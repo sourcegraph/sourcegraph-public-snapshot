@@ -2,13 +2,28 @@ import * as path from 'path'
 
 import type { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 
+import { ExternalServiceKind } from '../graphql-operations'
+
 import type { EditorReplacements, EditorSettings } from './editor-settings'
 import { Editor, getEditor, supportedEditors } from './editors'
 
-export function buildRepoBaseNameAndPath(repoName: string, filePath: string | undefined): string {
-    const codeHostsWithOwnerInUrl = ['github.com', 'gitlab.com', 'bitbucket.org']
-    const repoNameIncludesOwner = codeHostsWithOwnerInUrl.some(url => repoName.startsWith(url + '/'))
-    const bareRepoNamePieces = repoName.split('/').slice(repoNameIncludesOwner ? 2 : 1)
+// Just lowercasing these for now, it's a bit of a gamble because it's only a coincidence that ExternalServiceKind
+// and ExternalServiceType only differs in casing. But it works for now.
+// Discussion about this here: https://github.com/sourcegraph/sourcegraph/pull/41914#discussion_r977418118
+const serviceTypesWithOwnerInUrl = new Set<string>([
+    ExternalServiceKind.GITHUB.toLowerCase(),
+    ExternalServiceKind.GITLAB.toLowerCase(),
+    ExternalServiceKind.BITBUCKETCLOUD.toLowerCase(),
+])
+
+export function buildRepoBaseNameAndPath(
+    repoName: string,
+    externalServiceType: string | undefined,
+    filePath: string | undefined
+): string {
+    const bareRepoNamePieces = repoName
+        .split('/')
+        .slice(serviceTypesWithOwnerInUrl.has((externalServiceType || '').toLowerCase()) ? 2 : 1)
     return path.join(...bareRepoNamePieces, ...(filePath ? [filePath] : []))
 }
 

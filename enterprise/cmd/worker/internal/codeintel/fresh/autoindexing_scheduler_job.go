@@ -38,7 +38,7 @@ func (j *autoindexingScheduler) Config() []env.Config {
 	}
 }
 
-func (j *autoindexingScheduler) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
+func (j *autoindexingScheduler) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	observationContext := &observation.Context{
 		Logger:     logger.Scoped("routines", "codeintel autoindexing scheduling routines"),
 		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},

@@ -37,6 +37,7 @@ The plugin works with all JetBrains IDEs, including:
   - Mac: Go to `IntelliJ IDEA | Preferences` (or use <kbd>⌘,</kbd>)
 - Click `Plugins` in the left-hand pane, then the `Marketplace` tab at the top
 - Search for `Sourcegraph`, then click the `Install` button
+- Make sure that the `git` command is available in your PATH. We’re going to [get rid of this dependency](https://github.com/sourcegraph/sourcegraph/issues/40452), but for now, the plugin relies on it.
 - Restart your IDE if needed
 - To search with Sourcegraph, press <kbd>Alt+S</kbd> (<kbd>⌥S</kbd> on Mac).
 - To share a link to your code or search through the website, right-click in the editor, and choose an action under the `Sourcegraph` context menu item.
