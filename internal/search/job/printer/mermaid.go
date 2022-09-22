@@ -72,7 +72,6 @@ func buildLabel(j job.Describer, v job.Verbosity) string {
 	b.WriteString(trimmedUpperName(j.Name()))
 	enc := fieldStringEncoder{mermaidKeyValueWriter{b}}
 	for _, field := range j.Fields(v) {
-		b.WriteString(" <br> ")
 		field.Marshal(enc)
 	}
 	return b.String()
@@ -81,7 +80,25 @@ func buildLabel(j job.Describer, v job.Verbosity) string {
 type mermaidKeyValueWriter struct{ io.StringWriter }
 
 func (w mermaidKeyValueWriter) Write(key, value string) {
-	w.WriteString(key)
-	w.WriteString(": ")
-	w.WriteString(value)
+	w.WriteString(" <br> ")
+	w.WriteString(mermaidEscaper.Replace(key))
+	w.WriteString(mermaidEscaper.Replace(": "))
+	w.WriteString(mermaidEscaper.Replace(value))
 }
+
+// Copied from the `html` package and modified for mermaid
+var mermaidEscaper = strings.NewReplacer(
+	`&`, "&amp",
+	`'`, "&#39",
+	`"`, "&#34",
+	`<`, "&lt",
+	`>`, "&gt",
+	`(`, "&#40",
+	`)`, "&#41",
+	`:`, "&#58",
+	`[`, "&#91",
+	`]`, "&#93",
+	`{`, "&#123",
+	`|`, "&#124",
+	`}`, "&#125",
+)
