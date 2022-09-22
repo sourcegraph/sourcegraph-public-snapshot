@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/urfave/cli/v2"
@@ -122,13 +123,20 @@ Also refer to the generated reference documentation available for site admins:
 					for _, m := range uniqueMetrics {
 						md.WriteString(fmt.Sprintf("- `%s`\n", m))
 					}
-					return std.Out.WriteMarkdown(md.String())
+					if err := std.Out.WriteMarkdown(md.String()); err != nil {
+						return err
+					}
 
 				case "plain":
 					std.Out.Write(strings.Join(uniqueMetrics, "\n"))
 
 				case "regexp":
-					std.Out.Write("(" + strings.Join(uniqueMetrics, "|") + ")")
+					reString := "(" + strings.Join(uniqueMetrics, "|") + ")"
+					re, err := regexp.Compile(reString)
+					if err != nil {
+						return errors.Wrap(err, "generated regexp was invalid")
+					}
+					std.Out.Write(re.String())
 
 				default:
 					return errors.Newf("unknown format %q", format)
