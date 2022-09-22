@@ -256,7 +256,7 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
                         {window.context.isAuthenticatedUser && (
                             <OpenInEditorActionItem
                                 platformContext={props.platformContext}
-                                externalServiceType={props.repo?.externalRepository.serviceType}
+                                externalServiceType={props.repo?.externalRepository?.serviceType}
                             />
                         )}
                     </>
