@@ -59,7 +59,8 @@ type Job struct {
 	RedactedValues map[string]string `json:"redactedValues"`
 }
 
-// VirtualMachineFile is a file ...
+// VirtualMachineFile is a file that will be written to the VM. A file can contain the raw content of the file or
+// specify the coordinates of the file in the file store.
 type VirtualMachineFile struct {
 	// Content is the raw content of the file. If not provided, the file is retrieved from the file store based on the
 	// configured Bucket and Key.
