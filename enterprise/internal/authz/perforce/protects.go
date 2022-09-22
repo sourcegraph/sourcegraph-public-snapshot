@@ -395,6 +395,7 @@ func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermission
 					srp := getSubRepoPerms(depot)
 					newIncludes := convertRulesForWildcardDepotMatch(match, depot, patternsToGlob)
 					srp.PathIncludes = append(srp.PathIncludes, newIncludes...)
+					srp.Paths = append(srp.Paths, newIncludes...)
 					logger.Debug("Adding include rules", log.Strings("rules", newIncludes))
 
 					var i int
@@ -430,6 +431,11 @@ func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermission
 
 				newExcludes := convertRulesForWildcardDepotMatch(match, depot, patternsToGlob)
 				srp.PathExcludes = append(srp.PathExcludes, newExcludes...)
+
+				// Adding leading "-" sign to indicate exclusion
+				for _, exclude := range newExcludes {
+					srp.Paths = append(srp.Paths, "-"+exclude)
+				}
 				logger.Debug("Adding exclude rules", log.Strings("rules", newExcludes))
 
 				var i int
@@ -480,6 +486,12 @@ func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermission
 				// repositoryPathPattern has been used. We also need to remove any `//` prefixes
 				// which are included in all Helix server rules.
 				depotString := string(depot)
+				for i := range srp.PathIncludes {
+					srp.PathIncludes[i] = trimDepotNameAndSlashes(srp.PathIncludes[i], depotString)
+				}
+				for i := range srp.PathExcludes {
+					srp.PathExcludes[i] = trimDepotNameAndSlashes(srp.PathExcludes[i], depotString)
+				}
 				for i := range srp.Paths {
 					path := srp.Paths[i]
 
@@ -504,12 +516,8 @@ func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermission
 }
 
 func trimDepotNameAndSlashes(s, depotName string) string {
-	depotName = strings.TrimSuffix(depotName, "/") // we want to keep the leading slash
 	s = strings.TrimPrefix(s, depotName)
 	s = strings.TrimPrefix(s, "//")
-	if !strings.HasPrefix(s, "/") {
-		s = "/" + s // make sure path starts with a '/'
-	}
 	return s
 }
 
