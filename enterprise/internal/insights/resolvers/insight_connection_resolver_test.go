@@ -198,11 +198,11 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 
 	// Create some timeseries data, one row in each repository
 	_, err = insightsDB.ExecContext(context.Background(), `
-		INSERT INTO series_points (series_id, "time", "value", metadata_id, repo_id, repo_name_id, original_repo_name_id)
+		INSERT INTO series_points (series_id, "time", "value", repo_id, repo_name_id, original_repo_name_id)
 		VALUES
-			('s:087855E6A24440837303FD8A252E9893E8ABDFECA55B61AC83DA1B521906626E', $1, 5.0, null, 1, 3, 3),
-			('s:087855E6A24440837303FD8A252E9893E8ABDFECA55B61AC83DA1B521906626E', $1, 6.0, null, 2, 2, 2),
-			('s:087855E6A24440837303FD8A252E9893E8ABDFECA55B61AC83DA1B521906626E', $1, 7.0, null, 3, 1, 1)`, now)
+			('s:087855E6A24440837303FD8A252E9893E8ABDFECA55B61AC83DA1B521906626E', $1, 5.0, 1, 3, 3),
+			('s:087855E6A24440837303FD8A252E9893E8ABDFECA55B61AC83DA1B521906626E', $1, 6.0, 2, 2, 2),
+			('s:087855E6A24440837303FD8A252E9893E8ABDFECA55B61AC83DA1B521906626E', $1, 7.0, 3, 1, 1)`, now)
 	if err != nil {
 		t.Fatal(err)
 	}

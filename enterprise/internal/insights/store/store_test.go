@@ -43,20 +43,17 @@ func TestSeriesPoints(t *testing.T) {
 	_, err = insightsDB.ExecContext(context.Background(), `
 INSERT INTO repo_names(name) VALUES ('github.com/gorilla/mux-original');
 INSERT INTO repo_names(name) VALUES ('github.com/gorilla/mux-renamed');
-INSERT INTO metadata(metadata) VALUES ('{"hello": "world", "languages": ["Go", "Python", "Java"]}');
 SELECT setseed(0.5);
 INSERT INTO series_points(
     time,
 	series_id,
     value,
-    metadata_id,
     repo_id,
     repo_name_id,
     original_repo_name_id)
 SELECT time,
     'somehash',
     random()*80 - 40,
-    (SELECT id FROM metadata WHERE metadata = '{"hello": "world", "languages": ["Go", "Python", "Java"]}'),
     2,
     (SELECT id FROM repo_names WHERE name = 'github.com/gorilla/mux-renamed'),
     (SELECT id FROM repo_names WHERE name = 'github.com/gorilla/mux-original')
@@ -161,31 +158,26 @@ func TestCountData(t *testing.T) {
 			Point:       SeriesPoint{Time: timeValue("2020-03-01T00:00:00Z"), Value: 1.1},
 			RepoName:    optionalString("repo1"),
 			RepoID:      optionalRepoID(3),
-			Metadata:    map[string]any{"some": "data"},
 			PersistMode: RecordMode,
 		},
 		{
 			SeriesID:    "two",
 			Point:       SeriesPoint{Time: timeValue("2020-03-02T00:00:00Z"), Value: 2.2},
-			Metadata:    []any{"some", "data", "two"},
 			PersistMode: RecordMode,
 		},
 		{
 			SeriesID:    "two",
 			Point:       SeriesPoint{Time: timeValue("2020-03-02T00:01:00Z"), Value: 2.2},
-			Metadata:    []any{"some", "data", "two"},
 			PersistMode: RecordMode,
 		},
 		{
 			SeriesID:    "three",
 			Point:       SeriesPoint{Time: timeValue("2020-03-03T00:00:00Z"), Value: 3.3},
-			Metadata:    nil,
 			PersistMode: RecordMode,
 		},
 		{
 			SeriesID:    "three",
 			Point:       SeriesPoint{Time: timeValue("2020-03-03T00:01:00Z"), Value: 3.3},
-			Metadata:    nil,
 			PersistMode: RecordMode,
 		},
 	} {
@@ -243,14 +235,12 @@ func TestRecordSeriesPoints(t *testing.T) {
 
 	current := time.Date(2021, time.September, 10, 10, 0, 0, 0, time.UTC)
 
-	// Metadata is currently not queried and will not resolve to reduce cardinality.
 	for _, record := range []RecordSeriesPointArgs{
 		{
 			SeriesID:    "one",
 			Point:       SeriesPoint{Time: current, Value: 1.1},
 			RepoName:    optionalString("repo1"),
 			RepoID:      optionalRepoID(3),
-			Metadata:    map[string]any{"some": "data"},
 			PersistMode: RecordMode,
 		},
 		{
@@ -258,7 +248,6 @@ func TestRecordSeriesPoints(t *testing.T) {
 			Point:       SeriesPoint{Time: current.Add(-time.Hour * 24 * 14), Value: 2.2},
 			RepoName:    optionalString("repo1"),
 			RepoID:      optionalRepoID(3),
-			Metadata:    []any{"some", "data", "two"},
 			PersistMode: RecordMode,
 		},
 		{
@@ -266,7 +255,6 @@ func TestRecordSeriesPoints(t *testing.T) {
 			Point:       SeriesPoint{Time: current.Add(-time.Hour * 24 * 28), Value: 3.3},
 			RepoName:    optionalString("repo1"),
 			RepoID:      optionalRepoID(3),
-			Metadata:    nil,
 			PersistMode: RecordMode,
 		},
 		{
@@ -274,7 +262,6 @@ func TestRecordSeriesPoints(t *testing.T) {
 			Point:       SeriesPoint{Time: current.Add(-time.Hour * 24 * 42), Value: 3.3},
 			RepoName:    optionalString("repo1"),
 			RepoID:      optionalRepoID(3),
-			Metadata:    nil,
 			PersistMode: RecordMode,
 		},
 	} {
@@ -347,14 +334,12 @@ func TestRecordSeriesPointsSnapshotOnly(t *testing.T) {
 
 	current := time.Date(2021, time.September, 10, 10, 0, 0, 0, time.UTC)
 
-	// Metadata is currently not queried and will not resolve to reduce cardinality.
 	for _, record := range []RecordSeriesPointArgs{
 		{
 			SeriesID:    "one",
 			Point:       SeriesPoint{Time: current, Value: 1.1},
 			RepoName:    optionalString("repo1"),
 			RepoID:      optionalRepoID(3),
-			Metadata:    map[string]any{"some": "data"},
 			PersistMode: SnapshotMode,
 		},
 	} {
@@ -413,14 +398,12 @@ func TestRecordSeriesPointsRecordingOnly(t *testing.T) {
 
 	current := time.Date(2021, time.September, 10, 10, 0, 0, 0, time.UTC)
 
-	// Metadata is currently not queried and will not resolve to reduce cardinality.
 	for _, record := range []RecordSeriesPointArgs{
 		{
 			SeriesID:    "one",
 			Point:       SeriesPoint{Time: current, Value: 1.1},
 			RepoName:    optionalString("repo1"),
 			RepoID:      optionalRepoID(3),
-			Metadata:    map[string]any{"some": "data"},
 			PersistMode: RecordMode,
 		},
 	} {
@@ -480,14 +463,12 @@ func TestDeleteSnapshots(t *testing.T) {
 	current := time.Date(2021, time.September, 10, 10, 0, 0, 0, time.UTC)
 
 	seriesID := "one"
-	// Metadata is currently not queried and will not resolve to reduce cardinality.
 	for _, record := range []RecordSeriesPointArgs{
 		{
 			SeriesID:    seriesID,
 			Point:       SeriesPoint{Time: current, Value: 1.1},
 			RepoName:    optionalString("repo1"),
 			RepoID:      optionalRepoID(3),
-			Metadata:    map[string]any{"some": "data"},
 			PersistMode: SnapshotMode,
 		},
 		{
@@ -495,7 +476,6 @@ func TestDeleteSnapshots(t *testing.T) {
 			Point:       SeriesPoint{Time: current.Add(time.Hour), Value: 1.1}, // offsetting the time by an hour so that the point is not deduplicated
 			RepoName:    optionalString("repo1"),
 			RepoID:      optionalRepoID(3),
-			Metadata:    map[string]any{"some": "data"},
 			PersistMode: RecordMode,
 		},
 	} {

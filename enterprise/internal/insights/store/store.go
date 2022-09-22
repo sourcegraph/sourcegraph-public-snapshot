@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -81,12 +80,11 @@ type SeriesPoint struct {
 	SeriesID string
 	Time     time.Time
 	Value    float64
-	Metadata []byte
 	Capture  *string
 }
 
 func (s *SeriesPoint) String() string {
-	return fmt.Sprintf("SeriesPoint{Time: %q, Value: %v, Metadata: %s}", s.Time, s.Value, s.Metadata)
+	return fmt.Sprintf("SeriesPoint{Time: %q, Value: %v}", s.Time, s.Value)
 }
 
 // SeriesPointsOpts describes options for querying insights' series data points.
@@ -101,7 +99,6 @@ type SeriesPointsOpts struct {
 	Included []api.RepoID
 
 	// TODO(slimsag): Add ability to filter based on repo name, original name.
-	// TODO(slimsag): Add ability to do limited filtering based on metadata.
 
 	IncludeRepoRegex []string
 	ExcludeRepoRegex []string
@@ -141,7 +138,6 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 			&point.SeriesID,
 			&point.Time,
 			&point.Value,
-			&point.Metadata,
 			&point.Capture,
 		)
 		if err != nil {
@@ -189,8 +185,8 @@ DELETE FROM series_points_snapshots where series_id = %s;
 // and then SUM the result for each repository, giving us our final total number.
 const fullVectorSeriesAggregation = `
 -- source: enterprise/internal/insights/store/store.go:SeriesPoints
-SELECT sub.series_id, sub.interval_time, SUM(sub.value) as value, sub.metadata, sub.capture FROM (
-	SELECT sp.repo_name_id, sp.series_id, date_trunc('seconds', sp.time) AS interval_time, MAX(value) as value, null as metadata, capture
+SELECT sub.series_id, sub.interval_time, SUM(sub.value) as value, sub.capture FROM (
+	SELECT sp.repo_name_id, sp.series_id, date_trunc('seconds', sp.time) AS interval_time, MAX(value) as value, capture
 	FROM (  select * from series_points
 			union
 			select * from series_points_snapshots
@@ -200,7 +196,7 @@ SELECT sub.series_id, sub.interval_time, SUM(sub.value) as value, sub.metadata, 
 	GROUP BY sp.series_id, interval_time, sp.repo_name_id, capture
 	ORDER BY sp.series_id, interval_time, sp.repo_name_id
 ) sub
-GROUP BY sub.series_id, sub.interval_time, sub.metadata, sub.capture
+GROUP BY sub.series_id, sub.interval_time, sub.capture
 ORDER BY sub.series_id, sub.interval_time ASC
 `
 
@@ -376,12 +372,6 @@ type RecordSeriesPointArgs struct {
 	RepoName *string
 	RepoID   *api.RepoID
 
-	// Metadata contains arbitrary JSON metadata to associate with the data point, if any.
-	//
-	// See the DB schema comments for intended use cases. This should generally be small,
-	// low-cardinality data to avoid inflating the table.
-	Metadata any
-
 	PersistMode PersistMode
 }
 
@@ -414,24 +404,6 @@ func (s *Store) RecordSeriesPoint(ctx context.Context, v RecordSeriesPointArgs) 
 		repoNameID = &repoNameIDValue
 	}
 
-	// Upsert the metadata into a separate table, so we get a small ID we can reference many times
-	// from the series_points table without storing the metadata multiple times.
-	var metadataID *int
-	if v.Metadata != nil {
-		jsonMetadata, err := json.Marshal(v.Metadata)
-		if err != nil {
-			return errors.Wrap(err, "upserting: encoding metadata")
-		}
-		metadataIDValue, ok, err := basestore.ScanFirstInt(txStore.Query(ctx, sqlf.Sprintf(upsertMetadataFmtStr, jsonMetadata, jsonMetadata)))
-		if err != nil {
-			return errors.Wrap(err, "upserting metadata ID")
-		}
-		if !ok {
-			return errors.Wrap(err, "metadata ID not found (this should never happen)")
-		}
-		metadataID = &metadataIDValue
-	}
-
 	tableName, err := getTableForPersistMode(v.PersistMode)
 	if err != nil {
 		return err
@@ -443,7 +415,6 @@ func (s *Store) RecordSeriesPoint(ctx context.Context, v RecordSeriesPointArgs) 
 		v.SeriesID,         // series_id
 		v.Point.Time.UTC(), // time
 		v.Point.Value,      // value
-		metadataID,         // metadata_id
 		v.RepoID,           // repo_id
 		repoNameID,         // repo_name_id
 		repoNameID,         // original_repo_name_id
@@ -494,30 +465,16 @@ UNION
 	SELECT id FROM repo_names WHERE name = %s;
 `
 
-const upsertMetadataFmtStr = `
--- source: enterprise/internal/insights/store/store.go:RecordSeriesPoint
-WITH e AS(
-    INSERT INTO metadata(metadata)
-    VALUES (%s)
-    ON CONFLICT DO NOTHING
-    RETURNING id
-)
-SELECT * FROM e
-UNION
-	SELECT id FROM metadata WHERE metadata = %s;
-`
-
 const recordSeriesPointFmtstr = `
 -- source: enterprise/internal/insights/store/store.go:RecordSeriesPoint
 INSERT INTO %s (
 	series_id,
 	time,
 	value,
-	metadata_id,
 	repo_id,
 	repo_name_id,
 	original_repo_name_id, capture)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
+VALUES (%s, %s, %s, %s, %s, %s, %s);
 `
 
 func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
