@@ -46,6 +46,7 @@ import (
 //
 // Paths are relative to the root of the repo.
 type SubRepoPermissions struct {
+	Paths        []string
 	PathIncludes []string
 	PathExcludes []string
 }

@@ -114,7 +114,7 @@ SET
 // Get will fetch sub repo rules for the given repo and user combination.
 func (s *subRepoPermsStore) Get(ctx context.Context, userID int32, repoID api.RepoID) (*authz.SubRepoPermissions, error) {
 	q := sqlf.Sprintf(`
-SELECT path_includes, path_excludes
+SELECT paths
 FROM sub_repo_permissions
 WHERE repo_id = %s
   AND user_id = %s
@@ -128,13 +128,11 @@ WHERE repo_id = %s
 
 	perms := new(authz.SubRepoPermissions)
 	for rows.Next() {
-		var includes []string
-		var excludes []string
-		if err := rows.Scan(pq.Array(&includes), pq.Array(&excludes)); err != nil {
+		var paths []string
+		if err := rows.Scan(pq.Array(&paths)); err != nil {
 			return nil, errors.Wrap(err, "scanning row")
 		}
-		perms.PathIncludes = append(perms.PathIncludes, includes...)
-		perms.PathExcludes = append(perms.PathExcludes, excludes...)
+		perms.Paths = append(perms.Paths, paths...)
 	}
 
 	if err := rows.Close(); err != nil {
@@ -147,7 +145,7 @@ WHERE repo_id = %s
 // GetByUser fetches all sub repo perms for a user keyed by repo.
 func (s *subRepoPermsStore) GetByUser(ctx context.Context, userID int32) (map[api.RepoName]authz.SubRepoPermissions, error) {
 	q := sqlf.Sprintf(`
-SELECT r.name, path_includes, path_excludes
+SELECT r.name, paths
 FROM sub_repo_permissions
 JOIN repo r on r.id = repo_id
 WHERE user_id = %s
@@ -163,7 +161,7 @@ WHERE user_id = %s
 	for rows.Next() {
 		var perms authz.SubRepoPermissions
 		var repoName api.RepoName
-		if err := rows.Scan(&repoName, pq.Array(&perms.PathIncludes), pq.Array(&perms.PathExcludes)); err != nil {
+		if err := rows.Scan(&repoName, pq.Array(&perms.Paths)); err != nil {
 			return nil, errors.Wrap(err, "scanning row")
 		}
 		result[repoName] = perms
@@ -178,7 +176,7 @@ WHERE user_id = %s
 
 func (s *subRepoPermsStore) GetByUserAndService(ctx context.Context, userID int32, serviceType string, serviceID string) (map[api.ExternalRepoSpec]authz.SubRepoPermissions, error) {
 	q := sqlf.Sprintf(`
-SELECT r.external_id, path_includes, path_excludes
+SELECT r.external_id, paths
 FROM sub_repo_permissions
 JOIN repo r on r.id = repo_id
 WHERE user_id = %s
