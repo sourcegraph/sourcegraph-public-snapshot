@@ -478,6 +478,17 @@ read  group     Rome    *  //depot/dev/...
 			protectsFile: "testdata/sample-protects-edb.txt",
 			canReadAll:   []string{"db/plpgsql/seed.psql"},
 		},
+        {
+            name:         "Deny all, grant some",
+            depot:        "//depot/main/",
+            protects: `
+read    group   Dev1    *   //depot/main/...
+read    group   Dev1    *   -//depot/main/.../*.java
+read    group   Dev1    *   //depot/main/.../dev/foo.java
+`,
+            canReadAll: []string{"dev/foo.java"},
+            cannotReadAny: []string{"dev/bar.java"},
+        },
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := logtest.Scoped(t)
@@ -716,7 +727,7 @@ func TestCheckWildcardDepotMatch(t *testing.T) {
 func TestScanAllUsers(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	f, err := os.Open("testdata/sample-protects-a.txt")
+	f, err := os.Open("testdata/sample-protects-conflict.txt")
 	if err != nil {
 		t.Fatal(err)
 	}
