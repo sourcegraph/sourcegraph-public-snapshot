@@ -410,6 +410,9 @@ func fetchSeries(ctx context.Context, definition types.InsightViewSeries, filter
 
 func recordedSeries(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) (_ []graphqlbackend.InsightSeriesResolver, err error) {
 	points, err := fetchSeries(ctx, definition, filters, &r)
+	if err != nil {
+		return nil, err
+	}
 
 	status, err := queryrunner.QueryJobsStatus(ctx, r.workerBaseStore, definition.SeriesID)
 	if err != nil {
@@ -435,6 +438,9 @@ func recordedSeries(ctx context.Context, definition types.InsightViewSeries, r b
 
 func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
 	allPoints, err := fetchSeries(ctx, definition, filters, &r)
+	if err != nil {
+		return nil, err
+	}
 	groupedByCapture := make(map[string][]store.SeriesPoint)
 
 	for i := range allPoints {
