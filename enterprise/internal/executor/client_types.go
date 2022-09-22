@@ -20,9 +20,6 @@ type Job struct {
 	// unset, defaults to the workspace root.
 	RepositoryDirectory string `json:"repositoryDirectory"`
 
-	// WorkspaceFilesDirectory is the relative path to where the workspace files are written to.
-	WorkspaceFilesDirectory string `json:"workspaceFilesDirectory"`
-
 	// Commit is the revhash that should be checked out prior to job execution.
 	Commit string `json:"commit"`
 

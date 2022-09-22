@@ -121,7 +121,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 		return apiclient.Job{}, errors.Wrap(err, "fetching workspace files")
 	}
 	for _, workspaceFile := range workspaceFiles {
-		files[filepath.Join(workspaceFile.Path, workspaceFile.FileName)] = apiclient.VirtualMachineFile{
+		files[filepath.Join(srcWorkspaceFilesDir, workspaceFile.Path, workspaceFile.FileName)] = apiclient.VirtualMachineFile{
 			Bucket:     "batch-changes",
 			Key:        filepath.Join(batchSpec.RandID, workspaceFile.RandID),
 			ModifiedAt: workspaceFile.ModifiedAt,
@@ -137,12 +137,11 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 	}
 
 	return apiclient.Job{
-		ID:                      int(job.ID),
-		VirtualMachineFiles:     files,
-		RepositoryName:          string(repo.Name),
-		RepositoryDirectory:     srcRepoDir,
-		WorkspaceFilesDirectory: srcWorkspaceFilesDir,
-		Commit:                  workspace.Commit,
+		ID:                  int(job.ID),
+		VirtualMachineFiles: files,
+		RepositoryName:      string(repo.Name),
+		RepositoryDirectory: srcRepoDir,
+		Commit:              workspace.Commit,
 		// We only care about the current repos content, so a shallow clone is good enough.
 		// Later we might allow to tweak more git parameters, like submodules and LFS.
 		ShallowClone:   true,

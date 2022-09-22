@@ -164,7 +164,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 			}
 			workspaceFileContentsByPath[path] = []byte(machineFile.Content)
 		} else if machineFile.Bucket != "" && machineFile.Key != "" {
-			path := filepath.Join(workspaceRoot, job.WorkspaceFilesDirectory, relativePath)
+			path := filepath.Join(workspaceRoot, relativePath)
 			if err := writeWorkspaceFile(commandLogger, h.filesStore, ctx, path, machineFile); err != nil {
 				return errors.Wrap(err, "failed to write workspace files")
 			}
