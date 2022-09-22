@@ -10,7 +10,6 @@ import { CodeIntelligenceProps } from './codeintel'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
 import type { LayoutProps } from './Layout'
-import { BlobProps } from './repo/blob/Blob'
 import { PageRoutes } from './routes.constants'
 import { SearchPageWrapper } from './search/SearchPageWrapper'
 import { getExperimentalFeatures, useExperimentalFeatures } from './stores'
@@ -42,8 +41,7 @@ export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof
         BreadcrumbsProps,
         BreadcrumbSetters,
         CodeIntelligenceProps,
-        BatchChangesProps,
-        Pick<BlobProps, 'onHandleFuzzyFinder'> {
+        BatchChangesProps {
     isSourcegraphDotCom: boolean
     isMacPlatform: boolean
 }
