@@ -123,10 +123,6 @@ func (s *syncHandler) Handle(ctx context.Context, logger log.Logger, record work
 	if !ok {
 		return errors.Errorf("expected repos.SyncJob, got %T", record)
 	}
-	select {
-	case <-ctx.Done():
-	case <-time.After(50 * time.Second):
-	}
 
 	return s.syncer.SyncExternalService(ctx, sj.ExternalServiceID, s.minSyncInterval())
 }
@@ -549,7 +545,7 @@ func (s *Syncer) SyncExternalService(
 		svc.LastSyncAt = now
 
 		// We only want to log this error, not return it
-		if err := s.Store.ExternalServiceStore().Upsert(ctx, svc); err != nil {
+		if err := s.Store.ExternalServiceStore().Upsert(context.Background(), svc); err != nil {
 			logger.Error("upserting external service", log.Error(err))
 		}
 
@@ -584,7 +580,6 @@ func (s *Syncer) SyncExternalService(
 	}
 
 	results := make(chan SourceResult)
-
 	go func() {
 		src.ListRepos(ctx, results)
 		close(results)

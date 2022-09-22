@@ -154,7 +154,12 @@ func (c *V4Client) requestGraphQL(ctx context.Context, query string, vars map[st
 		return errors.Wrap(err, "rate limit")
 	}
 
-	time.Sleep(c.rateLimitMonitor.RecommendedWaitForBackgroundOp(cost))
+	// Wait for the rate limit, or return if context has been canceled.
+	select {
+	case <-time.After(c.rateLimitMonitor.RecommendedWaitForBackgroundOp(cost)):
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 
 	if _, err := doRequest(ctx, c.log, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, &respBody); err != nil {
 		return err
