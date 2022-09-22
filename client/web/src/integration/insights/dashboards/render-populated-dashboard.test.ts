@@ -4,7 +4,13 @@ import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/dri
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../../context'
-import { GET_DASHBOARD_INSIGHTS, INSIGHTS_DASHBOARDS } from '../fixtures/dashboards'
+import {
+    GET_DASHBOARD_INSIGHTS_POPULATED,
+    GET_INSIGHT_VIEW_1,
+    GET_INSIGHT_VIEW_2,
+    INSIGHTS_DASHBOARDS,
+    LANG_STAT_INSIGHT_CONTENT,
+} from '../fixtures/dashboards'
 import { overrideInsightsGraphQLApi } from '../utils/override-insights-graphql-api'
 
 describe('Code insights populated dashboard', () => {
@@ -31,18 +37,18 @@ describe('Code insights populated dashboard', () => {
     afterEachSaveScreenshotIfFailed(() => driver.page)
 
     it('renders a dashboard with each of the available insight types', async () => {
-        overrideInsightsGraphQLApi({
-            testContext,
-            overrides: {
-                InsightsDashboards: () => INSIGHTS_DASHBOARDS,
-                GetDashboardInsights: () => GET_DASHBOARD_INSIGHTS,
-            },
+        overrideInsightsGraphQLApi({ testContext })
+        testContext.overrideGraphQL({
+            GetDashboardInsights: () => GET_DASHBOARD_INSIGHTS_POPULATED,
+            GetInsightView: () => GET_INSIGHT_VIEW_1,
+            InsightsDashboards: () => INSIGHTS_DASHBOARDS,
+            LangStatsInsightContent: () => LANG_STAT_INSIGHT_CONTENT,
         })
+        testContext.overrideGraphQL({ GetInsightView: () => GET_INSIGHT_VIEW_2 })
 
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/EMPTY_DASHBOARD')
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/EACH_TYPE_OF_INSIGHT')
 
         const dashboardSelectButton = await driver.page.waitForSelector('[data-testid="dashboard-select-button"')
-        const addInsightsButtonCard = await driver.page.waitForSelector('[data-testid="add-insights-button-card"')
 
         assert(dashboardSelectButton)
 
@@ -50,12 +56,7 @@ describe('Code insights populated dashboard', () => {
             button => button.textContent,
             dashboardSelectButton
         )) as string
-        const addInsightsButtonCardText: string = (await driver.page.evaluate(
-            button => button.textContent,
-            addInsightsButtonCard
-        )) as string
 
-        assert(/empty dashboard/i.test(dashboardSelectButtonText))
-        assert(/add insights/i.test(addInsightsButtonCardText))
+        assert(/each type of insight/i.test(dashboardSelectButtonText))
     })
 })
