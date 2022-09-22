@@ -34,6 +34,8 @@ type BatchesStore interface {
 	DatabaseDB() database.DB
 }
 
+const fileStoreBucket = "batch-changes"
+
 // transformRecord transforms a *btypes.BatchSpecWorkspaceExecutionJob into an apiclient.Job.
 func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job *btypes.BatchSpecWorkspaceExecutionJob) (apiclient.Job, error) {
 	workspace, err := s.GetBatchSpecWorkspace(ctx, store.GetBatchSpecWorkspaceOpts{ID: job.BatchSpecWorkspaceID})
@@ -122,7 +124,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 	}
 	for _, workspaceFile := range workspaceFiles {
 		files[filepath.Join(srcWorkspaceFilesDir, workspaceFile.Path, workspaceFile.FileName)] = apiclient.VirtualMachineFile{
-			Bucket:     "batch-changes",
+			Bucket:     fileStoreBucket,
 			Key:        filepath.Join(batchSpec.RandID, workspaceFile.RandID),
 			ModifiedAt: workspaceFile.ModifiedAt,
 		}
