@@ -796,7 +796,6 @@ type Mutation {
     the file on disk, and marking it as not-cloned in the database.
     """
     deleteRepositoryFromDisk(repo: ID!): EmptyResponse!
-
 }
 
 """
@@ -1730,6 +1729,14 @@ type Executor implements Node {
     The last time the executor sent a heartbeat to the Sourcegraph instance.
     """
     lastSeenAt: DateTime!
+    """
+    The compatibility of the executor with respect to the Sourcegraph instance.
+    If outdated, please make sure that the executor and the Sourcegraph backend are of compatible versions. This means they should match in major and minor version, but they may be 1 minor version apart.
+    If too new, please update the Sourcegraph instance to match the version of the executor or downgrade the executor.
+
+    Compatibility can be null if the executor or Sourcegraph instance runs in dev mode or there's a version mismatch.
+    """
+    compatibility: ExecutorCompatibility
 }
 
 """
@@ -1952,44 +1959,64 @@ query plan. The job tree discards information about query syntax and corresponds
 closely to backend services (text search, git commit search, etc.).
 """
 enum SearchQueryOutputPhase {
-     PARSE_TREE
-     JOB_TREE
+    PARSE_TREE
+    JOB_TREE
 }
 
 """
 The output format to emit for a parsed query.
 """
 enum SearchQueryOutputVerbosity {
-     """
-     Minimal verbosity outputs only nodes.
-     """
-     MINIMAL
-     """
-     Basic verbosity outputs nodes and essential fields associated with nodes.
-     """
-     BASIC
-     """
-     Maximal verbosity outputs nodes and all information associated with nodes.
-     """
-     MAXIMAL
+    """
+    Minimal verbosity outputs only nodes.
+    """
+    MINIMAL
+    """
+    Basic verbosity outputs nodes and essential fields associated with nodes.
+    """
+    BASIC
+    """
+    Maximal verbosity outputs nodes and all information associated with nodes.
+    """
+    MAXIMAL
 }
 
 """
 The output format to emit for a parsed query.
 """
 enum SearchQueryOutputFormat {
-     """
-     JSON format.
-     """
-     JSON
-     """
-     S-expression format.
-     """
-     SEXP
-     """
-     Mermaid flowchart format.
-     """
-     MERMAID
+    """
+    JSON format.
+    """
+    JSON
+    """
+    S-expression format.
+    """
+    SEXP
+    """
+    Mermaid flowchart format.
+    """
+    MERMAID
+}
+
+"""
+The compatibility of the executor with the sourcegraph instance.
+"""
+enum ExecutorCompatibility {
+    """
+    Executor version is more than one version behind the Sourcegraph instance.
+    """
+    OUTDATED
+
+    """
+    Executor is up-to-date with the Sourcegraph instance.
+    """
+    UP_TO_DATE
+
+    """
+    Executor version is more than one version ahead of the Sourcegraph instance.
+    """
+    VERSION_AHEAD
 }
 
 """

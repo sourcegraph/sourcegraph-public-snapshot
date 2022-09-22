@@ -82,6 +82,7 @@ const batchSpecWorkspaceFieldsFragment = gql`
             hostname
             active
             os
+            compatibility
             architecture
             dockerVersion
             executorVersion
