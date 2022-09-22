@@ -26,19 +26,20 @@ export enum ExternalServiceType {
     Other = 'other',
 }
 
+const serviceTypesWithOwnerInUrl = new Set<string>([
+    ExternalServiceType.GitHub,
+    ExternalServiceType.GitLab,
+    ExternalServiceType.BitbucketCloud,
+])
+
 export function buildRepoBaseNameAndPath(
     repoName: string,
     externalServiceType: string | undefined,
     filePath: string | undefined
 ): string {
-    const serviceTypesWithOwnerInUrl: string[] = [
-        ExternalServiceType.GitHub,
-        ExternalServiceType.GitLab,
-        ExternalServiceType.BitbucketCloud,
-    ]
     const bareRepoNamePieces = repoName
         .split('/')
-        .slice(serviceTypesWithOwnerInUrl.includes(externalServiceType || '') ? 2 : 1)
+        .slice(serviceTypesWithOwnerInUrl.has(externalServiceType || '') ? 2 : 1)
     return path.join(...bareRepoNamePieces, ...(filePath ? [filePath] : []))
 }
 
