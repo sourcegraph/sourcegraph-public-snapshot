@@ -1530,8 +1530,13 @@ func doRequest(ctx context.Context, oauthContext *oauthutil.OAuthContext, logger
 		span.Finish()
 	}()
 
+	var code int
+	var status string
+	var header http.Header
+	var body []byte
+
 	if bearerToken != nil && oauthContext != nil {
-		code, header, _, err := oauthutil.DoRequest(ctx, httpClient, req, bearerToken, tokenRefresher, *oauthContext)
+		code, header, body, err = oauthutil.DoRequest(ctx, httpClient, req, bearerToken, tokenRefresher, *oauthContext)
 		if err != nil {
 			return newHttpResponseState(code, header), errors.Wrap(err, "do request with retry and refresh")
 		}
@@ -1540,42 +1545,48 @@ func doRequest(ctx context.Context, oauthContext *oauthutil.OAuthContext, logger
 		if err != nil {
 			return nil, err
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
+
+		code = resp.StatusCode
+		header = resp.Header
+		status = resp.Status
+		body, _ = io.ReadAll(resp.Body)
 	}
 
 	logger.Debug("doRequest",
-		log.String("status", resp.Status),
-		log.String("x-ratelimit-remaining", resp.Header.Get("x-ratelimit-remaining")))
+		log.String("status", status),
+		log.String("x-ratelimit-remaining", header.Get("x-ratelimit-remaining")))
 
 	// For 401 responses we receive a remaining limit of 0. This will cause the next
 	// call to block for up to an hour because it believes we have run out of tokens.
 	// Instead, we should fail fast.
-	if resp.StatusCode != 401 {
-		rateLimitMonitor.Update(resp.Header)
+	if code != 401 {
+		rateLimitMonitor.Update(header)
 	}
 
-	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+	var readErr error
+	if code < 200 || code >= 400 {
 		var err APIError
-		if body, readErr := io.ReadAll(io.LimitReader(resp.Body, 1<<13)); readErr != nil { // 8kb
+		if body, readErr = io.ReadAll(io.LimitReader(resp.Body, 1<<13)); readErr != nil { // 8kb
 			err.Message = fmt.Sprintf("failed to read error response from GitHub API: %v: %q", readErr, string(body))
 		} else if decErr := json.Unmarshal(body, &err); decErr != nil {
 			err.Message = fmt.Sprintf("failed to decode error response from GitHub API: %v: %q", decErr, string(body))
 		}
 		err.URL = req.URL.String()
-		err.Code = resp.StatusCode
-		return newHttpResponseState(resp.StatusCode, resp.Header), &err
+		err.Code = code
+		return newHttpResponseState(code, header), &err
 	}
 
 	// If the resource is not modified, the body is empty. Return early. This is expected for
 	// resources that support conditional requests.
 	//
 	// See: https://docs.github.com/en/rest/overview/resources-in-the-rest-api#conditional-requests
-	if resp.StatusCode == 304 {
-		return newHttpResponseState(resp.StatusCode, resp.Header), nil
+	if code == 304 {
+		return newHttpResponseState(code, header), nil
 	}
 
-	err = json.NewDecoder(resp.Body).Decode(result)
-	return newHttpResponseState(resp.StatusCode, resp.Header), err
+	err = json.Unmarshal(body, result)
+	return newHttpResponseState(code, header), err
 }
 
 func canonicalizedURL(apiURL *url.URL) *url.URL {
