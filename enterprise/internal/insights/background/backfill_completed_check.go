@@ -8,6 +8,7 @@ import (
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -33,51 +34,52 @@ func checkBackfillCompleted(ctx context.Context, postgres database.DB, insightsd
 	defer func() { err = insightTx.Done(err) }()
 
 	// First select all series ids for which backfill has not yet been marked as complete.
-	seriesIds, err := insightStore.GetSeriesIdsBackfillNotComplete(ctx)
+	series, err := insightStore.GetDataSeries(ctx, store.GetDataSeriesArgs{BackfillNotComplete: true})
 	if err != nil {
 		return errors.Wrap(err, "GetSeriesIdsBackfillNotComplete")
 	}
-	if len(seriesIds) == 0 {
+	if len(series) == 0 {
 		return nil
 	}
 
 	// Query the jobs queue to find out the status of the series.
-	statusRows, err := getStatusRows(ctx, seriesIds, postgres)
+	statusRows, err := getStatusRows(ctx, series, postgres)
 	if err != nil {
 		return errors.Wrap(err, "getStatusRows")
 	}
 
 	lastCompletedJob := make(map[string]time.Time)
-	inProgressSeries := make(map[string]*bool)
+	inProgressSeries := map[string]struct{}{}
+	exists := struct{}{}
 	for _, r := range statusRows {
 		if r.StatusType == "completed" && r.FinishedAt != nil {
 			lastCompletedJob[r.SeriesId] = *r.FinishedAt
 		} else {
 			// If this is any status other than "completed", the series is still backfilling
-			trueValue := true
-			inProgressSeries[r.SeriesId] = &trueValue
+			inProgressSeries[r.SeriesId] = exists
 		}
 	}
 
 	// For each series that has completed jobs and is not stil in progress, stamp it.
 	for seriesId, timestamp := range lastCompletedJob {
-		if inProgressSeries[seriesId] == nil {
-			err = insightTx.SetSeriesBackfillComplete(ctx, seriesId, timestamp)
-			if err != nil {
-				return errors.Wrap(err, "SetSeriesBackfillComplete")
-			}
+		if _, ok := inProgressSeries[seriesId]; ok {
+			continue
+		}
+		err = insightTx.SetSeriesBackfillComplete(ctx, seriesId, timestamp)
+		if err != nil {
+			return errors.Wrap(err, "SetSeriesBackfillComplete")
 		}
 	}
 
 	return nil
 }
 
-func getStatusRows(ctx context.Context, seriesIds []string, postgres database.DB) ([]JobStatus, error) {
+func getStatusRows(ctx context.Context, series []types.InsightSeries, postgres database.DB) ([]JobStatus, error) {
 	queueStore := basestore.NewWithHandle(postgres.Handle())
 
-	elems := make([]*sqlf.Query, 0, len(seriesIds))
-	for _, id := range seriesIds {
-		elems = append(elems, sqlf.Sprintf("%s", id))
+	elems := make([]*sqlf.Query, 0, len(series))
+	for _, s := range series {
+		elems = append(elems, sqlf.Sprintf("%s", s.SeriesID))
 	}
 	q := sqlf.Sprintf(getStateForSeriesJobs, sqlf.Join(elems, ","))
 	rows, err := queueStore.Query(ctx, q)
