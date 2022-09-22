@@ -55,18 +55,18 @@ func (m *migrator) Routines(startupCtx context.Context, logger log.Logger) ([]go
 	}
 	outOfBandMigrationRunner := oobmigration.NewRunnerWithDB(db, oobmigration.RefreshInterval, observationContext)
 
-	if outOfBandMigrationRunner.SynchronizeMetadata(ctx); err != nil {
+	if outOfBandMigrationRunner.SynchronizeMetadata(startupCtx); err != nil {
 		return nil, errors.Wrap(err, "failed to synchronized out of band migration metadata")
 	}
 
-	if err := m.registerMigrators(ctx, db, outOfBandMigrationRunner); err != nil {
+	if err := m.registerMigrators(startupCtx, db, outOfBandMigrationRunner); err != nil {
 		return nil, err
 	}
 
 	if os.Getenv("SRC_DISABLE_OOBMIGRATION_VALIDATION") != "" {
 		logger.Warn("Skipping out-of-band migrations check")
 	} else {
-		if err := oobmigration.ValidateOutOfBandMigrationRunner(ctx, db, outOfBandMigrationRunner); err != nil {
+		if err := oobmigration.ValidateOutOfBandMigrationRunner(startupCtx, db, outOfBandMigrationRunner); err != nil {
 			return nil, err
 		}
 	}
