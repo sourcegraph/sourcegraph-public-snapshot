@@ -2,7 +2,9 @@ package command
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -50,10 +52,31 @@ func formatFirecrackerCommand(spec CommandSpec, name string, options Options) co
 	}
 }
 
+type dockerDaemonConfig struct {
+	RegistryMirrors []string `json:"registry-mirrors"`
+}
+
 // setupFirecracker invokes a set of commands to provision and prepare a Firecracker virtual
 // machine instance. If a startup script path (an executable file on the host) is supplied,
 // it will be mounted into the new virtual machine instance and executed.
 func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, name, workspaceDevice string, options Options, operations *Operations) error {
+	// TODO: Clean this file up.
+	var daemonConfigFile string
+	if options.FirecrackerOptions.DockerRegistryMirrorAddress != "" {
+		f, err := os.CreateTemp("", "docker-daemon-config-*.json")
+		if err != nil {
+			return err
+		}
+		daemonConfigFile = f.Name()
+		c, err := json.Marshal(&dockerDaemonConfig{RegistryMirrors: []string{options.FirecrackerOptions.DockerRegistryMirrorAddress}})
+		if err != nil {
+			return err
+		}
+		if err := os.WriteFile(daemonConfigFile, c, os.ModePerm); err != nil {
+			return err
+		}
+	}
+
 	// Start the VM and wait for the SSH server to become available.
 	startCommand := command{
 		Key: "setup.firecracker.start",
@@ -62,7 +85,7 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, 
 			"--runtime", "docker",
 			"--network-plugin", "cni",
 			firecrackerResourceFlags(options.ResourceOptions),
-			firecrackerCopyfileFlags(options.FirecrackerOptions.VMStartupScriptPath),
+			firecrackerCopyfileFlags(options.FirecrackerOptions.VMStartupScriptPath, daemonConfigFile),
 			firecrackerVolumeFlags(workspaceDevice, firecrackerContainerDir),
 			"--ssh",
 			"--name", name,
@@ -113,10 +136,14 @@ func firecrackerResourceFlags(options ResourceOptions) []string {
 	}
 }
 
-func firecrackerCopyfileFlags(vmStartupScriptPath string) []string {
-	copyfiles := make([]string, 0, 1)
+func firecrackerCopyfileFlags(vmStartupScriptPath, daemonConfigFile string) []string {
+	copyfiles := make([]string, 0, 2)
 	if vmStartupScriptPath != "" {
 		copyfiles = append(copyfiles, fmt.Sprintf("%s:%s", vmStartupScriptPath, vmStartupScriptPath))
+	}
+
+	if daemonConfigFile != "" {
+		copyfiles = append(copyfiles, fmt.Sprintf("%s:%s", daemonConfigFile, "/etc/docker/daemon.json"))
 	}
 
 	sort.Strings(copyfiles)
