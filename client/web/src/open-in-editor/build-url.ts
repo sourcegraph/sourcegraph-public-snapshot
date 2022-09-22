@@ -7,6 +7,9 @@ import { ExternalServiceKind } from '../graphql-operations'
 import type { EditorReplacements, EditorSettings } from './editor-settings'
 import { Editor, getEditor, supportedEditors } from './editors'
 
+// Just lowercasing these for now, it's a bit of a gamble because it's only a coincidence that ExternalServiceKind
+// and ExternalServiceType only differs in casing. But it works for now.
+// Discussion about this here: https://github.com/sourcegraph/sourcegraph/pull/41914#discussion_r977418118
 const serviceTypesWithOwnerInUrl = new Set<string>([
     ExternalServiceKind.GITHUB.toLowerCase(),
     ExternalServiceKind.GITLAB.toLowerCase(),
