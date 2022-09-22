@@ -52,7 +52,7 @@ export interface ContentMatch {
     branches?: string[]
     commit?: string
     lineMatches: LineMatch[]
-    chunkMatches: ChunkMatch[]
+    chunkMatches?: ChunkMatch[]
     hunks?: DecoratedHunk[]
 }
 
