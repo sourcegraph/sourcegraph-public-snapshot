@@ -471,6 +471,7 @@ func trimDepotNameAndSlashes(s, depotName string) string {
 	if !strings.HasPrefix(s, "/") {
 		s = "/" + s
 	}
+
 	return s
 }
 
