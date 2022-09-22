@@ -41,12 +41,21 @@ describe('Code insights empty dashboard', () => {
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/EMPTY_DASHBOARD')
 
-        const button = await driver.page.waitForSelector('[data-testid="dashboard-select-button"')
+        const dashboardSelectButton = await driver.page.waitForSelector('[data-testid="dashboard-select-button"')
+        const addInsightsButtonCard = await driver.page.waitForSelector('[data-testid="add-insights-button-card"')
 
-        assert(button)
+        assert(dashboardSelectButton)
 
-        const buttonText: string = (await driver.page.evaluate(button => button.textContent, button)) as string
+        const dashboardSelectButtonText: string = (await driver.page.evaluate(
+            button => button.textContent,
+            dashboardSelectButton
+        )) as string
+        const addInsightsButtonCardText: string = (await driver.page.evaluate(
+            button => button.textContent,
+            addInsightsButtonCard
+        )) as string
 
-        assert(/empty dashboard/i.test(buttonText))
+        assert(/empty dashboard/i.test(dashboardSelectButtonText))
+        assert(/add insights/i.test(addInsightsButtonCardText))
     })
 })
