@@ -31,7 +31,7 @@ func (j *uploadBackfillerJob) Config() []env.Config {
 	}
 }
 
-func (j *uploadBackfillerJob) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
+func (j *uploadBackfillerJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	dbStore, err := codeintel.InitDBStore()
 	if err != nil {
 		return nil, err

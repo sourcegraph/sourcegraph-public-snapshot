@@ -33,7 +33,7 @@ func (j *policiesRepositoryMatcherJob) Config() []env.Config {
 	}
 }
 
-func (j *policiesRepositoryMatcherJob) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
+func (j *policiesRepositoryMatcherJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	observationCtx := &observation.Context{
 		Logger:     logger.Scoped("routines", "codeintel job routines"),
 		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},

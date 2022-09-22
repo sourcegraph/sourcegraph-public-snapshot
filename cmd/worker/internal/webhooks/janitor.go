@@ -33,7 +33,7 @@ func (j *janitor) Config() []env.Config {
 	return nil
 }
 
-func (j *janitor) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
+func (j *janitor) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	db, err := workerdb.Init()
 	if err != nil {
 		return nil, err
