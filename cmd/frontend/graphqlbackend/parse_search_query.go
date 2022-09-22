@@ -7,8 +7,11 @@ import (
 )
 
 func (r *schemaResolver) ParseSearchQuery(ctx context.Context, args *struct {
-	Query       string
-	PatternType string
+	Query           string
+	PatternType     string
+	OutputPhase     string
+	OutputFormat    string
+	OutputVerbosity string
 }) (*JSONValue, error) {
 	var searchType query.SearchType
 	switch args.PatternType {

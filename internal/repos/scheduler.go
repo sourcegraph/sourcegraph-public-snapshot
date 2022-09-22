@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	gitserverprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -218,7 +219,11 @@ func (s *UpdateScheduler) runUpdateLoop(ctx context.Context) {
 					subLogger.Error("error requesting repo update", log.Error(err), log.String("uri", string(repo.Name)))
 				} else if resp != nil && resp.Error != "" {
 					schedError.WithLabelValues("repoUpdateResponse").Inc()
-					subLogger.Error("error updating repo", log.String("err", resp.Error), log.String("uri", string(repo.Name)))
+					// We don't want to spam our logs when the rate limiter has been set to block all
+					// updates
+					if !strings.Contains(resp.Error, ratelimit.ErrBlockAll.Error()) {
+						subLogger.Error("error updating repo", log.String("err", resp.Error), log.String("uri", string(repo.Name)))
+					}
 				}
 
 				if interval := getCustomInterval(subLogger, conf.Get(), string(repo.Name)); interval > 0 {

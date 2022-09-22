@@ -508,7 +508,7 @@ const References: React.FunctionComponent<React.PropsWithChildren<{ spec: Visibl
 const ApplyDiffStat: React.FunctionComponent<React.PropsWithChildren<{ spec: VisibleChangesetApplyPreviewFields }>> = ({
     spec,
 }) => {
-    let diffStat: { added: number; changed: number; deleted: number }
+    let diffStat: { added: number; deleted: number }
     if (spec.targets.__typename === 'VisibleApplyPreviewTargetsDetach') {
         if (!spec.targets.changeset.diffStat) {
             return null

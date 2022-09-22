@@ -27,7 +27,7 @@ func (j *janitorJob) Config() []env.Config {
 	return []env.Config{janitorConfigInst}
 }
 
-func (j *janitorJob) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
+func (j *janitorJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	db, err := workerdb.Init()
 	if err != nil {
 		return nil, err

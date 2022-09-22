@@ -450,5 +450,17 @@ func findTargetSquashCommit(migrationName string) (string, error) {
 		return "", err
 	}
 
-	return fmt.Sprintf("v%d.%d.0", currentVersion.Major(), currentVersion.Minor()-minimumMigrationSquashDistance-1), nil
+	major := currentVersion.Major()
+	minor := currentVersion.Minor() - minimumMigrationSquashDistance - 1
+
+	if minor < 0 {
+		minor += majorVersionChanges[major]
+		major -= 1
+	}
+
+	return fmt.Sprintf("v%d.%d.0", major, minor), nil
+}
+
+var majorVersionChanges = map[int64]int64{
+	4: 44, // 4.0 equivalent to 3.44
 }
