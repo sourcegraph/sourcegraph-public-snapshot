@@ -64,16 +64,16 @@ type Job struct {
 type VirtualMachineFile struct {
 	// Content is the raw content of the file. If not provided, the file is retrieved from the file store based on the
 	// configured Bucket and Key.
-	Content string `json:"content"`
+	Content string `json:"content,omitempty"`
 
 	// Bucket is the bucket in the files store the file belongs to. A Key must also be configured.
-	Bucket string `json:"bucket"`
+	Bucket string `json:"bucket,omitempty"`
 
 	// Key the key or coordinates of the files in the Bucket. The Bucket must be configured.
-	Key string `json:"key"`
+	Key string `json:"key,omitempty"`
 
-	// CacheModifiedAt an optional field that specifies when the file was last modified. This is used for caching.
-	CacheModifiedAt time.Time `json:"cacheModifiedAt,omitempty"`
+	// ModifiedAt an optional field that specifies when the file was last modified.
+	ModifiedAt time.Time `json:"modifiedAt,omitempty"`
 }
 
 func (j Job) RecordID() int {

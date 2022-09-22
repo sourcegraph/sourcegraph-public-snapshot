@@ -140,7 +140,7 @@ func TestHandle_WorkspaceFile(t *testing.T) {
 
 	runner := NewMockRunner()
 
-	virtualFileCacheModifiedat := time.Now()
+	virtualFileModifiedAt := time.Now()
 
 	job := executor.Job{
 		ID:             42,
@@ -148,7 +148,7 @@ func TestHandle_WorkspaceFile(t *testing.T) {
 		RepositoryName: "linux",
 		VirtualMachineFiles: map[string]executor.VirtualMachineFile{
 			"test.txt":  {Content: "<file payload>"},
-			"script.sh": {Bucket: "batch-changes", Key: "123/abc", CacheModifiedAt: virtualFileCacheModifiedat},
+			"script.sh": {Bucket: "batch-changes", Key: "123/abc", ModifiedAt: virtualFileModifiedAt},
 		},
 		DockerSteps: []executor.DockerStep{
 			{

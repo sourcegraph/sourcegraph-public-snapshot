@@ -241,7 +241,7 @@ func TestTransformRecord(t *testing.T) {
 			SparseCheckout:          []string{"a/b/c/*"},
 			VirtualMachineFiles: map[string]apiclient.VirtualMachineFile{
 				"input.json":        {Content: string(marshaledInput)},
-				"foo/bar/script.sh": {Bucket: "batch-changes", Key: "abc/xyz", CacheModifiedAt: workspaceFileModifiedAt},
+				"foo/bar/script.sh": {Bucket: "batch-changes", Key: "abc/xyz", ModifiedAt: workspaceFileModifiedAt},
 			},
 			CliSteps: []apiclient.CliStep{
 				{

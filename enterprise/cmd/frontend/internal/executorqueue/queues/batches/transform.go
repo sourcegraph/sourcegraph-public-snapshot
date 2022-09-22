@@ -122,9 +122,9 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 	}
 	for _, workspaceFile := range workspaceFiles {
 		files[filepath.Join(workspaceFile.Path, workspaceFile.FileName)] = apiclient.VirtualMachineFile{
-			Bucket:          "batch-changes",
-			Key:             filepath.Join(batchSpec.RandID, workspaceFile.RandID),
-			CacheModifiedAt: workspaceFile.ModifiedAt,
+			Bucket:     "batch-changes",
+			Key:        filepath.Join(batchSpec.RandID, workspaceFile.RandID),
+			ModifiedAt: workspaceFile.ModifiedAt,
 		}
 	}
 

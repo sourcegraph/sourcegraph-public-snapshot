@@ -336,8 +336,8 @@ func writeWorkspaceFile(logger command.Logger, store FilesStore, ctx context.Con
 	}
 
 	// Set modified time for caching (if provided)
-	if !file.CacheModifiedAt.IsZero() {
-		if err = os.Chtimes(path, file.CacheModifiedAt, file.CacheModifiedAt); err != nil {
+	if !file.ModifiedAt.IsZero() {
+		if err = os.Chtimes(path, file.ModifiedAt, file.ModifiedAt); err != nil {
 			return err
 		}
 	}
