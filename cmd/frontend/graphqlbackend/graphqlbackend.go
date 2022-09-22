@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/audit"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -51,6 +52,7 @@ var (
 
 type prometheusTracer struct {
 	tracer trace.OpenTracingTracer
+	logger sglog.Logger
 }
 
 func (t *prometheusTracer) TraceQuery(ctx context.Context, queryString string, operationName string, variables map[string]any, varTypes map[string]*introspection.Type) (context.Context, trace.TraceQueryFinishFunc) {
@@ -65,12 +67,10 @@ func (t *prometheusTracer) TraceQuery(ctx context.Context, queryString string, o
 	_, disableLog := os.LookupEnv("NO_GRAPHQL_LOG")
 	_, logAllRequests := os.LookupEnv("LOG_ALL_GRAPHQL_REQUESTS")
 
-	// Note: We don't care about the error here, we just extract the username if
-	// we get a non-nil user object.
-	var currentUserID int32
-	a := actor.FromContext(ctx)
-	if a.IsAuthenticated() {
-		currentUserID = a.UID
+	// GraphQL requests may be part of the audit log, which is controlled by a site config setting
+	logCfg := conf.Get().Log
+	if logCfg != nil && logCfg.AuditLog != nil {
+		logAllRequests = logAllRequests || logCfg.AuditLog.GraphQL
 	}
 
 	// Requests made by our JS frontend and other internal things will have a concrete name attached to the
@@ -79,30 +79,29 @@ func (t *prometheusTracer) TraceQuery(ctx context.Context, queryString string, o
 	// then it is an interesting query to log in the event it is harmful and a site admin needs to identify
 	// it and the user issuing it.
 	requestName := sgtrace.GraphQLRequestName(ctx)
-	lvl := log15.Debug
-	if requestName == "unknown" {
-		lvl = log15.Info
-	}
 	requestSource := sgtrace.RequestSource(ctx)
 
 	if !disableLog {
-		lvl("serving GraphQL request", "name", requestName, "userID", currentUserID, "source", requestSource)
 		if requestName == "unknown" || logAllRequests {
-			reason := ""
-			if requestName == "unknown" {
-				reason = "for unnamed GraphQL request above "
-			}
-			log.Printf(`logging complete query %sname=%s userID=%d source=%s:
-QUERY
------
-%s
-
-VARIABLES
----------
-%v
-
-`, reason, requestName, currentUserID, requestSource, queryString, variables)
+			audit.Log(ctx, t.logger, audit.Record{
+				Entity: "GraphQL",
+				Action: "request",
+				Fields: []sglog.Field{sglog.Object("request",
+					sglog.String("name", requestName),
+					sglog.String("source", string(requestSource)),
+					sglog.String("variables", fmt.Sprint(variables)),
+					sglog.String("query", queryString)),
+				},
+			})
 		}
+	}
+
+	// Note: We don't care about the error here, we just extract the username if
+	// we get a non-nil user object.
+	var currentUserID int32
+	a := actor.FromContext(ctx)
+	if a.IsAuthenticated() {
+		currentUserID = a.UID
 	}
 
 	return ctx, func(err []*gqlerrors.QueryError) {
@@ -352,6 +351,7 @@ func prometheusGraphQLRequestName(requestName string) string {
 
 func NewSchema(
 	db database.DB,
+	logger sglog.Logger,
 	batchChanges BatchChangesResolver,
 	codeIntel CodeIntelResolver,
 	insights InsightsResolver,
@@ -364,7 +364,7 @@ func NewSchema(
 	compute ComputeResolver,
 	insightsAggregation InsightsAggregationResolver,
 ) (*graphql.Schema, error) {
-	resolver := newSchemaResolver(db)
+	resolver := newSchemaResolver(db, logger)
 	schemas := []string{mainSchema}
 
 	if batchChanges != nil {
@@ -461,7 +461,7 @@ func NewSchema(
 	return graphql.ParseSchema(
 		strings.Join(schemas, "\n"),
 		resolver,
-		graphql.Tracer(&prometheusTracer{}),
+		graphql.Tracer(&prometheusTracer{logger: resolver.logger.Scoped("prometheusTracer", "Prometheus tracer")}),
 		graphql.UseStringDescriptions(),
 	)
 }
@@ -494,9 +494,13 @@ type schemaResolver struct {
 
 // newSchemaResolver will return a new, safely instantiated schemaResolver with some
 // defaults. It does not implement any sub-resolvers.
-func newSchemaResolver(db database.DB) *schemaResolver {
+func newSchemaResolver(db database.DB, logger sglog.Logger) *schemaResolver {
+	if logger == nil {
+		logger = sglog.Scoped("schemaResolver", "GraphQL schema resolver")
+	}
+
 	r := &schemaResolver{
-		logger:            sglog.Scoped("schemaResolver", "GraphQL schema resolver"),
+		logger:            logger,
 		db:                db,
 		repoupdaterClient: repoupdater.DefaultClient,
 	}
@@ -572,7 +576,7 @@ var EnterpriseResolvers = struct {
 
 // DEPRECATED
 func (r *schemaResolver) Root() *schemaResolver {
-	return newSchemaResolver(r.db)
+	return newSchemaResolver(r.db, nil)
 }
 
 func (r *schemaResolver) Repository(ctx context.Context, args *struct {

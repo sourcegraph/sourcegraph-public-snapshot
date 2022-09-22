@@ -115,7 +115,7 @@ func TestAddUserEmail(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := newSchemaResolver(db).AddUserEmail(
+				_, err := newSchemaResolver(db, nil).AddUserEmail(
 					test.ctx,
 					&addUserEmailArgs{
 						User: MarshalUserID(1),
@@ -174,7 +174,7 @@ func TestRemoveUserEmail(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := newSchemaResolver(db).RemoveUserEmail(
+				_, err := newSchemaResolver(db, nil).RemoveUserEmail(
 					test.ctx,
 					&removeUserEmailArgs{
 						User: MarshalUserID(1),
@@ -233,7 +233,7 @@ func TestSetUserEmailPrimary(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := newSchemaResolver(db).SetUserEmailPrimary(
+				_, err := newSchemaResolver(db, nil).SetUserEmailPrimary(
 					test.ctx,
 					&setUserEmailPrimaryArgs{
 						User: MarshalUserID(1),
@@ -292,7 +292,7 @@ func TestSetUserEmailVerified(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := newSchemaResolver(database.NewMockDB()).SetUserEmailVerified(
+				_, err := newSchemaResolver(database.NewMockDB(), nil).SetUserEmailVerified(
 					test.ctx,
 					&setUserEmailVerifiedArgs{
 						User: MarshalUserID(1),
@@ -429,7 +429,7 @@ func TestResendUserEmailVerification(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := newSchemaResolver(database.NewMockDB()).ResendVerificationEmail(
+				_, err := newSchemaResolver(database.NewMockDB(), nil).ResendVerificationEmail(
 					test.ctx,
 					&resendVerificationEmailArgs{
 						User: MarshalUserID(1),

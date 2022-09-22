@@ -22,6 +22,7 @@ import (
 	sglog "github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -34,6 +35,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestMain(m *testing.M) {
@@ -73,6 +75,7 @@ func TestRepository(t *testing.T) {
 	repos := database.NewMockRepoStore()
 	repos.GetByNameFunc.SetDefaultReturn(&types.Repo{ID: 2, Name: "github.com/gorilla/mux"}, nil)
 	db.ReposFunc.SetDefaultReturn(repos)
+
 	RunTests(t, []*Test{
 		{
 			Schema: mustParseGraphQLSchema(t, db),
@@ -92,6 +95,60 @@ func TestRepository(t *testing.T) {
 			`,
 		},
 	})
+}
+
+func TestGraphQLRequestsAreAuditLogged(t *testing.T) {
+	resetMocks()
+
+	db := database.NewMockDB()
+	repos := database.NewMockRepoStore()
+	repos.GetByNameFunc.SetDefaultReturn(&types.Repo{ID: 2, Name: "github.com/gorilla/mux"}, nil)
+	db.ReposFunc.SetDefaultReturn(repos)
+
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			Log: &schema.Log{
+				AuditLog: &schema.AuditLog{
+					GraphQL: true,
+				},
+			},
+		},
+	})
+	defer conf.Mock(nil)
+
+	logger, exportLogs := logtest.Captured(t)
+
+	RunTests(t, []*Test{
+		{
+			Schema: mustParseGraphQLSchemaWithLogger(t, db, logger),
+			Query: `
+				{
+					repository(name: "github.com/gorilla/mux") {
+						name
+					}
+				}
+			`,
+			ExpectedResult: `
+				{
+					"repository": {
+						"name": "github.com/gorilla/mux"
+					}
+				}
+			`,
+		},
+	})
+
+	logs := exportLogs()
+	require.Len(t, logs, 3) // index 0 and 2 contain additional debug messages, index 1 contains the audit log
+	auditField := logs[1].Fields["audit"].(map[string]interface{})
+	assert.Equal(t, "GraphQL", auditField["entity"])
+	assert.NotNilf(t, auditField["actor"], "audit log must contain an actor")
+
+	requestField := logs[1].Fields["request"].(map[string]interface{})
+	assert.Equal(t, requestField["name"], "unknown")
+	assert.NotNilf(t, requestField["source"], "audit log must contain request source")
+	assert.NotNilf(t, requestField["variables"], "audit log must contain request variables")
+	assert.NotNilf(t, requestField["query"], "audit log must contain request query")
 }
 
 func TestRecloneRepository(t *testing.T) {

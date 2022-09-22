@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
 	"github.com/sourcegraph/zoekt/web"
 
@@ -113,8 +114,8 @@ func TestSearch(t *testing.T) {
 			db.ExternalServicesFunc.SetDefaultReturn(ext)
 			db.PhabricatorFunc.SetDefaultReturn(phabricator)
 
-			sr := newSchemaResolver(db)
-			schema, err := graphql.ParseSchema(mainSchema, sr, graphql.Tracer(&prometheusTracer{}))
+			sr := newSchemaResolver(db, nil)
+			schema, err := graphql.ParseSchema(mainSchema, sr, graphql.Tracer(&prometheusTracer{logger: log.NoOp()}))
 			if err != nil {
 				t.Fatal(err)
 			}

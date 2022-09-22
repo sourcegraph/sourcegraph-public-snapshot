@@ -84,7 +84,7 @@ func DecodedViewerFinalSettings(ctx context.Context, db database.DB) (_ *schema.
 		return MockDecodedViewerFinalSettings, nil
 	}
 
-	cascade, err := newSchemaResolver(db).ViewerSettings(ctx)
+	cascade, err := newSchemaResolver(db, log.Scoped("DecodedViewerFinalSettings", "")).ViewerSettings(ctx)
 	if err != nil {
 		return nil, err
 	}

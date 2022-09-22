@@ -12,15 +12,21 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
+	sglog "github.com/sourcegraph/log"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 func mustParseGraphQLSchema(t *testing.T, db database.DB) *graphql.Schema {
+	logger := sglog.Scoped("schemaResolver", "GraphQL schema resolver")
+	return mustParseGraphQLSchemaWithLogger(t, db, logger)
+}
+
+func mustParseGraphQLSchemaWithLogger(t *testing.T, db database.DB, logger sglog.Logger) *graphql.Schema {
 	t.Helper()
 
-	parsedSchema, parseSchemaErr := NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	parsedSchema, parseSchemaErr := NewSchema(db, logger, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if parseSchemaErr != nil {
 		t.Fatal(parseSchemaErr)
 	}

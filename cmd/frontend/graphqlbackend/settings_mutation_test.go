@@ -157,7 +157,7 @@ func TestSettingsMutation(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := newSchemaResolver(db).SettingsMutation(
+				_, err := newSchemaResolver(db, nil).SettingsMutation(
 					test.ctx,
 					&settingsMutationArgs{
 						Input: &settingsMutationGroupInput{
