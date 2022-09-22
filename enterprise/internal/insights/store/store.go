@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/RoaringBitmap/roaring"
+
 	"github.com/keegancsmith/sqlf"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
@@ -113,7 +115,6 @@ type SeriesPointsOpts struct {
 // SeriesPoints queries data points over time for a specific insights' series.
 func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]SeriesPoint, error) {
 	points := make([]SeriesPoint, 0, opts.Limit)
-
 	// 🚨 SECURITY: This is a double-negative repo permission enforcement. The list of authorized repos is generally expected to be very large, and nearly the full
 	// set of repos installed on Sourcegraph. To make this faster, we query Postgres for a list of repos the current user cannot see, and then exclude those from the
 	// time series results. 🚨
@@ -131,7 +132,7 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 	}
 	opts.Excluded = append(opts.Excluded, denylist...)
 
-	q := seriesPointsQuery(opts)
+	q := seriesPointsQuery(fullVectorSeriesAggregation, opts)
 	err = s.query(ctx, q, func(sc scanner) error {
 		var point SeriesPoint
 		err := sc.Scan(
@@ -146,6 +147,93 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 		points = append(points, point)
 		return nil
 	})
+	return points, err
+}
+
+func (s *Store) LoadSeriesInMem(ctx context.Context, opts SeriesPointsOpts) (points []SeriesPoint, err error) {
+	denylist, err := s.permStore.GetUnauthorizedRepoIDs(ctx)
+	if err != nil {
+		return []SeriesPoint{}, err
+	}
+	denyBitmap := roaring.New()
+	for _, id := range denylist {
+		denyBitmap.Add(uint32(id))
+	}
+
+	type loadStruct struct {
+		Time    time.Time
+		Value   float64
+		RepoID  int
+		Capture *string
+	}
+	type captureMap map[string]*SeriesPoint
+	mapping := make(map[time.Time]captureMap)
+
+	getByKey := func(time time.Time, key *string) *SeriesPoint {
+		cm, ok := mapping[time]
+		if !ok {
+			cm = make(captureMap)
+			mapping[time] = cm
+		}
+		k := ""
+		if key != nil {
+			k = *key
+		}
+		v, found := cm[k]
+		if !found {
+			v = &SeriesPoint{}
+			cm[k] = v
+		}
+		return v
+	}
+
+	filter := func(id int) bool {
+		return denyBitmap.Contains(uint32(id))
+	}
+
+	q := `select date_trunc('seconds', sp.time) AS interval_time, max(value), repo_id, capture FROM (
+				select * from series_points
+				union
+				select * from series_points_snapshots
+				) as sp
+		  JOIN repo_names rn ON sp.repo_name_id = rn.id
+          where %s
+		  GROUP BY sp.series_id, interval_time, sp.repo_id, capture
+;`
+	fullQ := seriesPointsQuery(q, opts)
+	err = s.query(ctx, fullQ, func(sc scanner) (err error) {
+		var row loadStruct
+		err = sc.Scan(
+			&row.Time,
+			&row.Value,
+			&row.RepoID,
+			&row.Capture,
+		)
+		if err != nil {
+			return err
+		}
+		if filter(row.RepoID) {
+			return nil
+		}
+
+		sp := getByKey(row.Time, row.Capture)
+		sp.Capture = row.Capture
+		sp.Value += row.Value
+		sp.Time = row.Time
+
+		return nil
+	})
+
+	for _, pointTime := range mapping {
+		for _, point := range pointTime {
+			points = append(points, SeriesPoint{
+				SeriesID: *opts.SeriesID,
+				Time:     point.Time,
+				Value:    point.Value,
+				Capture:  point.Capture,
+			})
+		}
+	}
 	return points, err
 }
 
@@ -210,7 +298,19 @@ ORDER BY sub.series_id, sub.interval_time ASC
 //     This will cause some jitter in the aggregated series, and will skew the results slightly.
 //  3. Searches may not complete at the same exact time, so even in a perfect world if the interval
 //     should be 12h it may be off by a minute or so.
-func seriesPointsQuery(opts SeriesPointsOpts) *sqlf.Query {
+func seriesPointsQuery(baseQuery string, opts SeriesPointsOpts) *sqlf.Query {
+	preds := seriesPointsPredicates(opts)
+	limitClause := ""
+	if opts.Limit > 0 {
+		limitClause = fmt.Sprintf("LIMIT %d", opts.Limit)
+	}
+	return sqlf.Sprintf(
+		baseQuery+limitClause,
+		sqlf.Join(preds, "\n AND "),
+	)
+}
+
+func seriesPointsPredicates(opts SeriesPointsOpts) []*sqlf.Query {
 	preds := []*sqlf.Query{}
 
 	if opts.SeriesID != nil {
@@ -225,10 +325,7 @@ func seriesPointsQuery(opts SeriesPointsOpts) *sqlf.Query {
 	if opts.To != nil {
 		preds = append(preds, sqlf.Sprintf("time <= %s", *opts.To))
 	}
-	limitClause := ""
-	if opts.Limit > 0 {
-		limitClause = fmt.Sprintf("LIMIT %d", opts.Limit)
-	}
+
 	if len(opts.Included) > 0 {
 		s := fmt.Sprintf("repo_id = any(%v)", values(opts.Included))
 		preds = append(preds, sqlf.Sprintf(s))
@@ -257,10 +354,7 @@ func seriesPointsQuery(opts SeriesPointsOpts) *sqlf.Query {
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
-	return sqlf.Sprintf(
-		fullVectorSeriesAggregation+limitClause,
-		sqlf.Join(preds, "\n AND "),
-	)
+	return preds
 }
 
 // values constructs a SQL values statement out of an array of repository ids
