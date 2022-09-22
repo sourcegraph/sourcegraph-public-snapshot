@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	_ "embed"
 	"fmt"
 	"html/template"
@@ -15,6 +16,10 @@ import (
 	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 )
+
+type featureFlagStore interface {
+	GetGlobalFeatureFlags(context.Context) (map[string]bool, error)
+}
 
 //go:embed opengraph.html
 var openGraphHTML string
@@ -46,8 +51,21 @@ func displayRepoName(repoName string) string {
 	return strings.Join(repoNameParts, "/")
 }
 
-func getOpenGraphTemplateData(req *http.Request) *openGraphTemplateData {
-	if envvar.SourcegraphDotComMode() || actor.FromContext(req.Context()).IsAuthenticated() || !isValidOpenGraphRequesterUserAgent(req.UserAgent()) {
+func canServeOpenGraphMetadata(req *http.Request, ffs featureFlagStore) bool {
+	ctx := req.Context()
+	if envvar.SourcegraphDotComMode() || actor.FromContext(ctx).IsAuthenticated() || !isValidOpenGraphRequesterUserAgent(req.UserAgent()) {
+		return false
+	}
+	// Only hit the DB if the above conditions are not satisfied to avoid slowing down the requests for non-bot users.
+	globalFeatureFlags, err := ffs.GetGlobalFeatureFlags(ctx)
+	if err != nil {
+		return false
+	}
+	return globalFeatureFlags["enable-link-previews"]
+}
+
+func getOpenGraphTemplateData(req *http.Request, ffs featureFlagStore) *openGraphTemplateData {
+	if !canServeOpenGraphMetadata(req, ffs) {
 		return nil
 	}
 
@@ -89,9 +107,9 @@ func getOpenGraphTemplateData(req *http.Request) *openGraphTemplateData {
 // OpenGraphMetadataMiddleware serves a separate template with OpenGraph metadata meant for unauthenticated requests to private instances from
 // social bots (e.g. Slackbot). Instead of redirecting the bots to the sign-in page, they can parse the OpenGraph metadata and
 // produce a nicer link preview for a subset of Sourcegraph app routes.
-func OpenGraphMetadataMiddleware(next http.Handler) http.Handler {
+func OpenGraphMetadataMiddleware(ffs featureFlagStore, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		if templateData := getOpenGraphTemplateData(req); templateData != nil {
+		if templateData := getOpenGraphTemplateData(req, ffs); templateData != nil {
 			tmpl, err := template.New("").Parse(openGraphHTML)
 			if err != nil {
 				http.Error(rw, err.Error(), http.StatusInternalServerError)
