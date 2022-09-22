@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path"
 	"sort"
 	"strconv"
 	"strings"
@@ -52,27 +53,44 @@ func formatFirecrackerCommand(spec CommandSpec, name string, options Options) co
 	}
 }
 
+// dockerDaemonConfig is a struct that marshals into a valid docker daemon config.
 type dockerDaemonConfig struct {
 	RegistryMirrors []string `json:"registry-mirrors"`
 }
 
+// dockerDaemonConfigFilename is the filename in the firecracker state tmp directory
+// for the optional docker daemon config file.
+const dockerDaemonConfigFilename = "docker-daemon.json"
+
+func newDockerDaemonConfig(tmpDir, mirrorAddress string) (_ string, err error) {
+	f, err := os.Create(path.Join(tmpDir, dockerDaemonConfigFilename))
+	if err != nil {
+		return "", errors.Wrap(err, "creating temp file for docker daemon config")
+	}
+	defer func() {
+		err = errors.Append(err, f.Close())
+	}()
+	daemonConfigFile := f.Name()
+
+	c, err := json.Marshal(&dockerDaemonConfig{RegistryMirrors: []string{mirrorAddress}})
+	if err != nil {
+		return daemonConfigFile, errors.Wrap(err, "marshalling docker daemon config")
+	}
+
+	return daemonConfigFile, os.WriteFile(daemonConfigFile, c, os.ModePerm)
+}
+
 // setupFirecracker invokes a set of commands to provision and prepare a Firecracker virtual
 // machine instance. If a startup script path (an executable file on the host) is supplied,
-// it will be mounted into the new virtual machine instance and executed.
-func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, name, workspaceDevice string, options Options, operations *Operations) error {
-	// TODO: Clean this file up.
+// it will be mounted into the new virtual machine instance and executed. Optionally,
+// a docker daemon config is created for FirecrackerOptions.DockerRegistryMirrorAddress
+// and mounted into the VM.
+func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, name, workspaceDevice, tmpDir string, options Options, operations *Operations) error {
 	var daemonConfigFile string
 	if options.FirecrackerOptions.DockerRegistryMirrorAddress != "" {
-		f, err := os.CreateTemp("", "docker-daemon-config-*.json")
+		var err error
+		daemonConfigFile, err = newDockerDaemonConfig(tmpDir, options.FirecrackerOptions.DockerRegistryMirrorAddress)
 		if err != nil {
-			return err
-		}
-		daemonConfigFile = f.Name()
-		c, err := json.Marshal(&dockerDaemonConfig{RegistryMirrors: []string{options.FirecrackerOptions.DockerRegistryMirrorAddress}})
-		if err != nil {
-			return err
-		}
-		if err := os.WriteFile(daemonConfigFile, c, os.ModePerm); err != nil {
 			return err
 		}
 	}
@@ -114,8 +132,8 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, 
 }
 
 // teardownFirecracker issues a stop and a remove request for the Firecracker VM with
-// the given name.
-func teardownFirecracker(ctx context.Context, runner commandRunner, logger Logger, name string, operations *Operations) error {
+// the given name and removes the tmpDir.
+func teardownFirecracker(ctx context.Context, runner commandRunner, logger Logger, name, tmpDir string, operations *Operations) error {
 	removeCommand := command{
 		Key:       "teardown.firecracker.remove",
 		Command:   flatten("ignite", "rm", "-f", name),
@@ -123,6 +141,10 @@ func teardownFirecracker(ctx context.Context, runner commandRunner, logger Logge
 	}
 	if err := runner.RunCommand(ctx, removeCommand, logger); err != nil {
 		log15.Error("Failed to remove firecracker vm", "name", name, "err", err)
+	}
+
+	if err := os.RemoveAll(tmpDir); err != nil {
+		log15.Error("Failed to remove firecracker state tmp dir", "name", name, "err", err)
 	}
 
 	return nil

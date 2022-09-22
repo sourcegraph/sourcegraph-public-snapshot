@@ -2,8 +2,10 @@ package command
 
 import (
 	"context"
+	"os"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Runner is the interface between an executor and the host on which commands
@@ -124,17 +126,25 @@ type firecrackerRunner struct {
 	workspaceDevice string
 	logger          Logger
 	options         Options
-	operations      *Operations
+	// tmpDir is used to store temporary files used for firecracker execution.
+	tmpDir     string
+	operations *Operations
 }
 
 var _ Runner = &firecrackerRunner{}
 
 func (r *firecrackerRunner) Setup(ctx context.Context) error {
-	return setupFirecracker(ctx, defaultRunner, r.logger, r.name, r.workspaceDevice, r.options, r.operations)
+	dir, err := os.MkdirTemp("", "executor-firecracker-runner")
+	if err != nil {
+		return errors.Wrap(err, "failed to create tmp dir for firecracker runner")
+	}
+	r.tmpDir = dir
+
+	return setupFirecracker(ctx, defaultRunner, r.logger, r.name, r.workspaceDevice, r.tmpDir, r.options, r.operations)
 }
 
 func (r *firecrackerRunner) Teardown(ctx context.Context) error {
-	return teardownFirecracker(ctx, defaultRunner, r.logger, r.name, r.operations)
+	return teardownFirecracker(ctx, defaultRunner, r.logger, r.name, r.tmpDir, r.operations)
 }
 
 func (r *firecrackerRunner) Run(ctx context.Context, command CommandSpec) error {
