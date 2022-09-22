@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -150,7 +151,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 	// Construct a map from filenames to file content that should be accessible to jobs
 	// within the workspace. This consists of files supplied within the job record itself,
 	// as well as file-version of each script step.
-	workspaceFileContentsByPath := map[string][]byte{}
+	workspaceFilesByPath := map[string]workspaceFile{}
 
 	for relativePath, machineFile := range job.VirtualMachineFiles {
 		path, err := filepath.Abs(filepath.Join(workspaceRoot, relativePath))
@@ -161,12 +162,11 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 			return errors.Errorf("refusing to write outside of working directory")
 		}
 		// Either write raw content that has already been provided or retrieve it from the store.
-		if machineFile.Content != "" {
-			workspaceFileContentsByPath[path] = []byte(machineFile.Content)
-		} else if machineFile.Bucket != "" && machineFile.Key != "" {
-			if err = writeWorkspaceFile(commandLogger, h.filesStore, ctx, path, machineFile); err != nil {
-				return errors.Wrap(err, "failed to write workspace files")
-			}
+		workspaceFilesByPath[path] = workspaceFile{
+			content:    []byte(machineFile.Content),
+			bucket:     machineFile.Bucket,
+			key:        machineFile.Key,
+			modifiedAt: machineFile.ModifiedAt,
 		}
 	}
 
@@ -176,10 +176,10 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 		scriptNames = append(scriptNames, scriptName)
 
 		path := filepath.Join(workspaceRoot, command.ScriptsPath, scriptName)
-		workspaceFileContentsByPath[path] = buildScript(dockerStep)
+		workspaceFilesByPath[path] = buildScript(dockerStep)
 	}
 
-	if err := writeFiles(workspaceFileContentsByPath, commandLogger); err != nil {
+	if err := writeFiles(h.filesStore, ctx, workspaceFilesByPath, commandLogger); err != nil {
 		return errors.Wrap(err, "failed to write virtual machine files")
 	}
 
@@ -236,12 +236,19 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 	return nil
 }
 
+type workspaceFile struct {
+	content    []byte
+	bucket     string
+	key        string
+	modifiedAt time.Time
+}
+
 var scriptPreamble = `
 set -x
 `
 
-func buildScript(dockerStep executor.DockerStep) []byte {
-	return []byte(strings.Join(append([]string{scriptPreamble, ""}, dockerStep.Commands...), "\n") + "\n")
+func buildScript(dockerStep executor.DockerStep) workspaceFile {
+	return workspaceFile{content: []byte(strings.Join(append([]string{scriptPreamble, ""}, dockerStep.Commands...), "\n") + "\n")}
 }
 
 func union(a, b map[string]string) map[string]string {
@@ -262,7 +269,7 @@ func scriptNameFromJobStep(job executor.Job, i int) string {
 }
 
 // writeFiles writes to the filesystem the content in the given map.
-func writeFiles(workspaceFileContentsByPath map[string][]byte, logger command.Logger) (err error) {
+func writeFiles(store FilesStore, ctx context.Context, workspaceFileContentsByPath map[string]workspaceFile, logger command.Logger) (err error) {
 	// Bail out early if nothing to do, we don't need to spawn an empty log group.
 	if len(workspaceFileContentsByPath) == 0 {
 		return nil
@@ -279,65 +286,41 @@ func writeFiles(workspaceFileContentsByPath map[string][]byte, logger command.Lo
 		handle.Close()
 	}()
 
-	for path, content := range workspaceFileContentsByPath {
+	for path, wf := range workspaceFileContentsByPath {
 		// Ensure the path exists.
 		if err := os.MkdirAll(filepath.Dir(path), os.ModePerm); err != nil {
 			return err
 		}
 
-		if err := os.WriteFile(path, content, os.ModePerm); err != nil {
+		var src io.ReadCloser
+
+		if len(wf.content) > 0 {
+			src = io.NopCloser(bytes.NewReader(wf.content))
+		} else if wf.bucket != "" && wf.key != "" {
+			src, err = store.Get(ctx, wf.bucket, wf.key)
+			if err != nil {
+				return err
+			}
+		} else {
+			return errors.Newf("no content for %s", path)
+		}
+
+		f, err := os.Create(path)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		if _, err = io.Copy(f, src); err != nil {
 			return err
 		}
 
 		handle.Write([]byte(fmt.Sprintf("Wrote %s\n", path)))
-	}
 
-	return nil
-}
-
-func writeWorkspaceFile(logger command.Logger, store FilesStore, ctx context.Context, path string, file executor.VirtualMachineFile) (err error) {
-	handle := logger.Log("writeWorkspaceFile.fs", []string{path})
-	defer func() {
-		if err == nil {
-			handle.Finalize(0)
-		} else {
-			handle.Finalize(1)
-		}
-
-		handle.Close()
-	}()
-
-	exists, err := store.Exists(ctx, file.Bucket, file.Key)
-	if err != nil {
-		return err
-	}
-	if !exists {
-		return errors.Newf("workspace file %s does not exist", fmt.Sprintf("%s/%s", file.Bucket, file.Key))
-	}
-
-	content, err := store.Get(ctx, file.Bucket, file.Key)
-	if err != nil {
-		return err
-	}
-	defer content.Close()
-
-	// Ensure the path exists.
-	if err := os.MkdirAll(filepath.Dir(path), os.ModePerm); err != nil {
-		return err
-	}
-	f, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	if _, err = io.Copy(f, content); err != nil {
-		return err
-	}
-
-	// Set modified time for caching (if provided)
-	if !file.ModifiedAt.IsZero() {
-		if err = os.Chtimes(path, file.ModifiedAt, file.ModifiedAt); err != nil {
-			return err
+		// Set modified time for caching (if provided)
+		if !wf.modifiedAt.IsZero() {
+			if err = os.Chtimes(path, wf.modifiedAt, wf.modifiedAt); err != nil {
+				return err
+			}
 		}
 	}
 

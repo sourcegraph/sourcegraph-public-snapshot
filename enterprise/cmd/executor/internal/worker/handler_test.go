@@ -12,6 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
@@ -113,7 +114,6 @@ func TestHandle(t *testing.T) {
 	}
 
 	// Ensure the files store was not called
-	assert.Len(t, filesStore.ExistsFunc.History(), 0)
 	assert.Len(t, filesStore.GetFunc.History(), 0)
 
 	expectedCommands := [][]string{
@@ -128,7 +128,7 @@ func TestHandle(t *testing.T) {
 }
 
 func TestHandle_WorkspaceFile(t *testing.T) {
-	testDir := "/tmp/batches"
+	testDir := t.TempDir()
 	makeTempDir = func() (string, error) { return testDir, nil }
 	t.Cleanup(func() {
 		makeTempDir = makeTemporaryDirectory
@@ -187,7 +187,11 @@ func TestHandle_WorkspaceFile(t *testing.T) {
 		store:      NewMockStore(),
 		filesStore: filesStore,
 		nameSet:    janitor.NewNameSet(),
-		options:    Options{},
+		options: Options{
+			// Do not clean directory after handler has run. We want to check if files were actually written.
+			// t.TempDir() will clean up after the test.
+			KeepWorkspaces: true,
+		},
 		operations: command.NewOperations(&observation.TestContext),
 		runnerFactory: func(dir string, logger command.Logger, options command.Options, operations *command.Operations) command.Runner {
 			if dir == "" {
@@ -227,10 +231,6 @@ func TestHandle_WorkspaceFile(t *testing.T) {
 	}
 
 	// Ensure the files store was called properly
-	existsHistory := filesStore.ExistsFunc.History()
-	assert.Len(t, existsHistory, 1)
-	assert.Equal(t, "batch-changes", existsHistory[0].Arg1)
-	assert.Equal(t, "123/abc", existsHistory[0].Arg2)
 	getHistory := filesStore.GetFunc.History()
 	assert.Len(t, getHistory, 1)
 	assert.Equal(t, "batch-changes", getHistory[0].Arg1)
@@ -245,4 +245,33 @@ func TestHandle_WorkspaceFile(t *testing.T) {
 	if diff := cmp.Diff(expectedCommands, commands); diff != "" {
 		t.Errorf("unexpected commands (-want +got):\n%s", diff)
 	}
+
+	// Ensure files were actually written
+	scriptFile, err := os.Open(filepath.Join(testDir, "script.sh"))
+	require.NoError(t, err)
+	defer scriptFile.Close()
+	scriptFileContent, err := io.ReadAll(scriptFile)
+	require.NoError(t, err)
+	assert.Equal(t, "echo foo", string(scriptFileContent))
+
+	testFile, err := os.Open(filepath.Join(testDir, "test.txt"))
+	require.NoError(t, err)
+	defer testFile.Close()
+	testFileContent, err := io.ReadAll(testFile)
+	require.NoError(t, err)
+	assert.Equal(t, "<file payload>", string(testFileContent))
+
+	dockerScriptFile1, err := os.Open(filepath.Join(testDir, ".sourcegraph-executor", "42.0_linux@deadbeef.sh"))
+	require.NoError(t, err)
+	defer dockerScriptFile1.Close()
+	dockerScriptFile1Content, err := io.ReadAll(dockerScriptFile1)
+	require.NoError(t, err)
+	assert.Equal(t, "\nset -x\n\n\ngo\nmod\ninstall\n", string(dockerScriptFile1Content))
+
+	dockerScriptFile2, err := os.Open(filepath.Join(testDir, ".sourcegraph-executor", "42.1_linux@deadbeef.sh"))
+	require.NoError(t, err)
+	defer dockerScriptFile2.Close()
+	dockerScriptFile2Content, err := io.ReadAll(dockerScriptFile2)
+	require.NoError(t, err)
+	assert.Equal(t, "\nset -x\n\n\nyarn\ninstall\n", string(dockerScriptFile2Content))
 }
