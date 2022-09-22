@@ -40,7 +40,7 @@ type args struct {
 	OutputVerbosity string
 }
 
-func (r *schemaResolver) ParseSearchQuery(ctx context.Context, args *args) (*JSONValue, error) {
+func (r *schemaResolver) ParseSearchQuery(ctx context.Context, args *args) (string, error) {
 	var searchType query.SearchType
 	switch args.PatternType {
 	case "literal":
@@ -59,23 +59,23 @@ func (r *schemaResolver) ParseSearchQuery(ctx context.Context, args *args) (*JSO
 	case JobTree:
 		return outputJobTree(ctx, searchType, args, r.db, r.logger)
 	}
-	return nil, nil
+	return "", nil
 }
 
-func outputParseTree(searchType query.SearchType, args *args) (*JSONValue, error) {
+func outputParseTree(searchType query.SearchType, args *args) (string, error) {
 	plan, err := query.Pipeline(query.Init(args.Query, searchType))
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	if args.OutputFormat != Json || args.OutputVerbosity != Basic {
-		return nil, errors.New("unsupported output options for PARSE_TREE, only JSON output with BASIC verbosity is supported")
+		return "", errors.New("unsupported output options for PARSE_TREE, only JSON output with BASIC verbosity is supported")
 	}
 	jsonString, err := query.ToJSON(plan.ToQ())
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	return &JSONValue{Value: jsonString}, nil
+	return jsonString, nil
 }
 
 func outputJobTree(
@@ -84,15 +84,15 @@ func outputJobTree(
 	args *args,
 	db database.DB,
 	logger log.Logger,
-) (*JSONValue, error) {
+) (string, error) {
 	plan, err := query.Pipeline(query.Init(args.Query, searchType))
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	settings, err := DecodedViewerFinalSettings(ctx, db)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	inputs := &search.Inputs{
@@ -104,7 +104,7 @@ func outputJobTree(
 	}
 	j, err := jobutil.NewPlanJob(inputs, plan)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	var verbosity job.Verbosity
@@ -120,13 +120,13 @@ func outputJobTree(
 	switch args.OutputFormat {
 	case Json:
 		jsonString := printer.JSONVerbose(j, verbosity)
-		return &JSONValue{Value: jsonString}, nil
+		return jsonString, nil
 	case Sexp:
 		sexpString := printer.SexpVerbose(j, verbosity, true)
-		return &JSONValue{Value: sexpString}, nil
+		return sexpString, nil
 	case Mermaid:
 		mermaidString := printer.MermaidVerbose(j, verbosity)
-		return &JSONValue{Value: mermaidString}, nil
+		return mermaidString, nil
 	}
-	return nil, nil
+	return "", nil
 }
