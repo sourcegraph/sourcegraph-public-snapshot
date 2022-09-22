@@ -53,7 +53,7 @@ set -euxo pipefail
 # ACTION REQUIRED: REPLACE THE URL AND REVISION WITH YOUR DEPLOYMENT REPO INFO
 ###############################################################################
 DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL='https://github.com/sourcegraph/deploy-sourcegraph-docker.git'
-DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.43.2'
+DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v4.0.0'
 ##################### NO CHANGES REQUIRED BELOW THIS LINE #####################
 DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/root/deploy-sourcegraph-docker'
 DOCKER_DATA_ROOT='/mnt/docker-data'
