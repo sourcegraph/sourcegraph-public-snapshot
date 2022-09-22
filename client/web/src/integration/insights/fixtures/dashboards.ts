@@ -1,3 +1,4 @@
+import { SeriesSortDirection, SeriesSortMode, TimeIntervalStepUnit } from '@sourcegraph/shared/src/schema'
 import { testUserID } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 
 import { GetDashboardInsightsResult, GetInsightViewResult, InsightsDashboardsResult } from '../../../graphql-operations'
@@ -25,8 +26,8 @@ export const GET_DASHBOARD_INSIGHTS_POPULATED: GetDashboardInsightsResult = {
                             defaultSeriesDisplayOptions: {
                                 limit: 20,
                                 sortOptions: {
-                                    mode: 'RESULT_COUNT',
-                                    direction: 'DESC',
+                                    mode: SeriesSortMode.RESULT_COUNT,
+                                    direction: SeriesSortDirection.DESC,
                                     __typename: 'SeriesSortOptions',
                                 },
                                 __typename: 'SeriesDisplayOptions',
@@ -34,8 +35,8 @@ export const GET_DASHBOARD_INSIGHTS_POPULATED: GetDashboardInsightsResult = {
                             appliedSeriesDisplayOptions: {
                                 limit: 20,
                                 sortOptions: {
-                                    mode: 'RESULT_COUNT',
-                                    direction: 'DESC',
+                                    mode: SeriesSortMode.RESULT_COUNT,
+                                    direction: SeriesSortDirection.DESC,
                                     __typename: 'SeriesSortOptions',
                                 },
                                 __typename: 'SeriesDisplayOptions',
@@ -85,7 +86,7 @@ export const GET_DASHBOARD_INSIGHTS_POPULATED: GetDashboardInsightsResult = {
                                         __typename: 'InsightRepositoryScope',
                                     },
                                     timeScope: {
-                                        unit: 'MONTH',
+                                        unit: TimeIntervalStepUnit.MONTH,
                                         value: 1,
                                         __typename: 'InsightIntervalTimeScope',
                                     },
@@ -154,7 +155,7 @@ export const GET_DASHBOARD_INSIGHTS_POPULATED: GetDashboardInsightsResult = {
                                         __typename: 'InsightRepositoryScope',
                                     },
                                     timeScope: {
-                                        unit: 'MONTH',
+                                        unit: TimeIntervalStepUnit.MONTH,
                                         value: 0,
                                         __typename: 'InsightIntervalTimeScope',
                                     },
@@ -246,7 +247,7 @@ export const GET_DASHBOARD_INSIGHTS_POPULATED: GetDashboardInsightsResult = {
                                         __typename: 'InsightRepositoryScope',
                                     },
                                     timeScope: {
-                                        unit: 'WEEK',
+                                        unit: TimeIntervalStepUnit.WEEK,
                                         value: 2,
                                         __typename: 'InsightIntervalTimeScope',
                                     },
@@ -268,7 +269,7 @@ export const GET_DASHBOARD_INSIGHTS_POPULATED: GetDashboardInsightsResult = {
                                         __typename: 'InsightRepositoryScope',
                                     },
                                     timeScope: {
-                                        unit: 'WEEK',
+                                        unit: TimeIntervalStepUnit.WEEK,
                                         value: 2,
                                         __typename: 'InsightIntervalTimeScope',
                                     },
