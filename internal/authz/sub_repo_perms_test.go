@@ -61,8 +61,7 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 				getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]SubRepoPermissions, error) {
 					return map[api.RepoName]SubRepoPermissions{
 						"sample": {
-							PathIncludes: []string{},
-							PathExcludes: []string{},
+							Paths: []string{},
 						},
 					}, nil
 				})
@@ -231,19 +230,17 @@ func BenchmarkFilterActorPaths(b *testing.B) {
 	getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]SubRepoPermissions, error) {
 		return map[api.RepoName]SubRepoPermissions{
 			repo: {
-				PathIncludes: []string{
-					"base/**",
-					"*/stuff/**",
-					"frontend/**/stuff/*",
-					"config.yaml",
-					"subdir/**",
-					"**/README.md",
-					"dir.yaml",
-				},
-				PathExcludes: []string{
-					"subdir/remove/",
-					"subdir/*/also-remove/**",
-					"**/.secrets.env",
+				Paths: []string{
+					"/base/**",
+					"/*/stuff/**",
+					"/frontend/**/stuff/*",
+					"/config.yaml",
+					"/subdir/**",
+					"/**/README.md",
+					"/dir.yaml",
+					"-/subdir/remove/",
+					"-/subdir/*/also-remove/**",
+					"-/**/.secrets.env",
 				},
 			},
 		}, nil

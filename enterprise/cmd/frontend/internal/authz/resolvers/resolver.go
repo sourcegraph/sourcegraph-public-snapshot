@@ -255,8 +255,7 @@ func (r *Resolver) SetSubRepositoryPermissionsForUsers(ctx context.Context, args
 		}
 
 		if err := db.SubRepoPerms().Upsert(ctx, userID, repoID, authz.SubRepoPermissions{
-			PathIncludes: perm.PathIncludes,
-			PathExcludes: perm.PathExcludes,
+			Paths: perm.Paths,
 		}); err != nil {
 			return nil, errors.Wrap(err, "upserting sub-repo permissions")
 		}

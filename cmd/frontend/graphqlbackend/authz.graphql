@@ -229,13 +229,11 @@ input UserSubRepoPermission {
     """
     bindID: String!
     """
-    An array of paths that the user is allowed to access, in glob format.
+    An array of paths that describe what the user can and cannot access.
+    Paths starting with a minus (-) character deny access.
+    The last applicable path takes precedence.
     """
-    pathIncludes: [String!]!
-    """
-    An array of paths that the user is not allowed to access, in glob format.
-    """
-    pathExcludes: [String!]!
+    paths: [String!]!
 }
 
 """

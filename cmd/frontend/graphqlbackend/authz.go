@@ -55,9 +55,8 @@ type RepoUnrestrictedArgs struct {
 type SubRepoPermsArgs struct {
 	Repository      graphql.ID
 	UserPermissions []struct {
-		BindID       string
-		PathIncludes []string
-		PathExcludes []string
+		BindID string
+		Paths  []string
 	}
 }
 

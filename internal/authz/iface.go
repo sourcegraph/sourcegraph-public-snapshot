@@ -47,10 +47,6 @@ import (
 // Paths are relative to the root of the repo.
 type SubRepoPermissions struct {
 	Paths []string
-	// Deprecated: Use Paths instead.
-	PathIncludes []string
-	// Deprecated: Use Paths instead.
-	PathExcludes []string
 }
 
 // ExternalUserPermissions is a collection of accessible repository/project IDs

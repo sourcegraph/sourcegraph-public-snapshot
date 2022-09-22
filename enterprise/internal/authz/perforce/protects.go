@@ -441,12 +441,6 @@ func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermission
 				// repositoryPathPattern has been used. We also need to remove any `//` prefixes
 				// which are included in all Helix server rules.
 				depotString := string(depot)
-				for i := range srp.PathIncludes {
-					srp.PathIncludes[i] = trimDepotNameAndSlashes(srp.PathIncludes[i], depotString)
-				}
-				for i := range srp.PathExcludes {
-					srp.PathExcludes[i] = trimDepotNameAndSlashes(srp.PathExcludes[i], depotString)
-				}
 				for i := range srp.Paths {
 					path := srp.Paths[i]
 
