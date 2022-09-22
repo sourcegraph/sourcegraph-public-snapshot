@@ -108,15 +108,15 @@ export class ShortcutManager {
 
 function isFocusedInput(): boolean {
     const target = document.activeElement
-    if (target?.tagName === null) {
+    if (target === null) {
         return false
     }
 
     return Boolean(
-        target?.tagName === 'INPUT' ||
-            target?.tagName === 'SELECT' ||
-            target?.tagName === 'TEXTAREA' ||
-            target?.hasAttribute('contenteditable')
+        target.tagName === 'INPUT' ||
+            target.tagName === 'SELECT' ||
+            target.tagName === 'TEXTAREA' ||
+            (target as HTMLElement).isContentEditable
     )
 }
 
