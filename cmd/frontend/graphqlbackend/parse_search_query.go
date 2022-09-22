@@ -125,10 +125,7 @@ func outputJobTree(
 		sexpString := printer.SexpVerbose(j, verbosity, true)
 		return &JSONValue{Value: sexpString}, nil
 	case Mermaid:
-		if args.OutputVerbosity != Minimal {
-			return nil, errors.New("unsupported output options for MERMAID JOB_TREE, only MINIMAL verbosity is supported")
-		}
-		mermaidString := printer.Mermaid(j)
+		mermaidString := printer.MermaidVerbose(j, verbosity)
 		return &JSONValue{Value: mermaidString}, nil
 	}
 	return nil, nil
