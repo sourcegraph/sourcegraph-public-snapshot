@@ -10,16 +10,6 @@ When a user is viewing an insight, any repositories they do not have access to w
 
 Sourcegraph search-based and language insights run natively on a Sourcegraph instance using the instance's Sourcegraph search API. This means they don't send any information about your code to third-party servers. 
 
-## Security of Sourcegraph extension-provided Code Insights
-
-Sourcegraph extension-provided insights adhere to the same security standards as any other Sourcegraph extension. Refer to [Security and privacy of Sourcegraph extensions](../../extensions/security.md). 
-
-If you are concerned about the security of extension-provided insights, then you can: 
-
-## Disable Sourcegraph extension-provided Code Insights 
-
-If you want to disable Sourcegraph-extension-provided code insights, you can do so the same way you would disable any other extension. Refer to [Disabling remote extensions](../../admin/extensions.md#use-extensions-from-sourcegraph-com-or-disable-remote-extensions) and [Allow only specific extensions](../../admin/extensions.md#use-extensions-from-sourcegraph-com-or-disable-remote-extensions).
-
 ## Insight and Dashboard permissions
 
 Note: there are no separate read/write permissions. If a user can view an insight or dashboard, they can also edit it.
