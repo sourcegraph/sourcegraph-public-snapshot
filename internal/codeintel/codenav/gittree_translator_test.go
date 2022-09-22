@@ -388,8 +388,87 @@ var prometheusTestCases = []gitTreeTranslatorTestCase{
 	{prometheusDiff, "prometheus", "after hunk", 500, true, 500},
 }
 
+// netlinkDiff is a (truncated) diff from github.com/vishvananda/netlink generated via the following command.
+// git diff 5e915e0149386ce3d02379ff93f4c0a5601779d5 8715fe718dfdf487a919acb6df7da109346bbfd6 -- route_linux.go
+var netlinkDiff = `
+diff --git a/route_linux.go b/route_linux.go
+index 8da8866573c8..02f4de38f03c 100644
+--- a/route_linux.go
++++ b/route_linux.go
+@@ -41,7 +41,6 @@ func (s Scope) String() string {
+ 	}
+ }
+
+-
+ const (
+ 	FLAG_ONLINK    NextHopFlag = unix.RTNH_F_ONLINK
+ 	FLAG_PERVASIVE NextHopFlag = unix.RTNH_F_PERVASIVE
+@@ -656,7 +655,8 @@ func RouteAdd(route *Route) error {
+ func (h *Handle) RouteAdd(route *Route) error {
+ 	flags := unix.NLM_F_CREATE | unix.NLM_F_EXCL | unix.NLM_F_ACK
+ 	req := h.newNetlinkRequest(unix.RTM_NEWROUTE, flags)
+-	return h.routeHandle(route, req, nl.NewRtMsg())
++	_, err := h.routeHandle(route, req, nl.NewRtMsg())
++	return err
+ }
+
+ // RouteAppend will append a route to the system.
+@@ -670,7 +670,8 @@ func RouteAppend(route *Route) error {
+ func (h *Handle) RouteAppend(route *Route) error {
+ 	flags := unix.NLM_F_CREATE | unix.NLM_F_APPEND | unix.NLM_F_ACK
+ 	req := h.newNetlinkRequest(unix.RTM_NEWROUTE, flags)
+-	return h.routeHandle(route, req, nl.NewRtMsg())
++	_, err := h.routeHandle(route, req, nl.NewRtMsg())
++	return err
+ }
+
+ // RouteAddEcmp will add a route to the system.
+@@ -682,7 +683,8 @@ func RouteAddEcmp(route *Route) error {
+ func (h *Handle) RouteAddEcmp(route *Route) error {
+ 	flags := unix.NLM_F_CREATE | unix.NLM_F_ACK
+ 	req := h.newNetlinkRequest(unix.RTM_NEWROUTE, flags)
+-	return h.routeHandle(route, req, nl.NewRtMsg())
++	_, err := h.routeHandle(route, req, nl.NewRtMsg())
++	return err
+ }
+
+ // RouteReplace will add a route to the system.
+@@ -696,7 +698,8 @@ func RouteReplace(route *Route) error {
+ func (h *Handle) RouteReplace(route *Route) error {
+ 	flags := unix.NLM_F_CREATE | unix.NLM_F_REPLACE | unix.NLM_F_ACK
+ 	req := h.newNetlinkRequest(unix.RTM_NEWROUTE, flags)
+-	return h.routeHandle(route, req, nl.NewRtMsg())
++	_, err := h.routeHandle(route, req, nl.NewRtMsg())
++	return err
+ }
+
+ // RouteDel will delete a route from the system.
+@@ -709,12 +712,13 @@ func RouteDel(route *Route) error {
+ // Equivalent to: ` + "`" + `ip route del $route` + "`" + `
+ func (h *Handle) RouteDel(route *Route) error {
+ 	req := h.newNetlinkRequest(unix.RTM_DELROUTE, unix.NLM_F_ACK)
+-	return h.routeHandle(route, req, nl.NewRtDelMsg())
++	_, err := h.routeHandle(route, req, nl.NewRtDelMsg())
++	return err
+ }
+
+-func (h *Handle) routeHandle(route *Route, req *nl.NetlinkRequest, msg *nl.RtMsg) error {
+-	if (route.Dst == nil || route.Dst.IP == nil) && route.Src == nil && route.Gw == nil && route.MPLSDst == nil {
+-		return fmt.Errorf("one of Dst.IP, Src, or Gw must not be nil")
++func (h *Handle) routeHandle(route *Route, req *nl.NetlinkRequest, msg *nl.RtMsg) ([][]byte, error) {
++	if req.NlMsghdr.Type != unix.RTM_GETROUTE && (route.Dst == nil || route.Dst.IP == nil) && route.Src == nil && route.Gw == nil && route.MPLSDst == nil {
++		return nil, fmt.Errorf("Either Dst.IP, Src.IP or Gw must be set")
+ 	}
+
+ 	family := -1
+`
+
+var netlinkTestCases = []gitTreeTranslatorTestCase{
+	{netlinkDiff, "netlink", "", 656, false, 0},
+}
+
 func TestRawGetTargetCommitPositionFromSourcePosition(t *testing.T) {
-	for _, testCase := range append(append([]gitTreeTranslatorTestCase(nil), hugoTestCases...), prometheusTestCases...) {
+	for _, testCase := range combineTestCases(hugoTestCases, prometheusTestCases, netlinkTestCases) {
 		name := fmt.Sprintf("%s : %s", testCase.diffName, testCase.description)
 
 		t.Run(name, func(t *testing.T) {
@@ -417,4 +496,11 @@ func TestRawGetTargetCommitPositionFromSourcePosition(t *testing.T) {
 			}
 		})
 	}
+}
+
+func combineTestCases(testCaseSets ...[]gitTreeTranslatorTestCase) (combined []gitTreeTranslatorTestCase) {
+	for _, set := range testCaseSets {
+		combined = append(combined, set...)
+	}
+	return combined
 }
