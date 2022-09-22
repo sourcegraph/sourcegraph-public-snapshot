@@ -15,9 +15,9 @@ title: Get Started
     height: 15em;
     width: 100%;
     border-radius: 1em;
-    border: 2px solid var(--input-focus-bord);
+    border: 2px solid var(--input-focus-border);
     color: var(--text-color);
-    background-color: var(--code-bg);
+    background-color: var(--sidebar-bg);
     text-align: center;
     font-weight: 500;
     -moz-osx-font-smoothing: grayscale;
@@ -58,12 +58,11 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
   </button>
 </form>
 <form class="grid">
-  <!-- AWS One Click-->
-  <button class="app-btn btn" formaction="/admin/deploy/docker-compose/aws-oneclick">
-    <img alt="aws-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/aws.png"/>
-    <h3>AWS One-Click</h3>
-    <span class="badge badge-warning">Coming soon</span> 
-    <!-- <p>Deploy onto AWS in one click</p> -->
+  <!-- AWS AMI-->
+  <button class="app-btn btn" formaction="/admin/deploy/docker-compose/aws-ami">
+    <img alt="aws-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/1280px-Amazon_Web_Services_Logo.svg.png"/>
+    <h3>AWS AMI</h3>
+    <p>Launch a pre-configured Sourcegraph instances with AWS AMIs</p>
   </button>
 </form>
 
@@ -75,6 +74,13 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
     <img alt="azure-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/azure.png"/>
     <h3>Azure</h3>
     <p>Deploy onto Microsoft Azure</p>
+  </button>
+  <!-- AWS One Click-->
+  <button class="app-btn btn" formaction="/admin/deploy/docker-compose/aws-oneclick">
+    <img alt="aws-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/1280px-Amazon_Web_Services_Logo.svg.png"/>
+    <h3>AWS One-Click</h3>
+    <span class="badge badge-warning">Coming soon</span> 
+    <!-- <p>Deploy onto AWS in one click</p> -->
   </button>
   <!-- Digital Ocean -->
   <button class="app-btn btn" formaction="/admin/deploy/docker-compose/digitalocean">
@@ -130,8 +136,6 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
   - Take a tour of Sourcegraph’s features using real-world examples and use cases
 - [Trial Sourcegraph](adopt/trial/index.md) 
   - Start a Sourcegraph trail at your company
-- [Sourcegraph AWS launch stack](admin/deploy/docker-compose/aws-oneclick.md) 
-  - Launch a Sourcegraph instance in one-click
 
 ## Community
 

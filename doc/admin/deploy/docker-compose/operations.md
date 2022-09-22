@@ -5,9 +5,10 @@
 
 The Sourcegraph Docker Compose yaml file uses [Docker volumes](https://docs.docker.com/storage/volumes/) to store its data. These volumes are stored at `/var/lib/docker/volumes` by [default on Linux](https://docs.docker.com/storage/#choose-the-right-type-of-mount).
 
-Guides for managing cloud storage and backups are available in our [cloud-specific installation guides](./index.md#cloud-installation):
+Guides for managing cloud storage and backups are available in our cloud-specific installation guides:
 
 - [Storage and backups for Amazon Web Services](./aws.md#storage-and-backups)
+- [Storage and backups for Azure](./aws.md#storage-and-backups)
 - [Storage and backups for Google Cloud](./google_cloud.md#storage-and-backups)
 - [Storage and backups for Digital Ocean](./digitalocean.md#storage-and-backups)
 

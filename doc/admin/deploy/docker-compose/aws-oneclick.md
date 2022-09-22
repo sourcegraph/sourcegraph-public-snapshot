@@ -33,9 +33,8 @@ You only need to choose your VPC and SSH Key-Pair to get started.
 
 1. Choose an AWS Region in the launcher below
 2. Click on the `Launch Stack` button
-3. Select an `Instance type`
-4. Select or create a new `key pair` for connecting to your instance securely
-5. Select or create a new `security group` with `auto-assign public IP` enabled
+3. Select or create a new `key pair`
+4. Select or create a new `security group` with `auto-assign public IP` enabled
 
  🎉 You can now start a Sourcegraph instance by clicking on the `Launch instance` button 🎉
 

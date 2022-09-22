@@ -164,3 +164,5 @@ Once the server is ready, navigate to the `sourcegraph-frontend-0` hostname or I
 
 - [Upgrade](upgrade.md)
 - [Management Operations](operations.md)
+- [HTTP and HTTPS/SSL configuration](../../../admin/http_https_configuration.md#sourcegraph-via-docker-compose-caddy-2)
+- [Site Administration Quickstart](../../../admin/how-to/site-admin-quickstart.md)
