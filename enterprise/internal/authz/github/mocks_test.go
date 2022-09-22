@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	github "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	oauthutil "github.com/sourcegraph/sourcegraph/internal/oauthutil"
 )
 
 // MockClient is a mock implementation of the client interface (from the
@@ -129,7 +130,7 @@ func NewMockClient() *MockClient {
 			},
 		},
 		WithTokenFunc: &ClientWithTokenFunc{
-			defaultHook: func(string) (r0 client) {
+			defaultHook: func(string, oauthutil.TokenRefresher) (r0 client) {
 				return
 			},
 		},
@@ -201,7 +202,7 @@ func NewStrictMockClient() *MockClient {
 			},
 		},
 		WithTokenFunc: &ClientWithTokenFunc{
-			defaultHook: func(string) client {
+			defaultHook: func(string, oauthutil.TokenRefresher) client {
 				panic("unexpected invocation of MockClient.WithToken")
 			},
 		},
@@ -224,7 +225,7 @@ type surrogateMockClient interface {
 	ListRepositoryTeams(context.Context, string, string, int) ([]*github.Team, bool, error)
 	ListTeamMembers(context.Context, string, string, int) ([]*github.Collaborator, bool, error)
 	ListTeamRepositories(context.Context, string, string, int) ([]*github.Repository, bool, int, error)
-	WithToken(string) client
+	WithToken(string, oauthutil.TokenRefresher) client
 }
 
 // NewMockClientFrom creates a new mock of the MockClient interface. All
@@ -1685,23 +1686,23 @@ func (c ClientListTeamRepositoriesFuncCall) Results() []interface{} {
 // ClientWithTokenFunc describes the behavior when the WithToken method of
 // the parent MockClient instance is invoked.
 type ClientWithTokenFunc struct {
-	defaultHook func(string) client
-	hooks       []func(string) client
+	defaultHook func(string, oauthutil.TokenRefresher) client
+	hooks       []func(string, oauthutil.TokenRefresher) client
 	history     []ClientWithTokenFuncCall
 	mutex       sync.Mutex
 }
 
 // WithToken delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockClient) WithToken(v0 string) client {
-	r0 := m.WithTokenFunc.nextHook()(v0)
-	m.WithTokenFunc.appendCall(ClientWithTokenFuncCall{v0, r0})
+func (m *MockClient) WithToken(v0 string, v1 oauthutil.TokenRefresher) client {
+	r0 := m.WithTokenFunc.nextHook()(v0, v1)
+	m.WithTokenFunc.appendCall(ClientWithTokenFuncCall{v0, v1, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the WithToken method of
 // the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientWithTokenFunc) SetDefaultHook(hook func(string) client) {
+func (f *ClientWithTokenFunc) SetDefaultHook(hook func(string, oauthutil.TokenRefresher) client) {
 	f.defaultHook = hook
 }
 
@@ -1709,7 +1710,7 @@ func (f *ClientWithTokenFunc) SetDefaultHook(hook func(string) client) {
 // WithToken method of the parent MockClient instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *ClientWithTokenFunc) PushHook(hook func(string) client) {
+func (f *ClientWithTokenFunc) PushHook(hook func(string, oauthutil.TokenRefresher) client) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1718,19 +1719,19 @@ func (f *ClientWithTokenFunc) PushHook(hook func(string) client) {
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ClientWithTokenFunc) SetDefaultReturn(r0 client) {
-	f.SetDefaultHook(func(string) client {
+	f.SetDefaultHook(func(string, oauthutil.TokenRefresher) client {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ClientWithTokenFunc) PushReturn(r0 client) {
-	f.PushHook(func(string) client {
+	f.PushHook(func(string, oauthutil.TokenRefresher) client {
 		return r0
 	})
 }
 
-func (f *ClientWithTokenFunc) nextHook() func(string) client {
+func (f *ClientWithTokenFunc) nextHook() func(string, oauthutil.TokenRefresher) client {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1766,6 +1767,9 @@ type ClientWithTokenFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 string
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 oauthutil.TokenRefresher
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 client
@@ -1774,7 +1778,7 @@ type ClientWithTokenFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ClientWithTokenFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this

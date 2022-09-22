@@ -87,7 +87,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
+			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer, nil)
 
 			testDB := database.NewDB(logger, dbtest.NewDB(logger, t))
 			ctx := actor.WithInternalActor(context.Background())
@@ -104,7 +104,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				GitHubURL:      uri,
 				BaseToken:      token,
 				GroupsCacheTTL: -1,
-			})
+			}, nil)
 
 			authz.SetProviders(false, []authz.Provider{provider})
 			defer authz.SetProviders(true, nil)
@@ -167,7 +167,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
+			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer, nil)
 
 			testDB := database.NewDB(logger, dbtest.NewDB(logger, t))
 			ctx := actor.WithInternalActor(context.Background())
@@ -184,7 +184,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				GitHubURL:      uri,
 				BaseToken:      token,
 				GroupsCacheTTL: 72,
-			})
+			}, nil)
 
 			authz.SetProviders(false, []authz.Provider{provider})
 			defer authz.SetProviders(true, nil)
@@ -270,7 +270,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
+			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer, nil)
 
 			testDB := database.NewDB(logger, dbtest.NewDB(logger, t))
 			ctx := actor.WithInternalActor(context.Background())
@@ -287,7 +287,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				GitHubURL:      uri,
 				BaseToken:      token,
 				GroupsCacheTTL: -1,
-			})
+			}, nil)
 
 			authz.SetProviders(false, []authz.Provider{provider})
 			defer authz.SetProviders(true, nil)
@@ -353,7 +353,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
+			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer, nil)
 
 			testDB := database.NewDB(logger, dbtest.NewDB(logger, t))
 			ctx := actor.WithInternalActor(context.Background())
@@ -370,7 +370,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				GitHubURL:      uri,
 				BaseToken:      token,
 				GroupsCacheTTL: 72,
-			})
+			}, nil)
 
 			authz.SetProviders(false, []authz.Provider{provider})
 			defer authz.SetProviders(true, nil)

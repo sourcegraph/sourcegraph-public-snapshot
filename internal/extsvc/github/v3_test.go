@@ -33,7 +33,7 @@ func newTestClientWithAuthenticator(t *testing.T, auth auth.Authenticator, cli h
 	rcache.SetupForTest(t)
 
 	apiURL := &url.URL{Scheme: "https", Host: "example.com", Path: "/"}
-	return NewV3Client(logtest.Scoped(t), "Test", apiURL, auth, cli)
+	return NewV3Client(logtest.Scoped(t), "Test", apiURL, auth, cli, nil)
 }
 
 func TestListAffiliatedRepositories(t *testing.T) {
@@ -595,7 +595,7 @@ func TestListOrganizations(t *testing.T) {
 		}))
 
 		uri, _ := url.Parse(testServer.URL)
-		testCli := NewV3Client(logtest.Scoped(t), "Test", uri, gheToken, testServer.Client())
+		testCli := NewV3Client(logtest.Scoped(t), "Test", uri, gheToken, testServer.Client(), nil)
 
 		runTest := func(since int, expectedNextSince int, expectedOrgs []*Org) {
 			orgs, nextSince, err := testCli.ListOrganizations(context.Background(), since)
@@ -691,7 +691,7 @@ func TestV3Client_WithAuthenticator(t *testing.T) {
 	}
 
 	newToken := &auth.OAuthBearerToken{Token: "new_token"}
-	new := old.WithAuthenticator(newToken)
+	new := old.WithAuthenticator(newToken, nil)
 	if old == new {
 		t.Fatal("both clients have the same address")
 	}
@@ -764,7 +764,7 @@ func newV3TestClient(t testing.TB, name string) (*V3Client, func()) {
 		t.Fatal(err)
 	}
 
-	return NewV3Client(logtest.Scoped(t), "Test", uri, vcrToken, doer), save
+	return NewV3Client(logtest.Scoped(t), "Test", uri, vcrToken, doer, nil), save
 }
 
 func newV3TestEnterpriseClient(t testing.TB, name string) (*V3Client, func()) {
@@ -781,7 +781,7 @@ func newV3TestEnterpriseClient(t testing.TB, name string) (*V3Client, func()) {
 		t.Fatal(err)
 	}
 
-	return NewV3Client(logtest.Scoped(t), "Test", uri, gheToken, doer), save
+	return NewV3Client(logtest.Scoped(t), "Test", uri, gheToken, doer, nil), save
 }
 
 func strPtr(s string) *string { return &s }
@@ -871,7 +871,7 @@ func TestSyncWebhook_CreateListFindDelete(t *testing.T) {
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
 			token := os.Getenv(fmt.Sprintf("%s_ACCESS_TOKEN", name))
-			client = client.WithAuthenticator(&auth.OAuthBearerToken{Token: token})
+			client = client.WithAuthenticator(&auth.OAuthBearerToken{Token: token}, nil)
 
 			id, err := client.CreateSyncWebhook(ctx, tc.repoName, "https://target-url.com", "secret")
 			if err != nil {

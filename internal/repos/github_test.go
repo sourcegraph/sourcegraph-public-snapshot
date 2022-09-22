@@ -119,7 +119,8 @@ func TestGithubSource_GetRepo(t *testing.T) {
 			}
 
 			ctx := context.Background()
-			githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), database.NewMockExternalServiceStore(), svc, cf)
+			db := database.NewMockDB()
+			githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), db, svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -161,7 +162,8 @@ func TestPublicRepos_PaginationTerminatesGracefully(t *testing.T) {
 	defer save(t)
 
 	ctx := context.Background()
-	githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), database.NewMockExternalServiceStore(), service, factory)
+	db := database.NewMockDB()
+	githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), db, service, factory)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -273,7 +275,8 @@ func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
 			defer save(t)
 
 			ctx := context.Background()
-			githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), database.NewMockExternalServiceStore(), svc, cf)
+			db := database.NewMockDB()
+			githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), db, svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -295,6 +298,7 @@ func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
 }
 
 func TestGithubSource_makeRepo(t *testing.T) {
+	db := database.NewMockDB()
 	b, err := os.ReadFile(filepath.Join("testdata", "github-repos.json"))
 	if err != nil {
 		t.Fatal(err)
@@ -337,7 +341,7 @@ func TestGithubSource_makeRepo(t *testing.T) {
 		test.name = "GithubSource_makeRepo_" + test.name
 		t.Run(test.name, func(t *testing.T) {
 
-			s, err := newGithubSource(logtest.Scoped(t), database.NewMockExternalServiceStore(), &svc, test.schema, nil)
+			s, err := newGithubSource(logtest.Scoped(t), db, &svc, test.schema, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -532,7 +536,8 @@ func TestGithubSource_ListRepos(t *testing.T) {
 			}
 
 			ctx := context.Background()
-			githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), database.NewMockExternalServiceStore(), svc, cf)
+			db := database.NewMockDB()
+			githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), db, svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -559,6 +564,7 @@ func githubGraphQLFailureMiddleware(cli httpcli.Doer) httpcli.Doer {
 }
 
 func TestGithubSource_WithAuthenticator(t *testing.T) {
+	db := database.NewMockDB()
 	svc := &types.ExternalService{
 		Kind: extsvc.KindGitHub,
 		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
@@ -568,7 +574,7 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), database.NewMockExternalServiceStore(), svc, nil)
+	githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), db, svc, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -617,7 +623,8 @@ func TestGithubSource_excludes_disabledAndLocked(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), database.NewMockExternalServiceStore(), svc, nil)
+	db := database.NewMockDB()
+	githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), db, svc, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -644,7 +651,8 @@ func TestGithubSource_GetVersion(t *testing.T) {
 		}
 
 		ctx := context.Background()
-		githubSrc, err := NewGithubSource(ctx, logger, database.NewMockExternalServiceStore(), svc, nil)
+		db := database.NewMockDB()
+		githubSrc, err := NewGithubSource(ctx, logger, db, svc, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -680,7 +688,8 @@ func TestGithubSource_GetVersion(t *testing.T) {
 		}
 
 		ctx := context.Background()
-		githubSrc, err := NewGithubSource(ctx, logger, database.NewMockExternalServiceStore(), svc, cf)
+		db := database.NewMockDB()
+		githubSrc, err := NewGithubSource(ctx, logger, db, svc, cf)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -735,7 +744,7 @@ func TestRepositoryQuery_Do(t *testing.T) {
 				Query:    tc.query,
 				First:    tc.first,
 				Limit:    tc.limit,
-				Searcher: github.NewV4Client("Test", apiURL, token, cli),
+				Searcher: github.NewV4Client("Test", apiURL, token, cli, nil),
 			}
 
 			results := make(chan *githubResult)
@@ -816,7 +825,7 @@ func TestGetOrRenewGitHubAppInstallationAccessToken(t *testing.T) {
 			}, nil
 		},
 	}
-	client := github.NewV3Client(logtest.Scoped(t), "Test", baseURL, &auth.OAuthBearerToken{Token: "oauth-token"}, doer)
+	client := github.NewV3Client(logtest.Scoped(t), "Test", baseURL, &auth.OAuthBearerToken{Token: "oauth-token"}, doer, nil)
 
 	tests := []struct {
 		name           string

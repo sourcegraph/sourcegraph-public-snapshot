@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"net/url"
 	"strings"
 	"testing"
@@ -48,7 +49,7 @@ func newMockClientWithTokenMock() *MockClient {
 
 func TestProvider_FetchUserPerms(t *testing.T) {
 	t.Run("nil account", func(t *testing.T) {
-		p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
+		p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")}, nil)
 		_, err := p.FetchUserPerms(context.Background(), nil, authz.FetchPermsOptions{})
 		want := "no account provided"
 		got := fmt.Sprintf("%v", err)
@@ -58,7 +59,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 	})
 
 	t.Run("not the code host of the account", func(t *testing.T) {
-		p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
+		p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")}, nil)
 		_, err := p.FetchUserPerms(context.Background(),
 			&extsvc.Account{
 				AccountSpec: extsvc.AccountSpec{
@@ -76,7 +77,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 	})
 
 	t.Run("no token found in account data", func(t *testing.T) {
-		p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
+		p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")}, nil)
 		_, err := p.FetchUserPerms(context.Background(),
 			&extsvc.Account{
 				AccountSpec: extsvc.AccountSpec{
@@ -185,7 +186,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 		p := NewProvider("", ProviderOptions{
 			GitHubURL:      mustURL(t, "https://github.com"),
 			GroupsCacheTTL: time.Duration(-1),
-		})
+		}, nil)
 		p.client = mockClientFunc(mockClient)
 		if p.groupsCache != nil {
 			t.Fatal("expected nil groupsCache")
@@ -226,12 +227,12 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			// should call with token
 			calledWithToken := false
 			mockClient.WithTokenFunc.SetDefaultHook(
-				func(_ string) client {
+				func(_ string, refresher oauthutil.TokenRefresher) client {
 					calledWithToken = true
 					return mockClient
 				})
 
-			p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
+			p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")}, nil)
 			p.client = mockClientFunc(mockClient)
 			if p.groupsCache == nil {
 				t.Fatal("expected groupsCache")
@@ -447,7 +448,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 					}, false, 1, nil
 				})
 
-			p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
+			p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")}, nil)
 			p.client = mockClientFunc(mockClient)
 			memCache := memGroupsCache()
 			p.groupsCache = memCache
@@ -541,7 +542,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 
 			p := NewProvider("", ProviderOptions{
 				GitHubURL: mustURL(t, "https://github.com"),
-			})
+			}, nil)
 			p.client = mockClientFunc(mockClient)
 			memCache := memGroupsCache()
 			p.groupsCache = memCache
@@ -592,7 +593,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 
 func TestProvider_FetchRepoPerms(t *testing.T) {
 	t.Run("nil repository", func(t *testing.T) {
-		p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
+		p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")}, nil)
 		_, err := p.FetchRepoPerms(context.Background(), nil, authz.FetchPermsOptions{})
 		want := "no repository provided"
 		got := fmt.Sprintf("%v", err)
@@ -602,7 +603,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 	})
 
 	t.Run("not the code host of the repository", func(t *testing.T) {
-		p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
+		p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")}, nil)
 		_, err := p.FetchRepoPerms(context.Background(),
 			&extsvc.Repository{
 				URI: "gitlab.com/user/repo",
@@ -661,7 +662,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 		p := NewProvider("", ProviderOptions{
 			GitHubURL:      mustURL(t, "https://github.com"),
 			GroupsCacheTTL: -1,
-		})
+		}, nil)
 		mockClient := newMockClientWithTokenMock()
 		mockClient.ListRepositoryCollaboratorsFunc.SetDefaultHook(
 			func(ctx context.Context, owner, repo string, page int, affiliation github.CollaboratorAffiliation) (users []*github.Collaborator, hasNextPage bool, _ error) {
@@ -693,7 +694,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 		t.Run("repo not in org", func(t *testing.T) {
 			p := NewProvider("", ProviderOptions{
 				GitHubURL: mustURL(t, "https://github.com"),
-			})
+			}, nil)
 			mockClient := newMockClientWithTokenMock()
 			mockClient.ListRepositoryCollaboratorsFunc.SetDefaultHook(
 				func(ctx context.Context, owner, repo string, page int, affiliation github.CollaboratorAffiliation) (users []*github.Collaborator, hasNextPage bool, _ error) {
@@ -737,7 +738,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 		t.Run("repo in read org", func(t *testing.T) {
 			p := NewProvider("", ProviderOptions{
 				GitHubURL: mustURL(t, "https://github.com"),
-			})
+			}, nil)
 			mockClient := newMockClientWithTokenMock()
 			mockClient.ListRepositoryCollaboratorsFunc.SetDefaultHook(
 				func(ctx context.Context, owner, repo string, page int, affiliation github.CollaboratorAffiliation) (users []*github.Collaborator, hasNextPage bool, _ error) {
@@ -808,7 +809,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 
 			p := NewProvider("", ProviderOptions{
 				GitHubURL: mustURL(t, "https://github.com"),
-			})
+			}, nil)
 
 			mockClient := newMockClientWithTokenMock()
 			mockClient.ListRepositoryCollaboratorsFunc.SetDefaultHook(mockListCollaborators)
@@ -920,7 +921,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 		t.Run("repo in non-read org but in teams", func(t *testing.T) {
 			p := NewProvider("", ProviderOptions{
 				GitHubURL: mustURL(t, "https://github.com"),
-			})
+			}, nil)
 			mockClient := newMockClientWithTokenMock()
 			mockClient.ListRepositoryCollaboratorsFunc.SetDefaultHook(
 				func(ctx context.Context, owner, repo string, page int, affiliation github.CollaboratorAffiliation) (users []*github.Collaborator, hasNextPage bool, _ error) {
@@ -1016,7 +1017,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 		t.Run("cache and invalidate", func(t *testing.T) {
 			p := NewProvider("", ProviderOptions{
 				GitHubURL: mustURL(t, "https://github.com"),
-			})
+			}, nil)
 			callsToListOrgMembers := 0
 			mockClient := newMockClientWithTokenMock()
 			mockClient.ListRepositoryCollaboratorsFunc.SetDefaultHook(
@@ -1121,7 +1122,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 		t.Run("cache partial update", func(t *testing.T) {
 			p := NewProvider("", ProviderOptions{
 				GitHubURL: mustURL(t, "https://github.com"),
-			})
+			}, nil)
 			mockClient := newMockClientWithTokenMock()
 			mockClient.ListRepositoryCollaboratorsFunc.SetDefaultHook(
 				mockListCollaborators)
@@ -1209,7 +1210,7 @@ func TestProvider_ValidateConnection(t *testing.T) {
 		p := NewProvider("", ProviderOptions{
 			GitHubURL:      mustURL(t, "https://github.com"),
 			GroupsCacheTTL: -1,
-		})
+		}, nil)
 		problems := p.ValidateConnection(context.Background())
 		if len(problems) > 0 {
 			t.Fatal("expected validate to pass")
@@ -1220,7 +1221,7 @@ func TestProvider_ValidateConnection(t *testing.T) {
 		p := NewProvider("", ProviderOptions{
 			GitHubURL:      mustURL(t, "https://github.com"),
 			GroupsCacheTTL: 72,
-		})
+		}, nil)
 
 		t.Run("error getting scopes", func(t *testing.T) {
 			mockClient := newMockClientWithTokenMock()
@@ -1276,7 +1277,7 @@ func TestProvider_ValidateConnection(t *testing.T) {
 }
 
 func setupProvider(t *testing.T, mc *MockClient) *Provider {
-	p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
+	p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")}, nil)
 	p.client = mockClientFunc(mc)
 	p.groupsCache = memGroupsCache()
 	return p

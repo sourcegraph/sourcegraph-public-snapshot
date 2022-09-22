@@ -17,9 +17,10 @@ import (
 )
 
 func TestNewAuthzProviders(t *testing.T) {
+	db := database.NewMockDB()
 	t.Run("no authorization", func(t *testing.T) {
 		providers, problems, warnings, invalidConnections := NewAuthzProviders(
-			database.NewMockExternalServiceStore(),
+			db,
 			[]*ExternalConnection{
 				{
 					GitHubConnection: &types.GitHubConnection{
@@ -45,8 +46,9 @@ func TestNewAuthzProviders(t *testing.T) {
 
 	t.Run("no matching auth provider", func(t *testing.T) {
 		licensing.MockCheckFeatureError("")
+		db := database.NewMockDB()
 		providers, problems, warnings, invalidConnections := NewAuthzProviders(
-			database.NewMockExternalServiceStore(),
+			db,
 			[]*ExternalConnection{
 				{
 					GitHubConnection: &types.GitHubConnection{
@@ -79,8 +81,9 @@ func TestNewAuthzProviders(t *testing.T) {
 	t.Run("matching auth provider found", func(t *testing.T) {
 		t.Run("default case", func(t *testing.T) {
 			licensing.MockCheckFeatureError("")
+			db := database.NewMockDB()
 			providers, problems, warnings, invalidConnections := NewAuthzProviders(
-				database.NewMockExternalServiceStore(),
+				db,
 				[]*ExternalConnection{
 					{
 						GitHubConnection: &types.GitHubConnection{
@@ -109,8 +112,9 @@ func TestNewAuthzProviders(t *testing.T) {
 
 		t.Run("license does not have ACLs feature", func(t *testing.T) {
 			licensing.MockCheckFeatureError("failed")
+			db := database.NewMockDB()
 			providers, problems, warnings, invalidConnections := NewAuthzProviders(
-				database.NewMockExternalServiceStore(),
+				db,
 				[]*ExternalConnection{
 					{
 						GitHubConnection: &types.GitHubConnection{
@@ -138,8 +142,9 @@ func TestNewAuthzProviders(t *testing.T) {
 
 		t.Run("groups cache enabled, but not allowGroupsPermissionsSync", func(t *testing.T) {
 			licensing.MockCheckFeatureError("")
+			db := database.NewMockDB()
 			providers, problems, warnings, invalidConnections := NewAuthzProviders(
-				database.NewMockExternalServiceStore(),
+				db,
 				[]*ExternalConnection{
 					{
 						GitHubConnection: &types.GitHubConnection{
@@ -177,8 +182,9 @@ func TestNewAuthzProviders(t *testing.T) {
 			github.MockGetAuthenticatedOAuthScopes = func(context.Context) ([]string, error) {
 				return []string{"read:org"}, nil
 			}
+			db := database.NewMockDB()
 			providers, problems, warnings, invalidConnections := NewAuthzProviders(
-				database.NewMockExternalServiceStore(),
+				db,
 				[]*ExternalConnection{
 					{
 						GitHubConnection: &types.GitHubConnection{
@@ -226,8 +232,9 @@ func TestNewAuthzProviders(t *testing.T) {
 			})
 			defer conf.Mock(nil)
 
+			db := database.NewMockDB()
 			providers, problems, warnings, invalidConnections := NewAuthzProviders(
-				database.NewMockExternalServiceStore(),
+				db,
 				[]*ExternalConnection{
 					{
 						ExternalService: &types.ExternalService{
