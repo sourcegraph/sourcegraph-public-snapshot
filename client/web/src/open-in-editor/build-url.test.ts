@@ -1,6 +1,7 @@
+import { ExternalServiceKind } from '../graphql-operations'
 import { parseBrowserRepoURL } from '../util/url'
 
-import { buildEditorUrl, buildRepoBaseNameAndPath, ExternalServiceType } from './build-url'
+import { buildEditorUrl, buildRepoBaseNameAndPath } from './build-url'
 import { EditorSettings } from './editor-settings'
 
 function buildSettings(props: EditorSettings = {}): EditorSettings {
@@ -16,7 +17,7 @@ describe('buildRepoBaseNameAndPath tests', () => {
         const url = 'https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/tsconfig.json'
         const { repoName, filePath } = parseBrowserRepoURL(url)
 
-        const result = buildRepoBaseNameAndPath(repoName, ExternalServiceType.GitHub, filePath)
+        const result = buildRepoBaseNameAndPath(repoName, ExternalServiceKind.GITHUB, filePath)
 
         expect(result).toEqual('sourcegraph/tsconfig.json')
     })
@@ -25,7 +26,7 @@ describe('buildRepoBaseNameAndPath tests', () => {
         const url = 'https://k8s.sgdev.org/ghe.sgdev.org/sourcegraph/idan-test/-/blob/README.md'
         const { repoName, filePath } = parseBrowserRepoURL(url)
 
-        const result = buildRepoBaseNameAndPath(repoName, ExternalServiceType.GitHub, filePath)
+        const result = buildRepoBaseNameAndPath(repoName, ExternalServiceKind.GITHUB, filePath)
 
         expect(result).toEqual('idan-test/README.md')
     })
@@ -34,7 +35,7 @@ describe('buildRepoBaseNameAndPath tests', () => {
         const url = 'https://sourcegraph.com/gitlab.com/gitlab-org/gitlab-foss/-/blob/.eslintignore'
         const { repoName, filePath } = parseBrowserRepoURL(url)
 
-        const result = buildRepoBaseNameAndPath(repoName, ExternalServiceType.GitLab, filePath)
+        const result = buildRepoBaseNameAndPath(repoName, ExternalServiceKind.GITLAB, filePath)
 
         expect(result).toEqual('gitlab-foss/.eslintignore')
     })
@@ -44,7 +45,7 @@ describe('buildRepoBaseNameAndPath tests', () => {
             'https://k8s.sgdev.org/gitlab.sgdev.org/sg-repos/public-sg-repos/gophercon-2018-liveblog/-/blob/README.md'
         const { repoName, filePath } = parseBrowserRepoURL(url)
 
-        const result = buildRepoBaseNameAndPath(repoName, ExternalServiceType.GitLab, filePath)
+        const result = buildRepoBaseNameAndPath(repoName, ExternalServiceKind.GITLAB, filePath)
 
         expect(result).toEqual('public-sg-repos/gophercon-2018-liveblog/README.md')
     })
@@ -63,7 +64,7 @@ describe('buildRepoBaseNameAndPath tests', () => {
             'https://cse-k8s.sgdev.org/perforce.beatrix.com/app/b200/patch/core/-/blob/test/1.js?toast=integrations'
         const { repoName, filePath } = parseBrowserRepoURL(url)
 
-        const result = buildRepoBaseNameAndPath(repoName, ExternalServiceType.Perforce, filePath)
+        const result = buildRepoBaseNameAndPath(repoName, ExternalServiceKind.PERFORCE, filePath)
 
         expect(result).toEqual('app/b200/patch/core/test/1.js')
     })
@@ -72,7 +73,7 @@ describe('buildRepoBaseNameAndPath tests', () => {
         const url = 'https://sourcegraph.com/maven/com.esotericsoftware.minlog/minlog/-/blob/lsif-java.json'
         const { repoName, filePath } = parseBrowserRepoURL(url)
 
-        const result = buildRepoBaseNameAndPath(repoName, ExternalServiceType.Other, filePath)
+        const result = buildRepoBaseNameAndPath(repoName, ExternalServiceKind.OTHER, filePath)
 
         expect(result).toEqual('com.esotericsoftware.minlog/minlog/lsif-java.json')
     })

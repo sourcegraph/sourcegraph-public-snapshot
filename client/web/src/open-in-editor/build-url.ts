@@ -2,34 +2,15 @@ import * as path from 'path'
 
 import type { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 
+import { ExternalServiceKind } from '../graphql-operations'
+
 import type { EditorReplacements, EditorSettings } from './editor-settings'
 import { Editor, getEditor, supportedEditors } from './editors'
 
-// A hard-coded copy of the Type* constants of `extsvc/types.go`
-export enum ExternalServiceType {
-    AWSCodeCommit = 'awscodecommit',
-    BitbucketServer = 'bitbucketServer',
-    BitbucketCloud = 'bitbucketCloud',
-    Gerrit = 'gerrit',
-    GitHub = 'github',
-    GitHubApp = 'githubApp',
-    GitLab = 'gitlab',
-    Gitolite = 'gitolite',
-    Perforce = 'perforce',
-    Phabricator = 'phabricator',
-    JVMPackages = 'jvmPackages',
-    Pagure = 'pagure',
-    NpmPackages = 'npmPackages',
-    GoModules = 'goModules',
-    PythonPackages = 'pythonPackages',
-    RustPackages = 'rustPackages',
-    Other = 'other',
-}
-
 const serviceTypesWithOwnerInUrl = new Set<string>([
-    ExternalServiceType.GitHub,
-    ExternalServiceType.GitLab,
-    ExternalServiceType.BitbucketCloud,
+    ExternalServiceKind.GITHUB.toLowerCase(),
+    ExternalServiceKind.GITLAB.toLowerCase(),
+    ExternalServiceKind.BITBUCKETCLOUD.toLowerCase(),
 ])
 
 export function buildRepoBaseNameAndPath(
@@ -39,7 +20,7 @@ export function buildRepoBaseNameAndPath(
 ): string {
     const bareRepoNamePieces = repoName
         .split('/')
-        .slice(serviceTypesWithOwnerInUrl.has(externalServiceType || '') ? 2 : 1)
+        .slice(serviceTypesWithOwnerInUrl.has((externalServiceType || '').toLowerCase()) ? 2 : 1)
     return path.join(...bareRepoNamePieces, ...(filePath ? [filePath] : []))
 }
 
