@@ -294,6 +294,8 @@ func writeFiles(store FilesStore, ctx context.Context, workspaceFileContentsByPa
 
 		var src io.ReadCloser
 
+		// Log how long it takes to write the files
+		start := time.Now()
 		if len(wf.content) > 0 {
 			src = io.NopCloser(bytes.NewReader(wf.content))
 		} else if wf.bucket != "" && wf.key != "" {
@@ -314,7 +316,7 @@ func writeFiles(store FilesStore, ctx context.Context, workspaceFileContentsByPa
 			return err
 		}
 
-		handle.Write([]byte(fmt.Sprintf("Wrote %s\n", path)))
+		handle.Write([]byte(fmt.Sprintf("Wrote %s in %s\n", path, time.Since(start))))
 
 		// Set modified time for caching (if provided)
 		if !wf.modifiedAt.IsZero() {
