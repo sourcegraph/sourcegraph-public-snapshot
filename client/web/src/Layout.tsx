@@ -207,7 +207,6 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
         ...themeProps,
         ...breadcrumbProps,
         isMacPlatform: isMacPlatform(),
-        onHandleFuzzyFinder: setIsFuzzyFinderVisible,
     }
 
     return (
