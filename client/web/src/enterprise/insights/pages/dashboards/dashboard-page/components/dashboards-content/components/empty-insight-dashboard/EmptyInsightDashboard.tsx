@@ -71,6 +71,7 @@ export const EmptySettingsBasedDashboard: React.FunctionComponent<
                 onClick={onAddInsight}
                 variant="secondary"
                 className="p-0 w-100 border-0"
+                data-testid="add-insights-button-card"
             >
                 <Tooltip content={addRemoveInsightPermissions.tooltip} placement="right">
                     <Card className={styles.itemCard}>
