@@ -1429,7 +1429,7 @@ type Query {
         The level of output format verbosity.
         """
         outputVerbosity: SearchQueryOutputVerbosity = BASIC
-    ): JSONValue
+    ): String!
     """
     The current site.
     """
