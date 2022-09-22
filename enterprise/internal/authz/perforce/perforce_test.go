@@ -296,6 +296,10 @@ read user alice * -//Sourcegraph/Security/...
 					PathExcludes: []string{
 						mustGlobPattern(t, "Security/..."),
 					},
+					Paths: []string{
+						mustGlobPattern(t, "Engineering/..."),
+						mustGlobPattern(t, "-Security/..."),
+					},
 				},
 			},
 		}, got); diff != "" {

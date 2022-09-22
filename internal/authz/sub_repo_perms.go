@@ -43,7 +43,7 @@ type SubRepoPermissionChecker interface {
 	// If the userID represents an anonymous user, ErrUnauthenticated is returned.
 	Permissions(ctx context.Context, userID int32, content RepoContent) (Perms, error)
 
-	// FilePermissionFunc returns a FilePermissionFunc for userID in repo.
+	// FilePermissionsFunc returns a FilePermissionFunc for userID in repo.
 	// This function should only be used during the lifetime of a request. It
 	// exists to amortize the cost of checking many files in a repo.
 	//
