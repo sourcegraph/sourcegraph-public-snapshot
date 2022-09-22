@@ -198,9 +198,10 @@ Error response from daemon: Get "https://registry-1.docker.io/v2/": Failed to lo
 ```
 
 You can comment out the [following line](https://sourcegraph.sourcegraph.com/search?q=context%3Aglobal+repo%3A%5Egithub%5C.com%2Fsourcegraph%2Fsourcegraph%24+docker+pull+-q+sourcegraph%2Fsyntax-highlighter%3Ainsiders&patternType=standard) in your `sg.config.yaml` for the `syntax-highlighter` install:
-```
+```bash
       # docker pull -q sourcegraph/syntax-highlighter:insiders
 ```
+This will however only work if you have pulled the image in the past.
 
 ## Contributing to `sg`
 
