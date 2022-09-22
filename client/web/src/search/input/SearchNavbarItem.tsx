@@ -32,7 +32,6 @@ interface Props
     globbing: boolean
     isSearchAutoFocusRequired?: boolean
     isRepositoryRelatedPage?: boolean
-    onHandleFuzzyFinder?: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 const selectQueryState = ({
@@ -111,7 +110,6 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                 submitSearchOnSearchContextChange={submitSearchOnChange}
                 autoFocus={autoFocus}
                 hideHelpButton={isSearchPage}
-                onHandleFuzzyFinder={props.onHandleFuzzyFinder}
                 isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
                 structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
             />
