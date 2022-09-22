@@ -3,6 +3,8 @@ package background
 import (
 	"context"
 	"fmt"
+	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -149,6 +151,9 @@ func TestCheckBackfillCompleted(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		sort.SliceStable(series, func(i, j int) bool {
+			return strings.Compare(series[i].SeriesId, series[j].SeriesId) < 0
+		})
 		autogold.Want("SeriesBackfillCompleted", series).Equal(t, []SeriesBackfillStatus{
 			{SeriesId: "1", BackfillCompletedAt: now.UTC()},
 			{SeriesId: "2", BackfillCompletedAt: now.Add(time.Minute * 10).UTC()},
