@@ -153,19 +153,18 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 	workspaceFileContentsByPath := map[string][]byte{}
 
 	for relativePath, machineFile := range job.VirtualMachineFiles {
+		path, err := filepath.Abs(filepath.Join(workspaceRoot, relativePath))
+		if err != nil {
+			return err
+		}
+		if !strings.HasPrefix(path, workspaceRoot) {
+			return errors.Errorf("refusing to write outside of working directory")
+		}
 		// Either write raw content that has already been provided or retrieve it from the store.
 		if machineFile.Content != "" {
-			path, err := filepath.Abs(filepath.Join(workspaceRoot, relativePath))
-			if err != nil {
-				return err
-			}
-			if !strings.HasPrefix(path, workspaceRoot) {
-				return errors.Errorf("refusing to write outside of working directory")
-			}
 			workspaceFileContentsByPath[path] = []byte(machineFile.Content)
 		} else if machineFile.Bucket != "" && machineFile.Key != "" {
-			path := filepath.Join(workspaceRoot, relativePath)
-			if err := writeWorkspaceFile(commandLogger, h.filesStore, ctx, path, machineFile); err != nil {
+			if err = writeWorkspaceFile(commandLogger, h.filesStore, ctx, path, machineFile); err != nil {
 				return errors.Wrap(err, "failed to write workspace files")
 			}
 		}
