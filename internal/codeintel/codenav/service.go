@@ -529,9 +529,12 @@ func (s *Service) getUploadLocations(ctx context.Context, args shared.RequestArg
 			continue
 		}
 
-		adjustedLocation, err := s.getUploadLocation(ctx, args, requestState, upload, location)
+		adjustedLocation, ok, err := s.getUploadLocation(ctx, args, requestState, upload, location)
 		if err != nil {
 			return nil, err
+		}
+		if !ok {
+			continue
 		}
 
 		if !checkerEnabled {
@@ -552,10 +555,10 @@ func (s *Service) getUploadLocations(ctx context.Context, args shared.RequestArg
 // getUploadLocation translates a location (relative to the indexed commit) into an equivalent location in
 // the requested commit. If the translation fails, then the original commit and range are used as the
 // commit and range of the adjusted location.
-func (s *Service) getUploadLocation(ctx context.Context, args shared.RequestArgs, requestState RequestState, dump types.Dump, location shared.Location) (types.UploadLocation, error) {
-	adjustedCommit, adjustedRange, _, err := s.getSourceRange(ctx, args, requestState, dump.RepositoryID, dump.Commit, dump.Root+location.Path, location.Range)
-	if err != nil {
-		return types.UploadLocation{}, err
+func (s *Service) getUploadLocation(ctx context.Context, args shared.RequestArgs, requestState RequestState, dump types.Dump, location shared.Location) (types.UploadLocation, bool, error) {
+	adjustedCommit, adjustedRange, ok, err := s.getSourceRange(ctx, args, requestState, dump.RepositoryID, dump.Commit, dump.Root+location.Path, location.Range)
+	if err != nil || !ok {
+		return types.UploadLocation{}, ok, err
 	}
 
 	return types.UploadLocation{
@@ -563,7 +566,7 @@ func (s *Service) getUploadLocation(ctx context.Context, args shared.RequestArgs
 		Path:         dump.Root + location.Path,
 		TargetCommit: adjustedCommit,
 		TargetRange:  adjustedRange,
-	}, nil
+	}, true, nil
 }
 
 // getSourceRange translates a range (relative to the indexed commit) into an equivalent range in the requested
