@@ -5,6 +5,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { useQuery } from '@sourcegraph/http-client'
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -19,6 +20,7 @@ import {
     BatchChangeFields,
 } from '../../../graphql-operations'
 import { Description } from '../Description'
+import { MissingCredentialsAlert } from '../MissingCredentialsAlert'
 
 import { ActiveExecutionNotice } from './ActiveExecutionNotice'
 import { deleteBatchChange as _deleteBatchChange, BATCH_CHANGE_BY_NAMESPACE } from './backend'
@@ -42,6 +44,8 @@ export interface BatchChangeDetailsPageProps extends BatchChangeDetailsProps, Se
     initialTab?: TabName
     /** For testing only. */
     deleteBatchChange?: typeof _deleteBatchChange
+
+    authenticatedUser: Pick<AuthenticatedUser, 'url'>
 }
 
 /**
@@ -50,7 +54,15 @@ export interface BatchChangeDetailsPageProps extends BatchChangeDetailsProps, Se
 export const BatchChangeDetailsPage: React.FunctionComponent<
     React.PropsWithChildren<BatchChangeDetailsPageProps>
 > = props => {
-    const { namespaceID, batchChangeName, history, location, telemetryService, deleteBatchChange } = props
+    const {
+        namespaceID,
+        batchChangeName,
+        history,
+        location,
+        telemetryService,
+        authenticatedUser,
+        deleteBatchChange,
+    } = props
 
     useEffect(() => {
         telemetryService.logViewEvent('BatchChangeDetailsPage')
@@ -140,6 +152,10 @@ export const BatchChangeDetailsPage: React.FunctionComponent<
                 </PageHeader.Heading>
             </PageHeader>
             <BulkOperationsAlerts location={location} bulkOperations={batchChange.activeBulkOperations} />
+            <MissingCredentialsAlert
+                authenticatedUser={authenticatedUser}
+                viewerBatchChangesCodeHosts={batchChange.currentSpec.viewerBatchChangesCodeHosts}
+            />
             <SupersedingBatchSpecAlert spec={batchChange.currentSpec.supersedingBatchSpec} />
             <ActiveExecutionNotice
                 batchSpecs={batchChange.batchSpecs.nodes}

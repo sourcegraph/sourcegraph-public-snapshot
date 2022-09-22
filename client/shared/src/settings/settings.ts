@@ -19,6 +19,7 @@ export interface IClient {
  */
 export interface Settings {
     extensions?: { [extensionID: string]: boolean }
+    'codeIntel.referencesPanel'?: 'tree-view' | 'tabbed'
     experimentalFeatures?: {
         batchChangesExecution?: boolean
         showSearchContext?: boolean

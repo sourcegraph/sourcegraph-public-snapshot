@@ -23,6 +23,10 @@ const currentSpec = {
     originalInput: '',
     supersedingBatchSpec: null,
     source: BatchSpecSource.REMOTE,
+    viewerBatchChangesCodeHosts: {
+        totalCount: 0,
+        nodes: [],
+    },
 }
 
 const batchChange = (totalCount: number, hasNextPage: boolean) => ({
