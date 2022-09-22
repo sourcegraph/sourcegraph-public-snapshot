@@ -51,22 +51,19 @@ func displayRepoName(repoName string) string {
 	return strings.Join(repoNameParts, "/")
 }
 
-func canServeOpenGraphMetadata(req *http.Request, ffs featureFlagStore) bool {
-	ctx := req.Context()
-	if envvar.SourcegraphDotComMode() || actor.FromContext(ctx).IsAuthenticated() || !isValidOpenGraphRequesterUserAgent(req.UserAgent()) {
-		return false
-	}
-	// Only hit the DB if the above conditions are not satisfied to avoid slowing down the requests for non-bot users.
-	globalFeatureFlags, err := ffs.GetGlobalFeatureFlags(ctx)
-	if err != nil {
-		return false
-	}
-	return globalFeatureFlags["enable-link-previews"]
+func canServeOpenGraphMetadata(req *http.Request) bool {
+	return !envvar.SourcegraphDotComMode() && !actor.FromContext(req.Context()).IsAuthenticated() && isValidOpenGraphRequesterUserAgent(req.UserAgent())
 }
 
 func getOpenGraphTemplateData(req *http.Request, ffs featureFlagStore) *openGraphTemplateData {
-	if !canServeOpenGraphMetadata(req, ffs) {
+	if !canServeOpenGraphMetadata(req) {
 		return nil
+	}
+
+	globalFeatureFlags, _ := ffs.GetGlobalFeatureFlags(req.Context())
+	if !globalFeatureFlags["enable-link-previews"] {
+		// If link previews are not enabled, return default OpenGraph metadata content to avoid showing the "Sign in" page metadata.
+		return &openGraphTemplateData{Title: "View on Sourcegraph", Description: "Sourcegraph is a web-based code search and navigation tool for dev teams. Search, navigate, and review code. Find answers."}
 	}
 
 	// The requested route should match the UI portion of the router (repo, blob, search, etc.), so that we don't
