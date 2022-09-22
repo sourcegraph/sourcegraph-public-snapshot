@@ -215,6 +215,7 @@ require (
 require github.com/hmarr/codeowners v0.4.0
 
 require (
+	github.com/c2h5oh/datasize v0.0.0-20220606134207-859f65c6625b
 	github.com/hashicorp/hcl v1.0.0
 	github.com/opsgenie/opsgenie-go-sdk-v2 v1.2.13
 	github.com/prometheus/prometheus v0.37.1
@@ -222,7 +223,7 @@ require (
 )
 
 require (
-	github.com/sourcegraph/zoekt v0.0.0-20220921122446-2fa5f478abb8
+	github.com/sourcegraph/zoekt v0.0.0-20220922012354-1a338228b6c9
 	github.com/stretchr/objx v0.4.0 // indirect
 )
 

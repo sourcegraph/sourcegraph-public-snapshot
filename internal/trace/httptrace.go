@@ -49,7 +49,7 @@ var (
 	metricLabels    = []string{"route", "method", "code", "repo", "origin"}
 	requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name:    "src_http_request_duration_seconds",
-		Help:    "The HTTP request latencies in seconds.",
+		Help:    "The HTTP request latencies in seconds. Use src_graphql_field_seconds for GraphQL requests.",
 		Buckets: UserLatencyBuckets,
 	}, metricLabels)
 )
@@ -187,22 +187,28 @@ func HTTPMiddleware(logger log.Logger, next http.Handler, siteConfig conftypes.S
 		// handle request
 		m := httpsnoop.CaptureMetrics(next, rw, r.WithContext(ctx))
 
-		// get route name, which is set after request is handled
+		// get route name, which is set after request is handled, to set as the trace
+		// title. We allow graphql requests to all be grouped under the route "graphql"
+		// to avoid making src_http_request_duration_seconds not be super high-cardinality.
+		//
+		// If you wish to see the performance of GraphQL endpoints, please use the
+		// src_graphql_field_seconds metric instead.
+		fullRouteTitle := routeName
 		if routeName == "graphql" {
 			// We use the query to denote the type of a GraphQL request, e.g. /.api/graphql?Repositories
 			if r.URL.RawQuery != "" {
-				routeName = "graphql: " + r.URL.RawQuery
+				fullRouteTitle = "graphql: " + r.URL.RawQuery
 			} else {
-				routeName = "graphql: unknown"
+				fullRouteTitle = "graphql: unknown"
 			}
 		}
-		span.SetOperationName("Serve: " + routeName)
+		span.SetOperationName("Serve: " + fullRouteTitle)
 		span.SetTag("Route", routeName)
 
 		ext.HTTPStatusCode.Set(span, uint16(m.Code))
 
 		labels := prometheus.Labels{
-			"route":  routeName,
+			"route":  routeName, // do not use full route title to reduce cardinality
 			"method": strings.ToLower(r.Method),
 			"code":   strconv.Itoa(m.Code),
 			"repo":   repotrackutil.GetTrackedRepo(api.RepoName(r.URL.Path)),
@@ -227,7 +233,7 @@ func HTTPMiddleware(logger log.Logger, next http.Handler, siteConfig conftypes.S
 		if m.Code >= minCode || m.Duration >= minDuration {
 			fields := make([]log.Field, 0, 10)
 			fields = append(fields,
-				log.String("route_name", routeName),
+				log.String("route_name", fullRouteTitle),
 				log.String("method", r.Method),
 				log.String("url", truncate(r.URL.String(), 100)),
 				log.Int("code", m.Code),

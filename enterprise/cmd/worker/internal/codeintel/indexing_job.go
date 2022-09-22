@@ -37,7 +37,7 @@ func (j *indexingJob) Config() []env.Config {
 	return []env.Config{indexingConfigInst}
 }
 
-func (j *indexingJob) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
+func (j *indexingJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	logger = logger.Scoped("routines", "indexing job routines")
 	observationContext := &observation.Context{
 		Logger:     logger.Scoped("routines", "indexing job routines"),
