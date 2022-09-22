@@ -24,7 +24,6 @@ import (
 // for actual API usage.
 type Interface interface {
 	SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]SeriesPoint, error)
-	LoadSeriesInMem(ctx context.Context, opts SeriesPointsOpts) ([]SeriesPoint, error)
 	RecordSeriesPoint(ctx context.Context, v RecordSeriesPointArgs) error
 	RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointArgs) error
 	CountData(ctx context.Context, opts CountDataOpts) (int, error)
