@@ -52,6 +52,11 @@ describe('GitLab', () => {
                     merged: { contents: '', messages: [] },
                 },
             }),
+            ResolveRepoName: () => ({
+                repository: {
+                    name: 'gitlab.com/sourcegraph/jsonrpc2',
+                },
+            }),
             ResolveRev: () => ({
                 repository: {
                     mirrorInfo: {
