@@ -6,12 +6,7 @@ This document describes the process to update a Docker Compose Sourcegraph insta
 
 A [standard upgrade](../../updates/index.md#standard-upgrades) occurs between two minor versions of Sourcegraph. If you are looking to jump forward several versions, you must perform a [multi-version upgrade](#multi-version-upgrades) instead.
 
-**Before upgrading**:
-
-- Read our [update policy](../../updates/index.md#update-policy) to learn about Sourcegraph updates.
-- Find the relevant entry for your update in the [update notes for Sourcegraph with Docker Compose](../../updates/docker_compose.md).
-
-If you [configured Docker Compose with a release branch](index.md#step-3-configure-the-release-branch), please merge the upstream release tag for the next minor version into your `release` branch. In the following example, the release branch is being upgraded to v3.40.2.
+If you've [configured Docker Compose with a release branch](index.md#step-1-prepare-the-deployment-repository), please merge the upstream release tag for the next minor version into your `release` branch. In the following example, the release branch is being upgraded to v3.43.2.
 
 ```bash
 # first, checkout the release branch
@@ -20,25 +15,29 @@ git checkout release
 git fetch upstream
 # merge the upstream release tag into your release branch
 git checkout release
-git merge v3.40.2
+git merge v3.43.2
 ```
 
 #### Address any merge conflicts you might have
 
 For each conflict, you need to reconcile any customizations you made with the updates from the new version. Use the information you gathered earlier from the change log and changes list to interpret the merge conflict and to ensure that it doesn't over-write your customizations. You may need to update your customizations to accommodate the new version. 
 
-> NOTE: If you have made no changes or only very minimal changes to your configuration, you can also ask git to always select incoming changes in the event of merge conflicts. In the following example merges will be accepted from the upstream version v3.40.2:
+> NOTE: If you have made no changes or only very minimal changes to your configuration, you can also ask git to always select incoming changes in the event of merge conflicts. In the following example merges will be accepted from the upstream version v3.43.2:
 >
-> `git merge -X theirs v3.40.2`
+> `git merge -X theirs v3.43.2`
 >
 > If you do this, make sure your configuration is correct before proceeding because it may have made changes to your docker-compose YAML file.
 
 #### Clone the updated release branch to your server
 
 SSH into your instance and navigate to the appropriate folder:  
-- AWS: `/home/ec2-user/deploy-sourcegraph-docker/docker-compose`  
-- Digital Ocean: `/root/deploy-sourcegraph-docker/docker-compose`  
-- Google Cloud: `/root/deploy-sourcegraph-docker/docker-compose`  
+
+```bash
+# AWS
+cd /home/ec2-user/deploy-sourcegraph-docker/docker-compose
+# Azure, Digital Ocean, Google Cloud
+cd /root/deploy-sourcegraph-docker/docker-compose
+```
 
 Download all the latest docker images to your local docker daemon:
 

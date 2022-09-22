@@ -49,18 +49,6 @@ func Inject(expression string, matchers []*labels.Matcher, vars VariableApplier)
 	return revertExpr(expr)
 }
 
-// replaceAndParse applies vars to the expression and parses the result into a PromQL AST.
-func replaceAndParse(expression string, vars VariableApplier) (promqlparser.Expr, error) {
-	if vars != nil {
-		expression = vars.ApplySentinelValues(expression)
-	}
-	expr, err := promqlparser.ParseExpr(expression)
-	if err != nil {
-		return nil, errors.Wrapf(err, "%q", expression)
-	}
-	return expr, nil
-}
-
 // ListMetrics returns all unique metrics used in the expression.
 func ListMetrics(expression string, vars VariableApplier) ([]string, error) {
 	// Generate AST
@@ -82,4 +70,16 @@ func ListMetrics(expression string, vars VariableApplier) ([]string, error) {
 		return nil
 	})
 	return metrics, nil
+}
+
+// replaceAndParse applies vars to the expression and parses the result into a PromQL AST.
+func replaceAndParse(expression string, vars VariableApplier) (promqlparser.Expr, error) {
+	if vars != nil {
+		expression = vars.ApplySentinelValues(expression)
+	}
+	expr, err := promqlparser.ParseExpr(expression)
+	if err != nil {
+		return nil, errors.Wrapf(err, "%q", expression)
+	}
+	return expr, nil
 }

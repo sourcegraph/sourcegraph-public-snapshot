@@ -12,15 +12,16 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestHandle(t *testing.T) {
 	testDir := "/tmp/codeintel"
-	makeTempDir = func() (string, error) { return testDir, nil }
+	workspace.MakeTempDirectory = func(string) (string, error) { return testDir, nil }
 	t.Cleanup(func() {
-		makeTempDir = makeTemporaryDirectory
+		workspace.MakeTempDirectory = workspace.MakeTemporaryDirectory
 	})
 
 	if err := os.MkdirAll(filepath.Join(testDir, command.ScriptsPath), os.ModePerm); err != nil {

@@ -13,5 +13,5 @@
   - [Symbol search](features.md#symbol-search)
 - <span class="badge badge-beta">Beta</span> [Rockskip: faster search-based code navigation](rockskip.md)
 - [Writing an indexer](writing_an_indexer.md)
-- <span class="badge badge-beta">Beta</span> [Auto-indexing](auto_indexing.md)
-- <span class="badge badge-beta">Beta</span> [Auto-indexing inference](auto_indexing_inference.md)
+- [Auto-indexing](auto_indexing.md)
+- [Auto-indexing inference](auto_indexing_inference.md)

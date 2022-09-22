@@ -13,7 +13,7 @@ file:go\.mod$ go\s*(\d\.\d+)
 ### What are the open source licenses most used in our codebase? 
 See all the licenses included, by frequency (group by capture group)
 ```sgquery
-file:package.json /"license":\s(.*)/,
+file:package.json /"license":\s(.*),/
 ```
 
 ### Which repos use a specific internal library the most?

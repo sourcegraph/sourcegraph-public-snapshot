@@ -287,6 +287,11 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
      * Whether or not code views need to be tokenized. Defaults to false.
      */
     codeViewsRequireTokenization?: boolean
+
+    /**
+     * Called before injecting the code intelligence to the code host.
+     */
+    prepareCodeHost?: (requestGraphQL: BrowserPlatformContext['requestGraphQL']) => Promise<boolean>
 }
 
 /**
@@ -1575,6 +1580,8 @@ export function injectCodeIntelligenceToCodeHost(
         subscriptions.add(extensionsController)
     }
 
+    const codeHostReady = codeHost.prepareCodeHost ? from(codeHost.prepareCodeHost(requestGraphQL)) : of(true)
+
     const isTelemetryEnabled = combineLatest([
         observeSendTelemetry(isExtension),
         from(codeHost.getContext?.().then(context => context.privateRepository) ?? Promise.resolve(true)),
@@ -1615,14 +1622,14 @@ export function injectCodeIntelligenceToCodeHost(
 
     subscriptions.add(
         // eslint-disable-next-line rxjs/no-async-subscribe, @typescript-eslint/no-misused-promises
-        extensionDisabled.subscribe(async disableExtension => {
+        combineLatest([codeHostReady, extensionDisabled]).subscribe(async ([isCodeHostReady, disableExtension]) => {
             if (disableExtension) {
                 // We don't need to unsubscribe if the extension starts with disabled state.
                 if (codeHostSubscription) {
                     codeHostSubscription.unsubscribe()
                 }
                 console.log('Browser extension is disabled')
-            } else if (extensionsController !== null) {
+            } else if (isCodeHostReady && extensionsController !== null) {
                 codeHostSubscription = await handleCodeHost({
                     mutations,
                     codeHost,

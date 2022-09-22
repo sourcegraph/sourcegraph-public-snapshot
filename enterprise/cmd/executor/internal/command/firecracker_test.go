@@ -127,7 +127,7 @@ func TestSetupFirecracker(t *testing.T) {
 	operations := NewOperations(&observation.TestContext)
 
 	logger := NewMockLogger()
-	if err := setupFirecracker(context.Background(), runner, logger, "deadbeef", "/proj", options, operations); err != nil {
+	if err := setupFirecracker(context.Background(), runner, logger, "deadbeef", "/dev/loopX", options, operations); err != nil {
 		t.Fatalf("unexpected error tearing down virtual machine: %s", err)
 	}
 
@@ -141,8 +141,8 @@ func TestSetupFirecracker(t *testing.T) {
 			"ignite run",
 			"--runtime docker --network-plugin cni",
 			"--cpus 4 --memory 20G --size 1T",
-			"--copy-files /proj:/work",
 			"--copy-files /vm-startup.sh:/vm-startup.sh",
+			"--volumes /dev/loopX:/work",
 			"--ssh --name deadbeef",
 			"--kernel-image", "ignite-kernel:5.10.135",
 			"sourcegraph/executor-vm:3.43.1",

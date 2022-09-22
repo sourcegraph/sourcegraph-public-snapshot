@@ -17,7 +17,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
--
+- Outdated executors now show a warning from the admin page. [#40916](https://github.com/sourcegraph/sourcegraph/pull/40916)
 
 ### Changed
 
