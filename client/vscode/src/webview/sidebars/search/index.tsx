@@ -2,13 +2,13 @@ import '../../platform/polyfills'
 
 import React, { useMemo, useState } from 'react'
 
-import { ShortcutProvider } from '@slimsag/react-shortcuts'
 import { VSCodeProgressRing } from '@vscode/webview-ui-toolkit/react'
 import * as Comlink from 'comlink'
 import { createRoot } from 'react-dom/client'
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import { ShortcutProvider } from '@sourcegraph/shared/src/react-shortcuts'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { AnchorLink, setLinkComponent, useObservable, WildcardThemeContext } from '@sourcegraph/wildcard'
 

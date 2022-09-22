@@ -3,11 +3,11 @@ import { TreeEntriesResult } from '@sourcegraph/shared/src/graphql-operations'
 
 import {
     BlobResult,
-    FileExternalLinksResult,
-    ResolveRepoRevResult,
     ExternalServiceKind,
-    RepoChangesetsStatsResult,
+    FileExternalLinksResult,
     FileNamesResult,
+    RepoChangesetsStatsResult,
+    ResolveRepoRevResult,
 } from '../graphql-operations'
 
 export const createTreeEntriesResult = (url: string, toplevelFiles: string[]): TreeEntriesResult => ({
@@ -82,6 +82,7 @@ export const createResolveRepoRevisionResult = (treeUrl: string, oid = '1'.repea
                 serviceKind: ExternalServiceKind.GITHUB,
             },
         ],
+        externalRepository: { serviceType: 'github' },
         description: 'bla',
         viewerCanAdminister: false,
         defaultBranch: { displayName: 'master', abbrevName: 'master' },
@@ -107,6 +108,7 @@ export const createResolveCloningRepoRevisionResult = (
                 serviceKind: ExternalServiceKind.GITHUB,
             },
         ],
+        externalRepository: { serviceType: 'github' },
         description: 'bla',
         viewerCanAdminister: false,
         defaultBranch: null,
