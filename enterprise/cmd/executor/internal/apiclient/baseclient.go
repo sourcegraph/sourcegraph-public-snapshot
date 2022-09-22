@@ -14,7 +14,6 @@ import (
 	"golang.org/x/net/context/ctxhttp"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // schemeExecutorToken is the special type of token to communicate with the executor endpoints.
@@ -109,10 +108,18 @@ func (c *BaseClient) Do(ctx context.Context, req *http.Request) (hasContent bool
 			log15.Error("apiclient got unexpected status code", "code", resp.StatusCode, "body", string(content))
 		}
 
-		return false, nil, errors.Errorf("unexpected status code %d", resp.StatusCode)
+		return false, nil, &UnexpectedStatusCodeErr{StatusCode: resp.StatusCode}
 	}
 
 	return true, resp.Body, nil
+}
+
+type UnexpectedStatusCodeErr struct {
+	StatusCode int
+}
+
+func (e *UnexpectedStatusCodeErr) Error() string {
+	return fmt.Sprintf("unexpected status code %d", e.StatusCode)
 }
 
 // DoAndDecode performs the given HTTP request and unmarshals the response body into the
