@@ -464,7 +464,7 @@ index 8da8866573c8..02f4de38f03c 100644
 `
 
 var netlinkTestCases = []gitTreeTranslatorTestCase{
-	{netlinkDiff, "netlink", "", 656, false, 0},
+	{netlinkDiff, "netlink", "", 672, false, 0},
 }
 
 func TestRawGetTargetCommitPositionFromSourcePosition(t *testing.T) {
