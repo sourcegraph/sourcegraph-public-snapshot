@@ -68,8 +68,8 @@ func outputParseTree(searchType query.SearchType, args *args) (*JSONValue, error
 		return nil, err
 	}
 
-	if args.OutputFormat != Json || args.OutputVerbosity != Minimal {
-		return nil, errors.New("unsupported output options for PARSE_TREE, only JSON output with MINIMAL verbosity is supported")
+	if args.OutputFormat != Json || args.OutputVerbosity != Basic {
+		return nil, errors.New("unsupported output options for PARSE_TREE, only JSON output with BASIC verbosity is supported")
 	}
 	jsonString, err := query.ToJSON(plan.ToQ())
 	if err != nil {

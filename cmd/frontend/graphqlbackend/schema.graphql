@@ -1428,7 +1428,7 @@ type Query {
         """
         The level of output format verbosity.
         """
-        outputVerbosity: SearchQueryOutputVerbosity = MINIMAL
+        outputVerbosity: SearchQueryOutputVerbosity = BASIC
     ): JSONValue
     """
     The current site.
