@@ -60,7 +60,7 @@ You can navigate to the public IP address assigned to the EC2 node to access you
 
 > WARNING: This upgrade process works with **Sourcegraph AWS AMI instances only**
 
-Recommended: Please back up your volume before proceeding with the upgrades
+<span class="badge badge-critical">IMPORTANT</span> **Back up your volumes before each upgrade**
 
 #### Step 1: Terminate the current instance
 
@@ -165,6 +165,12 @@ Click **Create subnet** in your VPC subnets dashboard:
   - Protocol: HTTPS
   - Port: 443
   - Default action: Select the HTTPS target group created for the instance
+
+---
+
+## Storage and Backups
+
+We strongly recommend you taking [snapshots of the entire EBS volume](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-creating-snapshot.html) on an [automatic, scheduled basis](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/snapshot-lifecycle.html).
 
 ---
 
