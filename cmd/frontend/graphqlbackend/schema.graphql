@@ -1417,7 +1417,7 @@ type Query {
         """
         The parser to use for this query.
         """
-        patternType: SearchPatternType = literal
+        patternType: SearchPatternType = standard
         """
         The output corresponding to a phase in the parser pipeline.
         """
