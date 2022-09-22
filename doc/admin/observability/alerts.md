@@ -1426,9 +1426,9 @@ Generated query for critical alert: `min(((src_gitserver_disk_space_available / 
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(instance, cmd) (src_gitserver_exec_running{instance=~"${shard:regex}"})) >= 50)`
+Generated query for warning alert: `max((sum by(instance, cmd) (src_gitserver_exec_running)) >= 50)`
 
-Generated query for critical alert: `max((sum by(instance, cmd) (src_gitserver_exec_running{instance=~"${shard:regex}"})) >= 100)`
+Generated query for critical alert: `max((sum by(instance, cmd) (src_gitserver_exec_running)) >= 100)`
 
 </details>
 
