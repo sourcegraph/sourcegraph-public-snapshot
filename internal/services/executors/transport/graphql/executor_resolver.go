@@ -14,6 +14,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+var insiderBuildRegex = regexp.MustCompile(`^[\w-]+_(\d{4}-\d{2}-\d{2})_\w+`)
+
 type ExecutorResolver struct {
 	executor types.Executor
 }
@@ -51,7 +53,7 @@ func (e *ExecutorResolver) Compatibility() (*string, error) {
 }
 
 func calculateExecutorCompatibility(ev string) (*string, error) {
-	var compatibility ExecutorCompatibility = ExecutorCompatibilityUptoDate
+	var compatibility ExecutorCompatibility = ExecutorCompatibilityUpToDate
 	sv := version.Version()
 
 	isExecutorDev := ev != "" && version.IsDev(ev)
@@ -61,13 +63,12 @@ func calculateExecutorCompatibility(ev string) (*string, error) {
 		return nil, nil
 	}
 
-	r := regexp.MustCompile(`^[\w-]+_(\d{4}-\d{2}-\d{2})_\w+`)
-	evm := r.FindStringSubmatch(ev)
-	svm := r.FindStringSubmatch(sv)
+	evm := insiderBuildRegex.FindStringSubmatch(ev)
+	svm := insiderBuildRegex.FindStringSubmatch(sv)
 
 	// check for version mismatch
 	if len(evm) > 1 && len(svm) <= 1 {
-		// this means that the executor is an insiert version while the Sourcegraph
+		// this means that the executor is an insider version while the Sourcegraph
 		// instance is not.
 		return nil, nil
 	}

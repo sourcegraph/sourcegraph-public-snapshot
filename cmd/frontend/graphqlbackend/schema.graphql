@@ -1732,7 +1732,8 @@ type Executor implements Node {
     """
     The compatibility of the executor with respect to the Sourcegraph instance.
     If outdated, please make sure that the executor and the Sourcegraph backend are of compatible versions. This means they should match in major and minor version, but they may be 1 minor version apart.
-    If too new, please update the sourcegraph instance to match the version of the executor.
+    If too new, please update the Sourcegraph instance to match the version of the executor or downgrade the executor.
+    Null is returned if there's a version mismatch or either of the Sourcegraph instance or executor is running a dev version.
     """
     compatibility: ExecutorCompatibility
 }

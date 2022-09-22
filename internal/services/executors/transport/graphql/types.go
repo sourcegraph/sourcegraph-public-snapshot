@@ -11,7 +11,7 @@ type ExecutorCompatibility string
 
 const (
 	ExecutorCompatibilityOutdated     ExecutorCompatibility = "OUTDATED"
-	ExecutorCompatibilityUptoDate     ExecutorCompatibility = "UP_TO_DATE"
+	ExecutorCompatibilityUpToDate     ExecutorCompatibility = "UP_TO_DATE"
 	ExecutorCompatibilityVersionAhead ExecutorCompatibility = "VERSION_AHEAD"
 )
 
