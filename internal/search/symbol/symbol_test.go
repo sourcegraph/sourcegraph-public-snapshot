@@ -31,7 +31,7 @@ func TestFilterZoektResults(t *testing.T) {
 	ctx = actor.WithActor(ctx, &actor.Actor{
 		UID: 1,
 	})
-	checker, err := authz.NewSimpleChecker(repoName, []string{"**"}, []string{"*_test.go"})
+	checker, err := authz.NewSimpleChecker(repoName, []string{"/**", "-/*_test.go"})
 	if err != nil {
 		t.Fatal(err)
 	}

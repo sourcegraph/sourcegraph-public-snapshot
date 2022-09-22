@@ -256,72 +256,40 @@ func TestScanFullRepoPermissions(t *testing.T) {
 		},
 		SubRepoPermissions: map[extsvc.RepoID]*authz.SubRepoPermissions{
 			"//depot/main/": {
-				PathIncludes: []string{
-					mustGlobPattern(t, "base/..."),
-					mustGlobPattern(t, "*/stuff/..."),
-					mustGlobPattern(t, "frontend/.../stuff/*"),
-					mustGlobPattern(t, "config.yaml"),
-					mustGlobPattern(t, "subdir/**"),
-					mustGlobPattern(t, ".../README.md"),
-					mustGlobPattern(t, "dir.yaml"),
-				},
-				PathExcludes: []string{
-					mustGlobPattern(t, "subdir/remove/"),
-					mustGlobPattern(t, "subdir/*/also-remove/..."),
-					mustGlobPattern(t, ".../.secrets.env"),
-				},
 				Paths: []string{
-					mustGlobPattern(t, "-..."),
-					mustGlobPattern(t, "base/..."),
-					mustGlobPattern(t, "*/stuff/..."),
-					mustGlobPattern(t, "frontend/.../stuff/*"),
-					mustGlobPattern(t, "config.yaml"),
-					mustGlobPattern(t, "subdir/**"),
-					mustGlobPattern(t, "-subdir/remove/"),
-					mustGlobPattern(t, "subdir/some-dir/also-remove/..."),
-					mustGlobPattern(t, "subdir/another-dir/also-remove/..."),
-					mustGlobPattern(t, "-subdir/*/also-remove/..."),
-					mustGlobPattern(t, ".../README.md"),
-					mustGlobPattern(t, "dir.yaml"),
-					mustGlobPattern(t, "-.../.secrets.env"),
+					mustGlobPattern(t, "-/..."),
+					mustGlobPattern(t, "/base/..."),
+					mustGlobPattern(t, "/*/stuff/..."),
+					mustGlobPattern(t, "/frontend/.../stuff/*"),
+					mustGlobPattern(t, "/config.yaml"),
+					mustGlobPattern(t, "/subdir/**"),
+					mustGlobPattern(t, "-/subdir/remove/"),
+					mustGlobPattern(t, "/subdir/some-dir/also-remove/..."),
+					mustGlobPattern(t, "/subdir/another-dir/also-remove/..."),
+					mustGlobPattern(t, "-/subdir/*/also-remove/..."),
+					mustGlobPattern(t, "/.../README.md"),
+					mustGlobPattern(t, "/dir.yaml"),
+					mustGlobPattern(t, "-/.../.secrets.env"),
 				},
 			},
 			"//depot/test/": {
-				PathIncludes: []string{
-					mustGlobPattern(t, "..."),
-					mustGlobPattern(t, ".../README.md"),
-					mustGlobPattern(t, "dir.yaml"),
-				},
-				PathExcludes: []string{
-					mustGlobPattern(t, ".../.secrets.env"),
-				},
 				Paths: []string{
-					mustGlobPattern(t, "-..."),
-					mustGlobPattern(t, "..."),
-					mustGlobPattern(t, ".../README.md"),
-					mustGlobPattern(t, "dir.yaml"),
-					mustGlobPattern(t, "-.../.secrets.env"),
+					mustGlobPattern(t, "-/..."),
+					mustGlobPattern(t, "/..."),
+					mustGlobPattern(t, "/.../README.md"),
+					mustGlobPattern(t, "/dir.yaml"),
+					mustGlobPattern(t, "-/.../.secrets.env"),
 				},
 			},
 			"//depot/training/": {
-				PathIncludes: []string{
-					mustGlobPattern(t, "..."),
-					mustGlobPattern(t, ".../README.md"),
-					mustGlobPattern(t, "dir.yaml"),
-				},
-				PathExcludes: []string{
-					mustGlobPattern(t, "secrets/..."),
-					mustGlobPattern(t, ".env"),
-					mustGlobPattern(t, ".../.secrets.env"),
-				},
 				Paths: []string{
-					mustGlobPattern(t, "-..."),
-					mustGlobPattern(t, "..."),
-					mustGlobPattern(t, "-secrets/..."),
-					mustGlobPattern(t, "-.env"),
-					mustGlobPattern(t, ".../README.md"),
-					mustGlobPattern(t, "dir.yaml"),
-					mustGlobPattern(t, "-.../.secrets.env"),
+					mustGlobPattern(t, "-/..."),
+					mustGlobPattern(t, "/..."),
+					mustGlobPattern(t, "-/secrets/..."),
+					mustGlobPattern(t, "-/.env"),
+					mustGlobPattern(t, "/.../README.md"),
+					mustGlobPattern(t, "/dir.yaml"),
+					mustGlobPattern(t, "-/.../.secrets.env"),
 				},
 			},
 		},
@@ -368,24 +336,14 @@ func TestScanFullRepoPermissionsWithWildcardMatchingDepot(t *testing.T) {
 		},
 		SubRepoPermissions: map[extsvc.RepoID]*authz.SubRepoPermissions{
 			"//depot/main/base/": {
-				PathIncludes: []string{
-					mustGlobPattern(t, "**"),
-				},
-				PathExcludes: []string{
-					mustGlobPattern(t, "**"),
-					mustGlobPattern(t, "**/base/build/deleteorgs.txt"),
-					mustGlobPattern(t, "build/deleteorgs.txt"),
-					mustGlobPattern(t, "**/base/build/**/asdf.txt"),
-					mustGlobPattern(t, "build/**/asdf.txt"),
-				},
 				Paths: []string{
-					mustGlobPattern(t, "-**"),
-					mustGlobPattern(t, "**"),
-					mustGlobPattern(t, "-**"),
-					mustGlobPattern(t, "-**/base/build/deleteorgs.txt"),
-					mustGlobPattern(t, "-build/deleteorgs.txt"),
-					mustGlobPattern(t, "-**/base/build/**/asdf.txt"),
-					mustGlobPattern(t, "-build/**/asdf.txt"),
+					mustGlobPattern(t, "-/**"),
+					mustGlobPattern(t, "/**"),
+					mustGlobPattern(t, "-/**"),
+					mustGlobPattern(t, "-/**/base/build/deleteorgs.txt"),
+					mustGlobPattern(t, "-/build/deleteorgs.txt"),
+					mustGlobPattern(t, "-/**/base/build/**/asdf.txt"),
+					mustGlobPattern(t, "-/build/**/asdf.txt"),
 				},
 			},
 		},
@@ -518,17 +476,17 @@ read  group     Rome    *  //depot/dev/...
 			protectsFile: "testdata/sample-protects-edb.txt",
 			canReadAll:   []string{"db/plpgsql/seed.psql"},
 		},
-        {
-            name:         "Deny all, grant some",
-            depot:        "//depot/main/",
-            protects: `
+		{
+			name:  "Deny all, grant some",
+			depot: "//depot/main/",
+			protects: `
 read    group   Dev1    *   //depot/main/...
 read    group   Dev1    *   -//depot/main/.../*.java
 read    group   Dev1    *   //depot/main/.../dev/foo.java
 `,
-            canReadAll: []string{"dev/foo.java"},
-            cannotReadAny: []string{"dev/bar.java"},
-        },
+			canReadAll:    []string{"dev/foo.java"},
+			cannotReadAny: []string{"dev/bar.java"},
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := logtest.Scoped(t)
@@ -587,7 +545,7 @@ read    group   Dev1    *   //depot/main/.../dev/foo.java
 			} else if ok && tc.noRules {
 				t.Fatal("expected no rules")
 			}
-			checker, err := authz.NewSimpleChecker(api.RepoName(tc.depot), rules.PathIncludes, rules.PathExcludes)
+			checker, err := authz.NewSimpleChecker(api.RepoName(tc.depot), rules.Paths)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -652,26 +610,15 @@ func TestFullScanWildcardDepotMatching(t *testing.T) {
 		},
 		SubRepoPermissions: map[extsvc.RepoID]*authz.SubRepoPermissions{
 			"//depot/654/deploy/base/": {
-				PathExcludes: []string{
-					mustGlobPattern(t, "**/base/build/deleteorgs.txt"),
-					mustGlobPattern(t, "build/deleteorgs.txt"),
-					mustGlobPattern(t, "asdf/plsql/base/cCustomSchema*.sql"),
-				},
-				PathIncludes: []string{
-					mustGlobPattern(t, "db/upgrade-scripts/**"),
-					mustGlobPattern(t, "db/my_db/upgrade-scripts/**"),
-					mustGlobPattern(t, "asdf/config/my_schema.xml"),
-					mustGlobPattern(t, "db/plpgsql/**"),
-				},
 				Paths: []string{
-					mustGlobPattern(t, "-**"),
-					mustGlobPattern(t, "-**/base/build/deleteorgs.txt"),
-					mustGlobPattern(t, "-build/deleteorgs.txt"),
-					mustGlobPattern(t, "-asdf/plsql/base/cCustomSchema*.sql"),
-					mustGlobPattern(t, "db/upgrade-scripts/**"),
-					mustGlobPattern(t, "db/my_db/upgrade-scripts/**"),
-					mustGlobPattern(t, "asdf/config/my_schema.xml"),
-					mustGlobPattern(t, "db/plpgsql/**"),
+					mustGlobPattern(t, "-/**"),
+					mustGlobPattern(t, "-/**/base/build/deleteorgs.txt"),
+					mustGlobPattern(t, "-/build/deleteorgs.txt"),
+					mustGlobPattern(t, "-/asdf/plsql/base/cCustomSchema*.sql"),
+					mustGlobPattern(t, "/db/upgrade-scripts/**"),
+					mustGlobPattern(t, "/db/my_db/upgrade-scripts/**"),
+					mustGlobPattern(t, "/asdf/config/my_schema.xml"),
+					mustGlobPattern(t, "/db/plpgsql/**"),
 				},
 			},
 		},
@@ -777,7 +724,7 @@ func TestCheckWildcardDepotMatch(t *testing.T) {
 func TestScanAllUsers(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	f, err := os.Open("testdata/sample-protects-conflict.txt")
+	f, err := os.Open("testdata/sample-protects-a.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

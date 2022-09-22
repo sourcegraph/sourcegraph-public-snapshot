@@ -82,7 +82,7 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 				getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]SubRepoPermissions, error) {
 					return map[api.RepoName]SubRepoPermissions{
 						"sample": {
-                            Paths: []string{"-/dev/*"},
+							Paths: []string{"-/dev/*"},
 						},
 					}, nil
 				})
@@ -348,36 +348,36 @@ func TestSubRepoPermissionsCanReadDirectoriesInPath(t *testing.T) {
 	repoName := api.RepoName("repo")
 
 	testCases := []struct {
-		paths  []string
+		paths         []string
 		canReadAll    []string
 		cannotReadAny []string
 	}{
 		{
-			paths:  []string{"foo/bar/thing.txt"},
+			paths:         []string{"foo/bar/thing.txt"},
 			canReadAll:    []string{"foo/", "foo/bar/"},
 			cannotReadAny: []string{"foo/thing.txt", "foo/bar/other.txt"},
 		},
 		{
-			paths: []string{"foo/bar/**"},
-			canReadAll:   []string{"foo/", "foo/bar/", "foo/bar/baz/", "foo/bar/baz/fox/"},
+			paths:      []string{"foo/bar/**"},
+			canReadAll: []string{"foo/", "foo/bar/", "foo/bar/baz/", "foo/bar/baz/fox/"},
 		},
 		{
-			paths:  []string{"foo/bar/"},
+			paths:         []string{"foo/bar/"},
 			canReadAll:    []string{"foo/", "foo/bar/"},
 			cannotReadAny: []string{"foo/thing.txt", "foo/bar/thing.txt"},
 		},
 		{
-			paths:  []string{"baz/*/foo/bar/thing.txt"},
+			paths:         []string{"baz/*/foo/bar/thing.txt"},
 			canReadAll:    []string{"baz/", "baz/x/", "baz/x/foo/bar/"},
 			cannotReadAny: []string{"baz/thing.txt"},
 		},
 		// We can't support rules that start with a wildcard, see comment in expandDirs
 		{
-			paths:  []string{"**/foo/bar/thing.txt"},
+			paths:         []string{"**/foo/bar/thing.txt"},
 			cannotReadAny: []string{"foo/", "foo/bar/"},
 		},
 		{
-			paths:  []string{"*/foo/bar/thing.txt"},
+			paths:         []string{"*/foo/bar/thing.txt"},
 			cannotReadAny: []string{"foo/", "foo/bar/"},
 		},
 	}

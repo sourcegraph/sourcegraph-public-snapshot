@@ -2,6 +2,7 @@ package authz
 
 import (
 	"context"
+	"fmt"
 	"io/fs"
 	"strconv"
 	"strings"
@@ -126,8 +127,8 @@ type cachedRules struct {
 }
 
 type path struct {
-    globPath glob.Glob
-    exclusion bool
+	globPath  glob.Glob
+	exclusion bool
 }
 
 type compiledRules struct {
@@ -279,38 +280,45 @@ func (s *SubRepoPermsClient) FilePermissionsFunc(ctx context.Context, userID int
 			return Read, nil
 		}
 
+		// Prefix path with "/", otherwise suffix rules like "**/file.txt" won't match
+		if !strings.HasPrefix(path, "/") {
+			path = "/" + path
+		}
+
 		// The current path needs to either be included or NOT excluded and we'll give
 		// preference to exclusion.
-        exclusion := false
-        match := false
+		exclusion := false
+		match := false
 		for _, rule := range rules.paths {
 			if rule.globPath.Match(path) {
-                match = true
-                exclusion = rule.exclusion
+				match = true
+				exclusion = rule.exclusion
 			}
 		}
 
-        if match {
-            if exclusion {
-                return None, nil
-            }
-            return Read, nil
-        }
+		if match {
+			if exclusion {
+				return None, nil
+			}
+
+			return Read, nil
+		}
 
 		// We also want to match any directories above paths that we include so that we
 		// can browse down the file hierarchy.
 		if strings.HasSuffix(path, "/") {
+			fmt.Println(rules.allDirs)
 			for _, rule := range rules.allDirs {
 				if rule.globPath.Match(path) {
-                    match = true
-                    exclusion = rule.exclusion
+					match = true
+					exclusion = rule.exclusion
 				}
 			}
 		}
 
-        if match && !exclusion {
-            return Read, nil
-        }
+		if match && !exclusion {
+			return Read, nil
+		}
 
 		// Return None if no rule matches or if only match is an exclusion
 		return None, nil
@@ -351,10 +359,14 @@ func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32)
 			allDirs := make([]path, 0)
 			dirSeen := make(map[string]struct{})
 			for _, rule := range perms.Paths {
-                exclusion := strings.HasPrefix(rule, "-")
-                if exclusion {
-                    rule = rule[1:]
-                }
+				exclusion := strings.HasPrefix(rule, "-")
+				if exclusion {
+					rule = rule[1:]
+				}
+
+				if !strings.HasPrefix(rule, "/") {
+					rule = "/" + rule
+				}
 
 				g, err := glob.Compile(rule, '/')
 				if err != nil {
@@ -379,7 +391,7 @@ func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32)
 			}
 
 			toCache.rules[repo] = compiledRules{
-				paths:       paths,
+				paths:   paths,
 				allDirs: allDirs,
 			}
 		}
@@ -415,7 +427,7 @@ func expandDirs(rule string) []string {
 	// We can't support rules that start with a wildcard because we can only
 	// see one level of the tree at a time so we have no way of knowing which path leads
 	// to a file the user is allowed to see.
-	if strings.HasPrefix(rule, "*") {
+	if strings.HasPrefix(rule, "/*") {
 		return dirs
 	}
 
@@ -436,13 +448,12 @@ func expandDirs(rule string) []string {
 // NewSimpleChecker is exposed for testing and allows creation of a simple
 // checker based on the rules provided. The rules are expected to be in glob
 // format.
-func NewSimpleChecker(repo api.RepoName, includes []string, excludes []string) (SubRepoPermissionChecker, error) {
+func NewSimpleChecker(repo api.RepoName, paths []string) (SubRepoPermissionChecker, error) {
 	getter := NewMockSubRepoPermissionsGetter()
 	getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]SubRepoPermissions, error) {
 		return map[api.RepoName]SubRepoPermissions{
 			repo: {
-				PathIncludes: includes,
-				PathExcludes: excludes,
+				Paths: paths,
 			},
 		}, nil
 	})
