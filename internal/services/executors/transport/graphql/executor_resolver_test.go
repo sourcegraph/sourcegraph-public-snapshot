@@ -38,7 +38,7 @@ func TestExecutorResolver(t *testing.T) {
 				executorVersion:    "3.43.0",
 				sourcegraphVersion: "3.42.0",
 				isActive:           true,
-				expected:           ExecutorCompatibilityUptoDate.ToGraphQL(),
+				expected:           ExecutorCompatibilityUpToDate.ToGraphQL(),
 				description:        "executor is one version ahead of the Sourcegraph instance",
 			},
 			// The executor is not outdated if it's one minor version ahead of the sourcegraph version (SEMVER)
@@ -46,7 +46,7 @@ func TestExecutorResolver(t *testing.T) {
 				executorVersion:    "3.42.0",
 				sourcegraphVersion: "3.43.0",
 				isActive:           true,
-				expected:           ExecutorCompatibilityUptoDate.ToGraphQL(),
+				expected:           ExecutorCompatibilityUpToDate.ToGraphQL(),
 				description:        "executor is one minor version ahead of the Sourcegraph instance",
 			},
 			// The executor is not outdated when both sourcegraph and executor are the same (SEMVER).
@@ -54,7 +54,7 @@ func TestExecutorResolver(t *testing.T) {
 				executorVersion:    "3.43.0",
 				sourcegraphVersion: "3.43.0",
 				isActive:           true,
-				expected:           ExecutorCompatibilityUptoDate.ToGraphQL(),
+				expected:           ExecutorCompatibilityUpToDate.ToGraphQL(),
 				description:        "executor and the sourcegraph instance are the same version (SEMVER)",
 			},
 			// The executor is not outdated when both sourcegraph and executor are the same (insiders).
@@ -62,7 +62,7 @@ func TestExecutorResolver(t *testing.T) {
 				executorVersion:    "executor-patch-notest-es-ignite-debug_168065_2022-08-25_e94e18c4ebcc_patch",
 				sourcegraphVersion: "169135_2022-08-25_a2b623dce148",
 				isActive:           true,
-				expected:           ExecutorCompatibilityUptoDate.ToGraphQL(),
+				expected:           ExecutorCompatibilityUpToDate.ToGraphQL(),
 				description:        "executor and the sourcegraph instance are the same version (insiders)",
 			},
 			// The executor is outdated if the sourcegraph version is more than one version
