@@ -1,15 +1,27 @@
 import React from 'react'
 
 import { pluralize } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
 import { Alert, Link, Text } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../auth'
-import { ViewerBatchChangesCodeHostsFields } from '../../../graphql-operations'
-import { CodeHost } from '../CodeHost'
+import { AuthenticatedUser } from '../../auth'
+import { ViewerBatchChangesCodeHostsFields } from '../../graphql-operations'
+
+import { CodeHost } from './CodeHost'
+
+export const VIEWER_BATCH_CHANGES_CODE_HOST_FRAGMENT = gql`
+    fragment ViewerBatchChangesCodeHostsFields on BatchChangesCodeHostConnection {
+        totalCount
+        nodes {
+            externalServiceURL
+            externalServiceKind
+        }
+    }
+`
 
 export interface MissingCredentialsAlertProps {
-    viewerBatchChangesCodeHosts: ViewerBatchChangesCodeHostsFields
     authenticatedUser: Pick<AuthenticatedUser, 'url'>
+    viewerBatchChangesCodeHosts: ViewerBatchChangesCodeHostsFields
 }
 
 export const MissingCredentialsAlert: React.FunctionComponent<
@@ -36,7 +48,7 @@ export const MissingCredentialsAlert: React.FunctionComponent<
                 <Link to={`${authenticatedUser.url}/settings/batch-changes`} target="_blank" rel="noopener">
                     batch changes user settings
                 </Link>{' '}
-                to apply this spec.
+                to publish changesets from this batch change.
             </Text>
         </Alert>
     )
