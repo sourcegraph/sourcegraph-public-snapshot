@@ -404,6 +404,11 @@
           "!go": {
             "pointer": true
           }
+        },
+        "insightsAlternateLoadingStrategy": {
+          "description": "Use an in-memory strategy of loading Code Insights. Should only be used for benchmarking on large instances, not for customer use currently.",
+          "type": "boolean",
+          "default": false
         }
       },
       "group": "Experimental"
