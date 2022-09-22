@@ -21,10 +21,14 @@ interface MenuButtonProps {
  * Renders ListBox menu button for dashboard select component.
  */
 export const MenuButton: React.FunctionComponent<React.PropsWithChildren<MenuButtonProps>> = props => {
-    const { dashboards, className } = props
+    const { dashboards, className, ...attributes } = props
 
     return (
-        <ListboxButton id="insight-dashboard-select-button" className={classNames(styles.button, className)}>
+        <ListboxButton
+            id="insight-dashboard-select-button"
+            className={classNames(styles.button, className)}
+            {...attributes}
+        >
             {({ value, isExpanded }) => {
                 const dashboard = dashboards.find(dashboard => dashboard.id === value)
 

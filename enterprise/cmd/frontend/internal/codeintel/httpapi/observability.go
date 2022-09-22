@@ -5,39 +5,32 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/uploadhandler"
 )
 
 type Operations struct {
-	authMiddleware                 *observation.Operation
-	handleEnqueue                  *observation.Operation
-	handleEnqueueSinglePayload     *observation.Operation
-	handleEnqueueMultipartSetup    *observation.Operation
-	handleEnqueueMultipartUpload   *observation.Operation
-	handleEnqueueMultipartFinalize *observation.Operation
+	*uploadhandler.Operations
+	authMiddleware *observation.Operation
 }
 
 func NewOperations(observationContext *observation.Context) *Operations {
 	metrics := metrics.NewREDMetrics(
 		observationContext.Registerer,
-		"codeintel_httpapi",
+		"codeintel_httpapi_auth",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of method invocations."),
 	)
 
 	op := func(name string) *observation.Operation {
 		return observationContext.Operation(observation.Op{
-			Name:              fmt.Sprintf("codeintel.httpapi.%s", name),
+			Name:              fmt.Sprintf("codeintel.httpapi.auth.%s", name),
 			MetricLabelValues: []string{name},
 			Metrics:           metrics,
 		})
 	}
 
 	return &Operations{
-		authMiddleware:                 op("authMiddleware"),
-		handleEnqueue:                  op("HandleEnqueue"),
-		handleEnqueueSinglePayload:     op("handleEnqueueSinglePayload"),
-		handleEnqueueMultipartSetup:    op("handleEnqueueMultipartSetup"),
-		handleEnqueueMultipartUpload:   op("handleEnqueueMultipartUpload"),
-		handleEnqueueMultipartFinalize: op("handleEnqueueMultipartFinalize"),
+		Operations:     uploadhandler.NewOperations(observationContext),
+		authMiddleware: op("authMiddleware"),
 	}
 }

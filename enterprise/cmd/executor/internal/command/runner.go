@@ -86,11 +86,11 @@ func NewRunner(dir string, logger Logger, options Options, operations *Operation
 	}
 
 	return &firecrackerRunner{
-		name:       options.ExecutorName,
-		dir:        dir,
-		logger:     logger,
-		options:    options,
-		operations: operations,
+		name:            options.ExecutorName,
+		workspaceDevice: dir,
+		logger:          logger,
+		options:         options,
+		operations:      operations,
 	}
 }
 
@@ -115,17 +115,17 @@ func (r *dockerRunner) Run(ctx context.Context, command CommandSpec) error {
 }
 
 type firecrackerRunner struct {
-	name       string
-	dir        string
-	logger     Logger
-	options    Options
-	operations *Operations
+	name            string
+	workspaceDevice string
+	logger          Logger
+	options         Options
+	operations      *Operations
 }
 
 var _ Runner = &firecrackerRunner{}
 
 func (r *firecrackerRunner) Setup(ctx context.Context) error {
-	return setupFirecracker(ctx, defaultRunner, r.logger, r.name, r.dir, r.options, r.operations)
+	return setupFirecracker(ctx, defaultRunner, r.logger, r.name, r.workspaceDevice, r.options, r.operations)
 }
 
 func (r *firecrackerRunner) Teardown(ctx context.Context) error {

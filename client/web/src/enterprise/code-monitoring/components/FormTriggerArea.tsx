@@ -129,10 +129,10 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
     const [queryState, setQueryState] = useState<QueryState>({ query: query || '' })
 
     const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
-    const applySuggestionsOnEnter = useExperimentalFeatures(
-        features => features.applySearchQuerySuggestionOnEnter ?? false
-    )
     const [enableCoreWorkflowImprovements] = useCoreWorkflowImprovementsEnabled()
+    const applySuggestionsOnEnter =
+        useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ??
+        enableCoreWorkflowImprovements
 
     useEffect(() => {
         const value = queryState.query
@@ -251,7 +251,7 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                                     globbing={false}
                                     preventNewLine={true}
                                     autoFocus={true}
-                                    applySuggestionsOnEnter={enableCoreWorkflowImprovements || applySuggestionsOnEnter}
+                                    applySuggestionsOnEnter={applySuggestionsOnEnter}
                                 />
                             </div>
                             <div className={styles.queryInputPreviewLink}>

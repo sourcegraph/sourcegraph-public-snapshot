@@ -318,7 +318,7 @@ func newGithubSource(
 	}, nil
 }
 
-func (s GitHubSource) WithAuthenticator(a auth.Authenticator) (Source, error) {
+func (s *GitHubSource) WithAuthenticator(a auth.Authenticator) (Source, error) {
 	switch a.(type) {
 	case *auth.OAuthBearerToken,
 		*auth.OAuthBearerTokenWithSSH:
@@ -330,7 +330,7 @@ func (s GitHubSource) WithAuthenticator(a auth.Authenticator) (Source, error) {
 
 	tokenRefresher := database.ExternalServiceTokenRefresher(s.db, s.svc.ID, s.config.TokenOauthRefresh)
 
-	sc := s
+	sc := *s
 
 	sc.v3Client = sc.v3Client.WithAuthenticator(a, tokenRefresher)
 	sc.v4Client = sc.v4Client.WithAuthenticator(a, tokenRefresher)
@@ -344,18 +344,18 @@ type githubResult struct {
 	repo *github.Repository
 }
 
-func (s GitHubSource) ValidateAuthenticator(ctx context.Context) error {
+func (s *GitHubSource) ValidateAuthenticator(ctx context.Context) error {
 	_, err := s.v3Client.GetAuthenticatedUser(ctx)
 	return err
 }
 
-func (s GitHubSource) Version(ctx context.Context) (string, error) {
+func (s *GitHubSource) Version(ctx context.Context) (string, error) {
 	return s.v3Client.GetVersion(ctx)
 }
 
 // ListRepos returns all Github repositories accessible to all connections configured
 // in Sourcegraph via the external services configuration.
-func (s GitHubSource) ListRepos(ctx context.Context, results chan SourceResult) {
+func (s *GitHubSource) ListRepos(ctx context.Context, results chan SourceResult) {
 	unfiltered := make(chan *githubResult)
 	go func() {
 		s.listAllRepositories(ctx, unfiltered)
@@ -376,13 +376,13 @@ func (s GitHubSource) ListRepos(ctx context.Context, results chan SourceResult) 
 }
 
 // ExternalServices returns a singleton slice containing the external service.
-func (s GitHubSource) ExternalServices() types.ExternalServices {
+func (s *GitHubSource) ExternalServices() types.ExternalServices {
 	return types.ExternalServices{s.svc}
 }
 
 // GetRepo returns the GitHub repository with the given name and owner
 // ("org/repo-name")
-func (s GitHubSource) GetRepo(ctx context.Context, nameWithOwner string) (*types.Repo, error) {
+func (s *GitHubSource) GetRepo(ctx context.Context, nameWithOwner string) (*types.Repo, error) {
 	r, err := s.getRepository(ctx, nameWithOwner)
 	if err != nil {
 		return nil, err
@@ -390,7 +390,7 @@ func (s GitHubSource) GetRepo(ctx context.Context, nameWithOwner string) (*types
 	return s.makeRepo(r), nil
 }
 
-func (s GitHubSource) makeRepo(r *github.Repository) *types.Repo {
+func (s *GitHubSource) makeRepo(r *github.Repository) *types.Repo {
 	urn := s.svc.URN()
 	metadata := *r
 	// This field flip flops depending on which token was used to retrieve the repo

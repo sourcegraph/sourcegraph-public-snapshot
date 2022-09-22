@@ -69,7 +69,7 @@ const batchChangeDefaults: BatchChangeFields = {
         namespaceName: 'alice',
         url: '/users/alice',
     },
-    diffStat: { added: 1000, changed: 2000, deleted: 1000, __typename: 'DiffStat' },
+    diffStat: { added: 3000, deleted: 3000, __typename: 'DiffStat' },
     viewerCanAdminister: true,
     closedAt: null,
     description: '## What this batch change does\n\nTruly awesome things for example.',
@@ -89,6 +89,11 @@ const batchChangeDefaults: BatchChangeFields = {
             nodes: [],
             pageInfo: { hasNextPage: false },
             totalCount: 0,
+        },
+        viewerBatchChangesCodeHosts: {
+            __typename: 'BatchChangesCodeHostConnection',
+            totalCount: 0,
+            nodes: [],
         },
     },
     batchSpecs: {
@@ -155,7 +160,6 @@ const queryChangesets: typeof _queryChangesets = () =>
                 diffStat: {
                     __typename: 'DiffStat',
                     added: 10,
-                    changed: 9,
                     deleted: 1,
                 },
                 externalID: '123',
@@ -203,7 +207,6 @@ const queryChangesets: typeof _queryChangesets = () =>
                 diffStat: {
                     __typename: 'DiffStat',
                     added: 10,
-                    changed: 9,
                     deleted: 1,
                 },
                 externalID: null,

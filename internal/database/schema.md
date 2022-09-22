@@ -331,7 +331,6 @@ Foreign-key constraints:
  repo_id             | integer                  |           | not null | 
  user_id             | integer                  |           |          | 
  diff_stat_added     | integer                  |           |          | 
- diff_stat_changed   | integer                  |           |          | 
  diff_stat_deleted   | integer                  |           |          | 
  created_at          | timestamp with time zone |           | not null | now()
  updated_at          | timestamp with time zone |           | not null | now()
@@ -385,7 +384,6 @@ Referenced by:
  external_review_state    | text                                         |           |          | 
  external_check_state     | text                                         |           |          | 
  diff_stat_added          | integer                                      |           |          | 
- diff_stat_changed        | integer                                      |           |          | 
  diff_stat_deleted        | integer                                      |           |          | 
  sync_state               | jsonb                                        |           | not null | '{}'::jsonb
  current_spec_id          | bigint                                       |           |          | 
@@ -3263,7 +3261,6 @@ Foreign-key constraints:
     c.external_review_state,
     c.external_check_state,
     c.diff_stat_added,
-    c.diff_stat_changed,
     c.diff_stat_deleted,
     c.sync_state,
     c.current_spec_id,
