@@ -384,7 +384,6 @@
     "@reach/visually-hidden": "^0.16.0",
     "@react-aria/live-announcer": "^3.1.0",
     "@sentry/browser": "^7.8.1",
-    "@slimsag/react-shortcuts": "^1.2.1",
     "@sourcegraph/extension-api-classes": "^1.1.0",
     "@storybook/addon-controls": "^6.5.9",
     "@storybook/addon-knobs": "^6.4.0",

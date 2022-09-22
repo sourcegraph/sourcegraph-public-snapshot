@@ -5531,17 +5531,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@slimsag/react-shortcuts@npm:^1.2.1":
-  version: 1.2.1
-  resolution: "@slimsag/react-shortcuts@npm:1.2.1"
-  dependencies:
-    prop-types: ^15.6.2
-  peerDependencies:
-    react: ^16.3.2
-  checksum: 048be471b85734403e5e658f989977b6039235ec2c7a772c021da3ed6c94b88f76235b6efb75bb0178759cc7fda737784a561a306f0d7cd9dbcbf40e1c5f8f9e
-  languageName: node
-  linkType: hard
-
 "@sourcegraph/branded@workspace:client/branded":
   version: 0.0.0-use.local
   resolution: "@sourcegraph/branded@workspace:client/branded"
@@ -28820,7 +28809,6 @@ pvutils@latest:
     "@sentry/cli": ^1.74.4
     "@sentry/webpack-plugin": ^1.18.9
     "@slack/web-api": ^5.15.0
-    "@slimsag/react-shortcuts": ^1.2.1
     "@sourcegraph/eslint-config": 0.32.0
     "@sourcegraph/eslint-plugin-sourcegraph": ^1.0.5
     "@sourcegraph/eslint-plugin-wildcard": 1.0.0

@@ -25,13 +25,13 @@ import {
     TooltipView,
     WidgetType,
 } from '@codemirror/view'
-import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
 
 import { renderMarkdown } from '@sourcegraph/common'
 import { EditorHint, QueryChangeSource, SearchPatternTypeProps } from '@sourcegraph/search'
 import { useCodeMirror, createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
+import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { DecoratedToken, toCSSClassName } from '@sourcegraph/shared/src/search/query/decoratedToken'
 import { Diagnostic, getDiagnostics } from '@sourcegraph/shared/src/search/query/diagnostics'
 import { resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
