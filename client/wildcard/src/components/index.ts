@@ -74,3 +74,10 @@ export type { TooltipProps } from './Tooltip'
 export type { HeadingProps, HeadingElement } from './Typography'
 export type { BadgeProps, BadgeVariantType, ProductStatusType, BaseProductStatusBadgeProps } from './Badge'
 export type { ModalProps } from './Modal'
+
+/**
+ * Style exports to be used with plain DOM nodes.
+ * NOTE: Prefer using the React components is possible.
+ */
+export { default as ButtonStyles } from './Button/Button.module.scss'
+export { default as LabelStyles } from './Typography/Label/Label.module.scss'
