@@ -285,11 +285,11 @@ func (rm ReposModified) ReposModified(modified types.RepoModified) types.Repos {
 //
 // It works for repos from:
 //
-// 1. Public "cloud_default" code hosts since we don't sync them in the background
-//    (which would delete lazy synced repos).
-// 2. Any package hosts (i.e. npm, Maven, etc) since callers are expected to store
-//    repos in the `lsif_dependency_repos` table which is used as the source of truth
-//    for the next full sync, so lazy added repos don't get wiped.
+//  1. Public "cloud_default" code hosts since we don't sync them in the background
+//     (which would delete lazy synced repos).
+//  2. Any package hosts (i.e. npm, Maven, etc) since callers are expected to store
+//     repos in the `lsif_dependency_repos` table which is used as the source of truth
+//     for the next full sync, so lazy added repos don't get wiped.
 //
 // The "background" boolean flag indicates that we should run this
 // sync in the background vs block and call s.syncRepo synchronously.

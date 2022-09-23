@@ -158,6 +158,15 @@ func (r *repositoryMirrorInfoResolver) UpdatedAt(ctx context.Context) (*DateTime
 	return &DateTime{Time: info.LastFetched}, nil
 }
 
+func (r *repositoryMirrorInfoResolver) ByteSize(ctx context.Context) (BigInt, error) {
+	info, err := r.computeGitserverRepo(ctx)
+	if err != nil {
+		return BigInt{Int: 0}, err
+	}
+
+	return BigInt{Int: info.RepoSizeBytes}, err
+}
+
 func (r *repositoryMirrorInfoResolver) UpdateSchedule(ctx context.Context) (*updateScheduleResolver, error) {
 	info, err := r.repoUpdateSchedulerInfo(ctx)
 	if err != nil {

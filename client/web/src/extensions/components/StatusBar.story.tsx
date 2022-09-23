@@ -10,6 +10,7 @@ import { pretendProxySubscribable, pretendRemote } from '@sourcegraph/shared/src
 import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { AppRouterContainer } from '../../components/AppRouterContainer'
+import { WebStory } from '../../components/WebStory'
 
 import { StatusBar } from './StatusBar'
 
@@ -20,9 +21,13 @@ const LOCATION: H.Location = { hash: '', pathname: '/', search: '', state: undef
 const decorator: DecoratorFn = story => (
     <>
         <style>{webStyles}</style>
-        <AppRouterContainer>
-            <div className="container mt-3">{story()}</div>
-        </AppRouterContainer>
+        <WebStory>
+            {() => (
+                <AppRouterContainer>
+                    <div className="container mt-3">{story()}</div>
+                </AppRouterContainer>
+            )}
+        </WebStory>
     </>
 )
 

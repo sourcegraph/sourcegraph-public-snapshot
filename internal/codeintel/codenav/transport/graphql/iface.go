@@ -43,6 +43,7 @@ type AutoIndexingService interface {
 	GetIndexesByIDs(ctx context.Context, ids ...int) (_ []types.Index, err error)
 	GetUnsafeDB() database.DB
 	GetListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) (_ []*gitdomain.Tag, err error)
+	QueueRepoRev(ctx context.Context, repositoryID int, rev string) error
 }
 
 type UploadsService interface {

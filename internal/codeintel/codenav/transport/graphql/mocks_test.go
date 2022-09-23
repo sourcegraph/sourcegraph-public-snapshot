@@ -41,6 +41,9 @@ type MockAutoIndexingService struct {
 	// GetUnsafeDBFunc is an instance of a mock function object controlling
 	// the behavior of the method GetUnsafeDB.
 	GetUnsafeDBFunc *AutoIndexingServiceGetUnsafeDBFunc
+	// QueueRepoRevFunc is an instance of a mock function object controlling
+	// the behavior of the method QueueRepoRev.
+	QueueRepoRevFunc *AutoIndexingServiceQueueRepoRevFunc
 }
 
 // NewMockAutoIndexingService creates a new mock of the AutoIndexingService
@@ -70,6 +73,11 @@ func NewMockAutoIndexingService() *MockAutoIndexingService {
 		},
 		GetUnsafeDBFunc: &AutoIndexingServiceGetUnsafeDBFunc{
 			defaultHook: func() (r0 database.DB) {
+				return
+			},
+		},
+		QueueRepoRevFunc: &AutoIndexingServiceQueueRepoRevFunc{
+			defaultHook: func(context.Context, int, string) (r0 error) {
 				return
 			},
 		},
@@ -106,6 +114,11 @@ func NewStrictMockAutoIndexingService() *MockAutoIndexingService {
 				panic("unexpected invocation of MockAutoIndexingService.GetUnsafeDB")
 			},
 		},
+		QueueRepoRevFunc: &AutoIndexingServiceQueueRepoRevFunc{
+			defaultHook: func(context.Context, int, string) error {
+				panic("unexpected invocation of MockAutoIndexingService.QueueRepoRev")
+			},
+		},
 	}
 }
 
@@ -128,6 +141,9 @@ func NewMockAutoIndexingServiceFrom(i AutoIndexingService) *MockAutoIndexingServ
 		},
 		GetUnsafeDBFunc: &AutoIndexingServiceGetUnsafeDBFunc{
 			defaultHook: i.GetUnsafeDB,
+		},
+		QueueRepoRevFunc: &AutoIndexingServiceQueueRepoRevFunc{
+			defaultHook: i.QueueRepoRev,
 		},
 	}
 }
@@ -695,6 +711,117 @@ func (c AutoIndexingServiceGetUnsafeDBFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c AutoIndexingServiceGetUnsafeDBFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// AutoIndexingServiceQueueRepoRevFunc describes the behavior when the
+// QueueRepoRev method of the parent MockAutoIndexingService instance is
+// invoked.
+type AutoIndexingServiceQueueRepoRevFunc struct {
+	defaultHook func(context.Context, int, string) error
+	hooks       []func(context.Context, int, string) error
+	history     []AutoIndexingServiceQueueRepoRevFuncCall
+	mutex       sync.Mutex
+}
+
+// QueueRepoRev delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockAutoIndexingService) QueueRepoRev(v0 context.Context, v1 int, v2 string) error {
+	r0 := m.QueueRepoRevFunc.nextHook()(v0, v1, v2)
+	m.QueueRepoRevFunc.appendCall(AutoIndexingServiceQueueRepoRevFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the QueueRepoRev method
+// of the parent MockAutoIndexingService instance is invoked and the hook
+// queue is empty.
+func (f *AutoIndexingServiceQueueRepoRevFunc) SetDefaultHook(hook func(context.Context, int, string) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// QueueRepoRev method of the parent MockAutoIndexingService instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *AutoIndexingServiceQueueRepoRevFunc) PushHook(hook func(context.Context, int, string) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AutoIndexingServiceQueueRepoRevFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int, string) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AutoIndexingServiceQueueRepoRevFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int, string) error {
+		return r0
+	})
+}
+
+func (f *AutoIndexingServiceQueueRepoRevFunc) nextHook() func(context.Context, int, string) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AutoIndexingServiceQueueRepoRevFunc) appendCall(r0 AutoIndexingServiceQueueRepoRevFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of AutoIndexingServiceQueueRepoRevFuncCall
+// objects describing the invocations of this function.
+func (f *AutoIndexingServiceQueueRepoRevFunc) History() []AutoIndexingServiceQueueRepoRevFuncCall {
+	f.mutex.Lock()
+	history := make([]AutoIndexingServiceQueueRepoRevFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AutoIndexingServiceQueueRepoRevFuncCall is an object that describes an
+// invocation of method QueueRepoRev on an instance of
+// MockAutoIndexingService.
+type AutoIndexingServiceQueueRepoRevFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AutoIndexingServiceQueueRepoRevFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AutoIndexingServiceQueueRepoRevFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

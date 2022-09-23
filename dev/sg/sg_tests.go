@@ -8,6 +8,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/cliutil"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -29,7 +30,7 @@ var testCommand = &cli.Command{
 sg test backend
 sg test backend-integration
 sg test client
-sg test client-e2e
+sg test web-e2e
 
 # List available test suites:
 sg test -help
@@ -38,7 +39,7 @@ sg test -help
 sg test backend-integration -run TestSearch
 `,
 	Category: CategoryDev,
-	BashComplete: completeOptions(func() (options []string) {
+	BashComplete: cliutil.CompleteOptions(func() (options []string) {
 		config, _ := getConfig()
 		if config == nil {
 			return

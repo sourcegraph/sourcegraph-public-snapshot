@@ -298,22 +298,6 @@ func (r *changesetResolver) getBranchSpecDescription(ctx context.Context) (*btyp
 	return spec, nil
 }
 
-func (r *changesetResolver) PublicationState() string {
-	return string(r.changeset.PublicationState)
-}
-
-func (r *changesetResolver) ReconcilerState() string {
-	return string(r.changeset.ReconcilerState)
-}
-
-func (r *changesetResolver) ExternalState() *string {
-	if !r.changeset.Published() {
-		return nil
-	}
-	state := string(r.changeset.ExternalState)
-	return &state
-}
-
 func (r *changesetResolver) State() string {
 	return string(r.changeset.State)
 }

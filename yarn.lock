@@ -5433,12 +5433,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@sinonjs/commons@npm:^1, @sinonjs/commons@npm:^1.6.0, @sinonjs/commons@npm:^1.7.0, @sinonjs/commons@npm:^1.7.2":
-  version: 1.8.0
-  resolution: "@sinonjs/commons@npm:1.8.0"
+"@sinonjs/commons@npm:^1, @sinonjs/commons@npm:^1.6.0, @sinonjs/commons@npm:^1.7.0, @sinonjs/commons@npm:^1.7.2, @sinonjs/commons@npm:^1.8.1":
+  version: 1.8.3
+  resolution: "@sinonjs/commons@npm:1.8.3"
   dependencies:
     type-detect: 4.0.8
-  checksum: 97639bd46b0b8c9a1160e91b856c743fa231f7b0dd7d308f39a46eec86739b47158a509638a905c14e633489d65175cee42eed4f598ff50e6692c57e39d6edf1
+  checksum: 6159726db5ce6bf9f2297f8427f7ca5b3dff45b31e5cee23496f1fa6ef0bb4eab878b23fb2c5e6446381f6a66aba4968ef2fc255c1180d753d4b8c271636a2e5
   languageName: node
   linkType: hard
 
@@ -5448,6 +5448,15 @@ __metadata:
   dependencies:
     "@sinonjs/commons": ^1.7.0
   checksum: 8e331aa1412d905ecc8efd63550f58a6f77dcb510f878172004e53be63eb82650623618763001a918fc5e21257b86c45041e4e97c454ed6a2d187de084abbd11
+  languageName: node
+  linkType: hard
+
+"@sinonjs/fake-timers@npm:^7.1.0":
+  version: 7.1.2
+  resolution: "@sinonjs/fake-timers@npm:7.1.2"
+  dependencies:
+    "@sinonjs/commons": ^1.7.0
+  checksum: c84773d7973edad5511a31d2cc75023447b5cf714a84de9bb50eda45dda88a0d3bd2c30bf6e6e936da50a048d5352e2151c694e13e59b97d187ba1f329e9a00c
   languageName: node
   linkType: hard
 
@@ -5470,14 +5479,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@sinonjs/samsam@npm:^5.0.2, @sinonjs/samsam@npm:^5.0.3":
-  version: 5.0.3
-  resolution: "@sinonjs/samsam@npm:5.0.3"
+"@sinonjs/samsam@npm:^5.0.2, @sinonjs/samsam@npm:^5.0.3, @sinonjs/samsam@npm:^5.3.1":
+  version: 5.3.1
+  resolution: "@sinonjs/samsam@npm:5.3.1"
   dependencies:
     "@sinonjs/commons": ^1.6.0
     lodash.get: ^4.4.2
     type-detect: ^4.0.8
-  checksum: c23d1ef0e94f93d690da147904b3b8f59575a5a96d392236083a8260bcee03aeb8528cdd799156252103532bd83d420d45cdb26525d2196caf23e32080d52aa8
+  checksum: 1c2c49d51b1840775980e9496707d68b936f443896f92e48150c4f7713d14904e576740e52660b602f8a53b665bd5f149c5c733758030758427ddb1621090279
   languageName: node
   linkType: hard
 
@@ -5519,17 +5528,6 @@ __metadata:
     p-queue: ^6.6.1
     p-retry: ^4.0.0
   checksum: c0500b88f9acd3c0581b1e7c51bc4edf013db93ec81f0fc7bed878be1a2710722ac9ccc35a4198e0d86ec64f4b733de0a622d759cfe7e1de493c46dcc41985b5
-  languageName: node
-  linkType: hard
-
-"@slimsag/react-shortcuts@npm:^1.2.1":
-  version: 1.2.1
-  resolution: "@slimsag/react-shortcuts@npm:1.2.1"
-  dependencies:
-    prop-types: ^15.6.2
-  peerDependencies:
-    react: ^16.3.2
-  checksum: 048be471b85734403e5e658f989977b6039235ec2c7a772c021da3ed6c94b88f76235b6efb75bb0178759cc7fda737784a561a306f0d7cd9dbcbf40e1c5f8f9e
   languageName: node
   linkType: hard
 
@@ -5686,6 +5684,20 @@ __metadata:
   peerDependencies:
     sourcegraph: ">=24.6.0"
   checksum: 026b86831b08be5dc6a6713aa9181440a9b811c0b7a2bc978a1fd98950b4f8cfec1b6c5bdbb339ba2669def576f47a51ffb452d79293d333c15aea5425f057cd
+  languageName: node
+  linkType: hard
+
+"@sourcegraph/extension-api-stubs@npm:^1.6.1":
+  version: 1.6.1
+  resolution: "@sourcegraph/extension-api-stubs@npm:1.6.1"
+  dependencies:
+    "@sourcegraph/extension-api-classes": ^1.1.0
+    "@types/sinon": 10.0.4
+    graphql: ^15.4.0
+    rxjs: ^6.5.1
+    sinon: ^10.0.0
+    sourcegraph: ^25.5.0
+  checksum: 89e7005d543560c0aa79570ba302e9cd5fce7d49fc8a89966843caa882ab90eb172490649e069f66f0ca44431dbba24bc9184d23114379455e28956e75567bc0
   languageName: node
   linkType: hard
 
@@ -8234,6 +8246,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/mock-require@npm:^2.0.1":
+  version: 2.0.1
+  resolution: "@types/mock-require@npm:2.0.1"
+  dependencies:
+    "@types/node": "*"
+  checksum: 8749a4b3fcb9f3d6ebaeff442f00997ca59c4806bc00fea648a1fd06b1ea8510a6900b8e47070561ddf15ce98abc80dfe24ff21a307c2b0d1a6845bd865f708b
+  languageName: node
+  linkType: hard
+
 "@types/mockdate@npm:2.0.0":
   version: 2.0.0
   resolution: "@types/mockdate@npm:2.0.0"
@@ -8510,16 +8531,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/reactstrap@npm:8.4.2":
-  version: 8.4.2
-  resolution: "@types/reactstrap@npm:8.4.2"
-  dependencies:
-    "@types/react": "*"
-    popper.js: ^1.14.1
-  checksum: 264e35e0f16d2ceddfb010d834f6432728660d2a04e7c6f7c91b31567a53c317e0d6f69fdd5028b65c21495f59f06e9d8dba4b0265258460853c0c2b8042c4a7
-  languageName: node
-  linkType: hard
-
 "@types/recharts@npm:1.8.23":
   version: 1.8.23
   resolution: "@types/recharts@npm:1.8.23"
@@ -8646,6 +8657,15 @@ __metadata:
   version: 0.5.1
   resolution: "@types/simmerjs@npm:0.5.1"
   checksum: 391de9040fa6c656665789863bbe3a2539c9d71bb34f59f1d88712bded377b77853bb6e764fc0ffa39c0e62a709c0a53481595b96a4a89a842b669ad5d9cbbfe
+  languageName: node
+  linkType: hard
+
+"@types/sinon@npm:10.0.4":
+  version: 10.0.4
+  resolution: "@types/sinon@npm:10.0.4"
+  dependencies:
+    "@sinonjs/fake-timers": ^7.1.0
+  checksum: 8060328504f82aa4d121cd32256686c197fa36c0ea4bd740620438835b2fd7f95d605da06cd4c10afa86d514ca22e2a118ade80f59089201967506afb4734375
   languageName: node
   linkType: hard
 
@@ -12380,7 +12400,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"classnames@npm:2.3.1, classnames@npm:^2.2.3, classnames@npm:^2.2.5, classnames@npm:^2.2.6, classnames@npm:^2.3.1":
+"classnames@npm:2.3.1, classnames@npm:^2.2.5, classnames@npm:^2.2.6, classnames@npm:^2.3.1":
   version: 2.3.1
   resolution: "classnames@npm:2.3.1"
   checksum: 14db8889d56c267a591f08b0834989fe542d47fac659af5a539e110cc4266694e8de86e4e3bbd271157dbd831361310a8293e0167141e80b0f03a0f175c80960
@@ -13282,19 +13302,6 @@ __metadata:
     loose-envify: ^1.3.1
     object-assign: ^4.1.1
   checksum: 0c5f43da705fa9f67ec289051dd5780792652d440dfa17cd2c7d8423c1f604609596f895dabf46fda1960ddd93ee96fe1b61ef4d55a94fc4271b07d515486714
-  languageName: node
-  linkType: hard
-
-"create-react-context@npm:^0.3.0":
-  version: 0.3.0
-  resolution: "create-react-context@npm:0.3.0"
-  dependencies:
-    gud: ^1.0.0
-    warning: ^4.0.3
-  peerDependencies:
-    prop-types: ^15.0.0
-    react: ^0.14.0 || ^15.0.0 || ^16.0.0
-  checksum: e59b7a65671e59f5b11e06f67faadf0733ab6c33247d5631331aeb05450d180b8ae44d73817b9c02f1527654ba490ea3d3dd7320f8d6debb36776f10b0ae6a47
   languageName: node
   linkType: hard
 
@@ -14744,7 +14751,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"deep-equal@npm:^1.0.1, deep-equal@npm:^1.1.1":
+"deep-equal@npm:^1.0.1":
   version: 1.1.1
   resolution: "deep-equal@npm:1.1.1"
   dependencies:
@@ -17993,7 +18000,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"get-caller-file@npm:^1.0.1":
+"get-caller-file@npm:^1.0.1, get-caller-file@npm:^1.0.2":
   version: 1.0.3
   resolution: "get-caller-file@npm:1.0.3"
   checksum: 2b90a7f848896abcebcdc0acc627a435bcf05b9cd280599bc980ebfcdc222416c3df12c24c4845f69adc4346728e8966f70b758f9369f3534182791dfbc25c05
@@ -18817,13 +18824,6 @@ __metadata:
     jws: ^3.1.5
     mime: ^2.2.0
   checksum: 56f405c3feddb57ed9b3a0081fe179c013ef11f00382bab74c4267e55ed9f469b3d021da23f472f47ae0bd9b58336928d03fd57aadf7b885d626aa66d2a55a97
-  languageName: node
-  linkType: hard
-
-"gud@npm:^1.0.0":
-  version: 1.0.0
-  resolution: "gud@npm:1.0.0"
-  checksum: 3e2eb37cf794364077c18f036d6aa259c821c7fd188f2b7935cb00d589d82a41e0ebb1be809e1a93679417f62f1ad0513e745c3cf5329596e489aef8c5e5feae
   languageName: node
   linkType: hard
 
@@ -24019,6 +24019,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"mock-require@npm:^3.0.3":
+  version: 3.0.3
+  resolution: "mock-require@npm:3.0.3"
+  dependencies:
+    get-caller-file: ^1.0.2
+    normalize-path: ^2.1.1
+  checksum: 6355c0bd9d7acb5247155142928b0154ace2913264b42d9a611a85d469ed11048f405efe432ffc627a57efb87ec359589a7419bf680b4fd248612311deb031bd
+  languageName: node
+  linkType: hard
+
 "mockdate@npm:^3.0.2":
   version: 3.0.2
   resolution: "mockdate@npm:3.0.2"
@@ -24307,16 +24317,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"nise@npm:^4.0.1":
-  version: 4.0.3
-  resolution: "nise@npm:4.0.3"
+"nise@npm:^4.0.1, nise@npm:^4.1.0":
+  version: 4.1.0
+  resolution: "nise@npm:4.1.0"
   dependencies:
     "@sinonjs/commons": ^1.7.0
     "@sinonjs/fake-timers": ^6.0.0
     "@sinonjs/text-encoding": ^0.7.1
     just-extend: ^4.0.2
     path-to-regexp: ^1.7.0
-  checksum: 0783236f2df4da750ac35132052c086960070a3ae9935df539c3f560e8dd096998a8b420c3a74d219b7a6d661f22bc40eab75b9f01b20264565ba3f011bcf0d0
+  checksum: b2ea1c96a41c392adf746509904af565ebd667ad4e40267f6d73be3648f04267945624ba0ce6a991b779f3ae246181f71975152b93b4dafee1f62886fa897c32
   languageName: node
   linkType: hard
 
@@ -25963,13 +25973,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"popper.js@npm:^1.14.1, popper.js@npm:^1.14.4":
-  version: 1.15.0
-  resolution: "popper.js@npm:1.15.0"
-  checksum: 49375758d98154563c841fb050450f263e70c7108989a5bfefd6b556f883e081492004efa48ea1efd3728f657e896a8cc86153bc5f86fe26246d7334c6ee1c2f
-  languageName: node
-  linkType: hard
-
 "portfinder@npm:^1.0.28":
   version: 1.0.28
   resolution: "portfinder@npm:1.0.28"
@@ -27428,23 +27431,6 @@ pvutils@latest:
   languageName: node
   linkType: hard
 
-"react-popper@npm:^1.3.6":
-  version: 1.3.7
-  resolution: "react-popper@npm:1.3.7"
-  dependencies:
-    "@babel/runtime": ^7.1.2
-    create-react-context: ^0.3.0
-    deep-equal: ^1.1.1
-    popper.js: ^1.14.4
-    prop-types: ^15.6.1
-    typed-styles: ^0.0.7
-    warning: ^4.0.2
-  peerDependencies:
-    react: 0.14.x || ^15.0.0 || ^16.0.0
-  checksum: 9ba10e852d6a6d8d8b0a8e5482307b656254addec66c37969ff14516067f564281e6a54ca4a18a7c790cbafbf405d0d152f288729e61cb28274371838923da59
-  languageName: node
-  linkType: hard
-
 "react-refresh@npm:^0.10.0":
   version: 0.10.0
   resolution: "react-refresh@npm:0.10.0"
@@ -27579,18 +27565,6 @@ pvutils@latest:
   peerDependencies:
     react: ">=16.8"
   checksum: 7be673f5e72104be01e6ab274516bdb932efd93305243170690f6560e3bd1035dd1df3d3c9ce1e0f452638a2529f43a1e77dcf0934fc8031c4783da657be13ca
-  languageName: node
-  linkType: hard
-
-"react-scroll-manager@npm:^1.0.3":
-  version: 1.0.3
-  resolution: "react-scroll-manager@npm:1.0.3"
-  dependencies:
-    prop-types: ^15.7.2
-  peerDependencies:
-    react: ^16.0.0
-    react-dom: ^16.0.0
-  checksum: a4da9ab92395110916ff1ea23a9c4adcfd3bfcd4dc924c11adf3de1ec3726c2531a661eefb4e123db824f2ceb09f28ac42766a51c00cda1693b1ffd109f23878
   languageName: node
   linkType: hard
 
@@ -27732,7 +27706,7 @@ pvutils@latest:
   languageName: node
   linkType: hard
 
-"react-transition-group@npm:^2.3.1, react-transition-group@npm:^2.5.0":
+"react-transition-group@npm:^2.5.0":
   version: 2.9.0
   resolution: "react-transition-group@npm:2.9.0"
   dependencies:
@@ -27792,22 +27766,6 @@ pvutils@latest:
   dependencies:
     loose-envify: ^1.1.0
   checksum: 5bb296b561b43ef2220395da4faac86c14a087c8c80e1a7598a5740f01ee605c11eaf249985c1e2000971c4cd32ccb46d40f00479bbd9fb6b1c7cf857393b7d4
-  languageName: node
-  linkType: hard
-
-"reactstrap@npm:^8.9.0":
-  version: 8.9.0
-  resolution: "reactstrap@npm:8.9.0"
-  dependencies:
-    "@babel/runtime": ^7.12.5
-    classnames: ^2.2.3
-    prop-types: ^15.5.8
-    react-popper: ^1.3.6
-    react-transition-group: ^2.3.1
-  peerDependencies:
-    react: ">=16.3.0"
-    react-dom: ">=16.3.0"
-  checksum: 5dfd29583c5bff0aaa5443bc73031951b3073604042599e8283302494cbbca11769149fa49f71482cde9deec1ad38068274216d7545a93c51b8c04a5d1933009
   languageName: node
   linkType: hard
 
@@ -28851,11 +28809,11 @@ pvutils@latest:
     "@sentry/cli": ^1.74.4
     "@sentry/webpack-plugin": ^1.18.9
     "@slack/web-api": ^5.15.0
-    "@slimsag/react-shortcuts": ^1.2.1
     "@sourcegraph/eslint-config": 0.32.0
     "@sourcegraph/eslint-plugin-sourcegraph": ^1.0.5
     "@sourcegraph/eslint-plugin-wildcard": 1.0.0
     "@sourcegraph/extension-api-classes": ^1.1.0
+    "@sourcegraph/extension-api-stubs": ^1.6.1
     "@sourcegraph/prettierrc": ^3.0.3
     "@sourcegraph/stylelint-config": ^1.4.0
     "@sourcegraph/stylelint-plugin-sourcegraph": ^1.0.1
@@ -28928,6 +28886,7 @@ pvutils@latest:
     "@types/mime-types": 2.1.0
     "@types/mini-css-extract-plugin": 2.0.1
     "@types/mocha": 8.2.0
+    "@types/mock-require": ^2.0.1
     "@types/mockdate": 2.0.0
     "@types/mz": 2.7.3
     "@types/node": 13.13.5
@@ -28943,7 +28902,6 @@ pvutils@latest:
     "@types/react-resizable": ^3.0.2
     "@types/react-router": ^5.1.18
     "@types/react-router-dom": ^5.3.3
-    "@types/reactstrap": 8.4.2
     "@types/recharts": 1.8.23
     "@types/resize-observer-browser": 0.1.4
     "@types/rimraf": ^3.0.2
@@ -29084,6 +29042,7 @@ pvutils@latest:
     mini-css-extract-plugin: ^2.1.0
     minimatch: ^3.0.4
     mocha: ^8.3.2
+    mock-require: ^3.0.3
     mockdate: ^3.0.2
     monaco-editor: ^0.24.0
     monaco-editor-webpack-plugin: ^3.1.0
@@ -29123,12 +29082,10 @@ pvutils@latest:
     react-router: ^5.2.0
     react-router-dom: ^5.2.0
     react-router-dom-v5-compat: ^6.3.0
-    react-scroll-manager: ^1.0.3
     react-select: ^5.2.2
     react-spring: ^9.4.2
     react-sticky-box: 1.0.2
     react-visibility-sensor: ^5.1.1
-    reactstrap: ^8.9.0
     recharts: ^1.8.5
     regexpp: ^3.1.0
     rimraf: ^3.0.2
@@ -29239,12 +29196,12 @@ pvutils@latest:
   languageName: node
   linkType: hard
 
-"rxjs@npm:^6.3.3, rxjs@npm:^6.4.0, rxjs@npm:^6.6.0, rxjs@npm:^6.6.3":
-  version: 6.6.3
-  resolution: "rxjs@npm:6.6.3"
+"rxjs@npm:^6.3.3, rxjs@npm:^6.4.0, rxjs@npm:^6.5.1, rxjs@npm:^6.6.0, rxjs@npm:^6.6.3":
+  version: 6.6.7
+  resolution: "rxjs@npm:6.6.7"
   dependencies:
     tslib: ^1.9.0
-  checksum: c7206389f5a91f89c2248aa9ef5ce73f979524c676e557ec2088b10ec138d91fd653ebee6cdb65532b6c05278eb3c8364ccd6feb9a499092d67731318cf05977
+  checksum: bc334edef1bb8bbf56590b0b25734ba0deaf8825b703256a93714308ea36dff8a11d25533671adf8e104e5e8f256aa6fdfe39b2e248cdbd7a5f90c260acbbd1b
   languageName: node
   linkType: hard
 
@@ -29787,6 +29744,20 @@ pvutils@latest:
   languageName: node
   linkType: hard
 
+"sinon@npm:^10.0.0":
+  version: 10.0.0
+  resolution: "sinon@npm:10.0.0"
+  dependencies:
+    "@sinonjs/commons": ^1.8.1
+    "@sinonjs/fake-timers": ^6.0.1
+    "@sinonjs/samsam": ^5.3.1
+    diff: ^4.0.2
+    nise: ^4.1.0
+    supports-color: ^7.1.0
+  checksum: 84fe418bbf27c314bc06def873dc18c40e45fdb508a5ce321cfd1aea95184a1cf8d4c007954f6c8a2349379f0241879a7b860f1bd7d10321d9b90a924ba03d0e
+  languageName: node
+  linkType: hard
+
 "sinon@npm:^9.0.2":
   version: 9.0.2
   resolution: "sinon@npm:9.0.2"
@@ -30120,7 +30091,7 @@ pvutils@latest:
   languageName: node
   linkType: hard
 
-"sourcegraph@workspace:client/extension-api":
+"sourcegraph@^25.5.0, sourcegraph@workspace:client/extension-api":
   version: 0.0.0-use.local
   resolution: "sourcegraph@workspace:client/extension-api"
   dependencies:
@@ -32134,13 +32105,6 @@ pvutils@latest:
   languageName: node
   linkType: hard
 
-"typed-styles@npm:^0.0.7":
-  version: 0.0.7
-  resolution: "typed-styles@npm:0.0.7"
-  checksum: 36a6ad6bee008c15ddb8c2425eaf9aee37d2841985b4c44406ea4cf57080a9c30b6f9f3feb842ac952354733ac53299ee44f68d83f734486e8344d413f8c8c0d
-  languageName: node
-  linkType: hard
-
 "typedarray-to-buffer@npm:^3.1.5":
   version: 3.1.5
   resolution: "typedarray-to-buffer@npm:3.1.5"
@@ -33308,15 +33272,6 @@ pvutils@latest:
   dependencies:
     loose-envify: ^1.0.0
   checksum: c9f99a12803aab81b29858e7dc3415bf98b41baee3a4c3acdeb680d98c47b6e17490f1087dccc54432deed5711a5ce0ebcda2b27e9b5eb054c32ae50acb4419c
-  languageName: node
-  linkType: hard
-
-"warning@npm:^4.0.2, warning@npm:^4.0.3":
-  version: 4.0.3
-  resolution: "warning@npm:4.0.3"
-  dependencies:
-    loose-envify: ^1.0.0
-  checksum: 4f2cb6a9575e4faf71ddad9ad1ae7a00d0a75d24521c193fa464f30e6b04027bd97aa5d9546b0e13d3a150ab402eda216d59c1d0f2d6ca60124d96cd40dfa35c
   languageName: node
   linkType: hard
 

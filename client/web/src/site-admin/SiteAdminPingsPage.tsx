@@ -178,9 +178,9 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                         <li>Total count of created batch changes</li>
                         <li>Total count of closed batch changes</li>
                         <li>Total count of changesets created by batch changes</li>
-                        <li>Aggregate counts of lines changed, added, deleted in changeset</li>
+                        <li>Aggregate counts of lines added, deleted in changeset</li>
                         <li>Total count of changesets created by batch changes that have been merged</li>
-                        <li>Aggregate counts of lines changed, added, deleted in merged changeset</li>
+                        <li>Aggregate counts of lines added, deleted in merged changeset</li>
                         <li>Total count of changesets manually added to a batch change</li>
                         <li>Total count of changesets manually added to a batch change that have been merged</li>
                         <li>
@@ -376,6 +376,25 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                         </li>
                     </ul>
                     <ul>Aggregate count of daily redirects from extension to Sourcegraph instance</ul>
+                </li>
+                <li>
+                    Migrated extensions data
+                    <ul>
+                        Aggregate data of:
+                        <li>
+                            <ul>Count interactions with the Git blame feature</ul>
+                            <ul>Count of unique users who interacted with the Git blame feature</ul>
+                            <ul>Count interactions with the open in editor feature</ul>
+                            <ul>Count of unique users who interacted with the open in editor feature</ul>
+                            <ul>Count interactions with the search exports feature</ul>
+                            <ul>Count of unique users who interacted with the search exports feature</ul>
+                            <ul>Count interactions with the go imports search query transformation feature</ul>
+                            <ul>
+                                Count of unique users who interacted with the go imports search query transformation
+                                feature
+                            </ul>
+                        </li>
+                    </ul>
                 </li>
             </ul>
             {updatesDisabled ? (

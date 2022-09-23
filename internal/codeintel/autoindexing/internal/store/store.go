@@ -15,6 +15,10 @@ import (
 
 // Store provides the interface for autoindexing storage.
 type Store interface {
+	// Transactions
+	Transact(ctx context.Context) (Store, error)
+	Done(err error) error
+
 	// Commits
 	GetStaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []shared.SourcedCommits, err error)
 	UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (indexesUpdated int, err error)
@@ -30,6 +34,9 @@ type Store interface {
 	DeleteIndexByID(ctx context.Context, id int) (_ bool, err error)
 	DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error)
 	IsQueued(ctx context.Context, repositoryID int, commit string) (_ bool, err error)
+	QueueRepoRev(ctx context.Context, repositoryID int, commit string) error
+	GetQueuedRepoRev(ctx context.Context, batchSize int) ([]RepoRev, error)
+	MarkRepoRevsAsProcessed(ctx context.Context, ids []int) error
 
 	// Index configurations
 	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (_ shared.IndexConfiguration, _ bool, err error)
@@ -60,6 +67,10 @@ func New(db database.DB, observationContext *observation.Context) Store {
 	}
 }
 
+func (s *store) Transact(ctx context.Context) (Store, error) {
+	return s.transact(ctx)
+}
+
 func (s *store) transact(ctx context.Context) (*store, error) {
 	tx, err := s.db.Transact(ctx)
 	if err != nil {
@@ -71,6 +82,10 @@ func (s *store) transact(ctx context.Context) (*store, error) {
 		db:         tx,
 		operations: s.operations,
 	}, nil
+}
+
+func (s *store) Done(err error) error {
+	return s.db.Done(err)
 }
 
 // GetUnsafeDB returns the underlying database handle. This is used by the

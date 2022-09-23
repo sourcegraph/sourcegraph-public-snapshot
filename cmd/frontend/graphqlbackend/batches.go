@@ -507,7 +507,6 @@ type GitBranchChangesetDescriptionResolver interface {
 	BaseRef() string
 	BaseRev() string
 
-	HeadRepository() *RepositoryResolver
 	HeadRef() string
 
 	Title() string
@@ -631,11 +630,9 @@ type BatchChangeResolver interface {
 	Name() string
 	Description() *string
 	State() string
-	InitialApplier(ctx context.Context) (*UserResolver, error)
 	Creator(ctx context.Context) (*UserResolver, error)
 	LastApplier(ctx context.Context) (*UserResolver, error)
 	LastAppliedAt() *DateTime
-	SpecCreator(ctx context.Context) (*UserResolver, error)
 	ViewerCanAdminister(ctx context.Context) (bool, error)
 	URL(ctx context.Context) (string, error)
 	Namespace(ctx context.Context) (n NamespaceResolver, err error)
@@ -706,12 +703,6 @@ type ChangesetResolver interface {
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
 	NextSyncAt(ctx context.Context) (*DateTime, error)
-	// PublicationState returns a value of type btypes.ChangesetPublicationState.
-	PublicationState() string
-	// ReconcilerState returns a value of type btypes.ReconcilerState.
-	ReconcilerState() string
-	// ExternalState returns a value of type *btypes.ChangesetExternalState.
-	ExternalState() *string
 	// State returns a value of type *btypes.ChangesetState.
 	State() string
 	BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)

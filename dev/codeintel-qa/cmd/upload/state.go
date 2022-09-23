@@ -20,11 +20,11 @@ import (
 // given repo, as well as the status of each given upload. When there is a change of
 // state for a repository, it is printed. The state changes that can occur are:
 //
-// - An upload fails to process (returns an error)
-// - An upload completes processing
-// - The last upload for a repository completes processing, but the
-//   containing repo has a stale commit graph
-// - A repository with no pending uploads has a fresh commit graph
+//   - An upload fails to process (returns an error)
+//   - An upload completes processing
+//   - The last upload for a repository completes processing, but the
+//     containing repo has a stale commit graph
+//   - A repository with no pending uploads has a fresh commit graph
 func monitor(ctx context.Context, repoNames []string, uploads []uploadMeta) error {
 	var oldState map[string]repoState
 	waitMessageDisplayed := make(map[string]struct{}, len(repoNames))

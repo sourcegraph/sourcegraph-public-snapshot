@@ -1,4 +1,4 @@
-import { Key, ModifierKey } from '@slimsag/react-shortcuts'
+import { Key, ModifierKey } from '@sourcegraph/shared/src/react-shortcuts'
 
 /**
  * An action and its associated keybindings.

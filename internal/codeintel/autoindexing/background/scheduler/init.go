@@ -3,6 +3,8 @@ package scheduler
 import (
 	"context"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -37,10 +39,21 @@ func NewScheduler(
 		},
 	})
 
-	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), ConfigInst.Interval, &scheduler{
+	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), ConfigInst.SchedulerInterval, &scheduler{
 		autoindexingSvc: autoindexingSvc,
 		policySvc:       policySvc,
 		uploadSvc:       uploadSvc,
 		policyMatcher:   policyMatcher,
+		logger:          log.Scoped("autoindexing-scheduler", ""),
 	}, handleIndexScheduler)
+}
+
+func NewOnDemandScheduler(
+	autoindexingSvc *autoindexing.Service,
+	observationContext *observation.Context,
+) goroutine.BackgroundRoutine {
+	return goroutine.NewPeriodicGoroutine(context.Background(), ConfigInst.OnDemandSchedulerInterval, &onDemandScheduler{
+		autoindexingSvc: autoindexingSvc,
+		batchSize:       ConfigInst.OnDemandBatchsize,
+	})
 }

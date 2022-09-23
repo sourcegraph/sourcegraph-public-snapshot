@@ -5,6 +5,11 @@ $grid-columns: 12;
     --grid-gutter-width: 1.5rem;
 }
 
+// No max width except for xl.
+$container-max-widths: (
+    xl: 1140px,
+);
+
 // Single container class with breakpoint max-widths
 .container,
   // 100% wide container at all breakpoints

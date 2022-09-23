@@ -39,6 +39,7 @@ interface OverrideGraphQLExtensionsProps {
  * extension js bundle requests.
  *
  * @param props - Custom override for code insight APIs (gql, user setting, extensions)
+ * @param [props.overrides] - GraphQL calls to override. Note: Overrides need all __typename fields included for Apollo cache to work.
  */
 export function overrideInsightsGraphQLApi(props: OverrideGraphQLExtensionsProps): void {
     const { testContext, overrides = {} } = props

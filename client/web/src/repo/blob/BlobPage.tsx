@@ -39,8 +39,8 @@ import { SearchStreamingProps } from '../../search'
 import { useNotepad, useExperimentalFeatures } from '../../stores'
 import { basename } from '../../util/path'
 import { toTreeURL } from '../../util/url'
-import { ToggleBlameAction } from '../actions/ToggleBlameAction'
 import { useBlameHunks } from '../blame/useBlameHunks'
+import { useBlameVisibility } from '../blame/useBlameVisibility'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { HoverThresholdProps } from '../RepoContainer'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
@@ -51,7 +51,7 @@ import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { getModeFromURL } from './actions/utils'
 import { fetchBlob } from './backend'
-import { Blob, BlobInfo, BlobProps } from './Blob'
+import { Blob, BlobInfo } from './Blob'
 import { Blob as CodeMirrorBlob } from './CodeMirrorBlob'
 import { GoToRawAction } from './GoToRawAction'
 import { BlobPanel } from './panel/BlobPanel'
@@ -74,7 +74,6 @@ interface BlobPageProps
         HoverThresholdProps,
         BreadcrumbSetters,
         SearchStreamingProps,
-        Pick<BlobProps, 'onHandleFuzzyFinder'>,
         Pick<SearchContextProps, 'searchContextsEnabled'>,
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'> {
     location: H.Location
@@ -165,7 +164,9 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
      */
     const formattedBlobInfoOrError = useObservable(
         useMemo(() => {
-            if (!enableLazyBlobSyntaxHighlighting) {
+            // Note: Lazy syntax highlighting is currently buggy in CodeMirror.
+            // GitHub issue to fix: https://github.com/sourcegraph/sourcegraph/issues/41413
+            if (!enableLazyBlobSyntaxHighlighting || enableCodeMirror) {
                 return of(undefined)
             }
 
@@ -197,7 +198,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                         })
                     )
             )
-        }, [enableLazyBlobSyntaxHighlighting, filePath, mode, repoName, revision, span])
+        }, [enableCodeMirror, enableLazyBlobSyntaxHighlighting, filePath, mode, repoName, revision, span])
     )
 
     // Bundle latest blob with all other file info to pass to `Blob`
@@ -280,6 +281,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
         return `${repoString}`
     }
 
+    const [isBlameVisible] = useBlameVisibility()
     const blameDecorations = useBlameHunks({ repoName, revision, filePath }, props.platformContext.sourcegraphURL)
 
     const isSearchNotebook = Boolean(
@@ -352,15 +354,6 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                         revision={props.revision}
                         filePath={filePath}
                     />
-                )}
-            </RepoHeaderContributionPortal>
-            <RepoHeaderContributionPortal
-                position="right"
-                id="toggle-blame"
-                repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
-            >
-                {({ actionType }) => (
-                    <ToggleBlameAction key="toggle-blame" actionType={actionType} filePath={filePath} />
                 )}
             </RepoHeaderContributionPortal>
         </>
@@ -484,12 +477,12 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                         isLightTheme={isLightTheme}
                         telemetryService={props.telemetryService}
                         location={props.location}
-                        disableStatusBar={false}
+                        disableStatusBar={!window.context.enableLegacyExtensions}
                         disableDecorations={false}
                         role="region"
                         ariaLabel="File blob"
+                        isBlameVisible={isBlameVisible}
                         blameHunks={blameDecorations}
-                        onHandleFuzzyFinder={props.onHandleFuzzyFinder}
                     />
                 </TraceSpanProvider>
             )}
