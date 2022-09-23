@@ -199,6 +199,8 @@ require (
 require github.com/XSAM/otelsql v0.15.0
 
 require (
+	github.com/containerd/go-cni v1.1.7 // indirect
+	github.com/containernetworking/cni v1.1.1 // indirect
 	github.com/dennwc/varint v1.0.0 // indirect
 	github.com/emicklei/go-restful v2.16.0+incompatible // indirect
 	github.com/go-sql-driver/mysql v1.6.0 // indirect
