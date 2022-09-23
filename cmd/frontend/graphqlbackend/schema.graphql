@@ -3653,6 +3653,9 @@ type Symbol {
     fileLocal: Boolean!
 }
 
+"""
+A gitblob resolver specific to code intel.
+"""
 type CodeIntelGitBlob {
     """
     The full path (relative to the root) of this tree.
@@ -3680,7 +3683,13 @@ type CodeIntelGitBlob {
     content: String!
 }
 
+"""
+A codeintel repository is a Git source control repository that is mirrored from some origin code host and it is specific to code intel.
+"""
 type CodeIntelRepository {
+    """
+    The globally addressable ID for this commit.
+    """
     id: ID!
     """
     The repository's name, as a path with one or more components. It conventionally consists of
@@ -3697,6 +3706,9 @@ type CodeIntelRepository {
     url: String!
 }
 
+"""
+A Code Intel Commit.
+"""
 type CodeIntelCommit {
     """
     The globally addressable ID for this commit.
@@ -4431,6 +4443,9 @@ interface TreeEntry {
     ): Boolean!
 }
 
+"""
+A Code Intel Git Tree.
+"""
 type CodeIntelGitTree {
     """
     The full path (relative to the root) of this tree.
