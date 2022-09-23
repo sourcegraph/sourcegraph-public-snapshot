@@ -203,7 +203,7 @@ exports[`GlobalNavbar default 1`] = `
       >
         <div>
           <a
-            class="anchorLink btn btnOutlineSecondary btnSm mr-1"
+            class="anchorLink btn btnSecondary btnOutline btnSm mr-1"
             href="/sign-in"
           >
             Log in
@@ -445,7 +445,7 @@ exports[`GlobalNavbar low-profile 1`] = `
       >
         <div>
           <a
-            class="anchorLink btn btnOutlineSecondary btnSm mr-1"
+            class="anchorLink btn btnSecondary btnOutline btnSm mr-1"
             href="/sign-in"
           >
             Log in
