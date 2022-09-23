@@ -362,6 +362,14 @@ func NewSchemaWithBatchChangesResolver(db database.DB, batchChanges BatchChanges
 	return NewSchema(db, batchChanges, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
+func NewSchemaWithCodeMonitorsResolver(db database.DB, codeMonitors CodeMonitorsResolver) (*graphql.Schema, error) {
+	return NewSchema(db, nil, nil, nil, nil, codeMonitors, nil, nil, nil, nil, nil, nil)
+}
+
+func NewSchemaWithLicenseResolver(db database.DB, license LicenseResolver) (*graphql.Schema, error) {
+	return NewSchema(db, nil, nil, nil, nil, nil, license, nil, nil, nil, nil, nil)
+}
+
 func NewSchema(
 	db database.DB,
 	batchChanges BatchChangesResolver,
