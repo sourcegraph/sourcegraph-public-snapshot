@@ -61,9 +61,7 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 				getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]SubRepoPermissions, error) {
 					return map[api.RepoName]SubRepoPermissions{
 						"sample": {
-							Paths:        []string{},
-							PathIncludes: []string{},
-							PathExcludes: []string{},
+							Paths: []string{},
 						},
 					}, nil
 				})
@@ -83,9 +81,7 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 				getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]SubRepoPermissions, error) {
 					return map[api.RepoName]SubRepoPermissions{
 						"sample": {
-							Paths:        []string{"-/dev/*"},
-							PathIncludes: []string{},
-							PathExcludes: []string{"/dev/*"},
+							Paths: []string{"-/dev/*"},
 						},
 					}, nil
 				})
@@ -105,8 +101,7 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 				getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]SubRepoPermissions, error) {
 					return map[api.RepoName]SubRepoPermissions{
 						"sample": {
-							Paths:        []string{"/*"},
-							PathIncludes: []string{"/*"},
+							Paths: []string{"/*"},
 						},
 					}, nil
 				})
@@ -126,9 +121,7 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 				getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]SubRepoPermissions, error) {
 					return map[api.RepoName]SubRepoPermissions{
 						"sample": {
-							Paths:        []string{"/**", "-/dev/*"},
-							PathIncludes: []string{"**"},
-							PathExcludes: []string{"/dev/*"},
+							Paths: []string{"/**", "-/dev/*"},
 						},
 					}, nil
 				})
@@ -148,9 +141,7 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 				getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]SubRepoPermissions, error) {
 					return map[api.RepoName]SubRepoPermissions{
 						"sample": {
-							Paths:        []string{"-/dev/*", "/**"},
-							PathIncludes: []string{"**"},
-							PathExcludes: []string{"/dev/*"},
+							Paths: []string{"-/dev/*", "/**"},
 						},
 					}, nil
 				})
@@ -270,20 +261,6 @@ func BenchmarkFilterActorPaths(b *testing.B) {
 					"-/subdir/remove/",
 					"-/subdir/*/also-remove/**",
 					"-/**/.secrets.env",
-				},
-				PathIncludes: []string{
-					"base/**",
-					"*/stuff/**",
-					"frontend/**/stuff/*",
-					"config.yaml",
-					"subdir/**",
-					"**/README.md",
-					"dir.yaml",
-				},
-				PathExcludes: []string{
-					"subdir/remove/",
-					"subdir/*/also-remove/**",
-					"**/.secrets.env",
 				},
 			},
 		}, nil
