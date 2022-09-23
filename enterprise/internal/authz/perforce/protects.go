@@ -417,20 +417,20 @@ func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermission
 				srp, exists := perms.SubRepoPermissions[depot]
 				if !exists {
 					continue
-				} else {
-					onlyExclusions := true
-					for _, path := range srp.Paths {
-						if !strings.HasPrefix(path, "-") {
-							onlyExclusions = false
-							break
-						}
-					}
+				}
 
-					if onlyExclusions {
-						// Depots with no inclusions can just be dropped
-						delete(perms.SubRepoPermissions, depot)
-						continue
+				onlyExclusions := true
+				for _, path := range srp.Paths {
+					if !strings.HasPrefix(path, "-") {
+						onlyExclusions = false
+						break
 					}
+				}
+
+				if onlyExclusions {
+					// Depots with no inclusions can just be dropped
+					delete(perms.SubRepoPermissions, depot)
+					continue
 				}
 
 				// Rules should not include the depot name. We want them to be relative so that
