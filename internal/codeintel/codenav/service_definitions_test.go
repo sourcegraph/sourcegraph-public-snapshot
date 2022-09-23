@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	codeintelgitserver "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
-	uploadsShared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
@@ -171,7 +170,7 @@ func TestDefinitionsRemote(t *testing.T) {
 	}
 	mockRequestState.SetUploadsDataLoader(uploads)
 
-	dumps := []uploadsShared.Dump{
+	dumps := []types.Dump{
 		{ID: 150, Commit: "deadbeef1", Root: "sub1/"},
 		{ID: 151, Commit: "deadbeef2", Root: "sub2/"},
 		{ID: 152, Commit: "deadbeef3", Root: "sub3/"},
@@ -304,7 +303,7 @@ func TestDefinitionsRemoteWithSubRepoPermissions(t *testing.T) {
 	})
 	mockRequestState.SetAuthChecker(checker)
 
-	dumps := []uploadsShared.Dump{
+	dumps := []types.Dump{
 		{ID: 150, Commit: "deadbeef1", Root: "sub1/"},
 		{ID: 151, Commit: "deadbeef2", Root: "sub2/"},
 		{ID: 152, Commit: "deadbeef3", Root: "sub3/"},
@@ -456,7 +455,7 @@ func uploadLocationsToAdjustedLocations(location []types.UploadLocation) []types
 	return uploadLocation
 }
 
-func uploadDumpToCodeNavDump(storeDumps []uploadsShared.Dump) []types.Dump {
+func uploadDumpToCodeNavDump(storeDumps []types.Dump) []types.Dump {
 	dumps := make([]types.Dump, 0, len(storeDumps))
 	for _, d := range storeDumps {
 		dumps = append(dumps, types.Dump{

@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	codeintelgitserver "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
-	uploads "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -1291,7 +1290,7 @@ func filterUploadsWithCommits(ctx context.Context, commitCache CommitCache, uplo
 	return filtered, nil
 }
 
-func updateSvcDumpToSharedDump(uploadDumps []uploads.Dump) []types.Dump {
+func updateSvcDumpToSharedDump(uploadDumps []types.Dump) []types.Dump {
 	dumps := make([]types.Dump, 0, len(uploadDumps))
 	for _, d := range uploadDumps {
 		dumps = append(dumps, types.Dump{

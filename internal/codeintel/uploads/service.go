@@ -60,13 +60,13 @@ type service interface {
 	DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_ int, err error)
 	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error)
 	DeleteUploadByID(ctx context.Context, id int) (_ bool, err error)
-	InferClosestUploads(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) ([]shared.Dump, error)
+	InferClosestUploads(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) ([]types.Dump, error)
 
 	// Dumps
-	FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) (_ []shared.Dump, err error)
-	FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, commitGraph *gitdomain.CommitGraph) (_ []shared.Dump, err error)
-	GetDumpsWithDefinitionsForMonikers(ctx context.Context, monikers []precise.QualifiedMonikerData) (_ []shared.Dump, err error)
-	GetDumpsByIDs(ctx context.Context, ids []int) (_ []shared.Dump, err error)
+	FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) (_ []types.Dump, err error)
+	FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, commitGraph *gitdomain.CommitGraph) (_ []types.Dump, err error)
+	GetDumpsWithDefinitionsForMonikers(ctx context.Context, monikers []precise.QualifiedMonikerData) (_ []types.Dump, err error)
+	GetDumpsByIDs(ctx context.Context, ids []int) (_ []types.Dump, err error)
 
 	// Packages
 	UpdatePackages(ctx context.Context, dumpID int, packages []precise.Package) (err error)
@@ -462,7 +462,7 @@ const numAncestors = 100
 // all results while a subsequent request made after the lsif_nearest_uploads has been updated to include
 // this commit will.
 //
-func (s *Service) InferClosestUploads(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) (_ []shared.Dump, err error) {
+func (s *Service) InferClosestUploads(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) (_ []types.Dump, err error) {
 	ctx, _, endObservation := s.operations.inferClosestUploads.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{log.Int("repositoryID", repositoryID), log.String("commit", commit), log.String("path", path), log.Bool("exactPath", exactPath), log.String("indexer", indexer)},
 	})
@@ -517,7 +517,7 @@ func (s *Service) InferClosestUploads(ctx context.Context, repositoryID int, com
 	return dumps, nil
 }
 
-func (s *Service) FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) (_ []shared.Dump, err error) {
+func (s *Service) FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) (_ []types.Dump, err error) {
 	ctx, _, endObservation := s.operations.findClosestDumps.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", repositoryID), log.String("commit", commit), log.String("path", path),
@@ -529,7 +529,7 @@ func (s *Service) FindClosestDumps(ctx context.Context, repositoryID int, commit
 	return s.store.FindClosestDumps(ctx, repositoryID, commit, path, rootMustEnclosePath, indexer)
 }
 
-func (s *Service) FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, commitGraph *gitdomain.CommitGraph) (_ []shared.Dump, err error) {
+func (s *Service) FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, commitGraph *gitdomain.CommitGraph) (_ []types.Dump, err error) {
 	ctx, _, endObservation := s.operations.findClosestDumpsFromGraphFragment.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", repositoryID), log.String("commit", commit), log.String("path", path),
@@ -541,7 +541,7 @@ func (s *Service) FindClosestDumpsFromGraphFragment(ctx context.Context, reposit
 	return s.store.FindClosestDumpsFromGraphFragment(ctx, repositoryID, commit, path, rootMustEnclosePath, indexer, commitGraph)
 }
 
-func (s *Service) GetDumpsWithDefinitionsForMonikers(ctx context.Context, monikers []precise.QualifiedMonikerData) (_ []shared.Dump, err error) {
+func (s *Service) GetDumpsWithDefinitionsForMonikers(ctx context.Context, monikers []precise.QualifiedMonikerData) (_ []types.Dump, err error) {
 	ctx, _, endObservation := s.operations.getDumpsWithDefinitionsForMonikers.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{log.String("monikers", fmt.Sprintf("%v", monikers))},
 	})
@@ -550,7 +550,7 @@ func (s *Service) GetDumpsWithDefinitionsForMonikers(ctx context.Context, monike
 	return s.store.GetDumpsWithDefinitionsForMonikers(ctx, monikers)
 }
 
-func (s *Service) GetDumpsByIDs(ctx context.Context, ids []int) (_ []shared.Dump, err error) {
+func (s *Service) GetDumpsByIDs(ctx context.Context, ids []int) (_ []types.Dump, err error) {
 	ctx, _, endObservation := s.operations.getDumpsByIDs.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{log.Int("total_ids", len(ids)), log.String("ids", fmt.Sprintf("%v", ids))},
 	})

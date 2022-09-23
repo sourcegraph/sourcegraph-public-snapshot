@@ -127,7 +127,7 @@ func scanCounts(rows *sql.Rows, queryErr error) (_ map[int]int, err error) {
 }
 
 // scanDumps scans a slice of dumps from the return value of `*Store.query`.
-func scanDump(s dbutil.Scanner) (dump shared.Dump, err error) {
+func scanDump(s dbutil.Scanner) (dump types.Dump, err error) {
 	return dump, s.Scan(
 		&dump.ID,
 		&dump.Commit,

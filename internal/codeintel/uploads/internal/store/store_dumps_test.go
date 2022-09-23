@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/commitgraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -861,7 +860,7 @@ func testFindClosestDumps(t *testing.T, store Store, testCases []FindClosestDump
 			testCase.indexer,
 		)
 
-		assertDumpIDs := func(t *testing.T, dumps []shared.Dump) {
+		assertDumpIDs := func(t *testing.T, dumps []types.Dump) {
 			if len(testCase.anyOfIDs) > 0 {
 				testAnyOf(t, dumps, testCase.anyOfIDs)
 				return
@@ -902,7 +901,7 @@ func testFindClosestDumps(t *testing.T, store Store, testCases []FindClosestDump
 	}
 }
 
-func testAnyOf(t *testing.T, dumps []shared.Dump, expectedIDs []int) {
+func testAnyOf(t *testing.T, dumps []types.Dump, expectedIDs []int) {
 	if len(dumps) != 1 {
 		t.Errorf("unexpected nearest dump length. want=%d have=%d", 1, len(dumps))
 		return
@@ -923,7 +922,7 @@ func testPresence(needle int, haystack []int) bool {
 	return false
 }
 
-func testAllOf(t *testing.T, dumps []shared.Dump, expectedIDs []int) {
+func testAllOf(t *testing.T, dumps []types.Dump, expectedIDs []int) {
 	if len(dumps) != len(expectedIDs) {
 		t.Errorf("unexpected nearest dump length. want=%d have=%d", 1, len(dumps))
 	}

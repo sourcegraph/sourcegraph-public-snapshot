@@ -12,37 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// UploadLocation is a path and range pair from within a particular upload. The target commit
-// denotes the target commit for which the location was set (the originally requested commit).
-type UploadLocation struct {
-	Dump         Dump
-	Path         string
-	TargetCommit string
-	TargetRange  Range
-}
-
-// Dump is a subset of the lsif_uploads table (queried via the lsif_dumps_with_repository_name view)
-// and stores only processed records.
-type Dump struct {
-	ID                int
-	Commit            string
-	Root              string
-	VisibleAtTip      bool
-	UploadedAt        time.Time
-	State             string
-	FailureMessage    *string
-	StartedAt         *time.Time
-	FinishedAt        *time.Time
-	ProcessAfter      *time.Time
-	NumResets         int
-	NumFailures       int
-	RepositoryID      int
-	RepositoryName    string
-	Indexer           string
-	IndexerVersion    string
-	AssociatedIndexID *int
-}
-
 type SourcedCommits struct {
 	RepositoryID   int
 	RepositoryName string
@@ -91,7 +60,7 @@ type CursorAdjustedUpload struct {
 // current target path and position adjusted so that it matches the data within the
 // underlying index.
 type AdjustedUpload struct {
-	Upload               Dump
+	Upload               types.Dump
 	AdjustedPath         string
 	AdjustedPosition     lsifstore.Position
 	AdjustedPathInBundle string
