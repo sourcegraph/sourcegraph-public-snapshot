@@ -153,13 +153,13 @@ function buildMockLocation({
             content,
             repository: {
                 name: repo,
-                __typename: 'Repository',
+                __typename: 'CodeIntelRepository',
             },
             commit: {
                 oid: commit,
-                __typename: 'GitCommit',
+                __typename: 'CodeIntelCommit',
             },
-            __typename: 'GitBlob',
+            __typename: 'CodeIntelGitBlob',
         },
         range: {
             start: { ...start, __typename: 'Position' },
