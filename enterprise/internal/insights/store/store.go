@@ -276,7 +276,7 @@ const fullVectorSeriesAggregation = `
 SELECT sub.series_id, sub.interval_time, SUM(sub.value) as value, sub.capture FROM (
 	SELECT sp.repo_name_id, sp.series_id, date_trunc('seconds', sp.time) AS interval_time, MAX(value) as value, capture
 	FROM (  select * from series_points
-			union
+			union all
 			select * from series_points_snapshots
 	) AS sp
 	%s
