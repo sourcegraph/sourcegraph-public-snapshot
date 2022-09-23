@@ -483,7 +483,7 @@ read  group     Rome    *  //depot/dev/...
 read   group   Rome    *   //depot/.../something.java   ## Can read all files named 'something.java'
 read   group   Rome    *   -//depot/dev/prodA/...   ## Except files in this directory
 `,
-			cannotReadAny: []string{"dev/prodA/something.java", "dev/prodA/another_dir/something.java"},
+			cannotReadAny: []string{"dev/prodA/something.java", "dev/prodA/another_dir/something.java", "/dev/prodA/something.java", "/dev/prodA/another_dir/something.java"},
 			canReadAll:    []string{"something.java", "/something.java", "dev/prodB/something.java", "/dev/prodC/something.java"},
 		},
 		{

@@ -255,17 +255,19 @@ func (r *Resolver) SetSubRepositoryPermissionsForUsers(ctx context.Context, args
 		}
 
 		paths := make([]string, 0, len(perm.PathIncludes)+len(perm.PathExcludes))
-		for _, include := range perm.PathIncludes {
+		for i, include := range perm.PathIncludes {
 			if !strings.HasPrefix(include, "/") { // ensure leading slash
 				include = "/" + include
 			}
 			paths = append(paths, include)
+			perm.PathIncludes[i] = include
 		}
 		for _, exclude := range perm.PathExcludes {
 			if !strings.HasPrefix(exclude, "/") { // ensure leading slash
 				exclude = "/" + exclude
 			}
 			paths = append(paths, "-"+exclude) // excludes start with a minus (-)
+			perm.PathExcludes[i] = exclude
 		}
 
 		if err := db.SubRepoPerms().Upsert(ctx, userID, repoID, authz.SubRepoPermissions{
