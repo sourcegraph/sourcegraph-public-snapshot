@@ -4,11 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"golang.org/x/oauth2"
 	"io"
 	"net/http"
-	"strings"
-
-	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -90,11 +88,16 @@ func DoRequest(ctx context.Context, doer httpcli.Doer, req *http.Request, auther
 		if resp.StatusCode == http.StatusUnauthorized && auther != nil {
 			if err = getOAuthErrorDetails(body); err != nil {
 				if _, ok := err.(*oauthError); ok {
-					// Refresh the token
+					if tokenRefresher == nil {
+						return 0, nil, nil, errors.Errorf("could not refresh token. Refresher is missing %T", err)
+					}
+					// If a refresher is present, we can then refresh the token and update the authenticator.
+					// The next request should then succeed.
 					newToken, err := tokenRefresher(ctx, doer, oauthCtx)
 					if err != nil {
 						return 0, nil, nil, errors.Wrap(err, "refresh token")
 					}
+
 					auther = auther.WithToken(newToken)
 					continue
 				}

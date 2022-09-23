@@ -175,3 +175,54 @@ func TestClient_doRequestWithV4Client(t *testing.T) {
 
 	require.NoError(t, err)
 }
+
+func TestClient_doRequestWithoutARefresher(t *testing.T) {
+	doer := &mockDoer{
+		do: func(r *http.Request) (*http.Response, error) {
+			if r.Header.Get("Authorization") == "Bearer bad token" {
+				return &http.Response{
+					Status:     http.StatusText(http.StatusUnauthorized),
+					StatusCode: http.StatusUnauthorized,
+					Body:       io.NopCloser(bytes.NewReader([]byte(`{"error":"invalid_token","error_description":"Token is expired. You can either do re-authorization or token refresh."}`))),
+				}, nil
+			}
+
+			body := `{"access_token": "refreshed-token", "token_type": "Bearer", "expires_in":3600, "refresh_token":"refresh-now", "scope":"create"}`
+			return &http.Response{
+				Status:     http.StatusText(http.StatusOK),
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(bytes.NewReader([]byte(body))),
+			}, nil
+
+		},
+	}
+
+	ctx := context.Background()
+	mockOauthContext := &oauthutil.OAuthContext{
+		ClientID:     "client_id",
+		ClientSecret: "client_secret",
+		Endpoint: oauth2.Endpoint{
+			AuthURL:  "url/login/oauth/authorize",
+			TokenURL: "url/login/oauth/access_token",
+		},
+	}
+
+	uri, err := url.Parse("https://github.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bearerToken := &auth.OAuthBearerToken{Token: "bad token"}
+
+	v3Client := NewV3Client(logtest.Scoped(t), "Test", uri, bearerToken, doer, nil)
+	req, err := http.NewRequest(http.MethodGet, "url", nil)
+	require.NoError(t, err)
+
+	expectedError := "do request with retry and refresh: could not refresh token. Refresher is missing *oauthutil.oauthError"
+	var result map[string]any
+	_, err = doRequest(ctx, mockOauthContext, logtest.Scoped(t), v3Client.apiURL, v3Client.auth, v3Client.rateLimitMonitor, doer, bearerToken, v3Client.tokenRefresher, req, &result)
+
+	if err == nil || err.Error() != expectedError {
+		t.Fatalf("received error: %v, want %s", err, expectedError)
+	}
+}

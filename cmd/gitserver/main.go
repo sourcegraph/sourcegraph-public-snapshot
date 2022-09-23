@@ -420,8 +420,7 @@ func editGitHubAppExternalServiceConfigToken(
 		return "", nil
 	}
 
-	tokenRefresher := database.ExternalServiceTokenRefresher(db, svc.ID, c.TokenOauthRefresh)
-	client := github.NewV3Client(logger, svc.URN(), apiURL, auther, cli, tokenRefresher)
+	client := github.NewV3Client(logger, svc.URN(), apiURL, auther, cli, nil)
 
 	externalServiceStore := db.ExternalServices()
 	token, err := repos.GetOrRenewGitHubAppInstallationAccessToken(ctx, log.Scoped("GetOrRenewGitHubAppInstallationAccessToken", ""), externalServiceStore, svc, client, installationID)
