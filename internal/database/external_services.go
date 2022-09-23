@@ -228,6 +228,8 @@ type ExternalServiceReposListOptions ExternalServicesGetSyncJobsOptions
 
 type ExternalServicesGetSyncJobsOptions struct {
 	ExternalServiceID int64
+	// Only include jobs in the 'processing' state
+	OnlyProcessing bool
 
 	*LimitOffset
 }
@@ -967,6 +969,18 @@ func (e *externalServiceStore) Delete(ctx context.Context, id int64) (err error)
 	}
 	defer func() { err = tx.Done(err) }()
 
+	// If this external service is currently syncing, we should not allow deletion
+	count, err := e.CountSyncJobs(ctx, ExternalServicesGetSyncJobsOptions{
+		ExternalServiceID: id,
+		OnlyProcessing:    true,
+	})
+	if err != nil {
+		return errors.Wrap(err, "counting sync jobs")
+	}
+	if count > 0 {
+		return errors.Errorf("service is syncing, deleting not allowed")
+	}
+
 	// Create a temporary table where we'll store repos affected by the deletion of
 	// the external service
 	if err := tx.Exec(ctx, sqlf.Sprintf(`
@@ -1075,6 +1089,9 @@ func (e *externalServiceStore) GetSyncJobs(ctx context.Context, opt ExternalServ
 	if opt.ExternalServiceID != 0 {
 		preds = append(preds, sqlf.Sprintf("external_service_id = %s", opt.ExternalServiceID))
 	}
+	if opt.OnlyProcessing {
+		preds = append(preds, sqlf.Sprintf("state = 'processing'"))
+	}
 
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("TRUE"))
@@ -1115,6 +1132,9 @@ func (e *externalServiceStore) CountSyncJobs(ctx context.Context, opt ExternalSe
 
 	if opt.ExternalServiceID != 0 {
 		preds = append(preds, sqlf.Sprintf("external_service_id = %s", opt.ExternalServiceID))
+	}
+	if opt.OnlyProcessing {
+		preds = append(preds, sqlf.Sprintf("state = 'processing'"))
 	}
 
 	if len(preds) == 0 {

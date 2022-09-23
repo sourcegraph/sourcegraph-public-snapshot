@@ -912,6 +912,26 @@ VALUES (%d, 1, ''), (%d, 2, '')
 		t.Fatal(err)
 	}
 
+	// We should not be allowed to delete an external service if it is syncing
+	q = sqlf.Sprintf(`
+INSERT INTO external_service_sync_jobs (external_service_id, state)
+VALUES (%d, 'processing')
+`, es1.ID)
+	_, err = db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = db.ExternalServices().Delete(ctx, es1.ID)
+	if err == nil {
+		t.Fatal("Want error, should not be allowed to delete syncing service")
+	}
+	// Clear jobs
+	q = sqlf.Sprintf(`DELETE FROM external_service_sync_jobs`)
+	_, err = db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	// Delete this external service
 	err = db.ExternalServices().Delete(ctx, es1.ID)
 	if err != nil {
@@ -2041,21 +2061,29 @@ func TestExternalServiceStore_CountSyncJobs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if have != 1 {
-		t.Fatalf("Expected 1 job, got %d", have)
-	}
-
 	require.Exactly(t, int64(1), have, "total count is incorrect")
 
 	have, err = db.ExternalServices().CountSyncJobs(ctx, ExternalServicesGetSyncJobsOptions{ExternalServiceID: es.ID + 1})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if have != 0 {
-		t.Fatalf("Expected 0 jobs, got %d", have)
-	}
-
 	require.Exactly(t, int64(0), have, "total count is incorrect")
+
+	have, err = db.ExternalServices().CountSyncJobs(ctx, ExternalServicesGetSyncJobsOptions{OnlyProcessing: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	require.Exactly(t, int64(0), have, "total count is incorrect")
+
+	_, err = db.Handle().ExecContext(ctx, "UPDATE external_service_sync_jobs set state = 'processing'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	have, err = db.ExternalServices().CountSyncJobs(ctx, ExternalServicesGetSyncJobsOptions{OnlyProcessing: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	require.Exactly(t, int64(1), have, "total count is incorrect")
 }
 
 func TestExternalServiceStore_GetSyncJobByID(t *testing.T) {
