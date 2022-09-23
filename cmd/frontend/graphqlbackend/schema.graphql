@@ -3765,8 +3765,7 @@ enum DiagnosticSeverity {
 }
 
 """
-All possible kinds of symbols. This set matches that of the Language Server Protocol
-(https://microsoft.github.io/language-server-protocol/specification#workspace_symbol).
+All possible kinds of symbols.
 """
 enum SymbolKind {
     ACCELERATORS

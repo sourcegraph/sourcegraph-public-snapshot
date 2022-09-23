@@ -15,7 +15,7 @@ const getSymbolTooltip = (kind: SymbolKind): string => {
             return 'Active binding func'
         case 'ALTSTEP':
             return 'Altstep definition'
-        case "ANNOTATION":
+        case 'ANNOTATION':
             return 'Annotation declarations'
         case 'ANONMEMBER':
             return 'Struct anonymous member'
@@ -25,13 +25,13 @@ const getSymbolTooltip = (kind: SymbolKind): string => {
             return 'Chunck labels'
         case 'ENUMCONSTANT':
             return 'Enum constant'
-        case "HEADING1":
+        case 'HEADING1':
             return 'H1 headings'
-        case "HEADING2":
+        case 'HEADING2':
             return 'H2 headings'
-        case "HEADING3":
+        case 'HEADING3':
             return 'H3 headings'
-        case "IFCLASS":
+        case 'IFCLASS':
             return 'Interface class'
         case 'METHODSPEC':
             return 'Interface method specification'
