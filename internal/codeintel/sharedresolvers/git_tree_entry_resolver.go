@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -106,7 +106,7 @@ func (r *GitTreeEntryResolver) url(ctx context.Context) *url.URL {
 		}
 		repoName, err := cloneURLToRepoName(ctx, r.db, submoduleURL)
 		if err != nil {
-			log15.Error("Failed to resolve submodule repository name from clone URL", "cloneURL", submodule.URL(), "err", err)
+			log.Error(err)
 			return &url.URL{}
 		}
 		return &url.URL{Path: "/" + repoName + "@" + submodule.Commit()}

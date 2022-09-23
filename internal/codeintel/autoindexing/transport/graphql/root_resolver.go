@@ -105,7 +105,6 @@ func (r *rootResolver) DeleteLSIFIndex(ctx context.Context, args *struct{ ID gra
 		return nil, err
 	}
 
-	// autoIndexingResolver := r.resolver.AutoIndexingResolver()
 	if _, err := r.autoindexSvc.DeleteIndexByID(ctx, int(indexID)); err != nil {
 		return nil, err
 	}
@@ -277,8 +276,6 @@ func (r *rootResolver) UpdateRepositoryIndexConfiguration(ctx context.Context, a
 		return nil, err
 	}
 
-	// autoIndexingResolver := r.resolver.AutoIndexingResolver()
-	// if err := autoIndexingResolver.UpdateIndexConfigurationByRepositoryID(ctx, int(repositoryID), args.Configuration); err != nil {
 	if err := r.autoindexSvc.UpdateIndexConfigurationByRepositoryID(ctx, int(repositoryID), []byte(args.Configuration)); err != nil {
 		return nil, err
 	}

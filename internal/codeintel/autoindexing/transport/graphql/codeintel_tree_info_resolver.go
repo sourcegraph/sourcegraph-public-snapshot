@@ -52,7 +52,6 @@ func NewCodeIntelTreeInfoResolver(
 
 func (r *codeIntelTreeInfoResolver) SearchBasedSupport(ctx context.Context) (*[]GitTreeSearchBasedCoverage, error) {
 	langMapping := make(map[string][]string)
-	// codeNavResolver := r.resolver.CodeNavResolver()
 	for _, file := range r.files {
 		ok, lang, err := r.autoindexSvc.GetSupportedByCtags(ctx, file, r.repo.Name)
 		if err != nil {
@@ -76,7 +75,6 @@ func (r *codeIntelTreeInfoResolver) SearchBasedSupport(ctx context.Context) (*[]
 }
 
 func (r *codeIntelTreeInfoResolver) PreciseSupport(ctx context.Context) (*[]GitTreePreciseCoverage, error) {
-	// configurations, ok, err := r.resolver.AutoIndexingRootResolver().InferedIndexConfiguration(ctx, int(r.repo.ID), r.commit)
 	configurations, _, err := r.autoindexSvc.InferIndexConfiguration(ctx, int(r.repo.ID), r.commit, true)
 	if err != nil {
 		return nil, err

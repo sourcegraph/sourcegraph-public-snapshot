@@ -32,8 +32,6 @@ func NewIndexConfigurationResolver(autoindexSvc AutoIndexingService, repositoryI
 
 func (r *indexConfigurationResolver) Configuration(ctx context.Context) (_ *string, err error) {
 	defer r.errTracer.Collect(&err, log.String("indexConfigResolver.field", "configuration"))
-	// autoIndexingResolver := r.resolver.AutoIndexingResolver()
-	// configuration, exists, err := r.autoindexSvc.GetIndexConfiguration(ctx, r.repositoryID)
 	configuration, exists, err := r.autoindexSvc.GetIndexConfigurationByRepositoryID(ctx, r.repositoryID)
 	if err != nil {
 		return nil, err
@@ -47,15 +45,6 @@ func (r *indexConfigurationResolver) Configuration(ctx context.Context) (_ *stri
 
 func (r *indexConfigurationResolver) InferredConfiguration(ctx context.Context) (_ *string, err error) {
 	defer r.errTracer.Collect(&err, log.String("indexConfigResolver.field", "inferredConfiguration"))
-	// autoIndexingResolver := r.resolver.AutoIndexingResolver()
-	// configuration, exists, err := autoIndexingResolver.InferedIndexConfiguration(ctx, r.repositoryID, "")
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// if !exists {
-	// 	return nil, nil
-	// }
-
 	configuration, _, err := r.autoindexSvc.InferIndexConfiguration(ctx, r.repositoryID, "", true)
 	if err != nil {
 		return nil, err
