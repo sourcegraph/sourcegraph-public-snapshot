@@ -67,6 +67,34 @@ func New(options Options, metricsGatherer prometheus.Gatherer, observationContex
 	}
 }
 
+// TODO: Should this live here?
+// TODO: Should we also add a method to download that src cli version?
+// That would only work on a non-airgapped executor though.
+func (c *Client) LatestSrcCLIVersion(ctx context.Context) (_ string, err error) {
+	u, err := makeRelativeURL(
+		c.options.EndpointOptions.URL,
+		".api/src-cli/version",
+	)
+	if err != nil {
+		return "", err
+	}
+
+	req, err := MakeJSONRequest(http.MethodGet, u, nil)
+	if err != nil {
+		return "", err
+	}
+
+	type versionPayload struct {
+		Version string `json:"version"`
+	}
+	var v versionPayload
+	if _, err := c.client.DoAndDecode(ctx, req, &v); err != nil {
+		return "", err
+	}
+
+	return v.Version, nil
+}
+
 func (c *Client) Dequeue(ctx context.Context, queueName string, job *executor.Job) (_ bool, err error) {
 	ctx, _, endObservation := c.operations.dequeue.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("queueName", queueName),

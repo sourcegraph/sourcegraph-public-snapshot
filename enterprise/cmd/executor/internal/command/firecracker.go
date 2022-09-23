@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
 	"os"
 	"path"
 	"sort"
@@ -23,6 +24,11 @@ type commandRunner interface {
 }
 
 const firecrackerContainerDir = "/work"
+
+// cniSubnetCIDR is the CIDR range of the VMs in firecracker. This is the ignite
+// default and chosen so that it doesn't interfere with other common applications
+// such as docker. It also provides room for a large number of VMs.
+var cniSubnetCIDR = mustParseCIDR("10.61.0.0/16")
 
 // formatFirecrackerCommand constructs the command to run on the host via a Firecracker
 // virtual machine in order to invoke the given spec. If the spec specifies an image, then
@@ -53,6 +59,108 @@ func formatFirecrackerCommand(spec CommandSpec, name string, options Options) co
 	}
 }
 
+// defaultCNIConfig is the CNI config used for our firecracker VMs.
+// TODO: Can we remove the portmap completely?
+const defaultCNIConfig = `
+{
+  "cniVersion": "0.4.0",
+  "name": "ignite-cni-bridge",
+  "plugins": [
+    {
+  	  "type": "bridge",
+  	  "bridge": "ignite0",
+  	  "isGateway": true,
+  	  "isDefaultGateway": true,
+  	  "promiscMode": false,
+  	  "ipMasq": true,
+  	  "ipam": {
+  	    "type": "host-local",
+  	    "subnet": %q
+  	  }
+    },
+    {
+  	  "type": "portmap",
+  	  "capabilities": {
+  	    "portMappings": true
+  	  }
+    },
+    {
+  	  "type": "firewall"
+    },
+    {
+  	  "type": "isolation"
+    },
+    {
+  	  "name": "slowdown",
+  	  "type": "bandwidth",
+  	  "ingressRate": %d,
+  	  "ingressBurst": %d,
+  	  "egressRate": %d,
+  	  "egressBurst": %d
+    }
+  ]
+}
+`
+
+const defaultCNIConfigPath = "/etc/cni/net.d/10-ignite.conflist"
+
+// writeDefaultCNIConfig writes the dfault settings for the CNI to disk. This is
+// useful so that it's easy to spin up a VM without using the executor for debugging.
+// TODO: Use this somewhere.
+// TODO: What if we added a command "executor run [NAME]" that just starts a VM
+// with all the defaults, like ignite run but doesn't require all these global
+// config files.
+func writeDefaultCNIConfig() error {
+	// Make sure the directory exists.
+	if err := os.MkdirAll(path.Dir(defaultCNIConfigPath), os.ModePerm); err != nil {
+		return nil
+	}
+	// Check if the config already exists. If so: quit.
+	if _, err := os.Stat(defaultCNIConfigPath); err != nil && !os.IsNotExist(err) {
+		return err
+	} else if os.IsExist(err) {
+		return nil
+	}
+	// Write the default config file.
+	f, err := os.Create(defaultCNIConfigPath)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	return os.WriteFile(f.Name(), []byte(cniConfig(500*1024*1024, 500*1024*1024)), os.ModePerm)
+}
+
+// Configures the CNI explicitly and adds the isolation plugin to the chain.
+// This is to prevent cross-network communication (which currently doesn't happen
+// as we only have 1 bridge).
+// We also set the maximum bandwidth usable per VM to the configured value to avoid
+// abuse and to make sure multiple VMs on the same host won't starve others.
+func cniConfig(maxIngressBandwidth, maxEgressBandwidth int) string {
+	return fmt.Sprintf(
+		defaultCNIConfig,
+		cniSubnetCIDR,
+		maxIngressBandwidth,
+		2*maxIngressBandwidth,
+		maxEgressBandwidth,
+		2*maxEgressBandwidth,
+	)
+}
+
+// firecrackerKernelArgs are the arguments passed to the Linux kernel of our firecracker
+// VMs.
+//
+// Explanation of arguments passed here:
+// console: Default
+// reboot: Default
+// panic: Default
+// pci: Default
+// ip: Default
+// random.trust_cpu: Found in https://github.com/firecracker-microvm/firecracker/blob/main/docs/snapshotting/random-for-clones.md,
+// this makes RNG initialization much faster (saves ~1s on startup).
+// i8042.X: Makes boot faster, doesn't poll on the i8042 device on boot. See
+// https://github.com/firecracker-microvm/firecracker/blob/main/docs/api_requests/actions.md#intel-and-amd-only-sendctrlaltdel.
+const firecrackerKernelArgs = "console=ttyS0 reboot=k panic=1 pci=off ip=dhcp random.trust_cpu=on i8042.noaux i8042.nomux i8042.nopnp i8042.dumbkbd"
+
 // dockerDaemonConfig is a struct that marshals into a valid docker daemon config.
 type dockerDaemonConfig struct {
 	RegistryMirrors []string `json:"registry-mirrors"`
@@ -75,10 +183,12 @@ func newDockerDaemonConfig(tmpDir, mirrorAddress string) (_ string, err error) {
 
 // setupFirecracker invokes a set of commands to provision and prepare a Firecracker virtual
 // machine instance. If a startup script path (an executable file on the host) is supplied,
-// it will be mounted into the new virtual machine instance and executed. Optionally,
-// a docker daemon config is created for FirecrackerOptions.DockerRegistryMirrorAddress
-// and mounted into the VM.
-func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, name, workspaceDevice, tmpDir string, options Options, operations *Operations) error {
+// it will be mounted into the new virtual machine instance and executed.
+func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, name, workspaceDevice string, options Options, operations *Operations) error {
+	tmpDir, err := os.MkdirTemp("", "firecracker-vm-state")
+	if err != nil {
+		return err
+	}
 	var daemonConfigFile string
 	if options.FirecrackerOptions.DockerRegistryMirrorURL != "" {
 		var err error
@@ -88,9 +198,23 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, 
 		}
 	}
 
+	cniConfigDir := path.Join(tmpDir, "cni")
+	err = os.Mkdir(cniConfigDir, os.ModePerm)
+	if err != nil {
+		return err
+	}
+	cniConfigFile := path.Join(tmpDir, "10-sourcegraph-executors.conflist")
+	err = os.WriteFile(cniConfigFile, []byte(cniConfig(options.ResourceOptions.MaxIngressBandwidth, options.ResourceOptions.MaxEgressBandwidth)), os.ModePerm)
+	if err != nil {
+		return err
+	}
+
 	// Start the VM and wait for the SSH server to become available.
 	startCommand := command{
 		Key: "setup.firecracker.start",
+		// Tell ignite to use our temporary config.
+		// TODO: This requires a new ignite release.
+		Env: []string{fmt.Sprintf("CNI_CONF_DIR=%s", tmpDir)},
 		Command: flatten(
 			"ignite", "run",
 			"--runtime", "docker",
@@ -101,6 +225,8 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, 
 			"--ssh",
 			"--name", name,
 			"--kernel-image", sanitizeImage(options.FirecrackerOptions.KernelImage),
+			"--kernel-args", firecrackerKernelArgs,
+			"--sandbox-image", options.FirecrackerOptions.SandboxImage,
 			sanitizeImage(options.FirecrackerOptions.Image),
 		),
 		Operation: operations.SetupFirecrackerStart,
@@ -184,4 +310,12 @@ func sanitizeImage(image string) string {
 	}
 
 	return image
+}
+
+func mustParseCIDR(val string) *net.IPNet {
+	_, net, err := net.ParseCIDR(val)
+	if err != nil {
+		panic(err)
+	}
+	return net
 }

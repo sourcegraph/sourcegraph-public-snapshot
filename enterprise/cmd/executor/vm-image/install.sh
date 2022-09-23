@@ -211,96 +211,6 @@ function preheat_kernel_image() {
   docker pull "${RUNTIME_IMAGE}"
 }
 
-## Configures the CNI explicitly and adds the isolation plugin to the chain.
-## This is to prevent cross-network communication (which currently doesn't happen
-## as we only have 1 bridge).
-## We also set the maximum bandwidth usable per VM to 500 MBit to avoid abuse and
-## to make sure multiple VMs on the same host won't starve others.
-function configure_cni() {
-  mkdir -p /etc/cni/net.d
-  cat <<EOF >/etc/cni/net.d/10-ignite.conflist
-{
-  "cniVersion": "0.4.0",
-  "name": "ignite-cni-bridge",
-  "plugins": [
-    {
-      "type": "bridge",
-      "bridge": "ignite0",
-      "isGateway": true,
-      "isDefaultGateway": true,
-      "promiscMode": false,
-      "ipMasq": true,
-      "ipam": {
-        "type": "host-local",
-        "subnet": "10.61.0.0/16"
-      }
-    },
-    {
-      "type": "portmap",
-      "capabilities": {
-        "portMappings": true
-      }
-    },
-    {
-      "type": "firewall"
-    },
-    {
-      "type": "isolation"
-    },
-    {
-      "name": "slowdown",
-      "type": "bandwidth",
-      "ingressRate": 524288000,
-      "ingressBurst": 1048576000,
-      "egressRate": 524288000,
-      "egressBurst": 1048576000
-    }
-  ]
-}
-EOF
-}
-
-## Configures iptables rules for our ignite VMs. We don't want to allow any local
-## traffic except the traffic to nameservers. This is to prevent any internal attack
-## vector and talking to link-local services like the google metadata server.
-function setup_iptables() {
-  # Make sure the below install doesn't block.
-  echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
-  # Ensure iptables-persistent is installed.
-  apt-get install -y iptables-persistent
-
-  # Ensure the chain exists.
-  iptables --list | grep CNI-ADMIN 1>/dev/null || iptables -N CNI-ADMIN
-
-  # Explicitly allow DNS traffic (currently, the DNS server lives in the private
-  # networks for GCP and AWS. Ideally we'd want to use an internet-only DNS server
-  # to prevent leaking any network details).
-  iptables -A CNI-ADMIN -p udp --dport 53 -j ACCEPT
-
-  # Disallow any host-VM network traffic from the guests, except connections made
-  # FROM the host (to ssh into the guest).
-  iptables -A INPUT -d 10.61.0.0/16 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
-  iptables -A INPUT -s 10.61.0.0/16 -j DROP
-
-  # Disallow any inter-VM traffic.
-  # But allow to reach the gateway for internet access.
-  iptables -A CNI-ADMIN -s 10.61.0.1/32 -d 10.61.0.0/16 -j ACCEPT
-  iptables -A CNI-ADMIN -d 10.61.0.0/16 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
-  iptables -A CNI-ADMIN -s 10.61.0.0/16 -d 10.61.0.0/16 -j DROP
-
-  # Disallow local networks access.
-  iptables -A CNI-ADMIN -s 10.61.0.0/16 -d 10.0.0.0/8 -p tcp -j DROP
-  iptables -A CNI-ADMIN -s 10.61.0.0/16 -d 192.168.0.0/16 -p tcp -j DROP
-  iptables -A CNI-ADMIN -s 10.61.0.0/16 -d 172.16.0.0/12 -p tcp -j DROP
-  # Disallow link-local traffic, too. This usually contains cloud provider
-  # resources that we don't want to expose.
-  iptables -A CNI-ADMIN -s 10.61.0.0/16 -d 169.254.0.0/16 -j DROP
-
-  # Store the iptables config.
-  mkdir -p /etc/iptables
-  iptables-save >/etc/iptables/rules.v4
-}
-
 ## Writes a config file with the default values we use for ignite in the executor.
 ## This makes it easier to stand up a debugging VM with the same parameters,
 ## without having to find the three image versions involved here.
@@ -352,8 +262,6 @@ install_git
 install_src_cli
 install_ignite
 install_cni
-configure_cni
-setup_iptables
 
 # Services
 install_executor

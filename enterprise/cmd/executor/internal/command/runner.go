@@ -59,6 +59,9 @@ type FirecrackerOptions struct {
 	// virtual machines.
 	KernelImage string
 
+	// TODO: Document.
+	SandboxImage string
+
 	// VMStartupScriptPath is a path to a file on the host that is loaded into a fresh
 	// virtual machine and executed on startup.
 	VMStartupScriptPath string
@@ -77,7 +80,15 @@ type ResourceOptions struct {
 	Memory string
 
 	// DiskSpace is the maximum amount of disk a container or VM can use.
+	// Only available in firecracker.
 	DiskSpace string
+
+	// TODO: Document.
+	// Only available in firecracker.
+	MaxIngressBandwidth int
+	// TODO: Document.
+	// Only available in firecracker.
+	MaxEgressBandwidth int
 
 	// DockerHostMountPath, if supplied, replaces the workspace parent directory in the
 	// volume mounts of Docker containers. This option is used when running privilegled
