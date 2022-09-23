@@ -10,11 +10,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/go-lsp"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -71,59 +68,6 @@ func unmarshalLSIFUploadGQLID(id graphql.ID) (uploadID int64, err error) {
 
 func marshalLSIFUploadGQLID(uploadID int64) graphql.ID {
 	return relay.MarshalID("LSIFUpload", uploadID)
-}
-
-func marshalLSIFIndexGQLID(indexID int64) graphql.ID {
-	return relay.MarshalID("LSIFIndex", indexID)
-}
-
-// toInt32 translates the given int pointer into an int32 pointer.
-func toInt32(val *int) *int32 {
-	if val == nil {
-		return nil
-	}
-
-	v := int32(*val)
-	return &v
-}
-
-func sharedRetentionPolicyToStoreRetentionPolicy(policy []types.RetentionPolicyMatchCandidate) []types.RetentionPolicyMatchCandidate {
-	retentionPolicy := make([]types.RetentionPolicyMatchCandidate, 0, len(policy))
-	for _, p := range policy {
-		r := types.RetentionPolicyMatchCandidate{
-			Matched:           p.Matched,
-			ProtectingCommits: p.ProtectingCommits,
-		}
-		if p.ConfigurationPolicy != nil {
-			r.ConfigurationPolicy = &types.ConfigurationPolicy{
-				ID:                        p.ID,
-				RepositoryID:              p.RepositoryID,
-				RepositoryPatterns:        p.RepositoryPatterns,
-				Name:                      p.Name,
-				Type:                      types.GitObjectType(p.Type),
-				Pattern:                   p.Pattern,
-				Protected:                 p.Protected,
-				RetentionEnabled:          p.RetentionEnabled,
-				RetentionDuration:         p.RetentionDuration,
-				RetainIntermediateCommits: p.RetainIntermediateCommits,
-				IndexingEnabled:           p.IndexingEnabled,
-				IndexCommitMaxAge:         p.IndexCommitMaxAge,
-				IndexIntermediateCommits:  p.IndexIntermediateCommits,
-			}
-		}
-		retentionPolicy = append(retentionPolicy, r)
-	}
-
-	return retentionPolicy
-}
-
-// convertRange creates an LSP range from a bundle range.
-func convertRange(r shared.Range) lsp.Range {
-	return lsp.Range{Start: convertPosition(r.Start.Line, r.Start.Character), End: convertPosition(r.End.Line, r.End.Character)}
-}
-
-func convertPosition(line, character int) lsp.Position {
-	return lsp.Position{Line: line, Character: character}
 }
 
 func unmarshalRepositoryID(id graphql.ID) (repo api.RepoID, err error) {
