@@ -342,6 +342,7 @@ func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32)
 			dirIncludes := make([]glob.Glob, 0)
 			dirSeen := make(map[string]struct{})
 			for _, rule := range perms.PathIncludes {
+				// Prepend rule with slash in case it does not have one
 				if !strings.HasPrefix(rule, "/") {
 					rule = "/" + rule
 				}
@@ -368,6 +369,7 @@ func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32)
 
 			excludes := make([]glob.Glob, 0, len(perms.PathExcludes))
 			for _, rule := range perms.PathExcludes {
+				// Prepend rule with slash in case it does not have one
 				if !strings.HasPrefix(rule, "/") {
 					rule = "/" + rule
 				}
