@@ -421,7 +421,7 @@ func expandDirs(rule string) []string {
 
 	for {
 		lastSlash := strings.LastIndex(rule, "/")
-		if lastSlash == -1 {
+		if lastSlash <= 0 {
 			break
 		}
 		// Drop anything after the last slash
