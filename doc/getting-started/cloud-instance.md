@@ -32,7 +32,7 @@ Getting users into Sourcegraph is easy, you just need to navigate to:
 
 
 #### Setting up SSO
-Sourcegraph supports out of the box support for different auth providers, our documentation provides guidance on how to setup these
+Sourcegraph supports out-of-the-box support for different auth providers. Our documentation provides guidance on how to setup these.
 
 [User authentication (SSO) - Sourcegraph docs](https://docs.sourcegraph.com/admin/auth)
 
