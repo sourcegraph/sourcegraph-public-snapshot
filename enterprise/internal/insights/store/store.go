@@ -541,7 +541,7 @@ func (s *Store) RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointA
 	}
 	defer func() { err = tx.Done(err) }()
 
-	tableColumns := []string{"series_id", "time", "value", "repo_id", "repo_name_id", "original_repo_id", "capture"}
+	tableColumns := []string{"series_id", "time", "value", "repo_id", "repo_name_id", "original_repo_name_id", "capture"}
 
 	// In our current use cases we should only ever use one of these for one function call, but this could change.
 	inserters := map[PersistMode]*batch.Inserter{
@@ -580,7 +580,7 @@ func (s *Store) RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointA
 			pt.RepoID,           // repo_id
 			pt.RepoNameID,       // repo_name_id
 			pt.RepoNameID,       // original_repo_name_id
-			pt.Point.Capture,
+			pt.Point.Capture,    // capture
 		); err != nil {
 			return errors.Wrap(err, "Insert")
 		}

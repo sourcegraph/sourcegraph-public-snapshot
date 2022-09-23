@@ -152,7 +152,7 @@ func TestCountData(t *testing.T) {
 	optionalRepoID := func(v api.RepoID) *api.RepoID { return &v }
 
 	// Record some duplicate data points.
-	for _, record := range []RecordSeriesPointArgs{
+	records := []RecordSeriesPointArgs{
 		{
 			SeriesID:    "one",
 			Point:       SeriesPoint{Time: timeValue("2020-03-01T00:00:00Z"), Value: 1.1},
@@ -180,10 +180,9 @@ func TestCountData(t *testing.T) {
 			Point:       SeriesPoint{Time: timeValue("2020-03-03T00:01:00Z"), Value: 3.3},
 			PersistMode: RecordMode,
 		},
-	} {
-		if err := store.RecordSeriesPoint(ctx, record); err != nil {
-			t.Fatal(err)
-		}
+	}
+	if err := store.RecordSeriesPoints(ctx, records); err != nil {
+		t.Fatal(err)
 	}
 
 	// How many data points on 02-29?
@@ -230,12 +229,17 @@ func TestRecordSeriesPoints(t *testing.T) {
 	permStore := NewInsightPermissionStore(postgres)
 	store := NewWithClock(insightsDB, permStore, clock)
 
+	// First test it does not error with no records.
+	if err := store.RecordSeriesPoints(ctx, []RecordSeriesPointArgs{}); err != nil {
+		t.Fatal(err)
+	}
+
 	optionalString := func(v string) *string { return &v }
 	optionalRepoID := func(v api.RepoID) *api.RepoID { return &v }
 
 	current := time.Date(2021, time.September, 10, 10, 0, 0, 0, time.UTC)
 
-	for _, record := range []RecordSeriesPointArgs{
+	records := []RecordSeriesPointArgs{
 		{
 			SeriesID:    "one",
 			Point:       SeriesPoint{Time: current, Value: 1.1},
@@ -255,19 +259,18 @@ func TestRecordSeriesPoints(t *testing.T) {
 			Point:       SeriesPoint{Time: current.Add(-time.Hour * 24 * 28), Value: 3.3},
 			RepoName:    optionalString("repo1"),
 			RepoID:      optionalRepoID(3),
-			PersistMode: RecordMode,
+			PersistMode: SnapshotMode,
 		},
 		{
 			SeriesID:    "one",
 			Point:       SeriesPoint{Time: current.Add(-time.Hour * 24 * 42), Value: 3.3},
 			RepoName:    optionalString("repo1"),
 			RepoID:      optionalRepoID(3),
-			PersistMode: RecordMode,
+			PersistMode: SnapshotMode,
 		},
-	} {
-		if err := store.RecordSeriesPoint(ctx, record); err != nil {
-			t.Fatal(err)
-		}
+	}
+	if err := store.RecordSeriesPoints(ctx, records); err != nil {
+		t.Fatal(err)
 	}
 
 	want := []SeriesPoint{
@@ -334,7 +337,7 @@ func TestRecordSeriesPointsSnapshotOnly(t *testing.T) {
 
 	current := time.Date(2021, time.September, 10, 10, 0, 0, 0, time.UTC)
 
-	for _, record := range []RecordSeriesPointArgs{
+	records := []RecordSeriesPointArgs{
 		{
 			SeriesID:    "one",
 			Point:       SeriesPoint{Time: current, Value: 1.1},
@@ -342,10 +345,9 @@ func TestRecordSeriesPointsSnapshotOnly(t *testing.T) {
 			RepoID:      optionalRepoID(3),
 			PersistMode: SnapshotMode,
 		},
-	} {
-		if err := store.RecordSeriesPoint(ctx, record); err != nil {
-			t.Fatal(err)
-		}
+	}
+	if err := store.RecordSeriesPoints(ctx, records); err != nil {
+		t.Fatal(err)
 	}
 
 	// check snapshots table has a row
@@ -398,7 +400,7 @@ func TestRecordSeriesPointsRecordingOnly(t *testing.T) {
 
 	current := time.Date(2021, time.September, 10, 10, 0, 0, 0, time.UTC)
 
-	for _, record := range []RecordSeriesPointArgs{
+	records := []RecordSeriesPointArgs{
 		{
 			SeriesID:    "one",
 			Point:       SeriesPoint{Time: current, Value: 1.1},
@@ -406,10 +408,9 @@ func TestRecordSeriesPointsRecordingOnly(t *testing.T) {
 			RepoID:      optionalRepoID(3),
 			PersistMode: RecordMode,
 		},
-	} {
-		if err := store.RecordSeriesPoint(ctx, record); err != nil {
-			t.Fatal(err)
-		}
+	}
+	if err := store.RecordSeriesPoints(ctx, records); err != nil {
+		t.Fatal(err)
 	}
 
 	// check snapshots table has a row
@@ -463,7 +464,7 @@ func TestDeleteSnapshots(t *testing.T) {
 	current := time.Date(2021, time.September, 10, 10, 0, 0, 0, time.UTC)
 
 	seriesID := "one"
-	for _, record := range []RecordSeriesPointArgs{
+	records := []RecordSeriesPointArgs{
 		{
 			SeriesID:    seriesID,
 			Point:       SeriesPoint{Time: current, Value: 1.1},
@@ -478,10 +479,9 @@ func TestDeleteSnapshots(t *testing.T) {
 			RepoID:      optionalRepoID(3),
 			PersistMode: RecordMode,
 		},
-	} {
-		if err := store.RecordSeriesPoint(ctx, record); err != nil {
-			t.Fatal(err)
-		}
+	}
+	if err := store.RecordSeriesPoints(ctx, records); err != nil {
+		t.Fatal(err)
 	}
 
 	// first check that we have one recording and one snapshot
