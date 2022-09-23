@@ -52,7 +52,7 @@ const externalService = {
 
 const queryExternalServiceSyncJobs: typeof _queryExternalServiceSyncJobs = () =>
     of({
-        totalCount: 3,
+        totalCount: 4,
         pageInfo: { endCursor: null, hasNextPage: false },
         nodes: [
             {
