@@ -135,6 +135,37 @@ type compiledRules struct {
 	dirs  []path
 }
 
+// GetPermissionsForPath tries to match a given path to a list of rules.
+// Since the last applicable rule is the one that applies, the list is
+// traversed in reverse, and the function returns as soon as a match is found.
+// If no match is found, None is returned.
+func (rules compiledRules) GetPermissionsForPath(path string) Perms {
+	for i := len(rules.paths) - 1; i >= 0; i-- {
+		if rules.paths[i].globPath.Match(path) {
+			if rules.paths[i].exclusion {
+				return None
+			}
+			return Read
+		}
+	}
+
+	// We also want to match any directories above paths that we include so that we
+	// can browse down the file hierarchy.
+	if strings.HasSuffix(path, "/") {
+		for i := len(rules.dirs) - 1; i >= 0; i-- {
+			if rules.dirs[i].globPath.Match(path) {
+				if rules.dirs[i].exclusion {
+					return None
+				}
+				return Read
+			}
+		}
+	}
+
+	// Return None if no rule matches
+	return None
+}
+
 // NewSubRepoPermsClient instantiates an instance of authz.SubRepoPermsClient
 // which implements SubRepoPermissionChecker.
 //
@@ -286,40 +317,7 @@ func (s *SubRepoPermsClient) FilePermissionsFunc(ctx context.Context, userID int
 
 		// Iterate through all rules for the current path, and the final match takes
 		// preference.
-		exclusion := false
-		match := false
-		for _, rule := range rules.paths {
-			if rule.globPath.Match(path) {
-				match = true
-				exclusion = rule.exclusion
-			}
-		}
-
-		if match {
-			if exclusion {
-				return None, nil
-			}
-
-			return Read, nil
-		}
-
-		// We also want to match any directories above paths that we include so that we
-		// can browse down the file hierarchy.
-		if strings.HasSuffix(path, "/") {
-			for _, rule := range rules.dirs {
-				if rule.globPath.Match(path) {
-					match = true
-					exclusion = rule.exclusion
-				}
-			}
-		}
-
-		if match && !exclusion {
-			return Read, nil
-		}
-
-		// Return None if no rule matches or if only match is an exclusion
-		return None, nil
+		return rules.GetPermissionsForPath(path), nil
 	}, nil
 }
 
