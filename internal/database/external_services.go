@@ -1186,16 +1186,21 @@ LIMIT 1
 }
 
 func (e *externalServiceStore) CancelSyncJob(ctx context.Context, id int64) error {
+	now := timeutil.Now()
 	q := sqlf.Sprintf(`
 UPDATE
 	external_service_sync_jobs
 SET
-	cancel = TRUE
+	cancel = TRUE,
+	-- If the sync job is still queued, we directly abort, otherwise we keep the
+	-- state, so the worker can to teardown and, at some point, mark it failed itself.
+	state = CASE WHEN external_service_sync_jobs.state = 'processing' THEN external_service_sync_jobs.state ELSE 'canceled' END,
+	finished_at = CASE WHEN external_service_sync_jobs.state = 'processing' THEN external_service_sync_jobs.finished_at ELSE %s END
 WHERE
 	id = %s
 	AND
 	state IN ('queued', 'processing')
-`, id)
+`, now, id)
 
 	res, err := e.ExecResult(ctx, q)
 	if err != nil {
