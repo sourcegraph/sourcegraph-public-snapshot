@@ -1,15 +1,20 @@
 import assert from 'assert'
 
+import { Page } from 'puppeteer'
+
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../../context'
 import {
+    CAPTURE_GROUP_INSIGHT,
     GET_DASHBOARD_INSIGHTS_POPULATED,
-    GET_INSIGHT_VIEW_1,
-    GET_INSIGHT_VIEW_2,
+    GET_INSIGHT_VIEW_CAPTURE_GROUP_INSIGHT,
+    GET_INSIGHT_VIEW_SEARCH_BASED_INSIGHT,
     INSIGHTS_DASHBOARDS,
+    LANG_STATS_INSIGHT,
     LANG_STAT_INSIGHT_CONTENT,
+    SEARCH_BASED_INSIGHT,
 } from '../fixtures/dashboards'
 import { overrideInsightsGraphQLApi } from '../utils/override-insights-graphql-api'
 
@@ -40,11 +45,11 @@ describe('Code insights populated dashboard', () => {
         overrideInsightsGraphQLApi({ testContext })
         testContext.overrideGraphQL({
             GetDashboardInsights: () => GET_DASHBOARD_INSIGHTS_POPULATED,
-            GetInsightView: () => GET_INSIGHT_VIEW_1,
+            GetInsightView: () => GET_INSIGHT_VIEW_CAPTURE_GROUP_INSIGHT,
             InsightsDashboards: () => INSIGHTS_DASHBOARDS,
             LangStatsInsightContent: () => LANG_STAT_INSIGHT_CONTENT,
         })
-        testContext.overrideGraphQL({ GetInsightView: () => GET_INSIGHT_VIEW_2 })
+        testContext.overrideGraphQL({ GetInsightView: () => GET_INSIGHT_VIEW_SEARCH_BASED_INSIGHT })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/EACH_TYPE_OF_INSIGHT')
 
@@ -58,5 +63,29 @@ describe('Code insights populated dashboard', () => {
         )) as string
 
         assert(/each type of insight/i.test(dashboardSelectButtonText))
+
+        const expectedLinks = [
+            CAPTURE_GROUP_INSIGHT.presentation.title,
+            LANG_STATS_INSIGHT.presentation.title,
+            SEARCH_BASED_INSIGHT.presentation.title,
+        ]
+        const foundLinks = await getLinks(driver.page, expectedLinks)
+
+        assert.deepStrictEqual(expectedLinks, foundLinks)
     })
 })
+
+async function getLinks(page: Page, labels: string[]): Promise<string[]> {
+    const foundLinks: string[] = []
+    const links = await page.$$('a')
+
+    for (const link of links) {
+        const valueHandle = await link.getProperty('innerText')
+        const linkText = await valueHandle.jsonValue()
+        if (typeof linkText === 'string' && labels.includes(linkText)) {
+            foundLinks.push(linkText)
+        }
+    }
+
+    return foundLinks
+}

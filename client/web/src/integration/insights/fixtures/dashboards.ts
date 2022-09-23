@@ -1,7 +1,12 @@
 import { SeriesSortDirection, SeriesSortMode, TimeIntervalStepUnit } from '@sourcegraph/shared/src/schema'
 import { testUserID } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 
-import { GetDashboardInsightsResult, GetInsightViewResult, InsightsDashboardsResult } from '../../../graphql-operations'
+import {
+    GetDashboardInsightsResult,
+    GetInsightViewResult,
+    InsightsDashboardsResult,
+    InsightViewNode,
+} from '../../../graphql-operations'
 
 export const GET_DASHBOARD_INSIGHTS_EMPTY = {
     insightsDashboards: {
@@ -14,274 +19,275 @@ export const GET_DASHBOARD_INSIGHTS_EMPTY = {
     },
 }
 
+export const CAPTURE_GROUP_INSIGHT: InsightViewNode = {
+    id: 'aW5zaWdodF92aWV3OiIyQnF6ZnBQQzFYUVJTeFpkUnhOWk5jYW1jQ1ki',
+    defaultSeriesDisplayOptions: {
+        limit: 20,
+        sortOptions: {
+            mode: SeriesSortMode.RESULT_COUNT,
+            direction: SeriesSortDirection.DESC,
+            __typename: 'SeriesSortOptions',
+        },
+        __typename: 'SeriesDisplayOptions',
+    },
+    appliedSeriesDisplayOptions: {
+        limit: 20,
+        sortOptions: {
+            mode: SeriesSortMode.RESULT_COUNT,
+            direction: SeriesSortDirection.DESC,
+            __typename: 'SeriesSortOptions',
+        },
+        __typename: 'SeriesDisplayOptions',
+    },
+    isFrozen: false,
+    appliedFilters: {
+        includeRepoRegex: '',
+        excludeRepoRegex: '',
+        searchContexts: [],
+        __typename: 'InsightViewFilters',
+    },
+    dashboardReferenceCount: 2,
+    dashboards: {
+        nodes: [
+            {
+                id: 'ZGFzaGJvYXJkOnsiSWRUeXBlIjoiY3VzdG9tIiwiQXJnIjoyfQ==',
+                title: 'Cloud cost optimization',
+                __typename: 'InsightsDashboard',
+            },
+            {
+                id: 'ZGFzaGJvYXJkOnsiSWRUeXBlIjoiY3VzdG9tIiwiQXJnIjoxN30=',
+                title: 'Each Type of Insight',
+                __typename: 'InsightsDashboard',
+            },
+        ],
+        __typename: 'InsightsDashboardConnection',
+    },
+    presentation: {
+        __typename: 'LineChartInsightViewPresentation',
+        title: 'Capture Group',
+        seriesPresentation: [
+            {
+                seriesId: '2CGKrC1dcbOpawrHQUOkiSu0NC8',
+                label: '',
+                color: '',
+                __typename: 'LineChartDataSeriesPresentation',
+            },
+        ],
+    },
+    dataSeriesDefinitions: [
+        {
+            seriesId: '2CGKrC1dcbOpawrHQUOkiSu0NC8',
+            query: 'machine_type \\"([\\w]+\\-[\\w]+[\\-[\\w]+]?)\\" lang:Terraform  patterntype:regexp',
+            repositoryScope: {
+                repositories: [],
+                __typename: 'InsightRepositoryScope',
+            },
+            timeScope: {
+                unit: TimeIntervalStepUnit.MONTH,
+                value: 1,
+                __typename: 'InsightIntervalTimeScope',
+            },
+            isCalculated: true,
+            generatedFromCaptureGroups: true,
+            groupBy: null,
+            __typename: 'SearchInsightDataSeriesDefinition',
+        },
+    ],
+    __typename: 'InsightView',
+}
+
+export const SEARCH_BASED_INSIGHT: InsightViewNode = {
+    id: 'aW5zaWdodF92aWV3OiIyQmRnV2VFYktwWGF2UjlGcXpuVDA1cld0c2si',
+    defaultSeriesDisplayOptions: {
+        limit: null,
+        sortOptions: {
+            mode: null,
+            direction: null,
+            __typename: 'SeriesSortOptions',
+        },
+        __typename: 'SeriesDisplayOptions',
+    },
+    appliedSeriesDisplayOptions: {
+        limit: null,
+        sortOptions: {
+            mode: null,
+            direction: null,
+            __typename: 'SeriesSortOptions',
+        },
+        __typename: 'SeriesDisplayOptions',
+    },
+    isFrozen: false,
+    appliedFilters: {
+        includeRepoRegex: '',
+        excludeRepoRegex: '',
+        searchContexts: [],
+        __typename: 'InsightViewFilters',
+    },
+    dashboardReferenceCount: 3,
+    dashboards: {
+        nodes: [
+            {
+                id: 'ZGFzaGJvYXJkOnsiSWRUeXBlIjoiY3VzdG9tIiwiQXJnIjoxfQ==',
+                title: 'Dev Experience',
+                __typename: 'InsightsDashboard',
+            },
+            {
+                id: 'ZGFzaGJvYXJkOnsiSWRUeXBlIjoiY3VzdG9tIiwiQXJnIjo1fQ==',
+                title: 'asd',
+                __typename: 'InsightsDashboard',
+            },
+            {
+                id: 'ZGFzaGJvYXJkOnsiSWRUeXBlIjoiY3VzdG9tIiwiQXJnIjoxN30=',
+                title: 'Each Type of Insight',
+                __typename: 'InsightsDashboard',
+            },
+        ],
+        __typename: 'InsightsDashboardConnection',
+    },
+    presentation: {
+        __typename: 'LineChartInsightViewPresentation',
+        title: 'Search Based',
+        seriesPresentation: [
+            {
+                seriesId: '2D2MUtp6DzHhwhjUo9mIlBbhqoO',
+                label: 'exec',
+                color: 'var(--oc-grape-7)',
+                __typename: 'LineChartDataSeriesPresentation',
+            },
+            {
+                seriesId: '2D2MUHBTNUe5v18Je4o9woc8zrH',
+                label: 'sourcegraph/run',
+                color: 'var(--oc-teal-7)',
+                __typename: 'LineChartDataSeriesPresentation',
+            },
+        ],
+    },
+    dataSeriesDefinitions: [
+        {
+            seriesId: '2D2MUtp6DzHhwhjUo9mIlBbhqoO',
+            query: 'lang:go exec.Cmd OR exec.CommandContext',
+            repositoryScope: {
+                repositories: [
+                    'github.com/sourcegraph/sourcegraph',
+                    'github.com/sourcegraph/deploy-sourcegraph-managed',
+                    'github.com/sourcegraph/infrastructure',
+                    'github.com/sourcegraph/deploy-sourcegraph-cloud',
+                ],
+                __typename: 'InsightRepositoryScope',
+            },
+            timeScope: {
+                unit: TimeIntervalStepUnit.WEEK,
+                value: 2,
+                __typename: 'InsightIntervalTimeScope',
+            },
+            isCalculated: true,
+            generatedFromCaptureGroups: false,
+            groupBy: null,
+            __typename: 'SearchInsightDataSeriesDefinition',
+        },
+        {
+            seriesId: '2D2MUHBTNUe5v18Je4o9woc8zrH',
+            query: 'lang:go content:"github.com/sourcegraph/run" AND (run.Cmd OR run.Bash)',
+            repositoryScope: {
+                repositories: [
+                    'github.com/sourcegraph/sourcegraph',
+                    'github.com/sourcegraph/deploy-sourcegraph-managed',
+                    'github.com/sourcegraph/infrastructure',
+                    'github.com/sourcegraph/deploy-sourcegraph-cloud',
+                ],
+                __typename: 'InsightRepositoryScope',
+            },
+            timeScope: {
+                unit: TimeIntervalStepUnit.WEEK,
+                value: 2,
+                __typename: 'InsightIntervalTimeScope',
+            },
+            isCalculated: true,
+            generatedFromCaptureGroups: false,
+            groupBy: null,
+            __typename: 'SearchInsightDataSeriesDefinition',
+        },
+    ],
+    __typename: 'InsightView',
+}
+
+export const LANG_STATS_INSIGHT: InsightViewNode = {
+    id: 'aW5zaWdodF92aWV3OiIyQ3VMOXlZbXNndHI3NW05NEpUY3BWWVFNMFoi',
+    defaultSeriesDisplayOptions: {
+        limit: null,
+        sortOptions: {
+            mode: null,
+            direction: null,
+            __typename: 'SeriesSortOptions',
+        },
+        __typename: 'SeriesDisplayOptions',
+    },
+    appliedSeriesDisplayOptions: {
+        limit: null,
+        sortOptions: {
+            mode: null,
+            direction: null,
+            __typename: 'SeriesSortOptions',
+        },
+        __typename: 'SeriesDisplayOptions',
+    },
+    isFrozen: false,
+    appliedFilters: {
+        includeRepoRegex: null,
+        excludeRepoRegex: null,
+        searchContexts: [],
+        __typename: 'InsightViewFilters',
+    },
+    dashboardReferenceCount: 2,
+    dashboards: {
+        nodes: [
+            {
+                id: 'ZGFzaGJvYXJkOnsiSWRUeXBlIjoiY3VzdG9tIiwiQXJnIjo3fQ==',
+                title: 'CPT Sourcegraph',
+                __typename: 'InsightsDashboard',
+            },
+            {
+                id: 'ZGFzaGJvYXJkOnsiSWRUeXBlIjoiY3VzdG9tIiwiQXJnIjoxN30=',
+                title: 'Each Type of Insight',
+                __typename: 'InsightsDashboard',
+            },
+        ],
+        __typename: 'InsightsDashboardConnection',
+    },
+    presentation: {
+        __typename: 'PieChartInsightViewPresentation',
+        title: 'Lang Stats',
+        otherThreshold: 0.03,
+    },
+    dataSeriesDefinitions: [
+        {
+            seriesId: '2CuLABWoJVNlP8KqoB49hdes8MK',
+            query: '',
+            repositoryScope: {
+                repositories: ['github.com/sourcegraph/about'],
+                __typename: 'InsightRepositoryScope',
+            },
+            timeScope: {
+                unit: TimeIntervalStepUnit.MONTH,
+                value: 0,
+                __typename: 'InsightIntervalTimeScope',
+            },
+            isCalculated: false,
+            generatedFromCaptureGroups: false,
+            groupBy: null,
+            __typename: 'SearchInsightDataSeriesDefinition',
+        },
+    ],
+    __typename: 'InsightView',
+}
+
 export const GET_DASHBOARD_INSIGHTS_POPULATED: GetDashboardInsightsResult = {
     insightsDashboards: {
         nodes: [
             {
                 id: 'EACH_TYPE_OF_INSIGHT',
                 views: {
-                    nodes: [
-                        {
-                            id: 'aW5zaWdodF92aWV3OiIyQnF6ZnBQQzFYUVJTeFpkUnhOWk5jYW1jQ1ki',
-                            defaultSeriesDisplayOptions: {
-                                limit: 20,
-                                sortOptions: {
-                                    mode: SeriesSortMode.RESULT_COUNT,
-                                    direction: SeriesSortDirection.DESC,
-                                    __typename: 'SeriesSortOptions',
-                                },
-                                __typename: 'SeriesDisplayOptions',
-                            },
-                            appliedSeriesDisplayOptions: {
-                                limit: 20,
-                                sortOptions: {
-                                    mode: SeriesSortMode.RESULT_COUNT,
-                                    direction: SeriesSortDirection.DESC,
-                                    __typename: 'SeriesSortOptions',
-                                },
-                                __typename: 'SeriesDisplayOptions',
-                            },
-                            isFrozen: false,
-                            appliedFilters: {
-                                includeRepoRegex: '',
-                                excludeRepoRegex: '',
-                                searchContexts: [],
-                                __typename: 'InsightViewFilters',
-                            },
-                            dashboardReferenceCount: 2,
-                            dashboards: {
-                                nodes: [
-                                    {
-                                        id: 'ZGFzaGJvYXJkOnsiSWRUeXBlIjoiY3VzdG9tIiwiQXJnIjoyfQ==',
-                                        title: 'Cloud cost optimization',
-                                        __typename: 'InsightsDashboard',
-                                    },
-                                    {
-                                        id: 'ZGFzaGJvYXJkOnsiSWRUeXBlIjoiY3VzdG9tIiwiQXJnIjoxN30=',
-                                        title: 'Each Type of Insight',
-                                        __typename: 'InsightsDashboard',
-                                    },
-                                ],
-                                __typename: 'InsightsDashboardConnection',
-                            },
-                            presentation: {
-                                __typename: 'LineChartInsightViewPresentation',
-                                title: 'Machine Types',
-                                seriesPresentation: [
-                                    {
-                                        seriesId: '2CGKrC1dcbOpawrHQUOkiSu0NC8',
-                                        label: '',
-                                        color: '',
-                                        __typename: 'LineChartDataSeriesPresentation',
-                                    },
-                                ],
-                            },
-                            dataSeriesDefinitions: [
-                                {
-                                    seriesId: '2CGKrC1dcbOpawrHQUOkiSu0NC8',
-                                    query:
-                                        'machine_type \\"([\\w]+\\-[\\w]+[\\-[\\w]+]?)\\" lang:Terraform  patterntype:regexp',
-                                    repositoryScope: {
-                                        repositories: [],
-                                        __typename: 'InsightRepositoryScope',
-                                    },
-                                    timeScope: {
-                                        unit: TimeIntervalStepUnit.MONTH,
-                                        value: 1,
-                                        __typename: 'InsightIntervalTimeScope',
-                                    },
-                                    isCalculated: true,
-                                    generatedFromCaptureGroups: true,
-                                    groupBy: null,
-                                    __typename: 'SearchInsightDataSeriesDefinition',
-                                },
-                            ],
-                            __typename: 'InsightView',
-                        },
-                        {
-                            id: 'aW5zaWdodF92aWV3OiIyQ3VMOXlZbXNndHI3NW05NEpUY3BWWVFNMFoi',
-                            defaultSeriesDisplayOptions: {
-                                limit: null,
-                                sortOptions: {
-                                    mode: null,
-                                    direction: null,
-                                    __typename: 'SeriesSortOptions',
-                                },
-                                __typename: 'SeriesDisplayOptions',
-                            },
-                            appliedSeriesDisplayOptions: {
-                                limit: null,
-                                sortOptions: {
-                                    mode: null,
-                                    direction: null,
-                                    __typename: 'SeriesSortOptions',
-                                },
-                                __typename: 'SeriesDisplayOptions',
-                            },
-                            isFrozen: false,
-                            appliedFilters: {
-                                includeRepoRegex: null,
-                                excludeRepoRegex: null,
-                                searchContexts: [],
-                                __typename: 'InsightViewFilters',
-                            },
-                            dashboardReferenceCount: 2,
-                            dashboards: {
-                                nodes: [
-                                    {
-                                        id: 'ZGFzaGJvYXJkOnsiSWRUeXBlIjoiY3VzdG9tIiwiQXJnIjo3fQ==',
-                                        title: 'CPT Sourcegraph',
-                                        __typename: 'InsightsDashboard',
-                                    },
-                                    {
-                                        id: 'ZGFzaGJvYXJkOnsiSWRUeXBlIjoiY3VzdG9tIiwiQXJnIjoxN30=',
-                                        title: 'Each Type of Insight',
-                                        __typename: 'InsightsDashboard',
-                                    },
-                                ],
-                                __typename: 'InsightsDashboardConnection',
-                            },
-                            presentation: {
-                                __typename: 'PieChartInsightViewPresentation',
-                                title: 'Language Use in /About',
-                                otherThreshold: 0.03,
-                            },
-                            dataSeriesDefinitions: [
-                                {
-                                    seriesId: '2CuLABWoJVNlP8KqoB49hdes8MK',
-                                    query: '',
-                                    repositoryScope: {
-                                        repositories: ['github.com/sourcegraph/about'],
-                                        __typename: 'InsightRepositoryScope',
-                                    },
-                                    timeScope: {
-                                        unit: TimeIntervalStepUnit.MONTH,
-                                        value: 0,
-                                        __typename: 'InsightIntervalTimeScope',
-                                    },
-                                    isCalculated: false,
-                                    generatedFromCaptureGroups: false,
-                                    groupBy: null,
-                                    __typename: 'SearchInsightDataSeriesDefinition',
-                                },
-                            ],
-                            __typename: 'InsightView',
-                        },
-                        {
-                            id: 'aW5zaWdodF92aWV3OiIyQmRnV2VFYktwWGF2UjlGcXpuVDA1cld0c2si',
-                            defaultSeriesDisplayOptions: {
-                                limit: null,
-                                sortOptions: {
-                                    mode: null,
-                                    direction: null,
-                                    __typename: 'SeriesSortOptions',
-                                },
-                                __typename: 'SeriesDisplayOptions',
-                            },
-                            appliedSeriesDisplayOptions: {
-                                limit: null,
-                                sortOptions: {
-                                    mode: null,
-                                    direction: null,
-                                    __typename: 'SeriesSortOptions',
-                                },
-                                __typename: 'SeriesDisplayOptions',
-                            },
-                            isFrozen: false,
-                            appliedFilters: {
-                                includeRepoRegex: '',
-                                excludeRepoRegex: '',
-                                searchContexts: [],
-                                __typename: 'InsightViewFilters',
-                            },
-                            dashboardReferenceCount: 3,
-                            dashboards: {
-                                nodes: [
-                                    {
-                                        id: 'ZGFzaGJvYXJkOnsiSWRUeXBlIjoiY3VzdG9tIiwiQXJnIjoxfQ==',
-                                        title: 'Dev Experience',
-                                        __typename: 'InsightsDashboard',
-                                    },
-                                    {
-                                        id: 'ZGFzaGJvYXJkOnsiSWRUeXBlIjoiY3VzdG9tIiwiQXJnIjo1fQ==',
-                                        title: 'asd',
-                                        __typename: 'InsightsDashboard',
-                                    },
-                                    {
-                                        id: 'ZGFzaGJvYXJkOnsiSWRUeXBlIjoiY3VzdG9tIiwiQXJnIjoxN30=',
-                                        title: 'Each Type of Insight',
-                                        __typename: 'InsightsDashboard',
-                                    },
-                                ],
-                                __typename: 'InsightsDashboardConnection',
-                            },
-                            presentation: {
-                                __typename: 'LineChartInsightViewPresentation',
-                                title: 'Command execution',
-                                seriesPresentation: [
-                                    {
-                                        seriesId: '2D2MUtp6DzHhwhjUo9mIlBbhqoO',
-                                        label: 'exec',
-                                        color: 'var(--oc-grape-7)',
-                                        __typename: 'LineChartDataSeriesPresentation',
-                                    },
-                                    {
-                                        seriesId: '2D2MUHBTNUe5v18Je4o9woc8zrH',
-                                        label: 'sourcegraph/run',
-                                        color: 'var(--oc-teal-7)',
-                                        __typename: 'LineChartDataSeriesPresentation',
-                                    },
-                                ],
-                            },
-                            dataSeriesDefinitions: [
-                                {
-                                    seriesId: '2D2MUtp6DzHhwhjUo9mIlBbhqoO',
-                                    query: 'lang:go exec.Cmd OR exec.CommandContext',
-                                    repositoryScope: {
-                                        repositories: [
-                                            'github.com/sourcegraph/sourcegraph',
-                                            'github.com/sourcegraph/deploy-sourcegraph-managed',
-                                            'github.com/sourcegraph/infrastructure',
-                                            'github.com/sourcegraph/deploy-sourcegraph-cloud',
-                                        ],
-                                        __typename: 'InsightRepositoryScope',
-                                    },
-                                    timeScope: {
-                                        unit: TimeIntervalStepUnit.WEEK,
-                                        value: 2,
-                                        __typename: 'InsightIntervalTimeScope',
-                                    },
-                                    isCalculated: true,
-                                    generatedFromCaptureGroups: false,
-                                    groupBy: null,
-                                    __typename: 'SearchInsightDataSeriesDefinition',
-                                },
-                                {
-                                    seriesId: '2D2MUHBTNUe5v18Je4o9woc8zrH',
-                                    query: 'lang:go content:"github.com/sourcegraph/run" AND (run.Cmd OR run.Bash)',
-                                    repositoryScope: {
-                                        repositories: [
-                                            'github.com/sourcegraph/sourcegraph',
-                                            'github.com/sourcegraph/deploy-sourcegraph-managed',
-                                            'github.com/sourcegraph/infrastructure',
-                                            'github.com/sourcegraph/deploy-sourcegraph-cloud',
-                                        ],
-                                        __typename: 'InsightRepositoryScope',
-                                    },
-                                    timeScope: {
-                                        unit: TimeIntervalStepUnit.WEEK,
-                                        value: 2,
-                                        __typename: 'InsightIntervalTimeScope',
-                                    },
-                                    isCalculated: true,
-                                    generatedFromCaptureGroups: false,
-                                    groupBy: null,
-                                    __typename: 'SearchInsightDataSeriesDefinition',
-                                },
-                            ],
-                            __typename: 'InsightView',
-                        },
-                    ],
+                    nodes: [CAPTURE_GROUP_INSIGHT, LANG_STATS_INSIGHT, SEARCH_BASED_INSIGHT],
                     __typename: 'InsightViewConnection',
                 },
                 __typename: 'InsightsDashboard',
@@ -356,7 +362,7 @@ export const INSIGHTS_DASHBOARDS: InsightsDashboardsResult = {
     },
 }
 
-export const GET_INSIGHT_VIEW_1: GetInsightViewResult = {
+export const GET_INSIGHT_VIEW_CAPTURE_GROUP_INSIGHT: GetInsightViewResult = {
     insightViews: {
         nodes: [
             {
@@ -839,7 +845,7 @@ export const GET_INSIGHT_VIEW_1: GetInsightViewResult = {
     },
 }
 
-export const GET_INSIGHT_VIEW_2: GetInsightViewResult = {
+export const GET_INSIGHT_VIEW_SEARCH_BASED_INSIGHT: GetInsightViewResult = {
     insightViews: {
         nodes: [
             {
