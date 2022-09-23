@@ -249,31 +249,58 @@ func (r *Resolver) SetSubRepositoryPermissionsForUsers(ctx context.Context, args
 	}
 
 	for _, perm := range args.UserPermissions {
+		if (perm.PathIncludes == nil || perm.PathExcludes == nil) && perm.Paths == nil {
+			return nil, errors.New("either both pathIncludes and pathExcludes needs to be set, or paths needs to be set")
+		}
+	}
+
+	for _, perm := range args.UserPermissions {
 		userID, ok := mapping[perm.BindID]
 		if !ok {
 			return nil, errors.Errorf("user %q not found", perm.BindID)
 		}
 
-		paths := make([]string, 0, len(perm.PathIncludes)+len(perm.PathExcludes))
-		for i, include := range perm.PathIncludes {
-			if !strings.HasPrefix(include, "/") { // ensure leading slash
-				include = "/" + include
+		var paths []string
+		var pathIncludes []string
+		var pathExcludes []string
+		if perm.Paths == nil {
+			paths = make([]string, 0, len(*perm.PathIncludes)+len(*perm.PathExcludes))
+			pathIncludes = make([]string, 0, len(*perm.PathIncludes))
+			pathExcludes = make([]string, 0, len(*perm.PathExcludes))
+			for _, include := range *perm.PathIncludes {
+				if !strings.HasPrefix(include, "/") { // ensure leading slash
+					include = "/" + include
+				}
+				paths = append(paths, include)
+				pathIncludes = append(pathIncludes, include)
 			}
-			paths = append(paths, include)
-			perm.PathIncludes[i] = include
-		}
-		for i, exclude := range perm.PathExcludes {
-			if !strings.HasPrefix(exclude, "/") { // ensure leading slash
-				exclude = "/" + exclude
+			for _, exclude := range *perm.PathExcludes {
+				if !strings.HasPrefix(exclude, "/") { // ensure leading slash
+					exclude = "/" + exclude
+				}
+				paths = append(paths, "-"+exclude) // excludes start with a minus (-)
+				pathExcludes = append(pathExcludes, exclude)
 			}
-			paths = append(paths, "-"+exclude) // excludes start with a minus (-)
-			perm.PathExcludes[i] = exclude
+		} else {
+			paths = make([]string, 0, len(*perm.Paths))
+			for _, path := range *perm.Paths {
+				if strings.HasPrefix(path, "-") {
+					if !strings.HasPrefix(path, "-/") {
+						path = "-/" + strings.TrimPrefix(path, "-")
+					}
+				} else {
+					if !strings.HasPrefix(path, "/") {
+						path = "/" + path
+					}
+				}
+				paths = append(paths, path)
+			}
 		}
 
 		if err := db.SubRepoPerms().Upsert(ctx, userID, repoID, authz.SubRepoPermissions{
 			Paths:        paths,
-			PathIncludes: perm.PathIncludes,
-			PathExcludes: perm.PathExcludes,
+			PathIncludes: pathIncludes,
+			PathExcludes: pathExcludes,
 		}); err != nil {
 			return nil, errors.Wrap(err, "upserting sub-repo permissions")
 		}
