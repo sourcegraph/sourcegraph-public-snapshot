@@ -1,6 +1,11 @@
 # GitLab integration with Sourcegraph
 
-You can use Sourcegraph with [GitLab.com](https://gitlab.com) and GitLab CE/EE.
+Public [GitLab.com](https://gitlab.com) projects have Sourcegraph enabled.
+Support for private projects is not yet available. See
+[GitLab Docs](https://docs.gitlab.com/ee/integration/sourcegraph.html#sourcegraph-for-gitlabcom)
+for details.
+
+The intergration is also available by default for self-hosted GitLab CE/EE .
 
 Feature | Supported?
 ------- | ----------
