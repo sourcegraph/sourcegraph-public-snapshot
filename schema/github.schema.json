@@ -30,6 +30,12 @@
       "type": "string",
       "minLength": 1
     },
+    "token.type": {
+      "description": "The type of the token",
+      "type": "string",
+      "enum": ["pat", "oauth"],
+      "default": "pat"
+    },
     "token.oauth.refresh": {
       "description": "The OAuth refresh token",
       "type": "string"

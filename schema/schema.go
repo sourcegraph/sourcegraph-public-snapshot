@@ -862,6 +862,8 @@ type GitHubConnection struct {
 	TokenOauthExpiry int `json:"token.oauth.expiry,omitempty"`
 	// TokenOauthRefresh description: The OAuth refresh token
 	TokenOauthRefresh string `json:"token.oauth.refresh,omitempty"`
+	// TokenType description: The type of the token
+	TokenType string `json:"token.type,omitempty"`
 	// Url description: URL of a GitHub instance, such as https://github.com or https://github-enterprise.example.com.
 	Url string `json:"url"`
 	// Webhooks description: An array of configurations defining existing GitHub webhooks that send updates back to Sourcegraph.
