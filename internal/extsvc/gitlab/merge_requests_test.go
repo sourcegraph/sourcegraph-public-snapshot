@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/Masterminds/semver"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 
@@ -13,19 +14,53 @@ import (
 )
 
 func TestWIPOrDraft(t *testing.T) {
+	preV14Version := semver.MustParse("12.0.0")
+	postV14Version := semver.MustParse("15.5.0")
+
 	t.Run("setWIP", func(t *testing.T) {
 		tests := []struct{ title, want string }{
 			{title: "My perfect changeset", want: "WIP: My perfect changeset"},
 			{title: "WIP: My perfect changeset", want: "WIP: My perfect changeset"},
-			{title: "Draft: My perfect changeset", want: "Draft: My perfect changeset"},
+			{title: "Draft: My perfect changeset", want: "WIP: My perfect changeset"},
 		}
 		for _, tc := range tests {
 			if have, want := setWIP(tc.title), tc.want; have != want {
-				t.Errorf("incorrect title generated from SetWIP: have=%q want=%q", have, want)
+				t.Errorf("incorrect title generated from setWIP: have=%q want=%q", have, want)
 			}
 		}
 	})
-	t.Run("UnsetWIP", func(t *testing.T) {
+	t.Run("setDraft", func(t *testing.T) {
+		tests := []struct{ title, want string }{
+			{title: "My perfect changeset", want: "Draft: My perfect changeset"},
+			{title: "WIP: My perfect changeset", want: "Draft: My perfect changeset"},
+			{title: "Draft: My perfect changeset", want: "Draft: My perfect changeset"},
+		}
+		for _, tc := range tests {
+			if have, want := setDraft(tc.title), tc.want; have != want {
+				t.Errorf("incorrect title generated from setDraft: have=%q want=%q", have, want)
+			}
+		}
+	})
+	t.Run("SetWIPOrDraft", func(t *testing.T) {
+		tests := []struct {
+			gitlabVersion *semver.Version
+			title, want   string
+		}{
+			{title: "My perfect changeset", want: "WIP: My perfect changeset", gitlabVersion: preV14Version},
+			{title: "WIP: My perfect changeset", want: "WIP: My perfect changeset", gitlabVersion: preV14Version},
+			{title: "Draft: My perfect changeset", want: "WIP: My perfect changeset", gitlabVersion: preV14Version},
+
+			{title: "My perfect changeset", want: "Draft: My perfect changeset", gitlabVersion: postV14Version},
+			{title: "WIP: My perfect changeset", want: "Draft: My perfect changeset", gitlabVersion: postV14Version},
+			{title: "Draft: My perfect changeset", want: "Draft: My perfect changeset", gitlabVersion: postV14Version},
+		}
+		for _, tc := range tests {
+			if have, want := SetWIPOrDraft(tc.title, tc.gitlabVersion), tc.want; have != want {
+				t.Errorf("incorrect title generated from setDraft: have=%q want=%q", have, want)
+			}
+		}
+	})
+	t.Run("UnsetWIPOrDraft", func(t *testing.T) {
 		tests := []struct{ title, want string }{
 			{title: "WIP: My perfect changeset", want: "My perfect changeset"},
 			{title: "Draft: My perfect changeset", want: "My perfect changeset"},
@@ -33,7 +68,7 @@ func TestWIPOrDraft(t *testing.T) {
 		}
 		for _, tc := range tests {
 			if have, want := UnsetWIPOrDraft(tc.title), tc.want; have != want {
-				t.Errorf("incorrect title generated from UnsetWIP: have=%q want=%q", have, want)
+				t.Errorf("incorrect title generated from UnsetWIPOrDraft: have=%q want=%q", have, want)
 			}
 		}
 	})
