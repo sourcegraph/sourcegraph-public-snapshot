@@ -84,15 +84,6 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 	var mu sync.Mutex
 	rq := newResultQueue(siteConfig, endpoints)
 
-	defer func() {
-		mu.Lock()
-		metricReorderQueueSize.WithLabelValues().Observe(float64(rq.metricMaxLength))
-		metricMaxMatchCount.WithLabelValues().Observe(float64(rq.metricMaxMatchCount))
-		metricFinalQueueSize.Add(float64(rq.queue.Len()))
-		metricMaxSizeBytes.WithLabelValues().Observe(float64(rq.metricMaxSizeBytes))
-		mu.Unlock()
-	}()
-
 	// Flush the queue latest after maxReorderDuration. The longer
 	// maxReorderDuration, the more stable the ranking and the more MEM pressure we
 	// put on frontend. maxReorderDuration is effectively the budget we give each
@@ -182,6 +173,11 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 	}
 
 	mu.Lock()
+	metricReorderQueueSize.WithLabelValues().Observe(float64(rq.metricMaxLength))
+	metricMaxMatchCount.WithLabelValues().Observe(float64(rq.metricMaxMatchCount))
+	metricFinalQueueSize.Add(float64(rq.queue.Len()))
+	metricMaxSizeBytes.WithLabelValues().Observe(float64(rq.metricMaxSizeBytes))
+
 	rq.FlushAll(streamer)
 	mu.Unlock()
 
