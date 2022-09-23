@@ -41,6 +41,8 @@ import { ExternalServiceForm } from './ExternalServiceForm'
 import { defaultExternalServices, codeHostExternalServices } from './externalServices'
 import { ExternalServiceWebhook } from './ExternalServiceWebhook'
 
+import styles from './ExternalServicePage.module.scss'
+
 interface Props extends TelemetryProps {
     externalServiceID: Scalars['ID']
     isLightTheme: boolean
@@ -313,7 +315,7 @@ const ExternalServiceSyncJobNode: React.FunctionComponent<ExternalServiceSyncJob
                 <div className="flex-shrink-0 mr-2">
                     <Badge>{node.state}</Badge>
                 </div>
-                <div className="flex-shrink-0">
+                <div className="flex-shrink-0 flex-grow-1 mr-2">
                     {node.startedAt && (
                         <>
                             {node.finishedAt === null && <>Running since </>}
@@ -324,24 +326,28 @@ const ExternalServiceSyncJobNode: React.FunctionComponent<ExternalServiceSyncJob
                                 stableWidth={false}
                                 className="d-inline"
                             />
-                            {node.state === ExternalServiceSyncJobState.QUEUED ||
-                                (node.state === ExternalServiceSyncJobState.PROCESSING && (
-                                    <LoaderButton
-                                        label="Cancel"
-                                        alwaysShowLabel={true}
-                                        variant="danger"
-                                        outline={true}
-                                        size="sm"
-                                        onClick={cancelJob}
-                                        loading={cancelSyncJobLoading}
-                                        disabled={cancelSyncJobLoading}
-                                    />
-                                ))}
                             {cancelSyncJobError && <ErrorAlert error={cancelSyncJobError} />}
                         </>
                     )}
                 </div>
-                <div className="text-right flex-grow-1">
+                {[
+                    ExternalServiceSyncJobState.QUEUED,
+                    ExternalServiceSyncJobState.PROCESSING,
+                    ExternalServiceSyncJobState.CANCELING,
+                ].includes(node.state) && (
+                    <LoaderButton
+                        label="Cancel"
+                        alwaysShowLabel={true}
+                        variant="danger"
+                        outline={true}
+                        size="sm"
+                        onClick={cancelJob}
+                        loading={cancelSyncJobLoading || node.state === ExternalServiceSyncJobState.CANCELING}
+                        disabled={cancelSyncJobLoading || node.state === ExternalServiceSyncJobState.CANCELING}
+                        className={styles.cancelButton}
+                    />
+                )}
+                <div className="text-right flex-shrink-0">
                     <div>
                         {node.startedAt === null && 'Not started yet'}
                         {node.startedAt !== null && (
