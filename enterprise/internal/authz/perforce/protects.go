@@ -381,35 +381,32 @@ func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermission
 			}
 			logger.Debug("Relevant depots", log.Strings("depots", depotStrings))
 
-			// Handle inclusions
-			if !line.isExclusion {
-				// Grant access to specified paths
-				for _, depot := range depots {
-					srp := getSubRepoPerms(depot)
-					newIncludes := convertRulesForWildcardDepotMatch(match, depot, patternsToGlob)
-					srp.Paths = append(srp.Paths, newIncludes...)
-					logger.Debug("Adding include rules", log.Strings("rules", newIncludes))
-				}
-
-				return nil
-			}
-
+			// Apply rules to specified paths
 			for _, depot := range depots {
 				srp := getSubRepoPerms(depot)
 
-				// Special case: exclude entire depot
+				// Special case: match entire depot overrides all previous rules
 				if strings.TrimPrefix(match.original, string(depot)) == perforceWildcardMatchAll {
-					logger.Debug("Exclude entire depot, removing all previous rules")
+					if line.isExclusion {
+						logger.Debug("Exclude entire depot, removing all previous rules")
+					} else {
+						logger.Debug("Include entire depot, removing all previous rules")
+					}
 					srp.Paths = nil
 				}
 
-				newExcludes := convertRulesForWildcardDepotMatch(match, depot, patternsToGlob)
-
-				// Adding leading "-" sign to indicate exclusion
-				for _, exclude := range newExcludes {
-					srp.Paths = append(srp.Paths, "-"+exclude)
+				newPaths := convertRulesForWildcardDepotMatch(match, depot, patternsToGlob)
+				if line.isExclusion {
+					for i, path := range newPaths {
+						newPaths[i] = "-" + path
+					}
 				}
-				logger.Debug("Adding exclude rules", log.Strings("rules", newExcludes))
+				srp.Paths = append(srp.Paths, newPaths...)
+				if line.isExclusion {
+					logger.Debug("Adding exclude rules", log.Strings("rules", newPaths))
+				} else {
+					logger.Debug("Adding include rules", log.Strings("rules", newPaths))
+				}
 			}
 
 			return nil

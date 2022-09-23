@@ -262,7 +262,7 @@ func (r *Resolver) SetSubRepositoryPermissionsForUsers(ctx context.Context, args
 			paths = append(paths, include)
 			perm.PathIncludes[i] = include
 		}
-		for _, exclude := range perm.PathExcludes {
+		for i, exclude := range perm.PathExcludes {
 			if !strings.HasPrefix(exclude, "/") { // ensure leading slash
 				exclude = "/" + exclude
 			}
