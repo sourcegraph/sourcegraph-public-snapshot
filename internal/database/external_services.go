@@ -560,6 +560,9 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 	if err != nil {
 		return err
 	}
+	if strings.TrimSpace(rawConfig) == "" {
+		return fmt.Errorf("config is empty")
+	}
 
 	normalized, err := ValidateExternalServiceConfig(ctx, e, ValidateExternalServiceConfigOptions{
 		Kind:            es.Kind,
@@ -647,6 +650,9 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 		rawConfig, err := s.Config.Decrypt(ctx)
 		if err != nil {
 			return err
+		}
+		if strings.TrimSpace(rawConfig) == "" {
+			return fmt.Errorf("config is empty: service %d", s.ID)
 		}
 
 		// 🚨 SECURITY: For all GitHub and GitLab code host connections on Sourcegraph
@@ -846,6 +852,9 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 	)
 	if update.Config != nil {
 		rawConfig := *update.Config
+		if strings.TrimSpace(rawConfig) == "" {
+			return fmt.Errorf("config is empty: service %d", id)
+		}
 
 		// Query to get the kind (which is immutable) so we can validate the new config.
 		externalService, err := e.GetByID(ctx, id)
