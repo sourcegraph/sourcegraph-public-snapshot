@@ -503,7 +503,6 @@ func (r *schemaResolver) CancelExternalServiceSync(ctx context.Context, args *ca
 		return nil, err
 	}
 
-	// Enqueue a sync job for the external service, if none exists yet.
 	if err := r.db.ExternalServices().CancelSyncJob(ctx, esj.ID); err != nil {
 		return nil, err
 	}
