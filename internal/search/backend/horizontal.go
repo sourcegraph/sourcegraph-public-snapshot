@@ -78,11 +78,11 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 		endpoints = append(endpoints, endpoint)
 	}
 
-	queueSettings := resultQueueSettingsFromConfig(conf.Get().SiteConfiguration)
+	siteConfig := newRankingSiteConfig(conf.Get().SiteConfiguration)
 
 	// rq is used to re-order results by priority.
 	var mu sync.Mutex
-	rq := newResultQueue(queueSettings, endpoints)
+	rq := newResultQueue(siteConfig, endpoints)
 
 	defer func() {
 		mu.Lock()
@@ -109,7 +109,7 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 	//
 	// maxQueueDepth should be chosen as large as possible given the available
 	// resources.
-	if queueSettings.maxReorderDuration > 0 {
+	if siteConfig.maxReorderDuration > 0 {
 		done := make(chan struct{})
 		defer close(done)
 
@@ -125,7 +125,7 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 		go func() {
 			select {
 			case <-done:
-			case <-time.After(queueSettings.maxReorderDuration):
+			case <-time.After(siteConfig.maxReorderDuration):
 				mu.Lock()
 				defer mu.Unlock()
 				if searchDone {
@@ -188,16 +188,16 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 	return nil
 }
 
-type resultQueueSettings struct {
+type rankingSiteConfig struct {
 	maxQueueDepth      int
 	maxMatchCount      int
 	maxSizeBytes       int
 	maxReorderDuration time.Duration
 }
 
-func resultQueueSettingsFromConfig(siteConfig schema.SiteConfiguration) *resultQueueSettings {
+func newRankingSiteConfig(siteConfig schema.SiteConfiguration) *rankingSiteConfig {
 	// defaults
-	settings := &resultQueueSettings{
+	c := &rankingSiteConfig{
 		maxQueueDepth:      24,
 		maxMatchCount:      -1,
 		maxReorderDuration: 0,
@@ -205,24 +205,24 @@ func resultQueueSettingsFromConfig(siteConfig schema.SiteConfiguration) *resultQ
 	}
 
 	if siteConfig.ExperimentalFeatures == nil || siteConfig.ExperimentalFeatures.Ranking == nil {
-		return settings
+		return c
 	}
 
 	if siteConfig.ExperimentalFeatures.Ranking.MaxReorderQueueSize != nil {
-		settings.maxQueueDepth = *siteConfig.ExperimentalFeatures.Ranking.MaxReorderQueueSize
+		c.maxQueueDepth = *siteConfig.ExperimentalFeatures.Ranking.MaxReorderQueueSize
 	}
 
 	if siteConfig.ExperimentalFeatures.Ranking.MaxQueueMatchCount != nil {
-		settings.maxMatchCount = *siteConfig.ExperimentalFeatures.Ranking.MaxQueueMatchCount
+		c.maxMatchCount = *siteConfig.ExperimentalFeatures.Ranking.MaxQueueMatchCount
 	}
 
 	if siteConfig.ExperimentalFeatures.Ranking.MaxQueueSizeBytes != nil {
-		settings.maxSizeBytes = *siteConfig.ExperimentalFeatures.Ranking.MaxQueueSizeBytes
+		c.maxSizeBytes = *siteConfig.ExperimentalFeatures.Ranking.MaxQueueSizeBytes
 	}
 
-	settings.maxReorderDuration = time.Duration(siteConfig.ExperimentalFeatures.Ranking.MaxReorderDurationMS) * time.Millisecond
+	c.maxReorderDuration = time.Duration(siteConfig.ExperimentalFeatures.Ranking.MaxReorderDurationMS) * time.Millisecond
 
-	return settings
+	return c
 }
 
 // The results from each endpoint are mostly sorted by priority, with bounded
@@ -272,7 +272,7 @@ type resultQueue struct {
 	stats zoekt.Stats
 }
 
-func newResultQueue(settings *resultQueueSettings, endpoints []string) *resultQueue {
+func newResultQueue(siteConfig *rankingSiteConfig, endpoints []string) *resultQueue {
 	// To start, initialize every endpoint's maxPending to +inf since we don't yet know the bounds.
 	endpointMaxPendingPriority := map[string]float64{}
 	for _, endpoint := range endpoints {
@@ -280,9 +280,9 @@ func newResultQueue(settings *resultQueueSettings, endpoints []string) *resultQu
 	}
 
 	return &resultQueue{
-		maxQueueDepth:              settings.maxQueueDepth,
-		maxMatchCount:              settings.maxMatchCount,
-		maxSizeBytes:               settings.maxSizeBytes,
+		maxQueueDepth:              siteConfig.maxQueueDepth,
+		maxMatchCount:              siteConfig.maxMatchCount,
+		maxSizeBytes:               siteConfig.maxSizeBytes,
 		endpointMaxPendingPriority: endpointMaxPendingPriority,
 	}
 }

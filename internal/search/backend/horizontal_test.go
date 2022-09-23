@@ -348,7 +348,7 @@ func TestResultQueueSettingsFromConfig(t *testing.T) {
 
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
-			settings := resultQueueSettingsFromConfig(tt.siteConfig)
+			settings := newRankingSiteConfig(tt.siteConfig)
 
 			if settings.maxQueueDepth != tt.wantMaxQueueDepth {
 				t.Fatalf("want %d, got %d", tt.wantMaxQueueDepth, settings.maxQueueDepth)
