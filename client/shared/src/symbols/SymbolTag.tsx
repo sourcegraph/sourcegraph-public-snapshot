@@ -65,7 +65,7 @@ function getSymbolClassName(kind: SymbolKind): string {
         case 'CONSTRUCTOR':
         case 'FUNCTION':
         case 'FUN':
-        case "FUNC":
+        case 'FUNC':
             return styles.tagFunction
 
         case 'STRING':
