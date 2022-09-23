@@ -56,7 +56,7 @@ func TestWIPOrDraft(t *testing.T) {
 		}
 		for _, tc := range tests {
 			if have, want := SetWIPOrDraft(tc.title, tc.gitlabVersion), tc.want; have != want {
-				t.Errorf("incorrect title generated from setDraft: have=%q want=%q", have, want)
+				t.Errorf("incorrect title generated from SetWIPOrDraft: have=%q want=%q", have, want)
 			}
 		}
 	})
@@ -69,6 +69,21 @@ func TestWIPOrDraft(t *testing.T) {
 		for _, tc := range tests {
 			if have, want := UnsetWIPOrDraft(tc.title), tc.want; have != want {
 				t.Errorf("incorrect title generated from UnsetWIPOrDraft: have=%q want=%q", have, want)
+			}
+		}
+	})
+	t.Run("IsWIPOrDraft", func(t *testing.T) {
+		tests := []struct {
+			title    string
+			expected bool
+		}{
+			{title: "WIP: My perfect changeset", expected: true},
+			{title: "Draft: My perfect changeset", expected: true},
+			{title: "My perfect changeset", expected: false},
+		}
+		for _, tc := range tests {
+			if have := IsWIPOrDraft(tc.title); have != tc.expected {
+				t.Errorf("incorrect title generated from IsWIPOrDraft: have=%t want=%t", have, tc.expected)
 			}
 		}
 	})
