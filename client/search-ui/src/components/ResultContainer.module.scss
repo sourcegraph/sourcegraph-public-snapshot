@@ -5,9 +5,6 @@
 
     &:not(:last-of-type) {
         margin-bottom: 0.5rem;
-    }
-
-    &:not(:last-of-type) {
         // Prevents the sticky items below from affecting
         // anything outside of the result container.
         isolation: isolate;

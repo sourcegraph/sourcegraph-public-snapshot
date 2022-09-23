@@ -1,14 +1,5 @@
 .text-layout {
     :global(.theme-dark) & rect {
-        fill: var(--gray-09);
-    }
-
-    :global(.theme-light) & rect {
-        fill: var(--gray-03);
-    }
-
-    // Simple UI mode theme
-    :global(.theme-dark) & rect {
         fill: var(--gray-10);
     }
 

@@ -21,14 +21,12 @@
     }
 
     @media (--md-breakpoint-down) {
-        & {
-            grid-template-columns: minmax(0, 1fr);
-            grid-template-rows: auto auto 1fr;
-            grid-template-areas:
-                'infobar'
-                'sidebar'
-                'contents';
-        }
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto auto 1fr;
+        grid-template-areas:
+            'infobar'
+            'sidebar'
+            'contents';
     }
 }
 

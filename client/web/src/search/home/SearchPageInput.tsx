@@ -17,7 +17,7 @@ import { SearchBox } from '@sourcegraph/search-ui'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { SettingsCascadeProps, isSettingsValid } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
@@ -92,9 +92,6 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                 : [],
         [props.authenticatedUser, props.selectedSearchContextSpec, props.telemetryService, showSearchHistory]
     )
-
-    const quickLinks =
-        (isSettingsValid<Settings>(props.settingsCascade) && props.settingsCascade.final.quicklinks) || []
 
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
