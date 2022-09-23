@@ -2,9 +2,12 @@ package sources
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
+
+	"github.com/Masterminds/semver"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -154,7 +157,17 @@ func (s *GitLabSource) CreateChangeset(ctx context.Context, c *Changeset) (bool,
 // CreateDraftChangeset creates a GitLab merge request. If it already exists,
 // *Changeset will be populated and the return value will be true.
 func (s *GitLabSource) CreateDraftChangeset(ctx context.Context, c *Changeset) (bool, error) {
-	c.Title = gitlab.SetWIP(c.Title)
+	v, err := s.client.GetVersion(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	gv, err := semver.NewVersion(v)
+	if err != nil {
+		return false, err
+	}
+
+	c.Title = gitlab.SetWIPOrDraft(c.Title, gv.Major())
 
 	exists, err := s.CreateChangeset(ctx, c)
 	if err != nil {
@@ -425,7 +438,17 @@ func (s *GitLabSource) UpdateChangeset(ctx context.Context, c *Changeset) error 
 	// status.
 	title := c.Title
 	if mr.WorkInProgress {
-		title = gitlab.SetWIP(c.Title)
+		v, err := s.client.GetVersion(ctx)
+		if err != nil {
+			return err
+		}
+
+		gv, err := semver.NewVersion(v)
+		if err != nil {
+			return err
+		}
+		// check gitlab version first
+		title = gitlab.SetWIPOrDraft(c.Title, gv.Major())
 	}
 
 	updated, err := s.client.UpdateMergeRequest(ctx, project, mr, gitlab.UpdateMergeRequestOpts{
@@ -453,7 +476,7 @@ func (s *GitLabSource) UndraftChangeset(ctx context.Context, c *Changeset) error
 	}
 
 	// Remove WIP prefix from title.
-	c.Title = gitlab.UnsetWIP(c.Title)
+	c.Title = gitlab.UnsetWIPOrDraft(c.Title)
 	// And mark the mr as not WorkInProgress anymore, otherwise UpdateChangeset
 	// will prepend the WIP: prefix again.
 	mr.WorkInProgress = false

@@ -12,15 +12,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func TestWIP(t *testing.T) {
-	t.Run("SetWIP", func(t *testing.T) {
+func TestWIPOrDraft(t *testing.T) {
+	t.Run("setWIP", func(t *testing.T) {
 		tests := []struct{ title, want string }{
 			{title: "My perfect changeset", want: "WIP: My perfect changeset"},
 			{title: "WIP: My perfect changeset", want: "WIP: My perfect changeset"},
 			{title: "Draft: My perfect changeset", want: "Draft: My perfect changeset"},
 		}
 		for _, tc := range tests {
-			if have, want := SetWIP(tc.title), tc.want; have != want {
+			if have, want := setWIP(tc.title), tc.want; have != want {
 				t.Errorf("incorrect title generated from SetWIP: have=%q want=%q", have, want)
 			}
 		}
@@ -32,7 +32,7 @@ func TestWIP(t *testing.T) {
 			{title: "My perfect changeset", want: "My perfect changeset"},
 		}
 		for _, tc := range tests {
-			if have, want := UnsetWIP(tc.title), tc.want; have != want {
+			if have, want := UnsetWIPOrDraft(tc.title), tc.want; have != want {
 				t.Errorf("incorrect title generated from UnsetWIP: have=%q want=%q", have, want)
 			}
 		}
