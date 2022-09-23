@@ -291,8 +291,7 @@ func TestIgnoreDownEndpoints(t *testing.T) {
 }
 
 func TestResultQueueSettingsFromConfig(t *testing.T) {
-	queueDepth := 96
-	maxQueueMatchCount := 100
+	dummy := 100
 
 	cases := []struct {
 		name                   string
@@ -300,12 +299,14 @@ func TestResultQueueSettingsFromConfig(t *testing.T) {
 		wantMaxQueueDepth      int
 		wantMaxReorderDuration time.Duration
 		wantMaxQueueMatchCount int
+		wantMaxSizeBytes       int
 	}{
 		{
 			name:                   "defaults",
 			siteConfig:             schema.SiteConfiguration{},
 			wantMaxQueueDepth:      24,
 			wantMaxQueueMatchCount: -1,
+			wantMaxSizeBytes:       -1,
 		},
 		{
 			name: "MaxReorderDurationMS",
@@ -315,39 +316,54 @@ func TestResultQueueSettingsFromConfig(t *testing.T) {
 			wantMaxQueueDepth:      24,
 			wantMaxReorderDuration: 5 * time.Millisecond,
 			wantMaxQueueMatchCount: -1,
+			wantMaxSizeBytes:       -1,
 		},
 		{
 			name: "MaxReorderQueueSize",
 			siteConfig: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{Ranking: &schema.Ranking{
-				MaxReorderQueueSize: &queueDepth,
-			}}},
-			wantMaxQueueDepth:      96,
+				MaxReorderQueueSize: &dummy}}},
+			wantMaxQueueDepth:      dummy,
 			wantMaxQueueMatchCount: -1,
+			wantMaxSizeBytes:       -1,
 		},
 		{
 			name: "MaxQueueMatchCount",
 			siteConfig: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{Ranking: &schema.Ranking{
-				MaxQueueMatchCount: &maxQueueMatchCount,
+				MaxQueueMatchCount: &dummy,
 			}}},
 			wantMaxQueueDepth:      24,
-			wantMaxQueueMatchCount: 100,
+			wantMaxQueueMatchCount: dummy,
+			wantMaxSizeBytes:       -1,
+		},
+		{
+			name: "MaxSizeBytes",
+			siteConfig: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{Ranking: &schema.Ranking{
+				MaxQueueSizeBytes: &dummy,
+			}}},
+			wantMaxQueueDepth:      24,
+			wantMaxQueueMatchCount: -1,
+			wantMaxSizeBytes:       dummy,
 		},
 	}
 
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
-			haveMaxQueueDepth, haveMaxReorderDuration, haveMaxQueueMatchCount := resultQueueSettingsFromConfig(tt.siteConfig)
+			settings := newRankingSiteConfig(tt.siteConfig)
 
-			if haveMaxQueueDepth != tt.wantMaxQueueDepth {
-				t.Fatalf("want %d, got %d", tt.wantMaxQueueDepth, haveMaxQueueDepth)
+			if settings.maxQueueDepth != tt.wantMaxQueueDepth {
+				t.Fatalf("want %d, got %d", tt.wantMaxQueueDepth, settings.maxQueueDepth)
 			}
 
-			if haveMaxReorderDuration != tt.wantMaxReorderDuration {
-				t.Fatalf("want %d, got %d", tt.wantMaxReorderDuration, haveMaxReorderDuration)
+			if settings.maxReorderDuration != tt.wantMaxReorderDuration {
+				t.Fatalf("want %d, got %d", tt.wantMaxReorderDuration, settings.maxReorderDuration)
 			}
 
-			if haveMaxQueueMatchCount != tt.wantMaxQueueMatchCount {
-				t.Fatalf("want %d, got %d", tt.wantMaxQueueMatchCount, haveMaxQueueMatchCount)
+			if settings.maxMatchCount != tt.wantMaxQueueMatchCount {
+				t.Fatalf("want %d, got %d", tt.wantMaxQueueMatchCount, settings.maxMatchCount)
+			}
+
+			if settings.maxSizeBytes != tt.wantMaxSizeBytes {
+				t.Fatalf("want %d, got %d", tt.wantMaxSizeBytes, settings.maxSizeBytes)
 			}
 		})
 	}
