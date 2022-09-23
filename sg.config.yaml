@@ -57,8 +57,6 @@ env:
       { "Name": "oss-worker", "Host": "127.0.0.1:6089" },
       { "Name": "worker", "Host": "127.0.0.1:6089" },
       { "Name": "worker-executors", "Host": "127.0.0.1:6996" },
-      { "Name": "executor-codeintel", "Host": "127.0.0.1:6092" },
-      { "Name": "executor-batches", "Host": "127.0.0.1:6093" },
       { "Name": "zoekt-index-0", "Host": "127.0.0.1:6072" },
       { "Name": "zoekt-index-1", "Host": "127.0.0.1:6073" },
       { "Name": "zoekt-web-0", "Host": "127.0.0.1:3070", "DefaultPath": "/debug/requests/" },
@@ -102,7 +100,6 @@ env:
 
   # Disable firecracker inside executor in dev
   EXECUTOR_USE_FIRECRACKER: false
-  EXECUTOR_IMAGE_ARCHIVE_PATH: $HOME/.sourcegraph/images
 
   # Disable auto-indexing the CNCF repo group (this only works in Cloud)
   # This setting will be going away soon
@@ -467,7 +464,6 @@ commands:
         export GCFLAGS='all=-N -l'
       fi
       go build -gcflags="$GCFLAGS" -o .bin/executor github.com/sourcegraph/sourcegraph/enterprise/cmd/executor &&
-      mkdir -p $EXECUTOR_IMAGE_ARCHIVE_PATH
     checkBinary: .bin/executor
     env:
       EXECUTOR_QUEUE_NAME: TEMPLATE
@@ -483,7 +479,6 @@ commands:
       env TMPDIR="$HOME/.sourcegraph/indexer-temp" .bin/executor
     env:
       EXECUTOR_QUEUE_NAME: codeintel
-      SRC_PROF_HTTP: ':6092'
 
   # If you want to use this, either start it with `sg run batches-executor-firecracker` or
   # modify the `commandsets.batches` in your local `sg.config.overwrite.yaml`
@@ -491,12 +486,11 @@ commands:
     <<: *executor_template
     cmd: |
       env TMPDIR="$HOME/.sourcegraph/codeintel-executor-temp" \
-        sudo --preserve-env=TMPDIR,EXECUTOR_QUEUE_NAME,SRC_PROF_HTTP,EXECUTOR_FRONTEND_URL,EXECUTOR_FRONTEND_PASSWORD,EXECUTOR_USE_FIRECRACKER,EXECUTOR_IMAGE_ARCHIVE_PATH \
+        sudo --preserve-env=TMPDIR,EXECUTOR_QUEUE_NAME,EXECUTOR_FRONTEND_URL,EXECUTOR_FRONTEND_PASSWORD,EXECUTOR_USE_FIRECRACKER \
           .bin/executor
     env:
       EXECUTOR_USE_FIRECRACKER: true
       EXECUTOR_QUEUE_NAME: codeintel
-      SRC_PROF_HTTP: ':6093'
 
   batches-executor:
     <<: *executor_template
@@ -505,7 +499,6 @@ commands:
     env:
       EXECUTOR_QUEUE_NAME: batches
       EXECUTOR_MAXIMUM_NUM_JOBS: 8
-      SRC_PROF_HTTP: ':6093'
 
   # If you want to use this, either start it with `sg run batches-executor-firecracker` or
   # modify the `commandsets.batches` in your local `sg.config.overwrite.yaml`
@@ -513,12 +506,11 @@ commands:
     <<: *executor_template
     cmd: |
       env TMPDIR="$HOME/.sourcegraph/batches-executor-temp" \
-        sudo --preserve-env=TMPDIR,EXECUTOR_QUEUE_NAME,SRC_PROF_HTTP,EXECUTOR_FRONTEND_URL,EXECUTOR_FRONTEND_PASSWORD,EXECUTOR_USE_FIRECRACKER,EXECUTOR_IMAGE_ARCHIVE_PATH \
+        sudo --preserve-env=TMPDIR,EXECUTOR_QUEUE_NAME,EXECUTOR_FRONTEND_URL,EXECUTOR_FRONTEND_PASSWORD,EXECUTOR_USE_FIRECRACKER \
           .bin/executor
     env:
       EXECUTOR_USE_FIRECRACKER: true
       EXECUTOR_QUEUE_NAME: batches
-      SRC_PROF_HTTP: ':6093'
 
   minio:
     cmd: |

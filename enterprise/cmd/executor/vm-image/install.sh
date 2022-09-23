@@ -114,7 +114,6 @@ Restart=on-failure
 EnvironmentFile=/etc/systemd/system/executor.env
 Environment=HOME="%h"
 Environment=SRC_LOG_LEVEL=dbug
-Environment=SRC_PROF_HTTP=127.0.0.1:6060
 Environment=EXECUTOR_FIRECRACKER_IMAGE="${EXECUTOR_FIRECRACKER_IMAGE}"
 Environment=NODE_EXPORTER_URL="http://${NODE_EXPORTER_ADDR}"
 

@@ -21,7 +21,7 @@ type TelemetryOptions struct {
 	SrcCliVersion   string
 }
 
-func NewTelemetryOptions(ctx context.Context) TelemetryOptions {
+func NewTelemetryOptions(ctx context.Context, useFirecracker bool) TelemetryOptions {
 	t := TelemetryOptions{
 		OS:              runtime.GOOS,
 		Architecture:    runtime.GOARCH,
@@ -45,9 +45,11 @@ func NewTelemetryOptions(ctx context.Context) TelemetryOptions {
 		log15.Error("Failed to get docker version", "err", err)
 	}
 
-	t.IgniteVersion, err = getIgniteVersion(ctx)
-	if err != nil {
-		log15.Error("Failed to get ignite version", "err", err)
+	if useFirecracker {
+		t.IgniteVersion, err = getIgniteVersion(ctx)
+		if err != nil {
+			log15.Error("Failed to get ignite version", "err", err)
+		}
 	}
 
 	return t
