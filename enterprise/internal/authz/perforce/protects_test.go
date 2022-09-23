@@ -484,8 +484,7 @@ read   group   Rome    *   //depot/.../something.java   ## Can read all files na
 read   group   Rome    *   -//depot/dev/prodA/...   ## Except files in this directory
 `,
 			cannotReadAny: []string{"dev/prodA/something.java", "dev/prodA/another_dir/something.java"},
-			// The include appears after the exclude so it should take preference
-			canReadAll: []string{"something.java", "/something.java", "dev/prodB/something.java", "/dev/prodC/something.java"},
+			canReadAll:    []string{"something.java", "/something.java", "dev/prodB/something.java", "/dev/prodC/something.java"},
 		},
 		{
 			name:  "Deny all, grant some",
