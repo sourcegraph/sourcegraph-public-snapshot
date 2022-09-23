@@ -8,8 +8,10 @@ import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../../context'
 import {
     CAPTURE_GROUP_INSIGHT,
+    COMPUTE_INSIGHT,
     GET_DASHBOARD_INSIGHTS_POPULATED,
     GET_INSIGHT_VIEW_CAPTURE_GROUP_INSIGHT,
+    GET_INSIGHT_VIEW_COMPUTE_INSIGHT,
     GET_INSIGHT_VIEW_SEARCH_BASED_INSIGHT,
     INSIGHTS_DASHBOARDS,
     LANG_STATS_INSIGHT,
@@ -44,12 +46,32 @@ describe('Code insights populated dashboard', () => {
     it('renders a dashboard with each of the available insight types', async () => {
         overrideInsightsGraphQLApi({ testContext })
         testContext.overrideGraphQL({
+            ViewerSettings: () => ({
+                viewerSettings: {
+                    __typename: 'SettingsCascade',
+                    subjects: [
+                        {
+                            __typename: 'DefaultSettings',
+                            settingsURL: null,
+                            viewerCanAdminister: false,
+                            latestSettings: {
+                                id: 0,
+                                contents: JSON.stringify({
+                                    experimentalFeatures: { codeInsightsCompute: true },
+                                }),
+                            },
+                        },
+                    ],
+                    final: JSON.stringify({}),
+                },
+            }),
             GetDashboardInsights: () => GET_DASHBOARD_INSIGHTS_POPULATED,
             GetInsightView: () => GET_INSIGHT_VIEW_CAPTURE_GROUP_INSIGHT,
             InsightsDashboards: () => INSIGHTS_DASHBOARDS,
             LangStatsInsightContent: () => LANG_STAT_INSIGHT_CONTENT,
         })
         testContext.overrideGraphQL({ GetInsightView: () => GET_INSIGHT_VIEW_SEARCH_BASED_INSIGHT })
+        testContext.overrideGraphQL({ GetInsightView: () => GET_INSIGHT_VIEW_COMPUTE_INSIGHT })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/EACH_TYPE_OF_INSIGHT')
 
@@ -68,6 +90,7 @@ describe('Code insights populated dashboard', () => {
             CAPTURE_GROUP_INSIGHT.presentation.title,
             LANG_STATS_INSIGHT.presentation.title,
             SEARCH_BASED_INSIGHT.presentation.title,
+            COMPUTE_INSIGHT.presentation.title,
         ]
         const foundLinks = await getLinks(driver.page, expectedLinks)
 

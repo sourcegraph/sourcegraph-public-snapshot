@@ -1,4 +1,4 @@
-import { SeriesSortDirection, SeriesSortMode, TimeIntervalStepUnit } from '@sourcegraph/shared/src/schema'
+import { GroupByField, SeriesSortDirection, SeriesSortMode, TimeIntervalStepUnit } from '@sourcegraph/shared/src/schema'
 import { testUserID } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 
 import {
@@ -281,13 +281,73 @@ export const LANG_STATS_INSIGHT: InsightViewNode = {
     __typename: 'InsightView',
 }
 
+export const COMPUTE_INSIGHT: InsightViewNode = {
+    id: 'aW5zaWdodF92aWV3OiIyRjdlUk1Tc1ZoUHRBd0FKNzJ2TEJEOWZEQUgi',
+    defaultSeriesDisplayOptions: {
+        limit: null,
+        sortOptions: { mode: null, direction: null, __typename: 'SeriesSortOptions' },
+        __typename: 'SeriesDisplayOptions',
+    },
+    appliedSeriesDisplayOptions: {
+        limit: null,
+        sortOptions: { mode: null, direction: null, __typename: 'SeriesSortOptions' },
+        __typename: 'SeriesDisplayOptions',
+    },
+    isFrozen: false,
+    appliedFilters: {
+        includeRepoRegex: '',
+        excludeRepoRegex: '',
+        searchContexts: [],
+        __typename: 'InsightViewFilters',
+    },
+    dashboardReferenceCount: 1,
+    dashboards: {
+        nodes: [
+            {
+                id: 'ZGFzaGJvYXJkOnsiSWRUeXBlIjoiY3VzdG9tIiwiQXJnIjoxNn0=',
+                title: 'help',
+                __typename: 'InsightsDashboard',
+            },
+        ],
+        __typename: 'InsightsDashboardConnection',
+    },
+    presentation: {
+        __typename: 'LineChartInsightViewPresentation',
+        title: 'Compute Insight',
+        seriesPresentation: [
+            {
+                seriesId: '2F7eRYTr4EyEblhHeoQE2lRXG2y',
+                label: 'dep case:yes',
+                color: 'var(--oc-orange-7)',
+                __typename: 'LineChartDataSeriesPresentation',
+            },
+        ],
+    },
+    dataSeriesDefinitions: [
+        {
+            seriesId: '2F7eRYTr4EyEblhHeoQE2lRXG2y',
+            query: 'DEP case:yes',
+            repositoryScope: {
+                repositories: ['github.com/sourcegraph/test_DEPRECATED', 'github.com/sourcegraph/deploy-k8s-helper'],
+                __typename: 'InsightRepositoryScope',
+            },
+            timeScope: { unit: TimeIntervalStepUnit.WEEK, value: 2, __typename: 'InsightIntervalTimeScope' },
+            isCalculated: true,
+            generatedFromCaptureGroups: true,
+            groupBy: GroupByField.REPO,
+            __typename: 'SearchInsightDataSeriesDefinition',
+        },
+    ],
+    __typename: 'InsightView',
+}
+
 export const GET_DASHBOARD_INSIGHTS_POPULATED: GetDashboardInsightsResult = {
     insightsDashboards: {
         nodes: [
             {
                 id: 'EACH_TYPE_OF_INSIGHT',
                 views: {
-                    nodes: [CAPTURE_GROUP_INSIGHT, LANG_STATS_INSIGHT, SEARCH_BASED_INSIGHT],
+                    nodes: [CAPTURE_GROUP_INSIGHT, LANG_STATS_INSIGHT, SEARCH_BASED_INSIGHT, COMPUTE_INSIGHT],
                     __typename: 'InsightViewConnection',
                 },
                 __typename: 'InsightsDashboard',
@@ -336,22 +396,26 @@ export const INSIGHTS_DASHBOARDS: InsightsDashboardsResult = {
                 views: {
                     nodes: [
                         {
-                            id: 'aW5zaWdodF92aWV3OiIyQnF6ZnBQQzFYUVJTeFpkUnhOWk5jYW1jQ1ki',
+                            id: CAPTURE_GROUP_INSIGHT.id,
                             __typename: 'InsightView',
                         },
                         {
-                            id: 'aW5zaWdodF92aWV3OiIyQ3VMOXlZbXNndHI3NW05NEpUY3BWWVFNMFoi',
+                            id: LANG_STATS_INSIGHT.id,
                             __typename: 'InsightView',
                         },
                         {
-                            id: 'aW5zaWdodF92aWV3OiIyQmRnV2VFYktwWGF2UjlGcXpuVDA1cld0c2si',
+                            id: SEARCH_BASED_INSIGHT.id,
+                            __typename: 'InsightView',
+                        },
+                        {
+                            id: COMPUTE_INSIGHT.id,
                             __typename: 'InsightView',
                         },
                     ],
                     __typename: 'InsightViewConnection',
                 },
                 grants: {
-                    users: ['VXNlcjo2NQ=='],
+                    users: [testUserID],
                     organizations: [],
                     global: false,
                     __typename: 'InsightsPermissionGrants',
@@ -366,7 +430,7 @@ export const GET_INSIGHT_VIEW_CAPTURE_GROUP_INSIGHT: GetInsightViewResult = {
     insightViews: {
         nodes: [
             {
-                id: 'aW5zaWdodF92aWV3OiIyQnF6ZnBQQzFYUVJTeFpkUnhOWk5jYW1jQ1ki',
+                id: CAPTURE_GROUP_INSIGHT.id,
                 dataSeries: [
                     {
                         seriesId: '2CGKrC1dcbOpawrHQUOkiSu0NC8-n2-highmem-4',
@@ -849,7 +913,7 @@ export const GET_INSIGHT_VIEW_SEARCH_BASED_INSIGHT: GetInsightViewResult = {
     insightViews: {
         nodes: [
             {
-                id: 'aW5zaWdodF92aWV3OiIyQmRnV2VFYktwWGF2UjlGcXpuVDA1cld0c2si',
+                id: SEARCH_BASED_INSIGHT.id,
                 dataSeries: [
                     {
                         seriesId: '2D2MUtp6DzHhwhjUo9mIlBbhqoO',
@@ -900,6 +964,33 @@ export const GET_INSIGHT_VIEW_SEARCH_BASED_INSIGHT: GetInsightViewResult = {
                         status: {
                             backfillQueuedAt: '2022-08-07T17:19:02Z',
                             completedJobs: 8,
+                            pendingJobs: 0,
+                            failedJobs: 0,
+                            __typename: 'InsightSeriesStatus',
+                        },
+                        __typename: 'InsightsSeries',
+                    },
+                ],
+                __typename: 'InsightView',
+            },
+        ],
+        __typename: 'InsightViewConnection',
+    },
+}
+
+export const GET_INSIGHT_VIEW_COMPUTE_INSIGHT: GetInsightViewResult = {
+    insightViews: {
+        nodes: [
+            {
+                id: 'aW5zaWdodF92aWV3OiIyRjdlUk1Tc1ZoUHRBd0FKNzJ2TEJEOWZEQUgi',
+                dataSeries: [
+                    {
+                        seriesId: '2F7eRYTr4EyEblhHeoQE2lRXG2y-github.com/sourcegraph/test_DEPRECATED',
+                        label: 'github.com/sourcegraph/test_DEPRECATED',
+                        points: [{ dateTime: '2022-09-23T00:06:59Z', value: 2, __typename: 'InsightDataPoint' }],
+                        status: {
+                            backfillQueuedAt: '2022-09-22T11:52:21Z',
+                            completedJobs: 2,
                             pendingJobs: 0,
                             failedJobs: 0,
                             __typename: 'InsightSeriesStatus',
