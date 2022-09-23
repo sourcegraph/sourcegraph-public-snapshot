@@ -1,9 +1,29 @@
 package store
 
 import (
+	bytes2 "bytes"
 	"context"
+	"encoding/hex"
+	"fmt"
+	"math"
+	"sort"
+	"strings"
 	"testing"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+
+	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
+
+	"github.com/keisku/gorilla"
+
+	"github.com/stretchr/testify/require"
+
+	"k8s.io/apimachinery/pkg/util/rand"
+
+	"github.com/jwilder/encoding/simple8b"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/hexops/autogold"
@@ -623,4 +643,498 @@ func TestDelete(t *testing.T) {
 	if getCountForSeries(ctx, timeseriesStore, SnapshotMode, "series2") != 1 {
 		t.Errorf("expected 1 count for series2 in snapshot table")
 	}
+}
+
+func TestIntegerEncoding(t *testing.T) {
+	vals := make([]int32, 0)
+	current := int32(500)
+	vals = append(vals, current)
+	for i := 0; i <= 24; i++ {
+		r := int32(rand.IntnRange(-10, 10))
+		n := current + r
+		current = n
+		vals = append(vals, n)
+	}
+	s := samples(vals).ToDelta()
+	t.Log(s)
+
+	v := convert(s)
+
+	// t.Log(vals)
+	//
+	// compressed, err := simple8b.EncodeAll(vals)
+	// if err != nil {
+	// 	t.Fatal(err)
+	// }
+	// t.Log(compressed)
+	//
+	// count, err := simple8b.Count(compressed[0])
+	// if err != nil {
+	// 	t.Fatal(err)
+	// }
+	// dst := make([]uint64, len(vals))
+	// decoded, err := simple8b.DecodeAll(dst, compressed)
+	// if err != nil {
+	// 	t.Fatal(err)
+	// }
+	// t.Log(dst)
+	// t.Log(decoded)
+
+	encoder := simple8b.NewEncoder()
+	encoder.SetValues(v)
+	bytes, err := encoder.Bytes()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(bytes)
+	t.Log(len(bytes))
+	t.Log(hex.EncodeToString(bytes))
+
+	decoder := simple8b.NewDecoder(bytes)
+	for decoder.Next() {
+		t.Log(decoder.Read())
+	}
+}
+
+func TestTimeEncoding(t *testing.T) {
+	input := make([]time.Time, 0)
+	start := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
+	for i := 0; i < 100; i++ {
+		input = append(input, start.AddDate(0, 0, i))
+	}
+
+	tt := timeSamples(input)
+	t.Log(tt)
+
+	delts := tt.ToDelta()
+	t.Log("delts")
+	t.Log(delts)
+
+	encoder := simple8b.NewEncoder()
+	encoder.SetValues(delts)
+	bytes, err := encoder.Bytes()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(len(bytes))
+	oldSize := 8 * len(input)
+	newSize := len(bytes)
+
+	diff := (float64(newSize-oldSize) / float64(oldSize)) * 100
+
+	t.Log(fmt.Sprintf("bytes: %d, regular: %d, compression: %f", len(bytes), oldSize, math.Abs(diff)))
+	// t.Log(fmt.Sprintf("bytes: %d, regular: %d, compression: %f", len(bytes), oldSize, float64(len(bytes)*100)/float64(oldSize)))
+	// t.Log(hex.EncodeToString(bytes))
+
+	got := make([]uint64, 0, len(input))
+	decoder := simple8b.NewDecoder(bytes)
+	for decoder.Next() {
+		// t.Log(decoder.Read())
+		got = append(got, decoder.Read())
+	}
+	uncompd := uncompressTimes(got)
+	t.Log(uncompd)
+	require.ElementsMatchf(t, uncompd, tt, "not equal")
+}
+
+type samples []int32
+
+func (s samples) ToDelta() []int32 {
+	result := make([]int32, len(s))
+	result[0] = s[0]
+	for i := 1; i < len(s); i++ {
+		result[i] = s[i] - s[i-1]
+	}
+	return result
+}
+
+func convert(in []int32) []uint64 {
+	out := make([]uint64, len(in))
+	for i := range in {
+		out[i] = uint64(in[i])
+	}
+	return out
+}
+
+type timeSamples []time.Time
+
+func (t timeSamples) ToDelta() []uint64 {
+	result := make([]uint64, len(t))
+	result[0] = uint64(t[0].Unix())
+	for i := 1; i < len(t); i++ {
+		result[i] = uint64(t[i].Sub(t[i-1]).Hours())
+	}
+	return result
+}
+
+func uncompressTimes(in []uint64) timeSamples {
+	result := make(timeSamples, len(in))
+	current := time.Unix(int64(in[0]), 0)
+	result[0] = current
+
+	for i := 1; i < len(in); i++ {
+		temp := current.Add(time.Hour * time.Duration(in[i]))
+		result[i] = temp
+		current = temp
+	}
+	return result
+}
+
+func TestGorilla(t *testing.T) {
+	type sample struct {
+		at    time.Time
+		value float64
+	}
+
+	ss := make([]*sample, 0)
+
+	input := make([]time.Time, 0)
+	start := time.Date(2021, 1, 1, 5, 30, 0, 0, time.UTC)
+	for i := 0; i < 12; i++ {
+		input = append(input, start.AddDate(0, i, 0))
+		ss = append(ss, &sample{
+			at:    start.AddDate(0, 0, i),
+			value: float64(rand.IntnRange(0, 500000)),
+		})
+	}
+	t.Log(ss)
+
+	buf := new(bytes2.Buffer)
+	// header := uint32(start.AddDate(0, 0, -1).Unix())
+	header := uint32(start.Unix())
+
+	c, finish, err := gorilla.NewCompressor(buf, header)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, t2 := range input {
+		// t2 := ss[i]
+		// err := c.Compress(uint32(t2.at.Unix()), t2.value)
+		err := c.Compress(uint32(t2.Unix()), float64(rand.IntnRange(0, 500000)))
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	err = finish()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	size := len(buf.Bytes())
+	t.Log(size)
+	t.Log(hex.EncodeToString(buf.Bytes()))
+
+	// 100 * 8 = time
+	// 100 * 8 = values
+
+	// 4.5 bytes per sample
+
+	// currently
+	// 8 time + 8 bytes value = 16 per row
+
+	decompressor, header, err := gorilla.NewDecompressor(buf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := make([]sample, 0)
+	iter := decompressor.Iterator()
+	for iter.Next() {
+		ts, v := iter.At()
+		t.Log(ts, v)
+		got = append(got, sample{
+			at:    time.Unix(int64(ts), 0),
+			value: v,
+		})
+	}
+	t.Log("got")
+	for _, s := range got {
+		t.Log(s.at)
+		t.Log(s.value)
+	}
+	// t.Log(got)
+}
+
+type sample struct {
+	at    time.Time
+	value float64
+}
+
+type dataForRepo struct {
+	repoId   int
+	repoName string
+	ss       []sample
+}
+
+func TestLoadStuff(t *testing.T) {
+	ctx := context.Background()
+	dsn := `postgres://sourcegraph:sourcegraph@localhost:5432/sourcegraph`
+	handle, err := connections.EnsureNewCodeInsightsDB(dsn, "app", &observation.TestContext)
+	if err != nil {
+		t.Fatal(err)
+	}
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, handle)
+	//
+	// seriesId := "29M8bMLrYk2I54tMRUwRMhCnLti"
+	//
+	permStore := NewInsightPermissionStore(db)
+	store := New(edb.NewInsightsDB(handle), permStore)
+
+	seriesId := rand.String(10)
+	t.Log(seriesId)
+	rawId := 6
+
+	numRepos := 10000
+	repoIdMin := 20000
+	repoIdMax := repoIdMin + numRepos
+
+	valMax := 100000
+
+	numSamples := 12
+
+	times := make([]time.Time, 0)
+	start := time.Date(2021, 1, 1, 5, 30, 0, 0, time.UTC)
+	for i := 0; i < numSamples; i++ {
+		times = append(times, start.AddDate(0, i, 0))
+	}
+
+	var allData []dataForRepo
+
+	for i := repoIdMin; i < repoIdMax; i++ {
+		// first write to old table
+		repoId := i
+		name := fmt.Sprintf("repo-%d", repoId)
+
+		var smps []sample
+		for _, current := range times {
+			smps = append(smps, sample{
+				at:    current,
+				value: float64(rand.IntnRange(0, valMax+1)),
+			})
+		}
+
+		allData = append(allData, dataForRepo{
+			repoId:   i,
+			repoName: name,
+			ss:       smps,
+		})
+	}
+
+	t.Log(len(allData))
+
+	err = writeNew(ctx, store, rawId, allData)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = writeOld(ctx, store, seriesId, allData)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return
+}
+
+func writeOld(ctx context.Context, store *Store, seriesId string, allData []dataForRepo) error {
+	for i, datum := range allData {
+		if i%100 == 0 {
+			println(fmt.Sprintf("old %d", i))
+		}
+		for _, sample := range datum.ss {
+			rn := datum.repoName
+			id := api.RepoID(datum.repoId)
+			if err := store.RecordSeriesPoint(ctx, RecordSeriesPointArgs{
+				SeriesID: seriesId,
+				Point: SeriesPoint{
+					SeriesID: seriesId,
+					Time:     sample.at,
+					Value:    sample.value,
+				},
+				RepoName:    &rn,
+				RepoID:      &id,
+				PersistMode: "record",
+			}); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func BenchmarkReadGeneratedSeries(b *testing.B) {
+	ctx := context.Background()
+	dsn := `postgres://sourcegraph:sourcegraph@localhost:5432/sourcegraph`
+	handle, err := connections.EnsureNewCodeInsightsDB(dsn, "app", &observation.TestContext)
+	if err != nil {
+		b.Fatal(err)
+	}
+	logger := logtest.Scoped(b)
+	db := database.NewDB(logger, handle)
+
+	// seriesId := "cnf79vsfwc"
+	// plainId := 5
+
+	// mzvgb7cltt
+
+	seriesId := "mzvgb7cltt"
+	plainId := 5
+
+	permStore := NewInsightPermissionStore(db)
+	store := New(edb.NewInsightsDB(handle), permStore)
+
+	var newFormat []SeriesPoint
+
+	b.Run("new format", func(b *testing.B) {
+		got, err := loadNew(ctx, store, plainId)
+		if err != nil {
+			b.Fatal(err)
+		}
+		newFormat = toTimeseries(got, seriesId)
+	})
+
+	var oldFormat []SeriesPoint
+	opts := SeriesPointsOpts{SeriesID: &seriesId}
+	b.Run("old format", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			oldFormat, err = store.LoadSeriesInMem(ctx, opts)
+			if err != nil {
+				b.Fatal(err)
+			}
+			sort.Slice(oldFormat, func(i, j int) bool {
+				return oldFormat[i].Time.Before(oldFormat[j].Time)
+			})
+		}
+	})
+
+	// b.Log(oldFormat)
+	// b.Log(newFormat)
+
+	doNothing(oldFormat)
+	doNothing(newFormat)
+}
+
+func doNothing(data []SeriesPoint) {
+	return
+}
+
+func formatSamples(vals []sample) string {
+	var sb strings.Builder
+	for _, val := range vals {
+		sb.WriteString(fmt.Sprintf("%s-%d --", val.at.String(), int(val.value)))
+	}
+	return sb.String()
+}
+
+func writeNew(ctx context.Context, store *Store, seriesId int, allData []dataForRepo) error {
+	for i, datum := range allData {
+		if i%100 == 0 {
+			println(fmt.Sprintf("new %d", i))
+		}
+		// rn := datum.repoName
+		id := datum.repoId
+
+		buf, err := compress(datum.ss)
+		if err != nil {
+			return errors.Wrapf(err, "repo_id: %d", id)
+		}
+
+		q := `insert into test_data_table(series_id, repo_id, data) values (%s, %s, %s);`
+		if err := store.Exec(ctx, sqlf.Sprintf(q, seriesId, id, buf.Bytes())); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func compress(smpls []sample) (buf *bytes2.Buffer, err error) {
+	buf = new(bytes2.Buffer)
+	header := uint32(smpls[0].at.Unix())
+	c, finish, err := gorilla.NewCompressor(buf, header)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, smpl := range smpls {
+		if err := c.Compress(uint32(smpl.at.Unix()), smpl.value); err != nil {
+			return nil, err
+		}
+	}
+
+	return buf, finish()
+}
+
+func decompress(data []byte) (smpls []sample, err error) {
+	decompressor, _, err := gorilla.NewDecompressor(bytes2.NewReader(data))
+	if err != nil {
+		return nil, err
+	}
+
+	iter := decompressor.Iterator()
+	for iter.Next() {
+		t, v := iter.At()
+		smpls = append(smpls, sample{
+			at:    time.Unix(int64(t), 0),
+			value: v,
+		})
+	}
+
+	return smpls, err
+}
+
+type newRow struct {
+	RepoId  int
+	Smpls   []sample
+	Capture *string
+}
+
+func loadNew(ctx context.Context, store *Store, id int) ([]newRow, error) {
+	q := `select repo_id, data, capture from test_data_table where series_id = %s;`
+
+	var rows []newRow
+
+	if err := store.query(ctx, sqlf.Sprintf(q, id), func(s scanner) (err error) {
+		var tmp newRow
+		var raw []byte
+		if err := s.Scan(
+			&tmp.RepoId,
+			&raw,
+			&tmp.Capture,
+		); err != nil {
+			return err
+		}
+
+		dcmp, err := decompress(raw)
+		if err != nil {
+			return err
+		}
+		tmp.Smpls = dcmp
+		rows = append(rows, tmp)
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	return rows, nil
+}
+
+func toTimeseries(data []newRow, seriesId string) (results []SeriesPoint) {
+	mapped := make(map[time.Time]float64)
+	for _, datum := range data {
+		for _, smpl := range datum.Smpls {
+			mapped[smpl.at] += smpl.value
+		}
+	}
+
+	for t, f := range mapped {
+		results = append(results, SeriesPoint{
+			SeriesID: seriesId,
+			Time:     t,
+			Value:    f,
+		})
+	}
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].Time.Before(results[j].Time)
+	})
+	return results
 }
