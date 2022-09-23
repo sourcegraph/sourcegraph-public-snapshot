@@ -51,6 +51,6 @@ Extra resources that we think are helpful
 
 
 ## 💬 Community and Support
-[Join our discord server](https://discord.gg/79wK8p2DBq)
+[Join our discord server](https://srcgr.ph/discord-cloud-onboarding)
 
 If you need support, reach out via support@sourcegraph.com
