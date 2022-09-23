@@ -57,11 +57,7 @@ func run(logger log.Logger, depot string, input io.Reader) {
 	for depot, subRepo := range perms.SubRepoPermissions {
 		logger.Debug("Sub repo permissions", log.String("depot", string(depot)))
 		for _, path := range subRepo.Paths {
-			if strings.HasPrefix(path, "-") {
-				logger.Debug("Exclude rule", log.String("rule", path))
-			} else {
-				logger.Debug("Include rule", log.String("rule", path))
-			}
+			logger.Debug("Include rule", log.String("rule", path))
 		}
 	}
 }
