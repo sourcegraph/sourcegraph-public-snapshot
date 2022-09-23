@@ -286,39 +286,29 @@ func (s *SubRepoPermsClient) FilePermissionsFunc(ctx context.Context, userID int
 
 		// Iterate through all rules for the current path, and the final match takes
 		// preference.
-		exclusion := false
-		match := false
-		for _, rule := range rules.paths {
-			if rule.globPath.Match(path) {
-				match = true
-				exclusion = rule.exclusion
+		for i := len(rules.paths) - 1; i >= 0; i-- {
+			if rules.paths[i].globPath.Match(path) {
+				if rules.paths[i].exclusion {
+					return None, nil
+				}
+				return Read, nil
 			}
-		}
-
-		if match {
-			if exclusion {
-				return None, nil
-			}
-
-			return Read, nil
 		}
 
 		// We also want to match any directories above paths that we include so that we
 		// can browse down the file hierarchy.
 		if strings.HasSuffix(path, "/") {
-			for _, rule := range rules.dirs {
-				if rule.globPath.Match(path) {
-					match = true
-					exclusion = rule.exclusion
+			for i := len(rules.dirs) - 1; i >= 0; i-- {
+				if rules.dirs[i].globPath.Match(path) {
+					if rules.dirs[i].exclusion {
+						return None, nil
+					}
+					return Read, nil
 				}
 			}
 		}
 
-		if match && !exclusion {
-			return Read, nil
-		}
-
-		// Return None if no rule matches or if only match is an exclusion
+		// Return None if no rule matches
 		return None, nil
 	}, nil
 }
