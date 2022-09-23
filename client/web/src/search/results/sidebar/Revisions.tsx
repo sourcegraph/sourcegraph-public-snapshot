@@ -9,7 +9,6 @@ import styles from '@sourcegraph/search-ui/src/results/sidebar/SearchFilterSecti
 import { GitRefType } from '@sourcegraph/shared/src/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { Button, LoadingSpinner, Tab, TabList, TabPanel, TabPanels, Tabs, Text } from '@sourcegraph/wildcard'
 
 import { useConnection } from '../../../components/FilteredConnection/hooks/useConnection'
@@ -67,8 +66,6 @@ const RevisionList: React.FunctionComponent<React.PropsWithChildren<RevisionList
     pluralNoun,
     query,
 }) => {
-    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
-
     const { connection, fetchMore, hasNextPage, loading, error } = useConnection<
         SearchSidebarGitRefsResult,
         SearchSidebarGitRefsVariables,
@@ -124,7 +121,6 @@ const RevisionList: React.FunctionComponent<React.PropsWithChildren<RevisionList
                         key={node.name}
                         label={node.displayName}
                         value={node.name}
-                        labelConverter={coreWorkflowImprovementsEnabled ? undefined : revisionLabel}
                         onFilterChosen={onFilterClick}
                     />
                 ))}
