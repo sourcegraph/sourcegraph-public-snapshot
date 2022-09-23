@@ -219,11 +219,6 @@ func DeterminePlan(previousSpec, currentSpec *btypes.ChangesetSpec, currentChang
 			} else if calc := calculatePublicationState(currentSpec.Published, wantedChangeset.UiPublicationState); calc.IsPublished() && wantedChangeset.ExternalState == btypes.ChangesetExternalStateDraft {
 				pl.AddOp(btypes.ReconcilerOperationUndraft)
 			}
-
-			calc := calculatePublicationState(currentSpec.Published, wantedChangeset.UiPublicationState)
-			if calc.IsDraft() {
-				pl.AddOp(btypes.ReconcilerOperationPublishDraft)
-			}
 		}
 
 		if delta.AttributesChanged() {
