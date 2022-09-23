@@ -526,7 +526,7 @@ read   group   Rome    *   //depot/.../something.java   ## Can read all files na
 read   group   Rome    *   -//depot/dev/prodA/...   ## Except files in this directory
 `,
 			cannotReadAny: []string{"dev/prodA/something.java", "dev/prodA/another_dir/something.java"},
-			canReadAll: []string{"something.java", "/something.java", "dev/prodB/something.java", "/dev/prodC/something.java"},
+			canReadAll:    []string{"something.java", "/something.java", "dev/prodB/something.java", "/dev/prodC/something.java"},
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

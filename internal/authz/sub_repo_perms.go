@@ -414,16 +414,20 @@ func (s *SubRepoPermsClient) EnabledForRepo(ctx context.Context, repo api.RepoNa
 func expandDirs(rule string) []string {
 	dirs := make([]string, 0)
 
+	// Make sure the rule starts with a slash
+	if !strings.HasPrefix(rule, "/") {
+		rule = "/" + rule
+	}
 	// We can't support rules that start with a wildcard because we can only
 	// see one level of the tree at a time so we have no way of knowing which path leads
 	// to a file the user is allowed to see.
-	if strings.HasPrefix(rule, "*") || strings.HasPrefix(rule, "/*") {
+	if strings.HasPrefix(rule, "/*") {
 		return dirs
 	}
 
 	for {
 		lastSlash := strings.LastIndex(rule, "/")
-		if lastSlash <= 0 {
+		if lastSlash <= 0 { // we have to ignore the slash at index 0
 			break
 		}
 		// Drop anything after the last slash
