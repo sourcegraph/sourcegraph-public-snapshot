@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Masterminds/semver"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -62,8 +64,8 @@ func IsWIPOrDraft(title string) bool {
 }
 
 // SetWIPOrDraft ensures the title is prefixed with either "WIP:" or "Draft: " depending on the Gitlab version.
-func SetWIPOrDraft(t string, v int64) string {
-	if v >= 14 {
+func SetWIPOrDraft(t string, v *semver.Version) string {
+	if v.Major() >= 14 {
 		return setDraft(t)
 	}
 	return setWIP(t)

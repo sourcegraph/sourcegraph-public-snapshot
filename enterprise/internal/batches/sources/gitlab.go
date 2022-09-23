@@ -2,10 +2,10 @@ package sources
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/Masterminds/semver"
 
@@ -24,6 +24,10 @@ import (
 type GitLabSource struct {
 	client *gitlab.Client
 	au     auth.Authenticator
+
+	version      *semver.Version
+	versionOnce  sync.Once
+	versionError error
 }
 
 var _ ChangesetSource = &GitLabSource{}
@@ -157,17 +161,12 @@ func (s *GitLabSource) CreateChangeset(ctx context.Context, c *Changeset) (bool,
 // CreateDraftChangeset creates a GitLab merge request. If it already exists,
 // *Changeset will be populated and the return value will be true.
 func (s *GitLabSource) CreateDraftChangeset(ctx context.Context, c *Changeset) (bool, error) {
-	v, err := s.client.GetVersion(ctx)
+	v, err := s.determineVersion(ctx)
 	if err != nil {
 		return false, err
 	}
 
-	gv, err := semver.NewVersion(v)
-	if err != nil {
-		return false, err
-	}
-
-	c.Title = gitlab.SetWIPOrDraft(c.Title, gv.Major())
+	c.Title = gitlab.SetWIPOrDraft(c.Title, v)
 
 	exists, err := s.CreateChangeset(ctx, c)
 	if err != nil {
@@ -425,6 +424,18 @@ func readPipelines(it func() ([]*gitlab.Pipeline, error)) ([]*gitlab.Pipeline, e
 	}
 }
 
+func (s *GitLabSource) determineVersion(ctx context.Context) (*semver.Version, error) {
+	s.versionOnce.Do(func() {
+		var v string
+		v, s.versionError = s.client.GetVersion(ctx)
+
+		if s.versionError == nil {
+			s.version, s.versionError = semver.NewVersion(v)
+		}
+	})
+	return s.version, s.versionError
+}
+
 // UpdateChangeset updates the merge request on GitLab to reflect the local
 // state of the Changeset.
 func (s *GitLabSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
@@ -438,17 +449,12 @@ func (s *GitLabSource) UpdateChangeset(ctx context.Context, c *Changeset) error 
 	// status.
 	title := c.Title
 	if mr.WorkInProgress {
-		v, err := s.client.GetVersion(ctx)
+		v, err := s.determineVersion(ctx)
 		if err != nil {
 			return err
 		}
 
-		gv, err := semver.NewVersion(v)
-		if err != nil {
-			return err
-		}
-		// check gitlab version first
-		title = gitlab.SetWIPOrDraft(c.Title, gv.Major())
+		title = gitlab.SetWIPOrDraft(c.Title, v)
 	}
 
 	updated, err := s.client.UpdateMergeRequest(ctx, project, mr, gitlab.UpdateMergeRequestOpts{
