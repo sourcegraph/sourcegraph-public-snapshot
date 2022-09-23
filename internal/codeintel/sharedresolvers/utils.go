@@ -224,3 +224,14 @@ func UnmarshalRepositoryID(id graphql.ID) (repo api.RepoID, err error) {
 	err = relay.UnmarshalSpec(id, &repo)
 	return
 }
+
+// gitCommitGQLID is a type used for marshaling and unmarshaling a Git commit's
+// GraphQL ID.
+type gitCommitGQLID struct {
+	Repository graphql.ID  `json:"r"`
+	CommitID   GitObjectID `json:"c"`
+}
+
+func marshalGitCommitID(repo graphql.ID, commitID GitObjectID) graphql.ID {
+	return relay.MarshalID("GitCommit", gitCommitGQLID{Repository: repo, CommitID: commitID})
+}

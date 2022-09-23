@@ -19,9 +19,7 @@ import (
 type CodeIntelRepositoryResolver interface {
 	ID() graphql.ID
 	Name() string
-	Type(ctx context.Context) (*types.Repo, error)
 	URL() string
-	CommitFromID(ctx context.Context, args *RepositoryCommitArgs, commitID api.CommitID) (*GitCommitResolver, error)
 }
 
 type RepositoryResolver struct {
@@ -96,6 +94,11 @@ func (r *RepositoryResolver) URL() string {
 	return r.url().String()
 }
 
+func (r *RepositoryResolver) URI(ctx context.Context) (string, error) {
+	repo, err := r.repo(ctx)
+	return repo.URI, err
+}
+
 func (r *RepositoryResolver) url() *url.URL {
 	path := "/" + string(r.RepoMatch.Name)
 	if r.Rev != "" {
@@ -108,6 +111,10 @@ func (r *RepositoryResolver) url() *url.URL {
 func (r *RepositoryResolver) repo(ctx context.Context) (*types.Repo, error) {
 	err := r.hydrate(ctx)
 	return r.innerRepo, err
+}
+
+func (r *RepositoryResolver) RepoName() api.RepoName {
+	return r.RepoMatch.Name
 }
 
 func (r *RepositoryResolver) hydrate(ctx context.Context) error {

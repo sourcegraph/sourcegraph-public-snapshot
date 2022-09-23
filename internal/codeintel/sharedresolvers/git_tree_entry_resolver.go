@@ -6,10 +6,15 @@ import (
 	"net/url"
 	"path"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -22,6 +27,10 @@ type GitTreeEntryResolver struct {
 	db     database.DB
 	commit *GitCommitResolver
 
+	contentOnce sync.Once
+	content     []byte
+	contentErr  error
+
 	// stat is this tree entry's file info. Its Name method must return the full path relative to
 	// the root, not the basename.
 	stat fs.FileInfo
@@ -32,6 +41,36 @@ func NewGitTreeEntryResolver(db database.DB, commit *GitCommitResolver, stat fs.
 }
 func (r *GitTreeEntryResolver) Path() string { return r.stat.Name() }
 func (r *GitTreeEntryResolver) Name() string { return path.Base(r.stat.Name()) }
+
+func (r *GitTreeEntryResolver) ToGitTree() (*GitTreeEntryResolver, bool) { return r, r.IsDirectory() }
+func (r *GitTreeEntryResolver) ToGitBlob() (*GitTreeEntryResolver, bool) { return r, !r.IsDirectory() }
+
+// func (r *GitTreeEntryResolver) ToVirtualFile() (*virtualFileResolver, bool) { return nil, false }
+
+func (r *GitTreeEntryResolver) ByteSize(ctx context.Context) (int32, error) {
+	content, err := r.Content(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len([]byte(content))), nil
+}
+
+func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
+	r.contentOnce.Do(func() {
+		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+		defer cancel()
+
+		r.content, r.contentErr = gitserver.NewClient(r.db).ReadFile(
+			ctx,
+			r.commit.repoResolver.RepoName(),
+			api.CommitID(r.commit.OID()),
+			r.Path(),
+			authz.DefaultSubRepoPermsChecker,
+		)
+	})
+
+	return string(r.content), r.contentErr
+}
 
 func (r *GitTreeEntryResolver) Commit() *GitCommitResolver      { return r.commit }
 func (r *GitTreeEntryResolver) Repository() *RepositoryResolver { return r.commit.repoResolver }

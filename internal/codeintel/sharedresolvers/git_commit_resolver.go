@@ -3,6 +3,8 @@ package sharedresolvers
 import (
 	"net/url"
 
+	"github.com/graph-gophers/graphql-go"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
@@ -26,6 +28,12 @@ func NewGitCommitResolver(repo *RepositoryResolver, id api.CommitID) *GitCommitR
 		repoResolver: repo,
 	}
 }
+
+func (r *GitCommitResolver) ID() graphql.ID {
+	return marshalGitCommitID(r.repoResolver.ID(), r.oid)
+}
+
+func (r *GitCommitResolver) Repository() *RepositoryResolver { return r.repoResolver }
 
 func (r *GitCommitResolver) OID() GitObjectID { return r.oid }
 
