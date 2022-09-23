@@ -7,13 +7,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
-
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"k8s.io/apimachinery/pkg/util/rand"
 
-	"github.com/sourcegraph/log/logtest"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
