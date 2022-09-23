@@ -358,9 +358,7 @@ func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32)
 			dirSeen := make(map[string]struct{})
 			for _, rule := range perms.Paths {
 				exclusion := strings.HasPrefix(rule, "-")
-				if exclusion {
-          rule = strings.TrimPrefix(rule, "-")
-				}
+				rule = strings.TrimPrefix(rule, "-")
 
 				if !strings.HasPrefix(rule, "/") {
 					rule = "/" + rule
