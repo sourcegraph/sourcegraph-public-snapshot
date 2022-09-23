@@ -30,9 +30,7 @@ func TestSubRepoPermsInsert(t *testing.T) {
 	userID := int32(1)
 	repoID := api.RepoID(1)
 	perms := authz.SubRepoPermissions{
-		PathIncludes: []string{"/src/foo/*"},
-		PathExcludes: []string{"/src/bar/*"},
-		Paths:        []string{"/src/foo/*", "-/src/bar/*"},
+		Paths: []string{"/src/foo/*", "-/src/bar/*"},
 	}
 	if err := s.Upsert(ctx, userID, repoID, perms); err != nil {
 		t.Fatal(err)
@@ -64,9 +62,7 @@ func TestSubRepoPermsUpsert(t *testing.T) {
 	userID := int32(1)
 	repoID := api.RepoID(1)
 	perms := authz.SubRepoPermissions{
-		PathIncludes: []string{"/src/foo/*"},
-		PathExcludes: []string{"/src/bar/*"},
-		Paths:        []string{"/src/foo/*", "-/src/bar/*"},
+		Paths: []string{"/src/foo/*", "-/src/bar/*"},
 	}
 	// Insert initial data
 	if err := s.Upsert(ctx, userID, repoID, perms); err != nil {
@@ -75,9 +71,7 @@ func TestSubRepoPermsUpsert(t *testing.T) {
 
 	// Upsert to change perms
 	perms = authz.SubRepoPermissions{
-		PathIncludes: []string{"/src/foo_upsert/*"},
-		PathExcludes: []string{"/src/bar_upsert/*"},
-		Paths:        []string{"/src/foo_upsert/*", "-/src/bar_upsert/*"},
+		Paths: []string{"/src/foo_upsert/*", "-/src/bar_upsert/*"},
 	}
 	if err := s.Upsert(ctx, userID, repoID, perms); err != nil {
 		t.Fatal(err)
@@ -109,9 +103,7 @@ func TestSubRepoPermsUpsertWithSpec(t *testing.T) {
 	userID := int32(1)
 	repoID := api.RepoID(1)
 	perms := authz.SubRepoPermissions{
-		PathIncludes: []string{"/src/foo/*"},
-		PathExcludes: []string{"/src/bar/*"},
-		Paths:        []string{"/src/foo/*", "-/src/bar/*"},
+		Paths: []string{"/src/foo/*", "-/src/bar/*"},
 	}
 	spec := api.ExternalRepoSpec{
 		ID:          "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
@@ -125,9 +117,7 @@ func TestSubRepoPermsUpsertWithSpec(t *testing.T) {
 
 	// Upsert to change perms
 	perms = authz.SubRepoPermissions{
-		PathIncludes: []string{"/src/foo_upsert/*"},
-		PathExcludes: []string{"/src/bar_upsert/*"},
-		Paths:        []string{"/src/foo_upsert/*", "-/src/bar_upsert/*"},
+		Paths: []string{"/src/foo_upsert/*", "-/src/bar_upsert/*"},
 	}
 	if err := s.UpsertWithSpec(ctx, userID, spec, perms); err != nil {
 		t.Fatal(err)
@@ -158,9 +148,7 @@ func TestSubRepoPermsGetByUser(t *testing.T) {
 
 	userID := int32(1)
 	perms := authz.SubRepoPermissions{
-		PathIncludes: []string{"/src/foo/*"},
-		PathExcludes: []string{"/src/bar/*"},
-		Paths:        []string{"/src/foo/*", "-/src/bar/*"},
+		Paths: []string{"/src/foo/*", "-/src/bar/*"},
 	}
 	if err := s.Upsert(ctx, userID, api.RepoID(1), perms); err != nil {
 		t.Fatal(err)
@@ -168,9 +156,7 @@ func TestSubRepoPermsGetByUser(t *testing.T) {
 
 	userID = int32(1)
 	perms = authz.SubRepoPermissions{
-		PathIncludes: []string{"/src/foo2/*"},
-		PathExcludes: []string{"/src/bar2/*"},
-		Paths:        []string{"/src/foo2/*", "-/src/bar2/*"},
+		Paths: []string{"/src/foo2/*", "-/src/bar2/*"},
 	}
 	if err := s.Upsert(ctx, userID, api.RepoID(2), perms); err != nil {
 		t.Fatal(err)
@@ -183,14 +169,10 @@ func TestSubRepoPermsGetByUser(t *testing.T) {
 
 	want := map[api.RepoName]authz.SubRepoPermissions{
 		"github.com/foo/bar": {
-			PathIncludes: []string{"/src/foo/*"},
-			PathExcludes: []string{"/src/bar/*"},
-			Paths:        []string{"/src/foo/*", "-/src/bar/*"},
+			Paths: []string{"/src/foo/*", "-/src/bar/*"},
 		},
 		"github.com/foo/baz": {
-			PathIncludes: []string{"/src/foo2/*"},
-			PathExcludes: []string{"/src/bar2/*"},
-			Paths:        []string{"/src/foo2/*", "-/src/bar2/*"},
+			Paths: []string{"/src/foo2/*", "-/src/bar2/*"},
 		},
 	}
 
@@ -215,9 +197,7 @@ func TestSubRepoPermsGetByUserAndService(t *testing.T) {
 
 	userID := int32(1)
 	perms := authz.SubRepoPermissions{
-		PathIncludes: []string{"/src/foo/*"},
-		PathExcludes: []string{"/src/bar/*"},
-		Paths:        []string{"/src/foo/*", "-/src/bar/*"},
+		Paths: []string{"/src/foo/*", "-/src/bar/*"},
 	}
 	if err := s.Upsert(ctx, userID, api.RepoID(1), perms); err != nil {
 		t.Fatal(err)
@@ -225,9 +205,7 @@ func TestSubRepoPermsGetByUserAndService(t *testing.T) {
 
 	userID = int32(1)
 	perms = authz.SubRepoPermissions{
-		PathIncludes: []string{"/src/foo2/*"},
-		PathExcludes: []string{"/src/bar2/*"},
-		Paths:        []string{"/src/foo2/*", "-/src/bar2/*"},
+		Paths: []string{"/src/foo2/*", "-/src/bar2/*"},
 	}
 	if err := s.Upsert(ctx, userID, api.RepoID(2), perms); err != nil {
 		t.Fatal(err)
@@ -258,18 +236,14 @@ func TestSubRepoPermsGetByUserAndService(t *testing.T) {
 					ServiceType: "github",
 					ServiceID:   "https://github.com/",
 				}: {
-					PathIncludes: []string{"/src/foo/*"},
-					PathExcludes: []string{"/src/bar/*"},
-					Paths:        []string{"/src/foo/*", "-/src/bar/*"},
+					Paths: []string{"/src/foo/*", "-/src/bar/*"},
 				},
 				{
 					ID:          "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOB==",
 					ServiceType: "github",
 					ServiceID:   "https://github.com/",
 				}: {
-					PathIncludes: []string{"/src/foo2/*"},
-					PathExcludes: []string{"/src/bar2/*"},
-					Paths:        []string{"/src/foo2/*", "-/src/bar2/*"},
+					Paths: []string{"/src/foo2/*", "-/src/bar2/*"},
 				},
 			},
 		},

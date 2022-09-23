@@ -1350,34 +1350,99 @@ func TestResolver_SetSubRepositoryPermissionsForUsers(t *testing.T) {
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
-		test := &graphqlbackend.Test{
-			Context: ctx,
-			Schema:  mustParseGraphQLSchema(t, db),
-			Query: `
+		tests := []*graphqlbackend.Test{
+			{
+				Context: ctx,
+				Schema:  mustParseGraphQLSchema(t, db),
+				Query: `
 						mutation {
   setSubRepositoryPermissionsForUsers(
     repository: "UmVwb3NpdG9yeTox"
-    userPermissions: [{bindID: "alice", pathIncludes: ["*"], pathExcludes: ["*_test.go"]}]
+    userPermissions: [{bindID: "alice", pathIncludes: ["/*"], pathExcludes: ["/*_test.go"]}]
   ) {
     alwaysNil
   }
 }
 					`,
-			ExpectedResult: `
+				ExpectedResult: `
 						{
 							"setSubRepositoryPermissionsForUsers": {
 								"alwaysNil": null
 							}
 						}
 					`,
+			},
+			{
+				Context: ctx,
+				Schema:  mustParseGraphQLSchema(t, db),
+				Query: `
+						mutation {
+  setSubRepositoryPermissionsForUsers(
+    repository: "UmVwb3NpdG9yeTox"
+    userPermissions: [{bindID: "alice", pathIncludes: ["/*"], pathExcludes: ["/*_test.go"], paths: ["-/*_test.go", "/*"]}]
+  ) {
+    alwaysNil
+  }
+}
+					`,
+				ExpectedResult: `
+						{
+							"setSubRepositoryPermissionsForUsers": {
+								"alwaysNil": null
+							}
+						}
+					`,
+			},
+			{
+				Context: ctx,
+				Schema:  mustParseGraphQLSchema(t, db),
+				Query: `
+						mutation {
+  setSubRepositoryPermissionsForUsers(
+    repository: "UmVwb3NpdG9yeTox"
+    userPermissions: [{bindID: "alice", paths: ["-/*_test.go", "/*"]}]
+  ) {
+    alwaysNil
+  }
+}
+					`,
+				ExpectedResult: `
+						{
+							"setSubRepositoryPermissionsForUsers": {
+								"alwaysNil": null
+							}
+						}
+					`,
+			},
+			{
+				Context: ctx,
+				Schema:  mustParseGraphQLSchema(t, db),
+				Query: `
+						mutation {
+  setSubRepositoryPermissionsForUsers(
+    repository: "UmVwb3NpdG9yeTox"
+    userPermissions: [{bindID: "alice", pathIncludes: ["/*_test.go"]}]
+  ) {
+    alwaysNil
+  }
+}
+					`,
+				ExpectedErrors: []*gqlerrors.QueryError{
+					{
+						Message: "either both pathIncludes and pathExcludes needs to be set, or paths needs to be set",
+						Path:    []any{string("setSubRepositoryPermissionsForUsers")},
+					},
+				},
+				ExpectedResult: "null",
+			},
 		}
 
-		graphqlbackend.RunTests(t, []*graphqlbackend.Test{test})
+		graphqlbackend.RunTests(t, tests)
 
 		// Assert that we actually tried to store perms
 		h := subReposStore.UpsertFunc.History()
-		if len(h) != 1 {
-			t.Fatalf("Wanted 1 call, got %d", len(h))
+		if len(h) != 3 {
+			t.Fatalf("Wanted 3 calls, got %d", len(h))
 		}
 	})
 }

@@ -290,15 +290,9 @@ read user alice * -//Sourcegraph/Security/...
 			Exacts: []extsvc.RepoID{"//Sourcegraph/"},
 			SubRepoPermissions: map[extsvc.RepoID]*authz.SubRepoPermissions{
 				"//Sourcegraph/": {
-					PathIncludes: []string{
-						mustGlobPattern(t, "Engineering/..."),
-					},
-					PathExcludes: []string{
-						mustGlobPattern(t, "Security/..."),
-					},
 					Paths: []string{
-						mustGlobPattern(t, "Engineering/..."),
-						mustGlobPattern(t, "-Security/..."),
+						mustGlobPattern(t, "/Engineering/..."),
+						mustGlobPattern(t, "-/Security/..."),
 					},
 				},
 			},
