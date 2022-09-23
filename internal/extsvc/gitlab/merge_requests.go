@@ -65,6 +65,7 @@ func IsWIPOrDraft(title string) bool {
 
 // SetWIPOrDraft ensures the title is prefixed with either "WIP:" or "Draft: " depending on the Gitlab version.
 func SetWIPOrDraft(t string, v *semver.Version) string {
+	// Gitlab >=14.0 requires the prefix of a draft MR to be "Draft:"
 	if v.Major() >= 14 {
 		return setDraft(t)
 	}
