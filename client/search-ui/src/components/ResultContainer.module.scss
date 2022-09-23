@@ -4,11 +4,9 @@
     }
 
     &:not(:last-of-type) {
-        margin-bottom: 0.5rem;
         // Prevents the sticky items below from affecting
         // anything outside of the result container.
         isolation: isolate;
-
         margin-bottom: 1rem;
     }
 }
