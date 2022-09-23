@@ -387,27 +387,8 @@ func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermission
 				for _, depot := range depots {
 					srp := getSubRepoPerms(depot)
 					newIncludes := convertRulesForWildcardDepotMatch(match, depot, patternsToGlob)
-					srp.PathIncludes = append(srp.PathIncludes, newIncludes...)
 					srp.Paths = append(srp.Paths, newIncludes...)
 					logger.Debug("Adding include rules", log.Strings("rules", newIncludes))
-
-					var i int
-					for _, exclude := range srp.PathExcludes {
-						// Perforce ACLs can have conflicting rules and the later one wins, so
-						// if we get a match here we drop the existing rule.
-						originalExclude, exists := patternsToGlob[exclude]
-						if !exists {
-							i++
-							continue
-						}
-						checkWithDepotAdded := !strings.HasPrefix(originalExclude.pattern, "//") && match.Match(string(depot)+originalExclude.pattern)
-						if originalExclude.Match(match.original) || checkWithDepotAdded {
-							logger.Debug("Removing conflicting exclude rule", log.String("rule", originalExclude.pattern))
-							srp.PathExcludes = append(srp.PathExcludes[:i], srp.PathExcludes[i+1:]...)
-						} else {
-							i++
-						}
-					}
 				}
 
 				return nil
@@ -418,36 +399,17 @@ func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermission
 
 				// Special case: exclude entire depot
 				if strings.TrimPrefix(match.original, string(depot)) == perforceWildcardMatchAll {
-					logger.Debug("Exclude entire depot, removing all include rules")
-					srp.PathIncludes = nil
+					logger.Debug("Exclude entire depot, removing all previous rules")
+					srp.Paths = nil
 				}
 
 				newExcludes := convertRulesForWildcardDepotMatch(match, depot, patternsToGlob)
-				srp.PathExcludes = append(srp.PathExcludes, newExcludes...)
 
 				// Adding leading "-" sign to indicate exclusion
 				for _, exclude := range newExcludes {
 					srp.Paths = append(srp.Paths, "-"+exclude)
 				}
 				logger.Debug("Adding exclude rules", log.Strings("rules", newExcludes))
-
-				var i int
-				for _, include := range srp.PathIncludes {
-					// Perforce ACLs can have conflicting rules and the later one wins, so
-					// if we get a match here we drop the existing rule.
-					originalInclude, exists := patternsToGlob[include]
-					if !exists {
-						i++
-						continue
-					}
-					checkWithDepotAdded := !strings.HasPrefix(originalInclude.pattern, "//") && match.Match(string(depot)+originalInclude.pattern)
-					if match.Match(originalInclude.original) || checkWithDepotAdded {
-						logger.Debug("Removing conflicting include rule", log.String("rule", originalInclude.pattern))
-						srp.PathIncludes = append(srp.PathIncludes[:i], srp.PathIncludes[i+1:]...)
-					} else {
-						i++
-					}
-				}
 			}
 
 			return nil
@@ -458,10 +420,20 @@ func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermission
 				srp, exists := perms.SubRepoPermissions[depot]
 				if !exists {
 					continue
-				} else if len(srp.PathIncludes) == 0 {
-					// Depots with no inclusions can just be dropped
-					delete(perms.SubRepoPermissions, depot)
-					continue
+				} else {
+					onlyExclusions := true
+					for _, path := range srp.Paths {
+						if !strings.HasPrefix(path, "-") {
+							onlyExclusions = false
+							break
+						}
+					}
+
+					if onlyExclusions {
+						// Depots with no inclusions can just be dropped
+						delete(perms.SubRepoPermissions, depot)
+						continue
+					}
 				}
 
 				// Rules should not include the depot name. We want them to be relative so that
@@ -469,12 +441,6 @@ func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermission
 				// repositoryPathPattern has been used. We also need to remove any `//` prefixes
 				// which are included in all Helix server rules.
 				depotString := string(depot)
-				for i := range srp.PathIncludes {
-					srp.PathIncludes[i] = trimDepotNameAndSlashes(srp.PathIncludes[i], depotString)
-				}
-				for i := range srp.PathExcludes {
-					srp.PathExcludes[i] = trimDepotNameAndSlashes(srp.PathExcludes[i], depotString)
-				}
 				for i := range srp.Paths {
 					path := srp.Paths[i]
 

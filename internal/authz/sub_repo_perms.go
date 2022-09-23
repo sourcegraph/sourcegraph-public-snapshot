@@ -125,10 +125,14 @@ type cachedRules struct {
 	timestamp time.Time
 }
 
+type path struct {
+	globPath  glob.Glob
+	exclusion bool
+}
+
 type compiledRules struct {
-	includes    []glob.Glob
-	excludes    []glob.Glob
-	dirIncludes []glob.Glob
+	paths []path
+	dirs  []path
 }
 
 // NewSubRepoPermsClient instantiates an instance of authz.SubRepoPermsClient
@@ -280,30 +284,41 @@ func (s *SubRepoPermsClient) FilePermissionsFunc(ctx context.Context, userID int
 			path = "/" + path
 		}
 
-		// The current path needs to either be included or NOT excluded and we'll give
-		// preference to exclusion.
-		for _, rule := range rules.excludes {
-			if rule.Match(path) {
-				return None, nil
+		// Iterate through all rules for the current path, and the final match takes
+		// preference.
+		exclusion := false
+		match := false
+		for _, rule := range rules.paths {
+			if rule.globPath.Match(path) {
+				match = true
+				exclusion = rule.exclusion
 			}
 		}
-		for _, rule := range rules.includes {
-			if rule.Match(path) {
-				return Read, nil
+
+		if match {
+			if exclusion {
+				return None, nil
 			}
+
+			return Read, nil
 		}
 
 		// We also want to match any directories above paths that we include so that we
 		// can browse down the file hierarchy.
 		if strings.HasSuffix(path, "/") {
-			for _, rule := range rules.dirIncludes {
-				if rule.Match(path) {
-					return Read, nil
+			for _, rule := range rules.dirs {
+				if rule.globPath.Match(path) {
+					match = true
+					exclusion = rule.exclusion
 				}
 			}
 		}
 
-		// Return None if no rule matches to be safe
+		if match && !exclusion {
+			return Read, nil
+		}
+
+		// Return None if no rule matches or if only match is an exclusion
 		return None, nil
 	}, nil
 }
@@ -338,18 +353,25 @@ func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32)
 			timestamp: time.Time{},
 		}
 		for repo, perms := range repoPerms {
-			includes := make([]glob.Glob, 0, len(perms.PathIncludes))
-			dirIncludes := make([]glob.Glob, 0)
+			paths := make([]path, 0, len(perms.Paths))
+			allDirs := make([]path, 0)
 			dirSeen := make(map[string]struct{})
-			for _, rule := range perms.PathIncludes {
+			for _, rule := range perms.Paths {
+				exclusion := strings.HasPrefix(rule, "-")
+				if exclusion {
+					rule = rule[1:]
+				}
+
 				if !strings.HasPrefix(rule, "/") {
 					rule = "/" + rule
 				}
+
 				g, err := glob.Compile(rule, '/')
 				if err != nil {
 					return nil, errors.Wrap(err, "building include matcher")
 				}
-				includes = append(includes, g)
+
+				paths = append(paths, path{g, exclusion})
 
 				// We should include all directories above an include rule
 				dirs := expandDirs(rule)
@@ -361,26 +383,14 @@ func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32)
 					if err != nil {
 						return nil, errors.Wrap(err, "building include matcher for dir")
 					}
-					dirIncludes = append(dirIncludes, g)
+					allDirs = append(allDirs, path{g, exclusion})
 					dirSeen[dir] = struct{}{}
 				}
 			}
 
-			excludes := make([]glob.Glob, 0, len(perms.PathExcludes))
-			for _, rule := range perms.PathExcludes {
-				if !strings.HasPrefix(rule, "/") {
-					rule = "/" + rule
-				}
-				g, err := glob.Compile(rule, '/')
-				if err != nil {
-					return nil, errors.Wrap(err, "building exclude matcher")
-				}
-				excludes = append(excludes, g)
-			}
 			toCache.rules[repo] = compiledRules{
-				includes:    includes,
-				excludes:    excludes,
-				dirIncludes: dirIncludes,
+				paths: paths,
+				dirs:  allDirs,
 			}
 		}
 		toCache.timestamp = s.clock()
@@ -436,13 +446,12 @@ func expandDirs(rule string) []string {
 // NewSimpleChecker is exposed for testing and allows creation of a simple
 // checker based on the rules provided. The rules are expected to be in glob
 // format.
-func NewSimpleChecker(repo api.RepoName, includes []string, excludes []string) (SubRepoPermissionChecker, error) {
+func NewSimpleChecker(repo api.RepoName, paths []string) (SubRepoPermissionChecker, error) {
 	getter := NewMockSubRepoPermissionsGetter()
 	getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]SubRepoPermissions, error) {
 		return map[api.RepoName]SubRepoPermissions{
 			repo: {
-				PathIncludes: includes,
-				PathExcludes: excludes,
+				Paths: paths,
 			},
 		}, nil
 	})

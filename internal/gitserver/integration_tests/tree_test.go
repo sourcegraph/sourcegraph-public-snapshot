@@ -49,6 +49,7 @@ func TestReadDir_SubRepoFiltering(t *testing.T) {
 	srpGetter := database.NewMockSubRepoPermsStore()
 	testSubRepoPerms := map[api.RepoName]authz.SubRepoPermissions{
 		repo: {
+			Paths:        []string{"/**", "-/app/**"},
 			PathIncludes: []string{"**"},
 			PathExcludes: []string{"app/**"},
 		},
