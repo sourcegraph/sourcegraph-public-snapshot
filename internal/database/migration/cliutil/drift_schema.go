@@ -27,7 +27,7 @@ func GCSExpectedSchemaFactory(filename, version string) (schemaDescription descr
 // GitHubExpectedSchemaFactory reads schema definitions from the sourcegraph/sourcegraph repository via the
 // GitHub raw API. A false-valued flag is returned if the schema does not exist for this version.
 func GitHubExpectedSchemaFactory(filename, version string) (descriptions.SchemaDescription, bool, error) {
-	if !regexp.MustCompile(`(^v\d+\.\d+\.\d+$)|(^[A-Fa-f0-9]{40}$)`).MatchString(version) {
+	if !regexp.MustCompile(`(^\d+.\d+$)|(^v\d+\.\d+\.\d+$)|(^[A-Fa-f0-9]{40}$)`).MatchString(version) {
 		return descriptions.SchemaDescription{}, false, errors.Newf("failed to parse %q - expected a version of the form `vX.Y.Z` or a 40-character commit hash", version)
 	}
 

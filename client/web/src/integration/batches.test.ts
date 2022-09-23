@@ -405,6 +405,11 @@ function mockCommonGraphQLResponses(
                         pageInfo: { hasNextPage: false },
                         totalCount: 0,
                     },
+                    viewerBatchChangesCodeHosts: {
+                        __typename: 'BatchChangesCodeHostConnection',
+                        nodes: [],
+                        totalCount: 0,
+                    },
                 },
                 batchSpecs: {
                     nodes: [{ state: BatchSpecState.COMPLETED }],

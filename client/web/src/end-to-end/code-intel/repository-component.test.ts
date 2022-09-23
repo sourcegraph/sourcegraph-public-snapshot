@@ -496,7 +496,7 @@ describe('Repository component', () => {
 
     describe('hovers', () => {
         describe('Blob', () => {
-            test('gets displayed and updates URL when hovering over a token', async () => {
+            test.skip('gets displayed and updates URL when hovering over a token', async () => {
                 await driver.page.goto(
                     sourcegraphBaseUrl +
                         '/github.com/gorilla/mux@15a353a636720571d19e37b34a14499c3afa9991/-/blob/mux.go'

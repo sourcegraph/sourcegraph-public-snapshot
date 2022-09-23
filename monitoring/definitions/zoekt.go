@@ -24,10 +24,14 @@ func Zoekt() *monitoring.Dashboard {
 		NoSourcegraphDebugServer: true,
 		Variables: []monitoring.ContainerVariable{
 			{
-				Label:        "Instance",
-				Name:         "instance",
-				OptionsQuery: "label_values(index_num_assigned, instance)",
-				Multi:        true,
+				Label: "Instance",
+				Name:  "instance",
+				OptionsLabelValues: monitoring.ContainerVariableOptionsLabelValues{
+					Query:         "index_num_assigned",
+					LabelName:     "instance",
+					ExampleOption: "zoekt-indexserver-0:6072",
+				},
+				Multi: true,
 			},
 		},
 		Groups: []monitoring.Group{
