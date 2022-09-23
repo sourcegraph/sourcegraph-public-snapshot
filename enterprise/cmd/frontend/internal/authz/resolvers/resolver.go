@@ -261,25 +261,19 @@ func (r *Resolver) SetSubRepositoryPermissionsForUsers(ctx context.Context, args
 		}
 
 		var paths []string
-		var pathIncludes []string
-		var pathExcludes []string
 		if perm.Paths == nil {
 			paths = make([]string, 0, len(*perm.PathIncludes)+len(*perm.PathExcludes))
-			pathIncludes = make([]string, 0, len(*perm.PathIncludes))
-			pathExcludes = make([]string, 0, len(*perm.PathExcludes))
 			for _, include := range *perm.PathIncludes {
 				if !strings.HasPrefix(include, "/") { // ensure leading slash
 					include = "/" + include
 				}
 				paths = append(paths, include)
-				pathIncludes = append(pathIncludes, include)
 			}
 			for _, exclude := range *perm.PathExcludes {
 				if !strings.HasPrefix(exclude, "/") { // ensure leading slash
 					exclude = "/" + exclude
 				}
 				paths = append(paths, "-"+exclude) // excludes start with a minus (-)
-				pathExcludes = append(pathExcludes, exclude)
 			}
 		} else {
 			paths = make([]string, 0, len(*perm.Paths))
@@ -298,9 +292,7 @@ func (r *Resolver) SetSubRepositoryPermissionsForUsers(ctx context.Context, args
 		}
 
 		if err := db.SubRepoPerms().Upsert(ctx, userID, repoID, authz.SubRepoPermissions{
-			Paths:        paths,
-			PathIncludes: pathIncludes,
-			PathExcludes: pathExcludes,
+			Paths: paths,
 		}); err != nil {
 			return nil, errors.Wrap(err, "upserting sub-repo permissions")
 		}

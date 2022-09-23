@@ -731,14 +731,10 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 
 			SubRepoPermissions: map[extsvc.RepoID]*authz.SubRepoPermissions{
 				"abc": {
-					Paths:        []string{"/include1", "/include2", "-/exclude1", "-/exclude2"},
-					PathIncludes: []string{"/include1", "/include2"},
-					PathExcludes: []string{"/exclude1", "/exclude2"},
+					Paths: []string{"/include1", "/include2", "-/exclude1", "-/exclude2"},
 				},
 				"def": {
-					Paths:        []string{"/include1", "/include2", "-/exclude1", "-/exclude2"},
-					PathIncludes: []string{"/include1", "/include2"},
-					PathExcludes: []string{"/exclude1", "/exclude2"},
+					Paths: []string{"/include1", "/include2", "-/exclude1", "-/exclude2"},
 				},
 			},
 		}, nil
