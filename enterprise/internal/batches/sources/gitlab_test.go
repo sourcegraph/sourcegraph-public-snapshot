@@ -6,8 +6,10 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"testing"
 
+	"github.com/Masterminds/semver"
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
 	"github.com/stretchr/testify/assert"
@@ -21,6 +23,63 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+var mockVersion = semver.MustParse("12.0.0-pre")
+var mockVersion2 = semver.MustParse("14.10.0-pre")
+
+func TestGitLabSource(t *testing.T) {
+	t.Run("determineVersion", func(t *testing.T) {
+		p := newGitLabChangesetSourceTestProvider(t)
+
+		// assert that version and versionError has not been set yet.
+		assert.Empty(t, p.source.version)
+		assert.NoError(t, p.source.versionError)
+
+		p.mockGetVersion(mockVersion.String(), nil)
+		p.source.determineVersion(p.ctx)
+
+		assert.NoError(t, p.source.versionError)
+		assert.True(t, mockVersion.Equal(p.source.version), fmt.Sprintf("expected: %s, got: %s", p.source.version.String(), mockVersion.String()))
+	})
+
+	t.Run("CreateDraftChangeset", func(t *testing.T) {
+		t.Run("GitLab version is greater than 14.0.0", func(t *testing.T) {
+			p := newGitLabChangesetSourceTestProvider(t)
+			p.mockGetVersion(mockVersion2.String(), nil)
+
+			p.mockCreateMergeRequest(gitlab.CreateMergeRequestOpts{
+				SourceBranch: p.mr.SourceBranch,
+				TargetBranch: p.mr.TargetBranch,
+			}, p.mr, nil)
+			p.mockGetMergeRequestNotes(p.mr.IID, nil, 20, nil)
+			p.mockGetMergeRequestResourceStateEvents(p.mr.IID, nil, 20, nil)
+			p.mockGetMergeRequestPipelines(p.mr.IID, nil, 20, nil)
+
+			exists, err := p.source.CreateDraftChangeset(p.ctx, p.changeset)
+			assert.NoError(t, err)
+			assert.True(t, strings.HasPrefix(p.changeset.Title, "Draft:"))
+			assert.False(t, exists)
+		})
+
+		t.Run("GitLab Version is less than 14.0.0", func(t *testing.T) {
+			p := newGitLabChangesetSourceTestProvider(t)
+			p.mockGetVersion(mockVersion.String(), nil)
+
+			p.mockCreateMergeRequest(gitlab.CreateMergeRequestOpts{
+				SourceBranch: p.mr.SourceBranch,
+				TargetBranch: p.mr.TargetBranch,
+			}, p.mr, nil)
+			p.mockGetMergeRequestNotes(p.mr.IID, nil, 20, nil)
+			p.mockGetMergeRequestResourceStateEvents(p.mr.IID, nil, 20, nil)
+			p.mockGetMergeRequestPipelines(p.mr.IID, nil, 20, nil)
+
+			exists, err := p.source.CreateDraftChangeset(p.ctx, p.changeset)
+			assert.NoError(t, err)
+			assert.True(t, strings.HasPrefix(p.changeset.Title, "WIP:"))
+			assert.False(t, exists)
+		})
+	})
+}
 
 // TestGitLabSource_ChangesetSource tests the various Changeset functions that
 // implement the ChangesetSource interface.
@@ -619,33 +678,67 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 	})
 
 	t.Run("UpdateChangeset draft", func(t *testing.T) {
-		// We won't test the full set of UpdateChangeset scenarios; instead
-		// we'll just make sure the title is appropriately munged.
-		in := &gitlab.MergeRequest{IID: 2, WorkInProgress: true}
-		out := &gitlab.MergeRequest{}
+		t.Run("GitLab version is greater than 14.0.0", func(t *testing.T) {
+			// We won't test the full set of UpdateChangeset scenarios; instead
+			// we'll just make sure the title is appropriately munged.
+			in := &gitlab.MergeRequest{IID: 2, WorkInProgress: true}
+			out := &gitlab.MergeRequest{}
 
-		p := newGitLabChangesetSourceTestProvider(t)
-		p.changeset.Changeset.Metadata = in
+			p := newGitLabChangesetSourceTestProvider(t)
+			p.changeset.Changeset.Metadata = in
+			p.mockGetVersion(mockVersion2.String(), nil)
 
-		oldMock := gitlab.MockUpdateMergeRequest
-		t.Cleanup(func() { gitlab.MockUpdateMergeRequest = oldMock })
-		gitlab.MockUpdateMergeRequest = func(c *gitlab.Client, ctx context.Context, project *gitlab.Project, mr *gitlab.MergeRequest, opts gitlab.UpdateMergeRequestOpts) (*gitlab.MergeRequest, error) {
-			if have, want := opts.Title, "WIP: title"; have != want {
-				t.Errorf("unexpected title: have=%q want=%q", have, want)
+			oldMock := gitlab.MockUpdateMergeRequest
+			t.Cleanup(func() { gitlab.MockUpdateMergeRequest = oldMock })
+			gitlab.MockUpdateMergeRequest = func(c *gitlab.Client, ctx context.Context, project *gitlab.Project, mr *gitlab.MergeRequest, opts gitlab.UpdateMergeRequestOpts) (*gitlab.MergeRequest, error) {
+				if have, want := opts.Title, "Draft: title"; have != want {
+					t.Errorf("unexpected title: have=%q want=%q", have, want)
+				}
+				return out, nil
 			}
-			return out, nil
-		}
 
-		p.mockGetMergeRequestNotes(in.IID, nil, 20, nil)
-		p.mockGetMergeRequestResourceStateEvents(in.IID, nil, 20, nil)
-		p.mockGetMergeRequestPipelines(in.IID, nil, 20, nil)
+			p.mockGetMergeRequestNotes(in.IID, nil, 20, nil)
+			p.mockGetMergeRequestResourceStateEvents(in.IID, nil, 20, nil)
+			p.mockGetMergeRequestPipelines(in.IID, nil, 20, nil)
 
-		if err := p.source.UpdateChangeset(p.ctx, p.changeset); err != nil {
-			t.Errorf("unexpected non-nil error: %+v", err)
-		}
-		if p.changeset.Changeset.Metadata != out {
-			t.Errorf("metadata not correctly updated: have %+v; want %+v", p.changeset.Changeset.Metadata, out)
-		}
+			if err := p.source.UpdateChangeset(p.ctx, p.changeset); err != nil {
+				t.Errorf("unexpected non-nil error: %+v", err)
+			}
+			if p.changeset.Changeset.Metadata != out {
+				t.Errorf("metadata not correctly updated: have %+v; want %+v", p.changeset.Changeset.Metadata, out)
+			}
+		})
+
+		t.Run("GitLab version is greater than 14.0.0", func(t *testing.T) {
+			// We won't test the full set of UpdateChangeset scenarios; instead
+			// we'll just make sure the title is appropriately munged.
+			in := &gitlab.MergeRequest{IID: 2, WorkInProgress: true}
+			out := &gitlab.MergeRequest{}
+
+			p := newGitLabChangesetSourceTestProvider(t)
+			p.changeset.Changeset.Metadata = in
+			p.mockGetVersion(mockVersion.String(), nil)
+
+			oldMock := gitlab.MockUpdateMergeRequest
+			t.Cleanup(func() { gitlab.MockUpdateMergeRequest = oldMock })
+			gitlab.MockUpdateMergeRequest = func(c *gitlab.Client, ctx context.Context, project *gitlab.Project, mr *gitlab.MergeRequest, opts gitlab.UpdateMergeRequestOpts) (*gitlab.MergeRequest, error) {
+				if have, want := opts.Title, "WIP: title"; have != want {
+					t.Errorf("unexpected title: have=%q want=%q", have, want)
+				}
+				return out, nil
+			}
+
+			p.mockGetMergeRequestNotes(in.IID, nil, 20, nil)
+			p.mockGetMergeRequestResourceStateEvents(in.IID, nil, 20, nil)
+			p.mockGetMergeRequestPipelines(in.IID, nil, 20, nil)
+
+			if err := p.source.UpdateChangeset(p.ctx, p.changeset); err != nil {
+				t.Errorf("unexpected non-nil error: %+v", err)
+			}
+			if p.changeset.Changeset.Metadata != out {
+				t.Errorf("metadata not correctly updated: have %+v; want %+v", p.changeset.Changeset.Metadata, out)
+			}
+		})
 	})
 
 	t.Run("UndraftChangeset", func(t *testing.T) {
@@ -1019,6 +1112,12 @@ func (p *gitLabChangesetSourceTestProvider) mockCreateComment(expected string, e
 	}
 }
 
+func (p *gitLabChangesetSourceTestProvider) mockGetVersion(version string, err error) {
+	gitlab.MockGetVersion = func(c *gitlab.Client, ctx context.Context) (string, error) {
+		return version, err
+	}
+}
+
 func (p *gitLabChangesetSourceTestProvider) unmock() {
 	gitlab.MockCreateMergeRequest = nil
 	gitlab.MockGetMergeRequest = nil
@@ -1028,6 +1127,7 @@ func (p *gitLabChangesetSourceTestProvider) unmock() {
 	gitlab.MockGetOpenMergeRequestByRefs = nil
 	gitlab.MockUpdateMergeRequest = nil
 	gitlab.MockCreateMergeRequestNote = nil
+	gitlab.MockGetVersion = nil
 }
 
 // panicDoer provides a httpcli.Doer implementation that panics if any attempt
