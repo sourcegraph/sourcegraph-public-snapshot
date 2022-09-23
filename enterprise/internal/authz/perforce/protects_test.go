@@ -274,7 +274,6 @@ func TestScanFullRepoPermissions(t *testing.T) {
 			},
 			"//depot/test/": {
 				Paths: []string{
-					mustGlobPattern(t, "-/..."),
 					mustGlobPattern(t, "/..."),
 					mustGlobPattern(t, "/.../README.md"),
 					mustGlobPattern(t, "/dir.yaml"),
@@ -283,7 +282,6 @@ func TestScanFullRepoPermissions(t *testing.T) {
 			},
 			"//depot/training/": {
 				Paths: []string{
-					mustGlobPattern(t, "-/..."),
 					mustGlobPattern(t, "/..."),
 					mustGlobPattern(t, "-/secrets/..."),
 					mustGlobPattern(t, "-/.env"),
