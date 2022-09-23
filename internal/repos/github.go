@@ -1031,7 +1031,7 @@ func (s *GitHubSource) AffiliatedRepositories(ctx context.Context) ([]types.Code
 	for hasNextPage {
 		select {
 		case <-ctx.Done():
-			return nil, errors.Errorf("context canceled")
+			return nil, ctx.Err()
 		default:
 		}
 
