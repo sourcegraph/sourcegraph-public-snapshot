@@ -1193,7 +1193,7 @@ UPDATE
 SET
 	cancel = TRUE,
 	-- If the sync job is still queued, we directly abort, otherwise we keep the
-	-- state, so the worker can to teardown and, at some point, mark it failed itself.
+	-- state, so the worker can do teardown and, at some point, mark it failed itself.
 	state = CASE WHEN external_service_sync_jobs.state = 'processing' THEN external_service_sync_jobs.state ELSE 'canceled' END,
 	finished_at = CASE WHEN external_service_sync_jobs.state = 'processing' THEN external_service_sync_jobs.finished_at ELSE %s END
 WHERE
