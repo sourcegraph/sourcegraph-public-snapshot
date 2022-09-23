@@ -1375,30 +1375,34 @@ func TestCancelExternalServiceSync(t *testing.T) {
 	externalServiceID := int64(1234)
 	syncJobID := int64(99)
 
-	externalServices := database.NewMockExternalServiceStore()
-	externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
-		return &types.ExternalService{
-			ID:          externalServiceID,
-			Kind:        extsvc.KindGitHub,
-			DisplayName: "my external service",
-			Config:      extsvc.NewUnencryptedConfig(`{}`),
-		}, nil
-	})
+	newExternalServices := func() *database.MockExternalServiceStore {
+		externalServices := database.NewMockExternalServiceStore()
+		externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
+			return &types.ExternalService{
+				ID:          externalServiceID,
+				Kind:        extsvc.KindGitHub,
+				DisplayName: "my external service",
+				Config:      extsvc.NewUnencryptedConfig(`{}`),
+			}, nil
+		})
 
-	externalServices.GetSyncJobByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalServiceSyncJob, error) {
-		return &types.ExternalServiceSyncJob{
-			ID:                id,
-			State:             "processing",
-			QueuedAt:          timeutil.Now().Add(-5 * time.Minute),
-			StartedAt:         timeutil.Now(),
-			ExternalServiceID: externalServiceID,
-		}, nil
-	})
+		externalServices.GetSyncJobByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalServiceSyncJob, error) {
+			return &types.ExternalServiceSyncJob{
+				ID:                id,
+				State:             "processing",
+				QueuedAt:          timeutil.Now().Add(-5 * time.Minute),
+				StartedAt:         timeutil.Now(),
+				ExternalServiceID: externalServiceID,
+			}, nil
+		})
+		return externalServices
+	}
 
 	t.Run("as an admin with access to the external service", func(t *testing.T) {
 		users := database.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
+		externalServices := newExternalServices()
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		db.ExternalServicesFunc.SetDefaultReturn(externalServices)
@@ -1424,6 +1428,7 @@ func TestCancelExternalServiceSync(t *testing.T) {
 		users := database.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: false}, nil)
 
+		externalServices := newExternalServices()
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		db.ExternalServicesFunc.SetDefaultReturn(externalServices)
