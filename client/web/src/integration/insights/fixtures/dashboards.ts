@@ -3,7 +3,7 @@ import { testUserID } from '@sourcegraph/shared/src/testing/integration/graphQlR
 
 import { GetDashboardInsightsResult, GetInsightViewResult, InsightsDashboardsResult } from '../../../graphql-operations'
 
-export const GET_DASHBOARD_INSIGHTS = {
+export const GET_DASHBOARD_INSIGHTS_EMPTY = {
     insightsDashboards: {
         nodes: [
             {
