@@ -544,8 +544,10 @@ func (s *Syncer) SyncExternalService(
 		svc.NextSyncAt = now.Add(interval)
 		svc.LastSyncAt = now
 
-		// We only want to log this error, not return it
+		// We use context.Background() here because we want this update to
+		// succeed even if the job has been canceled.
 		if err := s.Store.ExternalServiceStore().Upsert(context.Background(), svc); err != nil {
+			// We only want to log this error, not return it
 			logger.Error("upserting external service", log.Error(err))
 		}
 

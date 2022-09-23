@@ -794,11 +794,9 @@ func (q *repositoryQuery) Do(ctx context.Context, results chan *githubResult) {
 	// 5) At this point we have scanned all results between 2007 -> To, move the From and To pointers to the remaining unscanned timeslice (To+1 -> Now()), repeat from step 3
 	// 6) Once all the repos created from 2007 to Now() are found, return
 	for {
-		select {
-		case <-ctx.Done():
+		if err := ctx.Err(); err != nil {
 			results <- &githubResult{err: ctx.Err()}
 			return
-		default:
 		}
 
 		res, err := q.Searcher.SearchRepos(ctx, github.SearchReposParams{
@@ -999,8 +997,10 @@ func (s *GitHubSource) fetchAllRepositoriesInBatches(ctx context.Context, result
 		s.logger.Debug("github sync: GetReposByNameWithOwner", log.Strings("repos", batch))
 		for _, r := range repos {
 			if err := ctx.Err(); err != nil {
+				results <- &githubResult{err: err}
 				return err
 			}
+
 			results <- &githubResult{repo: r}
 		}
 	}

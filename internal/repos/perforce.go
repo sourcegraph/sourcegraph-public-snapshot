@@ -50,6 +50,7 @@ func (s PerforceSource) ListRepos(ctx context.Context, results chan SourceResult
 		// Tiny optimization: exit early if context has been canceled.
 		if err := ctx.Err(); err != nil {
 			results <- SourceResult{Source: s, Err: err}
+			return
 		}
 
 		results <- SourceResult{Source: s, Repo: s.makeRepo(depot)}
