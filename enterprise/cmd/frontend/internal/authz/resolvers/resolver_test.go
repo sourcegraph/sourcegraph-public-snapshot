@@ -1357,7 +1357,7 @@ func TestResolver_SetSubRepositoryPermissionsForUsers(t *testing.T) {
 						mutation {
   setSubRepositoryPermissionsForUsers(
     repository: "UmVwb3NpdG9yeTox"
-    userPermissions: [{bindID: "alice", pathIncludes: ["*"], pathExcludes: ["*_test.go"]}]
+    userPermissions: [{bindID: "alice", pathIncludes: ["/*"], pathExcludes: ["/*_test.go"]}]
   ) {
     alwaysNil
   }

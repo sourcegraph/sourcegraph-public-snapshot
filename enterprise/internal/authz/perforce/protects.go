@@ -242,8 +242,8 @@ func scanProtects(logger log.Logger, rc io.Reader, s *protectsScanner) error {
 			match:      fields[4],
 		}
 		if strings.HasPrefix(parsedLine.match, "-") {
-			parsedLine.isExclusion = true           // is an exclusion
-			parsedLine.match = parsedLine.match[1:] // trim leading -
+			parsedLine.isExclusion = true                                // is an exclusion
+			parsedLine.match = strings.TrimPrefix(parsedLine.match, "-") // trim leading -
 		}
 
 		// We only care about read access. If the permission doesn't change read access,
@@ -499,8 +499,12 @@ func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermission
 }
 
 func trimDepotNameAndSlashes(s, depotName string) string {
+	depotName = strings.TrimSuffix(depotName, "/") // we want to keep the leading slash
 	s = strings.TrimPrefix(s, depotName)
 	s = strings.TrimPrefix(s, "//")
+	if !strings.HasPrefix(s, "/") {
+		s = "/" + s // make sure path starts with a '/'
+	}
 	return s
 }
 

@@ -275,6 +275,11 @@ func (s *SubRepoPermsClient) FilePermissionsFunc(ctx context.Context, userID int
 			return Read, nil
 		}
 
+		// Prefix path with "/", otherwise suffix rules like "**/file.txt" won't match
+		if !strings.HasPrefix(path, "/") {
+			path = "/" + path
+		}
+
 		// The current path needs to either be included or NOT excluded and we'll give
 		// preference to exclusion.
 		for _, rule := range rules.excludes {
@@ -337,6 +342,9 @@ func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32)
 			dirIncludes := make([]glob.Glob, 0)
 			dirSeen := make(map[string]struct{})
 			for _, rule := range perms.PathIncludes {
+				if !strings.HasPrefix(rule, "/") {
+					rule = "/" + rule
+				}
 				g, err := glob.Compile(rule, '/')
 				if err != nil {
 					return nil, errors.Wrap(err, "building include matcher")
@@ -360,6 +368,9 @@ func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32)
 
 			excludes := make([]glob.Glob, 0, len(perms.PathExcludes))
 			for _, rule := range perms.PathExcludes {
+				if !strings.HasPrefix(rule, "/") {
+					rule = "/" + rule
+				}
 				g, err := glob.Compile(rule, '/')
 				if err != nil {
 					return nil, errors.Wrap(err, "building exclude matcher")
@@ -404,7 +415,7 @@ func expandDirs(rule string) []string {
 	// We can't support rules that start with a wildcard because we can only
 	// see one level of the tree at a time so we have no way of knowing which path leads
 	// to a file the user is allowed to see.
-	if strings.HasPrefix(rule, "*") {
+	if strings.HasPrefix(rule, "*") || strings.HasPrefix(rule, "/*") {
 		return dirs
 	}
 
