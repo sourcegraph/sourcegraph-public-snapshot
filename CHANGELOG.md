@@ -17,6 +17,25 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- Outdated executors now show a warning from the admin page. [#40916](https://github.com/sourcegraph/sourcegraph/pull/40916)
+- Added support for better Slack link previews for private instances. Link previews are currently feature-flagged, and site admins can turn them on by creating the `enable-link-previews` feature flag on the `/site-admin/feature-flags` page. [#41843](https://github.com/sourcegraph/sourcegraph/pull/41843)
+
+### Changed
+
+-
+
+### Fixed
+
+-
+
+### Removed
+
+-
+
+## 4.0.0
+
+### Added
+
 - A new look for Sourcegraph, previously in beta as "Simple UI", is now permanently enabled. [#41021](https://github.com/sourcegraph/sourcegraph/pull/41021)
 - A new [multi-version upgrade](https://docs.sourcegraph.com/admin/updates#multi-version-upgrades) process now allows Sourcegraph instances to upgrade more than a single minor version. Instances at version 3.20 or later can now jump directly to 4.0. [#40628](https://github.com/sourcegraph/sourcegraph/pull/40628)
 - Matching ranges in file paths are now highlighted for path results and content results. Matching paths in repository names are now highlighted for repository results. [#41296](https://github.com/sourcegraph/sourcegraph/pull/41296) [#41385](https://github.com/sourcegraph/sourcegraph/pull/41385) [#41470](https://github.com/sourcegraph/sourcegraph/pull/41470)

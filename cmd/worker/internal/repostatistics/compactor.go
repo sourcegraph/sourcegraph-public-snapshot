@@ -31,7 +31,7 @@ func (j *compactor) Config() []env.Config {
 	return nil
 }
 
-func (j *compactor) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
+func (j *compactor) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	db, err := workerdb.Init()
 	if err != nil {
 		return nil, err

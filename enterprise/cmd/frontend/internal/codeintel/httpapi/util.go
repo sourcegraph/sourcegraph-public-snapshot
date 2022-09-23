@@ -3,10 +3,17 @@ package httpapi
 import (
 	"net/http"
 	"strconv"
+	"strings"
 )
 
-func hasQuery(r *http.Request, name string) bool {
-	return r.URL.Query().Get(name) != ""
+func sanitizeRoot(s string) string {
+	if s == "" || s == "/" {
+		return ""
+	}
+	if !strings.HasSuffix(s, "/") {
+		s += "/"
+	}
+	return s
 }
 
 func getQuery(r *http.Request, name string) string {

@@ -485,6 +485,19 @@ commands:
       EXECUTOR_QUEUE_NAME: codeintel
       SRC_PROF_HTTP: ':6092'
 
+  # If you want to use this, either start it with `sg run batches-executor-firecracker` or
+  # modify the `commandsets.batches` in your local `sg.config.overwrite.yaml`
+  codeintel-executor-firecracker:
+    <<: *executor_template
+    cmd: |
+      env TMPDIR="$HOME/.sourcegraph/codeintel-executor-temp" \
+        sudo --preserve-env=TMPDIR,EXECUTOR_QUEUE_NAME,SRC_PROF_HTTP,EXECUTOR_FRONTEND_URL,EXECUTOR_FRONTEND_PASSWORD,EXECUTOR_USE_FIRECRACKER,EXECUTOR_IMAGE_ARCHIVE_PATH \
+          .bin/executor
+    env:
+      EXECUTOR_USE_FIRECRACKER: true
+      EXECUTOR_QUEUE_NAME: codeintel
+      SRC_PROF_HTTP: ':6093'
+
   batches-executor:
     <<: *executor_template
     cmd: |

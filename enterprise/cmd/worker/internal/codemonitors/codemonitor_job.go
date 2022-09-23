@@ -28,7 +28,7 @@ func (j *codeMonitorJob) Config() []env.Config {
 	return []env.Config{}
 }
 
-func (j *codeMonitorJob) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
+func (j *codeMonitorJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	sqlDB, err := workerdb.Init()
 	if err != nil {
 		return nil, err

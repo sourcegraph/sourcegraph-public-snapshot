@@ -9,6 +9,9 @@ import {
     snippet,
     CompletionSource,
     acceptCompletion,
+    selectedCompletion,
+    currentCompletions,
+    setSelectedCompletion,
 } from '@codemirror/autocomplete'
 import { Extension, Prec } from '@codemirror/state'
 import { keymap, EditorView } from '@codemirror/view'
@@ -59,8 +62,6 @@ import { Filter, Token } from '@sourcegraph/shared/src/search/query/token'
 import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
 import { queryTokens } from './parsedQuery'
-
-import styles from '../CodeMirrorQueryInput.module.scss'
 
 type CompletionType = SymbolKind | 'queryfilter' | 'repository' | 'searchhistory'
 
@@ -197,28 +198,31 @@ export function searchQueryAutocompletion(
         },
     ]
 
-    if (!applyOnEnter) {
-        // This renders the "Tab" indicator after the details text. It's
-        // only visible for the currently selected suggestion (handled
-        // by CSS).
-        addToOptions.push({
-            render() {
-                const node = document.createElement('span')
-                node.classList.add('completion-hint', styles.tabStyle)
-                node.textContent = 'Tab'
-                return node
-            },
-            position: 200,
-        })
-    }
-
     return [
         // Uses the default keymapping but changes accepting suggestions from Enter
         // to Tab
         Prec.highest(
             keymap.of(
                 applyOnEnter
-                    ? [...completionKeymap, { key: 'Tab', run: acceptCompletion }]
+                    ? [
+                          ...completionKeymap,
+                          {
+                              key: 'Tab',
+                              run(view) {
+                                  // Select first completion item if none is selected
+                                  // and items are available.
+                                  if (selectedCompletion(view.state) === null) {
+                                      if (currentCompletions(view.state).length > 0) {
+                                          view.dispatch({ effects: setSelectedCompletion(0) })
+                                          return true
+                                      }
+                                      return false
+                                  }
+                                  // Otherwise apply the selected completion item
+                                  return acceptCompletion(view)
+                              },
+                          },
+                      ]
                     : completionKeymap.map(keybinding =>
                           keybinding.key === 'Enter' ? { ...keybinding, key: 'Tab' } : keybinding
                       )

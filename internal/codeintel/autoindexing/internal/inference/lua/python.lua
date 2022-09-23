@@ -1,5 +1,5 @@
-local patterns = require "sg.patterns"
-local recognizers = require "sg.recognizers"
+local pattern = require "sg.autoindex.patterns"
+local recognizer = require "sg.autoindex.recognizer"
 
 local indexer = "sourcegraph/scip-python:autoindex"
 local outfile = "index.scip"
@@ -103,13 +103,13 @@ local make_job = function(root, name, version, additional_args)
   }
 end
 
-return recognizers.path_recognizer {
+return recognizer.new_path_recognizer {
   patterns = {
-    patterns.path_basename "PKG-INFO",
+    pattern.new_path_basename "PKG-INFO",
   },
 
   patterns_for_content = {
-    patterns.path_basename "PKG-INFO",
+    pattern.new_path_basename "PKG-INFO",
   },
 
   generate = function(_, paths, contents_by_path)

@@ -5,6 +5,8 @@ import * as H from 'history'
 import { useHistory } from 'react-router-dom'
 
 import { gql, getDocumentNode } from '@sourcegraph/http-client'
+import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
+import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { FuzzySearch, SearchIndexing } from '../../fuzzyFinder/FuzzySearch'
@@ -15,7 +17,55 @@ import { FuzzyModal } from './FuzzyModal'
 
 const DEFAULT_MAX_RESULTS = 100
 
-export interface FuzzyFinderProps extends TelemetryProps {
+interface FuzzyFinderContainerProps extends TelemetryProps, Pick<FuzzyFinderProps, 'location'> {}
+
+/**
+ * This components registers a global keyboard shortcut to render the fuzzy
+ * finder and renders the fuzzy finder.
+ */
+export const FuzzyFinderContainer: React.FunctionComponent<FuzzyFinderContainerProps> = ({
+    location,
+    telemetryService,
+}) => {
+    const [isVisible, setIsVisible] = useState(false)
+    const [retainFuzzyFinderCache, setRetainFuzzyFinderCache] = useState(true)
+    const fuzzyFinderShortcut = useKeyboardShortcut('fuzzyFinder')
+
+    useEffect(() => {
+        if (isVisible) {
+            telemetryService.log('FuzzyFinderViewed', { action: 'shortcut open' })
+        }
+    }, [telemetryService, isVisible])
+
+    return (
+        <>
+            {fuzzyFinderShortcut?.keybindings.map((keybinding, index) => (
+                <Shortcut
+                    key={index}
+                    {...keybinding}
+                    onMatch={() => {
+                        setIsVisible(true)
+                        setRetainFuzzyFinderCache(true)
+                        const input = document.querySelector<HTMLInputElement>('#fuzzy-modal-input')
+                        input?.focus()
+                        input?.select()
+                    }}
+                    ignoreInput={true}
+                />
+            ))}
+            {retainFuzzyFinderCache && (
+                <FuzzyFinder
+                    setIsVisible={bool => setIsVisible(bool)}
+                    isVisible={isVisible}
+                    location={location}
+                    setCacheRetention={bool => setRetainFuzzyFinderCache(bool)}
+                />
+            )}
+        </>
+    )
+}
+
+interface FuzzyFinderProps {
     setIsVisible: Dispatch<SetStateAction<boolean>>
 
     isVisible: boolean
@@ -35,12 +85,11 @@ export interface FuzzyFinderProps extends TelemetryProps {
     caseInsensitiveFileCountThreshold?: number
 }
 
-export const FuzzyFinder: React.FunctionComponent<React.PropsWithChildren<FuzzyFinderProps>> = ({
+const FuzzyFinder: React.FunctionComponent<React.PropsWithChildren<FuzzyFinderProps>> = ({
     location: { search, pathname, hash },
     setCacheRetention,
     setIsVisible,
     isVisible,
-    telemetryService,
 }) => {
     // The state machine of the fuzzy finder. See `FuzzyFSM` for more details
     // about the state transititions.
@@ -60,12 +109,6 @@ export const FuzzyFinder: React.FunctionComponent<React.PropsWithChildren<FuzzyF
             }),
         [history, repoName, commitID, rawRevision, setCacheRetention]
     )
-
-    useEffect(() => {
-        if (isVisible) {
-            telemetryService.log('FuzzyFinderViewed', { action: 'shortcut open' })
-        }
-    }, [telemetryService, isVisible])
 
     if (!isVisible) {
         return null

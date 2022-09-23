@@ -53,8 +53,8 @@ func formatFirecrackerCommand(spec CommandSpec, name string, options Options) co
 // setupFirecracker invokes a set of commands to provision and prepare a Firecracker virtual
 // machine instance. If a startup script path (an executable file on the host) is supplied,
 // it will be mounted into the new virtual machine instance and executed.
-func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, name, repoDir string, options Options, operations *Operations) error {
-	// Start the VM and wait for the SSH server to become available
+func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, name, workspaceDevice string, options Options, operations *Operations) error {
+	// Start the VM and wait for the SSH server to become available.
 	startCommand := command{
 		Key: "setup.firecracker.start",
 		Command: flatten(
@@ -62,7 +62,8 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, 
 			"--runtime", "docker",
 			"--network-plugin", "cni",
 			firecrackerResourceFlags(options.ResourceOptions),
-			firecrackerCopyfileFlags(repoDir, options.FirecrackerOptions.VMStartupScriptPath),
+			firecrackerCopyfileFlags(options.FirecrackerOptions.VMStartupScriptPath),
+			firecrackerVolumeFlags(workspaceDevice, firecrackerContainerDir),
 			"--ssh",
 			"--name", name,
 			"--kernel-image", sanitizeImage(options.FirecrackerOptions.KernelImage),
@@ -112,17 +113,18 @@ func firecrackerResourceFlags(options ResourceOptions) []string {
 	}
 }
 
-func firecrackerCopyfileFlags(dir, vmStartupScriptPath string) []string {
-	copyfiles := make([]string, 0, 2)
-	if dir != "" {
-		copyfiles = append(copyfiles, fmt.Sprintf("%s:%s", dir, firecrackerContainerDir))
-	}
+func firecrackerCopyfileFlags(vmStartupScriptPath string) []string {
+	copyfiles := make([]string, 0, 1)
 	if vmStartupScriptPath != "" {
 		copyfiles = append(copyfiles, fmt.Sprintf("%s:%s", vmStartupScriptPath, vmStartupScriptPath))
 	}
 
 	sort.Strings(copyfiles)
 	return intersperse("--copy-files", copyfiles)
+}
+
+func firecrackerVolumeFlags(workspaceDevice, firecrackerContainerDir string) []string {
+	return []string{"--volumes", fmt.Sprintf("%s:%s", workspaceDevice, firecrackerContainerDir)}
 }
 
 var imagePattern = lazyregexp.New(`([^:@]+)(?::([^@]+))?(?:@sha256:([a-z0-9]{64}))?`)

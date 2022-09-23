@@ -16,6 +16,7 @@ func New(ctx context.Context, conf *Config, observationContext *observation.Cont
 		S3: uploadstore.S3Config{
 			Region:          conf.S3Region,
 			Endpoint:        conf.S3Endpoint,
+			UsePathStyle:    conf.S3UsePathStyle,
 			AccessKeyID:     conf.S3AccessKeyID,
 			SecretAccessKey: conf.S3SecretAccessKey,
 			SessionToken:    conf.S3SessionToken,

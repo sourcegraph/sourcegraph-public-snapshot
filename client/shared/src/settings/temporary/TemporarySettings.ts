@@ -33,7 +33,6 @@ export interface TemporarySettingsSchema {
     'batches.downloadSpecModalDismissed': boolean
     'codeintel.badge.used': boolean
     'codeintel.referencePanel.redesign.ctaDismissed': boolean
-    'codeintel.referencePanel.redesign.enabled': boolean
     'onboarding.quickStartTour': TourListState
     'characterKeyShortcuts.enabled': boolean
     'search.homepage.queryExamplesContent': {

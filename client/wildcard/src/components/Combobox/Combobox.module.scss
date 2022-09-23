@@ -39,6 +39,12 @@
     }
 }
 
+.item {
+    &--disabled {
+        cursor: not-allowed;
+    }
+}
+
 .group {
     margin-top: 0.25rem;
 }

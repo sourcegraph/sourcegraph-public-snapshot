@@ -105,8 +105,8 @@ Once setup, code navigation is available for use across popular development tool
 - [Code navigation features](explanations/features.md)
 - <span class="badge badge-beta">Beta</span> [Rockskip: faster search-based code navigation](explanations/rockskip.md)
 - [Writing an indexer](explanations/writing_an_indexer.md)
-- <span class="badge badge-beta">Beta</span> [Auto-indexing](explanations/auto_indexing.md)
-- <span class="badge badge-beta">Beta</span> [Auto-indexing inference](explanations/auto_indexing_inference.md)
+- [Auto-indexing](explanations/auto_indexing.md)
+- [Auto-indexing inference](explanations/auto_indexing_inference.md)
 
 
 ## [How-tos](how-to/index.md)
@@ -123,8 +123,8 @@ Once setup, code navigation is available for use across popular development tool
 - Automate uploading code graph data
   - [Add code graph data to many repositories](how-to/adding_lsif_to_many_repos.md)
   - [Adding code graph data to CI workflows](how-to/adding_lsif_to_workflows.md)
-  - <span class="badge badge-beta">Beta</span> [Enable auto-indexing](how-to/enable_auto_indexing.md)
-  - <span class="badge badge-beta">Beta</span> [Configure auto-indexing](how-to/configure_auto_indexing.md)
+  - [Enable auto-indexing](how-to/enable_auto_indexing.md)
+  - [Configure auto-indexing](how-to/configure_auto_indexing.md)
 
 ## [References](references/index.md)
 
@@ -133,6 +133,6 @@ Once setup, code navigation is available for use across popular development tool
 - [FAQ](references/faq.md)
 - [Sourcegraph recommended indexers](references/indexers.md)
 - [Environment variables](references/envvars.md)
-- <span class="badge badge-beta">Beta</span> [Auto-indexing configuration](references/auto_indexing_configuration.md)
+- [Auto-indexing configuration](references/auto_indexing_configuration.md)
 
 
