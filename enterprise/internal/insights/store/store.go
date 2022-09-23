@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"strings"
 	"time"
 
@@ -466,6 +467,9 @@ type RecordSeriesPointArgs struct {
 	RepoName *string
 	RepoID   *api.RepoID
 
+	// RepoNameID is calculated from RepoName and RepoID.
+	RepoNameID *int
+
 	PersistMode PersistMode
 }
 
@@ -537,12 +541,57 @@ func (s *Store) RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointA
 	}
 	defer func() { err = tx.Done(err) }()
 
+	tableColumns := []string{"series_id", "time", "value", "repo_id", "repo_name_id", "original_repo_id", "capture"}
+
+	// In our current use cases we should only ever use one of these for one function call, but this could change.
+	inserters := map[PersistMode]*batch.Inserter{
+		RecordMode:   batch.NewInserter(ctx, tx.Handle(), recordingTable, batch.MaxNumPostgresParameters, tableColumns...),
+		SnapshotMode: batch.NewInserter(ctx, tx.Handle(), snapshotsTable, batch.MaxNumPostgresParameters, tableColumns...),
+	}
+
 	for _, pt := range pts {
-		// this is a pretty naive implementation, this can be refactored to reduce db calls
-		if err := s.RecordSeriesPoint(ctx, pt); err != nil {
-			return err
+		inserter, ok := inserters[pt.PersistMode]
+		if !ok {
+			return errors.Newf("unsupported insights series point persist mode: %v", pt.PersistMode)
+		}
+
+		if (pt.RepoName != nil && pt.RepoID == nil) || (pt.RepoID != nil && pt.RepoName == nil) {
+			return errors.New("RepoName and RepoID must be mutually specified")
+		}
+
+		// Upsert the repository name into a separate table, so we get a small ID we can reference
+		// many times from the series_points table without storing the repo name multiple times.
+		if pt.RepoName != nil {
+			repoNameIDValue, ok, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(upsertRepoNameFmtStr, *pt.RepoName, *pt.RepoName)))
+			if err != nil {
+				return errors.Wrap(err, "upserting repo name ID")
+			}
+			if !ok {
+				return errors.Wrap(err, "repo name ID not found (this should never happen)")
+			}
+			pt.RepoNameID = &repoNameIDValue
+		}
+
+		if err := inserter.Insert(
+			ctx,
+			pt.SeriesID,         // series_id
+			pt.Point.Time.UTC(), // time
+			pt.Point.Value,      // value
+			pt.RepoID,           // repo_id
+			pt.RepoNameID,       // repo_name_id
+			pt.RepoNameID,       // original_repo_name_id
+			pt.Point.Capture,
+		); err != nil {
+			return errors.Wrap(err, "Insert")
 		}
 	}
+
+	for _, inserter := range inserters {
+		if err := inserter.Flush(ctx); err != nil {
+			return errors.Wrap(err, "Flush")
+		}
+	}
+
 	return nil
 }
 
