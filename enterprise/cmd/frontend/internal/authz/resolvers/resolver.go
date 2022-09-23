@@ -254,6 +254,17 @@ func (r *Resolver) SetSubRepositoryPermissionsForUsers(ctx context.Context, args
 			return nil, errors.Errorf("user %q not found", perm.BindID)
 		}
 
+		for i, include := range perm.PathIncludes {
+			if !strings.HasPrefix(include, "/") {
+				perm.PathIncludes[i] = "/" + include
+			}
+		}
+		for i, exclude := range perm.PathExcludes {
+			if !strings.HasPrefix(exclude, "/") {
+				perm.PathExcludes[i] = "/" + exclude
+			}
+		}
+
 		if err := db.SubRepoPerms().Upsert(ctx, userID, repoID, authz.SubRepoPermissions{
 			PathIncludes: perm.PathIncludes,
 			PathExcludes: perm.PathExcludes,
