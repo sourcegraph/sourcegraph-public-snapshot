@@ -91,32 +91,6 @@ func NextPageCursor(endCursor string) *PageInfo {
 func (r *PageInfo) EndCursor() *string { return r.endCursor }
 func (r *PageInfo) HasNextPage() bool  { return r.hasNextPage }
 
-func uploadLocationToAdjustedLocations(location []types.UploadLocation) []AdjustedLocation {
-	uploadLocation := make([]AdjustedLocation, 0, len(location))
-	for _, loc := range location {
-		dump := types.Dump(loc.Dump)
-		adjustedRange := types.Range{
-			Start: types.Position{
-				Line:      loc.TargetRange.Start.Line,
-				Character: loc.TargetRange.Start.Character,
-			},
-			End: types.Position{
-				Line:      loc.TargetRange.End.Line,
-				Character: loc.TargetRange.End.Character,
-			},
-		}
-
-		uploadLocation = append(uploadLocation, AdjustedLocation{
-			Dump:           dump,
-			Path:           loc.Path,
-			AdjustedCommit: loc.TargetCommit,
-			AdjustedRange:  adjustedRange,
-		})
-	}
-
-	return uploadLocation
-}
-
 func sharedDumpToDbstoreUpload(dump types.Dump) types.Upload {
 	return types.Upload{
 		ID:                dump.ID,
