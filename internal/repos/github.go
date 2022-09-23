@@ -485,6 +485,7 @@ func (s *GitHubSource) paginate(ctx context.Context, results chan *githubResult,
 		}
 
 		if hasNext && cost > 0 {
+			// 0-duration sleep unless nearing rate limit exhaustion, or return if context has been canceled.
 			select {
 			case <-ctx.Done():
 				results <- &githubResult{err: ctx.Err()}
@@ -657,7 +658,7 @@ func (s *GitHubSource) listRepos(ctx context.Context, repos []string, results ch
 		results <- &githubResult{repo: repo}
 
 		select {
-		// 0-duration sleep unless nearing rate limit exhaustion
+		// 0-duration sleep unless nearing rate limit exhaustion, or return if context has been canceled.
 		case <-time.After(s.v3Client.RateLimitMonitor().RecommendedWaitForBackgroundOp(1)):
 		case <-ctx.Done():
 			results <- &githubResult{err: ctx.Err()}
