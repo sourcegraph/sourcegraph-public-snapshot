@@ -6,7 +6,6 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -18,12 +17,12 @@ type GitBlobCodeIntelSupportResolver interface {
 type codeIntelSupportResolver struct {
 	repo         api.RepoName
 	path         string
-	autoindexSvc *autoindexing.Service
+	autoindexSvc AutoIndexingService
 	errTracer    *observation.ErrCollector
 }
 
 // move to autoindexing service
-func NewCodeIntelSupportResolver(autoindexSvc *autoindexing.Service, repoName api.RepoName, path string, errTracer *observation.ErrCollector) GitBlobCodeIntelSupportResolver {
+func NewCodeIntelSupportResolver(autoindexSvc AutoIndexingService, repoName api.RepoName, path string, errTracer *observation.ErrCollector) GitBlobCodeIntelSupportResolver {
 	return &codeIntelSupportResolver{
 		repo:         repoName,
 		path:         path,

@@ -374,7 +374,7 @@ func (r *RepositoryResolver) LSIFIndexes(ctx context.Context, args *autoindex.LS
 	})
 }
 
-func (r *RepositoryResolver) IndexConfiguration(ctx context.Context) (IndexConfigurationResolver, error) {
+func (r *RepositoryResolver) IndexConfiguration(ctx context.Context) (autoindex.IndexConfigurationResolver, error) {
 	return EnterpriseResolvers.codeIntelResolver.IndexConfiguration(ctx, r.ID())
 }
 

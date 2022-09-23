@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/sharedresolvers"
 	resolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/sharedresolvers"
@@ -48,13 +47,13 @@ type RootResolver interface {
 }
 
 type rootResolver struct {
-	autoindexSvc *autoindexing.Service
+	autoindexSvc AutoIndexingService
 	uploadSvc    UploadsService
 	policySvc    PolicyService
 	operations   *operations
 }
 
-func NewRootResolver(autoindexSvc *autoindexing.Service, uploadSvc UploadsService, policySvc PolicyService, observationContext *observation.Context) RootResolver {
+func NewRootResolver(autoindexSvc AutoIndexingService, uploadSvc UploadsService, policySvc PolicyService, observationContext *observation.Context) RootResolver {
 	return &rootResolver{
 		autoindexSvc: autoindexSvc,
 		uploadSvc:    uploadSvc,

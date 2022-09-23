@@ -8,14 +8,11 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	autoindexinggraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql"
+	codenavgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql"
 	policiesgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/sharedresolvers"
 	uploadsgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const (
@@ -26,42 +23,37 @@ const (
 	DefaultRetentionPolicyMatchesPageSize  = 50
 )
 
-var autoIndexingEnabled = conf.CodeIntelAutoIndexingEnabled
+// var autoIndexingEnabled = conf.CodeIntelAutoIndexingEnabled
 
-var errAutoIndexingNotEnabled = errors.New("precise code intelligence auto-indexing is not enabled")
+// var errAutoIndexingNotEnabled = errors.New("precise code intelligence auto-indexing is not enabled")
 
 // Resolver is the main interface to code intel-related operations exposed to the GraphQL API. This
 // resolver concerns itself with GraphQL/API-specific behaviors (auth, validation, marshaling, etc.).
 // All code intel-specific behavior is delegated to the underlying resolver instance, which is defined
 // in the parent package.
 type Resolver struct {
-	gitserver          GitserverClient
-	resolver           resolvers.Resolver
-	locationResolver   *CachedLocationResolver
-	observationContext *operations
+	resolver resolvers.Resolver
 }
 
 // NewResolver creates a new Resolver with the given resolver that defines all code intel-specific behavior.
-func NewResolver(db database.DB, gitserver GitserverClient, resolver resolvers.Resolver, observationContext *observation.Context) gql.CodeIntelResolver {
+func NewResolver(resolver resolvers.Resolver) gql.CodeIntelResolver {
 	baseResolver := &Resolver{
-		gitserver:          gitserver,
-		resolver:           resolver,
-		locationResolver:   NewCachedLocationResolver(db),
-		observationContext: newOperations(observationContext),
+		resolver: resolver,
 	}
 
-	return &frankenResolver{
-		Resolver: baseResolver,
-	}
+	// return &frankenResolver{
+	// 	Resolver: baseResolver,
+	// }
+	return baseResolver
 }
 
-func (r *frankenResolver) NodeResolvers() map[string]gql.NodeByIDFunc {
+func (r *Resolver) NodeResolvers() map[string]gql.NodeByIDFunc {
 	return map[string]gql.NodeByIDFunc{
 		"LSIFUpload": func(ctx context.Context, id graphql.ID) (gql.Node, error) {
-			return r.Resolver.LSIFUploadByID(ctx, id)
+			return r.LSIFUploadByID(ctx, id)
 		},
 		"LSIFIndex": func(ctx context.Context, id graphql.ID) (gql.Node, error) {
-			return r.Resolver.LSIFIndexByID(ctx, id)
+			return r.LSIFIndexByID(ctx, id)
 		},
 		"CodeIntelligenceConfigurationPolicy": func(ctx context.Context, id graphql.ID) (gql.Node, error) {
 			return r.ConfigurationPolicyByID(ctx, id)
@@ -132,25 +124,24 @@ func (r *Resolver) RequestedLanguageSupport(ctx context.Context) (_ []string, er
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for query resolution
-func (r *Resolver) GitBlobLSIFData(ctx context.Context, args *gql.GitBlobLSIFDataArgs) (_ gql.GitBlobLSIFDataResolver, err error) {
-	ctx, errTracer, endObservation := r.observationContext.gitBlobLsifData.WithErrors(ctx, &err, observation.Args{})
-	endObservation.OnCancel(ctx, 1, observation.Args{})
+func (r *Resolver) GitBlobLSIFData(ctx context.Context, args *codenavgraphql.GitBlobLSIFDataArgs) (_ codenavgraphql.GitBlobLSIFDataResolver, err error) {
+	// ctx, errTracer, endObservation := r.observationContext.gitBlobLsifData.WithErrors(ctx, &err, observation.Args{})
+	// endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	codenav := r.resolver.CodeNavResolver()
-	gitBlobResolver, err := codenav.GitBlobLSIFDataResolverFactory(ctx, args.Repo, string(args.Commit), args.Path, args.ToolName, args.ExactPath)
-	if err != nil || gitBlobResolver == nil {
-		return nil, err
-	}
+	// codenav := r.resolver.CodeNavResolver()
+	// gitBlobResolver, err := codenav.GitBlobLSIFDataResolverFactory(ctx, args.Repo, string(args.Commit), args.Path, args.ToolName, args.ExactPath)
+	// if err != nil || gitBlobResolver == nil {
+	// 	return nil, err
+	// }
 
-	return NewQueryResolver(r.gitserver, gitBlobResolver, r.resolver, r.locationResolver, errTracer), nil
+	// return NewQueryResolver(r.gitserver, gitBlobResolver, r.resolver, r.locationResolver, errTracer), nil
+	return r.resolver.CodeNavResolver().GitBlobLSIFData(ctx, args)
 }
 
-// move to autoindexing service
 func (r *Resolver) GitBlobCodeIntelInfo(ctx context.Context, args *autoindexinggraphql.GitTreeEntryCodeIntelInfoArgs) (_ autoindexinggraphql.GitBlobCodeIntelSupportResolver, err error) {
 	return r.resolver.AutoIndexingRootResolver().GitBlobCodeIntelInfo(ctx, args)
 }
 
-// move to autoindexing service
 func (r *Resolver) GitTreeCodeIntelInfo(ctx context.Context, args *autoindexinggraphql.GitTreeEntryCodeIntelInfoArgs) (resolver autoindexinggraphql.GitTreeCodeIntelSupportResolver, err error) {
 	return r.resolver.AutoIndexingRootResolver().GitTreeCodeIntelInfo(ctx, args)
 }

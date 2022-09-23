@@ -1,4 +1,4 @@
-package graphql
+package sharedresolvers
 
 import (
 	"context"
@@ -11,11 +11,7 @@ import (
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -73,7 +69,7 @@ func TestCachedLocationResolver(t *testing.T) {
 
 	type resolverPair struct {
 		key      string
-		resolver *gql.GitTreeEntryResolver
+		resolver *GitTreeEntryResolver
 	}
 	resolvers := make(chan resolverPair, numRoutines*len(repositoryIDs)*len(commits)*len(paths))
 
@@ -91,7 +87,7 @@ func TestCachedLocationResolver(t *testing.T) {
 					errs <- err
 					return
 				}
-				repoID, err := gql.UnmarshalRepositoryID(repositoryResolver.ID())
+				repoID, err := UnmarshalRepositoryID(repositoryResolver.ID())
 				if err != nil {
 					errs <- err
 					return
@@ -109,7 +105,7 @@ func TestCachedLocationResolver(t *testing.T) {
 						errs <- err
 						return
 					}
-					if commitResolver.OID() != graphqlbackend.GitObjectID(commit) {
+					if commitResolver.OID() != GitObjectID(commit) {
 						errs <- errors.Errorf("unexpected commit. want=%s have=%s", commit, commitResolver.OID())
 						return
 					}
@@ -152,7 +148,7 @@ func TestCachedLocationResolver(t *testing.T) {
 	}
 
 	close(resolvers)
-	resolversByKey := map[string][]*gql.GitTreeEntryResolver{}
+	resolversByKey := map[string][]*GitTreeEntryResolver{}
 	for pair := range resolvers {
 		resolversByKey[pair.key] = append(resolversByKey[pair.key], pair.resolver)
 	}
@@ -225,60 +221,4 @@ func TestCachedLocationResolverUnknownCommit(t *testing.T) {
 		t.Errorf("unexpected non-nil resolver")
 	}
 	mockrequire.Called(t, repos.GetFunc)
-}
-
-func TestResolveLocations(t *testing.T) {
-	repos := database.NewStrictMockRepoStore()
-	repos.GetFunc.SetDefaultHook(func(_ context.Context, id api.RepoID) (*types.Repo, error) {
-		return &types.Repo{ID: id, Name: api.RepoName(fmt.Sprintf("repo%d", id))}, nil
-	})
-
-	db := database.NewStrictMockDB()
-	db.ReposFunc.SetDefaultReturn(repos)
-
-	t.Cleanup(func() {
-		gitserver.Mocks.ResolveRevision = nil
-		backend.Mocks.Repos.GetCommit = nil
-	})
-
-	gitserver.Mocks.ResolveRevision = func(spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
-		if spec == "deadbeef3" {
-			return "", &gitdomain.RevisionNotFoundError{}
-		}
-		return api.CommitID(spec), nil
-	}
-
-	backend.Mocks.Repos.GetCommit = func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*gitdomain.Commit, error) {
-		return &gitdomain.Commit{ID: commitID}, nil
-	}
-
-	r1 := lsifstore.Range{Start: lsifstore.Position{Line: 11, Character: 12}, End: lsifstore.Position{Line: 13, Character: 14}}
-	r2 := lsifstore.Range{Start: lsifstore.Position{Line: 21, Character: 22}, End: lsifstore.Position{Line: 23, Character: 24}}
-	r3 := lsifstore.Range{Start: lsifstore.Position{Line: 31, Character: 32}, End: lsifstore.Position{Line: 33, Character: 34}}
-	r4 := lsifstore.Range{Start: lsifstore.Position{Line: 41, Character: 42}, End: lsifstore.Position{Line: 43, Character: 44}}
-
-	locations, err := resolveLocations(context.Background(), NewCachedLocationResolver(db), []AdjustedLocation{
-		{Dump: store.Dump{RepositoryID: 50}, AdjustedCommit: "deadbeef1", AdjustedRange: r1, Path: "p1"},
-		{Dump: store.Dump{RepositoryID: 51}, AdjustedCommit: "deadbeef2", AdjustedRange: r2, Path: "p2"},
-		{Dump: store.Dump{RepositoryID: 52}, AdjustedCommit: "deadbeef3", AdjustedRange: r3, Path: "p3"},
-		{Dump: store.Dump{RepositoryID: 53}, AdjustedCommit: "deadbeef4", AdjustedRange: r4, Path: "p4"},
-	})
-	if err != nil {
-		t.Fatalf("Unexpected error: %s", err)
-	}
-
-	mockrequire.Called(t, repos.GetFunc)
-
-	if len(locations) != 3 {
-		t.Fatalf("unexpected length. want=%d have=%d", 3, len(locations))
-	}
-	if url := locations[0].CanonicalURL(); url != "/repo50@deadbeef1/-/blob/p1?L12:13-14:15" {
-		t.Errorf("unexpected canonical url. want=%s have=%s", "/repo50@deadbeef1/-/blob/p1?L12:13-14:15", url)
-	}
-	if url := locations[1].CanonicalURL(); url != "/repo51@deadbeef2/-/blob/p2?L22:23-24:25" {
-		t.Errorf("unexpected canonical url. want=%s have=%s", "/repo51@deadbeef2/-/blob/p2?L22:23-24:25", url)
-	}
-	if url := locations[2].CanonicalURL(); url != "/repo53@deadbeef4/-/blob/p4?L42:43-44:45" {
-		t.Errorf("unexpected canonical url. want=%s have=%s", "/repo53@deadbeef4/-/blob/p4?L42:43-44:45", url)
-	}
 }

@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	autoindexinggraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql"
+	codenavgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql"
 	policiesgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
 	uploadsgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
 	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
@@ -14,7 +15,7 @@ import (
 // by the API.
 type Resolver interface {
 	ExecutorResolver() executor.Resolver
-	CodeNavResolver() CodeNavResolver
+	CodeNavResolver() codenavgraphql.RootResolver
 	PoliciesRootResolver() policiesgraphql.RootResolver
 	AutoIndexingRootResolver() autoindexinggraphql.RootResolver
 	UploadRootResolver() uploadsgraphql.RootResolver
@@ -22,7 +23,7 @@ type Resolver interface {
 
 type resolver struct {
 	executorResolver         executor.Resolver
-	codenavResolver          CodeNavResolver
+	codenavResolver          codenavgraphql.RootResolver
 	policiesRootResolver     policiesgraphql.RootResolver
 	autoIndexingRootResolver autoindexinggraphql.RootResolver
 	uploadsRootResolver      uploadsgraphql.RootResolver
@@ -30,7 +31,7 @@ type resolver struct {
 
 // NewResolver creates a new resolver with the given services.
 func NewResolver(
-	codenavResolver CodeNavResolver,
+	codenavResolver codenavgraphql.RootResolver,
 	executorResolver executor.Resolver,
 	policiesRootResolver policiesgraphql.RootResolver,
 	autoIndexingRootResolver autoindexinggraphql.RootResolver,
@@ -45,7 +46,7 @@ func NewResolver(
 	}
 }
 
-func (r *resolver) CodeNavResolver() CodeNavResolver {
+func (r *resolver) CodeNavResolver() codenavgraphql.RootResolver {
 	return r.codenavResolver
 }
 

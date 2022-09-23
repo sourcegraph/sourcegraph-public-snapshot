@@ -4,7 +4,6 @@ import (
 	"context"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -25,7 +24,7 @@ const (
 )
 
 type codeIntelTreeInfoResolver struct {
-	autoindexSvc *autoindexing.Service
+	autoindexSvc AutoIndexingService
 	commit       string
 	path         string
 	files        []string
@@ -35,7 +34,7 @@ type codeIntelTreeInfoResolver struct {
 
 // move to autoindexing service
 func NewCodeIntelTreeInfoResolver(
-	autoindexSvc *autoindexing.Service,
+	autoindexSvc AutoIndexingService,
 	repo *types.Repo,
 	commit, path string,
 	files []string,

@@ -9,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	resolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/sharedresolvers"
-	uploads "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -22,13 +21,13 @@ type RootResolver interface {
 }
 
 type rootResolver struct {
-	uploadSvc    *uploads.Service
+	uploadSvc    UploadService
 	autoindexSvc AutoIndexingService
 	policySvc    PolicyService
 	operations   *operations
 }
 
-func NewRootResolver(uploadSvc *uploads.Service, autoindexSvc AutoIndexingService, policySvc PolicyService, observationContext *observation.Context) RootResolver {
+func NewRootResolver(uploadSvc UploadService, autoindexSvc AutoIndexingService, policySvc PolicyService, observationContext *observation.Context) RootResolver {
 	return &rootResolver{
 		uploadSvc:    uploadSvc,
 		autoindexSvc: autoindexSvc,

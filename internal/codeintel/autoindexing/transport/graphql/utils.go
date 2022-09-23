@@ -70,6 +70,10 @@ func (v *DateTime) UnmarshalGraphQL(input any) error {
 	return nil
 }
 
+func marshalLSIFIndexGQLID(indexID int64) graphql.ID {
+	return relay.MarshalID("LSIFIndex", indexID)
+}
+
 func unmarshalLSIFIndexGQLID(id graphql.ID) (indexID int64, err error) {
 	err = relay.UnmarshalSpec(id, &indexID)
 	return indexID, err
@@ -134,6 +138,44 @@ func EncodeIntCursor(val *int32) *PageInfo {
 
 	str := strconv.FormatInt(int64(*val), 10)
 	return EncodeCursor(&str)
+}
+
+// DecodeIntCursor decodes the given integer cursor value. It is assumed to be a value
+// previously returned from the function encodeIntCursor. The zero value is returned if
+// no cursor is supplied. Invalid cursors return errors.
+func DecodeIntCursor(val *string) (int, error) {
+	cursor, err := DecodeCursor(val)
+	if err != nil || cursor == "" {
+		return 0, err
+	}
+
+	return strconv.Atoi(cursor)
+}
+
+// DecodeCursor decodes the given cursor value. It is assumed to be a value previously
+// returned from the function encodeCursor. An empty string is returned if no cursor is
+// supplied. Invalid cursors return errors.
+func DecodeCursor(val *string) (string, error) {
+	if val == nil {
+		return "", nil
+	}
+
+	decoded, err := base64.StdEncoding.DecodeString(*val)
+	if err != nil {
+		return "", err
+	}
+
+	return string(decoded), nil
+}
+
+// toInt32 translates the given int pointer into an int32 pointer.
+func toInt32(val *int) *int32 {
+	if val == nil {
+		return nil
+	}
+
+	v := int32(*val)
+	return &v
 }
 
 // derefString returns the underlying value in the given pointer.

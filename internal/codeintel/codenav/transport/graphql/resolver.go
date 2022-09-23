@@ -14,7 +14,7 @@ import (
 
 type Resolver interface {
 	// Factory for GitBlobLSIFDataResolver
-	GitBlobLSIFDataResolverFactory(ctx context.Context, repo *types.Repo, commit, path, toolName string, exactPath bool) (_ GitBlobLSIFDataResolver, err error)
+	GitBlobLSIFDataResolverFactory(ctx context.Context, repo *types.Repo, commit, path, toolName string, exactPath bool) (_ GitBlobLSIFDataResolverOLD, err error)
 }
 
 type resolver struct {
@@ -39,7 +39,7 @@ func New(svc Service, gitserver GitserverClient, maxIndexSearch, hunkCacheSize i
 
 const slowQueryResolverRequestThreshold = time.Second
 
-func (r *resolver) GitBlobLSIFDataResolverFactory(ctx context.Context, repo *types.Repo, commit, path, toolName string, exactPath bool) (_ GitBlobLSIFDataResolver, err error) {
+func (r *resolver) GitBlobLSIFDataResolverFactory(ctx context.Context, repo *types.Repo, commit, path, toolName string, exactPath bool) (_ GitBlobLSIFDataResolverOLD, err error) {
 	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.getGitBlobLSIFDataResolver, slowQueryResolverRequestThreshold, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", int(repo.ID)),
@@ -57,7 +57,7 @@ func (r *resolver) GitBlobLSIFDataResolverFactory(ctx context.Context, repo *typ
 	}
 
 	reqState := codenav.NewRequestState(uploads, authz.DefaultSubRepoPermsChecker, r.gitserver, repo, commit, path, r.maximumIndexesPerMonikerSearch, r.hunkCacheSize)
-	gbr := NewGitBlobLSIFDataResolver(r.svc, int(repo.ID), commit, path, r.operations, reqState)
+	gbr := NewGitBlobLSIFDataResolverOLD(r.svc, int(repo.ID), commit, path, r.operations, reqState)
 
 	return gbr, nil
 }

@@ -10,8 +10,8 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/sourcegraph/go-lsp"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	autoindexingShared "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
@@ -63,14 +63,14 @@ func strPtr(val string) *string {
 	return &val
 }
 
-// convertRange creates an LSP range from a bundle range.
-func convertRange(r types.Range) lsp.Range {
-	return lsp.Range{Start: convertPosition(r.Start.Line, r.Start.Character), End: convertPosition(r.End.Line, r.End.Character)}
-}
+// // convertRange creates an LSP range from a bundle range.
+// func convertRange(r types.Range) lsp.Range {
+// 	return lsp.Range{Start: convertPosition(r.Start.Line, r.Start.Character), End: convertPosition(r.End.Line, r.End.Character)}
+// }
 
-func convertPosition(line, character int) lsp.Position {
-	return lsp.Position{Line: line, Character: character}
-}
+// func convertPosition(line, character int) lsp.Position {
+// 	return lsp.Position{Line: line, Character: character}
+// }
 
 func marshalLSIFIndexGQLID(indexID int64) graphql.ID {
 	return relay.MarshalID("LSIFIndex", indexID)
@@ -218,4 +218,9 @@ func convertSharedIndexToDBStoreIndex(index types.Index) store.Index {
 		Rank:               index.Rank,
 		AssociatedUploadID: index.AssociatedUploadID,
 	}
+}
+
+func UnmarshalRepositoryID(id graphql.ID) (repo api.RepoID, err error) {
+	err = relay.UnmarshalSpec(id, &repo)
+	return
 }

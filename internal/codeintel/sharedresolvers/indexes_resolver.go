@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 )
 
@@ -24,7 +23,7 @@ type IndexesResolver struct {
 
 // NewIndexesResolver creates a new IndexesResolver which wil invoke store.GetIndexes
 // with the given options.
-func NewIndexesResolver(svc *autoindexing.Service, opts types.GetIndexesOptions) *IndexesResolver {
+func NewIndexesResolver(svc AutoIndexingService, opts types.GetIndexesOptions) *IndexesResolver {
 	return &IndexesResolver{svc: svc, opts: opts}
 }
 

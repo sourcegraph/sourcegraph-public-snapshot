@@ -23,6 +23,9 @@ type operations struct {
 	ranges          *observation.Operation
 
 	getGitBlobLSIFDataResolver *observation.Operation
+
+	// NEW STUFF
+	gitBlobLsifData *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -51,6 +54,9 @@ func newOperations(observationContext *observation.Context) *operations {
 		ranges:          op("Ranges"),
 
 		getGitBlobLSIFDataResolver: op("GetGitBlobLSIFDataResolver"),
+
+		// NEW STUFF
+		gitBlobLsifData: op("GitBlobLsifData"),
 	}
 }
 

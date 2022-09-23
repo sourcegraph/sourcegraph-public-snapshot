@@ -8,10 +8,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	codeintelgitserver "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	uploadsShared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
@@ -30,8 +31,8 @@ func TestHover(t *testing.T) {
 	// Set up request state
 	mockRequestState := RequestState{}
 	mockRequestState.SetLocalCommitCache(mockGitserverClient)
-	mockRequestState.SetLocalGitTreeTranslator(mockGitServer, &types.Repo{ID: 42}, mockCommit, mockPath, 50)
-	uploads := []shared.Dump{
+	mockRequestState.SetLocalGitTreeTranslator(mockGitServer, &sgtypes.Repo{ID: 42}, mockCommit, mockPath, 50)
+	uploads := []types.Dump{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
 		{ID: 52, Commit: "deadbeef", Root: "sub3/"},
@@ -39,11 +40,11 @@ func TestHover(t *testing.T) {
 	}
 	mockRequestState.SetUploadsDataLoader(uploads)
 
-	expectedRange := shared.Range{
-		Start: shared.Position{Line: 10, Character: 10},
-		End:   shared.Position{Line: 15, Character: 25},
+	expectedRange := types.Range{
+		Start: types.Position{Line: 10, Character: 10},
+		End:   types.Position{Line: 15, Character: 25},
 	}
-	mockLsifStore.GetHoverFunc.PushReturn("", shared.Range{}, false, nil)
+	mockLsifStore.GetHoverFunc.PushReturn("", types.Range{}, false, nil)
 	mockLsifStore.GetHoverFunc.PushReturn("doctext", expectedRange, true, nil)
 
 	mockRequest := shared.RequestArgs{
@@ -85,21 +86,21 @@ func TestHoverRemote(t *testing.T) {
 	// Set up request state
 	mockRequestState := RequestState{}
 	mockRequestState.SetLocalCommitCache(mockGitserverClient)
-	mockRequestState.SetLocalGitTreeTranslator(mockGitServer, &types.Repo{ID: 42}, mockCommit, mockPath, 50)
-	uploads := []shared.Dump{
+	mockRequestState.SetLocalGitTreeTranslator(mockGitServer, &sgtypes.Repo{ID: 42}, mockCommit, mockPath, 50)
+	uploads := []types.Dump{
 		{ID: 50, Commit: "deadbeef"},
 	}
 	mockRequestState.SetUploadsDataLoader(uploads)
 
-	expectedRange := shared.Range{
-		Start: shared.Position{Line: 10, Character: 10},
-		End:   shared.Position{Line: 15, Character: 25},
+	expectedRange := types.Range{
+		Start: types.Position{Line: 10, Character: 10},
+		End:   types.Position{Line: 15, Character: 25},
 	}
 	mockLsifStore.GetHoverFunc.PushReturn("", expectedRange, true, nil)
 
-	remoteRange := shared.Range{
-		Start: shared.Position{Line: 30, Character: 30},
-		End:   shared.Position{Line: 35, Character: 45},
+	remoteRange := types.Range{
+		Start: types.Position{Line: 30, Character: 30},
+		End:   types.Position{Line: 35, Character: 45},
 	}
 	mockLsifStore.GetHoverFunc.PushReturn("doctext", remoteRange, true, nil)
 

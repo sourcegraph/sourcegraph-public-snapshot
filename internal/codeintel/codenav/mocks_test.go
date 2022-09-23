@@ -17,7 +17,9 @@ import (
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/store"
 	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	gitserver "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
+	types "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	shared1 "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	database "github.com/sourcegraph/sourcegraph/internal/database"
 	precise "github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
@@ -25,24 +27,142 @@ import (
 // package
 // github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/store)
 // used for unit testing.
-type MockStore struct{}
+type MockStore struct {
+	// GetUnsafeDBFunc is an instance of a mock function object controlling
+	// the behavior of the method GetUnsafeDB.
+	GetUnsafeDBFunc *StoreGetUnsafeDBFunc
+}
 
 // NewMockStore creates a new mock of the Store interface. All methods
 // return zero values for all results, unless overwritten.
 func NewMockStore() *MockStore {
-	return &MockStore{}
+	return &MockStore{
+		GetUnsafeDBFunc: &StoreGetUnsafeDBFunc{
+			defaultHook: func() (r0 database.DB) {
+				return
+			},
+		},
+	}
 }
 
 // NewStrictMockStore creates a new mock of the Store interface. All methods
 // panic on invocation, unless overwritten.
 func NewStrictMockStore() *MockStore {
-	return &MockStore{}
+	return &MockStore{
+		GetUnsafeDBFunc: &StoreGetUnsafeDBFunc{
+			defaultHook: func() database.DB {
+				panic("unexpected invocation of MockStore.GetUnsafeDB")
+			},
+		},
+	}
 }
 
 // NewMockStoreFrom creates a new mock of the MockStore interface. All
 // methods delegate to the given implementation, unless overwritten.
 func NewMockStoreFrom(i store.Store) *MockStore {
-	return &MockStore{}
+	return &MockStore{
+		GetUnsafeDBFunc: &StoreGetUnsafeDBFunc{
+			defaultHook: i.GetUnsafeDB,
+		},
+	}
+}
+
+// StoreGetUnsafeDBFunc describes the behavior when the GetUnsafeDB method
+// of the parent MockStore instance is invoked.
+type StoreGetUnsafeDBFunc struct {
+	defaultHook func() database.DB
+	hooks       []func() database.DB
+	history     []StoreGetUnsafeDBFuncCall
+	mutex       sync.Mutex
+}
+
+// GetUnsafeDB delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockStore) GetUnsafeDB() database.DB {
+	r0 := m.GetUnsafeDBFunc.nextHook()()
+	m.GetUnsafeDBFunc.appendCall(StoreGetUnsafeDBFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the GetUnsafeDB method
+// of the parent MockStore instance is invoked and the hook queue is empty.
+func (f *StoreGetUnsafeDBFunc) SetDefaultHook(hook func() database.DB) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetUnsafeDB method of the parent MockStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *StoreGetUnsafeDBFunc) PushHook(hook func() database.DB) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreGetUnsafeDBFunc) SetDefaultReturn(r0 database.DB) {
+	f.SetDefaultHook(func() database.DB {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreGetUnsafeDBFunc) PushReturn(r0 database.DB) {
+	f.PushHook(func() database.DB {
+		return r0
+	})
+}
+
+func (f *StoreGetUnsafeDBFunc) nextHook() func() database.DB {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreGetUnsafeDBFunc) appendCall(r0 StoreGetUnsafeDBFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreGetUnsafeDBFuncCall objects describing
+// the invocations of this function.
+func (f *StoreGetUnsafeDBFunc) History() []StoreGetUnsafeDBFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreGetUnsafeDBFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreGetUnsafeDBFuncCall is an object that describes an invocation of
+// method GetUnsafeDB on an instance of MockStore.
+type StoreGetUnsafeDBFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.DB
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreGetUnsafeDBFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreGetUnsafeDBFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // MockLsifStore is a mock implementation of the LsifStore interface (from
@@ -106,7 +226,7 @@ func NewMockLsifStore() *MockLsifStore {
 			},
 		},
 		GetHoverFunc: &LsifStoreGetHoverFunc{
-			defaultHook: func(context.Context, int, string, int, int) (r0 string, r1 shared.Range, r2 bool, r3 error) {
+			defaultHook: func(context.Context, int, string, int, int) (r0 string, r1 types.Range, r2 bool, r3 error) {
 				return
 			},
 		},
@@ -141,7 +261,7 @@ func NewMockLsifStore() *MockLsifStore {
 			},
 		},
 		GetStencilFunc: &LsifStoreGetStencilFunc{
-			defaultHook: func(context.Context, int, string) (r0 []shared.Range, r1 error) {
+			defaultHook: func(context.Context, int, string) (r0 []types.Range, r1 error) {
 				return
 			},
 		},
@@ -168,7 +288,7 @@ func NewStrictMockLsifStore() *MockLsifStore {
 			},
 		},
 		GetHoverFunc: &LsifStoreGetHoverFunc{
-			defaultHook: func(context.Context, int, string, int, int) (string, shared.Range, bool, error) {
+			defaultHook: func(context.Context, int, string, int, int) (string, types.Range, bool, error) {
 				panic("unexpected invocation of MockLsifStore.GetHover")
 			},
 		},
@@ -203,7 +323,7 @@ func NewStrictMockLsifStore() *MockLsifStore {
 			},
 		},
 		GetStencilFunc: &LsifStoreGetStencilFunc{
-			defaultHook: func(context.Context, int, string) ([]shared.Range, error) {
+			defaultHook: func(context.Context, int, string) ([]types.Range, error) {
 				panic("unexpected invocation of MockLsifStore.GetStencil")
 			},
 		},
@@ -628,15 +748,15 @@ func (c LsifStoreGetDiagnosticsFuncCall) Results() []interface{} {
 // LsifStoreGetHoverFunc describes the behavior when the GetHover method of
 // the parent MockLsifStore instance is invoked.
 type LsifStoreGetHoverFunc struct {
-	defaultHook func(context.Context, int, string, int, int) (string, shared.Range, bool, error)
-	hooks       []func(context.Context, int, string, int, int) (string, shared.Range, bool, error)
+	defaultHook func(context.Context, int, string, int, int) (string, types.Range, bool, error)
+	hooks       []func(context.Context, int, string, int, int) (string, types.Range, bool, error)
 	history     []LsifStoreGetHoverFuncCall
 	mutex       sync.Mutex
 }
 
 // GetHover delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockLsifStore) GetHover(v0 context.Context, v1 int, v2 string, v3 int, v4 int) (string, shared.Range, bool, error) {
+func (m *MockLsifStore) GetHover(v0 context.Context, v1 int, v2 string, v3 int, v4 int) (string, types.Range, bool, error) {
 	r0, r1, r2, r3 := m.GetHoverFunc.nextHook()(v0, v1, v2, v3, v4)
 	m.GetHoverFunc.appendCall(LsifStoreGetHoverFuncCall{v0, v1, v2, v3, v4, r0, r1, r2, r3})
 	return r0, r1, r2, r3
@@ -644,7 +764,7 @@ func (m *MockLsifStore) GetHover(v0 context.Context, v1 int, v2 string, v3 int, 
 
 // SetDefaultHook sets function that is called when the GetHover method of
 // the parent MockLsifStore instance is invoked and the hook queue is empty.
-func (f *LsifStoreGetHoverFunc) SetDefaultHook(hook func(context.Context, int, string, int, int) (string, shared.Range, bool, error)) {
+func (f *LsifStoreGetHoverFunc) SetDefaultHook(hook func(context.Context, int, string, int, int) (string, types.Range, bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -652,7 +772,7 @@ func (f *LsifStoreGetHoverFunc) SetDefaultHook(hook func(context.Context, int, s
 // GetHover method of the parent MockLsifStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *LsifStoreGetHoverFunc) PushHook(hook func(context.Context, int, string, int, int) (string, shared.Range, bool, error)) {
+func (f *LsifStoreGetHoverFunc) PushHook(hook func(context.Context, int, string, int, int) (string, types.Range, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -660,20 +780,20 @@ func (f *LsifStoreGetHoverFunc) PushHook(hook func(context.Context, int, string,
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *LsifStoreGetHoverFunc) SetDefaultReturn(r0 string, r1 shared.Range, r2 bool, r3 error) {
-	f.SetDefaultHook(func(context.Context, int, string, int, int) (string, shared.Range, bool, error) {
+func (f *LsifStoreGetHoverFunc) SetDefaultReturn(r0 string, r1 types.Range, r2 bool, r3 error) {
+	f.SetDefaultHook(func(context.Context, int, string, int, int) (string, types.Range, bool, error) {
 		return r0, r1, r2, r3
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *LsifStoreGetHoverFunc) PushReturn(r0 string, r1 shared.Range, r2 bool, r3 error) {
-	f.PushHook(func(context.Context, int, string, int, int) (string, shared.Range, bool, error) {
+func (f *LsifStoreGetHoverFunc) PushReturn(r0 string, r1 types.Range, r2 bool, r3 error) {
+	f.PushHook(func(context.Context, int, string, int, int) (string, types.Range, bool, error) {
 		return r0, r1, r2, r3
 	})
 }
 
-func (f *LsifStoreGetHoverFunc) nextHook() func(context.Context, int, string, int, int) (string, shared.Range, bool, error) {
+func (f *LsifStoreGetHoverFunc) nextHook() func(context.Context, int, string, int, int) (string, types.Range, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -726,7 +846,7 @@ type LsifStoreGetHoverFuncCall struct {
 	Result0 string
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 shared.Range
+	Result1 types.Range
 	// Result2 is the value of the 3rd result returned from this method
 	// invocation.
 	Result2 bool
@@ -1472,15 +1592,15 @@ func (c LsifStoreGetReferenceLocationsFuncCall) Results() []interface{} {
 // LsifStoreGetStencilFunc describes the behavior when the GetStencil method
 // of the parent MockLsifStore instance is invoked.
 type LsifStoreGetStencilFunc struct {
-	defaultHook func(context.Context, int, string) ([]shared.Range, error)
-	hooks       []func(context.Context, int, string) ([]shared.Range, error)
+	defaultHook func(context.Context, int, string) ([]types.Range, error)
+	hooks       []func(context.Context, int, string) ([]types.Range, error)
 	history     []LsifStoreGetStencilFuncCall
 	mutex       sync.Mutex
 }
 
 // GetStencil delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockLsifStore) GetStencil(v0 context.Context, v1 int, v2 string) ([]shared.Range, error) {
+func (m *MockLsifStore) GetStencil(v0 context.Context, v1 int, v2 string) ([]types.Range, error) {
 	r0, r1 := m.GetStencilFunc.nextHook()(v0, v1, v2)
 	m.GetStencilFunc.appendCall(LsifStoreGetStencilFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
@@ -1488,7 +1608,7 @@ func (m *MockLsifStore) GetStencil(v0 context.Context, v1 int, v2 string) ([]sha
 
 // SetDefaultHook sets function that is called when the GetStencil method of
 // the parent MockLsifStore instance is invoked and the hook queue is empty.
-func (f *LsifStoreGetStencilFunc) SetDefaultHook(hook func(context.Context, int, string) ([]shared.Range, error)) {
+func (f *LsifStoreGetStencilFunc) SetDefaultHook(hook func(context.Context, int, string) ([]types.Range, error)) {
 	f.defaultHook = hook
 }
 
@@ -1496,7 +1616,7 @@ func (f *LsifStoreGetStencilFunc) SetDefaultHook(hook func(context.Context, int,
 // GetStencil method of the parent MockLsifStore instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *LsifStoreGetStencilFunc) PushHook(hook func(context.Context, int, string) ([]shared.Range, error)) {
+func (f *LsifStoreGetStencilFunc) PushHook(hook func(context.Context, int, string) ([]types.Range, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1504,20 +1624,20 @@ func (f *LsifStoreGetStencilFunc) PushHook(hook func(context.Context, int, strin
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *LsifStoreGetStencilFunc) SetDefaultReturn(r0 []shared.Range, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, string) ([]shared.Range, error) {
+func (f *LsifStoreGetStencilFunc) SetDefaultReturn(r0 []types.Range, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string) ([]types.Range, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *LsifStoreGetStencilFunc) PushReturn(r0 []shared.Range, r1 error) {
-	f.PushHook(func(context.Context, int, string) ([]shared.Range, error) {
+func (f *LsifStoreGetStencilFunc) PushReturn(r0 []types.Range, r1 error) {
+	f.PushHook(func(context.Context, int, string) ([]types.Range, error) {
 		return r0, r1
 	})
 }
 
-func (f *LsifStoreGetStencilFunc) nextHook() func(context.Context, int, string) ([]shared.Range, error) {
+func (f *LsifStoreGetStencilFunc) nextHook() func(context.Context, int, string) ([]types.Range, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1561,7 +1681,7 @@ type LsifStoreGetStencilFuncCall struct {
 	Arg2 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []shared.Range
+	Result0 []types.Range
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -1889,12 +2009,12 @@ func NewMockGitTreeTranslator() *MockGitTreeTranslator {
 			},
 		},
 		GetTargetCommitPositionFromSourcePositionFunc: &GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFunc{
-			defaultHook: func(context.Context, string, shared.Position, bool) (r0 string, r1 shared.Position, r2 bool, r3 error) {
+			defaultHook: func(context.Context, string, types.Position, bool) (r0 string, r1 types.Position, r2 bool, r3 error) {
 				return
 			},
 		},
 		GetTargetCommitRangeFromSourceRangeFunc: &GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFunc{
-			defaultHook: func(context.Context, string, string, shared.Range, bool) (r0 string, r1 shared.Range, r2 bool, r3 error) {
+			defaultHook: func(context.Context, string, string, types.Range, bool) (r0 string, r1 types.Range, r2 bool, r3 error) {
 				return
 			},
 		},
@@ -1912,12 +2032,12 @@ func NewStrictMockGitTreeTranslator() *MockGitTreeTranslator {
 			},
 		},
 		GetTargetCommitPositionFromSourcePositionFunc: &GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFunc{
-			defaultHook: func(context.Context, string, shared.Position, bool) (string, shared.Position, bool, error) {
+			defaultHook: func(context.Context, string, types.Position, bool) (string, types.Position, bool, error) {
 				panic("unexpected invocation of MockGitTreeTranslator.GetTargetCommitPositionFromSourcePosition")
 			},
 		},
 		GetTargetCommitRangeFromSourceRangeFunc: &GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFunc{
-			defaultHook: func(context.Context, string, string, shared.Range, bool) (string, shared.Range, bool, error) {
+			defaultHook: func(context.Context, string, string, types.Range, bool) (string, types.Range, bool, error) {
 				panic("unexpected invocation of MockGitTreeTranslator.GetTargetCommitRangeFromSourceRange")
 			},
 		},
@@ -2066,8 +2186,8 @@ func (c GitTreeTranslatorGetTargetCommitPathFromSourcePathFuncCall) Results() []
 // the behavior when the GetTargetCommitPositionFromSourcePosition method of
 // the parent MockGitTreeTranslator instance is invoked.
 type GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFunc struct {
-	defaultHook func(context.Context, string, shared.Position, bool) (string, shared.Position, bool, error)
-	hooks       []func(context.Context, string, shared.Position, bool) (string, shared.Position, bool, error)
+	defaultHook func(context.Context, string, types.Position, bool) (string, types.Position, bool, error)
+	hooks       []func(context.Context, string, types.Position, bool) (string, types.Position, bool, error)
 	history     []GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFuncCall
 	mutex       sync.Mutex
 }
@@ -2075,7 +2195,7 @@ type GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFunc struct {
 // GetTargetCommitPositionFromSourcePosition delegates to the next hook
 // function in the queue and stores the parameter and result values of this
 // invocation.
-func (m *MockGitTreeTranslator) GetTargetCommitPositionFromSourcePosition(v0 context.Context, v1 string, v2 shared.Position, v3 bool) (string, shared.Position, bool, error) {
+func (m *MockGitTreeTranslator) GetTargetCommitPositionFromSourcePosition(v0 context.Context, v1 string, v2 types.Position, v3 bool) (string, types.Position, bool, error) {
 	r0, r1, r2, r3 := m.GetTargetCommitPositionFromSourcePositionFunc.nextHook()(v0, v1, v2, v3)
 	m.GetTargetCommitPositionFromSourcePositionFunc.appendCall(GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFuncCall{v0, v1, v2, v3, r0, r1, r2, r3})
 	return r0, r1, r2, r3
@@ -2084,7 +2204,7 @@ func (m *MockGitTreeTranslator) GetTargetCommitPositionFromSourcePosition(v0 con
 // SetDefaultHook sets function that is called when the
 // GetTargetCommitPositionFromSourcePosition method of the parent
 // MockGitTreeTranslator instance is invoked and the hook queue is empty.
-func (f *GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFunc) SetDefaultHook(hook func(context.Context, string, shared.Position, bool) (string, shared.Position, bool, error)) {
+func (f *GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFunc) SetDefaultHook(hook func(context.Context, string, types.Position, bool) (string, types.Position, bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -2093,7 +2213,7 @@ func (f *GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFunc) SetDefa
 // MockGitTreeTranslator instance invokes the hook at the front of the queue
 // and discards it. After the queue is empty, the default hook function is
 // invoked for any future action.
-func (f *GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFunc) PushHook(hook func(context.Context, string, shared.Position, bool) (string, shared.Position, bool, error)) {
+func (f *GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFunc) PushHook(hook func(context.Context, string, types.Position, bool) (string, types.Position, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2101,20 +2221,20 @@ func (f *GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFunc) PushHoo
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFunc) SetDefaultReturn(r0 string, r1 shared.Position, r2 bool, r3 error) {
-	f.SetDefaultHook(func(context.Context, string, shared.Position, bool) (string, shared.Position, bool, error) {
+func (f *GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFunc) SetDefaultReturn(r0 string, r1 types.Position, r2 bool, r3 error) {
+	f.SetDefaultHook(func(context.Context, string, types.Position, bool) (string, types.Position, bool, error) {
 		return r0, r1, r2, r3
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFunc) PushReturn(r0 string, r1 shared.Position, r2 bool, r3 error) {
-	f.PushHook(func(context.Context, string, shared.Position, bool) (string, shared.Position, bool, error) {
+func (f *GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFunc) PushReturn(r0 string, r1 types.Position, r2 bool, r3 error) {
+	f.PushHook(func(context.Context, string, types.Position, bool) (string, types.Position, bool, error) {
 		return r0, r1, r2, r3
 	})
 }
 
-func (f *GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFunc) nextHook() func(context.Context, string, shared.Position, bool) (string, shared.Position, bool, error) {
+func (f *GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFunc) nextHook() func(context.Context, string, types.Position, bool) (string, types.Position, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2158,7 +2278,7 @@ type GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFuncCall struct {
 	Arg1 string
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 shared.Position
+	Arg2 types.Position
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
 	Arg3 bool
@@ -2167,7 +2287,7 @@ type GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFuncCall struct {
 	Result0 string
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 shared.Position
+	Result1 types.Position
 	// Result2 is the value of the 3rd result returned from this method
 	// invocation.
 	Result2 bool
@@ -2192,8 +2312,8 @@ func (c GitTreeTranslatorGetTargetCommitPositionFromSourcePositionFuncCall) Resu
 // behavior when the GetTargetCommitRangeFromSourceRange method of the
 // parent MockGitTreeTranslator instance is invoked.
 type GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFunc struct {
-	defaultHook func(context.Context, string, string, shared.Range, bool) (string, shared.Range, bool, error)
-	hooks       []func(context.Context, string, string, shared.Range, bool) (string, shared.Range, bool, error)
+	defaultHook func(context.Context, string, string, types.Range, bool) (string, types.Range, bool, error)
+	hooks       []func(context.Context, string, string, types.Range, bool) (string, types.Range, bool, error)
 	history     []GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFuncCall
 	mutex       sync.Mutex
 }
@@ -2201,7 +2321,7 @@ type GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFunc struct {
 // GetTargetCommitRangeFromSourceRange delegates to the next hook function
 // in the queue and stores the parameter and result values of this
 // invocation.
-func (m *MockGitTreeTranslator) GetTargetCommitRangeFromSourceRange(v0 context.Context, v1 string, v2 string, v3 shared.Range, v4 bool) (string, shared.Range, bool, error) {
+func (m *MockGitTreeTranslator) GetTargetCommitRangeFromSourceRange(v0 context.Context, v1 string, v2 string, v3 types.Range, v4 bool) (string, types.Range, bool, error) {
 	r0, r1, r2, r3 := m.GetTargetCommitRangeFromSourceRangeFunc.nextHook()(v0, v1, v2, v3, v4)
 	m.GetTargetCommitRangeFromSourceRangeFunc.appendCall(GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFuncCall{v0, v1, v2, v3, v4, r0, r1, r2, r3})
 	return r0, r1, r2, r3
@@ -2210,7 +2330,7 @@ func (m *MockGitTreeTranslator) GetTargetCommitRangeFromSourceRange(v0 context.C
 // SetDefaultHook sets function that is called when the
 // GetTargetCommitRangeFromSourceRange method of the parent
 // MockGitTreeTranslator instance is invoked and the hook queue is empty.
-func (f *GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFunc) SetDefaultHook(hook func(context.Context, string, string, shared.Range, bool) (string, shared.Range, bool, error)) {
+func (f *GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFunc) SetDefaultHook(hook func(context.Context, string, string, types.Range, bool) (string, types.Range, bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -2219,7 +2339,7 @@ func (f *GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFunc) SetDefaultHoo
 // MockGitTreeTranslator instance invokes the hook at the front of the queue
 // and discards it. After the queue is empty, the default hook function is
 // invoked for any future action.
-func (f *GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFunc) PushHook(hook func(context.Context, string, string, shared.Range, bool) (string, shared.Range, bool, error)) {
+func (f *GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFunc) PushHook(hook func(context.Context, string, string, types.Range, bool) (string, types.Range, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2227,20 +2347,20 @@ func (f *GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFunc) PushHook(hook
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFunc) SetDefaultReturn(r0 string, r1 shared.Range, r2 bool, r3 error) {
-	f.SetDefaultHook(func(context.Context, string, string, shared.Range, bool) (string, shared.Range, bool, error) {
+func (f *GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFunc) SetDefaultReturn(r0 string, r1 types.Range, r2 bool, r3 error) {
+	f.SetDefaultHook(func(context.Context, string, string, types.Range, bool) (string, types.Range, bool, error) {
 		return r0, r1, r2, r3
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFunc) PushReturn(r0 string, r1 shared.Range, r2 bool, r3 error) {
-	f.PushHook(func(context.Context, string, string, shared.Range, bool) (string, shared.Range, bool, error) {
+func (f *GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFunc) PushReturn(r0 string, r1 types.Range, r2 bool, r3 error) {
+	f.PushHook(func(context.Context, string, string, types.Range, bool) (string, types.Range, bool, error) {
 		return r0, r1, r2, r3
 	})
 }
 
-func (f *GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFunc) nextHook() func(context.Context, string, string, shared.Range, bool) (string, shared.Range, bool, error) {
+func (f *GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFunc) nextHook() func(context.Context, string, string, types.Range, bool) (string, types.Range, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2287,7 +2407,7 @@ type GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFuncCall struct {
 	Arg2 string
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 shared.Range
+	Arg3 types.Range
 	// Arg4 is the value of the 5th argument passed to this method
 	// invocation.
 	Arg4 bool
@@ -2296,7 +2416,7 @@ type GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFuncCall struct {
 	Result0 string
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 shared.Range
+	Result1 types.Range
 	// Result2 is the value of the 3rd result returned from this method
 	// invocation.
 	Result2 bool

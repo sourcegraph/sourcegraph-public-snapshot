@@ -16,7 +16,6 @@ import (
 	policiesgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
 	uploadgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	executorgraphql "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -32,17 +31,15 @@ func Init(ctx context.Context, db database.DB, config *Config, enterpriseService
 	}
 
 	executorResolver := executorgraphql.New(db)
-	codenavResolver := codenavgraphql.New(services.CodeNavSvc, services.gitserverClient, config.MaximumIndexesPerMonikerSearch, config.HunkCacheSize, oc("codenav"))
 
+	codenavRootResolver := codenavgraphql.NewRootResolver(services.CodeNavSvc, services.AutoIndexingSvc, services.UploadSvc, services.PoliciesSvc, services.gitserverClient, config.MaximumIndexesPerMonikerSearch, config.HunkCacheSize, oc("codenav"))
 	policyRootResolver := policiesgraphql.NewRootResolver(services.PoliciesSvc, oc("policies"))
 	autoindexingRootResolver := autoindexinggraphql.NewRootResolver(services.AutoIndexingSvc, services.UploadSvc, services.PoliciesSvc, oc("autoindexing"))
 	uploadRootResolver := uploadgraphql.NewRootResolver(services.UploadSvc, services.AutoIndexingSvc, services.PoliciesSvc, oc("upload"))
 
-	innerResolver := codeintelresolvers.NewResolver(codenavResolver, executorResolver, policyRootResolver, autoindexingRootResolver, uploadRootResolver)
+	resolvers := codeintelresolvers.NewResolver(codenavRootResolver, executorResolver, policyRootResolver, autoindexingRootResolver, uploadRootResolver)
 
-	observationCtx := &observation.Context{Logger: nil, Tracer: &trace.Tracer{}, Registerer: nil, HoneyDataset: &honey.Dataset{}}
-
-	enterpriseServices.CodeIntelResolver = codeintelgqlresolvers.NewResolver(db, services.gitserverClient, innerResolver, observationCtx)
+	enterpriseServices.CodeIntelResolver = codeintelgqlresolvers.NewResolver(resolvers)
 	enterpriseServices.NewCodeIntelUploadHandler = newUploadHandler(services)
 
 	return nil

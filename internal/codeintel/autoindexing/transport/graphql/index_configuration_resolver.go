@@ -7,7 +7,6 @@ import (
 
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
@@ -18,12 +17,12 @@ type IndexConfigurationResolver interface {
 }
 
 type indexConfigurationResolver struct {
-	autoindexSvc *autoindexing.Service
+	autoindexSvc AutoIndexingService
 	repositoryID int
 	errTracer    *observation.ErrCollector
 }
 
-func NewIndexConfigurationResolver(autoindexSvc *autoindexing.Service, repositoryID int, errTracer *observation.ErrCollector) IndexConfigurationResolver {
+func NewIndexConfigurationResolver(autoindexSvc AutoIndexingService, repositoryID int, errTracer *observation.ErrCollector) IndexConfigurationResolver {
 	return &indexConfigurationResolver{
 		autoindexSvc: autoindexSvc,
 		repositoryID: repositoryID,
