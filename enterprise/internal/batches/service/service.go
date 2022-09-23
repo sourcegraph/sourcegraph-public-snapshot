@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -256,6 +257,11 @@ func (s *Service) UpsertEmptyBatchChange(ctx context.Context, opts UpsertEmptyBa
 	}
 
 	spec, err := batcheslib.ParseBatchSpec(rawSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = template.ValidateBatchSpecTemplate(string(rawSpec))
 	if err != nil {
 		return nil, err
 	}
@@ -652,6 +658,14 @@ func (s *Service) ReplaceBatchSpecInput(ctx context.Context, opts ReplaceBatchSp
 		return nil, err
 	}
 
+	// Also validate that the batch spec only uses known templating variables and
+	// functions. If we get an error here that it's invalid, we also want to surface that
+	// error to the UI.
+	_, err = template.ValidateBatchSpecTemplate(opts.RawSpec)
+	if err != nil {
+		return nil, err
+	}
+
 	// Make sure the user has access.
 	batchSpec, err = s.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{RandID: opts.BatchSpecRandID})
 	if err != nil {
@@ -695,6 +709,11 @@ func (s *Service) UpsertBatchSpecInput(ctx context.Context, opts UpsertBatchSpec
 	spec, err = btypes.NewBatchSpecFromRaw(opts.RawSpec)
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing batch spec")
+	}
+
+	_, err = template.ValidateBatchSpecTemplate(opts.RawSpec)
+	if err != nil {
+		return nil, err
 	}
 
 	// Check whether the current user has access to either one of the namespaces.
