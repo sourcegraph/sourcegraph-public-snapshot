@@ -40,7 +40,7 @@ export interface CodeIntelAPI {
         context: sourcegraph.ReferenceContext
     ): Observable<clientType.Location[]>
     getImplementations(parameters: TextDocumentPositionParameters): Observable<clientType.Location[]>
-    getHover(textParameters: TextDocumentPositionParameters): Observable<HoverMerged>
+    getHover(textParameters: TextDocumentPositionParameters): Observable<HoverMerged | null>
     getDocumentHighlights(textParameters: TextDocumentPositionParameters): Observable<sglegacy.DocumentHighlight[]>
 }
 
@@ -87,14 +87,14 @@ class DefaultCodeIntelAPI implements CodeIntelAPI {
             request.providers.implementations.provideLocations(request.document, request.position)
         )
     }
-    public getHover(textParameters: TextDocumentPositionParameters): Observable<HoverMerged> {
+    public getHover(textParameters: TextDocumentPositionParameters): Observable<HoverMerged | null> {
         const request = requestFor(textParameters)
         return (
             request.providers.hover
                 .provideHover(request.document, request.position)
                 // We intentionally don't use `defaultIfEmpty()` here because
                 // that makes the popover load with an empty docstring.
-                .pipe(map(result => fromHoverMerged([result]) || { contents: [] }))
+                .pipe(map(result => fromHoverMerged([result])))
         )
     }
     public getDocumentHighlights(
