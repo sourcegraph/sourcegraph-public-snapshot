@@ -11,8 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
@@ -864,7 +862,7 @@ type sample struct {
 type dataForRepo struct {
 	repoId   int
 	repoName string
-	ss       []sample
+	ss       []RawSample
 }
 
 func TestLoadStuff(t *testing.T) {
@@ -882,9 +880,10 @@ func TestLoadStuff(t *testing.T) {
 	permStore := NewInsightPermissionStore(db)
 	store := New(edb.NewInsightsDB(handle), permStore)
 
-	seriesId := rand.String(10)
+	// seriesId := rand.String(10)
+	seriesId := "findme"
 	t.Log(seriesId)
-	rawId := 6
+	rawId := 8
 
 	numRepos := 10000
 	repoIdMin := 20000
@@ -892,7 +891,7 @@ func TestLoadStuff(t *testing.T) {
 
 	valMax := 100000
 
-	numSamples := 12
+	numSamples := 120
 
 	times := make([]time.Time, 0)
 	start := time.Date(2021, 1, 1, 5, 30, 0, 0, time.UTC)
@@ -907,11 +906,11 @@ func TestLoadStuff(t *testing.T) {
 		repoId := i
 		name := fmt.Sprintf("repo-%d", repoId)
 
-		var smps []sample
+		var smps []RawSample
 		for _, current := range times {
-			smps = append(smps, sample{
-				at:    current,
-				value: float64(rand.IntnRange(0, valMax+1)),
+			smps = append(smps, RawSample{
+				Time:  uint32(current.Unix()),
+				Value: float64(rand.IntnRange(0, valMax+1)),
 			})
 		}
 
@@ -924,43 +923,54 @@ func TestLoadStuff(t *testing.T) {
 
 	t.Log(len(allData))
 
-	err = writeNew(ctx, store, rawId, allData)
-	if err != nil {
-		t.Fatal(err)
+	for _, datum := range allData {
+		err := store.StoreAlternateFormat(ctx, AlternateFormatRow{
+			RepoId:  uint32(datum.repoId),
+			Samples: datum.ss,
+		}, rawId)
+		if err != nil {
+			t.Fatalf("failed on repo_id: %d %s", datum.repoId, err.Error())
+		}
 	}
 
-	err = writeOld(ctx, store, seriesId, allData)
-	if err != nil {
-		t.Fatal(err)
-	}
+	// err = writeNew(ctx, store, rawId, allData)
+	// if err != nil {
+	// 	t.Fatal(err)
+	// }
+
+	// err = writeOld(ctx, store, seriesId, allData)
+	// if err != nil {
+	// 	t.Fatal(err)
+	// }
 	return
 }
 
-func writeOld(ctx context.Context, store *Store, seriesId string, allData []dataForRepo) error {
-	for i, datum := range allData {
-		if i%100 == 0 {
-			println(fmt.Sprintf("old %d", i))
-		}
-		for _, sample := range datum.ss {
-			rn := datum.repoName
-			id := api.RepoID(datum.repoId)
-			if err := store.RecordSeriesPoint(ctx, RecordSeriesPointArgs{
-				SeriesID: seriesId,
-				Point: SeriesPoint{
-					SeriesID: seriesId,
-					Time:     sample.at,
-					Value:    sample.value,
-				},
-				RepoName:    &rn,
-				RepoID:      &id,
-				PersistMode: "record",
-			}); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
+//
+// func writeOld(ctx context.Context, store *Store, seriesId string, allData []dataForRepo) error {
+// 	for i, datum := range allData {
+// 		if i%100 == 0 {
+// 			println(fmt.Sprintf("old %d", i))
+// 		}
+// 		for _, sample := range datum.ss {
+// 			rn := datum.repoName
+// 			id := api.RepoID(datum.repoId)
+// 			if err := store.RecordSeriesPoint(ctx, RecordSeriesPointArgs{
+// 				SeriesID: seriesId,
+// 				Point: SeriesPoint{
+// 					SeriesID: seriesId,
+// 					Time:     sample.at,
+// 					Value:    sample.value,
+// 				},
+// 				RepoName:    &rn,
+// 				RepoID:      &id,
+// 				PersistMode: "record",
+// 			}); err != nil {
+// 				return err
+// 			}
+// 		}
+// 	}
+// 	return nil
+// }
 
 func BenchmarkReadGeneratedSeries(b *testing.B) {
 	ctx := context.Background()
@@ -977,40 +987,51 @@ func BenchmarkReadGeneratedSeries(b *testing.B) {
 
 	// mzvgb7cltt
 
-	seriesId := "mzvgb7cltt"
-	plainId := 5
+	// seriesId := "mzvgb7cltt"
+	seriesId := "findme"
+	// plainId := 8
 
 	permStore := NewInsightPermissionStore(db)
 	store := New(edb.NewInsightsDB(handle), permStore)
 
 	var newFormat []SeriesPoint
 
+	// b.Run("new format", func(b *testing.B) {
+	// 	got, err := loadNew(ctx, store, plainId)
+	// 	if err != nil {
+	// 		b.Fatal(err)
+	// 	}
+	// 	newFormat = toTs(got, seriesId)
+	// })
+
 	b.Run("new format", func(b *testing.B) {
-		got, err := loadNew(ctx, store, plainId)
+		rows, err := store.LoadAlternateFormat(ctx, SeriesPointsOpts{SeriesID: &seriesId})
 		if err != nil {
 			b.Fatal(err)
 		}
-		newFormat = toTimeseries(got, seriesId)
+		newFormat = ToTimeseries(rows, seriesId)
 	})
 
-	var oldFormat []SeriesPoint
-	opts := SeriesPointsOpts{SeriesID: &seriesId}
-	b.Run("old format", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			oldFormat, err = store.LoadSeriesInMem(ctx, opts)
-			if err != nil {
-				b.Fatal(err)
-			}
-			sort.Slice(oldFormat, func(i, j int) bool {
-				return oldFormat[i].Time.Before(oldFormat[j].Time)
-			})
-		}
-	})
+	b.Log(len(newFormat))
+
+	// var oldFormat []SeriesPoint
+	// opts := SeriesPointsOpts{SeriesID: &seriesId}
+	// b.Run("old format", func(b *testing.B) {
+	// 	for i := 0; i < b.N; i++ {
+	// 		oldFormat, err = store.LoadSeriesInMem(ctx, opts)
+	// 		if err != nil {
+	// 			b.Fatal(err)
+	// 		}
+	// 		sort.Slice(oldFormat, func(i, j int) bool {
+	// 			return oldFormat[i].Time.Before(oldFormat[j].Time)
+	// 		})
+	// 	}
+	// })
 
 	// b.Log(oldFormat)
-	// b.Log(newFormat)
+	b.Log(newFormat)
 
-	doNothing(oldFormat)
+	// doNothing(oldFormat)
 	doNothing(newFormat)
 }
 
@@ -1026,26 +1047,26 @@ func formatSamples(vals []sample) string {
 	return sb.String()
 }
 
-func writeNew(ctx context.Context, store *Store, seriesId int, allData []dataForRepo) error {
-	for i, datum := range allData {
-		if i%100 == 0 {
-			println(fmt.Sprintf("new %d", i))
-		}
-		// rn := datum.repoName
-		id := datum.repoId
-
-		buf, err := compress(datum.ss)
-		if err != nil {
-			return errors.Wrapf(err, "repo_id: %d", id)
-		}
-
-		q := `insert into test_data_table(series_id, repo_id, data) values (%s, %s, %s);`
-		if err := store.Exec(ctx, sqlf.Sprintf(q, seriesId, id, buf.Bytes())); err != nil {
-			return err
-		}
-	}
-	return nil
-}
+// func writeNew(ctx context.Context, store *Store, seriesId int, allData []dataForRepo) error {
+// 	for i, datum := range allData {
+// 		if i%100 == 0 {
+// 			println(fmt.Sprintf("new %d", i))
+// 		}
+// 		// rn := datum.repoName
+// 		id := datum.repoId
+//
+// 		buf, err := compress(datum.ss)
+// 		if err != nil {
+// 			return errors.Wrapf(err, "repo_id: %d", id)
+// 		}
+//
+// 		q := `insert into test_data_table(series_id, repo_id, data) values (%s, %s, %s);`
+// 		if err := store.Exec(ctx, sqlf.Sprintf(q, seriesId, id, buf.Bytes())); err != nil {
+// 			return err
+// 		}
+// 	}
+// 	return nil
+// }
 
 func compress(smpls []sample) (buf *bytes2.Buffer, err error) {
 	buf = new(bytes2.Buffer)
@@ -1062,24 +1083,6 @@ func compress(smpls []sample) (buf *bytes2.Buffer, err error) {
 	}
 
 	return buf, finish()
-}
-
-func decompress(data []byte) (smpls []sample, err error) {
-	decompressor, _, err := gorilla.NewDecompressor(bytes2.NewReader(data))
-	if err != nil {
-		return nil, err
-	}
-
-	iter := decompressor.Iterator()
-	for iter.Next() {
-		t, v := iter.At()
-		smpls = append(smpls, sample{
-			at:    time.Unix(int64(t), 0),
-			value: v,
-		})
-	}
-
-	return smpls, err
 }
 
 type newRow struct {
@@ -1118,11 +1121,30 @@ func loadNew(ctx context.Context, store *Store, id int) ([]newRow, error) {
 	return rows, nil
 }
 
-func toTimeseries(data []newRow, seriesId string) (results []SeriesPoint) {
+func decompress(data []byte) (smpls []sample, err error) {
+	decompressor, _, err := gorilla.NewDecompressor(bytes2.NewReader(data))
+	if err != nil {
+		return nil, err
+	}
+	iter := decompressor.Iterator()
+	for iter.Next() {
+		t, v := iter.At()
+		smpls = append(smpls, sample{
+			at:    time.Unix(int64(t), 0),
+			value: v,
+		})
+	}
+
+	return smpls, err
+}
+
+func toTs(data []newRow, seriesId string) (results []SeriesPoint) {
+	count := 0
 	mapped := make(map[time.Time]float64)
 	for _, datum := range data {
 		for _, smpl := range datum.Smpls {
 			mapped[smpl.at] += smpl.value
+			count += 1
 		}
 	}
 
@@ -1136,5 +1158,6 @@ func toTimeseries(data []newRow, seriesId string) (results []SeriesPoint) {
 	sort.Slice(results, func(i, j int) bool {
 		return results[i].Time.Before(results[j].Time)
 	})
+	println(count)
 	return results
 }

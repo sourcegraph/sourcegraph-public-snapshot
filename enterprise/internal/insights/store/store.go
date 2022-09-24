@@ -1,11 +1,15 @@
 package store
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
+
+	"github.com/keisku/gorilla"
 
 	"github.com/RoaringBitmap/roaring"
 
@@ -602,4 +606,169 @@ func scanAll(rows *sql.Rows, scan scanFunc) (err error) {
 		}
 	}
 	return rows.Err()
+}
+
+type RawSample struct {
+	Time  uint32
+	Value float64
+}
+
+type AlternateFormatRow struct {
+	Id      uint32
+	RepoId  uint32
+	Capture *string
+	Samples []RawSample
+}
+
+func (s *Store) StoreAlternateFormat(ctx context.Context, row AlternateFormatRow, seriesId int) error {
+	buf, err := compressSamples(row.Samples)
+	if err != nil {
+		return err
+	}
+
+	var q *sqlf.Query
+	if row.Id != 0 {
+		q = sqlf.Sprintf("update series_points_compressed (data) values (%s) where id = %s", buf.Bytes(), row.Id)
+	} else {
+		q = sqlf.Sprintf("insert into series_points_compressed (series_id, repo_id, capture, data) values (%s, %s, %s, %s)", seriesId, row.RepoId, row.Capture, buf.Bytes())
+	}
+
+	return s.Exec(ctx, q)
+}
+
+func (s *Store) LoadAlternateFormat(ctx context.Context, opts SeriesPointsOpts) ([]AlternateFormatRow, error) {
+	baseQuery := `select id, repo_id, data, capture from series_points_compressed sp`
+	var preds []*sqlf.Query
+	if len(opts.IncludeRepoRegex) > 0 || len(opts.ExcludeRepoRegex) > 0 {
+		baseQuery += " join repo_names rn on rn.id = sp.repo_name_id"
+	}
+
+	if len(opts.IncludeRepoRegex) > 0 {
+		for _, regex := range opts.IncludeRepoRegex {
+			if len(regex) == 0 {
+				continue
+			}
+			preds = append(preds, sqlf.Sprintf("rn.name ~ %s", regex))
+		}
+	}
+	if len(opts.ExcludeRepoRegex) > 0 {
+		for _, regex := range opts.ExcludeRepoRegex {
+			if len(regex) == 0 {
+				continue
+			}
+			preds = append(preds, sqlf.Sprintf("rn.name !~ %s", regex))
+		}
+	}
+	if opts.SeriesID != nil {
+		preds = append(preds, sqlf.Sprintf("series_id = (select id from insight_series as isn where isn.series_id = %s)", *opts.SeriesID))
+	}
+	if opts.RepoID != nil {
+		preds = append(preds, sqlf.Sprintf("repo_id = %s", *opts.RepoID))
+	}
+
+	if len(preds) > 0 {
+		baseQuery += " where %s"
+	}
+
+	final := sqlf.Sprintf(baseQuery, sqlf.Join(preds, "AND "))
+
+	var rows []AlternateFormatRow
+
+	denylist, err := s.permStore.GetUnauthorizedRepoIDs(ctx)
+	if err != nil {
+		return nil, err
+	}
+	denyBitmap := roaring.New()
+	for _, id := range denylist {
+		denyBitmap.Add(uint32(id))
+	}
+
+	if err := s.query(ctx, final, func(s scanner) (err error) {
+		var tmp AlternateFormatRow
+		var raw []byte
+		if err := s.Scan(
+			&tmp.Id,
+			&tmp.RepoId,
+			&raw,
+			&tmp.Capture,
+		); err != nil {
+			return err
+		}
+
+		if denyBitmap.Contains(tmp.RepoId) {
+			return
+		}
+
+		dcmp, err := decompressSamples(raw)
+		if err != nil {
+			return err
+		}
+		tmp.Samples = dcmp
+		rows = append(rows, tmp)
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	return rows, nil
+}
+
+func decompressSamples(data []byte) (smpls []RawSample, err error) {
+	decompressor, _, err := gorilla.NewDecompressor(bytes.NewReader(data))
+	if err != nil {
+		return nil, err
+	}
+	iter := decompressor.Iterator()
+	for iter.Next() {
+		t, v := iter.At()
+		smpls = append(smpls, RawSample{
+			Time:  t,
+			Value: v,
+		})
+	}
+
+	return smpls, err
+}
+
+func compressSamples(samples []RawSample) (buf *bytes.Buffer, err error) {
+	if len(samples) == 0 {
+		return nil, errors.New("no samples provided to compress")
+	}
+	buf = new(bytes.Buffer)
+	header := samples[0].Time
+	c, finish, err := gorilla.NewCompressor(buf, header)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, smpl := range samples {
+		if err = c.Compress(smpl.Time, smpl.Value); err != nil {
+			return nil, err
+		}
+	}
+
+	return buf, finish()
+}
+
+func ToTimeseries(data []AlternateFormatRow, seriesId string) (results []SeriesPoint) {
+	count := 0
+	mapped := make(map[uint32]float64)
+	for _, datum := range data {
+		for _, smpl := range datum.Samples {
+			mapped[smpl.Time] += smpl.Value
+			count += 1
+		}
+	}
+
+	for t, f := range mapped {
+		results = append(results, SeriesPoint{
+			SeriesID: seriesId,
+			Time:     time.Unix(int64(t), 0),
+			Value:    f,
+		})
+	}
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].Time.Before(results[j].Time)
+	})
+	return results
 }
