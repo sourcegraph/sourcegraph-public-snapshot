@@ -5,11 +5,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"math"
 	"sort"
 	"strings"
 	"time"
-
-	"github.com/inconshreveable/log15"
 
 	"github.com/keisku/gorilla"
 
@@ -113,6 +112,8 @@ type SeriesPointsOpts struct {
 
 	// Time ranges to query from/to, if non-nil, in UTC.
 	From, To *time.Time
+
+	Key *TimeSeriesKey
 
 	// Limit is the number of data points to query, if non-zero.
 	Limit int
@@ -615,6 +616,12 @@ type RawSample struct {
 	Value float64
 }
 
+type TimeSeriesKey struct {
+	SeriesId uint32
+	RepoId   uint32
+	Capture  *string
+}
+
 type UncompressedRow struct {
 	altFormatRowMetadata
 	Samples []RawSample
@@ -631,7 +638,8 @@ type altFormatRowMetadata struct {
 	Capture *string
 }
 
-func (s *Store) StoreAlternateFormat(ctx context.Context, row UncompressedRow, seriesId int) error {
+func (s *Store) StoreAlternateFormat(ctx context.Context, row UncompressedRow, seriesId uint32) error {
+	prepareSamplesForCompression(row.Samples)
 	buf, err := compressSamples(row.Samples)
 	if err != nil {
 		return err
@@ -648,42 +656,6 @@ func (s *Store) StoreAlternateFormat(ctx context.Context, row UncompressedRow, s
 }
 
 func (s *Store) LoadAlternateFormat(ctx context.Context, opts SeriesPointsOpts) ([]UncompressedRow, error) {
-	baseQuery := `select sp.id, repo_id, data, capture from series_points_compressed sp`
-	var preds []*sqlf.Query
-	// if len(opts.IncludeRepoRegex) > 0 || len(opts.ExcludeRepoRegex) > 0 {
-	// 	baseQuery += " join repo_names rn on rn.id = sp.repo_name_id"
-	// }
-	//
-	// if len(opts.IncludeRepoRegex) > 0 {
-	// 	for _, regex := range opts.IncludeRepoRegex {
-	// 		if len(regex) == 0 {
-	// 			continue
-	// 		}
-	// 		preds = append(preds, sqlf.Sprintf("rn.name ~ %s", regex))
-	// 	}
-	// }
-	// if len(opts.ExcludeRepoRegex) > 0 {
-	// 	for _, regex := range opts.ExcludeRepoRegex {
-	// 		if len(regex) == 0 {
-	// 			continue
-	// 		}
-	// 		preds = append(preds, sqlf.Sprintf("rn.name !~ %s", regex))
-	// 	}
-	// }
-	if opts.SeriesID != nil {
-		preds = append(preds, sqlf.Sprintf("series_id = (select isn.id from insight_series as isn where isn.series_id = %s)", *opts.SeriesID))
-	}
-	if opts.RepoID != nil {
-		preds = append(preds, sqlf.Sprintf("repo_id = %s", *opts.RepoID))
-	}
-
-	if len(preds) > 0 {
-		baseQuery += " where %s"
-	}
-
-	final := sqlf.Sprintf(baseQuery, sqlf.Join(preds, "AND "))
-	log15.Info("finalquery", "q", final.Query(sqlf.PostgresBindVar), "args", final.Args())
-
 	// i'd really like to rethink this and load it much earlier - this is getting reloaded for every insight series we fetch
 	// maybe a privilged access struct vs unprivd?
 	denylist, err := s.permStore.GetUnauthorizedRepoIDs(ctx)
@@ -696,7 +668,7 @@ func (s *Store) LoadAlternateFormat(ctx context.Context, opts SeriesPointsOpts) 
 	}
 
 	var rows []UncompressedRow
-	return rows, s.streamAlternativeFormat(ctx, final, func(ctx context.Context, row *CompressedRow) (err error) {
+	return rows, s.streamAlternativeFormat(ctx, opts, func(ctx context.Context, row *CompressedRow) (err error) {
 		if denyBitmap.Contains(row.RepoId) {
 			return nil
 		}
@@ -714,8 +686,95 @@ func (s *Store) LoadAlternateFormat(ctx context.Context, opts SeriesPointsOpts) 
 	})
 }
 
-func (s *Store) streamAlternativeFormat(ctx context.Context, query *sqlf.Query, callback func(ctx context.Context, row *CompressedRow) error) error {
-	return s.query(ctx, query, func(s scanner) (err error) {
+func altFormatQuery(opts SeriesPointsOpts) *sqlf.Query {
+	baseQuery := `select sp.id, repo_id, data, capture from series_points_compressed sp`
+	var preds []*sqlf.Query
+
+	// todo(insights): add repo filtering somehow
+	if opts.SeriesID != nil {
+		preds = append(preds, sqlf.Sprintf("series_id = (select isn.id from insight_series as isn where isn.series_id = %s)", *opts.SeriesID))
+	}
+	if opts.RepoID != nil {
+		preds = append(preds, sqlf.Sprintf("repo_id = %s", *opts.RepoID))
+	}
+
+	if opts.Key != nil {
+		preds = append(preds, sqlf.Sprintf("series_id = %s and repo_id = %s and capture = %s", opts.Key.SeriesId, opts.Key.RepoId, opts.Key.Capture))
+	}
+	if len(preds) > 0 {
+		baseQuery += " where %s"
+	}
+
+	return sqlf.Sprintf(baseQuery, sqlf.Join(preds, "AND "))
+}
+
+func (s *Store) Append(ctx context.Context, key TimeSeriesKey, samples []RawSample) (err error) {
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	var keyMatch *UncompressedRow
+	err = tx.streamAlternativeFormat(ctx, SeriesPointsOpts{Key: &key}, func(ctx context.Context, row *CompressedRow) error {
+		decompressed, err := decompressSamples(row.Data)
+		if err != nil {
+			return errors.Wrap(err, "failed to decompress sample data")
+		}
+		keyMatch = &UncompressedRow{
+			altFormatRowMetadata: row.altFormatRowMetadata,
+			Samples:              decompressed,
+		}
+		return nil
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to decompress row")
+	}
+
+	if keyMatch == nil {
+		// no data exists already for this key, so we will write a new row with the provided samples
+		keyMatch = &UncompressedRow{
+			altFormatRowMetadata: altFormatRowMetadata{
+				RepoId:  key.RepoId,
+				Capture: key.Capture,
+			},
+			Samples: samples,
+		}
+	}
+	keyMatch.Samples = append(keyMatch.Samples, samples...)
+	return tx.StoreAlternateFormat(ctx, *keyMatch, key.SeriesId)
+}
+
+func prepareSamplesForCompression(samples []RawSample) {
+	uniques := make(map[uint32]RawSample)
+	for i := range samples {
+		if val, ok := uniques[samples[i].Time]; ok {
+			// deduplicate by time - keep the highest value for any duplicate times
+			// eventually we may want to be less granular about what we consider a duplicate time,
+			// for example round down to the near hour
+			uniques[samples[i].Time] = RawSample{
+				Time:  samples[i].Time,
+				Value: math.Max(val.Value, samples[i].Value),
+			}
+		} else {
+			uniques[samples[i].Time] = samples[i]
+		}
+	}
+	samples = samples[:0]
+
+	for _, v := range uniques {
+		samples = append(samples, v)
+	}
+
+	sort.Slice(samples, func(i, j int) bool {
+		return samples[i].Time < samples[j].Time
+	})
+}
+
+type altFormatStream func(ctx context.Context, row *CompressedRow) error
+
+func (s *Store) streamAlternativeFormat(ctx context.Context, opts SeriesPointsOpts, callback altFormatStream) error {
+	return s.query(ctx, altFormatQuery(opts), func(s scanner) (err error) {
 		var tmp CompressedRow
 		if err := s.Scan(
 			&tmp.Id,
