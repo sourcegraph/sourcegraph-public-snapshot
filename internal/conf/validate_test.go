@@ -61,7 +61,7 @@ func TestValidateSettings(t *testing.T) {
 		},
 		"comment only": {
 			input:        `// a`,
-			wantProblems: []string{"(root): Invalid type. Expected: object, given: null"},
+			wantProblems: []string{"must be a JSON object (use {} for empty)"},
 		},
 		"invalid per JSON Schema": {
 			input:        `{"experimentalFeatures":123}`,
@@ -86,12 +86,12 @@ func TestDoValidate(t *testing.T) {
 		wantProblems []string
 	}{
 		"valid": {
-			input:        `{"externalURL":"https://example.com"}`,
+			input:        `{}`,
 			wantProblems: []string{},
 		},
 		"invalid root": {
 			input:        `null`,
-			wantProblems: []string{`(root): Invalid type. Expected: object, given: null`},
+			wantProblems: []string{`must be a JSON object (use {} for empty)`},
 		},
 		"invalid per JSON Schema": {
 			input:        `{"externalURL":123}`,
