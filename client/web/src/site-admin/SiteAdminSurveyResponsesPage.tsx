@@ -34,6 +34,7 @@ import {
     fetchAllUsersWithSurveyResponses,
     fetchSurveyResponseAggregates,
 } from '../marketing/backend'
+import { SURVEY_QUESTIONS } from '../marketing/components/SurveyUseCaseForm'
 import { eventLogger } from '../tracking/eventLogger'
 import { userURL } from '../user'
 
@@ -80,16 +81,21 @@ const SurveyResponseNode: React.FunctionComponent<SurveyResponseNodeProps> = pro
         </div>
         {(props.node.reason || props.node.better) && (
             <dl className="mt-3">
+                {props.node.otherUseCase && props.node.otherUseCase !== '' && (
+                    <>
+                        <dt>{SURVEY_QUESTIONS.otherUseCase}</dt>
+                        <dd>{props.node.otherUseCase}</dd>
+                    </>
+                )}
                 {props.node.reason && props.node.reason !== '' && (
                     <>
-                        <dt>What is the most important reason for the score you gave Sourcegraph?</dt>
+                        <dt>{SURVEY_QUESTIONS.reason}</dt>
                         <dd>{props.node.reason}</dd>
                     </>
                 )}
-                {props.node.reason && props.node.better && <div className="mt-2" />}
                 {props.node.better && props.node.better !== '' && (
                     <>
-                        <dt>What could Sourcegraph do to provide a better product?</dt>
+                        <dt>{SURVEY_QUESTIONS.better}</dt>
                         <dd>{props.node.better}</dd>
                     </>
                 )}
@@ -173,20 +179,24 @@ class UserSurveyResponseNode extends React.PureComponent<UserSurveyResponseNodeP
                                         <Timestamp date={response.createdAt} />
                                         <ScoreBadge score={response.score} />
                                         <br />
-                                        {(response.reason || response.better) && <div className="mt-2" />}
+                                        {(response.otherUseCase || response.reason || response.better) && (
+                                            <div className="mt-2" />
+                                        )}
+                                        {response.otherUseCase && response.otherUseCase !== '' && (
+                                            <>
+                                                <dt>{SURVEY_QUESTIONS.otherUseCase}</dt>
+                                                <dd>{response.otherUseCase}</dd>
+                                            </>
+                                        )}
                                         {response.reason && response.reason !== '' && (
                                             <>
-                                                <dt>
-                                                    What is the most important reason for the score you gave
-                                                    Sourcegraph?
-                                                </dt>
+                                                <dt>{SURVEY_QUESTIONS.reason}</dt>
                                                 <dd>{response.reason}</dd>
                                             </>
                                         )}
-                                        {response.reason && response.better && <div className="mt-2" />}
                                         {response.better && response.better !== '' && (
                                             <>
-                                                <dt>What could Sourcegraph do to provide a better product?</dt>
+                                                <dt>{SURVEY_QUESTIONS.better}</dt>
                                                 <dd>{response.better}</dd>
                                             </>
                                         )}
