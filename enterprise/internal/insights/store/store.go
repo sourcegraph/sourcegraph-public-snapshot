@@ -672,6 +672,7 @@ func (s *Store) LoadAlternateFormat(ctx context.Context, opts SeriesPointsOpts) 
 		baseQuery += " where %s"
 	}
 
+	// github.com/sourcegraph/sourcegraph
 	final := sqlf.Sprintf(baseQuery, sqlf.Join(preds, "AND "))
 	log15.Info("finalquery", "q", final.Query(sqlf.PostgresBindVar), "args", final.Args())
 
@@ -686,7 +687,7 @@ func (s *Store) LoadAlternateFormat(ctx context.Context, opts SeriesPointsOpts) 
 		denyBitmap.Add(uint32(id))
 	}
 
-	if err := s.query(ctx, final, func(s scanner) (err error) {
+	if err = s.query(ctx, final, func(s scanner) (err error) {
 		var tmp AlternateFormatRow
 		var raw []byte
 		if err := s.Scan(
@@ -716,7 +717,7 @@ func (s *Store) LoadAlternateFormat(ctx context.Context, opts SeriesPointsOpts) 
 	return rows, nil
 }
 
-func decompressSamples(data []byte) (smpls []RawSample, err error) {
+func decompressSamples(data []byte) (samples []RawSample, err error) {
 	decompressor, _, err := gorilla.NewDecompressor(bytes.NewReader(data))
 	if err != nil {
 		return nil, err
@@ -724,13 +725,13 @@ func decompressSamples(data []byte) (smpls []RawSample, err error) {
 	iter := decompressor.Iterator()
 	for iter.Next() {
 		t, v := iter.At()
-		smpls = append(smpls, RawSample{
+		samples = append(samples, RawSample{
 			Time:  t,
 			Value: v,
 		})
 	}
 
-	return smpls, err
+	return samples, err
 }
 
 func compressSamples(samples []RawSample) (buf *bytes.Buffer, err error) {
@@ -754,8 +755,6 @@ func compressSamples(samples []RawSample) (buf *bytes.Buffer, err error) {
 }
 
 func ToTimeseries(data []AlternateFormatRow, seriesId string) (results []SeriesPoint) {
-	// mapped := make(map[uint32]float64)
-
 	getKey := func(s *string) string {
 		if s == nil {
 			return ""
@@ -765,14 +764,6 @@ func ToTimeseries(data []AlternateFormatRow, seriesId string) (results []SeriesP
 
 	byCapture := make(map[string][]AlternateFormatRow)
 	for _, datum := range data {
-		// for _, smpl := range datum.Samples {
-		// 	// mapped[smpl.Time] += smpl.Value
-		// 	// count += 1
-		//
-		// }
-		if datum.Capture == nil {
-
-		}
 		byCapture[getKey(datum.Capture)] = append(byCapture[getKey(datum.Capture)], datum)
 	}
 
