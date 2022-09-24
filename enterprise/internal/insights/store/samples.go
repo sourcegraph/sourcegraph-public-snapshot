@@ -22,6 +22,7 @@ type SampleStore interface {
 	With(other basestore.ShareableStore) SampleStore
 	Done(err error) error
 
+	// Sample Operations
 	StoreRow(ctx context.Context, row UncompressedRow, seriesId uint32) error
 	LoadRows(ctx context.Context, opts SeriesPointsOpts) ([]UncompressedRow, error)
 	Append(ctx context.Context, key TimeSeriesKey, samples []RawSample) (err error)
