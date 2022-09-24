@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math"
+	"strings"
 	"testing"
 	"time"
 
@@ -1090,40 +1091,23 @@ func TestAppend(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	t.Log("asdf")
-
 	got, err := store.LoadAlternateFormat(ctx, SeriesPointsOpts{Key: &tsk})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	autogold.Want("no previous values inserted new row", []UncompressedRow{{
-		altFormatRowMetadata: altFormatRowMetadata{
-			Id:     1,
-			RepoId: 1,
-		},
-		Samples: []RawSample{
-			{
-				Time: 1609459200,
-			},
-			{
-				Time:  1612137600,
-				Value: 1,
-			},
-			{
-				Time:  1614556800,
-				Value: 2,
-			},
-			{
-				Time:  1617235200,
-				Value: 3,
-			},
-			{
-				Time:  1619827200,
-				Value: 4,
-			},
-		},
-	}}).Equal(t, got)
+	autogold.Want("no previous values inserted new row", []string{"({1 1 <nil>} [(2021-01-01 00:00:00 +0000 UTC 0.000000), (2021-02-01 00:00:00 +0000 UTC 1.000000), (2021-03-01 00:00:00 +0000 UTC 2.000000), (2021-04-01 00:00:00 +0000 UTC 3.000000), (2021-05-01 00:00:00 +0000 UTC 4.000000)])"}).Equal(t, stringifyRows(got))
+}
+
+func stringifyRows(rows []UncompressedRow) (strs []string) {
+	for _, row := range rows {
+		var ll []string
+		for _, rawSample := range row.Samples {
+			ll = append(ll, rawSample.String())
+		}
+		strs = append(strs, fmt.Sprintf("(%v [%s])", row.altFormatRowMetadata, strings.Join(ll, ", ")))
+	}
+	return strs
 }
 
 func generateSamples(start time.Time, count int) (samples []RawSample) {

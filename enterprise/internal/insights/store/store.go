@@ -13,7 +13,6 @@ import (
 	"github.com/keisku/gorilla"
 
 	"github.com/RoaringBitmap/roaring"
-
 	"github.com/keegancsmith/sqlf"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
@@ -616,6 +615,10 @@ type RawSample struct {
 	Value float64
 }
 
+func (r RawSample) String() string {
+	return fmt.Sprintf("(%s %f)", time.Unix(int64(r.Time), 0).String(), r.Value)
+}
+
 type TimeSeriesKey struct {
 	SeriesId uint32
 	RepoId   uint32
@@ -645,11 +648,13 @@ func (s *Store) StoreAlternateFormat(ctx context.Context, row UncompressedRow, s
 		return err
 	}
 
+	data := buf.Bytes()
+
 	var q *sqlf.Query
 	if row.Id != 0 {
-		q = sqlf.Sprintf("update series_points_compressed set data = %s where id = %s", buf.Bytes(), row.Id)
+		q = sqlf.Sprintf("update series_points_compressed set data = %s where id = %s", data, row.Id)
 	} else {
-		q = sqlf.Sprintf("insert into series_points_compressed (series_id, repo_id, capture, data) values (%s, %s, %s, %s)", seriesId, row.RepoId, row.Capture, buf.Bytes())
+		q = sqlf.Sprintf("insert into series_points_compressed (series_id, repo_id, capture, data) values (%s, %s, %s, %s)", seriesId, row.RepoId, row.Capture, data)
 	}
 	return s.Exec(ctx, q)
 }
@@ -809,6 +814,11 @@ func decompressSamples(data []byte) (samples []RawSample, err error) {
 	iter := decompressor.Iterator()
 	for iter.Next() {
 		t, v := iter.At()
+		if len(samples) > 0 {
+			// this is a little optimization because Code Insights operates with minimum hourly intervals.
+			// we still store the first value as the full timestamp in seconds, and all the delta-of-delta as hours
+			t = t * 3600
+		}
 		samples = append(samples, RawSample{
 			Time:  t,
 			Value: v,
@@ -823,14 +833,21 @@ func compressSamples(samples []RawSample) (buf *bytes.Buffer, err error) {
 		return nil, errors.New("no samples provided to compress")
 	}
 	buf = new(bytes.Buffer)
-	header := samples[0].Time
-	c, finish, err := gorilla.NewCompressor(buf, header)
+	header := samples[0]
+	c, finish, err := gorilla.NewCompressor(buf, header.Time)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, smpl := range samples {
-		if err = c.Compress(smpl.Time, smpl.Value); err != nil {
+	if err = c.Compress(header.Time, header.Value); err != nil {
+		return nil, err
+	}
+
+	for i := 1; i < len(samples); i++ {
+		smpl := samples[i]
+		if err = c.Compress(smpl.Time/3600, smpl.Value); err != nil {
+			// we convert the time to hours as a little optimization because Code Insights operates with minimum hourly intervals.
+			// we still store the first value as the full timestamp in seconds, and all the delta-of-delta as hours
 			return nil, err
 		}
 	}
