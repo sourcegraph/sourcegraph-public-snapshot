@@ -284,6 +284,8 @@ type BatchChangesResolver interface {
 	BatchChange(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error)
 	BatchChanges(cx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)
 
+	Changesets(cx context.Context, args *ListChangesetsArgs) (ChangesetsConnectionResolver, error)
+
 	BatchChangesCodeHosts(ctx context.Context, args *ListBatchChangesCodeHostsArgs) (BatchChangesCodeHostConnectionResolver, error)
 	RepoChangesetsStats(ctx context.Context, repo *graphql.ID) (RepoChangesetsStatsResolver, error)
 	RepoDiffStat(ctx context.Context, repo *graphql.ID) (*DiffStat, error)

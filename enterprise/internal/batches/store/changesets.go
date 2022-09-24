@@ -265,6 +265,7 @@ type CountChangesetsOpts struct {
 	TextSearch           []search.TextSearchTerm
 	EnforceAuthz         bool
 	RepoIDs              []api.RepoID
+	States               []btypes.ChangesetState
 }
 
 // CountChangesets returns the number of changesets in the database.
@@ -306,6 +307,9 @@ func countChangesetsQuery(opts *CountChangesetsOpts, authzConds *sqlf.Query) *sq
 	}
 	if len(opts.ExternalStates) > 0 {
 		preds = append(preds, sqlf.Sprintf("changesets.external_state = ANY (%s)", pq.Array(opts.ExternalStates)))
+	}
+	if len(opts.States) > 0 {
+		preds = append(preds, sqlf.Sprintf("changesets.computed_state = ANY (%s)", pq.Array(opts.States)))
 	}
 	if opts.ExternalReviewState != nil {
 		preds = append(preds, sqlf.Sprintf("changesets.external_review_state = %s", *opts.ExternalReviewState))

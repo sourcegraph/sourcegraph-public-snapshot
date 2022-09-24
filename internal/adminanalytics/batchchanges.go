@@ -71,6 +71,7 @@ var changesetsMergedNodesQuery = `
 		INNER JOIN batch_changes ON batch_changes.id = changesets.owned_by_batch_change_id
 	WHERE changeset_events.created_at %s AND changeset_events.kind IN (%s)
 	GROUP BY date
+
 `
 
 var changesetsMergedSummaryQuery = `
@@ -84,6 +85,7 @@ var changesetsMergedSummaryQuery = `
 		INNER JOIN batch_changes ON batch_changes.id = changesets.owned_by_batch_change_id
 	WHERE changeset_events.created_at %s AND changeset_events.kind IN (%s)
 `
+
 
 var mergeEventKinds = sqlf.Join([]*sqlf.Query{
 	sqlf.Sprintf("'github:merged'"),
@@ -129,4 +131,53 @@ func (s *BatchChanges) CacheAll(ctx context.Context) error {
 		}
 	}
 	return nil
+}
+
+
+
+var changesetsOpenedNodesQuery = `
+	SELECT
+		%s AS date,
+		COUNT(DISTINCT changesets.id) AS count,
+		COUNT(DISTINCT batch_changes.creator_id) AS unique_users,
+		COUNT(DISTINCT batch_changes.creator_id) AS registered_users
+	FROM
+		changeset_events
+		INNER JOIN changesets ON changesets.id = changeset_events.changeset_id
+		INNER JOIN batch_changes ON batch_changes.id = changesets.owned_by_batch_change_id
+	WHERE changeset_events.created_at %s AND changeset_events.kind IN (%s)
+	GROUP BY date
+
+`
+
+var changesetsOpenedSummaryQuery = `
+	SELECT
+		COUNT(DISTINCT changesets.id) AS total_count,
+		COUNT(DISTINCT batch_changes.creator_id) AS total_unique_users,
+		COUNT(DISTINCT batch_changes.creator_id) AS total_registered_users
+	FROM
+		changeset_events
+		INNER JOIN changesets ON changesets.id = changeset_events.changeset_id
+		INNER JOIN batch_changes ON batch_changes.id = changesets.owned_by_batch_change_id
+	WHERE changeset_events.created_at %s AND changeset_events.kind IN (%s)
+`
+
+func (s *BatchChanges) ChangesetsOpened() (*AnalyticsFetcher, error) {
+	dateTruncExp, dateBetweenCond, err := makeDateParameters(s.DateRange, s.Grouping, "changesets.created_at")
+	if err != nil {
+		return nil, err
+	}
+
+	nodesQuery := sqlf.Sprintf(changesetsMergedNodesQuery, dateTruncExp, dateBetweenCond, mergeEventKinds)
+	summaryQuery := sqlf.Sprintf(changesetsMergedSummaryQuery, dateBetweenCond, mergeEventKinds)
+
+	return &AnalyticsFetcher{
+		db:           s.DB,
+		dateRange:    s.DateRange,
+		grouping:     s.Grouping,
+		nodesQuery:   nodesQuery,
+		summaryQuery: summaryQuery,
+		group:        "BatchChanges:ChangesetsMerged",
+		cache:        s.Cache,
+	}, nil
 }

@@ -40,6 +40,7 @@ import { BATCH_CHANGES, BATCH_CHANGES_BY_NAMESPACE, GET_LICENSE_AND_USAGE_INFO }
 import { BatchChangeListFilters } from './BatchChangeListFilters'
 import { BatchChangeNode } from './BatchChangeNode'
 import { BatchChangesListIntro } from './BatchChangesListIntro'
+import { BatchChangeStatsBar } from './BatchChangeStatsBar'
 import { GettingStarted } from './GettingStarted'
 import { NewBatchChangeButton } from './NewBatchChangeButton'
 import { useBatchChangeListFilters } from './useBatchChangeListFilters'
@@ -172,6 +173,8 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                                     {pluralize('batch change', currentTotalCount)}
                                 </H3>
                             )}
+
+                            <BatchChangeStatsBar />
                             <BatchChangeListFilters
                                 className="m-0"
                                 isExecutionEnabled={isExecutionEnabled}

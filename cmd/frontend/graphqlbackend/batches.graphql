@@ -1774,6 +1774,50 @@ extend type Query {
     ): BatchChange
 
     """
+    A list of changesets.
+    """
+    changesets(
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Only include changesets with the given state.
+        """
+        state: ChangesetState
+        """
+        Query only changesets that are either open or draft. This is used on the close page to list changesets that remain open.
+        When set, passing state is not allowed.
+        """
+        onlyClosable: Boolean
+        """
+        Only include changesets with the given review state.
+        """
+        reviewState: ChangesetReviewState
+        """
+        Only include changesets with the given check state.
+        """
+        checkState: ChangesetCheckState
+        """
+        Only return changesets that have been published by this batch change. Imported changesets will be omitted.
+        """
+        onlyPublishedByThisBatchChange: Boolean
+        """
+        Search for changesets matching this query. Queries may include quoted substrings to match phrases, and words may be preceded by - to negate them.
+        """
+        search: String
+        """
+        Only return changesets that are archived in this batch change.
+        """
+        onlyArchived: Boolean = false
+        """
+        Only include changesets belonging to the given repository.
+        """
+        repo: ID
+    ): ChangesetConnection!
+
+    """
     All globally configured code hosts usable with Batch Changes.
     """
     batchChangesCodeHosts(
