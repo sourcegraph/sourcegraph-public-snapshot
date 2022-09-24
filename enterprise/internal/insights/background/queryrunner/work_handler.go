@@ -276,7 +276,7 @@ func (r *workHandler) persistRecordings(ctx context.Context, job *Job, series *t
 				RepoId:   uint32(int(*recording.RepoID)),
 				Capture:  recording.Point.Capture,
 			}, samples); err != nil {
-				return err
+				return errors.Wrap(err, "Append")
 			}
 		}
 	} else {

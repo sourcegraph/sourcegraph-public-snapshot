@@ -647,11 +647,10 @@ func (s *Store) StoreAlternateFormat(ctx context.Context, row UncompressedRow, s
 
 	var q *sqlf.Query
 	if row.Id != 0 {
-		q = sqlf.Sprintf("update series_points_compressed (data) values (%s) where id = %s", buf.Bytes(), row.Id)
+		q = sqlf.Sprintf("update series_points_compressed set data = %s where id = %s", buf.Bytes(), row.Id)
 	} else {
 		q = sqlf.Sprintf("insert into series_points_compressed (series_id, repo_id, capture, data) values (%s, %s, %s, %s)", seriesId, row.RepoId, row.Capture, buf.Bytes())
 	}
-
 	return s.Exec(ctx, q)
 }
 
@@ -711,7 +710,8 @@ func altFormatQuery(opts SeriesPointsOpts) *sqlf.Query {
 		baseQuery += " where %s"
 	}
 
-	return sqlf.Sprintf(baseQuery, sqlf.Join(preds, "AND "))
+	final := sqlf.Sprintf(baseQuery, sqlf.Join(preds, "AND"))
+	return final
 }
 
 // select sp.id, repo_id, data, capture from series_points_compressed sp where series_id = 1 and repo_id = 1 and capture = null
@@ -750,7 +750,11 @@ func (s *Store) Append(ctx context.Context, key TimeSeriesKey, samples []RawSamp
 		}
 	}
 	keyMatch.Samples = append(keyMatch.Samples, samples...)
-	return tx.StoreAlternateFormat(ctx, *keyMatch, key.SeriesId)
+	err = tx.StoreAlternateFormat(ctx, *keyMatch, key.SeriesId)
+	if err != nil {
+		return errors.Wrap(err, "StoreAlternateFormat")
+	}
+	return nil
 }
 
 func prepareSamplesForCompression(samples []RawSample) {
