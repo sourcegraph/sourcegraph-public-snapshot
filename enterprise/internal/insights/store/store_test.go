@@ -6,8 +6,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math"
-	"sort"
-	"strings"
 	"testing"
 	"time"
 
@@ -1032,136 +1030,12 @@ func BenchmarkReadGeneratedSeries(b *testing.B) {
 
 	// b.Log(oldFormat)
 	b.Log(newFormat)
-
-	// doNothing(oldFormat)
-	doNothing(newFormat)
-}
-
-func doNothing(data []SeriesPoint) {
-	return
-}
-
-func formatSamples(vals []sample) string {
-	var sb strings.Builder
-	for _, val := range vals {
-		sb.WriteString(fmt.Sprintf("%s-%d --", val.at.String(), int(val.value)))
-	}
-	return sb.String()
-}
-
-// func writeNew(ctx context.Context, store *Store, seriesId int, allData []dataForRepo) error {
-// 	for i, datum := range allData {
-// 		if i%100 == 0 {
-// 			println(fmt.Sprintf("new %d", i))
-// 		}
-// 		// rn := datum.repoName
-// 		id := datum.repoId
-//
-// 		buf, err := compress(datum.ss)
-// 		if err != nil {
-// 			return errors.Wrapf(err, "repo_id: %d", id)
-// 		}
-//
-// 		q := `insert into test_data_table(series_id, repo_id, data) values (%s, %s, %s);`
-// 		if err := store.Exec(ctx, sqlf.Sprintf(q, seriesId, id, buf.Bytes())); err != nil {
-// 			return err
-// 		}
-// 	}
-// 	return nil
-// }
-
-func compress(smpls []sample) (buf *bytes2.Buffer, err error) {
-	buf = new(bytes2.Buffer)
-	header := uint32(smpls[0].at.Unix())
-	c, finish, err := gorilla.NewCompressor(buf, header)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, smpl := range smpls {
-		if err := c.Compress(uint32(smpl.at.Unix()), smpl.value); err != nil {
-			return nil, err
-		}
-	}
-
-	return buf, finish()
 }
 
 type newRow struct {
 	RepoId  int
 	Smpls   []sample
 	Capture *string
-}
-
-func loadNew(ctx context.Context, store *Store, id int) ([]newRow, error) {
-	q := `select repo_id, data, capture from test_data_table where series_id = %s;`
-
-	var rows []newRow
-
-	if err := store.query(ctx, sqlf.Sprintf(q, id), func(s scanner) (err error) {
-		var tmp newRow
-		var raw []byte
-		if err := s.Scan(
-			&tmp.RepoId,
-			&raw,
-			&tmp.Capture,
-		); err != nil {
-			return err
-		}
-
-		dcmp, err := decompress(raw)
-		if err != nil {
-			return err
-		}
-		tmp.Smpls = dcmp
-		rows = append(rows, tmp)
-		return nil
-	}); err != nil {
-		return nil, err
-	}
-
-	return rows, nil
-}
-
-func decompress(data []byte) (smpls []sample, err error) {
-	decompressor, _, err := gorilla.NewDecompressor(bytes2.NewReader(data))
-	if err != nil {
-		return nil, err
-	}
-	iter := decompressor.Iterator()
-	for iter.Next() {
-		t, v := iter.At()
-		smpls = append(smpls, sample{
-			at:    time.Unix(int64(t), 0),
-			value: v,
-		})
-	}
-
-	return smpls, err
-}
-
-func toTs(data []newRow, seriesId string) (results []SeriesPoint) {
-	count := 0
-	mapped := make(map[time.Time]float64)
-	for _, datum := range data {
-		for _, smpl := range datum.Smpls {
-			mapped[smpl.at] += smpl.value
-			count += 1
-		}
-	}
-
-	for t, f := range mapped {
-		results = append(results, SeriesPoint{
-			SeriesID: seriesId,
-			Time:     t,
-			Value:    f,
-		})
-	}
-	sort.Slice(results, func(i, j int) bool {
-		return results[i].Time.Before(results[j].Time)
-	})
-	println(count)
-	return results
 }
 
 func TestConvert(t *testing.T) {
@@ -1194,4 +1068,70 @@ func TestConvert(t *testing.T) {
 			t.Logf("completed series:%s %d", series.SeriesID, series.ID)
 		}
 	}
+}
+
+func TestAppend(t *testing.T) {
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	clock := timeutil.Now
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
+	permStore := NewInsightPermissionStore(postgres)
+	store := NewWithClock(insightsDB, permStore, clock)
+
+	start := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
+
+	tsk := TimeSeriesKey{
+		SeriesId: 1,
+		RepoId:   1,
+	}
+	err := store.Append(ctx, tsk, generateSamples(start, 5))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log("asdf")
+
+	got, err := store.LoadAlternateFormat(ctx, SeriesPointsOpts{Key: &tsk})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	autogold.Want("no previous values inserted new row", []UncompressedRow{{
+		altFormatRowMetadata: altFormatRowMetadata{
+			Id:     1,
+			RepoId: 1,
+		},
+		Samples: []RawSample{
+			{
+				Time: 1609459200,
+			},
+			{
+				Time:  1612137600,
+				Value: 1,
+			},
+			{
+				Time:  1614556800,
+				Value: 2,
+			},
+			{
+				Time:  1617235200,
+				Value: 3,
+			},
+			{
+				Time:  1619827200,
+				Value: 4,
+			},
+		},
+	}}).Equal(t, got)
+}
+
+func generateSamples(start time.Time, count int) (samples []RawSample) {
+	for i := 0; i < count; i++ {
+		samples = append(samples, RawSample{
+			Time:  uint32(start.AddDate(0, i, 0).Unix()),
+			Value: float64(i),
+		})
+	}
+	return samples
 }

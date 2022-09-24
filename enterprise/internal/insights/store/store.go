@@ -699,7 +699,13 @@ func altFormatQuery(opts SeriesPointsOpts) *sqlf.Query {
 	}
 
 	if opts.Key != nil {
-		preds = append(preds, sqlf.Sprintf("series_id = %s and repo_id = %s and capture = %s", opts.Key.SeriesId, opts.Key.RepoId, opts.Key.Capture))
+		preds = append(preds, sqlf.Sprintf("series_id = %s", opts.Key.SeriesId))
+		preds = append(preds, sqlf.Sprintf("repo_id = %s", opts.Key.RepoId))
+		if opts.Key.Capture == nil {
+			preds = append(preds, sqlf.Sprintf("capture is null"))
+		} else {
+			preds = append(preds, sqlf.Sprintf("capture = %s", *opts.Key.Capture))
+		}
 	}
 	if len(preds) > 0 {
 		baseQuery += " where %s"
@@ -707,6 +713,8 @@ func altFormatQuery(opts SeriesPointsOpts) *sqlf.Query {
 
 	return sqlf.Sprintf(baseQuery, sqlf.Join(preds, "AND "))
 }
+
+// select sp.id, repo_id, data, capture from series_points_compressed sp where series_id = 1 and repo_id = 1 and capture = null
 
 func (s *Store) Append(ctx context.Context, key TimeSeriesKey, samples []RawSample) (err error) {
 	tx, err := s.Transact(ctx)
@@ -738,7 +746,7 @@ func (s *Store) Append(ctx context.Context, key TimeSeriesKey, samples []RawSamp
 				RepoId:  key.RepoId,
 				Capture: key.Capture,
 			},
-			Samples: samples,
+			Samples: nil, // not setting this because this is the "original" samples, we will append the new ones later
 		}
 	}
 	keyMatch.Samples = append(keyMatch.Samples, samples...)
