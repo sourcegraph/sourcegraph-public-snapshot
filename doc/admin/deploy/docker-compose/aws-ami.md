@@ -1,24 +1,36 @@
 # Sourcegraph AWS AMI Instances
 
-Launch a verified and pre-configured Sourcegraph instance with the following setup:
+[Amazon Machine Images (AMIs)](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instances-and-amis.html) allows you to start a verified and pre-configured Sourcegraph instance with everything you need for your instance size in just a few clicks.
+
+A Sourcegraph AWS AMI instance includes:
 
 - Root EBS volume with 50GB of storage
-- Additional EBS volume with 500GB (configurable) of storage, for storing code and search indices
-- The latest version of Sourcegraph
+- Additional EBS volume for storing code and search indices
+  - Storage space depends on your selected instance size
+  - It is configurable and expandable
+- A specific version of Sourcegraph based on the selected AMI
 - Resource requirements are configured according to your selected instance size
 
 You only need to choose your VPC and SSH Key-Pair to get started.
+
+See the [official docs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instances-and-amis.html) to learn more about instances and AMIs.
 
 ---
 
 ## Instance sizes
 
-| Size          | L                       | XL                      | 2XL                     |
-|---------------|-------------------------|-------------------------|-------------------------|
-| Users         | 10,000                  | 20,000                  | 40,000                  |
-| Repositories  | 100,000                 | 250,000                 | 500,000                 |
-| Instance Type | m6a.12xlarge            | m6a.24xlarge            | m6a.48xlarge            |
-| AMI Name      | sourcegraph-placeholder | sourcegraph-placeholder | sourcegraph-placeholder |
+<!-- TODO: How to pick an instance size -->
+
+| **Size**           | **S**       | **M**       | **L**        | **XL**       | **2XL**      |
+|:------------------:|:-----------:|:-----------:|:------------:|:------------:|:------------:|
+| **Users**          | 1,000       | 5,000       | 10,000       | 20,000       | 40,000       |
+| **Repositories**   | 10,000      | 50,000      | 100,000      | 250,000      | 500,000      |
+| **Instance Types** | m6a.4xlarge | m6a.8xlarge | m6a.12xlarge | m6a.24xlarge | m6a.48xlarge |
+| **Alternatives**   | -           | m6a.4xlarge | m6a.8xlarge  | m6a.12xlarge |              |
+| **Root Storage**   | 50GB        | 50GB        | 50GB         | 50GB         | 50GB         |
+| **Data Storage**   | 500GB       | 1TB         | 3TB          | 5TB          | 5TB          |
+| **AMI Name**       | TBA         | placeholder | placeholder  | placeholder  | TBA          |
+
 
 ---
 

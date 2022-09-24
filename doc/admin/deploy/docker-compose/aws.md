@@ -2,6 +2,8 @@
 
 This guide will take you through how to deploy Sourcegraph with [Docker Compose](https://docs.docker.com/compose/) to a single EC2 instance on Amazon Web Services (AWS).
 
+<span class="badge badge-note">RECOMMENDED</span> Deploy a Sourcegraph instance with [AWS AMIs](aws-ami.md) or [AWS One-Click](aws-oneclick.md).
+
 ---
 
 ## Configure
@@ -63,7 +65,7 @@ set -euxo pipefail
 ###############################################################################
 # Please read the notes below the script if you are cloning a private repository
 DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL='https://github.com/sourcegraph/deploy-sourcegraph-docker.git'
-DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.43.2'
+DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v4.0.0'
 ##################### NO CHANGES REQUIRED BELOW THIS LINE #####################
 DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/home/ec2-user/deploy-sourcegraph-docker'
 DOCKER_COMPOSE_VERSION='1.29.2'
