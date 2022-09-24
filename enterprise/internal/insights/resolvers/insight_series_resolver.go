@@ -393,7 +393,8 @@ func fetchSeries(ctx context.Context, definition types.InsightViewSeries, filter
 	start = time.Now()
 	if definition.DataFormat == storage.Gorilla {
 		log15.Info("new data format gogo")
-		rows, err := r.timeSeriesStore.LoadAlternateFormat(ctx, *opts)
+		sampleStore := store.SampleStoreFromLegacyStore(r.timeSeriesStore)
+		rows, err := sampleStore.LoadRows(ctx, *opts)
 		if err != nil {
 			return nil, errors.Wrap(err, "LoadAlternateFormat")
 		}
