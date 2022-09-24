@@ -129,7 +129,6 @@ export interface BlobProps
 
     isBlameVisible?: boolean
     blameHunks?: BlameHunk[]
-    onHandleFuzzyFinder?: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {

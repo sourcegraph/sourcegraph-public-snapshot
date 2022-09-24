@@ -971,12 +971,26 @@ Flags:
 
 List and describe the default dashboards.
 
+Arguments: `<dashboard...>`
 
 Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--groups`: Show row groups
 * `--metrics`: Show metrics used in dashboards
+
+### sg monitoring metrics
+
+List metrics used in dashboards.
+
+For per-dashboard summaries, use 'sg monitoring dashboards' instead.
+
+Arguments: `<dashboard...>`
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--format, -f="<value>"`: Output format of list ('markdown', 'plain', 'regexp') (default: markdown)
 
 ## sg secret
 

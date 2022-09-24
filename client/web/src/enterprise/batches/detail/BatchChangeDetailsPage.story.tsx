@@ -9,7 +9,7 @@ import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/setting
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
-import { BatchChangeByNamespaceResult, BatchChangeFields } from '../../../graphql-operations'
+import { BatchChangeByNamespaceResult, BatchChangeFields, ExternalServiceKind } from '../../../graphql-operations'
 
 import {
     queryExternalChangesetWithFileDiffs,
@@ -58,6 +58,8 @@ const config: Meta = {
 export default config
 
 const now = new Date()
+
+const authenticatedUser = { url: 'https://sourcegraph.com/users/this-is-a-fake-user' }
 
 const queryAllChangesetIDs: typeof _queryAllChangesetIDs = () => of(['somev1', 'somev2'])
 
@@ -142,16 +144,20 @@ const queryChangesetCountsOverTime: typeof _queryChangesetCountsOverTime = () =>
 
 const deleteBatchChange = () => Promise.resolve(undefined)
 
-const Template: Story = ({ url, supersededBatchSpec, ...args }) => {
-    const supersedingBatchSpec = args.supersedingBatchSpec
-    const viewerCanAdminister = args.viewerCanAdminister
-    const isClosed = args.isClosed
+const Template: Story<{
+    url: string
+    supersedingBatchSpec?: boolean
+    currentBatchSpec?: BatchChangeFields['currentSpec']
+    viewerCanAdminister: boolean
+    isClosed?: boolean
+}> = ({ url, supersedingBatchSpec, currentBatchSpec, viewerCanAdminister, isClosed }) => {
+    const batchChange: BatchChangeFields = useMemo(() => {
+        const currentSpec = currentBatchSpec ?? MOCK_BATCH_CHANGE.currentSpec
 
-    const batchChange: BatchChangeFields = useMemo(
-        () => ({
+        return {
             ...MOCK_BATCH_CHANGE,
             currentSpec: {
-                ...MOCK_BATCH_CHANGE.currentSpec,
+                ...currentSpec,
                 supersedingBatchSpec: supersedingBatchSpec
                     ? {
                           __typename: 'BatchSpec',
@@ -162,9 +168,8 @@ const Template: Story = ({ url, supersededBatchSpec, ...args }) => {
             },
             viewerCanAdminister,
             closedAt: isClosed ? subDays(now, 1).toISOString() : null,
-        }),
-        [supersedingBatchSpec, viewerCanAdminister, isClosed]
-    )
+        }
+    }, [currentBatchSpec, supersedingBatchSpec, viewerCanAdminister, isClosed])
 
     const data: BatchChangeByNamespaceResult = { batchChange }
 
@@ -201,6 +206,7 @@ const Template: Story = ({ url, supersededBatchSpec, ...args }) => {
                 <MockedTestProvider link={mocks}>
                     <BatchChangeDetailsPage
                         {...props}
+                        authenticatedUser={authenticatedUser}
                         namespaceID="namespace123"
                         batchChangeName="awesome-batch-change"
                         queryChangesetCountsOverTime={queryChangesetCountsOverTime}
@@ -261,9 +267,33 @@ BulkOperations.argTypes = {
 }
 
 export const SupersededBatchSpec = Template.bind({})
-SupersededBatchSpec.args = { url: '/users/alice/batch-changes/awesome-batch-change', supersededBatchSpec: true }
+SupersededBatchSpec.args = { url: '/users/alice/batch-changes/awesome-batch-change', supersedingBatchSpec: true }
 SupersededBatchSpec.storyName = 'Superseded batch-spec'
 SupersededBatchSpec.argTypes = {
+    supersedingBatchSpec: {
+        defaultValue: true,
+    },
+}
+
+export const UnpublishableBatchSpec = Template.bind({})
+UnpublishableBatchSpec.args = {
+    url: '/users/alice/batch-changes/awesome-batch-change',
+    currentBatchSpec: {
+        ...MOCK_BATCH_CHANGE.currentSpec,
+        viewerBatchChangesCodeHosts: {
+            __typename: 'BatchChangesCodeHostConnection',
+            totalCount: 1,
+            nodes: [
+                {
+                    externalServiceURL: 'https://github.com/',
+                    externalServiceKind: ExternalServiceKind.GITHUB,
+                },
+            ],
+        },
+    },
+}
+UnpublishableBatchSpec.storyName = 'Batch spec with unpublishable changesets'
+UnpublishableBatchSpec.argTypes = {
     supersedingBatchSpec: {
         defaultValue: true,
     },
@@ -295,6 +325,7 @@ export const EmptyChangesets: Story = args => {
                 <MockedTestProvider link={mocks}>
                     <BatchChangeDetailsPage
                         {...props}
+                        authenticatedUser={authenticatedUser}
                         namespaceID="namespace123"
                         batchChangeName="awesome-batch-change"
                         queryChangesetCountsOverTime={queryChangesetCountsOverTime}

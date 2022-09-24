@@ -32,7 +32,6 @@ export interface SearchBoxProps
             | 'interpretComments'
             | 'onChange'
             | 'onCompletionItemSelected'
-            | 'onHandleFuzzyFinder'
             | 'applySuggestionsOnEnter'
             | 'suggestionSources'
             | 'defaultSuggestionsShowWhenEmpty'
@@ -122,7 +121,6 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
                         onChange={props.onChange}
                         onCompletionItemSelected={props.onCompletionItemSelected}
                         onFocus={props.onFocus}
-                        onHandleFuzzyFinder={props.onHandleFuzzyFinder}
                         onSubmit={props.onSubmit}
                         patternType={props.patternType}
                         queryState={queryState}
