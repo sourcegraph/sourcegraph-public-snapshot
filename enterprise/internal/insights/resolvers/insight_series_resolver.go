@@ -398,7 +398,6 @@ func fetchSeries(ctx context.Context, definition types.InsightViewSeries, filter
 		if err != nil {
 			return nil, errors.Wrap(err, "LoadAlternateFormat")
 		}
-		log15.Info("new data format gogo", "rows", len(rows))
 		points = store.ToTimeseries(rows, definition.SeriesID)
 	} else if !alternativeLoadingStrategy {
 		points, err = r.timeSeriesStore.SeriesPoints(ctx, *opts)

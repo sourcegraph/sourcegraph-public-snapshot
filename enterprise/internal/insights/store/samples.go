@@ -136,7 +136,7 @@ func (s *sampleStore) LoadRows(ctx context.Context, opts SeriesPointsOpts) ([]Un
 	}
 
 	var rows []UncompressedRow
-	return rows, s.streamAlternativeFormat(ctx, opts, func(ctx context.Context, row *CompressedRow) (err error) {
+	return rows, s.streamRows(ctx, opts, func(ctx context.Context, row *CompressedRow) (err error) {
 		if denyBitmap.Contains(row.RepoId) {
 			return nil
 		}
@@ -154,7 +154,7 @@ func (s *sampleStore) LoadRows(ctx context.Context, opts SeriesPointsOpts) ([]Un
 	})
 }
 
-func altFormatQuery(opts SeriesPointsOpts) *sqlf.Query {
+func loadRowsQuery(opts SeriesPointsOpts) *sqlf.Query {
 	baseQuery := `select sp.id, repo_id, data, capture from series_points_compressed sp`
 	var preds []*sqlf.Query
 
@@ -191,7 +191,7 @@ func (s *sampleStore) Append(ctx context.Context, key TimeSeriesKey, samples []R
 	defer func() { err = tx.Done(err) }()
 
 	var keyMatch *UncompressedRow
-	err = tx.streamAlternativeFormat(ctx, SeriesPointsOpts{Key: &key}, func(ctx context.Context, row *CompressedRow) error {
+	err = tx.streamRows(ctx, SeriesPointsOpts{Key: &key}, func(ctx context.Context, row *CompressedRow) error {
 		decompressed, err := decompressSamples(row.Data)
 		if err != nil {
 			return errors.Wrap(err, "failed to decompress sample data")
@@ -250,10 +250,10 @@ func prepareSamplesForCompression(samples []RawSample) {
 	})
 }
 
-type altFormatStream func(ctx context.Context, row *CompressedRow) error
+type rowStreamFunc func(ctx context.Context, row *CompressedRow) error
 
-func (s *sampleStore) streamAlternativeFormat(ctx context.Context, opts SeriesPointsOpts, callback altFormatStream) error {
-	return s.query(ctx, altFormatQuery(opts), func(s scanner) (err error) {
+func (s *sampleStore) streamRows(ctx context.Context, opts SeriesPointsOpts, callback rowStreamFunc) error {
+	return s.query(ctx, loadRowsQuery(opts), func(s scanner) (err error) {
 		var tmp CompressedRow
 		if err := s.Scan(
 			&tmp.Id,
@@ -317,6 +317,14 @@ func compressSamples(samples []RawSample) (buf *bytes.Buffer, err error) {
 	return buf, finish()
 }
 
+func (s *sampleStore) query(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
+	rows, err := s.Store.Query(ctx, q)
+	if err != nil {
+		return err
+	}
+	return scanAll(rows, sc)
+}
+
 func ToTimeseries(data []UncompressedRow, seriesId string) (results []SeriesPoint) {
 	getKey := func(s *string) string {
 		if s == nil {
@@ -359,12 +367,4 @@ func ToTimeseries(data []UncompressedRow, seriesId string) (results []SeriesPoin
 		return results[i].Time.Before(results[j].Time)
 	})
 	return results
-}
-
-func (s *sampleStore) query(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
-	rows, err := s.Store.Query(ctx, q)
-	if err != nil {
-		return err
-	}
-	return scanAll(rows, sc)
 }
