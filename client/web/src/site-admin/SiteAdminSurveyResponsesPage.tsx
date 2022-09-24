@@ -49,8 +49,6 @@ interface SurveyResponseNodeProps {
     node: SurveyResponseFields
 }
 
-interface SurveyResponseNodeState {}
-
 function scoreToClassSuffix(score: number): typeof BADGE_VARIANTS[number] {
     return score > 8 ? 'success' : score > 6 ? 'info' : 'danger'
 }
@@ -61,50 +59,44 @@ const ScoreBadge: React.FunctionComponent<React.PropsWithChildren<{ score: numbe
     </Badge>
 )
 
-class SurveyResponseNode extends React.PureComponent<SurveyResponseNodeProps, SurveyResponseNodeState> {
-    public state: SurveyResponseNodeState = {}
-
-    public render(): JSX.Element | null {
-        return (
-            <li className="list-group-item py-2">
-                <div className="d-flex align-items-center justify-content-between">
-                    <div>
-                        <strong>
-                            {this.props.node.user ? (
-                                <Link to={userURL(this.props.node.user.username)}>{this.props.node.user.username}</Link>
-                            ) : this.props.node.email ? (
-                                this.props.node.email
-                            ) : (
-                                'anonymous user'
-                            )}
-                        </strong>
-                        <ScoreBadge score={this.props.node.score} />
-                    </div>
-                    <div>
-                        <Timestamp date={this.props.node.createdAt} />
-                    </div>
-                </div>
-                {(this.props.node.reason || this.props.node.better) && (
-                    <dl className="mt-3">
-                        {this.props.node.reason && this.props.node.reason !== '' && (
-                            <>
-                                <dt>What is the most important reason for the score you gave Sourcegraph?</dt>
-                                <dd>{this.props.node.reason}</dd>
-                            </>
-                        )}
-                        {this.props.node.reason && this.props.node.better && <div className="mt-2" />}
-                        {this.props.node.better && this.props.node.better !== '' && (
-                            <>
-                                <dt>What could Sourcegraph do to provide a better product?</dt>
-                                <dd>{this.props.node.better}</dd>
-                            </>
-                        )}
-                    </dl>
+const SurveyResponseNode: React.FunctionComponent<SurveyResponseNodeProps> = props => (
+    <li className="list-group-item py-2">
+        <div className="d-flex align-items-center justify-content-between">
+            <div>
+                <strong>
+                    {props.node.user ? (
+                        <Link to={userURL(props.node.user.username)}>{props.node.user.username}</Link>
+                    ) : props.node.email ? (
+                        props.node.email
+                    ) : (
+                        'anonymous user'
+                    )}
+                </strong>
+                <ScoreBadge score={props.node.score} />
+            </div>
+            <div>
+                <Timestamp date={props.node.createdAt} />
+            </div>
+        </div>
+        {(props.node.reason || props.node.better) && (
+            <dl className="mt-3">
+                {props.node.reason && props.node.reason !== '' && (
+                    <>
+                        <dt>What is the most important reason for the score you gave Sourcegraph?</dt>
+                        <dd>{props.node.reason}</dd>
+                    </>
                 )}
-            </li>
-        )
-    }
-}
+                {props.node.reason && props.node.better && <div className="mt-2" />}
+                {props.node.better && props.node.better !== '' && (
+                    <>
+                        <dt>What could Sourcegraph do to provide a better product?</dt>
+                        <dd>{props.node.better}</dd>
+                    </>
+                )}
+            </dl>
+        )}
+    </li>
+)
 
 const UserSurveyResponsesHeader: React.FunctionComponent<
     React.PropsWithChildren<{ nodes: UserWithSurveyResponseFields[] }>
