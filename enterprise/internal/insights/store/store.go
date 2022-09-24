@@ -876,28 +876,6 @@ func ToTimeseries(data []UncompressedRow, seriesId string) (results []SeriesPoin
 			})
 		}
 	}
-
-	// byCapture := make(map[*string][]UncompressedRow)
-	//
-	// for _, datum := range data {
-	// 	byCapture[datum.Capture] = append(byCapture[datum.Capture], datum)
-	// }
-	//
-	// for key, val := range byCapture {
-	// 	tmp := SeriesPoint{
-	// 		SeriesID: seriesId,
-	// 		Time:     time.Time{},
-	// 		Value:    0,
-	// 		Capture:  nil,
-	// 	}
-	// 	for _, row := range val {
-	// 		results = append(results, SeriesPoint{
-	// 			SeriesID: seriesId,
-	// 			Time:     time.Unix(int64(t), 0),
-	// 			Value:    f,
-	// 		})
-	// 	}
-	// }
 	sort.Slice(results, func(i, j int) bool {
 		return results[i].Time.Before(results[j].Time)
 	})
