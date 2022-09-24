@@ -754,22 +754,75 @@ func compressSamples(samples []RawSample) (buf *bytes.Buffer, err error) {
 }
 
 func ToTimeseries(data []AlternateFormatRow, seriesId string) (results []SeriesPoint) {
-	count := 0
-	mapped := make(map[uint32]float64)
+	// mapped := make(map[uint32]float64)
+
+	getKey := func(s *string) string {
+		if s == nil {
+			return ""
+		}
+		return *s
+	}
+
+	byCapture := make(map[string][]AlternateFormatRow)
 	for _, datum := range data {
-		for _, smpl := range datum.Samples {
-			mapped[smpl.Time] += smpl.Value
-			count += 1
+		// for _, smpl := range datum.Samples {
+		// 	// mapped[smpl.Time] += smpl.Value
+		// 	// count += 1
+		//
+		// }
+		if datum.Capture == nil {
+
+		}
+		byCapture[getKey(datum.Capture)] = append(byCapture[getKey(datum.Capture)], datum)
+	}
+
+	for key, vals := range byCapture {
+		mapped := make(map[uint32]float64)
+
+		for _, val := range vals {
+			for _, sample := range val.Samples {
+				mapped[sample.Time] += sample.Value
+			}
+		}
+
+		toPtr := func(s string) *string {
+			if s == "" {
+				return nil
+			}
+			return &s
+		}
+
+		for utime, agg := range mapped {
+			results = append(results, SeriesPoint{
+				SeriesID: seriesId,
+				Time:     time.Unix(int64(utime), 0),
+				Value:    agg,
+				Capture:  toPtr(key),
+			})
 		}
 	}
 
-	for t, f := range mapped {
-		results = append(results, SeriesPoint{
-			SeriesID: seriesId,
-			Time:     time.Unix(int64(t), 0),
-			Value:    f,
-		})
-	}
+	// byCapture := make(map[*string][]AlternateFormatRow)
+	//
+	// for _, datum := range data {
+	// 	byCapture[datum.Capture] = append(byCapture[datum.Capture], datum)
+	// }
+	//
+	// for key, val := range byCapture {
+	// 	tmp := SeriesPoint{
+	// 		SeriesID: seriesId,
+	// 		Time:     time.Time{},
+	// 		Value:    0,
+	// 		Capture:  nil,
+	// 	}
+	// 	for _, row := range val {
+	// 		results = append(results, SeriesPoint{
+	// 			SeriesID: seriesId,
+	// 			Time:     time.Unix(int64(t), 0),
+	// 			Value:    f,
+	// 		})
+	// 	}
+	// }
 	sort.Slice(results, func(i, j int) bool {
 		return results[i].Time.Before(results[j].Time)
 	})

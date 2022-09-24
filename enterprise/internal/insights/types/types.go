@@ -2,6 +2,8 @@ package types
 
 import (
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/storage"
 )
 
 // InsightViewSeries is an abstraction of a complete Code Insight. This type materializes a view with any associated series.
@@ -39,7 +41,7 @@ type InsightViewSeries struct {
 	SeriesLimit                   *int32
 	GroupBy                       *string
 	BackfillAttempts              int32
-	DataFormat                    DataFormat
+	DataFormat                    storage.DataFormat
 }
 
 type Insight struct {
@@ -105,16 +107,8 @@ type InsightSeries struct {
 	GenerationMethod           GenerationMethod
 	GroupBy                    *string
 	BackfillAttempts           int32
-	DataFormat                 DataFormat
+	DataFormat                 storage.DataFormat
 }
-
-type DataFormat int
-
-const (
-	_ DataFormat = iota
-	Uncompressed
-	Gorilla
-)
 
 type IntervalUnit string
 

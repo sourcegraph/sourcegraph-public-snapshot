@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/storage"
+
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
@@ -902,7 +904,6 @@ func TestLoadStuff(t *testing.T) {
 	var allData []dataForRepo
 
 	for i := repoIdMin; i < repoIdMax; i++ {
-		// first write to old table
 		repoId := i
 		name := fmt.Sprintf("repo-%d", repoId)
 
@@ -938,39 +939,38 @@ func TestLoadStuff(t *testing.T) {
 	// 	t.Fatal(err)
 	// }
 
-	// err = writeOld(ctx, store, seriesId, allData)
-	// if err != nil {
-	// 	t.Fatal(err)
-	// }
+	err = writeOld(ctx, store, seriesId, allData)
+	if err != nil {
+		t.Fatal(err)
+	}
 	return
 }
 
-//
-// func writeOld(ctx context.Context, store *Store, seriesId string, allData []dataForRepo) error {
-// 	for i, datum := range allData {
-// 		if i%100 == 0 {
-// 			println(fmt.Sprintf("old %d", i))
-// 		}
-// 		for _, sample := range datum.ss {
-// 			rn := datum.repoName
-// 			id := api.RepoID(datum.repoId)
-// 			if err := store.RecordSeriesPoint(ctx, RecordSeriesPointArgs{
-// 				SeriesID: seriesId,
-// 				Point: SeriesPoint{
-// 					SeriesID: seriesId,
-// 					Time:     sample.at,
-// 					Value:    sample.value,
-// 				},
-// 				RepoName:    &rn,
-// 				RepoID:      &id,
-// 				PersistMode: "record",
-// 			}); err != nil {
-// 				return err
-// 			}
-// 		}
-// 	}
-// 	return nil
-// }
+func writeOld(ctx context.Context, store *Store, seriesId string, allData []dataForRepo) error {
+	for i, datum := range allData {
+		if i%100 == 0 {
+			println(fmt.Sprintf("old %d", i))
+		}
+		for _, sample := range datum.ss {
+			rn := datum.repoName
+			id := api.RepoID(datum.repoId)
+			if err := store.RecordSeriesPoint(ctx, RecordSeriesPointArgs{
+				SeriesID: seriesId,
+				Point: SeriesPoint{
+					SeriesID: seriesId,
+					Time:     time.Unix(int64(sample.Time), 0),
+					Value:    sample.Value,
+				},
+				RepoName:    &rn,
+				RepoID:      &id,
+				PersistMode: "record",
+			}); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
 
 func BenchmarkReadGeneratedSeries(b *testing.B) {
 	ctx := context.Background()
@@ -1160,4 +1160,37 @@ func toTs(data []newRow, seriesId string) (results []SeriesPoint) {
 	})
 	println(count)
 	return results
+}
+
+func TestConvert(t *testing.T) {
+	ctx := context.Background()
+	dsn := `postgres://sourcegraph:sourcegraph@localhost:5432/sourcegraph`
+	handle, err := connections.EnsureNewCodeInsightsDB(dsn, "app", &observation.TestContext)
+	if err != nil {
+		t.Fatal(err)
+	}
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, handle)
+	permStore := NewInsightPermissionStore(db)
+	store := New(edb.NewInsightsDB(handle), permStore)
+
+	insightStore := NewInsightStore(edb.NewInsightsDB(handle))
+	dataSeries, err := insightStore.GetDataSeries(ctx, GetDataSeriesArgs{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cvtr := NewConverter(store)
+
+	for _, series := range dataSeries {
+		t.Log(series.SeriesID)
+		if series.DataFormat == storage.Uncompressed {
+			err = cvtr.Convert(ctx, series, storage.Gorilla)
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Logf("completed series:%s %d", series.SeriesID, series.ID)
+		}
+	}
+
 }

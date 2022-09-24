@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/storage"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -389,7 +391,7 @@ func fetchSeries(ctx context.Context, definition types.InsightViewSeries, filter
 
 	var start, end time.Time
 	start = time.Now()
-	if definition.DataFormat == types.Gorilla {
+	if definition.DataFormat == storage.Gorilla {
 		log15.Info("new data format gogo")
 		rows, err := r.timeSeriesStore.LoadAlternateFormat(ctx, *opts)
 		if err != nil {
