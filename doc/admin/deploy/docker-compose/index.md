@@ -51,6 +51,8 @@ Use the GitHub GUI to [create a public fork](https://docs.github.com/en/get-star
 <details>
   <summary>**Or click here** for detailed instruction on creating a *private copy*</summary>
 
+##### Using a private copy of the deployment repository
+
 1\. Create an [empty private repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-new-repository), for example `<you/private-repository>` in GitHub.
 
 2\. Bare clone the deployment repository. 
@@ -72,6 +74,17 @@ Use the GitHub GUI to [create a public fork](https://docs.github.com/en/get-star
   cd ..
   rm -rf deploy-sourcegraph-docker.git
 ```
+
+5\. Private repository clone URL
+
+If you are deploying using our start up scripts, please check with your code host on how to generate a URL for cloning private repository
+For example, GitHub users can include their personal access token to clone repositories they have access to using the following URL:
+
+```bash
+# Please make sure to discard the token after the deployment for security purpose
+https://<PERSONAL-ACCESS-TOKEN>@github.com/<USERNAME>/<REPO>.git
+```
+
 </details>
 
 #### Configure your deployment repository

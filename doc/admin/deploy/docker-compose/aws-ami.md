@@ -38,14 +38,13 @@ Once you've been redirected to the `Launch an instance` page...
 2. Select an **instance type**
 3. **Key pair (login)**: Select or create a new Key Pair for connecting to your instance securely
 4. **Network settings**: 
-   - Click on the **Edit** button in the `Network setting` to enable `auto-assign public IP` 
    - Select a **Security Group** for the instance, or create one with the following rules:
      - Default HTTP rule: port range 80, source 0.0.0.0/0, ::/0
      - Default HTTPS rule: port range 443, source 0.0.0.0/0, ::/0
      - Default SSH rule: port range 22, source 0.0.0.0/0, ::/0
 5. **Configure storage**:
    - Root Volume: 50GB/gp2
-   - EBS Volume: 500GB/gp3(20% more than the total size of all your repositories)
+   - EBS Volume: 500GB/gp3 (20% more than the total size of all your repositories)
 6. Click **Launch instance** to launch
 
 Your Sourcegraph instance should be ready in the next few minutes. 
@@ -81,12 +80,12 @@ You can navigate to the public IP address assigned to the EC2 node to access you
 2. Name the instance
 3. Select the appropriate **instance type**
 4. Under **Key Pair**
-  - Select the Key Pair used by the old instance
+  - Select the **Key Pair** used by the old instance
 5. Under **Network settings**
-   - Click Edit > enable Auto-assign public IP
-   - Select the Security Group used by the old instance
+   - Select the **Security Group** used by the old instance
+   - [OPTIONAL] Enable `Auto-assign public IP`
 6. Under **Configure storage**
- - Remove the second EBS volume
+ - Remove the **second** EBS volume
 7. After reviewing the settings, click **Launch Instance**
 8. Attach the detached volume to the new instance
    - Go to the Volumes section in your ECS Console
