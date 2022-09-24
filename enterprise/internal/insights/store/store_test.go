@@ -930,7 +930,7 @@ func TestLoadStuff(t *testing.T) {
 				RepoId: uint32(datum.repoId),
 			},
 			Samples: datum.ss,
-		}, rawId)
+		}, uint32(rawId))
 		if err != nil {
 			t.Fatalf("failed on repo_id: %d %s", datum.repoId, err.Error())
 		}
@@ -1194,5 +1194,4 @@ func TestConvert(t *testing.T) {
 			t.Logf("completed series:%s %d", series.SeriesID, series.ID)
 		}
 	}
-
 }
