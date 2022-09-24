@@ -266,12 +266,14 @@ func (r *workHandler) persistRecordings(ctx context.Context, job *Job, series *t
 
 	if series.DataFormat == storage.Gorilla && store.PersistMode(job.PersistMode) == store.RecordMode {
 		// gorilla doesn't support snapshots yet womp womp
+		sampleStore := store.SampleStoreFromLegacyStore(tx)
+
 		for _, recording := range recordings {
 			samples := []store.RawSample{{
 				Time:  uint32(recording.Point.Time.Unix()),
 				Value: recording.Point.Value,
 			}}
-			if err = tx.Append(ctx, store.TimeSeriesKey{
+			if err = sampleStore.Append(ctx, store.TimeSeriesKey{
 				SeriesId: uint32(series.ID),
 				RepoId:   uint32(int(*recording.RepoID)),
 				Capture:  recording.Point.Capture,
