@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/inconshreveable/log15"
+
 	"github.com/keisku/gorilla"
 
 	"github.com/RoaringBitmap/roaring"
@@ -637,30 +639,30 @@ func (s *Store) StoreAlternateFormat(ctx context.Context, row AlternateFormatRow
 }
 
 func (s *Store) LoadAlternateFormat(ctx context.Context, opts SeriesPointsOpts) ([]AlternateFormatRow, error) {
-	baseQuery := `select id, repo_id, data, capture from series_points_compressed sp`
+	baseQuery := `select sp.id, repo_id, data, capture from series_points_compressed sp`
 	var preds []*sqlf.Query
-	if len(opts.IncludeRepoRegex) > 0 || len(opts.ExcludeRepoRegex) > 0 {
-		baseQuery += " join repo_names rn on rn.id = sp.repo_name_id"
-	}
-
-	if len(opts.IncludeRepoRegex) > 0 {
-		for _, regex := range opts.IncludeRepoRegex {
-			if len(regex) == 0 {
-				continue
-			}
-			preds = append(preds, sqlf.Sprintf("rn.name ~ %s", regex))
-		}
-	}
-	if len(opts.ExcludeRepoRegex) > 0 {
-		for _, regex := range opts.ExcludeRepoRegex {
-			if len(regex) == 0 {
-				continue
-			}
-			preds = append(preds, sqlf.Sprintf("rn.name !~ %s", regex))
-		}
-	}
+	// if len(opts.IncludeRepoRegex) > 0 || len(opts.ExcludeRepoRegex) > 0 {
+	// 	baseQuery += " join repo_names rn on rn.id = sp.repo_name_id"
+	// }
+	//
+	// if len(opts.IncludeRepoRegex) > 0 {
+	// 	for _, regex := range opts.IncludeRepoRegex {
+	// 		if len(regex) == 0 {
+	// 			continue
+	// 		}
+	// 		preds = append(preds, sqlf.Sprintf("rn.name ~ %s", regex))
+	// 	}
+	// }
+	// if len(opts.ExcludeRepoRegex) > 0 {
+	// 	for _, regex := range opts.ExcludeRepoRegex {
+	// 		if len(regex) == 0 {
+	// 			continue
+	// 		}
+	// 		preds = append(preds, sqlf.Sprintf("rn.name !~ %s", regex))
+	// 	}
+	// }
 	if opts.SeriesID != nil {
-		preds = append(preds, sqlf.Sprintf("series_id = (select id from insight_series as isn where isn.series_id = %s)", *opts.SeriesID))
+		preds = append(preds, sqlf.Sprintf("series_id = (select isn.id from insight_series as isn where isn.series_id = %s)", *opts.SeriesID))
 	}
 	if opts.RepoID != nil {
 		preds = append(preds, sqlf.Sprintf("repo_id = %s", *opts.RepoID))
@@ -671,6 +673,7 @@ func (s *Store) LoadAlternateFormat(ctx context.Context, opts SeriesPointsOpts) 
 	}
 
 	final := sqlf.Sprintf(baseQuery, sqlf.Join(preds, "AND "))
+	log15.Info("finalquery", "q", final.Query(sqlf.PostgresBindVar), "args", final.Args())
 
 	var rows []AlternateFormatRow
 

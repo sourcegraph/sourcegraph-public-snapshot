@@ -39,6 +39,7 @@ type InsightViewSeries struct {
 	SeriesLimit                   *int32
 	GroupBy                       *string
 	BackfillAttempts              int32
+	DataFormat                    DataFormat
 }
 
 type Insight struct {
@@ -104,7 +105,16 @@ type InsightSeries struct {
 	GenerationMethod           GenerationMethod
 	GroupBy                    *string
 	BackfillAttempts           int32
+	DataFormat                 DataFormat
 }
+
+type DataFormat int
+
+const (
+	_ DataFormat = iota
+	Uncompressed
+	Gorilla
+)
 
 type IntervalUnit string
 

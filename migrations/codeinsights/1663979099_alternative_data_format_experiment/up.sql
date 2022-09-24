@@ -7,3 +7,5 @@ create table if not exists series_points_compressed
     data bytea not null,
     capture text
 );
+
+alter table insight_series add COLUMN if not exists data_format int not null default 1;

@@ -370,7 +370,7 @@ func getRecordedSeriesPointOpts(ctx context.Context, db database.DB, definition 
 	return opts, nil
 }
 
-var loadingStrategyRED = metrics.NewREDMetrics(prometheus.DefaultRegisterer, "src_insights_loading_strategy", metrics.WithLabels("in_mem", "capture"))
+var loadingStrategyRED = metrics.NewREDMetrics(prometheus.DefaultRegisterer, "src_insights_loading_strategy", metrics.WithLabels("in_mem", "capture", "format"))
 
 func fetchSeries(ctx context.Context, definition types.InsightViewSeries, filters types.InsightViewFilters, r *baseInsightResolver) (points []store.SeriesPoint, err error) {
 	opts, err := getRecordedSeriesPointOpts(ctx, database.NewDBWith(log.Scoped("recordedSeries", ""), r.workerBaseStore), definition, filters)
@@ -389,7 +389,15 @@ func fetchSeries(ctx context.Context, definition types.InsightViewSeries, filter
 
 	var start, end time.Time
 	start = time.Now()
-	if !alternativeLoadingStrategy {
+	if definition.DataFormat == types.Gorilla {
+		log15.Info("new data format gogo")
+		rows, err := r.timeSeriesStore.LoadAlternateFormat(ctx, *opts)
+		if err != nil {
+			return nil, errors.Wrap(err, "LoadAlternateFormat")
+		}
+		log15.Info("new data format gogo", "rows", len(rows))
+		points = store.ToTimeseries(rows, definition.SeriesID)
+	} else if !alternativeLoadingStrategy {
 		points, err = r.timeSeriesStore.SeriesPoints(ctx, *opts)
 		if err != nil {
 			return nil, err
@@ -404,7 +412,8 @@ func fetchSeries(ctx context.Context, definition types.InsightViewSeries, filter
 		})
 	}
 	end = time.Now()
-	loadingStrategyRED.Observe(end.Sub(start).Seconds(), 1, &err, strconv.FormatBool(alternativeLoadingStrategy), strconv.FormatBool(definition.GeneratedFromCaptureGroups))
+	log15.Info("loaded series", "data_format", definition.DataFormat, "elapsed milliseconds", end.Sub(start).Milliseconds())
+	loadingStrategyRED.Observe(end.Sub(start).Seconds(), 1, &err, strconv.FormatBool(alternativeLoadingStrategy), strconv.FormatBool(definition.GeneratedFromCaptureGroups), strconv.Itoa(int(definition.DataFormat)))
 	return points, err
 }
 
