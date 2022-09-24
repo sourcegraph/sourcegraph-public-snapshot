@@ -26,7 +26,7 @@ type GitLabSource struct {
 	au     auth.Authenticator
 
 	version      *semver.Version
-	versionOnce  sync.Once
+	versionOnce  *sync.Once
 	versionError error
 }
 
@@ -78,8 +78,9 @@ func newGitLabSource(urn string, c *schema.GitLabConnection, cf *httpcli.Factory
 
 	provider := gitlab.NewClientProvider(urn, baseURL, cli, nil)
 	return &GitLabSource{
-		au:     authr,
-		client: provider.GetAuthenticatorClient(authr),
+		au:          authr,
+		client:      provider.GetAuthenticatorClient(authr),
+		versionOnce: &sync.Once{},
 	}, nil
 }
 

@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/Masterminds/semver"
@@ -985,7 +986,8 @@ func newGitLabChangesetSourceTestProvider(t *testing.T) *gitLabChangesetSourceTe
 			TargetBranch:    "base",
 		},
 		source: &GitLabSource{
-			client: prov.GetClient(),
+			client:      prov.GetClient(),
+			versionOnce: &sync.Once{},
 		},
 		t: t,
 	}
