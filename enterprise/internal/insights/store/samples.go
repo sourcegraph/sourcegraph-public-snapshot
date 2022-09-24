@@ -8,6 +8,8 @@ import (
 	"sort"
 	"time"
 
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+
 	"github.com/RoaringBitmap/roaring"
 	"github.com/keegancsmith/sqlf"
 	"github.com/keisku/gorilla"
@@ -39,6 +41,13 @@ func SampleStoreFromLegacyStore(legacy *Store) SampleStore {
 	return &sampleStore{
 		Store:     legacy.Store,
 		permStore: legacy.permStore,
+	}
+}
+
+func NewSampleStore(db edb.InsightsDB, permStore InsightPermissionStore) SampleStore {
+	return &sampleStore{
+		Store:     basestore.NewWithHandle(db.Handle()),
+		permStore: permStore,
 	}
 }
 

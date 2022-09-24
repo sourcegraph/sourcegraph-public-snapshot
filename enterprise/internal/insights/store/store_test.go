@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math"
-	"strings"
 	"testing"
 	"time"
 
@@ -866,178 +865,178 @@ type dataForRepo struct {
 	ss       []RawSample
 }
 
-func TestLoadStuff(t *testing.T) {
-	ctx := context.Background()
-	dsn := `postgres://sourcegraph:sourcegraph@localhost:5432/sourcegraph`
-	handle, err := connections.EnsureNewCodeInsightsDB(dsn, "app", &observation.TestContext)
-	if err != nil {
-		t.Fatal(err)
-	}
-	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, handle)
-	//
-	// seriesId := "29M8bMLrYk2I54tMRUwRMhCnLti"
-	//
-	permStore := NewInsightPermissionStore(db)
-	store := New(edb.NewInsightsDB(handle), permStore)
-
-	// seriesId := rand.String(10)
-	seriesId := "findme"
-	t.Log(seriesId)
-	rawId := 8
-
-	numRepos := 10000
-	repoIdMin := 20000
-	repoIdMax := repoIdMin + numRepos
-
-	valMax := 100000
-
-	numSamples := 120
-
-	times := make([]time.Time, 0)
-	start := time.Date(2021, 1, 1, 5, 30, 0, 0, time.UTC)
-	for i := 0; i < numSamples; i++ {
-		times = append(times, start.AddDate(0, i, 0))
-	}
-
-	var allData []dataForRepo
-
-	for i := repoIdMin; i < repoIdMax; i++ {
-		repoId := i
-		name := fmt.Sprintf("repo-%d", repoId)
-
-		var smps []RawSample
-		for _, current := range times {
-			smps = append(smps, RawSample{
-				Time:  uint32(current.Unix()),
-				Value: float64(rand.IntnRange(0, valMax+1)),
-			})
-		}
-
-		allData = append(allData, dataForRepo{
-			repoId:   i,
-			repoName: name,
-			ss:       smps,
-		})
-	}
-
-	t.Log(len(allData))
-
-	for _, datum := range allData {
-		err := store.StoreAlternateFormat(ctx, UncompressedRow{
-			altFormatRowMetadata: altFormatRowMetadata{
-				RepoId: uint32(datum.repoId),
-			},
-			Samples: datum.ss,
-		}, uint32(rawId))
-		if err != nil {
-			t.Fatalf("failed on repo_id: %d %s", datum.repoId, err.Error())
-		}
-	}
-
-	// err = writeNew(ctx, store, rawId, allData)
-	// if err != nil {
-	// 	t.Fatal(err)
-	// }
-
-	err = writeOld(ctx, store, seriesId, allData)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return
-}
-
-func writeOld(ctx context.Context, store *Store, seriesId string, allData []dataForRepo) error {
-	for i, datum := range allData {
-		if i%100 == 0 {
-			println(fmt.Sprintf("old %d", i))
-		}
-		for _, sample := range datum.ss {
-			rn := datum.repoName
-			id := api.RepoID(datum.repoId)
-			if err := store.RecordSeriesPoint(ctx, RecordSeriesPointArgs{
-				SeriesID: seriesId,
-				Point: SeriesPoint{
-					SeriesID: seriesId,
-					Time:     time.Unix(int64(sample.Time), 0),
-					Value:    sample.Value,
-				},
-				RepoName:    &rn,
-				RepoID:      &id,
-				PersistMode: "record",
-			}); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-func BenchmarkReadGeneratedSeries(b *testing.B) {
-	ctx := context.Background()
-	dsn := `postgres://sourcegraph:sourcegraph@localhost:5432/sourcegraph`
-	handle, err := connections.EnsureNewCodeInsightsDB(dsn, "app", &observation.TestContext)
-	if err != nil {
-		b.Fatal(err)
-	}
-	logger := logtest.Scoped(b)
-	db := database.NewDB(logger, handle)
-
-	// seriesId := "cnf79vsfwc"
-	// plainId := 5
-
-	// mzvgb7cltt
-
-	// seriesId := "mzvgb7cltt"
-	seriesId := "findme"
-	// plainId := 8
-
-	permStore := NewInsightPermissionStore(db)
-	store := New(edb.NewInsightsDB(handle), permStore)
-
-	var newFormat []SeriesPoint
-
-	// b.Run("new format", func(b *testing.B) {
-	// 	got, err := loadNew(ctx, store, plainId)
-	// 	if err != nil {
-	// 		b.Fatal(err)
-	// 	}
-	// 	newFormat = toTs(got, seriesId)
-	// })
-
-	b.Run("new format", func(b *testing.B) {
-		rows, err := store.LoadAlternateFormat(ctx, SeriesPointsOpts{SeriesID: &seriesId})
-		if err != nil {
-			b.Fatal(err)
-		}
-		newFormat = ToTimeseries(rows, seriesId)
-	})
-
-	b.Log(len(newFormat))
-
-	// var oldFormat []SeriesPoint
-	// opts := SeriesPointsOpts{SeriesID: &seriesId}
-	// b.Run("old format", func(b *testing.B) {
-	// 	for i := 0; i < b.N; i++ {
-	// 		oldFormat, err = store.LoadSeriesInMem(ctx, opts)
-	// 		if err != nil {
-	// 			b.Fatal(err)
-	// 		}
-	// 		sort.Slice(oldFormat, func(i, j int) bool {
-	// 			return oldFormat[i].Time.Before(oldFormat[j].Time)
-	// 		})
-	// 	}
-	// })
-
-	// b.Log(oldFormat)
-	b.Log(newFormat)
-}
-
-type newRow struct {
-	RepoId  int
-	Smpls   []sample
-	Capture *string
-}
+// func TestLoadStuff(t *testing.T) {
+// 	ctx := context.Background()
+// 	dsn := `postgres://sourcegraph:sourcegraph@localhost:5432/sourcegraph`
+// 	handle, err := connections.EnsureNewCodeInsightsDB(dsn, "app", &observation.TestContext)
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
+// 	logger := logtest.Scoped(t)
+// 	db := database.NewDB(logger, handle)
+// 	//
+// 	// seriesId := "29M8bMLrYk2I54tMRUwRMhCnLti"
+// 	//
+// 	permStore := NewInsightPermissionStore(db)
+// 	store := New(edb.NewInsightsDB(handle), permStore)
+//
+// 	// seriesId := rand.String(10)
+// 	seriesId := "findme"
+// 	t.Log(seriesId)
+// 	rawId := 8
+//
+// 	numRepos := 10000
+// 	repoIdMin := 20000
+// 	repoIdMax := repoIdMin + numRepos
+//
+// 	valMax := 100000
+//
+// 	numSamples := 120
+//
+// 	times := make([]time.Time, 0)
+// 	start := time.Date(2021, 1, 1, 5, 30, 0, 0, time.UTC)
+// 	for i := 0; i < numSamples; i++ {
+// 		times = append(times, start.AddDate(0, i, 0))
+// 	}
+//
+// 	var allData []dataForRepo
+//
+// 	for i := repoIdMin; i < repoIdMax; i++ {
+// 		repoId := i
+// 		name := fmt.Sprintf("repo-%d", repoId)
+//
+// 		var smps []RawSample
+// 		for _, current := range times {
+// 			smps = append(smps, RawSample{
+// 				Time:  uint32(current.Unix()),
+// 				Value: float64(rand.IntnRange(0, valMax+1)),
+// 			})
+// 		}
+//
+// 		allData = append(allData, dataForRepo{
+// 			repoId:   i,
+// 			repoName: name,
+// 			ss:       smps,
+// 		})
+// 	}
+//
+// 	t.Log(len(allData))
+//
+// 	for _, datum := range allData {
+// 		err := store.StoreAlternateFormat(ctx, UncompressedRow{
+// 			altFormatRowMetadata: altFormatRowMetadata{
+// 				RepoId: uint32(datum.repoId),
+// 			},
+// 			Samples: datum.ss,
+// 		}, uint32(rawId))
+// 		if err != nil {
+// 			t.Fatalf("failed on repo_id: %d %s", datum.repoId, err.Error())
+// 		}
+// 	}
+//
+// 	// err = writeNew(ctx, store, rawId, allData)
+// 	// if err != nil {
+// 	// 	t.Fatal(err)
+// 	// }
+//
+// 	err = writeOld(ctx, store, seriesId, allData)
+// 	if err != nil {
+// 		t.Fatal(err)
+// // 	}
+// // 	return
+// // }
+//
+// func writeOld(ctx context.Context, store *Store, seriesId string, allData []dataForRepo) error {
+// 	for i, datum := range allData {
+// 		if i%100 == 0 {
+// 			println(fmt.Sprintf("old %d", i))
+// 		}
+// 		for _, sample := range datum.ss {
+// 			rn := datum.repoName
+// 			id := api.RepoID(datum.repoId)
+// 			if err := store.RecordSeriesPoint(ctx, RecordSeriesPointArgs{
+// 				SeriesID: seriesId,
+// 				Point: SeriesPoint{
+// 					SeriesID: seriesId,
+// 					Time:     time.Unix(int64(sample.Time), 0),
+// 					Value:    sample.Value,
+// 				},
+// 				RepoName:    &rn,
+// 				RepoID:      &id,
+// 				PersistMode: "record",
+// 			}); err != nil {
+// 				return err
+// 			}
+// 		}
+// 	}
+// 	return nil
+// }
+//
+// func BenchmarkReadGeneratedSeries(b *testing.B) {
+// 	ctx := context.Background()
+// 	dsn := `postgres://sourcegraph:sourcegraph@localhost:5432/sourcegraph`
+// 	handle, err := connections.EnsureNewCodeInsightsDB(dsn, "app", &observation.TestContext)
+// 	if err != nil {
+// 		b.Fatal(err)
+// 	}
+// 	logger := logtest.Scoped(b)
+// 	db := database.NewDB(logger, handle)
+//
+// 	// seriesId := "cnf79vsfwc"
+// 	// plainId := 5
+//
+// 	// mzvgb7cltt
+//
+// 	// seriesId := "mzvgb7cltt"
+// 	seriesId := "findme"
+// 	// plainId := 8
+//
+// 	permStore := NewInsightPermissionStore(db)
+// 	store := New(edb.NewInsightsDB(handle), permStore)
+//
+// 	var newFormat []SeriesPoint
+//
+// 	// b.Run("new format", func(b *testing.B) {
+// 	// 	got, err := loadNew(ctx, store, plainId)
+// 	// 	if err != nil {
+// 	// 		b.Fatal(err)
+// 	// 	}
+// 	// 	newFormat = toTs(got, seriesId)
+// 	// })
+//
+// 	b.Run("new format", func(b *testing.B) {
+// 		rows, err := store.LoadAlternateFormat(ctx, SeriesPointsOpts{SeriesID: &seriesId})
+// 		if err != nil {
+// 			b.Fatal(err)
+// 		}
+// 		newFormat = ToTimeseries(rows, seriesId)
+// 	})
+//
+// 	b.Log(len(newFormat))
+//
+// 	// var oldFormat []SeriesPoint
+// 	// opts := SeriesPointsOpts{SeriesID: &seriesId}
+// 	// b.Run("old format", func(b *testing.B) {
+// 	// 	for i := 0; i < b.N; i++ {
+// 	// 		oldFormat, err = store.LoadSeriesInMem(ctx, opts)
+// 	// 		if err != nil {
+// 	// 			b.Fatal(err)
+// 	// 		}
+// 	// 		sort.Slice(oldFormat, func(i, j int) bool {
+// 	// 			return oldFormat[i].Time.Before(oldFormat[j].Time)
+// 	// 		})
+// 	// 	}
+// 	// })
+//
+// 	// b.Log(oldFormat)
+// 	b.Log(newFormat)
+// }
+//
+// type newRow struct {
+// 	RepoId  int
+// 	Smpls   []sample
+// 	Capture *string
+// }
 
 func TestConvert(t *testing.T) {
 	ctx := context.Background()
@@ -1069,53 +1068,4 @@ func TestConvert(t *testing.T) {
 			t.Logf("completed series:%s %d", series.SeriesID, series.ID)
 		}
 	}
-}
-
-func TestAppend(t *testing.T) {
-	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	clock := timeutil.Now
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
-	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
-	permStore := NewInsightPermissionStore(postgres)
-	store := NewWithClock(insightsDB, permStore, clock)
-
-	start := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
-
-	tsk := TimeSeriesKey{
-		SeriesId: 1,
-		RepoId:   1,
-	}
-	err := store.Append(ctx, tsk, generateSamples(start, 5))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	got, err := store.LoadAlternateFormat(ctx, SeriesPointsOpts{Key: &tsk})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	autogold.Want("no previous values inserted new row", []string{"({1 1 <nil>} [(2021-01-01 00:00:00 +0000 UTC 0.000000), (2021-02-01 00:00:00 +0000 UTC 1.000000), (2021-03-01 00:00:00 +0000 UTC 2.000000), (2021-04-01 00:00:00 +0000 UTC 3.000000), (2021-05-01 00:00:00 +0000 UTC 4.000000)])"}).Equal(t, stringifyRows(got))
-}
-
-func stringifyRows(rows []UncompressedRow) (strs []string) {
-	for _, row := range rows {
-		var ll []string
-		for _, rawSample := range row.Samples {
-			ll = append(ll, rawSample.String())
-		}
-		strs = append(strs, fmt.Sprintf("(%v [%s])", row.altFormatRowMetadata, strings.Join(ll, ", ")))
-	}
-	return strs
-}
-
-func generateSamples(start time.Time, count int) (samples []RawSample) {
-	for i := 0; i < count; i++ {
-		samples = append(samples, RawSample{
-			Time:  uint32(start.AddDate(0, i, 0).Unix()),
-			Value: float64(i),
-		})
-	}
-	return samples
 }

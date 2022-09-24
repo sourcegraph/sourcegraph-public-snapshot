@@ -37,8 +37,16 @@ func (c *converter) Convert(ctx context.Context, seriesDefinition types.InsightS
 	}
 }
 
-func (c *converter) uncompressedToGorilla(ctx context.Context, seriesDefinition types.InsightSeries) error {
-	repos, err := c.allReposForSeriesOnSeriesPoints(ctx, seriesDefinition.SeriesID)
+func (c *converter) uncompressedToGorilla(ctx context.Context, seriesDefinition types.InsightSeries) (err error) {
+
+	tx, err := c.store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+	sampleStore := SampleStoreFromLegacyStore(tx)
+
+	repos, err := allReposForSeriesOnSeriesPoints(ctx, seriesDefinition.SeriesID, tx)
 	if err != nil {
 		return errors.Wrap(err, "error selecting repo_ids for series")
 	}
@@ -89,7 +97,7 @@ func (c *converter) uncompressedToGorilla(ctx context.Context, seriesDefinition 
 				Samples: samples,
 			}
 
-			err = c.store.StoreAlternateFormat(ctx, row, uint32(seriesDefinition.ID))
+			err = sampleStore.StoreRow(ctx, row, uint32(seriesDefinition.ID))
 			if err != nil {
 				return errors.Wrap(err, "StoreAlternateFormat")
 			}
@@ -99,7 +107,7 @@ func (c *converter) uncompressedToGorilla(ctx context.Context, seriesDefinition 
 	return nil
 }
 
-func (c *converter) allReposForSeriesOnSeriesPoints(ctx context.Context, seriesId string) (_ []uint32, err error) {
+func allReposForSeriesOnSeriesPoints(ctx context.Context, seriesId string, store *Store) (_ []uint32, err error) {
 	q := `select distinct repo_id from series_points where series_id = %s order by repo_id;`
-	return basestore.Scanuint32s(c.store.Query(ctx, sqlf.Sprintf(q, seriesId)))
+	return basestore.Scanuint32s(store.Query(ctx, sqlf.Sprintf(q, seriesId)))
 }
