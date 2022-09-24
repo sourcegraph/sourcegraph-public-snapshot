@@ -81,9 +81,11 @@ func (c *converter) uncompressedToGorilla(ctx context.Context, seriesDefinition 
 				})
 			}
 
-			row := AlternateFormatRow{
-				RepoId:  repo,
-				Capture: &key,
+			row := UncompressedRow{
+				altFormatRowMetadata: altFormatRowMetadata{
+					RepoId:  repo,
+					Capture: &key,
+				},
 				Samples: samples,
 			}
 

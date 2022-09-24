@@ -925,8 +925,10 @@ func TestLoadStuff(t *testing.T) {
 	t.Log(len(allData))
 
 	for _, datum := range allData {
-		err := store.StoreAlternateFormat(ctx, AlternateFormatRow{
-			RepoId:  uint32(datum.repoId),
+		err := store.StoreAlternateFormat(ctx, UncompressedRow{
+			altFormatRowMetadata: altFormatRowMetadata{
+				RepoId: uint32(datum.repoId),
+			},
 			Samples: datum.ss,
 		}, rawId)
 		if err != nil {

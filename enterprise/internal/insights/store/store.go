@@ -615,14 +615,23 @@ type RawSample struct {
 	Value float64
 }
 
-type AlternateFormatRow struct {
-	Id      uint32
-	RepoId  uint32
-	Capture *string
+type UncompressedRow struct {
+	altFormatRowMetadata
 	Samples []RawSample
 }
 
-func (s *Store) StoreAlternateFormat(ctx context.Context, row AlternateFormatRow, seriesId int) error {
+type CompressedRow struct {
+	altFormatRowMetadata
+	Data []byte
+}
+
+type altFormatRowMetadata struct {
+	Id      uint32
+	RepoId  uint32
+	Capture *string
+}
+
+func (s *Store) StoreAlternateFormat(ctx context.Context, row UncompressedRow, seriesId int) error {
 	buf, err := compressSamples(row.Samples)
 	if err != nil {
 		return err
@@ -638,7 +647,7 @@ func (s *Store) StoreAlternateFormat(ctx context.Context, row AlternateFormatRow
 	return s.Exec(ctx, q)
 }
 
-func (s *Store) LoadAlternateFormat(ctx context.Context, opts SeriesPointsOpts) ([]AlternateFormatRow, error) {
+func (s *Store) LoadAlternateFormat(ctx context.Context, opts SeriesPointsOpts) ([]UncompressedRow, error) {
 	baseQuery := `select sp.id, repo_id, data, capture from series_points_compressed sp`
 	var preds []*sqlf.Query
 	// if len(opts.IncludeRepoRegex) > 0 || len(opts.ExcludeRepoRegex) > 0 {
@@ -672,12 +681,11 @@ func (s *Store) LoadAlternateFormat(ctx context.Context, opts SeriesPointsOpts) 
 		baseQuery += " where %s"
 	}
 
-	// github.com/sourcegraph/sourcegraph
 	final := sqlf.Sprintf(baseQuery, sqlf.Join(preds, "AND "))
 	log15.Info("finalquery", "q", final.Query(sqlf.PostgresBindVar), "args", final.Args())
 
-	var rows []AlternateFormatRow
-
+	// i'd really like to rethink this and load it much earlier - this is getting reloaded for every insight series we fetch
+	// maybe a privilged access struct vs unprivd?
 	denylist, err := s.permStore.GetUnauthorizedRepoIDs(ctx)
 	if err != nil {
 		return nil, err
@@ -687,34 +695,39 @@ func (s *Store) LoadAlternateFormat(ctx context.Context, opts SeriesPointsOpts) 
 		denyBitmap.Add(uint32(id))
 	}
 
-	if err = s.query(ctx, final, func(s scanner) (err error) {
-		var tmp AlternateFormatRow
-		var raw []byte
+	var rows []UncompressedRow
+	return rows, s.streamAlternativeFormat(ctx, final, func(ctx context.Context, row *CompressedRow) (err error) {
+		if denyBitmap.Contains(row.RepoId) {
+			return nil
+		}
+
+		dcmp, err := decompressSamples(row.Data)
+		if err != nil {
+			return err
+		}
+
+		rows = append(rows, UncompressedRow{
+			altFormatRowMetadata: row.altFormatRowMetadata,
+			Samples:              dcmp,
+		})
+		return nil
+	})
+}
+
+func (s *Store) streamAlternativeFormat(ctx context.Context, query *sqlf.Query, callback func(ctx context.Context, row *CompressedRow) error) error {
+	return s.query(ctx, query, func(s scanner) (err error) {
+		var tmp CompressedRow
 		if err := s.Scan(
 			&tmp.Id,
 			&tmp.RepoId,
-			&raw,
+			&tmp.Data,
 			&tmp.Capture,
 		); err != nil {
 			return err
 		}
 
-		if denyBitmap.Contains(tmp.RepoId) {
-			return
-		}
-
-		dcmp, err := decompressSamples(raw)
-		if err != nil {
-			return err
-		}
-		tmp.Samples = dcmp
-		rows = append(rows, tmp)
-		return nil
-	}); err != nil {
-		return nil, err
-	}
-
-	return rows, nil
+		return callback(ctx, &tmp)
+	})
 }
 
 func decompressSamples(data []byte) (samples []RawSample, err error) {
@@ -754,7 +767,7 @@ func compressSamples(samples []RawSample) (buf *bytes.Buffer, err error) {
 	return buf, finish()
 }
 
-func ToTimeseries(data []AlternateFormatRow, seriesId string) (results []SeriesPoint) {
+func ToTimeseries(data []UncompressedRow, seriesId string) (results []SeriesPoint) {
 	getKey := func(s *string) string {
 		if s == nil {
 			return ""
@@ -762,7 +775,7 @@ func ToTimeseries(data []AlternateFormatRow, seriesId string) (results []SeriesP
 		return *s
 	}
 
-	byCapture := make(map[string][]AlternateFormatRow)
+	byCapture := make(map[string][]UncompressedRow)
 	for _, datum := range data {
 		byCapture[getKey(datum.Capture)] = append(byCapture[getKey(datum.Capture)], datum)
 	}
@@ -793,7 +806,7 @@ func ToTimeseries(data []AlternateFormatRow, seriesId string) (results []SeriesP
 		}
 	}
 
-	// byCapture := make(map[*string][]AlternateFormatRow)
+	// byCapture := make(map[*string][]UncompressedRow)
 	//
 	// for _, datum := range data {
 	// 	byCapture[datum.Capture] = append(byCapture[datum.Capture], datum)
