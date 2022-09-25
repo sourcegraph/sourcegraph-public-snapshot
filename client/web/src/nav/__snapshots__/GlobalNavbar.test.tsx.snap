@@ -62,7 +62,7 @@ exports[`GlobalNavbar default 1`] = `
         class="list menuClose"
       >
         <li
-          class="item d-none d-md-flex position-relative"
+          class="item d-none d-sm-flex position-relative"
         >
           <div
             class="link d-flex align-items-center p-0"
@@ -130,7 +130,7 @@ exports[`GlobalNavbar default 1`] = `
           </div>
         </li>
         <li
-          class="item d-flex d-md-none"
+          class="item d-flex d-sm-none"
         >
           <a
             class="link"
@@ -161,7 +161,7 @@ exports[`GlobalNavbar default 1`] = `
           </a>
         </li>
         <li
-          class="item d-flex d-md-none"
+          class="item d-flex d-sm-none"
         >
           <a
             class="link"
@@ -190,7 +190,7 @@ exports[`GlobalNavbar default 1`] = `
           class="anchorLink link"
           href="https://about.sourcegraph.com"
         >
-          About 
+          About
           <span
             class="d-none d-sm-inline"
           >
@@ -304,7 +304,7 @@ exports[`GlobalNavbar low-profile 1`] = `
         class="list menuClose"
       >
         <li
-          class="item d-none d-md-flex position-relative"
+          class="item d-none d-sm-flex position-relative"
         >
           <div
             class="link d-flex align-items-center p-0"
@@ -372,7 +372,7 @@ exports[`GlobalNavbar low-profile 1`] = `
           </div>
         </li>
         <li
-          class="item d-flex d-md-none"
+          class="item d-flex d-sm-none"
         >
           <a
             class="link"
@@ -403,7 +403,7 @@ exports[`GlobalNavbar low-profile 1`] = `
           </a>
         </li>
         <li
-          class="item d-flex d-md-none"
+          class="item d-flex d-sm-none"
         >
           <a
             class="link"
@@ -432,7 +432,7 @@ exports[`GlobalNavbar low-profile 1`] = `
           class="anchorLink link"
           href="https://about.sourcegraph.com"
         >
-          About 
+          About
           <span
             class="d-none d-sm-inline"
           >
