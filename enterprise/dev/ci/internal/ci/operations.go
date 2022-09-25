@@ -527,11 +527,18 @@ func triggerAsync(buildOptions bk.BuildOptions) operations.Operation {
 func triggerReleaseBranchHealthchecks(minimumUpgradeableVersion string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		version := semver.MustParse(minimumUpgradeableVersion)
+
+		// HACK: we can't just subtract a single minor version once we roll over to 4.0,
+		// so hard-code the previous minor version.
+		previousMinorVersion := fmt.Sprintf("%d.%d", version.Major(), version.Minor()-1)
+		if version.Major() == 4 && version.Minor() == 0 {
+			previousMinorVersion = "3.43"
+		}
+
 		for _, branch := range []string{
 			// Most recent major.minor
 			fmt.Sprintf("%d.%d", version.Major(), version.Minor()),
-			// The previous major.minor-1
-			fmt.Sprintf("%d.%d", version.Major(), version.Minor()-1),
+			previousMinorVersion,
 		} {
 			name := fmt.Sprintf(":stethoscope: Trigger %s release branch healthcheck build", branch)
 			pipeline.AddTrigger(name, "sourcegraph",

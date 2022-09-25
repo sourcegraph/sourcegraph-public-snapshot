@@ -27,6 +27,13 @@ const apexSpec: LanguageSpec = {
     commentStyles: [javaStyleComment],
 }
 
+const reprolangSpec: LanguageSpec = {
+    languageID: 'reprolang',
+    stylized: 'Reprolang',
+    fileExts: ['repro'],
+    commentStyles: pythonSpec.commentStyles,
+}
+
 const starlarkSpec: LanguageSpec = {
     languageID: 'starlark',
     stylized: 'Starlark',
@@ -385,6 +392,7 @@ export const languageSpecs: LanguageSpec[] = [
     pythonSpec,
     tclSpec,
     rSpec,
+    reprolangSpec,
     rubySpec,
     rustSpec,
     scalaSpec,

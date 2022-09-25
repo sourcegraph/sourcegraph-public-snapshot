@@ -125,7 +125,7 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
             class="list-inline-item mb-2"
           >
             <a
-              class="anchorLink btn btnOutlineSecondary btnSm"
+              class="anchorLink btn btnSecondary btnOutline btnSm"
               href="/extensions?category=Programming+languages"
             >
               Programming languages
@@ -135,7 +135,7 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
             class="list-inline-item mb-2"
           >
             <a
-              class="anchorLink btn btnOutlineSecondary btnSm"
+              class="anchorLink btn btnSecondary btnOutline btnSm"
               href="/extensions?category=Other"
             >
               Other
@@ -158,7 +158,7 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
             class="list-inline-item mb-2"
           >
             <a
-              class="anchorLink btn btnOutlineSecondary btnSm tag"
+              class="anchorLink btn btnSecondary btnOutline btnSm tag"
               href="/extensions?query=tag%3AT1"
             >
               T1
@@ -168,7 +168,7 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
             class="list-inline-item mb-2"
           >
             <a
-              class="anchorLink btn btnOutlineSecondary btnSm tag"
+              class="anchorLink btn btnSecondary btnOutline btnSm tag"
               href="/extensions?query=tag%3AT2"
             >
               T2
@@ -306,7 +306,7 @@ exports[`RegistryExtensionOverviewPage renders with no tags 1`] = `
             class="list-inline-item mb-2"
           >
             <a
-              class="anchorLink btn btnOutlineSecondary btnSm"
+              class="anchorLink btn btnSecondary btnOutline btnSm"
               href="/extensions?category=Programming+languages"
             >
               Programming languages
@@ -316,7 +316,7 @@ exports[`RegistryExtensionOverviewPage renders with no tags 1`] = `
             class="list-inline-item mb-2"
           >
             <a
-              class="anchorLink btn btnOutlineSecondary btnSm"
+              class="anchorLink btn btnSecondary btnOutline btnSm"
               href="/extensions?category=Other"
             >
               Other
