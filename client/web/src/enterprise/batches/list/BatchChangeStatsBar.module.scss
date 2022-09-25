@@ -1,0 +1,27 @@
+.stats-bar {
+    display: flex;
+    padding: 1.5rem;
+    background-color: var(--color-bg-1);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    margin-top: 1.5rem !important;
+    margin-bottom: 1.5rem !important;
+}
+
+.left-side {
+    display: flex;
+    width: 70%;
+    flex-direction: row;
+    // background-color: red;
+}
+
+.right-side {
+    display: flex;
+    width: 30%;
+    // background-color: blue;
+    justify-content: flex-end;
+}
+
+.stat-item {
+    padding-right: 2rem;
+}
