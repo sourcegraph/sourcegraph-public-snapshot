@@ -55,7 +55,6 @@ export const CodeInsightsLearnMore: React.FunctionComponent<
                     <Text className="text-muted mb-2">
                         Have a question or idea about Code Insights? We want to hear your feedback!
                     </Text>
-
                     <FeedbackText headerText="" />
                 </article>
             </div>
