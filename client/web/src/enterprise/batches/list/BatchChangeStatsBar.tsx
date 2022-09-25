@@ -3,6 +3,7 @@ import React from 'react'
 import { useQuery } from '@sourcegraph/http-client'
 
 import { ChangesetStatisticsResult, ChangesetStatisticsVariables } from '../../../graphql-operations'
+import { ChangesetStatusClosed, ChangesetStatusOpen } from '../detail/changesets/ChangesetStatusCell'
 
 import { CHANGESET_STATISTICS } from './backend'
 
@@ -15,37 +16,33 @@ interface BatchChangeStatsBarProps {
 export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildren<BatchChangeStatsBarProps>> = () => {
     const { data } = useQuery<ChangesetStatisticsResult, ChangesetStatisticsVariables>(CHANGESET_STATISTICS, {})
 
-    console.log(data)
-
     return (
         <div className={styles.statsBar}>
             <div className={styles.leftSide}>
-                <div className={styles.statItem}>
-                    <span>{data?.batchChanges.totalCount}</span>
+                <div className="pr-2">
+                    <span className="font-weight-bold">{data?.batchChanges.totalCount}</span>
                     <br />
                     <span>Batch Changes</span>
                 </div>
-                <div className={styles.statItem}>
-                    <span>{data?.merged.totalCount}</span>
+                <div className="pr-2">
+                    <span className="font-weight-bold">{data?.merged.totalCount}</span>
                     <br />
                     <span>Merged</span>
                 </div>
-                <div className={styles.statItem}>
-                    <span>27.7</span>
+                <div className="pr-2">
+                    <span className="font-weight-bold">{(data?.merged.totalCount * 15) / 60}</span>
                     <br />
                     <span>Hours Saved</span>
                 </div>
             </div>
             <div className={styles.rightSide}>
-                <div className={styles.statItem}>
-                    <span>image</span>
-                    <br />
-                    <span>{data?.opened.totalCount} Open</span>
+                <div className="pr-4 text-center">
+                    <ChangesetStatusOpen label="" />
+                    <span className="font-weight-bold">{data?.opened.totalCount}</span> <span>Open</span>
                 </div>
-                <div>
-                    <span>image</span>
-                    <br />
-                    <span>{data?.closed.totalCount} Closed</span>
+                <div className="text-center">
+                    <ChangesetStatusClosed label="" />
+                    <span className="font-weight-bold">{data?.closed.totalCount}</span> <span>Closed</span>
                 </div>
             </div>
         </div>
