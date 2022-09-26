@@ -357,6 +357,14 @@ func doValidate(inputStr, schema string) (messages []string, err error) {
 			keyPath = e.Field()
 		}
 
+		// Use an easier-to-understand description for the common case when the root is not an
+		// object (which can happen when the input is derived from JSONC that is entirely commented
+		// out, for example).
+		if e, ok := e.(*gojsonschema.InvalidTypeError); ok && e.Field() == "(root)" && strings.HasPrefix(e.Description(), "Invalid type. Expected: object, given: ") {
+			messages = append(messages, "must be a JSON object (use {} for empty)")
+			continue
+		}
+
 		messages = append(messages, fmt.Sprintf("%s: %s", keyPath, e.Description()))
 	}
 	return messages, nil
