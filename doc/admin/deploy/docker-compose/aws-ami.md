@@ -10,7 +10,6 @@ A Sourcegraph AWS AMI instance includes:
   - It is configurable and expandable
 - A specific version of Sourcegraph based on the selected AMI
 - Resource requirements are configured according to your selected instance size
-- Kubernetes with k3s and Helm
 
 You only need to choose your VPC and SSH Key-Pair to get started.
 
@@ -20,7 +19,11 @@ See the [official docs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-
 
 ## Instance size
 
-<!-- TODO: How to pick an instance size -->
+You should select an AMI that works with the amount of users and repositories you have. 
+
+For example, if you have 8,000 users with 80,000 repositories, your instance size would be **M**. 
+
+If you have 1,000 users with 80,000 users, you should still go with size **M**.
 
 | **Size**           | **S**       | **M**       | **L**        | **XL**       | **2XL**      |
 |:------------------:|:-----------:|:-----------:|:------------:|:------------:|:------------:|
@@ -38,14 +41,14 @@ The recommended instance type has better performance due to allocated resources.
 
 Please select the instance type according to the table below for your instance size, and do not go below the suggested minimum instance type.
 
-> NOTE: You can resize your instance anytime by [changing the instance type](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-resize.html) associated with your instance size. If you need to change beyond the minimum or maximum supports of your current instance type, you can follow our [upgrade steps](#upgrade) in this page to start a new instance using the new instance size with its associated instance typ.  Please make sure the volumes are backed up before switching instance type.
-
 | **Size**           | **S**       | **M**       | **L**        | **XL**       | **2XL**      |
 |:------------------:|:-----------:|:-----------:|:------------:|:------------:|:------------:|
 | **Users**          | 1,000       | 5,000       | 10,000       | 20,000       | 40,000       |
 | **Repositories**   | 10,000      | 50,000      | 100,000      | 250,000      | 500,000      |
 | **Recommended**    | m6a.4xlarge | m6a.8xlarge | m6a.12xlarge | m6a.24xlarge | m6a.48xlarge |
 | **Minimum**        | m6a.2xlarge | m6a.4xlarge | m6a.8xlarge  | m6a.12xlarge | m6a.48xlarge |
+
+> NOTE: You can resize your instance anytime by [changing the instance type](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-resize.html) associated with your instance size. If you need to change beyond the minimum or maximum supports of your current instance type, you can follow our [upgrade steps](#upgrade) in this page to start a new instance using the new instance size with its associated instance typ.  Please make sure the volumes are backed up before switching instance type.
 
 ---
 
