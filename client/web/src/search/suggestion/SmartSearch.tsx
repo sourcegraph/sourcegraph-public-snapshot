@@ -1,10 +1,23 @@
-import { mdiArrowRight, mdiChevronDown, mdiChevronUp, mdiHelpCircleOutline } from '@mdi/js'
+import { MouseEvent, useCallback } from 'react'
 
-import { formatSearchParameters } from '@sourcegraph/common'
-import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
+import { mdiArrowRight, mdiChevronDown, mdiChevronUp } from '@mdi/js'
+
+import { formatSearchParameters, renderMarkdown } from '@sourcegraph/common'
+import { SyntaxHighlightedSearchQuery, smartSearchIconSvgPath } from '@sourcegraph/search-ui'
+import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { Link, H3, createLinkUrl, Tooltip, Icon, Collapse, CollapseHeader, CollapsePanel } from '@sourcegraph/wildcard'
+import {
+    Link,
+    createLinkUrl,
+    Icon,
+    Collapse,
+    CollapseHeader,
+    CollapsePanel,
+    H2,
+    Text,
+    Button,
+} from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../graphql-operations'
 
@@ -12,6 +25,7 @@ import styles from './QuerySuggestion.module.scss'
 
 interface SmartSearchProps {
     alert: Required<AggregateStreamingSearchResults>['alert'] | undefined
+    onDisableSmartSearch: () => void
 }
 
 const processDescription = (description: string): string => {
@@ -21,38 +35,58 @@ const processDescription = (description: string): string => {
     return split.join(', ')
 }
 
-export const SmartSearch: React.FunctionComponent<React.PropsWithChildren<SmartSearchProps>> = ({ alert }) => {
+export const SmartSearch: React.FunctionComponent<React.PropsWithChildren<SmartSearchProps>> = ({
+    alert,
+    onDisableSmartSearch,
+}) => {
     const [isCollapsed, setIsCollapsed] = useTemporarySetting('search.results.collapseSmartSearch')
+
+    const disableSmartSearch = useCallback(
+        (event: MouseEvent) => {
+            event.stopPropagation() // Don't trigger the collapse toggle
+            onDisableSmartSearch()
+        },
+        [onDisableSmartSearch]
+    )
 
     return alert?.kind && alert.kind !== 'lucky-search-queries' ? null : (
         <div className={styles.root}>
             <Collapse isOpen={!isCollapsed} onOpenChange={opened => setIsCollapsed(!opened)}>
                 <CollapseHeader className={styles.collapseButton}>
-                    <H3 className={styles.header}>
-                        <span>
-                            {alert?.title || 'Also showing additional results'}
-                            <Tooltip
-                                content={
-                                    alert?.description ||
-                                    'We returned all the results for your query. We also added results for similar queries that might interest you.'
-                                }
-                            >
-                                <Icon
-                                    className="ml-1"
-                                    tabIndex={0}
-                                    aria-label="More information"
-                                    svgPath={mdiHelpCircleOutline}
-                                />
-                            </Tooltip>
+                    <div className={styles.header}>
+                        <span className="d-flex align-items-center">
+                            <Icon aria-hidden={true} svgPath={smartSearchIconSvgPath} className={styles.smartIcon} />
+                            <span>
+                                <H2 className={styles.title}>
+                                    <Markdown
+                                        wrapper="span"
+                                        dangerousInnerHTML={renderMarkdown(
+                                            alert?.title || '**Smart Search** is also showing additional results.'
+                                        )}
+                                    />
+                                </H2>
+                                <span className="text-muted">
+                                    Don't want these?{' '}
+                                    <Button
+                                        variant="link"
+                                        size="sm"
+                                        className={styles.disableButton}
+                                        onClick={disableSmartSearch}
+                                    >
+                                        Disable <b>Smart Search</b>
+                                    </Button>
+                                </span>
+                            </span>
                         </span>
                         {isCollapsed ? (
                             <Icon aria-label="Expand" svgPath={mdiChevronDown} />
                         ) : (
                             <Icon aria-label="Collapse" svgPath={mdiChevronUp} />
                         )}
-                    </H3>
+                    </div>
                 </CollapseHeader>
                 <CollapsePanel>
+                    <Text className={styles.description}>{alert?.description}</Text>
                     <ul className={styles.container}>
                         {alert?.proposedQueries?.map(entry => (
                             <li key={entry.query} className={styles.listItem}>
@@ -64,7 +98,7 @@ export const SmartSearch: React.FunctionComponent<React.PropsWithChildren<SmartS
                                     className={styles.link}
                                 >
                                     <span>
-                                        <span className={styles.description}>{`${processDescription(
+                                        <span className={styles.listItemDescription}>{`${processDescription(
                                             entry.description || ''
                                         )}`}</span>
                                         {entry.annotations
@@ -113,7 +147,7 @@ export const smartSearchEvent = (alertTitle: string, descriptions: string[]): st
         return 'Other'
     })
 
-    const prefix = alertTitle.match(/No results for original query/)
+    const prefix = alertTitle.match(/your query found \*\*no results\*\*/)
         ? 'SearchResultsAutoPure'
         : 'SearchResultsAutoAdded'
 

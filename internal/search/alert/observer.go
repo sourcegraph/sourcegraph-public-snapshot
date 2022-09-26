@@ -260,11 +260,11 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 	}
 
 	if errors.As(err, &lErr) {
-		title := "Also showing additional results"
-		description := "We returned all the results for your query. We also added results for similar queries that might interest you."
+		title := "**Smart Search** is also showing **additional results**."
+		description := "Smart Search added results for the following similar queries that might interest you:"
 		if lErr.Type == LuckyAlertPure {
-			title = "No results for original query. Showing related results instead"
-			description = "The original query returned no results. Below are results for similar queries that might interest you."
+			title = "**Smart Search** is showing **related results** as your query found **no results**."
+			description = "To get additional results, Smart Search also ran these queries:"
 		}
 		return &search.Alert{
 			PrometheusType:  "lucky_search_notice",

@@ -23,7 +23,7 @@ export const smartSearchClickedEvent = (alertTitle: string, descriptions: string
         return 'Other'
     })
 
-    const prefix = alertTitle.match(/No results for original query/)
+    const prefix = alertTitle.match(/your query found \*\*no results\*\*/)
         ? 'SearchResultClickedAutoPure'
         : 'SearchResultClickedAdded'
 
