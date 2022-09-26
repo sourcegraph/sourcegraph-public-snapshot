@@ -1806,7 +1806,7 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 		tr.SetAttributes(attribute.String("args", args))
 		logger = logger.WithTrace(trace.Context(ctx))
 
-		execRunning.WithLabelValues(cmd, req.P4Port).Inc()
+		execRunning.WithLabelValues(cmd).Inc()
 		defer func() {
 			tr.AddEvent("done",
 				attribute.String("status", status),
@@ -1817,8 +1817,8 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 			tr.Finish()
 
 			duration := time.Since(start)
-			execRunning.WithLabelValues(cmd, req.P4Port).Dec()
-			execDuration.WithLabelValues(cmd, req.P4Port, status).Observe(duration.Seconds())
+			execRunning.WithLabelValues(cmd).Dec()
+			execDuration.WithLabelValues(cmd, status).Observe(duration.Seconds())
 
 			var cmdDuration time.Duration
 			if !cmdStart.IsZero() {
