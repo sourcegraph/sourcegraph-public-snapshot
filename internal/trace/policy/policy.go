@@ -43,7 +43,8 @@ const shouldTraceKey key = iota
 func ShouldTrace(ctx context.Context) bool {
 	v, ok := ctx.Value(shouldTraceKey).(bool)
 	if !ok {
-		return false
+		// If ShouldTrace is set to false, we respect TraceAll instead.
+		return GetTracePolicy() == TraceAll
 	}
 	return v
 }
