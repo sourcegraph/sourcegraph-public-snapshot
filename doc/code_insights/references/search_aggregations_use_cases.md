@@ -55,6 +55,12 @@ See every email address hardcoded, by frequency
 /(\w+)\@sourcegraph\.com/
 ```
 
+### What are the most common go modules in use? 
+See the most common go modules in go.mod files
+```sgquery
+file:go.mod$ /(.+)\sv(?:.+)(?:\s\/\/\sindirect)?/
+```
+
 
 ## By repo 
 

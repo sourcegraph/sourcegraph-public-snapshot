@@ -66,6 +66,7 @@ Code Insights is based on our universal code search, making it precise and confi
 ## [References](references/index.md)
 
 - [Common use cases and recipes](references/common_use_cases.md)
+  - [Search results aggregations use cases and recipes](search_aggregations_use_cases.md)
 - [Common reasons code insights may not match search results](references/common_reasons_code_insights_may_not_match_search_results.md)
 - [Licensing and limited access](references/license.md)
 - [Managing code insights with the API](../api/graphql/managing-code-insights-with-api.md)
