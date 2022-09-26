@@ -34,6 +34,13 @@ Some stepwise upgrade notes have multi-version considerations.
 
 Follow the [steps](#upgrade-procedure) outlined at the top of this page to upgrade.
 
+
+## 3.43 -> 4.0
+
+<!-- Add changes changes to this section before release. -->
+
+Follow the [steps](#upgrade-procedure) outlined at the top of this page to upgrade.
+
 * `jaeger` (deployed with the `jaeger-all-in-one` image) has been removed in favor of an [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) DaemonSet + Deployment configuration. See [Configure a tracing backend](../deploy/docker-compose/operations.md#configure-a-tracing-backend)
 * Exporting traces to an external observability backend is now available. Read the [documentation](../deploy/docker-compose/operations.md#configure-a-tracing-backend) to configure.
 * The bundled Jaeger instance is now disabled by default. It can be [enabled](../deploy/docker-compose/operations.md#enable-the-bundled-jaeger-deployment) if you do not wish to utilise your own external tracing backend.

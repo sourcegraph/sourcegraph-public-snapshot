@@ -14,12 +14,8 @@ export const FreeUsersExceededAlert: React.FunctionComponent<
     <Alert className={className} variant="danger">
         This Sourcegraph instance has reached{' '}
         {noLicenseWarningUserCount === null ? 'the limit for' : noLicenseWarningUserCount} free users, and an admin must{' '}
-        <Link className="site-alert__link" to="https://sourcegraph.com/user/subscriptions/new">
-            <span className="underline">purchase a license</span>
-        </Link>{' '}
-        or{' '}
         <Link className="site-alert__link" to="https://about.sourcegraph.com/contact/sales">
-            <span className="underline">contact Sourcegraph for a free trial</span>
+            <span className="underline">contact Sourcegraph to start a free trial or purchase a license</span>
         </Link>{' '}
         to add more
     </Alert>

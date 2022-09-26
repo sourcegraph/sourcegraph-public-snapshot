@@ -157,9 +157,6 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** Whether the product research sign-up page is enabled on the site. */
     productResearchPageEnabled: boolean
 
-    /** The publishable key for the billing service (Stripe). */
-    billingPublishableKey?: string
-
     /** Whether the extension registry and the use of extensions are enabled. (Doesn't affect code intel and git extras.) */
     enableLegacyExtensions?: boolean
 

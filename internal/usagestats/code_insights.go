@@ -426,6 +426,7 @@ func GetGroupResultsExpandedViewPing(ctx context.Context, db database.DB, pingNa
 			&groupResultsExpandedViewPing.Count,
 			&groupResultsExpandedViewPing.AggregationMode,
 			&noop,
+			&noop,
 		); err != nil {
 			return nil, err
 		}
