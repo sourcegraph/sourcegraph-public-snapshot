@@ -21,12 +21,16 @@ if (!window.context) {
     window.context = {} as SourcegraphContext & Mocha.SuiteFunction
 }
 
+export type WebStoryChildrenProps = ThemeProps &
+    BreadcrumbSetters &
+    BreadcrumbsProps &
+    TelemetryProps &
+    RouteComponentProps<any>
+
 export interface WebStoryProps
     extends Omit<MemoryRouterProps, 'children'>,
         Pick<MockedStoryProviderProps, 'mocks' | 'useStrictMocking'> {
-    children: React.FunctionComponent<
-        ThemeProps & BreadcrumbSetters & BreadcrumbsProps & TelemetryProps & RouteComponentProps<any>
-    >
+    children: React.FunctionComponent<WebStoryChildrenProps>
 }
 
 /**

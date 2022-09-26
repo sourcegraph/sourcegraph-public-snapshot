@@ -19,9 +19,9 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
-import { LoadingSpinner, Panel, useObservable } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Panel } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser, authRequired as authRequiredObservable } from './auth'
+import { AuthenticatedUser } from './auth'
 import { BatchChangesProps } from './batches'
 import { CodeIntelligenceProps } from './codeintel'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
@@ -155,8 +155,6 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
     // and preserve autofocus for first textarea at survey page, creation UI etc.
     const isSearchAutoFocusRequired = routeMatch === PageRoutes.Survey || routeMatch === EnterprisePageRoutes.Insights
 
-    const authRequired = useObservable(authRequiredObservable)
-
     const themeProps = useThemeProps()
     const [enableContrastCompliantSyntaxHighlighting] = useFeatureFlag('contrast-compliant-syntax-highlighting')
     const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
@@ -221,7 +219,6 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                 <GlobalNavbar
                     {...props}
                     {...themeProps}
-                    authRequired={!!authRequired}
                     showSearchBox={
                         isSearchRelatedPage &&
                         !isSearchHomepage &&
@@ -229,17 +226,10 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                         !isSearchConsolePage &&
                         !isSearchNotebooksPage
                     }
-                    variant={
-                        isSearchHomepage
-                            ? 'low-profile'
-                            : isCommunitySearchContextPage
-                            ? 'low-profile-with-logo'
-                            : 'default'
-                    }
-                    minimalNavLinks={minimalNavLinks}
                     isSearchAutoFocusRequired={!isSearchAutoFocusRequired}
                     isRepositoryRelatedPage={isRepositoryRelatedPage}
                     showKeyboardShortcutsHelp={showKeyboardShortcutsHelp}
+                    enableLegacyExtensions={window.context.enableLegacyExtensions}
                 />
             )}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}

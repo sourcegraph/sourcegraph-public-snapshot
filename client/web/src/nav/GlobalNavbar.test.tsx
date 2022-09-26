@@ -22,7 +22,6 @@ jest.mock('../components/branding/BrandLogo', () => ({ BrandLogo: 'BrandLogo' })
 const history = createMemoryHistory()
 const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     authenticatedUser: null,
-    authRequired: false,
     extensionsController,
     location: createLocation('/'),
     history,
