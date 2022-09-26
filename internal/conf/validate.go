@@ -349,6 +349,8 @@ func ValidateSettings(jsoncInput string) (problems []string) {
 func doValidate(input []byte, schema string) (messages []string) {
 	res, err := validate([]byte(schema), input)
 	if err != nil {
+		// We can't return more detailed problems because the input completely failed to parse, so
+		// just return the parse error as the problem.
 		return []string{err.Error()}
 	}
 	messages = make([]string, 0, len(res.Errors()))

@@ -47,10 +47,6 @@ func (s *settingsStore) Transact(ctx context.Context) (SettingsStore, error) {
 }
 
 func (o *settingsStore) CreateIfUpToDate(ctx context.Context, subject api.SettingsSubject, lastID *int32, authorUserID *int32, contents string) (latestSetting *api.Settings, err error) {
-	if strings.TrimSpace(contents) == "" {
-		return nil, errors.Errorf("blank settings are invalid (you can clear the settings by entering an empty JSON object: {})")
-	}
-
 	// Validate JSON syntax before saving.
 	if _, errs := jsonx.Parse(contents, jsonx.ParseOptions{Comments: true, TrailingCommas: true}); len(errs) > 0 {
 		return nil, errors.Errorf("invalid settings JSON: %v", errs)
