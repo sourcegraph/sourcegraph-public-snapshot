@@ -63,10 +63,10 @@ type FirecrackerOptions struct {
 	// virtual machine and executed on startup.
 	VMStartupScriptPath string
 
-	// DockerRegistryMirrorAddress is an optional parameter to configure a docker
+	// DockerRegistryMirrorURL is an optional parameter to configure a docker
 	// registry mirror for the VMs docker daemon on startup. When set, /etc/docker/daemon.json
 	// will be mounted into the VM.
-	DockerRegistryMirrorAddress string
+	DockerRegistryMirrorURL string
 }
 
 type ResourceOptions struct {

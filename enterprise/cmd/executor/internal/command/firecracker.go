@@ -63,21 +63,14 @@ type dockerDaemonConfig struct {
 const dockerDaemonConfigFilename = "docker-daemon.json"
 
 func newDockerDaemonConfig(tmpDir, mirrorAddress string) (_ string, err error) {
-	f, err := os.Create(path.Join(tmpDir, dockerDaemonConfigFilename))
-	if err != nil {
-		return "", errors.Wrap(err, "creating temp file for docker daemon config")
-	}
-	defer func() {
-		err = errors.Append(err, f.Close())
-	}()
-	daemonConfigFile := f.Name()
-
 	c, err := json.Marshal(&dockerDaemonConfig{RegistryMirrors: []string{mirrorAddress}})
 	if err != nil {
-		return daemonConfigFile, errors.Wrap(err, "marshalling docker daemon config")
+		return "", errors.Wrap(err, "marshalling docker daemon config")
 	}
 
-	return daemonConfigFile, os.WriteFile(daemonConfigFile, c, os.ModePerm)
+	tmpFilePath := path.Join(tmpDir, dockerDaemonConfigFilename)
+	err = os.WriteFile(tmpFilePath, c, os.ModePerm)
+	return tmpFilePath, errors.Wrap(err, "writing docker daemon config file")
 }
 
 // setupFirecracker invokes a set of commands to provision and prepare a Firecracker virtual
@@ -87,9 +80,9 @@ func newDockerDaemonConfig(tmpDir, mirrorAddress string) (_ string, err error) {
 // and mounted into the VM.
 func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, name, workspaceDevice, tmpDir string, options Options, operations *Operations) error {
 	var daemonConfigFile string
-	if options.FirecrackerOptions.DockerRegistryMirrorAddress != "" {
+	if options.FirecrackerOptions.DockerRegistryMirrorURL != "" {
 		var err error
-		daemonConfigFile, err = newDockerDaemonConfig(tmpDir, options.FirecrackerOptions.DockerRegistryMirrorAddress)
+		daemonConfigFile, err = newDockerDaemonConfig(tmpDir, options.FirecrackerOptions.DockerRegistryMirrorURL)
 		if err != nil {
 			return err
 		}
@@ -144,7 +137,7 @@ func teardownFirecracker(ctx context.Context, runner commandRunner, logger Logge
 	}
 
 	if err := os.RemoveAll(tmpDir); err != nil {
-		log15.Error("Failed to remove firecracker state tmp dir", "name", name, "err", err)
+		log15.Error("Failed to remove firecracker state tmp dir", "name", name, "tmpDir", tmpDir, "err", err)
 	}
 
 	return nil
