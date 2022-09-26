@@ -52,13 +52,13 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/gitchander/permutation v0.0.0-20210517125447-a5d73722e1b1
 	github.com/go-enry/go-enry/v2 v2.8.2
-	github.com/go-git/go-git/v5 v5.4.2
+	github.com/go-git/go-git/v5 v5.4.3-0.20210630082519-b4368b2a2ca4
 	github.com/go-openapi/strfmt v0.21.3
 	github.com/go-redsync/redsync v1.4.2
 	github.com/gobwas/glob v0.2.3
 	github.com/gofrs/uuid v4.2.0+incompatible
 	github.com/gogo/protobuf v1.3.2
-	github.com/golang-jwt/jwt/v4 v4.2.0
+	github.com/golang-jwt/jwt/v4 v4.4.1
 	github.com/golang/gddo v0.0.0-20210115222349-20d68f94ee1f
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
 	github.com/gomodule/oauth1 v0.2.0
@@ -100,11 +100,11 @@ require (
 	github.com/kr/text v0.2.0
 	github.com/kylelemons/godebug v1.1.0
 	github.com/layeh/gopher-json v0.0.0-20201124131017-552bb3c4c3bf
-	github.com/lib/pq v1.10.4
+	github.com/lib/pq v1.10.5
 	github.com/machinebox/graphql v0.2.2
 	github.com/mattn/go-sqlite3 v1.14.12
 	github.com/mcuadros/go-version v0.0.0-20190830083331-035f6764e8d2
-	github.com/microcosm-cc/bluemonday v1.0.17
+	github.com/microcosm-cc/bluemonday v1.0.19
 	github.com/mitchellh/hashstructure v1.1.0
 	github.com/moby/buildkit v0.9.3
 	github.com/montanaflynn/stats v0.6.6
@@ -201,7 +201,6 @@ require github.com/XSAM/otelsql v0.15.0
 require (
 	github.com/dennwc/varint v1.0.0 // indirect
 	github.com/emicklei/go-restful v2.16.0+incompatible // indirect
-	github.com/go-sql-driver/mysql v1.6.0 // indirect
 	github.com/google/gnostic v0.5.7-v3refs // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.1.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
@@ -215,6 +214,7 @@ require (
 require github.com/hmarr/codeowners v0.4.0
 
 require (
+	code.gitea.io/gitea v1.17.2
 	github.com/c2h5oh/datasize v0.0.0-20220606134207-859f65c6625b
 	github.com/hashicorp/hcl v1.0.0
 	github.com/opsgenie/opsgenie-go-sdk-v2 v1.2.13
