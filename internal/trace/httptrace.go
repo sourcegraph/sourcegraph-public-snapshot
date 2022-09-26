@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -38,12 +37,6 @@ const (
 	GraphQLQueryKey
 )
 
-// trackOrigin specifies a URL value. When an incoming request has the request header "Origin" set
-// and the header value equals the `trackOrigin` value then the `requestDuration` metric (and other metrics downstream)
-// gets labeled with this value for the "origin" label  (otherwise the metric is labeled with "unknown").
-// The tracked value can be changed with the METRICS_TRACK_ORIGIN environmental variable.
-var trackOrigin = "https://gitlab.com"
-
 var (
 	metricLabels    = []string{"route", "method", "code", "origin"}
 	requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
@@ -57,12 +50,6 @@ var requestHeartbeat = promauto.NewGaugeVec(prometheus.GaugeOpts{
 	Name: "src_http_requests_last_timestamp_unixtime",
 	Help: "Last time a request finished for a http endpoint.",
 }, metricLabels)
-
-func Init() {
-	if origin := os.Getenv("METRICS_TRACK_ORIGIN"); origin != "" {
-		trackOrigin = origin
-	}
-}
 
 // GraphQLRequestName returns the GraphQL request name for a request context. For example,
 // a request to /.api/graphql?Foobar would have the name `Foobar`. If the request had no
@@ -78,21 +65,6 @@ func GraphQLRequestName(ctx context.Context) string {
 // WithGraphQLRequestName sets the GraphQL request name in the context.
 func WithGraphQLRequestName(ctx context.Context, name string) context.Context {
 	return context.WithValue(ctx, graphQLRequestNameKey, name)
-}
-
-// RequestOrigin returns the request origin (the value of the request header "Origin") for a request context.
-// If the request didn't have this header set "unknown" is returned.
-func RequestOrigin(ctx context.Context) string {
-	v := ctx.Value(originKey)
-	if v == nil {
-		return "unknown"
-	}
-	return v.(string)
-}
-
-// WithRequestOrigin sets the request origin in the context.
-func WithRequestOrigin(ctx context.Context, name string) context.Context {
-	return context.WithValue(ctx, originKey, name)
 }
 
 // SourceType indicates the type of source that likely created the request.
@@ -177,12 +149,6 @@ func HTTPMiddleware(logger log.Logger, next http.Handler, siteConfig conftypes.S
 		var requestErrorCause error
 		ctx = context.WithValue(ctx, requestErrorCauseKey, &requestErrorCause)
 
-		origin := "unknown"
-		if r.Header.Get("Origin") == trackOrigin {
-			origin = trackOrigin
-		}
-		ctx = WithRequestOrigin(ctx, origin)
-
 		// handle request
 		m := httpsnoop.CaptureMetrics(next, rw, r.WithContext(ctx))
 
@@ -210,7 +176,6 @@ func HTTPMiddleware(logger log.Logger, next http.Handler, siteConfig conftypes.S
 			"route":  routeName, // do not use full route title to reduce cardinality
 			"method": strings.ToLower(r.Method),
 			"code":   strconv.Itoa(m.Code),
-			"origin": origin,
 		}
 		requestDuration.With(labels).Observe(m.Duration.Seconds())
 		requestHeartbeat.With(labels).Set(float64(time.Now().Unix()))
