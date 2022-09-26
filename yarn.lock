@@ -7239,26 +7239,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@stripe/react-stripe-js@npm:^1.8.0-0":
-  version: 1.8.0-0
-  resolution: "@stripe/react-stripe-js@npm:1.8.0-0"
-  dependencies:
-    prop-types: ^15.7.2
-  peerDependencies:
-    "@stripe/stripe-js": ^1.26.0
-    react: ^16.8.0 || ^17.0.0 || ^18.0.0
-    react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0
-  checksum: 1b9f03d26588538e4fb000a9b723ea80be50a9b181f70937d7a54940fe3deb46f4cff6e06c7e6543f8bf944f33f707afce275ccf1c768da99b8289a02b1e0bb7
-  languageName: node
-  linkType: hard
-
-"@stripe/stripe-js@npm:^1.29.0":
-  version: 1.29.0
-  resolution: "@stripe/stripe-js@npm:1.29.0"
-  checksum: 413ae9541a3612166edcdf9cc7d62f3d3cac3f301e723b1da9aec618d0a11a31e30725f334e7498b8a42496e01a6e9254d4c5e1a748d41b7d46e038257d625c4
-  languageName: node
-  linkType: hard
-
 "@szmarczak/http-timer@npm:^1.1.2":
   version: 1.1.2
   resolution: "@szmarczak/http-timer@npm:1.1.2"
@@ -28840,8 +28820,6 @@ pvutils@latest:
     "@storybook/manager-webpack5": ^6.5.9
     "@storybook/react": ^6.5.9
     "@storybook/theming": ^6.5.9
-    "@stripe/react-stripe-js": ^1.8.0-0
-    "@stripe/stripe-js": ^1.29.0
     "@terminus-term/to-string-loader": ^1.1.7-beta.1
     "@testing-library/dom": ^8.13.0
     "@testing-library/jest-dom": ^5.16.4

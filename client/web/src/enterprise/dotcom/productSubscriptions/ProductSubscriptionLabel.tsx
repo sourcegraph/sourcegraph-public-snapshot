@@ -10,26 +10,13 @@ import { formatUserCount } from '../../../productSubscription/helpers'
  */
 export const ProductSubscriptionLabel: React.FunctionComponent<
     React.PropsWithChildren<{
-        productSubscription: {
-            invoiceItem?:
-                | ({
-                      plan: Pick<GQL.IProductPlan, 'name' | 'nameWithBrand'>
-                  } & Pick<GQL.IProductSubscriptionInvoiceItem, 'userCount'>)
-                | null
-        } & Pick<GQL.IProductSubscription, 'activeLicense'>
-
-        planField?: 'name' | 'nameWithBrand'
+        productSubscription: Pick<GQL.IProductSubscription, 'activeLicense'>
 
         className?: string
     }>
-> = ({ productSubscription, planField, className = '' }) => (
+> = ({ productSubscription, className = '' }) => (
     <span className={className}>
-        {productSubscription.invoiceItem ? (
-            <>
-                {productSubscription.invoiceItem.plan[planField || 'nameWithBrand']} (
-                {formatUserCount(productSubscription.invoiceItem.userCount)})
-            </>
-        ) : productSubscription.activeLicense?.info ? (
+        {productSubscription.activeLicense?.info ? (
             <>
                 {productSubscription.activeLicense.info.productNameWithBrand} (
                 {formatUserCount(productSubscription.activeLicense.info.userCount)})
