@@ -8,7 +8,9 @@ import type { Search, Theme } from '../search/types'
 import { dark } from './theme-snapshots/dark'
 import { light } from './theme-snapshots/light'
 
+/* Set these to connect to a different server */
 const instanceURL = 'https://sourcegraph.com/'
+const accessToken = null
 
 let isDarkTheme = false
 
@@ -53,7 +55,7 @@ function handleRequest(
                 JSON.stringify({
                     instanceURL,
                     isGlobbingEnabled: true,
-                    accessToken: null,
+                    accessToken,
                     anonymousUserId: 'test',
                     pluginVersion: '1.2.3',
                 })
