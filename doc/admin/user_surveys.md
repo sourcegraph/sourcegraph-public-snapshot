@@ -4,7 +4,8 @@ Sourcegraph periodically surveys users for feedback. The results are visible to 
 
 - How likely is it that you would recommend Sourcegraph to a friend?
 - What do you use Sourcegraph for?
-- What would make Sourcegraph better?
+- How can we make Sourcegraph better?
+- What is the most important reason for the score you gave Sourcegraph?
 
 ## Gathering survey feedback
 
