@@ -2,10 +2,10 @@ import vscode, { env } from 'vscode'
 
 import { getSourcegraphFileUrl, repoInfo } from './git-helpers'
 import { generateSourcegraphBlobLink, vsceUtms } from './initialize'
+
 /**
  * Open active file in the browser on the configured Sourcegraph instance.
  */
-
 export async function browserActions(action: string, logRedirectEvent: (uri: string) => void): Promise<void> {
     const editor = vscode.window.activeTextEditor
     if (!editor) {
