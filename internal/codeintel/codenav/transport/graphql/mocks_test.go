@@ -825,78 +825,78 @@ func (c AutoIndexingServiceQueueRepoRevFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// MockGitBlobLSIFDataResolverOLD is a mock implementation of the
-// GitBlobLSIFDataResolverOLD interface (from the package
+// MockGitBlobResolver is a mock implementation of the GitBlobResolver
+// interface (from the package
 // github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql)
 // used for unit testing.
-type MockGitBlobLSIFDataResolverOLD struct {
+type MockGitBlobResolver struct {
 	// DefinitionsFunc is an instance of a mock function object controlling
 	// the behavior of the method Definitions.
-	DefinitionsFunc *GitBlobLSIFDataResolverOLDDefinitionsFunc
+	DefinitionsFunc *GitBlobResolverDefinitionsFunc
 	// DiagnosticsFunc is an instance of a mock function object controlling
 	// the behavior of the method Diagnostics.
-	DiagnosticsFunc *GitBlobLSIFDataResolverOLDDiagnosticsFunc
+	DiagnosticsFunc *GitBlobResolverDiagnosticsFunc
 	// HoverFunc is an instance of a mock function object controlling the
 	// behavior of the method Hover.
-	HoverFunc *GitBlobLSIFDataResolverOLDHoverFunc
+	HoverFunc *GitBlobResolverHoverFunc
 	// ImplementationsFunc is an instance of a mock function object
 	// controlling the behavior of the method Implementations.
-	ImplementationsFunc *GitBlobLSIFDataResolverOLDImplementationsFunc
+	ImplementationsFunc *GitBlobResolverImplementationsFunc
 	// LSIFUploadsFunc is an instance of a mock function object controlling
 	// the behavior of the method LSIFUploads.
-	LSIFUploadsFunc *GitBlobLSIFDataResolverOLDLSIFUploadsFunc
+	LSIFUploadsFunc *GitBlobResolverLSIFUploadsFunc
 	// RangesFunc is an instance of a mock function object controlling the
 	// behavior of the method Ranges.
-	RangesFunc *GitBlobLSIFDataResolverOLDRangesFunc
+	RangesFunc *GitBlobResolverRangesFunc
 	// ReferencesFunc is an instance of a mock function object controlling
 	// the behavior of the method References.
-	ReferencesFunc *GitBlobLSIFDataResolverOLDReferencesFunc
+	ReferencesFunc *GitBlobResolverReferencesFunc
 	// StencilFunc is an instance of a mock function object controlling the
 	// behavior of the method Stencil.
-	StencilFunc *GitBlobLSIFDataResolverOLDStencilFunc
+	StencilFunc *GitBlobResolverStencilFunc
 }
 
-// NewMockGitBlobLSIFDataResolverOLD creates a new mock of the
-// GitBlobLSIFDataResolverOLD interface. All methods return zero values for
-// all results, unless overwritten.
-func NewMockGitBlobLSIFDataResolverOLD() *MockGitBlobLSIFDataResolverOLD {
-	return &MockGitBlobLSIFDataResolverOLD{
-		DefinitionsFunc: &GitBlobLSIFDataResolverOLDDefinitionsFunc{
+// NewMockGitBlobResolver creates a new mock of the GitBlobResolver
+// interface. All methods return zero values for all results, unless
+// overwritten.
+func NewMockGitBlobResolver() *MockGitBlobResolver {
+	return &MockGitBlobResolver{
+		DefinitionsFunc: &GitBlobResolverDefinitionsFunc{
 			defaultHook: func(context.Context, int, int) (r0 []types.UploadLocation, r1 error) {
 				return
 			},
 		},
-		DiagnosticsFunc: &GitBlobLSIFDataResolverOLDDiagnosticsFunc{
+		DiagnosticsFunc: &GitBlobResolverDiagnosticsFunc{
 			defaultHook: func(context.Context, int) (r0 []shared.DiagnosticAtUpload, r1 int, r2 error) {
 				return
 			},
 		},
-		HoverFunc: &GitBlobLSIFDataResolverOLDHoverFunc{
+		HoverFunc: &GitBlobResolverHoverFunc{
 			defaultHook: func(context.Context, int, int) (r0 string, r1 types.Range, r2 bool, r3 error) {
 				return
 			},
 		},
-		ImplementationsFunc: &GitBlobLSIFDataResolverOLDImplementationsFunc{
+		ImplementationsFunc: &GitBlobResolverImplementationsFunc{
 			defaultHook: func(context.Context, int, int, int, string) (r0 []types.UploadLocation, r1 string, r2 error) {
 				return
 			},
 		},
-		LSIFUploadsFunc: &GitBlobLSIFDataResolverOLDLSIFUploadsFunc{
+		LSIFUploadsFunc: &GitBlobResolverLSIFUploadsFunc{
 			defaultHook: func(context.Context) (r0 []types.Dump, r1 error) {
 				return
 			},
 		},
-		RangesFunc: &GitBlobLSIFDataResolverOLDRangesFunc{
+		RangesFunc: &GitBlobResolverRangesFunc{
 			defaultHook: func(context.Context, int, int) (r0 []shared.AdjustedCodeIntelligenceRange, r1 error) {
 				return
 			},
 		},
-		ReferencesFunc: &GitBlobLSIFDataResolverOLDReferencesFunc{
+		ReferencesFunc: &GitBlobResolverReferencesFunc{
 			defaultHook: func(context.Context, int, int, int, string) (r0 []types.UploadLocation, r1 string, r2 error) {
 				return
 			},
 		},
-		StencilFunc: &GitBlobLSIFDataResolverOLDStencilFunc{
+		StencilFunc: &GitBlobResolverStencilFunc{
 			defaultHook: func(context.Context) (r0 []types.Range, r1 error) {
 				return
 			},
@@ -904,117 +904,114 @@ func NewMockGitBlobLSIFDataResolverOLD() *MockGitBlobLSIFDataResolverOLD {
 	}
 }
 
-// NewStrictMockGitBlobLSIFDataResolverOLD creates a new mock of the
-// GitBlobLSIFDataResolverOLD interface. All methods panic on invocation,
-// unless overwritten.
-func NewStrictMockGitBlobLSIFDataResolverOLD() *MockGitBlobLSIFDataResolverOLD {
-	return &MockGitBlobLSIFDataResolverOLD{
-		DefinitionsFunc: &GitBlobLSIFDataResolverOLDDefinitionsFunc{
+// NewStrictMockGitBlobResolver creates a new mock of the GitBlobResolver
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockGitBlobResolver() *MockGitBlobResolver {
+	return &MockGitBlobResolver{
+		DefinitionsFunc: &GitBlobResolverDefinitionsFunc{
 			defaultHook: func(context.Context, int, int) ([]types.UploadLocation, error) {
-				panic("unexpected invocation of MockGitBlobLSIFDataResolverOLD.Definitions")
+				panic("unexpected invocation of MockGitBlobResolver.Definitions")
 			},
 		},
-		DiagnosticsFunc: &GitBlobLSIFDataResolverOLDDiagnosticsFunc{
+		DiagnosticsFunc: &GitBlobResolverDiagnosticsFunc{
 			defaultHook: func(context.Context, int) ([]shared.DiagnosticAtUpload, int, error) {
-				panic("unexpected invocation of MockGitBlobLSIFDataResolverOLD.Diagnostics")
+				panic("unexpected invocation of MockGitBlobResolver.Diagnostics")
 			},
 		},
-		HoverFunc: &GitBlobLSIFDataResolverOLDHoverFunc{
+		HoverFunc: &GitBlobResolverHoverFunc{
 			defaultHook: func(context.Context, int, int) (string, types.Range, bool, error) {
-				panic("unexpected invocation of MockGitBlobLSIFDataResolverOLD.Hover")
+				panic("unexpected invocation of MockGitBlobResolver.Hover")
 			},
 		},
-		ImplementationsFunc: &GitBlobLSIFDataResolverOLDImplementationsFunc{
+		ImplementationsFunc: &GitBlobResolverImplementationsFunc{
 			defaultHook: func(context.Context, int, int, int, string) ([]types.UploadLocation, string, error) {
-				panic("unexpected invocation of MockGitBlobLSIFDataResolverOLD.Implementations")
+				panic("unexpected invocation of MockGitBlobResolver.Implementations")
 			},
 		},
-		LSIFUploadsFunc: &GitBlobLSIFDataResolverOLDLSIFUploadsFunc{
+		LSIFUploadsFunc: &GitBlobResolverLSIFUploadsFunc{
 			defaultHook: func(context.Context) ([]types.Dump, error) {
-				panic("unexpected invocation of MockGitBlobLSIFDataResolverOLD.LSIFUploads")
+				panic("unexpected invocation of MockGitBlobResolver.LSIFUploads")
 			},
 		},
-		RangesFunc: &GitBlobLSIFDataResolverOLDRangesFunc{
+		RangesFunc: &GitBlobResolverRangesFunc{
 			defaultHook: func(context.Context, int, int) ([]shared.AdjustedCodeIntelligenceRange, error) {
-				panic("unexpected invocation of MockGitBlobLSIFDataResolverOLD.Ranges")
+				panic("unexpected invocation of MockGitBlobResolver.Ranges")
 			},
 		},
-		ReferencesFunc: &GitBlobLSIFDataResolverOLDReferencesFunc{
+		ReferencesFunc: &GitBlobResolverReferencesFunc{
 			defaultHook: func(context.Context, int, int, int, string) ([]types.UploadLocation, string, error) {
-				panic("unexpected invocation of MockGitBlobLSIFDataResolverOLD.References")
+				panic("unexpected invocation of MockGitBlobResolver.References")
 			},
 		},
-		StencilFunc: &GitBlobLSIFDataResolverOLDStencilFunc{
+		StencilFunc: &GitBlobResolverStencilFunc{
 			defaultHook: func(context.Context) ([]types.Range, error) {
-				panic("unexpected invocation of MockGitBlobLSIFDataResolverOLD.Stencil")
+				panic("unexpected invocation of MockGitBlobResolver.Stencil")
 			},
 		},
 	}
 }
 
-// NewMockGitBlobLSIFDataResolverOLDFrom creates a new mock of the
-// MockGitBlobLSIFDataResolverOLD interface. All methods delegate to the
-// given implementation, unless overwritten.
-func NewMockGitBlobLSIFDataResolverOLDFrom(i GitBlobResolver) *MockGitBlobLSIFDataResolverOLD {
-	return &MockGitBlobLSIFDataResolverOLD{
-		DefinitionsFunc: &GitBlobLSIFDataResolverOLDDefinitionsFunc{
+// NewMockGitBlobResolverFrom creates a new mock of the MockGitBlobResolver
+// interface. All methods delegate to the given implementation, unless
+// overwritten.
+func NewMockGitBlobResolverFrom(i GitBlobResolver) *MockGitBlobResolver {
+	return &MockGitBlobResolver{
+		DefinitionsFunc: &GitBlobResolverDefinitionsFunc{
 			defaultHook: i.Definitions,
 		},
-		DiagnosticsFunc: &GitBlobLSIFDataResolverOLDDiagnosticsFunc{
+		DiagnosticsFunc: &GitBlobResolverDiagnosticsFunc{
 			defaultHook: i.Diagnostics,
 		},
-		HoverFunc: &GitBlobLSIFDataResolverOLDHoverFunc{
+		HoverFunc: &GitBlobResolverHoverFunc{
 			defaultHook: i.Hover,
 		},
-		ImplementationsFunc: &GitBlobLSIFDataResolverOLDImplementationsFunc{
+		ImplementationsFunc: &GitBlobResolverImplementationsFunc{
 			defaultHook: i.Implementations,
 		},
-		LSIFUploadsFunc: &GitBlobLSIFDataResolverOLDLSIFUploadsFunc{
+		LSIFUploadsFunc: &GitBlobResolverLSIFUploadsFunc{
 			defaultHook: i.LSIFUploads,
 		},
-		RangesFunc: &GitBlobLSIFDataResolverOLDRangesFunc{
+		RangesFunc: &GitBlobResolverRangesFunc{
 			defaultHook: i.Ranges,
 		},
-		ReferencesFunc: &GitBlobLSIFDataResolverOLDReferencesFunc{
+		ReferencesFunc: &GitBlobResolverReferencesFunc{
 			defaultHook: i.References,
 		},
-		StencilFunc: &GitBlobLSIFDataResolverOLDStencilFunc{
+		StencilFunc: &GitBlobResolverStencilFunc{
 			defaultHook: i.Stencil,
 		},
 	}
 }
 
-// GitBlobLSIFDataResolverOLDDefinitionsFunc describes the behavior when the
-// Definitions method of the parent MockGitBlobLSIFDataResolverOLD instance
-// is invoked.
-type GitBlobLSIFDataResolverOLDDefinitionsFunc struct {
+// GitBlobResolverDefinitionsFunc describes the behavior when the
+// Definitions method of the parent MockGitBlobResolver instance is invoked.
+type GitBlobResolverDefinitionsFunc struct {
 	defaultHook func(context.Context, int, int) ([]types.UploadLocation, error)
 	hooks       []func(context.Context, int, int) ([]types.UploadLocation, error)
-	history     []GitBlobLSIFDataResolverOLDDefinitionsFuncCall
+	history     []GitBlobResolverDefinitionsFuncCall
 	mutex       sync.Mutex
 }
 
 // Definitions delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockGitBlobLSIFDataResolverOLD) Definitions(v0 context.Context, v1 int, v2 int) ([]types.UploadLocation, error) {
+func (m *MockGitBlobResolver) Definitions(v0 context.Context, v1 int, v2 int) ([]types.UploadLocation, error) {
 	r0, r1 := m.DefinitionsFunc.nextHook()(v0, v1, v2)
-	m.DefinitionsFunc.appendCall(GitBlobLSIFDataResolverOLDDefinitionsFuncCall{v0, v1, v2, r0, r1})
+	m.DefinitionsFunc.appendCall(GitBlobResolverDefinitionsFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Definitions method
-// of the parent MockGitBlobLSIFDataResolverOLD instance is invoked and the
-// hook queue is empty.
-func (f *GitBlobLSIFDataResolverOLDDefinitionsFunc) SetDefaultHook(hook func(context.Context, int, int) ([]types.UploadLocation, error)) {
+// of the parent MockGitBlobResolver instance is invoked and the hook queue
+// is empty.
+func (f *GitBlobResolverDefinitionsFunc) SetDefaultHook(hook func(context.Context, int, int) ([]types.UploadLocation, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Definitions method of the parent MockGitBlobLSIFDataResolverOLD instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *GitBlobLSIFDataResolverOLDDefinitionsFunc) PushHook(hook func(context.Context, int, int) ([]types.UploadLocation, error)) {
+// Definitions method of the parent MockGitBlobResolver instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *GitBlobResolverDefinitionsFunc) PushHook(hook func(context.Context, int, int) ([]types.UploadLocation, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1022,20 +1019,20 @@ func (f *GitBlobLSIFDataResolverOLDDefinitionsFunc) PushHook(hook func(context.C
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitBlobLSIFDataResolverOLDDefinitionsFunc) SetDefaultReturn(r0 []types.UploadLocation, r1 error) {
+func (f *GitBlobResolverDefinitionsFunc) SetDefaultReturn(r0 []types.UploadLocation, r1 error) {
 	f.SetDefaultHook(func(context.Context, int, int) ([]types.UploadLocation, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitBlobLSIFDataResolverOLDDefinitionsFunc) PushReturn(r0 []types.UploadLocation, r1 error) {
+func (f *GitBlobResolverDefinitionsFunc) PushReturn(r0 []types.UploadLocation, r1 error) {
 	f.PushHook(func(context.Context, int, int) ([]types.UploadLocation, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitBlobLSIFDataResolverOLDDefinitionsFunc) nextHook() func(context.Context, int, int) ([]types.UploadLocation, error) {
+func (f *GitBlobResolverDefinitionsFunc) nextHook() func(context.Context, int, int) ([]types.UploadLocation, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1048,28 +1045,26 @@ func (f *GitBlobLSIFDataResolverOLDDefinitionsFunc) nextHook() func(context.Cont
 	return hook
 }
 
-func (f *GitBlobLSIFDataResolverOLDDefinitionsFunc) appendCall(r0 GitBlobLSIFDataResolverOLDDefinitionsFuncCall) {
+func (f *GitBlobResolverDefinitionsFunc) appendCall(r0 GitBlobResolverDefinitionsFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of
-// GitBlobLSIFDataResolverOLDDefinitionsFuncCall objects describing the
-// invocations of this function.
-func (f *GitBlobLSIFDataResolverOLDDefinitionsFunc) History() []GitBlobLSIFDataResolverOLDDefinitionsFuncCall {
+// History returns a sequence of GitBlobResolverDefinitionsFuncCall objects
+// describing the invocations of this function.
+func (f *GitBlobResolverDefinitionsFunc) History() []GitBlobResolverDefinitionsFuncCall {
 	f.mutex.Lock()
-	history := make([]GitBlobLSIFDataResolverOLDDefinitionsFuncCall, len(f.history))
+	history := make([]GitBlobResolverDefinitionsFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// GitBlobLSIFDataResolverOLDDefinitionsFuncCall is an object that describes
-// an invocation of method Definitions on an instance of
-// MockGitBlobLSIFDataResolverOLD.
-type GitBlobLSIFDataResolverOLDDefinitionsFuncCall struct {
+// GitBlobResolverDefinitionsFuncCall is an object that describes an
+// invocation of method Definitions on an instance of MockGitBlobResolver.
+type GitBlobResolverDefinitionsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -1089,47 +1084,45 @@ type GitBlobLSIFDataResolverOLDDefinitionsFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c GitBlobLSIFDataResolverOLDDefinitionsFuncCall) Args() []interface{} {
+func (c GitBlobResolverDefinitionsFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c GitBlobLSIFDataResolverOLDDefinitionsFuncCall) Results() []interface{} {
+func (c GitBlobResolverDefinitionsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// GitBlobLSIFDataResolverOLDDiagnosticsFunc describes the behavior when the
-// Diagnostics method of the parent MockGitBlobLSIFDataResolverOLD instance
-// is invoked.
-type GitBlobLSIFDataResolverOLDDiagnosticsFunc struct {
+// GitBlobResolverDiagnosticsFunc describes the behavior when the
+// Diagnostics method of the parent MockGitBlobResolver instance is invoked.
+type GitBlobResolverDiagnosticsFunc struct {
 	defaultHook func(context.Context, int) ([]shared.DiagnosticAtUpload, int, error)
 	hooks       []func(context.Context, int) ([]shared.DiagnosticAtUpload, int, error)
-	history     []GitBlobLSIFDataResolverOLDDiagnosticsFuncCall
+	history     []GitBlobResolverDiagnosticsFuncCall
 	mutex       sync.Mutex
 }
 
 // Diagnostics delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockGitBlobLSIFDataResolverOLD) Diagnostics(v0 context.Context, v1 int) ([]shared.DiagnosticAtUpload, int, error) {
+func (m *MockGitBlobResolver) Diagnostics(v0 context.Context, v1 int) ([]shared.DiagnosticAtUpload, int, error) {
 	r0, r1, r2 := m.DiagnosticsFunc.nextHook()(v0, v1)
-	m.DiagnosticsFunc.appendCall(GitBlobLSIFDataResolverOLDDiagnosticsFuncCall{v0, v1, r0, r1, r2})
+	m.DiagnosticsFunc.appendCall(GitBlobResolverDiagnosticsFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the Diagnostics method
-// of the parent MockGitBlobLSIFDataResolverOLD instance is invoked and the
-// hook queue is empty.
-func (f *GitBlobLSIFDataResolverOLDDiagnosticsFunc) SetDefaultHook(hook func(context.Context, int) ([]shared.DiagnosticAtUpload, int, error)) {
+// of the parent MockGitBlobResolver instance is invoked and the hook queue
+// is empty.
+func (f *GitBlobResolverDiagnosticsFunc) SetDefaultHook(hook func(context.Context, int) ([]shared.DiagnosticAtUpload, int, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Diagnostics method of the parent MockGitBlobLSIFDataResolverOLD instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *GitBlobLSIFDataResolverOLDDiagnosticsFunc) PushHook(hook func(context.Context, int) ([]shared.DiagnosticAtUpload, int, error)) {
+// Diagnostics method of the parent MockGitBlobResolver instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *GitBlobResolverDiagnosticsFunc) PushHook(hook func(context.Context, int) ([]shared.DiagnosticAtUpload, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1137,20 +1130,20 @@ func (f *GitBlobLSIFDataResolverOLDDiagnosticsFunc) PushHook(hook func(context.C
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitBlobLSIFDataResolverOLDDiagnosticsFunc) SetDefaultReturn(r0 []shared.DiagnosticAtUpload, r1 int, r2 error) {
+func (f *GitBlobResolverDiagnosticsFunc) SetDefaultReturn(r0 []shared.DiagnosticAtUpload, r1 int, r2 error) {
 	f.SetDefaultHook(func(context.Context, int) ([]shared.DiagnosticAtUpload, int, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitBlobLSIFDataResolverOLDDiagnosticsFunc) PushReturn(r0 []shared.DiagnosticAtUpload, r1 int, r2 error) {
+func (f *GitBlobResolverDiagnosticsFunc) PushReturn(r0 []shared.DiagnosticAtUpload, r1 int, r2 error) {
 	f.PushHook(func(context.Context, int) ([]shared.DiagnosticAtUpload, int, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *GitBlobLSIFDataResolverOLDDiagnosticsFunc) nextHook() func(context.Context, int) ([]shared.DiagnosticAtUpload, int, error) {
+func (f *GitBlobResolverDiagnosticsFunc) nextHook() func(context.Context, int) ([]shared.DiagnosticAtUpload, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1163,28 +1156,26 @@ func (f *GitBlobLSIFDataResolverOLDDiagnosticsFunc) nextHook() func(context.Cont
 	return hook
 }
 
-func (f *GitBlobLSIFDataResolverOLDDiagnosticsFunc) appendCall(r0 GitBlobLSIFDataResolverOLDDiagnosticsFuncCall) {
+func (f *GitBlobResolverDiagnosticsFunc) appendCall(r0 GitBlobResolverDiagnosticsFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of
-// GitBlobLSIFDataResolverOLDDiagnosticsFuncCall objects describing the
-// invocations of this function.
-func (f *GitBlobLSIFDataResolverOLDDiagnosticsFunc) History() []GitBlobLSIFDataResolverOLDDiagnosticsFuncCall {
+// History returns a sequence of GitBlobResolverDiagnosticsFuncCall objects
+// describing the invocations of this function.
+func (f *GitBlobResolverDiagnosticsFunc) History() []GitBlobResolverDiagnosticsFuncCall {
 	f.mutex.Lock()
-	history := make([]GitBlobLSIFDataResolverOLDDiagnosticsFuncCall, len(f.history))
+	history := make([]GitBlobResolverDiagnosticsFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// GitBlobLSIFDataResolverOLDDiagnosticsFuncCall is an object that describes
-// an invocation of method Diagnostics on an instance of
-// MockGitBlobLSIFDataResolverOLD.
-type GitBlobLSIFDataResolverOLDDiagnosticsFuncCall struct {
+// GitBlobResolverDiagnosticsFuncCall is an object that describes an
+// invocation of method Diagnostics on an instance of MockGitBlobResolver.
+type GitBlobResolverDiagnosticsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -1204,46 +1195,45 @@ type GitBlobLSIFDataResolverOLDDiagnosticsFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c GitBlobLSIFDataResolverOLDDiagnosticsFuncCall) Args() []interface{} {
+func (c GitBlobResolverDiagnosticsFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c GitBlobLSIFDataResolverOLDDiagnosticsFuncCall) Results() []interface{} {
+func (c GitBlobResolverDiagnosticsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
-// GitBlobLSIFDataResolverOLDHoverFunc describes the behavior when the Hover
-// method of the parent MockGitBlobLSIFDataResolverOLD instance is invoked.
-type GitBlobLSIFDataResolverOLDHoverFunc struct {
+// GitBlobResolverHoverFunc describes the behavior when the Hover method of
+// the parent MockGitBlobResolver instance is invoked.
+type GitBlobResolverHoverFunc struct {
 	defaultHook func(context.Context, int, int) (string, types.Range, bool, error)
 	hooks       []func(context.Context, int, int) (string, types.Range, bool, error)
-	history     []GitBlobLSIFDataResolverOLDHoverFuncCall
+	history     []GitBlobResolverHoverFuncCall
 	mutex       sync.Mutex
 }
 
 // Hover delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockGitBlobLSIFDataResolverOLD) Hover(v0 context.Context, v1 int, v2 int) (string, types.Range, bool, error) {
+func (m *MockGitBlobResolver) Hover(v0 context.Context, v1 int, v2 int) (string, types.Range, bool, error) {
 	r0, r1, r2, r3 := m.HoverFunc.nextHook()(v0, v1, v2)
-	m.HoverFunc.appendCall(GitBlobLSIFDataResolverOLDHoverFuncCall{v0, v1, v2, r0, r1, r2, r3})
+	m.HoverFunc.appendCall(GitBlobResolverHoverFuncCall{v0, v1, v2, r0, r1, r2, r3})
 	return r0, r1, r2, r3
 }
 
 // SetDefaultHook sets function that is called when the Hover method of the
-// parent MockGitBlobLSIFDataResolverOLD instance is invoked and the hook
-// queue is empty.
-func (f *GitBlobLSIFDataResolverOLDHoverFunc) SetDefaultHook(hook func(context.Context, int, int) (string, types.Range, bool, error)) {
+// parent MockGitBlobResolver instance is invoked and the hook queue is
+// empty.
+func (f *GitBlobResolverHoverFunc) SetDefaultHook(hook func(context.Context, int, int) (string, types.Range, bool, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Hover method of the parent MockGitBlobLSIFDataResolverOLD instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *GitBlobLSIFDataResolverOLDHoverFunc) PushHook(hook func(context.Context, int, int) (string, types.Range, bool, error)) {
+// Hover method of the parent MockGitBlobResolver instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *GitBlobResolverHoverFunc) PushHook(hook func(context.Context, int, int) (string, types.Range, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1251,20 +1241,20 @@ func (f *GitBlobLSIFDataResolverOLDHoverFunc) PushHook(hook func(context.Context
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitBlobLSIFDataResolverOLDHoverFunc) SetDefaultReturn(r0 string, r1 types.Range, r2 bool, r3 error) {
+func (f *GitBlobResolverHoverFunc) SetDefaultReturn(r0 string, r1 types.Range, r2 bool, r3 error) {
 	f.SetDefaultHook(func(context.Context, int, int) (string, types.Range, bool, error) {
 		return r0, r1, r2, r3
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitBlobLSIFDataResolverOLDHoverFunc) PushReturn(r0 string, r1 types.Range, r2 bool, r3 error) {
+func (f *GitBlobResolverHoverFunc) PushReturn(r0 string, r1 types.Range, r2 bool, r3 error) {
 	f.PushHook(func(context.Context, int, int) (string, types.Range, bool, error) {
 		return r0, r1, r2, r3
 	})
 }
 
-func (f *GitBlobLSIFDataResolverOLDHoverFunc) nextHook() func(context.Context, int, int) (string, types.Range, bool, error) {
+func (f *GitBlobResolverHoverFunc) nextHook() func(context.Context, int, int) (string, types.Range, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1277,27 +1267,26 @@ func (f *GitBlobLSIFDataResolverOLDHoverFunc) nextHook() func(context.Context, i
 	return hook
 }
 
-func (f *GitBlobLSIFDataResolverOLDHoverFunc) appendCall(r0 GitBlobLSIFDataResolverOLDHoverFuncCall) {
+func (f *GitBlobResolverHoverFunc) appendCall(r0 GitBlobResolverHoverFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of GitBlobLSIFDataResolverOLDHoverFuncCall
-// objects describing the invocations of this function.
-func (f *GitBlobLSIFDataResolverOLDHoverFunc) History() []GitBlobLSIFDataResolverOLDHoverFuncCall {
+// History returns a sequence of GitBlobResolverHoverFuncCall objects
+// describing the invocations of this function.
+func (f *GitBlobResolverHoverFunc) History() []GitBlobResolverHoverFuncCall {
 	f.mutex.Lock()
-	history := make([]GitBlobLSIFDataResolverOLDHoverFuncCall, len(f.history))
+	history := make([]GitBlobResolverHoverFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// GitBlobLSIFDataResolverOLDHoverFuncCall is an object that describes an
-// invocation of method Hover on an instance of
-// MockGitBlobLSIFDataResolverOLD.
-type GitBlobLSIFDataResolverOLDHoverFuncCall struct {
+// GitBlobResolverHoverFuncCall is an object that describes an invocation of
+// method Hover on an instance of MockGitBlobResolver.
+type GitBlobResolverHoverFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -1323,47 +1312,46 @@ type GitBlobLSIFDataResolverOLDHoverFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c GitBlobLSIFDataResolverOLDHoverFuncCall) Args() []interface{} {
+func (c GitBlobResolverHoverFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c GitBlobLSIFDataResolverOLDHoverFuncCall) Results() []interface{} {
+func (c GitBlobResolverHoverFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
 }
 
-// GitBlobLSIFDataResolverOLDImplementationsFunc describes the behavior when
-// the Implementations method of the parent MockGitBlobLSIFDataResolverOLD
-// instance is invoked.
-type GitBlobLSIFDataResolverOLDImplementationsFunc struct {
+// GitBlobResolverImplementationsFunc describes the behavior when the
+// Implementations method of the parent MockGitBlobResolver instance is
+// invoked.
+type GitBlobResolverImplementationsFunc struct {
 	defaultHook func(context.Context, int, int, int, string) ([]types.UploadLocation, string, error)
 	hooks       []func(context.Context, int, int, int, string) ([]types.UploadLocation, string, error)
-	history     []GitBlobLSIFDataResolverOLDImplementationsFuncCall
+	history     []GitBlobResolverImplementationsFuncCall
 	mutex       sync.Mutex
 }
 
 // Implementations delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockGitBlobLSIFDataResolverOLD) Implementations(v0 context.Context, v1 int, v2 int, v3 int, v4 string) ([]types.UploadLocation, string, error) {
+func (m *MockGitBlobResolver) Implementations(v0 context.Context, v1 int, v2 int, v3 int, v4 string) ([]types.UploadLocation, string, error) {
 	r0, r1, r2 := m.ImplementationsFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.ImplementationsFunc.appendCall(GitBlobLSIFDataResolverOLDImplementationsFuncCall{v0, v1, v2, v3, v4, r0, r1, r2})
+	m.ImplementationsFunc.appendCall(GitBlobResolverImplementationsFuncCall{v0, v1, v2, v3, v4, r0, r1, r2})
 	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the Implementations
-// method of the parent MockGitBlobLSIFDataResolverOLD instance is invoked
-// and the hook queue is empty.
-func (f *GitBlobLSIFDataResolverOLDImplementationsFunc) SetDefaultHook(hook func(context.Context, int, int, int, string) ([]types.UploadLocation, string, error)) {
+// method of the parent MockGitBlobResolver instance is invoked and the hook
+// queue is empty.
+func (f *GitBlobResolverImplementationsFunc) SetDefaultHook(hook func(context.Context, int, int, int, string) ([]types.UploadLocation, string, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Implementations method of the parent MockGitBlobLSIFDataResolverOLD
-// instance invokes the hook at the front of the queue and discards it.
-// After the queue is empty, the default hook function is invoked for any
-// future action.
-func (f *GitBlobLSIFDataResolverOLDImplementationsFunc) PushHook(hook func(context.Context, int, int, int, string) ([]types.UploadLocation, string, error)) {
+// Implementations method of the parent MockGitBlobResolver instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *GitBlobResolverImplementationsFunc) PushHook(hook func(context.Context, int, int, int, string) ([]types.UploadLocation, string, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1371,20 +1359,20 @@ func (f *GitBlobLSIFDataResolverOLDImplementationsFunc) PushHook(hook func(conte
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitBlobLSIFDataResolverOLDImplementationsFunc) SetDefaultReturn(r0 []types.UploadLocation, r1 string, r2 error) {
+func (f *GitBlobResolverImplementationsFunc) SetDefaultReturn(r0 []types.UploadLocation, r1 string, r2 error) {
 	f.SetDefaultHook(func(context.Context, int, int, int, string) ([]types.UploadLocation, string, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitBlobLSIFDataResolverOLDImplementationsFunc) PushReturn(r0 []types.UploadLocation, r1 string, r2 error) {
+func (f *GitBlobResolverImplementationsFunc) PushReturn(r0 []types.UploadLocation, r1 string, r2 error) {
 	f.PushHook(func(context.Context, int, int, int, string) ([]types.UploadLocation, string, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *GitBlobLSIFDataResolverOLDImplementationsFunc) nextHook() func(context.Context, int, int, int, string) ([]types.UploadLocation, string, error) {
+func (f *GitBlobResolverImplementationsFunc) nextHook() func(context.Context, int, int, int, string) ([]types.UploadLocation, string, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1397,28 +1385,27 @@ func (f *GitBlobLSIFDataResolverOLDImplementationsFunc) nextHook() func(context.
 	return hook
 }
 
-func (f *GitBlobLSIFDataResolverOLDImplementationsFunc) appendCall(r0 GitBlobLSIFDataResolverOLDImplementationsFuncCall) {
+func (f *GitBlobResolverImplementationsFunc) appendCall(r0 GitBlobResolverImplementationsFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of
-// GitBlobLSIFDataResolverOLDImplementationsFuncCall objects describing the
-// invocations of this function.
-func (f *GitBlobLSIFDataResolverOLDImplementationsFunc) History() []GitBlobLSIFDataResolverOLDImplementationsFuncCall {
+// History returns a sequence of GitBlobResolverImplementationsFuncCall
+// objects describing the invocations of this function.
+func (f *GitBlobResolverImplementationsFunc) History() []GitBlobResolverImplementationsFuncCall {
 	f.mutex.Lock()
-	history := make([]GitBlobLSIFDataResolverOLDImplementationsFuncCall, len(f.history))
+	history := make([]GitBlobResolverImplementationsFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// GitBlobLSIFDataResolverOLDImplementationsFuncCall is an object that
-// describes an invocation of method Implementations on an instance of
-// MockGitBlobLSIFDataResolverOLD.
-type GitBlobLSIFDataResolverOLDImplementationsFuncCall struct {
+// GitBlobResolverImplementationsFuncCall is an object that describes an
+// invocation of method Implementations on an instance of
+// MockGitBlobResolver.
+type GitBlobResolverImplementationsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -1447,47 +1434,45 @@ type GitBlobLSIFDataResolverOLDImplementationsFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c GitBlobLSIFDataResolverOLDImplementationsFuncCall) Args() []interface{} {
+func (c GitBlobResolverImplementationsFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c GitBlobLSIFDataResolverOLDImplementationsFuncCall) Results() []interface{} {
+func (c GitBlobResolverImplementationsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
-// GitBlobLSIFDataResolverOLDLSIFUploadsFunc describes the behavior when the
-// LSIFUploads method of the parent MockGitBlobLSIFDataResolverOLD instance
-// is invoked.
-type GitBlobLSIFDataResolverOLDLSIFUploadsFunc struct {
+// GitBlobResolverLSIFUploadsFunc describes the behavior when the
+// LSIFUploads method of the parent MockGitBlobResolver instance is invoked.
+type GitBlobResolverLSIFUploadsFunc struct {
 	defaultHook func(context.Context) ([]types.Dump, error)
 	hooks       []func(context.Context) ([]types.Dump, error)
-	history     []GitBlobLSIFDataResolverOLDLSIFUploadsFuncCall
+	history     []GitBlobResolverLSIFUploadsFuncCall
 	mutex       sync.Mutex
 }
 
 // LSIFUploads delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockGitBlobLSIFDataResolverOLD) LSIFUploads(v0 context.Context) ([]types.Dump, error) {
+func (m *MockGitBlobResolver) LSIFUploads(v0 context.Context) ([]types.Dump, error) {
 	r0, r1 := m.LSIFUploadsFunc.nextHook()(v0)
-	m.LSIFUploadsFunc.appendCall(GitBlobLSIFDataResolverOLDLSIFUploadsFuncCall{v0, r0, r1})
+	m.LSIFUploadsFunc.appendCall(GitBlobResolverLSIFUploadsFuncCall{v0, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the LSIFUploads method
-// of the parent MockGitBlobLSIFDataResolverOLD instance is invoked and the
-// hook queue is empty.
-func (f *GitBlobLSIFDataResolverOLDLSIFUploadsFunc) SetDefaultHook(hook func(context.Context) ([]types.Dump, error)) {
+// of the parent MockGitBlobResolver instance is invoked and the hook queue
+// is empty.
+func (f *GitBlobResolverLSIFUploadsFunc) SetDefaultHook(hook func(context.Context) ([]types.Dump, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// LSIFUploads method of the parent MockGitBlobLSIFDataResolverOLD instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *GitBlobLSIFDataResolverOLDLSIFUploadsFunc) PushHook(hook func(context.Context) ([]types.Dump, error)) {
+// LSIFUploads method of the parent MockGitBlobResolver instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *GitBlobResolverLSIFUploadsFunc) PushHook(hook func(context.Context) ([]types.Dump, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1495,20 +1480,20 @@ func (f *GitBlobLSIFDataResolverOLDLSIFUploadsFunc) PushHook(hook func(context.C
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitBlobLSIFDataResolverOLDLSIFUploadsFunc) SetDefaultReturn(r0 []types.Dump, r1 error) {
+func (f *GitBlobResolverLSIFUploadsFunc) SetDefaultReturn(r0 []types.Dump, r1 error) {
 	f.SetDefaultHook(func(context.Context) ([]types.Dump, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitBlobLSIFDataResolverOLDLSIFUploadsFunc) PushReturn(r0 []types.Dump, r1 error) {
+func (f *GitBlobResolverLSIFUploadsFunc) PushReturn(r0 []types.Dump, r1 error) {
 	f.PushHook(func(context.Context) ([]types.Dump, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitBlobLSIFDataResolverOLDLSIFUploadsFunc) nextHook() func(context.Context) ([]types.Dump, error) {
+func (f *GitBlobResolverLSIFUploadsFunc) nextHook() func(context.Context) ([]types.Dump, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1521,28 +1506,26 @@ func (f *GitBlobLSIFDataResolverOLDLSIFUploadsFunc) nextHook() func(context.Cont
 	return hook
 }
 
-func (f *GitBlobLSIFDataResolverOLDLSIFUploadsFunc) appendCall(r0 GitBlobLSIFDataResolverOLDLSIFUploadsFuncCall) {
+func (f *GitBlobResolverLSIFUploadsFunc) appendCall(r0 GitBlobResolverLSIFUploadsFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of
-// GitBlobLSIFDataResolverOLDLSIFUploadsFuncCall objects describing the
-// invocations of this function.
-func (f *GitBlobLSIFDataResolverOLDLSIFUploadsFunc) History() []GitBlobLSIFDataResolverOLDLSIFUploadsFuncCall {
+// History returns a sequence of GitBlobResolverLSIFUploadsFuncCall objects
+// describing the invocations of this function.
+func (f *GitBlobResolverLSIFUploadsFunc) History() []GitBlobResolverLSIFUploadsFuncCall {
 	f.mutex.Lock()
-	history := make([]GitBlobLSIFDataResolverOLDLSIFUploadsFuncCall, len(f.history))
+	history := make([]GitBlobResolverLSIFUploadsFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// GitBlobLSIFDataResolverOLDLSIFUploadsFuncCall is an object that describes
-// an invocation of method LSIFUploads on an instance of
-// MockGitBlobLSIFDataResolverOLD.
-type GitBlobLSIFDataResolverOLDLSIFUploadsFuncCall struct {
+// GitBlobResolverLSIFUploadsFuncCall is an object that describes an
+// invocation of method LSIFUploads on an instance of MockGitBlobResolver.
+type GitBlobResolverLSIFUploadsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -1556,47 +1539,45 @@ type GitBlobLSIFDataResolverOLDLSIFUploadsFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c GitBlobLSIFDataResolverOLDLSIFUploadsFuncCall) Args() []interface{} {
+func (c GitBlobResolverLSIFUploadsFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c GitBlobLSIFDataResolverOLDLSIFUploadsFuncCall) Results() []interface{} {
+func (c GitBlobResolverLSIFUploadsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// GitBlobLSIFDataResolverOLDRangesFunc describes the behavior when the
-// Ranges method of the parent MockGitBlobLSIFDataResolverOLD instance is
-// invoked.
-type GitBlobLSIFDataResolverOLDRangesFunc struct {
+// GitBlobResolverRangesFunc describes the behavior when the Ranges method
+// of the parent MockGitBlobResolver instance is invoked.
+type GitBlobResolverRangesFunc struct {
 	defaultHook func(context.Context, int, int) ([]shared.AdjustedCodeIntelligenceRange, error)
 	hooks       []func(context.Context, int, int) ([]shared.AdjustedCodeIntelligenceRange, error)
-	history     []GitBlobLSIFDataResolverOLDRangesFuncCall
+	history     []GitBlobResolverRangesFuncCall
 	mutex       sync.Mutex
 }
 
 // Ranges delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockGitBlobLSIFDataResolverOLD) Ranges(v0 context.Context, v1 int, v2 int) ([]shared.AdjustedCodeIntelligenceRange, error) {
+func (m *MockGitBlobResolver) Ranges(v0 context.Context, v1 int, v2 int) ([]shared.AdjustedCodeIntelligenceRange, error) {
 	r0, r1 := m.RangesFunc.nextHook()(v0, v1, v2)
-	m.RangesFunc.appendCall(GitBlobLSIFDataResolverOLDRangesFuncCall{v0, v1, v2, r0, r1})
+	m.RangesFunc.appendCall(GitBlobResolverRangesFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Ranges method of the
-// parent MockGitBlobLSIFDataResolverOLD instance is invoked and the hook
-// queue is empty.
-func (f *GitBlobLSIFDataResolverOLDRangesFunc) SetDefaultHook(hook func(context.Context, int, int) ([]shared.AdjustedCodeIntelligenceRange, error)) {
+// parent MockGitBlobResolver instance is invoked and the hook queue is
+// empty.
+func (f *GitBlobResolverRangesFunc) SetDefaultHook(hook func(context.Context, int, int) ([]shared.AdjustedCodeIntelligenceRange, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Ranges method of the parent MockGitBlobLSIFDataResolverOLD instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *GitBlobLSIFDataResolverOLDRangesFunc) PushHook(hook func(context.Context, int, int) ([]shared.AdjustedCodeIntelligenceRange, error)) {
+// Ranges method of the parent MockGitBlobResolver instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *GitBlobResolverRangesFunc) PushHook(hook func(context.Context, int, int) ([]shared.AdjustedCodeIntelligenceRange, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1604,20 +1585,20 @@ func (f *GitBlobLSIFDataResolverOLDRangesFunc) PushHook(hook func(context.Contex
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitBlobLSIFDataResolverOLDRangesFunc) SetDefaultReturn(r0 []shared.AdjustedCodeIntelligenceRange, r1 error) {
+func (f *GitBlobResolverRangesFunc) SetDefaultReturn(r0 []shared.AdjustedCodeIntelligenceRange, r1 error) {
 	f.SetDefaultHook(func(context.Context, int, int) ([]shared.AdjustedCodeIntelligenceRange, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitBlobLSIFDataResolverOLDRangesFunc) PushReturn(r0 []shared.AdjustedCodeIntelligenceRange, r1 error) {
+func (f *GitBlobResolverRangesFunc) PushReturn(r0 []shared.AdjustedCodeIntelligenceRange, r1 error) {
 	f.PushHook(func(context.Context, int, int) ([]shared.AdjustedCodeIntelligenceRange, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitBlobLSIFDataResolverOLDRangesFunc) nextHook() func(context.Context, int, int) ([]shared.AdjustedCodeIntelligenceRange, error) {
+func (f *GitBlobResolverRangesFunc) nextHook() func(context.Context, int, int) ([]shared.AdjustedCodeIntelligenceRange, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1630,27 +1611,26 @@ func (f *GitBlobLSIFDataResolverOLDRangesFunc) nextHook() func(context.Context, 
 	return hook
 }
 
-func (f *GitBlobLSIFDataResolverOLDRangesFunc) appendCall(r0 GitBlobLSIFDataResolverOLDRangesFuncCall) {
+func (f *GitBlobResolverRangesFunc) appendCall(r0 GitBlobResolverRangesFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of GitBlobLSIFDataResolverOLDRangesFuncCall
-// objects describing the invocations of this function.
-func (f *GitBlobLSIFDataResolverOLDRangesFunc) History() []GitBlobLSIFDataResolverOLDRangesFuncCall {
+// History returns a sequence of GitBlobResolverRangesFuncCall objects
+// describing the invocations of this function.
+func (f *GitBlobResolverRangesFunc) History() []GitBlobResolverRangesFuncCall {
 	f.mutex.Lock()
-	history := make([]GitBlobLSIFDataResolverOLDRangesFuncCall, len(f.history))
+	history := make([]GitBlobResolverRangesFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// GitBlobLSIFDataResolverOLDRangesFuncCall is an object that describes an
-// invocation of method Ranges on an instance of
-// MockGitBlobLSIFDataResolverOLD.
-type GitBlobLSIFDataResolverOLDRangesFuncCall struct {
+// GitBlobResolverRangesFuncCall is an object that describes an invocation
+// of method Ranges on an instance of MockGitBlobResolver.
+type GitBlobResolverRangesFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -1670,47 +1650,45 @@ type GitBlobLSIFDataResolverOLDRangesFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c GitBlobLSIFDataResolverOLDRangesFuncCall) Args() []interface{} {
+func (c GitBlobResolverRangesFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c GitBlobLSIFDataResolverOLDRangesFuncCall) Results() []interface{} {
+func (c GitBlobResolverRangesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// GitBlobLSIFDataResolverOLDReferencesFunc describes the behavior when the
-// References method of the parent MockGitBlobLSIFDataResolverOLD instance
-// is invoked.
-type GitBlobLSIFDataResolverOLDReferencesFunc struct {
+// GitBlobResolverReferencesFunc describes the behavior when the References
+// method of the parent MockGitBlobResolver instance is invoked.
+type GitBlobResolverReferencesFunc struct {
 	defaultHook func(context.Context, int, int, int, string) ([]types.UploadLocation, string, error)
 	hooks       []func(context.Context, int, int, int, string) ([]types.UploadLocation, string, error)
-	history     []GitBlobLSIFDataResolverOLDReferencesFuncCall
+	history     []GitBlobResolverReferencesFuncCall
 	mutex       sync.Mutex
 }
 
 // References delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockGitBlobLSIFDataResolverOLD) References(v0 context.Context, v1 int, v2 int, v3 int, v4 string) ([]types.UploadLocation, string, error) {
+func (m *MockGitBlobResolver) References(v0 context.Context, v1 int, v2 int, v3 int, v4 string) ([]types.UploadLocation, string, error) {
 	r0, r1, r2 := m.ReferencesFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.ReferencesFunc.appendCall(GitBlobLSIFDataResolverOLDReferencesFuncCall{v0, v1, v2, v3, v4, r0, r1, r2})
+	m.ReferencesFunc.appendCall(GitBlobResolverReferencesFuncCall{v0, v1, v2, v3, v4, r0, r1, r2})
 	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the References method of
-// the parent MockGitBlobLSIFDataResolverOLD instance is invoked and the
-// hook queue is empty.
-func (f *GitBlobLSIFDataResolverOLDReferencesFunc) SetDefaultHook(hook func(context.Context, int, int, int, string) ([]types.UploadLocation, string, error)) {
+// the parent MockGitBlobResolver instance is invoked and the hook queue is
+// empty.
+func (f *GitBlobResolverReferencesFunc) SetDefaultHook(hook func(context.Context, int, int, int, string) ([]types.UploadLocation, string, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// References method of the parent MockGitBlobLSIFDataResolverOLD instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *GitBlobLSIFDataResolverOLDReferencesFunc) PushHook(hook func(context.Context, int, int, int, string) ([]types.UploadLocation, string, error)) {
+// References method of the parent MockGitBlobResolver instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *GitBlobResolverReferencesFunc) PushHook(hook func(context.Context, int, int, int, string) ([]types.UploadLocation, string, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1718,20 +1696,20 @@ func (f *GitBlobLSIFDataResolverOLDReferencesFunc) PushHook(hook func(context.Co
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitBlobLSIFDataResolverOLDReferencesFunc) SetDefaultReturn(r0 []types.UploadLocation, r1 string, r2 error) {
+func (f *GitBlobResolverReferencesFunc) SetDefaultReturn(r0 []types.UploadLocation, r1 string, r2 error) {
 	f.SetDefaultHook(func(context.Context, int, int, int, string) ([]types.UploadLocation, string, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitBlobLSIFDataResolverOLDReferencesFunc) PushReturn(r0 []types.UploadLocation, r1 string, r2 error) {
+func (f *GitBlobResolverReferencesFunc) PushReturn(r0 []types.UploadLocation, r1 string, r2 error) {
 	f.PushHook(func(context.Context, int, int, int, string) ([]types.UploadLocation, string, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *GitBlobLSIFDataResolverOLDReferencesFunc) nextHook() func(context.Context, int, int, int, string) ([]types.UploadLocation, string, error) {
+func (f *GitBlobResolverReferencesFunc) nextHook() func(context.Context, int, int, int, string) ([]types.UploadLocation, string, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1744,28 +1722,26 @@ func (f *GitBlobLSIFDataResolverOLDReferencesFunc) nextHook() func(context.Conte
 	return hook
 }
 
-func (f *GitBlobLSIFDataResolverOLDReferencesFunc) appendCall(r0 GitBlobLSIFDataResolverOLDReferencesFuncCall) {
+func (f *GitBlobResolverReferencesFunc) appendCall(r0 GitBlobResolverReferencesFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of
-// GitBlobLSIFDataResolverOLDReferencesFuncCall objects describing the
-// invocations of this function.
-func (f *GitBlobLSIFDataResolverOLDReferencesFunc) History() []GitBlobLSIFDataResolverOLDReferencesFuncCall {
+// History returns a sequence of GitBlobResolverReferencesFuncCall objects
+// describing the invocations of this function.
+func (f *GitBlobResolverReferencesFunc) History() []GitBlobResolverReferencesFuncCall {
 	f.mutex.Lock()
-	history := make([]GitBlobLSIFDataResolverOLDReferencesFuncCall, len(f.history))
+	history := make([]GitBlobResolverReferencesFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// GitBlobLSIFDataResolverOLDReferencesFuncCall is an object that describes
-// an invocation of method References on an instance of
-// MockGitBlobLSIFDataResolverOLD.
-type GitBlobLSIFDataResolverOLDReferencesFuncCall struct {
+// GitBlobResolverReferencesFuncCall is an object that describes an
+// invocation of method References on an instance of MockGitBlobResolver.
+type GitBlobResolverReferencesFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -1794,47 +1770,45 @@ type GitBlobLSIFDataResolverOLDReferencesFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c GitBlobLSIFDataResolverOLDReferencesFuncCall) Args() []interface{} {
+func (c GitBlobResolverReferencesFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c GitBlobLSIFDataResolverOLDReferencesFuncCall) Results() []interface{} {
+func (c GitBlobResolverReferencesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
-// GitBlobLSIFDataResolverOLDStencilFunc describes the behavior when the
-// Stencil method of the parent MockGitBlobLSIFDataResolverOLD instance is
-// invoked.
-type GitBlobLSIFDataResolverOLDStencilFunc struct {
+// GitBlobResolverStencilFunc describes the behavior when the Stencil method
+// of the parent MockGitBlobResolver instance is invoked.
+type GitBlobResolverStencilFunc struct {
 	defaultHook func(context.Context) ([]types.Range, error)
 	hooks       []func(context.Context) ([]types.Range, error)
-	history     []GitBlobLSIFDataResolverOLDStencilFuncCall
+	history     []GitBlobResolverStencilFuncCall
 	mutex       sync.Mutex
 }
 
 // Stencil delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockGitBlobLSIFDataResolverOLD) Stencil(v0 context.Context) ([]types.Range, error) {
+func (m *MockGitBlobResolver) Stencil(v0 context.Context) ([]types.Range, error) {
 	r0, r1 := m.StencilFunc.nextHook()(v0)
-	m.StencilFunc.appendCall(GitBlobLSIFDataResolverOLDStencilFuncCall{v0, r0, r1})
+	m.StencilFunc.appendCall(GitBlobResolverStencilFuncCall{v0, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Stencil method of
-// the parent MockGitBlobLSIFDataResolverOLD instance is invoked and the
-// hook queue is empty.
-func (f *GitBlobLSIFDataResolverOLDStencilFunc) SetDefaultHook(hook func(context.Context) ([]types.Range, error)) {
+// the parent MockGitBlobResolver instance is invoked and the hook queue is
+// empty.
+func (f *GitBlobResolverStencilFunc) SetDefaultHook(hook func(context.Context) ([]types.Range, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Stencil method of the parent MockGitBlobLSIFDataResolverOLD instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *GitBlobLSIFDataResolverOLDStencilFunc) PushHook(hook func(context.Context) ([]types.Range, error)) {
+// Stencil method of the parent MockGitBlobResolver instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *GitBlobResolverStencilFunc) PushHook(hook func(context.Context) ([]types.Range, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1842,20 +1816,20 @@ func (f *GitBlobLSIFDataResolverOLDStencilFunc) PushHook(hook func(context.Conte
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitBlobLSIFDataResolverOLDStencilFunc) SetDefaultReturn(r0 []types.Range, r1 error) {
+func (f *GitBlobResolverStencilFunc) SetDefaultReturn(r0 []types.Range, r1 error) {
 	f.SetDefaultHook(func(context.Context) ([]types.Range, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitBlobLSIFDataResolverOLDStencilFunc) PushReturn(r0 []types.Range, r1 error) {
+func (f *GitBlobResolverStencilFunc) PushReturn(r0 []types.Range, r1 error) {
 	f.PushHook(func(context.Context) ([]types.Range, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitBlobLSIFDataResolverOLDStencilFunc) nextHook() func(context.Context) ([]types.Range, error) {
+func (f *GitBlobResolverStencilFunc) nextHook() func(context.Context) ([]types.Range, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1868,27 +1842,26 @@ func (f *GitBlobLSIFDataResolverOLDStencilFunc) nextHook() func(context.Context)
 	return hook
 }
 
-func (f *GitBlobLSIFDataResolverOLDStencilFunc) appendCall(r0 GitBlobLSIFDataResolverOLDStencilFuncCall) {
+func (f *GitBlobResolverStencilFunc) appendCall(r0 GitBlobResolverStencilFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of GitBlobLSIFDataResolverOLDStencilFuncCall
-// objects describing the invocations of this function.
-func (f *GitBlobLSIFDataResolverOLDStencilFunc) History() []GitBlobLSIFDataResolverOLDStencilFuncCall {
+// History returns a sequence of GitBlobResolverStencilFuncCall objects
+// describing the invocations of this function.
+func (f *GitBlobResolverStencilFunc) History() []GitBlobResolverStencilFuncCall {
 	f.mutex.Lock()
-	history := make([]GitBlobLSIFDataResolverOLDStencilFuncCall, len(f.history))
+	history := make([]GitBlobResolverStencilFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// GitBlobLSIFDataResolverOLDStencilFuncCall is an object that describes an
-// invocation of method Stencil on an instance of
-// MockGitBlobLSIFDataResolverOLD.
-type GitBlobLSIFDataResolverOLDStencilFuncCall struct {
+// GitBlobResolverStencilFuncCall is an object that describes an invocation
+// of method Stencil on an instance of MockGitBlobResolver.
+type GitBlobResolverStencilFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -1902,13 +1875,13 @@ type GitBlobLSIFDataResolverOLDStencilFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c GitBlobLSIFDataResolverOLDStencilFuncCall) Args() []interface{} {
+func (c GitBlobResolverStencilFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c GitBlobLSIFDataResolverOLDStencilFuncCall) Results() []interface{} {
+func (c GitBlobResolverStencilFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

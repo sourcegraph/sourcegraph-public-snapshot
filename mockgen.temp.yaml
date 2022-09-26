@@ -30,7 +30,7 @@
 - filename: internal/codeintel/codenav/transport/graphql/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql
   interfaces:
-    - GitBlobLSIFDataResolverOLD
+    - GitBlobResolver
     - AutoIndexingService
     - UploadsService
     - PolicyService
