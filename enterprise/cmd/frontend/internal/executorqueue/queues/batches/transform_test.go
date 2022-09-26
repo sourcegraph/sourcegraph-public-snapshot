@@ -114,13 +114,12 @@ func TestTransformRecord(t *testing.T) {
 		}
 
 		expected := apiclient.Job{
-			ID:                      int(workspaceExecutionJob.ID),
-			RepositoryName:          "github.com/sourcegraph/sourcegraph",
-			RepositoryDirectory:     "repository",
-			WorkspaceFilesDirectory: "workspace-files",
-			Commit:                  workspace.Commit,
-			ShallowClone:            true,
-			SparseCheckout:          []string{"a/b/c/*"},
+			ID:                  int(workspaceExecutionJob.ID),
+			RepositoryName:      "github.com/sourcegraph/sourcegraph",
+			RepositoryDirectory: "repository",
+			Commit:              workspace.Commit,
+			ShallowClone:        true,
+			SparseCheckout:      []string{"a/b/c/*"},
 			VirtualMachineFiles: map[string]apiclient.VirtualMachineFile{
 				"input.json": {Content: string(marshaledInput)},
 			},
@@ -164,13 +163,12 @@ func TestTransformRecord(t *testing.T) {
 		}
 
 		expected := apiclient.Job{
-			ID:                      int(workspaceExecutionJob.ID),
-			RepositoryName:          "github.com/sourcegraph/sourcegraph",
-			RepositoryDirectory:     "repository",
-			WorkspaceFilesDirectory: "workspace-files",
-			Commit:                  workspace.Commit,
-			ShallowClone:            true,
-			SparseCheckout:          []string{"a/b/c/*"},
+			ID:                  int(workspaceExecutionJob.ID),
+			RepositoryName:      "github.com/sourcegraph/sourcegraph",
+			RepositoryDirectory: "repository",
+			Commit:              workspace.Commit,
+			ShallowClone:        true,
+			SparseCheckout:      []string{"a/b/c/*"},
 			VirtualMachineFiles: map[string]apiclient.VirtualMachineFile{
 				"input.json": {Content: string(marshaledInput)},
 			},
@@ -232,16 +230,15 @@ func TestTransformRecord(t *testing.T) {
 		}
 
 		expected := apiclient.Job{
-			ID:                      int(workspaceExecutionJob.ID),
-			RepositoryName:          "github.com/sourcegraph/sourcegraph",
-			RepositoryDirectory:     "repository",
-			WorkspaceFilesDirectory: "workspace-files",
-			Commit:                  workspace.Commit,
-			ShallowClone:            true,
-			SparseCheckout:          []string{"a/b/c/*"},
+			ID:                  int(workspaceExecutionJob.ID),
+			RepositoryName:      "github.com/sourcegraph/sourcegraph",
+			RepositoryDirectory: "repository",
+			Commit:              workspace.Commit,
+			ShallowClone:        true,
+			SparseCheckout:      []string{"a/b/c/*"},
 			VirtualMachineFiles: map[string]apiclient.VirtualMachineFile{
-				"input.json":        {Content: string(marshaledInput)},
-				"foo/bar/script.sh": {Bucket: "batch-changes", Key: "abc/xyz", CacheModifiedAt: workspaceFileModifiedAt},
+				"input.json":                        {Content: string(marshaledInput)},
+				"workspace-files/foo/bar/script.sh": {Bucket: "batch-changes", Key: "abc/xyz", ModifiedAt: workspaceFileModifiedAt},
 			},
 			CliSteps: []apiclient.CliStep{
 				{

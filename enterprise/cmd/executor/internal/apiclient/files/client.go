@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Client interacts with the files store.
@@ -47,8 +47,11 @@ func (c *Client) Exists(ctx context.Context, bucket string, key string) (exists 
 	}
 
 	if err = c.client.DoAndDrop(ctx, req); err != nil {
-		if strings.Contains(err.Error(), "404") {
-			return false, nil
+		var unexpectedStatusCodeError *apiclient.UnexpectedStatusCodeErr
+		if errors.As(err, &unexpectedStatusCodeError) {
+			if unexpectedStatusCodeError.StatusCode == http.StatusNotFound {
+				return false, nil
+			}
 		}
 		return false, err
 	}

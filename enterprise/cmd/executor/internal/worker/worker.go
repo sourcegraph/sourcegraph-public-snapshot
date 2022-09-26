@@ -18,15 +18,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/store"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-// canceledJobsPollInterval denotes the time in between calls to the API to get a
-// list of canceled jobs.
-const canceledJobsPollInterval = 1 * time.Second
 
 type Options struct {
 	// VMPrefix is a unique string used to namespace virtual machines controlled by
@@ -94,7 +91,7 @@ func NewWorker(nameSet *janitor.NameSet, options Options, observationContext *ob
 	if err != nil {
 		return nil, errors.Wrap(err, "building files store")
 	}
-	store := &storeShim{queueName: options.QueueName, queueStore: queueStore}
+	shim := &store.QueueShim{Name: options.QueueName, Store: queueStore}
 
 	if !connectToFrontend(queueStore, options) {
 		os.Exit(1)
@@ -102,7 +99,7 @@ func NewWorker(nameSet *janitor.NameSet, options Options, observationContext *ob
 
 	h := &handler{
 		nameSet:       nameSet,
-		store:         store,
+		store:         shim,
 		filesStore:    filesStore,
 		options:       options,
 		operations:    command.NewOperations(observationContext),
@@ -111,7 +108,7 @@ func NewWorker(nameSet *janitor.NameSet, options Options, observationContext *ob
 
 	ctx := context.Background()
 
-	return workerutil.NewWorker(ctx, store, h, options.WorkerOptions), nil
+	return workerutil.NewWorker(ctx, shim, h, options.WorkerOptions), nil
 }
 
 // connectToFrontend will ping the configured Sourcegraph instance until it receives a 200 response.

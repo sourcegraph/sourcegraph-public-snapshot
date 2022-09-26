@@ -86,6 +86,7 @@ Available commands in `sg.config.yaml`:
 * bext
 * caddy
 * codeintel-executor
+* codeintel-executor-firecracker
 * codeintel-worker
 * debug-env: Debug env vars
 * docsite: Docsite instance serving the docs
@@ -970,12 +971,25 @@ Flags:
 
 List and describe the default dashboards.
 
+Arguments: `<dashboard...>`
 
 Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--groups`: Show row groups
 * `--metrics`: Show metrics used in dashboards
+
+### sg monitoring metrics
+
+List metrics used in dashboards.
+
+For per-dashboard summaries, use 'sg monitoring dashboards' instead.
+
+Arguments: `<dashboard...>`
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
 
 ## sg secret
 

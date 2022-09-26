@@ -27,7 +27,7 @@ func (j *documentsIndexerJob) Config() []env.Config {
 	}
 }
 
-func (j *documentsIndexerJob) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
+func (j *documentsIndexerJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	return []goroutine.BackgroundRoutine{
 		indexer.NewIndexer(),
 	}, nil
