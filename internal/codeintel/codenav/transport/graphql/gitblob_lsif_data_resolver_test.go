@@ -10,7 +10,7 @@ import (
 )
 
 func TestRanges(t *testing.T) {
-	mockGitBlobResolver := NewMockGitBlobLSIFDataResolverOLD()
+	mockGitBlobResolver := NewMockGitBlobResolver()
 	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
@@ -42,7 +42,7 @@ func TestRanges(t *testing.T) {
 }
 
 func TestDefinitions(t *testing.T) {
-	mockGitBlobResolver := NewMockGitBlobLSIFDataResolverOLD()
+	mockGitBlobResolver := NewMockGitBlobResolver()
 	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
@@ -74,7 +74,7 @@ func TestDefinitions(t *testing.T) {
 }
 
 func TestReferences(t *testing.T) {
-	mockGitBlobResolver := NewMockGitBlobLSIFDataResolverOLD()
+	mockGitBlobResolver := NewMockGitBlobResolver()
 	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
@@ -123,7 +123,7 @@ func TestReferences(t *testing.T) {
 }
 
 func TestReferencesDefaultLimit(t *testing.T) {
-	mockGitBlobResolver := NewMockGitBlobLSIFDataResolverOLD()
+	mockGitBlobResolver := NewMockGitBlobResolver()
 	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
@@ -159,7 +159,7 @@ func TestReferencesDefaultLimit(t *testing.T) {
 }
 
 func TestReferencesDefaultIllegalLimit(t *testing.T) {
-	mockGitBlobResolver := NewMockGitBlobLSIFDataResolverOLD()
+	mockGitBlobResolver := NewMockGitBlobResolver()
 	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
@@ -189,7 +189,7 @@ func TestReferencesDefaultIllegalLimit(t *testing.T) {
 }
 
 func TestHover(t *testing.T) {
-	mockGitBlobResolver := NewMockGitBlobLSIFDataResolverOLD()
+	mockGitBlobResolver := NewMockGitBlobResolver()
 	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
@@ -221,7 +221,7 @@ func TestHover(t *testing.T) {
 }
 
 func TestDiagnostics(t *testing.T) {
-	mockGitBlobResolver := NewMockGitBlobLSIFDataResolverOLD()
+	mockGitBlobResolver := NewMockGitBlobResolver()
 	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
@@ -254,7 +254,7 @@ func TestDiagnostics(t *testing.T) {
 }
 
 func TestDiagnosticsDefaultLimit(t *testing.T) {
-	mockGitBlobResolver := NewMockGitBlobLSIFDataResolverOLD()
+	mockGitBlobResolver := NewMockGitBlobResolver()
 	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
@@ -286,7 +286,7 @@ func TestDiagnosticsDefaultLimit(t *testing.T) {
 }
 
 func TestDiagnosticsDefaultIllegalLimit(t *testing.T) {
-	mockGitBlobResolver := NewMockGitBlobLSIFDataResolverOLD()
+	mockGitBlobResolver := NewMockGitBlobResolver()
 	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()

@@ -70,11 +70,6 @@ func (r *gitBlobLSIFDataResolverQueryResolver) Stencil(ctx context.Context) (_ [
 		return nil, err
 	}
 
-	// var adjustedRanges []lsifstore.Range
-	// for _, r := range ranges {
-	// 	adjustedRanges = append(adjustedRanges, sharedRangeTolsifstoreRange(r))
-	// }
-
 	resolvers := make([]RangeResolver, 0, len(ranges))
 	for _, r := range ranges {
 		resolvers = append(resolvers, NewRangeResolver(convertRange(r)))
@@ -103,11 +98,6 @@ func (r *gitBlobLSIFDataResolverQueryResolver) Ranges(ctx context.Context, args 
 		return nil, err
 	}
 
-	// return &CodeIntelligenceRangeConnectionResolver{
-	// 	ranges:           sharedRangeToAdjustedRange(ranges),
-	// 	locationResolver: r.locationResolver,
-	// }, nil
-
 	return NewCodeIntelligenceRangeConnectionResolver(ranges, r.locationResolver), nil
 }
 
@@ -128,8 +118,6 @@ func (r *gitBlobLSIFDataResolverQueryResolver) Definitions(ctx context.Context, 
 		}
 		locations = filtered
 	}
-
-	// lct := uploadLocationToAdjustedLocations(locations)
 
 	return NewLocationConnectionResolver(locations, nil, r.locationResolver), nil
 }
@@ -163,8 +151,6 @@ func (r *gitBlobLSIFDataResolverQueryResolver) References(ctx context.Context, a
 		}
 		locations = filtered
 	}
-
-	// lct := uploadLocationToAdjustedLocations(locations)
 
 	return NewLocationConnectionResolver(locations, strPtr(cursor), r.locationResolver), nil
 }
@@ -215,8 +201,6 @@ func (r *gitBlobLSIFDataResolverQueryResolver) Implementations(ctx context.Conte
 		}
 		locations = filtered
 	}
-
-	// lct := uploadLocationToAdjustedLocations(locations)
 
 	return NewLocationConnectionResolver(locations, strPtr(cursor), r.locationResolver), nil
 }
