@@ -66,6 +66,11 @@ public class BrowserAndLoadingPanel extends JLayeredPane {
                     emptyText.appendLine(lines[i]);
                 }
             }
+            emptyText.appendLine("");
+            emptyText.appendLine("If you believe this is a bug, please raise this at support@sourcegraph.com,");
+            //noinspection DialogTitleCapitalization
+            emptyText.appendLine("mentioning the above error message and your plugin and Sourcegraph version.");
+            emptyText.appendLine("Sorry for the inconvenience.");
 
         } else {
             // We need to do this because the "COULD_NOT_CONNECT" link is clickable even when the empty text is hidden! :o
