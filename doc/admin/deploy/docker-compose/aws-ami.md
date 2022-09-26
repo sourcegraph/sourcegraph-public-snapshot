@@ -10,6 +10,7 @@ A Sourcegraph AWS AMI instance includes:
   - It is configurable and expandable
 - A specific version of Sourcegraph based on the selected AMI
 - Resource requirements are configured according to your selected instance size
+- Kubernetes with k3s and Helm
 
 You only need to choose your VPC and SSH Key-Pair to get started.
 
@@ -17,7 +18,7 @@ See the [official docs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-
 
 ---
 
-## Instance sizes
+## Instance size
 
 <!-- TODO: How to pick an instance size -->
 
@@ -25,12 +26,26 @@ See the [official docs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-
 |:------------------:|:-----------:|:-----------:|:------------:|:------------:|:------------:|
 | **Users**          | 1,000       | 5,000       | 10,000       | 20,000       | 40,000       |
 | **Repositories**   | 10,000      | 50,000      | 100,000      | 250,000      | 500,000      |
-| **Instance Types** | m6a.4xlarge | m6a.8xlarge | m6a.12xlarge | m6a.24xlarge | m6a.48xlarge |
-| **Alternatives**   | -           | m6a.4xlarge | m6a.8xlarge  | m6a.12xlarge |              |
 | **Root Storage**   | 50GB        | 50GB        | 50GB         | 50GB         | 50GB         |
 | **Data Storage**   | 500GB       | 1TB         | 3TB          | 5TB          | 5TB          |
 | **AMI Name**       | TBA         | placeholder | placeholder  | placeholder  | TBA          |
 
+## Instance types
+
+Here is a list of suggestions of instance types for each instance size.
+
+The recommended instance type has better performance due to allocated resources.
+
+Please select the instance type according to the table below for your instance size, and do not go below the suggested minimum instance type.
+
+> NOTE: You can resize your instance anytime by [changing the instance type](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-resize.html) associated with your instance size. If you need to change beyond the minimum or maximum supports of your current instance type, you can follow our [upgrade steps](#upgrade) in this page to start a new instance using the new instance size with its associated instance typ.  Please make sure the volumes are backed up before switching instance type.
+
+| **Size**           | **S**       | **M**       | **L**        | **XL**       | **2XL**      |
+|:------------------:|:-----------:|:-----------:|:------------:|:------------:|:------------:|
+| **Users**          | 1,000       | 5,000       | 10,000       | 20,000       | 40,000       |
+| **Repositories**   | 10,000      | 50,000      | 100,000      | 250,000      | 500,000      |
+| **Recommended**    | m6a.4xlarge | m6a.8xlarge | m6a.12xlarge | m6a.24xlarge | m6a.48xlarge |
+| **Minimum**        | m6a.2xlarge | m6a.4xlarge | m6a.8xlarge  | m6a.12xlarge | m6a.48xlarge |
 
 ---
 
@@ -61,10 +76,6 @@ Once you've been redirected to the `Launch an instance` page...
 
 Your Sourcegraph instance should be ready in the next few minutes. 
 
-You can navigate to the public IP address assigned to the EC2 node to access your newly created instance.
-
->NOTE: Look for the **IPv4 Public IP** value in your EC2 instance page under the *Description* panel.
-
 ---
 
 ## Upgrade
@@ -72,6 +83,13 @@ You can navigate to the public IP address assigned to the EC2 node to access you
 > WARNING: This upgrade process works with **Sourcegraph AWS AMI instances only**
 
 <span class="badge badge-critical">IMPORTANT</span> **Back up your volumes before each upgrade**
+
+Please take time to review the following before proceeding with the upgrades:
+
+- [Changelog](https://docs.sourcegraph.com/CHANGELOG)
+- [Update policy](https://docs.sourcegraph.com/admin/updates#update-policy)
+- [Update notes](https://docs.sourcegraph.com/admin/updates/kubernetes)
+- [Multi-version upgrade procedure](https://docs.sourcegraph.com/admin/updates/kubernetes#multi-version-upgrade-procedure)
 
 #### Step 1: Terminate the current instance
 
@@ -95,7 +113,6 @@ You can navigate to the public IP address assigned to the EC2 node to access you
   - Select the **Key Pair** used by the old instance
 5. Under **Network settings**
    - Select the **Security Group** used by the old instance
-   - [OPTIONAL] Enable `Auto-assign public IP`
 6. Under **Configure storage**
  - Remove the **second** EBS volume
 7. After reviewing the settings, click **Launch Instance**
@@ -108,6 +125,10 @@ You can navigate to the public IP address assigned to the EC2 node to access you
   - **Device name**: /dev/sdb
 
 10\. Reboot the new instance
+
+### Downgrade
+
+Please refer to the upgrade steps above for downgrading your instance. 
 
 ---
 
@@ -188,3 +209,10 @@ We strongly recommend you taking [snapshots of the entire EBS volume](https://do
 ## Manual deploy on AWS EC2
 
 Click [here](aws.md) to view install instructions for deploying on AWS EC2 manually.
+
+--- 
+
+## Resources
+
+- [Increase the size of an Amazon EBS volume on an EC2 instance](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/modify-ebs-volume-on-instance.html)
+- [Change the instance type](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-resize.html)
