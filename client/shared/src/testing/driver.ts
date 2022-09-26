@@ -10,7 +10,6 @@ import { readFile } from 'mz/fs'
 import puppeteer, {
     PageEventObject,
     Page,
-    Serializable,
     LaunchOptions,
     ConsoleMessage,
     Target,
@@ -527,7 +526,7 @@ export class Driver {
         )
     }
 
-    private async makeRequest<T = void>({ url, init }: { url: string; init: RequestInit & Serializable }): Promise<T> {
+    private async makeRequest<T = void>({ url, init }: { url: string; init: RequestInit }): Promise<T> {
         const handle = await this.page.evaluateHandle(
             (url, init) => fetch(url, init).then(response => response.json()),
             url,
@@ -680,7 +679,7 @@ export class Driver {
     public async findElementWithText(
         text: string,
         options: FindElementOptions & { action?: 'click' } = {}
-    ): Promise<puppeteer.ElementHandle<Element>> {
+    ): Promise<puppeteer.ElementHandle<Node>> {
         const { selector: tagName, fuzziness, wait } = options
         const tag = tagName || '*'
         const regexps = findElementRegexpStrings(text, { fuzziness })
