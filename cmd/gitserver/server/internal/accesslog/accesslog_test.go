@@ -51,17 +51,23 @@ var _ conftypes.WatchableSiteConfig = &accessLogConf{}
 func (a *accessLogConf) Watch(cb func()) { a.callback = cb }
 func (a *accessLogConf) SiteConfig() schema.SiteConfiguration {
 	return schema.SiteConfiguration{
-		Log: &schema.Log{GitserverAccessLogs: !a.disabled},
+		Log: &schema.Log{
+			AuditLog: &schema.AuditLog{
+				GitserverAccess: !a.disabled,
+				GraphQL:         false,
+				SecurityEvents:  false,
+			},
+		},
 	}
 }
 
 func TestHTTPMiddleware(t *testing.T) {
-	t.Run("OK", func(t *testing.T) {
+	t.Run("OK for access log setting", func(t *testing.T) {
 		logger, exportLogs := logtest.Captured(t)
-		h := HTTPMiddleware(logger, &accessLogConf{}, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		h := HTTPMiddleware(logger, &accessLogConf{}, func(w http.ResponseWriter, r *http.Request) {
 			meta := map[string]string{"cmd": "git", "args": "grep foo"}
 			Record(r.Context(), "github.com/foo/bar", meta)
-		}))
+		})
 
 		rec := httptest.NewRecorder()
 		req := httptest.NewRequest("GET", "/", nil)
@@ -75,15 +81,24 @@ func TestHTTPMiddleware(t *testing.T) {
 		assert.Equal(t, accessLoggingEnabledMessage, logs[0].Message)
 		assert.Equal(t, accessEventMessage, logs[1].Message)
 		assert.Equal(t, "github.com/foo/bar", logs[1].Fields["params"].(map[string]any)["repo"])
-		assert.Equal(t, "192.168.1.1", logs[1].Fields["actor"].(map[string]any)["ip"])
+
+		auditLogFields := map[string]interface{}{
+			"entity": "gitserver",
+			"actor": map[string]interface{}{
+				"actorUID":        "unknown",
+				"ip":              "192.168.1.1",
+				"X-Forwarded-For": "",
+			},
+		}
+		assert.Equal(t, auditLogFields, logs[1].Fields["audit"])
 	})
 
 	t.Run("handle, no recording", func(t *testing.T) {
 		logger, exportLogs := logtest.Captured(t)
 		var handled bool
-		h := HTTPMiddleware(logger, &accessLogConf{}, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		h := HTTPMiddleware(logger, &accessLogConf{}, func(w http.ResponseWriter, r *http.Request) {
 			handled = true
-		}))
+		})
 		rec := httptest.NewRecorder()
 		req := httptest.NewRequest("GET", "/", nil)
 
@@ -98,13 +113,13 @@ func TestHTTPMiddleware(t *testing.T) {
 
 	t.Run("disabled, then enabled", func(t *testing.T) {
 		logger, exportLogs := logtest.Captured(t)
-		c := &accessLogConf{disabled: true}
+		cfg := &accessLogConf{disabled: true}
 		var handled bool
-		h := HTTPMiddleware(logger, c, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		h := HTTPMiddleware(logger, cfg, func(w http.ResponseWriter, r *http.Request) {
 			meta := map[string]string{"cmd": "git", "args": "grep foo"}
 			Record(r.Context(), "github.com/foo/bar", meta)
 			handled = true
-		}))
+		})
 		rec := httptest.NewRecorder()
 		req := httptest.NewRequest("GET", "/", nil)
 
@@ -118,8 +133,8 @@ func TestHTTPMiddleware(t *testing.T) {
 
 		// Now we re-enable
 		handled = false
-		c.disabled = false
-		c.callback()
+		cfg.disabled = false
+		cfg.callback()
 		h.ServeHTTP(rec, req)
 
 		// Enabled, should have handled AND generated a log message
@@ -129,4 +144,61 @@ func TestHTTPMiddleware(t *testing.T) {
 		assert.Equal(t, accessLoggingEnabledMessage, logs[0].Message)
 		assert.Equal(t, accessEventMessage, logs[1].Message)
 	})
+}
+
+func Test_shouldLog(t *testing.T) {
+	tests := []struct {
+		name   string
+		logCfg *schema.Log
+		want   bool
+	}{
+		{
+			name:   "shouldn't log if 'log' property is missing",
+			logCfg: nil,
+			want:   false,
+		},
+		{
+			name: "should log if GitServerAccessLogs is true",
+			logCfg: &schema.Log{
+				GitserverAccessLogs: true,
+			},
+			want: true,
+		},
+		{
+			name: "should log if AuditLog.GitserverAccess is true",
+			logCfg: &schema.Log{
+				AuditLog: &schema.AuditLog{
+					GitserverAccess: true,
+				},
+				GitserverAccessLogs: false,
+			},
+			want: true,
+		},
+		{
+			name: "should log if both settings are true",
+			logCfg: &schema.Log{
+				AuditLog: &schema.AuditLog{
+					GitserverAccess: true,
+				},
+				GitserverAccessLogs: true,
+			},
+			want: true,
+		},
+		{
+			name: "shouldn't log if both settings are false",
+			logCfg: &schema.Log{
+				AuditLog: &schema.AuditLog{
+					GitserverAccess: false,
+				},
+				GitserverAccessLogs: false,
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := schema.SiteConfiguration{Log: tt.logCfg}
+			assert.Equalf(t, tt.want, shouldLog(cfg), "shouldLog(%v)", cfg)
+		})
+	}
 }

@@ -41,6 +41,13 @@ Some stepwise upgrade notes have multi-version considerations.
 
 Follow the [steps](#upgrade-procedure) outlined at the top of this page to upgrade.
 
+
+## 3.43 -> 4.0
+
+<!-- Add changes changes to this section before release. -->
+
+Follow the [steps](#upgrade-procedure) outlined at the top of this page to upgrade.
+
 ## 3.42 -> 3.43.2
 
 Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
