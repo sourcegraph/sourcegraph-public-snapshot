@@ -14,9 +14,9 @@ var defaultAPIs = map[string]luasandbox.LuaLib{
 }
 
 var defaultModules = (func() map[string]lua.LGFunction {
-	modules := make(map[string]lua.LGFunction, len(luasandbox.DefaultModules)+len(defaultAPIs))
+	modules := make(map[string]lua.LGFunction, len(luasandbox.DefaultGoModules)+len(defaultAPIs))
 
-	for name, module := range luasandbox.DefaultModules {
+	for name, module := range luasandbox.DefaultGoModules {
 		modules[name] = module
 	}
 	for name, api := range defaultAPIs {

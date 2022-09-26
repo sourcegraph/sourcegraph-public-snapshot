@@ -31,7 +31,7 @@ func (j *metricsServerJob) Config() []env.Config {
 	return []env.Config{metricsServerConfigInst}
 }
 
-func (j *metricsServerJob) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
+func (j *metricsServerJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	host := ""
 	if env.InsecureDev {
 		host = "127.0.0.1"

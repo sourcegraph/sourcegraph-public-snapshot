@@ -30,4 +30,10 @@ The following repositories have precise code navigation enabled:
 - [nestjs/nest](https://sourcegraph.com/github.com/nestjs/nest@d5b6e489209090544a4f39c4f4a716b9800ca6a8/-/blob/packages/microservices/listeners-controller.ts?L39:9&popover=pinned)
 - [puppeteer/puppeteer](https://sourcegraph.com/github.com/puppeteer/puppeteer@79e11985ba44b72b1ad6b8cd861fe316f1945e64/-/blob/src/common/Browser.ts?L54:11#tab=references)
  
+## Ruby
+- [Shopify/shopify-api-ruby](https://sourcegraph.com/github.com/Shopify/shopify-api-ruby@v11.1.0/-/blob/lib/shopify_api/auth/auth_scopes.rb?L23:33&popover=pinned)
+- [Homebrew/brew](https://sourcegraph.com/github.com/Homebrew/brew@3.5.9/-/blob/Library/Homebrew/utils/bottles.rb?L18:18&popover=pinned)
 
+## Rust
+- [rust-lang/cargo](https://sourcegraph.com/github.com/rust-lang/cargo/-/blob/src/cargo/core/compiler/compilation.rs?L15:12&popover=pinned#tab=references)
+- [rust-lang/rustlings](https://sourcegraph.com/github.com/rust-lang/rustlings@c923e7af73a91970d2e63e03babbca9cc0817551/-/blob/src/verify.rs?L147:15&popover=pinned)

@@ -6,31 +6,19 @@ import BarChartIcon from 'mdi-react/BarChartIcon'
 import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
-import { of } from 'rxjs'
-import { startWith } from 'rxjs/operators'
 
 import { ContributableMenu } from '@sourcegraph/client-api'
 import { isErrorLike } from '@sourcegraph/common'
-import { SearchContextInputProps, isSearchContextSpecAvailable } from '@sourcegraph/search'
+import { SearchContextInputProps } from '@sourcegraph/search'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
-import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
-import {
-    useObservable,
-    Button,
-    Link,
-    FeedbackPrompt,
-    ButtonLink,
-    PopoverTrigger,
-    useWindowSize,
-} from '@sourcegraph/wildcard'
+import { Button, Link, ButtonLink, useWindowSize } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -40,7 +28,7 @@ import { ActivationDropdown } from '../components/ActivationDropdown'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { WebCommandListPopoverButton } from '../components/shared'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
-import { useHandleSubmitFeedback, useRoutesMatch } from '../hooks'
+import { useRoutesMatch } from '../hooks'
 import { CodeInsightsProps } from '../insights/types'
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
 import { LayoutRouteProps } from '../routes'
@@ -95,7 +83,6 @@ interface Props
     isRepositoryRelatedPage?: boolean
     branding?: typeof window.context.branding
     showKeyboardShortcutsHelp: () => void
-    onHandleFuzzyFinder?: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 /**
@@ -164,31 +151,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
     // Workaround: can't put this in optional parameter value because of https://github.com/babel/babel/issues/11166
     branding = branding ?? window.context?.branding
 
-    const query = useNavbarQueryState(state => state.searchQueryFromURL)
-
-    const globalSearchContextSpec = useMemo(() => getGlobalSearchContextFilter(query), [query])
-
-    const isSearchContextAvailable = useObservable(
-        useMemo(
-            () =>
-                globalSearchContextSpec && searchContextsEnabled
-                    ? // While we wait for the result of the `isSearchContextSpecAvailable` call, we assume the context is available
-                      // to prevent flashing and moving content in the query bar. This optimizes for the most common use case where
-                      // user selects a search context from the dropdown.
-                      // See https://github.com/sourcegraph/sourcegraph/issues/19918 for more info.
-                      isSearchContextSpecAvailable({
-                          spec: globalSearchContextSpec.spec,
-                          platformContext: props.platformContext,
-                      }).pipe(startWith(true))
-                    : of(false),
-            [globalSearchContextSpec, searchContextsEnabled, props.platformContext]
-        )
-    )
-
     const routeMatch = useRoutesMatch(props.routes)
-    const { handleSubmitFeedback } = useHandleSubmitFeedback({
-        routeMatch,
-    })
 
     const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext)
@@ -203,27 +166,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
             onNavbarQueryChange({ query: '' })
             return
         }
-        // Do nothing if there is no query in the URL
-        if (!query) {
-            return
-        }
-
-        // If a global search context spec is available to the user, we omit it from the
-        // query and move it to the search contexts dropdown
-        const finalQuery =
-            globalSearchContextSpec && isSearchContextAvailable && showSearchContext
-                ? omitFilter(query, globalSearchContextSpec.filter)
-                : query
-
-        onNavbarQueryChange({ query: finalQuery })
-    }, [
-        showSearchBox,
-        onNavbarQueryChange,
-        query,
-        globalSearchContextSpec,
-        isSearchContextAvailable,
-        showSearchContext,
-    ])
+    }, [showSearchBox, onNavbarQueryChange])
 
     const navbarReference = useRef<HTMLDivElement | null>(null)
     const navLinkVariant = useCalculatedNavLinkVariant(navbarReference, props.activation, props.authenticatedUser)
@@ -343,22 +286,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                         </>
                     )}
                     {props.authenticatedUser?.siteAdmin && <AnalyticsNavItem />}
-                    {props.authenticatedUser && (
-                        <NavAction>
-                            <FeedbackPrompt onSubmit={handleSubmitFeedback} productResearchEnabled={true}>
-                                <PopoverTrigger
-                                    as={Button}
-                                    aria-label="Feedback"
-                                    variant="secondary"
-                                    outline={true}
-                                    size="sm"
-                                    className={styles.feedbackTrigger}
-                                >
-                                    <span>Feedback</span>
-                                </PopoverTrigger>
-                            </FeedbackPrompt>
-                        </NavAction>
-                    )}
                     {props.authenticatedUser && extensionsController !== null && window.context.enableLegacyExtensions && (
                         <NavAction>
                             <WebCommandListPopoverButton

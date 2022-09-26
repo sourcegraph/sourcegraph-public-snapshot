@@ -205,22 +205,22 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 	// missing diffstat shouldn't happen anymore (due to migration), but it's still a nullable field.
 	_, err = db.ExecContext(context.Background(), `
 		INSERT INTO changesets
-			(id, repo_id, external_service_type, owned_by_batch_change_id, batch_change_ids, external_state, publication_state, diff_stat_added, diff_stat_changed, diff_stat_deleted)
+			(id, repo_id, external_service_type, owned_by_batch_change_id, batch_change_ids, external_state, publication_state, diff_stat_added, diff_stat_deleted)
 		VALUES
 		    -- tracked
-			($2, $1, 'github', NULL, '{"1": {"detached": false}}', 'OPEN',   'PUBLISHED', 9, 7, 5),
-			($3, $1, 'github', NULL, '{"2": {"detached": false}}', 'MERGED', 'PUBLISHED', 7, 9, 5),
+			($2, $1, 'github', NULL, '{"1": {"detached": false}}', 'OPEN',   'PUBLISHED', 16, 12),
+			($3, $1, 'github', NULL, '{"2": {"detached": false}}', 'MERGED', 'PUBLISHED', 16, 14),
 			-- created by batch change
-			($4,  $1, 'github', 1, '{"1": {"detached": false}}', 'OPEN',   'PUBLISHED', 5, 7, 9),
-			($5,  $1, 'github', 1, '{"1": {"detached": false}}', 'OPEN',   'PUBLISHED', NULL, NULL, NULL),
-			($6,  $1, 'github', 1, '{"1": {"detached": false}}', 'DRAFT',  'PUBLISHED', NULL, NULL, NULL),
-			(7,  $1, 'github', 2, '{"2": {"detached": false}}',  NULL,    'UNPUBLISHED', 9, 7, 5),
-			(8,  $1, 'github', 2, '{"2": {"detached": false}}', 'MERGED', 'PUBLISHED', 9, 7, 5),
-			(9,  $1, 'github', 2, '{"2": {"detached": false}}', 'MERGED', 'PUBLISHED', NULL, NULL, NULL),
-			(10, $1, 'github', 2, '{"2": {"detached": false}}',  NULL,    'UNPUBLISHED', 9, 7, 5),
-			(11, $1, 'github', 2, '{"2": {"detached": false}}', 'CLOSED', 'PUBLISHED', NULL, NULL, NULL),
-			(12, $1, 'github', 3, '{"3": {"detached": false}}', 'OPEN',   'PUBLISHED', 5, 7, 9),
-			(13, $1, 'github', 3, '{"3": {"detached": false}}', 'OPEN',   'PUBLISHED', NULL, NULL, NULL)
+			($4,  $1, 'github', 1, '{"1": {"detached": false}}', 'OPEN',   'PUBLISHED', 12, 16),
+			($5,  $1, 'github', 1, '{"1": {"detached": false}}', 'OPEN',   'PUBLISHED', NULL, NULL),
+			($6,  $1, 'github', 1, '{"1": {"detached": false}}', 'DRAFT',  'PUBLISHED', NULL, NULL),
+			(7,  $1, 'github', 2, '{"2": {"detached": false}}',  NULL,    'UNPUBLISHED', 16, 12),
+			(8,  $1, 'github', 2, '{"2": {"detached": false}}', 'MERGED', 'PUBLISHED', 16, 12),
+			(9,  $1, 'github', 2, '{"2": {"detached": false}}', 'MERGED', 'PUBLISHED', NULL, NULL),
+			(10, $1, 'github', 2, '{"2": {"detached": false}}',  NULL,    'UNPUBLISHED', 16, 12),
+			(11, $1, 'github', 2, '{"2": {"detached": false}}', 'CLOSED', 'PUBLISHED', NULL, NULL),
+			(12, $1, 'github', 3, '{"3": {"detached": false}}', 'OPEN',   'PUBLISHED', 12, 16),
+			(13, $1, 'github', 3, '{"3": {"detached": false}}', 'OPEN',   'PUBLISHED', NULL, NULL)
 	`, repo.ID, changesetIDOne, changesetIDTwo, changesetIDFour, changesetIDFive, changesetIDSix)
 	if err != nil {
 		t.Fatal(err)
@@ -303,13 +303,11 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 		BatchChangesClosedCount:                     1,
 		PublishedChangesetsUnpublishedCount:         2,
 		PublishedChangesetsCount:                    8,
-		PublishedChangesetsDiffStatAddedSum:         19,
-		PublishedChangesetsDiffStatChangedSum:       21,
-		PublishedChangesetsDiffStatDeletedSum:       23,
+		PublishedChangesetsDiffStatAddedSum:         40,
+		PublishedChangesetsDiffStatDeletedSum:       44,
 		PublishedChangesetsMergedCount:              2,
-		PublishedChangesetsMergedDiffStatAddedSum:   9,
-		PublishedChangesetsMergedDiffStatChangedSum: 7,
-		PublishedChangesetsMergedDiffStatDeletedSum: 5,
+		PublishedChangesetsMergedDiffStatAddedSum:   16,
+		PublishedChangesetsMergedDiffStatDeletedSum: 12,
 		ImportedChangesetsCount:                     2,
 		ImportedChangesetsMergedCount:               1,
 		BatchSpecsCreatedCount:                      4,

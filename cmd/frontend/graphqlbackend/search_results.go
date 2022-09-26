@@ -335,8 +335,9 @@ loop:
 			panic("SearchResults.Sparkline unexpected union type state")
 		}
 	}
-	span := opentracing.SpanFromContext(ctx)
-	span.SetTag("blame_ops", blameOps)
+	if span := opentracing.SpanFromContext(ctx); span != nil {
+		span.SetTag("blame_ops", blameOps)
+	}
 	return sparkline, nil
 }
 
@@ -577,6 +578,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 		if err := json.Unmarshal(jsonRes, &stats); err != nil {
 			return nil, err
 		}
+		stats.logger = r.logger.Scoped("searchResultsStats", "provides status on search results")
 		stats.sr = r
 		return stats, nil
 	}

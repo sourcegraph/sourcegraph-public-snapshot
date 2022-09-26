@@ -51,10 +51,10 @@ Standard search matches literal patterns exactly, including puncutation like quo
 
 Matching is case-_insensitive_ (toggle the <span class="toggle-container"><img class="toggle" src=../img/case.png alt="case"></span> button to change).
 
-### Dedicated regular expression search
+<details>
+  <summary><strong>Dedicated regular expression search with <span class="toggle-container"><img class="toggle" src=../img/regex.png alt="regular expression"></span></strong></summary>
 
-Clicking the <span class="toggle-container"><img class="toggle"
-src=../img/regex.png alt="regular expression"></span> toggle interprets _all_
+Clicking the <span class="toggle-container"><img class="toggle" src=../img/regex.png alt="regular expression"></span> toggle interprets _all_
 search patterns as regular expressions.
 
 **Note.** You can achieve the same regular expression searches in the [default Standard mode](#standard-search-default) by enclosing patterns in `/.../`, so
@@ -70,7 +70,7 @@ exactly".
 | [`"foo bar"`](https://sourcegraph.com/search?q=%27foo+bar%27&patternType=regexp) | Match the _string literal_ `foo bar`. Quoting strings in this mode are interpreted exactly, except that special characters like `"` and `\` may be escaped, and whitespace escape sequences like `\n` are interpreted normally. |
 
 As in Standard search, we support [RE2 syntax](https://golang.org/s/re2syntax). Matching is case-_insensitive_ (toggle the <span class="toggle-container"><img class="toggle" src=../img/case.png alt="case"></span> button to change).
-
+</details>
 
 ### Structural search
 

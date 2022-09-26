@@ -340,11 +340,11 @@ func dependencyGcloud() *dependency {
 				}
 			}
 
-			if err := run.Cmd(ctx, "gcloud auth login").Input(cio.Input).Run().StreamLines(cio.Write); err != nil {
+			if err := usershell.Command(ctx, "gcloud auth login").Input(cio.Input).Run().StreamLines(cio.Write); err != nil {
 				return err
 			}
 
-			return run.Cmd(ctx, "gcloud auth configure-docker").Run().Wait()
+			return usershell.Command(ctx, "gcloud auth configure-docker").Run().Wait()
 		},
 	}
 }

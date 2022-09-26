@@ -28,8 +28,9 @@ type Breadcrumbs []Breadcrumb
 
 // Prints breadcrumbs like this:
 //
-//             v some breadcrumb
-//               vvv other breadcrumb
+//	v some breadcrumb
+//	  vvv other breadcrumb
+//
 // 78 | func f(f Foo) {
 func (bs *Breadcrumbs) pretty(w *strings.Builder, readFile ReadFileFunc) {
 	// First collect all the breadcrumbs in a map (path -> line -> breadcrumb) for easier printing.

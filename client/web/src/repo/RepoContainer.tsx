@@ -4,21 +4,15 @@ import { mdiSourceRepository, mdiChevronDown } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { escapeRegExp } from 'lodash'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { matchPath, Route, RouteComponentProps, Switch } from 'react-router'
 import { NEVER, of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
-import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike, encodeURIPathComponent, repeatUntil } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
 import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
-import {
-    isCloneInProgressErrorLike,
-    isRepoNotFoundErrorLike,
-    isRepoSeeOtherErrorLike,
-} from '@sourcegraph/shared/src/backend/errors'
+import { isCloneInProgressErrorLike, isRepoSeeOtherErrorLike } from '@sourcegraph/shared/src/backend/errors'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -58,7 +52,7 @@ import { parseBrowserRepoURL } from '../util/url'
 
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
 import { fetchFileExternalLinks, ResolvedRevision, resolveRepoRevision } from './backend'
-import { BlobProps } from './blob/Blob'
+import { RepoContainerError } from './RepoContainerError'
 import { RepoHeader, RepoHeaderActionButton, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import {
@@ -67,7 +61,7 @@ import {
     RepoRevisionContainerRoute,
 } from './RepoRevisionContainer'
 import { RepositoriesPopover } from './RepositoriesPopover'
-import { RepositoryNotFoundPage } from './RepositoryNotFoundPage'
+import { commitsPath, compareSpecPath } from './routes'
 import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
 
@@ -130,7 +124,6 @@ interface RepoContainerProps
         ActivationProps,
         ThemeProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
-        Pick<BlobProps, 'onHandleFuzzyFinder'>,
         BreadcrumbSetters,
         BreadcrumbsProps,
         SearchStreamingProps,
@@ -323,15 +316,22 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
 
     const { useActionItemsBar, useActionItemsToggle } = useWebActionItems()
 
-    if (isErrorLike(repoOrError)) {
+    // render go to the code host action on all the repo container routes and on all compare spec routes
+    const isGoToCodeHostActionVisible = useMemo(() => {
+        const paths = [...props.repoContainerRoutes.map(route => route.path), compareSpecPath, commitsPath]
+        return paths.some(path => matchPath(props.match.url, { path: props.match.path + path }))
+    }, [props.repoContainerRoutes, props.match])
+
+    if (isErrorLike(repoOrError) || isErrorLike(resolvedRevisionOrError)) {
         const viewerCanAdminister = !!props.authenticatedUser && props.authenticatedUser.siteAdmin
 
-        // Display error page
-        if (isRepoNotFoundErrorLike(repoOrError)) {
-            return <RepositoryNotFoundPage repo={repoName} viewerCanAdminister={viewerCanAdminister} />
-        }
-
-        return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={<ErrorMessage error={repoOrError} />} />
+        return (
+            <RepoContainerError
+                repoName={repoName}
+                viewerCanAdminister={viewerCanAdminister}
+                repoFetchError={repoOrError as ErrorLike}
+            />
+        )
     }
 
     const isCodeIntelRepositoryBadgeVisible = getIsCodeIntelRepositoryBadgeVisible({
@@ -350,8 +350,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
         repo: repoOrError,
         repoName,
         revision: revision || '',
-        resolvedRevisionOrError,
-        resolvedRev: undefined,
+        resolvedRevision: resolvedRevisionOrError,
         routePrefix: repoMatchURL,
         useActionItemsBar,
     }
@@ -365,6 +364,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
             const repoContainerContext: RepoContainerContext = {
                 ...repoRevisionContainerContext,
                 repo: repoOrError,
+                resolvedRevisionOrError,
                 onDidUpdateExternalLinks: setExternalLinks,
             }
 
@@ -409,29 +409,32 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                 extensionsController={extensionsController}
                 telemetryService={props.telemetryService}
             />
-            <RepoHeaderContributionPortal
-                position="right"
-                priority={2}
-                id="go-to-code-host"
-                {...repoHeaderContributionsLifecycleProps}
-            >
-                {({ actionType }) => (
-                    <GoToCodeHostAction
-                        key="go-to-code-host"
-                        repo={repoOrError}
-                        // We need a revision to generate code host URLs, if revision isn't available, we use the default branch or HEAD.
-                        revision={rawRevision || repoOrError?.defaultBranch?.displayName || 'HEAD'}
-                        filePath={filePath}
-                        commitRange={commitRange}
-                        position={position}
-                        range={range}
-                        externalLinks={externalLinks}
-                        fetchFileExternalLinks={fetchFileExternalLinks}
-                        actionType={actionType}
-                        repoName={repoName}
-                    />
-                )}
-            </RepoHeaderContributionPortal>
+            {isGoToCodeHostActionVisible && (
+                <RepoHeaderContributionPortal
+                    position="right"
+                    priority={2}
+                    id="go-to-code-host"
+                    {...repoHeaderContributionsLifecycleProps}
+                >
+                    {({ actionType }) => (
+                        <GoToCodeHostAction
+                            key="go-to-code-host"
+                            source="repoHeader"
+                            repo={repoOrError}
+                            // We need a revision to generate code host URLs, if revision isn't available, we use the default branch or HEAD.
+                            revision={rawRevision || repoOrError?.defaultBranch?.displayName || 'HEAD'}
+                            filePath={filePath}
+                            commitRange={commitRange}
+                            position={position}
+                            range={range}
+                            externalLinks={externalLinks}
+                            fetchFileExternalLinks={fetchFileExternalLinks}
+                            actionType={actionType}
+                            repoName={repoName}
+                        />
+                    )}
+                </RepoHeaderContributionPortal>
+            )}
 
             {isCodeIntelRepositoryBadgeVisible && (
                 <RepoHeaderContributionPortal
@@ -483,7 +486,6 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                                     routes={props.repoRevisionContainerRoutes}
                                     // must exactly match how the revision was encoded in the URL
                                     routePrefix={`${repoMatchURL}${rawRevision ? `@${rawRevision}` : ''}`}
-                                    onHandleFuzzyFinder={props.onHandleFuzzyFinder}
                                 />
                             )}
                         />

@@ -35,7 +35,7 @@ interface LanguageUsageDatum {
 const LANGUAGE_USAGE_DATA: LanguageUsageDatum[] = [
     {
         name: 'JavaScript',
-        value: 422,
+        value: 129,
         fill: '#f1e05a',
         linkURL: 'https://en.wikipedia.org/wiki/JavaScript',
     },
@@ -47,7 +47,7 @@ const LANGUAGE_USAGE_DATA: LanguageUsageDatum[] = [
     },
     {
         name: 'HTML',
-        value: 129,
+        value: 422,
         fill: '#e34c26',
         linkURL: 'https://en.wikipedia.org/wiki/HTML',
     },
@@ -76,9 +76,11 @@ export const BarChartDemo: Story = () => (
         }}
     >
         <PlainBarChartExample />
+        <SortedBarChartExample />
         <GroupedBarExample />
         <StackedBarExample />
         <ManyBarsExample />
+        <CustomDimmedColor />
     </main>
 )
 
@@ -95,6 +97,26 @@ const PlainBarChartExample = () => (
             width={400}
             height={400}
             data={LANGUAGE_USAGE_DATA}
+            getDatumName={getName}
+            getDatumValue={getValue}
+            getDatumColor={getColor}
+            getDatumLink={getLink}
+            getDatumHover={datum => `custom text for ${datum.name}`}
+        />
+    </section>
+)
+
+const SortedBarChartExample = () => (
+    <section style={{ flexBasis: 0 }}>
+        <H2>Sorted bar chart</H2>
+
+        <Text>This is the default bar chart sorted by descending value.</Text>
+
+        <BarChart
+            width={400}
+            height={400}
+            data={LANGUAGE_USAGE_DATA}
+            sortByValue={true}
             getDatumName={getName}
             getDatumValue={getValue}
             getDatumColor={getColor}
@@ -278,5 +300,27 @@ const ManyBarsExample = () => (
                 )}
             </ParentSize>
         </ResizableBox>
+    </section>
+)
+
+const CustomDimmedColor = () => (
+    <section style={{ flexBasis: 0 }}>
+        <H2>Dimmed colors</H2>
+
+        <Text style={{ maxWidth: 400, minWidth: 400 }}>
+            You can specify any dimmed colors for the non-active bars. (see bar chart README.md for more details about
+            chart colours.
+        </Text>
+
+        <BarChart
+            width={400}
+            height={400}
+            data={LANGUAGE_USAGE_DATA}
+            getDatumName={getName}
+            getDatumValue={getValue}
+            getDatumColor={getColor}
+            getDatumFadeColor={() => 'var(--blue)'}
+            getDatumLink={getLink}
+        />
     </section>
 )

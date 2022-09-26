@@ -1153,9 +1153,16 @@ func testSyncerMultipleServices(store repos.Store) func(t *testing.T) {
 			t.Fatalf("initial Synced mismatch (-want +got):\n%s", d)
 		}
 
+		// we poll, so lets set an aggressive deadline
+		deadline := time.Now().Add(10 * time.Second)
+		if tDeadline, ok := t.Deadline(); ok && tDeadline.Before(deadline) {
+			// give time to report errors
+			deadline = tDeadline.Add(-100 * time.Millisecond)
+		}
+
 		// it should add a job for all external services
 		var jobCount int
-		for i := 0; i < 10; i++ {
+		for time.Now().Before(deadline) {
 			q := sqlf.Sprintf("SELECT COUNT(*) FROM external_service_sync_jobs")
 			if err := store.Handle().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&jobCount); err != nil {
 				t.Fatal(err)
@@ -1188,7 +1195,7 @@ func testSyncerMultipleServices(store repos.Store) func(t *testing.T) {
 		}
 
 		var jobsCompleted int
-		for i := 0; i < 10; i++ {
+		for time.Now().Before(deadline) {
 			q := sqlf.Sprintf("SELECT COUNT(*) FROM external_service_sync_jobs where state = 'completed'")
 			if err := store.Handle().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&jobsCompleted); err != nil {
 				t.Fatal(err)

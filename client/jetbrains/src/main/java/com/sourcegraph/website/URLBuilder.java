@@ -1,6 +1,5 @@
 package com.sourcegraph.website;
 
-import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.editor.LogicalPosition;
 import com.intellij.openapi.project.Project;
 import com.sourcegraph.config.ConfigUtil;
@@ -21,13 +20,13 @@ public class URLBuilder {
             + "&start_col=" + URLEncoder.encode(Integer.toString(start.column), StandardCharsets.UTF_8)) : "")
             + (end != null ? ("&end_row=" + URLEncoder.encode(Integer.toString(end.line), StandardCharsets.UTF_8)
             + "&end_col=" + URLEncoder.encode(Integer.toString(end.column), StandardCharsets.UTF_8)) : "")
-            + "&" + buildMarketingParams();
+            + "&" + buildVersionParams();
     }
 
     @NotNull
     public static String buildEditorSearchUrl(@NotNull Project project, @NotNull String search, @Nullable String remoteUrl, @Nullable String branchName) {
         String url = ConfigUtil.getSourcegraphUrl(project) + "-/editor"
-            + "?" + buildMarketingParams()
+            + "?" + buildVersionParams()
             + "&search=" + URLEncoder.encode(search, StandardCharsets.UTF_8);
 
         if (remoteUrl != null) {
@@ -48,18 +47,12 @@ public class URLBuilder {
             + (start != null ? ("L" + URLEncoder.encode(Integer.toString(start.line + 1), StandardCharsets.UTF_8)
             + ":" + URLEncoder.encode(Integer.toString(start.column + 1), StandardCharsets.UTF_8)) : "")
             + (end != null ? ("-" + URLEncoder.encode(Integer.toString(end.line + 1), StandardCharsets.UTF_8)
-            + ":" + URLEncoder.encode(Integer.toString(end.column + 1), StandardCharsets.UTF_8)) : "")
-            + "&" + buildMarketingParams();
+            + ":" + URLEncoder.encode(Integer.toString(end.column + 1), StandardCharsets.UTF_8)) : "");
     }
 
     @NotNull
-    private static String buildMarketingParams() {
-        String productName = ApplicationInfo.getInstance().getVersionName();
-        String productVersion = ApplicationInfo.getInstance().getFullVersion();
-
+    private static String buildVersionParams() {
         return "editor=" + URLEncoder.encode("JetBrains", StandardCharsets.UTF_8)
-            + "&version=v" + URLEncoder.encode(ConfigUtil.getPluginVersion(), StandardCharsets.UTF_8)
-            + "&utm_product_name=" + URLEncoder.encode(productName, StandardCharsets.UTF_8)
-            + "&utm_product_version=" + URLEncoder.encode(productVersion, StandardCharsets.UTF_8);
+            + "&version=v" + URLEncoder.encode(ConfigUtil.getPluginVersion(), StandardCharsets.UTF_8);
     }
 }

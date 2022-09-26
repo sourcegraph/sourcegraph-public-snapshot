@@ -80,7 +80,7 @@ Once LSIF data has uploaded, open the Sourcegraph UI or your code host (i.e. Git
 
 ### Error Logs
 
-To view code graph indexer processing failures go to **Repository settings > Code Graph > Activity for this repository** in your Sourcegraph instance. Failures can occur if the LSIF data is invalid (e.g., malformed indexer output), or problems were encountered during processing (e.g., system-level bug, flaky connections, etc). Try again or [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new) if the problem persists.
+To view code graph indexer processing failures go to **Repository settings > Code graph data > Activity for this repository** in your Sourcegraph instance. Failures can occur if the LSIF data is invalid (e.g., malformed indexer output), or problems were encountered during processing (e.g., system-level bug, flaky connections, etc). Try again or [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new) if the problem persists.
 
 ### Common Errors
 

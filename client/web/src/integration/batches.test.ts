@@ -121,9 +121,8 @@ const mockDiff: NonNullable<ExternalChangesetFileDiffsFields['diff']> = {
                     },
                 ],
                 stat: {
-                    added: 10,
-                    changed: 3,
-                    deleted: 8,
+                    added: 13,
+                    deleted: 11,
                 },
             },
         ],
@@ -211,7 +210,6 @@ const BatchChangeChangesets: (variables: BatchChangeChangesetsVariables) => Batc
                     diffStat: {
                         __typename: 'DiffStat',
                         added: 100,
-                        changed: 10,
                         deleted: 23,
                     },
                     error: null,
@@ -405,6 +403,11 @@ function mockCommonGraphQLResponses(
                     codeHostsWithoutWebhooks: {
                         nodes: [],
                         pageInfo: { hasNextPage: false },
+                        totalCount: 0,
+                    },
+                    viewerBatchChangesCodeHosts: {
+                        __typename: 'BatchChangesCodeHostConnection',
+                        nodes: [],
                         totalCount: 0,
                     },
                 },
@@ -726,7 +729,6 @@ describe('Batches', () => {
                             diffStat: {
                                 __typename: 'DiffStat',
                                 added: 1000,
-                                changed: 100,
                                 deleted: 182,
                             },
                             expiresAt: addDays(now, 3).toISOString(),
@@ -813,7 +815,6 @@ describe('Batches', () => {
                                                     diffStat: {
                                                         __typename: 'DiffStat',
                                                         added: 10,
-                                                        changed: 2,
                                                         deleted: 9,
                                                     },
                                                     title: 'Changeset title',

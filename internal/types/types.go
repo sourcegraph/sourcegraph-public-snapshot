@@ -909,9 +909,6 @@ type BatchChangesUsageStatistics struct {
 	// PublishedChangesetsDiffStatAddedSum is the total sum of lines added by
 	// changesets published on the code host by batch changes.
 	PublishedChangesetsDiffStatAddedSum int32
-	// PublishedChangesetsDiffStatChangedSum is the total sum of lines changed by
-	// changesets published on the code host by batch changes.
-	PublishedChangesetsDiffStatChangedSum int32
 	// PublishedChangesetsDiffStatDeletedSum is the total sum of lines deleted by
 	// changesets published on the code host by batch changes.
 	PublishedChangesetsDiffStatDeletedSum int32
@@ -924,9 +921,6 @@ type BatchChangesUsageStatistics struct {
 	// PublishedChangesetsMergedDiffStatAddedSum is the total sum of lines added by
 	// changesets published on the code host by batch changes and merged.
 	PublishedChangesetsMergedDiffStatAddedSum int32
-	// PublishedChangesetsMergedDiffStatChangedSum is the total sum of lines changed by
-	// changesets published on the code host by batch changes and merged.
-	PublishedChangesetsMergedDiffStatChangedSum int32
 	// PublishedChangesetsMergedDiffStatDeletedSum is the total sum of lines deleted by
 	// changesets published on the code host by batch changes and merged.
 	PublishedChangesetsMergedDiffStatDeletedSum int32
@@ -1281,6 +1275,36 @@ type IDEExtensionsUsageUserState struct {
 	Uninstalls int32
 }
 
+// MigratedExtensionsUsageStatistics repreents the numbers of interactions with
+// the migrated extensions (git blame, open in editor, search exports, and go
+// imports search).
+type MigratedExtensionsUsageStatistics struct {
+	GitBlameEnabled                 *int32
+	GitBlameEnabledUniqueUsers      *int32
+	GitBlameDisabled                *int32
+	GitBlameDisabledUniqueUsers     *int32
+	GitBlamePopupViewed             *int32
+	GitBlamePopupViewedUniqueUsers  *int32
+	GitBlamePopupClicked            *int32
+	GitBlamePopupClickedUniqueUsers *int32
+
+	SearchExportPerformed            *int32
+	SearchExportPerformedUniqueUsers *int32
+	SearchExportFailed               *int32
+	SearchExportFailedUniqueUsers    *int32
+
+	GoImportsSearchQueryTransformed            *int32
+	GoImportsSearchQueryTransformedUniqueUsers *int32
+
+	OpenInEditor []*MigratedExtensionsOpenInEditorUsageStatistics
+}
+
+type MigratedExtensionsOpenInEditorUsageStatistics struct {
+	IdeKind            string
+	Clicked            *int32
+	ClickedUniqueUsers *int32
+}
+
 // CodeHostIntegrationUsage represents the daily, weekly and monthly
 // number of unique users and events for code host integration usage
 // and inbound traffic from code host integration to Sourcegraph instance
@@ -1428,6 +1452,7 @@ type GroupResultPing struct {
 	AggregationMode *string
 	UIMode          *string
 	Count           *int32
+	BarIndex        *int32
 }
 
 type GroupResultExpandedViewPing struct {

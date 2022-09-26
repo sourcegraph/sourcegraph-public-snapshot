@@ -238,8 +238,8 @@ describe('Search', () => {
                     await driver.page.waitForSelector('[data-testid="results-info-bar"]')
                     expect(await editor.getValue()).toStrictEqual('foo')
                     // Field value is cleared when navigating to a non search-related page
-                    await driver.page.waitForSelector('a[href="/extensions"]')
-                    await driver.page.click('a[href="/extensions"]')
+                    await driver.page.waitForSelector('a[href="/notebooks"]')
+                    await driver.page.click('a[href="/notebooks"]')
                     // Search box is gone when in a non-search page
                     expect(await editor.getValue()).toStrictEqual(undefined)
                     // Field value is restored when the back button is pressed

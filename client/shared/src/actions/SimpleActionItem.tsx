@@ -2,29 +2,37 @@ import * as React from 'react'
 
 import classNames from 'classnames'
 
-import { Button, Tooltip } from '@sourcegraph/wildcard'
+import { ButtonLink, ButtonLinkProps, Tooltip } from '@sourcegraph/wildcard'
 
 import styles from './SimpleActionItem.module.scss'
 
-export interface SimpleActionItemProps {
+interface SimpleActionItemProps extends Omit<ButtonLinkProps, 'href'> {
     isActive?: boolean
-    iconURL: string
     tooltip: string
-    onClick: (event: React.MouseEvent<HTMLElement>) => void
 }
 
 export const SimpleActionItem: React.FunctionComponent<SimpleActionItemProps> = props => {
-    const { isActive, iconURL, tooltip, onClick, ...otherProps } = props
+    const { isActive, tooltip, children, className, ...buttonLinkProps } = props
+
     return (
-        <Tooltip content={tooltip}>
-            <Button
-                className={classNames(styles.simpleActionItem, isActive && styles.simpleActionItemActive)}
-                onClick={onClick}
-                aria-label={tooltip}
-                {...otherProps}
-            >
-                <img src={iconURL} alt={tooltip || ''} />
-            </Button>
+        <Tooltip content={props.tooltip}>
+            <span>
+                {/**
+                 * This <ButtonLink> must be wrapped with an additional span, since the tooltip currently has an issue that will
+                 * break its onClick handler, and it will no longer prevent the default page reload (with no href).
+                 */}
+                <ButtonLink
+                    className={classNames(
+                        styles.simpleActionItem,
+                        isActive && styles.simpleActionItemActive,
+                        className
+                    )}
+                    aria-label={props.tooltip}
+                    {...buttonLinkProps}
+                >
+                    {children}
+                </ButtonLink>
+            </span>
         </Tooltip>
     )
 }

@@ -107,12 +107,23 @@ func refreshAnalyticsCache(ctx context.Context, db database.DB) error {
 				&Repos{DB: db, Cache: true},
 				&BatchChanges{Grouping: groupBy, DateRange: dateRange, DB: db, Cache: true},
 				&Extensions{Grouping: groupBy, DateRange: dateRange, DB: db, Cache: true},
+				&CodeInsights{Grouping: groupBy, DateRange: dateRange, DB: db, Cache: true},
 			}
 			for _, store := range stores {
 				if err := store.CacheAll(ctx); err != nil {
 					return err
 				}
 			}
+		}
+
+		_, err := GetCodeIntelByLanguage(ctx, db, true, dateRange)
+		if err != nil {
+			return err
+		}
+
+		_, err = GetCodeIntelTopRepositories(ctx, db, true, dateRange)
+		if err != nil {
+			return err
 		}
 	}
 
