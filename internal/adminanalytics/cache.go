@@ -115,6 +115,16 @@ func refreshAnalyticsCache(ctx context.Context, db database.DB) error {
 				}
 			}
 		}
+
+		_, err := GetCodeIntelByLanguage(ctx, db, true, dateRange)
+		if err != nil {
+			return err
+		}
+
+		_, err = GetCodeIntelTopRepositories(ctx, db, true, dateRange)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

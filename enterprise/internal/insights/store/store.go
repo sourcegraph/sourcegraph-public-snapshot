@@ -3,17 +3,18 @@ package store
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
+	"github.com/RoaringBitmap/roaring"
 	"github.com/keegancsmith/sqlf"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -22,7 +23,6 @@ import (
 // for actual API usage.
 type Interface interface {
 	SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]SeriesPoint, error)
-	RecordSeriesPoint(ctx context.Context, v RecordSeriesPointArgs) error
 	RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointArgs) error
 	CountData(ctx context.Context, opts CountDataOpts) (int, error)
 }
@@ -81,12 +81,11 @@ type SeriesPoint struct {
 	SeriesID string
 	Time     time.Time
 	Value    float64
-	Metadata []byte
 	Capture  *string
 }
 
 func (s *SeriesPoint) String() string {
-	return fmt.Sprintf("SeriesPoint{Time: %q, Value: %v, Metadata: %s}", s.Time, s.Value, s.Metadata)
+	return fmt.Sprintf("SeriesPoint{Time: %q, Value: %v}", s.Time, s.Value)
 }
 
 // SeriesPointsOpts describes options for querying insights' series data points.
@@ -101,7 +100,6 @@ type SeriesPointsOpts struct {
 	Included []api.RepoID
 
 	// TODO(slimsag): Add ability to filter based on repo name, original name.
-	// TODO(slimsag): Add ability to do limited filtering based on metadata.
 
 	IncludeRepoRegex []string
 	ExcludeRepoRegex []string
@@ -116,7 +114,6 @@ type SeriesPointsOpts struct {
 // SeriesPoints queries data points over time for a specific insights' series.
 func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]SeriesPoint, error) {
 	points := make([]SeriesPoint, 0, opts.Limit)
-
 	// 🚨 SECURITY: This is a double-negative repo permission enforcement. The list of authorized repos is generally expected to be very large, and nearly the full
 	// set of repos installed on Sourcegraph. To make this faster, we query Postgres for a list of repos the current user cannot see, and then exclude those from the
 	// time series results. 🚨
@@ -134,14 +131,13 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 	}
 	opts.Excluded = append(opts.Excluded, denylist...)
 
-	q := seriesPointsQuery(opts)
+	q := seriesPointsQuery(fullVectorSeriesAggregation, opts)
 	err = s.query(ctx, q, func(sc scanner) error {
 		var point SeriesPoint
 		err := sc.Scan(
 			&point.SeriesID,
 			&point.Time,
 			&point.Value,
-			&point.Metadata,
 			&point.Capture,
 		)
 		if err != nil {
@@ -150,6 +146,93 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 		points = append(points, point)
 		return nil
 	})
+	return points, err
+}
+
+func (s *Store) LoadSeriesInMem(ctx context.Context, opts SeriesPointsOpts) (points []SeriesPoint, err error) {
+	denylist, err := s.permStore.GetUnauthorizedRepoIDs(ctx)
+	if err != nil {
+		return []SeriesPoint{}, err
+	}
+	denyBitmap := roaring.New()
+	for _, id := range denylist {
+		denyBitmap.Add(uint32(id))
+	}
+
+	type loadStruct struct {
+		Time    time.Time
+		Value   float64
+		RepoID  int
+		Capture *string
+	}
+	type captureMap map[string]*SeriesPoint
+	mapping := make(map[time.Time]captureMap)
+
+	getByKey := func(time time.Time, key *string) *SeriesPoint {
+		cm, ok := mapping[time]
+		if !ok {
+			cm = make(captureMap)
+			mapping[time] = cm
+		}
+		k := ""
+		if key != nil {
+			k = *key
+		}
+		v, found := cm[k]
+		if !found {
+			v = &SeriesPoint{}
+			cm[k] = v
+		}
+		return v
+	}
+
+	filter := func(id int) bool {
+		return denyBitmap.Contains(uint32(id))
+	}
+
+	q := `select date_trunc('seconds', sp.time) AS interval_time, max(value), repo_id, capture FROM (
+					select * from series_points
+					union all
+					select * from series_points_snapshots
+					) as sp
+			  %s
+	          where %s
+			  GROUP BY sp.series_id, interval_time, sp.repo_id, capture
+	;`
+	fullQ := seriesPointsQuery(q, opts)
+	err = s.query(ctx, fullQ, func(sc scanner) (err error) {
+		var row loadStruct
+		err = sc.Scan(
+			&row.Time,
+			&row.Value,
+			&row.RepoID,
+			&row.Capture,
+		)
+		if err != nil {
+			return err
+		}
+		if filter(row.RepoID) {
+			return nil
+		}
+
+		sp := getByKey(row.Time, row.Capture)
+		sp.Capture = row.Capture
+		sp.Value += row.Value
+		sp.Time = row.Time
+
+		return nil
+	})
+
+	for _, pointTime := range mapping {
+		for _, point := range pointTime {
+			points = append(points, SeriesPoint{
+				SeriesID: *opts.SeriesID,
+				Time:     point.Time,
+				Value:    point.Value,
+				Capture:  point.Capture,
+			})
+		}
+	}
 	return points, err
 }
 
@@ -189,18 +272,18 @@ DELETE FROM series_points_snapshots where series_id = %s;
 // and then SUM the result for each repository, giving us our final total number.
 const fullVectorSeriesAggregation = `
 -- source: enterprise/internal/insights/store/store.go:SeriesPoints
-SELECT sub.series_id, sub.interval_time, SUM(sub.value) as value, sub.metadata, sub.capture FROM (
-	SELECT sp.repo_name_id, sp.series_id, date_trunc('seconds', sp.time) AS interval_time, MAX(value) as value, null as metadata, capture
+SELECT sub.series_id, sub.interval_time, SUM(sub.value) as value, sub.capture FROM (
+	SELECT sp.repo_name_id, sp.series_id, date_trunc('seconds', sp.time) AS interval_time, MAX(value) as value, capture
 	FROM (  select * from series_points
-			union
+			union all
 			select * from series_points_snapshots
 	) AS sp
-	JOIN repo_names rn ON sp.repo_name_id = rn.id
+	%s
 	WHERE %s
 	GROUP BY sp.series_id, interval_time, sp.repo_name_id, capture
 	ORDER BY sp.series_id, interval_time, sp.repo_name_id
 ) sub
-GROUP BY sub.series_id, sub.interval_time, sub.metadata, sub.capture
+GROUP BY sub.series_id, sub.interval_time, sub.capture
 ORDER BY sub.series_id, sub.interval_time ASC
 `
 
@@ -214,7 +297,25 @@ ORDER BY sub.series_id, sub.interval_time ASC
 //     This will cause some jitter in the aggregated series, and will skew the results slightly.
 //  3. Searches may not complete at the same exact time, so even in a perfect world if the interval
 //     should be 12h it may be off by a minute or so.
-func seriesPointsQuery(opts SeriesPointsOpts) *sqlf.Query {
+func seriesPointsQuery(baseQuery string, opts SeriesPointsOpts) *sqlf.Query {
+	preds := seriesPointsPredicates(opts)
+	limitClause := ""
+	if opts.Limit > 0 {
+		limitClause = fmt.Sprintf("LIMIT %d", opts.Limit)
+	}
+	repoFilterJoinClause := " "
+	if len(opts.IncludeRepoRegex) > 0 || len(opts.ExcludeRepoRegex) > 0 {
+		repoFilterJoinClause = ` JOIN repo_names rn ON sp.repo_name_id = rn.id `
+	}
+
+	queryWithJoin := fmt.Sprintf(baseQuery, repoFilterJoinClause, `%s`) // this is a little janky
+	return sqlf.Sprintf(
+		queryWithJoin+limitClause,
+		sqlf.Join(preds, "\n AND "),
+	)
+}
+
+func seriesPointsPredicates(opts SeriesPointsOpts) []*sqlf.Query {
 	preds := []*sqlf.Query{}
 
 	if opts.SeriesID != nil {
@@ -229,10 +330,7 @@ func seriesPointsQuery(opts SeriesPointsOpts) *sqlf.Query {
 	if opts.To != nil {
 		preds = append(preds, sqlf.Sprintf("time <= %s", *opts.To))
 	}
-	limitClause := ""
-	if opts.Limit > 0 {
-		limitClause = fmt.Sprintf("LIMIT %d", opts.Limit)
-	}
+
 	if len(opts.Included) > 0 {
 		s := fmt.Sprintf("repo_id = any(%v)", values(opts.Included))
 		preds = append(preds, sqlf.Sprintf(s))
@@ -261,10 +359,7 @@ func seriesPointsQuery(opts SeriesPointsOpts) *sqlf.Query {
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
-	return sqlf.Sprintf(
-		fullVectorSeriesAggregation+limitClause,
-		sqlf.Join(preds, "\n AND "),
-	)
+	return preds
 }
 
 // values constructs a SQL values statement out of an array of repository ids
@@ -376,92 +471,7 @@ type RecordSeriesPointArgs struct {
 	RepoName *string
 	RepoID   *api.RepoID
 
-	// Metadata contains arbitrary JSON metadata to associate with the data point, if any.
-	//
-	// See the DB schema comments for intended use cases. This should generally be small,
-	// low-cardinality data to avoid inflating the table.
-	Metadata any
-
 	PersistMode PersistMode
-}
-
-// RecordSeriesPoint records a data point for the specfied series ID (which is a unique ID for the
-// series, not a DB table primary key ID).
-func (s *Store) RecordSeriesPoint(ctx context.Context, v RecordSeriesPointArgs) (err error) {
-	// Start transaction.
-	var txStore *basestore.Store
-	txStore, err = s.Store.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = txStore.Done(err) }()
-
-	if (v.RepoName != nil && v.RepoID == nil) || (v.RepoID != nil && v.RepoName == nil) {
-		return errors.New("RepoName and RepoID must be mutually specified")
-	}
-
-	// Upsert the repository name into a separate table, so we get a small ID we can reference
-	// many times from the series_points table without storing the repo name multiple times.
-	var repoNameID *int
-	if v.RepoName != nil {
-		repoNameIDValue, ok, err := basestore.ScanFirstInt(txStore.Query(ctx, sqlf.Sprintf(upsertRepoNameFmtStr, *v.RepoName, *v.RepoName)))
-		if err != nil {
-			return errors.Wrap(err, "upserting repo name ID")
-		}
-		if !ok {
-			return errors.Wrap(err, "repo name ID not found (this should never happen)")
-		}
-		repoNameID = &repoNameIDValue
-	}
-
-	// Upsert the metadata into a separate table, so we get a small ID we can reference many times
-	// from the series_points table without storing the metadata multiple times.
-	var metadataID *int
-	if v.Metadata != nil {
-		jsonMetadata, err := json.Marshal(v.Metadata)
-		if err != nil {
-			return errors.Wrap(err, "upserting: encoding metadata")
-		}
-		metadataIDValue, ok, err := basestore.ScanFirstInt(txStore.Query(ctx, sqlf.Sprintf(upsertMetadataFmtStr, jsonMetadata, jsonMetadata)))
-		if err != nil {
-			return errors.Wrap(err, "upserting metadata ID")
-		}
-		if !ok {
-			return errors.Wrap(err, "metadata ID not found (this should never happen)")
-		}
-		metadataID = &metadataIDValue
-	}
-
-	tableName, err := getTableForPersistMode(v.PersistMode)
-	if err != nil {
-		return err
-	}
-
-	q := sqlf.Sprintf(
-		recordSeriesPointFmtstr,
-		sqlf.Sprintf(tableName),
-		v.SeriesID,         // series_id
-		v.Point.Time.UTC(), // time
-		v.Point.Value,      // value
-		metadataID,         // metadata_id
-		v.RepoID,           // repo_id
-		repoNameID,         // repo_name_id
-		repoNameID,         // original_repo_name_id
-		v.Point.Capture,
-	)
-	// Insert the actual data point.
-	return txStore.Exec(ctx, q)
-}
-
-func getTableForPersistMode(mode PersistMode) (string, error) {
-	switch mode {
-	case RecordMode:
-		return recordingTable, nil
-	case SnapshotMode:
-		return snapshotsTable, nil
-	default:
-		return "", errors.Newf("unsupported insights series point persist mode: %v", mode)
-	}
 }
 
 // RecordSeriesPoints stores multiple data points atomically.
@@ -472,12 +482,58 @@ func (s *Store) RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointA
 	}
 	defer func() { err = tx.Done(err) }()
 
+	tableColumns := []string{"series_id", "time", "value", "repo_id", "repo_name_id", "original_repo_name_id", "capture"}
+
+	// In our current use cases we should only ever use one of these for one function call, but this could change.
+	inserters := map[PersistMode]*batch.Inserter{
+		RecordMode:   batch.NewInserter(ctx, tx.Handle(), recordingTable, batch.MaxNumPostgresParameters, tableColumns...),
+		SnapshotMode: batch.NewInserter(ctx, tx.Handle(), snapshotsTable, batch.MaxNumPostgresParameters, tableColumns...),
+	}
+
 	for _, pt := range pts {
-		// this is a pretty naive implementation, this can be refactored to reduce db calls
-		if err := s.RecordSeriesPoint(ctx, pt); err != nil {
-			return err
+		inserter, ok := inserters[pt.PersistMode]
+		if !ok {
+			return errors.Newf("unsupported insights series point persist mode: %v", pt.PersistMode)
+		}
+
+		if (pt.RepoName != nil && pt.RepoID == nil) || (pt.RepoID != nil && pt.RepoName == nil) {
+			return errors.New("RepoName and RepoID must be mutually specified")
+		}
+
+		// Upsert the repository name into a separate table, so we get a small ID we can reference
+		// many times from the series_points table without storing the repo name multiple times.
+		var repoNameID *int
+		if pt.RepoName != nil {
+			repoNameIDValue, ok, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(upsertRepoNameFmtStr, *pt.RepoName, *pt.RepoName)))
+			if err != nil {
+				return errors.Wrap(err, "upserting repo name ID")
+			}
+			if !ok {
+				return errors.Wrap(err, "repo name ID not found (this should never happen)")
+			}
+			repoNameID = &repoNameIDValue
+		}
+
+		if err := inserter.Insert(
+			ctx,
+			pt.SeriesID,         // series_id
+			pt.Point.Time.UTC(), // time
+			pt.Point.Value,      // value
+			pt.RepoID,           // repo_id
+			repoNameID,          // repo_name_id
+			repoNameID,          // original_repo_name_id
+			pt.Point.Capture,    // capture
+		); err != nil {
+			return errors.Wrap(err, "Insert")
 		}
 	}
+
+	for _, inserter := range inserters {
+		if err := inserter.Flush(ctx); err != nil {
+			return errors.Wrap(err, "Flush")
+		}
+	}
+
 	return nil
 }
 
@@ -494,30 +550,16 @@ UNION
 	SELECT id FROM repo_names WHERE name = %s;
 `
 
-const upsertMetadataFmtStr = `
--- source: enterprise/internal/insights/store/store.go:RecordSeriesPoint
-WITH e AS(
-    INSERT INTO metadata(metadata)
-    VALUES (%s)
-    ON CONFLICT DO NOTHING
-    RETURNING id
-)
-SELECT * FROM e
-UNION
-	SELECT id FROM metadata WHERE metadata = %s;
-`
-
 const recordSeriesPointFmtstr = `
 -- source: enterprise/internal/insights/store/store.go:RecordSeriesPoint
 INSERT INTO %s (
 	series_id,
 	time,
 	value,
-	metadata_id,
 	repo_id,
 	repo_name_id,
 	original_repo_name_id, capture)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
+VALUES (%s, %s, %s, %s, %s, %s, %s);
 `
 
 func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
