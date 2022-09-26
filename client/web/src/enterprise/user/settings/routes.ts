@@ -40,29 +40,11 @@ export const enterpriseUserSettingsAreaRoutes: readonly UserSettingsAreaRoute[] 
             batchChangesEnabled && viewerCanAdminister,
     },
     {
-        path: '/subscriptions/new',
-        exact: true,
-        render: lazyComponent(
-            () => import('../productSubscriptions/UserSubscriptionsNewProductSubscriptionPage'),
-            'UserSubscriptionsNewProductSubscriptionPage'
-        ),
-        condition: () => SHOW_BUSINESS_FEATURES,
-    },
-    {
         path: '/subscriptions/:subscriptionUUID',
         exact: true,
         render: lazyComponent(
             () => import('../productSubscriptions/UserSubscriptionsProductSubscriptionPage'),
             'UserSubscriptionsProductSubscriptionPage'
-        ),
-        condition: () => SHOW_BUSINESS_FEATURES,
-    },
-    {
-        path: '/subscriptions/:subscriptionUUID/edit',
-        exact: true,
-        render: lazyComponent(
-            () => import('../productSubscriptions/UserSubscriptionsEditProductSubscriptionPage'),
-            'UserSubscriptionsEditProductSubscriptionPage'
         ),
         condition: () => SHOW_BUSINESS_FEATURES,
     },

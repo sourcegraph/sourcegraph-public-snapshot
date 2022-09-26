@@ -26,6 +26,7 @@ type Store interface {
 
 	// Utilities
 	GetUnsafeDB() database.DB
+	SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context, batchSize int) (configurationPolicies []types.ConfigurationPolicy, err error)
 }
 
 // store manages the policies store.

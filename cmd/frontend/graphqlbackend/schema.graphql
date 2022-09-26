@@ -555,10 +555,6 @@ type Mutation {
     """
     submitSurvey(input: SurveySubmissionInput!): EmptyResponse
     """
-    Submits happiness feedback.
-    """
-    submitHappinessFeedback(input: HappinessFeedbackSubmissionInput!): EmptyResponse
-    """
     Submits a request for a Sourcegraph Enterprise trial license.
     """
     requestTrial(email: String!): EmptyResponse
@@ -1132,24 +1128,6 @@ input SurveySubmissionInput {
     The answer to "What would make Sourcegraph better?"
     """
     better: String
-}
-
-"""
-Input for a happiness feedback submission.
-"""
-input HappinessFeedbackSubmissionInput {
-    """
-    User's happiness rating, from 1-4.
-    """
-    score: Int!
-    """
-    The answer to "What's going well? What could be better?".
-    """
-    feedback: String
-    """
-    The path that the happiness feedback will be submitted from.
-    """
-    currentPath: String
 }
 
 """

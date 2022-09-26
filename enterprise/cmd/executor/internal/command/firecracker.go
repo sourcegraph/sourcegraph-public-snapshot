@@ -2,7 +2,10 @@ package command
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"os"
+	"path"
 	"sort"
 	"strconv"
 	"strings"
@@ -50,10 +53,41 @@ func formatFirecrackerCommand(spec CommandSpec, name string, options Options) co
 	}
 }
 
+// dockerDaemonConfig is a struct that marshals into a valid docker daemon config.
+type dockerDaemonConfig struct {
+	RegistryMirrors []string `json:"registry-mirrors"`
+}
+
+// dockerDaemonConfigFilename is the filename in the firecracker state tmp directory
+// for the optional docker daemon config file.
+const dockerDaemonConfigFilename = "docker-daemon.json"
+
+func newDockerDaemonConfig(tmpDir, mirrorAddress string) (_ string, err error) {
+	c, err := json.Marshal(&dockerDaemonConfig{RegistryMirrors: []string{mirrorAddress}})
+	if err != nil {
+		return "", errors.Wrap(err, "marshalling docker daemon config")
+	}
+
+	tmpFilePath := path.Join(tmpDir, dockerDaemonConfigFilename)
+	err = os.WriteFile(tmpFilePath, c, os.ModePerm)
+	return tmpFilePath, errors.Wrap(err, "writing docker daemon config file")
+}
+
 // setupFirecracker invokes a set of commands to provision and prepare a Firecracker virtual
 // machine instance. If a startup script path (an executable file on the host) is supplied,
-// it will be mounted into the new virtual machine instance and executed.
-func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, name, workspaceDevice string, options Options, operations *Operations) error {
+// it will be mounted into the new virtual machine instance and executed. Optionally,
+// a docker daemon config is created for FirecrackerOptions.DockerRegistryMirrorAddress
+// and mounted into the VM.
+func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, name, workspaceDevice, tmpDir string, options Options, operations *Operations) error {
+	var daemonConfigFile string
+	if options.FirecrackerOptions.DockerRegistryMirrorURL != "" {
+		var err error
+		daemonConfigFile, err = newDockerDaemonConfig(tmpDir, options.FirecrackerOptions.DockerRegistryMirrorURL)
+		if err != nil {
+			return err
+		}
+	}
+
 	// Start the VM and wait for the SSH server to become available.
 	startCommand := command{
 		Key: "setup.firecracker.start",
@@ -62,7 +96,7 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, 
 			"--runtime", "docker",
 			"--network-plugin", "cni",
 			firecrackerResourceFlags(options.ResourceOptions),
-			firecrackerCopyfileFlags(options.FirecrackerOptions.VMStartupScriptPath),
+			firecrackerCopyfileFlags(options.FirecrackerOptions.VMStartupScriptPath, daemonConfigFile),
 			firecrackerVolumeFlags(workspaceDevice, firecrackerContainerDir),
 			"--ssh",
 			"--name", name,
@@ -91,8 +125,8 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, 
 }
 
 // teardownFirecracker issues a stop and a remove request for the Firecracker VM with
-// the given name.
-func teardownFirecracker(ctx context.Context, runner commandRunner, logger Logger, name string, operations *Operations) error {
+// the given name and removes the tmpDir.
+func teardownFirecracker(ctx context.Context, runner commandRunner, logger Logger, name, tmpDir string, operations *Operations) error {
 	removeCommand := command{
 		Key:       "teardown.firecracker.remove",
 		Command:   flatten("ignite", "rm", "-f", name),
@@ -100,6 +134,10 @@ func teardownFirecracker(ctx context.Context, runner commandRunner, logger Logge
 	}
 	if err := runner.RunCommand(ctx, removeCommand, logger); err != nil {
 		log15.Error("Failed to remove firecracker vm", "name", name, "err", err)
+	}
+
+	if err := os.RemoveAll(tmpDir); err != nil {
+		log15.Error("Failed to remove firecracker state tmp dir", "name", name, "tmpDir", tmpDir, "err", err)
 	}
 
 	return nil
@@ -113,10 +151,14 @@ func firecrackerResourceFlags(options ResourceOptions) []string {
 	}
 }
 
-func firecrackerCopyfileFlags(vmStartupScriptPath string) []string {
-	copyfiles := make([]string, 0, 1)
+func firecrackerCopyfileFlags(vmStartupScriptPath, daemonConfigFile string) []string {
+	copyfiles := make([]string, 0, 2)
 	if vmStartupScriptPath != "" {
 		copyfiles = append(copyfiles, fmt.Sprintf("%s:%s", vmStartupScriptPath, vmStartupScriptPath))
+	}
+
+	if daemonConfigFile != "" {
+		copyfiles = append(copyfiles, fmt.Sprintf("%s:%s", daemonConfigFile, "/etc/docker/daemon.json"))
 	}
 
 	sort.Strings(copyfiles)

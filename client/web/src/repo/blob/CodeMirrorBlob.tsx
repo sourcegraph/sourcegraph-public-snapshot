@@ -305,8 +305,12 @@ const [pinnedRangeField, updatePinnedRangeField] = createUpdateableField<LineOrP
         }
         const from = uiPositionToOffset(state.doc, startPosition, startLine)
 
+        if (from === null) {
+            return []
+        }
+
         let endPosition: UIPositionSpec['position']
-        let to: number
+        let to: number | null = null
 
         if (position.endLine && position.endCharacter) {
             endPosition = {
@@ -323,6 +327,10 @@ const [pinnedRangeField, updatePinnedRangeField] = createUpdateableField<LineOrP
             }
             to = word.to
             endPosition = offsetToUIPosition(state.doc, word.to)
+        }
+
+        if (to === null || endPosition === null) {
+            return []
         }
 
         return [
