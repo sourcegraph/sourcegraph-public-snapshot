@@ -20,7 +20,7 @@ import (
 type SettingsStore interface {
 	CreateIfUpToDate(ctx context.Context, subject api.SettingsSubject, lastID *int32, authorUserID *int32, contents string) (*api.Settings, error)
 	Done(error) error
-	GetLastestSchemaSettings(context.Context, api.SettingsSubject) (*schema.Settings, error)
+	GetLatestSchemaSettings(context.Context, api.SettingsSubject) (*schema.Settings, error)
 	GetLatest(context.Context, api.SettingsSubject) (*api.Settings, error)
 	ListAll(ctx context.Context, impreciseSubstring string) ([]*api.Settings, error)
 	Transact(context.Context) (SettingsStore, error)
@@ -131,7 +131,7 @@ func (o *settingsStore) GetLatest(ctx context.Context, subject api.SettingsSubje
 	return settings[0], nil
 }
 
-func (o *settingsStore) GetLastestSchemaSettings(ctx context.Context, subject api.SettingsSubject) (*schema.Settings, error) {
+func (o *settingsStore) GetLatestSchemaSettings(ctx context.Context, subject api.SettingsSubject) (*schema.Settings, error) {
 	apiSettings, err := o.GetLatest(ctx, subject)
 	if err != nil {
 		return nil, err

@@ -111,7 +111,7 @@ func TestGetLatestSchemaSettings(t *testing.T) {
 		t.Error(err)
 	}
 
-	settings, err := db.Settings().GetLastestSchemaSettings(ctx, api.SettingsSubject{User: &user1.ID})
+	settings, err := db.Settings().GetLatestSchemaSettings(ctx, api.SettingsSubject{User: &user1.ID})
 	if err != nil {
 		t.Fatal(err)
 	}

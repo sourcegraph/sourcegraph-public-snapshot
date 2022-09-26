@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import { upperFirst } from 'lodash'
 
 import { BUTTON_VARIANTS, BUTTON_SIZES, BUTTON_DISPLAY } from './constants'
@@ -10,7 +11,7 @@ interface GetButtonStyleParameters {
 }
 
 export const getButtonStyle = ({ variant, outline }: GetButtonStyleParameters): string =>
-    styles[`btn${outline ? 'Outline' : ''}${upperFirst(variant)}` as keyof typeof styles]
+    classNames(styles[`btn${upperFirst(variant)}` as keyof typeof styles], outline && styles.btnOutline)
 
 interface GetButtonSizeParameters {
     size: typeof BUTTON_SIZES[number]
