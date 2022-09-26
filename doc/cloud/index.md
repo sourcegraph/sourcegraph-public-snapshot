@@ -75,7 +75,7 @@ As with any Sourcegraph enterprise customer, you will also receive support from 
 
 - A dedicated project manager point of contact for the rollout process
 - A mutual non-disclosure agreement, and any additional approvals or special status required to allow Sourcegraph to manage infrastructure access tokens (listed below)
-- Acceptance of our [Terms of Service for private instances](https://about.sourcegraph.com/terms-private) or an enterprise contract
+- Acceptance of our [Terms of Service for Cloud](https://about.sourcegraph.com/terms/cloud) or an enterprise contract
 
 ### Technical
 
