@@ -29,7 +29,11 @@ type SampleStore interface {
 	// Sample Operations
 	StoreRow(ctx context.Context, row UncompressedRow, seriesId uint32) error
 	LoadRows(ctx context.Context, opts SeriesPointsOpts) ([]UncompressedRow, error)
-	Append(ctx context.Context, key TimeSeriesKey, samples []RawSample) (err error)
+	Append(ctx context.Context, key TimeSeriesKey, samples []RawSample) error
+
+	// Snapshot Operations
+	Snapshot(ctx context.Context, key TimeSeriesKey, snapshot RawSample) error
+	ClearSnapshots(ctx context.Context, seriesId uint32) error
 }
 
 type sampleStore struct {
@@ -93,12 +97,19 @@ type TimeSeriesKey struct {
 
 type UncompressedRow struct {
 	altFormatRowMetadata
-	Samples []RawSample
+	Samples  []RawSample
+	Snapshot SnapshotSample
 }
 
 type CompressedRow struct {
 	altFormatRowMetadata
-	Data []byte
+	Data     []byte
+	Snapshot SnapshotSample
+}
+
+type SnapshotSample struct {
+	Time  *uint32
+	Value *float64
 }
 
 type altFormatRowMetadata struct {
@@ -151,15 +162,15 @@ func (s *sampleStore) LoadRows(ctx context.Context, opts SeriesPointsOpts) ([]Un
 		rows = append(rows, UncompressedRow{
 			altFormatRowMetadata: row.altFormatRowMetadata,
 			Samples:              dcmp,
+			Snapshot:             row.Snapshot,
 		})
 		return nil
 	})
 }
 
 func loadRowsQuery(opts SeriesPointsOpts) *sqlf.Query {
-	baseQuery := `select spc.id, spc.repo_id, data, capture from series_points_compressed spc`
+	baseQuery := `select spc.id, spc.repo_id, data, capture, snapshot_time, snapshot_value from series_points_compressed spc`
 	var preds []*sqlf.Query
-	// joinCond := " JOIN series_points_compressed_repo_names spcrn ON spc.id = spcrn.series_points_compressed_id join repo_names rn ON spcrn.repo_name_id = rn.id"
 	joinCond := " JOIN repo_names rn ON spc.repo_id = rn.repo_id"
 	hasJoin := false
 	if len(opts.IncludeRepoRegex) > 0 {
@@ -288,6 +299,8 @@ func (s *sampleStore) streamRows(ctx context.Context, opts SeriesPointsOpts, cal
 			&tmp.RepoId,
 			&tmp.Data,
 			&tmp.Capture,
+			&tmp.Snapshot.Time,
+			&tmp.Snapshot.Value,
 		); err != nil {
 			return err
 		}
@@ -366,12 +379,23 @@ func ToTimeseries(data []UncompressedRow, seriesId string) (results []SeriesPoin
 		byCapture[getKey(datum.Capture)] = append(byCapture[getKey(datum.Capture)], datum)
 	}
 
+	coalesce := func(val *float64, coal float64) float64 {
+		if val == nil {
+			return coal
+		}
+		return *val
+	}
+
 	for key, vals := range byCapture {
 		mapped := make(map[uint32]float64)
+		snapshots := make(map[uint32]float64)
 
 		for _, val := range vals {
 			for _, sample := range val.Samples {
 				mapped[sample.Time] += sample.Value
+			}
+			if val.Snapshot.Time != nil {
+				snapshots[*val.Snapshot.Time] += coalesce(val.Snapshot.Value, 0)
 			}
 		}
 
@@ -390,9 +414,40 @@ func ToTimeseries(data []UncompressedRow, seriesId string) (results []SeriesPoin
 				Capture:  toPtr(key),
 			})
 		}
+
+		for utime, agg := range snapshots {
+			results = append(results, SeriesPoint{
+				SeriesID: seriesId,
+				Time:     time.Unix(int64(utime), 0),
+				Value:    agg,
+				Capture:  toPtr(key),
+			})
+		}
 	}
 	sort.Slice(results, func(i, j int) bool {
 		return results[i].Time.Before(results[j].Time)
 	})
 	return results
+}
+
+func (s *sampleStore) Snapshot(ctx context.Context, key TimeSeriesKey, snapshot RawSample) (err error) {
+	var preds []*sqlf.Query
+	q := "update series_points_compressed set snapshot_time = %s, snapshot_value = %s where %s"
+
+	preds = append(preds, sqlf.Sprintf("series_id = %s", key.SeriesId))
+	preds = append(preds, sqlf.Sprintf("repo_id = %s", key.RepoId))
+
+	if key.Capture == nil {
+		preds = append(preds, sqlf.Sprintf("capture is null"))
+	} else {
+		preds = append(preds, sqlf.Sprintf("capture = %s", key.Capture))
+	}
+
+	return s.Exec(ctx, sqlf.Sprintf(q, snapshot.Time, snapshot.Value, sqlf.Join(preds, "AND")))
+}
+
+func (s *sampleStore) ClearSnapshots(ctx context.Context, seriesId uint32) error {
+	q := "update series_points_compressed set snapshot_time = null, snapshot_value = null where series_id = %s"
+
+	return s.Exec(ctx, sqlf.Sprintf(q, seriesId))
 }

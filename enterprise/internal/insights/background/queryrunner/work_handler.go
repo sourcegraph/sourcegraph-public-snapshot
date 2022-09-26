@@ -252,8 +252,17 @@ func (r *workHandler) persistRecordings(ctx context.Context, job *Job, series *t
 	if store.PersistMode(job.PersistMode) == store.SnapshotMode {
 		// The purpose of the snapshot is for low fidelity but recently updated data points.
 		// We store one snapshot of an insight at any time, so we prune the table whenever adding a new series.
-		if err := tx.DeleteSnapshots(ctx, series); err != nil {
-			return err
+
+		if series.DataFormat == storage.Gorilla {
+			sampleStore := store.SampleStoreFromLegacyStore(tx)
+			err = sampleStore.ClearSnapshots(ctx, uint32(series.ID))
+			if err != nil {
+				return err
+			}
+		} else {
+			if err := tx.DeleteSnapshots(ctx, series); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -265,7 +274,6 @@ func (r *workHandler) persistRecordings(ctx context.Context, job *Job, series *t
 	}
 
 	if series.DataFormat == storage.Gorilla && store.PersistMode(job.PersistMode) == store.RecordMode {
-		// gorilla doesn't support snapshots yet womp womp
 		sampleStore := store.SampleStoreFromLegacyStore(tx)
 
 		for _, recording := range recordings {
@@ -281,6 +289,23 @@ func (r *workHandler) persistRecordings(ctx context.Context, job *Job, series *t
 				return errors.Wrap(err, "Append")
 			}
 		}
+	} else if series.DataFormat == storage.Gorilla && store.PersistMode(job.PersistMode) == store.SnapshotMode {
+		sampleStore := store.SampleStoreFromLegacyStore(tx)
+
+		for _, recording := range recordings {
+			err = sampleStore.Snapshot(ctx, store.TimeSeriesKey{
+				SeriesId: uint32(series.ID),
+				RepoId:   uint32(int(*recording.RepoID)),
+				Capture:  recording.Point.Capture,
+			}, store.RawSample{
+				Time:  uint32(recording.Point.Time.Unix()),
+				Value: recording.Point.Value,
+			})
+			if err != nil {
+				return errors.Wrap(err, "Snapshot")
+			}
+		}
+
 	} else {
 		if recordErr := tx.RecordSeriesPoints(ctx, filteredRecordings); recordErr != nil {
 			err = errors.Append(err, errors.Wrap(recordErr, "RecordSeriesPointsCapture"))
