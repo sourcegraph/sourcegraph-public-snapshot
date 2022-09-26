@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/urfave/cli/v2"
@@ -86,6 +87,14 @@ Also refer to the generated reference documentation available for site admins:
 			ArgsUsage:   "<dashboard...>",
 			Usage:       "List metrics used in dashboards",
 			Description: `For per-dashboard summaries, use 'sg monitoring dashboards' instead.`,
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:    "format",
+					Aliases: []string{"f"},
+					Usage:   "Output format of list ('markdown', 'plain', 'regexp')",
+					Value:   "markdown",
+				},
+			},
 			Action: func(c *cli.Context) error {
 				dashboards, err := dashboardsFromArgs(c.Args())
 				if err != nil {
@@ -96,10 +105,41 @@ Also refer to the generated reference documentation available for site admins:
 				if err != nil {
 					return errors.Wrap(err, "failed to list metrics")
 				}
+
+				foundMetrics := make(map[string]struct{})
+				var uniqueMetrics []string
 				for _, metrics := range results {
 					for _, metric := range metrics {
-						std.Out.Write(metric)
+						if _, exists := foundMetrics[metric]; !exists {
+							uniqueMetrics = append(uniqueMetrics, metric)
+							foundMetrics[metric] = struct{}{}
+						}
 					}
+				}
+
+				switch format := c.String("format"); format {
+				case "markdown":
+					var md strings.Builder
+					for _, m := range uniqueMetrics {
+						md.WriteString(fmt.Sprintf("- `%s`\n", m))
+					}
+					if err := std.Out.WriteMarkdown(md.String()); err != nil {
+						return err
+					}
+
+				case "plain":
+					std.Out.Write(strings.Join(uniqueMetrics, "\n"))
+
+				case "regexp":
+					reString := "(" + strings.Join(uniqueMetrics, "|") + ")"
+					re, err := regexp.Compile(reString)
+					if err != nil {
+						return errors.Wrap(err, "generated regexp was invalid")
+					}
+					std.Out.Write(re.String())
+
+				default:
+					return errors.Newf("unknown format %q", format)
 				}
 
 				return nil

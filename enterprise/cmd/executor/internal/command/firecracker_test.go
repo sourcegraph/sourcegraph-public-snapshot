@@ -127,7 +127,7 @@ func TestSetupFirecracker(t *testing.T) {
 	operations := NewOperations(&observation.TestContext)
 
 	logger := NewMockLogger()
-	if err := setupFirecracker(context.Background(), runner, logger, "deadbeef", "/dev/loopX", options, operations); err != nil {
+	if err := setupFirecracker(context.Background(), runner, logger, "deadbeef", "/dev/loopX", "/tmp/firecracker123", options, operations); err != nil {
 		t.Fatalf("unexpected error tearing down virtual machine: %s", err)
 	}
 
@@ -158,7 +158,7 @@ func TestTeardownFirecracker(t *testing.T) {
 	runner := NewMockCommandRunner()
 	operations := NewOperations(&observation.TestContext)
 
-	if err := teardownFirecracker(context.Background(), runner, nil, "deadbeef", operations); err != nil {
+	if err := teardownFirecracker(context.Background(), runner, nil, "deadbeef", "/tmp/firecracker123", operations); err != nil {
 		t.Fatalf("unexpected error tearing down virtual machine: %s", err)
 	}
 

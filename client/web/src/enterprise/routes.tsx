@@ -1,5 +1,3 @@
-import { Redirect } from 'react-router'
-
 import { isErrorLike } from '@sourcegraph/common'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
@@ -14,22 +12,6 @@ const isSearchContextsManagementEnabled = (settingsCascade: SettingsCascadeOrErr
     settingsCascade.final?.experimentalFeatures?.showSearchContextManagement !== false
 
 export const enterpriseRoutes: readonly LayoutRouteProps<any>[] = [
-    {
-        // Allow unauthenticated viewers to view the "new subscription" page to price out a subscription (instead
-        // of just dumping them on a sign-in page).
-        path: EnterprisePageRoutes.SubscriptionsNew,
-        exact: true,
-        render: lazyComponent(
-            () => import('./user/productSubscriptions/NewProductSubscriptionPageOrRedirectUser'),
-            'NewProductSubscriptionPageOrRedirectUser'
-        ),
-    },
-    {
-        // Redirect from old /user/subscriptions/new -> /subscriptions/new.
-        path: EnterprisePageRoutes.OldSubscriptionsNew,
-        exact: true,
-        render: () => <Redirect to="/subscriptions/new" />,
-    },
     {
         path: EnterprisePageRoutes.BatchChanges,
         render: lazyComponent(() => import('./batches/global/GlobalBatchChangesArea'), 'GlobalBatchChangesArea'),

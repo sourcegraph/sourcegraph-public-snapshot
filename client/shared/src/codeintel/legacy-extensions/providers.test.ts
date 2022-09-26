@@ -9,7 +9,6 @@ import * as scip from '../scip'
 
 import * as sourcegraph from './api'
 import * as indicators from './indicators'
-import { LSIFSupport } from './language-specs/language-spec'
 import {
     clearReferenceResultCache,
     createDefinitionProvider,
@@ -330,7 +329,6 @@ describe('createHoverProvider', () => {
         const searchDefinitionProvider = sinon.spy(() => asyncGeneratorFromValues([]))
 
         const result = createHoverProvider(
-            LSIFSupport.None,
             () => Promise.resolve({ definition: [location1], hover: hover1 }),
             searchDefinitionProvider,
             () => asyncGeneratorFromValues([hover2]),
@@ -342,7 +340,6 @@ describe('createHoverProvider', () => {
         assert.deepStrictEqual(await gatherValues(result), [
             {
                 ...hover1,
-                alerts: [indicators.lsif],
                 aggregableBadges: [indicators.preciseBadge],
             },
         ])
@@ -355,7 +352,6 @@ describe('createHoverProvider', () => {
         const searchDefinitionProvider = sinon.spy(() => asyncGeneratorFromValues([[location1]]))
 
         const result = createHoverProvider(
-            LSIFSupport.None,
             () => Promise.resolve({ definition: [], hover: hover1 }),
             searchDefinitionProvider,
             () => asyncGeneratorFromValues([hover2]),
@@ -367,7 +363,6 @@ describe('createHoverProvider', () => {
         assert.deepStrictEqual(await gatherValues(result), [
             {
                 ...hover1,
-                alerts: [indicators.lsifPartialHoverOnly],
                 aggregableBadges: [indicators.partialHoverNoDefinitionBadge],
             },
         ])
@@ -378,7 +373,6 @@ describe('createHoverProvider', () => {
 
     it('does not tag partially precise results without search definition', async () => {
         const result = createHoverProvider(
-            LSIFSupport.None,
             () => Promise.resolve({ definition: [], hover: hover1 }),
             () => asyncGeneratorFromValues([]),
             () => asyncGeneratorFromValues([hover2]),
@@ -390,7 +384,6 @@ describe('createHoverProvider', () => {
         assert.deepStrictEqual(await gatherValues(result), [
             {
                 ...hover1,
-                alerts: [indicators.lsif],
                 aggregableBadges: [indicators.preciseBadge],
             },
         ])
@@ -398,7 +391,6 @@ describe('createHoverProvider', () => {
 
     it('falls back to search when precise results are not found', async () => {
         const result = createHoverProvider(
-            LSIFSupport.None,
             () => Promise.resolve(null),
             () => asyncGeneratorFromValues([]),
             () => asyncGeneratorFromValues([hover3]),
@@ -410,7 +402,6 @@ describe('createHoverProvider', () => {
         assert.deepStrictEqual(await gatherValues(result), [
             {
                 ...hover3,
-                alerts: [indicators.searchLSIFSupportNone],
                 aggregableBadges: [indicators.searchBasedBadge],
             },
         ])
@@ -418,7 +409,6 @@ describe('createHoverProvider', () => {
 
     it('alerts search results correctly with experimental LSIF support', async () => {
         const result = createHoverProvider(
-            LSIFSupport.Experimental,
             () => Promise.resolve(null),
             () => asyncGeneratorFromValues([]),
             () => asyncGeneratorFromValues([hover1]),
@@ -430,7 +420,6 @@ describe('createHoverProvider', () => {
         assert.deepStrictEqual(await gatherValues(result), [
             {
                 ...hover1,
-                alerts: [indicators.searchLSIFSupportExperimental],
                 aggregableBadges: [indicators.searchBasedBadge],
             },
         ])
@@ -438,7 +427,6 @@ describe('createHoverProvider', () => {
 
     it('alerts search results correctly with robust LSIF support', async () => {
         const result = createHoverProvider(
-            LSIFSupport.Robust,
             () => Promise.resolve(null),
             () => asyncGeneratorFromValues([]),
             () => asyncGeneratorFromValues([hover1]),
@@ -450,7 +438,6 @@ describe('createHoverProvider', () => {
         assert.deepStrictEqual(await gatherValues(result), [
             {
                 ...hover1,
-                alerts: [indicators.searchLSIFSupportRobust],
                 aggregableBadges: [indicators.searchBasedBadge],
             },
         ])

@@ -170,7 +170,8 @@ CREATE TABLE insight_series (
     just_in_time boolean DEFAULT false NOT NULL,
     group_by text,
     backfill_attempts integer DEFAULT 0 NOT NULL,
-    needs_migration boolean
+    needs_migration boolean,
+    backfill_completed_at timestamp without time zone
 );
 
 COMMENT ON TABLE insight_series IS 'Data series that comprise code insights.';

@@ -990,6 +990,7 @@ Arguments: `<dashboard...>`
 Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--format, -f="<value>"`: Output format of list ('markdown', 'plain', 'regexp') (default: markdown)
 
 ## sg secret
 
