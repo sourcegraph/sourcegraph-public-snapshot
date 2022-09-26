@@ -100,7 +100,7 @@ A brief summary of the pros and cons of each workflow is:
   </tbody>
 </table>
 
-**N.B**: We currently do not support changing the state of a `published` changeset to `draft` or `unpublished`. Once a changest is published, it can't be `unpublished` or changed to a `draft`.
+>NOTE: We currently do not support changing the state of a `published` changeset to `draft` or `unpublished`. Once a changeset is published, it can't be `unpublished` or changed to a `draft`.
 
 ### Within the spec
 
