@@ -37,7 +37,7 @@ import (
 
 func NewMiddleware(logger log.Logger, db database.DB, serviceType, authPrefix string, isAPIHandler bool, next http.Handler) http.Handler {
 	logger = logger.Scoped("oauthFlowHandler", "handles oauth authentication flow")
-	oauthFlowHandler := http.StripPrefix(authPrefix, newOAuthFlowHandler(db, serviceType))
+	oauthFlowHandler := http.StripPrefix(authPrefix, newOAuthFlowHandler(logger, db, serviceType))
 	traceFamily := fmt.Sprintf("oauth.%s", serviceType)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -11,12 +11,14 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -76,7 +78,6 @@ func parseProvider(logger log.Logger, p *schema.GitHubAuthProvider, db database.
 }
 
 func failureHandler(logger log.Logger) http.HandlerFunc {
-	logger = logger.Scoped("failureHandler", "handles github oauth authentication failures")
 	return func(w http.ResponseWriter, r *http.Request) {
 		// As a special case wa want to handle `access_denied` errors by redirecting
 		// back. This case arises when the user decides not to proceed by clicking `cancel`.
@@ -87,6 +88,7 @@ func failureHandler(logger log.Logger) http.HandlerFunc {
 		}
 
 		ctx := r.Context()
+		logger = logger.WithTrace(trace.Context(ctx))
 		encodedState, err := goauth2.StateFromContext(ctx)
 		if err != nil {
 			logger.Error("could not get state from context.", log.Error(err))
