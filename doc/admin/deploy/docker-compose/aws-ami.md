@@ -5,9 +5,8 @@
 A Sourcegraph AWS AMI instance includes:
 
 - Root EBS volume with 50GB of storage
-- Additional EBS volume for storing code and search indices
-  - Storage space depends on your selected instance size
-  - It is configurable and expandable
+- Additional EBS volume with 500GB of storage for storing code and search indices
+  - Storage space is configurable and expandable
 - A specific version of Sourcegraph based on the selected AMI
 - Resource requirements are configured according to your selected instance size
 
@@ -25,13 +24,23 @@ For example, if you have 8,000 users with 80,000 repositories, your instance siz
 
 If you have 1,000 users with 80,000 users, you should still go with size **M**.
 
-| **Size**           | **S**       | **M**       | **L**        | **XL**       | **2XL**      |
-|:------------------:|:-----------:|:-----------:|:------------:|:------------:|:------------:|
-| **Users**          | 1,000       | 5,000       | 10,000       | 20,000       | 40,000       |
-| **Repositories**   | 10,000      | 50,000      | 100,000      | 250,000      | 500,000      |
-| **Root Storage**   | 50GB        | 50GB        | 50GB         | 50GB         | 50GB         |
-| **Data Storage**   | 500GB       | 1TB         | 3TB          | 5TB          | 5TB          |
-| **AMI Name**       | TBA         | placeholder | placeholder  | placeholder  | TBA          |
+| **Size**           | **XS**       | **S**       | **M**       | **L**        | **XL**       |
+|:------------------:|:-----------:|:-----------:|:-----------:|:------------:|:------------:|
+| **Users**          | 500         | 1,000       | 5,000       | 10,000       | 20,000       |
+| **Repositories**   | 5,000       | 10,000      | 50,000      | 100,000      | 250,000      |
+| **AMI Name**       | sourcegraph-XS (__v4.0.0__) m6a.2xlarge | sourcegraph-S (__v4.0.0__) m6a.4xlarge | sourcegraph-M (__v4.0.0__) m6a.8xlarge | sourcegraph-L (__v4.0.0__) m6a.12xlarge | sourcegraph-XL (__v4.0.0__) m6a.24xlarge |
+
+<span class="badge badge-critical">IMPORTANT</span> Replace __4.0.0__ with the version number of your choice. **Versions below v4.0.0 are not supported.**
+
+### AMI names
+
+For example, below are the names of the AMIs for version 4.0.0:
+
+- XS: [sourcegraph-XS (v4.0.0) m6a.2xlarge](https://console.aws.amazon.com/ec2#ImageDetails:imageId=ami-0ee5cdc5e89a4bee2)
+- S : sourcegraph-S (v4.0.0) m6a.4xlarge
+- M : sourcegraph-M (v4.0.0) m6a.8xlarge
+- L: [sourcegraph-L (v4.0.0) m6a.12xlarge](https://console.aws.amazon.com/ec2#ImageDetails:imageId=ami-021db30b6db9b0634)
+- XL: [sourcegraph-XL (v4.0.0) m6a.24xlarge](https://console.aws.amazon.com/ec2#ImageDetails:imageId=ami-04b10e0fabedb6eac)
 
 ## Instance types
 
@@ -54,13 +63,17 @@ Please select the instance type according to the table below for your instance s
 
 ## Deploy
 
-![image](https://user-images.githubusercontent.com/68532117/191854109-8b81abb4-925d-436d-b14f-91607c852f7b.png)
+![image](https://user-images.githubusercontent.com/68532117/192365588-05c4d828-9d15-4c2d-a2e7-169b5f3ce20f.png)
 
-1. Open the [Amazon EC2 AMIs console](https://console.aws.amazon.com/ec2/home#Images:visibility=public-images)
+1. Open the [Amazon EC2 AMIs console](https://console.aws.amazon.com/ec2/home#Images:visibility=public-images;owner=185007729374;Name=production;)
 2. Choose **Public images** from the dropdown menu next to the search bar
-3. Enter `Owner alias = sourcegraph` in the search bar
+3. Enter `Owner = 185007729374` and `Name=production` or the [name of the AMI](#ami-names) in the search bar
 4. Select the AMI published by Sourcegraph for your instance size
 5. Click **Launch instance from AMI**
+
+Alternatively, you can search for the AMIs using  [name of the AMI](#ami-names) in the community AMIs page when launching an instance:
+![image](https://user-images.githubusercontent.com/68532117/192366274-5e75eaae-1f45-4f12-bae9-13bfea0a2cb2.png)
+
 
 Once you've been redirected to the `Launch an instance` page...
 
@@ -94,18 +107,17 @@ Please take time to review the following before proceeding with the upgrades:
 - [Update notes](https://docs.sourcegraph.com/admin/updates/kubernetes)
 - [Multi-version upgrade procedure](https://docs.sourcegraph.com/admin/updates/kubernetes#multi-version-upgrade-procedure)
 
-#### Step 1: Terminate the current instance
+#### Step 1: Stop the current instance
 
 1. Stop your current Sourcegraph AMI instance
    - Go to the ECS console for your instance
    - Click Instance State to Stop Instance
 2. Detach the non-root data volume (Device name: /dev/sdb/)
    - Go to the Storage section in your instance console
-   - Find the volume with the device name /dev/sdb
-   - Select the volume, then click Actions to Detach Volume
+   - Find the volume with the device name **/dev/sdb**
+   - Select the volume, then click Actions to **Detach Volume**
    - Give the volume a name for identification purposes
-3. Take a note of the VPC name
-4. Terminate the stopped Sourcegraph AMI instance
+3. Make a note of the VPC name
 
 #### Step 2: Launch a new instance
 
@@ -128,6 +140,8 @@ Please take time to review the following before proceeding with the upgrades:
   - **Device name**: /dev/sdb
 
 10\. Reboot the new instance
+
+You can terminate the stopped Sourcegraph AMI instance once you have confirmed the new instance is up and running.
 
 ### Downgrade
 
