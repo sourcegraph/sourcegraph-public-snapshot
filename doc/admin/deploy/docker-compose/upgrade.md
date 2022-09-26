@@ -75,12 +75,10 @@ To perform a multi-version upgrade on a Sourcegraph instance running on Docker c
   - Otherwise, perform the following steps from the [upgrading internal Postgres instances](../../postgres.md#upgrading-internal-postgresql-instances) guide:
       1. It's assumed that your fork of `deploy-sourcegraph-docker` is up to date with your instance's current version. Pull the upstream changes for `v3.27.0` and resolve any git merge conflicts. We need to temporarily boot the containers defined at this specific version to rewrite existing data to the new Postgres 12 format.
       1. Run `docker-compose up pgsql` to launch new Postgres 12 containers and rewrite the old Postgres 11 data. This may take a while, but streaming container logs should show progress.
-      1. Wait until the database container is accepting connections. Once ready, run the command `docker exec -it pgsql -- psql -U sg` to open an interactive pgsql prompt.
-      1. Issue the command `REINDEX database sg;` in the pgsql prompt to repair indexes that were silently invalidated by the previous data rewrite step. **If you skip this step**, then some data may become inaccessible under normal operation. The following steps are not guaranteed to work, and **data loss will occur**.
+      1. Wait until the database container is accepting connections. Once ready, run the command `docker exec pgsql -- psql -U sg -c 'REINDEX database sg;'` to repair indexes that were silently invalidated by the previous data rewrite step. **If you skip this step**, then some data may become inaccessible under normal operation, the following steps are not guaranteed to work, and **data loss will occur**.
       1. Follow the same steps for the `codeintel-db`:
           - Run `docker-compose up codeintel-db` to launch Postgres 12.
-          - Run `docker exec -it codeintel-db -- pgsql -U sg` to open a pgsql prompt.
-          - Run `REINDEX database sg` in the pgsql prompt.
+          - Run `docker exec codeintel-db -- pgsql -U sg -c 'REINDEX database sg;'` to reindex the database.
 1. Pull the upstream changes for the target instance version and resolve any git merge conflicts. The [standard upgrade procedure](#standard-upgrades) describes this step in more detail.
 1. Optionally, if using local database instances, start the containers now via `docker-compose up -d pgsql codeintel-db codeinsights-db`. The following migrator command will start these containers on-demand if this step is skipped, but running them separately will make startup errors apparent.
 1. Follow the instructions on [how to run the migrator job in Docker Compose](../../how-to/manual_database_migrations.md#docker-compose) to perform the upgrade migration. For specific documentation on the `upgrade` command, see the [command documentation](../../how-to/manual_database_migrations.md#upgrade). The following specific steps are an easy way to run the upgrade command:
