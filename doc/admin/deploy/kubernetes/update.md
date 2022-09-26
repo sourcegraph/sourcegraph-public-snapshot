@@ -76,13 +76,11 @@ To perform a multi-version upgrade on a Sourcegraph instance running on Kubernet
   - Otherwise, perform the following steps from the [upgrading internal Postgres instances](../../postgres.md#upgrading-internal-postgresql-instances) guide:
       1. It's assumed that your fork of `deploy-sourcegraph` is up to date with your instance's current version. Pull the upstream changes for `v3.27.0` and resolve any git merge conflicts. We need to temporarily boot the containers defined at this specific version to rewrite existing data to the new Postgres 12 format.
       1. Run `kubectl apply -l deploy=sourcegraph -f base/pgsql` to launch a new Postgres 12 container and rewrite the old Postgres 11 data. This may take a while, but streaming container logs should show progress.
-      1. Wait until the database container is accepting connections. Once ready, run the command `kubectl exec --stdin --tty pgsql -- psql -U sg` to open an interactive pgsql prompt.
-      1. Issue the command `REINDEX database sg` in the pgsql prompt to repair indexes that were silently invalidated by the previous data rewrite step. **If you skip this step**, then some data may become inaccessible under normal operation. The following steps are not guaranteed to work, and **data loss will occur**.
+      1. Wait until the database container is accepting connections. Once ready, run the command `kubectl exec pgsql -- psql -U sg -c 'REINDEX database sg;'` issue a reindex command to Postgres to repair indexes that were silently invalidated by the previous data rewrite step. **If you skip this step**, then some data may become inaccessible under normal operation, the following steps are not guaranteed to work, and **data loss will occur**.
       1. Follow the same steps for the `codeintel-db`:
           - Run `kubectl apply -l deploy=sourcegraph -f base/codeintel-db` to launch Postgres 12.
-          - Run `kubectl exec --stdin --tty codeintel-db -- psql -U sg` to open a pgsql prompt.
-          - Run `REINDEX database sg` in the pgsql prompt.
-      1. Leave these databases running while the subsequent migration steps are performed.
+          - Run `kubectl exec codeintel-db -- psql -U sg -c 'REINDEX database sg;'` to issue a reindex command to Postgres.
+      1. Leave these versions of the databases running while the subsequent migration steps are performed. If `codeinsights-db` is a container new to your instance, now is a good time to start it as well.
 1. Pull the upstream changes for the target instance version and resolve any git merge conflicts. The [standard upgrade procedure](#standard-upgrades) describes this step in more detail.
 1. Follow the instructions on [how to run the migrator job in Kubernetes](http://localhost:5080/admin/how-to/manual_database_migrations#kubernetes) to perform the upgrade migration. For specific documentation on the `upgrade` command, see the [command documentation](./../../how-to/manual_database_migrations.md#upgrade). The following specific steps are an easy way to run the upgrade command:
   1. Edit the file `configure/migrator/migrator.Job.yaml` and set the value of the `command` key to `["upgrade", "--from=<old version>", "--to=<new version>"]`.
