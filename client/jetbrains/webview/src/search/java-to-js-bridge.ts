@@ -1,4 +1,4 @@
-import { getAuthenticatedUser } from '../sourcegraph-api-access/api-gateway'
+import { getSiteVersionAndAuthenticatedUser } from '../sourcegraph-api-access/api-gateway'
 
 import { indicateFinishedLoading } from './js-to-java-bridge'
 import { PluginConfig, Theme } from './types'
@@ -28,8 +28,8 @@ export async function handleRequest(
         const pluginConfig = argumentsAsObject as PluginSettingsChangedRequestArguments
         applyConfig(pluginConfig)
         try {
-            const authenticatedUser = await getAuthenticatedUser(pluginConfig.instanceURL, pluginConfig.accessToken)
-            await indicateFinishedLoading(true, !!authenticatedUser)
+            const {currentUser} = await getSiteVersionAndAuthenticatedUser(pluginConfig.instanceURL, pluginConfig.accessToken)
+            await indicateFinishedLoading(true, !!currentUser)
         } catch {
             await indicateFinishedLoading(false, false)
         }

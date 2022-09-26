@@ -4,7 +4,7 @@ import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import polyfillEventSource from '@sourcegraph/shared/src/polyfills/vendor/eventSource'
 import { AnchorLink, setLinkComponent } from '@sourcegraph/wildcard'
 
-import { getAuthenticatedUser } from '../sourcegraph-api-access/api-gateway'
+import { getSiteVersionAndAuthenticatedUser } from '../sourcegraph-api-access/api-gateway'
 import { EventLogger } from '../telemetry/EventLogger'
 
 import { App } from './App'
@@ -31,6 +31,7 @@ let anonymousUserId: string
 let pluginVersion: string
 let initialSearch: Search | null = null
 let authenticatedUser: AuthenticatedUser | null = null
+let backendVersion: string | null = null
 let telemetryService: EventLogger
 
 window.initializeSourcegraph = async () => {
@@ -47,7 +48,9 @@ window.initializeSourcegraph = async () => {
 
         let isServerAccessSuccessful = false
         try {
-            authenticatedUser = await getAuthenticatedUser(instanceURL, accessToken)
+            const {site, currentUser} = await getSiteVersionAndAuthenticatedUser(instanceURL, accessToken)
+            authenticatedUser = currentUser
+            backendVersion = site?.productVersion || null
             isServerAccessSuccessful = true
         } catch (error) {
             console.info('Could not authenticate with current URL and token settings', instanceURL, accessToken, error)
@@ -86,6 +89,7 @@ export function renderReactApp(): void {
             onPreviewChange={onPreviewChange}
             onPreviewClear={onPreviewClear}
             onSearchError={onSearchError}
+            backendVersion={backendVersion}
             authenticatedUser={authenticatedUser}
             telemetryService={telemetryService}
         />,
