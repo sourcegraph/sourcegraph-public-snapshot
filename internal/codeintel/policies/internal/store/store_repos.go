@@ -7,9 +7,11 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 // UpdateReposMatchingPatterns updates the values of the repository pattern lookup table for the
@@ -169,4 +171,52 @@ WHERE
 	(%s)
 ORDER BY stars DESC NULLS LAST, id
 LIMIT %s OFFSET %s
+`
+
+// SelectPoliciesForRepositoryMembershipUpdate returns a slice of configuration policies that should be considered
+// for repository membership updates. Configuration policies are returned in the order of least recently updated.
+func (s *store) SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context, batchSize int) (configurationPolicies []shared.ConfigurationPolicy, err error) {
+	ctx, trace, endObservation := s.operations.selectPoliciesForRepositoryMembershipUpdate.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	configurationPolicies, err = scanConfigurationPolicies(s.db.Query(ctx, sqlf.Sprintf(selectPoliciesForRepositoryMembershipUpdate, batchSize, timeutil.Now())))
+	if err != nil {
+		return nil, err
+	}
+	trace.Log(log.Int("numConfigurationPolicies", len(configurationPolicies)))
+
+	return configurationPolicies, nil
+}
+
+const selectPoliciesForRepositoryMembershipUpdate = `
+-- source: internal/codeintel/stores/dbstore/configuration_policies.go:SelectPoliciesForRepositoryMembershipUpdate
+WITH
+candidate_policies AS (
+	SELECT p.id
+	FROM lsif_configuration_policies p
+	ORDER BY p.last_resolved_at NULLS FIRST
+	LIMIT %d
+),
+locked_policies AS (
+	SELECT c.id
+	FROM candidate_policies c
+	ORDER BY c.id FOR UPDATE
+)
+UPDATE lsif_configuration_policies
+SET last_resolved_at = %s
+WHERE id IN (SELECT id FROM locked_policies)
+RETURNING
+	id,
+	repository_id,
+	repository_patterns,
+	name,
+	type,
+	pattern,
+	protected,
+	retention_enabled,
+	retention_duration_hours,
+	retain_intermediate_commits,
+	indexing_enabled,
+	index_commit_max_age_hours,
+	index_intermediate_commits
 `

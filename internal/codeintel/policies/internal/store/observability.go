@@ -16,8 +16,9 @@ type operations struct {
 	deleteConfigurationPolicyByID *observation.Operation
 
 	// Repositories
-	getRepoIDsByGlobPatterns    *observation.Operation
-	updateReposMatchingPatterns *observation.Operation
+	getRepoIDsByGlobPatterns                    *observation.Operation
+	updateReposMatchingPatterns                 *observation.Operation
+	selectPoliciesForRepositoryMembershipUpdate *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -45,7 +46,8 @@ func newOperations(observationContext *observation.Context) *operations {
 		deleteConfigurationPolicyByID: op("DeleteConfigurationPolicyByID"),
 
 		// Repositories
-		updateReposMatchingPatterns: op("UpdateReposMatchingPatterns"),
-		getRepoIDsByGlobPatterns:    op("GetRepoIDsByGlobPatterns"),
+		updateReposMatchingPatterns:                 op("UpdateReposMatchingPatterns"),
+		getRepoIDsByGlobPatterns:                    op("GetRepoIDsByGlobPatterns"),
+		selectPoliciesForRepositoryMembershipUpdate: op("SelectPoliciesForRepositoryMembershipUpdate"),
 	}
 }
