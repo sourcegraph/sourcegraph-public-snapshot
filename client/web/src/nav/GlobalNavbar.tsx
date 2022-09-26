@@ -18,7 +18,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, FeedbackPrompt, ButtonLink, PopoverTrigger, useWindowSize } from '@sourcegraph/wildcard'
+import { Button, Link, ButtonLink, useWindowSize } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -28,7 +28,7 @@ import { ActivationDropdown } from '../components/ActivationDropdown'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { WebCommandListPopoverButton } from '../components/shared'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
-import { useHandleSubmitFeedback, useRoutesMatch } from '../hooks'
+import { useRoutesMatch } from '../hooks'
 import { CodeInsightsProps } from '../insights/types'
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
 import { LayoutRouteProps } from '../routes'
@@ -152,9 +152,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
     branding = branding ?? window.context?.branding
 
     const routeMatch = useRoutesMatch(props.routes)
-    const { handleSubmitFeedback } = useHandleSubmitFeedback({
-        routeMatch,
-    })
 
     const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext)
@@ -289,22 +286,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                         </>
                     )}
                     {props.authenticatedUser?.siteAdmin && <AnalyticsNavItem />}
-                    {props.authenticatedUser && (
-                        <NavAction>
-                            <FeedbackPrompt onSubmit={handleSubmitFeedback} productResearchEnabled={true}>
-                                <PopoverTrigger
-                                    as={Button}
-                                    aria-label="Feedback"
-                                    variant="secondary"
-                                    outline={true}
-                                    size="sm"
-                                    className={styles.feedbackTrigger}
-                                >
-                                    <span>Feedback</span>
-                                </PopoverTrigger>
-                            </FeedbackPrompt>
-                        </NavAction>
-                    )}
                     {props.authenticatedUser && extensionsController !== null && window.context.enableLegacyExtensions && (
                         <NavAction>
                             <WebCommandListPopoverButton
