@@ -2,7 +2,7 @@
 
 Sourcegraph Cloud is a single-tenant cloud (formerly known as managed instances). Cloud instances are private, dedicated Sourcegraph instances provisioned and managed by Sourcegraph.
 
-Sourcegraph provisions each instance in a completely isolated and secure cloud infrastructure. Access is restricted to only your organization through your SO provider of choice. Enterprise VPN is available upon request.
+Sourcegraph provisions each instance in a completely isolated and secure cloud infrastructure. Access is restricted to only your organization through your SSO provider of choice. Enterprise VPN is available upon request.
 
 To get started with a cloud trial, just [signup](https://signup.sourcegraph.com) or [contact us](https://about.sourcegraph.com/contact/sales) if you have specific requirements (VPN) or either more than 500 users, more than 1,000 repos or very large monorepos.
 
