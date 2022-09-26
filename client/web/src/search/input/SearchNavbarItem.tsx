@@ -32,7 +32,6 @@ interface Props
     globbing: boolean
     isSearchAutoFocusRequired?: boolean
     isRepositoryRelatedPage?: boolean
-    onHandleFuzzyFinder?: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 const selectQueryState = ({
@@ -63,10 +62,10 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
         features => features.showSearchContextManagement ?? false
     )
     const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
-    const applySuggestionsOnEnter = useExperimentalFeatures(
-        features => features.applySearchQuerySuggestionOnEnter ?? false
-    )
     const [enableCoreWorkflowImprovements] = useCoreWorkflowImprovementsEnabled()
+    const applySuggestionsOnEnter =
+        useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ??
+        enableCoreWorkflowImprovements
 
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
@@ -97,7 +96,7 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
             <SearchBox
                 {...props}
                 editorComponent={editorComponent}
-                applySuggestionsOnEnter={enableCoreWorkflowImprovements || applySuggestionsOnEnter}
+                applySuggestionsOnEnter={applySuggestionsOnEnter}
                 showSearchContext={showSearchContext}
                 showSearchContextManagement={showSearchContextManagement}
                 caseSensitive={searchCaseSensitivity}
@@ -111,7 +110,6 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                 submitSearchOnSearchContextChange={submitSearchOnChange}
                 autoFocus={autoFocus}
                 hideHelpButton={isSearchPage}
-                onHandleFuzzyFinder={props.onHandleFuzzyFinder}
                 isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
                 structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
             />

@@ -16,6 +16,7 @@ export interface BarChartProps<Datum> extends CategoricalLikeChart<Datum>, SVGPr
     width: number
     height: number
     stacked?: boolean
+    sortByValue?: boolean
 
     // TODO: Move these specific only to the axis label UI props to the axis components
     // see https://github.com/sourcegraph/sourcegraph/issues/40009
@@ -27,6 +28,7 @@ export interface BarChartProps<Datum> extends CategoricalLikeChart<Datum>, SVGPr
     getScaleXTicks?: <T>(options: GetScaleTicksOptions) => T[]
     getTruncatedXTick?: (formattedTick: string) => string
     getCategory?: (datum: Datum) => string | undefined
+    getDatumFadeColor?: (datum: Datum) => string
 
     onDatumHover?: (datum: Datum) => void
 }
@@ -42,12 +44,14 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
         minAngleXTick,
         maxAngleXTick,
         stacked = false,
+        sortByValue,
         getDatumHover,
         getScaleXTicks,
         getTruncatedXTick,
         getDatumName,
         getDatumValue,
         getDatumColor,
+        getDatumFadeColor,
         getDatumLink = DEFAULT_LINK_GETTER,
         getCategory = getDatumName,
         onDatumLinkClick,
@@ -56,8 +60,8 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
     } = props
 
     const categories = useMemo(
-        () => getGroupedCategories({ data, stacked, getCategory, getDatumName, getDatumValue }),
-        [data, stacked, getCategory, getDatumName, getDatumValue]
+        () => getGroupedCategories({ data, stacked, sortByValue, getCategory, getDatumName, getDatumValue }),
+        [data, stacked, sortByValue, getCategory, getDatumName, getDatumValue]
     )
 
     const xScale = useMemo(
@@ -116,6 +120,7 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
                         getDatumName={getDatumName}
                         getDatumValue={getDatumValue}
                         getDatumColor={getDatumColor}
+                        getDatumFadeColor={getDatumFadeColor}
                         getDatumLink={getDatumLink}
                         onBarClick={handleBarClick}
                         onBarHover={onDatumHover}

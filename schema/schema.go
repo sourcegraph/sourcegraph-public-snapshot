@@ -66,6 +66,16 @@ type ApiRatelimit struct {
 	PerUser int `json:"perUser"`
 }
 
+// AuditLog description: EXPERIMENTAL: Configuration for audit logging (specially formatted log entries for tracking sensitive events)
+type AuditLog struct {
+	// GitserverAccess description: Capture gitserver access logs as part of the audit log.
+	GitserverAccess bool `json:"gitserverAccess"`
+	// GraphQL description: Capture GraphQL requests and responses as part of the audit log.
+	GraphQL bool `json:"graphQL"`
+	// SecurityEvents description: Capture security events as part of the audit log.
+	SecurityEvents bool `json:"securityEvents"`
+}
+
 // AuthAccessTokens description: Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.
 type AuthAccessTokens struct {
 	// Allow description: Allow or restrict the use of access tokens. The default is "all-users-create", which enables all users to create access tokens. Use "none" to disable access tokens entirely. Use "site-admin-create" to restrict creation of new tokens to admin users (existing tokens will still work until revoked).
@@ -621,6 +631,8 @@ type ExperimentalFeatures struct {
 	GitServerPinnedRepos map[string]string `json:"gitServerPinnedRepos,omitempty"`
 	// GoPackages description: Allow adding Go package host connections
 	GoPackages string `json:"goPackages,omitempty"`
+	// InsightsAlternateLoadingStrategy description: Use an in-memory strategy of loading Code Insights. Should only be used for benchmarking on large instances, not for customer use currently.
+	InsightsAlternateLoadingStrategy bool `json:"insightsAlternateLoadingStrategy,omitempty"`
 	// JvmPackages description: Allow adding JVM package host connections
 	JvmPackages string `json:"jvmPackages,omitempty"`
 	// NpmPackages description: Allow adding npm package code host connections
@@ -1109,6 +1121,8 @@ type JVMPackagesConnection struct {
 
 // Log description: Configuration for logging and alerting, including to external services.
 type Log struct {
+	// AuditLog description: EXPERIMENTAL: Configuration for audit logging (specially formatted log entries for tracking sensitive events)
+	AuditLog *AuditLog `json:"auditLog,omitempty"`
 	// GitserverAccessLogs description: Enable gitserver access logging.
 	GitserverAccessLogs bool `json:"gitserver.accessLogs,omitempty"`
 	// Sentry description: Configuration for Sentry
@@ -1538,6 +1552,10 @@ type QuickLink struct {
 
 // Ranking description: Experimental search result ranking options.
 type Ranking struct {
+	// MaxQueueMatchCount description: The maximum number of matches that can be buffered to sort results. The default is -1 (unbounded). Setting this to a positive integer protects frontend against OOMs for queries with extremely high count of matches per repository.
+	MaxQueueMatchCount *int `json:"maxQueueMatchCount,omitempty"`
+	// MaxQueueSizeBytes description: The maximum number of bytes that can be buffered to sort results. The default is -1 (unbounded). Setting this to a positive integer protects frontend against OOMs.
+	MaxQueueSizeBytes *int `json:"maxQueueSizeBytes,omitempty"`
 	// MaxReorderDurationMS description: The maximum time in milliseconds we wait until we flush the results queue. The default is 0 (unbounded). The larger the value the more stable the ranking and the higher the MEM pressure on frontend.
 	MaxReorderDurationMS int `json:"maxReorderDurationMS,omitempty"`
 	// MaxReorderQueueSize description: The maximum number of search results that can be buffered to sort results. -1 is unbounded. The default is 24. Set this to small integers to limit latency increases from slow backends.
@@ -1711,6 +1729,8 @@ type Settings struct {
 	CodeIntelDisableSearchBased bool `json:"codeIntel.disableSearchBased,omitempty"`
 	// CodeIntelMixPreciseAndSearchBasedReferences description: Whether to supplement precise references with search-based results.
 	CodeIntelMixPreciseAndSearchBasedReferences bool `json:"codeIntel.mixPreciseAndSearchBasedReferences,omitempty"`
+	// CodeIntelReferencesPanel description: What kind of references panel to use for exploring definitions and references. The tabbed panel is deprecated.
+	CodeIntelReferencesPanel string `json:"codeIntel.referencesPanel,omitempty"`
 	// CodeIntelTraceExtension description: Whether to enable trace logging on the extension.
 	CodeIntelTraceExtension bool `json:"codeIntel.traceExtension,omitempty"`
 	// CodeIntelligenceAutoIndexPopularRepoLimit description: Up to this number of repos are auto-indexed automatically. Ordered by star count.
@@ -1733,6 +1753,8 @@ type Settings struct {
 	HistoryPreferAbsoluteTimestamps bool `json:"history.preferAbsoluteTimestamps,omitempty"`
 	// Insights description: EXPERIMENTAL: Code Insights
 	Insights []*Insight `json:"insights,omitempty"`
+	// InsightsAggregationsExtendedTimeout description: The number of seconds to execute the aggregation for when running in extended timeout mode. This value should always be less than any proxy timeout if one exists. The maximum value is equal to searchLimits.maxTimeoutSeconds
+	InsightsAggregationsExtendedTimeout int `json:"insights.aggregations.extendedTimeout,omitempty"`
 	// InsightsAllrepos description: EXPERIMENTAL: Backend-based Code Insights
 	InsightsAllrepos map[string]BackendInsight `json:"insights.allrepos,omitempty"`
 	// InsightsDashboards description: EXPERIMENTAL: Code Insights Dashboards
@@ -1815,8 +1837,6 @@ type SettingsExperimentalFeatures struct {
 	CoolCodeIntel *bool `json:"coolCodeIntel,omitempty"`
 	// CopyQueryButton description: DEPRECATED: This feature is now permanently enabled. Enables displaying the copy query button in the search bar when hovering over the global navigation bar.
 	CopyQueryButton *bool `json:"copyQueryButton,omitempty"`
-	// DisableProactiveSearchAggregations description: Search results aggregations are not triggered automatically with a search.
-	DisableProactiveSearchAggregations *bool `json:"disableProactiveSearchAggregations,omitempty"`
 	// Editor description: Specifies which (code) editor to use for query and text input
 	Editor *string `json:"editor,omitempty"`
 	// EnableCodeMirrorFileView description: Uses CodeMirror to display files. In this first iteration not all features of the current file view are available.
@@ -1831,16 +1851,14 @@ type SettingsExperimentalFeatures struct {
 	EnableLazyFileResultSyntaxHighlighting *bool `json:"enableLazyFileResultSyntaxHighlighting,omitempty"`
 	// EnableMergedFileSymbolSidebar description: Enables the new file sidebar experience with merged file and symbol entries.
 	EnableMergedFileSymbolSidebar *bool `json:"enableMergedFileSymbolSidebar,omitempty"`
-	// EnableSearchResultsAggregations description: Display aggregations for your search results on the search screen.
-	EnableSearchResultsAggregations *bool `json:"enableSearchResultsAggregations,omitempty"`
+	// EnableSearchFilePrefetch description: Pre-fetch plaintext file revisions from search results on hover/focus.
+	EnableSearchFilePrefetch *bool `json:"enableSearchFilePrefetch,omitempty"`
 	// EnableSearchStack description: REMOVED: This feature can now be enabled/disabled via the notepad button on the notebooks list page.
 	EnableSearchStack *bool `json:"enableSearchStack,omitempty"`
-	// EnableSidebarFilePrefetch description: Pre-fetch plaintext file revisions from sidebar on hover.
+	// EnableSidebarFilePrefetch description: Pre-fetch plaintext file revisions from sidebar on hover/focus.
 	EnableSidebarFilePrefetch *bool `json:"enableSidebarFilePrefetch,omitempty"`
 	// EnableSmartQuery description: REMOVED. Previously, added more syntax highlighting and hovers for queries in the web app. This behavior is active by default now.
 	EnableSmartQuery *bool `json:"enableSmartQuery,omitempty"`
-	// ExtensionsAsCoreFeatures description: Use default extensions (Git extras, Open in editor, Search export) functionality as core features instead of extensions.
-	ExtensionsAsCoreFeatures *bool `json:"extensionsAsCoreFeatures,omitempty"`
 	// FuzzyFinder description: Enables fuzzy finder with the keyboard shortcut `Cmd+K` on macOS and `Ctrl+K` on Linux/Windows.
 	FuzzyFinder *bool `json:"fuzzyFinder,omitempty"`
 	// FuzzyFinderCaseInsensitiveFileCountThreshold description: The maximum number of files a repo can have to use case-insensitive fuzzy finding
@@ -1851,8 +1869,14 @@ type SettingsExperimentalFeatures struct {
 	HomePanelsComputeSuggestions bool `json:"homePanelsComputeSuggestions,omitempty"`
 	// HomepageUserInvitation description: Shows a panel to invite collaborators to Sourcegraph on home page.
 	HomepageUserInvitation *bool `json:"homepageUserInvitation,omitempty"`
+	// InsightsAlternateLoadingStrategy description: Use an in-memory strategy of loading Code Insights. Should only be used for benchmarking on large instances, not for customer use currently.
+	InsightsAlternateLoadingStrategy bool `json:"insightsAlternateLoadingStrategy,omitempty"`
+	// ProactiveSearchResultsAggregations description: Search results aggregations are triggered automatically with a search.
+	ProactiveSearchResultsAggregations *bool `json:"proactiveSearchResultsAggregations,omitempty"`
 	// SearchContextsQuery description: DEPRECATED: This feature is now permanently enabled. Enables query based search contexts
 	SearchContextsQuery *bool `json:"searchContextsQuery,omitempty"`
+	// SearchResultsAggregations description: Display aggregations for your search results on the search screen.
+	SearchResultsAggregations *bool `json:"searchResultsAggregations,omitempty"`
 	// SearchStats description: Enables a button on the search results page that shows language statistics about the results for a search query.
 	SearchStats *bool `json:"searchStats,omitempty"`
 	// SearchStreaming description: DEPRECATED: This feature is now permanently enabled. Enables streaming search support.
@@ -2056,6 +2080,8 @@ type SiteConfiguration struct {
 	HtmlHeadTop string `json:"htmlHeadTop,omitempty"`
 	// InsightsAggregationsBufferSize description: The size of the buffer for aggregations ran in-memory. A higher limit might strain memory for the frontend
 	InsightsAggregationsBufferSize int `json:"insights.aggregations.bufferSize,omitempty"`
+	// InsightsAggregationsProactiveResultLimit description: The maximum number of results a proactive search aggregation can accept before stopping
+	InsightsAggregationsProactiveResultLimit int `json:"insights.aggregations.proactiveResultLimit,omitempty"`
 	// InsightsCommitIndexerInterval description: The interval (in minutes) at which the insights commit indexer will check for new commits.
 	InsightsCommitIndexerInterval int `json:"insights.commit.indexer.interval,omitempty"`
 	// InsightsCommitIndexerWindowDuration description: The number of days of commits the insights commit indexer will pull during each request (0 is no limit).
@@ -2202,7 +2228,7 @@ type SyntaxHighlightingLanguagePatterns struct {
 
 // TlsExternal description: Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.
 type TlsExternal struct {
-	// Certificates description: TLS certificates to accept. This is only necessary if you are using self-signed certificates or an internal CA. Can be an internal CA certificate or a self-signed certificate. To get the certificate of a webserver run `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM`. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh. NOTE: git will only respect these certificates and will ignore system certificates. Remember to include system certificates in this setting.
+	// Certificates description: TLS certificates to accept. This is only necessary if you are using self-signed certificates or an internal CA. Can be an internal CA certificate or a self-signed certificate. To get the certificate of a webserver run `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM`. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh. NOTE: System Certificate Authorities are automatically included.
 	Certificates []string `json:"certificates,omitempty"`
 	// InsecureSkipVerify description: insecureSkipVerify controls whether a client verifies the server's certificate chain and host name.
 	// If InsecureSkipVerify is true, TLS accepts any certificate presented by the server and any host name in that certificate. In this mode, TLS is susceptible to man-in-the-middle attacks.

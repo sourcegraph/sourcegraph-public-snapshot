@@ -139,7 +139,7 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
         Continue
       </button>
       <button
-        class="btn btnOutlineSecondary"
+        class="btn btnSecondary btnOutline"
         data-testid="cancel-action-email"
         type="button"
       >
@@ -149,7 +149,7 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
         class="flex-grow-1"
       />
       <button
-        class="btn btnOutlineDanger"
+        class="btn btnDanger btnOutline"
         data-testid="delete-action-email"
         type="button"
       >

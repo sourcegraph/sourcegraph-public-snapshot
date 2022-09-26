@@ -1,12 +1,13 @@
 import { useState } from 'react'
 
 import { Meta, Story } from '@storybook/react'
+import classNames from 'classnames'
 import SearchIcon from 'mdi-react/SearchIcon'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { H1, H2, Text, Tooltip, ButtonLink } from '../..'
+import { H1, H2, Text, Tooltip, ButtonLink, Code } from '../..'
 import { Button } from '../Button'
 import { ButtonGroup } from '../ButtonGroup'
 import { BUTTON_VARIANTS, BUTTON_SIZES } from '../constants'
@@ -127,83 +128,161 @@ AllButtons.parameters = {
     },
 }
 
+type ButtonSizesType = typeof BUTTON_SIZES[number] | undefined
+
 export const Group: Story = () => {
-    const [selectedButton, setSelectedButton] = useState(1)
+    const [active, setActive] = useState<'Left' | 'Middle' | 'Right'>('Left')
+    const buttonSizes: ButtonSizesType[] = ['lg', undefined, 'sm']
 
     return (
         <>
-            <div className="mb-4">
-                <H2>Standard</H2>
+            <H1>Button groups</H1>
 
-                <ButtonGroup>
-                    <Button variant="secondary" outline={selectedButton !== 1} onClick={() => setSelectedButton(1)}>
-                        One
-                    </Button>
-                    <Button variant="secondary" outline={selectedButton !== 2} onClick={() => setSelectedButton(2)}>
-                        Two
-                    </Button>
-                    <Button variant="secondary" outline={selectedButton !== 3} onClick={() => setSelectedButton(3)}>
-                        Three
-                    </Button>
-                </ButtonGroup>
+            <H2>Example</H2>
+            <div className="mb-2">
+                <Text>
+                    Button groups have no styles on their own, they just group buttons together. This means they can be
+                    used to group any other semantic or outline button variant.
+                </Text>
+                <div className="mb-2">
+                    <ButtonGroup aria-label="Basic example">
+                        <Button variant="secondary">Left</Button>
+                        <Button variant="secondary">Middle</Button>
+                        <Button variant="secondary">Right</Button>
+                    </ButtonGroup>{' '}
+                    Example with secondary buttons
+                </div>
+                <div className="mb-2">
+                    <ButtonGroup aria-label="Basic example">
+                        <Button outline={true} variant="secondary">
+                            Left
+                        </Button>
+                        <Button outline={true} variant="secondary">
+                            Middle
+                        </Button>
+                        <Button outline={true} variant="secondary">
+                            Right
+                        </Button>
+                    </ButtonGroup>{' '}
+                    Example with secondary outline buttons
+                </div>
+                <div className="mb-2">
+                    <ButtonGroup aria-label="Basic example">
+                        <Button outline={true} variant="primary">
+                            Left
+                        </Button>
+                        <Button outline={true} variant="primary">
+                            Middle
+                        </Button>
+                        <Button outline={true} variant="primary">
+                            Right
+                        </Button>
+                    </ButtonGroup>{' '}
+                    Example with primary outline buttons
+                </div>
             </div>
 
-            <div className="mb-4">
-                <H2>With Tooltips</H2>
-
-                <ButtonGroup>
-                    <Tooltip content="Option One">
-                        <Button variant="secondary" outline={selectedButton !== 1} onClick={() => setSelectedButton(1)}>
-                            One
-                        </Button>
-                    </Tooltip>
-                    <Tooltip content="Option Two">
-                        <Button variant="secondary" outline={selectedButton !== 2} onClick={() => setSelectedButton(2)}>
-                            Two
-                        </Button>
-                    </Tooltip>
-                    <Tooltip content="Option Three">
-                        <Button variant="secondary" outline={selectedButton !== 3} onClick={() => setSelectedButton(3)}>
-                            Three
-                        </Button>
-                    </Tooltip>
-                </ButtonGroup>
+            <H2 className="mt-3">Sizing</H2>
+            <Text>
+                Just like buttons, button groups have <Code>sm</Code> and <Code>lg</Code> size variants.
+            </Text>
+            <div className="mb-2">
+                {buttonSizes.map(size => (
+                    <div key={size} className="mb-2">
+                        <ButtonGroup aria-label="Sizing example">
+                            <Button size={size} outline={true} variant="primary">
+                                Left
+                            </Button>
+                            <Button size={size} outline={true} variant="primary">
+                                Middle
+                            </Button>
+                            <Button size={size} outline={true} variant="primary">
+                                Right
+                            </Button>
+                        </ButtonGroup>
+                    </div>
+                ))}
             </div>
 
-            <div className="mb-4">
-                <H2>With Tooltips (Disabled Buttons)</H2>
+            <H2 className="mt-3">Active state</H2>
+            <Text>
+                The <Code>active</Code> class can be used to craft toggles out of button groups.
+            </Text>
+            <div className="mb-2">
+                <ButtonGroup aria-label="Basic example">
+                    {(['Left', 'Middle', 'Right'] as const).map(option => (
+                        <Button
+                            key={option}
+                            className={classNames(option === active && 'active')}
+                            onClick={() => setActive(option)}
+                            aria-pressed={option === active}
+                            outline={true}
+                            variant="secondary"
+                        >
+                            {option}
+                        </Button>
+                    ))}
+                </ButtonGroup>{' '}
+                Example with secondary outline buttons
+            </div>
+            <div className="mb-2">
+                <ButtonGroup aria-label="Basic example">
+                    {(['Left', 'Middle', 'Right'] as const).map(option => (
+                        <Button
+                            key={option}
+                            className={classNames(option === active && 'active')}
+                            onClick={() => setActive(option)}
+                            aria-pressed={option === active}
+                            outline={true}
+                            variant="primary"
+                        >
+                            {option}
+                        </Button>
+                    ))}
+                </ButtonGroup>{' '}
+                Example with primary outline buttons
+            </div>
 
-                <ButtonGroup>
-                    <Tooltip content="Option One">
-                        <Button variant="secondary" outline={selectedButton !== 1} onClick={() => setSelectedButton(1)}>
-                            One
-                        </Button>
-                    </Tooltip>
-                    <Tooltip content="Option Two">
-                        <Button
-                            disabled={true}
-                            variant="secondary"
-                            outline={selectedButton !== 2}
-                            onClick={() => setSelectedButton(2)}
-                        >
-                            Two
-                        </Button>
-                    </Tooltip>
-                    <Tooltip content="Option Three">
-                        <Button
-                            disabled={true}
-                            variant="secondary"
-                            outline={selectedButton !== 3}
-                            onClick={() => setSelectedButton(3)}
-                        >
-                            Three
-                        </Button>
-                    </Tooltip>
-                </ButtonGroup>
+            <H2 className="mt-3">With Tooltips</H2>
+            <div className="mb-2">
+                <ButtonGroup aria-label="With Tooltips">
+                    {(['Left', 'Middle', 'Right'] as const).map(option => (
+                        <Tooltip key={option} content={`Option ${option}`}>
+                            <Button
+                                variant="secondary"
+                                outline={option === active}
+                                onClick={() => setActive(option)}
+                                aria-pressed={option === active}
+                            >
+                                {option}
+                            </Button>
+                        </Tooltip>
+                    ))}
+                </ButtonGroup>{' '}
+                Example with enabled buttons
+            </div>
+            <div className="mb-2">
+                <ButtonGroup aria-label="With Tooltips (Disabled Buttons)">
+                    {(['Left', 'Middle', 'Right'] as const).map(option => (
+                        <Tooltip key={option} content={`Option ${option}`}>
+                            <Button
+                                variant="secondary"
+                                disabled={true}
+                                outline={option === active}
+                                onClick={() => setActive(option)}
+                                aria-pressed={option === active}
+                            >
+                                {option}
+                            </Button>
+                        </Tooltip>
+                    ))}
+                </ButtonGroup>{' '}
+                Example with disabled buttons
             </div>
         </>
     )
 }
+
 Group.storyName = 'Button Group'
 Group.parameters = {
     chromatic: {

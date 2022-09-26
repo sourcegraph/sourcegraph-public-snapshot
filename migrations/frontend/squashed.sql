@@ -1010,7 +1010,6 @@ CREATE TABLE changeset_specs (
     repo_id integer NOT NULL,
     user_id integer,
     diff_stat_added integer,
-    diff_stat_changed integer,
     diff_stat_deleted integer,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
@@ -1045,7 +1044,6 @@ CREATE TABLE changesets (
     external_review_state text,
     external_check_state text,
     diff_stat_added integer,
-    diff_stat_changed integer,
     diff_stat_deleted integer,
     sync_state jsonb DEFAULT '{}'::jsonb NOT NULL,
     current_spec_id bigint,
@@ -1425,6 +1423,24 @@ CREATE SEQUENCE cm_webhooks_id_seq
     CACHE 1;
 
 ALTER SEQUENCE cm_webhooks_id_seq OWNED BY cm_webhooks.id;
+
+CREATE TABLE codeintel_autoindex_queue (
+    id integer NOT NULL,
+    repository_id integer NOT NULL,
+    rev text NOT NULL,
+    queued_at timestamp with time zone DEFAULT now() NOT NULL,
+    processed_at timestamp with time zone
+);
+
+CREATE SEQUENCE codeintel_autoindex_queue_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE codeintel_autoindex_queue_id_seq OWNED BY codeintel_autoindex_queue.id;
 
 CREATE TABLE codeintel_langugage_support_requests (
     id integer NOT NULL,
@@ -2969,7 +2985,7 @@ CREATE TABLE users (
     searchable boolean DEFAULT true NOT NULL,
     CONSTRAINT users_display_name_max_length CHECK ((char_length(display_name) <= 255)),
     CONSTRAINT users_username_max_length CHECK ((char_length((username)::text) <= 255)),
-    CONSTRAINT users_username_valid_chars CHECK ((username OPERATOR(~) '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-.](?=[a-zA-Z0-9]))*-?$'::citext))
+    CONSTRAINT users_username_valid_chars CHECK ((username OPERATOR(~) '^\w(?:\w|[-.](?=\w))*-?$'::citext))
 );
 
 CREATE VIEW reconciler_changesets AS
@@ -2989,7 +3005,6 @@ CREATE VIEW reconciler_changesets AS
     c.external_review_state,
     c.external_check_state,
     c.diff_stat_added,
-    c.diff_stat_changed,
     c.diff_stat_deleted,
     c.sync_state,
     c.current_spec_id,
@@ -3507,6 +3522,8 @@ ALTER TABLE ONLY cm_trigger_jobs ALTER COLUMN id SET DEFAULT nextval('cm_trigger
 
 ALTER TABLE ONLY cm_webhooks ALTER COLUMN id SET DEFAULT nextval('cm_webhooks_id_seq'::regclass);
 
+ALTER TABLE ONLY codeintel_autoindex_queue ALTER COLUMN id SET DEFAULT nextval('codeintel_autoindex_queue_id_seq'::regclass);
+
 ALTER TABLE ONLY codeintel_langugage_support_requests ALTER COLUMN id SET DEFAULT nextval('codeintel_langugage_support_requests_id_seq'::regclass);
 
 ALTER TABLE ONLY codeintel_lockfile_references ALTER COLUMN id SET DEFAULT nextval('codeintel_lockfile_references_id_seq'::regclass);
@@ -3690,6 +3707,9 @@ ALTER TABLE ONLY cm_trigger_jobs
 
 ALTER TABLE ONLY cm_webhooks
     ADD CONSTRAINT cm_webhooks_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY codeintel_autoindex_queue
+    ADD CONSTRAINT codeintel_autoindex_queue_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY codeintel_lockfile_references
     ADD CONSTRAINT codeintel_lockfile_references_pkey PRIMARY KEY (id);
@@ -4011,6 +4031,8 @@ CREATE INDEX cm_trigger_jobs_finished_at ON cm_trigger_jobs USING btree (finishe
 CREATE INDEX cm_trigger_jobs_state_idx ON cm_trigger_jobs USING btree (state);
 
 CREATE INDEX cm_webhooks_monitor ON cm_webhooks USING btree (monitor);
+
+CREATE UNIQUE INDEX codeintel_autoindex_queue_repository_id_commit ON codeintel_autoindex_queue USING btree (repository_id, rev);
 
 CREATE UNIQUE INDEX codeintel_langugage_support_requests_user_id_language ON codeintel_langugage_support_requests USING btree (user_id, language_id);
 

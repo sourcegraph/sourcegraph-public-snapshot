@@ -60,7 +60,7 @@ export const selectedLines = StateField.define<SelectedLineRange>({
 
             const endLine = range.endLine ?? range.line
             const from = Math.min(range.line, endLine)
-            const to = from === endLine ? range.line : endLine
+            const to = Math.min(state.doc.lines, from === endLine ? range.line : endLine)
 
             const builder = new RangeSetBuilder<Decoration>()
 
@@ -78,7 +78,7 @@ export const selectedLines = StateField.define<SelectedLineRange>({
             if (range) {
                 const endLine = range.endLine ?? range.line
                 const from = Math.min(range.line, endLine)
-                const to = from === endLine ? range.line : endLine
+                const to = Math.min(state.doc.lines, from === endLine ? range.line : endLine)
 
                 for (let lineNumber = from; lineNumber <= to; lineNumber++) {
                     marks.push(selectedLineGutterMarker.range(state.doc.line(lineNumber).from))
@@ -149,6 +149,7 @@ const scrollIntoView = ViewPlugin.fromClass(
 export function selectableLineNumbers(config: {
     onSelection: (range: SelectedLineRange) => void
     initialSelection: SelectedLineRange | null
+    navigateToLineOnAnyClick: boolean
 }): Extension {
     let dragging = false
 
@@ -159,14 +160,21 @@ export function selectableLineNumbers(config: {
             domEventHandlers: {
                 mousedown(view, block, event) {
                     const line = view.state.doc.lineAt(block.from).number
-                    const range = view.state.field(selectedLines)
-
-                    view.dispatch({
-                        effects: (event as MouseEvent).shiftKey
-                            ? setEndLine.of(line)
-                            : setSelectedLines.of(isSingleLine(range) && range?.line === line ? null : { line }),
-                        annotations: lineSelectionSource.of('gutter'),
-                    })
+                    if (config.navigateToLineOnAnyClick) {
+                        // Only support single line selection when navigateToLineOnAnyClick is true.
+                        view.dispatch({
+                            effects: setSelectedLines.of({ line }),
+                            annotations: lineSelectionSource.of('gutter'),
+                        })
+                    } else {
+                        const range = view.state.field(selectedLines)
+                        view.dispatch({
+                            effects: (event as MouseEvent).shiftKey
+                                ? setEndLine.of(line)
+                                : setSelectedLines.of(isSingleLine(range) && range?.line === line ? null : { line }),
+                            annotations: lineSelectionSource.of('gutter'),
+                        })
+                    }
 
                     dragging = true
 

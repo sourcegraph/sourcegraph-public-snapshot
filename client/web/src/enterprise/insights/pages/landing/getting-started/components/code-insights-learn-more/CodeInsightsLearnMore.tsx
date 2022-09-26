@@ -1,9 +1,8 @@
 import React from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Link, PopoverTrigger, FeedbackPrompt, H2, H3, Text } from '@sourcegraph/wildcard'
+import { Link, H2, H3, Text, FeedbackText } from '@sourcegraph/wildcard'
 
-import { useHandleSubmitFeedback } from '../../../../../../../hooks'
 import { useLogEventName } from '../../../CodeInsightsLandingPageContext'
 
 import styles from './CodeInsightsLearnMore.module.scss'
@@ -15,11 +14,6 @@ export const CodeInsightsLearnMore: React.FunctionComponent<
 > = props => {
     const { telemetryService, ...otherProps } = props
     const textDocumentClickPingName = useLogEventName('InsightsGetStartedDocsClicks')
-
-    const { handleSubmitFeedback } = useHandleSubmitFeedback({
-        routeMatch: '/insights/about',
-        textPrefix: 'Code Insights: ',
-    })
 
     const handleLinkClick = (): void => {
         telemetryService.log(textDocumentClickPingName)
@@ -61,12 +55,7 @@ export const CodeInsightsLearnMore: React.FunctionComponent<
                     <Text className="text-muted mb-2">
                         Have a question or idea about Code Insights? We want to hear your feedback!
                     </Text>
-
-                    <FeedbackPrompt onSubmit={handleSubmitFeedback}>
-                        <PopoverTrigger as={Button} variant="link" className={styles.feedbackTrigger}>
-                            Share your thoughts
-                        </PopoverTrigger>
-                    </FeedbackPrompt>
+                    <FeedbackText headerText="" />
                 </article>
             </div>
         </footer>

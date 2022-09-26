@@ -577,6 +577,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 		if err := json.Unmarshal(jsonRes, &stats); err != nil {
 			return nil, err
 		}
+		stats.logger = r.logger.Scoped("searchResultsStats", "provides status on search results")
 		stats.sr = r
 		return stats, nil
 	}

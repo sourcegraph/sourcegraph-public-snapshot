@@ -18,6 +18,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/internal/cacert"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -29,7 +30,7 @@ import (
 // GitDir is an absolute path to a GIT_DIR.
 // They will all follow the form:
 //
-//    ${s.ReposDir}/${name}/.git
+//	${s.ReposDir}/${name}/.git
 type GitDir string
 
 // Path is a helper which returns filepath.Join(dir, elem...)
@@ -121,6 +122,21 @@ func getTlsExternalDoNotInvoke() *tlsConfig {
 			b.WriteString(cert)
 			b.WriteString("\n")
 		}
+
+		// git will ignore the system certificates when specifying SSLCAInfo,
+		// so we additionally include the system certificates. Note: this only
+		// works on linux, see cacert package for more information.
+		root, err := cacert.System()
+		if err != nil {
+			logger.Error("failed to load system certificates for inclusion in SSLCAInfo. Git will now fail to speak to TLS services not specified in your TlsExternal site configuration.", log.Error(err))
+		} else if len(root) == 0 {
+			logger.Warn("no system certificates found for inclusion in SSLCAInfo. Git will now fail to speak to TLS services not specified in your TlsExternal site configuration.")
+		}
+		for _, cert := range root {
+			b.Write(cert)
+			b.WriteString("\n")
+		}
+
 		// We don't clean up the file since it has a process life time.
 		p, err := writeTempFile("gitserver*.crt", b.Bytes())
 		if err != nil {

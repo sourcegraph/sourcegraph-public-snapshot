@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/httpapi"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/httpapi/auth"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
@@ -95,7 +96,7 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 			&httpapi.DBStoreShim{Store: dbStore},
 			uploadStore,
 			internal,
-			httpapi.DefaultValidatorByCodeHost,
+			auth.DefaultValidatorByCodeHost,
 			operations,
 		)
 	}

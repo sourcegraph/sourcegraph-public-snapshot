@@ -39,6 +39,7 @@ export function AggregationChart<Datum>(props: AggregationChartProps<Datum>): Re
             {parent => (
                 <BarChart
                     {...attributes}
+                    sortByValue={true}
                     width={parent.width}
                     height={parent.height}
                     hideXTicks={true}

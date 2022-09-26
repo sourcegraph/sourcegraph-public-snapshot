@@ -54,8 +54,8 @@ func LocalGitGetChildrenFunc(repoRoot string) GetChildrenFunc {
 // cleanDirectoriesForLsTree sanitizes the input dirnames to a git ls-tree command. There are a
 // few peculiarities handled here:
 //
-//   1. The root of the tree must be indicated with `.`, and
-//   2. In order for git ls-tree to return a directory's contents, the name must end in a slash.
+//  1. The root of the tree must be indicated with `.`, and
+//  2. In order for git ls-tree to return a directory's contents, the name must end in a slash.
 func cleanDirectoriesForLsTree(dirnames []string) []string {
 	var args []string
 	for _, dir := range dirnames {

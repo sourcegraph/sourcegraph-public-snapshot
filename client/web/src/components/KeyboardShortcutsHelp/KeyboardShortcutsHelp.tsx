@@ -1,11 +1,11 @@
 import React from 'react'
 
 import { mdiClose } from '@mdi/js'
-import { ModifierKey, Key } from '@slimsag/react-shortcuts'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { KEYBOARD_SHORTCUTS } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
+import { ModifierKey, Key } from '@sourcegraph/shared/src/react-shortcuts'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { Button, Modal, Icon, H4, Label } from '@sourcegraph/wildcard'
 

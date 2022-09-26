@@ -657,6 +657,7 @@ func (z *RepoSubsetTextSearchJob) Fields(v job.Verbosity) (res []otlog.Field) {
 		res = append(res,
 			otlog.Int32("fileMatchLimit", z.FileMatchLimit),
 			trace.Stringer("select", z.Select),
+			otlog.Object("zoektQueryRegexps", z.ZoektQueryRegexps),
 		)
 		// z.Repos is nil for un-indexed search
 		if z.Repos != nil {
@@ -708,6 +709,7 @@ func (t *GlobalTextSearchJob) Fields(v job.Verbosity) (res []otlog.Field) {
 			trace.Stringer("select", t.ZoektArgs.Select),
 			trace.Printf("repoScope", "%q", t.GlobalZoektQuery.RepoScope),
 			otlog.Bool("includePrivate", t.GlobalZoektQuery.IncludePrivate),
+			otlog.Object("globalZoektQueryRegexps", t.GlobalZoektQueryRegexps),
 		)
 		fallthrough
 	case job.VerbosityBasic:

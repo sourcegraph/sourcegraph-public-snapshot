@@ -38,7 +38,7 @@ func (j *uploadExpirerJob) Config() []env.Config {
 	}
 }
 
-func (j *uploadExpirerJob) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
+func (j *uploadExpirerJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	observationContext := &observation.Context{
 		Logger:     logger.Scoped("routines", "codeintel job routines"),
 		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},

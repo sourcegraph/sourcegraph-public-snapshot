@@ -28,6 +28,8 @@ func Init(
 	// Register queues. If this set changes, be sure to also update the list of valid
 	// queue names in ./metrics/queue_allocation.go, and register a metrics exporter
 	// in the worker.
+	//
+	// Note: In order register a new queue type please change the validate() check code in enterprise/cmd/executor/config.go
 	queueOptions := []handler.QueueOptions{
 		codeintelqueue.QueueOptions(db, accessToken, observationContext),
 		batches.QueueOptions(db, accessToken, observationContext),

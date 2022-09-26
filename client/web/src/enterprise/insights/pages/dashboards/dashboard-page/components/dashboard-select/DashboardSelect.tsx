@@ -82,7 +82,7 @@ export const DashboardSelect: React.FunctionComponent<React.PropsWithChildren<Da
                 value={value ?? 'unknown'}
                 onChange={handleChange}
             >
-                <MenuButton dashboards={rawDashboards} />
+                <MenuButton dashboards={rawDashboards} data-testid="dashboard-select-button" />
 
                 <ListboxPopover className={classNames(styles.popover)} portal={true}>
                     <ListboxList

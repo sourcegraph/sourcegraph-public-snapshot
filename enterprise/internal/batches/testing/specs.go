@@ -75,7 +75,7 @@ func BuildRawBatchSpecWithImportChangesets(t *testing.T, imports []batcheslib.Im
 	return string(marshaledRawSpec)
 }
 
-var ChangesetSpecDiffStat = &diff.Stat{Added: 1, Changed: 2, Deleted: 1}
+var ChangesetSpecDiffStat = &diff.Stat{Added: 3, Deleted: 3}
 
 const ChangesetSpecAuthorEmail = "mary@example.com"
 const ChangesetSpecDiff = `diff --git INSTALL.md INSTALL.md

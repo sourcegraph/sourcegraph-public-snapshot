@@ -68,9 +68,8 @@ const batchSpec = (props: Args): BatchSpecFields => ({
     },
     diffStat: {
         __typename: 'DiffStat',
-        added: 10,
-        changed: 8,
-        deleted: 10,
+        added: 18,
+        deleted: 18,
     },
     expiresAt: addDays(new Date(), 7).toISOString(),
     id: 'specid',

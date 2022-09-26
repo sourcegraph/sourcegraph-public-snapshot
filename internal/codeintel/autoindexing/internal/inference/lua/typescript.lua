@@ -1,17 +1,17 @@
 local json = require "json"
 local path = require "path"
-local patterns = require "sg.patterns"
-local recognizers = require "sg.recognizers"
+local recognizer = require "sg.autoindex.recognizer"
+local pattern = require "sg.autoindex.patterns"
 
-local shared = loadfile "shared.lua"()
-local util = loadfile "util.lua"()
+local shared = require "sg.autoindex.shared"
+local util = require "sg.autoindex.util"
 
 local indexer = "sourcegraph/scip-typescript:autoindex"
 local typescript_nmusl_command =
   "N_NODE_MIRROR=https://unofficial-builds.nodejs.org/download/release n --arch x64-musl auto"
 
-local exclude_paths = patterns.path_combine(shared.exclude_paths, {
-  patterns.path_segment "node_modules",
+local exclude_paths = pattern.new_path_combine(shared.exclude_paths, {
+  pattern.new_path_segment "node_modules",
 })
 
 local check_lerna_file = function(root, contents_by_path)
@@ -54,24 +54,24 @@ local infer_typescript_job = function(api, tsconfig_path, should_infer_config)
   local root = path.dirname(tsconfig_path)
   local reverse_ancestors = util.reverse(path.ancestors(tsconfig_path))
 
-  api:register(recognizers.path_recognizer {
+  api:register(recognizer.new_path_recognizer {
     patterns = {
       -- To disambiguate installation steps
-      patterns.path_basename "yarn.lock",
+      pattern.new_path_basename "yarn.lock",
       -- Try to determine version
-      patterns.path_basename ".n-node-version",
-      patterns.path_basename ".node-version",
-      patterns.path_basename ".nvmrc",
+      pattern.new_path_basename ".n-node-version",
+      pattern.new_path_basename ".node-version",
+      pattern.new_path_basename ".nvmrc",
       -- To reinvoke simple cases with no other files
-      patterns.path_basename "tsconfig.json",
-      patterns.path_exclude(exclude_paths),
+      pattern.new_path_basename "tsconfig.json",
+      pattern.new_path_exclude(exclude_paths),
     },
 
     patterns_for_content = {
       -- To read explicitly configured engines and npm client
-      patterns.path_basename "package.json",
-      patterns.path_basename "lerna.json",
-      patterns.path_exclude(exclude_paths),
+      pattern.new_path_basename "package.json",
+      pattern.new_path_basename "lerna.json",
+      pattern.new_path_exclude(exclude_paths),
     },
 
     -- Invoked when any of the files listed in the patterns above exist.
@@ -131,11 +131,11 @@ local infer_typescript_job = function(api, tsconfig_path, should_infer_config)
   return {}
 end
 
-return recognizers.path_recognizer {
+return recognizer.new_path_recognizer {
   patterns = {
-    patterns.path_basename "package.json",
-    patterns.path_basename "tsconfig.json",
-    patterns.path_exclude(exclude_paths),
+    pattern.new_path_basename "package.json",
+    pattern.new_path_basename "tsconfig.json",
+    pattern.new_path_exclude(exclude_paths),
   },
 
   -- Invoked when package.json or tsconfig.json files exist

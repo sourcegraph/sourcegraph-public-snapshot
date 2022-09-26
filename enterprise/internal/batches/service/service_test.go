@@ -615,9 +615,8 @@ index e5af166..d44c3fc 100644
  Line 9
  Line 10
 `),
-				DiffStatAdded:     1,
-				DiffStatChanged:   2,
-				DiffStatDeleted:   1,
+				DiffStatAdded:     3,
+				DiffStatDeleted:   3,
 				BaseRepoID:        1,
 				UserID:            1,
 				BaseRev:           "d34db33f",
@@ -1540,6 +1539,76 @@ index e5af166..d44c3fc 100644
 				t.Fatalf("unexpected error: %s", err)
 			}
 		})
+
+		tests := []struct {
+			name    string
+			rawSpec string
+			wantErr error
+		}{
+			{
+				name:    "empty",
+				rawSpec: "",
+				wantErr: errors.New("Expected: object, given: null"),
+			},
+			{
+				name:    "invalid YAML",
+				rawSpec: "invalid YAML",
+				wantErr: errors.New("Expected: object, given: string"),
+			},
+			{
+				name:    "invalid name",
+				rawSpec: "name: invalid name",
+				wantErr: errors.New("The batch change name can only contain word characters, dots and dashes. No whitespace or newlines allowed."),
+			},
+			{
+				name: "requires changesetTemplate when steps are included",
+				rawSpec: `
+name: test
+on:
+  - repository: github.com/sourcegraph-testing/some-repo
+steps:
+  - run: echo "Hello world"
+    container: alpine:3`,
+				wantErr: errors.New("batch spec includes steps but no changesetTemplate"),
+			},
+			{
+				name: "unknown templating variable",
+				rawSpec: `
+name: hello
+on:
+  - repository: github.com/sourcegraph-testing/some-repo
+steps:
+  - run: echo "Hello ${{ resopitory.name }}" >> message.txt
+    container: alpine:3
+changesetTemplate:
+  title: Hello World
+  body: My first batch change!
+  branch: hello-world
+  commit:
+    message: Write a message to a text file
+`,
+				wantErr: errors.New("unknown templating variable: 'resopitory'"),
+			},
+		}
+
+		for _, tc := range tests {
+			t.Run("batchSpec has invalid raw spec: "+tc.name, func(t *testing.T) {
+				spec := createBatchSpecWithWorkspaces(t)
+
+				_, gotErr := svc.ReplaceBatchSpecInput(ctx, ReplaceBatchSpecInputOpts{
+					BatchSpecRandID: spec.RandID,
+					RawSpec:         tc.rawSpec,
+				})
+
+				if gotErr == nil {
+					t.Fatalf("unexpected nil error.\nwant=%s\n---\ngot=nil", tc.wantErr)
+				}
+
+				if !strings.Contains(gotErr.Error(), tc.wantErr.Error()) {
+					t.Fatalf("unexpected error.\nwant=%s\n---\ngot=%s", tc.wantErr, gotErr)
+				}
+			})
+		}
 
 		t.Run("batchSpec already has changeset specs", func(t *testing.T) {
 			assertNoChangesetSpecs := func(t *testing.T, batchSpecID int64) {

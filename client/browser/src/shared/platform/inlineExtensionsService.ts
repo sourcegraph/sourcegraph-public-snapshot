@@ -5,12 +5,12 @@ import { checkOk, isErrorGraphQLResult, gql } from '@sourcegraph/http-client'
 import { ExecutableExtension } from '@sourcegraph/shared/src/api/extension/activation'
 import { ExtensionManifest } from '@sourcegraph/shared/src/extensions/extensionManifest'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
 
 import extensions from '../../../code-intel-extensions.json'
+import { EnableLegacyExtensionsResult } from '../../graphql-operations'
 import { isExtension } from '../context'
 
-const DEFAULT_ENABLE_LEGACY_EXTENSIONS = true // Should be changed to false after Sourcegraph 4.0 release
+const DEFAULT_ENABLE_LEGACY_EXTENSIONS = false
 
 /**
  * Determine which extensions should be loaded:
@@ -18,7 +18,7 @@ const DEFAULT_ENABLE_LEGACY_EXTENSIONS = true // Should be changed to false afte
  * - or from the extensions registry (if `enableLegacyExtensions` experimental feature value is set to `true`).
  */
 export const shouldUseInlineExtensions = (requestGraphQL: PlatformContext['requestGraphQL']): Observable<boolean> =>
-    requestGraphQL<GQL.IQuery>({
+    requestGraphQL<EnableLegacyExtensionsResult>({
         request: gql`
             query EnableLegacyExtensions {
                 site {
@@ -37,7 +37,10 @@ export const shouldUseInlineExtensions = (requestGraphQL: PlatformContext['reque
             }
 
             try {
-                return result.data.site.enableLegacyExtensions
+                const enableLegacyExtensions = result.data.site.enableLegacyExtensions
+                return typeof enableLegacyExtensions === 'undefined'
+                    ? DEFAULT_ENABLE_LEGACY_EXTENSIONS
+                    : enableLegacyExtensions
             } catch {
                 return DEFAULT_ENABLE_LEGACY_EXTENSIONS
             }

@@ -52,6 +52,7 @@ export interface ContentMatch {
     branches?: string[]
     commit?: string
     lineMatches: LineMatch[]
+    chunkMatches?: ChunkMatch[]
     hunks?: DecoratedHunk[]
 }
 
@@ -83,6 +84,12 @@ interface LineMatch {
     lineNumber: number
     offsetAndLengths: number[][]
     aggregableBadges?: AggregableBadge[]
+}
+
+interface ChunkMatch {
+   content: string
+   contentStart: Location
+   ranges: Range[]
 }
 
 export interface SymbolMatch {
@@ -131,6 +138,7 @@ export interface CommitMatch {
 export interface RepositoryMatch {
     type: 'repo'
     repository: string
+    repositoryMatches?: Range[]
     repoStars?: number
     repoLastFetched?: string
     description?: string

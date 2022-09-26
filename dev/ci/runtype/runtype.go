@@ -256,8 +256,8 @@ func (m *RunTypeMatcher) IsBranchPrefixMatcher() bool {
 // ExtractBranchArgument extracts the second segment, delimited by '/', of the branch as
 // an argument, for example:
 //
-//   prefix/{argument}
-//   prefix/{argument}/something-else
+//	prefix/{argument}
+//	prefix/{argument}/something-else
 //
 // If BranchArgumentRequired, an error is returned if no argument is found.
 //
