@@ -263,6 +263,7 @@ var sg = &cli.App{
 		migrationCommand,
 		insightsCommand,
 		telemetryCommand,
+		monitoringCommand,
 
 		// Dev environment
 		secretCommand,

@@ -4,9 +4,6 @@ import { Link } from '../../Link'
 import { Text } from '../../Typography'
 
 interface FeedbackTextProps {
-    /**
-     * @default "Questions/feedback?"
-     */
     headerText?: React.ReactNode
     footerText?: React.ReactNode
     className?: string
@@ -18,10 +15,10 @@ interface FeedbackTextProps {
 export const FeedbackText: React.FunctionComponent<React.PropsWithChildren<FeedbackTextProps>> = ({
     className,
     footerText,
-    headerText,
+    headerText = 'Questions/feedback?',
 }) => (
     <Text className={className}>
-        {headerText || 'Questions/feedback?'} Contact us at{' '}
+        {headerText} Contact us at{' '}
         <Link to="https://twitter.com/sourcegraph" target="_blank" rel="noopener noreferrer">
             @sourcegraph
         </Link>{' '}

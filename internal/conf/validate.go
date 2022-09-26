@@ -165,14 +165,16 @@ func (ps Problems) ExternalService() (problems Problems) {
 // Validate validates the configuration against the JSON Schema and other
 // custom validation checks.
 func Validate(input conftypes.RawUnified) (problems Problems, err error) {
-	siteProblems, err := doValidate(input.Site, schema.SiteSchemaJSON)
+	siteJSON, err := jsonc.Parse(input.Site)
 	if err != nil {
 		return nil, err
 	}
+
+	siteProblems := doValidate(siteJSON, schema.SiteSchemaJSON)
 	problems = append(problems, NewSiteProblems(siteProblems...)...)
 
 	customProblems, err := validateCustomRaw(conftypes.RawUnified{
-		Site: string(jsonc.Normalize(input.Site)),
+		Site: string(siteJSON),
 	})
 	if err != nil {
 		return nil, err
@@ -333,16 +335,23 @@ func RedactSecrets(raw conftypes.RawUnified) (empty conftypes.RawUnified, err er
 	}, err
 }
 
-func ValidateSetting(input string) (problems []string, err error) {
-	return doValidate(input, schema.SettingsSchemaJSON)
+// ValidateSettings validates the JSONC input against the settings JSON Schema, returning a list of
+// problems (if any).
+func ValidateSettings(jsoncInput string) (problems []string) {
+	jsonInput, err := jsonc.Parse(jsoncInput)
+	if err != nil {
+		return []string{err.Error()}
+	}
+
+	return doValidate(jsonInput, schema.SettingsSchemaJSON)
 }
 
-func doValidate(inputStr, schema string) (messages []string, err error) {
-	input := jsonc.Normalize(inputStr)
-
+func doValidate(input []byte, schema string) (messages []string) {
 	res, err := validate([]byte(schema), input)
 	if err != nil {
-		return nil, err
+		// We can't return more detailed problems because the input completely failed to parse, so
+		// just return the parse error as the problem.
+		return []string{err.Error()}
 	}
 	messages = make([]string, 0, len(res.Errors()))
 	for _, e := range res.Errors() {
@@ -357,9 +366,17 @@ func doValidate(inputStr, schema string) (messages []string, err error) {
 			keyPath = e.Field()
 		}
 
+		// Use an easier-to-understand description for the common case when the root is not an
+		// object (which can happen when the input is derived from JSONC that is entirely commented
+		// out, for example).
+		if e, ok := e.(*gojsonschema.InvalidTypeError); ok && e.Field() == "(root)" && strings.HasPrefix(e.Description(), "Invalid type. Expected: object, given: ") {
+			messages = append(messages, "must be a JSON object (use {} for empty)")
+			continue
+		}
+
 		messages = append(messages, fmt.Sprintf("%s: %s", keyPath, e.Description()))
 	}
-	return messages, nil
+	return messages
 }
 
 func validate(schema, input []byte) (*gojsonschema.Result, error) {

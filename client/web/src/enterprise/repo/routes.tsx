@@ -6,11 +6,6 @@ import { RepoContainerRoute } from '../../repo/RepoContainer'
 import { RepoRevisionContainerRoute } from '../../repo/RepoRevisionContainer'
 import { repoContainerRoutes, repoRevisionContainerRoutes } from '../../repo/routes'
 
-const RepositoryGitDataContainer = lazyComponent(
-    () => import('../../repo/RepositoryGitDataContainer'),
-    'RepositoryGitDataContainer'
-)
-
 const RepositoryCodeIntelArea = lazyComponent(
     () => import('../codeintel/repo/RepositoryCodeIntelArea'),
     'RepositoryCodeIntelArea'
@@ -32,21 +27,13 @@ export const enterpriseRepoContainerRoutes: readonly RepoContainerRoute[] = [
     {
         path: '/-/code-graph',
         exact: false,
-        render: context => (
-            <RepositoryGitDataContainer {...context} repoName={context.repoName}>
-                <RepositoryCodeIntelArea {...context} />
-            </RepositoryGitDataContainer>
-        ),
+        render: context => <RepositoryCodeIntelArea {...context} />,
     },
 
     {
         path: '/-/batch-changes',
         condition: ({ batchChangesEnabled }) => batchChangesEnabled,
-        render: context => (
-            <RepositoryGitDataContainer {...context} repoName={context.repoName}>
-                <RepositoryBatchChangesArea {...context} />
-            </RepositoryGitDataContainer>
-        ),
+        render: context => <RepositoryBatchChangesArea {...context} />,
     },
 ]
 

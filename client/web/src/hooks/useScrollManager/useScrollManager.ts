@@ -100,7 +100,11 @@ export function useScrollManager(containerKey: string, containerRef: React.RefOb
                         }
                     })
             }
+        } else if (action === 'PUSH') {
+            // In the case of pushing new history (e.g. clicking a navigation link), make sure we always start at the top of the container
+            containerRef.current?.scrollTo(0, 0)
         }
+
         // This should only run when `pathname`/`action` change; ignore changes to `containerKey` or `containerRef` as those should not trigger a scroll restoration
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [location.pathname, action])

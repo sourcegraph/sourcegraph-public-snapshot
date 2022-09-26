@@ -5,7 +5,8 @@ import { mdiCheckboxBlankCircle, mdiMapSearch } from '@mdi/js'
 import { RouteComponentProps, useHistory } from 'react-router'
 import { Subject } from 'rxjs'
 
-import { Badge, Container, Link, PageHeader, Icon, H3, H4, Text, Tooltip } from '@sourcegraph/wildcard'
+import { ExecutorCompatibility } from '@sourcegraph/shared/src/schema'
+import { Alert, Badge, Container, Link, PageHeader, Icon, H3, H4, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../components/Collapsible'
 import {
@@ -95,7 +96,7 @@ export const ExecutorsListPage: FunctionComponent<React.PropsWithChildren<Execut
                 </Text>
             </Container>
             <Container>
-                <FilteredConnection<ExecutorFields, {}>
+                <FilteredConnection<ExecutorFields>
                     listComponent="ul"
                     listClassName="list-group mb-2"
                     showMoreClassName="mb-0"
@@ -206,6 +207,8 @@ export const ExecutorNode: FunctionComponent<React.PropsWithChildren<ExecutorNod
                 </div>
             </dl>
         </Collapsible>
+
+        <ExecutorCompatibilityAlert node={node} />
     </li>
 )
 
@@ -222,4 +225,41 @@ const TelemetryData: React.FunctionComponent<React.PropsWithChildren<{ data: str
         return <>{data}</>
     }
     return <>n/a</>
+}
+
+const ExecutorCompatibilityAlert: React.FunctionComponent<React.PropsWithChildren<ExecutorNodeProps>> = ({ node }) => {
+    switch (node.compatibility) {
+        case ExecutorCompatibility.OUTDATED:
+            return (
+                <Alert variant="warning" className="mt-3">
+                    <Text className="m-0">{node.hostname} is outdated.</Text>
+                    <Text className="m-0">
+                        Please{' '}
+                        <Link to="/help/admin/deploy_executors" target="_blank" rel="noopener">
+                            upgrade this executor
+                        </Link>{' '}
+                        to a version compatible with your Sourcegraph version.
+                    </Text>
+                </Alert>
+            )
+        case ExecutorCompatibility.VERSION_AHEAD:
+            return (
+                <Alert variant="warning" className="mt-3">
+                    <Text className="m-0">Your Sourcegraph instance is out of date.</Text>
+                    <Text className="m-0">
+                        Please{' '}
+                        <Link to="/help/admin/updates" target="_blank" rel="noopener">
+                            upgrade your Sourcegraph instance
+                        </Link>
+                        or{' '}
+                        <Link to="/help/admin/deploy_executors" target="_blank" rel="noopener">
+                            downgrade this executor
+                        </Link>
+                        .
+                    </Text>
+                </Alert>
+            )
+        default:
+            return null
+    }
 }

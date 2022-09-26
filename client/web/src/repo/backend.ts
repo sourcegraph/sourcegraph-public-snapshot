@@ -12,9 +12,9 @@ import {
 import {
     makeRepoURI,
     RepoRevision,
-    RevisionSpec,
     RepoSpec,
     ResolvedRevisionSpec,
+    RevisionSpec,
 } from '@sourcegraph/shared/src/util/url'
 
 import { queryGraphQL } from '../backend/graphql'
@@ -35,6 +35,9 @@ export const repositoryFragment = gql`
         externalURLs {
             url
             serviceKind
+        }
+        externalRepository {
+            serviceType
         }
         description
         viewerCanAdminister

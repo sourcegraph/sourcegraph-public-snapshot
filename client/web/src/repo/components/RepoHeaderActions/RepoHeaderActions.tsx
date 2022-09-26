@@ -5,7 +5,6 @@ import classNames from 'classnames'
 import {
     ButtonLink,
     ButtonLinkProps,
-    Button,
     ForwardReferenceComponent,
     MenuButton,
     MenuItem,
@@ -40,9 +39,9 @@ RepoHeaderActionButtonLink.displayName = 'RepoHeaderActionButtonLink'
 export const RepoHeaderActionDropdownToggle: React.FunctionComponent<
     React.PropsWithChildren<Pick<React.AriaAttributes, 'aria-label'>>
 > = ({ children, ...ariaAttributes }) => (
-    <Button as={MenuButton} className={styles.action} {...ariaAttributes}>
+    <MenuButton className={styles.action} {...ariaAttributes}>
         {children}
-    </Button>
+    </MenuButton>
 )
 
 export type RepoHeaderActionAnchorProps = Omit<ButtonLinkProps, 'as' | 'href'> & {

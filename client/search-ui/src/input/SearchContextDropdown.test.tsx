@@ -44,14 +44,14 @@ describe('SearchContextDropdown', () => {
 
     it('should start closed', () => {
         render(<SearchContextDropdown {...defaultProps} />)
-        expect(screen.getByTestId('dropdown')).not.toHaveClass('show')
+        expect(screen.queryByTestId('dropdown-content')).not.toBeInTheDocument()
     })
 
     it('should open when toggle event happens', () => {
         render(<SearchContextDropdown {...defaultProps} />)
         userEvent.click(screen.getByTestId('dropdown-toggle'))
 
-        expect(screen.getByTestId('dropdown')).toHaveClass('show')
+        expect(screen.queryByTestId('dropdown-content')).toBeInTheDocument()
     })
 
     it('should close if toggle event happens again', () => {
@@ -63,7 +63,7 @@ describe('SearchContextDropdown', () => {
         // Click to close
         userEvent.click(screen.getByTestId('dropdown-toggle'))
 
-        expect(screen.getByTestId('dropdown')).not.toHaveClass('show')
+        expect(screen.queryByTestId('dropdown-content')).not.toBeInTheDocument()
     })
 
     it('should be enabled if query is empty', () => {
@@ -89,19 +89,40 @@ describe('SearchContextDropdown', () => {
 
     it('should submit search on item click', () => {
         const submitSearch = sinon.spy()
-        const { rerender } = render(
-            <SearchContextDropdown {...defaultProps} submitSearch={submitSearch} query="test" />
-        )
+
+        render(<SearchContextDropdown {...defaultProps} submitSearch={submitSearch} query="test" />)
+
+        userEvent.click(screen.getByTestId('dropdown-toggle'))
 
         act(() => {
             // Wait for debounce
             clock.tick(50)
         })
 
-        rerender(<SearchContextDropdown {...defaultProps} submitSearch={submitSearch} query="test" />)
-
         userEvent.click(screen.getByTestId('search-context-menu-item'))
 
         sinon.assert.calledOnce(submitSearch)
+    })
+
+    it('should close menu when pressing Escape button', () => {
+        const closeMenu = sinon.spy()
+
+        render(
+            <SearchContextDropdown
+                {...defaultProps}
+                selectedSearchContextSpec="@username"
+                onEscapeMenuClose={closeMenu}
+            />
+        )
+
+        userEvent.click(screen.getByTestId('dropdown-toggle'))
+        userEvent.type(document.body, '{esc}')
+
+        act(() => {
+            // Wait for the next frame
+            clock.tick(50)
+        })
+
+        sinon.assert.calledOnce(closeMenu)
     })
 })

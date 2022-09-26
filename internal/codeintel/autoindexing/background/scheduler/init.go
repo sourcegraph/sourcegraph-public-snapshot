@@ -3,6 +3,8 @@ package scheduler
 import (
 	"context"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -42,6 +44,7 @@ func NewScheduler(
 		policySvc:       policySvc,
 		uploadSvc:       uploadSvc,
 		policyMatcher:   policyMatcher,
+		logger:          log.Scoped("autoindexing-scheduler", ""),
 	}, handleIndexScheduler)
 }
 

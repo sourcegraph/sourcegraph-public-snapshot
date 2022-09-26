@@ -19,13 +19,58 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+var orgnamesForTests = []struct {
+	name      string
+	wantValid bool
+}{
+	{"nick", true},
+	{"n1ck", true},
+	{"Nick2", true},
+	{"N-S", true},
+	{"nick-s", true},
+	{"renfred-xh", true},
+	{"renfred-x-h", true},
+	{"deadmau5", true},
+	{"deadmau-5", true},
+	{"3blindmice", true},
+	{"nick.com", true},
+	{"nick.com.uk", true},
+	{"nick.com-put-er", true},
+	{"nick-", true},
+	{"777", true},
+	{"7-7", true},
+	{"long-butnotquitelongenoughtoreachlimit", true},
+
+	{".nick", false},
+	{"-nick", false},
+	{"nick.", false},
+	{"nick--s", false},
+	{"nick--sny", false},
+	{"nick..sny", false},
+	{"nick.-sny", false},
+	{"_", false},
+	{"_nick", false},
+	{"ke$ha", false},
+	{"ni%k", false},
+	{"#nick", false},
+	{"@nick", false},
+	{"", false},
+	{"nick s", false},
+	{" ", false},
+	{"-", false},
+	{"--", false},
+	{"-s", false},
+	{"レンフレッド", false},
+	{"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", false},
+}
+
 func TestOrgs_ValidNames(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
-	for _, test := range usernamesForTests {
+	for _, test := range orgnamesForTests {
 		t.Run(test.name, func(t *testing.T) {
 			valid := true
 			if _, err := db.Orgs().Create(ctx, test.name, nil); err != nil {

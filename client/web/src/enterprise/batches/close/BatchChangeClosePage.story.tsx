@@ -90,6 +90,11 @@ const batchChangeDefaults: BatchChangeFields = {
             pageInfo: { hasNextPage: false },
             totalCount: 0,
         },
+        viewerBatchChangesCodeHosts: {
+            __typename: 'BatchChangesCodeHostConnection',
+            totalCount: 0,
+            nodes: [],
+        },
     },
     batchSpecs: {
         nodes: [{ state: BatchSpecState.COMPLETED }],
