@@ -120,7 +120,7 @@ func parseJSONTime(t testing.TB, ts string) time.Time {
 }
 
 func newSchema(db database.DB, r graphqlbackend.BatchChangesResolver) (*graphql.Schema, error) {
-	return graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	return graphqlbackend.NewSchemaWithBatchChangesResolver(db, r)
 }
 
 func newGitHubExternalService(t *testing.T, store database.ExternalServiceStore) *types.ExternalService {

@@ -2,8 +2,10 @@ package command
 
 import (
 	"context"
+	"os"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Runner is the interface between an executor and the host on which commands
@@ -60,6 +62,11 @@ type FirecrackerOptions struct {
 	// VMStartupScriptPath is a path to a file on the host that is loaded into a fresh
 	// virtual machine and executed on startup.
 	VMStartupScriptPath string
+
+	// DockerRegistryMirrorURL is an optional parameter to configure a docker
+	// registry mirror for the VMs docker daemon on startup. When set, /etc/docker/daemon.json
+	// will be mounted into the VM.
+	DockerRegistryMirrorURL string
 }
 
 type ResourceOptions struct {
@@ -119,17 +126,25 @@ type firecrackerRunner struct {
 	workspaceDevice string
 	logger          Logger
 	options         Options
-	operations      *Operations
+	// tmpDir is used to store temporary files used for firecracker execution.
+	tmpDir     string
+	operations *Operations
 }
 
 var _ Runner = &firecrackerRunner{}
 
 func (r *firecrackerRunner) Setup(ctx context.Context) error {
-	return setupFirecracker(ctx, defaultRunner, r.logger, r.name, r.workspaceDevice, r.options, r.operations)
+	dir, err := os.MkdirTemp("", "executor-firecracker-runner")
+	if err != nil {
+		return errors.Wrap(err, "failed to create tmp dir for firecracker runner")
+	}
+	r.tmpDir = dir
+
+	return setupFirecracker(ctx, defaultRunner, r.logger, r.name, r.workspaceDevice, r.tmpDir, r.options, r.operations)
 }
 
 func (r *firecrackerRunner) Teardown(ctx context.Context) error {
-	return teardownFirecracker(ctx, defaultRunner, r.logger, r.name, r.operations)
+	return teardownFirecracker(ctx, defaultRunner, r.logger, r.name, r.tmpDir, r.operations)
 }
 
 func (r *firecrackerRunner) Run(ctx context.Context, command CommandSpec) error {
