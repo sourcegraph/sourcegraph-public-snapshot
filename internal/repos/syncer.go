@@ -118,13 +118,13 @@ type syncHandler struct {
 	minSyncInterval func() time.Duration
 }
 
-func (s *syncHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
+func (s *syncHandler) Handle(ctx context.Context, logger log.Logger, commandLogger workerutil.Logger, record workerutil.Record) (err error) {
 	sj, ok := record.(*SyncJob)
 	if !ok {
 		return errors.Errorf("expected repos.SyncJob, got %T", record)
 	}
 
-	return s.syncer.SyncExternalService(ctx, sj.ExternalServiceID, s.minSyncInterval())
+	return s.syncer.SyncExternalService(ctx, sj.ExternalServiceID, commandLogger, s.minSyncInterval())
 }
 
 // sleep is a context aware time.Sleep
@@ -512,6 +512,7 @@ var ErrCloudDefaultSync = errors.New("cloud default external services can't be s
 func (s *Syncer) SyncExternalService(
 	ctx context.Context,
 	externalServiceID int64,
+	commandLogger workerutil.Logger,
 	minSyncInterval time.Duration,
 ) (err error) {
 	logger := s.Logger.With(log.Int64("externalServiceID", externalServiceID))
@@ -599,11 +600,23 @@ func (s *Syncer) SyncExternalService(
 			errcode.IsAccountSuspended(err)
 	}
 
+	logEntry := commandLogger.Log("sync.iterate", []string{})
+	defer func() {
+		if err != nil {
+			logEntry.Finalize(1)
+		} else {
+			logEntry.Finalize(0)
+		}
+		err = errors.Append(err, logEntry.Close())
+	}()
+
 	logger = s.Logger.With(log.Object("svc", log.String("name", svc.DisplayName), log.Int64("id", svc.ID)))
 	// Insert or update repos as they are sourced. Keep track of what was seen
 	// so we can remove anything else at the end.
 	for res := range results {
 		if err := res.Err; err != nil {
+			fmt.Fprintf(logEntry, "stderr: Error from codehost: %s\n", err)
+
 			logger.Error("error from codehost", log.Int("seen", len(seen)), log.Error(err))
 
 			errs = errors.Append(errs, errors.Wrapf(err, "fetching from code host %s", svc.DisplayName))
@@ -619,11 +632,13 @@ func (s *Syncer) SyncExternalService(
 
 		sourced := res.Repo
 		if !allowed(sourced) {
+			fmt.Fprintf(logEntry, "stderr: Repo not allowed: %s\n", sourced)
 			continue
 		}
 
 		var diff Diff
 		if diff, err = s.sync(ctx, svc, sourced); err != nil {
+			fmt.Fprintf(logEntry, "stderr: Error syncing: %s\n", err)
 			logger.Error("failed to sync, skipping", log.String("repo", string(sourced.Name)), log.Error(err))
 			errs = errors.Append(errs, err)
 
@@ -638,6 +653,7 @@ func (s *Syncer) SyncExternalService(
 		}
 		for _, r := range diff.Repos() {
 			seen[r.ID] = struct{}{}
+			fmt.Fprintf(logEntry, "stdout: Saw repo: %s\n", r.Name)
 		}
 
 		modified = modified || len(diff.Modified)+len(diff.Added) > 0

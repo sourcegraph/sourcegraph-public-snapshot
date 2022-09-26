@@ -296,7 +296,7 @@ func filterRecordingsBySeriesRepos(ctx context.Context, repoStore discovery.Repo
 
 }
 
-func (r *workHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
+func (r *workHandler) Handle(ctx context.Context, logger log.Logger, _ workerutil.Logger, record workerutil.Record) (err error) {
 	// 🚨 SECURITY: The request is performed without authentication, we get back results from every
 	// repository on Sourcegraph - results will be filtered when users query for insight data based on the
 	// repositories they can see.

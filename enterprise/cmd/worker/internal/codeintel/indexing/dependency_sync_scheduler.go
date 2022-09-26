@@ -66,7 +66,7 @@ type dependencySyncSchedulerHandler struct {
 	extsvcStore ExternalServiceStore
 }
 
-func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
+func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.Logger, _ workerutil.Logger, record workerutil.Record) error {
 	if !autoIndexingEnabled() {
 		return nil
 	}

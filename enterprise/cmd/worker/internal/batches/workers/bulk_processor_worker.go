@@ -47,7 +47,7 @@ type bulkProcessorWorker struct {
 }
 
 func (b *bulkProcessorWorker) HandlerFunc() workerutil.HandlerFunc {
-	return func(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
+	return func(ctx context.Context, logger log.Logger, _ workerutil.Logger, record workerutil.Record) (err error) {
 		job := record.(*btypes.ChangesetJob)
 
 		tx, err := b.store.Transact(ctx)

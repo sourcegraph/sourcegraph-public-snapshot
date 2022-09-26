@@ -389,8 +389,26 @@ func (w *Worker) handle(ctx, workerContext context.Context, record Record) (err 
 		defer cancel()
 	}
 
+	// 🚨 SECURITY: The job logger must be supplied with all sensitive values that may appear
+	// in a command constructed and run in the following function. Note that the command and
+	// its output may both contain sensitive values, but only values which we directly
+	// interpolate into the command. No command that we run on the host leaks environment
+	// variables, and the user-specified commands (which could leak their environment) are
+	// run in a clean VM.
+	commandLogger := NewLogger(w.store, record.RecordID(), map[string]string{}) // TODO: Redaction union(h.options.RedactedValues, job.RedactedValues))
+	defer func() {
+		flushErr := commandLogger.Flush()
+		if flushErr != nil {
+			if handleErr != nil {
+				handleErr = errors.Append(handleErr, flushErr)
+			} else {
+				handleErr = flushErr
+			}
+		}
+	}()
+
 	// Open namespace for logger to avoid key collisions on fields
-	handleErr = w.handler.Handle(ctx, handleLog.With(log.Namespace("handle")), record)
+	handleErr = w.handler.Handle(ctx, handleLog.With(log.Namespace("handle")), commandLogger, record)
 
 	if w.options.MaximumRuntimePerJob > 0 && errors.Is(handleErr, context.DeadlineExceeded) {
 		handleErr = errors.Wrap(handleErr, fmt.Sprintf("job exceeded maximum execution time of %s", w.options.MaximumRuntimePerJob))

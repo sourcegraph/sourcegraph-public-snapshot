@@ -42,7 +42,7 @@ func New(gitClient GitserverClient, sourcer sources.Sourcer, store *store.Store)
 // HandlerFunc returns a dbworker.HandlerFunc that can be passed to a
 // workerutil.Worker to process queued changesets.
 func (r *Reconciler) HandlerFunc() workerutil.HandlerFunc {
-	return func(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
+	return func(ctx context.Context, logger log.Logger, _ workerutil.Logger, record workerutil.Record) (err error) {
 		tx, err := r.store.Transact(ctx)
 		if err != nil {
 			return err

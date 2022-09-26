@@ -82,7 +82,7 @@ var _ workerutil.Handler = &dependencyIndexingSchedulerHandler{}
 // recently completed processing. Each moniker is interpreted according to its
 // scheme to determine the dependent repository and commit. A set of indexing
 // jobs are enqueued for each repository and commit pair.
-func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
+func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, logger log.Logger, _ workerutil.Logger, record workerutil.Record) error {
 	if !autoIndexingEnabled() || disableIndexScheduler {
 		return nil
 	}

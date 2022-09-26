@@ -2553,7 +2553,7 @@ type fakeWebhookBuildHandler struct {
 	jobChan chan *webhookworker.Job
 }
 
-func (h *fakeWebhookBuildHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
+func (h *fakeWebhookBuildHandler) Handle(ctx context.Context, logger log.Logger, _ workerutil.Logger, record workerutil.Record) error {
 	job, ok := record.(*webhookworker.Job)
 	if !ok {
 		return errors.Newf("expected webhookworker.Job, got %T", record)

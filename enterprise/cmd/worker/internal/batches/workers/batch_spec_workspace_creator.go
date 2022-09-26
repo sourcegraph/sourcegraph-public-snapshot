@@ -31,7 +31,7 @@ type batchSpecWorkspaceCreator struct {
 // HandlerFunc returns a workerutil.HandlerFunc that can be passed to a
 // workerutil.Worker to process queued changesets.
 func (r *batchSpecWorkspaceCreator) HandlerFunc() workerutil.HandlerFunc {
-	return func(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
+	return func(ctx context.Context, logger log.Logger, _ workerutil.Logger, record workerutil.Record) (err error) {
 		job := record.(*btypes.BatchSpecResolutionJob)
 
 		return r.process(ctx, service.NewWorkspaceResolver, job)

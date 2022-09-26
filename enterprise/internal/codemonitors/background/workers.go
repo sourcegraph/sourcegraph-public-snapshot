@@ -132,7 +132,7 @@ type queryRunner struct {
 	db edb.EnterpriseDB
 }
 
-func (r *queryRunner) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
+func (r *queryRunner) Handle(ctx context.Context, logger log.Logger, _ workerutil.Logger, record workerutil.Record) (err error) {
 	defer func() {
 		if err != nil {
 			logger.Error("queryRunner.Handle", log.Error(err))
@@ -209,7 +209,7 @@ type actionRunner struct {
 	edb.CodeMonitorStore
 }
 
-func (r *actionRunner) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
+func (r *actionRunner) Handle(ctx context.Context, logger log.Logger, _ workerutil.Logger, record workerutil.Record) (err error) {
 	logger.Info("actionRunner.Handle starting")
 	defer func() {
 		if err != nil {

@@ -55,7 +55,7 @@ var (
 // errCommitDoesNotExist occurs when gitserver does not recognize the commit attached to the upload.
 var errCommitDoesNotExist = errors.Errorf("commit does not exist")
 
-func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
+func (h *handler) Handle(ctx context.Context, logger log.Logger, _ workerutil.Logger, record workerutil.Record) (err error) {
 	upload := record.(store.Upload)
 
 	var requeued bool

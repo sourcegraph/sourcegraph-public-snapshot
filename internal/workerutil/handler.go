@@ -11,13 +11,13 @@ import (
 // interfaces to further configure the behavior of the worker routine.
 type Handler interface {
 	// Handle processes a single record.
-	Handle(ctx context.Context, logger log.Logger, record Record) error
+	Handle(ctx context.Context, logger log.Logger, commandLogger Logger, record Record) error
 }
 
-type HandlerFunc func(ctx context.Context, logger log.Logger, record Record) error
+type HandlerFunc func(ctx context.Context, logger log.Logger, commandLogger Logger, record Record) error
 
-func (f HandlerFunc) Handle(ctx context.Context, logger log.Logger, record Record) error {
-	return f(ctx, logger, record)
+func (f HandlerFunc) Handle(ctx context.Context, logger log.Logger, commandLogger Logger, record Record) error {
+	return f(ctx, logger, commandLogger, record)
 }
 
 // WithPreDequeue is an extension of the Handler interface.

@@ -84,7 +84,7 @@ type fakeRepoSyncHandler struct {
 	jobChan chan *repos.SyncJob
 }
 
-func (h *fakeRepoSyncHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
+func (h *fakeRepoSyncHandler) Handle(ctx context.Context, logger log.Logger, _ workerutil.Logger, record workerutil.Record) error {
 	sj, ok := record.(*repos.SyncJob)
 	if !ok {
 		return errors.Errorf("expected repos.SyncJob, got %T", record)

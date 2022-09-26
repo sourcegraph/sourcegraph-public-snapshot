@@ -86,7 +86,7 @@ type bitbucketProjectPermissionsHandler struct {
 }
 
 // Handle implements the workerutil.Handler interface.
-func (h *bitbucketProjectPermissionsHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
+func (h *bitbucketProjectPermissionsHandler) Handle(ctx context.Context, logger log.Logger, _ workerutil.Logger, record workerutil.Record) (err error) {
 	logger = logger.Scoped("BitbucketProjectPermissionsHandler", "handles jobs to apply explicit permissions to all repositories of a Bitbucket Project")
 	defer func() {
 		if err != nil {
