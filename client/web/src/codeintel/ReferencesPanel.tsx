@@ -537,9 +537,9 @@ const CollapsibleLocationList: React.FunctionComponent<
                         className="d-flex p-0 justify-content-start w-100"
                     >
                         {isOpen ? (
-                            <Icon aria-label="Close" svgPath={mdiChevronDown} />
+                            <Icon aria-hidden={true} svgPath={mdiChevronDown} />
                         ) : (
-                            <Icon aria-label="Expand" svgPath={mdiChevronRight} />
+                            <Icon aria-hidden={true} svgPath={mdiChevronRight} />
                         )}{' '}
                         <H4 className="mb-0">{capitalize(props.name)}</H4>
                         <span className={classNames('ml-2 text-muted small', styles.cardHeaderSmallText)}>
@@ -854,9 +854,9 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                     )}
                 >
                     {open ? (
-                        <Icon aria-label="Close" svgPath={mdiChevronDown} />
+                        <Icon aria-hidden={true} svgPath={mdiChevronDown} />
                     ) : (
-                        <Icon aria-label="Expand" svgPath={mdiChevronRight} />
+                        <Icon aria-hidden={true} svgPath={mdiChevronRight} />
                     )}
                     <small className={styles.locationGroupHeaderFilename}>
                         <span>
