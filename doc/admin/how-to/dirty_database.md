@@ -107,7 +107,7 @@ If you're running into errors such as being unable to create a unique index due 
 
 ### 3. Add a migration log entry
 
-**Ensure the migration applied, then signal that the migration has been run**. Run the `migrator` instance against your database to create an explicit migration log. For the following, consult the [Kubernetes](./manual_database_migrations.md#kubernetes), [Docker-compose](./manual_database_migrations.md#docker-compose), or [local development](./manual_database_migrations.md#local-development) instructions on how to manually run database operations. The specific migrator command to run is:
+**Ensure the migration applied, then signal that the migration has been run**. Run the `migrator` instance against your database to create an explicit migration log. For the following, consult the [Kubernetes](./manual_database_migrations.md#kubernetes), [Docker-compose](./manual_database_migrations.md#docker--docker-compose), or [local development](./manual_database_migrations.md#local-development) instructions on how to manually run database operations. The specific migrator command to run is:
 
 - For Kubernetes: replace container args with `["add-log", "-db=<schema>", "-version=<version>"]`
 - For Docker-compose: replace container args with `"add-log" "-db=<schema>" "-version=<version>"`

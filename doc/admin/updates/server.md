@@ -12,26 +12,7 @@ This document describes the exact changes needed to update a single-node Sourceg
 ## Multi-version upgrade procedure
 
 1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
-1. For each version within the multi-version upgrade range, read the stepwise update notes on this page. For example, when upgrading from 3.20 to 3.23, update notes for existing stepwise updates (here, [3.20 -> 3.21](#3-20-3-21) is relevant). Neglecting this step can cause you to [miss important upgrade notes](#if-you-wish-to-keep-existing-precise-code-navigation-indexes) and data that required special treatment can be lost permanently.
-1. Check the [update notes](#multi-version-upgrade-notes) specific to multi-version upgrades.
-1. After checking the relevant update notes, refer to the [upgrade procedure](../deploy/docker-single-container/index.md#multi-version-upgrades) to upgrade your instance.
-
-### Multi-version upgrade notes
-
-Step 2 of performing a [multi-version upgrade](../deploy/docker-single-container/index.md#multi-version-upgrades) on a Docker Single Server with built-in database requires starting an equivalent Postgres container locally. The version of this Postgres container is dependent on the version of the instance prior to upgrade.
-
-| `${SG_VERSION}`     | `${PG_VERSION}` | `${PG_VERSION_TAG}` |
-| ------------------- | --------------- | ------------------- |
-| `3.20.X` - `3.26.X` | `11`            | `11.4`              |
-| `3.27.X` - `3.29.X` | `12`            | `12.6`              |
-| `3.30.X` - `3.37.X` | `12`            | `12.6-alpine`       |
-| `3.38.X` -          | `12`            | `12-alpine`         |
-
-Some stepwise upgrade notes have multi-version considerations.
-
-- **Upgrades crossing 3.26 -> 3.27** will require an update to Postgres 12.
-    - If you are using an external database, follow the [upgrade instructions](../postgres.md#upgrading-external-postgresql-instances) prior to starting the upgrade procedure.
-    - If you are using the provided database containers, update the `pgsql` and `codeintel-db` images to the new version prior to starting the upgrade procedure. These images will convert postgres 9.6 data on-disk to a Postgres 12-compatible format.
+1. Refer to the [upgrade procedure](../deploy/docker-single-container/index.md#multi-version-upgrades) to upgrade your instance.
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
