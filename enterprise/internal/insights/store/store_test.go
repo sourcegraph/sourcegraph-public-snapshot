@@ -9,8 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/storage"
-
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
@@ -170,7 +168,7 @@ func TestCountData(t *testing.T) {
 	optionalRepoID := func(v api.RepoID) *api.RepoID { return &v }
 
 	// Record some duplicate data points.
-	for _, record := range []RecordSeriesPointArgs{
+	records := []RecordSeriesPointArgs{
 		{
 			SeriesID:    "one",
 			Point:       SeriesPoint{Time: timeValue("2020-03-01T00:00:00Z"), Value: 1.1},
@@ -198,10 +196,9 @@ func TestCountData(t *testing.T) {
 			Point:       SeriesPoint{Time: timeValue("2020-03-03T00:01:00Z"), Value: 3.3},
 			PersistMode: RecordMode,
 		},
-	} {
-		if err := store.RecordSeriesPoint(ctx, record); err != nil {
-			t.Fatal(err)
-		}
+	}
+	if err := store.RecordSeriesPoints(ctx, records); err != nil {
+		t.Fatal(err)
 	}
 
 	// How many data points on 02-29?
@@ -248,12 +245,17 @@ func TestRecordSeriesPoints(t *testing.T) {
 	permStore := NewInsightPermissionStore(postgres)
 	store := NewWithClock(insightsDB, permStore, clock)
 
+	// First test it does not error with no records.
+	if err := store.RecordSeriesPoints(ctx, []RecordSeriesPointArgs{}); err != nil {
+		t.Fatal(err)
+	}
+
 	optionalString := func(v string) *string { return &v }
 	optionalRepoID := func(v api.RepoID) *api.RepoID { return &v }
 
 	current := time.Date(2021, time.September, 10, 10, 0, 0, 0, time.UTC)
 
-	for _, record := range []RecordSeriesPointArgs{
+	records := []RecordSeriesPointArgs{
 		{
 			SeriesID:    "one",
 			Point:       SeriesPoint{Time: current, Value: 1.1},
@@ -273,19 +275,18 @@ func TestRecordSeriesPoints(t *testing.T) {
 			Point:       SeriesPoint{Time: current.Add(-time.Hour * 24 * 28), Value: 3.3},
 			RepoName:    optionalString("repo1"),
 			RepoID:      optionalRepoID(3),
-			PersistMode: RecordMode,
+			PersistMode: SnapshotMode,
 		},
 		{
 			SeriesID:    "one",
 			Point:       SeriesPoint{Time: current.Add(-time.Hour * 24 * 42), Value: 3.3},
 			RepoName:    optionalString("repo1"),
 			RepoID:      optionalRepoID(3),
-			PersistMode: RecordMode,
+			PersistMode: SnapshotMode,
 		},
-	} {
-		if err := store.RecordSeriesPoint(ctx, record); err != nil {
-			t.Fatal(err)
-		}
+	}
+	if err := store.RecordSeriesPoints(ctx, records); err != nil {
+		t.Fatal(err)
 	}
 
 	want := []SeriesPoint{
@@ -352,7 +353,7 @@ func TestRecordSeriesPointsSnapshotOnly(t *testing.T) {
 
 	current := time.Date(2021, time.September, 10, 10, 0, 0, 0, time.UTC)
 
-	for _, record := range []RecordSeriesPointArgs{
+	records := []RecordSeriesPointArgs{
 		{
 			SeriesID:    "one",
 			Point:       SeriesPoint{Time: current, Value: 1.1},
@@ -360,10 +361,9 @@ func TestRecordSeriesPointsSnapshotOnly(t *testing.T) {
 			RepoID:      optionalRepoID(3),
 			PersistMode: SnapshotMode,
 		},
-	} {
-		if err := store.RecordSeriesPoint(ctx, record); err != nil {
-			t.Fatal(err)
-		}
+	}
+	if err := store.RecordSeriesPoints(ctx, records); err != nil {
+		t.Fatal(err)
 	}
 
 	// check snapshots table has a row
@@ -416,7 +416,7 @@ func TestRecordSeriesPointsRecordingOnly(t *testing.T) {
 
 	current := time.Date(2021, time.September, 10, 10, 0, 0, 0, time.UTC)
 
-	for _, record := range []RecordSeriesPointArgs{
+	records := []RecordSeriesPointArgs{
 		{
 			SeriesID:    "one",
 			Point:       SeriesPoint{Time: current, Value: 1.1},
@@ -424,10 +424,9 @@ func TestRecordSeriesPointsRecordingOnly(t *testing.T) {
 			RepoID:      optionalRepoID(3),
 			PersistMode: RecordMode,
 		},
-	} {
-		if err := store.RecordSeriesPoint(ctx, record); err != nil {
-			t.Fatal(err)
-		}
+	}
+	if err := store.RecordSeriesPoints(ctx, records); err != nil {
+		t.Fatal(err)
 	}
 
 	// check snapshots table has a row
@@ -481,7 +480,7 @@ func TestDeleteSnapshots(t *testing.T) {
 	current := time.Date(2021, time.September, 10, 10, 0, 0, 0, time.UTC)
 
 	seriesID := "one"
-	for _, record := range []RecordSeriesPointArgs{
+	records := []RecordSeriesPointArgs{
 		{
 			SeriesID:    seriesID,
 			Point:       SeriesPoint{Time: current, Value: 1.1},
@@ -496,10 +495,9 @@ func TestDeleteSnapshots(t *testing.T) {
 			RepoID:      optionalRepoID(3),
 			PersistMode: RecordMode,
 		},
-	} {
-		if err := store.RecordSeriesPoint(ctx, record); err != nil {
-			t.Fatal(err)
-		}
+	}
+	if err := store.RecordSeriesPoints(ctx, records); err != nil {
+		t.Fatal(err)
 	}
 
 	// first check that we have one recording and one snapshot
@@ -919,10 +917,12 @@ func TestLoadStuff(t *testing.T) {
 				})
 			}
 
+			randStr := rand.String(12)
 			allData = append(allData, dataForTimeseries{
 				repoId:   i,
 				repoName: name,
 				ss:       smps,
+				Capture:  &randStr,
 			})
 		}
 	}
@@ -946,7 +946,7 @@ func TestLoadStuff(t *testing.T) {
 	// 	t.Fatal(err)
 	// }
 	//
-	err = writeOld(ctx, store, seriesId, allData)
+	err = writeOldBatch(ctx, store, seriesId, allData)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -961,7 +961,8 @@ func writeOld(ctx context.Context, store *Store, seriesId string, allData []data
 		for _, sample := range datum.ss {
 			rn := datum.repoName
 			id := api.RepoID(datum.repoId)
-			if err := store.RecordSeriesPoint(ctx, RecordSeriesPointArgs{
+
+			if err := store.RecordSeriesPoints(ctx, []RecordSeriesPointArgs{{
 				SeriesID: seriesId,
 				Point: SeriesPoint{
 					SeriesID: seriesId,
@@ -972,10 +973,42 @@ func writeOld(ctx context.Context, store *Store, seriesId string, allData []data
 				RepoName:    &rn,
 				RepoID:      &id,
 				PersistMode: "record",
-			}); err != nil {
+			}},
+			); err != nil {
 				return err
 			}
 		}
+	}
+	return nil
+}
+
+func writeOldBatch(ctx context.Context, store *Store, seriesId string, allData []dataForTimeseries) error {
+	var pts []RecordSeriesPointArgs
+	for i, datum := range allData {
+		if i%100 == 0 {
+			println(fmt.Sprintf("old %d", i))
+		}
+		for _, sample := range datum.ss {
+			rn := datum.repoName
+			id := api.RepoID(datum.repoId)
+
+			pts = append(pts, RecordSeriesPointArgs{
+				SeriesID: seriesId,
+				Point: SeriesPoint{
+					SeriesID: seriesId,
+					Time:     time.Unix(int64(sample.Time), 0),
+					Value:    sample.Value,
+					Capture:  datum.Capture,
+				},
+				RepoName:    &rn,
+				RepoID:      &id,
+				PersistMode: "record",
+			})
+		}
+	}
+
+	if err := store.RecordSeriesPoints(ctx, pts); err != nil {
+		return err
 	}
 	return nil
 }
@@ -1059,22 +1092,27 @@ func TestConvert(t *testing.T) {
 	permStore := NewInsightPermissionStore(db)
 	store := New(edb.NewInsightsDB(handle), permStore)
 
-	insightStore := NewInsightStore(edb.NewInsightsDB(handle))
-	dataSeries, err := insightStore.GetDataSeries(ctx, GetDataSeriesArgs{})
+	// insightStore := NewInsightStore(edb.NewInsightsDB(handle))
+	// dataSeries, err := insightStore.GetDataSeries(ctx, GetDataSeriesArgs{})
+	// if err != nil {
+	// 	t.Fatal(err)
+	// }
+
+	cvtr := NewConverter(store)
+
+	err = cvtr.Convert(ctx, types.InsightSeries{SeriesID: "findme", ID: 117, DataFormat: 1}, 2)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	cvtr := NewConverter(store)
-
-	for _, series := range dataSeries {
-		t.Log(series.SeriesID)
-		if series.DataFormat == storage.Uncompressed {
-			err = cvtr.Convert(ctx, series, storage.Gorilla)
-			if err != nil {
-				t.Fatal(err)
-			}
-			t.Logf("completed series:%s %d", series.SeriesID, series.ID)
-		}
-	}
+	// for _, series := range dataSeries {
+	// 	t.Log(series.SeriesID)
+	// 	if series.DataFormat == storage.Uncompressed {
+	// 		err = cvtr.Convert(ctx, series, storage.Gorilla)
+	// 		if err != nil {
+	// 			t.Fatal(err)
+	// 		}
+	// 		t.Logf("completed series:%s %d", series.SeriesID, series.ID)
+	// 	}
+	// }
 }
