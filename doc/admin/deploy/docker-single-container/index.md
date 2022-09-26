@@ -164,22 +164,66 @@ A [multi-version upgrade](../../updates/index.md#multi-version-upgrades) is a do
 
 To perform a multi-version upgrade on a Sourcegraph instance running on Docker Single Container:
 
-1. Stop the container.
-    - `docker stop [CONTAINER]`
-1. If using an [externalized database](../../external_services/postgres.md), the database is already accessible from the`migrator` so no action is needed. Otherwise, a new local Postgres container must be started so that the `migrator` can upgrade the data in-place. Let `${PATH}` be the directory mounted into `/var/opt/sourcegraph` of your instance (this contains the Postgres data directory). Start the new Postgres container via the following (again, see the [update notes](../../updates/server.md#multi-version-upgrade-procedure) to check the correct version for your target instance):
+1. Stop the running Sourcegraph container via `docker stop [CONTAINER]`.
+1. Start a temporary Postgres container on top of the Postgres data directory used by the old `sourcegraph/server` image. This Postgres instance will be used by the following upgrade migration. If using an [external database](../../external_services/postgres.md), the database is already accessible from the `migrator` so no action is needed. Otherwise, start the new Postgres container by following the steps [described below](#running-temporary-postgres-containers).
+1. Follow the instructions on [how to run the migrator job in Docker](../../how-to/manual_database_migrations.md#docker--docker-compose) to perform the upgrade migratiohn. For specific documentation on the `upgrade` command, see the [command documentation](../../how-to/manual_database_migrations.md#upgrade). The following specific steps are an easy way to run the upgrade command:
 
+<p />
+
+```bash
+docker run \
+  --rm \
+  --name migrator_${SG_VERSION} \
+  -e PGHOST='pgsql' \
+  -e PGPORT='5432' \
+  -e PGUSER='sg' \
+  -e PGPASSWORD='sg' \
+  -e PGDATABASE='sourcegraph' \
+  -e PGSSLMODE='disable' \
+  -e CODEINTEL_PGHOST='pgsql' \
+  -e CODEINTEL_PGPORT='5432' \
+  -e CODEINTEL_PGUSER='sg' \
+  -e CODEINTEL_PGPASSWORD='sg' \
+  -e CODEINTEL_PGDATABASE='sourcegraph-codeintel' \
+  -e CODEINTEL_PGSSLMODE='disable' \
+  -e CODEINSIGHTS_PGHOST='pgsql' \
+  -e CODEINSIGHTS_PGPORT='5432' \
+  -e CODEINSIGHTS_PGUSER='postgres' \
+  -e CODEINSIGHTS_PGPASSWORD='password' \
+  -e CODEINSIGHTS_PGDATABASE='postgres' \
+  -e CODEINSIGHTS_PGSSLMODE='disable' \
+  -e CODEINTEL_PG_ALLOW_SINGLE_DB=true \
+  sourcegraph/migrator:v${SG_VERSION} \
+  upgrade --from=${CURRENT_SG_VERSION} --to=${SG_VERSION}
 ```
+
+The remaining infrastructure can now be updated. All temporary containers can be stopped, and the Docker invocation for your `sourcegraph/server` container can be updated to use the new target version.
+
+#### Running temporary Postgres containers
+
+Mounting a Postgres container on top of the data directory used by `sourcegraph/server` will allow us to access and migrate the data in-place without having running services interfere.
+
+Let `${PATH}` be the directory mounted into `/var/opt/sourcegraph` of your instance. This mount contains the Postgres data directory inside of the container.
+
+For example, `${PATH}` is `~/.sourcegraph/data` in `-v ~/.sourcegraph/data:/var/opt/sourcegraph`.
+
+```bash
 docker run --rm -it \
-        -v `pwd`/data/postgresql:/data/pgdata-${PG_VERSION} \
-        -u 70 \
-        -p 5432:5432 \
-        --entrypoint bash \
-        sourcegraph/postgres-${PG_VERSION_TAG}:${SG_VERSION} \
-        -c 'echo "host all all 0.0.0.0/0 trust" >> /data/pgdata-${PG_VERSION}/pg_hba.conf && postgres -c l  listen_addresses="*" -D /data/pgdata-${PG_VERSION}'
+  -v ${PATH}/postgresql:/data/pgdata-${PG_VERSION} \
+  -u 70 \
+  -p 5432:5432 \
+  --entrypoint bash \
+  sourcegraph/postgres-${PG_VERSION_TAG}:${SG_VERSION} \
+  -c 'echo "host all all 0.0.0.0/0 trust" >> /data/pgdata-${PG_VERSION}/pg_hba.conf && postgres -c l listen_addresses="*" -D /data/pgdata-${PG_VERSION}'
 ```
 
-1. Run the `migrator upgrade` command targetting the same databases as your instance (possibly the one externalized in the previous step). See the [command documentation](./../../how-to/manual_database_migrations.md#upgrade) for additional details. In short, the [migrator](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/deploy-sourcegraph-docker%24+file:%5Epure-docker/deploy-migrator.sh%24+sourcegraph/migrator) is invoked with a `docker run` command using environment variables indicating the instance's databases.
-1. Now that the data has been prepared to run against a new version of Sourcegraph, the infrastructure can be updated. The remaining steps follow the [standard upgrade for Docker Single Container](#standard-upgrades).
+The version of this Postgres container is dependent on the version of the instance prior to upgrade.
+
+| `${SG_VERSION}`     | `${PG_VERSION}` | `${PG_VERSION_TAG}` |
+| ------------------- | --------------- | ------------------- |
+| `3.20.X` - `3.29.X` | `12`            | `12.6`              |
+| `3.30.X` - `3.37.X` | `12`            | `12.6-alpine`       |
+| `3.38.X` -          | `12`            | `12-alpine`         |
 
 ## Troubleshooting
 
