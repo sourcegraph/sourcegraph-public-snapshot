@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"os"
 	"strings"
-	"sync"
 	"testing"
 
 	"github.com/Masterminds/semver"
@@ -19,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -32,22 +32,18 @@ func TestGitLabSource(t *testing.T) {
 	t.Run("determineVersion", func(t *testing.T) {
 		p := newGitLabChangesetSourceTestProvider(t)
 
-		// assert that version and versionError has not been set yet.
-		assert.Empty(t, p.source.version)
-		assert.NoError(t, p.source.versionError)
+		p.mockGetVersions(mockVersion.String())
+		v, err := p.source.determineVersion(p.ctx)
 
-		p.mockGetVersion(mockVersion.String(), nil)
-		p.source.determineVersion(p.ctx)
-
-		assert.NoError(t, p.source.versionError)
-		assert.True(t, mockVersion.Equal(p.source.version), fmt.Sprintf("expected: %s, got: %s", p.source.version.String(), mockVersion.String()))
+		assert.NoError(t, err)
+		assert.True(t, mockVersion.Equal(v), fmt.Sprintf("expected: %s, got: %s", v.String(), mockVersion.String()))
 	})
 
 	t.Run("CreateDraftChangeset", func(t *testing.T) {
 		t.Run("GitLab version is greater than 14.0.0", func(t *testing.T) {
 			p := newGitLabChangesetSourceTestProvider(t)
-			p.mockGetVersion(mockVersion2.String(), nil)
 
+			p.mockGetVersions(mockVersion2.String())
 			p.mockCreateMergeRequest(gitlab.CreateMergeRequestOpts{
 				SourceBranch: p.mr.SourceBranch,
 				TargetBranch: p.mr.TargetBranch,
@@ -64,8 +60,8 @@ func TestGitLabSource(t *testing.T) {
 
 		t.Run("GitLab Version is less than 14.0.0", func(t *testing.T) {
 			p := newGitLabChangesetSourceTestProvider(t)
-			p.mockGetVersion(mockVersion.String(), nil)
 
+			p.mockGetVersions(mockVersion.String())
 			p.mockCreateMergeRequest(gitlab.CreateMergeRequestOpts{
 				SourceBranch: p.mr.SourceBranch,
 				TargetBranch: p.mr.TargetBranch,
@@ -686,8 +682,8 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			out := &gitlab.MergeRequest{}
 
 			p := newGitLabChangesetSourceTestProvider(t)
+			p.mockGetVersions(mockVersion2.String())
 			p.changeset.Changeset.Metadata = in
-			p.mockGetVersion(mockVersion2.String(), nil)
 
 			oldMock := gitlab.MockUpdateMergeRequest
 			t.Cleanup(func() { gitlab.MockUpdateMergeRequest = oldMock })
@@ -710,15 +706,15 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			}
 		})
 
-		t.Run("GitLab version is greater than 14.0.0", func(t *testing.T) {
+		t.Run("GitLab version is less than 14.0.0", func(t *testing.T) {
 			// We won't test the full set of UpdateChangeset scenarios; instead
 			// we'll just make sure the title is appropriately munged.
 			in := &gitlab.MergeRequest{IID: 2, WorkInProgress: true}
 			out := &gitlab.MergeRequest{}
 
 			p := newGitLabChangesetSourceTestProvider(t)
+			p.mockGetVersions(mockVersion.String())
 			p.changeset.Changeset.Metadata = in
-			p.mockGetVersion(mockVersion.String(), nil)
 
 			oldMock := gitlab.MockUpdateMergeRequest
 			t.Cleanup(func() { gitlab.MockUpdateMergeRequest = oldMock })
@@ -986,8 +982,7 @@ func newGitLabChangesetSourceTestProvider(t *testing.T) *gitLabChangesetSourceTe
 			TargetBranch:    "base",
 		},
 		source: &GitLabSource{
-			client:      prov.GetClient(),
-			versionOnce: &sync.Once{},
+			client: prov.GetClient(),
 		},
 		t: t,
 	}
@@ -1114,9 +1109,14 @@ func (p *gitLabChangesetSourceTestProvider) mockCreateComment(expected string, e
 	}
 }
 
-func (p *gitLabChangesetSourceTestProvider) mockGetVersion(version string, err error) {
-	gitlab.MockGetVersion = func(c *gitlab.Client, ctx context.Context) (string, error) {
-		return version, err
+func (p *gitLabChangesetSourceTestProvider) mockGetVersions(expected string) {
+	versions.MockGetVersions = func() ([]*versions.Version, error) {
+		return []*versions.Version{
+			{
+				ExternalServiceKind: extsvc.KindGitLab,
+				Version:             expected,
+			},
+		}, nil
 	}
 }
 
@@ -1129,7 +1129,8 @@ func (p *gitLabChangesetSourceTestProvider) unmock() {
 	gitlab.MockGetOpenMergeRequestByRefs = nil
 	gitlab.MockUpdateMergeRequest = nil
 	gitlab.MockCreateMergeRequestNote = nil
-	gitlab.MockGetVersion = nil
+
+	versions.MockGetVersions = nil
 }
 
 // panicDoer provides a httpcli.Doer implementation that panics if any attempt

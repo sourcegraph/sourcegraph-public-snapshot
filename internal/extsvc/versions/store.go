@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/gomodule/redigo/redis"
+
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
@@ -30,6 +31,9 @@ func storeVersions(versions []*Version) error {
 }
 
 func GetVersions() ([]*Version, error) {
+	if MockGetVersions != nil {
+		return MockGetVersions()
+	}
 	c := pool.Get()
 	defer c.Close()
 

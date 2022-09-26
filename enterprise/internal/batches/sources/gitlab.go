@@ -5,13 +5,13 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/Masterminds/semver"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -24,10 +24,6 @@ import (
 type GitLabSource struct {
 	client *gitlab.Client
 	au     auth.Authenticator
-
-	version      *semver.Version
-	versionOnce  *sync.Once
-	versionError error
 }
 
 var _ ChangesetSource = &GitLabSource{}
@@ -78,9 +74,8 @@ func newGitLabSource(urn string, c *schema.GitLabConnection, cf *httpcli.Factory
 
 	provider := gitlab.NewClientProvider(urn, baseURL, cli, nil)
 	return &GitLabSource{
-		au:          authr,
-		client:      provider.GetAuthenticatorClient(authr),
-		versionOnce: &sync.Once{},
+		au:     authr,
+		client: provider.GetAuthenticatorClient(authr),
 	}, nil
 }
 
@@ -426,15 +421,25 @@ func readPipelines(it func() ([]*gitlab.Pipeline, error)) ([]*gitlab.Pipeline, e
 }
 
 func (s *GitLabSource) determineVersion(ctx context.Context) (*semver.Version, error) {
-	s.versionOnce.Do(func() {
-		var v string
-		v, s.versionError = s.client.GetVersion(ctx)
+	chvs, err := versions.GetVersions()
+	if err != nil {
+		return nil, err
+	}
 
-		if s.versionError == nil {
-			s.version, s.versionError = semver.NewVersion(v)
+	for _, chv := range chvs {
+		if chv.ExternalServiceKind != extsvc.KindGitLab {
+			continue
 		}
-	})
-	return s.version, s.versionError
+
+		cv, err := semver.NewVersion(chv.Version)
+		if err != nil {
+			return nil, err
+		}
+
+		return cv, nil
+	}
+
+	return nil, errors.New("Cannot determine gitlab version")
 }
 
 // UpdateChangeset updates the merge request on GitLab to reflect the local
