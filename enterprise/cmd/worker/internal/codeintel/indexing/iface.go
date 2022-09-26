@@ -32,7 +32,7 @@ type DBStoreShim struct {
 }
 
 type IndexingSettingStore interface {
-	GetLastestSchemaSettings(context.Context, api.SettingsSubject) (*schema.Settings, error)
+	GetLatestSchemaSettings(context.Context, api.SettingsSubject) (*schema.Settings, error)
 }
 
 type IndexingRepoStore interface {

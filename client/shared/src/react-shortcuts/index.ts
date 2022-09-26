@@ -1,9 +1,12 @@
-export { Shortcut, Props as ShortcutProps } from './Shortcut'
+export { Shortcut } from './Shortcut'
+export type { Props as ShortcutProps } from './Shortcut'
 
-export { ShortcutProvider, Props as ProviderProps, Context, Provider as ContextProvider } from './ShortcutProvider'
+export { ShortcutProvider, Provider as ContextProvider } from './ShortcutProvider'
+export type { Context, Props as ProviderProps } from './ShortcutProvider'
 
 export { ShortcutManager } from './ShortcutManager'
-export {
+
+export type {
     Key,
     AlphabetKey,
     NumericKey,
