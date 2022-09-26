@@ -42,9 +42,9 @@ title: Get Started
 
 Sourcegraph is runnable in a variety of environments, from cloud to self-hosted to your local machine.
 
-* For most customers, we recommend Sourcegraph Cloud, a single-tenant, auto-managed, and auto-upgrading option.
-* For customers that desire to self-host, we recommend one of the single-node deployment options.
-* For enterprise customers that require a multi-node, self-hosted deployment, we offer a Kubernetes option. We strongly encourage you to get in touch via Discord or email if you pursue this option.
+- For most customers, we recommend Sourcegraph Cloud. A Sourcegraph Cloud instance is a single-tenant instance that is managed entirely by Sourcegraph.
+- For customers that want to self-host, we recommend one of the single-node [deployment options](admin/deploy/index.md).
+- For enterprise customers that require a multi-node, self-hosted deployment, we offer a Kubernetes option. We strongly encourage you to get in touch by email (sales@sourcegraph.com) if you pursue this option.
 
 ### Recommended
 
@@ -127,19 +127,19 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
 
 ## Quickstart
 
-- [Learn Sourcegraph](getting-started/index.md) 
+- [Learn Sourcegraph](getting-started/index.md)
   - Sourcegraph 101: how to use Sourcegraph
 - [Tour Sourcegraph](getting-started/tour.md)
   - Take a tour of Sourcegraph’s features using real-world examples and use cases
-- [Trial Sourcegraph](adopt/trial/index.md) 
+- [Trial Sourcegraph](adopt/trial/index.md)
   - Start a Sourcegraph trail at your company
-- [Sourcegraph AWS launch stack](admin/deploy/docker-compose/aws-oneclick.md) 
+- [Sourcegraph AWS launch stack](admin/deploy/docker-compose/aws-oneclick.md)
   - Launch a Sourcegraph instance in one-click
 
 ## Community
 
 - [Blog](https://about.sourcegraph.com/blog/)
-- [Discord](https://discord.gg/s2qDtYGnAE) 
+- [Discord](https://discord.gg/s2qDtYGnAE)
 - [Twitter](https://twitter.com/sourcegraph)
 - [Handbook](https://handbook.sourcegraph.com/)
 
