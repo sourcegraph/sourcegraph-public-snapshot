@@ -86,7 +86,6 @@ var changesetsMergedSummaryQuery = `
 	WHERE changeset_events.created_at %s AND changeset_events.kind IN (%s)
 `
 
-
 var mergeEventKinds = sqlf.Join([]*sqlf.Query{
 	sqlf.Sprintf("'github:merged'"),
 	sqlf.Sprintf("'bitbucketserver:merged'"),
@@ -132,8 +131,6 @@ func (s *BatchChanges) CacheAll(ctx context.Context) error {
 	}
 	return nil
 }
-
-
 
 var changesetsOpenedNodesQuery = `
 	SELECT

@@ -19,17 +19,17 @@ export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildre
     return (
         <div className={styles.statsBar}>
             <div className={styles.leftSide}>
-                <div className="pr-2">
+                <div className="pr-4">
                     <span className="font-weight-bold">{data?.batchChanges.totalCount}</span>
                     <br />
                     <span>Batch Changes</span>
                 </div>
-                <div className="pr-2">
+                <div className="pr-4">
                     <span className="font-weight-bold">{data?.merged.totalCount}</span>
                     <br />
                     <span>Merged</span>
                 </div>
-                <div className="pr-2">
+                <div className="pr-4">
                     <span className="font-weight-bold">{(data?.merged.totalCount * 15) / 60}</span>
                     <br />
                     <span>Hours Saved</span>

@@ -730,7 +730,7 @@ func (r *Resolver) BatchChanges(ctx context.Context, args *graphqlbackend.ListBa
 	if state != "" {
 		opts.States = []btypes.BatchChangeState{state}
 	}
-	
+
 	// If multiple `states` are provided, prefer them over `state`.
 	if args.States != nil {
 		states, err := parseBatchChangeStates(args.States)
@@ -789,15 +789,14 @@ func (r *Resolver) BatchChanges(ctx context.Context, args *graphqlbackend.ListBa
 	}, nil
 }
 
-
 func (r *Resolver) Changesets(
 	ctx context.Context,
 	args *graphqlbackend.ListChangesetsArgs,
 ) (graphqlbackend.ChangesetsConnectionResolver, error) {
-		if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
-					return nil, err
-		}
-	opts, safe, err := listChangesetOptsFromArgs(args, 0)	
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+		return nil, err
+	}
+	opts, safe, err := listChangesetOptsFromArgs(args, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -807,7 +806,6 @@ func (r *Resolver) Changesets(
 		optsSafe: safe,
 	}, nil
 }
-
 
 func (r *Resolver) RepoChangesetsStats(ctx context.Context, repo *graphql.ID) (graphqlbackend.RepoChangesetsStatsResolver, error) {
 	repoID, err := graphqlbackend.UnmarshalRepositoryID(*repo)

@@ -55,7 +55,7 @@ func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlback
 
 	resolvers := make([]graphqlbackend.ChangesetResolver, 0, len(changesetsPage))
 	for _, c := range changesetsPage {
-		resolvers = append(resolvers, NewChangesetResolverWithNextSync(r.store, c, reposByID[c.RepoID], scheduledSyncs[c.ID])) 
+		resolvers = append(resolvers, NewChangesetResolverWithNextSync(r.store, c, reposByID[c.RepoID], scheduledSyncs[c.ID]))
 	}
 
 	return resolvers, nil
@@ -75,7 +75,7 @@ func (r *changesetsConnectionResolver) TotalCount(ctx context.Context) (int32, e
 		OnlyArchived:         r.opts.OnlyArchived,
 		IncludeArchived:      r.opts.IncludeArchived,
 		RepoIDs:              r.opts.RepoIDs,
-		States:				  r.opts.States,
+		States:               r.opts.States,
 	})
 	return int32(count), err
 }
