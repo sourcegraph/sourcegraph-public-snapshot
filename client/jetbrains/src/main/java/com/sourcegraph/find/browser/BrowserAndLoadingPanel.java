@@ -7,7 +7,10 @@ import com.intellij.ui.components.JBPanelWithEmptyText;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.StatusText;
 import com.sourcegraph.config.SettingsConfigurable;
+import org.apache.commons.lang.SystemUtils;
+import org.apache.commons.lang.WordUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
@@ -37,7 +40,11 @@ public class BrowserAndLoadingPanel extends JLayeredPane {
         add(jcefPanel, Integer.valueOf(2));
     }
 
-    public void setState(State state) {
+    public void setState(@NotNull State state) {
+        this.setState(state, null);
+    }
+
+    public void setState(@NotNull State state, @Nullable String errorMessage) {
         StatusText emptyText = overlayPanel.getEmptyText();
 
         isBrowserVisible = state == State.AUTHENTICATED || state == State.COULD_CONNECT_BUT_NOT_AUTHENTICATED;
@@ -50,6 +57,16 @@ public class BrowserAndLoadingPanel extends JLayeredPane {
                 new SimpleTextAttributes(STYLE_PLAIN, JBUI.CurrentTheme.Link.Foreground.ENABLED),
                 __ -> ShowSettingsUtil.getInstance().showSettingsDialog(project, SettingsConfigurable.class)
             );
+        } else if (state == State.ERROR) {
+            String wrappedText = WordUtils.wrap("Error: " + errorMessage, 100);
+            String[] lines = wrappedText.split(SystemUtils.LINE_SEPARATOR);
+            emptyText.setText(lines[0]);
+            for (int i = 1; i < lines.length; i++) {
+                if (!lines[i].trim().isEmpty()) {
+                    emptyText.appendLine(lines[i]);
+                }
+            }
+
         } else {
             // We need to do this because the "COULD_NOT_CONNECT" link is clickable even when the empty text is hidden! :o
             emptyText.setText("");
@@ -81,6 +98,7 @@ public class BrowserAndLoadingPanel extends JLayeredPane {
         LOADING,
         AUTHENTICATED,
         COULD_NOT_CONNECT,
-        COULD_CONNECT_BUT_NOT_AUTHENTICATED
+        COULD_CONNECT_BUT_NOT_AUTHENTICATED,
+        ERROR
     }
 }

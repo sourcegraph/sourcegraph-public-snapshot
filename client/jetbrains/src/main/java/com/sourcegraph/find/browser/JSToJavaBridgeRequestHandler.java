@@ -42,6 +42,14 @@ public class JSToJavaBridgeRequestHandler {
                 case "getTheme":
                     JsonObject currentThemeAsJson = ThemeUtil.getCurrentThemeAsJson();
                     return createSuccessResponse(currentThemeAsJson);
+                case "indicateSearchError":
+                    arguments = request.getAsJsonObject("arguments");
+                    ApplicationManager.getApplication().invokeLater(() -> findPopupPanel.indicateSearchError(
+                        arguments.get("errorMessage").getAsString(),
+                        Date.from(Instant.from(
+                            DateTimeFormatter.ISO_INSTANT.parse(arguments.get("timeAsISOString").getAsString())))));
+                    return createSuccessResponse(null);
+
                 case "saveLastSearch":
                     arguments = request.getAsJsonObject("arguments");
                     String query = arguments.get("query").getAsString();

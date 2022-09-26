@@ -139,8 +139,19 @@ public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
         }
     }
 
+    public void indicateSearchError(@NotNull String errorMessage, @NotNull Date date) {
+        if (lastPreviewUpdate.before(date)) {
+            this.lastPreviewUpdate = date;
+            browserAndLoadingPanel.setState(BrowserAndLoadingPanel.State.ERROR, errorMessage);
+            selectionMetadataPanel.clearSelectionMetadataLabel();
+            previewPanel.setState(PreviewPanel.State.NO_PREVIEW_AVAILABLE);
+            footerPanel.setPreviewContent(null);
+        }
+    }
+
     public void indicateLoadingIfInTime(@NotNull Date date) {
         if (lastPreviewUpdate.before(date)) {
+            this.lastPreviewUpdate = date;
             selectionMetadataPanel.clearSelectionMetadataLabel();
             previewPanel.setState(PreviewPanel.State.LOADING);
             footerPanel.setPreviewContent(null);
