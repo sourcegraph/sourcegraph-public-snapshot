@@ -2,7 +2,6 @@ import * as React from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
-import * as _monaco from 'monaco-editor' // type only
 import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
 
@@ -12,10 +11,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { SaveToolbar } from '../components/SaveToolbar'
-import { settingsActions } from '../site-admin/configHelpers'
 import { eventLogger } from '../tracking/eventLogger'
-
-import { EditorActionsGroup } from './EditorActionsGroup'
 
 import styles from './SettingsFile.module.scss'
 
@@ -60,8 +56,6 @@ interface State {
 
 const emptySettings = '{\n  // add settings here (Ctrl+Space to see hints)\n}'
 
-const disposableToFunc = (disposable: _monaco.IDisposable) => () => disposable.dispose()
-
 const MonacoSettingsEditor = React.lazy(async () => ({
     default: (await import('./MonacoSettingsEditor')).MonacoSettingsEditor,
 }))
@@ -69,8 +63,6 @@ const MonacoSettingsEditor = React.lazy(async () => ({
 export class SettingsFile extends React.PureComponent<Props, State> {
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
-    private editor?: _monaco.editor.ICodeEditor
-    private monaco: typeof _monaco | null = null
 
     constructor(props: Props) {
         super(props)
@@ -169,14 +161,12 @@ export class SettingsFile extends React.PureComponent<Props, State> {
 
         return (
             <div className={classNames('test-settings-file d-flex flex-grow-1 flex-column', styles.settingsFile)}>
-                <EditorActionsGroup actions={settingsActions} onClick={this.runAction.bind(this)} />
                 <React.Suspense fallback={<LoadingSpinner className="mt-2" />}>
                     <MonacoSettingsEditor
                         value={contents}
                         jsonSchema={this.props.jsonSchema}
                         onChange={this.onEditorChange}
                         readOnly={this.state.saving}
-                        monacoRef={this.monacoRef}
                         isLightTheme={this.props.isLightTheme}
                         onDidSave={this.save}
                     />
@@ -190,53 +180,6 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                 />
             </div>
         )
-    }
-
-    private monacoRef = (monacoValue: typeof _monaco | null): void => {
-        this.monaco = monacoValue
-        if (this.monaco) {
-            this.subscriptions.add(
-                disposableToFunc(
-                    this.monaco.editor.onDidCreateEditor(editor => {
-                        this.editor = editor
-                    })
-                )
-            )
-            this.subscriptions.add(
-                disposableToFunc(
-                    this.monaco.editor.onDidCreateModel(async model => {
-                        // This function can only be called if the lazy MonacoSettingsEditor component was loaded,
-                        // so this import call will not incur another load.
-                        const { MonacoSettingsEditor } = await import('./MonacoSettingsEditor')
-
-                        if (this.editor && MonacoSettingsEditor.isStandaloneCodeEditor(this.editor)) {
-                            for (const { id, label, run } of settingsActions) {
-                                MonacoSettingsEditor.addEditorAction(
-                                    this.editor,
-                                    model,
-                                    label,
-                                    id,
-                                    run,
-                                    this.props.telemetryService
-                                )
-                            }
-                        }
-                    })
-                )
-            )
-        }
-    }
-
-    private runAction(id: string): void {
-        if (this.editor) {
-            const action = this.editor.getAction(id)
-            action.run().then(
-                () => undefined,
-                error => console.error(error)
-            )
-        } else {
-            alert('Wait for editor to load before running action.')
-        }
     }
 
     private getPropsSettingsContentsOrEmpty(settings = this.props.settings): string {

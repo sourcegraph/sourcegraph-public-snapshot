@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/repotrackutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -238,6 +239,7 @@ func HTTPMiddleware(logger log.Logger, next http.Handler, siteConfig conftypes.S
 				log.String("url", truncate(r.URL.String(), 100)),
 				log.Int("code", m.Code),
 				log.Duration("duration", m.Duration),
+				log.Bool("shouldTrace", policy.ShouldTrace(ctx)),
 			)
 
 			if v := r.Header.Get("X-Forwarded-For"); v != "" {

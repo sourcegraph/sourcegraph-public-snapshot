@@ -1,17 +1,5 @@
 @import 'wildcard/src/global-styles/breakpoints';
 
-@mixin github-dark-theme {
-    [data-color-mode='dark'] {
-        @content;
-    }
-
-    [data-color-mode='auto'] {
-        @media (prefers-color-scheme: dark) {
-            @content;
-        }
-    }
-}
-
 :root {
     /* Map out CSS variables to the theme-aware GitHub ones */
     --body-bg: var(--color-bg-canvas);
@@ -19,8 +7,14 @@
     --secondary: var(--color-auto-gray-2);
 }
 
-@include github-dark-theme {
+[data-color-mode='dark'] {
     --mark-bg: var(--mark-bg-dark);
+}
+
+[data-color-mode='auto'] {
+    @media (prefers-color-scheme: dark) {
+        --mark-bg: var(--mark-bg-dark);
+    }
 }
 
 .command-palette-popover {

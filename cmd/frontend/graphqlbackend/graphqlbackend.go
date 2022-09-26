@@ -350,6 +350,26 @@ func prometheusGraphQLRequestName(requestName string) string {
 	return "other"
 }
 
+func NewSchemaWithNotebooksResolver(db database.DB, notebooks NotebooksResolver) (*graphql.Schema, error) {
+	return NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil, notebooks, nil, nil)
+}
+
+func NewSchemaWithAuthzResolver(db database.DB, authz AuthzResolver) (*graphql.Schema, error) {
+	return NewSchema(db, nil, nil, nil, authz, nil, nil, nil, nil, nil, nil, nil)
+}
+
+func NewSchemaWithBatchChangesResolver(db database.DB, batchChanges BatchChangesResolver) (*graphql.Schema, error) {
+	return NewSchema(db, batchChanges, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+}
+
+func NewSchemaWithCodeMonitorsResolver(db database.DB, codeMonitors CodeMonitorsResolver) (*graphql.Schema, error) {
+	return NewSchema(db, nil, nil, nil, nil, codeMonitors, nil, nil, nil, nil, nil, nil)
+}
+
+func NewSchemaWithLicenseResolver(db database.DB, license LicenseResolver) (*graphql.Schema, error) {
+	return NewSchema(db, nil, nil, nil, nil, nil, license, nil, nil, nil, nil, nil)
+}
+
 func NewSchema(
 	db database.DB,
 	batchChanges BatchChangesResolver,

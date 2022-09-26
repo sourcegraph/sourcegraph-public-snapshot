@@ -2388,9 +2388,9 @@ func (c IndexingRepoStoreListMinimalReposFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing)
 // used for unit testing.
 type MockIndexingSettingStore struct {
-	// GetLastestSchemaSettingsFunc is an instance of a mock function object
-	// controlling the behavior of the method GetLastestSchemaSettings.
-	GetLastestSchemaSettingsFunc *IndexingSettingStoreGetLastestSchemaSettingsFunc
+	// GetLatestSchemaSettingsFunc is an instance of a mock function object
+	// controlling the behavior of the method GetLatestSchemaSettings.
+	GetLatestSchemaSettingsFunc *IndexingSettingStoreGetLatestSchemaSettingsFunc
 }
 
 // NewMockIndexingSettingStore creates a new mock of the
@@ -2398,7 +2398,7 @@ type MockIndexingSettingStore struct {
 // results, unless overwritten.
 func NewMockIndexingSettingStore() *MockIndexingSettingStore {
 	return &MockIndexingSettingStore{
-		GetLastestSchemaSettingsFunc: &IndexingSettingStoreGetLastestSchemaSettingsFunc{
+		GetLatestSchemaSettingsFunc: &IndexingSettingStoreGetLatestSchemaSettingsFunc{
 			defaultHook: func(context.Context, api.SettingsSubject) (r0 *schema.Settings, r1 error) {
 				return
 			},
@@ -2411,9 +2411,9 @@ func NewMockIndexingSettingStore() *MockIndexingSettingStore {
 // overwritten.
 func NewStrictMockIndexingSettingStore() *MockIndexingSettingStore {
 	return &MockIndexingSettingStore{
-		GetLastestSchemaSettingsFunc: &IndexingSettingStoreGetLastestSchemaSettingsFunc{
+		GetLatestSchemaSettingsFunc: &IndexingSettingStoreGetLatestSchemaSettingsFunc{
 			defaultHook: func(context.Context, api.SettingsSubject) (*schema.Settings, error) {
-				panic("unexpected invocation of MockIndexingSettingStore.GetLastestSchemaSettings")
+				panic("unexpected invocation of MockIndexingSettingStore.GetLatestSchemaSettings")
 			},
 		},
 	}
@@ -2424,43 +2424,43 @@ func NewStrictMockIndexingSettingStore() *MockIndexingSettingStore {
 // implementation, unless overwritten.
 func NewMockIndexingSettingStoreFrom(i IndexingSettingStore) *MockIndexingSettingStore {
 	return &MockIndexingSettingStore{
-		GetLastestSchemaSettingsFunc: &IndexingSettingStoreGetLastestSchemaSettingsFunc{
-			defaultHook: i.GetLastestSchemaSettings,
+		GetLatestSchemaSettingsFunc: &IndexingSettingStoreGetLatestSchemaSettingsFunc{
+			defaultHook: i.GetLatestSchemaSettings,
 		},
 	}
 }
 
-// IndexingSettingStoreGetLastestSchemaSettingsFunc describes the behavior
-// when the GetLastestSchemaSettings method of the parent
+// IndexingSettingStoreGetLatestSchemaSettingsFunc describes the behavior
+// when the GetLatestSchemaSettings method of the parent
 // MockIndexingSettingStore instance is invoked.
-type IndexingSettingStoreGetLastestSchemaSettingsFunc struct {
+type IndexingSettingStoreGetLatestSchemaSettingsFunc struct {
 	defaultHook func(context.Context, api.SettingsSubject) (*schema.Settings, error)
 	hooks       []func(context.Context, api.SettingsSubject) (*schema.Settings, error)
-	history     []IndexingSettingStoreGetLastestSchemaSettingsFuncCall
+	history     []IndexingSettingStoreGetLatestSchemaSettingsFuncCall
 	mutex       sync.Mutex
 }
 
-// GetLastestSchemaSettings delegates to the next hook function in the queue
+// GetLatestSchemaSettings delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockIndexingSettingStore) GetLastestSchemaSettings(v0 context.Context, v1 api.SettingsSubject) (*schema.Settings, error) {
-	r0, r1 := m.GetLastestSchemaSettingsFunc.nextHook()(v0, v1)
-	m.GetLastestSchemaSettingsFunc.appendCall(IndexingSettingStoreGetLastestSchemaSettingsFuncCall{v0, v1, r0, r1})
+func (m *MockIndexingSettingStore) GetLatestSchemaSettings(v0 context.Context, v1 api.SettingsSubject) (*schema.Settings, error) {
+	r0, r1 := m.GetLatestSchemaSettingsFunc.nextHook()(v0, v1)
+	m.GetLatestSchemaSettingsFunc.appendCall(IndexingSettingStoreGetLatestSchemaSettingsFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the
-// GetLastestSchemaSettings method of the parent MockIndexingSettingStore
+// GetLatestSchemaSettings method of the parent MockIndexingSettingStore
 // instance is invoked and the hook queue is empty.
-func (f *IndexingSettingStoreGetLastestSchemaSettingsFunc) SetDefaultHook(hook func(context.Context, api.SettingsSubject) (*schema.Settings, error)) {
+func (f *IndexingSettingStoreGetLatestSchemaSettingsFunc) SetDefaultHook(hook func(context.Context, api.SettingsSubject) (*schema.Settings, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// GetLastestSchemaSettings method of the parent MockIndexingSettingStore
+// GetLatestSchemaSettings method of the parent MockIndexingSettingStore
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *IndexingSettingStoreGetLastestSchemaSettingsFunc) PushHook(hook func(context.Context, api.SettingsSubject) (*schema.Settings, error)) {
+func (f *IndexingSettingStoreGetLatestSchemaSettingsFunc) PushHook(hook func(context.Context, api.SettingsSubject) (*schema.Settings, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2468,20 +2468,20 @@ func (f *IndexingSettingStoreGetLastestSchemaSettingsFunc) PushHook(hook func(co
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *IndexingSettingStoreGetLastestSchemaSettingsFunc) SetDefaultReturn(r0 *schema.Settings, r1 error) {
+func (f *IndexingSettingStoreGetLatestSchemaSettingsFunc) SetDefaultReturn(r0 *schema.Settings, r1 error) {
 	f.SetDefaultHook(func(context.Context, api.SettingsSubject) (*schema.Settings, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *IndexingSettingStoreGetLastestSchemaSettingsFunc) PushReturn(r0 *schema.Settings, r1 error) {
+func (f *IndexingSettingStoreGetLatestSchemaSettingsFunc) PushReturn(r0 *schema.Settings, r1 error) {
 	f.PushHook(func(context.Context, api.SettingsSubject) (*schema.Settings, error) {
 		return r0, r1
 	})
 }
 
-func (f *IndexingSettingStoreGetLastestSchemaSettingsFunc) nextHook() func(context.Context, api.SettingsSubject) (*schema.Settings, error) {
+func (f *IndexingSettingStoreGetLatestSchemaSettingsFunc) nextHook() func(context.Context, api.SettingsSubject) (*schema.Settings, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2494,28 +2494,28 @@ func (f *IndexingSettingStoreGetLastestSchemaSettingsFunc) nextHook() func(conte
 	return hook
 }
 
-func (f *IndexingSettingStoreGetLastestSchemaSettingsFunc) appendCall(r0 IndexingSettingStoreGetLastestSchemaSettingsFuncCall) {
+func (f *IndexingSettingStoreGetLatestSchemaSettingsFunc) appendCall(r0 IndexingSettingStoreGetLatestSchemaSettingsFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
 // History returns a sequence of
-// IndexingSettingStoreGetLastestSchemaSettingsFuncCall objects describing
+// IndexingSettingStoreGetLatestSchemaSettingsFuncCall objects describing
 // the invocations of this function.
-func (f *IndexingSettingStoreGetLastestSchemaSettingsFunc) History() []IndexingSettingStoreGetLastestSchemaSettingsFuncCall {
+func (f *IndexingSettingStoreGetLatestSchemaSettingsFunc) History() []IndexingSettingStoreGetLatestSchemaSettingsFuncCall {
 	f.mutex.Lock()
-	history := make([]IndexingSettingStoreGetLastestSchemaSettingsFuncCall, len(f.history))
+	history := make([]IndexingSettingStoreGetLatestSchemaSettingsFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// IndexingSettingStoreGetLastestSchemaSettingsFuncCall is an object that
-// describes an invocation of method GetLastestSchemaSettings on an instance
+// IndexingSettingStoreGetLatestSchemaSettingsFuncCall is an object that
+// describes an invocation of method GetLatestSchemaSettings on an instance
 // of MockIndexingSettingStore.
-type IndexingSettingStoreGetLastestSchemaSettingsFuncCall struct {
+type IndexingSettingStoreGetLatestSchemaSettingsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -2532,13 +2532,13 @@ type IndexingSettingStoreGetLastestSchemaSettingsFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c IndexingSettingStoreGetLastestSchemaSettingsFuncCall) Args() []interface{} {
+func (c IndexingSettingStoreGetLatestSchemaSettingsFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c IndexingSettingStoreGetLastestSchemaSettingsFuncCall) Results() []interface{} {
+func (c IndexingSettingStoreGetLatestSchemaSettingsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
