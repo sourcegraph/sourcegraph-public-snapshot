@@ -24,11 +24,11 @@ For example, if you have 8,000 users with 80,000 repositories, your instance siz
 
 If you have 1,000 users with 80,000 users, you should still go with size **M**.
 
-| **Size**           | **XS**       | **S**       | **M**       | **L**        | **XL**       |
-|:------------------:|:-----------:|:-----------:|:-----------:|:------------:|:------------:|
-| **Users**          | 500         | 1,000       | 5,000       | 10,000       | 20,000       |
-| **Repositories**   | 5,000       | 10,000      | 50,000      | 100,000      | 250,000      |
-| **AMI Name**       | sourcegraph-XS (__v4.0.0__) m6a.2xlarge | <span class="badge badge-warning">Coming soon</span> | <span class="badge badge-warning">Coming soon</span> | sourcegraph-L (__v4.0.0__) m6a.12xlarge | sourcegraph-XL (__v4.0.0__) m6a.24xlarge |
+|                   | **XS**       | **S**       | **M**       | **L**        | **XL**      |
+|:------------------|:-----------:|:-----------:|:-----------:|:------------:|:------------:|
+| **Users**         | 500         | 1,000       | 5,000       | 10,000       | 20,000       |
+| **Repositories**  | 5,000       | 10,000      | 50,000      | 100,000      | 250,000      |
+| **AMI Name**      | sourcegraph-XS (__v4.0.0__) m6a.2xlarge | <span class="badge badge-warning">Coming soon</span> | <span class="badge badge-warning">Coming soon</span> | sourcegraph-L (__v4.0.0__) m6a.12xlarge | sourcegraph-XL (__v4.0.0__) m6a.24xlarge |
 
 <span class="badge badge-critical">IMPORTANT</span> Replace __4.0.0__ with the version number of your choice. **Versions below v4.0.0 are not supported.**
 
@@ -48,12 +48,12 @@ The recommended instance type has better performance due to allocated resources.
 
 Please select the instance type according to the table below for your instance size, and do not go below the suggested minimum instance type.
 
-| **Size**           | **S**       | **M**       | **L**        | **XL**       | **2XL**      |
-|:------------------:|:-----------:|:-----------:|:------------:|:------------:|:------------:|
-| **Users**          | 1,000       | 5,000       | 10,000       | 20,000       | 40,000       |
-| **Repositories**   | 10,000      | 50,000      | 100,000      | 250,000      | 500,000      |
-| **Recommended**    | m6a.4xlarge | m6a.8xlarge | m6a.12xlarge | m6a.24xlarge | m6a.48xlarge |
-| **Minimum**        | m6a.2xlarge | m6a.4xlarge | m6a.8xlarge  | m6a.12xlarge | m6a.48xlarge |
+|                 | **XS**      | **S**       | **M**       | **L**        | **XL**       |
+|:----------------|:-----------:|:-----------:|:-----------:|:------------:|:------------:|
+| **Users**       | 500         | 1,000       | 5,000       | 10,000       | 20,000       |
+| **Repositories**| 5,000       | 10,000      | 50,000      | 100,000      | 250,000      |
+| **Recommended** | m6a.2xlarge | m6a.4xlarge | m6a.8xlarge | m6a.12xlarge | m6a.24xlarge |
+| **Minimum**     | m6a.2xlarge | m6a.2xlarge | m6a.4xlarge | m6a.8xlarge  | m6a.12xlarge |
 
 > NOTE: You can resize your instance anytime by [changing the instance type](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-resize.html) associated with your instance size. If you need to change beyond the minimum or maximum supports of your current instance type, you can follow our [upgrade steps](#upgrade) in this page to start a new instance using the new instance size with its associated instance typ.  Please make sure the volumes are backed up before switching instance type.
 
@@ -84,8 +84,10 @@ Once you've been redirected to the `Launch an instance` page...
      - Default HTTPS rule: port range 443, source 0.0.0.0/0, ::/0
      - Default SSH rule: port range 22, source 0.0.0.0/0, ::/0
 5. **Configure storage**:
-   - Root Volume: 50GB/gp2
-   - EBS Volume: 500GB/gp3 (20% more than the total size of all your repositories)
+   - Root Volume: 50GB
+   - EBS Volume: 500GB
+     - Please update your volume size accordingly
+     - The volume size should be at least 25-50% more than the total size of all your repositories
 6. Click **Launch instance** to launch
 
 Your Sourcegraph instance should be ready in the next few minutes. 
