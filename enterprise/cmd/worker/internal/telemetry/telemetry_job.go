@@ -54,7 +54,7 @@ func (t *telemetryJob) Config() []env.Config {
 	return nil
 }
 
-func (t *telemetryJob) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
+func (t *telemetryJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	if !isEnabled() {
 		return nil, nil
 	}

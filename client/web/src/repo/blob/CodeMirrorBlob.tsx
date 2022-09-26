@@ -39,19 +39,25 @@ const staticExtensions: Extension = [
     editorHeight({ height: '100%' }),
     EditorView.theme({
         '&': {
+            backgroundColor: 'var(--code-bg)',
+        },
+        '.cm-scroller': {
             fontFamily: 'var(--code-font-family)',
             fontSize: 'var(--code-font-size)',
+            lineHeight: '1rem',
+        },
+        '.cm-gutters': {
             backgroundColor: 'var(--code-bg)',
+            borderRight: 'initial',
+        },
+        '.cm-line': {
+            paddingLeft: '1rem',
         },
         '.selected-line': {
             backgroundColor: 'var(--code-selection-bg)',
         },
         '.highlighted-line': {
             backgroundColor: 'var(--code-selection-bg)',
-        },
-        '.cm-gutters': {
-            backgroundColor: 'var(--code-bg)',
-            borderRight: 'initial',
         },
     }),
     // Note that these only work out-of-the-box because the editor is
@@ -70,28 +76,6 @@ const blameDecorationsCompartment = new Compartment()
 // Compartment for propagating component props
 const blobPropsCompartment = new Compartment()
 
-// See CodeMirrorQueryInput for a detailed comment about the pattern that's used
-// below. The CodeMirror search bar uses a similar pattern to support global
-// shortcuts (including Mod-k) while the search bar is focused.
-const [callbacksField, setCallbacks] = createUpdateableField<Pick<BlobProps, 'onHandleFuzzyFinder'>>(
-    { onHandleFuzzyFinder: () => {} },
-    callbacks => [
-        keymap.of([
-            {
-                key: 'Mod-k',
-                run: view => {
-                    const { onHandleFuzzyFinder } = view.state.field(callbacks)
-                    if (onHandleFuzzyFinder) {
-                        onHandleFuzzyFinder(true)
-                        return true
-                    }
-                    return false
-                },
-            },
-        ]),
-    ]
-)
-
 export const Blob: React.FunctionComponent<BlobProps> = props => {
     const {
         className,
@@ -107,7 +91,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         // Reference panel specific props
         disableStatusBar,
         disableDecorations,
-        onHandleFuzzyFinder,
         navigateToLineOnAnyClick,
     } = props
 
@@ -171,7 +154,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     const extensions = useMemo(
         () => [
             staticExtensions,
-            callbacksField,
             selectableLineNumbers({
                 onSelection,
                 initialSelection: position.line !== undefined ? position : null,
@@ -204,12 +186,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         updateValueOnChange: false,
         updateOnExtensionChange: false,
     })
-
-    useEffect(() => {
-        if (editor) {
-            setCallbacks(editor, { onHandleFuzzyFinder })
-        }
-    }, [editor, onHandleFuzzyFinder])
 
     // Reconfigure editor when blobInfo or core extensions changed
     useEffect(() => {
@@ -329,8 +305,12 @@ const [pinnedRangeField, updatePinnedRangeField] = createUpdateableField<LineOrP
         }
         const from = uiPositionToOffset(state.doc, startPosition, startLine)
 
+        if (from === null) {
+            return []
+        }
+
         let endPosition: UIPositionSpec['position']
-        let to: number
+        let to: number | null = null
 
         if (position.endLine && position.endCharacter) {
             endPosition = {
@@ -347,6 +327,10 @@ const [pinnedRangeField, updatePinnedRangeField] = createUpdateableField<LineOrP
             }
             to = word.to
             endPosition = offsetToUIPosition(state.doc, word.to)
+        }
+
+        if (to === null || endPosition === null) {
+            return []
         }
 
         return [

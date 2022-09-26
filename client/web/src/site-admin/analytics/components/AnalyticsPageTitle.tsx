@@ -9,7 +9,6 @@ import styles from './AnalyticsPageTitle.module.scss'
 
 export const AnalyticsPageTitle: React.FunctionComponent<React.PropsWithChildren<{}>> = ({ children }) => (
     <div className="d-flex flex-column justify-content-between align-items-start">
-
         <H2 className="mb-4 mt-2 d-flex align-items-center">
             <Icon
                 className="mr-1"

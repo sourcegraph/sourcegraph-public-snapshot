@@ -2,10 +2,12 @@ package monitoring
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/grafana-tools/sdk"
 	"github.com/grafana/regexp"
+	"github.com/prometheus/prometheus/model/labels"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring/internal/promql"
@@ -94,7 +96,7 @@ func (c *ContainerVariable) validate() error {
 
 // toGrafanaTemplateVar generates the Grafana template variable configuration for this
 // container variable.
-func (c *ContainerVariable) toGrafanaTemplateVar() sdk.TemplateVar {
+func (c *ContainerVariable) toGrafanaTemplateVar(injectLabelMatchers []*labels.Matcher) (sdk.TemplateVar, error) {
 	variable := sdk.TemplateVar{
 		Name:  c.Name,
 		Label: c.Label,
@@ -121,7 +123,11 @@ func (c *ContainerVariable) toGrafanaTemplateVar() sdk.TemplateVar {
 	switch {
 	case c.OptionsLabelValues.Query != "":
 		variable.Type = "query"
-		variable.Query = fmt.Sprintf("label_values(%s, %s)", c.OptionsLabelValues.Query, c.OptionsLabelValues.LabelName)
+		expr, err := promql.Inject(c.OptionsLabelValues.Query, injectLabelMatchers, nil)
+		if err != nil {
+			return variable, errors.Wrap(err, "OptionsLabelValues.Query")
+		}
+		variable.Query = fmt.Sprintf("label_values(%s, %s)", expr, c.OptionsLabelValues.LabelName)
 		variable.Refresh = sdk.BoolInt{
 			Flag:  true,
 			Value: Int64Ptr(2), // Refresh on time range change
@@ -172,7 +178,7 @@ func (c *ContainerVariable) toGrafanaTemplateVar() sdk.TemplateVar {
 		}
 	}
 
-	return variable
+	return variable, nil
 }
 
 var numbers = regexp.MustCompile(`\d+`)
@@ -194,7 +200,11 @@ func (c *ContainerVariable) getSentinelValue() string {
 	// some other existing number in the query, this helps us distinguish what values
 	// were replaced. It also must be less than 60, since we don't want it to be
 	// reformatted as hours if it is a duration-based thing.
-	return numbers.ReplaceAllString(example, "59")
+	//
+	// To help prevent 2 variables from colliding, we do a simple heuristic where the
+	// variable name contributes to the generated number.
+	sentinelNumber := strconv.Itoa(60 - len(c.Name))
+	return numbers.ReplaceAllString(example, sentinelNumber)
 }
 
 func newVariableApplier(vars []ContainerVariable) promql.VariableApplier {

@@ -25,13 +25,13 @@ import {
     TooltipView,
     WidgetType,
 } from '@codemirror/view'
-import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
 
 import { renderMarkdown } from '@sourcegraph/common'
 import { EditorHint, QueryChangeSource, SearchPatternTypeProps } from '@sourcegraph/search'
 import { useCodeMirror, createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
+import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { DecoratedToken, toCSSClassName } from '@sourcegraph/shared/src/search/query/decoratedToken'
 import { Diagnostic, getDiagnostics } from '@sourcegraph/shared/src/search/query/diagnostics'
 import { resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
@@ -76,7 +76,6 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
     onBlur,
     isSourcegraphDotCom,
     globbing,
-    onHandleFuzzyFinder,
     onEditorCreated,
     interpretComments,
     isLightTheme,
@@ -212,10 +211,9 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
                 onFocus,
                 onBlur,
                 onCompletionItemSelected,
-                onHandleFuzzyFinder,
             })
         }
-    }, [editor, onChange, onSubmit, onFocus, onBlur, onCompletionItemSelected, onHandleFuzzyFinder])
+    }, [editor, onChange, onSubmit, onFocus, onBlur, onCompletionItemSelected])
 
     // Always focus the editor on 'selectedSearchContextSpec' change
     useEffect(() => {
@@ -435,10 +433,7 @@ export const CodeMirrorQueryInput: React.FunctionComponent<
 // Instead of creating a separate field for every handler, all handlers are set
 // via a single field to keep complexity manageable.
 const [callbacksField, setCallbacks] = createUpdateableField<
-    Pick<
-        MonacoQueryInputProps,
-        'onChange' | 'onSubmit' | 'onFocus' | 'onBlur' | 'onCompletionItemSelected' | 'onHandleFuzzyFinder'
-    >
+    Pick<MonacoQueryInputProps, 'onChange' | 'onSubmit' | 'onFocus' | 'onBlur' | 'onCompletionItemSelected'>
 >({ onChange: () => {} }, callbacks => [
     Prec.high(
         keymap.of([
@@ -457,19 +452,6 @@ const [callbacksField, setCallbacks] = createUpdateableField<
             },
         ])
     ),
-    keymap.of([
-        {
-            key: 'Mod-k',
-            run: view => {
-                const { onHandleFuzzyFinder } = view.state.field(callbacks)
-                if (onHandleFuzzyFinder) {
-                    onHandleFuzzyFinder(true)
-                    return true
-                }
-                return false
-            },
-        },
-    ]),
     EditorView.updateListener.of((update: ViewUpdate) => {
         const { state, view } = update
         const { onChange, onFocus, onBlur, onCompletionItemSelected } = state.field(callbacks)

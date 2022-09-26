@@ -77,7 +77,7 @@ require (
 	github.com/gorilla/securecookie v1.1.1
 	github.com/gorilla/sessions v1.2.1
 	github.com/goware/urlx v0.3.1
-	github.com/grafana-tools/sdk v0.0.0-20220203092117-edae16afa87b
+	github.com/grafana-tools/sdk v0.0.0-20220919052116-6562121319fc
 	github.com/grafana/regexp v0.0.0-20220304100321-149c8afcd6cb
 	github.com/graph-gophers/graphql-go v1.3.0
 	github.com/graphql-go/graphql v0.8.0
@@ -155,7 +155,7 @@ require (
 	github.com/uber/gonduit v0.13.0
 	github.com/uber/jaeger-client-go v2.30.0+incompatible
 	github.com/uber/jaeger-lib v2.4.1+incompatible // indirect
-	github.com/urfave/cli/v2 v2.6.0
+	github.com/urfave/cli/v2 v2.16.3
 	github.com/xeipuuv/gojsonschema v1.2.0
 	github.com/xeonx/timeago v1.0.0-rc4
 	github.com/yuin/gopher-lua v0.0.0-20210529063254-f4c35e4016d9
@@ -207,6 +207,7 @@ require (
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
+	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	go.opentelemetry.io/otel/metric v0.31.0 // indirect
 	go.uber.org/goleak v1.1.12 // indirect
 )
@@ -214,13 +215,15 @@ require (
 require github.com/hmarr/codeowners v0.4.0
 
 require (
+	github.com/c2h5oh/datasize v0.0.0-20220606134207-859f65c6625b
+	github.com/hashicorp/hcl v1.0.0
 	github.com/opsgenie/opsgenie-go-sdk-v2 v1.2.13
 	github.com/prometheus/prometheus v0.37.1
 	go.opentelemetry.io/otel/exporters/jaeger v1.9.0
 )
 
 require (
-	github.com/sourcegraph/zoekt v0.0.0-20220921122446-2fa5f478abb8
+	github.com/sourcegraph/zoekt v0.0.0-20220922012354-1a338228b6c9
 	github.com/stretchr/objx v0.4.0 // indirect
 )
 

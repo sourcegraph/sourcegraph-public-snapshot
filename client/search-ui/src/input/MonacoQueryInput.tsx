@@ -74,7 +74,6 @@ export interface MonacoQueryInputProps
     onEditorCreated?: (editor: IEditor) => void
     fetchStreamSuggestions?: typeof defaultFetchStreamSuggestions // Alternate implementation is used in the VS Code extension.
     autoFocus?: boolean
-    onHandleFuzzyFinder?: React.Dispatch<React.SetStateAction<boolean>>
     // Whether globbing is enabled for filters.
     globbing: boolean
 
@@ -195,7 +194,6 @@ export const MonacoQueryInput: React.FunctionComponent<React.PropsWithChildren<M
     height = 17,
     preventNewLine = true,
     editorOptions,
-    onHandleFuzzyFinder,
     editorClassName,
     onEditorCreated: onEditorCreatedCallback,
     placeholder,
@@ -395,23 +393,12 @@ export const MonacoQueryInput: React.FunctionComponent<React.PropsWithChildren<M
             }),
         ]
 
-        if (onHandleFuzzyFinder) {
-            disposables.push(
-                editor.addAction({
-                    id: 'triggerFuzzyFinder',
-                    label: 'triggerFuzzyFinder',
-                    keybindings: [Monaco.KeyMod.CtrlCmd | Monaco.KeyCode.KEY_K],
-                    run: () => onHandleFuzzyFinder(true),
-                })
-            )
-        }
-
         return () => {
             for (const disposable of disposables) {
                 disposable.dispose()
             }
         }
-    }, [editor, onSubmit, onHandleFuzzyFinder])
+    }, [editor, onSubmit])
 
     return (
         <div

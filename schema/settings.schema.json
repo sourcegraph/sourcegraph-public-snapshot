@@ -404,6 +404,11 @@
           "!go": {
             "pointer": true
           }
+        },
+        "insightsAlternateLoadingStrategy": {
+          "description": "Use an in-memory strategy of loading Code Insights. Should only be used for benchmarking on large instances, not for customer use currently.",
+          "type": "boolean",
+          "default": false
         }
       },
       "group": "Experimental"
@@ -561,6 +566,11 @@
           ]
         }
       }
+    },
+    "codeIntel.referencesPanel": {
+      "description": "What kind of references panel to use for exploring definitions and references. The tabbed panel is deprecated.",
+      "type": "string",
+      "enum": ["tree-view", "tabbed"]
     },
     "codeIntel.disableSearchBased": {
       "description": "Never fall back to search-based code intelligence.",
