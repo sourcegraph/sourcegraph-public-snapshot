@@ -13,6 +13,9 @@ import (
 )
 
 type Repositories struct {
+	// Repos is the number of indexed repositories.
+	Repos int
+
 	// GitDirBytes is the amount of bytes stored in .git directories.
 	GitDirBytes uint64
 
@@ -60,6 +63,7 @@ func GetRepositories(ctx context.Context, db database.DB) (*Repositories, error)
 		return nil, err
 	}
 
+	total.Repos = len(repos.Minimal)
 	total.NewLinesCount = repos.Stats.NewLinesCount
 	total.DefaultBranchNewLinesCount = repos.Stats.DefaultBranchNewLinesCount
 	total.OtherBranchesNewLinesCount = repos.Stats.OtherBranchesNewLinesCount

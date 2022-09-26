@@ -12,6 +12,7 @@ import (
 type repositoryStatsResolver struct {
 	db database.DB
 
+	indexedRepos      int
 	gitDirBytes       uint64
 	indexedLinesCount uint64
 
@@ -26,6 +27,10 @@ func (r *repositoryStatsResolver) GitDirBytes() BigInt {
 
 func (r *repositoryStatsResolver) IndexedLinesCount() BigInt {
 	return BigInt{Int: int64(r.indexedLinesCount)}
+}
+
+func (r *repositoryStatsResolver) Indexed(ctx context.Context) int32 {
+	return int32(r.indexedRepos)
 }
 
 func (r *repositoryStatsResolver) Total(ctx context.Context) (int32, error) {
@@ -89,6 +94,7 @@ func (r *schemaResolver) RepositoryStats(ctx context.Context) (*repositoryStatsR
 
 	return &repositoryStatsResolver{
 		db:                db,
+		indexedRepos:      stats.Repos,
 		gitDirBytes:       stats.GitDirBytes,
 		indexedLinesCount: stats.DefaultBranchNewLinesCount + stats.OtherBranchesNewLinesCount,
 	}, nil
