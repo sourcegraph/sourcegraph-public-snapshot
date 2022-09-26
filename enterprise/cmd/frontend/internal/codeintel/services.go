@@ -30,8 +30,6 @@ import (
 )
 
 type Services struct {
-	dbStore *store.Store
-
 	// shared with executor queue
 	InternalUploadHandler http.Handler
 	ExternalUploadHandler http.Handler
@@ -103,8 +101,6 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 	externalUploadHandler := newUploadHandler(false)
 
 	return &Services{
-		dbStore: dbStore,
-
 		InternalUploadHandler: internalUploadHandler,
 		ExternalUploadHandler: externalUploadHandler,
 

@@ -8,6 +8,7 @@ import (
 )
 
 type operations struct {
+	// noop is a no-op operation to keep the newOperation scaffolding.
 	noop *observation.Operation
 }
 

@@ -17,20 +17,6 @@ const (
 	GitObjectTypeUnknown GitObjectType = "GIT_UNKNOWN"
 )
 
-// func toGitObjectType(t gitdomain.ObjectType) GitObjectType {
-// 	switch t {
-// 	case gitdomain.ObjectTypeCommit:
-// 		return GitObjectTypeCommit
-// 	case gitdomain.ObjectTypeTag:
-// 		return GitObjectTypeTag
-// 	case gitdomain.ObjectTypeTree:
-// 		return GitObjectTypeTree
-// 	case gitdomain.ObjectTypeBlob:
-// 		return GitObjectTypeBlob
-// 	}
-// 	return GitObjectTypeUnknown
-// }
-
 type GitObjectID string
 
 func (GitObjectID) ImplementsGraphQLType(name string) bool {

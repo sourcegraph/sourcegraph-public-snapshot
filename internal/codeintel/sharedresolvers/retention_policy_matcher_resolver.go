@@ -5,6 +5,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
+// TODO(@Numbers88s): consolidate reference to these two interfaces
+type CodeIntelligenceRetentionPolicyMatchResolver interface {
+	ConfigurationPolicy() CodeIntelligenceConfigurationPolicyResolver
+	Matches() bool
+	ProtectingCommits() *[]string
+}
+
 type RetentionPolicyMatcherResolver interface {
 	ConfigurationPolicy() CodeIntelligenceConfigurationPolicyResolver
 	Matches() bool

@@ -15,18 +15,6 @@ import (
 	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 )
 
-const (
-	DefaultUploadPageSize                  = 50
-	DefaultIndexPageSize                   = 50
-	DefaultConfigurationPolicyPageSize     = 50
-	DefaultRepositoryFilterPreviewPageSize = 50
-	DefaultRetentionPolicyMatchesPageSize  = 50
-)
-
-// var autoIndexingEnabled = conf.CodeIntelAutoIndexingEnabled
-
-// var errAutoIndexingNotEnabled = errors.New("precise code intelligence auto-indexing is not enabled")
-
 // Resolver is the main interface to code intel-related operations exposed to the GraphQL API. This
 // resolver concerns itself with GraphQL/API-specific behaviors (auth, validation, marshaling, etc.).
 // All code intel-specific behavior is delegated to the underlying resolver instance, which is defined
@@ -41,9 +29,6 @@ func NewResolver(resolver resolvers.Resolver) gql.CodeIntelResolver {
 		resolver: resolver,
 	}
 
-	// return &frankenResolver{
-	// 	Resolver: baseResolver,
-	// }
 	return baseResolver
 }
 
@@ -125,16 +110,6 @@ func (r *Resolver) RequestedLanguageSupport(ctx context.Context) (_ []string, er
 
 // 🚨 SECURITY: dbstore layer handles authz for query resolution
 func (r *Resolver) GitBlobLSIFData(ctx context.Context, args *codenavgraphql.GitBlobLSIFDataArgs) (_ codenavgraphql.GitBlobLSIFDataResolver, err error) {
-	// ctx, errTracer, endObservation := r.observationContext.gitBlobLsifData.WithErrors(ctx, &err, observation.Args{})
-	// endObservation.OnCancel(ctx, 1, observation.Args{})
-
-	// codenav := r.resolver.CodeNavResolver()
-	// gitBlobResolver, err := codenav.GitBlobLSIFDataResolverFactory(ctx, args.Repo, string(args.Commit), args.Path, args.ToolName, args.ExactPath)
-	// if err != nil || gitBlobResolver == nil {
-	// 	return nil, err
-	// }
-
-	// return NewQueryResolver(r.gitserver, gitBlobResolver, r.resolver, r.locationResolver, errTracer), nil
 	return r.resolver.CodeNavResolver().GitBlobLSIFData(ctx, args)
 }
 

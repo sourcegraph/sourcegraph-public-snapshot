@@ -8,20 +8,13 @@ import (
 )
 
 type operations struct {
-	getIndexByID                            *observation.Operation
-	getUploadDocumentsForPath               *observation.Operation
-	getCommitsVisibleToUpload               *observation.Operation
-	getCommitGraphMetadata                  *observation.Operation
-	getAuditLogsForUpload                   *observation.Operation
-	getRecentUploadsSummary                 *observation.Operation
-	getLastUploadRetentionScanForRepository *observation.Operation
-
-	lsifUploadByID *observation.Operation
-
-	// Refactored stuff new here
-	commitGraph       *observation.Operation
+	// LSIF Uploads
+	lsifUploadByID    *observation.Operation
 	lsifUploadsByRepo *observation.Operation
 	deleteLsifUpload  *observation.Operation
+
+	// Commit Graph
+	commitGraph *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -41,17 +34,12 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
-		getIndexByID:                            op("GetIndexByID"),
-		getUploadDocumentsForPath:               op("GetUploadDocumentsForPath"),
-		getCommitsVisibleToUpload:               op("GetCommitsVisibleToUpload"),
-		getCommitGraphMetadata:                  op("GetCommitGraphMetadata"),
-		getAuditLogsForUpload:                   op("GetAuditLogsForUpload"),
-		getRecentUploadsSummary:                 op("GetRecentUploadsSummary"),
-		getLastUploadRetentionScanForRepository: op("GetLastUploadRetentionScanForRepository"),
-
-		// Refactored stuff new here
-		commitGraph:       op("CommitGraph"),
+		// LSIF Uploads
+		lsifUploadByID:    op("LSIFUploadByID"),
 		lsifUploadsByRepo: op("LSIFUploadsByRepo"),
 		deleteLsifUpload:  op("DeleteLSIFUpload"),
+
+		// Commit Graph
+		commitGraph: op("CommitGraph"),
 	}
 }

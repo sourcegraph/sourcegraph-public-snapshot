@@ -33,10 +33,6 @@ type ExecutorResolver interface {
 	ExecutorResolver() executor.Resolver
 }
 
-type CodeNavResolver interface {
-	CodeNavResolver() codenavgraphql.Resolver
-}
-
 type AutoindexingServiceResolver interface {
 	IndexConfiguration(ctx context.Context, id graphql.ID) (autoindexinggraphql.IndexConfigurationResolver, error) // TODO - rename ...ForRepo
 	DeleteLSIFIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*resolvers.EmptyResponse, error)

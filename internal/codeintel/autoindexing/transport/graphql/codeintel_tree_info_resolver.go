@@ -32,14 +32,7 @@ type codeIntelTreeInfoResolver struct {
 	errTracer    *observation.ErrCollector
 }
 
-// move to autoindexing service
-func NewCodeIntelTreeInfoResolver(
-	autoindexSvc AutoIndexingService,
-	repo *types.Repo,
-	commit, path string,
-	files []string,
-	errTracer *observation.ErrCollector,
-) GitTreeCodeIntelSupportResolver {
+func NewCodeIntelTreeInfoResolver(autoindexSvc AutoIndexingService, repo *types.Repo, commit, path string, files []string, errTracer *observation.ErrCollector) GitTreeCodeIntelSupportResolver {
 	return &codeIntelTreeInfoResolver{
 		autoindexSvc: autoindexSvc,
 		repo:         repo,

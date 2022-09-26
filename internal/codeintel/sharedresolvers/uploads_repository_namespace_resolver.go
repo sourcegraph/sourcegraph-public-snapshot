@@ -34,7 +34,6 @@ func (r *lsifUploadsWithRepositoryNamespaceResolver) Indexer() types.CodeIntelIn
 		}
 	}
 
-	// return &codeIntelIndexerResolver{name: r.uploadsSummary.Indexer}
 	return types.NewCodeIntelIndexerResolver(r.uploadsSummary.Indexer)
 }
 

@@ -33,7 +33,7 @@ type gitBlobLSIFDataResolverQueryResolver struct {
 	autoindexingSvc         AutoIndexingService
 	uploadSvc               UploadsService
 	policiesSvc             PolicyService
-	gitBlobLSIFDataResolver GitBlobLSIFDataResolverOLD
+	gitBlobLSIFDataResolver GitBlobResolver
 	gitserver               GitserverClient
 	locationResolver        *sharedresolvers.CachedLocationResolver
 	errTracer               *observation.ErrCollector
@@ -42,7 +42,7 @@ type gitBlobLSIFDataResolverQueryResolver struct {
 // NewQueryResolver creates a new QueryResolver with the given resolver that defines all code intel-specific
 // behavior. A cached location resolver instance is also given to the query resolver, which should be used
 // to resolve all location-related values.
-func NewGitBlobLSIFDataResolverQueryResolver(autoindexSvc AutoIndexingService, uploadSvc UploadsService, policiesSvc PolicyService, gitserver GitserverClient, gitBlobResolver GitBlobLSIFDataResolverOLD, errTracer *observation.ErrCollector) GitBlobLSIFDataResolver {
+func NewGitBlobLSIFDataResolverQueryResolver(autoindexSvc AutoIndexingService, uploadSvc UploadsService, policiesSvc PolicyService, gitserver GitserverClient, gitBlobResolver GitBlobResolver, errTracer *observation.ErrCollector) GitBlobLSIFDataResolver {
 	return &gitBlobLSIFDataResolverQueryResolver{
 		gitBlobLSIFDataResolver: gitBlobResolver,
 		autoindexingSvc:         autoindexSvc,

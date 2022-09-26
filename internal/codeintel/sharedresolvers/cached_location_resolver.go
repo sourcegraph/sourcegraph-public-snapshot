@@ -239,35 +239,3 @@ func (r *CachedLocationResolver) resolveCommit(ctx context.Context, repositoryRe
 func (r *CachedLocationResolver) resolvePath(commitResolver *GitCommitResolver, path string) *GitTreeEntryResolver {
 	return NewGitTreeEntryResolver(r.db, commitResolver, CreateFileInfo(path, false))
 }
-
-// // resolveLocations creates a slide of LocationResolvers for the given list of adjusted locations. The
-// // resulting list may be smaller than the input list as any locations with a commit not known by
-// // gitserver will be skipped.
-// func resolveLocations(ctx context.Context, locationResolver *CachedLocationResolver, locations []types.UploadLocation) ([]gql.LocationResolver, error) {
-// 	resolvedLocations := make([]gql.LocationResolver, 0, len(locations))
-// 	for i := range locations {
-// 		resolver, err := resolveLocation(ctx, locationResolver, locations[i])
-// 		if err != nil {
-// 			return nil, err
-// 		}
-// 		if resolver == nil {
-// 			continue
-// 		}
-
-// 		resolvedLocations = append(resolvedLocations, resolver)
-// 	}
-
-// 	return resolvedLocations, nil
-// }
-
-// // resolveLocation creates a LocationResolver for the given adjusted location. This function may return a
-// // nil resolver if the location's commit is not known by gitserver.
-// func resolveLocation(ctx context.Context, locationResolver *CachedLocationResolver, location types.UploadLocation) (gql.LocationResolver, error) {
-// 	treeResolver, err := locationResolver.Path(ctx, api.RepoID(location.Dump.RepositoryID), location.TargetCommit, location.Path)
-// 	if err != nil || treeResolver == nil {
-// 		return nil, err
-// 	}
-
-// 	lspRange := convertRange(location.TargetRange)
-// 	return gql.NewLocationResolver(treeResolver, &lspRange), nil
-// }

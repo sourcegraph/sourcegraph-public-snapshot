@@ -89,7 +89,7 @@ func TestPrefetcherIndexes(t *testing.T) {
 		4: {ID: 4},
 		5: {ID: 5},
 	}
-	// mockResolver := resolvermocks.NewMockResolver()
+
 	mockAutoIndexingResolver := NewMockAutoIndexingService()
 	mockAutoIndexingResolver.GetIndexesByIDsFunc.SetDefaultHook(func(_ context.Context, ids ...int) ([]types.Index, error) {
 		matching := make([]types.Index, 0, len(ids))
@@ -99,7 +99,6 @@ func TestPrefetcherIndexes(t *testing.T) {
 
 		return matching, nil
 	})
-	// mockResolver.AutoIndexingResolverFunc.PushReturn(mockAutoIndexingResolver)
 	mockUploadResolver := NewMockUploadsService()
 	prefetcher := NewPrefetcher(mockAutoIndexingResolver, mockUploadResolver)
 
@@ -142,7 +141,6 @@ func TestPrefetcherIndexes(t *testing.T) {
 
 		return matching, nil
 	})
-	// mockResolver.AutoIndexingResolverFunc.PushReturn(mockAutoIndexingResolver)
 
 	expectedIndex.ID = 2
 	if index, exists, err := prefetcher.GetIndexByID(context.Background(), 2); err != nil {

@@ -16,7 +16,6 @@ type searchBasedSupportResolver struct {
 	language string
 }
 
-// move to autoindexing service
 func NewSearchBasedCodeIntelResolver(language string) SearchBasedSupportResolver {
 	return &searchBasedSupportResolver{language}
 }

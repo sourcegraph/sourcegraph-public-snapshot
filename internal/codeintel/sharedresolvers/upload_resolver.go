@@ -34,10 +34,6 @@ type LSIFUploadResolver interface {
 	AuditLogs(ctx context.Context) (*[]LSIFUploadsAuditLogsResolver, error)
 }
 
-type LSIFUploadDocumentPathsQueryArgs struct {
-	Pattern string
-}
-
 type UploadResolver struct {
 	uploadsSvc       UploadsService
 	autoindexingSvc  AutoIndexingService
@@ -131,12 +127,6 @@ type LSIFUploadRetentionPolicyMatchesArgs struct {
 	Query       *string
 }
 
-type CodeIntelligenceRetentionPolicyMatchesConnectionResolver interface {
-	Nodes(ctx context.Context) ([]CodeIntelligenceRetentionPolicyMatchResolver, error)
-	TotalCount(ctx context.Context) (*int32, error)
-	PageInfo(ctx context.Context) (*PageInfo, error)
-}
-
 func (r *UploadResolver) RetentionPolicyOverview(ctx context.Context, args *LSIFUploadRetentionPolicyMatchesArgs) (_ CodeIntelligenceRetentionPolicyMatchesConnectionResolver, err error) {
 	var afterID int64
 	if args.After != nil {
@@ -172,6 +162,10 @@ func (r *UploadResolver) Indexer() types.CodeIntelIndexerResolver {
 	}
 
 	return types.NewCodeIntelIndexerResolver(r.upload.Indexer)
+}
+
+type LSIFUploadDocumentPathsQueryArgs struct {
+	Pattern string
 }
 
 func (r *UploadResolver) DocumentPaths(ctx context.Context, args *LSIFUploadDocumentPathsQueryArgs) (LSIFUploadDocumentPathsConnectionResolver, error) {

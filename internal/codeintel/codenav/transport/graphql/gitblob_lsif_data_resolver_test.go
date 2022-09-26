@@ -42,12 +42,6 @@ func TestRanges(t *testing.T) {
 }
 
 func TestDefinitions(t *testing.T) {
-	// logger := logtest.Scoped(t)
-	// db := database.NewDB(logger, nil)
-
-	// mockGitBlobResolver := NewMockGitBlobLSIFDataResolverOLD()
-	// resolver := NewGitBlobLSIFDataResolverQueryResolver(nil, mockGitBlobResolver, nil, sharedresolvers.NewCachedLocationResolver(db), nil)
-
 	mockGitBlobResolver := NewMockGitBlobLSIFDataResolverOLD()
 	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
@@ -80,12 +74,6 @@ func TestDefinitions(t *testing.T) {
 }
 
 func TestReferences(t *testing.T) {
-	// logger := logtest.Scoped(t)
-	// db := database.NewDB(logger, nil)
-
-	// mockGitBlobResolver := NewMockGitBlobLSIFDataResolverOLD()
-	// resolver := NewGitBlobLSIFDataResolverQueryResolver(nil, mockGitBlobResolver, nil, sharedresolvers.NewCachedLocationResolver(db), nil)
-
 	mockGitBlobResolver := NewMockGitBlobLSIFDataResolverOLD()
 	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
@@ -135,12 +123,6 @@ func TestReferences(t *testing.T) {
 }
 
 func TestReferencesDefaultLimit(t *testing.T) {
-	// logger := logtest.Scoped(t)
-	// db := database.NewDB(logger, nil)
-
-	// mockGitBlobResolver := NewMockGitBlobLSIFDataResolverOLD()
-	// resolver := NewGitBlobLSIFDataResolverQueryResolver(nil, mockGitBlobResolver, nil, sharedresolvers.NewCachedLocationResolver(db), nil)
-
 	mockGitBlobResolver := NewMockGitBlobLSIFDataResolverOLD()
 	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
@@ -177,12 +159,6 @@ func TestReferencesDefaultLimit(t *testing.T) {
 }
 
 func TestReferencesDefaultIllegalLimit(t *testing.T) {
-	// logger := logtest.Scoped(t)
-	// db := database.NewDB(logger, nil)
-
-	// mockGitBlobResolver := NewMockGitBlobLSIFDataResolverOLD()
-	// resolver := NewGitBlobLSIFDataResolverQueryResolver(nil, mockGitBlobResolver, nil, sharedresolvers.NewCachedLocationResolver(db), observation.NewErrorCollector())
-
 	mockGitBlobResolver := NewMockGitBlobLSIFDataResolverOLD()
 	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
@@ -213,10 +189,6 @@ func TestReferencesDefaultIllegalLimit(t *testing.T) {
 }
 
 func TestHover(t *testing.T) {
-	// logger := logtest.Scoped(t)
-	// db := database.NewDB(logger, nil)
-
-	// mockGitBlobResolver := NewMockGitBlobLSIFDataResolverOLD()
 	mockGitBlobResolver := NewMockGitBlobLSIFDataResolverOLD()
 	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
@@ -232,9 +204,6 @@ func TestHover(t *testing.T) {
 		observation.NewErrorCollector(),
 	)
 	mockGitBlobResolver.HoverFunc.SetDefaultReturn("text", types.Range{}, true, nil)
-	// mockResolver := resolvermocks.NewMockResolver()
-	// resolver := NewGitBlobLSIFDataResolverQueryResolver(nil, mockGitBlobResolver, mockResolver, sharedresolvers.NewCachedLocationResolver(db), nil)
-
 	args := &LSIFQueryPositionArgs{Line: 10, Character: 15}
 	if _, err := resolver.Hover(context.Background(), args); err != nil {
 		t.Fatalf("unexpected error: %s", err)
@@ -252,12 +221,6 @@ func TestHover(t *testing.T) {
 }
 
 func TestDiagnostics(t *testing.T) {
-	// logger := logtest.Scoped(t)
-	// db := database.NewDB(logger, nil)
-
-	// mockGitBlobResolver := NewMockGitBlobLSIFDataResolverOLD()
-	// resolver := NewGitBlobLSIFDataResolverQueryResolver(nil, mockGitBlobResolver, nil, sharedresolvers.NewCachedLocationResolver(db), nil)
-
 	mockGitBlobResolver := NewMockGitBlobLSIFDataResolverOLD()
 	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
@@ -291,11 +254,6 @@ func TestDiagnostics(t *testing.T) {
 }
 
 func TestDiagnosticsDefaultLimit(t *testing.T) {
-	// logger := logtest.Scoped(t)
-	// db := database.NewDB(logger, nil)
-
-	// mockGitBlobResolver := NewMockGitBlobLSIFDataResolverOLD()
-	// resolver := NewGitBlobLSIFDataResolverQueryResolver(nil, mockGitBlobResolver, nil, sharedresolvers.NewCachedLocationResolver(db), nil)
 	mockGitBlobResolver := NewMockGitBlobLSIFDataResolverOLD()
 	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
@@ -328,12 +286,6 @@ func TestDiagnosticsDefaultLimit(t *testing.T) {
 }
 
 func TestDiagnosticsDefaultIllegalLimit(t *testing.T) {
-	// logger := logtest.Scoped(t)
-	// db := database.NewDB(logger, nil)
-
-	// mockGitBlobResolver := NewMockGitBlobLSIFDataResolverOLD()
-	// resolver := NewGitBlobLSIFDataResolverQueryResolver(nil, mockGitBlobResolver, nil, sharedresolvers.NewCachedLocationResolver(db), observation.NewErrorCollector())
-
 	mockGitBlobResolver := NewMockGitBlobLSIFDataResolverOLD()
 	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()

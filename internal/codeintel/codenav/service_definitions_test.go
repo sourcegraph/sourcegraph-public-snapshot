@@ -231,8 +231,8 @@ func TestDefinitionsRemote(t *testing.T) {
 		{Dump: remoteUploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef2", TargetRange: testRange4},
 		{Dump: remoteUploads[1], Path: "sub2/c.go", TargetCommit: "deadbeef2", TargetRange: testRange5},
 	}
-	expectedLocations := uploadLocationsToAdjustedLocations(xLocations)
-	if diff := cmp.Diff(expectedLocations, adjustedLocations); diff != "" {
+
+	if diff := cmp.Diff(xLocations, adjustedLocations); diff != "" {
 		t.Errorf("unexpected locations (-want +got):\n%s", diff)
 	}
 
@@ -357,10 +357,10 @@ func TestDefinitionsRemoteWithSubRepoPermissions(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error querying definitions: %s", err)
 	}
-	remoteUploads := uploadDumpToCodeNavDump(dumps)
+
 	expectedLocations := []types.UploadLocation{
-		{Dump: remoteUploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef2", TargetRange: testRange2},
-		{Dump: remoteUploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef2", TargetRange: testRange4},
+		{Dump: dumps[1], Path: "sub2/b.go", TargetCommit: "deadbeef2", TargetRange: testRange2},
+		{Dump: dumps[1], Path: "sub2/b.go", TargetCommit: "deadbeef2", TargetRange: testRange4},
 	}
 	if diff := cmp.Diff(expectedLocations, adjustedLocations); diff != "" {
 		t.Errorf("unexpected locations (-want +got):\n%s", diff)
@@ -408,76 +408,4 @@ func mockedGitTreeTranslator() GitTreeTranslator {
 	})
 
 	return mockPositionAdjuster
-}
-
-func uploadLocationsToAdjustedLocations(location []types.UploadLocation) []types.UploadLocation {
-	uploadLocation := make([]types.UploadLocation, 0, len(location))
-	for _, loc := range location {
-		dump := types.Dump{
-			ID:                loc.Dump.ID,
-			Commit:            loc.Dump.Commit,
-			Root:              loc.Dump.Root,
-			VisibleAtTip:      loc.Dump.VisibleAtTip,
-			UploadedAt:        loc.Dump.UploadedAt,
-			State:             loc.Dump.State,
-			FailureMessage:    loc.Dump.FailureMessage,
-			StartedAt:         loc.Dump.StartedAt,
-			FinishedAt:        loc.Dump.FinishedAt,
-			ProcessAfter:      loc.Dump.ProcessAfter,
-			NumResets:         loc.Dump.NumResets,
-			NumFailures:       loc.Dump.NumFailures,
-			RepositoryID:      loc.Dump.RepositoryID,
-			RepositoryName:    loc.Dump.RepositoryName,
-			Indexer:           loc.Dump.Indexer,
-			IndexerVersion:    loc.Dump.IndexerVersion,
-			AssociatedIndexID: loc.Dump.AssociatedIndexID,
-		}
-
-		targetRange := types.Range{
-			Start: types.Position{
-				Line:      loc.TargetRange.Start.Line,
-				Character: loc.TargetRange.Start.Character,
-			},
-			End: types.Position{
-				Line:      loc.TargetRange.End.Line,
-				Character: loc.TargetRange.End.Character,
-			},
-		}
-
-		uploadLocation = append(uploadLocation, types.UploadLocation{
-			Dump:         dump,
-			Path:         loc.Path,
-			TargetCommit: loc.TargetCommit,
-			TargetRange:  targetRange,
-		})
-	}
-
-	return uploadLocation
-}
-
-func uploadDumpToCodeNavDump(storeDumps []types.Dump) []types.Dump {
-	dumps := make([]types.Dump, 0, len(storeDumps))
-	for _, d := range storeDumps {
-		dumps = append(dumps, types.Dump{
-			ID:                d.ID,
-			Commit:            d.Commit,
-			Root:              d.Root,
-			VisibleAtTip:      d.VisibleAtTip,
-			UploadedAt:        d.UploadedAt,
-			State:             d.State,
-			FailureMessage:    d.FailureMessage,
-			StartedAt:         d.StartedAt,
-			FinishedAt:        d.FinishedAt,
-			ProcessAfter:      d.ProcessAfter,
-			NumResets:         d.NumResets,
-			NumFailures:       d.NumFailures,
-			RepositoryID:      d.RepositoryID,
-			RepositoryName:    d.RepositoryName,
-			Indexer:           d.Indexer,
-			IndexerVersion:    d.IndexerVersion,
-			AssociatedIndexID: d.AssociatedIndexID,
-		})
-	}
-
-	return dumps
 }

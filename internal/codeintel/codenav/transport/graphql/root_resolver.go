@@ -53,19 +53,13 @@ func (r *rootResolver) GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDat
 	ctx, errTracer, endObservation := r.operations.gitBlobLsifData.WithErrors(ctx, &err, observation.Args{})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	// codenav := r.resolver.CodeNavResolver()
-	// gitBlobResolver, err := codenav.GitBlobLSIFDataResolverFactory(ctx, args.Repo, string(args.Commit), args.Path, args.ToolName, args.ExactPath)
-	// if err != nil || gitBlobResolver == nil {
-	// 	return nil, err
-	// }
-
 	uploads, err := r.svc.GetClosestDumpsForBlob(ctx, int(args.Repo.ID), string(args.Commit), args.Path, args.ExactPath, args.ToolName)
 	if err != nil || len(uploads) == 0 {
 		return nil, err
 	}
 
 	reqState := codenav.NewRequestState(uploads, authz.DefaultSubRepoPermsChecker, r.gitserver, args.Repo, string(args.Commit), args.Path, r.maximumIndexesPerMonikerSearch, r.hunkCacheSize)
-	gbr := NewGitBlobLSIFDataResolverOLD(r.svc, int(args.Repo.ID), string(args.Commit), args.Path, r.operations, reqState)
+	gbr := NewGitBlobResolver(r.svc, int(args.Repo.ID), string(args.Commit), args.Path, r.operations, reqState)
 
 	return NewGitBlobLSIFDataResolverQueryResolver(r.autoindexingSvc, r.uploadSvc, r.policiesSvc, r.gitserver, gbr, errTracer), nil
 }

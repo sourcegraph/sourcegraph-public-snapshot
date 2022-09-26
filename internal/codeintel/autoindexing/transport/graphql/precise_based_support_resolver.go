@@ -24,7 +24,6 @@ type preciseCodeIntelSupportResolver struct {
 	indexers []types.CodeIntelIndexerResolver
 }
 
-// move to autoindexing service
 func NewPreciseCodeIntelSupportResolver(filepath string) PreciseSupportResolver {
 	return &preciseCodeIntelSupportResolver{
 		indexers: types.LanguageToIndexer[path.Ext(filepath)],

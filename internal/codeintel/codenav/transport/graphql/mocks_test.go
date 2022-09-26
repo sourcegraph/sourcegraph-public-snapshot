@@ -955,7 +955,7 @@ func NewStrictMockGitBlobLSIFDataResolverOLD() *MockGitBlobLSIFDataResolverOLD {
 // NewMockGitBlobLSIFDataResolverOLDFrom creates a new mock of the
 // MockGitBlobLSIFDataResolverOLD interface. All methods delegate to the
 // given implementation, unless overwritten.
-func NewMockGitBlobLSIFDataResolverOLDFrom(i GitBlobLSIFDataResolverOLD) *MockGitBlobLSIFDataResolverOLD {
+func NewMockGitBlobLSIFDataResolverOLDFrom(i GitBlobResolver) *MockGitBlobLSIFDataResolverOLD {
 	return &MockGitBlobLSIFDataResolverOLD{
 		DefinitionsFunc: &GitBlobLSIFDataResolverOLDDefinitionsFunc{
 			defaultHook: i.Definitions,

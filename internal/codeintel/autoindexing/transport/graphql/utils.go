@@ -9,23 +9,12 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/sourcegraph/go-lsp"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-// convertRange creates an LSP range from a bundle range.
-func convertRange(r shared.Range) lsp.Range {
-	return lsp.Range{Start: convertPosition(r.Start.Line, r.Start.Character), End: convertPosition(r.End.Line, r.End.Character)}
-}
-
-func convertPosition(line, character int) lsp.Position {
-	return lsp.Position{Line: line, Character: character}
-}
 
 // strPtr creates a pointer to the given value. If the value is an
 // empty string, a nil pointer is returned.
@@ -198,11 +187,6 @@ func derefInt32(val *int32, defaultValue int) int {
 
 // intPtr creates a pointer to the given value.
 func intPtr(val int32) *int32 {
-	return &val
-}
-
-// intPtr creates a pointer to the given value.
-func boolPtr(val bool) *bool {
 	return &val
 }
 

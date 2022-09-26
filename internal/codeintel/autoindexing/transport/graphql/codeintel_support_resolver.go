@@ -21,7 +21,6 @@ type codeIntelSupportResolver struct {
 	errTracer    *observation.ErrCollector
 }
 
-// move to autoindexing service
 func NewCodeIntelSupportResolver(autoindexSvc AutoIndexingService, repoName api.RepoName, path string, errTracer *observation.ErrCollector) GitBlobCodeIntelSupportResolver {
 	return &codeIntelSupportResolver{
 		repo:         repoName,
@@ -53,11 +52,9 @@ func (r *codeIntelSupportResolver) SearchBasedSupport(ctx context.Context) (_ Se
 		return nil, nil
 	}
 
-	// move to autoindexing service
 	return NewSearchBasedCodeIntelResolver(language), nil
 }
 
-// move to autoindexing service
 func (r *codeIntelSupportResolver) PreciseSupport(ctx context.Context) (PreciseSupportResolver, error) {
 	return NewPreciseCodeIntelSupportResolver(r.path), nil
 }

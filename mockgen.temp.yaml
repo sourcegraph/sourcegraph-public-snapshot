@@ -15,7 +15,6 @@
   interfaces:
     - UploadsService
     - AutoIndexingService
-
 - filename: internal/codeintel/uploads/transport/graphql/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql
   interfaces:
@@ -28,13 +27,6 @@
     - AutoIndexingService
     - UploadsService
     - PolicyService
-
-
-
-
-
-
-
 - filename: internal/codeintel/codenav/transport/graphql/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql
   interfaces:

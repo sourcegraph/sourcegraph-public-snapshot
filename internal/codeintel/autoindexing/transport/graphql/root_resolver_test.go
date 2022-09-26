@@ -27,12 +27,10 @@ func TestDeleteLSIFIndex(t *testing.T) {
 	db.UsersFunc.SetDefaultReturn(users)
 
 	id := graphql.ID(base64.StdEncoding.EncodeToString([]byte("LSIFIndex:42")))
-	// mockResolver := resolvermocks.NewMockResolver()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
 	mockAutoIndexingService := NewMockAutoIndexingService()
 	mockAutoIndexingService.GetUnsafeDBFunc.SetDefaultReturn(db)
-	// mockResolver.AutoIndexingRootResolverFunc.PushReturn(mockAutoIndexingResolver)
 
 	rootResolver := NewRootResolver(mockAutoIndexingService, mockUploadsService, mockPolicyService, &observation.TestContext)
 
@@ -46,13 +44,6 @@ func TestDeleteLSIFIndex(t *testing.T) {
 	if val := mockAutoIndexingService.DeleteIndexByIDFunc.History()[0].Arg1; val != 42 {
 		t.Fatalf("unexpected upload id. want=%d have=%d", 42, val)
 	}
-	// val, err := unmarshalLSIFIndexGQLID(args1.ID)
-	// if err != nil {
-	// 	t.Fatalf("unexpected upload id. unexpected error: %s", err)
-	// }
-	// if val != 42 {
-
-	// }
 }
 
 func TestDeleteLSIFIndexUnauthenticated(t *testing.T) {
@@ -60,9 +51,6 @@ func TestDeleteLSIFIndexUnauthenticated(t *testing.T) {
 	db := database.NewDB(logger, nil)
 
 	id := graphql.ID(base64.StdEncoding.EncodeToString([]byte("LSIFIndex:42")))
-	// mockResolver := resolvermocks.NewMockResolver()
-	// mockAutoIndexingResolver := transportmocks.NewMockRootResolver()
-	// mockResolver.AutoIndexingRootResolverFunc.PushReturn(mockAutoIndexingResolver)
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
 	mockAutoIndexingService := NewMockAutoIndexingService()

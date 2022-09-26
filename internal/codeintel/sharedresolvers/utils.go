@@ -63,15 +63,6 @@ func strPtr(val string) *string {
 	return &val
 }
 
-// // convertRange creates an LSP range from a bundle range.
-// func convertRange(r types.Range) lsp.Range {
-// 	return lsp.Range{Start: convertPosition(r.Start.Line, r.Start.Character), End: convertPosition(r.End.Line, r.End.Character)}
-// }
-
-// func convertPosition(line, character int) lsp.Position {
-// 	return lsp.Position{Line: line, Character: character}
-// }
-
 func marshalLSIFIndexGQLID(indexID int64) graphql.ID {
 	return relay.MarshalID("LSIFIndex", indexID)
 }

@@ -7,10 +7,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type CodeIntelligenceRetentionPolicyMatchResolver interface {
-	ConfigurationPolicy() CodeIntelligenceConfigurationPolicyResolver
-	Matches() bool
-	ProtectingCommits() *[]string
+type CodeIntelligenceRetentionPolicyMatchesConnectionResolver interface {
+	Nodes(ctx context.Context) ([]CodeIntelligenceRetentionPolicyMatchResolver, error)
+	TotalCount(ctx context.Context) (*int32, error)
+	PageInfo(ctx context.Context) (*PageInfo, error)
 }
 
 type codeIntelligenceRetentionPolicyMatcherConnectionResolver struct {

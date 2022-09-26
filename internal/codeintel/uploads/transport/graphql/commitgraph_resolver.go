@@ -15,7 +15,7 @@ type CommitGraphResolver struct {
 	updatedAt *time.Time
 }
 
-func NewCommitGraphResolver(stale bool, updatedAt *time.Time) *CommitGraphResolver {
+func NewCommitGraphResolver(stale bool, updatedAt *time.Time) CodeIntelligenceCommitGraphResolver {
 	return &CommitGraphResolver{
 		stale:     stale,
 		updatedAt: updatedAt,

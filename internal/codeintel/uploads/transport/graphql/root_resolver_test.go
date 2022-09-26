@@ -22,9 +22,7 @@ func TestDeleteLSIFUpload(t *testing.T) {
 	db.UsersFunc.SetDefaultReturn(users)
 
 	id := graphql.ID(base64.StdEncoding.EncodeToString([]byte("LSIFUpload:42")))
-	// mockUploadRootResolver := uploadmocks.NewMockRootResolver()
-	// mockResolver := resolvermocks.NewMockResolver()
-	// mockResolver.UploadRootResolverFunc.SetDefaultReturn(mockUploadRootResolver)
+
 	mockUploadService := NewMockUploadService()
 	mockPolicyService := NewMockPolicyService()
 	mockAutoIndexingService := NewMockAutoIndexingService()
@@ -40,12 +38,6 @@ func TestDeleteLSIFUpload(t *testing.T) {
 		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockUploadService.DeleteUploadByIDFunc.History()))
 	}
 
-	// mockArg := struct{ ID graphql.ID }{ID: graphql.ID("42")}
-	// if val := mockUploadRootResolver.DeleteLSIFUploadFunc.History()[0].Arg1; val != &mockArg {
-	// 	val, _ := unmarshalLSIFUploadGQLID(val.ID)
-
-	// 	t.Fatalf("unexpected upload id. want=%d have=%d", 42, val)
-	// }
 	if val := mockUploadService.DeleteUploadByIDFunc.History()[0].Arg1; val != 42 {
 		t.Fatalf("unexpected upload id. want=%d have=%d", 42, val)
 	}

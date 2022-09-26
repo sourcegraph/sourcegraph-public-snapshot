@@ -35,7 +35,6 @@ func (r *lsifIndexesWithRepositoryNamespaceResolver) Indexer() types.CodeIntelIn
 		return idx
 	}
 
-	// return &codeIntelIndexerResolver{name: r.indexesSummary.Indexer}
 	return types.NewCodeIntelIndexerResolver(r.indexesSummary.Indexer)
 }
 
