@@ -325,42 +325,6 @@ UPDATE lsif_configuration_policies SET
 WHERE id = %s
 `
 
-// DeleteConfigurationPolicyByID deletes the configuration policy with the given identifier.
-func (s *Store) DeleteConfigurationPolicyByID(ctx context.Context, id int) (err error) {
-	ctx, _, endObservation := s.operations.deleteConfigurationPolicyByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("id", id),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	protected, ok, err := basestore.ScanFirstBool(s.Store.Query(ctx, sqlf.Sprintf(deleteConfigurationPolicyByIDQuery, id)))
-	if err != nil {
-		return err
-	}
-	if !ok {
-		return errUnknownConfigurationPolicy
-	}
-	if protected {
-		return errIllegalConfigurationPolicyDelete
-	}
-
-	return nil
-}
-
-const deleteConfigurationPolicyByIDQuery = `
--- source: internal/codeintel/stores/dbstore/configuration_policies.go:DeleteConfigurationPolicyByID
-WITH
-candidate AS (
-	SELECT id, protected
-	FROM lsif_configuration_policies
-	WHERE id = %s
-	ORDER BY id FOR UPDATE
-),
-deleted AS (
-	DELETE FROM lsif_configuration_policies WHERE id IN (SELECT id FROM candidate WHERE NOT protected)
-)
-SELECT protected FROM candidate
-`
-
 // SelectPoliciesForRepositoryMembershipUpdate returns a slice of configuration policies that should be considered
 // for repository membership updates. Configuration policies are returned in the order of least recently updated.
 func (s *Store) SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context, batchSize int) (configurationPolicies []ConfigurationPolicy, err error) {
