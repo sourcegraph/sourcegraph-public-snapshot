@@ -497,6 +497,11 @@ func creationPagesPingBuilder(timeSupplier func() time.Time) PingQueryBuilder {
 		"InsightGetStartedTemplateCopyClick",
 		"InsightGetStartedTemplateClick",
 		"InsightsGetStartedDocsClicks",
+
+		"ProactiveLimitHit",
+		"ProactiveLimitSuccess",
+		"ExplicitLimitHit",
+		"ExplicitLimitSuccess",
 	}
 
 	builder := NewPingBuilder(Week, timeSupplier)
