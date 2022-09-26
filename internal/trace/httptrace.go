@@ -19,10 +19,8 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/repotrackutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -47,7 +45,7 @@ const (
 var trackOrigin = "https://gitlab.com"
 
 var (
-	metricLabels    = []string{"route", "method", "code", "repo", "origin"}
+	metricLabels    = []string{"route", "method", "code", "origin"}
 	requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name:    "src_http_request_duration_seconds",
 		Help:    "The HTTP request latencies in seconds. Use src_graphql_field_seconds for GraphQL requests.",
@@ -212,7 +210,6 @@ func HTTPMiddleware(logger log.Logger, next http.Handler, siteConfig conftypes.S
 			"route":  routeName, // do not use full route title to reduce cardinality
 			"method": strings.ToLower(r.Method),
 			"code":   strconv.Itoa(m.Code),
-			"repo":   repotrackutil.GetTrackedRepo(api.RepoName(r.URL.Path)),
 			"origin": origin,
 		}
 		requestDuration.With(labels).Observe(m.Duration.Seconds())
