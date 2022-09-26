@@ -135,23 +135,23 @@ Please take time to review the following before proceeding with the upgrades:
    - Go to the Volumes section in your ECS Console
    - Select the volume you've detached earlier
    - Click **Actions > Attach Volume**
-9. On the Attach volume page:
+9. On the `Attach volume` page:
   - **Instance**: select the new Sourcegraph AMI instance
   - **Device name**: /dev/sdb
 
-10\. Reboot the new instance
+10\. **Reboot** the new instance
 
 You can terminate the stopped Sourcegraph AMI instance once you have confirmed the new instance is up and running.
 
-### Downgrade
+## Downgrade
 
-Please refer to the upgrade steps above for downgrading your instance. 
+Please refer to the upgrade procedure above if you wish to rollback your instance. 
 
 ---
 
 ## Network
 
-If you have access to your instance, you can follow our [HTTP and HTTPS/SSL configuration guide](../../../admin/http_https_configuration.md#sourcegraph-via-docker-compose-caddy-2) to set up HTTP and HTTPS connections.
+If you have access to your instance, you can follow our [HTTP and HTTPS/SSL configuration guide](../../../admin/http_https_configuration.md#sourcegraph-via-docker-compose-caddy-2) to set up HTTP and HTTPS connections. However, we recommend using the Application Load Balancers provided by AWS Load Balancer for easy setup.
 
 ### AWS Load Balancer
 
@@ -159,33 +159,37 @@ If you have access to your instance, you can follow our [HTTP and HTTPS/SSL conf
 
 > NOTE: You must own a DNS before you can proceed with the following steps.
 
-1. Request a certificate for the DNS via AWS Certificate Manager
-2. Create a target group for HTTPS Port 443 that links to the instance Port 443
+1. Request a certificate for the DNS in [AWS Certificate Manager](https://aws.amazon.com/certificate-manager/)
+2. Create a [target group](https://console.aws.amazon.com/ec2#TargetGroups) for `HTTPS Port 443` that links to the instance's `Port 443`
 3. Create a new subnet inside the instance VPC
-4. Create a new Load Balancer > Application Load Balancer
+4. Create a new Application Load Balancer via [AWS Load Balancers](https://console.aws.amazon.com/ec2#LoadBalancers)
 
 #### Step 1: Request certificate
+
+![image](https://user-images.githubusercontent.com/68532117/192369850-e90d1078-7ad6-4624-acc1-db093ef4d642.png)
+
+Open the [AWS Certificate Manager console](https://console.aws.amazon.com/acm) to **Request a certificate**:
 
 - **Domain names**: Fully qualified domain name: your domain
 - **Select validation method**: DNS validation - recommended
  
-After the certificate has been created, you will need to attach the CNAME name and values to your DNS.
+After the certificate has been created, you will need to attach the `CNAME name` and `CNAME values` to your DNS.
 
-If your DNS is hosted in AWS route 53:
+Follow the steps below to attach the CNAME to your DNS if your DNS is hosted in [AWS route 53](https://console.aws.amazon.com/route53):
 
 1. Click **Create record in route 53** in the certificate dashboard
 2. Select the DNS you would like to attach the certificate to
 3. Click **Create records** once you have verified the information is correct
-4. Wait 30 mins before the validation is completed
+4. Wait ~30 mins before the validation is completed
 
 #### Step 2: Create a target group
 
-1. Click **Create a target group** on your EC2 Target groups dashboard
+1. Click **Create a target group** on your [EC2 Target groups dashboard](https://console.aws.amazon.com/ec2#TargetGroups)
    - Choose a target type: Instance
    - Target group name: name
    - Protocol: HTTPS
    - Port: 443
-   - VPC: Where your instance is located
+   - VPC: Select the VPC where your instance is located
    - Protocol version: HTTP2
    - Health checks: Use Default
 2. Click **Include as pending below**
@@ -200,6 +204,9 @@ Click **Create subnet** in your VPC subnets dashboard:
 - Click **Create subnet**
 
 #### Step 4: Create an Application Load Balancer
+
+1. Open your [EC2 Load Balancers dashboard](https://console.aws.amazon.com/ec2#LoadBalancers) to **Create Load Balancer**. 
+2. Choose **Application Load Balancer** as the Load balancer types using the following configurations:
 
 - **Basic configuration**
   - Load balancer name: name
@@ -221,13 +228,9 @@ Click **Create subnet** in your VPC subnets dashboard:
 
 We strongly recommend you taking [snapshots of the entire EBS volume](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-creating-snapshot.html) on an [automatic, scheduled basis](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/snapshot-lifecycle.html).
 
----
-
 ## Manual deploy on AWS EC2
 
 Click [here](aws.md) to view install instructions for deploying on AWS EC2 manually.
-
---- 
 
 ## Resources
 
