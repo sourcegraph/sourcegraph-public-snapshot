@@ -278,7 +278,6 @@ Go,github.com/sourcegraph/syntaxhighlight,v0.0.0-20170531221838-bd320f5d308e,New
 Go,github.com/sourcegraph/yaml,v1.0.1-0.20200714132230-56936252f152,MIT,"",Approved
 Go,github.com/sourcegraph/zoekt,v0.0.0-20220906183641-6ba33af2cc5f,Apache 2.0,"",Approved
 Go,github.com/stretchr/testify,v1.8.0,MIT,"",Approved
-Go,github.com/stripe/stripe-go,v70.15.0,MIT,"",Approved
 Go,github.com/throttled/throttled/v2,v2.9.0,New BSD,"",Approved
 Go,github.com/tidwall/gjson,v1.14.0,MIT,"",Approved
 Go,github.com/tidwall/match,v1.1.1,MIT,"",Approved

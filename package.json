@@ -387,8 +387,6 @@
     "@sourcegraph/extension-api-classes": "^1.1.0",
     "@storybook/addon-controls": "^6.5.9",
     "@storybook/addon-knobs": "^6.4.0",
-    "@stripe/react-stripe-js": "^1.8.0-0",
-    "@stripe/stripe-js": "^1.29.0",
     "@types/react-resizable": "^3.0.2",
     "@visx/annotation": "^2.10.0",
     "@visx/axis": "^2.11.1",
