@@ -53,11 +53,7 @@ func (o *settingsStore) CreateIfUpToDate(ctx context.Context, subject api.Settin
 	}
 
 	// Validate setting schema
-	problems, err := conf.ValidateSetting(contents)
-	if err != nil {
-		return nil, err
-	}
-	if len(problems) > 0 {
+	if problems := conf.ValidateSettings(contents); len(problems) > 0 {
 		return nil, errors.Errorf("invalid settings: %s", strings.Join(problems, ","))
 	}
 

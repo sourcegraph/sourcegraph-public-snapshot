@@ -50,6 +50,32 @@ func TestValidate(t *testing.T) {
 	})
 }
 
+func TestDoValidate(t *testing.T) {
+	schema := schema.SiteSchemaJSON
+
+	tests := map[string]struct {
+		input        string
+		wantProblems []string
+	}{
+		"valid": {
+			input:        `{"externalURL":"https://example.com"}`,
+			wantProblems: []string{},
+		},
+		"invalid per JSON Schema": {
+			input:        `{"externalURL":123}`,
+			wantProblems: []string{"externalURL: Invalid type. Expected: string, given: integer"},
+		},
+	}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			problems := doValidate(test.input, schema)
+			if !reflect.DeepEqual(problems, test.wantProblems) {
+				t.Errorf("got problems %v, want %v", problems, test.wantProblems)
+			}
+		})
+	}
+}
+
 func TestValidateCustom(t *testing.T) {
 	tests := map[string]struct {
 		raw         string
