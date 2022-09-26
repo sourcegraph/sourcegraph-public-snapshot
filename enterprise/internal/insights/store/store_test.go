@@ -859,10 +859,11 @@ type sample struct {
 	value float64
 }
 
-type dataForRepo struct {
+type dataForTimeseries struct {
 	repoId   int
 	repoName string
 	ss       []RawSample
+	Capture  *string
 }
 
 func TestLoadStuff(t *testing.T) {
@@ -884,15 +885,17 @@ func TestLoadStuff(t *testing.T) {
 	// seriesId := rand.String(10)
 	seriesId := "findme"
 	t.Log(seriesId)
-	rawId := 8
+	rawId := 117
 
-	numRepos := 10000
+	numRepos := 100
 	repoIdMin := 20000
 	repoIdMax := repoIdMin + numRepos
 
 	valMax := 100000
 
-	numSamples := 120
+	numSamples := 12
+
+	numCapturePerRepo := 250
 
 	times := make([]time.Time, 0)
 	start := time.Date(2021, 1, 1, 5, 30, 0, 0, time.UTC)
@@ -900,31 +903,34 @@ func TestLoadStuff(t *testing.T) {
 		times = append(times, start.AddDate(0, i, 0))
 	}
 
-	var allData []dataForRepo
+	var allData []dataForTimeseries
 
 	for i := repoIdMin; i < repoIdMax; i++ {
-		repoId := i
-		name := fmt.Sprintf("repo-%d", repoId)
+		for c := 0; c < numCapturePerRepo; c++ {
 
-		var smps []RawSample
-		for _, current := range times {
-			smps = append(smps, RawSample{
-				Time:  uint32(current.Unix()),
-				Value: float64(rand.IntnRange(0, valMax+1)),
+			repoId := i
+			name := fmt.Sprintf("repo-%d", repoId)
+
+			var smps []RawSample
+			for _, current := range times {
+				smps = append(smps, RawSample{
+					Time:  uint32(current.Unix()),
+					Value: float64(rand.IntnRange(0, valMax+1)),
+				})
+			}
+
+			allData = append(allData, dataForTimeseries{
+				repoId:   i,
+				repoName: name,
+				ss:       smps,
 			})
 		}
-
-		allData = append(allData, dataForRepo{
-			repoId:   i,
-			repoName: name,
-			ss:       smps,
-		})
 	}
 
 	t.Log(len(allData))
 
 	for _, datum := range allData {
-		err := sampleStore.StoreRow(ctx, UncompressedRow{
+		err = sampleStore.StoreRow(ctx, UncompressedRow{
 			altFormatRowMetadata: altFormatRowMetadata{
 				RepoId: uint32(datum.repoId),
 			},
@@ -940,39 +946,40 @@ func TestLoadStuff(t *testing.T) {
 	// 	t.Fatal(err)
 	// }
 	//
-	// err = writeOld(ctx, store, seriesId, allData)
-	// if err != nil {
-	// 	t.Fatal(err)
-	// }
+	err = writeOld(ctx, store, seriesId, allData)
+	if err != nil {
+		t.Fatal(err)
+	}
 	return
 }
 
-//
-// func writeOld(ctx context.Context, store *Store, seriesId string, allData []dataForRepo) error {
-// 	for i, datum := range allData {
-// 		if i%100 == 0 {
-// 			println(fmt.Sprintf("old %d", i))
-// 		}
-// 		for _, sample := range datum.ss {
-// 			rn := datum.repoName
-// 			id := api.RepoID(datum.repoId)
-// 			if err := store.RecordSeriesPoint(ctx, RecordSeriesPointArgs{
-// 				SeriesID: seriesId,
-// 				Point: SeriesPoint{
-// 					SeriesID: seriesId,
-// 					Time:     time.Unix(int64(sample.Time), 0),
-// 					Value:    sample.Value,
-// 				},
-// 				RepoName:    &rn,
-// 				RepoID:      &id,
-// 				PersistMode: "record",
-// 			}); err != nil {
-// 				return err
-// 			}
-// 		}
-// 	}
-// 	return nil
-// }
+func writeOld(ctx context.Context, store *Store, seriesId string, allData []dataForTimeseries) error {
+	for i, datum := range allData {
+		if i%100 == 0 {
+			println(fmt.Sprintf("old %d", i))
+		}
+		for _, sample := range datum.ss {
+			rn := datum.repoName
+			id := api.RepoID(datum.repoId)
+			if err := store.RecordSeriesPoint(ctx, RecordSeriesPointArgs{
+				SeriesID: seriesId,
+				Point: SeriesPoint{
+					SeriesID: seriesId,
+					Time:     time.Unix(int64(sample.Time), 0),
+					Value:    sample.Value,
+					Capture:  datum.Capture,
+				},
+				RepoName:    &rn,
+				RepoID:      &id,
+				PersistMode: "record",
+			}); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 //
 // func BenchmarkReadGeneratedSeries(b *testing.B) {
 // 	ctx := context.Background()
