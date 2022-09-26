@@ -2985,7 +2985,7 @@ CREATE TABLE users (
     searchable boolean DEFAULT true NOT NULL,
     CONSTRAINT users_display_name_max_length CHECK ((char_length(display_name) <= 255)),
     CONSTRAINT users_username_max_length CHECK ((char_length((username)::text) <= 255)),
-    CONSTRAINT users_username_valid_chars CHECK ((username OPERATOR(~) '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-.](?=[a-zA-Z0-9]))*-?$'::citext))
+    CONSTRAINT users_username_valid_chars CHECK ((username OPERATOR(~) '^\w(?:\w|[-.](?=\w))*-?$'::citext))
 );
 
 CREATE VIEW reconciler_changesets AS
