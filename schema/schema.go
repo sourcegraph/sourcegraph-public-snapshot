@@ -597,7 +597,7 @@ type ExperimentalFeatures struct {
 	ApidocsSearchIndexing string `json:"apidocs.search.indexing,omitempty"`
 	// BitbucketServerFastPerm description: DEPRECATED: Configure in Bitbucket Server config.
 	BitbucketServerFastPerm string `json:"bitbucketServerFastPerm,omitempty"`
-	// CustomGitFetch description: JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command. DEPRECATED: CONFIGURATION MOVED TO A LOCAL FILE USE ENVIRONMENT VARIABLE `CUSTOM_GIT_FETCH_CONF` TO SET FILE PATH.
+	// CustomGitFetch description: DEPRECATED: THIS VALUE WILL IS IGNORED. CONFIGURATION MOVED TO A LOCAL FILE USE ENVIRONMENT VARIABLE `CUSTOM_GIT_FETCH_CONF` TO SET FILE PATH. JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command.
 	CustomGitFetch []*CustomGitFetchMapping `json:"customGitFetch,omitempty"`
 	// DebugLog description: Turns on debug logging for specific debugging scenarios.
 	DebugLog *DebugLog `json:"debug.log,omitempty"`
