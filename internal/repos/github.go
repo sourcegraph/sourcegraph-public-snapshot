@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -485,13 +486,10 @@ func (s *GitHubSource) paginate(ctx context.Context, results chan *githubResult,
 		}
 
 		if hasNext && cost > 0 {
-			// 0-duration sleep unless nearing rate limit exhaustion, or return if context has been canceled.
-			select {
-			case <-ctx.Done():
-				results <- &githubResult{err: ctx.Err()}
-				return
-			case <-time.After(s.v3Client.RateLimitMonitor().RecommendedWaitForBackgroundOp(cost)):
-			}
+			// 0-duration sleep unless nearing rate limit exhaustion, or
+			// shorter if context has been canceled (next iteration of loop
+			// will then return `ctx.Err()`).
+			timeutil.SleepWithContext(ctx, s.v3Client.RateLimitMonitor().RecommendedWaitForBackgroundOp(cost))
 		}
 	}
 }
@@ -657,11 +655,12 @@ func (s *GitHubSource) listRepos(ctx context.Context, repos []string, results ch
 
 		results <- &githubResult{repo: repo}
 
-		select {
-		// 0-duration sleep unless nearing rate limit exhaustion, or return if context has been canceled.
-		case <-time.After(s.v3Client.RateLimitMonitor().RecommendedWaitForBackgroundOp(1)):
-		case <-ctx.Done():
-			results <- &githubResult{err: ctx.Err()}
+		// If there is another iteration of the loop: 0-duration sleep unless
+		// nearing rate limit exhaustion, or shorter if context has been
+		// canceled. If context has been canceled, the `ctx.Err()` will be
+		// returned by next iteration.
+		if i > 0 {
+			timeutil.SleepWithContext(ctx, s.v3Client.RateLimitMonitor().RecommendedWaitForBackgroundOp(1))
 		}
 	}
 }

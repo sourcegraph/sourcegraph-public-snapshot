@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/repos/webhookworker"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -106,7 +107,7 @@ func (s *Syncer) Run(ctx context.Context, store Store, opts RunOptions) error {
 				s.Logger.Error("enqueuing sync jobs", log.Error(err))
 			}
 		}
-		sleep(ctx, opts.EnqueueInterval())
+		timeutil.SleepWithContext(ctx, opts.EnqueueInterval())
 	}
 
 	return ctx.Err()
@@ -125,14 +126,6 @@ func (s *syncHandler) Handle(ctx context.Context, logger log.Logger, record work
 	}
 
 	return s.syncer.SyncExternalService(ctx, sj.ExternalServiceID, s.minSyncInterval())
-}
-
-// sleep is a context aware time.Sleep
-func sleep(ctx context.Context, d time.Duration) {
-	select {
-	case <-ctx.Done():
-	case <-time.After(d):
-	}
 }
 
 // TriggerExternalServiceSync will enqueue a sync job for the supplied external
