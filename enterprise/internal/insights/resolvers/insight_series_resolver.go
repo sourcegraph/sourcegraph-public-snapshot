@@ -348,11 +348,21 @@ func getRecordedSeriesPointOpts(ctx context.Context, db database.DB, definition 
 		}
 	}
 	opts.From = &oldest
+
+	filterEmpty := func(regex []string) (nonempty []string) {
+		for _, s := range regex {
+			if s != "" {
+				nonempty = append(nonempty, s)
+			}
+		}
+		return nonempty
+	}
+
 	includeRepo := func(regex ...string) {
-		opts.IncludeRepoRegex = append(opts.IncludeRepoRegex, regex...)
+		opts.IncludeRepoRegex = append(opts.IncludeRepoRegex, filterEmpty(regex)...)
 	}
 	excludeRepo := func(regex ...string) {
-		opts.ExcludeRepoRegex = append(opts.ExcludeRepoRegex, regex...)
+		opts.ExcludeRepoRegex = append(opts.ExcludeRepoRegex, filterEmpty(regex)...)
 	}
 
 	if filters.IncludeRepoRegex != nil {

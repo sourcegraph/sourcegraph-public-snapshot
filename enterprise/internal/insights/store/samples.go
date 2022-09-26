@@ -8,6 +8,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/inconshreveable/log15"
+
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 
 	"github.com/RoaringBitmap/roaring"
@@ -155,10 +157,30 @@ func (s *sampleStore) LoadRows(ctx context.Context, opts SeriesPointsOpts) ([]Un
 }
 
 func loadRowsQuery(opts SeriesPointsOpts) *sqlf.Query {
-	baseQuery := `select sp.id, repo_id, data, capture from series_points_compressed sp`
+	baseQuery := `select spc.id, spc.repo_id, data, capture from series_points_compressed spc`
 	var preds []*sqlf.Query
+	// joinCond := " JOIN series_points_compressed_repo_names spcrn ON spc.id = spcrn.series_points_compressed_id join repo_names rn ON spcrn.repo_name_id = rn.id"
+	joinCond := " JOIN repo_names rn ON spc.repo_id = rn.repo_id"
+	hasJoin := false
+	if len(opts.IncludeRepoRegex) > 0 {
+		hasJoin = true
+		for _, regex := range opts.IncludeRepoRegex {
+			if len(regex) == 0 {
+				continue
+			}
+			preds = append(preds, sqlf.Sprintf("rn.name ~ %s", regex))
+		}
+	}
+	if len(opts.ExcludeRepoRegex) > 0 {
+		hasJoin = true
+		for _, regex := range opts.ExcludeRepoRegex {
+			if len(regex) == 0 {
+				continue
+			}
+			preds = append(preds, sqlf.Sprintf("rn.name !~ %s", regex))
+		}
+	}
 
-	// todo(insights): add repo filtering
 	if opts.SeriesID != nil {
 		preds = append(preds, sqlf.Sprintf("series_id = (select isn.id from insight_series as isn where isn.series_id = %s)", *opts.SeriesID))
 	}
@@ -175,11 +197,17 @@ func loadRowsQuery(opts SeriesPointsOpts) *sqlf.Query {
 			preds = append(preds, sqlf.Sprintf("capture = %s", *opts.Key.Capture))
 		}
 	}
+	if hasJoin {
+		baseQuery += joinCond
+	}
 	if len(preds) > 0 {
 		baseQuery += " where %s"
 	}
 
+	log15.Info("final preds", "preds", preds)
+
 	final := sqlf.Sprintf(baseQuery, sqlf.Join(preds, "AND"))
+	log15.Info("final", "q", final.Query(sqlf.PostgresBindVar), "args", final.Args())
 	return final
 }
 

@@ -865,86 +865,88 @@ type dataForRepo struct {
 	ss       []RawSample
 }
 
-// func TestLoadStuff(t *testing.T) {
-// 	ctx := context.Background()
-// 	dsn := `postgres://sourcegraph:sourcegraph@localhost:5432/sourcegraph`
-// 	handle, err := connections.EnsureNewCodeInsightsDB(dsn, "app", &observation.TestContext)
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	logger := logtest.Scoped(t)
-// 	db := database.NewDB(logger, handle)
-// 	//
-// 	// seriesId := "29M8bMLrYk2I54tMRUwRMhCnLti"
-// 	//
-// 	permStore := NewInsightPermissionStore(db)
-// 	store := New(edb.NewInsightsDB(handle), permStore)
-//
-// 	// seriesId := rand.String(10)
-// 	seriesId := "findme"
-// 	t.Log(seriesId)
-// 	rawId := 8
-//
-// 	numRepos := 10000
-// 	repoIdMin := 20000
-// 	repoIdMax := repoIdMin + numRepos
-//
-// 	valMax := 100000
-//
-// 	numSamples := 120
-//
-// 	times := make([]time.Time, 0)
-// 	start := time.Date(2021, 1, 1, 5, 30, 0, 0, time.UTC)
-// 	for i := 0; i < numSamples; i++ {
-// 		times = append(times, start.AddDate(0, i, 0))
-// 	}
-//
-// 	var allData []dataForRepo
-//
-// 	for i := repoIdMin; i < repoIdMax; i++ {
-// 		repoId := i
-// 		name := fmt.Sprintf("repo-%d", repoId)
-//
-// 		var smps []RawSample
-// 		for _, current := range times {
-// 			smps = append(smps, RawSample{
-// 				Time:  uint32(current.Unix()),
-// 				Value: float64(rand.IntnRange(0, valMax+1)),
-// 			})
-// 		}
-//
-// 		allData = append(allData, dataForRepo{
-// 			repoId:   i,
-// 			repoName: name,
-// 			ss:       smps,
-// 		})
-// 	}
-//
-// 	t.Log(len(allData))
-//
-// 	for _, datum := range allData {
-// 		err := store.StoreAlternateFormat(ctx, UncompressedRow{
-// 			altFormatRowMetadata: altFormatRowMetadata{
-// 				RepoId: uint32(datum.repoId),
-// 			},
-// 			Samples: datum.ss,
-// 		}, uint32(rawId))
-// 		if err != nil {
-// 			t.Fatalf("failed on repo_id: %d %s", datum.repoId, err.Error())
-// 		}
-// 	}
-//
-// 	// err = writeNew(ctx, store, rawId, allData)
-// 	// if err != nil {
-// 	// 	t.Fatal(err)
-// 	// }
-//
-// 	err = writeOld(ctx, store, seriesId, allData)
-// 	if err != nil {
-// 		t.Fatal(err)
-// // 	}
-// // 	return
-// // }
+func TestLoadStuff(t *testing.T) {
+	ctx := context.Background()
+	dsn := `postgres://sourcegraph:sourcegraph@localhost:5432/sourcegraph`
+	handle, err := connections.EnsureNewCodeInsightsDB(dsn, "app", &observation.TestContext)
+	if err != nil {
+		t.Fatal(err)
+	}
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, handle)
+	//
+	// seriesId := "29M8bMLrYk2I54tMRUwRMhCnLti"
+	//
+	permStore := NewInsightPermissionStore(db)
+	store := New(edb.NewInsightsDB(handle), permStore)
+	sampleStore := SampleStoreFromLegacyStore(store)
+
+	// seriesId := rand.String(10)
+	seriesId := "findme"
+	t.Log(seriesId)
+	rawId := 8
+
+	numRepos := 10000
+	repoIdMin := 20000
+	repoIdMax := repoIdMin + numRepos
+
+	valMax := 100000
+
+	numSamples := 120
+
+	times := make([]time.Time, 0)
+	start := time.Date(2021, 1, 1, 5, 30, 0, 0, time.UTC)
+	for i := 0; i < numSamples; i++ {
+		times = append(times, start.AddDate(0, i, 0))
+	}
+
+	var allData []dataForRepo
+
+	for i := repoIdMin; i < repoIdMax; i++ {
+		repoId := i
+		name := fmt.Sprintf("repo-%d", repoId)
+
+		var smps []RawSample
+		for _, current := range times {
+			smps = append(smps, RawSample{
+				Time:  uint32(current.Unix()),
+				Value: float64(rand.IntnRange(0, valMax+1)),
+			})
+		}
+
+		allData = append(allData, dataForRepo{
+			repoId:   i,
+			repoName: name,
+			ss:       smps,
+		})
+	}
+
+	t.Log(len(allData))
+
+	for _, datum := range allData {
+		err := sampleStore.StoreRow(ctx, UncompressedRow{
+			altFormatRowMetadata: altFormatRowMetadata{
+				RepoId: uint32(datum.repoId),
+			},
+			Samples: datum.ss,
+		}, uint32(rawId))
+		if err != nil {
+			t.Fatalf("failed on repo_id: %d %s", datum.repoId, err.Error())
+		}
+	}
+
+	// err = writeNew(ctx, store, rawId, allData)
+	// if err != nil {
+	// 	t.Fatal(err)
+	// }
+	//
+	// err = writeOld(ctx, store, seriesId, allData)
+	// if err != nil {
+	// 	t.Fatal(err)
+	// }
+	return
+}
+
 //
 // func writeOld(ctx context.Context, store *Store, seriesId string, allData []dataForRepo) error {
 // 	for i, datum := range allData {
