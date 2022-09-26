@@ -17,6 +17,7 @@ import {
     onOpen,
     onPreviewChange,
     onPreviewClear,
+    onSearchError,
 } from './js-to-java-bridge'
 import type { PluginConfig, Search, Theme } from './types'
 
@@ -33,33 +34,38 @@ let authenticatedUser: AuthenticatedUser | null = null
 let telemetryService: EventLogger
 
 window.initializeSourcegraph = async () => {
-    const [theme, config, lastSearch]: [Theme, PluginConfig, Search | null] = await Promise.all([
-        getThemeAlwaysFulfill(),
-        getConfigAlwaysFulfill(),
-        loadLastSearchAlwaysFulfill(),
-    ])
-
-    applyConfig(config)
-    applyTheme(theme)
-    applyLastSearch(lastSearch)
-
-    let isServerAccessSuccessful = false
     try {
-        authenticatedUser = await getAuthenticatedUser(instanceURL, accessToken)
-        isServerAccessSuccessful = true
+        const [theme, config, lastSearch]: [Theme, PluginConfig, Search | null] = await Promise.all([
+            getThemeAlwaysFulfill(),
+            getConfigAlwaysFulfill(),
+            loadLastSearchAlwaysFulfill(),
+        ])
+
+        applyConfig(config)
+        applyTheme(theme)
+        applyLastSearch(lastSearch)
+
+        let isServerAccessSuccessful = false
+        try {
+            authenticatedUser = await getAuthenticatedUser(instanceURL, accessToken)
+            isServerAccessSuccessful = true
+        } catch (error) {
+            console.info('Could not authenticate with current URL and token settings', instanceURL, accessToken, error)
+        }
+
+        if (accessToken && !authenticatedUser) {
+            console.warn(`No initial authenticated user with access token “${accessToken}”`)
+        }
+
+        telemetryService = new EventLogger(anonymousUserId, { editor: 'jetbrains', version: pluginVersion })
+
+        renderReactApp()
+
+        await indicateFinishedLoading(isServerAccessSuccessful, !!authenticatedUser)
     } catch (error) {
-        console.info('Could not authenticate with current URL and token settings', instanceURL, accessToken, error)
+        console.error('Error initializing Sourcegraph', error)
+        await indicateFinishedLoading(false, !!authenticatedUser)
     }
-
-    if (accessToken && !authenticatedUser) {
-        console.warn(`No initial authenticated user with access token “${accessToken}”`)
-    }
-
-    telemetryService = new EventLogger(anonymousUserId, { editor: 'jetbrains', version: pluginVersion })
-
-    renderReactApp()
-
-    await indicateFinishedLoading(isServerAccessSuccessful, !!authenticatedUser)
 }
 
 window.callJS = handleRequest
@@ -79,6 +85,7 @@ export function renderReactApp(): void {
             onOpen={onOpen}
             onPreviewChange={onPreviewChange}
             onPreviewClear={onPreviewClear}
+            onSearchError={onSearchError}
             authenticatedUser={authenticatedUser}
             telemetryService={telemetryService}
         />,

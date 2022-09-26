@@ -14,6 +14,7 @@ import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import {
     aggregateStreamingSearch,
+    AggregateStreamingSearchResults,
     LATEST_VERSION,
     Progress,
     SearchMatch,
@@ -45,6 +46,7 @@ interface Props {
     onPreviewChange: (match: SearchMatch, lineOrSymbolMatchIndex?: number) => Promise<void>
     onPreviewClear: () => Promise<void>
     onOpen: (match: SearchMatch, lineOrSymbolMatchIndex?: number) => Promise<void>
+    onSearchError: (errorMessage: string) => Promise<void>
     initialSearch: Search | null
     authenticatedUser: AuthenticatedUser | null
     telemetryService: TelemetryService
@@ -55,17 +57,18 @@ function fetchStreamSuggestionsWithStaticUrl(query: string): Observable<SearchMa
 }
 
 export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    isDarkTheme,
-    instanceURL,
-    isGlobbingEnabled,
-    accessToken,
-    onPreviewChange,
-    onPreviewClear,
-    onOpen,
-    initialSearch,
-    authenticatedUser,
-    telemetryService,
-}: Props) => {
+                                                                                 isDarkTheme,
+                                                                                 instanceURL,
+                                                                                 isGlobbingEnabled,
+                                                                                 accessToken,
+                                                                                 onPreviewChange,
+                                                                                 onPreviewClear,
+                                                                                 onOpen,
+                                                                                 onSearchError,
+                                                                                 initialSearch,
+                                                                                 authenticatedUser,
+                                                                                 telemetryService,
+                                                                             }: Props) => {
     const authState = authenticatedUser !== null ? 'success' : 'failure'
 
     const requestGraphQL = useCallback<PlatformContext['requestGraphQL']>(
@@ -158,7 +161,12 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                     decorationContextLines: 0,
                     displayLimit: 200,
                 }
-            ).subscribe(searchResults => {
+            ).subscribe((searchResults: AggregateStreamingSearchResults) => {
+                if (searchResults.state === 'error') {
+                    setProgressState('error')
+                    onSearchError(searchResults.error.message).then(() => {}).catch(() => {})
+                    return
+                }
                 setMatches(searchResults.results)
                 setProgress(searchResults.progress)
                 setProgressState(searchResults.state)
@@ -168,7 +176,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
             saveLastSearch(nextSearch)
             telemetryService.log('IDESearchSubmitted')
         },
-        [lastSearch, userQueryState.query, telemetryService, instanceURL]
+        [lastSearch, userQueryState.query, telemetryService, instanceURL, onSearchError]
     )
 
     const [didInitialSubmit, setDidInitialSubmit] = useState(false)
