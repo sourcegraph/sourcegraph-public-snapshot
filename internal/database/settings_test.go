@@ -95,6 +95,32 @@ func TestCreateIfUpToDate(t *testing.T) {
 			}
 		}
 	})
+
+	t.Run("valid settings", func(t *testing.T) {
+		contents := `{"experimentalFeatures": {}}`
+		_, err := db.Settings().CreateIfUpToDate(ctx, api.SettingsSubject{User: &u.ID}, nil, nil, contents)
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	t.Run("invalid settings per JSON Schema", func(t *testing.T) {
+		contents := `{"experimentalFeatures": 1}`
+		wantErr := "invalid settings: experimentalFeatures: Invalid type. Expected: object, given: integer"
+		_, err := db.Settings().CreateIfUpToDate(ctx, api.SettingsSubject{User: &u.ID}, nil, nil, contents)
+		if err == nil || err.Error() != wantErr {
+			t.Errorf("got err %q, want %q", err, wantErr)
+		}
+	})
+
+	t.Run("syntactically invalid settings", func(t *testing.T) {
+		contents := `{`
+		wantErr := "invalid settings JSON: [CloseBraceExpected]"
+		_, err := db.Settings().CreateIfUpToDate(ctx, api.SettingsSubject{User: &u.ID}, nil, nil, contents)
+		if err == nil || err.Error() != wantErr {
+			t.Errorf("got err %q, want %q", err, wantErr)
+		}
+	})
 }
 
 func TestGetLatestSchemaSettings(t *testing.T) {
