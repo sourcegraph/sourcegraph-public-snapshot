@@ -5,7 +5,6 @@ import { generateSourcegraphBlobLink } from './initialize'
 /**
  * Open active file in the browser on the configured Sourcegraph instance.
  */
-
 export async function browserActions(action: string, logRedirectEvent: (uri: string) => void): Promise<void> {
     const editor = vscode.window.activeTextEditor
     if (!editor) {
