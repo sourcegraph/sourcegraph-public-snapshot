@@ -4,6 +4,7 @@ import { Decoration, DecorationSet, EditorView, PluginValue, ViewPlugin, ViewUpd
 import { Occurrence, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
 
 import { BlobInfo } from '../Blob'
+
 import { positionToOffset } from './utils'
 
 /**

@@ -1,6 +1,8 @@
-import { Decoration } from '@codemirror/view'
 import { RangeSet, Text } from '@codemirror/state'
+import { Decoration } from '@codemirror/view'
+
 import { DocumentHighlight } from '@sourcegraph/codeintellify'
+
 import { documentHighlightsToRangeSet } from './document-highlights'
 
 describe('document-highlights', () => {

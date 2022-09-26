@@ -80,9 +80,8 @@ export function documentHighlightsToRangeSet<T extends RangeValue>(
         }
 
         return builder.finish()
-    } else {
-        return RangeSet.empty
     }
+    return RangeSet.empty
 }
 
 /**

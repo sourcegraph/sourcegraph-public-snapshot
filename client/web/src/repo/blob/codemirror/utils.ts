@@ -3,7 +3,7 @@ import { EditorView } from '@codemirror/view'
 import { OperatorFunction, pipe } from 'rxjs'
 import { scan, distinctUntilChanged } from 'rxjs/operators'
 
-import { Position, Range } from '@sourcegraph/extension-api-types'
+import { Position } from '@sourcegraph/extension-api-types'
 import { UIPositionSpec, UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 
 /**
@@ -181,8 +181,13 @@ export function isValidLineRange(
         return false
     }
 
-    if (range.character && uiPositionToOffset(textDocument, range) === null) {
-        return false
+    {
+        // Some juggling to make Typescript happy (passing range directly
+        // doesn't work)
+        const { character, line } = range
+        if (character && uiPositionToOffset(textDocument, { line, character }) === null) {
+            return false
+        }
     }
 
     if (range.endLine && range.endCharacter) {
