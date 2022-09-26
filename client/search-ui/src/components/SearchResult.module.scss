@@ -8,8 +8,6 @@
     border-radius: var(--border-radius);
     padding: 0.25rem 0;
     position: relative;
-    border: none !important;
-    border-top: none !important;
 
     &-clickable {
         cursor: pointer;
@@ -18,10 +16,6 @@
     &:hover {
         background-color: var(--color-bg-1);
         text-decoration: none;
-    }
-
-    &:not(:first-child) {
-        border-top: 1px solid var(--border-color);
     }
 
     pre,

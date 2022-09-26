@@ -4,14 +4,13 @@
     width: 100%;
     display: grid;
     grid-template-rows: auto 1fr;
-    height: min-content;
-    padding: 0.5rem 1rem 0 1rem;
-    column-gap: 1rem;
-
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
         'infobar  sidebar'
         'contents sidebar';
+    column-gap: 1rem;
+    height: min-content;
+    padding: 0.5rem 1rem 0 1rem;
 
     &--with-sidebar-hidden {
         grid-template-columns: minmax(0, 1fr);
@@ -50,10 +49,6 @@
             display: block;
         }
     }
-}
-
-.sidebar-button-strip {
-    grid-area: button-strip;
 }
 
 .infobar {

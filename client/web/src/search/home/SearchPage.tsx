@@ -69,7 +69,7 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
             {props.isSourcegraphDotCom && (
                 <div className="text-muted text-center mt-3">Search millions of open source repositories</div>
             )}
-            <div className={classNames(styles.searchContainer, styles.searchContainerWithContentBelow)}>
+            <div className={styles.searchContainer}>
                 <SearchPageInput {...props} queryState={queryState} setQueryState={setQueryState} source="home" />
             </div>
             <div
