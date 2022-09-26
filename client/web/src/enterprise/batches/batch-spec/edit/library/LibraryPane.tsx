@@ -108,7 +108,7 @@ export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<Librar
 
     const { search: searchQuery } = useLocation()
     const updateTemplateWithQueryAndName = useCallback((template: string): string => {
-        if (searchQuery) {
+        if (searchQuery !== '') {
             const parameters = new URLSearchParams(location.search)
 
             const query = parameters.get('q')
