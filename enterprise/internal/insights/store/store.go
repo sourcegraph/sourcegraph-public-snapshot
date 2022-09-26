@@ -192,14 +192,14 @@ func (s *Store) LoadSeriesInMem(ctx context.Context, opts SeriesPointsOpts) (poi
 	}
 
 	q := `select date_trunc('seconds', sp.time) AS interval_time, max(value), repo_id, capture FROM (
-				select * from series_points
-				union
-				select * from series_points_snapshots
-				) as sp
-		  JOIN repo_names rn ON sp.repo_name_id = rn.id
-          where %s
-		  GROUP BY sp.series_id, interval_time, sp.repo_id, capture
-;`
+					select * from series_points
+					union all
+					select * from series_points_snapshots
+					) as sp
+			  %s
+	          where %s
+			  GROUP BY sp.series_id, interval_time, sp.repo_id, capture
+	;`
 	fullQ := seriesPointsQuery(q, opts)
 	err = s.query(ctx, fullQ, func(sc scanner) (err error) {
 		var row loadStruct
@@ -276,10 +276,10 @@ const fullVectorSeriesAggregation = `
 SELECT sub.series_id, sub.interval_time, SUM(sub.value) as value, sub.capture FROM (
 	SELECT sp.repo_name_id, sp.series_id, date_trunc('seconds', sp.time) AS interval_time, MAX(value) as value, capture
 	FROM (  select * from series_points
-			union
+			union all
 			select * from series_points_snapshots
 	) AS sp
-	JOIN repo_names rn ON sp.repo_name_id = rn.id
+	%s
 	WHERE %s
 	GROUP BY sp.series_id, interval_time, sp.repo_name_id, capture
 	ORDER BY sp.series_id, interval_time, sp.repo_name_id
@@ -304,8 +304,14 @@ func seriesPointsQuery(baseQuery string, opts SeriesPointsOpts) *sqlf.Query {
 	if opts.Limit > 0 {
 		limitClause = fmt.Sprintf("LIMIT %d", opts.Limit)
 	}
+	repoFilterJoinClause := " "
+	if len(opts.IncludeRepoRegex) > 0 || len(opts.ExcludeRepoRegex) > 0 {
+		repoFilterJoinClause = ` JOIN repo_names rn ON sp.repo_name_id = rn.id `
+	}
+
+	queryWithJoin := fmt.Sprintf(baseQuery, repoFilterJoinClause, `%s`) // this is a little janky
 	return sqlf.Sprintf(
-		baseQuery+limitClause,
+		queryWithJoin+limitClause,
 		sqlf.Join(preds, "\n AND "),
 	)
 }
