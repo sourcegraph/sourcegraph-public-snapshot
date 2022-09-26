@@ -80,8 +80,8 @@ export interface GlobalNavbarProps
  */
 function useCalculatedNavLinkVariant(
     containerReference: React.MutableRefObject<HTMLDivElement | null>,
-    activation: Props['activation'],
-    authenticatedUser: Props['authenticatedUser']
+    activation: GlobalNavbarProps['activation'],
+    authenticatedUser: GlobalNavbarProps['authenticatedUser']
 ): 'compact' | undefined {
     const [navLinkVariant, setNavLinkVariant] = useState<'compact'>()
     const { width } = useWindowSize()

@@ -39,7 +39,6 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => undefined,
     defaultSearchContextSpec: '',
-    variant: 'default',
     globbing: false,
     branding: undefined,
     routes: [],
@@ -66,15 +65,6 @@ describe('GlobalNavbar', () => {
         const { asFragment } = renderWithBrandedContext(
             <MockedTestProvider>
                 <GlobalNavbar {...PROPS} />
-            </MockedTestProvider>
-        )
-        expect(asFragment()).toMatchSnapshot()
-    })
-
-    test('low-profile', () => {
-        const { asFragment } = renderWithBrandedContext(
-            <MockedTestProvider>
-                <GlobalNavbar {...PROPS} variant="low-profile" />
             </MockedTestProvider>
         )
         expect(asFragment()).toMatchSnapshot()
