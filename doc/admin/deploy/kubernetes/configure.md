@@ -545,9 +545,7 @@ If using cluster roles and cluster rolebinding RBAC is not an option, then you c
 
 Sourcegraph's Kubernetes deployment [requires an Enterprise license key](https://about.sourcegraph.com/pricing).
 
-- Create an account on or sign in to sourcegraph.com, and go to https://sourcegraph.com/subscriptions/new to obtain a license key.
-
-- Once you have a license key, add it to your [site configuration](https://docs.sourcegraph.com/admin/config/site_config).
+Once you have a license key, add it to your [site configuration](https://docs.sourcegraph.com/admin/config/site_config).
 
 ## Environment variables
 
