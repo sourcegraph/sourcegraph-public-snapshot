@@ -303,7 +303,7 @@
           }
         },
         "customGitFetch": {
-          "description": "DEPRECATED: THIS VALUE WILL IS IGNORED. CONFIGURATION MOVED TO A LOCAL FILE USE ENVIRONMENT VARIABLE `CUSTOM_GIT_FETCH_CONF` TO SET FILE PATH. JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command.",
+          "description": "DEPRECATED: THIS VALUE IS IGNORED. CONFIGURATION MOVED TO A LOCAL FILE USE ENVIRONMENT VARIABLE `CUSTOM_GIT_FETCH_CONF` TO SET FILE PATH. JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command.",
           "type": "array",
           "items": {
             "title": "CustomGitFetchMapping",
