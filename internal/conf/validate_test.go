@@ -2,6 +2,7 @@ package conf
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -94,6 +95,70 @@ func TestValidateCustom(t *testing.T) {
 				}
 			}
 			t.Fatalf("could not find problem %q in %v", test.wantProblem, problems)
+		})
+	}
+}
+
+func TestValidateSettings(t *testing.T) {
+	tests := map[string]struct {
+		input        string
+		wantProblems []string
+	}{
+		"valid": {
+			input:        `{}`,
+			wantProblems: []string{},
+		},
+		"comment only": {
+			input:        `// a`,
+			wantProblems: []string{"must be a JSON object (use {} for empty)"},
+		},
+		"invalid per JSON Schema": {
+			input:        `{"experimentalFeatures":123}`,
+			wantProblems: []string{"experimentalFeatures: Invalid type. Expected: object, given: integer"},
+		},
+	}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			problems, err := ValidateSetting(test.input)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !reflect.DeepEqual(problems, test.wantProblems) {
+				t.Errorf("got problems %v, want %v", problems, test.wantProblems)
+			}
+		})
+	}
+}
+
+func TestDoValidate(t *testing.T) {
+	schema := schema.SiteSchemaJSON
+
+	tests := map[string]struct {
+		input        string
+		wantProblems []string
+	}{
+		"valid": {
+			input:        `{}`,
+			wantProblems: []string{},
+		},
+		"invalid root": {
+			input:        `null`,
+			wantProblems: []string{`must be a JSON object (use {} for empty)`},
+		},
+		"invalid per JSON Schema": {
+			input:        `{"externalURL":123}`,
+			wantProblems: []string{"externalURL: Invalid type. Expected: string, given: integer"},
+		},
+	}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			problems, err := doValidate(test.input, schema)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !reflect.DeepEqual(problems, test.wantProblems) {
+				t.Errorf("got problems %v, want %v", problems, test.wantProblems)
+			}
 		})
 	}
 }
