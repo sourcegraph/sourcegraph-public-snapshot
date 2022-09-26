@@ -28,7 +28,7 @@ If you have 1,000 users with 80,000 users, you should still go with size **M**.
 |:------------------:|:-----------:|:-----------:|:-----------:|:------------:|:------------:|
 | **Users**          | 500         | 1,000       | 5,000       | 10,000       | 20,000       |
 | **Repositories**   | 5,000       | 10,000      | 50,000      | 100,000      | 250,000      |
-| **AMI Name**       | sourcegraph-XS (__v4.0.0__) m6a.2xlarge | sourcegraph-S (__v4.0.0__) m6a.4xlarge | sourcegraph-M (__v4.0.0__) m6a.8xlarge | sourcegraph-L (__v4.0.0__) m6a.12xlarge | sourcegraph-XL (__v4.0.0__) m6a.24xlarge |
+| **AMI Name**       | sourcegraph-XS (__v4.0.0__) m6a.2xlarge | <span class="badge badge-warning">Coming soon</span> | <span class="badge badge-warning">Coming soon</span> | sourcegraph-L (__v4.0.0__) m6a.12xlarge | sourcegraph-XL (__v4.0.0__) m6a.24xlarge |
 
 <span class="badge badge-critical">IMPORTANT</span> Replace __4.0.0__ with the version number of your choice. **Versions below v4.0.0 are not supported.**
 
@@ -37,8 +37,6 @@ If you have 1,000 users with 80,000 users, you should still go with size **M**.
 For example, below are the names of the AMIs for version 4.0.0:
 
 - XS: [sourcegraph-XS (v4.0.0) m6a.2xlarge](https://console.aws.amazon.com/ec2#ImageDetails:imageId=ami-0ee5cdc5e89a4bee2)
-- S : sourcegraph-S (v4.0.0) m6a.4xlarge
-- M : sourcegraph-M (v4.0.0) m6a.8xlarge
 - L: [sourcegraph-L (v4.0.0) m6a.12xlarge](https://console.aws.amazon.com/ec2#ImageDetails:imageId=ami-021db30b6db9b0634)
 - XL: [sourcegraph-XL (v4.0.0) m6a.24xlarge](https://console.aws.amazon.com/ec2#ImageDetails:imageId=ami-04b10e0fabedb6eac)
 
