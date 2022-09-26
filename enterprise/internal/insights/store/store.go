@@ -465,9 +465,6 @@ type RecordSeriesPointArgs struct {
 	RepoName *string
 	RepoID   *api.RepoID
 
-	// RepoNameID is calculated from RepoName and RepoID.
-	RepoNameID *int
-
 	PersistMode PersistMode
 }
 
@@ -499,6 +496,7 @@ func (s *Store) RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointA
 
 		// Upsert the repository name into a separate table, so we get a small ID we can reference
 		// many times from the series_points table without storing the repo name multiple times.
+		var repoNameID *int
 		if pt.RepoName != nil {
 			repoNameIDValue, ok, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(upsertRepoNameFmtStr, *pt.RepoName, *pt.RepoName)))
 			if err != nil {
@@ -507,7 +505,7 @@ func (s *Store) RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointA
 			if !ok {
 				return errors.Wrap(err, "repo name ID not found (this should never happen)")
 			}
-			pt.RepoNameID = &repoNameIDValue
+			repoNameID = &repoNameIDValue
 		}
 
 		if err := inserter.Insert(
@@ -516,8 +514,8 @@ func (s *Store) RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointA
 			pt.Point.Time.UTC(), // time
 			pt.Point.Value,      // value
 			pt.RepoID,           // repo_id
-			pt.RepoNameID,       // repo_name_id
-			pt.RepoNameID,       // original_repo_name_id
+			repoNameID,          // repo_name_id
+			repoNameID,          // original_repo_name_id
 			pt.Point.Capture,    // capture
 		); err != nil {
 			return errors.Wrap(err, "Insert")
