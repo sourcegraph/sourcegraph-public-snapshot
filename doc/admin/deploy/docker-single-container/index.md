@@ -181,30 +181,30 @@ docker run --rm -it \
 
 ```
 docker run \
---rm \
---name migrator_${SG_VERSION} \
--e PGHOST='pgsql' \
--e PGPORT='5432' \
--e PGUSER='sg' \
--e PGPASSWORD='sg' \
--e PGDATABASE='sourcegraph' \
--e PGSSLMODE='disable' \
--e CODEINTEL_PGHOST='pgsql' \
--e CODEINTEL_PGPORT='5432' \
--e CODEINTEL_PGUSER='sg' \
--e CODEINTEL_PGPASSWORD='sg' \
--e CODEINTEL_PGDATABASE='sourcegraph-codeintel' \
--e CODEINTEL_PGSSLMODE='disable' \
--e CODEINSIGHTS_PGHOST='pgsql' \
--e CODEINSIGHTS_PGPORT='5432' \
--e CODEINSIGHTS_PGUSER='postgres' \
--e CODEINSIGHTS_PGPASSWORD='password' \
--e CODEINSIGHTS_PGDATABASE='postgres' \
--e CODEINSIGHTS_PGSSLMODE='disable' \
--e CODEINTEL_PG_ALLOW_SINGLE_DB=true \
-sourcegraph/migrator:insiders@sha256:fe0a81d38280479bd30fa22c82dbc71f4b5a423f239f2a241eac4a72a648bb76 \
-upgrade --from=${CURRENT_SG_VERSION} --to=${SG_VERSION} \
---skip-version-check=false --dry-run=false
+    --rm \
+    --name migrator_${SG_VERSION} \
+    -e PGHOST='pgsql' \
+    -e PGPORT='5432' \
+    -e PGUSER='sg' \
+    -e PGPASSWORD='sg' \
+    -e PGDATABASE='sourcegraph' \
+    -e PGSSLMODE='disable' \
+    -e CODEINTEL_PGHOST='pgsql' \
+    -e CODEINTEL_PGPORT='5432' \
+    -e CODEINTEL_PGUSER='sg' \
+    -e CODEINTEL_PGPASSWORD='sg' \
+    -e CODEINTEL_PGDATABASE='sourcegraph-codeintel' \
+    -e CODEINTEL_PGSSLMODE='disable' \
+    -e CODEINSIGHTS_PGHOST='pgsql' \
+    -e CODEINSIGHTS_PGPORT='5432' \
+    -e CODEINSIGHTS_PGUSER='postgres' \
+    -e CODEINSIGHTS_PGPASSWORD='password' \
+    -e CODEINSIGHTS_PGDATABASE='postgres' \
+    -e CODEINSIGHTS_PGSSLMODE='disable' \
+    -e CODEINTEL_PG_ALLOW_SINGLE_DB=true \
+    sourcegraph/migrator:insiders@sha256:fe0a81d38280479bd30fa22c82dbc71f4b5a423f239f2a241eac4a72a648bb76 \
+    upgrade --from=${CURRENT_SG_VERSION} --to=${SG_VERSION} \
+    --skip-version-check=false --dry-run=false
 ```
 4. Now that the data has been prepared to run against a new version of Sourcegraph, the infrastructure can be updated. The remaining steps follow the [standard upgrade for Docker Single Container](#standard-upgrades).
 
