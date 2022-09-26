@@ -22,7 +22,7 @@ import (
 )
 
 func TestHandle(t *testing.T) {
-	testDir := "/tmp/codeintel"
+	testDir := t.TempDir()
 	workspace.MakeTempDirectory = func(string) (string, error) { return testDir, nil }
 	t.Cleanup(func() {
 		workspace.MakeTempDirectory = workspace.MakeTemporaryDirectory
@@ -130,9 +130,9 @@ func TestHandle(t *testing.T) {
 
 func TestHandle_WorkspaceFile(t *testing.T) {
 	testDir := t.TempDir()
-	makeTempDir = func() (string, error) { return testDir, nil }
+	workspace.MakeTempDirectory = func(string) (string, error) { return testDir, nil }
 	t.Cleanup(func() {
-		makeTempDir = makeTemporaryDirectory
+		workspace.MakeTempDirectory = workspace.MakeTemporaryDirectory
 	})
 
 	if err := os.MkdirAll(filepath.Join(testDir, command.ScriptsPath), os.ModePerm); err != nil {
