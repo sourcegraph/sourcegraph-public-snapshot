@@ -42,9 +42,9 @@ title: Get Started
 
 Sourcegraph is runnable in a variety of environments, from cloud to self-hosted to your local machine.
 
-- For most customers, we recommend Sourcegraph Cloud a single-tenant software as a service offering hosted and managed by Sourcegraph.
+- For most customers, we recommend Sourcegraph Cloud. A Sourcegraph Cloud instance is a single-tenant instance that is managed entirely by Sourcegraph.
 - For customers that want to self-host, we recommend one of the single-node [deployment options](/admin/deploy/index.md).
-- For enterprise customers that require a multi-node, self-hosted deployment, we offer a Kubernetes option. We strongly encourage you to get in touch via Discord or email if you pursue this option.
+- For enterprise customers that require a multi-node, self-hosted deployment, we offer a Kubernetes option. We strongly encourage you to get in touch by [email](sales@sourcegraph.com) if you pursue this option.
 
 ### Recommended
 
