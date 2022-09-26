@@ -1,6 +1,9 @@
 import React from 'react'
 
+import { mdiInformationOutline } from '@mdi/js'
+
 import { useQuery } from '@sourcegraph/http-client'
+import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { ChangesetStatisticsResult, ChangesetStatisticsVariables } from '../../../graphql-operations'
 import { ChangesetStatusClosed, ChangesetStatusOpen } from '../detail/changesets/ChangesetStatusCell'
@@ -30,9 +33,14 @@ export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildre
                     <span>Merged</span>
                 </div>
                 <div className="pr-4">
-                    <span className="font-weight-bold">{(data?.merged.totalCount * 15) / 60}</span>
+                    <span className="font-weight-bold">{data ? (data?.merged.totalCount * 15) / 60 : '--'}</span>
                     <br />
-                    <span>Hours Saved</span>
+                    <span>
+                        Hours Saved
+                        <Tooltip content="Based on multiplier per changeset defined by site admin">
+                            <Icon aria-label="More info" svgPath={mdiInformationOutline} className="ml-1" />
+                        </Tooltip>
+                    </span>
                 </div>
             </div>
             <div className={styles.rightSide}>
