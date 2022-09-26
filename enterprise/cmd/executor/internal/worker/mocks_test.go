@@ -12,6 +12,7 @@ import (
 	"sync"
 
 	command "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
+	store "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/store"
 	workerutil "github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
@@ -1551,7 +1552,7 @@ func (c StoreUpdateExecutionLogEntryFuncCall) Results() []interface{} {
 
 // MockFilesStore is a mock implementation of the FilesStore interface (from
 // the package
-// github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker)
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/store)
 // used for unit testing.
 type MockFilesStore struct {
 	// ExistsFunc is an instance of a mock function object controlling the
@@ -1598,7 +1599,7 @@ func NewStrictMockFilesStore() *MockFilesStore {
 
 // NewMockFilesStoreFrom creates a new mock of the MockFilesStore interface.
 // All methods delegate to the given implementation, unless overwritten.
-func NewMockFilesStoreFrom(i FilesStore) *MockFilesStore {
+func NewMockFilesStoreFrom(i store.FilesStore) *MockFilesStore {
 	return &MockFilesStore{
 		ExistsFunc: &FilesStoreExistsFunc{
 			defaultHook: i.Exists,
