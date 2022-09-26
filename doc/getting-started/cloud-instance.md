@@ -7,7 +7,6 @@ This is a compilation of the most important information you will need to get sta
 Sourcegraph is nothing without your code, so keeping it in sync with your code hosts is essential. 
 
 How to connect to…
-
 - [GitHub](https://docs.sourcegraph.com/admin/external_service/github)
 - [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab)
 - [Bitbucket Cloud](https://docs.sourcegraph.com/admin/external_service/bitbucket_cloud)
@@ -16,10 +15,10 @@ How to connect to…
 - [Non git hosts](https://docs.sourcegraph.com/admin/external_service)
 
 
-
 ## 👥 Inviting users and SSO
 
 A team is essential when using Sourcegraph. Be sure to spread the word and get everybody in.
+
 
 #### Setting up SSO
 
@@ -29,11 +28,13 @@ Sourcegraph supports out-of-the-box support for different auth providers. Our do
 
 You may not have the right privileges or role in your team to set this up. In that case, you could invite someone with the right privileges and make them a site-admin.
 
+
 #### Inviting Single Users
 
 Getting users into Sourcegraph is easy, you just need to navigate to:
 
 **Site Admin** → **Users and auth** → **Users** → **+ Create user**
+
 
 
 ## ✉️ Setup Email Server
