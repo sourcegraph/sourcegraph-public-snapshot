@@ -228,8 +228,8 @@ type ExternalServiceReposListOptions ExternalServicesGetSyncJobsOptions
 
 type ExternalServicesGetSyncJobsOptions struct {
 	ExternalServiceID int64
-	// Only include jobs in the 'processing' state
-	OnlyProcessing bool
+	// Only include jobs that are active, ie in the 'processing' or `queued` state.
+	OnlyActive bool
 
 	*LimitOffset
 }
@@ -972,7 +972,7 @@ func (e *externalServiceStore) Delete(ctx context.Context, id int64) (err error)
 	// If this external service is currently syncing, we should not allow deletion
 	count, err := e.CountSyncJobs(ctx, ExternalServicesGetSyncJobsOptions{
 		ExternalServiceID: id,
-		OnlyProcessing:    true,
+		OnlyActive:        true,
 	})
 	if err != nil {
 		return errors.Wrap(err, "counting sync jobs")
@@ -1083,14 +1083,16 @@ ORDER BY
 %s
 `
 
+var activeStateClause = "state in ('processing', 'queued')"
+
 func (e *externalServiceStore) GetSyncJobs(ctx context.Context, opt ExternalServicesGetSyncJobsOptions) (_ []*types.ExternalServiceSyncJob, err error) {
 	var preds []*sqlf.Query
 
 	if opt.ExternalServiceID != 0 {
 		preds = append(preds, sqlf.Sprintf("external_service_id = %s", opt.ExternalServiceID))
 	}
-	if opt.OnlyProcessing {
-		preds = append(preds, sqlf.Sprintf("state = 'processing'"))
+	if opt.OnlyActive {
+		preds = append(preds, sqlf.Sprintf(activeStateClause))
 	}
 
 	if len(preds) == 0 {
@@ -1133,8 +1135,8 @@ func (e *externalServiceStore) CountSyncJobs(ctx context.Context, opt ExternalSe
 	if opt.ExternalServiceID != 0 {
 		preds = append(preds, sqlf.Sprintf("external_service_id = %s", opt.ExternalServiceID))
 	}
-	if opt.OnlyProcessing {
-		preds = append(preds, sqlf.Sprintf("state = 'processing'"))
+	if opt.OnlyActive {
+		preds = append(preds, sqlf.Sprintf(activeStateClause))
 	}
 
 	if len(preds) == 0 {

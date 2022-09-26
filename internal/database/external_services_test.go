@@ -2027,6 +2027,24 @@ func TestExternalServiceStore_GetSyncJobs(t *testing.T) {
 	if diff := cmp.Diff(want, have[0], cmpopts.IgnoreFields(types.ExternalServiceSyncJob{}, "ID", "QueuedAt")); diff != "" {
 		t.Fatal(diff)
 	}
+
+	// Queued jobs are considered active
+	have, err = db.ExternalServices().GetSyncJobs(ctx, ExternalServicesGetSyncJobsOptions{OnlyActive: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(have) != 1 {
+		t.Fatalf("Expected 1 job, got %d", len(have))
+	}
+
+	want = &types.ExternalServiceSyncJob{
+		ID:                1,
+		State:             "queued",
+		ExternalServiceID: es.ID,
+	}
+	if diff := cmp.Diff(want, have[0], cmpopts.IgnoreFields(types.ExternalServiceSyncJob{}, "ID", "QueuedAt")); diff != "" {
+		t.Fatal(diff)
+	}
 }
 
 func TestExternalServiceStore_CountSyncJobs(t *testing.T) {
@@ -2069,21 +2087,32 @@ func TestExternalServiceStore_CountSyncJobs(t *testing.T) {
 	}
 	require.Exactly(t, int64(0), have, "total count is incorrect")
 
-	have, err = db.ExternalServices().CountSyncJobs(ctx, ExternalServicesGetSyncJobsOptions{OnlyProcessing: true})
+	// Queued status
+	have, err = db.ExternalServices().CountSyncJobs(ctx, ExternalServicesGetSyncJobsOptions{OnlyActive: true})
 	if err != nil {
 		t.Fatal(err)
 	}
-	require.Exactly(t, int64(0), have, "total count is incorrect")
+	require.Exactly(t, int64(1), have, "total count is incorrect")
 
 	_, err = db.Handle().ExecContext(ctx, "UPDATE external_service_sync_jobs set state = 'processing'")
 	if err != nil {
 		t.Fatal(err)
 	}
-	have, err = db.ExternalServices().CountSyncJobs(ctx, ExternalServicesGetSyncJobsOptions{OnlyProcessing: true})
+	have, err = db.ExternalServices().CountSyncJobs(ctx, ExternalServicesGetSyncJobsOptions{OnlyActive: true})
 	if err != nil {
 		t.Fatal(err)
 	}
 	require.Exactly(t, int64(1), have, "total count is incorrect")
+
+	_, err = db.Handle().ExecContext(ctx, "UPDATE external_service_sync_jobs set state = 'complete'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	have, err = db.ExternalServices().CountSyncJobs(ctx, ExternalServicesGetSyncJobsOptions{OnlyActive: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	require.Exactly(t, int64(0), have, "total count is incorrect")
 }
 
 func TestExternalServiceStore_GetSyncJobByID(t *testing.T) {
