@@ -21,6 +21,37 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+const (
+	defaultFirecrackerSandboxImage = "sourcegraph/ignite:v0.10.4"
+	defaultFirecrackerKernelImage  = "sourcegraph/ignite-kernel:5.10.135-amd64"
+)
+
+var defaultFirecrackerImage = func() string {
+	tag := version.Version()
+	// In dev, just use insiders for convenience.
+	if version.IsDev(tag) {
+		tag = "insiders"
+	}
+	return fmt.Sprintf("sourcegraph/executor-vm:%s", tag)
+}()
+
+const cniBinDir = "/opt/cni/bin"
+
+// requiredCNIPlugins is the list of CNI binaries that are expected to exist when using
+// firecracker.
+var requiredCNIPlugins = []string{
+	// Used to throttle bandwidth per VM so that none can drain the host completely.
+	"bandwidth",
+	"bridge",
+	"firewall",
+	"host-local",
+	// Used to isolate the ignite bridge from other bridges.
+	"isolation",
+	"loopback",
+	// Needed by ignite, but we don't actually do port mapping.
+	"portmap",
+}
+
 type Config struct {
 	env.BaseConfig
 
@@ -51,20 +82,6 @@ type Config struct {
 	WorkerHostname                string
 	DockerRegistryMirrorURL       string
 }
-
-const (
-	defaultFirecrackerSandboxImage = "sourcegraph/ignite:v0.10.4"
-	defaultFirecrackerKernelImage  = "sourcegraph/ignite-kernel:5.10.135-amd64"
-)
-
-var defaultFirecrackerImage = func() string {
-	tag := version.Version()
-	// In dev, just use insiders for convenience.
-	if version.IsDev(tag) {
-		tag = "insiders"
-	}
-	return fmt.Sprintf("sourcegraph/executor-vm:%s", tag)
-}()
 
 func (c *Config) Load() {
 	c.FrontendURL = c.Get("EXECUTOR_FRONTEND_URL", "", "The external URL of the sourcegraph instance.")
@@ -98,23 +115,6 @@ func (c *Config) Load() {
 	c.WorkerHostname = hn + "-" + uuid.New().String()
 }
 
-const cniBinDir = "/opt/cni/bin"
-
-// requiredCNIPlugins is the list of CNI binaries that are expected to exist when using
-// firecracker.
-var requiredCNIPlugins = []string{
-	// Used to throttle bandwidth per VM so that none can drain the host completely.
-	"bandwidth",
-	"bridge",
-	"firewall",
-	"host-local",
-	// Used to isolate the ignite bridge from other bridges.
-	"isolation",
-	"loopback",
-	// Needed by ignite, but we don't actually do port mapping.
-	"portmap",
-}
-
 func (c *Config) Validate() error {
 	if c.UseFirecracker {
 		// Validate that firecracker can work on this host.
@@ -139,7 +139,7 @@ func (c *Config) Validate() error {
 		// Make sure CNI is properly configured.
 		if stat, err := os.Stat(cniBinDir); err != nil {
 			if os.IsNotExist(err) {
-				c.AddError(errors.Newf("Cannot find %s, are the CNI plugins for firecracker installed correctly?", cniBinDir))
+				c.AddError(errors.Newf("Cannot find directory %s. Are the CNI plugins for firecracker installed correctly?", cniBinDir))
 			} else {
 				c.AddError(errors.Wrap(err, "Checking for CNI_BIN_DIR"))
 			}
@@ -162,7 +162,7 @@ func (c *Config) Validate() error {
 					}
 				} else {
 					if stat.IsDir() {
-						c.AddError(errors.Newf("%s expected to be a file, but is a directory", pluginPath))
+						c.AddError(errors.Newf("Expected %s to be a file, but is a directory", pluginPath))
 					}
 				}
 			}
