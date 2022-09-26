@@ -7,4 +7,8 @@ module.exports = {
     project: [__dirname + '/tsconfig.json', __dirname + '/src/testing/tsconfig.json'],
   },
   overrides: baseConfig.overrides,
+  rules: {
+    // We cannot use the versioned "/help" redirect in the browser extension
+    '@sourcegraph/sourcegraph/forbid-docs-links': 'off',
+  },
 }
