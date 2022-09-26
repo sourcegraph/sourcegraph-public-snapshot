@@ -6,6 +6,8 @@ import (
 	"io"
 	"strings"
 
+	"github.com/prometheus/prometheus/model/labels"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -67,6 +69,8 @@ func observableDocAnchor(c *Dashboard, o Observable) string {
 type documentation struct {
 	alertDocs  bytes.Buffer
 	dashboards bytes.Buffer
+
+	injectLabelMatchers []*labels.Matcher
 }
 
 func renderDocumentation(containers []*Dashboard) (*documentation, error) {
@@ -109,6 +113,7 @@ func (d *documentation) renderAlertSolutionEntry(c *Dashboard, o Observable) err
 	fprintObservableHeader(&d.alertDocs, c, &o, 2)
 	fprintSubtitle(&d.alertDocs, o.Description)
 
+	var alertQueryDetails []string
 	var prometheusAlertNames []string // collect names for silencing configuration
 	// Render descriptions of various levels of this alert
 	fmt.Fprintf(&d.alertDocs, "**Descriptions**\n\n")
@@ -127,16 +132,17 @@ func (d *documentation) renderAlertSolutionEntry(c *Dashboard, o Observable) err
 			return err
 		}
 		fmt.Fprintf(&d.alertDocs, "- <span class=\"badge badge-%s\">%s</span> %s\n", alert.level, alert.level, desc)
-		if alert.threshold.customQuery != "" {
-			fmt.Fprintf(&d.alertDocs, `
-<details>
-<summary>Technical details</summary>
 
-Custom alert query: %s
-
-</details>
-`, fmt.Sprintf("`%s`", alert.threshold.customQuery))
+		alertQuery, err := alert.threshold.generateAlertQuery(o, d.injectLabelMatchers, newVariableApplier(c.Variables))
+		if err != nil {
+			return err
 		}
+		if alert.threshold.customQuery != "" {
+			alertQueryDetails = append(alertQueryDetails, fmt.Sprintf("Custom query for %s alert: `%s`", alert.level, alertQuery))
+		} else {
+			alertQueryDetails = append(alertQueryDetails, fmt.Sprintf("Generated query for %s alert: `%s`", alert.level, alertQuery))
+		}
+
 		prometheusAlertNames = append(prometheusAlertNames,
 			fmt.Sprintf("  \"%s\"", prometheusAlertName(alert.level, c.Name, o.Name)))
 	}
@@ -166,6 +172,18 @@ Custom alert query: %s
 		// add owner
 		fprintOwnedBy(&d.alertDocs, o.Owner)
 	}
+
+	if len(alertQueryDetails) > 0 {
+		fmt.Fprintf(&d.alertDocs, `
+<details>
+<summary>Technical details</summary>
+
+%s
+
+</details>
+`, strings.Join(alertQueryDetails, "\n\n"))
+	}
+
 	// render break for readability
 	fmt.Fprint(&d.alertDocs, "\n<br />\n\n")
 	return nil
