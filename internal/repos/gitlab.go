@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -249,6 +250,11 @@ func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceR
 		go func() {
 			defer wg.Done()
 			for p := range projch {
+				if err := ctx.Err(); err != nil {
+					ch <- batch{err: err}
+					return
+				}
+
 				proj, err := s.client.GetProject(ctx, gitlab.GetProjectOp{
 					ID:                p.Id,
 					PathWithNamespace: p.Name,
@@ -267,13 +273,8 @@ func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceR
 					ch <- batch{projs: []*gitlab.Project{proj}}
 				}
 
-				// 0-duration sleep unless nearing rate limit exhaustion, or return if context has been canceled.
-				select {
-				case <-ctx.Done():
-					ch <- batch{err: ctx.Err()}
-					return
-				case <-time.After(s.client.RateLimitMonitor().RecommendedWaitForBackgroundOp(1)):
-				}
+				// 0-duration sleep unless nearing rate limit exhaustion. If context has been canceled, next iteration of loop will return error.
+				timeutil.SleepWithContext(ctx, s.client.RateLimitMonitor().RecommendedWaitForBackgroundOp(1))
 			}
 		}()
 	}
@@ -325,13 +326,8 @@ func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceR
 				}
 				url = *nextPageURL
 
-				// 0-duration sleep unless nearing rate limit exhaustion, or return if context has been canceled.
-				select {
-				case <-ctx.Done():
-					ch <- batch{err: ctx.Err()}
-					return
-				case <-time.After(s.client.RateLimitMonitor().RecommendedWaitForBackgroundOp(1)):
-				}
+				// 0-duration sleep unless nearing rate limit exhaustion. If context has been canceled, next iteration of loop will return error.
+				timeutil.SleepWithContext(ctx, s.client.RateLimitMonitor().RecommendedWaitForBackgroundOp(1))
 			}
 		}(projectQuery)
 	}
