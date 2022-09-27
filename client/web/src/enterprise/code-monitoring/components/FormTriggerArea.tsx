@@ -8,7 +8,6 @@ import { QueryState } from '@sourcegraph/search'
 import { LazyMonacoQueryInput } from '@sourcegraph/search-ui'
 import { FilterType, resolveFilter, validateFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
-import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Button, Link, Card, Icon, Checkbox, Code, H3, Tooltip } from '@sourcegraph/wildcard'
@@ -129,10 +128,8 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
     const [queryState, setQueryState] = useState<QueryState>({ query: query || '' })
 
     const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
-    const [enableCoreWorkflowImprovements] = useCoreWorkflowImprovementsEnabled()
     const applySuggestionsOnEnter =
-        useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ??
-        enableCoreWorkflowImprovements
+        useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
     useEffect(() => {
         const value = queryState.query
