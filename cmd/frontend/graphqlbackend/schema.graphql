@@ -7400,6 +7400,10 @@ type RepositoryStats {
     The number of repositories where initial cloning or subsequent fetching resulted in an error.
     """
     failedFetch: Int!
+    """
+    The number of indexed repositories
+    """
+    indexed: Int!
 }
 
 """
