@@ -34,7 +34,13 @@ class SearchPanel implements Panel {
             'button',
             {
                 type: 'button',
-                className: [ButtonStyles.btn, ButtonStyles.btnSm, ButtonStyles.btnOutlineSecondary].join(' '),
+                className: [
+                    ButtonStyles.btn,
+                    ButtonStyles.btnSm,
+                    ButtonStyles.btnOutline,
+                    ButtonStyles.btnSecondary,
+                    'mr-2',
+                ].join(' '),
                 onclick: () => findPrevious(view),
             },
             createSVGIcon(mdiChevronUp),
@@ -45,7 +51,12 @@ class SearchPanel implements Panel {
             'button',
             {
                 type: 'button',
-                className: [ButtonStyles.btn, ButtonStyles.btnSm, ButtonStyles.btnOutlineSecondary].join(' '),
+                className: [
+                    ButtonStyles.btn,
+                    ButtonStyles.btnSm,
+                    ButtonStyles.btnOutline,
+                    ButtonStyles.btnSecondary,
+                ].join(' '),
                 onclick: () => findNext(view),
             },
             createSVGIcon(mdiChevronDown),
@@ -56,15 +67,15 @@ class SearchPanel implements Panel {
         this.input = createElement('input', {
             name: 'search',
             placeholder: 'Find...',
-            className: 'form-control form-control-sm',
+            className: 'form-control form-control-sm mr-2',
             onchange: this.commit,
             onkeyup: this.commit,
         })
         this.input.setAttribute('main-field', 'true')
 
-        this.caseSensitive = createElement('input', { type: 'checkbox', onchange: this.commit })
+        this.caseSensitive = createElement('input', { type: 'checkbox', className: 'mr-2', onchange: this.commit })
         this.caseSensitive.setAttribute('data-testid', 'blob-view-search-case-sensitive')
-        this.regexp = createElement('input', { type: 'checkbox', onchange: this.commit })
+        this.regexp = createElement('input', { type: 'checkbox', className: 'mr-2', onchange: this.commit })
         this.regexp.setAttribute('data-testid', 'blob-view-search-regexp')
 
         this.dom = createElement(
@@ -77,13 +88,13 @@ class SearchPanel implements Panel {
                 'label',
                 { className: `form-check-label small mx-2 ml-3 ${LabelStyles.label}` },
                 this.caseSensitive,
-                ' Match case'
+                'Match case'
             ),
             createElement(
                 'label',
                 { className: `form-check-label small mx-2 ${LabelStyles.label}` },
                 this.regexp,
-                ' Regexp'
+                'Regexp'
             )
         )
 
@@ -147,10 +158,7 @@ export const search: Extension = [
             backgroundColor: 'var(--code-bg)',
             display: 'flex',
             alignItems: 'center',
-            padding: '0.25rem',
-        },
-        '.search-container > *': {
-            margin: '0 0.25rem',
+            padding: '0.375rem 1rem',
         },
         '.search-container > input.form-control': {
             width: '15rem',
