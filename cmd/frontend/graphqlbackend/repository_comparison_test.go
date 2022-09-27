@@ -994,7 +994,7 @@ func (d *dummyFileResolver) ExternalURLs(ctx context.Context) ([]*externallink.R
 	return []*externallink.Resolver{}, nil
 }
 
-func (d *dummyFileResolver) Highlight(ctx context.Context, args *HighlightArgs) (*highlightedFileResolver, error) {
+func (d *dummyFileResolver) Highlight(ctx context.Context, args *HighlightArgs) (*HighlightedFileResolver, error) {
 	return nil, errors.New("not implemented")
 }
 
@@ -1002,7 +1002,11 @@ func (d *dummyFileResolver) ToGitBlob() (*GitTreeEntryResolver, bool) {
 	return nil, false
 }
 
-func (d *dummyFileResolver) ToVirtualFile() (*virtualFileResolver, bool) {
+func (d *dummyFileResolver) ToVirtualFile() (*VirtualFileResolver, bool) {
+	return nil, false
+}
+
+func (d *dummyFileResolver) ToBatchSpecWorkspaceFile() (BatchWorkspaceFileResolver, bool) {
 	return nil, false
 }
 
