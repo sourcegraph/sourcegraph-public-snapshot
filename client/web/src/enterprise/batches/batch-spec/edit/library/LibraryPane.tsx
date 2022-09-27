@@ -116,7 +116,7 @@ export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<Librar
 
             if (query) {
                 const searchQuery = `${query} ${patternType ? `patternType:${patternType}` : ''}`
-                const renderTemplate = createRenderTemplate(searchQuery, template)
+                const renderTemplate = createRenderTemplate(searchQuery, template, true)
                 return renderTemplate(name)
             }
         }

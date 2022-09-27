@@ -415,14 +415,17 @@ export function quoteYAMLString(value: string): string {
  * @param value the value of the field to be updated
  * @param key the name of the field in the spec to be updated
  * @param quotable indicates if the value can be quoted or not
+ * @param commentExistingValue indicates whether the existing value should be commented instead of removed
  */
 export const insertFieldIntoLibraryItem = (
     librarySpec: string,
     value: string,
     key: string,
-    quotable: boolean = true
+    quotable: boolean,
+    commentExistingValue: boolean = false
 ): string => {
     const ast = load(librarySpec)
+    let existingValue = ''
 
     if (!isYAMLMap(ast) || ast.errors.length > 0) {
         return librarySpec
@@ -437,10 +440,22 @@ export const insertFieldIntoLibraryItem = (
 
     const finalValue = quotable ? quoteYAMLString(value) : value
 
+    if (commentExistingValue) {
+        console.log('about to comment out existing value')
+        existingValue = librarySpec
+            .slice(fieldMapping.value.startPosition, fieldMapping.value.endPosition)
+            .trim()
+            .split('\n')
+            .map(line => line.startsWith('#') ? line : `# ${line}`)
+            .join('\n')
+        existingValue = existingValue + '\n\n'
+    }
+
     // Stitch the new <value> into the spec.
     return (
         librarySpec.slice(0, fieldMapping.value.startPosition) +
         finalValue +
+        existingValue +
         librarySpec.slice(fieldMapping.value.endPosition)
     )
 }
@@ -453,7 +468,7 @@ export const insertFieldIntoLibraryItem = (
  * @param name the name of the batch change to be inserted
  */
 export const insertNameIntoLibraryItem = (librarySpec: string, name: string): string =>
-    insertFieldIntoLibraryItem(librarySpec, name, 'name')
+    insertFieldIntoLibraryItem(librarySpec, name, 'name', true)
 
 /**
  * Replaces the query of the provided `librarySpec`. If `librarySpec` or its query
@@ -461,17 +476,19 @@ export const insertNameIntoLibraryItem = (librarySpec: string, name: string): st
  *
  * @param librarySpec the raw batch spec YAML example code from a library spec
  * @param query the updated query to be inserted
+ * @param commentExistingQuery indicates whether the existing query should be commented instead of deleted
  */
-export const insertQueryIntoLibraryItem = (librarySpec: string, query: string): string => {
+export const insertQueryIntoLibraryItem = (librarySpec: string, query: string, commentExistingQuery: boolean): string => {
     // we pass in a key of `repositoriesMatchingQuery` into quoteYAMLString because we want to simplify
     // the operation for quoting a YAML String. Passing in a YAMLSequence adds an unnecessary overhead,
     // since we are concerned with quoting the value, passing in a normal string works just fine.
     const possiblyQuotedQuery = quoteYAMLString(query)
     return insertFieldIntoLibraryItem(
         librarySpec,
-        `- repositoriesMatchingQuery: ${possiblyQuotedQuery}\n\n`,
+        `- repositoriesMatchingQuery: ${possiblyQuotedQuery}\n`,
         'on',
-        false
+        false,
+        commentExistingQuery
     )
 }
 
