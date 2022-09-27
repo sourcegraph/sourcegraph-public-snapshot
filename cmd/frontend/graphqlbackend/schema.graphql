@@ -766,6 +766,13 @@ type Mutation {
     syncExternalService(id: ID!): EmptyResponse!
 
     """
+    Cancels an external service sync job. Must be in queued or processing state.
+
+    Site-admin or owner of the external service only.
+    """
+    cancelExternalServiceSync(id: ID!): EmptyResponse!
+
+    """
     Associate a new key-value pair with a repo.
     """
     addRepoKeyValuePair(repo: ID!, key: String!, value: String): EmptyResponse!
@@ -2651,6 +2658,16 @@ enum ExternalServiceSyncJobState {
     Sync finished successfully.
     """
     COMPLETED
+
+    """
+    Sync job is being canceled.
+    """
+    CANCELING
+
+    """
+    Sync job has been canceled.
+    """
+    CANCELED
 }
 
 """

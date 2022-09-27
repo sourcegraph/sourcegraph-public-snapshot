@@ -47,6 +47,12 @@ func newPerforceSource(svc *types.ExternalService, c *schema.PerforceConnection)
 // configured in Sourcegraph via the external services configuration.
 func (s PerforceSource) ListRepos(ctx context.Context, results chan SourceResult) {
 	for _, depot := range s.config.Depots {
+		// Tiny optimization: exit early if context has been canceled.
+		if err := ctx.Err(); err != nil {
+			results <- SourceResult{Source: s, Err: err}
+			return
+		}
+
 		results <- SourceResult{Source: s, Repo: s.makeRepo(depot)}
 	}
 }
