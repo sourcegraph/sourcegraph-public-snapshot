@@ -25,7 +25,7 @@ export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildre
                 <div className="pr-4">
                     <span className="font-weight-bold">{data?.batchChanges.totalCount}</span>
                     <br />
-                    <span>Batch Changes</span>
+                    <span>Batch changes</span>
                 </div>
                 <div className="pr-4">
                     <span className="font-weight-bold">{data?.merged.totalCount}</span>
