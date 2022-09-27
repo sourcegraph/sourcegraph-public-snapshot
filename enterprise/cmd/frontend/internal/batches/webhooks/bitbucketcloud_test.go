@@ -47,7 +47,7 @@ func testBitbucketCloudWebhook(db *sql.DB) func(*testing.T) {
 		ctx := context.Background()
 
 		cfg := &schema.BitbucketCloudConnection{
-			WebhookSecret: "secret",
+			WebhookSecret: "secretsecret",
 		}
 		esURL := bitbucketCloudExternalServiceURL
 
@@ -125,7 +125,7 @@ func testBitbucketCloudWebhook(db *sql.DB) func(*testing.T) {
 				u, err := extsvc.WebhookURL(extsvc.KindBitbucketCloud, es.ID, cfg, esURL)
 				assert.Nil(t, err)
 
-				u = strings.ReplaceAll(u, "&secret=secret", "")
+				u = strings.ReplaceAll(u, "&secret=secretsecret", "")
 				req, err := http.NewRequest("POST", u, bytes.NewBufferString("{}"))
 				assert.Nil(t, err)
 
@@ -143,7 +143,7 @@ func testBitbucketCloudWebhook(db *sql.DB) func(*testing.T) {
 				u, err := extsvc.WebhookURL(extsvc.KindBitbucketCloud, es.ID, cfg, esURL)
 				assert.Nil(t, err)
 
-				u = strings.ReplaceAll(u, "&secret=secret", "&secret=not+correct")
+				u = strings.ReplaceAll(u, "&secret=secretsecret", "&secret=not+correct")
 				req, err := http.NewRequest("POST", u, bytes.NewBufferString("{}"))
 				assert.Nil(t, err)
 
@@ -422,7 +422,6 @@ func testBitbucketCloudWebhook(db *sql.DB) func(*testing.T) {
 // tests. Any changes made to the stores will be rolled back after the test is
 // complete.
 func bitbucketCloudTestSetup(t *testing.T, sqlDB *sql.DB) *bstore.Store {
-
 	logger := logtest.Scoped(t)
 	clock := &bt.TestClock{Time: timeutil.Now()}
 	tx := dbtest.NewTx(t, sqlDB)
@@ -444,7 +443,7 @@ func createBitbucketCloudExternalService(t *testing.T, ctx context.Context, esSt
 			Url:           bitbucketCloudExternalServiceURL,
 			Username:      "user",
 			AppPassword:   "password",
-			WebhookSecret: "secret",
+			WebhookSecret: "secretsecret",
 		})),
 	}
 	if err := esStore.Upsert(ctx, es); err != nil {
