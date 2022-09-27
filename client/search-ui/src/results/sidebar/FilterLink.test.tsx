@@ -53,7 +53,7 @@ describe('FilterLink', () => {
         const filters: Filter[] = [repoFilter1, langFilter1, repoFilter2, langFilter2, fileFilter]
         const onFilterChosen = sinon.stub()
 
-        const links = getRepoFilterLinks(filters, onFilterChosen, false)
+        const links = getRepoFilterLinks(filters, onFilterChosen)
         expect(links).toHaveLength(2)
         expect(renderWithBrandedContext(<>{links}</>).asFragment()).toMatchSnapshot()
     })
@@ -62,7 +62,7 @@ describe('FilterLink', () => {
         const filters: Filter[] = [repoFilter1, langFilter1, repoFilter2, langFilter2, fileFilter]
         const onFilterChosen = sinon.stub()
 
-        const links = getRepoFilterLinks(filters, onFilterChosen, false)
+        const links = getRepoFilterLinks(filters, onFilterChosen)
         expect(links).toHaveLength(2)
 
         const { asFragment } = renderWithBrandedContext(<>{links}</>)
@@ -75,7 +75,7 @@ describe('FilterLink', () => {
         const filters: Filter[] = [langFilter1, langFilter2, fileFilter]
         const onFilterChosen = sinon.stub()
 
-        const links = getRepoFilterLinks(filters, onFilterChosen, false)
+        const links = getRepoFilterLinks(filters, onFilterChosen)
         expect(links).toHaveLength(0)
     })
 
@@ -122,7 +122,7 @@ describe('FilterLink', () => {
         const filters: Filter[] = [repoFilter1]
         const onFilterChosen = sinon.spy()
 
-        const links = getRepoFilterLinks(filters, onFilterChosen, false)
+        const links = getRepoFilterLinks(filters, onFilterChosen)
         renderWithBrandedContext(<>{links}</>)
         userEvent.click(screen.getByTestId('filter-link'))
 
