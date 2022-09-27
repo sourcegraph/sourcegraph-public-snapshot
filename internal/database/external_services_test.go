@@ -19,12 +19,14 @@ import (
 	"github.com/tidwall/gjson"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
@@ -1349,6 +1351,111 @@ VALUES ($1,$2,'errored', now())
 	}
 	if lastSyncError != expectedError {
 		t.Fatalf("Expected %q, have %q", expectedError, lastSyncError)
+	}
+}
+
+func TestExternalServiceStore_CancelSyncJob(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	// Create a new external service
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	es := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GITHUB #1",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
+	}
+	err := db.ExternalServices().Create(ctx, confGet, es)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Make sure "not found" is handled
+	err = db.ExternalServices().CancelSyncJob(ctx, 99999)
+	if !errors.HasType(err, &errSyncJobNotFound{}) {
+		t.Fatalf("Expected not-found error, have %q", err)
+	}
+
+	// Insert 'processing' sync job that can be canceled
+	syncJobID, _, err := basestore.ScanFirstInt64(db.Handle().QueryContext(ctx, `
+INSERT INTO external_service_sync_jobs (external_service_id, state, started_at)
+VALUES ($1, 'processing', now())
+RETURNING id
+`, es.ID))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = db.ExternalServices().CancelSyncJob(ctx, syncJobID)
+	if err != nil {
+		t.Fatalf("Cancel failed: %s", err)
+	}
+
+	// Make sure it was canceled
+	syncJob, err := db.ExternalServices().GetSyncJobByID(ctx, syncJobID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !syncJob.Cancel {
+		t.Fatalf("syncjob not canceled")
+	}
+	if syncJob.State != "processing" {
+		t.Fatalf("syncjob state unexpectedly changed")
+	}
+	if !syncJob.FinishedAt.IsZero() {
+		t.Fatalf("syncjob finishedAt is set but should not be")
+	}
+
+	// Insert 'queued' sync job that can be canceled
+	syncJobID, _, err = basestore.ScanFirstInt64(db.Handle().QueryContext(ctx, `
+INSERT INTO external_service_sync_jobs (external_service_id, state, started_at)
+VALUES ($1, 'queued', now())
+RETURNING id
+`, es.ID))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = db.ExternalServices().CancelSyncJob(ctx, syncJobID)
+	if err != nil {
+		t.Fatalf("Cancel failed: %s", err)
+	}
+
+	// Make sure it was canceled
+	syncJob, err = db.ExternalServices().GetSyncJobByID(ctx, syncJobID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !syncJob.Cancel {
+		t.Fatalf("syncjob not canceled")
+	}
+	if syncJob.State != "canceled" {
+		t.Fatalf("syncjob state not changed to 'canceled'")
+	}
+	if syncJob.FinishedAt.IsZero() {
+		t.Fatalf("syncjob finishedAt is not set")
+	}
+
+	// Insert sync job in state that is not cancelable
+	syncJobID, _, err = basestore.ScanFirstInt64(db.Handle().QueryContext(ctx, `
+INSERT INTO external_service_sync_jobs (external_service_id, state, started_at)
+VALUES ($1, 'completed', now())
+RETURNING id
+`, es.ID))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = db.ExternalServices().CancelSyncJob(ctx, syncJobID)
+	if !errors.HasType(err, &errSyncJobNotFound{}) {
+		t.Fatalf("Expected not-found error, have %q", err)
 	}
 }
 

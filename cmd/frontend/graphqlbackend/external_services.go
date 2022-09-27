@@ -473,3 +473,39 @@ func (r *schemaResolver) SyncExternalService(ctx context.Context, args *syncExte
 
 	return &EmptyResponse{}, nil
 }
+
+type cancelExternalServiceSyncArgs struct {
+	ID graphql.ID
+}
+
+func (r *schemaResolver) CancelExternalServiceSync(ctx context.Context, args *cancelExternalServiceSyncArgs) (*EmptyResponse, error) {
+	start := time.Now()
+	var err error
+	var namespaceUserID, namespaceOrgID int32
+	defer reportExternalServiceDuration(start, Update, &err, &namespaceUserID, &namespaceOrgID)
+
+	id, err := unmarshalExternalServiceSyncJobID(args.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	esj, err := r.db.ExternalServices().GetSyncJobByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	es, err := r.db.ExternalServices().GetByID(ctx, esj.ExternalServiceID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: check access to external service.
+	if err = backend.CheckExternalServiceAccess(ctx, r.db, es.NamespaceUserID, es.NamespaceOrgID); err != nil {
+		return nil, err
+	}
+
+	if err := r.db.ExternalServices().CancelSyncJob(ctx, esj.ID); err != nil {
+		return nil, err
+	}
+
+	return &EmptyResponse{}, nil
+}

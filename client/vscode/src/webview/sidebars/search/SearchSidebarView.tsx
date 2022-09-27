@@ -175,7 +175,7 @@ export const SearchSidebarView: React.FunctionComponent<React.PropsWithChildren<
                     minItems={1}
                     noResultText={getRepoFilterNoResultText}
                 >
-                    {getRepoFilterLinks(repoFilters, onDynamicFilterClicked, false)}
+                    {getRepoFilterLinks(repoFilters, onDynamicFilterClicked)}
                 </SearchSidebarSection>
 
                 <SearchSidebarSection

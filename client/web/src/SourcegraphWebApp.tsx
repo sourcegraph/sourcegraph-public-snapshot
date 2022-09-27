@@ -43,7 +43,6 @@ import { ShortcutProvider } from '@sourcegraph/shared/src/react-shortcuts'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
-import { CoreWorkflowImprovementsEnabledProvider } from '@sourcegraph/shared/src/settings/CoreWorkflowImprovementsEnabledProvider'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TemporarySettingsProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
 import { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
@@ -378,94 +377,85 @@ export class SourcegraphWebApp extends React.Component<
                         <FeatureFlagsProvider>
                             <ShortcutProvider>
                                 <TemporarySettingsProvider temporarySettingsStorage={temporarySettingsStorage}>
-                                    <CoreWorkflowImprovementsEnabledProvider>
-                                        <SearchResultsCacheProvider>
-                                            <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
-                                                <Router history={history} key={0}>
-                                                    <CompatRouter>
-                                                        <Route
-                                                            path="/"
-                                                            render={routeComponentProps => (
-                                                                <CodeHostScopeProvider
+                                    <SearchResultsCacheProvider>
+                                        <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
+                                            <Router history={history} key={0}>
+                                                <CompatRouter>
+                                                    <Route
+                                                        path="/"
+                                                        render={routeComponentProps => (
+                                                            <CodeHostScopeProvider
+                                                                authenticatedUser={authenticatedUser}
+                                                            >
+                                                                <LayoutWithActivation
+                                                                    {...props}
+                                                                    {...routeComponentProps}
                                                                     authenticatedUser={authenticatedUser}
-                                                                >
-                                                                    <LayoutWithActivation
-                                                                        {...props}
-                                                                        {...routeComponentProps}
-                                                                        authenticatedUser={authenticatedUser}
-                                                                        viewerSubject={this.state.viewerSubject}
-                                                                        settingsCascade={this.state.settingsCascade}
-                                                                        batchChangesEnabled={
-                                                                            this.props.batchChangesEnabled
-                                                                        }
-                                                                        batchChangesExecutionEnabled={isBatchChangesExecutionEnabled(
-                                                                            this.state.settingsCascade
-                                                                        )}
-                                                                        batchChangesWebhookLogsEnabled={
-                                                                            window.context
-                                                                                .batchChangesWebhookLogsEnabled
-                                                                        }
-                                                                        // Search query
-                                                                        fetchHighlightedFileLineRanges={
-                                                                            this.fetchHighlightedFileLineRanges
-                                                                        }
-                                                                        // Extensions
-                                                                        platformContext={this.platformContext}
-                                                                        extensionsController={this.extensionsController}
-                                                                        telemetryService={eventLogger}
-                                                                        isSourcegraphDotCom={
-                                                                            window.context.sourcegraphDotComMode
-                                                                        }
-                                                                        searchContextsEnabled={
-                                                                            this.props.searchContextsEnabled
-                                                                        }
-                                                                        selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
-                                                                        setSelectedSearchContextSpec={
-                                                                            this.setSelectedSearchContextSpec
-                                                                        }
-                                                                        getUserSearchContextNamespaces={
-                                                                            getUserSearchContextNamespaces
-                                                                        }
-                                                                        fetchAutoDefinedSearchContexts={
-                                                                            fetchAutoDefinedSearchContexts
-                                                                        }
-                                                                        fetchSearchContexts={fetchSearchContexts}
-                                                                        fetchSearchContextBySpec={
-                                                                            fetchSearchContextBySpec
-                                                                        }
-                                                                        fetchSearchContext={fetchSearchContext}
-                                                                        createSearchContext={createSearchContext}
-                                                                        updateSearchContext={updateSearchContext}
-                                                                        deleteSearchContext={deleteSearchContext}
-                                                                        isSearchContextSpecAvailable={
-                                                                            isSearchContextSpecAvailable
-                                                                        }
-                                                                        defaultSearchContextSpec={
-                                                                            this.state.defaultSearchContextSpec
-                                                                        }
-                                                                        globbing={this.state.globbing}
-                                                                        streamSearch={aggregateStreamingSearch}
-                                                                        onCreateNotebookFromNotepad={
-                                                                            this.onCreateNotebook
-                                                                        }
-                                                                    />
-                                                                </CodeHostScopeProvider>
-                                                            )}
-                                                        />
-                                                    </CompatRouter>
-                                                </Router>
-                                                {this.extensionsController !== null &&
-                                                window.context.enableLegacyExtensions ? (
-                                                    <Notifications
-                                                        key={2}
-                                                        extensionsController={this.extensionsController}
-                                                        notificationItemStyleProps={notificationStyles}
+                                                                    viewerSubject={this.state.viewerSubject}
+                                                                    settingsCascade={this.state.settingsCascade}
+                                                                    batchChangesEnabled={this.props.batchChangesEnabled}
+                                                                    batchChangesExecutionEnabled={isBatchChangesExecutionEnabled(
+                                                                        this.state.settingsCascade
+                                                                    )}
+                                                                    batchChangesWebhookLogsEnabled={
+                                                                        window.context.batchChangesWebhookLogsEnabled
+                                                                    }
+                                                                    // Search query
+                                                                    fetchHighlightedFileLineRanges={
+                                                                        this.fetchHighlightedFileLineRanges
+                                                                    }
+                                                                    // Extensions
+                                                                    platformContext={this.platformContext}
+                                                                    extensionsController={this.extensionsController}
+                                                                    telemetryService={eventLogger}
+                                                                    isSourcegraphDotCom={
+                                                                        window.context.sourcegraphDotComMode
+                                                                    }
+                                                                    searchContextsEnabled={
+                                                                        this.props.searchContextsEnabled
+                                                                    }
+                                                                    selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
+                                                                    setSelectedSearchContextSpec={
+                                                                        this.setSelectedSearchContextSpec
+                                                                    }
+                                                                    getUserSearchContextNamespaces={
+                                                                        getUserSearchContextNamespaces
+                                                                    }
+                                                                    fetchAutoDefinedSearchContexts={
+                                                                        fetchAutoDefinedSearchContexts
+                                                                    }
+                                                                    fetchSearchContexts={fetchSearchContexts}
+                                                                    fetchSearchContextBySpec={fetchSearchContextBySpec}
+                                                                    fetchSearchContext={fetchSearchContext}
+                                                                    createSearchContext={createSearchContext}
+                                                                    updateSearchContext={updateSearchContext}
+                                                                    deleteSearchContext={deleteSearchContext}
+                                                                    isSearchContextSpecAvailable={
+                                                                        isSearchContextSpecAvailable
+                                                                    }
+                                                                    defaultSearchContextSpec={
+                                                                        this.state.defaultSearchContextSpec
+                                                                    }
+                                                                    globbing={this.state.globbing}
+                                                                    streamSearch={aggregateStreamingSearch}
+                                                                    onCreateNotebookFromNotepad={this.onCreateNotebook}
+                                                                />
+                                                            </CodeHostScopeProvider>
+                                                        )}
                                                     />
-                                                ) : null}
-                                                <UserSessionStores />
-                                            </SearchQueryStateStoreProvider>
-                                        </SearchResultsCacheProvider>
-                                    </CoreWorkflowImprovementsEnabledProvider>
+                                                </CompatRouter>
+                                            </Router>
+                                            {this.extensionsController !== null &&
+                                            window.context.enableLegacyExtensions ? (
+                                                <Notifications
+                                                    key={2}
+                                                    extensionsController={this.extensionsController}
+                                                    notificationItemStyleProps={notificationStyles}
+                                                />
+                                            ) : null}
+                                            <UserSessionStores />
+                                        </SearchQueryStateStoreProvider>
+                                    </SearchResultsCacheProvider>
                                 </TemporarySettingsProvider>
                             </ShortcutProvider>
                         </FeatureFlagsProvider>
