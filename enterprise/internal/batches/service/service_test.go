@@ -1638,7 +1638,7 @@ changesetTemplate:
 			assertNoChangesetSpecs(t, spec.ID)
 		})
 
-		t.Run("mount error", func(t *testing.T) {
+		t.Run("has mount", func(t *testing.T) {
 			spec := createBatchSpecWithWorkspacesAndChangesetSpecs(t)
 
 			_, err := svc.ReplaceBatchSpecInput(adminCtx, ReplaceBatchSpecInputOpts{
@@ -1660,7 +1660,7 @@ changesetTemplate:
     message: Test
 `,
 			})
-			assert.Equal(t, "mounts are not allowed for server-side processing", err.Error())
+			assert.NoError(t, err)
 		})
 	})
 
