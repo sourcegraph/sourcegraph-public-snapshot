@@ -12,6 +12,7 @@ import (
 	"go.opentelemetry.io/otel"
 
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
@@ -121,18 +122,24 @@ func main() {
 	dbworker.InitPrometheusMetric(observationContext, workerStore, "codeintel", "upload", nil)
 
 	// Initialize worker
-	worker := worker.NewWorker(
+	rootContext := actor.WithInternalActor(context.Background())
+	handler := worker.NewHandler(
 		&worker.DBStoreShim{Store: dbStore},
 		workerStore,
 		&worker.LSIFStoreShim{Store: lsifStore},
 		uploadStore,
 		gitserverClient,
-		config.WorkerPollInterval,
 		config.WorkerConcurrency,
 		config.WorkerBudget,
-		config.MaximumRuntimePerJob,
-		makeWorkerMetrics(observationContext),
 	)
+	worker := dbworker.NewWorker(rootContext, workerStore, handler, workerutil.WorkerOptions{
+		Name:                 "precise_code_intel_upload_worker",
+		NumHandlers:          config.WorkerConcurrency,
+		Interval:             config.WorkerPollInterval,
+		HeartbeatInterval:    time.Second,
+		Metrics:              makeWorkerMetrics(observationContext),
+		MaximumRuntimePerJob: config.MaximumRuntimePerJob,
+	})
 
 	// Initialize health server
 	server := httpserver.NewFromAddr(addr, &http.Server{
