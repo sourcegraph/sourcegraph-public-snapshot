@@ -4,7 +4,7 @@ This is a compilation of the most important information you will need to get sta
 
 ## 🔄 Sync Code Hosts
 
-Sourcegraph is nothing without your code, so connecting your code hosts is essential. 
+Sourcegraph is nothing without your code, so connecting your code hosts is crucial. 
 
 How to connect to…
 - [GitHub](https://docs.sourcegraph.com/admin/external_service/github)
