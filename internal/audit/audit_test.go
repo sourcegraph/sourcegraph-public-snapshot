@@ -2,6 +2,7 @@ package audit
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"github.com/sourcegraph/log"
@@ -143,4 +144,24 @@ func TestLog(t *testing.T) {
 			assert.Equal(t, tc.expectedEntry, logs[0].Fields)
 		})
 	}
+}
+
+func TestSampling(t *testing.T) {
+	_ = os.Setenv("SRC_LOG_SAMPLING_INITIAL", "5")
+
+	ctx := context.Background()
+	logger, exportLogs := logtest.Captured(t)
+
+	t.Run("audit logs are never sampled", func(t *testing.T) {
+		for i := 0; i < 10; i++ {
+			Log(ctx, logger, Record{
+				Entity: "test",
+				Action: "sampling test",
+				Fields: nil,
+			})
+		}
+	})
+
+	logs := exportLogs()
+	assert.Equal(t, 10, len(logs))
 }
