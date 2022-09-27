@@ -105,7 +105,7 @@ func GenerateRepos(n int, base ...*types.Repo) types.Repos {
 	return rs
 }
 
-// Maketypes.ExternalServices creates one configured external service per kind and returns the list.
+// MakeExternalServices creates one configured external service per kind and returns the list.
 func MakeExternalServices() types.ExternalServices {
 	clock := timeutil.NewFakeClock(time.Now(), 0)
 	now := clock.Now()

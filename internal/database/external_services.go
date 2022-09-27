@@ -560,9 +560,6 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 	if err != nil {
 		return err
 	}
-	if strings.TrimSpace(rawConfig) == "" {
-		return fmt.Errorf("config is empty")
-	}
 
 	normalized, err := ValidateExternalServiceConfig(ctx, e, ValidateExternalServiceConfigOptions{
 		Kind:            es.Kind,
@@ -646,13 +643,22 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 		return nil
 	}
 
+	authProviders := conf.Get().AuthProviders
 	for _, s := range svcs {
 		rawConfig, err := s.Config.Decrypt(ctx)
 		if err != nil {
 			return err
 		}
-		if strings.TrimSpace(rawConfig) == "" {
-			return fmt.Errorf("config is empty: service %d", s.ID)
+
+		normalized, err := ValidateExternalServiceConfig(ctx, e, ValidateExternalServiceConfigOptions{
+			Kind:            s.Kind,
+			Config:          rawConfig,
+			AuthProviders:   authProviders,
+			NamespaceUserID: s.NamespaceUserID,
+			NamespaceOrgID:  s.NamespaceOrgID,
+		})
+		if err != nil {
+			return err
 		}
 
 		// 🚨 SECURITY: For all GitHub and GitLab code host connections on Sourcegraph
@@ -667,7 +673,7 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			s.Config.Set(rawConfig)
 		}
 
-		if err := e.recalculateFields(s, rawConfig); err != nil {
+		if err := e.recalculateFields(s, string(normalized)); err != nil {
 			return err
 		}
 	}
@@ -852,9 +858,6 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 	)
 	if update.Config != nil {
 		rawConfig := *update.Config
-		if strings.TrimSpace(rawConfig) == "" {
-			return fmt.Errorf("config is empty: service %d", id)
-		}
 
 		// Query to get the kind (which is immutable) so we can validate the new config.
 		externalService, err := e.GetByID(ctx, id)

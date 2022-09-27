@@ -401,10 +401,9 @@ func TestExternalServicesStore_Create(t *testing.T) {
 		{
 			name: "Empty config not allowed",
 			externalService: &types.ExternalService{
-				Kind:           extsvc.KindGitLab,
-				DisplayName:    "GITLAB #1",
-				Config:         extsvc.NewUnencryptedConfig(``),
-				NamespaceOrgID: org.ID,
+				Kind:        extsvc.KindGitLab,
+				DisplayName: "GITLAB #1",
+				Config:      extsvc.NewUnencryptedConfig(``),
 			},
 			wantUnrestricted: false,
 			wantHasWebhooks:  false,
@@ -588,6 +587,13 @@ func TestExternalServicesStore_Update(t *testing.T) {
 			name: "update with empty config",
 			update: &ExternalServiceUpdate{
 				Config: strptr(``),
+			},
+			wantError: true,
+		},
+		{
+			name: "update with comment config",
+			update: &ExternalServiceUpdate{
+				Config: strptr(`// {}`),
 			},
 			wantError: true,
 		},
@@ -1846,18 +1852,11 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 			t.Fatalf("List:\n%s", diff)
 		}
 
-		// We'll update the external services, but being careful to keep the
-		// config valid as we go.
+		// We'll update the external services.
 		now := clock.Now()
 		suffix := "-updated"
 		for _, r := range want {
-			cfg, err := r.Config.Decrypt(ctx)
-			if err != nil {
-				t.Fatal(err)
-			}
-
 			r.DisplayName += suffix
-			r.Config.Set(`{"wanted":true,` + cfg[1:])
 			r.UpdatedAt = now
 			r.CreatedAt = now
 		}
@@ -1922,6 +1921,33 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 		}
 	})
 
+	t.Run("config can't be only comments", func(t *testing.T) {
+		tx, err := db.ExternalServices().WithEncryptionKey(et.TestKey{}).Transact(ctx)
+		if err != nil {
+			t.Fatalf("Transact error: %s", err)
+		}
+		defer func() {
+			err = tx.Done(err)
+			if err != nil {
+				t.Fatalf("Done error: %s", err)
+			}
+		}()
+
+		want := typestest.GenerateExternalServices(1, svcs...)
+		oldValue, err := want[0].Config.Decrypt(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() {
+			want[0].Config.Set(oldValue)
+		})
+		want[0].Config.Set(`// {}`)
+
+		if err := tx.Upsert(ctx, want...); err != nil {
+			t.Fatalf("Wanted an error")
+		}
+	})
+
 	t.Run("with encryption key", func(t *testing.T) {
 		tx, err := db.ExternalServices().WithEncryptionKey(et.TestKey{}).Transact(ctx)
 		if err != nil {
@@ -1973,24 +1999,17 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 			t.Fatalf("List:\n%s", diff)
 		}
 
-		// We'll update the external services, but being careful to keep the
-		// config valid as we go.
+		// We'll update the external services.
 		now := clock.Now()
 		suffix := "-updated"
 		for _, r := range want {
-			cfg, err := r.Config.Decrypt(ctx)
-			if err != nil {
-				t.Fatal(err)
-			}
-
 			r.DisplayName += suffix
-			r.Config.Set(`{"wanted":true,` + cfg[1:])
 			r.UpdatedAt = now
 			r.CreatedAt = now
 		}
 
 		if err = tx.Upsert(ctx, want...); err != nil {
-			t.Errorf("Upsert error: %s", err)
+			t.Fatalf("Upsert error: %s", err)
 		}
 		have, err = tx.List(ctx, ExternalServicesListOptions{})
 		if err != nil {
