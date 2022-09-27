@@ -4,7 +4,6 @@ import { mdiClipboardPulseOutline } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Progress, StreamingResultsState } from '@sourcegraph/shared/src/search/stream'
-import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { Icon, Link } from '@sourcegraph/wildcard'
 
 import { StreamingProgressCount } from './StreamingProgressCount'
@@ -25,17 +24,12 @@ export const StreamingProgress: React.FunctionComponent<React.PropsWithChildren<
     showTrace,
     onSearchAgain,
 }) => {
-    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
     const isLoading = state === 'loading'
 
     return (
         <>
-            {(!coreWorkflowImprovementsEnabled || isLoading) && (
-                <StreamingProgressCount progress={progress} state={state} hideIcon={coreWorkflowImprovementsEnabled} />
-            )}
-            {(!coreWorkflowImprovementsEnabled || !isLoading) && (
-                <StreamingProgressSkippedButton progress={progress} onSearchAgain={onSearchAgain} />
-            )}
+            {isLoading && <StreamingProgressCount progress={progress} state={state} hideIcon={true} />}
+            {!isLoading && <StreamingProgressSkippedButton progress={progress} onSearchAgain={onSearchAgain} />}
             <TraceLink showTrace={showTrace} trace={progress.trace} />
         </>
     )

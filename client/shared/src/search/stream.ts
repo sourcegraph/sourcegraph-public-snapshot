@@ -87,9 +87,9 @@ interface LineMatch {
 }
 
 interface ChunkMatch {
-   content: string
-   contentStart: Location
-   ranges: Range[]
+    content: string
+    contentStart: Location
+    ranges: Range[]
 }
 
 export interface SymbolMatch {

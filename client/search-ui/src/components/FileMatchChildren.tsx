@@ -21,13 +21,10 @@ import { Controller as ExtensionsController } from '@sourcegraph/shared/src/exte
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
 import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
-import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 import { SymbolTag } from '@sourcegraph/shared/src/symbols/SymbolTag'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeIntelViewerUpdates'
-import { Link, Code } from '@sourcegraph/wildcard'
 
 import { CodeExcerpt, FetchFileParameters } from './CodeExcerpt'
 import { LastSyncedIcon } from './LastSyncedIcon'
@@ -148,8 +145,6 @@ function navigateToFileOnMiddleMouseButtonClick(event: MouseEvent<HTMLElement>):
 }
 
 export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<FileMatchProps>> = props => {
-    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
-
     /**
      * If LazyFileResultSyntaxHighlighting is enabled, we fetch plaintext
      * line ranges _alongside_ the typical highlighted line ranges.
@@ -347,14 +342,9 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
         telemetryService.log(...codeCopiedEvent('file-match'))
     }, [telemetryService])
 
-    const openInNewTabProps = props.openInNewTab ? { target: '_blank', rel: 'noopener noreferrer' } : undefined
-
     return (
         <div
-            className={classNames(
-                styles.fileMatchChildren,
-                coreWorkflowImprovementsEnabled && result.type === 'symbol' && styles.symbols
-            )}
+            className={classNames(styles.fileMatchChildren, result.type === 'symbol' && styles.symbols)}
             data-testid="file-match-children"
         >
             {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
@@ -366,23 +356,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
             )}
 
             {/* Symbols */}
-            {((!coreWorkflowImprovementsEnabled && result.type === 'symbol' && result.symbols) || []).map(symbol => (
-                <Link
-                    to={symbol.url}
-                    className={classNames('test-file-match-children-item', styles.item)}
-                    key={`symbol:${symbol.name}${String(symbol.containerName)}${symbol.url}`}
-                    data-testid="file-match-children-item"
-                    {...openInNewTabProps}
-                >
-                    <SymbolIcon kind={symbol.kind} className="mr-1 flex-shrink-0" />
-                    <Code>
-                        {symbol.name}{' '}
-                        {symbol.containerName && <span className="text-muted">{symbol.containerName}</span>}
-                    </Code>
-                </Link>
-            ))}
-
-            {((coreWorkflowImprovementsEnabled && result.type === 'symbol' && result.symbols) || []).map(symbol => (
+            {((result.type === 'symbol' && result.symbols) || []).map(symbol => (
                 <div
                     key={`symbol:${symbol.name}${String(symbol.containerName)}${symbol.url}`}
                     className={classNames('test-file-match-children-item', styles.symbol)}
@@ -420,7 +394,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
             {/* Line matches */}
             {grouped.length > 0 && (
                 <div>
-                    {grouped.map((group, index) => (
+                    {grouped.map(group => (
                         <div
                             key={`linematch:${getFileMatchUrl(result)}${group.position.line}:${
                                 group.position.character
