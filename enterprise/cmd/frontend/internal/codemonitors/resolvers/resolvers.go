@@ -388,8 +388,7 @@ func (r *Resolver) TriggerTestWebhookAction(ctx context.Context, args *graphqlba
 		return nil, err
 	}
 
-	// TODO get hostList from a setting
-	if err := background.SendTestWebhook(ctx, args.Description, args.Webhook.URL, "external"); err != nil {
+	if err := background.SendTestWebhook(ctx, args.Description, args.Webhook.URL); err != nil {
 		return nil, err
 	}
 
@@ -402,8 +401,7 @@ func (r *Resolver) TriggerTestSlackWebhookAction(ctx context.Context, args *grap
 		return nil, err
 	}
 
-	// TODO get hostList from a setting
-	if err := background.SendTestSlackWebhook(ctx, args.Description, args.SlackWebhook.URL, "external"); err != nil {
+	if err := background.SendTestSlackWebhook(ctx, args.Description, args.SlackWebhook.URL); err != nil {
 		return nil, err
 	}
 

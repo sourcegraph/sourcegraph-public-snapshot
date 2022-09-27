@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 
 	"code.gitea.io/gitea/modules/hostmatcher"
@@ -17,7 +18,7 @@ import (
 )
 
 func sendSlackNotification(ctx context.Context, url string, args actionArgs) error {
-	return postSlackWebhook(ctx, url, slackPayload(args), args.HostList)
+	return postSlackWebhook(ctx, url, slackPayload(args))
 }
 
 func slackPayload(args actionArgs) *slack.WebhookMessage {
@@ -115,18 +116,20 @@ func truncateResults(results []*result.CommitMatch, maxResults int) (_ []*result
 }
 
 // adapted from slack.PostWebhookCustomHTTPContext
-func postSlackWebhook(ctx context.Context, url string, msg *slack.WebhookMessage, hostList string) error {
+func postSlackWebhook(ctx context.Context, url string, msg *slack.WebhookMessage) error {
+
 	raw, err := json.Marshal(msg)
 	if err != nil {
 		return errors.Wrap(err, "marshal failed")
 	}
 
 	// Create an allowList out of specified HostList
+	hostList := os.Getenv("WEBHOOK_ALLOWLIST")
 	allowList := hostmatcher.ParseHostMatchList("", hostList)
 
 	webHookHttpClient := &http.Client{
 		Transport: &http.Transport{
-			DialContext: hostmatcher.NewDialContext("code-monitor-webhook", allowList, nil),
+			DialContext: hostmatcher.NewDialContext("code-monitor-slackwebhook", allowList, nil),
 		},
 	}
 	resp, err := webHookHttpClient.Post(url, "application/json", bytes.NewReader(raw))
@@ -147,7 +150,7 @@ func postSlackWebhook(ctx context.Context, url string, msg *slack.WebhookMessage
 	return nil
 }
 
-func SendTestSlackWebhook(ctx context.Context, description, url string, hostList string) error {
+func SendTestSlackWebhook(ctx context.Context, description, url string) error {
 	testMessage := &slack.WebhookMessage{Blocks: &slack.Blocks{BlockSet: []slack.Block{
 		slack.NewSectionBlock(
 			slack.NewTextBlockObject("mrkdwn",
@@ -163,5 +166,5 @@ func SendTestSlackWebhook(ctx context.Context, description, url string, hostList
 		),
 	}}}
 
-	return postSlackWebhook(ctx, url, testMessage, hostList)
+	return postSlackWebhook(ctx, url, testMessage)
 }

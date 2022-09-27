@@ -324,7 +324,6 @@ func (r *actionRunner) handleWebhook(ctx context.Context, j *edb.ActionJob) erro
 		MonitorOwnerName:   m.OwnerName,
 		Results:            m.Results,
 		IncludeResults:     w.IncludeResults,
-		HostList:           r.hostList,
 	}
 
 	return sendWebhookNotification(ctx, w.URL, args)
@@ -361,7 +360,6 @@ func (r *actionRunner) handleSlackWebhook(ctx context.Context, j *edb.ActionJob)
 		MonitorOwnerName:   m.OwnerName,
 		Results:            m.Results,
 		IncludeResults:     w.IncludeResults,
-		HostList:           r.hostList,
 	}
 
 	return sendSlackNotification(ctx, w.URL, args)

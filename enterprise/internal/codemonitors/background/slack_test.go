@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"testing"
 
 	"github.com/hexops/autogold"
@@ -18,6 +19,9 @@ import (
 func TestSlackWebhook(t *testing.T) {
 	t.Parallel()
 	eu, err := url.Parse("https://sourcegraph.com")
+	require.NoError(t, err)
+
+	err = os.Setenv("WEBHOOK_ALLOWLIST", "loopback")
 	require.NoError(t, err)
 
 	action := actionArgs{
@@ -44,7 +48,7 @@ func TestSlackWebhook(t *testing.T) {
 		}))
 		defer s.Close()
 
-		err := postSlackWebhook(context.Background(), s.URL, slackPayload(action), action.HostList)
+		err := postSlackWebhook(context.Background(), s.URL, slackPayload(action))
 		require.NoError(t, err)
 	})
 
@@ -57,7 +61,7 @@ func TestSlackWebhook(t *testing.T) {
 		}))
 		defer s.Close()
 
-		err := postSlackWebhook(context.Background(), s.URL, slackPayload(action), action.HostList)
+		err := postSlackWebhook(context.Background(), s.URL, slackPayload(action))
 		require.Error(t, err)
 	})
 
@@ -92,6 +96,9 @@ func TestTriggerTestSlackWebhookAction(t *testing.T) {
 	}))
 	defer s.Close()
 
-	err := SendTestSlackWebhook(context.Background(), "My test monitor", s.URL, "loopback")
+	err := os.Setenv("WEBHOOK_ALLOWLIST", "loopback")
+	require.NoError(t, err)
+
+	err = SendTestSlackWebhook(context.Background(), "My test monitor", s.URL)
 	require.NoError(t, err)
 }

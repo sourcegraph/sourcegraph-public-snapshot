@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"testing"
 
 	"github.com/hexops/autogold"
@@ -19,6 +20,11 @@ func TestWebhook(t *testing.T) {
 	eu, err := url.Parse("https://sourcegraph.com")
 	require.NoError(t, err)
 
+	err = os.Setenv("WEBHOOK_ALLOWLIST", "loopback")
+	if err != nil {
+		require.NoError(t, err)
+	}
+
 	action := actionArgs{
 		MonitorDescription: "My test monitor",
 		ExternalURL:        eu,
@@ -26,7 +32,6 @@ func TestWebhook(t *testing.T) {
 		Query:              "repo:camdentest -file:id_rsa.pub BEGIN",
 		Results:            []*result.CommitMatch{&diffResultMock, &commitResultMock},
 		IncludeResults:     false,
-		HostList:           "loopback",
 	}
 
 	t.Run("no error", func(t *testing.T) {
@@ -69,7 +74,8 @@ func TestWebhook(t *testing.T) {
 
 	t.Run("loopback requests are blocked", func(t *testing.T) {
 		// only allow external requests, excluding loopback
-		action.HostList = "external"
+		err = os.Setenv("WEBHOOK_ALLOWLIST", "external")
+		require.NoError(t, err)
 		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			b, err := io.ReadAll(r.Body)
 			require.NoError(t, err)
@@ -92,6 +98,9 @@ func TestTriggerTestWebhookAction(t *testing.T) {
 	}))
 	defer s.Close()
 
-	err := SendTestWebhook(context.Background(), "My test monitor", s.URL, "loopback")
+	err := os.Setenv("WEBHOOK_ALLOWLIST", "loopback")
+	require.NoError(t, err)
+
+	err = SendTestWebhook(context.Background(), "My test monitor", s.URL)
 	require.NoError(t, err)
 }

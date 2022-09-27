@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 
 	"code.gitea.io/gitea/modules/hostmatcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -20,7 +21,8 @@ func sendWebhookNotification(ctx context.Context, url string, args actionArgs) e
 func postWebhook(ctx context.Context, url string, args actionArgs) error {
 
 	// Create an allowList out of specified HostList
-	allowList := hostmatcher.ParseHostMatchList("", args.HostList)
+	hostList := os.Getenv("WEBHOOK_ALLOWLIST")
+	allowList := hostmatcher.ParseHostMatchList("", hostList)
 
 	webHookHttpClient := &http.Client{
 		Transport: &http.Transport{
@@ -53,12 +55,11 @@ func postWebhook(ctx context.Context, url string, args actionArgs) error {
 	return nil
 }
 
-func SendTestWebhook(ctx context.Context, description string, u string, hostList string) error {
+func SendTestWebhook(ctx context.Context, description string, u string) error {
 	args := actionArgs{
 		ExternalURL:        &url.URL{},
 		MonitorDescription: description,
 		Query:              "test query",
-		HostList:           hostList,
 	}
 	return postWebhook(ctx, u, args)
 }

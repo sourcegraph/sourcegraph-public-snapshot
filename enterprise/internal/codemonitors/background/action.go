@@ -18,5 +18,4 @@ type actionArgs struct {
 	Query          string
 	Results        []*result.CommitMatch
 	IncludeResults bool
-	HostList       string
 }
