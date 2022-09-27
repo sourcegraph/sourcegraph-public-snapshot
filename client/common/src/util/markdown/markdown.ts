@@ -7,8 +7,9 @@ import sanitize from 'sanitize-html'
 import { Overwrite } from 'utility-types'
 
 // Disable autolinks in Marked
-// Returning undefined is not allowed by the type definition
-// but is the only think that worked for me to easily disable autolinks.
+// Returning `undefined` is not allowed by TypeScript so we
+// need to do a bit of hacky type casting.
+// Returning `false` did NOT disable the autolinking when testing.
 // Explicit links using `[text](url)` are still allowed.
 // More context here: https://github.com/markedjs/marked/issues/882
 marked.use({
