@@ -1506,19 +1506,19 @@ func newHttpResponseState(statusCode int, headers http.Header) *httpResponseStat
 	}
 }
 
-func doRequest(ctx context.Context, oauthContext *oauthutil.OAuthContext, logger log.Logger, apiURL *url.URL, auther auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, httpClient httpcli.Doer, bearerToken *auth.OAuthBearerToken, tokenRefresher oauthutil.TokenRefresher, req *http.Request, result any) (responseState *httpResponseState, err error) {
+func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auther auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, httpClient httpcli.Doer, req *http.Request, result any) (responseState *httpResponseState, err error) {
 	req.URL.Path = path.Join(apiURL.Path, req.URL.Path)
 	req.URL = apiURL.ResolveReference(req.URL)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 
-    autherWithRefresh, isRefresh := auther.(auth.AuthenticatorWithRefresh)
-    if isRefresh {
+    var autherWithRefresh auth.AuthenticatorWithRefresh
+    if auther != nil {
+        autherWithRefresh, ok := auther.(auth.AuthenticatorWithRefresh)
         // Check if we should pre-emptively refresh
-        autherWithRefresh.CheckRefresh()
+        if ok && autherWithRefresh.IsExpired() {
+            autherWithRefresh.Refresh()
+        }
 
-        autherWithRefresh.Refresh()
-    }
-	if auther != nil {
 		if err := auther.Authenticate(req); err != nil {
 			return nil, errors.Wrap(err, "authenticating request")
 		}
@@ -1543,8 +1543,8 @@ func doRequest(ctx context.Context, oauthContext *oauthutil.OAuthContext, logger
 	var header http.Header
 	var body []byte
 
-	if bearerToken != nil && oauthContext != nil && isRefresh {
-		code, header, body, err = oauthutil.DoRequest(ctx, httpClient, req, autherWithRefresh, tokenRefresher, *oauthContext)
+	if autherWithRefresh != nil {
+		code, header, body, err = oauthutil.DoRequest(ctx, httpClient, req, autherWithRefresh)
 		if err != nil {
 			return newHttpResponseState(code, header), errors.Wrap(err, "do request with retry and refresh")
 		}

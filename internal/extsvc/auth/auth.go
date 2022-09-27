@@ -29,7 +29,7 @@ type Authenticator interface {
 
 type AuthenticatorWithRefresh interface {
 	Authenticate(*http.Request) error
-	CheckRefresh() (bool, error)
+	IsExpired() bool
 	Refresh() error
 	Hash() string
 }

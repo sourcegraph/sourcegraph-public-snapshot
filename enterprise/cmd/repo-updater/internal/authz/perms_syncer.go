@@ -275,11 +275,6 @@ func (s *PermsSyncer) getUserGitHubAppInstallations(ctx context.Context, acct *e
         Expiry: tok.Expiry,
     }
 
-    oauthToken.ShouldRefreshFunc = func() (bool, error) {
-        return oauthToken.Expiry.After(time.Now()), nil
-    }
-
-
 	// Not a GitHub App access token
 	if !github.IsGitHubAppAccessToken(tok.AccessToken) {
 		return nil, nil
@@ -294,9 +289,14 @@ func (s *PermsSyncer) getUserGitHubAppInstallations(ctx context.Context, acct *e
 	tokenRefresher := database.ExternalAccountTokenRefresher(s.db, acct.ID, tok.RefreshToken)
 
     oauthToken.RefreshFunc = func() error {
-        newTok, err := tokenRefresher()
+        // do refresh logic and store token in DB
         return nil
     }
+
+    oauthToken.ShouldRefreshFunc = func() (bool, error) {
+        return oauthToken.Expiry.After(time.Now()), nil
+    }
+
 	ghClient := github.NewV3Client(log.Scoped("perms_syncer.github.v3", "github v3 client for perms syncer"),
 		extsvc.URNGitHubOAuth, apiURL, &auth.OAuthBearerToken{Token: tok.AccessToken}, nil, tokenRefresher)
 

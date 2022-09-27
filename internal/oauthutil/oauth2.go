@@ -64,7 +64,7 @@ type TokenRefresher func(ctx context.Context, doer httpcli.Doer, oauthCtx OAuthC
 // a token being expired, it will use the supplied TokenRefresher function to
 // update the token. If the token is updated successfully, the same request will
 // be retried exactly once.
-func DoRequest(ctx context.Context, doer httpcli.Doer, req *http.Request, autherWithRefresh auth.AuthenticatorWithRefresh, tokenRefresher TokenRefresher, oauthCtx OAuthContext) (code int, header http.Header, body []byte, err error) {
+func DoRequest(ctx context.Context, doer httpcli.Doer, req *http.Request, autherWithRefresh auth.AuthenticatorWithRefresh) (code int, header http.Header, body []byte, err error) {
 	for i := 0; i < 2; i++ {
 		if autherWithRefresh != nil {
 			if err := autherWithRefresh.Authenticate(req); err != nil {
@@ -88,13 +88,9 @@ func DoRequest(ctx context.Context, doer httpcli.Doer, req *http.Request, auther
 		if resp.StatusCode == http.StatusUnauthorized && autherWithRefresh != nil {
 			if err = getOAuthErrorDetails(body); err != nil {
 				if _, ok := err.(*oauthError); ok {
-					if tokenRefresher == nil {
-						return 0, nil, nil, errors.Errorf("could not refresh token. Refresher is missing %T", err)
-					}
 					// If a refresher is present, we can then refresh the token and update the authenticator.
 					// The next request should then succeed.
-					// newToken, err := tokenRefresher(ctx, doer, oauthCtx)
-                    autherWithRefresh.Refresh()
+                    err = autherWithRefresh.Refresh()
 					if err != nil {
 						return 0, nil, nil, errors.Wrap(err, "refresh token")
 					}
