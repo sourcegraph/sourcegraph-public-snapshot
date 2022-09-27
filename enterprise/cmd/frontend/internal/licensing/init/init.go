@@ -82,7 +82,7 @@ func Init(ctx context.Context, db database.DB, conf conftypes.UnifiedWatchable, 
 	// feature, then alternative debug handlers will be invoked.
 	// TODO(miveronese): Uncomment this when licensing for FeatureMonitoring should be enforced.
 	// See PR https://github.com/sourcegraph/sourcegraph/pull/41679 for more details.
-	//app.SetPreMountGrafanaHook(enforcement.NewPreMountGrafanaHook())
+	// app.SetPreMountGrafanaHook(enforcement.NewPreMountGrafanaHook())
 
 	// Make the Site.productSubscription.productNameWithBrand GraphQL field (and other places) use the
 	// proper product name.
