@@ -12,7 +12,6 @@ import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { isDefined, combineLatestOrDefault, isErrorLike } from '@sourcegraph/common'
 import { Location } from '@sourcegraph/extension-api-types'
 import { FetchFileParameters } from '@sourcegraph/search-ui'
-import { SimpleActionItem } from '@sourcegraph/shared/src/actions/SimpleActionItem'
 import { ActionsNavItems } from '@sourcegraph/shared/src/actions/ActionsNavItems'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { match } from '@sourcegraph/shared/src/api/client/types/textDocument'
@@ -27,6 +26,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, useObservable, Tab, TabList, TabPanel, TabPanels, Tabs, Icon, Tooltip } from '@sourcegraph/wildcard'
 
+import { MixPreciseAndSearchBasedReferencesToggle } from './MixPreciseAndSearchBasedReferencesToggle'
 import { registerPanelToolbarContributions } from './views/contributions'
 import { EmptyPanelView } from './views/EmptyPanelView'
 import { ExtensionsLoadingPanelView } from './views/ExtensionsLoadingView'
@@ -308,6 +308,12 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
                 actions={
                     <div className="align-items-center d-flex">
                         <ul className="d-flex justify-content-end list-unstyled m-0 align-items-center">
+                            {activeTab && (
+                                <MixPreciseAndSearchBasedReferencesToggle
+                                    settingsCascade={props.settingsCascade}
+                                    platformContext={props.platformContext}
+                                />
+                            )}
                             {activeTab && extensionsController !== null && (
                                 <>
                                     <ActionsNavItems
