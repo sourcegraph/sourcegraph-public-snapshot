@@ -26,10 +26,11 @@ Following these docs will provision the following resources:
 4. Select an **instance type** according to [the sizing chart](#instance-size-chart).
 5. **Key pair (login)**: Select or create a new Key Pair for connecting to your instance securely (this may be required in the event you need support).
 6. **Network settings**: 
+   - Under "Auto-assign public IP" select "Enable".
    - Select a **Security Group** for the instance, or create one with the following rules:
-     - Default HTTP rule: port range 80, source 0.0.0.0/0, ::/0
-     - Default HTTPS rule: port range 443, source 0.0.0.0/0, ::/0
-     - Default SSH rule: port range 22, source 0.0.0.0/0, ::/0 (this may be required in the event you need support)
+     - Allow SSH from Anywhere (port range 22, source 0.0.0.0/0, ::/0)
+     - Allow HTTPS from the internet (port range 443, source 0.0.0.0/0, ::/0)
+     - Allow HTTP traffic from the internet (port range 80, source 0.0.0.0/0, ::/0)
    - **NOTE**: If you do not wish to have HTTP/HTTPS exposed to the public internet, you may later choose to remove these rules so that all traffic routes through your AWS load balancer.
 7. **Configure storage**:
    - Root Volume: 50GB
