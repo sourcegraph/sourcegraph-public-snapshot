@@ -5,6 +5,7 @@ import { Page } from 'puppeteer'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
+import { GetInsightViewResult } from '../../../graphql-operations'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../../context'
 import {
     CAPTURE_GROUP_INSIGHT,
@@ -66,12 +67,10 @@ describe('Code insights populated dashboard', () => {
                 },
             }),
             GetDashboardInsights: () => GET_DASHBOARD_INSIGHTS_POPULATED,
-            GetInsightView: () => GET_INSIGHT_VIEW_CAPTURE_GROUP_INSIGHT,
+            GetInsightView: ({ id }) => getInsightViewById(id),
             InsightsDashboards: () => INSIGHTS_DASHBOARDS,
             LangStatsInsightContent: () => LANG_STAT_INSIGHT_CONTENT,
         })
-        testContext.overrideGraphQL({ GetInsightView: () => GET_INSIGHT_VIEW_SEARCH_BASED_INSIGHT })
-        testContext.overrideGraphQL({ GetInsightView: () => GET_INSIGHT_VIEW_COMPUTE_INSIGHT })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/EACH_TYPE_OF_INSIGHT')
 
@@ -118,4 +117,24 @@ async function getLinks(page: Page, labels: string[]): Promise<string[]> {
     }
 
     return foundLinks
+}
+
+/**
+ * Helper function to get insight view by id.
+ *
+ * @param id - Insight id
+ * @returns a GetInsightViewResult
+ */
+function getInsightViewById(id: string | null): GetInsightViewResult {
+    const insightView = [
+        GET_INSIGHT_VIEW_CAPTURE_GROUP_INSIGHT,
+        GET_INSIGHT_VIEW_COMPUTE_INSIGHT,
+        GET_INSIGHT_VIEW_SEARCH_BASED_INSIGHT,
+    ].find(insight => insight.insightViews.nodes[0].id === id)
+
+    if (!insightView) {
+        throw new Error(`Insight view with id ${id} not found`)
+    }
+
+    return insightView
 }
