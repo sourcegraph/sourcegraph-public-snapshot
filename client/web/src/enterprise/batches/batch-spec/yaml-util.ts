@@ -441,12 +441,11 @@ export const insertFieldIntoLibraryItem = (
     const finalValue = quotable ? quoteYAMLString(value) : value
 
     if (commentExistingValue) {
-        console.log('about to comment out existing value')
         existingValue = librarySpec
             .slice(fieldMapping.value.startPosition, fieldMapping.value.endPosition)
             .trim()
             .split('\n')
-            .map(line => line.startsWith('#') ? line : `# ${line}`)
+            .map(line => (line === '' || line.startsWith('#')) ? line : `# ${line}`)
             .join('\n')
         existingValue = existingValue + '\n\n'
     }
