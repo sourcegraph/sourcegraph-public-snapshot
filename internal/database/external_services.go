@@ -1083,7 +1083,7 @@ ORDER BY
 %s
 `
 
-var activeStateClause = "state in ('processing', 'queued')"
+var activeStateClause = "state IN ('processing', 'queued')"
 
 func (e *externalServiceStore) GetSyncJobs(ctx context.Context, opt ExternalServicesGetSyncJobsOptions) (_ []*types.ExternalServiceSyncJob, err error) {
 	var preds []*sqlf.Query
