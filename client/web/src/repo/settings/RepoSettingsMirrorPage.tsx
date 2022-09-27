@@ -365,7 +365,7 @@ export class RepoSettingsMirrorPage extends React.PureComponent<
                             <div>
                                 This will delete the repository from disk and reclone it.
                                 <div className="mt-2">
-                                    <span className="text-danger">WARNING</span>: This can take a long time, depending
+                                    <span className="font-weight-bold text-danger">WARNING</span>: This can take a long time, depending
                                     on how large the repository is. The repository will be unsearchable while the
                                     reclone is in progress.
                                 </div>
