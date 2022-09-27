@@ -103,7 +103,8 @@ public class JSToJavaBridgeRequestHandler {
                     try {
                         previewContent = PreviewContent.fromJson(project, arguments);
                     } catch (Exception e) {
-                        return createErrorResponse("Parsing error while opening link: " + e.getClass().getName() + ": " + e.getMessage(), convertStackTraceToString(e));
+                        return createErrorResponse("Parsing error while opening link: "
+                            + e.getClass().getName() + ": " + e.getMessage(), convertStackTraceToString(e));
                     }
 
                     ApplicationManager.getApplication().invokeLater(() -> {
@@ -117,7 +118,9 @@ public class JSToJavaBridgeRequestHandler {
                     return createSuccessResponse(null);
                 case "indicateFinishedLoading":
                     arguments = request.getAsJsonObject("arguments");
-                    ApplicationManager.getApplication().invokeLater(() -> findPopupPanel.indicateAuthenticationStatus(arguments.get("wasServerAccessSuccessful").getAsBoolean(), arguments.get("wasAuthenticationSuccessful").getAsBoolean()));
+                    ApplicationManager.getApplication().invokeLater(() -> findPopupPanel.indicateAuthenticationStatus(
+                        arguments.get("wasServerAccessSuccessful").getAsBoolean(),
+                        arguments.get("wasAuthenticationSuccessful").getAsBoolean()));
                     return createSuccessResponse(null);
                 case "windowClose":
                     ApplicationManager.getApplication().invokeLater(findService::hidePopup);

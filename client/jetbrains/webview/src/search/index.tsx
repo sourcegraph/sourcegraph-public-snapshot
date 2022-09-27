@@ -33,6 +33,8 @@ let initialSearch: Search | null = null
 let authenticatedUser: AuthenticatedUser | null = null
 let backendVersion: string | null = null
 let telemetryService: EventLogger
+let errorRetryIndex = 0
+let isServerAccessSuccessful: boolean | null = null
 
 window.initializeSourcegraph = async () => {
     try {
@@ -45,26 +47,13 @@ window.initializeSourcegraph = async () => {
         applyConfig(config)
         applyTheme(theme)
         applyLastSearch(lastSearch)
-
-        let isServerAccessSuccessful = false
-        try {
-            const { site, currentUser } = await getSiteVersionAndAuthenticatedUser(instanceURL, accessToken)
-            authenticatedUser = currentUser
-            backendVersion = site?.productVersion || null
-            isServerAccessSuccessful = true
-        } catch (error) {
-            console.info('Could not authenticate with current URL and token settings', instanceURL, accessToken, error)
-        }
-
-        if (accessToken && !authenticatedUser) {
-            console.warn(`No initial authenticated user with access token “${accessToken}”`)
-        }
+        await updateVersionAndAuthDataFromServer()
 
         telemetryService = new EventLogger(anonymousUserId, { editor: 'jetbrains', version: pluginVersion })
 
         renderReactApp()
 
-        await indicateFinishedLoading(isServerAccessSuccessful, !!authenticatedUser)
+        await indicateFinishedLoading(isServerAccessSuccessful || false, !!authenticatedUser)
     } catch (error) {
         console.error('Error initializing Sourcegraph', error)
         await indicateFinishedLoading(false, !!authenticatedUser)
@@ -79,7 +68,7 @@ export function renderReactApp(): void {
         <App
             // Make sure we recreate the React app when the instance URL or access token changes to
             // avoid showing stale data.
-            key={`${instanceURL}-${accessToken}`}
+            key={`${instanceURL}-${accessToken}-${errorRetryIndex}`}
             isDarkTheme={isDarkTheme}
             instanceURL={instanceURL}
             isGlobbingEnabled={isGlobbingEnabled}
@@ -149,6 +138,26 @@ export function applyTheme(theme: Theme, rootElement: Element = document.documen
     root.style.setProperty('--body-bg', intelliJTheme['List.background'])
 }
 
+export async function updateVersionAndAuthDataFromServer(): Promise<void> {
+    try {
+        const { site, currentUser } = await getSiteVersionAndAuthenticatedUser(instanceURL, accessToken)
+        authenticatedUser = currentUser
+        backendVersion = site?.productVersion || null
+        isServerAccessSuccessful = true
+    } catch (error) {
+        console.info('Could not authenticate with current URL and token settings', instanceURL, accessToken, error)
+        isServerAccessSuccessful = false
+    }
+
+    if (accessToken && !authenticatedUser) {
+        console.warn(`No initial authenticated user with access token “${accessToken}”`)
+    }
+}
+
+export function retrySearch(): void {
+    errorRetryIndex++
+}
+
 function applyLastSearch(lastSearch: Search | null): void {
     initialSearch = lastSearch
 }
@@ -159,4 +168,12 @@ export function getAccessToken(): string | null {
 
 export function getInstanceURL(): string {
     return instanceURL
+}
+
+export function wasServerAccessSuccessful(): boolean | null {
+    return isServerAccessSuccessful
+}
+
+export function getAuthenticatedUser(): AuthenticatedUser | null {
+    return authenticatedUser
 }
