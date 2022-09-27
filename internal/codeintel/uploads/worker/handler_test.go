@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -267,7 +266,7 @@ func TestHandleCloneInProgress(t *testing.T) {
 //
 
 func copyTestDump(ctx context.Context, key string) (io.ReadCloser, error) {
-	return os.Open("../../testdata/dump1.lsif.gz")
+	return os.Open("../testdata/dump1.lsif.gz")
 }
 
 func setupRepoMocks(t *testing.T) {

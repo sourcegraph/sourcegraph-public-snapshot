@@ -8,11 +8,9 @@ import (
 
 	smithyhttp "github.com/aws/smithy-go/transport/http"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel"
 
-	"github.com/sourcegraph/log"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/worker"
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
@@ -20,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifuploadstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/worker"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"

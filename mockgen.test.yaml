@@ -57,9 +57,9 @@
   path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/queues/batches
   interfaces:
     - BatchesStore
-- filename: enterprise/cmd/precise-code-intel-worker/internal/worker/mocks_test.go
+- filename: internal/codeintel/uploads/worker/mocks_test.go
   sources:
-    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/worker
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/worker
       interfaces:
         - DBStore
         - GitserverClient
