@@ -208,7 +208,7 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 description: 'Indexed',
                 color: 'var(--body-color)',
                 position: 'right',
-                tooltip: 'The number of repositories that have been index for search.',
+                tooltip: 'The number of repositories that have been indexed for search.',
             },
             {
                 value: data.repositoryStats.failedFetch,
