@@ -156,25 +156,29 @@ func (e *InsightsPingEmitter) GetInsightsPerDashboard(ctx context.Context) (type
 	return insightsPerDashboardStats, nil
 }
 
-func (e *InsightsPingEmitter) GetBackfillTime(ctx context.Context) (types.InsightsBackfillTimePing, error) {
+func (e *InsightsPingEmitter) GetBackfillTime(ctx context.Context) ([]types.InsightsBackfillTimePing, error) {
 	rows, err := e.insightsDb.QueryContext(ctx, backfillTimeQuery, time.Now())
 	if err != nil {
-		return types.InsightsBackfillTimePing{}, err
+		return []types.InsightsBackfillTimePing{}, err
 	}
 	defer func() { err = rows.Close() }()
 
-	var backfillTimePing types.InsightsBackfillTimePing
-	rows.Next()
-	if err := rows.Scan(
-		&backfillTimePing.Count,
-		&backfillTimePing.P99Seconds,
-		&backfillTimePing.P90Seconds,
-		&backfillTimePing.P50Seconds,
-	); err != nil {
-		return types.InsightsBackfillTimePing{}, err
+	results := []types.InsightsBackfillTimePing{}
+	for rows.Next() {
+		backfillTimePing := types.InsightsBackfillTimePing{}
+		if err := rows.Scan(
+			&backfillTimePing.AllRepos,
+			&backfillTimePing.Count,
+			&backfillTimePing.P99Seconds,
+			&backfillTimePing.P90Seconds,
+			&backfillTimePing.P50Seconds,
+		); err != nil {
+			return []types.InsightsBackfillTimePing{}, err
+		}
+		results = append(results, backfillTimePing)
 	}
 
-	return backfillTimePing, nil
+	return results, nil
 }
 
 func getDays(intervalValue int, intervalUnit insightTypes.IntervalUnit) int {
@@ -284,10 +288,12 @@ SELECT COUNT(*) FROM insight_view WHERE is_frozen = false
 
 const backfillTimeQuery = `
 SELECT
+	repositories = '{}' as allRepos,
 	COUNT(*),
 	ROUND(EXTRACT(EPOCH FROM COALESCE(PERCENTILE_CONT(0.99) WITHIN GROUP( ORDER BY backfill_completed_at - backfill_queued_at), '0'))) AS p99_seconds,
 	ROUND(EXTRACT(EPOCH FROM COALESCE(PERCENTILE_CONT(0.90) WITHIN GROUP (ORDER BY backfill_completed_at - backfill_queued_at), '0'))) AS p90_seconds,
 	ROUND(EXTRACT(EPOCH FROM COALESCE(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY backfill_completed_at - backfill_queued_at), '0'))) AS p50_seconds
 FROM insight_series
 WHERE backfill_completed_at > ($1::timestamp - interval '7 days')
+GROUP BY allRepos;
 `

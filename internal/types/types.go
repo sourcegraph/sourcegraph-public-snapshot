@@ -1446,7 +1446,7 @@ type CodeInsightsUsageStatistics struct {
 	WeeklyGroupResultsChartBarClick                []GroupResultPing
 	WeeklyGroupResultsAggregationModeClicked       []GroupResultPing
 	WeeklyGroupResultsAggregationModeDisabledHover []GroupResultPing
-	WeeklySeriesBackfillTime                       InsightsBackfillTimePing
+	WeeklySeriesBackfillTime                       []InsightsBackfillTimePing
 }
 
 type GroupResultPing struct {
@@ -1532,6 +1532,7 @@ type InsightsPerDashboardPing struct {
 }
 
 type InsightsBackfillTimePing struct {
+	AllRepos   bool
 	P99Seconds int
 	P90Seconds int
 	P50Seconds int

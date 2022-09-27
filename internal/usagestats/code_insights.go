@@ -442,7 +442,7 @@ func GetGroupResultsExpandedViewPing(ctx context.Context, db database.DB, pingNa
 	return groupResultsExpandedViewPings, nil
 }
 
-func GetBackfillTimePing(ctx context.Context, db database.DB) (types.InsightsBackfillTimePing, error) {
+func GetBackfillTimePing(ctx context.Context, db database.DB) ([]types.InsightsBackfillTimePing, error) {
 	store := db.EventLogs()
 	name := InsightsBackfillTimePingName
 	all, err := store.ListAll(ctx, database.EventLogsListOptions{
@@ -453,16 +453,16 @@ func GetBackfillTimePing(ctx context.Context, db database.DB) (types.InsightsBac
 		EventName: &name,
 	})
 	if err != nil {
-		return types.InsightsBackfillTimePing{}, err
+		return []types.InsightsBackfillTimePing{}, err
 	} else if len(all) == 0 {
-		return types.InsightsBackfillTimePing{}, nil
+		return []types.InsightsBackfillTimePing{}, nil
 	}
 
 	latest := all[0]
-	var backfillTimePing types.InsightsBackfillTimePing
+	var backfillTimePing []types.InsightsBackfillTimePing
 	err = json.Unmarshal([]byte(latest.Argument), &backfillTimePing)
 	if err != nil {
-		return types.InsightsBackfillTimePing{}, errors.Wrap(err, "Unmarshal")
+		return []types.InsightsBackfillTimePing{}, errors.Wrap(err, "Unmarshal")
 	}
 	return backfillTimePing, nil
 }
