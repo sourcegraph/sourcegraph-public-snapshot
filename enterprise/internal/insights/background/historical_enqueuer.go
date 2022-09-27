@@ -8,23 +8,18 @@ import (
 	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/segmentio/ksuid"
-
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
-	"golang.org/x/time/rate"
-
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/segmentio/ksuid"
 	sglog "github.com/sourcegraph/log"
-
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
@@ -42,6 +37,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
@@ -548,7 +544,7 @@ func (a *backfillAnalyzer) buildForRepo(ctx context.Context, definitions []itype
 
 	// For every series that we want to potentially gather historical data for, try.
 	for _, series := range definitions {
-		frames := query.BuildFrames(12, timeseries.TimeInterval{
+		frames := timeseries.BuildFrames(12, timeseries.TimeInterval{
 			Unit:  itypes.IntervalUnit(series.SampleIntervalUnit),
 			Value: series.SampleIntervalValue,
 		}, series.CreatedAt.Truncate(time.Hour*24))
