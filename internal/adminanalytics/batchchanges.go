@@ -71,7 +71,6 @@ var changesetsMergedNodesQuery = `
 		INNER JOIN batch_changes ON batch_changes.id = changesets.owned_by_batch_change_id
 	WHERE changeset_events.created_at %s AND changeset_events.kind IN (%s)
 	GROUP BY date
-
 `
 
 var changesetsMergedSummaryQuery = `
