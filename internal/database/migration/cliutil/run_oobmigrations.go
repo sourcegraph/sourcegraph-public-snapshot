@@ -7,11 +7,13 @@ import (
 	"sort"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -34,6 +36,11 @@ func RunOutOfBandMigrations(
 		Usage:    "If set, run the out of band migration in reverse.",
 		Required: false,
 	}
+	disableAnimation := &cli.BoolFlag{
+		Name:     "disable-animation",
+		Usage:    "If set, progress bar animations are not displayed.",
+		Required: false,
+	}
 
 	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
 		r, err := runnerFactory(ctx, schemas.SchemaNames)
@@ -51,6 +58,7 @@ func RunOutOfBandMigrations(
 			db,
 			false, // dry-run
 			!applyReverseFlag.Get(cmd),
+			!disableAnimation.Get(cmd),
 			registerMigrators,
 			out,
 			idsFlag.Get(cmd),
@@ -69,6 +77,7 @@ func RunOutOfBandMigrations(
 		Flags: []cli.Flag{
 			idsFlag,
 			applyReverseFlag,
+			disableAnimation,
 		},
 	}
 }
@@ -78,6 +87,7 @@ func runOutOfBandMigrations(
 	db database.DB,
 	dryRun bool,
 	up bool,
+	animateProgress bool,
 	registerMigrations oobmigration.RegisterMigratorsFunc,
 	out *output.Output,
 	ids []int,
@@ -128,7 +138,7 @@ func runOutOfBandMigrations(
 		}
 	}()
 
-	updateMigrationProgress, cleanup := makeOutOfBandMigrationProgressUpdater(out, ids, true)
+	updateMigrationProgress, cleanup := makeOutOfBandMigrationProgressUpdater(out, ids, animateProgress)
 	defer cleanup()
 
 	ticker := time.NewTicker(time.Second).C
@@ -173,7 +183,7 @@ func makeOutOfBandMigrationProgressUpdater(out *output.Output, ids []int, animat
 	update func(i int, m oobmigration.Migration),
 	cleanup func(),
 ) {
-	if !animateProgress {
+	if !animateProgress || shouldDisableProgressAnimation() {
 		update = func(i int, m oobmigration.Migration) {
 			out.WriteLine(output.Linef("", output.StyleReset, "Migration #%d is %.2f%% complete", m.ID, m.Progress*100))
 		}
@@ -190,6 +200,14 @@ func makeOutOfBandMigrationProgressUpdater(out *output.Output, ids []int, animat
 
 	progress := out.Progress(bars, nil)
 	return func(i int, m oobmigration.Migration) { progress.SetValue(i, m.Progress) }, progress.Destroy
+}
+
+// shouldDisableProgressAnimation determines if progress bars should be avoided because the log level
+// will create output that interferes with a stable canvas. In effect, this adds the -disable-animation
+// flag when SRC_LOG_LEVEL is info or debug.
+func shouldDisableProgressAnimation() bool {
+	lvl, _ := log15.LvlFromString(env.LogLevel)
+	return lvl > log15.LvlWarn
 }
 
 func getMigrations(ctx context.Context, store *oobmigration.Store, ids []int) ([]oobmigration.Migration, error) {
