@@ -13,6 +13,8 @@ All notable changes to Sourcegraph [Browser Extensions](./README.md) are documen
 
 ## Unreleased
 
+## Chrome & Firefox v22.9.27.1330, Safari v1.16
+
 - Remove tracking parameters from all shareable URLs [pull/42022](https://github.com/sourcegraph/sourcegraph/pull/42022)
 
 ## Chrome v22.9.14.1335, Firefox v22.9.14.1616, Safari v1.15
