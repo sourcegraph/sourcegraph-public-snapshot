@@ -683,9 +683,8 @@ func (c *V3Client) ListInstallationRepositories(ctx context.Context, page int) (
 	return repos, len(repos) > 0, 1, nil
 }
 
-// listRepositories is a generic method that unmarshals the given
-// JSON HTTP endpoint into a []restRepository. It will return an
-// error if it fails.
+// listRepositories is a generic method that unmarshalls the given JSON HTTP
+// endpoint into a []restRepository. It will return an error if it fails.
 //
 // This is used to extract repositories from the GitHub API endpoints:
 // - /users/:user/repos
@@ -786,7 +785,8 @@ type Config struct {
 	Digest      string `json:"digest,omitempty"`
 }
 
-// CreateSyncWebhooks returns the id of the newly created webhook, or 0 if there was an error
+// CreateSyncWebhook returns the id of the newly created webhook, or 0 if there
+// was an error
 //
 // Cloud API docs: https://docs.github.com/en/enterprise-cloud@latest/rest/webhooks/repos#create-a-repository-webhook
 // Server API docs: https://docs.github.com/en/enterprise-server@3.3/rest/webhooks/repos#create-a-repository-webhook
@@ -846,7 +846,8 @@ func (c *V3Client) ListSyncWebhooks(ctx context.Context, repoName string) ([]Web
 	return results, nil
 }
 
-// FindSyncWebhook looks for any webhook with the targetURL ending in /github-webhooks
+// FindSyncWebhook looks for any webhook with the targetURL ending in
+// /github-webhooks
 func (c *V3Client) FindSyncWebhook(ctx context.Context, repoName string) (*WebhookPayload, error) {
 	payloads, err := c.ListSyncWebhooks(ctx, repoName)
 	if err != nil {
@@ -862,7 +863,8 @@ func (c *V3Client) FindSyncWebhook(ctx context.Context, repoName string) (*Webho
 	return nil, errors.New("unable to find webhook")
 }
 
-// DeleteSyncWebhook returns a boolean answer as to whether the target repo was deleted or not
+// DeleteSyncWebhook returns a boolean answer as to whether the target repo was
+// deleted or not
 //
 // Cloud API docs: https://docs.github.com/en/enterprise-cloud@latest/rest/webhooks/repos#delete-a-repository-webhook
 // Server API docs: https://docs.github.com/en/enterprise-server@3.3/rest/webhooks/repos#delete-a-repository-webhook
@@ -898,7 +900,8 @@ func webhookURLBuilder(repoName string) (string, error) {
 	return fmt.Sprintf("https://%s/api/v3/repos%s/hooks", u.Host, u.Path), nil
 }
 
-// webhookURLBuilder builds the URL to interface with the GitHub Webhooks API but with a hook ID
+// webhookURLBuilderWithID builds the URL to interface with the GitHub Webhooks
+// API but with a hook ID
 func webhookURLBuilderWithID(repoName string, hookID int) (string, error) {
 	repoName = fmt.Sprintf("//%s", repoName)
 	u, err := url.Parse(repoName)

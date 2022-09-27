@@ -365,6 +365,8 @@ type BatchSpecResolver interface {
 	ViewerCanRetry(context.Context) (bool, error)
 
 	Source() string
+
+	Files(ctx context.Context, args *ListBatchSpecWorkspaceFilesArgs) (BatchSpecWorkspaceFileConnectionResolver, error)
 }
 
 type BatchChangeDescriptionResolver interface {
@@ -593,6 +595,11 @@ type ListBatchSpecArgs struct {
 	IncludeLocallyExecutedSpecs *bool
 }
 
+type ListBatchSpecWorkspaceFilesArgs struct {
+	First int32
+	After *string
+}
+
 type AvailableBulkOperationsArgs struct {
 	BatchChange graphql.ID
 	Changesets  []graphql.ID
@@ -658,6 +665,35 @@ type BatchSpecConnectionResolver interface {
 	Nodes(ctx context.Context) ([]BatchSpecResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
+type BatchSpecWorkspaceFileConnectionResolver interface {
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	Nodes(ctx context.Context) ([]BatchWorkspaceFileResolver, error)
+}
+
+type BatchWorkspaceFileResolver interface {
+	ID() graphql.ID
+	ModifiedAt() DateTime
+	CreatedAt() DateTime
+	UpdatedAt() DateTime
+
+	Path() string
+	Name() string
+	IsDirectory() bool
+	Content(ctx context.Context) (string, error)
+	ByteSize(ctx context.Context) (int32, error)
+	Binary(ctx context.Context) (bool, error)
+	RichHTML(ctx context.Context) (string, error)
+	URL(ctx context.Context) (string, error)
+	CanonicalURL() string
+	ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error)
+	Highlight(ctx context.Context, args *HighlightArgs) (*HighlightedFileResolver, error)
+
+	ToGitBlob() (*GitTreeEntryResolver, bool)
+	ToVirtualFile() (*VirtualFileResolver, bool)
+	ToBatchSpecWorkspaceFile() (BatchWorkspaceFileResolver, bool)
 }
 
 type CommonChangesetsStatsResolver interface {

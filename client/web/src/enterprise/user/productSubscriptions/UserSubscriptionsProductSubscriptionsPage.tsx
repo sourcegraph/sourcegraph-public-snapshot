@@ -105,7 +105,7 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
                     location={props.location}
                     emptyElement={
                         <Text alignment="center" className="w-100 mb-0 text-muted">
-                            You have not purchased a subscription yet.
+                            You have no subscriptions.
                         </Text>
                     }
                 />

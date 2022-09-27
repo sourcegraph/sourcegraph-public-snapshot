@@ -39,11 +39,19 @@ type key int
 
 const shouldTraceKey key = iota
 
-// ShouldTrace returns true if the shouldTraceKey context value is true.
+// ShouldTrace returns true if the shouldTraceKey context value is true. It is used to
+// determine if a trace should be started by various middleware. If the value is not set
+// at all, we check if we should the global policy is set to TraceAll instead.
+//
+// It should NOT be used to guarantee if a span is present in context. The OpenTelemetry
+// library may provide a no-op span with trace.SpanFromContext, but the
+// opentracing.SpanFromContext function in particular can provide a nil span if no span
+// is provided.
 func ShouldTrace(ctx context.Context) bool {
 	v, ok := ctx.Value(shouldTraceKey).(bool)
 	if !ok {
-		return false
+		// If ShouldTrace is not set, we respect TraceAll instead.
+		return GetTracePolicy() == TraceAll
 	}
 	return v
 }

@@ -70,6 +70,7 @@ func NewSyncWorker(ctx context.Context, logger log.Logger, dbHandle basestore.Tr
 		Name:              "repo_sync_worker",
 		NumHandlers:       opts.NumHandlers,
 		Interval:          opts.WorkerInterval,
+		CancelInterval:    5 * time.Second,
 		HeartbeatInterval: 15 * time.Second,
 		Metrics:           newWorkerMetrics(opts.PrometheusRegisterer),
 	})

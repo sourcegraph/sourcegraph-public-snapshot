@@ -65,7 +65,7 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 	}
 	log15.Debug("Generated repoIds", "repoids", repoIds)
 
-	frames := BuildFrames(7, interval, c.clock())
+	frames := timeseries.BuildFrames(7, interval, c.clock())
 	pivoted := make(map[string]timeCounts)
 
 	for _, repository := range repositories {
