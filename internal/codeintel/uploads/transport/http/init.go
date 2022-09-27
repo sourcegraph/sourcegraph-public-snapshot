@@ -10,16 +10,19 @@ import (
 	"github.com/sourcegraph/log"
 
 	uploads "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/http/auth"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 var (
-	handler     http.Handler
-	handlerOnce sync.Once
+	handler         http.Handler
+	handlerWithAuth http.Handler
+	handlerOnce     sync.Once
 )
 
-func GetHandler(svc *uploads.Service, withCodeHostAuthAuth bool) http.Handler {
+func GetHandler(svc *uploads.Service, db database.DB, withCodeHostAuthAuth bool) http.Handler {
 	handlerOnce.Do(func() {
 		observationContext := &observation.Context{
 			Logger:     log.Scoped("uploads.handler", "codeintel uploads http handler"),
@@ -27,13 +30,16 @@ func GetHandler(svc *uploads.Service, withCodeHostAuthAuth bool) http.Handler {
 			Registerer: prometheus.DefaultRegisterer,
 		}
 
-		// uploadStore, err := lsifuploadstore.New(context.Background(), config.LSIFUploadStoreConfig, observationContext)
-		// if err != nil {
-		// 	logger.Fatal("Failed to initialize upload store", log.Error(err))
-		// }
+		operations := newOperations(observationContext)
+		handler = newHandler(svc, operations)
 
-		handler = newHandler(svc, observationContext)
+		// 🚨 SECURITY: Non-internal installations of this handler will require a user/repo
+		// visibility check with the remote code host (if enabled via site configuration).
+		handlerWithAuth = auth.AuthMiddleware(handler, db, auth.DefaultValidatorByCodeHost, operations.authMiddleware)
 	})
 
+	if withCodeHostAuthAuth {
+		return handlerWithAuth
+	}
 	return handler
 }

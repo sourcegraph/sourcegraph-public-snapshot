@@ -10,12 +10,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	uploads "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/http/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/uploadhandler"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -26,11 +24,13 @@ type Handler struct {
 	operations *operations
 }
 
-func newHandler(svc *uploads.Service, observationContext *observation.Context) http.Handler {
-	operations := newOperations(observationContext)
-	_ = operations // return &Handler{svc: svc}
-
-	return nil
+func newHandler(svc *uploads.Service, operations *operations) http.Handler {
+	return newUploadHandler(
+		nil, // TODO
+		nil, // TODO
+		nil, // TODO
+		operations,
+	)
 }
 
 var revhashPattern = lazyregexp.New(`^[a-z0-9]{40}$`)
@@ -39,13 +39,9 @@ func newUploadHandler(
 	db database.DB,
 	dbStore uploadhandler.DBStore[UploadMetadata],
 	uploadStore uploadstore.Store,
-	internal bool,
-	authValidators auth.AuthValidatorMap,
 	operations *operations,
 ) http.Handler {
-	logger := log.Scoped("UploadHandler", "").With(
-		log.Bool("internal", internal),
-	)
+	logger := log.Scoped("UploadHandler", "")
 
 	metadataFromRequest := func(ctx context.Context, r *http.Request) (UploadMetadata, int, error) {
 		commit := getQuery(r, "commit")
@@ -78,12 +74,6 @@ func newUploadHandler(
 		operations.Operations,
 		metadataFromRequest,
 	)
-
-	if !internal {
-		// 🚨 SECURITY: Non-internal installations of this handler will require a user/repo
-		// visibility check with the remote code host (if enabled via site configuration).
-		handler = auth.AuthMiddleware(handler, db, authValidators, operations.authMiddleware)
-	}
 
 	return handler
 }

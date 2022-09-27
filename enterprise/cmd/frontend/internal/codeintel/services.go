@@ -73,7 +73,9 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 	autoindexingSvc := autoindexing.GetService(db, uploadSvc, gitserverClient, repoUpdaterClient)
 
 	// Initialize http endpoints
-	newUploadHandler := func(withCodeHostAuth bool) http.Handler { return uploadshttp.GetHandler(uploadSvc, withCodeHostAuth) }
+	newUploadHandler := func(withCodeHostAuth bool) http.Handler {
+		return uploadshttp.GetHandler(uploadSvc, db, withCodeHostAuth)
+	}
 	internalUploadHandler := newUploadHandler(false)
 	externalUploadHandler := newUploadHandler(true)
 

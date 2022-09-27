@@ -110,14 +110,20 @@ func TestHandleEnqueueAuth(t *testing.T) {
 			},
 		}
 
-		newUploadHandler(
+		operations := newOperations(&observation.TestContext)
+		handler := auth.AuthMiddleware(
+			newUploadHandler(
+				db,
+				mockDBStore,
+				mockUploadStore,
+				operations,
+			),
 			db,
-			mockDBStore,
-			mockUploadStore,
-			false,
 			authValidators,
-			newOperations(&observation.TestContext),
-		).ServeHTTP(w, r)
+			operations.authMiddleware,
+		)
+
+		handler.ServeHTTP(w, r)
 
 		if w.Code != user.statusCode {
 			t.Errorf("unexpected status code for user %s. want=%d have=%d", user.name, user.statusCode, w.Code)
