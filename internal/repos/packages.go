@@ -56,6 +56,11 @@ func (s *PackagesSource) ListRepos(ctx context.Context, results chan SourceResul
 	handledPackages := make(map[reposource.PackageName]struct{})
 
 	for _, dep := range deps {
+		if err := ctx.Err(); err != nil {
+			results <- SourceResult{Source: s, Err: err}
+			return
+		}
+
 		if _, ok := handledPackages[dep.PackageSyntax()]; !ok {
 			_, err := getPackage(ctx, s.src, dep.PackageSyntax())
 			if err != nil {
