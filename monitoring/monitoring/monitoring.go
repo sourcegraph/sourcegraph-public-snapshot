@@ -752,7 +752,7 @@ func (o Observable) validate(variables []ContainerVariable) error {
 			"Warning":  o.Warning,
 			"Critical": o.Critical,
 		} {
-			if err := alert.validate(variables); err != nil {
+			if err := alert.validate(); err != nil {
 				return errors.Errorf("%s Alert: %w", alertLevel, err)
 			}
 		}
@@ -898,7 +898,7 @@ func (a *ObservableAlertDefinition) isEmpty() bool {
 	return a == nil || (*a == ObservableAlertDefinition{}) || (!a.greaterThan && !a.lessThan)
 }
 
-func (a *ObservableAlertDefinition) validate(variables []ContainerVariable) error {
+func (a *ObservableAlertDefinition) validate() error {
 	if a.isEmpty() {
 		return nil
 	}
@@ -906,9 +906,10 @@ func (a *ObservableAlertDefinition) validate(variables []ContainerVariable) erro
 		return errors.New("only one bound (greater or less) can be set")
 	}
 
-	// Chekc if query is valid
 	if a.customQuery != "" {
-		if err := promql.Validate(a.customQuery, newVariableApplier(variables)); err != nil {
+		// Check if custom query is a valid alert query. Also note that custom queries
+		// should not use variables, so we don't provide them here.
+		if _, err := promql.InjectAsAlert(a.customQuery, nil, nil); err != nil {
 			return errors.Wrapf(err, "CustomQuery is invalid")
 		}
 	}
@@ -930,5 +931,5 @@ func (a *ObservableAlertDefinition) generateAlertQuery(o Observable, injectLabel
 	}
 
 	// Inject label matchers
-	return promql.Inject(alertQuery, injectLabelMatchers, vars)
+	return promql.InjectAsAlert(alertQuery, injectLabelMatchers, vars)
 }
