@@ -35,7 +35,7 @@ func GetHandler(svc *uploads.Service, db database.DB, withCodeHostAuthAuth bool)
 
 		// 🚨 SECURITY: Non-internal installations of this handler will require a user/repo
 		// visibility check with the remote code host (if enabled via site configuration).
-		handlerWithAuth = auth.AuthMiddleware(handler, db, auth.DefaultValidatorByCodeHost, operations.authMiddleware)
+		handlerWithAuth = auth.AuthMiddleware(handler, db.Users(), auth.DefaultValidatorByCodeHost, operations.authMiddleware)
 	})
 
 	if withCodeHostAuthAuth {

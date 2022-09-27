@@ -118,7 +118,7 @@ func TestHandleEnqueueAuth(t *testing.T) {
 				mockUploadStore,
 				operations,
 			),
-			db,
+			db.Users(),
 			authValidators,
 			operations.authMiddleware,
 		)
