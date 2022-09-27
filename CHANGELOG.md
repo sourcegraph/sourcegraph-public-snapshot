@@ -22,7 +22,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
--
+- GraphQL request logs are now compliant with the audit logging format. This is a breaking change for potential users of the old logs (controlled by `LOG_ALL_GRAPHQL_REQUESTS` env var). [#41952](https://github.com/sourcegraph/sourcegraph/pull/41952)
 
 ### Fixed
 
