@@ -71,7 +71,7 @@ func RunOutOfBandMigrations(
 
 	return &cli.Command{
 		Name:        "run-out-of-band-migrations",
-		Usage:       "Run incomplete out of band migrations (experimental).",
+		Usage:       "Run incomplete out of band migrations.",
 		Description: "",
 		Action:      action,
 		Flags: []cli.Flag{
