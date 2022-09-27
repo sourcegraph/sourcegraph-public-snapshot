@@ -98,6 +98,13 @@ describe('Code insights populated dashboard', () => {
     })
 })
 
+/**
+ * Helper function to get all links on the page that match a list of strings.
+ *
+ * @param page - Reference to the puppeteer page
+ * @param labels - Array of labels that should be found on the page
+ * @returns - Array of labels that were found on the page
+ */
 async function getLinks(page: Page, labels: string[]): Promise<string[]> {
     const foundLinks: string[] = []
     const links = await page.$$('a')
