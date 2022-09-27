@@ -10,7 +10,7 @@ import styles from './TabbedPanelContent.module.scss'
 
 interface Props extends PlatformContextProps, SettingsCascadeProps {}
 
-export const MixPreciseAndSearchBasedReferencesToggle = (props: Props): React.ReactNode => {
+export const MixPreciseAndSearchBasedReferencesToggle = (props: Props): React.ReactElement | null => {
     const { settingsCascade, platformContext } = props
 
     const disableSearchBased = getSettingsValue(settingsCascade, 'codeIntel.disableSearchBased')
