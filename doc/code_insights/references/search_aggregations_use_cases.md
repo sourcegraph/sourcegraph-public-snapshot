@@ -7,7 +7,7 @@ Here are some common use cases for the [in-search-results aggregations](../expla
 ### What versions of Go are we using most? 
 See all the go versions in your codebase (group by capture group)
 ```sgquery
-file:go\.mod$ go\s*(\d\.\d+)
+file:go\.mod$ /go\s*(\d\.\d+)/
 ```
 
 ### What are the open source licenses most used in our codebase? 
@@ -16,20 +16,20 @@ See all the licenses included, by frequency (group by capture group)
 file:package.json /"license":\s(.*),/
 ```
 
-### Which repos use a specific internal library the most?
-See which repos import a library (group by repo) 
+### Which repositories use a specific internal library the most?
+See which repositories import a library (group by repository) 
 ```sguqery
-from\s'@sourcegraph/wildcard'
+from '@sourcegraph/wildcard'
 ```
 
 ### Which directories have the longest eslint ignore file? 
-See which files have the most linter override rules within a repo (group by file)
+See which files have the most linter override rules within a repository (group by file)
 ```sgquery
 file:^\.eslintignore /.\n/ repo:^github\.com/sourcegraph/sourcegraph$
 ```
 
 ### Who knows most about a library or component? 
-See who has added the most uses of a component to a specific repo in the last three months
+See who has added the most uses of a component to a specific repository in the last three months
 ```sgquery
 nodeComponent type:diff select:commit.diff.added repo:sourcegraph/sourcegraph$ after:"3 months ago"
 ```
@@ -56,21 +56,21 @@ See every email address hardcoded, by frequency
 ```
 
 
-## By repo 
+## By repository
 
-### Which repos use a specific internal library the most?
-See which repos import a library 
+### Which repositories use a specific internal library the most?
+See which repositories import a library 
 ```sguqery
 /from\s'\@sourcegraph\/wildcard/
 ```
 
-### Which teams (repos) have the most usages of a vulnerable function or library? 
+### Which teams (repositories) have the most usages of a vulnerable function or library? 
 ```sgquery
 vulnerableFunc(
 ```
 
-### Which repos have the longest top-level eslint ignore files? 
-See which repos are using the most linter overrides
+### Which repositories have the longest top-level eslint ignore files? 
+See which repositories are using the most linter overrides
 ```sgquery
 file:^\.eslintignore /.\n/
 ```
@@ -85,13 +85,13 @@ repo:^github\.com/sourcegraph/sourcegraph$ /log15\.(?:Debug|Info|Warn|Error)/
 ```
 
 ### Which are our biggest package.json files? 
-See which repos have the most scripts or dependencies
+See which repositories have the most scripts or dependencies
 ```sgquery
 file:package\.json ,
 ```
 
 ### Which directories have the longest eslint ignore file? 
-See which files have the most linter override rules within a repo
+See which files have the most linter override rules within a repository
 ```sgquery
 file:^\.eslintignore /.\n/ repo:^github\.com/sourcegraph/sourcegraph$
 ```
@@ -100,7 +100,7 @@ file:^\.eslintignore /.\n/ repo:^github\.com/sourcegraph/sourcegraph$
 ## By author
 
 ### Who knows most about a library or component? 
-See who has added the most uses of a component to a specific repo in the last three months
+See who has added the most uses of a component to a specific repository in the last three months
 ```sgquery
 nodeComponent type:diff select:commit.diff.added repo:sourcegraph/sourcegraph$ after:"3 months ago"
 ```
