@@ -162,7 +162,8 @@ type CreateEmptyBatchChangeOpts struct {
 // namespace permissions of the caller and validates that the combination of name +
 // namespace is unique.
 func (s *Service) CreateEmptyBatchChange(ctx context.Context, opts CreateEmptyBatchChangeOpts) (batchChange *btypes.BatchChange, err error) {
-	// Check whether the current user has access to either one of the namespaces.
+	// 🚨 SECURITY: Check whether the current user has access to either one of
+	// the namespaces.
 	err = s.CheckNamespaceAccess(ctx, opts.NamespaceUserID, opts.NamespaceOrgID)
 	if err != nil {
 		return nil, err
@@ -419,7 +420,8 @@ func (s *Service) CreateBatchSpecFromRaw(ctx context.Context, opts CreateBatchSp
 		return nil, err
 	}
 
-	// Check whether the current user has access to either one of the namespaces.
+	// 🚨 SECURITY: Check whether the current user has access to either one of
+	// the namespaces.
 	err = s.CheckNamespaceAccess(ctx, opts.NamespaceUserID, opts.NamespaceOrgID)
 	if err != nil {
 		return nil, err
@@ -446,8 +448,11 @@ func (s *Service) CreateBatchSpecFromRaw(ctx context.Context, opts CreateBatchSp
 			return nil, err
 		}
 
-		// 🚨 SECURITY: Only the Author of the batch change can create a batchSpec from raw assigned to it.
-		if err := backend.CheckSiteAdminOrSameUser(ctx, tx.DatabaseDB(), batchChange.CreatorID); err != nil {
+		// 🚨 SECURITY: Check whether the current user has access to the
+		// namespace of the batch change. Note that this may be different to the
+		// user-controlled namespace options — we need to check before changing
+		// anything in the database!
+		if err := s.CheckNamespaceAccess(ctx, batchChange.NamespaceUserID, batchChange.NamespaceOrgID); err != nil {
 			return nil, err
 		}
 	}
