@@ -50,14 +50,12 @@ func (r *Runner) validateSchema(ctx context.Context, schemaContext schemaContext
 		return nil
 	}
 
-	logger.Warn("Schema not in expected state",
+	logger.Info("Schema is not in the expected state - checking for active migrations",
 		log.String("schema", schemaContext.schema.Name),
 		log.Ints("appliedVersions", extractIDs(byState.applied)),
 		log.Ints("pendingVersions", extractIDs(byState.pending)),
 		log.Ints("failedVersions", extractIDs(byState.failed)),
 	)
-
-	logger.Info("Checking for active migrations")
 
 	for {
 		// Attempt to validate the given definitions. We may have to call this several times as
