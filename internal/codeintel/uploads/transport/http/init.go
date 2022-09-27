@@ -15,6 +15,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/uploadhandler"
+	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 )
 
 var (
@@ -23,7 +25,7 @@ var (
 	handlerOnce     sync.Once
 )
 
-func GetHandler(svc *uploads.Service, db database.DB, withCodeHostAuthAuth bool) http.Handler {
+func GetHandler(svc *uploads.Service, db database.DB, uploadStore uploadstore.Store, withCodeHostAuthAuth bool) http.Handler {
 	handlerOnce.Do(func() {
 		logger := log.Scoped(
 			"uploads.handler",
@@ -36,14 +38,24 @@ func GetHandler(svc *uploads.Service, db database.DB, withCodeHostAuthAuth bool)
 			Registerer: prometheus.DefaultRegisterer,
 		}
 
+		operations := newOperations(observationContext)
+		uploadHandlerOperations := uploadhandler.NewOperations("codeintel", observationContext)
+
 		userStore := db.Users()
 		repoStore := backend.NewRepos(logger, db)
-		operations := newOperations(observationContext) // TODO - split
-		handler = newHandler(svc, repoStore, operations.Operations)
+
+		// Construct base handler, used in internal routes and as internal handler wrapped
+		// in the auth middleware defined on the next few lines
+		handler = newHandler(repoStore, uploadStore, svc.UploadHandlerStore(), uploadHandlerOperations)
 
 		// 🚨 SECURITY: Non-internal installations of this handler will require a user/repo
 		// visibility check with the remote code host (if enabled via site configuration).
-		handlerWithAuth = auth.AuthMiddleware(handler, userStore, auth.DefaultValidatorByCodeHost, operations.authMiddleware)
+		handlerWithAuth = auth.AuthMiddleware(
+			handler,
+			userStore,
+			auth.DefaultValidatorByCodeHost,
+			operations.authMiddleware,
+		)
 	})
 
 	if withCodeHostAuthAuth {

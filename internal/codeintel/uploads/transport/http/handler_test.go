@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/uploadhandler"
 	uploadstoremocks "github.com/sourcegraph/sourcegraph/internal/uploadstore/mocks"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -33,6 +34,7 @@ func TestHandleEnqueueAuth(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	repoStore := backend.NewRepos(logger, db)
 	mockDBStore := NewMockDBStore[uploads.UploadMetadata]()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
@@ -111,20 +113,17 @@ func TestHandleEnqueueAuth(t *testing.T) {
 			},
 		}
 
-		operations := newOperations(&observation.TestContext)
-		handler := auth.AuthMiddleware(
-			newUploadHandler(
-				backend.NewRepos(logger, db),
-				mockDBStore,
+		auth.AuthMiddleware(
+			newHandler(
+				repoStore,
 				mockUploadStore,
-				operations.Operations,
+				mockDBStore,
+				uploadhandler.NewOperations("test", &observation.TestContext),
 			),
 			db.Users(),
 			authValidators,
-			operations.authMiddleware,
-		)
-
-		handler.ServeHTTP(w, r)
+			newOperations(&observation.TestContext).authMiddleware,
+		).ServeHTTP(w, r)
 
 		if w.Code != user.statusCode {
 			t.Errorf("unexpected status code for user %s. want=%d have=%d", user.name, user.statusCode, w.Code)

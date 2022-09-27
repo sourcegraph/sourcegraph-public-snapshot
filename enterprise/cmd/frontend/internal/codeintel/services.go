@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifuploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	uploadshttp "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/http"
@@ -61,6 +62,10 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 
 	// Initialize lsif stores (TODO: these should be integrated, they are basically pointing to the same thing)
 	codeIntelLsifStore := database.NewDBWith(observationContext.Logger, codeIntelDBConnection)
+	uploadStore, err := lsifuploadstore.New(context.Background(), config.LSIFUploadStoreConfig, observationContext)
+	if err != nil {
+		return nil, err
+	}
 
 	// Initialize gitserver client & repoupdater
 	gitserverClient := gitserver.New(db, dbStore, observationContext)
@@ -74,7 +79,7 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 
 	// Initialize http endpoints
 	newUploadHandler := func(withCodeHostAuth bool) http.Handler {
-		return uploadshttp.GetHandler(uploadSvc, db, withCodeHostAuth)
+		return uploadshttp.GetHandler(uploadSvc, db, uploadStore, withCodeHostAuth)
 	}
 	internalUploadHandler := newUploadHandler(false)
 	externalUploadHandler := newUploadHandler(true)

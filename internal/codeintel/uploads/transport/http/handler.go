@@ -22,25 +22,12 @@ type Handler struct {
 	operations *operations
 }
 
-func newHandler(
-	svc *uploads.Service,
-	repoStore RepoStore,
-	operations *uploadhandler.Operations,
-) http.Handler {
-	return newUploadHandler(
-		repoStore,
-		svc.UploadHandlerStore(),
-		nil, // TODO
-		operations,
-	)
-}
-
 var revhashPattern = lazyregexp.New(`^[a-z0-9]{40}$`)
 
-func newUploadHandler(
+func newHandler(
 	repoStore RepoStore,
-	dbStore uploadhandler.DBStore[uploads.UploadMetadata],
 	uploadStore uploadstore.Store,
+	dbStore uploadhandler.DBStore[uploads.UploadMetadata],
 	operations *uploadhandler.Operations,
 ) http.Handler {
 	logger := log.Scoped("UploadHandler", "")
