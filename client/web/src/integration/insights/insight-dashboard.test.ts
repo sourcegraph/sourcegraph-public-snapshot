@@ -129,68 +129,6 @@ describe('[Code Insight] Dashboard', () => {
         })
     })
 
-    it('creates dashboard through dashboard creation UI', async () => {
-        overrideInsightsGraphQLApi({
-            testContext,
-            overrides: {
-                ...testContext.overrideGraphQL,
-                InsightSubjects: () => ({
-                    currentUser: {
-                        __typename: 'User',
-                        id: 'user_001',
-                        organizations: { nodes: [] },
-                    },
-                    site: { __typename: 'Site', id: 'site_id' },
-                }),
-                CreateDashboard: () => ({
-                    createInsightsDashboard: {
-                        __typename: 'InsightsDashboardPayload',
-                        dashboard: {
-                            __typename: 'InsightsDashboard',
-                            id: '001',
-                            title: '',
-                            views: { nodes: [] },
-                            grants: {
-                                __typename: 'InsightsPermissionGrants',
-                                users: [],
-                                organizations: [],
-                                global: true,
-                            },
-                        },
-                    },
-                }),
-            },
-        })
-
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
-
-        await driver.page.waitForSelector('[data-testid="add-dashboard-button"]')
-        await driver.page.click('[data-testid="add-dashboard-button"]')
-        await driver.page.waitForSelector('form')
-
-        await driver.page.type('[name="name"]', 'New test dashboard')
-        await driver.page.click('[name="visibility"][value="site_id"]')
-
-        const variables = await testContext.waitForGraphQLRequest(async () => {
-            const [button] = await driver.page.$x("//button[contains(., 'Add dashboard')]")
-
-            if (button) {
-                await button.click()
-            }
-        }, 'CreateDashboard')
-
-        assert.deepStrictEqual(variables, {
-            input: {
-                title: 'New test dashboard',
-                grants: {
-                    users: [],
-                    organizations: [],
-                    global: true,
-                },
-            },
-        })
-    })
-
     it('updates existing dashboard properly', async () => {
         overrideInsightsGraphQLApi({
             testContext,
