@@ -4,16 +4,18 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"os"
 	"sort"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/urfave/cli/v2"
+	"go.uber.org/zap/zapcore"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -206,8 +208,8 @@ func makeOutOfBandMigrationProgressUpdater(out *output.Output, ids []int, animat
 // will create output that interferes with a stable canvas. In effect, this adds the -disable-animation
 // flag when SRC_LOG_LEVEL is info or debug.
 func shouldDisableProgressAnimation() bool {
-	lvl, _ := log15.LvlFromString(env.LogLevel)
-	return lvl > log15.LvlWarn
+	level := log.Level(os.Getenv(log.EnvLogLevel)).Parse()
+	return level < zapcore.WarnLevel
 }
 
 func getMigrations(ctx context.Context, store *oobmigration.Store, ids []int) ([]oobmigration.Migration, error) {
