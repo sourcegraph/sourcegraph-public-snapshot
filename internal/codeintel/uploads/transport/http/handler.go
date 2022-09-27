@@ -25,11 +25,11 @@ type Handler struct {
 func newHandler(
 	svc *uploads.Service,
 	repoStore RepoStore,
-	operations *operations,
+	operations *uploadhandler.Operations,
 ) http.Handler {
 	return newUploadHandler(
 		repoStore,
-		nil, // TODO
+		svc.UploadHandlerStore(),
 		nil, // TODO
 		operations,
 	)
@@ -39,27 +39,27 @@ var revhashPattern = lazyregexp.New(`^[a-z0-9]{40}$`)
 
 func newUploadHandler(
 	repoStore RepoStore,
-	dbStore uploadhandler.DBStore[UploadMetadata],
+	dbStore uploadhandler.DBStore[uploads.UploadMetadata],
 	uploadStore uploadstore.Store,
-	operations *operations,
+	operations *uploadhandler.Operations,
 ) http.Handler {
 	logger := log.Scoped("UploadHandler", "")
 
-	metadataFromRequest := func(ctx context.Context, r *http.Request) (UploadMetadata, int, error) {
+	metadataFromRequest := func(ctx context.Context, r *http.Request) (uploads.UploadMetadata, int, error) {
 		commit := getQuery(r, "commit")
 		if !revhashPattern.Match([]byte(commit)) {
-			return UploadMetadata{}, http.StatusBadRequest, errors.Errorf("commit must be a 40-character revhash")
+			return uploads.UploadMetadata{}, http.StatusBadRequest, errors.Errorf("commit must be a 40-character revhash")
 		}
 
 		// Ensure that the repository and commit given in the request are resolvable.
 		repositoryName := getQuery(r, "repository")
 		repositoryID, statusCode, err := ensureRepoAndCommitExist(ctx, repoStore, repositoryName, commit, logger)
 		if err != nil {
-			return UploadMetadata{}, statusCode, err
+			return uploads.UploadMetadata{}, statusCode, err
 		}
 
 		// Populate state from request
-		return UploadMetadata{
+		return uploads.UploadMetadata{
 			RepositoryID:      repositoryID,
 			Commit:            commit,
 			Root:              sanitizeRoot(getQuery(r, "root")),
@@ -73,7 +73,7 @@ func newUploadHandler(
 		logger,
 		dbStore,
 		uploadStore,
-		operations.Operations,
+		operations,
 		metadataFromRequest,
 	)
 

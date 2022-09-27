@@ -60,6 +60,12 @@ type Store interface {
 	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error)
 	DeleteUploadByID(ctx context.Context, id int) (_ bool, err error)
 
+	// Uploads (uploading)
+	InsertUpload(ctx context.Context, upload shared.Upload) (int, error)
+	AddUploadPart(ctx context.Context, uploadID, partIndex int) error
+	MarkQueued(ctx context.Context, id int, uploadSize *int64) error
+	MarkFailed(ctx context.Context, id int, reason string) error
+
 	// Dumps
 	FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) (_ []shared.Dump, err error)
 	FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, commitGraph *gitdomain.CommitGraph) (_ []shared.Dump, err error)

@@ -25,7 +25,10 @@ var (
 
 func GetHandler(svc *uploads.Service, db database.DB, withCodeHostAuthAuth bool) http.Handler {
 	handlerOnce.Do(func() {
-		logger := log.Scoped("uploads.handler", "codeintel uploads http handler")
+		logger := log.Scoped(
+			"uploads.handler",
+			"codeintel uploads http handler",
+		)
 
 		observationContext := &observation.Context{
 			Logger:     logger,
@@ -35,8 +38,8 @@ func GetHandler(svc *uploads.Service, db database.DB, withCodeHostAuthAuth bool)
 
 		userStore := db.Users()
 		repoStore := backend.NewRepos(logger, db)
-		operations := newOperations(observationContext)
-		handler = newHandler(svc, repoStore, operations)
+		operations := newOperations(observationContext) // TODO - split
+		handler = newHandler(svc, repoStore, operations.Operations)
 
 		// 🚨 SECURITY: Non-internal installations of this handler will require a user/repo
 		// visibility check with the remote code host (if enabled via site configuration).

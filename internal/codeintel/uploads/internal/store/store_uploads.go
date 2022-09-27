@@ -1971,3 +1971,19 @@ func buildLogFields(opts shared.GetUploadsOptions) []log.Field {
 		log.Int("offset", opts.Offset),
 	}
 }
+
+func (s *store) InsertUpload(ctx context.Context, upload shared.Upload) (int, error) {
+	return 0, errors.New("unimplemented InsertUpload") // TODO
+}
+
+func (s *store) AddUploadPart(ctx context.Context, uploadID, partIndex int) error {
+	return errors.New("unimplemented AddUploadPart") // TODO
+}
+
+func (s *store) MarkQueued(ctx context.Context, id int, uploadSize *int64) error {
+	return errors.New("unimplemented MarkQueued") // TODO
+}
+
+func (s *store) MarkFailed(ctx context.Context, id int, reason string) error {
+	return errors.New("unimplemented MarkFailed") // TODO
+}
