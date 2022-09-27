@@ -6,18 +6,6 @@ import { marked } from 'marked'
 import sanitize from 'sanitize-html'
 import { Overwrite } from 'utility-types'
 
-// Disable autolinks in Marked
-// Returning `undefined` is not allowed by TypeScript so we
-// need to do a bit of hacky type casting.
-// Returning `false` did NOT disable the autolinking when testing.
-// Explicit links using `[text](url)` are still allowed.
-// More context here: https://github.com/markedjs/marked/issues/882
-marked.use({
-    tokenizer: {
-        url: () => (undefined as unknown) as false,
-    },
-})
-
 /**
  * Escapes HTML by replacing characters like `<` with their HTML escape sequences like `&lt;`
  */
@@ -69,6 +57,8 @@ export const renderMarkdown = (
     options: {
         /** Whether to render line breaks as HTML `<br>`s */
         breaks?: boolean
+        /** Whether to disable autolinks. Explicit links using `[text](url)` are still allowed. */
+        disableAutolink?: boolean
         renderer?: marked.Renderer
         headerPrefix?: string
     } & (
@@ -85,6 +75,14 @@ export const renderMarkdown = (
           }
     ) = {}
 ): string => {
+    const tokenizer = new marked.Tokenizer()
+    if (options.disableAutolink) {
+        // Returning undefined is not allowed by the type definition
+        // but is the recommended way to easily disable autolinks.
+        // More context here: https://github.com/markedjs/marked/issues/882
+        tokenizer.url = () => (undefined as unknown) as marked.Tokens.Link
+    }
+
     const rendered = marked(markdown, {
         gfm: true,
         breaks: options.breaks,
@@ -92,6 +90,7 @@ export const renderMarkdown = (
         highlight: (code, language) => highlightCodeSafe(code, language),
         renderer: options.renderer,
         headerPrefix: options.headerPrefix ?? '',
+        tokenizer,
     })
 
     let sanitizeOptions: Overwrite<sanitize.IOptions, sanitize.IDefaults>
