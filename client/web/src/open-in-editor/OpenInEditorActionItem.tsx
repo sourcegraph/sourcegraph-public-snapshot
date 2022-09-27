@@ -21,10 +21,11 @@ import styles from './OpenInEditorActionItem.module.scss'
 
 export interface OpenInEditorActionItemProps {
     platformContext: PlatformContext
+    externalServiceType?: string
     assetsRoot?: string
 }
 
-// We only want to attemt to upgrade the legacy open in editor settings once per
+// We only want to attempt to upgrade the legacy open in editor settings once per
 // page load.
 let didAttemptToUpgradeSettings = false
 
@@ -89,6 +90,7 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
                                 eventLogger.log('OpenInEditorClicked', { editor: editor.id }, { editor: editor.id })
                                 openCurrentUrlInEditor(
                                     settings?.openInEditor,
+                                    props.externalServiceType,
                                     props.platformContext.sourcegraphURL,
                                     index
                                 )

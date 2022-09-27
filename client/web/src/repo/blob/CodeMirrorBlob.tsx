@@ -9,7 +9,12 @@ import { Compartment, EditorState, Extension } from '@codemirror/state'
 import { EditorView, keymap } from '@codemirror/view'
 import { isEqual } from 'lodash'
 
-import { addLineRangeQueryParameter, LineOrPositionOrRange, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
+import {
+    addLineRangeQueryParameter,
+    formatSearchParameters,
+    LineOrPositionOrRange,
+    toPositionOrRangeQueryParameter,
+} from '@sourcegraph/common'
 import { createUpdateableField, editorHeight, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { parseQueryAndHash, UIPositionSpec } from '@sourcegraph/shared/src/util/url'
 
@@ -34,19 +39,25 @@ const staticExtensions: Extension = [
     editorHeight({ height: '100%' }),
     EditorView.theme({
         '&': {
+            backgroundColor: 'var(--code-bg)',
+        },
+        '.cm-scroller': {
             fontFamily: 'var(--code-font-family)',
             fontSize: 'var(--code-font-size)',
+            lineHeight: '1rem',
+        },
+        '.cm-gutters': {
             backgroundColor: 'var(--code-bg)',
+            borderRight: 'initial',
+        },
+        '.cm-line': {
+            paddingLeft: '1rem',
         },
         '.selected-line': {
             backgroundColor: 'var(--code-selection-bg)',
         },
         '.highlighted-line': {
             backgroundColor: 'var(--code-selection-bg)',
-        },
-        '.cm-gutters': {
-            backgroundColor: 'var(--code-bg)',
-            borderRight: 'initial',
         },
     }),
     // Note that these only work out-of-the-box because the editor is
@@ -65,28 +76,6 @@ const blameDecorationsCompartment = new Compartment()
 // Compartment for propagating component props
 const blobPropsCompartment = new Compartment()
 
-// See CodeMirrorQueryInput for a detailed comment about the pattern that's used
-// below. The CodeMirror search bar uses a similar pattern to support global
-// shortcuts (including Mod-k) while the search bar is focused.
-const [callbacksField, setCallbacks] = createUpdateableField<Pick<BlobProps, 'onHandleFuzzyFinder'>>(
-    { onHandleFuzzyFinder: () => {} },
-    callbacks => [
-        keymap.of([
-            {
-                key: 'Mod-k',
-                run: view => {
-                    const { onHandleFuzzyFinder } = view.state.field(callbacks)
-                    if (onHandleFuzzyFinder) {
-                        onHandleFuzzyFinder(true)
-                        return true
-                    }
-                    return false
-                },
-            },
-        ]),
-    ]
-)
-
 export const Blob: React.FunctionComponent<BlobProps> = props => {
     const {
         className,
@@ -102,7 +91,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         // Reference panel specific props
         disableStatusBar,
         disableDecorations,
-        onHandleFuzzyFinder,
+        navigateToLineOnAnyClick,
     } = props
 
     const [container, setContainer] = useState<HTMLDivElement | null>(null)
@@ -110,6 +99,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     // same file are opened inside the reference panel.
     const blobInfo = useDistinctBlob(props.blobInfo)
     const position = useMemo(() => parseQueryAndHash(location.search, location.hash), [location.search, location.hash])
+    // const position = parseQueryAndHash(location.search, location.hash)
     const hasPin = useMemo(() => urlIsPinned(location.search), [location.search])
 
     const blobProps = useMemo(() => blobPropsFacet.of(props), [props])
@@ -119,11 +109,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         [wrapCode, isLightTheme]
     )
 
-    const blameDecorations = useMemo(
-        () => (blameHunks ? [showGitBlameDecorations.of(blameHunks)] : []),
-
-        [blameHunks]
-    )
+    const blameDecorations = useMemo(() => (blameHunks ? [showGitBlameDecorations.of(blameHunks)] : []), [blameHunks])
 
     // Keep history and location in a ref so that we can use the latest value in
     // the onSelection callback without having to recreate it and having to
@@ -133,36 +119,49 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     const locationRef = useRef(location)
     locationRef.current = location
 
-    const onSelection = useCallback((range: SelectedLineRange) => {
-        const parameters = new URLSearchParams(locationRef.current.search)
-        let query: string | undefined
+    const customHistoryAction = props.nav
+    const onSelection = useCallback(
+        (range: SelectedLineRange) => {
+            const parameters = new URLSearchParams(locationRef.current.search)
+            let query: string | undefined
 
-        if (range?.line !== range?.endLine && range?.endLine) {
-            query = toPositionOrRangeQueryParameter({
-                range: {
-                    start: { line: range.line },
-                    end: { line: range.endLine },
-                },
-            })
-        } else if (range?.line) {
-            query = toPositionOrRangeQueryParameter({ position: { line: range.line } })
-        }
+            if (range?.line !== range?.endLine && range?.endLine) {
+                query = toPositionOrRangeQueryParameter({
+                    range: {
+                        start: { line: range.line },
+                        end: { line: range.endLine },
+                    },
+                })
+            } else if (range?.line) {
+                query = toPositionOrRangeQueryParameter({ position: { line: range.line } })
+            }
 
-        updateBrowserHistoryIfChanged(
-            historyRef.current,
-            locationRef.current,
-            addLineRangeQueryParameter(parameters, query)
-        )
-    }, [])
+            const newSearchParameters = addLineRangeQueryParameter(parameters, query)
+            if (customHistoryAction) {
+                customHistoryAction(
+                    historyRef.current.createHref({
+                        ...locationRef.current,
+                        search: formatSearchParameters(newSearchParameters),
+                    })
+                )
+            } else {
+                updateBrowserHistoryIfChanged(historyRef.current, locationRef.current, newSearchParameters)
+            }
+        },
+        [customHistoryAction]
+    )
 
     const extensions = useMemo(
         () => [
             staticExtensions,
-            callbacksField,
-            selectableLineNumbers({ onSelection, initialSelection: position.line !== undefined ? position : null }),
+            selectableLineNumbers({
+                onSelection,
+                initialSelection: position.line !== undefined ? position : null,
+                navigateToLineOnAnyClick: navigateToLineOnAnyClick ?? false,
+            }),
             syntaxHighlight.of(blobInfo),
             pinnedRangeField.init(() => (hasPin ? position : null)),
-            extensionsController !== null
+            extensionsController !== null && !navigateToLineOnAnyClick
                 ? sourcegraphExtensions({
                       blobInfo,
                       initialSelection: position,
@@ -187,12 +186,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         updateValueOnChange: false,
         updateOnExtensionChange: false,
     })
-
-    useEffect(() => {
-        if (editor) {
-            setCallbacks(editor, { onHandleFuzzyFinder })
-        }
-    }, [editor, onHandleFuzzyFinder])
 
     // Reconfigure editor when blobInfo or core extensions changed
     useEffect(() => {
@@ -312,8 +305,12 @@ const [pinnedRangeField, updatePinnedRangeField] = createUpdateableField<LineOrP
         }
         const from = uiPositionToOffset(state.doc, startPosition, startLine)
 
+        if (from === null) {
+            return []
+        }
+
         let endPosition: UIPositionSpec['position']
-        let to: number
+        let to: number | null = null
 
         if (position.endLine && position.endCharacter) {
             endPosition = {
@@ -330,6 +327,10 @@ const [pinnedRangeField, updatePinnedRangeField] = createUpdateableField<LineOrP
             }
             to = word.to
             endPosition = offsetToUIPosition(state.doc, word.to)
+        }
+
+        if (to === null || endPosition === null) {
+            return []
         }
 
         return [

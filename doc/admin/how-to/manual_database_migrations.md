@@ -72,7 +72,7 @@ This command is used on Sourcegraph instance startup to ensure the database sche
 
 Note that if `-db=all`, the configuration flag `DISABLE_CODE_INSIGHTS` is not enabled, and the `codeinsights-db` is unavailable, the operation will fail. In this case, supply an explicit `-db` flag (e.g., `-db=frontend,codeintel`).
 
-If the flag `--skip-upgrade-validation` is supplied, then the current version of the schema will not be read to assert the [standard upgrade policy](../updates/index.md#standard-upgrades) is being followed. If the flag `--skip-oobmigration-validation` is supplied, then the progress of out-fo-band migrationsw ill not be read to assert completion of newly deprecated migrations.
+If the flag `--skip-upgrade-validation` is supplied, then the current version of the schema will not be read to assert the [standard upgrade policy](../updates/index.md#standard-upgrades) is being followed. If the flag `--skip-oobmigration-validation` is supplied, then the progress of out-fo-band migrations will not be read to assert completion of newly deprecated migrations.
 
 The flags `--ignore-single-dirty-log` and `--ignore-single-pending-log` can be supplied to re-attempt to apply the **next** migration that was marked as errored or as incomplete (respectively). For usage, see the guide on [How to troubleshoot a dirty database](dirty_database.md#0-attempt-re-application).
 
@@ -121,7 +121,7 @@ Note that if `-db=all`, the configuration flag `DISABLE_CODE_INSIGHTS` is not en
 To run a `migrator` command, follow the guide for your Sourcegraph distribution type:
 
 - [Kubernetes](#kubernetes) 
-- [Docker-compose](#docker-compose)
+- [Docker / Docker-compose](#docker--docker-compose)
 - [Local development](#local-development)
 
 ### Kubernetes
@@ -170,7 +170,7 @@ job.batch/migrator condition met
 
 The log output of the `migrator` should include `INFO`-level logs and successfully terminate with `migrator exited with code 0`. If you see an error message or any of the databases have been flagged as "dirty", please follow ["How to troubleshoot a dirty database"](../../../admin/how-to/dirty_database.md). A dirty database will not affect your ability to use Sourcegraph however it will need to be resolved to upgrade further. If you are unable to resolve the issues, contact support at <mailto:support@sourcegraph.com> for further assistance. Otherwise, you are now safe to upgrade Sourcegraph.
 
-### Docker compose
+### Docker / Docker compose
 
 Run the following commands on your Docker host.
 

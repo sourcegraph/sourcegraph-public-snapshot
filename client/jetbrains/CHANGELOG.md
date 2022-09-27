@@ -10,6 +10,8 @@
 
 ### Removed
 
+- Removed tracking parameters from all shareable URLs [pull/42022](https://github.com/sourcegraph/sourcegraph/pull/42022)
+
 ### Fixed
 
 ### Security

@@ -1208,12 +1208,12 @@ func testSearchClient(t *testing.T, client searchClient) {
 			{
 				name:   `commit results without repo filter`,
 				query:  `type:commit LSIF`,
-				counts: counts{Commit: 9},
+				counts: counts{Commit: 11},
 			},
 			{
 				name:   `commit results with repo filter`,
 				query:  `repo:contains.file(path:diff.pb.go) type:commit LSIF`,
-				counts: counts{Commit: 1},
+				counts: counts{Commit: 2},
 			},
 			{
 				name:   `predicate logic does not conflict with unrecognized patterns`,

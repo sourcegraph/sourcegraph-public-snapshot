@@ -87,6 +87,7 @@
         > button:focus {
             height: 1.5rem;
             padding: 0.125rem 1rem;
+            cursor: default;
             background: var(--jb-button-bg);
             border: 1px solid var(--jb-border-color);
             border-radius: 4px;
@@ -164,6 +165,7 @@
                     background: var(--jb-button-bg);
                     border: 1px solid var(--jb-border-color);
                     border-radius: 4px;
+                    cursor: default;
                     color: var(--jb-text-color);
                     font-weight: normal;
 
@@ -184,6 +186,7 @@
         button[data-search-context-spec],
         :global(button.disabled.dropdown-item) {
             padding: 0 0.75rem;
+            cursor: default;
 
             > small:not(:first-child),
             > span {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/c2h5oh/datasize"
 	"github.com/google/uuid"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
@@ -41,12 +42,13 @@ type Config struct {
 	NodeExporterURL               string
 	DockerRegistryNodeExporterURL string
 	WorkerHostname                string
+	DockerRegistryMirrorURL       string
 }
 
 func defaultFirecrackerImageTag() string {
 	// In dev, just use latest for convenience.
 	if version.IsDev(version.Version()) {
-		return "latest"
+		return "insiders"
 	}
 	return version.Version()
 }
@@ -73,6 +75,7 @@ func (c *Config) Load() {
 	c.NodeExporterURL = c.GetOptional("NODE_EXPORTER_URL", "The URL of the node_exporter instance, without the /metrics path.")
 	c.DockerRegistryNodeExporterURL = c.GetOptional("DOCKER_REGISTRY_NODE_EXPORTER_URL", "The URL of the Docker Registry instance's node_exporter, without the /metrics path.")
 	c.MaxActiveTime = c.GetInterval("EXECUTOR_MAX_ACTIVE_TIME", "0", "The maximum time that can be spent by the worker dequeueing records to be handled.")
+	c.DockerRegistryMirrorURL = c.GetOptional("EXECUTOR_DOCKER_REGISTRY_MIRROR_URL", "The address of a docker registry mirror to use in firecracker VMs.")
 
 	hn := hostname.Get()
 	// Be unique but also descriptive.
@@ -80,9 +83,16 @@ func (c *Config) Load() {
 }
 
 func (c *Config) Validate() error {
-	if c.JobNumCPUs != 1 && c.JobNumCPUs%2 != 0 && c.UseFirecracker {
-		// Required by Firecracker: The vCPU number is invalid! The vCPU number can only be 1 or an even number when hyperthreading is enabled
-		c.AddError(errors.Newf("EXECUTOR_JOB_NUM_CPUS must be 1 or an even number"))
+	if c.UseFirecracker {
+		if c.JobNumCPUs != 1 && c.JobNumCPUs%2 != 0 {
+			// Required by Firecracker: The vCPU number is invalid! The vCPU number can only be 1 or an even number when hyperthreading is enabled
+			c.AddError(errors.Newf("EXECUTOR_JOB_NUM_CPUS must be 1 or an even number"))
+		}
+
+		_, err := datasize.ParseString(c.FirecrackerDiskSpace)
+		if err != nil {
+			c.AddError(errors.Wrapf(err, "invalid disk size provided for EXECUTOR_FIRECRACKER_DISK_SPACE: %q", c.FirecrackerDiskSpace))
+		}
 	}
 	if c.QueueName != "batches" && c.QueueName != "codeintel" {
 		c.AddError(errors.Newf("EXECUTOR_QUEUE_NAME must be set to 'batches' or 'codeintel'"))
@@ -129,10 +139,11 @@ func (c *Config) WorkerOptions() workerutil.WorkerOptions {
 
 func (c *Config) FirecrackerOptions() command.FirecrackerOptions {
 	return command.FirecrackerOptions{
-		Enabled:             c.UseFirecracker,
-		Image:               c.FirecrackerImage,
-		KernelImage:         c.FirecrackerKernelImage,
-		VMStartupScriptPath: c.VMStartupScriptPath,
+		Enabled:                 c.UseFirecracker,
+		Image:                   c.FirecrackerImage,
+		KernelImage:             c.FirecrackerKernelImage,
+		VMStartupScriptPath:     c.VMStartupScriptPath,
+		DockerRegistryMirrorURL: c.DockerRegistryMirrorURL,
 	}
 }
 

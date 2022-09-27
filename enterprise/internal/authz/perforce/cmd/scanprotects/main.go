@@ -24,17 +24,21 @@ func main() {
 	}
 
 	if err := os.Setenv(log.EnvLogLevel, "DEBUG"); err != nil {
-		fail("Setting SRC_LOG_LEVEL")
+		fail(fmt.Sprintf("Setting %s", log.EnvLogLevel))
 	}
 	if err := os.Setenv(log.EnvDevelopment, "true"); err != nil {
-		fail("Setting SRC_LOG_LEVEL")
+		fail(fmt.Sprintf("Setting %s", log.EnvDevelopment))
 	}
 	liblog := log.Init(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
 	})
-	defer liblog.Sync()
+	defer func() {
+		if err := liblog.Sync(); err != nil {
+			fmt.Println("Error syncing logger", err)
+		}
+	}()
 
 	logger := log.Scoped("scanprotects", "")
 	run(logger, *depot, os.Stdin)

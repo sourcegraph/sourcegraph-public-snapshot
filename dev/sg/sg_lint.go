@@ -6,6 +6,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/cliutil"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/linters"
@@ -138,7 +139,7 @@ func (lt lintTargets) Commands() (cmds []*cli.Command) {
 				return runner.Check(cmd.Context, repoState)
 			},
 			// Completions to chain multiple commands
-			BashComplete: completeOptions(func() (options []string) {
+			BashComplete: cliutil.CompleteOptions(func() (options []string) {
 				for _, c := range lt {
 					options = append(options, c.Name)
 				}

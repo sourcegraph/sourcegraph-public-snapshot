@@ -24,6 +24,9 @@ func normalizeConfig(t Config) Config {
 	if o.Backend == "minio" {
 		// No manual provisioning on minIO.
 		o.ManageBucket = true
+
+		// No subdomains on built-in minIO.
+		o.S3.UsePathStyle = true
 	}
 	return o
 }

@@ -14,14 +14,14 @@ Using Sourcegraph makes you a more effective code reviewer because code navigati
 
 Requirements:
 
-- [Deploy and configure Sourcegraph](../admin/deploy/index.md) and add repositories
+- A [Sourcegraph Cloud](../index.md) instance, or [deploy and configure Sourcegraph](../admin/deploy/index.md) and add repositories
 - [Install the integration for your code host/review tool](../integration/index.md)
 
 Workflow:
 
 1.  Visit a pull request or code review in your web browser.
-1.  Hover over source code in the diff (in added, unchanged, or deleted code) to see hover tooltips with documentation and **Go to definition** and **Find references** actions.
-1.  Use these actions while reviewing the diff, such as to ensure that all call sites of a modified function are updated to account for any new assumptions or behavior.
+2.  Hover over source code in the diff (in added, unchanged, or deleted code) to see hover tooltips with documentation and **Go to definition** and **Find references** actions.
+3.  Use these actions while reviewing the diff, such as to ensure that all call sites of a modified function are updated to account for any new assumptions or behavior.
 
 To try this on an open-source pull request, [install the browser extension](../integration/browser_extension.md) and visit [gorilla/websocket#342](https://github.com/gorilla/websocket/pull/342/files). Use **Find references** to see all of the cases in which the newly added `AllowClientContextTakeover` is used.
 
@@ -68,7 +68,7 @@ Workflow:
 1.  Read through the code, clicking on a token and then **Go to definition** to navigate to its definition as needed.
 1.  If you have unanswered questions, use the blame information to determine who wrote the code, and send them a Sourcegraph link to the relevant code along with your specific questions.
 
-Using an Open Source repo, you can follow the steps above to navigate to the implementation of the [`getLocation`](https://sourcegraph.com/github.com/Microsoft/node-jsonc-parser@e31983089c88114c7cc17f8c729feb493295c69d/-/blob/src/impl/parser.ts#L26:17) function. From there, keep drilling down depth-first until you get to the [`createScanner`](https://sourcegraph.com/github.com/Microsoft/node-jsonc-parser@e31983089c88114c7cc17f8c729feb493295c69d/-/blob/src/impl/scanner.ts#L13:17) function. Explicitly, this involves: reading `getLocation` until you reach the first new function, `visit`; then finding the implementation of `visit` via "get references" and reading `visit` until you reach the first new function, `createScanner`. 
+Using an Open Source repo, you can follow the steps above to navigate to the implementation of the [`getLocation`](https://sourcegraph.com/github.com/Microsoft/node-jsonc-parser@e31983089c88114c7cc17f8c729feb493295c69d/-/blob/src/impl/parser.ts#L26:17) function. From there, keep drilling down depth-first until you get to the [`createScanner`](https://sourcegraph.com/github.com/Microsoft/node-jsonc-parser@e31983089c88114c7cc17f8c729feb493295c69d/-/blob/src/impl/scanner.ts#L13:17) function. Explicitly, this involves: reading `getLocation` until you reach the first new function, `visit`; then finding the implementation of `visit` via "get references" and reading `visit` until you reach the first new function, `createScanner`.
 
 ---
 

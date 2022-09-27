@@ -113,7 +113,7 @@ func (s *searchClient) Plan(
 		OriginalQuery:       searchQuery,
 		UserSettings:        settings,
 		OnSourcegraphDotCom: sourcegraphDotComMode,
-		Features:            toFeatures(featureflag.FromContext(ctx), s.logger),
+		Features:            ToFeatures(featureflag.FromContext(ctx), s.logger),
 		PatternType:         searchType,
 		Protocol:            protocol,
 	}
@@ -230,7 +230,7 @@ func overrideSearchType(input string, searchType query.SearchType) query.SearchT
 	return searchType
 }
 
-func toFeatures(flagSet *featureflag.FlagSet, logger log.Logger) *search.Features {
+func ToFeatures(flagSet *featureflag.FlagSet, logger log.Logger) *search.Features {
 	if flagSet == nil {
 		flagSet = &featureflag.FlagSet{}
 		metricFeatureFlagUnavailable.Inc()

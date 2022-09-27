@@ -3,9 +3,6 @@ package worker
 import (
 	"context"
 	"fmt"
-	"os"
-	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -100,26 +97,11 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 	logger.Info("Creating workspace")
 
 	hostRunner := h.runnerFactory("", commandLogger, command.Options{}, h.operations)
-	workspaceRoot, err := h.prepareWorkspace(ctx, hostRunner, job.RepositoryName, job.RepositoryDirectory, job.Commit, job.FetchTags, job.ShallowClone, job.SparseCheckout)
+	workspace, err := h.prepareWorkspace(ctx, hostRunner, job, commandLogger)
 	if err != nil {
 		return errors.Wrap(err, "failed to prepare workspace")
 	}
-	defer func() {
-		if !h.options.KeepWorkspaces {
-			handle := commandLogger.Log("teardown.fs", nil)
-
-			handle.Write([]byte(fmt.Sprintf("Removing %s\n", workspaceRoot)))
-
-			if rmErr := os.RemoveAll(workspaceRoot); rmErr != nil {
-				handle.Write([]byte(fmt.Sprintf("Operation failed: %s\n", rmErr.Error())))
-			}
-
-			// We always finish this with exit code 0 even if it errored, because workspace
-			// cleanup doesn't fail the execution job. We can deal with it separately.
-			handle.Finalize(0)
-			handle.Close()
-		}
-	}()
+	defer workspace.Remove(ctx, h.options.KeepWorkspaces)
 
 	vmNameSuffix, err := uuid.NewRandom()
 	if err != nil {
@@ -143,37 +125,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 		FirecrackerOptions: h.options.FirecrackerOptions,
 		ResourceOptions:    h.options.ResourceOptions,
 	}
-	runner := h.runnerFactory(workspaceRoot, commandLogger, options, h.operations)
-
-	// Construct a map from filenames to file content that should be accessible to jobs
-	// within the workspace. This consists of files supplied within the job record itself,
-	// as well as file-version of each script step.
-	workspaceFileContentsByPath := map[string][]byte{}
-
-	for relativePath, content := range job.VirtualMachineFiles {
-		path, err := filepath.Abs(filepath.Join(workspaceRoot, relativePath))
-		if err != nil {
-			return err
-		}
-		if !strings.HasPrefix(path, workspaceRoot) {
-			return errors.Errorf("refusing to write outside of working directory")
-		}
-
-		workspaceFileContentsByPath[path] = []byte(content)
-	}
-
-	scriptNames := make([]string, 0, len(job.DockerSteps))
-	for i, dockerStep := range job.DockerSteps {
-		scriptName := scriptNameFromJobStep(job, i)
-		scriptNames = append(scriptNames, scriptName)
-
-		path := filepath.Join(workspaceRoot, command.ScriptsPath, scriptName)
-		workspaceFileContentsByPath[path] = buildScript(dockerStep)
-	}
-
-	if err := writeFiles(workspaceFileContentsByPath, commandLogger); err != nil {
-		return errors.Wrap(err, "failed to write virtual machine files")
-	}
+	runner := h.runnerFactory(workspace.Path(), commandLogger, options, h.operations)
 
 	logger.Info("Setting up VM")
 
@@ -195,7 +147,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 		dockerStepCommand := command.CommandSpec{
 			Key:        fmt.Sprintf("step.docker.%d", i),
 			Image:      dockerStep.Image,
-			ScriptPath: scriptNames[i],
+			ScriptPath: workspace.ScriptFilenames()[i],
 			Dir:        dockerStep.Dir,
 			Env:        dockerStep.Env,
 			Operation:  h.operations.Exec,
@@ -228,14 +180,6 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 	return nil
 }
 
-var scriptPreamble = `
-set -x
-`
-
-func buildScript(dockerStep executor.DockerStep) []byte {
-	return []byte(strings.Join(append([]string{scriptPreamble, ""}, dockerStep.Commands...), "\n") + "\n")
-}
-
 func union(a, b map[string]string) map[string]string {
 	c := make(map[string]string, len(a)+len(b))
 
@@ -247,44 +191,6 @@ func union(a, b map[string]string) map[string]string {
 	}
 
 	return c
-}
-
-func scriptNameFromJobStep(job executor.Job, i int) string {
-	return fmt.Sprintf("%d.%d_%s@%s.sh", job.ID, i, strings.ReplaceAll(job.RepositoryName, "/", "_"), job.Commit)
-}
-
-// writeFiles writes to the filesystem the content in the given map.
-func writeFiles(workspaceFileContentsByPath map[string][]byte, logger command.Logger) (err error) {
-	// Bail out early if nothing to do, we don't need to spawn an empty log group.
-	if len(workspaceFileContentsByPath) == 0 {
-		return nil
-	}
-
-	handle := logger.Log("setup.fs", nil)
-	defer func() {
-		if err == nil {
-			handle.Finalize(0)
-		} else {
-			handle.Finalize(1)
-		}
-
-		handle.Close()
-	}()
-
-	for path, content := range workspaceFileContentsByPath {
-		// Ensure the path exists.
-		if err := os.MkdirAll(filepath.Dir(path), os.ModePerm); err != nil {
-			return err
-		}
-
-		if err := os.WriteFile(path, content, os.ModePerm); err != nil {
-			return err
-		}
-
-		handle.Write([]byte(fmt.Sprintf("Wrote %s\n", path)))
-	}
-
-	return nil
 }
 
 func createHoneyEvent(_ context.Context, job executor.Job, err error, duration time.Duration) honey.Event {

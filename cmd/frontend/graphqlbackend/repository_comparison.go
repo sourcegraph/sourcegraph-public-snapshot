@@ -656,26 +656,22 @@ func (r *DiffHunkRange) Lines() int32     { return r.lines }
 
 func NewDiffStat(s diff.Stat) *DiffStat {
 	return &DiffStat{
-		added:   s.Added,
-		changed: s.Changed,
-		deleted: s.Deleted,
+		added:   s.Added + s.Changed,
+		deleted: s.Deleted + s.Changed,
 	}
 }
 
-type DiffStat struct{ added, changed, deleted int32 }
+type DiffStat struct{ added, deleted int32 }
 
 func (r *DiffStat) AddStat(s diff.Stat) {
-	r.added += s.Added
-	r.changed += s.Changed
-	r.deleted += s.Deleted
+	r.added += s.Added + s.Changed
+	r.deleted += s.Deleted + s.Changed
 }
 
 func (r *DiffStat) AddDiffStat(s *DiffStat) {
 	r.added += s.Added()
-	r.changed += s.Changed()
 	r.deleted += s.Deleted()
 }
 
 func (r *DiffStat) Added() int32   { return r.added }
-func (r *DiffStat) Changed() int32 { return r.changed }
 func (r *DiffStat) Deleted() int32 { return r.deleted }
