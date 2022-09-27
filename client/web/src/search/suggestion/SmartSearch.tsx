@@ -24,7 +24,9 @@ const processDescription = (description: string): string => {
 export const SmartSearch: React.FunctionComponent<React.PropsWithChildren<SmartSearchProps>> = ({ alert }) => {
     const [isCollapsed, setIsCollapsed] = useTemporarySetting('search.results.collapseSmartSearch')
 
-    return alert?.kind && alert.kind !== 'lucky-search-queries' ? null : (
+    return alert?.kind &&
+        alert.kind !== 'smart-search-additional-results' &&
+        alert.kind !== 'smart-search-pure-results' ? null : (
         <div className={styles.root}>
             <Collapse isOpen={!isCollapsed} onOpenChange={opened => setIsCollapsed(!opened)}>
                 <CollapseHeader className={styles.collapseButton}>

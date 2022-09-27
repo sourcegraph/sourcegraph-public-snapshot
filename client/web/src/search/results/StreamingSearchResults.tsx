@@ -193,7 +193,8 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         }
         if (
             smartSearchEnabled &&
-            results?.alert?.kind === 'lucky-search-queries' &&
+            (results?.alert?.kind === 'smart-search-additional-results' ||
+                results?.alert?.kind === 'smart-search-pure-results') &&
             results?.alert?.title &&
             results.alert.proposedQueries
         ) {
