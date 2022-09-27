@@ -1,40 +1,30 @@
 # Sourcegraph AWS AMI instances
 
-Sourcegraph [Amazon Machine Images (AMIs)](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instances-and-amis.html) allow you to quickly deploy a production-ready Sourcegraph instance tuned for your organization's scale in just a few clicks.
+<style>
+img.doc-screenshot {
+    margin-top: 1em;
+    margin-bottom: 1em;
+    border: 1px solid lightgray;
+}
+</style>
 
-An AWS AMIs is provided for each version of Sourcegraph and in standard t-shirt-like sizes, including:
+Sourcegraph [Amazon Machine Images (AMIs)](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instances-and-amis.html) allow you to quickly deploy a production-ready Sourcegraph instance tuned to your organization's scale in just a few clicks.
 
-- A specific version of Sourcegraph, tuned to perform well for a specific EC2 instance type.
-- Root EBS volume with 50GB of storage
-- Data EBS volume (configurable) for Sourcegraph's code search indexes, user data, etc.
+Following these docs will provision the following resources:
 
----
-
-## Sourcegraph instance sizes
-
-Please select a size for the amount of users and repositories you have. If you fall between two sizes, choose the larger of the two:
-
-|                  |                                                  **XS**                                                  |                        **S**                         |                        **M**                         |                                                  **L**                                                  |                                                  **XL**                                                  |
-| :--------------- | :------------------------------------------------------------------------------------------------------: | :--------------------------------------------------: | :--------------------------------------------------: | :-----------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------: |
-| **Users**        |                                                   500                                                    |                        1,000                         |                        5,000                         |                                                 10,000                                                  |                                                  20,000                                                  |
-| **Repositories** |                                                  5,000                                                   |                        10,000                        |                        50,000                        |                                                 100,000                                                 |                                                 250,000                                                  |
-| **Recommended**  |                                               m6a.2xlarge                                                |                     m6a.4xlarge                      |                     m6a.8xlarge                      |                                              m6a.12xlarge                                               |                                               m6a.24xlarge                                               |
-| **Minimum**      |                                               m6a.2xlarge                                                |                     m6a.2xlarge                      |                     m6a.4xlarge                      |                                               m6a.8xlarge                                               |                                               m6a.12xlarge                                               |
-| **AMI**          | [sourcegraph-XS (v4.0.0)](https://console.aws.amazon.com/ec2#ImageDetails:imageId=ami-0ee5cdc5e89a4bee2) | <span class="badge badge-warning">Coming soon</span> | <span class="badge badge-warning">Coming soon</span> | [sourcegraph-L (v4.0.0)](https://console.aws.amazon.com/ec2#ImageDetails:imageId=ami-021db30b6db9b0634) | [sourcegraph-XL (v4.0.0)](https://console.aws.amazon.com/ec2#ImageDetails:imageId=ami-04b10e0fabedb6eac) |
-
-<span class="badge badge-warning">IMPORTANT</span> AMIs are currently only available in the **us-west-2 (Oregon)** region. More regions are coming soon.
-
-> NOTE: AMIs are optimized for the specific set of resources provided by the instance type, please ensure you use the correct AMI for the associated EC2 instance type. You can [resize your EC2 instance anytime](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-resize.html), but your Sourcegraph AMI must match accordingly. If needed, follow the [upgrade steps](#upgrade) to switch to the correct AMI image that is optimized for your EC2 instance type.
+- An EC2 node running Sourcegraph
+- A root EBS volume with 50GB of storage
+- An additional EBS volume with 500GB of storage for storing code and search indices
 
 ---
 
 ## Deploy Sourcegraph
 
-1. Following [the chart above](#sourcegraph-instance-sizes), click the link for your chosen AMI.
-2. Choose **Launch instance from AMI**
-3. Name your instance
-4. Select an **instance type** according to [the sizing chart above](#sourcegraph-instance-sizes).
-5. **Key pair (login)**: Select or create a new Key Pair for connecting to your instance securely (this may be required in the event you need support)
+1. In the [instance size chart](#instance-size-chart), click the link for the AMI that matches your deployment size.
+2. Choose **Launch instance from AMI**.
+3. Name your instance.
+4. Select an **instance type** according to [the sizing chart](#instance-size-chart).
+5. **Key pair (login)**: Select or create a new Key Pair for connecting to your instance securely (this may be required in the event you need support).
 6. **Network settings**: 
    - Select a **Security Group** for the instance, or create one with the following rules:
      - Default HTTP rule: port range 80, source 0.0.0.0/0, ::/0
@@ -44,11 +34,30 @@ Please select a size for the amount of users and repositories you have. If you f
 7. **Configure storage**:
    - Root Volume: 50GB
    - EBS Volume: 500GB - this should be at least 25-50% *more* than the size of all your repositories on disk (you may check your GitHub/BitBucket/GitLab instance's disk usage.)
-8. Click **Launch instance**, and navigate to the public IP address in your browser.
+8. Click **Launch instance**, and navigate to the public IP address in your browser. (Look for the IPv4 Public IP value in your EC2
+   instance page under the Description panel.)
 
-Once the instance has started, please allow ~5 minutes for Sourcegraph to initialize (during this time you may observe a `404 page not found` response.)
+Once the instance has started, please allow ~5 minutes for Sourcegraph to initialize. (During this time you may observe a `404 page not found` response.)
 
 To configure SSL, and lock down the instance from the public internet, see the [networking](#networking) section.
+
+### Instance size chart
+
+Select an AMI according to the number of users and repositories you have using this table. If you fall between two sizes, choose the larger of the two.
+
+|                  |                                                  **XS**                                                  |                        **S**                         |                        **M**                         |                                                  **L**                                                  |                                                  **XL**                                                  |
+| :--------------- | :------------------------------------------------------------------------------------------------------: | :--------------------------------------------------: | :--------------------------------------------------: | :-----------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------: |
+| **Users**        |                                                   500                                                    |                        1,000                         |                        5,000                         |                                                 10,000                                                  |                                                  20,000                                                  |
+| **Repositories** |                                                  5,000                                                   |                        10,000                        |                        50,000                        |                                                 100,000                                                 |                                                 250,000                                                  |
+| **Recommended**  |                                               m6a.2xlarge                                                |                     m6a.4xlarge                      |                     m6a.8xlarge                      |                                              m6a.12xlarge                                               |                                               m6a.24xlarge                                               |
+| **Minimum**      |                                               m6a.2xlarge                                                |                     m6a.2xlarge                      |                     m6a.4xlarge                      |                                               m6a.8xlarge                                               |                                               m6a.12xlarge                                               |
+| **AMI**          | [sourcegraph-XS (v4.0.0)](https://console.aws.amazon.com/ec2#ImageDetails:imageId=ami-0ee5cdc5e89a4bee2) | <span class="badge badge-warning">Coming soon</span> | <span class="badge badge-warning">Coming soon</span> | [sourcegraph-L (v4.0.0)](https://console.aws.amazon.com/ec2#ImageDetails:imageId=ami-021db30b6db9b0634) | [sourcegraph-XL (v4.0.0)](https://console.aws.amazon.com/ec2#ImageDetails:imageId=ami-04b10e0fabedb6eac) |
+
+<span class="badge badge-critical">IMPORTANT</span> AMIs are currently only available in the **us-west-2 (Oregon)** region. More regions are coming soon.
+
+For example, if you have 8,000 users with 80,000 repositories, your instance size would be **M**. If you have 1,000 users with 80,000 users, you should still go with size **M**.
+
+> NOTE: AMIs are optimized for the specific set of resources provided by the instance type, please ensure you use the correct AMI for the associated EC2 instance type. You can [resize your EC2 instance anytime](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-resize.html), but your Sourcegraph AMI must match accordingly. If needed, follow the [upgrade steps](#upgrade) to switch to the correct AMI image that is optimized for your EC2 instance type.
 
 ---
 
@@ -125,7 +134,7 @@ Click **Create subnet** in your VPC subnets dashboard:
 
 ### Securing your instance
 
-[Configure user authentication](../../auth/index.md) (SSO, SAML, OpenID Connect, etc.) to give users of your Sourcegraph instance access to it.
+[Configure user authentication](../auth/index.md) (SSO, SAML, OpenID Connect, etc.) to give users of your Sourcegraph instance access to it.
 
 Now that your instance is confirmed to be working, and you have HTTPS working through an Amazon load balancer, you may choose to secure your Sourcegraph instance further by modifying the security group/firewall rules to prevent access from the public internet. You can do this by modifying the security group/firewall rules.
 
@@ -133,9 +142,7 @@ Now that your instance is confirmed to be working, and you have HTTPS working th
 
 ## Upgrade
 
-> WARNING: This upgrade process works with **Sourcegraph AWS AMI instances only**
-
-<span class="badge badge-critical">IMPORTANT</span> **Back up your volumes before each upgrade**
+> WARNING: This upgrade process works with **Sourcegraph AWS AMI instances only**. Do not use these if you deployed Sourcegraph through other means.
 
 Please take time to review the following before proceeding with the upgrades:
 
@@ -143,6 +150,8 @@ Please take time to review the following before proceeding with the upgrades:
 - [Update policy](https://docs.sourcegraph.com/admin/updates#update-policy)
 - [Update notes](https://docs.sourcegraph.com/admin/updates/kubernetes)
 - [Multi-version upgrade procedure](https://docs.sourcegraph.com/admin/updates/kubernetes#multi-version-upgrade-procedure)
+
+<span class="badge badge-critical">IMPORTANT</span> **Back up your volumes before each upgrade**
 
 #### Step 1: Stop the current instance
 
@@ -190,11 +199,7 @@ Please refer to the upgrade procedure above if you wish to rollback your instanc
 
 We strongly recommend you taking [snapshots of the entire EBS volume](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-creating-snapshot.html) on an [automatic, scheduled basis](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/snapshot-lifecycle.html).
 
-## Manual deploy on AWS EC2
-
-Click [here](aws.md) to view install instructions for deploying on AWS EC2 manually.
-
-## Resources
+## Additional resources
 
 - [Increase the size of an Amazon EBS volume on an EC2 instance](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/modify-ebs-volume-on-instance.html)
 - [Change the instance type](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-resize.html)
