@@ -4,7 +4,7 @@ Site administrators have full administrative access to the Sourcegraph instance.
 
 ## Access to all repositories
 
-Site administrators are able to access all repositories on the Sourcegraph instance and manage the settings of individual repositories.
+Site administrators are able to access all repositories on the Sourcegraph instance and manage the settings of individual repositories. However, this setting can be changed in `admin/config/site.schema.json` as seen [here](https://docs.sourcegraph.com/admin/config/site_config#authz-enforceForSiteAdmins) so admins can only see private code they have access to in the code host. 
 
 ## Access to all GraphQL APIs
 
