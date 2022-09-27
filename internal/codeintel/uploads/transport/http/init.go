@@ -19,7 +19,7 @@ var (
 	handlerOnce sync.Once
 )
 
-func GetHandler(svc *uploads.Service) http.Handler {
+func GetHandler(svc *uploads.Service, withCodeHostAuthAuth bool) http.Handler {
 	handlerOnce.Do(func() {
 		observationContext := &observation.Context{
 			Logger:     log.Scoped("uploads.handler", "codeintel uploads http handler"),

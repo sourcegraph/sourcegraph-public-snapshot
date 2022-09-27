@@ -15,12 +15,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifuploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	uploadshttp "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/http"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/http/auth"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/httpapi"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -64,10 +61,6 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 
 	// Initialize lsif stores (TODO: these should be integrated, they are basically pointing to the same thing)
 	codeIntelLsifStore := database.NewDBWith(observationContext.Logger, codeIntelDBConnection)
-	uploadStore, err := lsifuploadstore.New(context.Background(), config.LSIFUploadStoreConfig, observationContext)
-	if err != nil {
-		logger.Fatal("Failed to initialize upload store", log.Error(err))
-	}
 
 	// Initialize gitserver client & repoupdater
 	gitserverClient := gitserver.New(db, dbStore, observationContext)
@@ -80,28 +73,9 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 	autoindexingSvc := autoindexing.GetService(db, uploadSvc, gitserverClient, repoUpdaterClient)
 
 	// Initialize http endpoints
-	operations := httpapi.NewOperations(observationContext)
-	newUploadHandler := func(internal bool) http.Handler {
-		if false {
-			// Until this handler has been implemented, we retain the origial
-			// LSIF update handler.
-			//
-			// See https://github.com/sourcegraph/sourcegraph/issues/33375
-
-			return uploadshttp.GetHandler(uploadSvc)
-		}
-
-		return httpapi.NewUploadHandler(
-			db,
-			&httpapi.DBStoreShim{Store: dbStore},
-			uploadStore,
-			internal,
-			auth.DefaultValidatorByCodeHost,
-			operations,
-		)
-	}
-	internalUploadHandler := newUploadHandler(true)
-	externalUploadHandler := newUploadHandler(false)
+	newUploadHandler := func(withCodeHostAuth bool) http.Handler { return uploadshttp.GetHandler(uploadSvc, withCodeHostAuth) }
+	internalUploadHandler := newUploadHandler(false)
+	externalUploadHandler := newUploadHandler(true)
 
 	return &Services{
 		dbStore: dbStore,
