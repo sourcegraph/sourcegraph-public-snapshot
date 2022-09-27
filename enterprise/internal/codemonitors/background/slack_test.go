@@ -21,8 +21,10 @@ func TestSlackWebhook(t *testing.T) {
 	eu, err := url.Parse("https://sourcegraph.com")
 	require.NoError(t, err)
 
-	err = os.Setenv("WEBHOOK_ALLOWLIST", "loopback")
-	require.NoError(t, err)
+	os.Setenv("WEBHOOK_ALLOWLIST", "loopback")
+	t.Cleanup(func() {
+		os.Unsetenv("WEBOOK_ALLOWLIST")
+	})
 
 	action := actionArgs{
 		MonitorDescription: "My test monitor",
@@ -96,9 +98,11 @@ func TestTriggerTestSlackWebhookAction(t *testing.T) {
 	}))
 	defer s.Close()
 
-	err := os.Setenv("WEBHOOK_ALLOWLIST", "loopback")
-	require.NoError(t, err)
+	os.Setenv("WEBHOOK_ALLOWLIST", "loopback")
+	t.Cleanup(func() {
+		os.Unsetenv("WEBOOK_ALLOWLIST")
+	})
 
-	err = SendTestSlackWebhook(context.Background(), "My test monitor", s.URL)
+	err := SendTestSlackWebhook(context.Background(), "My test monitor", s.URL)
 	require.NoError(t, err)
 }
