@@ -226,7 +226,7 @@ describe('DashboardsContent', () => {
 
     it('opens add insight modal', async () => {
         const screen = renderDashboardsContent()
-        const addInsightsButton = await waitFor(() => screen.getByTestId('add-or-remove-insights'))
+        const addInsightsButton = await waitFor(() => screen.getByRole('button', { name: /Add or remove insights/ }))
 
         userEvent.click(addInsightsButton)
 
