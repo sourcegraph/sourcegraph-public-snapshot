@@ -53,10 +53,10 @@ import {
     PREDICATE_REGEX,
     regexInsertText,
     repositoryInsertText,
-} from '@sourcegraph/shared/src/search/query/completion'
+} from '@sourcegraph/shared/src/search/query/completion-utils'
 import { decorate, DecoratedToken, toDecoration } from '@sourcegraph/shared/src/search/query/decoratedToken'
 import { FILTERS, FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
-import { getSuggestionQuery } from '@sourcegraph/shared/src/search/query/providers'
+import { getSuggestionQuery } from '@sourcegraph/shared/src/search/query/providers-utils'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Filter, Token } from '@sourcegraph/shared/src/search/query/token'
 import { SearchMatch } from '@sourcegraph/shared/src/search/stream'

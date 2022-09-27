@@ -49,7 +49,9 @@ export const SmartSearch: React.FunctionComponent<React.PropsWithChildren<SmartS
         [onDisableSmartSearch]
     )
 
-    return alert?.kind && alert.kind !== 'lucky-search-queries' ? null : (
+    return alert?.kind &&
+        alert.kind !== 'smart-search-additional-results' &&
+        alert.kind !== 'smart-search-pure-results' ? null : (
         <div className={styles.root}>
             <Collapse isOpen={!isCollapsed} onOpenChange={opened => setIsCollapsed(!opened)}>
                 <CollapseHeader className={styles.collapseButton}>

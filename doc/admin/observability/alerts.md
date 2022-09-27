@@ -1426,9 +1426,9 @@ Generated query for critical alert: `min(((src_gitserver_disk_space_available / 
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(instance, cmd) (src_gitserver_exec_running{instance=~"${shard:regex}"})) >= 50)`
+Generated query for warning alert: `max((sum by(instance, cmd) (src_gitserver_exec_running)) >= 50)`
 
-Generated query for critical alert: `max((sum by(instance, cmd) (src_gitserver_exec_running{instance=~"${shard:regex}"})) >= 100)`
+Generated query for critical alert: `max((sum by(instance, cmd) (src_gitserver_exec_running)) >= 100)`
 
 </details>
 
@@ -7639,7 +7639,7 @@ Generated query for critical alert: `min((sum by(app) (up{app=~".*prometheus"}) 
 <details>
 <summary>Technical details</summary>
 
-Custom query for critical alert: `min(((sum(src_executor_processor_handlers{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}) or vector(0)) == 0 and (sum by(queue) (src_executor_total{job=~"^sourcegraph-executors.*"})) > 0) <= 0)`
+Custom query for critical alert: `min(((sum(src_executor_processor_handlers{sg_job=~"^sourcegraph-executors.*"}) or vector(0)) == 0 and (sum by(queue) (src_executor_total{job=~"^sourcegraph-executors.*"})) > 0) <= 0)`
 
 </details>
 
@@ -7673,7 +7673,7 @@ problem is not know to be resolved until jobs start succeeding again.
 <details>
 <summary>Technical details</summary>
 
-Custom query for critical alert: `max((last_over_time(sum(increase(src_executor_processor_errors_total{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}[5m]))[5h:]) / (last_over_time(sum(increase(src_executor_processor_total{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}[5m]))[5h:]) + last_over_time(sum(increase(src_executor_processor_errors_total{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}[5m]))[5h:])) * 100) >= 100)`
+Custom query for critical alert: `max((last_over_time(sum(increase(src_executor_processor_errors_total{sg_job=~"^sourcegraph-executors.*"}[5m]))[5h:]) / (last_over_time(sum(increase(src_executor_processor_total{sg_job=~"^sourcegraph-executors.*"}[5m]))[5h:]) + last_over_time(sum(increase(src_executor_processor_errors_total{sg_job=~"^sourcegraph-executors.*"}[5m]))[5h:])) * 100) >= 100)`
 
 </details>
 
