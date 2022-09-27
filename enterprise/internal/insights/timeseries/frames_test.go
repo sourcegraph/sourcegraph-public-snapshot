@@ -1,4 +1,4 @@
-package query
+package timeseries
 
 import (
 	"testing"
@@ -6,7 +6,6 @@ import (
 
 	"github.com/hexops/autogold"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 )
 
@@ -20,7 +19,7 @@ func TestBuildFrames(t *testing.T) {
 		}
 		return got
 	}
-	buildFrameTest := func(count int, interval timeseries.TimeInterval, current time.Time) [][]string {
+	buildFrameTest := func(count int, interval TimeInterval, current time.Time) [][]string {
 		got := BuildFrames(count, interval, current)
 		return convert(got)
 	}
@@ -29,7 +28,7 @@ func TestBuildFrames(t *testing.T) {
 		autogold.Want("one point", [][]string{{
 			"2021-12-01 00:00:00 +0000 UTC",
 			"2021-12-01 00:00:00 +0000 UTC",
-		}}).Equal(t, buildFrameTest(1, timeseries.TimeInterval{Unit: types.Month, Value: 1}, startTime))
+		}}).Equal(t, buildFrameTest(1, TimeInterval{Unit: types.Month, Value: 1}, startTime))
 	})
 
 	t.Run("two points 1 month intervals", func(t *testing.T) {
@@ -42,7 +41,7 @@ func TestBuildFrames(t *testing.T) {
 				"2021-12-01 00:00:00 +0000 UTC",
 				"2021-12-01 00:00:00 +0000 UTC",
 			},
-		}).Equal(t, buildFrameTest(2, timeseries.TimeInterval{Unit: types.Month, Value: 1}, startTime))
+		}).Equal(t, buildFrameTest(2, TimeInterval{Unit: types.Month, Value: 1}, startTime))
 	})
 
 	t.Run("6 points 1 month intervals", func(t *testing.T) {
@@ -71,7 +70,7 @@ func TestBuildFrames(t *testing.T) {
 				"2021-12-01 00:00:00 +0000 UTC",
 				"2021-12-01 00:00:00 +0000 UTC",
 			},
-		}).Equal(t, buildFrameTest(6, timeseries.TimeInterval{Unit: types.Month, Value: 1}, startTime))
+		}).Equal(t, buildFrameTest(6, TimeInterval{Unit: types.Month, Value: 1}, startTime))
 	})
 
 	t.Run("12 points 2 week intervals", func(t *testing.T) {
@@ -124,7 +123,7 @@ func TestBuildFrames(t *testing.T) {
 				"2021-12-01 00:00:00 +0000 UTC",
 				"2021-12-01 00:00:00 +0000 UTC",
 			},
-		}).Equal(t, buildFrameTest(12, timeseries.TimeInterval{Unit: types.Week, Value: 2}, startTime))
+		}).Equal(t, buildFrameTest(12, TimeInterval{Unit: types.Week, Value: 2}, startTime))
 	})
 
 	t.Run("6 points 2 day intervals", func(t *testing.T) {
@@ -153,7 +152,7 @@ func TestBuildFrames(t *testing.T) {
 				"2021-12-01 00:00:00 +0000 UTC",
 				"2021-12-01 00:00:00 +0000 UTC",
 			},
-		}).Equal(t, buildFrameTest(6, timeseries.TimeInterval{Unit: types.Day, Value: 2}, startTime))
+		}).Equal(t, buildFrameTest(6, TimeInterval{Unit: types.Day, Value: 2}, startTime))
 	})
 
 	t.Run("6 points 2 hour intervals", func(t *testing.T) {
@@ -182,7 +181,7 @@ func TestBuildFrames(t *testing.T) {
 				"2021-12-01 00:00:00 +0000 UTC",
 				"2021-12-01 00:00:00 +0000 UTC",
 			},
-		}).Equal(t, buildFrameTest(6, timeseries.TimeInterval{Unit: types.Hour, Value: 2}, startTime))
+		}).Equal(t, buildFrameTest(6, TimeInterval{Unit: types.Hour, Value: 2}, startTime))
 	})
 
 	t.Run("6 points 1 year intervals", func(t *testing.T) {
@@ -211,6 +210,6 @@ func TestBuildFrames(t *testing.T) {
 				"2021-12-01 00:00:00 +0000 UTC",
 				"2021-12-01 00:00:00 +0000 UTC",
 			},
-		}).Equal(t, buildFrameTest(6, timeseries.TimeInterval{Unit: types.Year, Value: 1}, startTime))
+		}).Equal(t, buildFrameTest(6, TimeInterval{Unit: types.Year, Value: 1}, startTime))
 	})
 }

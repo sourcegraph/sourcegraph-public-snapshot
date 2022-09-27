@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-enry/go-enry/v2/regex"
 	"github.com/gorilla/mux"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -256,6 +257,8 @@ func isSiteAdminOrSameUser(ctx context.Context, logger sglog.Logger, db database
 	return user != nil && (user.SiteAdmin || user.ID == userId)
 }
 
+var pathValidationRegex = regex.MustCompile("[.]{2}|[\\\\]")
+
 func (h *FileHandler) uploadBatchSpecWorkspaceFile(ctx context.Context, r *http.Request, spec *btypes.BatchSpec) (string, error) {
 	modtime := r.Form.Get("filemod")
 	if modtime == "" {
@@ -273,8 +276,8 @@ func (h *FileHandler) uploadBatchSpecWorkspaceFile(ctx context.Context, r *http.
 	defer f.Close()
 
 	filePath := r.Form.Get("filepath")
-	if strings.Contains(filePath, "..") {
-		return "", errors.New("file path cannot contain double-dots '..'")
+	if pathValidationRegex.MatchString(filePath) {
+		return "", errors.New("file path cannot contain double-dots '..' or backslashes '\\'")
 	}
 
 	content, err := io.ReadAll(f)
