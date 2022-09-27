@@ -14,7 +14,7 @@ func TestMain(m *testing.M) {
 	if !testing.Verbose() {
 		logtest.InitWithLevel(m, log.LevelNone)
 	} else {
-		logtest.Init(m)	
+		logtest.Init(m)
 	}
 	os.Exit(m.Run())
 }
