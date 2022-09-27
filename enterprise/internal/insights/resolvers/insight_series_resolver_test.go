@@ -87,3 +87,7 @@ func TestResolver_InsightSeries(t *testing.T) {
 
 	})
 }
+
+func Test_augmentPointsForNoData(t *testing.T) {
+	t.Skip()
+}
