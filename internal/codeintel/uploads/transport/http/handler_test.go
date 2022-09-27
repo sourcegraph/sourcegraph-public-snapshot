@@ -113,7 +113,7 @@ func TestHandleEnqueueAuth(t *testing.T) {
 		operations := newOperations(&observation.TestContext)
 		handler := auth.AuthMiddleware(
 			newUploadHandler(
-				db,
+				backend.NewRepos(logger, db),
 				mockDBStore,
 				mockUploadStore,
 				operations,

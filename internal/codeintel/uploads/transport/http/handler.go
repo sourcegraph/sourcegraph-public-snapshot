@@ -6,11 +6,9 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	uploads "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -24,9 +22,13 @@ type Handler struct {
 	operations *operations
 }
 
-func newHandler(svc *uploads.Service, operations *operations) http.Handler {
+func newHandler(
+	svc *uploads.Service,
+	repoStore RepoStore,
+	operations *operations,
+) http.Handler {
 	return newUploadHandler(
-		nil, // TODO
+		repoStore,
 		nil, // TODO
 		nil, // TODO
 		operations,
@@ -36,7 +38,7 @@ func newHandler(svc *uploads.Service, operations *operations) http.Handler {
 var revhashPattern = lazyregexp.New(`^[a-z0-9]{40}$`)
 
 func newUploadHandler(
-	db database.DB,
+	repoStore RepoStore,
 	dbStore uploadhandler.DBStore[UploadMetadata],
 	uploadStore uploadstore.Store,
 	operations *operations,
@@ -51,7 +53,7 @@ func newUploadHandler(
 
 		// Ensure that the repository and commit given in the request are resolvable.
 		repositoryName := getQuery(r, "repository")
-		repositoryID, statusCode, err := ensureRepoAndCommitExist(ctx, logger, db, repositoryName, commit)
+		repositoryID, statusCode, err := ensureRepoAndCommitExist(ctx, repoStore, repositoryName, commit, logger)
 		if err != nil {
 			return UploadMetadata{}, statusCode, err
 		}
@@ -78,7 +80,7 @@ func newUploadHandler(
 	return handler
 }
 
-func ensureRepoAndCommitExist(ctx context.Context, logger log.Logger, db database.DB, repoName, commit string) (int, int, error) {
+func ensureRepoAndCommitExist(ctx context.Context, repoStore RepoStore, repoName, commit string, logger log.Logger) (int, int, error) {
 	// 🚨 SECURITY: Bypass authz here; we've already determined that the current request is
 	// authorized to view the target repository; they are either a site admin or the code
 	// host has explicit listed them with some level of access (depending on the code host).
@@ -87,7 +89,7 @@ func ensureRepoAndCommitExist(ctx context.Context, logger log.Logger, db databas
 	//
 	// 1. Resolve repository
 
-	repo, err := backend.NewRepos(logger, db).GetByName(ctx, api.RepoName(repoName))
+	repo, err := repoStore.GetByName(ctx, api.RepoName(repoName))
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return 0, http.StatusNotFound, errors.Errorf("unknown repository %q", repoName)
@@ -99,7 +101,7 @@ func ensureRepoAndCommitExist(ctx context.Context, logger log.Logger, db databas
 	//
 	// 2. Resolve commit
 
-	if _, err := backend.NewRepos(logger, db).ResolveRev(ctx, repo, commit); err != nil {
+	if _, err := repoStore.ResolveRev(ctx, repo, commit); err != nil {
 		var reason string
 		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			reason = "commit not found"
