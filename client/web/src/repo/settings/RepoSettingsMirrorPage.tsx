@@ -22,13 +22,18 @@ import {
     Input,
     Text,
     Code,
+    Label,
 } from '@sourcegraph/wildcard'
 
 import { TerminalLine } from '../../auth/Terminal'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import { SettingsAreaRepositoryFields } from '../../graphql-operations'
-import { checkMirrorRepositoryConnection, updateMirrorRepository } from '../../site-admin/backend'
+import {
+    checkMirrorRepositoryConnection,
+    RECLONE_REPOSITORY_MUTATION,
+    updateMirrorRepository,
+} from '../../site-admin/backend'
 import { eventLogger } from '../../tracking/eventLogger'
 import { DirectImportRepoAlert } from '../DirectImportRepoAlert'
 
@@ -36,6 +41,7 @@ import { fetchSettingsAreaRepository } from './backend'
 import { ActionContainer, BaseActionContainer } from './components/ActionContainer'
 
 import styles from './RepoSettingsMirrorPage.module.scss'
+import { requestGraphQL } from '../../../src/backend/graphql'
 
 interface UpdateMirrorRepositoryActionContainerProps {
     repo: SettingsAreaRepositoryFields
@@ -352,6 +358,37 @@ export class RepoSettingsMirrorPage extends React.PureComponent<
                                 ? 'Not reachable'
                                 : undefined
                         }
+                        history={this.props.history}
+                    />
+                    <ActionContainer
+                        title="Reclone repository"
+                        description={
+                            <div>
+                                This will delete the repository from disk and reclone it.
+                                <div className="mt-2">
+                                    <span className="text-danger">WARNING</span>: This can take a long time, depending
+                                    on how large the repository is. The repository will be unsearchable while the
+                                    reclone is in progress.
+                                </div>
+                            </div>
+                        }
+                        buttonClassName="danger"
+                        buttonLabel={
+                            this.state.repo.mirrorInfo.cloneInProgress ? (
+                                <span>
+                                    <LoadingSpinner /> Cloning...
+                                </span>
+                            ) : (
+                                'Reclone'
+                            )
+                        }
+                        buttonDisabled={this.state.repo.mirrorInfo.cloneInProgress}
+                        flashText="Recloning repo"
+                        run={async () => {
+                            await requestGraphQL(RECLONE_REPOSITORY_MUTATION, {
+                                repo: this.state.repo.id,
+                            }).toPromise()
+                        }}
                         history={this.props.history}
                     />
                     <CheckMirrorRepositoryConnectionActionContainer
