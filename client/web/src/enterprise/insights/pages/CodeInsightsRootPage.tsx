@@ -95,7 +95,7 @@ export const CodeInsightsRootPage: React.FunctionComponent<
                             to="/insights/add-dashboard"
                             variant="secondary"
                             className="mr-2"
-                            data-testid="add-dashboard-button"
+                            aria-label="add dashboard"
                         >
                             <Icon aria-hidden={true} svgPath={mdiPlus} /> Add dashboard
                         </Button>
