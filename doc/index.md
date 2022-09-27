@@ -87,7 +87,7 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
   <button class="app-btn btn" formaction="/admin/deploy/docker-compose/digitalocean">
     <img alt="digital-ocean-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/DigitalOcean.png"/>
     <h3>DigitalOcean</h3>
-    <p>Deploy onto Digital Ocean</p>
+    <p>Deploy onto DigitalOcean</p>
   </button>
   <!-- Docker Compose -->
   <button class="app-btn btn" formaction="/admin/install/docker-compose">
