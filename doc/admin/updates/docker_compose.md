@@ -11,20 +11,7 @@ This page lists the changes that are relevant for [upgrading Sourcegraph on Dock
 ## Multi-version upgrade procedure
 
 1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
-1. For each version within the multi-version upgrade range, read the stepwise update notes on this page. For example, when upgrading from 3.20 to 3.23, update notes for the stepwise updates [3.20 -> 3.21](#3-20-1-3-21-0), [3.21 -> 3.22](#3-21-3-22), and [3.22 -> 3.23](#3-22-3-23) are relevant. Neglecting this step can cause you to [miss important upgrade notes](#if-you-wish-to-keep-existing-lsif-data) and data that required special treatment can be lost permanently.
-1. Check the [update notes](#multi-version-upgrade-notes) specific to multi-version upgrades.
-1. After checking the relevant update notes, refer to the [upgrade procedure](../deploy/docker-compose/upgrade.md#multi-version-upgrades) to upgrade your instance.
-
-### Multi-version upgrade notes
-
-Some stepwise upgrade notes have multi-version considerations.
-
-- **Upgrades crossing 3.26 -> 3.27** will require an update to Postgres 12.
-    - If you are using an external database, follow the [upgrade instructions](../postgres.md#upgrading-external-postgresql-instances) prior to starting the upgrade procedure.
-    - If you are using the provided database containers, update the `pgsql` and `codeintel-db` images to the new version prior to starting the upgrade procedure. These images will convert postgres 9.6 data on-disk to a Postgres 12-compatible format.
-- **Upgrades crossing 3.26 -> 3.27** will require a deprecation of TimescaleDB for codeinsights. This should not require special treatment from the user: the old `codeinsights-db` image is compatible with Postgres 12. This database's image should be updated with the rest of the instance after the migrator has ran successfully.
-- **Upgrades crossing 3.20 -> 3.21** wil require a new `codeintel-db` database. This database should be added to the instance prior to starting the upgrade procedure.
-
+1. Refer to the [upgrade procedure](../deploy/docker-compose/upgrade.md#multi-version-upgrades) to upgrade your instance.
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
