@@ -5,7 +5,9 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 )
 
@@ -92,10 +94,24 @@ func (r *schemaResolver) RepositoryStats(ctx context.Context) (*repositoryStatsR
 		return nil, err
 	}
 
+	var (
+		indexedRepos     int
+		indexedLineCount uint64
+	)
+
+	if conf.SearchIndexEnabled() {
+		repos, err := search.ListAllIndexed(ctx)
+		if err != nil {
+			return nil, err
+		}
+		indexedRepos = len(repos.Minimal)
+		indexedLineCount = repos.Stats.DefaultBranchNewLinesCount + repos.Stats.OtherBranchesNewLinesCount
+	}
+
 	return &repositoryStatsResolver{
 		db:                db,
-		indexedRepos:      stats.Repos,
+		indexedRepos:      indexedRepos,
 		gitDirBytes:       stats.GitDirBytes,
-		indexedLinesCount: stats.DefaultBranchNewLinesCount + stats.OtherBranchesNewLinesCount,
+		indexedLinesCount: indexedLineCount,
 	}, nil
 }
