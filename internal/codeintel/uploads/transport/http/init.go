@@ -1,6 +1,7 @@
 package http
 
 import (
+	"net/http"
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -14,11 +15,11 @@ import (
 )
 
 var (
-	handler     *Handler
+	handler     http.Handler
 	handlerOnce sync.Once
 )
 
-func GetHandler(svc *uploads.Service) *Handler {
+func GetHandler(svc *uploads.Service) http.Handler {
 	handlerOnce.Do(func() {
 		observationContext := &observation.Context{
 			Logger:     log.Scoped("uploads.handler", "codeintel uploads http handler"),
