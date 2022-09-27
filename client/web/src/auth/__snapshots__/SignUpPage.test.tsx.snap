@@ -232,7 +232,7 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
                   id="username"
                   maxlength="255"
                   name="username"
-                  pattern="^[\\\\dA-Za-z](?:[\\\\dA-Za-z]|[.-](?=[\\\\dA-Za-z]))*-?$"
+                  pattern="^\\\\w(?:\\\\w|[.-](?=\\\\w))*-?$"
                   placeholder=" "
                   required=""
                   spellcheck="false"

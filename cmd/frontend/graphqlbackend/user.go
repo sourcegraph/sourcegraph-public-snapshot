@@ -348,10 +348,6 @@ func (r *UserResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
-func (r *UserResolver) URLForSiteAdminBilling(ctx context.Context) (*string, error) {
-	return EnterpriseResolvers.dotcomResolver.UserURLForSiteAdminBilling(ctx, r.user.ID)
-}
-
 func (r *UserResolver) NamespaceName() string { return r.user.Username }
 
 func (r *UserResolver) PermissionsInfo(ctx context.Context) (PermissionsInfoResolver, error) {

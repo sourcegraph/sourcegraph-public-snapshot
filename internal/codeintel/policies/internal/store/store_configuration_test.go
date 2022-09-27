@@ -151,6 +151,99 @@ func TestGetConfigurationPolicies(t *testing.T) {
 	}
 }
 
+func TestDeleteConfigurationPolicyByID(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := testStoreWithoutConfigurationPolicies(t, db)
+
+	repositoryID := 42
+	d1 := time.Hour * 5
+	d2 := time.Hour * 6
+
+	configurationPolicy := shared.ConfigurationPolicy{
+		RepositoryID:              &repositoryID,
+		Name:                      "name",
+		Type:                      shared.GitObjectTypeCommit,
+		Pattern:                   "deadbeef",
+		RetentionEnabled:          false,
+		RetentionDuration:         &d1,
+		RetainIntermediateCommits: true,
+		IndexingEnabled:           false,
+		IndexCommitMaxAge:         &d2,
+		IndexIntermediateCommits:  true,
+	}
+
+	hydratedConfigurationPolicy, err := store.CreateConfigurationPolicy(context.Background(), configurationPolicy)
+	if err != nil {
+		t.Fatalf("unexpected error creating configuration policy: %s", err)
+	}
+
+	if hydratedConfigurationPolicy.ID == 0 {
+		t.Fatalf("hydrated policy does not have an identifier")
+	}
+
+	if err := store.DeleteConfigurationPolicyByID(context.Background(), hydratedConfigurationPolicy.ID); err != nil {
+		t.Fatalf("unexpected error deleting configuration policy: %s", err)
+	}
+
+	_, ok, err := store.GetConfigurationPolicyByID(context.Background(), hydratedConfigurationPolicy.ID)
+	if err != nil {
+		t.Fatalf("unexpected error fetching configuration policy: %s", err)
+	}
+	if ok {
+		t.Fatalf("unexpected record")
+	}
+}
+
+func TestDeleteConfigurationProtectedPolicy(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := testStoreWithoutConfigurationPolicies(t, db)
+
+	repositoryID := 42
+	d1 := time.Hour * 5
+	d2 := time.Hour * 6
+
+	configurationPolicy := shared.ConfigurationPolicy{
+		RepositoryID:              &repositoryID,
+		Name:                      "name",
+		Type:                      shared.GitObjectTypeCommit,
+		Pattern:                   "deadbeef",
+		RetentionEnabled:          false,
+		RetentionDuration:         &d1,
+		RetainIntermediateCommits: true,
+		IndexingEnabled:           false,
+		IndexCommitMaxAge:         &d2,
+		IndexIntermediateCommits:  true,
+	}
+
+	hydratedConfigurationPolicy, err := store.CreateConfigurationPolicy(context.Background(), configurationPolicy)
+	if err != nil {
+		t.Fatalf("unexpected error creating configuration policy: %s", err)
+	}
+
+	if hydratedConfigurationPolicy.ID == 0 {
+		t.Fatalf("hydrated policy does not have an identifier")
+	}
+
+	// Mark configuration policy as protected (no other way to do so outside of migrations)
+	if _, err := db.ExecContext(context.Background(), "UPDATE lsif_configuration_policies SET protected = true"); err != nil {
+		t.Fatalf("unexpected error marking configuration policy as protected: %s", err)
+	}
+
+	if err := store.DeleteConfigurationPolicyByID(context.Background(), hydratedConfigurationPolicy.ID); err == nil {
+		t.Fatalf("expected error deleting configuration policy: %s", err)
+	}
+
+	_, ok, err := store.GetConfigurationPolicyByID(context.Background(), hydratedConfigurationPolicy.ID)
+	if err != nil {
+		t.Fatalf("unexpected error fetching configuration policy: %s", err)
+	}
+	if !ok {
+		t.Fatalf("expected record")
+	}
+}
+
 // removes default configuration policies
 func testStoreWithoutConfigurationPolicies(t *testing.T, db database.DB) Store {
 	if _, err := db.ExecContext(context.Background(), `TRUNCATE lsif_configuration_policies`); err != nil {

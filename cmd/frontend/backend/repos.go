@@ -178,8 +178,9 @@ func (s *repos) List(ctx context.Context, opt database.ReposListOptions) (repos 
 	ctx, done := trace(ctx, "Repos", "List", opt, &err)
 	defer func() {
 		if err == nil {
-			span := opentracing.SpanFromContext(ctx)
-			span.LogFields(otlog.Int("result.len", len(repos)))
+			if span := opentracing.SpanFromContext(ctx); span != nil {
+				span.LogFields(otlog.Int("result.len", len(repos)))
+			}
 		}
 		done()
 	}()
@@ -197,8 +198,9 @@ func (s *repos) ListIndexable(ctx context.Context) (repos []types.MinimalRepo, e
 	ctx, done := trace(ctx, "Repos", "ListIndexable", nil, &err)
 	defer func() {
 		if err == nil {
-			span := opentracing.SpanFromContext(ctx)
-			span.LogFields(otlog.Int("result.len", len(repos)))
+			if span := opentracing.SpanFromContext(ctx); span != nil {
+				span.LogFields(otlog.Int("result.len", len(repos)))
+			}
 		}
 		done()
 	}()

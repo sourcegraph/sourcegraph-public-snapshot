@@ -3,6 +3,12 @@
     display: flex;
 }
 
+.estimator .errorInput {
+    font-style: italic;
+    color: var(--critical-badge-color);
+    border-color: var(--critical-badge-color);
+}
+
 .estimator .radioInput label {
     display: inline-flex;
     align-items: center;
@@ -40,31 +46,23 @@
 </style>
 
 <script src="https://storage.googleapis.com/sourcegraph-resource-estimator/go_1_18_wasm_exec.js"></script>
-<script src="https://storage.googleapis.com/sourcegraph-resource-estimator/launch_script.js?v2" version="d0537bf"></script>
+<script src="https://storage.googleapis.com/sourcegraph-resource-estimator/launch_script.js?v2" version="f62b75b"></script>
 
 # Sourcegraph resource estimator
 
 Updating the form below will recalculate an estimate for the resources you can use to configure your Sourcegraph deployment.
 
-Use the default values for services not listed below.
-
-## Limitations
-
-- The estimator does not support instances with more than:
-  - 10,000 users
-  - 50,000 repositories
-  - 5TB size of all repositories
-  - 10 monorepos
-
-> WARNING: The values are **not valid and should not be used as references** if any of the factors go beyond the supported limit.
-
 <form id="root"></form>
 
-> NOTE: The output is estimated based on existing data we collected from current running deployments. 
+**Questions or concerns?** [Get help from an engineer](mailto:support@sourcegraph.com)
 
 ---
 
 ## Additional information
+
+#### Limitations
+
+- The estimator does not support instances with more than 50,000 users or 5,000,000 repositories.
 
 #### How to update a resource in your deployment?
 
@@ -72,15 +70,9 @@ Use the default values for services not listed below.
 - For Helm deployments, create an [override file](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/examples/common-modifications/override.yaml) (or update your existing override file) with the new values shown above.
 - For non-Helm Kubernetes deployments, we recommend using Kustomize to generate manifests with the values shown above. Please refer to our [Kustomize overlay for resources update](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/overlays/resources-update) for detail.
 
-#### Default setup
-
-- Please use the default setup of your deployment choice if you have less than 2,000 users and repositories combined. 
-
-Please refer to our reference architecture docs (coming soon) or contact our team for large deployments.
-
 #### What is engagement rate?
 
-- Engagement rate refers to the percentage of users who use Sourcegraph regularly. It is generally used for existing deployments to estimate resources.
+- (Deprecated) Engagement rate refers to the percentage of users who use Sourcegraph regularly. It is generally used for existing deployments to estimate resources.
 
 #### If you plan to enforce repository permissions on Sourcegraph
 

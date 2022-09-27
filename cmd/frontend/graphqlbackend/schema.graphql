@@ -555,10 +555,6 @@ type Mutation {
     """
     submitSurvey(input: SurveySubmissionInput!): EmptyResponse
     """
-    Submits happiness feedback.
-    """
-    submitHappinessFeedback(input: HappinessFeedbackSubmissionInput!): EmptyResponse
-    """
     Submits a request for a Sourcegraph Enterprise trial license.
     """
     requestTrial(email: String!): EmptyResponse
@@ -768,6 +764,13 @@ type Mutation {
     Site-admin or owner of the external service only.
     """
     syncExternalService(id: ID!): EmptyResponse!
+
+    """
+    Cancels an external service sync job. Must be in queued or processing state.
+
+    Site-admin or owner of the external service only.
+    """
+    cancelExternalServiceSync(id: ID!): EmptyResponse!
 
     """
     Associate a new key-value pair with a repo.
@@ -1135,24 +1138,6 @@ input SurveySubmissionInput {
 }
 
 """
-Input for a happiness feedback submission.
-"""
-input HappinessFeedbackSubmissionInput {
-    """
-    User's happiness rating, from 1-4.
-    """
-    score: Int!
-    """
-    The answer to "What's going well? What could be better?".
-    """
-    feedback: String
-    """
-    The path that the happiness feedback will be submitted from.
-    """
-    currentPath: String
-}
-
-"""
 A query.
 """
 type Query {
@@ -1428,8 +1413,8 @@ type Query {
         """
         The level of output format verbosity.
         """
-        outputVerbosity: SearchQueryOutputVerbosity = MINIMAL
-    ): JSONValue
+        outputVerbosity: SearchQueryOutputVerbosity = BASIC
+    ): String!
     """
     The current site.
     """
@@ -2673,6 +2658,16 @@ enum ExternalServiceSyncJobState {
     Sync finished successfully.
     """
     COMPLETED
+
+    """
+    Sync job is being canceled.
+    """
+    CANCELING
+
+    """
+    Sync job has been canceled.
+    """
+    CANCELED
 }
 
 """
@@ -7405,6 +7400,10 @@ type RepositoryStats {
     The number of repositories where initial cloning or subsequent fetching resulted in an error.
     """
     failedFetch: Int!
+    """
+    The number of indexed repositories
+    """
+    indexed: Int!
 }
 
 """

@@ -29,7 +29,7 @@ var (
 		"tag":          {"--list", "--sort", "-creatordate", "--format", "--points-at"},
 		"merge-base":   {"--"},
 		"show-ref":     {"--heads"},
-		"shortlog":     {"-s", "-n", "-e", "--no-merges"},
+		"shortlog":     {"-s", "-n", "-e", "--no-merges", "--after", "--before"},
 		"cat-file":     {},
 
 		// Used in tests to simulate errors with runCommand in handleExec of gitserver.

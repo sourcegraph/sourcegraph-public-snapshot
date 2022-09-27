@@ -381,22 +381,7 @@ func (c *Dashboard) renderRules(injectLabelMatchers []*labels.Matcher) (*promRul
 						continue
 					}
 
-					// The alertQuery must contribute a query that returns true when it should be firing.
-					var alertQuery string
-					if a.customQuery != "" {
-						alertQuery = fmt.Sprintf("%s((%s) %s %v)", a.aggregator, a.customQuery, a.comparator, a.threshold)
-					} else {
-						alertQuery = fmt.Sprintf("%s((%s) %s %v)", a.aggregator, o.Query, a.comparator, a.threshold)
-					}
-
-					// If the data must exist, we alert if the query returns no value as well
-					if o.DataMustExist {
-						alertQuery = fmt.Sprintf("(%s) OR (absent(%s) == 1)", alertQuery, o.Query)
-					}
-
-					// Inject label matchers
-					var err error
-					alertQuery, err = promql.Inject(alertQuery, injectLabelMatchers, newVariableApplier(c.Variables))
+					alertQuery, err := a.generateAlertQuery(o, injectLabelMatchers, newVariableApplier(c.Variables))
 					if err != nil {
 						return nil, errors.Errorf("%s.%s.%s: unable to generate query: %+v",
 							c.Name, o.Name, level, err)
@@ -767,7 +752,7 @@ func (o Observable) validate(variables []ContainerVariable) error {
 			"Warning":  o.Warning,
 			"Critical": o.Critical,
 		} {
-			if err := alert.validate(variables); err != nil {
+			if err := alert.validate(); err != nil {
 				return errors.Errorf("%s Alert: %w", alertLevel, err)
 			}
 		}
@@ -913,7 +898,7 @@ func (a *ObservableAlertDefinition) isEmpty() bool {
 	return a == nil || (*a == ObservableAlertDefinition{}) || (!a.greaterThan && !a.lessThan)
 }
 
-func (a *ObservableAlertDefinition) validate(variables []ContainerVariable) error {
+func (a *ObservableAlertDefinition) validate() error {
 	if a.isEmpty() {
 		return nil
 	}
@@ -921,11 +906,30 @@ func (a *ObservableAlertDefinition) validate(variables []ContainerVariable) erro
 		return errors.New("only one bound (greater or less) can be set")
 	}
 
-	// Chekc if query is valid
 	if a.customQuery != "" {
-		if err := promql.Validate(a.customQuery, newVariableApplier(variables)); err != nil {
+		// Check if custom query is a valid alert query. Also note that custom queries
+		// should not use variables, so we don't provide them here.
+		if _, err := promql.InjectAsAlert(a.customQuery, nil, nil); err != nil {
 			return errors.Wrapf(err, "CustomQuery is invalid")
 		}
 	}
 	return nil
+}
+
+func (a *ObservableAlertDefinition) generateAlertQuery(o Observable, injectLabelMatchers []*labels.Matcher, vars promql.VariableApplier) (string, error) {
+	// The alertQuery must contribute a query that returns true when it should be firing.
+	var alertQuery string
+	if a.customQuery != "" {
+		alertQuery = fmt.Sprintf("%s((%s) %s %v)", a.aggregator, a.customQuery, a.comparator, a.threshold)
+	} else {
+		alertQuery = fmt.Sprintf("%s((%s) %s %v)", a.aggregator, o.Query, a.comparator, a.threshold)
+	}
+
+	// If the data must exist, we alert if the query returns no value as well
+	if o.DataMustExist {
+		alertQuery = fmt.Sprintf("(%s) OR (absent(%s) == 1)", alertQuery, o.Query)
+	}
+
+	// Inject label matchers
+	return promql.InjectAsAlert(alertQuery, injectLabelMatchers, vars)
 }

@@ -28,6 +28,10 @@ const (
 	BitbucketServerWebhooks = "bitbucketServer.webhooks"
 	BitbucketCloudWebhooks  = "bitbucketCloud.webhooks"
 
+	BatchesFileGet    = "batches.file.get"
+	BatchesFileExists = "batches.file.exists"
+	BatchesFileUpload = "batches.file.upload"
+
 	ExternalURL            = "internal.app-url"
 	SendEmail              = "internal.send-email"
 	GitInfoRefs            = "internal.git.info-refs"
@@ -55,6 +59,9 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/gitlab-webhooks").Methods("POST").Name(GitLabWebhooks)
 	base.Path("/bitbucket-server-webhooks").Methods("POST").Name(BitbucketServerWebhooks)
 	base.Path("/bitbucket-cloud-webhooks").Methods("POST").Name(BitbucketCloudWebhooks)
+	base.Path("/files/batch-changes/{spec}/{file}").Methods("GET").Name(BatchesFileGet)
+	base.Path("/files/batch-changes/{spec}/{file}").Methods("HEAD").Name(BatchesFileExists)
+	base.Path("/files/batch-changes/{spec}").Methods("POST").Name(BatchesFileUpload)
 	base.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
 	base.Path("/search/stream").Methods("GET").Name(SearchStream)
 	base.Path("/compute/stream").Methods("GET", "POST").Name(ComputeStream)

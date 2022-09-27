@@ -30,7 +30,9 @@ func (r *Runner) validateSchema(ctx context.Context, schemaContext schemaContext
 	// Filter out any unlisted migrations (most likely future upgrades) and group them by status.
 	byState := groupByState(schemaContext.initialSchemaVersion, definitions)
 
-	logger := r.logger.With(log.String("schema", schemaContext.schema.Name))
+	logger := r.logger.With(
+		log.String("schema", schemaContext.schema.Name),
+	)
 
 	logger.Info("Checked current schema state",
 		log.String("schema", schemaContext.schema.Name),
@@ -45,18 +47,15 @@ func (r *Runner) validateSchema(ctx context.Context, schemaContext schemaContext
 	// to take an advisory lock and poll index creation status below.
 	if len(byState.pending) == 0 && len(byState.failed) == 0 && len(byState.applied) == len(definitions) {
 		logger.Info("Schema is in the expected state")
-
 		return nil
 	}
 
-	logger.Warn("Schema not in expected state",
+	logger.Info("Schema is not in the expected state - checking for active migrations",
 		log.String("schema", schemaContext.schema.Name),
 		log.Ints("appliedVersions", extractIDs(byState.applied)),
 		log.Ints("pendingVersions", extractIDs(byState.pending)),
 		log.Ints("failedVersions", extractIDs(byState.failed)),
 	)
-
-	logger.Info("Checking for active migrations")
 
 	for {
 		// Attempt to validate the given definitions. We may have to call this several times as
@@ -80,7 +79,6 @@ func (r *Runner) validateSchema(ctx context.Context, schemaContext schemaContext
 	}
 
 	logger.Info("Schema is in the expected state")
-
 	return nil
 }
 

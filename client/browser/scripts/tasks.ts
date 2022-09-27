@@ -111,7 +111,7 @@ function copyExtensionAssets(toDirectory: string): void {
  *
  * The pre-requisite step is to first clone, build, and copy into `build/extensions`.
  */
-function copyInlineExtensions(toDirectory: string): void {
+export function copyInlineExtensions(toDirectory: string): void {
     shelljs.cp('-R', 'build/extensions', toDirectory)
 }
 
