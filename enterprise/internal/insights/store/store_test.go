@@ -932,7 +932,8 @@ func TestLoadStuff(t *testing.T) {
 	for _, datum := range allData {
 		err = sampleStore.StoreRow(ctx, UncompressedRow{
 			altFormatRowMetadata: altFormatRowMetadata{
-				RepoId: uint32(datum.repoId),
+				RepoId:  uint32(datum.repoId),
+				Capture: datum.Capture,
 			},
 			Samples: datum.ss,
 		}, uint32(rawId))
