@@ -7,32 +7,92 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 )
 
 type repositoryStatsResolver struct {
 	db database.DB
 
-	indexedRepos      int
-	gitDirBytes       uint64
-	indexedLinesCount uint64
+	indexedStatsOnce  sync.Once
+	indexedRepos      int32
+	indexedLinesCount int64
+	indexedStatsErr   error
 
 	repoStatisticsOnce sync.Once
 	repoStatistics     database.RepoStatistics
 	repoStatisticsErr  error
+
+	gitDirBytesOnce sync.Once
+	gitDirBytes     int64
+	gitDirBytesErr  error
 }
 
-func (r *repositoryStatsResolver) GitDirBytes() BigInt {
-	return BigInt{Int: int64(r.gitDirBytes)}
+func (r *repositoryStatsResolver) GitDirBytes(ctx context.Context) (BigInt, error) {
+	gitDirBytes, err := r.computeGitDirBytes(ctx)
+	if err != nil {
+		return BigInt{}, err
+	}
+	return BigInt{Int: gitDirBytes}, nil
+
 }
 
-func (r *repositoryStatsResolver) IndexedLinesCount() BigInt {
-	return BigInt{Int: int64(r.indexedLinesCount)}
+func (r *repositoryStatsResolver) computeGitDirBytes(ctx context.Context) (int64, error) {
+	r.gitDirBytesOnce.Do(func() {
+		stats, err := gitserver.NewClient(r.db).ReposStats(ctx)
+		if err != nil {
+			r.gitDirBytesErr = err
+			return
+		}
+
+		var gitDirBytes int64
+		for _, stat := range stats {
+			gitDirBytes += int64(stat.GitDirBytes)
+		}
+		r.gitDirBytes = gitDirBytes
+	})
+
+	return r.gitDirBytes, r.gitDirBytesErr
 }
 
-func (r *repositoryStatsResolver) Indexed(ctx context.Context) int32 {
-	return int32(r.indexedRepos)
+func (r *repositoryStatsResolver) Indexed(ctx context.Context) (int32, error) {
+	indexedRepos, _, err := r.computeIndexedStats(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return indexedRepos, nil
+}
+
+func (r *repositoryStatsResolver) IndexedLinesCount(ctx context.Context) (BigInt, error) {
+	_, indexedLinesCount, err := r.computeIndexedStats(ctx)
+	if err != nil {
+		return BigInt{}, err
+	}
+	return BigInt{Int: indexedLinesCount}, nil
+}
+
+func (r *repositoryStatsResolver) computeIndexedStats(ctx context.Context) (int32, int64, error) {
+	r.indexedStatsOnce.Do(func() {
+		var (
+			indexedRepos     int32
+			indexedLineCount int64
+		)
+
+		if conf.SearchIndexEnabled() {
+			repos, err := search.ListAllIndexed(ctx)
+			if err != nil {
+				r.indexedStatsErr = err
+				return
+			}
+			indexedRepos = int32(len(repos.Minimal))
+			indexedLineCount = int64(repos.Stats.DefaultBranchNewLinesCount) + int64(repos.Stats.OtherBranchesNewLinesCount)
+		}
+
+		r.indexedRepos = indexedRepos
+		r.indexedLinesCount = indexedLineCount
+	})
+
+	return r.indexedRepos, r.indexedLinesCount, r.indexedStatsErr
 }
 
 func (r *repositoryStatsResolver) Total(ctx context.Context) (int32, error) {
@@ -89,29 +149,5 @@ func (r *schemaResolver) RepositoryStats(ctx context.Context) (*repositoryStatsR
 		return nil, err
 	}
 
-	stats, err := usagestats.GetRepositories(ctx, db)
-	if err != nil {
-		return nil, err
-	}
-
-	var (
-		indexedRepos     int
-		indexedLineCount uint64
-	)
-
-	if conf.SearchIndexEnabled() {
-		repos, err := search.ListAllIndexed(ctx)
-		if err != nil {
-			return nil, err
-		}
-		indexedRepos = len(repos.Minimal)
-		indexedLineCount = repos.Stats.DefaultBranchNewLinesCount + repos.Stats.OtherBranchesNewLinesCount
-	}
-
-	return &repositoryStatsResolver{
-		db:                db,
-		indexedRepos:      indexedRepos,
-		gitDirBytes:       stats.GitDirBytes,
-		indexedLinesCount: indexedLineCount,
-	}, nil
+	return &repositoryStatsResolver{db: db}, nil
 }
