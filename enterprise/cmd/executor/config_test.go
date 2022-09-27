@@ -74,8 +74,8 @@ func TestConfig_Load_Defaults(t *testing.T) {
 	assert.Equal(t, 1*time.Second, config.QueuePollInterval)
 	assert.Equal(t, 1, config.MaximumNumJobs)
 	assert.True(t, config.UseFirecracker)
-	assert.Equal(t, "sourcegraph/executor-vm:latest", config.FirecrackerImage)
-	assert.Equal(t, "sourcegraph/executor-vm:latest", config.FirecrackerImage)
+	assert.Equal(t, "sourcegraph/executor-vm:insiders", config.FirecrackerImage)
+	assert.Equal(t, "sourcegraph/executor-vm:insiders", config.FirecrackerImage)
 	assert.Equal(t, "sourcegraph/ignite-kernel:5.10.135-amd64", config.FirecrackerKernelImage)
 	assert.Empty(t, config.VMStartupScriptPath)
 	assert.Equal(t, "executor", config.VMPrefix)
@@ -207,7 +207,7 @@ func TestConfig_APIWorkerOptions(t *testing.T) {
 
 	// firecracker options
 	assert.True(t, options.FirecrackerOptions.Enabled)
-	assert.Equal(t, "sourcegraph/executor-vm:latest", options.FirecrackerOptions.Image)
+	assert.Equal(t, "sourcegraph/executor-vm:insiders", options.FirecrackerOptions.Image)
 	assert.Equal(t, "sourcegraph/ignite-kernel:5.10.135-amd64", options.FirecrackerOptions.KernelImage)
 	assert.Empty(t, options.FirecrackerOptions.VMStartupScriptPath)
 

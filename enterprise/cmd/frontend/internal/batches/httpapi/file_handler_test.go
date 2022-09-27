@@ -147,7 +147,23 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 			},
 			userID:               creatorID,
 			expectedStatusCode:   http.StatusInternalServerError,
-			expectedResponseBody: "uploading file: file path cannot contain double-dots '..'\n",
+			expectedResponseBody: "uploading file: file path cannot contain double-dots '..' or backslashes '\\'\n",
+		},
+		{
+			name:   "File path contains backslashes",
+			method: http.MethodPost,
+			path:   fmt.Sprintf("/files/batch-changes/%s", batchSpecRandID),
+			requestBody: func() (io.Reader, string) {
+				return multipartRequestBody(file{name: "hello.txt", path: "foo\\bar", content: "Hello world!", modified: modifiedTimeString})
+			},
+			mockInvokes: func(mockStore *mockBatchesStore) {
+				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
+					Return(&btypes.BatchSpec{ID: 1, RandID: batchSpecRandID, UserID: creatorID}, nil).
+					Once()
+			},
+			userID:               creatorID,
+			expectedStatusCode:   http.StatusInternalServerError,
+			expectedResponseBody: "uploading file: file path cannot contain double-dots '..' or backslashes '\\'\n",
 		},
 		{
 			name:   "Upload with marshalled spec ID",
