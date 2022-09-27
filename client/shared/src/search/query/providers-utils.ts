@@ -1,3 +1,7 @@
+// IMPORTANT: This module contains code used by the CodeMirror query input
+// implementation and therefore shouldn't have any runtime dependencies on
+// Monaco
+
 import { Observable, of } from 'rxjs'
 import { delay, takeUntil, switchMap } from 'rxjs/operators'
 
