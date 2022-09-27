@@ -27,9 +27,7 @@ There are two sources of timeouts in a `count:all` query:
 
 ### Large result sets
 
-The Sourcegraph webapp will only display up to 500 results (however will continue to display accurate statistics). 
-If you need to process more than 500 results, please use the [Sourcegraph CLI](https://github.com/sourcegraph/src-cli). 
-For now, you will need to pass in the `-stream` flag to efficiently get large result sets.
+The Sourcegraph webapp will only display up to 500 results (however will continue to display accurate statistics). If you need to process more than 500 results, please use the [Sourcegraph CLI](https://github.com/sourcegraph/src-cli). For now, you will need to pass in the `-stream` flag to efficiently get large result sets.
 
 ## Limitations
 
