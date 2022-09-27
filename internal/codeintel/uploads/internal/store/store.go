@@ -75,6 +75,10 @@ type Store interface {
 	// Audit Logs
 	GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []shared.UploadLog, err error)
 	DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (count int, err error)
+
+	// TODO
+	DeleteOverlappingDumps(ctx context.Context, repositoryID int, commit, root, indexer string) error
+	InsertDependencySyncingJob(ctx context.Context, uploadID int) (jobID int, err error)
 }
 
 // store manages the database operations for uploads.

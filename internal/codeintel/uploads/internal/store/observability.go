@@ -58,6 +58,7 @@ type operations struct {
 	findClosestDumpsFromGraphFragment  *observation.Operation
 	getDumpsWithDefinitionsForMonikers *observation.Operation
 	getDumpsByIDs                      *observation.Operation
+	deleteOverlappingDumps             *observation.Operation
 
 	// Packages
 	updatePackages *observation.Operation
@@ -67,6 +68,9 @@ type operations struct {
 
 	// Audit logs
 	deleteOldAuditLogs *observation.Operation
+
+	// Dependencies
+	insertDependencySyncingJob *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -137,6 +141,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		findClosestDumpsFromGraphFragment:  op("FindClosestDumpsFromGraphFragment"),
 		getDumpsWithDefinitionsForMonikers: op("GetUploadsWithDefinitionsForMonikers"),
 		getDumpsByIDs:                      op("GetDumpsByIDs"),
+		deleteOverlappingDumps:             op("DeleteOverlappingDumps"),
 
 		// Packages
 		updatePackages: op("UpdatePackages"),
@@ -146,5 +151,8 @@ func newOperations(observationContext *observation.Context) *operations {
 
 		// Audit logs
 		deleteOldAuditLogs: op("DeleteOldAuditLogs"),
+
+		// Dependencies
+		insertDependencySyncingJob: op("InsertDependencySyncingJob"),
 	}
 }
