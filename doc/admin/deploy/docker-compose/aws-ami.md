@@ -53,7 +53,7 @@ Select an AMI according to the number of users and repositories you have using t
 | **Minimum**      |                                               m6a.2xlarge                                                |                     m6a.2xlarge                      |                     m6a.4xlarge                      |                                               m6a.8xlarge                                               |                                               m6a.12xlarge                                               |
 | **AMI**          | [sourcegraph-XS (v4.0.0)](https://console.aws.amazon.com/ec2#ImageDetails:imageId=ami-0ee5cdc5e89a4bee2) | <span class="badge badge-warning">Coming soon</span> | <span class="badge badge-warning">Coming soon</span> | [sourcegraph-L (v4.0.0)](https://console.aws.amazon.com/ec2#ImageDetails:imageId=ami-021db30b6db9b0634) | [sourcegraph-XL (v4.0.0)](https://console.aws.amazon.com/ec2#ImageDetails:imageId=ami-04b10e0fabedb6eac) |
 
-<span class="badge badge-warning">IMPORTANT</span> AMIs are currently only available in the **us-west-2 (Oregon)** region. More regions are coming soon.
+<span class="badge badge-critical">IMPORTANT</span> AMIs are currently only available in the **us-west-2 (Oregon)** region. More regions are coming soon.
 
 For example, if you have 8,000 users with 80,000 repositories, your instance size would be **M**. If you have 1,000 users with 80,000 users, you should still go with size **M**.
 
