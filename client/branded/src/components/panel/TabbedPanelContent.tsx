@@ -12,6 +12,7 @@ import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { isDefined, combineLatestOrDefault, isErrorLike } from '@sourcegraph/common'
 import { Location } from '@sourcegraph/extension-api-types'
 import { FetchFileParameters } from '@sourcegraph/search-ui'
+import { SimpleActionItem } from '@sourcegraph/shared/src/actions/SimpleActionItem'
 import { ActionsNavItems } from '@sourcegraph/shared/src/actions/ActionsNavItems'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { match } from '@sourcegraph/shared/src/api/client/types/textDocument'
@@ -306,29 +307,32 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
                 wrapperClassName={classNames(styles.panelHeader, 'sticky-top')}
                 actions={
                     <div className="align-items-center d-flex">
-                        {activeTab && extensionsController !== null && (
-                            <>
-                                <ActionsNavItems
-                                    {...props}
-                                    extensionsController={extensionsController}
-                                    // TODO remove references to global branded classes from shared, get class name from prop
-                                    // This is okay for now because the Panel is currently only used in the webapp
-                                    listClass="d-flex justify-content-end list-unstyled m-0 align-items-center"
-                                    listItemClass="px-2 mx-2"
-                                    actionItemClass={classNames(styles.actionItemUnconstrained, 'font-weight-medium')}
-                                    actionItemIconClass="icon-inline"
-                                    menu={ContributableMenu.PanelToolbar}
-                                    scope={{
-                                        type: 'panelView',
-                                        id: activeTab.id,
-                                        hasLocations: Boolean(activeTab.hasLocations),
-                                    }}
-                                    wrapInList={true}
-                                    location={location}
-                                    transformContributions={transformPanelContributions}
-                                />
-                            </>
-                        )}
+                        <ul className="d-flex justify-content-end list-unstyled m-0 align-items-center">
+                            {activeTab && extensionsController !== null && (
+                                <>
+                                    <ActionsNavItems
+                                        {...props}
+                                        extensionsController={extensionsController}
+                                        listClass="r"
+                                        listItemClass="px-2 mx-2"
+                                        actionItemClass={classNames(
+                                            styles.actionItemUnconstrained,
+                                            'font-weight-medium'
+                                        )}
+                                        actionItemIconClass="icon-inline"
+                                        menu={ContributableMenu.PanelToolbar}
+                                        scope={{
+                                            type: 'panelView',
+                                            id: activeTab.id,
+                                            hasLocations: Boolean(activeTab.hasLocations),
+                                        }}
+                                        wrapInList={false}
+                                        location={location}
+                                        transformContributions={transformPanelContributions}
+                                    />
+                                </>
+                            )}
+                        </ul>
                         <Tooltip content="Close panel" placement="left">
                             <Button
                                 onClick={handlePanelClose}
