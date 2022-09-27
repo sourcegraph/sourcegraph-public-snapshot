@@ -23,7 +23,7 @@ func testSyncWorkerPlumbing(repoStore repos.Store) func(t *testing.T) {
 		testSvc := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "TestService",
-			Config:      extsvc.NewEmptyConfig(),
+			Config:      extsvc.NewUnencryptedConfig(basicGitHubConfig),
 		}
 
 		// Create external service

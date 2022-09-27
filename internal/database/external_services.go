@@ -658,7 +658,7 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			NamespaceOrgID:  s.NamespaceOrgID,
 		})
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "validating service of kind %q", s.Kind)
 		}
 
 		// 🚨 SECURITY: For all GitHub and GitLab code host connections on Sourcegraph
