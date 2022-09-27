@@ -62,7 +62,7 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
 
 <form class="grid">
   <!-- AWS AMI-->
-  <button class="app-btn btn" formaction="/admin/deploy/docker-compose/aws-ami">
+  <button class="app-btn btn" formaction="/admin/deploy/aws-ami">
     <img alt="aws-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/1280px-Amazon_Web_Services_Logo.svg.png"/>
     <h3>AWS</h3>
     <p>Launch a pre-configured Sourcegraph instance from an AWS AMI</p>
