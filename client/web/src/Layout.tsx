@@ -18,9 +18,9 @@ import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
-import { LoadingSpinner, Panel, useObservable } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Panel } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser, authRequired as authRequiredObservable } from './auth'
+import { AuthenticatedUser } from './auth'
 import { BatchChangesProps } from './batches'
 import { CodeIntelligenceProps } from './codeintel'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
@@ -122,7 +122,6 @@ const CONTRAST_COMPLIANT_CLASSNAME = 'theme-contrast-compliant-syntax-highlighti
 export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps>> = props => {
     const routeMatch = props.routes.find(({ path, exact }) => matchPath(props.location.pathname, { path, exact }))?.path
     const isSearchRelatedPage = (routeMatch === '/:repoRevAndRest+' || routeMatch?.startsWith('/search')) ?? false
-    const minimalNavLinks = routeMatch === '/cncf'
     const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
     const isSearchConsolePage = routeMatch?.startsWith('/search/console')
     const isSearchNotebooksPage = routeMatch?.startsWith(PageRoutes.Notebooks)
@@ -153,8 +152,6 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
     // Need to know this for disable autofocus on nav search input
     // and preserve autofocus for first textarea at survey page, creation UI etc.
     const isSearchAutoFocusRequired = routeMatch === PageRoutes.Survey || routeMatch === EnterprisePageRoutes.Insights
-
-    const authRequired = useObservable(authRequiredObservable)
 
     const themeProps = useThemeProps()
     const [enableContrastCompliantSyntaxHighlighting] = useFeatureFlag('contrast-compliant-syntax-highlighting')
@@ -218,7 +215,6 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                 <GlobalNavbar
                     {...props}
                     {...themeProps}
-                    authRequired={!!authRequired}
                     showSearchBox={
                         isSearchRelatedPage &&
                         !isSearchHomepage &&
@@ -226,17 +222,10 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                         !isSearchConsolePage &&
                         !isSearchNotebooksPage
                     }
-                    variant={
-                        isSearchHomepage
-                            ? 'low-profile'
-                            : isCommunitySearchContextPage
-                            ? 'low-profile-with-logo'
-                            : 'default'
-                    }
-                    minimalNavLinks={minimalNavLinks}
                     isSearchAutoFocusRequired={!isSearchAutoFocusRequired}
                     isRepositoryRelatedPage={isRepositoryRelatedPage}
                     showKeyboardShortcutsHelp={showKeyboardShortcutsHelp}
+                    enableLegacyExtensions={window.context.enableLegacyExtensions}
                 />
             )}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
