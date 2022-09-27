@@ -90,7 +90,6 @@ func Main(enterpriseInit EnterpriseInit) {
 	go conf.Watch(liblog.Update(conf.GetLogSinks))
 
 	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
-	trace.Init()
 	profiler.Init()
 
 	logger := log.Scoped("service", "repo-updater service")
