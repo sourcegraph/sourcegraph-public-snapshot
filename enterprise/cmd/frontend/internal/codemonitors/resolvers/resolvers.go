@@ -17,6 +17,7 @@ import (
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -388,7 +389,7 @@ func (r *Resolver) TriggerTestWebhookAction(ctx context.Context, args *graphqlba
 		return nil, err
 	}
 
-	if err := background.SendTestWebhook(ctx, args.Description, args.Webhook.URL); err != nil {
+	if err := background.SendTestWebhook(ctx, httpcli.ExternalDoer, args.Description, args.Webhook.URL); err != nil {
 		return nil, err
 	}
 
@@ -401,7 +402,7 @@ func (r *Resolver) TriggerTestSlackWebhookAction(ctx context.Context, args *grap
 		return nil, err
 	}
 
-	if err := background.SendTestSlackWebhook(ctx, args.Description, args.SlackWebhook.URL); err != nil {
+	if err := background.SendTestSlackWebhook(ctx, httpcli.ExternalDoer, args.Description, args.SlackWebhook.URL); err != nil {
 		return nil, err
 	}
 

@@ -15,6 +15,7 @@ import (
 	"sync"
 	"time"
 
+	"code.gitea.io/gitea/modules/hostmatcher"
 	"github.com/PuerkitoBio/rehttp"
 	"github.com/gregjones/httpcache"
 	"github.com/opentracing/opentracing-go"
@@ -213,7 +214,6 @@ func (f Factory) Client(base ...Opt) (*http.Client, error) {
 	for _, opt := range opts {
 		err = errors.Append(err, opt(&cli))
 	}
-
 	return &cli, err
 }
 
@@ -356,6 +356,10 @@ func ExternalTransportOpt(cli *http.Client) error {
 		return errors.Wrap(err, "httpcli.ExternalTransportOpt")
 	}
 
+	// create an allowList that only allows communication with external services
+	hostList := os.Getenv("EXTERNAL_ALLOWLIST")
+	allowList := hostmatcher.ParseHostMatchList("", hostList)
+	tr.DialContext = hostmatcher.NewDialContext("foobar", allowList, nil)
 	cli.Transport = &externalTransport{base: tr}
 	return nil
 }

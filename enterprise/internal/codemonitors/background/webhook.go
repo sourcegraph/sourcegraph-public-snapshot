@@ -7,40 +7,32 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 
-	"code.gitea.io/gitea/modules/hostmatcher"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func sendWebhookNotification(ctx context.Context, url string, args actionArgs) error {
-	return postWebhook(ctx, url, args)
+	return postWebhook(ctx, httpcli.ExternalDoer, url, generateWebhookPayload(args))
 }
 
-func postWebhook(ctx context.Context, url string, args actionArgs) error {
-
-	// Create an allowList out of specified HostList
-	hostList := os.Getenv("WEBHOOK_ALLOWLIST")
-	allowList := hostmatcher.ParseHostMatchList("", hostList)
-
-	webHookHttpClient := &http.Client{
-		Transport: &http.Transport{
-			DialContext: hostmatcher.NewDialContext("code-monitor-webhook", allowList, nil),
-		},
-	}
-
-	payload := generateWebhookPayload(args)
+func postWebhook(ctx context.Context, doer httpcli.Doer, url string, payload webhookPayload) error {
 	raw, err := json.Marshal(payload)
 	if err != nil {
 		return errors.Wrap(err, "marshal failed")
 	}
 
-	resp, err := webHookHttpClient.Post(url, "application/json", bytes.NewReader(raw))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(raw))
 	if err != nil {
 		return errors.Wrap(err, "failed new request")
 	}
+	req.Header.Set("Content-Type", "application/json")
 
+	resp, err := doer.Do(req)
+	if err != nil {
+		return errors.Wrap(err, "failed to post webhook")
+	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
@@ -55,13 +47,13 @@ func postWebhook(ctx context.Context, url string, args actionArgs) error {
 	return nil
 }
 
-func SendTestWebhook(ctx context.Context, description string, u string) error {
+func SendTestWebhook(ctx context.Context, doer httpcli.Doer, description string, u string) error {
 	args := actionArgs{
 		ExternalURL:        &url.URL{},
 		MonitorDescription: description,
 		Query:              "test query",
 	}
-	return postWebhook(ctx, u, args)
+	return postWebhook(ctx, httpcli.ExternalDoer, u, generateWebhookPayload(args))
 }
 
 type webhookPayload struct {

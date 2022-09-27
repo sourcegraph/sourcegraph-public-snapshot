@@ -83,7 +83,7 @@ func newActionRunner(ctx context.Context, logger log.Logger, s edb.CodeMonitorSt
 		HeartbeatInterval: 15 * time.Second,
 		Metrics:           metrics.workerMetrics,
 	}
-	worker := dbworker.NewWorker(ctx, createDBWorkerStoreForActionJobs(logger, s), &actionRunner{s, "external"}, options)
+	worker := dbworker.NewWorker(ctx, createDBWorkerStoreForActionJobs(logger, s), &actionRunner{s}, options)
 	return worker
 }
 
@@ -207,7 +207,6 @@ func (r *queryRunner) Handle(ctx context.Context, logger log.Logger, record work
 
 type actionRunner struct {
 	edb.CodeMonitorStore
-	hostList string
 }
 
 func (r *actionRunner) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {

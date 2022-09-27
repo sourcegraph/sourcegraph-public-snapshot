@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"os"
 	"testing"
 
 	"github.com/hexops/autogold"
@@ -38,7 +37,8 @@ func TestWebhook(t *testing.T) {
 		}))
 		defer s.Close()
 
-		err := postWebhook(context.Background(), s.URL, action)
+		client := s.Client()
+		err := postWebhook(context.Background(), client, s.URL, generateWebhookPayload(action))
 		require.NoError(t, err)
 	})
 
@@ -63,25 +63,8 @@ func TestWebhook(t *testing.T) {
 		}))
 		defer s.Close()
 
-		err := postWebhook(context.Background(), s.URL, action)
-		require.Error(t, err)
-	})
-
-	t.Run("loopback requests are blocked", func(t *testing.T) {
-		// only allow external requests, excluding loopback
-		os.Setenv("WEBHOOK_ALLOWLIST", "external")
-		t.Cleanup(func() {
-			os.Unsetenv("WEBHOOK_ALLOWLIST")
-		})
-		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			b, err := io.ReadAll(r.Body)
-			require.NoError(t, err)
-			autogold.Equal(t, autogold.Raw(b))
-			w.WriteHeader(500)
-		}))
-		defer s.Close()
-
-		err := postWebhook(context.Background(), s.URL, action)
+		client := s.Client()
+		err := postWebhook(context.Background(), client, s.URL, generateWebhookPayload(action))
 		require.Error(t, err)
 	})
 }
@@ -95,6 +78,7 @@ func TestTriggerTestWebhookAction(t *testing.T) {
 	}))
 	defer s.Close()
 
-	err := SendTestWebhook(context.Background(), "My test monitor", s.URL)
+	client := s.Client()
+	err := SendTestWebhook(context.Background(), client, "My test monitor", s.URL)
 	require.NoError(t, err)
 }

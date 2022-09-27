@@ -7,18 +7,17 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 
-	"code.gitea.io/gitea/modules/hostmatcher"
 	"github.com/slack-go/slack"
 
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func sendSlackNotification(ctx context.Context, url string, args actionArgs) error {
-	return postSlackWebhook(ctx, url, slackPayload(args))
+	return postSlackWebhook(ctx, httpcli.ExternalDoer, url, slackPayload(args))
 }
 
 func slackPayload(args actionArgs) *slack.WebhookMessage {
@@ -116,23 +115,19 @@ func truncateResults(results []*result.CommitMatch, maxResults int) (_ []*result
 }
 
 // adapted from slack.PostWebhookCustomHTTPContext
-func postSlackWebhook(ctx context.Context, url string, msg *slack.WebhookMessage) error {
-
+func postSlackWebhook(ctx context.Context, doer httpcli.Doer, url string, msg *slack.WebhookMessage) error {
 	raw, err := json.Marshal(msg)
 	if err != nil {
 		return errors.Wrap(err, "marshal failed")
 	}
 
-	// Create an allowList out of specified HostList
-	hostList := os.Getenv("WEBHOOK_ALLOWLIST")
-	allowList := hostmatcher.ParseHostMatchList("", hostList)
-
-	webHookHttpClient := &http.Client{
-		Transport: &http.Transport{
-			DialContext: hostmatcher.NewDialContext("code-monitor-slackwebhook", allowList, nil),
-		},
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(raw))
+	if err != nil {
+		return errors.Wrap(err, "failed new request")
 	}
-	resp, err := webHookHttpClient.Post(url, "application/json", bytes.NewReader(raw))
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := doer.Do(req)
 	if err != nil {
 		return errors.Wrap(err, "failed to post webhook")
 	}
@@ -150,7 +145,7 @@ func postSlackWebhook(ctx context.Context, url string, msg *slack.WebhookMessage
 	return nil
 }
 
-func SendTestSlackWebhook(ctx context.Context, description, url string) error {
+func SendTestSlackWebhook(ctx context.Context, doer httpcli.Doer, description, url string) error {
 	testMessage := &slack.WebhookMessage{Blocks: &slack.Blocks{BlockSet: []slack.Block{
 		slack.NewSectionBlock(
 			slack.NewTextBlockObject("mrkdwn",
@@ -166,5 +161,5 @@ func SendTestSlackWebhook(ctx context.Context, description, url string) error {
 		),
 	}}}
 
-	return postSlackWebhook(ctx, url, testMessage)
+	return postSlackWebhook(ctx, doer, url, testMessage)
 }
