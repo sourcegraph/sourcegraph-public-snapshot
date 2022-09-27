@@ -22,10 +22,10 @@ import {
     Input,
     Text,
     Code,
-    Label,
 } from '@sourcegraph/wildcard'
 
 import { TerminalLine } from '../../auth/Terminal'
+import { requestGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import { SettingsAreaRepositoryFields } from '../../graphql-operations'
@@ -41,7 +41,6 @@ import { fetchSettingsAreaRepository } from './backend'
 import { ActionContainer, BaseActionContainer } from './components/ActionContainer'
 
 import styles from './RepoSettingsMirrorPage.module.scss'
-import { requestGraphQL } from '../../../src/backend/graphql'
 
 interface UpdateMirrorRepositoryActionContainerProps {
     repo: SettingsAreaRepositoryFields
