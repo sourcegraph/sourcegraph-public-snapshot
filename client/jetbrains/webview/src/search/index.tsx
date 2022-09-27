@@ -48,7 +48,7 @@ window.initializeSourcegraph = async () => {
 
         let isServerAccessSuccessful = false
         try {
-            const {site, currentUser} = await getSiteVersionAndAuthenticatedUser(instanceURL, accessToken)
+            const { site, currentUser } = await getSiteVersionAndAuthenticatedUser(instanceURL, accessToken)
             authenticatedUser = currentUser
             backendVersion = site?.productVersion || null
             isServerAccessSuccessful = true

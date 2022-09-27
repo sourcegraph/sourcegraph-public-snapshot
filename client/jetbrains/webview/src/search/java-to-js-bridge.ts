@@ -28,7 +28,7 @@ export async function handleRequest(
         const pluginConfig = argumentsAsObject as PluginSettingsChangedRequestArguments
         applyConfig(pluginConfig)
         try {
-            const {currentUser} = await getSiteVersionAndAuthenticatedUser(pluginConfig.instanceURL, pluginConfig.accessToken)
+            const { currentUser } = await getSiteVersionAndAuthenticatedUser(pluginConfig.instanceURL, pluginConfig.accessToken)
             await indicateFinishedLoading(true, !!currentUser)
         } catch {
             await indicateFinishedLoading(false, false)
