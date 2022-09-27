@@ -180,6 +180,7 @@ func CreateBbsTestRepos(t *testing.T, ctx context.Context, db database.DB, count
 		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.BitbucketServerConnection{
 			Url:   "https://bitbucket.sourcegraph.com",
 			Token: "SECRETTOKEN",
+			Repos: []string{"owner/name"},
 		})),
 	}
 
@@ -288,7 +289,11 @@ func CreateAWSCodeCommitTestRepos(t *testing.T, ctx context.Context, db database
 		DisplayName: "AWS CodeCommit",
 		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.AWSCodeCommitConnection{
 			AccessKeyID: "horse-key",
-			Region:      "horse-town",
+			Region:      "us-east-1",
+			GitCredentials: schema.AWSCodeCommitGitCredentials{
+				Username: "horse",
+				Password: "graph",
+			},
 		})),
 	}
 	if err := esStore.Upsert(ctx, ext); err != nil {
