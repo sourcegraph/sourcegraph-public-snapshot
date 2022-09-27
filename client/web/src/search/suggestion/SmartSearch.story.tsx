@@ -10,6 +10,9 @@ import { SmartSearch } from './SmartSearch'
 
 const config: Meta = {
     title: 'web/searc/suggestion/SmartSearch',
+    parameters: {
+        chromatic: { disableSnapshot: false },
+    },
 }
 export default config
 
