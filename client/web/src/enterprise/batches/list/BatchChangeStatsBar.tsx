@@ -60,11 +60,11 @@ export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildre
             </div>
             <div className={styles.rightSide}>
                 <div className="pr-4 text-center">
-                    <ChangesetStatusOpen label="" />
+                    <ChangesetStatusOpen />
                     <span className="font-weight-bold">{data?.opened.totalCount}</span> <span>Open</span>
                 </div>
                 <div className="text-center">
-                    <ChangesetStatusClosed label="" />
+                    <ChangesetStatusClosed />
                     <span className="font-weight-bold">{data?.closed.totalCount}</span> <span>Closed</span>
                 </div>
             </div>
