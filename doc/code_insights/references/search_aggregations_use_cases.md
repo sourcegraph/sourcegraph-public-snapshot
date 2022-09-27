@@ -61,6 +61,11 @@ See the most common go modules in go.mod files
 file:go.mod$ /(.+)\sv(?:.+)(?:\s\/\/\sindirect)?/
 ```
 
+Or, to exclude indirect additions, use 
+```sgquery
+file:go.mod$ /(.+)\sv(?:(?:(?:[0-9]+)\.(?:[0-9]+)\.(?:[0-9]+)(?:-(?:[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?)(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?)\n/
+```
+
 
 ## By repo 
 
