@@ -208,6 +208,8 @@ type ListBatchSpecWorkspaceFileOpts struct {
 	LimitOpts
 	Cursor int64
 
+	ID              int64
+	RandID          string
 	BatchSpecID     int64
 	BatchSpecRandID string
 }
@@ -223,6 +225,14 @@ func (s *Store) CountBatchSpecWorkspaceFiles(ctx context.Context, opts ListBatch
 func countBatchSpecWorkspaceFilesQuery(opts ListBatchSpecWorkspaceFileOpts) *sqlf.Query {
 	var preds []*sqlf.Query
 	var joins []*sqlf.Query
+
+	if opts.ID != 0 {
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_files.id = %s", opts.ID))
+	}
+
+	if opts.RandID != "" {
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_files.rand_id = %s", opts.RandID))
+	}
 
 	if opts.BatchSpecID != 0 {
 		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_files.batch_spec_id = %s", opts.BatchSpecID))
