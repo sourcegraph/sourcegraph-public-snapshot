@@ -48,7 +48,7 @@ func (token *OAuthBearerToken) Refresh() error {
     return token.RefreshFunc()
 }
 
-func (token *OAuthBearerToken) ShouldRefresh() (bool, error) {
+func (token *OAuthBearerToken) IsExpired() (bool, error) {
     if token.ShouldRefreshFunc == nil {
         return false, errors.New("should refresh not implemented")
     }
