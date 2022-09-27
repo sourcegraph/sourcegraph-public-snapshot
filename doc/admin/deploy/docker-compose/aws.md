@@ -2,6 +2,8 @@
 
 This guide will take you through how to deploy Sourcegraph with [Docker Compose](https://docs.docker.com/compose/) to a single EC2 instance on Amazon Web Services (AWS).
 
+<span class="badge badge-note">RECOMMENDED</span> Deploy a Sourcegraph instance with [AWS AMIs](aws-ami.md) or [AWS One-Click](aws-oneclick.md).
+
 ---
 
 ## Configure
@@ -61,6 +63,7 @@ set -euxo pipefail
 ###############################################################################
 # ACTION REQUIRED: REPLACE THE URL AND REVISION WITH YOUR DEPLOYMENT REPO INFO
 ###############################################################################
+# Please read the notes below the script if you are cloning a private repository
 DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL='https://github.com/sourcegraph/deploy-sourcegraph-docker.git'
 DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v4.0.0'
 ##################### NO CHANGES REQUIRED BELOW THIS LINE #####################
@@ -123,7 +126,7 @@ docker-compose up -d --remove-orphans
 
 > NOTE: If you're deploying a production instance, we recommend [forking the deployment configuration repository](./index.md#step-1-fork-the-deployment-repository) to track any customizations you make to the deployment config. If you do so, you'll want to update the *startup script* you pasted from above to refer to the clone URL and revision of your fork:
 > 
-> - `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: The Git clone URL of your fork
+> - `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: The Git clone URL of your deployment repository. If it is a private repository, please check with your code host on how to generate a URL for cloning private repository
 > - `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The revision (branch) in your fork containing the customizations, typically "release"
 
 ---
@@ -162,3 +165,10 @@ There are two, non-mutually-exclusive ways to back up data:
 * [Snapshot the entire `/mnt/docker-data` EBS volume](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-creating-snapshot.html) on an [automatic, scheduled basis](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/snapshot-lifecycle.html).
 
 * <span class="badge badge-note">RECOMMENDED</span> Use [AWS RDS for PostgreSQL](https://aws.amazon.com/rds/) instead of the Dockerized PostgreSQL instance included by default. All data from Sourcegraph is derivable from the data stored in this database. Note, however, that it may take awhile to reclone repositories and rebuild indices afresh. If you require a faster restoration process, we recommend also snapshotting the EBS volume.
+
+---
+
+## Other resources
+
+[HTTP and HTTPS/SSL configuration](../../../admin/http_https_configuration.md#sourcegraph-via-docker-compose-caddy-2)
+[Site Administration Quickstart](../../../admin/how-to/site-admin-quickstart.md)

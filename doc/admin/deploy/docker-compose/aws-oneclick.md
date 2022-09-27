@@ -23,7 +23,6 @@ Launch a verified and pre-configured Sourcegraph instance with the following:
 
 - Root EBS volume with 50GB of storage
 - Additional EBS volume with 500GB of storage, for storing code and search indices
-- Security group with default rules: `HTTP(port 80), HTTPS(port 443), and SSH(port 22)`
 - The latest version of Sourcegraph
 
 You only need to choose your VPC and SSH Key-Pair to get started.
@@ -34,7 +33,10 @@ You only need to choose your VPC and SSH Key-Pair to get started.
 
 1. Choose an AWS Region in the launcher below
 2. Click on the `Launch Stack` button
-3. Select or create a new Key Pair for connecting to your instance securely
+3. Select or create a new `key pair`
+4. Select or create a new `security group` with `auto-assign public IP` enabled
+
+ 🎉 You can now start a Sourcegraph instance by clicking on the `Launch instance` button 🎉
 
 ## Launcher
 <span class="badge badge-warning">Coming soon</span> Set up a Sourcegraph instance in one click
@@ -53,3 +55,7 @@ You only need to choose your VPC and SSH Key-Pair to get started.
 </form>
 
 > NOTE: Once the instance has been created, Sourcegraph will be running at your server’s IP address, which allows you to navigate to your newly created Sourcegraph instance in your browser. You can also find the URL for your Sourcegraph instance in the 'Outputs' section of the Stack.
+
+## Manual deploy on AWS EC2
+
+Click [here](aws.md) to view install instructions for deploying on AWS EC2 manually.
