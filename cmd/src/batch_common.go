@@ -268,9 +268,13 @@ func executeBatchSpec(ctx context.Context, ui ui.ExecUI, opts executeBatchSpecOp
 		return err
 	}
 
-	// In the past, we checked `docker version`, but now we retrieve the number
-	// of CPUs, since we need that anyway and it performs the same check (is
-	// Docker working _at all_?).
+	// In the past, we relied on `getBatchParallelism` to ascertain if docker is running,
+	// however, we don't always check for the number of CPUs (especially when the -j parallelis)
+	// flag is passed. This is a more explicit check to confirm docker is working.
+	if err := docker.CheckVersion(ctx); err != nil {
+		return err
+	}
+
 	parallelism, err := getBatchParallelism(ctx, opts.flags.parallelism)
 	if err != nil {
 		return err
@@ -547,7 +551,7 @@ func parseBatchSpec(ctx context.Context, file string, svc *service.Service, isRe
 func checkExecutable(cmd string, args ...string) error {
 	if err := exec.Command(cmd, args...).Run(); err != nil {
 		return fmt.Errorf(
-			"failed to execute \"%s %s\":\n\t%s\n\n'src batch' require %q to be available.",
+			"failed to execute \"%s %s\":\n\t%s\n\n'src batch' requires %q to be available.",
 			cmd,
 			strings.Join(args, " "),
 			err,

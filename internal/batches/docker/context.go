@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
 	"sync"
 	"time"
 
@@ -93,4 +94,21 @@ func fastCommandTimeout() (time.Duration, error) {
 	})
 
 	return fastCommandTimeoutData.timeout, fastCommandTimeoutData.err
+}
+
+// executeFastCommand creates a fastCommandContext used to execute docker commands
+// with a timeout for docker commands that are supposed to be fast (e.g docker info).
+func executeFastCommand(ctx context.Context, args ...string) ([]byte, error) {
+	dctx, cancel, err := withFastCommandContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer cancel()
+
+	out, err := exec.CommandContext(dctx, "docker", args...).CombinedOutput()
+	if errors.IsDeadlineExceeded(err) || errors.IsDeadlineExceeded(dctx.Err()) {
+		return nil, newFastCommandTimeoutError(dctx, args...)
+	}
+
+	return out, err
 }
