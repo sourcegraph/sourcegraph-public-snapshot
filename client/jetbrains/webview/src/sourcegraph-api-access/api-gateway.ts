@@ -8,6 +8,7 @@ export type SiteVersionAndCurrentAuthStateResult = CurrentAuthStateResult & {
     }
 }
 
+// TODO: Could be deduplicated with `currentAuthStateQuery` in `shared/src/auth.ts`, using fragments
 export const siteVersionAndUserQuery = gql`
     query SiteVersionAndCurrentUser {
         site {
