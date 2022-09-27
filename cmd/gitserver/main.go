@@ -99,6 +99,7 @@ func main() {
 	go conf.Watch(liblog.Update(conf.GetLogSinks))
 
 	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
+	trace.Init()
 	profiler.Init()
 
 	logger := log.Scoped("server", "the gitserver service")

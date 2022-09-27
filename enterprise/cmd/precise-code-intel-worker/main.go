@@ -62,6 +62,7 @@ func main() {
 	conf.Init()
 	go conf.Watch(liblog.Update(conf.GetLogSinks))
 	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
+	trace.Init()
 	profiler.Init()
 
 	logger := log.Scoped("worker", "The precise-code-intel-worker service converts LSIF upload file into Postgres data.")
