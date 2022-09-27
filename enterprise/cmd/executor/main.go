@@ -44,6 +44,7 @@ func main() {
 		InstanceID: hostname.Get(),
 	})
 	defer liblog.Sync()
+	trace.Init()
 
 	logger := log.Scoped("executor", "the executor service polls the public frontend API for work to perform")
 

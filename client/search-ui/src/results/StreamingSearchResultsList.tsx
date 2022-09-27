@@ -113,13 +113,20 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             telemetryService.log('search.ranking.result-clicked', { index, type })
 
             // Lucky search A/B test events on Sourcegraph.com. To be removed at latest by 12/2022.
-            if (smartSearchEnabled && !(results?.alert?.kind === 'lucky-search-queries')) {
+            if (
+                smartSearchEnabled &&
+                !(
+                    results?.alert?.kind === 'smart-search-additional-results' ||
+                    results?.alert?.kind === 'smart-search-pure-results'
+                )
+            ) {
                 telemetryService.log('SearchResultClickedAutoNone')
             }
 
             if (
                 smartSearchEnabled &&
-                results?.alert?.kind === 'lucky-search-queries' &&
+                (results?.alert?.kind === 'smart-search-additional-results' ||
+                    results?.alert?.kind === 'smart-search-pure-results') &&
                 results?.alert?.title &&
                 results.alert.proposedQueries
             ) {
