@@ -3,9 +3,6 @@ package usagestats
 import (
 	"context"
 
-	"github.com/sourcegraph/zoekt"
-	"github.com/sourcegraph/zoekt/query"
-
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -54,8 +51,7 @@ func GetRepositories(ctx context.Context, db database.DB) (*Repositories, error)
 		return &total, nil
 	}
 
-	opts := &zoekt.ListOptions{Minimal: true}
-	repos, err := search.Indexed().List(ctx, &query.Const{Value: true}, opts)
+	repos, err := search.ListAllIndexed(ctx)
 	if err != nil {
 		return nil, err
 	}
