@@ -103,9 +103,9 @@ func TestGraphQLRequestsAreAuditLogged(t *testing.T) {
 		_ = os.Unsetenv("NO_GRAPHQL_LOG")
 
 		// reset back to whatever the previous value was
-		defer func(key, value string) {
-			_ = os.Setenv(key, value)
-		}("NO_GRAPHQL_LOG", orig)
+		t.Cleanup(func() {
+			_ = os.Setenv("NO_GRAPHQL_LOG", orig)
+		})
 	}
 
 	resetMocks()
