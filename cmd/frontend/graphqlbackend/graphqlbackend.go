@@ -64,52 +64,55 @@ func (t *prometheusTracer) TraceQuery(ctx context.Context, queryString string, o
 
 	ctx = context.WithValue(ctx, sgtrace.GraphQLQueryKey, queryString)
 
-	_, disableLog := os.LookupEnv("NO_GRAPHQL_LOG")
-
-	// DEPRECATED: LOG_ALL_GRAPHQL_REQUESTS will be removed in favor of audit log config
-	_, logAllRequests := os.LookupEnv("LOG_ALL_GRAPHQL_REQUESTS")
-
-	// GraphQL requests may be part of the audit log, which is controlled by a site config setting
-	logCfg := conf.Get().Log
-	if logCfg != nil && logCfg.AuditLog != nil {
-		logAllRequests = logAllRequests || logCfg.AuditLog.GraphQL
-	}
-
-	// Requests made by our JS frontend and other internal things will have a concrete name attached to the
-	// request which allows us to (softly) differentiate it from end-user API requests. For example,
-	// /.api/graphql?Foobar where Foobar is the name of the request we make. If there is not a request name,
-	// then it is an interesting query to log in the event it is harmful and a site admin needs to identify
-	// it and the user issuing it.
-	requestName := sgtrace.GraphQLRequestName(ctx)
-	requestSource := sgtrace.RequestSource(ctx)
-
-	if !disableLog {
-		if requestName == "unknown" || logAllRequests {
-			audit.Log(ctx, t.logger, audit.Record{
-				Entity: "GraphQL",
-				Action: "request",
-				Fields: []sglog.Field{sglog.Object("request",
-					sglog.String("name", requestName),
-					sglog.String("source", string(requestSource)),
-					sglog.String("variables", fmt.Sprint(variables)),
-					sglog.String("query", queryString)),
-				},
-			})
-		}
-	}
-
-	// Note: We don't care about the error here, we just extract the username if
-	// we get a non-nil user object.
-	var currentUserID int32
-	a := actor.FromContext(ctx)
-	if a.IsAuthenticated() {
-		currentUserID = a.UID
-	}
-
 	return ctx, func(err []*gqlerrors.QueryError) {
 		if finish != nil {
 			finish(err)
 		}
+
+		_, disableLog := os.LookupEnv("NO_GRAPHQL_LOG")
+
+		// DEPRECATED: LOG_ALL_GRAPHQL_REQUESTS will be removed in favor of audit log config
+		_, logAllRequests := os.LookupEnv("LOG_ALL_GRAPHQL_REQUESTS")
+
+		// GraphQL requests may be part of the audit log, which is controlled by a site config setting
+		logCfg := conf.Get().Log
+		if logCfg != nil && logCfg.AuditLog != nil {
+			logAllRequests = logAllRequests || logCfg.AuditLog.GraphQL
+		}
+
+		// Requests made by our JS frontend and other internal things will have a concrete name attached to the
+		// request which allows us to (softly) differentiate it from end-user API requests. For example,
+		// /.api/graphql?Foobar where Foobar is the name of the request we make. If there is not a request name,
+		// then it is an interesting query to log in the event it is harmful and a site admin needs to identify
+		// it and the user issuing it.
+		requestName := sgtrace.GraphQLRequestName(ctx)
+		requestSource := sgtrace.RequestSource(ctx)
+
+		// Note: We don't care about the error here, we just extract the username if
+		// we get a non-nil user object.
+		var currentUserID int32
+		a := actor.FromContext(ctx)
+		if a.IsAuthenticated() {
+			currentUserID = a.UID
+		}
+
+		if !disableLog {
+			if requestName == "unknown" || logAllRequests {
+				audit.Log(ctx, t.logger, audit.Record{
+					Entity: "GraphQL",
+					Action: "request",
+					Fields: []sglog.Field{sglog.Object("request",
+						sglog.String("name", requestName),
+						sglog.String("source", string(requestSource)),
+						sglog.String("variables", fmt.Sprint(variables)),
+						sglog.String("query", queryString),
+						sglog.Bool("mutation", strings.Contains(queryString, "mutation")),
+						sglog.Bool("successful", len(err) == 0)),
+					},
+				})
+			}
+		}
+
 		d := time.Since(start)
 		if v := conf.Get().ObservabilityLogSlowGraphQLRequests; v != 0 && d.Milliseconds() > int64(v) {
 			encodedVariables, _ := json.Marshal(variables)
