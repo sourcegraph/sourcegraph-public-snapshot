@@ -20,11 +20,6 @@ func TestWebhook(t *testing.T) {
 	eu, err := url.Parse("https://sourcegraph.com")
 	require.NoError(t, err)
 
-	os.Setenv("WEBHOOK_ALLOWLIST", "loopback")
-	t.Cleanup(func() {
-		os.Unsetenv("WEBOOK_ALLOWLIST")
-	})
-
 	action := actionArgs{
 		MonitorDescription: "My test monitor",
 		ExternalURL:        eu,
@@ -75,6 +70,9 @@ func TestWebhook(t *testing.T) {
 	t.Run("loopback requests are blocked", func(t *testing.T) {
 		// only allow external requests, excluding loopback
 		os.Setenv("WEBHOOK_ALLOWLIST", "external")
+		t.Cleanup(func() {
+			os.Unsetenv("WEBHOOK_ALLOWLIST")
+		})
 		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			b, err := io.ReadAll(r.Body)
 			require.NoError(t, err)
@@ -96,11 +94,6 @@ func TestTriggerTestWebhookAction(t *testing.T) {
 		w.WriteHeader(200)
 	}))
 	defer s.Close()
-
-	os.Setenv("WEBHOOK_ALLOWLIST", "loopback")
-	t.Cleanup(func() {
-		os.Unsetenv("WEBOOK_ALLOWLIST")
-	})
 
 	err := SendTestWebhook(context.Background(), "My test monitor", s.URL)
 	require.NoError(t, err)
