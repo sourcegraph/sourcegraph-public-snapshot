@@ -56,7 +56,7 @@ Select an AMI according to the number of users and repositories you have using t
 
 <span class="badge badge-critical">IMPORTANT</span> AMIs are currently only available in the **us-west-2 (Oregon)** region. More regions are coming soon.
 
-For example, if you have 8,000 users with 80,000 repositories, your instance size would be **M**. If you have 1,000 users with 80,000 users, you should still go with size **M**.
+For example, if you have 8,000 users with 80,000 repositories, your instance size would be **M**. If you have 1,000 users with 80,000 repositories, you should still go with size **M**.
 
 > NOTE: AMIs are optimized for the specific set of resources provided by the instance type, please ensure you use the correct AMI for the associated EC2 instance type. You can [resize your EC2 instance anytime](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-resize.html), but your Sourcegraph AMI must match accordingly. If needed, follow the [upgrade steps](#upgrade) to switch to the correct AMI image that is optimized for your EC2 instance type.
 
