@@ -41,6 +41,12 @@ var (
 		Help:    "GraphQL field resolver latencies in seconds.",
 		Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
 	}, []string{"type", "field", "error", "source", "request_name"})
+
+	codeIntelSearchHistogram = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "src_graphql_code_intel_search_seconds",
+		Help:    "Code intel search latencies in seconds.",
+		Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
+	}, []string{"exact", "error"})
 )
 
 type prometheusTracer struct {
@@ -135,6 +141,12 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 			string(sgtrace.RequestSource(ctx)),
 			prometheusGraphQLRequestName(sgtrace.GraphQLRequestName(ctx)),
 		).Observe(time.Since(start).Seconds())
+
+		origin := sgtrace.RequestOrigin(ctx)
+		if origin != "unknown" && (fieldName == "search" || fieldName == "lsif") {
+			isExact := strconv.FormatBool(fieldName == "lsif")
+			codeIntelSearchHistogram.WithLabelValues(isExact, isErrStr).Observe(time.Since(start).Seconds())
+		}
 	}
 }
 
