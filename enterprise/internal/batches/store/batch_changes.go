@@ -627,8 +627,10 @@ func listBatchChangesQuery(opts *ListBatchChangesOpts, repoAuthzConds *sqlf.Quer
 		}
 	}
 
+	// TODO: rename field
 	if opts.CreatorID != 0 {
-		preds = append(preds, sqlf.Sprintf("batch_changes.creator_id = %d", opts.CreatorID))
+		// FIXME: the org check doesn't seem to be working right now.
+		preds = append(preds, sqlf.Sprintf("(batch_changes.creator_id = %d OR EXISTS (SELECT 1 FROM org_members WHERE org_id = batch_changes.namespace_org_id AND user_id = %s AND org_id <> 0))", opts.CreatorID, opts.CreatorID))
 	}
 
 	if opts.NamespaceUserID != 0 {
