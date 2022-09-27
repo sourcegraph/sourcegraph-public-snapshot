@@ -273,6 +273,10 @@ func (h *FileHandler) uploadBatchSpecWorkspaceFile(ctx context.Context, r *http.
 	defer f.Close()
 
 	filePath := r.Form.Get("filepath")
+	if strings.Contains(filePath, "..") {
+		return "", errors.New("file path cannot contain double-dots '..'")
+	}
+
 	content, err := io.ReadAll(f)
 	if err != nil {
 		return "", err

@@ -29,8 +29,6 @@ import (
 )
 
 func TestFileHandler_ServeHTTP(t *testing.T) {
-	mockStore := new(mockBatchesStore)
-
 	batchSpecRandID := "123"
 	batchSpecWorkspaceFileRandID := "987"
 
@@ -53,7 +51,7 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 		path        string
 		requestBody func() (io.Reader, string)
 
-		mockInvokes func()
+		mockInvokes func(mockStore *mockBatchesStore)
 
 		userID int32
 
@@ -70,7 +68,7 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 			name:   "Get file",
 			method: http.MethodGet,
 			path:   fmt.Sprintf("/files/batch-changes/%s/%s", batchSpecRandID, batchSpecWorkspaceFileRandID),
-			mockInvokes: func() {
+			mockInvokes: func(mockStore *mockBatchesStore) {
 				mockStore.
 					On("GetBatchSpecWorkspaceFile", mock.Anything, store.GetBatchSpecWorkspaceFileOpts{RandID: batchSpecWorkspaceFileRandID}).
 					Return(&btypes.BatchSpecWorkspaceFile{Path: "foo/bar", FileName: "hello.txt", Content: []byte("Hello world!")}, nil).
@@ -83,7 +81,7 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 			name:   "Workspace file does not exist for retrieval",
 			method: http.MethodGet,
 			path:   fmt.Sprintf("/files/batch-changes/%s/%s", batchSpecRandID, batchSpecWorkspaceFileRandID),
-			mockInvokes: func() {
+			mockInvokes: func(mockStore *mockBatchesStore) {
 				mockStore.
 					On("GetBatchSpecWorkspaceFile", mock.Anything, store.GetBatchSpecWorkspaceFileOpts{RandID: batchSpecWorkspaceFileRandID}).
 					Return(nil, store.ErrNoResults).
@@ -102,7 +100,7 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 			name:   "Failed to find file",
 			method: http.MethodGet,
 			path:   fmt.Sprintf("/files/batch-changes/%s/%s", batchSpecRandID, batchSpecWorkspaceFileRandID),
-			mockInvokes: func() {
+			mockInvokes: func(mockStore *mockBatchesStore) {
 				mockStore.
 					On("GetBatchSpecWorkspaceFile", mock.Anything, store.GetBatchSpecWorkspaceFileOpts{RandID: batchSpecWorkspaceFileRandID}).
 					Return(nil, errors.New("failed to find file")).
@@ -118,7 +116,7 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 			requestBody: func() (io.Reader, string) {
 				return multipartRequestBody(file{name: "hello.txt", path: "foo/bar", content: "Hello world!", modified: modifiedTimeString})
 			},
-			mockInvokes: func() {
+			mockInvokes: func(mockStore *mockBatchesStore) {
 				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
 					Return(&btypes.BatchSpec{ID: 1, RandID: batchSpecRandID, UserID: creatorID}, nil).
 					Once()
@@ -136,13 +134,29 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 			expectedResponseBody: "{\"id\":\"abc\"}\n",
 		},
 		{
+			name:   "File path contains double-dots",
+			method: http.MethodPost,
+			path:   fmt.Sprintf("/files/batch-changes/%s", batchSpecRandID),
+			requestBody: func() (io.Reader, string) {
+				return multipartRequestBody(file{name: "hello.txt", path: "../../../foo/bar", content: "Hello world!", modified: modifiedTimeString})
+			},
+			mockInvokes: func(mockStore *mockBatchesStore) {
+				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
+					Return(&btypes.BatchSpec{ID: 1, RandID: batchSpecRandID, UserID: creatorID}, nil).
+					Once()
+			},
+			userID:               creatorID,
+			expectedStatusCode:   http.StatusInternalServerError,
+			expectedResponseBody: "uploading file: file path cannot contain double-dots '..'\n",
+		},
+		{
 			name:   "Upload with marshalled spec ID",
 			method: http.MethodPost,
 			path:   "/files/batch-changes/QmF0Y2hTcGVjOiJ6WW80TVFRdnhFIg==",
 			requestBody: func() (io.Reader, string) {
 				return multipartRequestBody(file{name: "hello.txt", path: "foo/bar", content: "Hello world!", modified: modifiedTimeString})
 			},
-			mockInvokes: func() {
+			mockInvokes: func(mockStore *mockBatchesStore) {
 				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: "zYo4MQQvxE"}).
 					Return(&btypes.BatchSpec{ID: 1, RandID: batchSpecRandID, UserID: creatorID}, nil).
 					Once()
@@ -166,7 +180,7 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 			requestBody: func() (io.Reader, string) {
 				return multipartRequestBody(file{name: "hello.txt", path: "foo/bar", content: "Hello world!", modified: modifiedTimeString})
 			},
-			mockInvokes: func() {
+			mockInvokes: func(mockStore *mockBatchesStore) {
 				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
 					Return(&btypes.BatchSpec{ID: 1, RandID: batchSpecRandID, UserID: creatorID}, nil).
 					Once()
@@ -190,7 +204,7 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 			requestBody: func() (io.Reader, string) {
 				return multipartRequestBody(file{name: "hello.txt", path: "foo/bar", content: "Hello world!", modified: modifiedTimeString})
 			},
-			mockInvokes: func() {
+			mockInvokes: func(mockStore *mockBatchesStore) {
 				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
 					Return(&btypes.BatchSpec{ID: 1, RandID: batchSpecRandID, UserID: adminID}, nil).
 					Once()
@@ -205,7 +219,7 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 			requestBody: func() (io.Reader, string) {
 				return multipartRequestBody(file{name: "hello.txt", path: "foo/bar", content: "Hello world!", modified: modifiedTimeString})
 			},
-			mockInvokes: func() {
+			mockInvokes: func(mockStore *mockBatchesStore) {
 				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
 					Return(nil, store.ErrNoResults).
 					Once()
@@ -221,7 +235,7 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 			requestBody: func() (io.Reader, string) {
 				return nil, "application/json"
 			},
-			mockInvokes: func() {
+			mockInvokes: func(mockStore *mockBatchesStore) {
 				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
 					Return(&btypes.BatchSpec{ID: 1, RandID: batchSpecRandID, UserID: creatorID}, nil).
 					Once()
@@ -237,7 +251,7 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 			requestBody: func() (io.Reader, string) {
 				return multipartRequestBody(file{name: "hello.txt", path: "foo/bar", content: "Hello world!", modified: modifiedTimeString})
 			},
-			mockInvokes: func() {
+			mockInvokes: func(mockStore *mockBatchesStore) {
 				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
 					Return(nil, errors.New("failed to find batch spec")).
 					Once()
@@ -255,7 +269,7 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 				w.Close()
 				return body, w.FormDataContentType()
 			},
-			mockInvokes: func() {
+			mockInvokes: func(mockStore *mockBatchesStore) {
 				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
 					Return(&btypes.BatchSpec{ID: 1, RandID: batchSpecRandID, UserID: creatorID}, nil).
 					Once()
@@ -275,7 +289,7 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 				w.Close()
 				return body, w.FormDataContentType()
 			},
-			mockInvokes: func() {
+			mockInvokes: func(mockStore *mockBatchesStore) {
 				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
 					Return(&btypes.BatchSpec{ID: 1, RandID: batchSpecRandID, UserID: creatorID}, nil).
 					Once()
@@ -291,7 +305,7 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 			requestBody: func() (io.Reader, string) {
 				return multipartRequestBody(file{name: "hello.txt", path: "foo/bar", content: "Hello world!", modified: modifiedTimeString})
 			},
-			mockInvokes: func() {
+			mockInvokes: func(mockStore *mockBatchesStore) {
 				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
 					Return(&btypes.BatchSpec{ID: 1, RandID: batchSpecRandID, UserID: creatorID}, nil).
 					Once()
@@ -308,7 +322,7 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 			name:   "File Exists",
 			method: http.MethodHead,
 			path:   fmt.Sprintf("/files/batch-changes/%s/%s", batchSpecRandID, batchSpecWorkspaceFileRandID),
-			mockInvokes: func() {
+			mockInvokes: func(mockStore *mockBatchesStore) {
 				mockStore.
 					On("CountBatchSpecWorkspaceFiles", mock.Anything, store.ListBatchSpecWorkspaceFileOpts{RandID: batchSpecWorkspaceFileRandID}).
 					Return(1, nil).
@@ -320,7 +334,7 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 			name:   "File Does Not Exists",
 			method: http.MethodHead,
 			path:   fmt.Sprintf("/files/batch-changes/%s/%s", batchSpecRandID, batchSpecWorkspaceFileRandID),
-			mockInvokes: func() {
+			mockInvokes: func(mockStore *mockBatchesStore) {
 				mockStore.
 					On("CountBatchSpecWorkspaceFiles", mock.Anything, store.ListBatchSpecWorkspaceFileOpts{RandID: batchSpecWorkspaceFileRandID}).
 					Return(0, nil).
@@ -332,7 +346,7 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 			name:   "File Exists Error",
 			method: http.MethodHead,
 			path:   fmt.Sprintf("/files/batch-changes/%s/%s", batchSpecRandID, batchSpecWorkspaceFileRandID),
-			mockInvokes: func() {
+			mockInvokes: func(mockStore *mockBatchesStore) {
 				mockStore.
 					On("CountBatchSpecWorkspaceFiles", mock.Anything, store.ListBatchSpecWorkspaceFileOpts{RandID: batchSpecWorkspaceFileRandID}).
 					Return(0, errors.New("failed to count")).
@@ -361,7 +375,7 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 				w.Close()
 				return body, w.FormDataContentType()
 			},
-			mockInvokes: func() {
+			mockInvokes: func(mockStore *mockBatchesStore) {
 				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
 					Return(&btypes.BatchSpec{ID: 1, RandID: batchSpecRandID, UserID: creatorID}, nil).
 					Once()
@@ -373,8 +387,10 @@ func TestFileHandler_ServeHTTP(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			mockStore := new(mockBatchesStore)
+
 			if test.mockInvokes != nil {
-				test.mockInvokes()
+				test.mockInvokes(mockStore)
 			}
 
 			handler := httpapi.NewFileHandler(db, mockStore, operations)
