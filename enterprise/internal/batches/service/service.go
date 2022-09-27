@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -1122,6 +1123,17 @@ func (s *Service) ReenqueueChangeset(ctx context.Context, id int64) (changeset *
 // If both values are zero, an error is returned.
 func (s *Service) CheckNamespaceAccess(ctx context.Context, namespaceUserID, namespaceOrgID int32) (err error) {
 	return s.checkNamespaceAccessWithDB(ctx, s.store.DatabaseDB(), namespaceUserID, namespaceOrgID)
+}
+
+func (s *Service) CanAdministerInNamespace(ctx context.Context, namespaceUserID, namespaceOrgID int32) (bool, error) {
+	err := s.CheckNamespaceAccess(ctx, namespaceUserID, namespaceOrgID)
+	if err != nil && (err == backend.ErrNotAnOrgMember || errcode.IsUnauthorized(err)) {
+		// These errors indicate that the viewer is valid, but that they simply
+		// don't have access to administer this batch change. We don't want to
+		// propagate that error to the caller.
+		return false, nil
+	}
+	return err == nil, err
 }
 
 func (s *Service) checkNamespaceAccessWithDB(ctx context.Context, db database.DB, namespaceUserID, namespaceOrgID int32) (err error) {
