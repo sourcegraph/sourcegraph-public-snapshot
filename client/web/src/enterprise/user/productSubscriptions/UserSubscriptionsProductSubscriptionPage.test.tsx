@@ -7,9 +7,6 @@ import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
 import { UserSubscriptionsProductSubscriptionPage } from './UserSubscriptionsProductSubscriptionPage'
 
-jest.mock('./ProductSubscriptionHistory', () => ({
-    ProductSubscriptionHistory: 'ProductSubscriptionHistory',
-}))
 describe('UserSubscriptionsProductSubscriptionPage', () => {
     test('renders', () => {
         const history = createMemoryHistory()

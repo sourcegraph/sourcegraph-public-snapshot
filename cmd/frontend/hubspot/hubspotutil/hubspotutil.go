@@ -18,10 +18,9 @@ var HubSpotHAPIKey = env.Get("HUBSPOT_HAPI_KEY", "", "HubSpot HAPIkey for access
 var SurveyFormID = "ee042306-491a-4b06-bd9c-1181774dfda0"
 
 // TrialFormID is ID for the request trial form.
+//
+// See https://app.hubspot.com/contacts/2762526/lists/244 for submissions.
 var TrialFormID = "0bbc9f90-3741-4c7a-b5f5-6c81f130ea9d"
-
-// HappinessFeedbackFormID is the ID for a Happiness survey.
-var HappinessFeedbackFormID = "417ec50b-39b4-41fa-a267-75da6f56a7cf"
 
 // SignupEventID is the HubSpot ID for signup events.
 // HubSpot Events and IDs are all defined in HubSpot "Events" web console:

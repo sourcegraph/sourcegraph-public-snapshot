@@ -18623,7 +18623,7 @@
           "ConstraintType": "c",
           "RefTableName": "",
           "IsDeferrable": false,
-          "ConstraintDefinition": "CHECK (username ~ '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-.](?=[a-zA-Z0-9]))*-?$'::citext)"
+          "ConstraintDefinition": "CHECK (username ~ '^\\w(?:\\w|[-.](?=\\w))*-?$'::citext)"
         }
       ],
       "Triggers": [

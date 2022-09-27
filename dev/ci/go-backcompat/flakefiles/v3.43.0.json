@@ -1,5 +1,10 @@
 [
   {
+    "path": "internal/database",
+    "prefix": "TestUsers_ValidUsernames",
+    "reason": "The username column constraint has been updated to allow underscores. The change is not auto-reversible."
+  },
+  {
     "path": "enterprise/cmd/frontend/internal/batches/webhooks",
     "prefix": "TestWebhooksIntegration",
     "reason": "Removed the `diff_stat_changed` column from changeset and changeset_specs table."

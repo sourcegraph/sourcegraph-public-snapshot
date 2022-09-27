@@ -68,11 +68,23 @@ A [multi-version upgrade](../../updates/index.md#multi-version-upgrades) is a do
 
 To perform a multi-version upgrade on a Sourcegraph instance running on Docker compose:
 
-1. Spin down the instance:
-  - `docker-compose stop`
-1. Spin back up each in-use local database so that the `migrator` can access them. Any [externalized database](../../external_services/postgres.md) is already accessible from the `migrator` so no action is needed for them.
-  - `docker-compose up -d pgsql`
-  - `docker-compose up -d codeintel-db`
-  - `docker-compose up -d codeinsights-db`
-1. Run the `migrator upgrade` command targetting the same databases as your instance. See the [command documentation](./../../how-to/manual_database_migrations.md#upgrade) for additional details. In short, the [migrator](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/deploy-sourcegraph-docker%24+file:docker-compose%5C.yaml+container_name:+migrator) is invoked with a `docker run` command using the same compose network and using environment variables indicating the instance's databases.
-1. Now that the data has been prepared to run against a new version of Sourcegraph, the infrastructure can be updated. The remaining steps follow the [standard upgrade for Docker Compose](#standard-upgrades).
+1. Spin down any pods that access the database. The easiest way to do this is to shut down the instance entirely:
+  - Run `docker-compose stop` in the directory with the `docker-compose.yaml` file.
+1. **If upgrading from 3.26 or before to 3.27 or later**, the `pgsql` and `codeintel-db` databases must be upgraded from Postgres 11 to Postgres 12. If this step is not performed, then the following upgrade procedure will fail fast (and leave all existing data untouched).
+  - If using an external database, follow the [upgrading external PostgreSQL instances](../../postgres.md#upgrading-external-postgresql-instances) guide.
+  - Otherwise, perform the following steps from the [upgrading internal Postgres instances](../../postgres.md#upgrading-internal-postgresql-instances) guide:
+      1. It's assumed that your fork of `deploy-sourcegraph-docker` is up to date with your instance's current version. Pull the upstream changes for `v3.27.0` and resolve any git merge conflicts. We need to temporarily boot the containers defined at this specific version to rewrite existing data to the new Postgres 12 format.
+      1. Run `docker-compose up pgsql` to launch new Postgres 12 containers and rewrite the old Postgres 11 data. This may take a while, but streaming container logs should show progress.
+      1. Wait until the database container is accepting connections. Once ready, run the command `docker exec pgsql -- psql -U sg -c 'REINDEX database sg;'` to repair indexes that were silently invalidated by the previous data rewrite step. **If you skip this step**, then some data may become inaccessible under normal operation, the following steps are not guaranteed to work, and **data loss will occur**.
+      1. Follow the same steps for the `codeintel-db`:
+          - Run `docker-compose up codeintel-db` to launch Postgres 12.
+          - Run `docker exec codeintel-db -- pgsql -U sg -c 'REINDEX database sg;'` to reindex the database.
+1. Pull the upstream changes for the target instance version and resolve any git merge conflicts. The [standard upgrade procedure](#standard-upgrades) describes this step in more detail.
+1. If using local database instances, start the containers now via `docker-compose up -d pgsql codeintel-db codeinsights-db`. The following migrator command will start these containers on-demand if this step is skipped, but running them separately will make startup errors more apparent.
+1. Follow the instructions on [how to run the migrator job in Docker Compose](../../how-to/manual_database_migrations.md#docker-compose) to perform the upgrade migration. For specific documentation on the `upgrade` command, see the [command documentation](../../how-to/manual_database_migrations.md#upgrade). The following specific steps are an easy way to run the upgrade command:
+  1. Edit the definition of the `migrator` container in the `docker-compose.yaml` so that the value of the `command` key is set to `['upgrade', '--from=<old version>', '--to=<new version>']`.
+  1. Run the upgrade via `docker-compose up migrator` and wait for it to complete.
+  1. Reset the `command` key altered in the previous steps to `['up']` so that the container initialization process will work as expected.
+1. The remaining infrastructure can now be updated. The [standard upgrade procedure](#standard-upgrades) describes this step in more detail.
+  - Run `docker-compose pull --include-deps` to pull new images.
+  - Run `docker-compose up -d --remove-orphans` to start the containers of the updated instance.

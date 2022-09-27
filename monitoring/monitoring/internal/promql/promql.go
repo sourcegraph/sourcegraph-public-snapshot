@@ -60,11 +60,26 @@ func ListMetrics(expression string, vars VariableApplier) ([]string, error) {
 	// Collect all metrics mentioned in the expression
 	foundMetrics := make(map[string]struct{})
 	var metrics []string
+	addMetric := func(m string) {
+		if _, exists := foundMetrics[m]; !exists {
+			metrics = append(metrics, m)
+			foundMetrics[m] = struct{}{}
+		}
+	}
+
 	promqlparser.Inspect(expr, func(n promqlparser.Node, path []promqlparser.Node) error {
 		if vec, ok := n.(*promqlparser.VectorSelector); ok {
-			if _, exists := foundMetrics[vec.Name]; !exists {
-				metrics = append(metrics, vec.Name)
-				foundMetrics[vec.Name] = struct{}{}
+			// Handle '{__name__=~"..."}' selectors
+			if vec.Name == "" {
+				for _, matcher := range vec.LabelMatchers {
+					if matcher.Name == "__name__" {
+						// This may be an arbitrary regex or something, but oh well
+						addMetric(matcher.Value)
+					}
+				}
+			} else {
+				// Otherwise just add the vector
+				addMetric(vec.Name)
 			}
 		}
 		return nil
