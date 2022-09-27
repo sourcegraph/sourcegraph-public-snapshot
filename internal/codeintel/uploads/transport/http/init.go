@@ -27,6 +27,11 @@ func GetHandler(svc *uploads.Service, withCodeHostAuthAuth bool) http.Handler {
 			Registerer: prometheus.DefaultRegisterer,
 		}
 
+		// uploadStore, err := lsifuploadstore.New(context.Background(), config.LSIFUploadStoreConfig, observationContext)
+		// if err != nil {
+		// 	logger.Fatal("Failed to initialize upload store", log.Error(err))
+		// }
+
 		handler = newHandler(svc, observationContext)
 	})
 

@@ -1,4 +1,4 @@
-package httpapi
+package http
 
 import (
 	"bytes"
@@ -116,7 +116,7 @@ func TestHandleEnqueueAuth(t *testing.T) {
 			mockUploadStore,
 			false,
 			authValidators,
-			NewOperations(&observation.TestContext),
+			newOperations(&observation.TestContext),
 		).ServeHTTP(w, r)
 
 		if w.Code != user.statusCode {

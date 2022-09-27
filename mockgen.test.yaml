@@ -33,7 +33,7 @@
   path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/app
   interfaces:
     - githubClient
-- filename: internal/codeintel/uploads/transport/httpapi/mocks_test.go
+- filename: internal/codeintel/uploads/transport/http/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/uploadhandler
   interfaces:
     - DBStore

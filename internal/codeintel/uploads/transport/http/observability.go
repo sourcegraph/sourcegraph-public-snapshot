@@ -5,10 +5,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/uploadhandler"
 )
 
 type operations struct {
-	todo *observation.Operation
+	*uploadhandler.Operations
+	authMiddleware *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -28,6 +30,7 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
-		todo: op("Todo"),
+		Operations:     uploadhandler.NewOperations(observationContext),
+		authMiddleware: op("authMiddleware"),
 	}
 }
