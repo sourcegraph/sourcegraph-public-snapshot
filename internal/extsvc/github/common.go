@@ -1511,13 +1511,13 @@ func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auther a
 	req.URL = apiURL.ResolveReference(req.URL)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 
-    var autherWithRefresh auth.AuthenticatorWithRefresh
-    if auther != nil {
-        autherWithRefresh, ok := auther.(auth.AuthenticatorWithRefresh)
-        // Check if we should pre-emptively refresh
-        if ok && autherWithRefresh.IsExpired() {
-            autherWithRefresh.Refresh()
-        }
+	var autherWithRefresh auth.AuthenticatorWithRefresh
+	if auther != nil {
+		autherWithRefresh, ok := auther.(auth.AuthenticatorWithRefresh)
+		// Check if we should pre-emptively refresh
+		if ok && autherWithRefresh.IsExpired() {
+			autherWithRefresh.Refresh()
+		}
 
 		if err := auther.Authenticate(req); err != nil {
 			return nil, errors.Wrap(err, "authenticating request")

@@ -90,7 +90,7 @@ func DoRequest(ctx context.Context, doer httpcli.Doer, req *http.Request, auther
 				if _, ok := err.(*oauthError); ok {
 					// If a refresher is present, we can then refresh the token and update the authenticator.
 					// The next request should then succeed.
-                    err = autherWithRefresh.Refresh()
+					err = autherWithRefresh.Refresh()
 					if err != nil {
 						return 0, nil, nil, errors.Wrap(err, "refresh token")
 					}
