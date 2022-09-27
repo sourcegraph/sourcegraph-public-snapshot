@@ -3,7 +3,7 @@ import React from 'react'
 import { mdiInformationOutline } from '@mdi/js'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Icon, Tooltip } from '@sourcegraph/wildcard'
+import { Icon, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
 
 import { ChangesetStatisticsResult, ChangesetStatisticsVariables } from '../../../graphql-operations'
 import { ChangesetStatusClosed, ChangesetStatusOpen } from '../detail/changesets/ChangesetStatusCell'
@@ -17,7 +17,22 @@ interface BatchChangeStatsBarProps {
 }
 
 export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildren<BatchChangeStatsBarProps>> = () => {
-    const { data } = useQuery<ChangesetStatisticsResult, ChangesetStatisticsVariables>(CHANGESET_STATISTICS, {})
+    const { data, error, loading } = useQuery<ChangesetStatisticsResult, ChangesetStatisticsVariables>(
+        CHANGESET_STATISTICS,
+        {}
+    )
+
+    if (loading && !data) {
+        return (
+            <div className="text-center">
+                <LoadingSpinner className="mx-auto my-4" />
+            </div>
+        )
+    }
+
+    if (error && !data) {
+        throw new Error(error.message)
+    }
 
     return (
         <div className={styles.statsBar}>
