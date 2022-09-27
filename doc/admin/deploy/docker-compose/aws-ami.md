@@ -1,165 +1,66 @@
-# Sourcegraph AWS AMI Instances
+# Sourcegraph AWS AMI instances
 
-[Amazon Machine Images (AMIs)](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instances-and-amis.html) allows you to start a verified and pre-configured Sourcegraph instance with everything you need for your instance size in just a few clicks.
+Sourcegraph [Amazon Machine Images (AMIs)](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instances-and-amis.html) allow you to quickly deploy a production-ready Sourcegraph instance tuned for your organization's scale in just a few clicks.
 
-A Sourcegraph AWS AMI instance includes:
+An AWS AMIs is provided for each version of Sourcegraph and in standard t-shirt-like sizes, including:
 
+- A specific version of Sourcegraph, tuned to perform well for a specific EC2 instance type.
 - Root EBS volume with 50GB of storage
-- Additional EBS volume with 500GB of storage for storing code and search indices
-  - Storage space is configurable and expandable
-- A specific version of Sourcegraph based on the selected AMI
-- Resource requirements are configured according to your selected instance size
-
-You only need to choose your VPC and SSH Key-Pair to get started.
-
-See the [official docs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instances-and-amis.html) to learn more about instances and AMIs.
+- Data EBS volume (configurable) for Sourcegraph's code search indexes, user data, etc.
 
 ---
 
-## Instance size
+## Sourcegraph instance sizes
 
-You should select an AMI that works with the amount of users and repositories you have. 
+Please select a size for the amount of users and repositories you have. If you fall between two sizes, choose the larger of the two:
 
-For example, if you have 8,000 users with 80,000 repositories, your instance size would be **M**. 
+|                  |                                                  **XS**                                                  |                        **S**                         |                        **M**                         |                                                  **L**                                                  |                                                  **XL**                                                  |
+| :--------------- | :------------------------------------------------------------------------------------------------------: | :--------------------------------------------------: | :--------------------------------------------------: | :-----------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------: |
+| **Users**        |                                                   500                                                    |                        1,000                         |                        5,000                         |                                                 10,000                                                  |                                                  20,000                                                  |
+| **Repositories** |                                                  5,000                                                   |                        10,000                        |                        50,000                        |                                                 100,000                                                 |                                                 250,000                                                  |
+| **Recommended**  |                                               m6a.2xlarge                                                |                     m6a.4xlarge                      |                     m6a.8xlarge                      |                                              m6a.12xlarge                                               |                                               m6a.24xlarge                                               |
+| **Minimum**      |                                               m6a.2xlarge                                                |                     m6a.2xlarge                      |                     m6a.4xlarge                      |                                               m6a.8xlarge                                               |                                               m6a.12xlarge                                               |
+| **AMI**          | [sourcegraph-XS (v4.0.0)](https://console.aws.amazon.com/ec2#ImageDetails:imageId=ami-0ee5cdc5e89a4bee2) | <span class="badge badge-warning">Coming soon</span> | <span class="badge badge-warning">Coming soon</span> | [sourcegraph-L (v4.0.0)](https://console.aws.amazon.com/ec2#ImageDetails:imageId=ami-021db30b6db9b0634) | [sourcegraph-XL (v4.0.0)](https://console.aws.amazon.com/ec2#ImageDetails:imageId=ami-04b10e0fabedb6eac) |
 
-If you have 1,000 users with 80,000 users, you should still go with size **M**.
+<span class="badge badge-warning">IMPORTANT</span> AMIs are currently only available in the **us-west-2 (Oregon)** region. More regions are coming soon.
 
-|                   | **XS**       | **S**       | **M**       | **L**        | **XL**      |
-|:------------------|:-----------:|:-----------:|:-----------:|:------------:|:------------:|
-| **Users**         | 500         | 1,000       | 5,000       | 10,000       | 20,000       |
-| **Repositories**  | 5,000       | 10,000      | 50,000      | 100,000      | 250,000      |
-| **AMI Name**      | sourcegraph-XS (__v4.0.0__) m6a.2xlarge | <span class="badge badge-warning">Coming soon</span> | <span class="badge badge-warning">Coming soon</span> | sourcegraph-L (__v4.0.0__) m6a.12xlarge | sourcegraph-XL (__v4.0.0__) m6a.24xlarge |
-
-<span class="badge badge-critical">IMPORTANT</span> Replace __4.0.0__ with the version number of your choice. **Versions below v4.0.0 are not supported.**
-
-### AMI names
-
-For example, below are the names of the AMIs for version 4.0.0:
-
-- XS: [sourcegraph-XS (v4.0.0) m6a.2xlarge](https://console.aws.amazon.com/ec2#ImageDetails:imageId=ami-0ee5cdc5e89a4bee2)
-- L: [sourcegraph-L (v4.0.0) m6a.12xlarge](https://console.aws.amazon.com/ec2#ImageDetails:imageId=ami-021db30b6db9b0634)
-- XL: [sourcegraph-XL (v4.0.0) m6a.24xlarge](https://console.aws.amazon.com/ec2#ImageDetails:imageId=ami-04b10e0fabedb6eac)
-
-## Instance types
-
-Here is a list of suggestions of instance types for each instance size.
-
-The recommended instance type has better performance due to allocated resources.
-
-Please select the instance type according to the table below for your instance size, and do not go below the suggested minimum instance type.
-
-|                 | **XS**      | **S**       | **M**       | **L**        | **XL**       |
-|:----------------|:-----------:|:-----------:|:-----------:|:------------:|:------------:|
-| **Users**       | 500         | 1,000       | 5,000       | 10,000       | 20,000       |
-| **Repositories**| 5,000       | 10,000      | 50,000      | 100,000      | 250,000      |
-| **Recommended** | m6a.2xlarge | m6a.4xlarge | m6a.8xlarge | m6a.12xlarge | m6a.24xlarge |
-| **Minimum**     | m6a.2xlarge | m6a.2xlarge | m6a.4xlarge | m6a.8xlarge  | m6a.12xlarge |
-
-> NOTE: You can resize your instance anytime by [changing the instance type](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-resize.html) associated with your instance size. If you need to change beyond the minimum or maximum supports of your current instance type, you can follow our [upgrade steps](#upgrade) in this page to start a new instance using the new instance size with its associated instance typ.  Please make sure the volumes are backed up before switching instance type.
+> NOTE: AMIs are optimized for the specific set of resources provided by the instance type, please ensure you use the correct AMI for the associated EC2 instance type. You can [resize your EC2 instance anytime](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-resize.html), but your Sourcegraph AMI must match accordingly. If needed, follow the [upgrade steps](#upgrade) to switch to the correct AMI image that is optimized for your EC2 instance type.
 
 ---
 
-## Deploy
+## Deploy Sourcegraph
 
-![image](https://user-images.githubusercontent.com/68532117/192365588-05c4d828-9d15-4c2d-a2e7-169b5f3ce20f.png)
-
-1. Open the [Amazon EC2 AMIs console](https://console.aws.amazon.com/ec2/home#Images:visibility=public-images;owner=185007729374;Name=production;)
-2. Choose **Public images** from the dropdown menu next to the search bar
-3. Enter `Owner = 185007729374` and `Name=production` or the [name of the AMI](#ami-names) in the search bar
-4. Select the AMI published by Sourcegraph for your instance size
-5. Click **Launch instance from AMI**
-
-Alternatively, you can search for the AMIs using  [name of the AMI](#ami-names) in the community AMIs page when launching an instance:
-![image](https://user-images.githubusercontent.com/68532117/192366274-5e75eaae-1f45-4f12-bae9-13bfea0a2cb2.png)
-
-
-Once you've been redirected to the `Launch an instance` page...
-
-1. Name your instance
-2. Select an **instance type**
-3. **Key pair (login)**: Select or create a new Key Pair for connecting to your instance securely
-4. **Network settings**: 
+1. Following [the chart above](#sourcegraph-instance-sizes), click the link for your chosen AMI.
+2. Choose **Launch instance from AMI**
+3. Name your instance
+4. Select an **instance type** according to [the sizing chart above](#sourcegraph-instance-sizes).
+5. **Key pair (login)**: Select or create a new Key Pair for connecting to your instance securely (this may be required in the event you need support)
+6. **Network settings**: 
    - Select a **Security Group** for the instance, or create one with the following rules:
      - Default HTTP rule: port range 80, source 0.0.0.0/0, ::/0
      - Default HTTPS rule: port range 443, source 0.0.0.0/0, ::/0
-     - Default SSH rule: port range 22, source 0.0.0.0/0, ::/0
-5. **Configure storage**:
+     - Default SSH rule: port range 22, source 0.0.0.0/0, ::/0 (this may be required in the event you need support)
+   - **NOTE**: If you do not wish to have HTTP/HTTPS exposed to the public internet, you may later choose to remove these rules so that all traffic routes through your AWS load balancer.
+7. **Configure storage**:
    - Root Volume: 50GB
-   - EBS Volume: 500GB
-     - Please update your volume size accordingly
-     - The volume size should be at least 25-50% more than the total size of all your repositories
-6. Click **Launch instance** to launch
+   - EBS Volume: 500GB - this should be at least 25-50% *more* than the size of all your repositories on disk (you may check your GitHub/BitBucket/GitLab instance's disk usage.)
+8. Click **Launch instance**, and navigate to the public IP address in your browser.
 
-Your Sourcegraph instance should be ready in the next few minutes. 
+Once the instance has started, please allow ~5 minutes for Sourcegraph to initialize (during this time you may observe a `404 page not found` response.)
 
----
-
-## Upgrade
-
-> WARNING: This upgrade process works with **Sourcegraph AWS AMI instances only**
-
-<span class="badge badge-critical">IMPORTANT</span> **Back up your volumes before each upgrade**
-
-Please take time to review the following before proceeding with the upgrades:
-
-- [Changelog](https://docs.sourcegraph.com/CHANGELOG)
-- [Update policy](https://docs.sourcegraph.com/admin/updates#update-policy)
-- [Update notes](https://docs.sourcegraph.com/admin/updates/kubernetes)
-- [Multi-version upgrade procedure](https://docs.sourcegraph.com/admin/updates/kubernetes#multi-version-upgrade-procedure)
-
-#### Step 1: Stop the current instance
-
-1. Stop your current Sourcegraph AMI instance
-   - Go to the ECS console for your instance
-   - Click Instance State to Stop Instance
-2. Detach the non-root data volume (Device name: /dev/sdb/)
-   - Go to the Storage section in your instance console
-   - Find the volume with the device name **/dev/sdb**
-   - Select the volume, then click Actions to **Detach Volume**
-   - Give the volume a name for identification purposes
-3. Make a note of the VPC name
-
-#### Step 2: Launch a new instance
-
-1. Launch a new Sourcegraph instance from an AMI with the latest version of Sourcegraph
-2. Name the instance
-3. Select the appropriate **instance type**
-4. Under **Key Pair**
-  - Select the **Key Pair** used by the old instance
-5. Under **Network settings**
-   - Select the **Security Group** used by the old instance
-6. Under **Configure storage**
- - Remove the **second** EBS volume
-7. After reviewing the settings, click **Launch Instance**
-8. Attach the detached volume to the new instance
-   - Go to the Volumes section in your ECS Console
-   - Select the volume you've detached earlier
-   - Click **Actions > Attach Volume**
-9. On the `Attach volume` page:
-  - **Instance**: select the new Sourcegraph AMI instance
-  - **Device name**: /dev/sdb
-
-10\. **Reboot** the new instance
-
-You can terminate the stopped Sourcegraph AMI instance once you have confirmed the new instance is up and running.
-
-## Downgrade
-
-Please refer to the upgrade procedure above if you wish to rollback your instance. 
+To configure SSL, and lock down the instance from the public internet, see the [networking](#networking) section.
 
 ---
 
-## Network
+## Networking
 
-If you have access to your instance, you can follow our [HTTP and HTTPS/SSL configuration guide](../../../admin/http_https_configuration.md#sourcegraph-via-docker-compose-caddy-2) to set up HTTP and HTTPS connections. However, we recommend using the Application Load Balancers provided by AWS Load Balancer for easy setup.
+We suggest using an AWS Application Load Balancer (ALB) to manage HTTPS connections to Sourcegraph. This makes managing SSL certificates easy.
 
-### AWS Load Balancer
+### Creating an AWS Load Balancer
 
-#### Set-up Overview:
+> NOTE: You must own a domain name before you can proceed with the following steps.
 
-> NOTE: You must own a DNS before you can proceed with the following steps.
-
-1. Request a certificate for the DNS in [AWS Certificate Manager](https://aws.amazon.com/certificate-manager/)
+1. Request a certificate for the domain name in [AWS Certificate Manager](https://aws.amazon.com/certificate-manager/)
 2. Create a [target group](https://console.aws.amazon.com/ec2#TargetGroups) for `HTTPS Port 443` that links to the instance's `Port 443`
 3. Create a new subnet inside the instance VPC
 4. Create a new Application Load Balancer via [AWS Load Balancers](https://console.aws.amazon.com/ec2#LoadBalancers)
@@ -221,6 +122,67 @@ Click **Create subnet** in your VPC subnets dashboard:
   - Protocol: HTTPS
   - Port: 443
   - Default action: Select the HTTPS target group created for the instance
+
+### Securing your instance
+
+[Configure user authentication](../../auth/index.md) (SSO, SAML, OpenID Connect, etc.) to give users of your Sourcegraph instance access to it.
+
+Now that your instance is confirmed to be working, and you have HTTPS working through an Amazon load balancer, you may choose to secure your Sourcegraph instance further by modifying the security group/firewall rules to prevent access from the public internet. You can do this by modifying the security group/firewall rules.
+
+---
+
+## Upgrade
+
+> WARNING: This upgrade process works with **Sourcegraph AWS AMI instances only**
+
+<span class="badge badge-critical">IMPORTANT</span> **Back up your volumes before each upgrade**
+
+Please take time to review the following before proceeding with the upgrades:
+
+- [Changelog](https://docs.sourcegraph.com/CHANGELOG)
+- [Update policy](https://docs.sourcegraph.com/admin/updates#update-policy)
+- [Update notes](https://docs.sourcegraph.com/admin/updates/kubernetes)
+- [Multi-version upgrade procedure](https://docs.sourcegraph.com/admin/updates/kubernetes#multi-version-upgrade-procedure)
+
+#### Step 1: Stop the current instance
+
+1. Stop your current Sourcegraph AMI instance
+   - Go to the ECS console for your instance
+   - Click Instance State to Stop Instance
+2. Detach the non-root data volume (Device name: /dev/sdb/)
+   - Go to the Storage section in your instance console
+   - Find the volume with the device name **/dev/sdb**
+   - Select the volume, then click Actions to **Detach Volume**
+   - Give the volume a name for identification purposes
+3. Make a note of the VPC name
+
+#### Step 2: Launch a new instance
+
+1. Launch a new Sourcegraph instance from an AMI with the latest version of Sourcegraph
+2. Name the instance
+3. Select the appropriate **instance type**
+4. Under **Key Pair**
+  - Select the **Key Pair** used by the old instance
+5. Under **Network settings**
+   - Select the **Security Group** used by the old instance
+6. Under **Configure storage**
+ - Remove the **second** EBS volume
+7. After reviewing the settings, click **Launch Instance**
+8. Attach the detached volume to the new instance
+   - Go to the Volumes section in your ECS Console
+   - Select the volume you've detached earlier
+   - Click **Actions > Attach Volume**
+9. On the `Attach volume` page:
+  - **Instance**: select the new Sourcegraph AMI instance
+  - **Device name**: /dev/sdb
+
+10\. **Reboot** the new instance
+
+You can terminate the stopped Sourcegraph AMI instance once you have confirmed the new instance is up and running.
+
+## Downgrade
+
+Please refer to the upgrade procedure above if you wish to rollback your instance. 
 
 ---
 
