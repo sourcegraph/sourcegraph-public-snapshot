@@ -23,12 +23,14 @@ func TestIntegration(t *testing.T) {
 
 	t.Run("Store", func(t *testing.T) {
 		t.Run("BatchChanges", storeTest(db, nil, testStoreBatchChanges))
+		t.Run("BatchChangesDeletedNamespace", storeTest(db, nil, testBatchChangesDeletedNamespace))
 		t.Run("Changesets", storeTest(db, nil, testStoreChangesets))
 		t.Run("ChangesetEvents", storeTest(db, nil, testStoreChangesetEvents))
 		t.Run("ChangesetScheduling", storeTest(db, nil, testStoreChangesetScheduling))
 		t.Run("ListChangesetSyncData", storeTest(db, nil, testStoreListChangesetSyncData))
 		t.Run("ListChangesetsTextSearch", storeTest(db, nil, testStoreListChangesetsTextSearch))
 		t.Run("BatchSpecs", storeTest(db, nil, testStoreBatchSpecs))
+		t.Run("BatchSpecWorkspaceFiles", storeTest(db, nil, testStoreBatchSpecWorkspaceFiles))
 		t.Run("ChangesetSpecs", storeTest(db, nil, testStoreChangesetSpecs))
 		t.Run("GetRewirerMappingWithArchivedChangesets", storeTest(db, nil, testStoreGetRewirerMappingWithArchivedChangesets))
 		t.Run("ChangesetSpecsCurrentState", storeTest(db, nil, testStoreChangesetSpecsCurrentState))

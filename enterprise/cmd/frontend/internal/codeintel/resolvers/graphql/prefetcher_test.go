@@ -7,7 +7,12 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	resolvermocks "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/mocks"
+	transportmocks "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/mocks/transport"
+	uploadtransportmocks "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/mocks/transport/uploads"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	uploadshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 func TestPrefetcherUploads(t *testing.T) {
@@ -21,11 +26,19 @@ func TestPrefetcherUploads(t *testing.T) {
 		4: {ID: 4},
 		5: {ID: 5},
 	}
-
-	mockResolver.GetUploadsByIDsFunc.SetDefaultHook(func(_ context.Context, ids ...int) ([]dbstore.Upload, error) {
-		matching := make([]dbstore.Upload, 0, len(ids))
+	sharedUpload := map[int]uploadshared.Upload{
+		1: {ID: 1},
+		2: {ID: 2},
+		3: {ID: 3},
+		4: {ID: 4},
+		5: {ID: 5},
+	}
+	mockUploadResolver := uploadtransportmocks.NewMockResolver()
+	mockResolver.UploadsResolverFunc.SetDefaultReturn(mockUploadResolver)
+	mockUploadResolver.GetUploadsByIDsFunc.SetDefaultHook(func(_ context.Context, ids ...int) ([]uploadshared.Upload, error) {
+		matching := make([]uploadshared.Upload, 0, len(ids))
 		for _, id := range ids {
-			matching = append(matching, uploads[id])
+			matching = append(matching, sharedUpload[id])
 		}
 
 		return matching, nil
@@ -38,7 +51,7 @@ func TestPrefetcherUploads(t *testing.T) {
 		t.Fatalf("expected upload to exist")
 	} else if diff := cmp.Diff(uploads[1], upload); diff != "" {
 		t.Fatalf("unexpected upload (-want +got):\n%s", diff)
-	} else if callCount := len(mockResolver.GetUploadsByIDsFunc.History()); callCount != 1 {
+	} else if callCount := len(mockUploadResolver.GetUploadsByIDsFunc.History()); callCount != 1 {
 		t.Fatalf("unexpected call count. want=%d have=%d", 1, callCount)
 	}
 
@@ -49,7 +62,7 @@ func TestPrefetcherUploads(t *testing.T) {
 		t.Fatalf("expected upload to exist")
 	} else if diff := cmp.Diff(uploads[1], upload); diff != "" {
 		t.Fatalf("unexpected upload (-want +got):\n%s", diff)
-	} else if callCount := len(mockResolver.GetUploadsByIDsFunc.History()); callCount != 1 {
+	} else if callCount := len(mockUploadResolver.GetUploadsByIDsFunc.History()); callCount != 1 {
 		t.Fatalf("unexpected call count. want=%d have=%d", 1, callCount)
 	}
 
@@ -65,7 +78,7 @@ func TestPrefetcherUploads(t *testing.T) {
 		t.Fatalf("expected upload to exist")
 	} else if diff := cmp.Diff(uploads[2], upload); diff != "" {
 		t.Fatalf("unexpected upload (-want +got):\n%s", diff)
-	} else if callCount := len(mockResolver.GetUploadsByIDsFunc.History()); callCount != 2 {
+	} else if callCount := len(mockUploadResolver.GetUploadsByIDsFunc.History()); callCount != 2 {
 		t.Fatalf("unexpected call count. want=%d have=%d", 2, callCount)
 	}
 
@@ -76,40 +89,47 @@ func TestPrefetcherUploads(t *testing.T) {
 		t.Fatalf("expected upload to exist")
 	} else if diff := cmp.Diff(uploads[4], upload); diff != "" {
 		t.Fatalf("unexpected upload (-want +got):\n%s", diff)
-	} else if callCount := len(mockResolver.GetUploadsByIDsFunc.History()); callCount != 2 {
+	} else if callCount := len(mockUploadResolver.GetUploadsByIDsFunc.History()); callCount != 2 {
 		t.Fatalf("unexpected call count. want=%d have=%d", 2, callCount)
 	}
 }
 
 func TestPrefetcherIndexes(t *testing.T) {
-	mockResolver := resolvermocks.NewMockResolver()
-	prefetcher := NewPrefetcher(mockResolver)
-
-	indexes := map[int]dbstore.Index{
+	indexes := map[int]shared.Index{
 		1: {ID: 1},
 		2: {ID: 2},
 		3: {ID: 3},
 		4: {ID: 4},
 		5: {ID: 5},
 	}
-
-	mockResolver.GetIndexesByIDsFunc.SetDefaultHook(func(_ context.Context, ids ...int) ([]dbstore.Index, error) {
-		matching := make([]dbstore.Index, 0, len(ids))
+	mockResolver := resolvermocks.NewMockResolver()
+	mockAutoIndexingResolver := transportmocks.NewMockResolver()
+	mockAutoIndexingResolver.GetIndexesByIDsFunc.SetDefaultHook(func(_ context.Context, ids ...int) ([]shared.Index, error) {
+		matching := make([]shared.Index, 0, len(ids))
 		for _, id := range ids {
 			matching = append(matching, indexes[id])
 		}
 
 		return matching, nil
 	})
+	mockResolver.AutoIndexingResolverFunc.PushReturn(mockAutoIndexingResolver)
+	prefetcher := NewPrefetcher(mockResolver)
+
+	// We do a conversion inside the function that I cannot reproduct inside the mock.
+	expectedIndex := dbstore.Index{
+		ID:            1,
+		DockerSteps:   []dbstore.DockerStep{},
+		ExecutionLogs: []workerutil.ExecutionLogEntry{},
+	}
 
 	// Bare fetch
 	if index, exists, err := prefetcher.GetIndexByID(context.Background(), 1); err != nil {
 		t.Fatalf("unexpected error fetching index: %s", err)
 	} else if !exists {
 		t.Fatalf("expected index to exist")
-	} else if diff := cmp.Diff(indexes[1], index); diff != "" {
+	} else if diff := cmp.Diff(expectedIndex, index); diff != "" {
 		t.Fatalf("unexpected index (-want +got):\n%s", diff)
-	} else if callCount := len(mockResolver.GetIndexesByIDsFunc.History()); callCount != 1 {
+	} else if callCount := len(mockAutoIndexingResolver.GetIndexesByIDsFunc.History()); callCount != 1 {
 		t.Fatalf("unexpected call count. want=%d have=%d", 1, callCount)
 	}
 
@@ -118,9 +138,9 @@ func TestPrefetcherIndexes(t *testing.T) {
 		t.Fatalf("unexpected error fetching index: %s", err)
 	} else if !exists {
 		t.Fatalf("expected index to exist")
-	} else if diff := cmp.Diff(indexes[1], index); diff != "" {
+	} else if diff := cmp.Diff(expectedIndex, index); diff != "" {
 		t.Fatalf("unexpected index (-want +got):\n%s", diff)
-	} else if callCount := len(mockResolver.GetIndexesByIDsFunc.History()); callCount != 1 {
+	} else if callCount := len(mockAutoIndexingResolver.GetIndexesByIDsFunc.History()); callCount != 1 {
 		t.Fatalf("unexpected call count. want=%d have=%d", 1, callCount)
 	}
 
@@ -130,24 +150,36 @@ func TestPrefetcherIndexes(t *testing.T) {
 	prefetcher.MarkIndex(4)
 	prefetcher.MarkIndex(6) // unknown id
 
+	mockAutoIndexingResolver.GetIndexesByIDsFunc.SetDefaultHook(func(_ context.Context, ids ...int) ([]shared.Index, error) {
+		matching := make([]shared.Index, 0, len(ids))
+		for _, id := range ids {
+			matching = append(matching, indexes[id])
+		}
+
+		return matching, nil
+	})
+	mockResolver.AutoIndexingResolverFunc.PushReturn(mockAutoIndexingResolver)
+
+	expectedIndex.ID = 2
 	if index, exists, err := prefetcher.GetIndexByID(context.Background(), 2); err != nil {
 		t.Fatalf("unexpected error fetching index: %s", err)
 	} else if !exists {
 		t.Fatalf("expected index to exist")
-	} else if diff := cmp.Diff(indexes[2], index); diff != "" {
+	} else if diff := cmp.Diff(expectedIndex, index); diff != "" {
 		t.Fatalf("unexpected index (-want +got):\n%s", diff)
-	} else if callCount := len(mockResolver.GetIndexesByIDsFunc.History()); callCount != 2 {
+	} else if callCount := len(mockAutoIndexingResolver.GetIndexesByIDsFunc.History()); callCount != 2 {
 		t.Fatalf("unexpected call count. want=%d have=%d", 2, callCount)
 	}
 
 	// Cached from earlier
+	expectedIndex.ID = 4
 	if index, exists, err := prefetcher.GetIndexByID(context.Background(), 4); err != nil {
 		t.Fatalf("unexpected error fetching index: %s", err)
 	} else if !exists {
 		t.Fatalf("expected index to exist")
-	} else if diff := cmp.Diff(indexes[4], index); diff != "" {
+	} else if diff := cmp.Diff(expectedIndex, index); diff != "" {
 		t.Fatalf("unexpected index (-want +got):\n%s", diff)
-	} else if callCount := len(mockResolver.GetIndexesByIDsFunc.History()); callCount != 2 {
+	} else if callCount := len(mockAutoIndexingResolver.GetIndexesByIDsFunc.History()); callCount != 2 {
 		t.Fatalf("unexpected call count. want=%d have=%d", 2, callCount)
 	}
 }

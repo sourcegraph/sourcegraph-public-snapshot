@@ -29,14 +29,19 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 		Usage: "Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.",
 		Value: false,
 	}
-	privilegedHashFlag := &cli.StringFlag{
+	privilegedHashesFlag := &cli.StringSliceFlag{
 		Name:  "privileged-hash",
-		Usage: "Running -noop-privileged without this value will supply a value that will unlock migration application for the current upgrade operation. Future (distinct) upgrade operations will require a unique hash.",
-		Value: "",
+		Usage: "Running --noop-privileged without this flag will print instructions and supply a value for use in a second invocation. Multiple privileged hash flags (for distinct schemas) may be supplied. Future (distinct) up operations will require a unique hash.",
+		Value: nil,
 	}
 	ignoreSingleDirtyLogFlag := &cli.BoolFlag{
 		Name:  "ignore-single-dirty-log",
-		Usage: "Ignore a previously failed attempt if it will be immediately retried by this operation.",
+		Usage: "Ignore a single previously failed attempt if it will be immediately retried by this operation.",
+		Value: development,
+	}
+	ignoreSinglePendingLogFlag := &cli.BoolFlag{
+		Name:  "ignore-single-pending-log",
+		Usage: "Ignore a single pending migration attempt if it will be immediately retried by this operation.",
 		Value: development,
 	}
 	skipUpgradeValidationFlag := &cli.BoolFlag{
@@ -67,10 +72,19 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 		}
 
 		return runner.Options{
-			Operations:           operations,
-			PrivilegedMode:       privilegedMode,
-			PrivilegedHash:       privilegedHashFlag.Get(cmd),
-			IgnoreSingleDirtyLog: ignoreSingleDirtyLogFlag.Get(cmd),
+			Operations:     operations,
+			PrivilegedMode: privilegedMode,
+			MatchPrivilegedHash: func(hash string) bool {
+				for _, candidate := range privilegedHashesFlag.Get(cmd) {
+					if hash == candidate {
+						return true
+					}
+				}
+
+				return false
+			},
+			IgnoreSingleDirtyLog:   ignoreSingleDirtyLogFlag.Get(cmd),
+			IgnoreSinglePendingLog: ignoreSinglePendingLogFlag.Get(cmd),
 		}, nil
 	}
 
@@ -127,8 +141,9 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 			schemaNamesFlag,
 			unprivilegedOnlyFlag,
 			noopPrivilegedFlag,
-			privilegedHashFlag,
+			privilegedHashesFlag,
 			ignoreSingleDirtyLogFlag,
+			ignoreSinglePendingLogFlag,
 			skipUpgradeValidationFlag,
 			skipOutOfBandMigrationValidationFlag,
 		},

@@ -31,9 +31,10 @@ func TestBitbucketProjectPermissionsEnqueue(t *testing.T) {
 		rows, err := db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 		require.NoError(t, err)
 
-		job, ok, err := ScanFirstBitbucketProjectPermissionsJob(rows, nil)
+		require.True(t, rows.Next())
+		job, err := ScanBitbucketProjectPermissionJob(rows)
 		require.NoError(t, err)
-		require.True(t, ok)
+		require.NotNil(t, job)
 		require.Equal(t, "queued", job.State)
 		require.Equal(t, projectKey, job.ProjectKey)
 		require.Equal(t, int64(1), job.ExternalServiceID)
@@ -157,9 +158,10 @@ func TestScanFirstBitbucketProjectPermissionsJob(t *testing.T) {
 	rows, err := db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	require.NoError(t, err)
 
-	record, ok, err := ScanFirstBitbucketProjectPermissionsJob(rows, nil)
+	require.True(t, rows.Next())
+	job, err := ScanBitbucketProjectPermissionJob(rows)
 	require.NoError(t, err)
-	require.True(t, ok)
+	require.NotNil(t, job)
 	require.Equal(t, &types.BitbucketProjectPermissionJob{
 		ID:                1,
 		State:             "queued",
@@ -177,7 +179,7 @@ func TestScanFirstBitbucketProjectPermissionsJob(t *testing.T) {
 		ExternalServiceID: 1,
 		Permissions:       []types.UserPermission{{Permission: "read", BindID: "omar@sourcegraph.com"}},
 		Unrestricted:      false,
-	}, record)
+	}, job)
 }
 
 func TestListJobsQuery(t *testing.T) {

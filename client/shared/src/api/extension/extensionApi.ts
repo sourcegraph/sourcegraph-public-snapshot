@@ -4,7 +4,7 @@ import { BehaviorSubject, EMPTY, ReplaySubject } from 'rxjs'
 import { debounceTime, mapTo } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 
-import { asError, logError } from '@sourcegraph/common'
+import { asError, logger } from '@sourcegraph/common'
 import { Location, MarkupKind, Position, Range, Selection } from '@sourcegraph/extension-api-classes'
 
 import { ClientAPI } from '../client/api/api'
@@ -165,7 +165,7 @@ export function createExtensionAPIFactory(
         showInputBox: options => clientAPI.showInputBox(options),
     }
 
-    const app: Omit<typeof sourcegraph['app'], 'createDecorationType'> = {
+    const app: typeof sourcegraph['app'] = {
         get activeWindow() {
             return window
         },
@@ -241,6 +241,7 @@ export function createExtensionAPIFactory(
                     return addWithRollback(state.homepageViewProviders, { id, viewProvider: provider })
             }
         },
+        createDecorationType,
         createStatusBarItemType,
         // `log` is implemented on extension activation
         log: noop,
@@ -285,29 +286,26 @@ export function createExtensionAPIFactory(
         // These were removed, but keep them here so that calls from old extensions do not throw
         // an exception and completely break.
         registerTypeDefinitionProvider: () => {
-            // TODO - should remove console.warn or replace with logError function from @sourcegraph/commons
-            console.warn(
+            logger.warn(
                 'sourcegraph.languages.registerTypeDefinitionProvider was removed. Use sourcegraph.languages.registerLocationProvider instead.'
             )
             return { unsubscribe: () => undefined }
         },
         registerImplementationProvider: () => {
-            // TODO - should remove console.warn or replace with logError function from @sourcegraph/commons
-            console.warn(
+            logger.warn(
                 'sourcegraph.languages.registerImplementationProvider was removed. Use sourcegraph.languages.registerLocationProvider instead.'
             )
             return { unsubscribe: () => undefined }
         },
         registerCompletionItemProvider: (): sourcegraph.Unsubscribable => {
-            // TODO - should remove console.warn or replace with logError function from @sourcegraph/commons
-            console.warn('sourcegraph.languages.registerCompletionItemProvider was removed.')
+            logger.warn('sourcegraph.languages.registerCompletionItemProvider was removed.')
             return { unsubscribe: () => undefined }
         },
     }
 
     // GraphQL
     const graphQL: typeof sourcegraph['graphQL'] = {
-        execute: (query, variables) => clientAPI.requestGraphQL(query, variables),
+        execute: ((query: any, variables: any) => clientAPI.requestGraphQL(query, variables)) as any,
     }
 
     // Content
@@ -339,11 +337,10 @@ export function createExtensionAPIFactory(
                         clientAPI
                             .logExtensionMessage(`🧩 %c${extensionID}`, 'background-color: lightgrey;', ...data)
                             .catch(error => {
-                                logError('Error sending extension message to main thread:', error)
+                                logger.error('Error sending extension message to main thread:', error)
                             })
                     }
                 },
-                createDecorationType: createDecorationType(extensionID),
             },
 
             workspace,

@@ -38,14 +38,14 @@ func TestBatchChangeResolver(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	cstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
+	bstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
 
 	batchSpec := &btypes.BatchSpec{
 		RawSpec:        bt.TestRawBatchSpec,
 		UserID:         userID,
 		NamespaceOrgID: orgID,
 	}
-	if err := cstore.CreateBatchSpec(ctx, batchSpec); err != nil {
+	if err := bstore.CreateBatchSpec(ctx, batchSpec); err != nil {
 		t.Fatal(err)
 	}
 
@@ -58,11 +58,11 @@ func TestBatchChangeResolver(t *testing.T) {
 		LastAppliedAt:  now,
 		BatchSpecID:    batchSpec.ID,
 	}
-	if err := cstore.CreateBatchChange(ctx, batchChange); err != nil {
+	if err := bstore.CreateBatchChange(ctx, batchChange); err != nil {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(db, &Resolver{store: bstore})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -78,7 +78,6 @@ func TestBatchChangeResolver(t *testing.T) {
 		Namespace:     apitest.UserOrg{ID: namespaceAPIID, Name: orgName},
 		Creator:       apiUser,
 		LastApplier:   apiUser,
-		SpecCreator:   apiUser,
 		LastAppliedAt: marshalDateTime(t, now),
 		URL:           fmt.Sprintf("/organizations/%s/batch-changes/%s", orgName, batchChange.Name),
 		CreatedAt:     marshalDateTime(t, now),
@@ -108,14 +107,13 @@ func TestBatchChangeResolver(t *testing.T) {
 	}
 
 	// Now soft-delete the user and check we can still access the batch change in the org namespace.
-	err = database.UsersWith(logger, cstore).Delete(ctx, userID)
+	err = database.UsersWith(logger, bstore).Delete(ctx, userID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	wantBatchChange.Creator = nil
 	wantBatchChange.LastApplier = nil
-	wantBatchChange.SpecCreator = nil
 
 	{
 		var response struct{ Node apitest.BatchChange }
@@ -127,7 +125,7 @@ func TestBatchChangeResolver(t *testing.T) {
 	}
 
 	// Now hard-delete the user and check we can still access the batch change in the org namespace.
-	err = database.UsersWith(logger, cstore).HardDelete(ctx, userID)
+	err = database.UsersWith(logger, bstore).HardDelete(ctx, userID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -156,9 +154,9 @@ func TestBatchChangeResolver_BatchSpecs(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	cstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
+	bstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
 
-	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(db, &Resolver{store: bstore})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -189,7 +187,7 @@ func TestBatchChangeResolver_BatchSpecs(t *testing.T) {
 	batchSpec3.CreatedFromRaw = true
 
 	for _, bs := range []*btypes.BatchSpec{batchSpec1, batchSpec2, batchSpec3} {
-		if err := cstore.CreateBatchSpec(ctx, bs); err != nil {
+		if err := bstore.CreateBatchSpec(ctx, bs); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -206,7 +204,7 @@ func TestBatchChangeResolver_BatchSpecs(t *testing.T) {
 		BatchSpecID:     batchSpec1.ID,
 	}
 
-	if err := cstore.CreateBatchChange(ctx, batchChange); err != nil {
+	if err := bstore.CreateBatchChange(ctx, batchChange); err != nil {
 		t.Fatal(err)
 	}
 
@@ -259,7 +257,6 @@ query($batchChange: ID!){
       id, name, description, state
       creator { ...u }
       lastApplier    { ...u }
-      specCreator    { ...u }
       lastAppliedAt
       createdAt
       updatedAt
@@ -283,7 +280,6 @@ query($namespace: ID!, $name: String!){
     id, name, description, state
     creator { ...u }
     lastApplier    { ...u }
-    specCreator    { ...u }
     lastAppliedAt
     createdAt
     updatedAt

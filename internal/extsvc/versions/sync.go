@@ -45,8 +45,11 @@ func (j *syncingJob) Routines(_ context.Context, logger log.Logger) ([]goroutine
 		return nil, err
 	}
 
-	cf := httpcli.ExternalClientFactory
-	sourcer := repos.NewSourcer(logger.Scoped("repos.Sourcer", ""), database.NewDB(logger, db), cf)
+	sourcerLogger := logger.Scoped("repos.Sourcer", "repository source for syncing")
+	sourcerCF := httpcli.NewExternalClientFactory(
+		httpcli.NewLoggingMiddleware(sourcerLogger),
+	)
+	sourcer := repos.NewSourcer(sourcerLogger, database.NewDB(logger, db), sourcerCF)
 
 	store := database.NewDB(logger, db).ExternalServices()
 	handler := goroutine.NewHandlerWithErrorMessage("sync versions of external services", func(ctx context.Context) error {

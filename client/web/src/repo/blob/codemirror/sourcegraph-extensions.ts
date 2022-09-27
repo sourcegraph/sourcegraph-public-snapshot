@@ -13,10 +13,9 @@ import { Remote } from 'comlink'
 import { createRoot, Root } from 'react-dom/client'
 import { combineLatest, EMPTY, from, Observable, of, Subject, Subscription } from 'rxjs'
 import { filter, map, catchError, switchMap, distinctUntilChanged, startWith, shareReplay } from 'rxjs/operators'
-import { TextDocumentDecorationType } from 'sourcegraph'
 
 import { DocumentHighlight, LOADER_DELAY, MaybeLoadingResult, emitLoading } from '@sourcegraph/codeintellify'
-import { asError, ErrorLike, LineOrPositionOrRange, lprToSelectionsZeroIndexed, logError } from '@sourcegraph/common'
+import { asError, ErrorLike, LineOrPositionOrRange, lprToSelectionsZeroIndexed, logger } from '@sourcegraph/common'
 import { Position, TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
@@ -33,8 +32,8 @@ import { getHover } from '../../../backend/features'
 import { StatusBar } from '../../../extensions/components/StatusBar'
 import { BlobInfo, BlobProps } from '../Blob'
 
-import { showTextDocumentDecorations } from './decorations'
 import { documentHighlightsSource } from './document-highlights'
+import { showTextDocumentDecorations } from './extensions-decorations'
 import { hovercardSource } from './hovercard'
 import { SelectedLineRange, selectedLines } from './linenumbers'
 import { Container } from './react-interop'
@@ -104,14 +103,14 @@ export function sourcegraphExtensions({
         })
     ).pipe(
         catchError(() => {
-            logError('Unable to initialize extensions context')
+            logger.error('Unable to initialize extensions context')
             return EMPTY
         }),
         map(([viewerId, extensionHostAPI]) => {
             subscriptions.add(() => {
                 extensionHostAPI
                     .removeViewer(viewerId)
-                    .catch(error => logError('Error removing viewer from extension host', error))
+                    .catch(error => logger.error('Error removing viewer from extension host', error))
             })
 
             return {
@@ -192,7 +191,7 @@ class TextDecorationManager implements PluginValue {
     constructor(
         view: EditorView,
         context: Observable<Context>,
-        setDecorations: StateEffectType<[TextDocumentDecorationType, TextDocumentDecoration[]][]>
+        setDecorations: StateEffectType<TextDocumentDecoration[]>
     ) {
         this.subscription = context
             .pipe(
@@ -211,9 +210,9 @@ class TextDecorationManager implements PluginValue {
 }
 
 function textDocumentDecorations(context: Observable<Context>): Extension {
-    const [decorationsField, , setDecorations] = createUpdateableField<
-        [TextDocumentDecorationType, TextDocumentDecoration[]][]
-    >([], field => showTextDocumentDecorations.from(field))
+    const [decorationsField, , setDecorations] = createUpdateableField<TextDocumentDecoration[]>([], field =>
+        showTextDocumentDecorations.from(field)
+    )
     return [decorationsField, ViewPlugin.define(view => new TextDecorationManager(view, context, setDecorations))]
 }
 
@@ -233,7 +232,7 @@ class SelectionManager implements PluginValue {
         this.subscription = combineLatest([context, this.nextSelection]).subscribe(([context, selection]) => {
             context.extensionHostAPI
                 .setEditorSelections(context.viewerId, lprToSelectionsZeroIndexed(selection ?? {}))
-                .catch(error => logError('Error updating editor selections on extension host', error))
+                .catch(error => logger.error('Error updating editor selections on extension host', error))
         })
     }
 

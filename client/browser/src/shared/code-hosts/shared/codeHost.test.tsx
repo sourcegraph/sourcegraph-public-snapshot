@@ -5,7 +5,7 @@ import { RenderResult } from '@testing-library/react'
 import { Remote } from 'comlink'
 import { uniqueId, noop, isEmpty, pick } from 'lodash'
 import { BehaviorSubject, NEVER, of, Subject, Subscription } from 'rxjs'
-import { filter, take, first, map } from 'rxjs/operators'
+import { filter, take, first } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
 import * as sinon from 'sinon'
 import * as sourcegraph from 'sourcegraph'
@@ -18,15 +18,14 @@ import { SuccessGraphQLResult } from '@sourcegraph/http-client'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { ExtensionCodeEditor } from '@sourcegraph/shared/src/api/extension/api/codeEditor'
-import { flattenDecorations } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { integrationTestContext } from '@sourcegraph/shared/src/api/integration-test/testHelpers'
 import { Controller } from '@sourcegraph/shared/src/extensions/controller'
-import { IQuery } from '@sourcegraph/shared/src/schema'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
+import { ResolveRepoResult } from '../../../graphql-operations'
 import { DEFAULT_SOURCEGRAPH_URL } from '../../util/context'
 import { MutationRecordLike } from '../../util/dom'
 
@@ -271,7 +270,7 @@ describe('codeHost', () => {
                                         },
                                     },
                                     errors: undefined,
-                                } as SuccessGraphQLResult<IQuery>),
+                                } as SuccessGraphQLResult<ResolveRepoResult>),
                         }),
                     }),
                 })
@@ -358,10 +357,7 @@ describe('codeHost', () => {
                 const decorationType = extensionAPI.app.createDecorationType()
                 const decorated = (editor: ExtensionCodeEditor): Promise<TextDocumentDecoration[] | null> =>
                     wrapRemoteObservable(extensionHostAPI.getTextDecorations({ viewerId: editor.viewerId }))
-                        .pipe(
-                            map(flattenDecorations),
-                            first(decorations => !isEmpty(decorations))
-                        )
+                        .pipe(first(decorations => !isEmpty(decorations)))
                         .toPromise()
 
                 // Set decorations and verify that a decoration attachment has been added
@@ -390,7 +386,6 @@ describe('codeHost', () => {
                 ])
                 await wrapRemoteObservable(extensionHostAPI.getTextDecorations({ viewerId: editor.viewerId }))
                     .pipe(
-                        map(flattenDecorations),
                         filter(
                             decorations =>
                                 !!decorations &&
@@ -467,10 +462,7 @@ describe('codeHost', () => {
                 const decorationType = extensionAPI.app.createDecorationType()
                 const decorated = (editor: ExtensionCodeEditor): Promise<TextDocumentDecoration[] | null> =>
                     wrapRemoteObservable(extensionHostAPI.getTextDecorations({ viewerId: editor.viewerId }))
-                        .pipe(
-                            map(flattenDecorations),
-                            first(decorations => !isEmpty(decorations))
-                        )
+                        .pipe(first(decorations => !isEmpty(decorations)))
                         .toPromise()
 
                 // Set decorations and verify that a decoration attachment has been added

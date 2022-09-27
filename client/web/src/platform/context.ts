@@ -6,7 +6,7 @@ import {
     asError,
     LocalStorageSubject,
     appendSubtreeQueryParameter,
-    logError,
+    logger,
 } from '@sourcegraph/common'
 import { fromObservableQueryPromise, getDocumentNode } from '@sourcegraph/http-client'
 import { viewerSettingsQuery } from '@sourcegraph/shared/src/backend/settings'
@@ -74,7 +74,7 @@ export function createPlatformContext(): PlatformContext {
             }
 
             // The error will be emitted to consumers from the `context.settings` observable.
-            await settingsQueryWatcher.refetch().catch(error => logError(error))
+            await settingsQueryWatcher.refetch().catch(error => logger.error(error))
         },
         getGraphQLClient: getWebGraphQLClient,
         requestGraphQL: ({ request, variables }) => requestGraphQL(request, variables),

@@ -1,7 +1,7 @@
 import { ApolloQueryResult, ObservableQuery, OperationVariables } from '@apollo/client'
 import { Observable } from 'rxjs'
 
-import { logError } from '@sourcegraph/common'
+import { logger } from '@sourcegraph/common'
 
 /**
  * Converts ObservableQuery returned by `client.watchQuery` to `rxjs` Observable.
@@ -41,7 +41,7 @@ export function fromObservableQueryPromise<T extends object, V extends object>(
 
         return function unsubscribe() {
             subscriber.unsubscribe()
-            subscriptionPromise.then(subscription => subscription?.unsubscribe()).catch(error => logError(error))
+            subscriptionPromise.then(subscription => subscription?.unsubscribe()).catch(error => logger.error(error))
         }
     })
 }

@@ -193,6 +193,29 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.batch_spec_workspace_files"
+```
+    Column     |           Type           | Collation | Nullable |                        Default                         
+---------------+--------------------------+-----------+----------+--------------------------------------------------------
+ id            | integer                  |           | not null | nextval('batch_spec_workspace_files_id_seq'::regclass)
+ rand_id       | text                     |           | not null | 
+ batch_spec_id | bigint                   |           | not null | 
+ filename      | text                     |           | not null | 
+ path          | text                     |           | not null | 
+ size          | bigint                   |           | not null | 
+ content       | bytea                    |           | not null | 
+ modified_at   | timestamp with time zone |           | not null | 
+ created_at    | timestamp with time zone |           | not null | now()
+ updated_at    | timestamp with time zone |           | not null | now()
+Indexes:
+    "batch_spec_workspace_files_pkey" PRIMARY KEY, btree (id)
+    "batch_spec_workspace_files_batch_spec_id_filename_path" UNIQUE, btree (batch_spec_id, filename, path)
+    "batch_spec_workspace_files_rand_id" btree (rand_id)
+Foreign-key constraints:
+    "batch_spec_workspace_files_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE
+
+```
+
 # Table "public.batch_spec_workspaces"
 ```
         Column        |           Type           | Collation | Nullable |                      Default                      
@@ -254,6 +277,7 @@ Foreign-key constraints:
 Referenced by:
     TABLE "batch_changes" CONSTRAINT "batch_changes_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
     TABLE "batch_spec_resolution_jobs" CONSTRAINT "batch_spec_resolution_jobs_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "batch_spec_workspace_files" CONSTRAINT "batch_spec_workspace_files_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE
     TABLE "batch_spec_workspaces" CONSTRAINT "batch_spec_workspaces_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
     TABLE "changeset_specs" CONSTRAINT "changeset_specs_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
 
@@ -326,12 +350,11 @@ Foreign-key constraints:
 ---------------------+--------------------------+-----------+----------+---------------------------------------------
  id                  | bigint                   |           | not null | nextval('changeset_specs_id_seq'::regclass)
  rand_id             | text                     |           | not null | 
- spec                | jsonb                    |           | not null | '{}'::jsonb
+ spec                | jsonb                    |           |          | '{}'::jsonb
  batch_spec_id       | bigint                   |           |          | 
  repo_id             | integer                  |           | not null | 
  user_id             | integer                  |           |          | 
  diff_stat_added     | integer                  |           |          | 
- diff_stat_changed   | integer                  |           |          | 
  diff_stat_deleted   | integer                  |           |          | 
  created_at          | timestamp with time zone |           | not null | now()
  updated_at          | timestamp with time zone |           | not null | now()
@@ -347,7 +370,7 @@ Foreign-key constraints:
  commit_message      | text                     |           |          | 
  commit_author_name  | text                     |           |          | 
  commit_author_email | text                     |           |          | 
- type                | text                     |           |          | 
+ type                | text                     |           | not null | 
 Indexes:
     "changeset_specs_pkey" PRIMARY KEY, btree (id)
     "changeset_specs_batch_spec_id" btree (batch_spec_id)
@@ -385,7 +408,6 @@ Referenced by:
  external_review_state    | text                                         |           |          | 
  external_check_state     | text                                         |           |          | 
  diff_stat_added          | integer                                      |           |          | 
- diff_stat_changed        | integer                                      |           |          | 
  diff_stat_deleted        | integer                                      |           |          | 
  sync_state               | jsonb                                        |           | not null | '{}'::jsonb
  current_spec_id          | bigint                                       |           |          | 
@@ -712,6 +734,21 @@ Webhook actions configured on code monitors
 **monitor**: The code monitor that the action is defined on
 
 **url**: The webhook URL we send the code monitor event to
+
+# Table "public.codeintel_autoindex_queue"
+```
+    Column     |           Type           | Collation | Nullable |                        Default                        
+---------------+--------------------------+-----------+----------+-------------------------------------------------------
+ id            | integer                  |           | not null | nextval('codeintel_autoindex_queue_id_seq'::regclass)
+ repository_id | integer                  |           | not null | 
+ rev           | text                     |           | not null | 
+ queued_at     | timestamp with time zone |           | not null | now()
+ processed_at  | timestamp with time zone |           |          | 
+Indexes:
+    "codeintel_autoindex_queue_pkey" PRIMARY KEY, btree (id)
+    "codeintel_autoindex_queue_repository_id_commit" UNIQUE, btree (repository_id, rev)
+
+```
 
 # Table "public.codeintel_langugage_support_requests"
 ```
@@ -1284,8 +1321,39 @@ Indexes:
     "gitserver_repos_shard_id" btree (shard_id, repo_id)
 Foreign-key constraints:
     "gitserver_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
+Triggers:
+    trig_recalc_gitserver_repos_statistics_on_delete AFTER DELETE ON gitserver_repos REFERENCING OLD TABLE AS oldtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_gitserver_repos_statistics_on_delete()
+    trig_recalc_gitserver_repos_statistics_on_insert AFTER INSERT ON gitserver_repos REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_gitserver_repos_statistics_on_insert()
+    trig_recalc_gitserver_repos_statistics_on_update AFTER UPDATE ON gitserver_repos REFERENCING OLD TABLE AS oldtab NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_gitserver_repos_statistics_on_update()
 
 ```
+
+# Table "public.gitserver_repos_statistics"
+```
+    Column    |  Type  | Collation | Nullable | Default 
+--------------+--------+-----------+----------+---------
+ shard_id     | text   |           | not null | 
+ total        | bigint |           | not null | 0
+ not_cloned   | bigint |           | not null | 0
+ cloning      | bigint |           | not null | 0
+ cloned       | bigint |           | not null | 0
+ failed_fetch | bigint |           | not null | 0
+Indexes:
+    "gitserver_repos_statistics_pkey" PRIMARY KEY, btree (shard_id)
+
+```
+
+**cloned**: Number of repositories in gitserver_repos table on this shard that are cloned
+
+**cloning**: Number of repositories in gitserver_repos table on this shard that cloning
+
+**failed_fetch**: Number of repositories in gitserver_repos table on this shard where last_error is set
+
+**not_cloned**: Number of repositories in gitserver_repos table on this shard that are not cloned yet
+
+**shard_id**: ID of this gitserver shard. If an empty string then the repositories havent been assigned a shard.
+
+**total**: Number of repositories in gitserver_repos table on this shard
 
 # Table "public.global_state"
 ```
@@ -2406,6 +2474,9 @@ Referenced by:
     TABLE "user_public_repos" CONSTRAINT "user_public_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
 Triggers:
     trig_delete_repo_ref_on_external_service_repos AFTER UPDATE OF deleted_at ON repo FOR EACH ROW EXECUTE FUNCTION delete_repo_ref_on_external_service_repos()
+    trig_recalc_repo_statistics_on_repo_delete AFTER DELETE ON repo REFERENCING OLD TABLE AS oldtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_repo_delete()
+    trig_recalc_repo_statistics_on_repo_insert AFTER INSERT ON repo REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_repo_insert()
+    trig_recalc_repo_statistics_on_repo_update AFTER UPDATE ON repo REFERENCING OLD TABLE AS oldtab NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_repo_update()
     trigger_gitserver_repo_insert AFTER INSERT ON repo FOR EACH ROW EXECUTE FUNCTION func_insert_gitserver_repo()
 
 ```
@@ -2452,6 +2523,31 @@ Indexes:
     "repo_permissions_unrestricted_true_idx" btree (unrestricted) WHERE unrestricted
 
 ```
+
+# Table "public.repo_statistics"
+```
+    Column    |  Type  | Collation | Nullable | Default 
+--------------+--------+-----------+----------+---------
+ total        | bigint |           | not null | 0
+ soft_deleted | bigint |           | not null | 0
+ not_cloned   | bigint |           | not null | 0
+ cloning      | bigint |           | not null | 0
+ cloned       | bigint |           | not null | 0
+ failed_fetch | bigint |           | not null | 0
+
+```
+
+**cloned**: Number of repositories that are NOT soft-deleted and not blocked and cloned by gitserver
+
+**cloning**: Number of repositories that are NOT soft-deleted and not blocked and currently being cloned by gitserver
+
+**failed_fetch**: Number of repositories that are NOT soft-deleted and not blocked and have last_error set in gitserver_repos table
+
+**not_cloned**: Number of repositories that are NOT soft-deleted and not blocked and not cloned by gitserver
+
+**soft_deleted**: Number of repositories that are soft-deleted and not blocked
+
+**total**: Number of repositories that are not soft-deleted and not blocked
 
 # Table "public.saved_searches"
 ```
@@ -2801,7 +2897,7 @@ Indexes:
 Check constraints:
     "users_display_name_max_length" CHECK (char_length(display_name) <= 255)
     "users_username_max_length" CHECK (char_length(username::text) <= 255)
-    "users_username_valid_chars" CHECK (username ~ '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-.](?=[a-zA-Z0-9]))*-?$'::citext)
+    "users_username_valid_chars" CHECK (username ~ '^\w(?:\w|[-.](?=\w))*-?$'::citext)
 Referenced by:
     TABLE "access_tokens" CONSTRAINT "access_tokens_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id)
     TABLE "access_tokens" CONSTRAINT "access_tokens_subject_user_id_fkey" FOREIGN KEY (subject_user_id) REFERENCES users(id)
@@ -3189,7 +3285,6 @@ Foreign-key constraints:
     c.external_review_state,
     c.external_check_state,
     c.diff_stat_added,
-    c.diff_stat_changed,
     c.diff_stat_deleted,
     c.sync_state,
     c.current_spec_id,

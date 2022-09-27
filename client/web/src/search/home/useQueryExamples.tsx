@@ -62,7 +62,7 @@ function getRepoFilterExamples(repositoryName: string): { singleRepoExample: str
     const repoOrg = repositoryNameParts[repositoryNameParts.length - 2]
     return {
         singleRepoExample: quoteIfNeeded(`${repoOrg}/${repoName}`),
-        orgReposExample: quoteIfNeeded(`${repoOrg}/*`),
+        orgReposExample: quoteIfNeeded(`${repoOrg}/.*`),
     }
 }
 

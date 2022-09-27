@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/httpapi"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/webhooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -29,14 +30,20 @@ func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, ent
 	})
 
 	// Initialize store.
-	cstore := store.New(db, observationContext, keyring.Default().BatchChangesCredentialKey)
+	bstore := store.New(db, observationContext, keyring.Default().BatchChangesCredentialKey)
 
 	// Register enterprise services.
-	enterpriseServices.BatchChangesResolver = resolvers.New(cstore)
-	enterpriseServices.GitHubWebhook = webhooks.NewGitHubWebhook(cstore)
-	enterpriseServices.BitbucketServerWebhook = webhooks.NewBitbucketServerWebhook(cstore)
-	enterpriseServices.BitbucketCloudWebhook = webhooks.NewBitbucketCloudWebhook(cstore)
-	enterpriseServices.GitLabWebhook = webhooks.NewGitLabWebhook(cstore)
+	enterpriseServices.BatchChangesResolver = resolvers.New(bstore)
+	enterpriseServices.GitHubWebhook = webhooks.NewGitHubWebhook(bstore)
+	enterpriseServices.BitbucketServerWebhook = webhooks.NewBitbucketServerWebhook(bstore)
+	enterpriseServices.BitbucketCloudWebhook = webhooks.NewBitbucketCloudWebhook(bstore)
+	enterpriseServices.GitLabWebhook = webhooks.NewGitLabWebhook(bstore)
+
+	operations := httpapi.NewOperations(observationContext)
+	fileHandler := httpapi.NewFileHandler(db, bstore, operations)
+	enterpriseServices.BatchesChangesFileGetHandler = fileHandler.Get()
+	enterpriseServices.BatchesChangesFileExistsHandler = fileHandler.Exists()
+	enterpriseServices.BatchesChangesFileUploadHandler = fileHandler.Upload()
 
 	return nil
 }

@@ -139,7 +139,7 @@ func NewMockAPI() *MockAPI {
 			},
 		},
 		QueryFunc: &APIQueryFunc{
-			defaultHook: func(context.Context, string, time.Time) (r0 model.Value, r1 v1.Warnings, r2 error) {
+			defaultHook: func(context.Context, string, time.Time, ...v1.Option) (r0 model.Value, r1 v1.Warnings, r2 error) {
 				return
 			},
 		},
@@ -149,7 +149,7 @@ func NewMockAPI() *MockAPI {
 			},
 		},
 		QueryRangeFunc: &APIQueryRangeFunc{
-			defaultHook: func(context.Context, string, v1.Range) (r0 model.Value, r1 v1.Warnings, r2 error) {
+			defaultHook: func(context.Context, string, v1.Range, ...v1.Option) (r0 model.Value, r1 v1.Warnings, r2 error) {
 				return
 			},
 		},
@@ -251,7 +251,7 @@ func NewStrictMockAPI() *MockAPI {
 			},
 		},
 		QueryFunc: &APIQueryFunc{
-			defaultHook: func(context.Context, string, time.Time) (model.Value, v1.Warnings, error) {
+			defaultHook: func(context.Context, string, time.Time, ...v1.Option) (model.Value, v1.Warnings, error) {
 				panic("unexpected invocation of MockAPI.Query")
 			},
 		},
@@ -261,7 +261,7 @@ func NewStrictMockAPI() *MockAPI {
 			},
 		},
 		QueryRangeFunc: &APIQueryRangeFunc{
-			defaultHook: func(context.Context, string, v1.Range) (model.Value, v1.Warnings, error) {
+			defaultHook: func(context.Context, string, v1.Range, ...v1.Option) (model.Value, v1.Warnings, error) {
 				panic("unexpected invocation of MockAPI.QueryRange")
 			},
 		},
@@ -1458,23 +1458,23 @@ func (c APIMetadataFuncCall) Results() []interface{} {
 // APIQueryFunc describes the behavior when the Query method of the parent
 // MockAPI instance is invoked.
 type APIQueryFunc struct {
-	defaultHook func(context.Context, string, time.Time) (model.Value, v1.Warnings, error)
-	hooks       []func(context.Context, string, time.Time) (model.Value, v1.Warnings, error)
+	defaultHook func(context.Context, string, time.Time, ...v1.Option) (model.Value, v1.Warnings, error)
+	hooks       []func(context.Context, string, time.Time, ...v1.Option) (model.Value, v1.Warnings, error)
 	history     []APIQueryFuncCall
 	mutex       sync.Mutex
 }
 
 // Query delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockAPI) Query(v0 context.Context, v1 string, v2 time.Time) (model.Value, v1.Warnings, error) {
-	r0, r1, r2 := m.QueryFunc.nextHook()(v0, v1, v2)
-	m.QueryFunc.appendCall(APIQueryFuncCall{v0, v1, v2, r0, r1, r2})
+func (m *MockAPI) Query(v0 context.Context, v1 string, v2 time.Time, v3 ...v1.Option) (model.Value, v1.Warnings, error) {
+	r0, r1, r2 := m.QueryFunc.nextHook()(v0, v1, v2, v3...)
+	m.QueryFunc.appendCall(APIQueryFuncCall{v0, v1, v2, v3, r0, r1, r2})
 	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the Query method of the
 // parent MockAPI instance is invoked and the hook queue is empty.
-func (f *APIQueryFunc) SetDefaultHook(hook func(context.Context, string, time.Time) (model.Value, v1.Warnings, error)) {
+func (f *APIQueryFunc) SetDefaultHook(hook func(context.Context, string, time.Time, ...v1.Option) (model.Value, v1.Warnings, error)) {
 	f.defaultHook = hook
 }
 
@@ -1482,7 +1482,7 @@ func (f *APIQueryFunc) SetDefaultHook(hook func(context.Context, string, time.Ti
 // Query method of the parent MockAPI instance invokes the hook at the front
 // of the queue and discards it. After the queue is empty, the default hook
 // function is invoked for any future action.
-func (f *APIQueryFunc) PushHook(hook func(context.Context, string, time.Time) (model.Value, v1.Warnings, error)) {
+func (f *APIQueryFunc) PushHook(hook func(context.Context, string, time.Time, ...v1.Option) (model.Value, v1.Warnings, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1491,19 +1491,19 @@ func (f *APIQueryFunc) PushHook(hook func(context.Context, string, time.Time) (m
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *APIQueryFunc) SetDefaultReturn(r0 model.Value, r1 v1.Warnings, r2 error) {
-	f.SetDefaultHook(func(context.Context, string, time.Time) (model.Value, v1.Warnings, error) {
+	f.SetDefaultHook(func(context.Context, string, time.Time, ...v1.Option) (model.Value, v1.Warnings, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *APIQueryFunc) PushReturn(r0 model.Value, r1 v1.Warnings, r2 error) {
-	f.PushHook(func(context.Context, string, time.Time) (model.Value, v1.Warnings, error) {
+	f.PushHook(func(context.Context, string, time.Time, ...v1.Option) (model.Value, v1.Warnings, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *APIQueryFunc) nextHook() func(context.Context, string, time.Time) (model.Value, v1.Warnings, error) {
+func (f *APIQueryFunc) nextHook() func(context.Context, string, time.Time, ...v1.Option) (model.Value, v1.Warnings, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1545,6 +1545,9 @@ type APIQueryFuncCall struct {
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 time.Time
+	// Arg3 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg3 []v1.Option
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 model.Value
@@ -1557,9 +1560,16 @@ type APIQueryFuncCall struct {
 }
 
 // Args returns an interface slice containing the arguments of this
-// invocation.
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
 func (c APIQueryFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	trailing := []interface{}{}
+	for _, val := range c.Arg3 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0, c.Arg1, c.Arg2}, trailing...)
 }
 
 // Results returns an interface slice containing the results of this
@@ -1685,23 +1695,23 @@ func (c APIQueryExemplarsFuncCall) Results() []interface{} {
 // APIQueryRangeFunc describes the behavior when the QueryRange method of
 // the parent MockAPI instance is invoked.
 type APIQueryRangeFunc struct {
-	defaultHook func(context.Context, string, v1.Range) (model.Value, v1.Warnings, error)
-	hooks       []func(context.Context, string, v1.Range) (model.Value, v1.Warnings, error)
+	defaultHook func(context.Context, string, v1.Range, ...v1.Option) (model.Value, v1.Warnings, error)
+	hooks       []func(context.Context, string, v1.Range, ...v1.Option) (model.Value, v1.Warnings, error)
 	history     []APIQueryRangeFuncCall
 	mutex       sync.Mutex
 }
 
 // QueryRange delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockAPI) QueryRange(v0 context.Context, v1 string, v2 v1.Range) (model.Value, v1.Warnings, error) {
-	r0, r1, r2 := m.QueryRangeFunc.nextHook()(v0, v1, v2)
-	m.QueryRangeFunc.appendCall(APIQueryRangeFuncCall{v0, v1, v2, r0, r1, r2})
+func (m *MockAPI) QueryRange(v0 context.Context, v1 string, v2 v1.Range, v3 ...v1.Option) (model.Value, v1.Warnings, error) {
+	r0, r1, r2 := m.QueryRangeFunc.nextHook()(v0, v1, v2, v3...)
+	m.QueryRangeFunc.appendCall(APIQueryRangeFuncCall{v0, v1, v2, v3, r0, r1, r2})
 	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the QueryRange method of
 // the parent MockAPI instance is invoked and the hook queue is empty.
-func (f *APIQueryRangeFunc) SetDefaultHook(hook func(context.Context, string, v1.Range) (model.Value, v1.Warnings, error)) {
+func (f *APIQueryRangeFunc) SetDefaultHook(hook func(context.Context, string, v1.Range, ...v1.Option) (model.Value, v1.Warnings, error)) {
 	f.defaultHook = hook
 }
 
@@ -1709,7 +1719,7 @@ func (f *APIQueryRangeFunc) SetDefaultHook(hook func(context.Context, string, v1
 // QueryRange method of the parent MockAPI instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *APIQueryRangeFunc) PushHook(hook func(context.Context, string, v1.Range) (model.Value, v1.Warnings, error)) {
+func (f *APIQueryRangeFunc) PushHook(hook func(context.Context, string, v1.Range, ...v1.Option) (model.Value, v1.Warnings, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1718,19 +1728,19 @@ func (f *APIQueryRangeFunc) PushHook(hook func(context.Context, string, v1.Range
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *APIQueryRangeFunc) SetDefaultReturn(r0 model.Value, r1 v1.Warnings, r2 error) {
-	f.SetDefaultHook(func(context.Context, string, v1.Range) (model.Value, v1.Warnings, error) {
+	f.SetDefaultHook(func(context.Context, string, v1.Range, ...v1.Option) (model.Value, v1.Warnings, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *APIQueryRangeFunc) PushReturn(r0 model.Value, r1 v1.Warnings, r2 error) {
-	f.PushHook(func(context.Context, string, v1.Range) (model.Value, v1.Warnings, error) {
+	f.PushHook(func(context.Context, string, v1.Range, ...v1.Option) (model.Value, v1.Warnings, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *APIQueryRangeFunc) nextHook() func(context.Context, string, v1.Range) (model.Value, v1.Warnings, error) {
+func (f *APIQueryRangeFunc) nextHook() func(context.Context, string, v1.Range, ...v1.Option) (model.Value, v1.Warnings, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1772,6 +1782,9 @@ type APIQueryRangeFuncCall struct {
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 v1.Range
+	// Arg3 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg3 []v1.Option
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 model.Value
@@ -1784,9 +1797,16 @@ type APIQueryRangeFuncCall struct {
 }
 
 // Args returns an interface slice containing the arguments of this
-// invocation.
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
 func (c APIQueryRangeFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	trailing := []interface{}{}
+	for _, val := range c.Arg3 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0, c.Arg1, c.Arg2}, trailing...)
 }
 
 // Results returns an interface slice containing the results of this

@@ -206,8 +206,8 @@ func TestRepositoryComparison(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			want := "2 added, 7 changed, 1 deleted"
-			if have := fmt.Sprintf("%d added, %d changed, %d deleted", diffStat.Added(), diffStat.Changed(), diffStat.Deleted()); have != want {
+			want := "9 added, 8 deleted"
+			if have := fmt.Sprintf("%d added, %d deleted", diffStat.Added(), diffStat.Deleted()); have != want {
 				t.Fatalf("wrong diffstat. want=%q, have=%q", want, have)
 			}
 		})
@@ -264,12 +264,12 @@ func TestRepositoryComparison(t *testing.T) {
 				t.Fatalf("wrong NewPath: %s", diff)
 			}
 
-			wantStat := "1 added, 2 changed, 1 deleted"
+			wantStat := "3 added, 3 deleted"
 			haveStat := n.Stat()
 			if haveStat == nil {
 				t.Fatalf("no diff stat")
 			}
-			if have := fmt.Sprintf("%d added, %d changed, %d deleted", haveStat.Added(), haveStat.Changed(), haveStat.Deleted()); have != wantStat {
+			if have := fmt.Sprintf("%d added, %d deleted", haveStat.Added(), haveStat.Deleted()); have != wantStat {
 				t.Fatalf("wrong diffstat. want=%q, have=%q", wantStat, have)
 			}
 
@@ -994,7 +994,7 @@ func (d *dummyFileResolver) ExternalURLs(ctx context.Context) ([]*externallink.R
 	return []*externallink.Resolver{}, nil
 }
 
-func (d *dummyFileResolver) Highlight(ctx context.Context, args *HighlightArgs) (*highlightedFileResolver, error) {
+func (d *dummyFileResolver) Highlight(ctx context.Context, args *HighlightArgs) (*HighlightedFileResolver, error) {
 	return nil, errors.New("not implemented")
 }
 
@@ -1002,7 +1002,11 @@ func (d *dummyFileResolver) ToGitBlob() (*GitTreeEntryResolver, bool) {
 	return nil, false
 }
 
-func (d *dummyFileResolver) ToVirtualFile() (*virtualFileResolver, bool) {
+func (d *dummyFileResolver) ToVirtualFile() (*VirtualFileResolver, bool) {
+	return nil, false
+}
+
+func (d *dummyFileResolver) ToBatchSpecWorkspaceFile() (BatchWorkspaceFileResolver, bool) {
 	return nil, false
 }
 

@@ -7,7 +7,7 @@ import { from, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, mergeMap, startWith, tap } from 'rxjs/operators'
 
 import { ActionContribution, Evaluated } from '@sourcegraph/client-api'
-import { asError, ErrorLike, isErrorLike, isExternalLink, logError } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, isExternalLink, logger } from '@sourcegraph/common'
 import {
     LoadingSpinner,
     Button,
@@ -161,7 +161,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
                 )
                 .subscribe(
                     stateUpdate => this.setState(stateUpdate),
-                    error => logError(error)
+                    error => logger.error(error)
                 )
         )
     }
@@ -304,43 +304,45 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
 
         return (
             <Tooltip content={tooltipOrErrorMessage}>
-                <ButtonLink
-                    data-content={this.props.dataContent}
-                    disabledClassName={this.props.inactiveClassName}
-                    aria-disabled={disabled}
-                    data-action-item-pressed={pressed}
-                    className={classNames(
-                        'test-action-item',
-                        this.props.className,
-                        showLoadingSpinner && styles.actionItemLoading,
-                        pressed && [this.props.pressedClassName],
-                        buttonLinkProps.variant === 'link' && styles.actionItemLink,
-                        disabled && this.props.inactiveClassName
-                    )}
-                    pressed={pressed}
-                    onSelect={this.runAction}
-                    // If the command is 'open' or 'openXyz' (builtin commands), render it as a link. Otherwise render
-                    // it as a button that executes the command.
-                    to={to}
-                    {...newTabProps}
-                    {...buttonLinkProps}
-                    {...sharedProps}
-                >
-                    {content}{' '}
-                    {!this.props.hideExternalLinkIcon && primaryTo && isExternalLink(primaryTo) && (
-                        <Icon
-                            className={this.props.iconClassName}
-                            svgPath={mdiOpenInNew}
-                            inline={false}
-                            aria-hidden={true}
-                        />
-                    )}
-                    {showLoadingSpinner && (
-                        <div className={styles.loader} data-testid="action-item-spinner">
-                            <LoadingSpinner inline={false} className={this.props.iconClassName} />
-                        </div>
-                    )}
-                </ButtonLink>
+                <span>
+                    <ButtonLink
+                        data-content={this.props.dataContent}
+                        disabledClassName={this.props.inactiveClassName}
+                        aria-disabled={disabled}
+                        data-action-item-pressed={pressed}
+                        className={classNames(
+                            'test-action-item',
+                            this.props.className,
+                            showLoadingSpinner && styles.actionItemLoading,
+                            pressed && [this.props.pressedClassName],
+                            buttonLinkProps.variant === 'link' && styles.actionItemLink,
+                            disabled && this.props.inactiveClassName
+                        )}
+                        pressed={pressed}
+                        onSelect={this.runAction}
+                        // If the command is 'open' or 'openXyz' (builtin commands), render it as a link. Otherwise render
+                        // it as a button that executes the command.
+                        to={to}
+                        {...newTabProps}
+                        {...buttonLinkProps}
+                        {...sharedProps}
+                    >
+                        {content}{' '}
+                        {!this.props.hideExternalLinkIcon && primaryTo && isExternalLink(primaryTo) && (
+                            <Icon
+                                className={this.props.iconClassName}
+                                svgPath={mdiOpenInNew}
+                                inline={false}
+                                aria-hidden={true}
+                            />
+                        )}
+                        {showLoadingSpinner && (
+                            <div className={styles.loader} data-testid="action-item-spinner">
+                                <LoadingSpinner inline={false} className={this.props.iconClassName} />
+                            </div>
+                        )}
+                    </ButtonLink>
+                </span>
             </Tooltip>
         )
     }

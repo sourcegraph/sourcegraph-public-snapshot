@@ -108,6 +108,7 @@
             background-color: var(--color-bg-1);
             // Default is 50vw
             max-width: 70vw;
+            margin-top: 0.25rem; // Position is controlled absolutely but needs to be shifted down a bit from the default
 
             > ul {
                 font-size: var(--code-font-size);
@@ -135,12 +136,14 @@
 
                     :global(.cm-completionDetail) {
                         padding-left: 0.25rem;
+                        font-size: 0.675rem;
                         color: var(--gray-06);
                         flex: 1;
                         min-width: 0;
                         overflow: hidden;
                         text-overflow: ellipsis;
                         font-style: initial;
+                        text-align: right;
                     }
 
                     :global(.cm-completionMatchedText) {
@@ -150,19 +153,6 @@
                         // Our style
                         color: var(--search-filter-keyword-color);
                         font-weight: bold;
-                    }
-
-                    .tabStyle {
-                        border: 1px solid var(--text-muted);
-                        border-radius: 0.25rem;
-                        height: 1.25rem;
-                        font-size: 0.65rem;
-                        line-height: 1;
-                        padding: 0.25rem 0.375rem;
-                        margin-left: auto;
-                        color: var(--text-muted);
-                        opacity: 0.75;
-                        display: none;
                     }
 
                     &[aria-selected] {

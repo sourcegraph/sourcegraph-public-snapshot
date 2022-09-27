@@ -288,7 +288,7 @@ func TestStoreDequeueView(t *testing.T) {
 
 	options := defaultTestStoreOptions(nil)
 	options.ViewName = "workerutil_test_view v"
-	options.Scan = testScanFirstRecordView
+	options.Scan = BuildWorkerScan(testScanRecordView)
 	options.OrderByExpression = sqlf.Sprintf("v.created_at")
 	options.ColumnExpressions = []*sqlf.Query{
 		sqlf.Sprintf("v.id"),
@@ -333,10 +333,10 @@ func TestStoreDequeueConcurrent(t *testing.T) {
 		t.Fatalf("expected a second dequeueable record")
 	}
 
-	if val := record1.(TestRecord).ID; val != 1 {
+	if val := record1.(*TestRecord).ID; val != 1 {
 		t.Errorf("unexpected id. want=%d have=%d", 1, val)
 	}
-	if val := record2.(TestRecord).ID; val != 2 {
+	if val := record2.(*TestRecord).ID; val != 2 {
 		t.Errorf("unexpected id. want=%d have=%d", 2, val)
 	}
 
@@ -365,7 +365,7 @@ func TestStoreDequeueRetryAfter(t *testing.T) {
 	}
 
 	options := defaultTestStoreOptions(nil)
-	options.Scan = testScanFirstRecordRetry
+	options.Scan = BuildWorkerScan(testScanRecordRetry)
 	options.MaxNumRetries = 5
 	options.RetryAfter = 5 * time.Minute
 	options.ColumnExpressions = []*sqlf.Query{
@@ -404,7 +404,7 @@ func TestStoreDequeueRetryAfterDisabled(t *testing.T) {
 	}
 
 	options := defaultTestStoreOptions(nil)
-	options.Scan = testScanFirstRecordRetry
+	options.Scan = BuildWorkerScan(testScanRecordRetry)
 	options.MaxNumRetries = 5
 	options.RetryAfter = 0
 	options.ColumnExpressions = []*sqlf.Query{

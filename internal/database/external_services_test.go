@@ -19,12 +19,14 @@ import (
 	"github.com/tidwall/gjson"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
@@ -457,7 +459,7 @@ func TestExternalServicesStore_CreateWithTierEnforcement(t *testing.T) {
 		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
 	}
 	store := db.ExternalServices()
-	BeforeCreateExternalService = func(ctx context.Context, _ ExternalServiceStore) error {
+	BeforeCreateExternalService = func(context.Context, ExternalServiceStore, *types.ExternalService) error {
 		return errcode.NewPresentationError("test plan limit exceeded")
 	}
 	t.Cleanup(func() { BeforeCreateExternalService = nil })
@@ -1192,218 +1194,88 @@ func TestExternalServicesStore_GetByID_Encrypted(t *testing.T) {
 	}
 }
 
-func TestGetAffiliatedSyncErrors(t *testing.T) {
+func TestGetLatestSyncErrors(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	t.Parallel()
+
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
-	// Create a new external service
-	confGet := func() *conf.Unified {
-		return &conf.Unified{}
-	}
+	createService := func(name string) *types.ExternalService {
+		confGet := func() *conf.Unified { return &conf.Unified{} }
 
-	// Initial user always gets created as an admin
-	admin, err := db.Users().Create(ctx, NewUser{
-		Email:                 "a1@example.com",
-		Username:              "u1",
-		Password:              "p",
-		EmailVerificationCode: "c",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	user2, err := db.Users().Create(ctx, NewUser{
-		Email:                 "u2@example.com",
-		Username:              "u2",
-		Password:              "p",
-		EmailVerificationCode: "c",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	org1, err := db.Orgs().Create(ctx, "ACME", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	createService := func(u *types.User, o *types.Org, name string) *types.ExternalService {
 		svc := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: name,
 			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
 		}
 
-		if u != nil {
-			svc.NamespaceUserID = u.ID
-		}
-
-		if o != nil {
-			svc.NamespaceOrgID = o.ID
-		}
-
-		err = db.ExternalServices().Create(ctx, confGet, svc)
-		if err != nil {
+		if err := db.ExternalServices().Create(ctx, confGet, svc); err != nil {
 			t.Fatal(err)
 		}
 		return svc
 	}
 
-	countErrors := func(results map[int64]string) int {
-		var errorCount int
-		for _, v := range results {
-			if len(v) > 0 {
-				errorCount++
-			}
+	addSyncError := func(t *testing.T, extSvcID int64, failure string) {
+		t.Helper()
+		_, err := db.Handle().ExecContext(ctx, `
+INSERT INTO external_service_sync_jobs (external_service_id, state, finished_at, failure_message)
+VALUES ($1,'errored', now(), $2)
+`, extSvcID, failure)
+		if err != nil {
+			t.Fatal(err)
 		}
-		return errorCount
 	}
 
-	siteLevel := createService(nil, nil, "GITHUB #1")
-	adminOwned := createService(admin, nil, "GITHUB #2")
-	userOwned := createService(user2, nil, "GITHUB #3")
+	extSvc1 := createService("GITHUB #1")
+	extSvc2 := createService("GITHUB #2")
 
 	// Listing errors now should return an empty map as none have been added yet
-	results, err := db.ExternalServices().GetAffiliatedSyncErrors(ctx, admin)
+	results, err := db.ExternalServices().GetLatestSyncErrors(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(results) != 2 {
-		t.Fatalf("Expected 2 results, got %d", len(results))
+
+	want := map[int64]string{
+		extSvc1.ID: "",
+		extSvc2.ID: "",
 	}
-	errorCount := countErrors(results)
-	if errorCount != 0 {
-		t.Fatal("Expected 0 errors")
+
+	if diff := cmp.Diff(want, results); diff != "" {
+		t.Fatalf("wrong sync errors (-want +got):\n%s", diff)
 	}
 
 	// Add two failures for the same service
 	failure1 := "oops"
-	_, err = db.Handle().ExecContext(ctx, `
-INSERT INTO external_service_sync_jobs (external_service_id, state, finished_at, failure_message)
-VALUES ($1,'errored', now(), $2)
-`, siteLevel.ID, failure1)
-	if err != nil {
-		t.Fatal(err)
-	}
 	failure2 := "oops again"
-	_, err = db.Handle().ExecContext(ctx, `
-INSERT INTO external_service_sync_jobs (external_service_id, state, finished_at, failure_message)
-VALUES ($1,'errored', now(), $2)
-`, siteLevel.ID, failure2)
-	if err != nil {
-		t.Fatal(err)
-	}
+	addSyncError(t, extSvc1.ID, failure1)
+	addSyncError(t, extSvc1.ID, failure2)
 
 	// We should get the latest failure
-	results, err = db.ExternalServices().GetAffiliatedSyncErrors(ctx, admin)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(results) != 2 {
-		t.Fatalf("Expected 2 results, got %d", len(results))
-	}
-	errorCount = countErrors(results)
-	if errorCount != 1 {
-		t.Fatal("Expected 1 error")
-	}
-	failure := results[siteLevel.ID]
-	if failure != failure2 {
-		t.Fatalf("Want %q, got %q", failure2, failure)
-	}
-
-	// Adding a second failing service
-	_, err = db.Handle().ExecContext(ctx, `
-INSERT INTO external_service_sync_jobs (external_service_id, state, finished_at, failure_message)
-VALUES ($1,'errored', now(), $2)
-`, adminOwned.ID, failure1)
+	results, err = db.ExternalServices().GetLatestSyncErrors(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	results, err = db.ExternalServices().GetAffiliatedSyncErrors(ctx, admin)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(results) != 2 {
-		t.Fatal("Expected 2 results")
-	}
-	errorCount = countErrors(results)
-	if errorCount != 2 {
-		t.Fatal("Expected 2 errors")
+	want = map[int64]string{extSvc1.ID: failure2, extSvc2.ID: ""}
+	if diff := cmp.Diff(want, results); diff != "" {
+		t.Fatalf("wrong sync errors (-want +got):\n%s", diff)
 	}
 
-	// User should not see any failures as they don't own any services
-	results, err = db.ExternalServices().GetAffiliatedSyncErrors(ctx, user2)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(results) != 1 {
-		t.Fatal("Expected 1 result")
-	}
-	errorCount = countErrors(results)
-	if errorCount != 0 {
-		t.Fatal("Expected 0 errors")
-	}
+	// Add error for other external service
+	addSyncError(t, extSvc2.ID, "oops over here")
 
-	// Add a failure to user service
-	failure3 := "user failure"
-	_, err = db.Handle().ExecContext(ctx, `
-INSERT INTO external_service_sync_jobs (external_service_id, state, finished_at, failure_message)
-VALUES ($1,'errored', now(), $2)
-`, userOwned.ID, failure3)
+	results, err = db.ExternalServices().GetLatestSyncErrors(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// We should get the latest failure
-	results, err = db.ExternalServices().GetAffiliatedSyncErrors(ctx, user2)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(results) != 1 {
-		t.Fatal("Expected 1 result")
-	}
-	errorCount = countErrors(results)
-	if errorCount != 1 {
-		t.Fatal("Expected 1 error")
-	}
-	failure = results[userOwned.ID]
-	if failure != failure3 {
-		t.Fatalf("Want %q, got %q", failure3, failure)
-	}
-
-	// Add a failure to org service
-	orgOwned := createService(nil, org1, "GITHUB Org owned")
-
-	_, err = db.Handle().ExecContext(ctx, `
-INSERT INTO external_service_sync_jobs (external_service_id, state, finished_at, failure_message)
-VALUES ($1,'errored', now(), $2)
-`, orgOwned.ID, "org failure")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Assert that site-admin should only get errors for site level external services
-	// or self owned external services.
-	results, err = db.ExternalServices().GetAffiliatedSyncErrors(ctx, admin)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if len(results) != 2 {
-		t.Fatalf("expected 2 results, got %v", results)
-	}
-
-	if _, ok := results[siteLevel.ID]; !ok {
-		t.Fatalf("expected admin to only get errors for site level external services and self-owned, got %+v", results)
-	}
-
-	if _, ok := results[adminOwned.ID]; !ok {
-		t.Fatalf("expected admin to only get errors for site level external services and self-owned, got %+v", results)
+	want = map[int64]string{extSvc1.ID: failure2, extSvc2.ID: "oops over here"}
+	if diff := cmp.Diff(want, results); diff != "" {
+		t.Fatalf("wrong sync errors (-want +got):\n%s", diff)
 	}
 }
 
@@ -1479,6 +1351,111 @@ VALUES ($1,$2,'errored', now())
 	}
 	if lastSyncError != expectedError {
 		t.Fatalf("Expected %q, have %q", expectedError, lastSyncError)
+	}
+}
+
+func TestExternalServiceStore_CancelSyncJob(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	// Create a new external service
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	es := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GITHUB #1",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
+	}
+	err := db.ExternalServices().Create(ctx, confGet, es)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Make sure "not found" is handled
+	err = db.ExternalServices().CancelSyncJob(ctx, 99999)
+	if !errors.HasType(err, &errSyncJobNotFound{}) {
+		t.Fatalf("Expected not-found error, have %q", err)
+	}
+
+	// Insert 'processing' sync job that can be canceled
+	syncJobID, _, err := basestore.ScanFirstInt64(db.Handle().QueryContext(ctx, `
+INSERT INTO external_service_sync_jobs (external_service_id, state, started_at)
+VALUES ($1, 'processing', now())
+RETURNING id
+`, es.ID))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = db.ExternalServices().CancelSyncJob(ctx, syncJobID)
+	if err != nil {
+		t.Fatalf("Cancel failed: %s", err)
+	}
+
+	// Make sure it was canceled
+	syncJob, err := db.ExternalServices().GetSyncJobByID(ctx, syncJobID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !syncJob.Cancel {
+		t.Fatalf("syncjob not canceled")
+	}
+	if syncJob.State != "processing" {
+		t.Fatalf("syncjob state unexpectedly changed")
+	}
+	if !syncJob.FinishedAt.IsZero() {
+		t.Fatalf("syncjob finishedAt is set but should not be")
+	}
+
+	// Insert 'queued' sync job that can be canceled
+	syncJobID, _, err = basestore.ScanFirstInt64(db.Handle().QueryContext(ctx, `
+INSERT INTO external_service_sync_jobs (external_service_id, state, started_at)
+VALUES ($1, 'queued', now())
+RETURNING id
+`, es.ID))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = db.ExternalServices().CancelSyncJob(ctx, syncJobID)
+	if err != nil {
+		t.Fatalf("Cancel failed: %s", err)
+	}
+
+	// Make sure it was canceled
+	syncJob, err = db.ExternalServices().GetSyncJobByID(ctx, syncJobID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !syncJob.Cancel {
+		t.Fatalf("syncjob not canceled")
+	}
+	if syncJob.State != "canceled" {
+		t.Fatalf("syncjob state not changed to 'canceled'")
+	}
+	if syncJob.FinishedAt.IsZero() {
+		t.Fatalf("syncjob finishedAt is not set")
+	}
+
+	// Insert sync job in state that is not cancelable
+	syncJobID, _, err = basestore.ScanFirstInt64(db.Handle().QueryContext(ctx, `
+INSERT INTO external_service_sync_jobs (external_service_id, state, started_at)
+VALUES ($1, 'completed', now())
+RETURNING id
+`, es.ID))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = db.ExternalServices().CancelSyncJob(ctx, syncJobID)
+	if !errors.HasType(err, &errSyncJobNotFound{}) {
+		t.Fatalf("Expected not-found error, have %q", err)
 	}
 }
 

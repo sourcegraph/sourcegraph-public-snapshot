@@ -6,6 +6,7 @@ import { Icon, LoadingSpinner, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'
 import { MirrorRepositoryInfoFields } from '../../graphql-operations'
+import { prettyBytesBigint } from '../../util/prettyBytesBigint'
 
 export const RepoMirrorInfo: React.FunctionComponent<
     React.PropsWithChildren<{
@@ -31,7 +32,8 @@ export const RepoMirrorInfo: React.FunctionComponent<
                     <>Not yet synced from code host.</>
                 ) : (
                     <>
-                        Last synced <Timestamp date={mirrorInfo.updatedAt} />.
+                        Last synced <Timestamp date={mirrorInfo.updatedAt} />. Size:{' '}
+                        {prettyBytesBigint(BigInt(mirrorInfo.byteSize))}.
                     </>
                 )}
             </small>

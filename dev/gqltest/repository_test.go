@@ -36,12 +36,7 @@ func TestRepository(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() {
-		err := client.DeleteExternalService(esID, false)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
+	removeExternalServiceAfterTest(t, esID)
 
 	err = client.WaitForReposToBeCloned(
 		"github.com/sgtest/go-diff",
@@ -99,12 +94,7 @@ func TestRepository_NameWithSpace(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() {
-		err := client.DeleteExternalService(esID, false)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
+	removeExternalServiceAfterTest(t, esID)
 
 	err = client.WaitForReposToBeCloned(
 		"sourcegraph.visualstudio.com/Test Repo",

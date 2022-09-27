@@ -432,6 +432,226 @@ CREATE FUNCTION merge_audit_log_transitions(internal hstore, arrayhstore hstore[
     END;
 $$;
 
+CREATE FUNCTION recalc_gitserver_repos_statistics_on_delete() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$ BEGIN
+      UPDATE gitserver_repos_statistics grs
+      SET
+        total        = grs.total      - (SELECT COUNT(*)                                           FROM oldtab WHERE oldtab.shard_id = grs.shard_id),
+        not_cloned   = grs.not_cloned - (SELECT COUNT(*) FILTER(WHERE clone_status = 'not_cloned') FROM oldtab WHERE oldtab.shard_id = grs.shard_id),
+        cloning      = grs.cloning    - (SELECT COUNT(*) FILTER(WHERE clone_status = 'cloning')    FROM oldtab WHERE oldtab.shard_id = grs.shard_id),
+        cloned       = grs.cloned     - (SELECT COUNT(*) FILTER(WHERE clone_status = 'cloned')     FROM oldtab WHERE oldtab.shard_id = grs.shard_id),
+        failed_fetch = grs.cloned     - (SELECT COUNT(*) FILTER(WHERE last_error IS NOT NULL)      FROM oldtab WHERE oldtab.shard_id = grs.shard_id)
+      ;
+
+      RETURN NULL;
+  END
+$$;
+
+CREATE FUNCTION recalc_gitserver_repos_statistics_on_insert() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$ BEGIN
+      INSERT INTO gitserver_repos_statistics AS grs (shard_id, total, not_cloned, cloning, cloned, failed_fetch)
+      SELECT
+        shard_id,
+        COUNT(*) AS total,
+        COUNT(*) FILTER(WHERE clone_status = 'not_cloned') AS not_cloned,
+        COUNT(*) FILTER(WHERE clone_status = 'cloning') AS cloning,
+        COUNT(*) FILTER(WHERE clone_status = 'cloned') AS cloned,
+        COUNT(*) FILTER(WHERE last_error IS NOT NULL) AS failed_fetch
+      FROM
+        newtab
+      GROUP BY shard_id
+      ON CONFLICT(shard_id)
+      DO UPDATE
+      SET
+        total        = grs.total        + excluded.total,
+        not_cloned   = grs.not_cloned   + excluded.not_cloned,
+        cloning      = grs.cloning      + excluded.cloning,
+        cloned       = grs.cloned       + excluded.cloned,
+        failed_fetch = grs.failed_fetch + excluded.failed_fetch
+      ;
+
+      RETURN NULL;
+  END
+$$;
+
+CREATE FUNCTION recalc_gitserver_repos_statistics_on_update() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$ BEGIN
+      --------------------
+      -- THIS IS UNCHANGED
+      --------------------
+      INSERT INTO gitserver_repos_statistics AS grs (shard_id, total, not_cloned, cloning, cloned, failed_fetch)
+      SELECT
+        newtab.shard_id AS shard_id,
+        COUNT(*) AS total,
+        COUNT(*) FILTER(WHERE clone_status = 'not_cloned')  AS not_cloned,
+        COUNT(*) FILTER(WHERE clone_status = 'cloning') AS cloning,
+        COUNT(*) FILTER(WHERE clone_status = 'cloned') AS cloned,
+        COUNT(*) FILTER(WHERE last_error IS NOT NULL) AS failed_fetch
+      FROM
+        newtab
+      GROUP BY newtab.shard_id
+      ON CONFLICT(shard_id) DO
+      UPDATE
+      SET
+        total        = grs.total        + (excluded.total        - (SELECT COUNT(*)                                              FROM oldtab ot WHERE ot.shard_id = excluded.shard_id)),
+        not_cloned   = grs.not_cloned   + (excluded.not_cloned   - (SELECT COUNT(*) FILTER(WHERE ot.clone_status = 'not_cloned') FROM oldtab ot WHERE ot.shard_id = excluded.shard_id)),
+        cloning      = grs.cloning      + (excluded.cloning      - (SELECT COUNT(*) FILTER(WHERE ot.clone_status = 'cloning')    FROM oldtab ot WHERE ot.shard_id = excluded.shard_id)),
+        cloned       = grs.cloned       + (excluded.cloned       - (SELECT COUNT(*) FILTER(WHERE ot.clone_status = 'cloned')     FROM oldtab ot WHERE ot.shard_id = excluded.shard_id)),
+        failed_fetch = grs.failed_fetch + (excluded.failed_fetch - (SELECT COUNT(*) FILTER(WHERE ot.last_error IS NOT NULL)      FROM oldtab ot WHERE ot.shard_id = excluded.shard_id))
+      ;
+
+      --------------------
+      -- THIS IS UNCHANGED
+      --------------------
+      WITH moved AS (
+        SELECT
+          oldtab.shard_id AS shard_id,
+          COUNT(*) AS total,
+          COUNT(*) FILTER(WHERE oldtab.clone_status = 'not_cloned')  AS not_cloned,
+          COUNT(*) FILTER(WHERE oldtab.clone_status = 'cloning') AS cloning,
+          COUNT(*) FILTER(WHERE oldtab.clone_status = 'cloned') AS cloned,
+          COUNT(*) FILTER(WHERE oldtab.last_error IS NOT NULL) AS failed_fetch
+        FROM
+          oldtab
+        JOIN newtab ON newtab.repo_id = oldtab.repo_id
+        WHERE
+          oldtab.shard_id != newtab.shard_id
+        GROUP BY oldtab.shard_id
+      )
+      UPDATE gitserver_repos_statistics grs
+      SET
+        total        = grs.total        - moved.total,
+        not_cloned   = grs.not_cloned   - moved.not_cloned,
+        cloning      = grs.cloning      - moved.cloning,
+        cloned       = grs.cloned       - moved.cloned,
+        failed_fetch = grs.failed_fetch - moved.failed_fetch
+      FROM moved
+      WHERE moved.shard_id = grs.shard_id;
+
+      -------------------------------------------------
+      -- IMPORTANT: THIS IS CHANGED
+      -------------------------------------------------
+      WITH diff(not_cloned, cloning, cloned, failed_fetch) AS (
+        VALUES (
+          (
+            (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.clone_status = 'not_cloned')
+            -
+            (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.clone_status = 'not_cloned')
+          ),
+          (
+            (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.clone_status = 'cloning')
+            -
+            (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.clone_status = 'cloning')
+          ),
+          (
+            (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.clone_status = 'cloned')
+            -
+            (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.clone_status = 'cloned')
+          ),
+          (
+            (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.last_error IS NOT NULL)
+            -
+            (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.last_error IS NOT NULL)
+          )
+        )
+      )
+      INSERT INTO repo_statistics (not_cloned, cloning, cloned, failed_fetch)
+      SELECT not_cloned, cloning, cloned, failed_fetch
+      FROM diff
+      WHERE
+           not_cloned != 0
+        OR cloning != 0
+        OR cloned != 0
+        OR failed_fetch != 0
+      ;
+
+      RETURN NULL;
+  END
+$$;
+
+CREATE FUNCTION recalc_repo_statistics_on_repo_delete() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$ BEGIN
+      INSERT INTO
+        repo_statistics (total, soft_deleted, not_cloned, cloning, cloned, failed_fetch)
+      VALUES (
+        -- Insert negative counts
+        (SELECT -COUNT(*) FROM oldtab WHERE deleted_at IS NULL     AND blocked IS NULL),
+        (SELECT -COUNT(*) FROM oldtab WHERE deleted_at IS NOT NULL AND blocked IS NULL),
+        (SELECT -COUNT(*) FROM oldtab JOIN gitserver_repos gr ON gr.repo_id = oldtab.id WHERE oldtab.deleted_at is NULL AND oldtab.blocked IS NULL AND gr.clone_status = 'not_cloned'),
+        (SELECT -COUNT(*) FROM oldtab JOIN gitserver_repos gr ON gr.repo_id = oldtab.id WHERE oldtab.deleted_at is NULL AND oldtab.blocked IS NULL AND gr.clone_status = 'cloning'),
+        (SELECT -COUNT(*) FROM oldtab JOIN gitserver_repos gr ON gr.repo_id = oldtab.id WHERE oldtab.deleted_at is NULL AND oldtab.blocked IS NULL AND gr.clone_status = 'cloned'),
+        (SELECT -COUNT(*) FROM oldtab JOIN gitserver_repos gr ON gr.repo_id = oldtab.id WHERE oldtab.deleted_at is NULL AND oldtab.blocked IS NULL AND gr.last_error IS NOT NULL)
+      );
+      RETURN NULL;
+  END
+$$;
+
+CREATE FUNCTION recalc_repo_statistics_on_repo_insert() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$ BEGIN
+      INSERT INTO
+        repo_statistics (total, soft_deleted, not_cloned)
+      VALUES (
+        (SELECT COUNT(*) FROM newtab WHERE deleted_at IS NULL     AND blocked IS NULL),
+        (SELECT COUNT(*) FROM newtab WHERE deleted_at IS NOT NULL AND blocked IS NULL),
+        -- New repositories are always not_cloned by default, so we can count them as not cloned here
+        (SELECT COUNT(*) FROM newtab WHERE deleted_at IS NULL     AND blocked IS NULL)
+        -- New repositories never have last_error set, so we can also ignore those here
+      );
+      RETURN NULL;
+  END
+$$;
+
+CREATE FUNCTION recalc_repo_statistics_on_repo_update() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$ BEGIN
+      -- Insert diff of changes
+      WITH diff(total, soft_deleted, not_cloned, cloning, cloned, failed_fetch) AS (
+        VALUES (
+          (SELECT COUNT(*) FROM newtab WHERE deleted_at IS NULL     AND blocked IS NULL) - (SELECT COUNT(*) FROM oldtab WHERE deleted_at IS NULL     AND blocked IS NULL),
+          (SELECT COUNT(*) FROM newtab WHERE deleted_at IS NOT NULL AND blocked IS NULL) - (SELECT COUNT(*) FROM oldtab WHERE deleted_at IS NOT NULL AND blocked IS NULL),
+          (
+            (SELECT COUNT(*) FROM newtab JOIN gitserver_repos gr ON gr.repo_id = newtab.id WHERE newtab.deleted_at is NULL AND newtab.blocked IS NULL AND gr.clone_status = 'not_cloned')
+            -
+            (SELECT COUNT(*) FROM oldtab JOIN gitserver_repos gr ON gr.repo_id = oldtab.id WHERE oldtab.deleted_at is NULL AND oldtab.blocked IS NULL AND gr.clone_status = 'not_cloned')
+          ),
+          (
+            (SELECT COUNT(*) FROM newtab JOIN gitserver_repos gr ON gr.repo_id = newtab.id WHERE newtab.deleted_at is NULL AND newtab.blocked IS NULL AND gr.clone_status = 'cloning')
+            -
+            (SELECT COUNT(*) FROM oldtab JOIN gitserver_repos gr ON gr.repo_id = oldtab.id WHERE oldtab.deleted_at is NULL AND oldtab.blocked IS NULL AND gr.clone_status = 'cloning')
+          ),
+          (
+            (SELECT COUNT(*) FROM newtab JOIN gitserver_repos gr ON gr.repo_id = newtab.id WHERE newtab.deleted_at is NULL AND newtab.blocked IS NULL AND gr.clone_status = 'cloned')
+            -
+            (SELECT COUNT(*) FROM oldtab JOIN gitserver_repos gr ON gr.repo_id = oldtab.id WHERE oldtab.deleted_at is NULL AND oldtab.blocked IS NULL AND gr.clone_status = 'cloned')
+          ),
+          (
+            (SELECT COUNT(*) FROM newtab JOIN gitserver_repos gr ON gr.repo_id = newtab.id WHERE newtab.deleted_at is NULL AND newtab.blocked IS NULL AND gr.last_error IS NOT NULL)
+            -
+            (SELECT COUNT(*) FROM oldtab JOIN gitserver_repos gr ON gr.repo_id = oldtab.id WHERE oldtab.deleted_at is NULL AND oldtab.blocked IS NULL AND gr.last_error IS NOT NULL)
+          )
+        )
+      )
+      INSERT INTO
+        repo_statistics (total, soft_deleted, not_cloned, cloning, cloned, failed_fetch)
+      SELECT total, soft_deleted, not_cloned, cloning, cloned, failed_fetch
+      FROM diff
+      WHERE
+           total != 0
+        OR soft_deleted != 0
+        OR not_cloned != 0
+        OR cloning != 0
+        OR cloned != 0
+        OR failed_fetch != 0
+      ;
+      RETURN NULL;
+  END
+$$;
+
 CREATE FUNCTION repo_block(reason text, at timestamp with time zone) RETURNS jsonb
     LANGUAGE sql IMMUTABLE STRICT
     AS $$
@@ -727,6 +947,29 @@ CREATE VIEW batch_spec_workspace_execution_jobs_with_rank AS
    FROM (batch_spec_workspace_execution_jobs j
      LEFT JOIN batch_spec_workspace_execution_queue q ON ((j.id = q.id)));
 
+CREATE TABLE batch_spec_workspace_files (
+    id integer NOT NULL,
+    rand_id text NOT NULL,
+    batch_spec_id bigint NOT NULL,
+    filename text NOT NULL,
+    path text NOT NULL,
+    size bigint NOT NULL,
+    content bytea NOT NULL,
+    modified_at timestamp with time zone NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE SEQUENCE batch_spec_workspace_files_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE batch_spec_workspace_files_id_seq OWNED BY batch_spec_workspace_files.id;
+
 CREATE TABLE batch_spec_workspaces (
     id bigint NOT NULL,
     batch_spec_id integer NOT NULL,
@@ -785,12 +1028,11 @@ ALTER SEQUENCE batch_specs_id_seq OWNED BY batch_specs.id;
 CREATE TABLE changeset_specs (
     id bigint NOT NULL,
     rand_id text NOT NULL,
-    spec jsonb DEFAULT '{}'::jsonb NOT NULL,
+    spec jsonb DEFAULT '{}'::jsonb,
     batch_spec_id bigint,
     repo_id integer NOT NULL,
     user_id integer,
     diff_stat_added integer,
-    diff_stat_changed integer,
     diff_stat_deleted integer,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
@@ -806,7 +1048,7 @@ CREATE TABLE changeset_specs (
     commit_message text,
     commit_author_name text,
     commit_author_email text,
-    type text
+    type text NOT NULL
 );
 
 CREATE TABLE changesets (
@@ -825,7 +1067,6 @@ CREATE TABLE changesets (
     external_review_state text,
     external_check_state text,
     diff_stat_added integer,
-    diff_stat_changed integer,
     diff_stat_deleted integer,
     sync_state jsonb DEFAULT '{}'::jsonb NOT NULL,
     current_spec_id bigint,
@@ -1205,6 +1446,24 @@ CREATE SEQUENCE cm_webhooks_id_seq
     CACHE 1;
 
 ALTER SEQUENCE cm_webhooks_id_seq OWNED BY cm_webhooks.id;
+
+CREATE TABLE codeintel_autoindex_queue (
+    id integer NOT NULL,
+    repository_id integer NOT NULL,
+    rev text NOT NULL,
+    queued_at timestamp with time zone DEFAULT now() NOT NULL,
+    processed_at timestamp with time zone
+);
+
+CREATE SEQUENCE codeintel_autoindex_queue_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE codeintel_autoindex_queue_id_seq OWNED BY codeintel_autoindex_queue.id;
 
 CREATE TABLE codeintel_langugage_support_requests (
     id integer NOT NULL,
@@ -1756,6 +2015,27 @@ CREATE TABLE gitserver_repos (
     last_changed timestamp with time zone DEFAULT now() NOT NULL,
     repo_size_bytes bigint
 );
+
+CREATE TABLE gitserver_repos_statistics (
+    shard_id text NOT NULL,
+    total bigint DEFAULT 0 NOT NULL,
+    not_cloned bigint DEFAULT 0 NOT NULL,
+    cloning bigint DEFAULT 0 NOT NULL,
+    cloned bigint DEFAULT 0 NOT NULL,
+    failed_fetch bigint DEFAULT 0 NOT NULL
+);
+
+COMMENT ON COLUMN gitserver_repos_statistics.shard_id IS 'ID of this gitserver shard. If an empty string then the repositories havent been assigned a shard.';
+
+COMMENT ON COLUMN gitserver_repos_statistics.total IS 'Number of repositories in gitserver_repos table on this shard';
+
+COMMENT ON COLUMN gitserver_repos_statistics.not_cloned IS 'Number of repositories in gitserver_repos table on this shard that are not cloned yet';
+
+COMMENT ON COLUMN gitserver_repos_statistics.cloning IS 'Number of repositories in gitserver_repos table on this shard that cloning';
+
+COMMENT ON COLUMN gitserver_repos_statistics.cloned IS 'Number of repositories in gitserver_repos table on this shard that are cloned';
+
+COMMENT ON COLUMN gitserver_repos_statistics.failed_fetch IS 'Number of repositories in gitserver_repos table on this shard where last_error is set';
 
 CREATE TABLE global_state (
     site_id uuid NOT NULL,
@@ -2728,7 +3008,7 @@ CREATE TABLE users (
     searchable boolean DEFAULT true NOT NULL,
     CONSTRAINT users_display_name_max_length CHECK ((char_length(display_name) <= 255)),
     CONSTRAINT users_username_max_length CHECK ((char_length((username)::text) <= 255)),
-    CONSTRAINT users_username_valid_chars CHECK ((username OPERATOR(~) '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-.](?=[a-zA-Z0-9]))*-?$'::citext))
+    CONSTRAINT users_username_valid_chars CHECK ((username OPERATOR(~) '^\w(?:\w|[-.](?=\w))*-?$'::citext))
 );
 
 CREATE VIEW reconciler_changesets AS
@@ -2748,7 +3028,6 @@ CREATE VIEW reconciler_changesets AS
     c.external_review_state,
     c.external_check_state,
     c.diff_stat_added,
-    c.diff_stat_changed,
     c.diff_stat_deleted,
     c.sync_state,
     c.current_spec_id,
@@ -2857,6 +3136,27 @@ CREATE TABLE repo_permissions (
     user_ids_ints integer[] DEFAULT '{}'::integer[] NOT NULL,
     unrestricted boolean DEFAULT false NOT NULL
 );
+
+CREATE TABLE repo_statistics (
+    total bigint DEFAULT 0 NOT NULL,
+    soft_deleted bigint DEFAULT 0 NOT NULL,
+    not_cloned bigint DEFAULT 0 NOT NULL,
+    cloning bigint DEFAULT 0 NOT NULL,
+    cloned bigint DEFAULT 0 NOT NULL,
+    failed_fetch bigint DEFAULT 0 NOT NULL
+);
+
+COMMENT ON COLUMN repo_statistics.total IS 'Number of repositories that are not soft-deleted and not blocked';
+
+COMMENT ON COLUMN repo_statistics.soft_deleted IS 'Number of repositories that are soft-deleted and not blocked';
+
+COMMENT ON COLUMN repo_statistics.not_cloned IS 'Number of repositories that are NOT soft-deleted and not blocked and not cloned by gitserver';
+
+COMMENT ON COLUMN repo_statistics.cloning IS 'Number of repositories that are NOT soft-deleted and not blocked and currently being cloned by gitserver';
+
+COMMENT ON COLUMN repo_statistics.cloned IS 'Number of repositories that are NOT soft-deleted and not blocked and cloned by gitserver';
+
+COMMENT ON COLUMN repo_statistics.failed_fetch IS 'Number of repositories that are NOT soft-deleted and not blocked and have last_error set in gitserver_repos table';
 
 CREATE TABLE saved_searches (
     id integer NOT NULL,
@@ -3217,6 +3517,8 @@ ALTER TABLE ONLY batch_spec_resolution_jobs ALTER COLUMN id SET DEFAULT nextval(
 
 ALTER TABLE ONLY batch_spec_workspace_execution_jobs ALTER COLUMN id SET DEFAULT nextval('batch_spec_workspace_execution_jobs_id_seq'::regclass);
 
+ALTER TABLE ONLY batch_spec_workspace_files ALTER COLUMN id SET DEFAULT nextval('batch_spec_workspace_files_id_seq'::regclass);
+
 ALTER TABLE ONLY batch_spec_workspaces ALTER COLUMN id SET DEFAULT nextval('batch_spec_workspaces_id_seq'::regclass);
 
 ALTER TABLE ONLY batch_specs ALTER COLUMN id SET DEFAULT nextval('batch_specs_id_seq'::regclass);
@@ -3244,6 +3546,8 @@ ALTER TABLE ONLY cm_slack_webhooks ALTER COLUMN id SET DEFAULT nextval('cm_slack
 ALTER TABLE ONLY cm_trigger_jobs ALTER COLUMN id SET DEFAULT nextval('cm_trigger_jobs_id_seq'::regclass);
 
 ALTER TABLE ONLY cm_webhooks ALTER COLUMN id SET DEFAULT nextval('cm_webhooks_id_seq'::regclass);
+
+ALTER TABLE ONLY codeintel_autoindex_queue ALTER COLUMN id SET DEFAULT nextval('codeintel_autoindex_queue_id_seq'::regclass);
 
 ALTER TABLE ONLY codeintel_langugage_support_requests ALTER COLUMN id SET DEFAULT nextval('codeintel_langugage_support_requests_id_seq'::regclass);
 
@@ -3378,6 +3682,9 @@ ALTER TABLE ONLY batch_spec_workspace_execution_jobs
 ALTER TABLE ONLY batch_spec_workspace_execution_last_dequeues
     ADD CONSTRAINT batch_spec_workspace_execution_last_dequeues_pkey PRIMARY KEY (user_id);
 
+ALTER TABLE ONLY batch_spec_workspace_files
+    ADD CONSTRAINT batch_spec_workspace_files_pkey PRIMARY KEY (id);
+
 ALTER TABLE ONLY batch_spec_workspaces
     ADD CONSTRAINT batch_spec_workspaces_pkey PRIMARY KEY (id);
 
@@ -3428,6 +3735,9 @@ ALTER TABLE ONLY cm_trigger_jobs
 
 ALTER TABLE ONLY cm_webhooks
     ADD CONSTRAINT cm_webhooks_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY codeintel_autoindex_queue
+    ADD CONSTRAINT codeintel_autoindex_queue_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY codeintel_lockfile_references
     ADD CONSTRAINT codeintel_lockfile_references_pkey PRIMARY KEY (id);
@@ -3488,6 +3798,9 @@ ALTER TABLE ONLY gitserver_relocator_jobs
 
 ALTER TABLE ONLY gitserver_repos
     ADD CONSTRAINT gitserver_repos_pkey PRIMARY KEY (repo_id);
+
+ALTER TABLE ONLY gitserver_repos_statistics
+    ADD CONSTRAINT gitserver_repos_statistics_pkey PRIMARY KEY (shard_id);
 
 ALTER TABLE ONLY global_state
     ADD CONSTRAINT global_state_pkey PRIMARY KEY (site_id);
@@ -3697,6 +4010,10 @@ CREATE INDEX batch_spec_workspace_execution_jobs_last_dequeue ON batch_spec_work
 
 CREATE INDEX batch_spec_workspace_execution_jobs_state ON batch_spec_workspace_execution_jobs USING btree (state);
 
+CREATE UNIQUE INDEX batch_spec_workspace_files_batch_spec_id_filename_path ON batch_spec_workspace_files USING btree (batch_spec_id, filename, path);
+
+CREATE INDEX batch_spec_workspace_files_rand_id ON batch_spec_workspace_files USING btree (rand_id);
+
 CREATE INDEX batch_spec_workspaces_batch_spec_id ON batch_spec_workspaces USING btree (batch_spec_id);
 
 CREATE INDEX batch_spec_workspaces_id_batch_spec_id ON batch_spec_workspaces USING btree (id, batch_spec_id);
@@ -3746,6 +4063,8 @@ CREATE INDEX cm_trigger_jobs_finished_at ON cm_trigger_jobs USING btree (finishe
 CREATE INDEX cm_trigger_jobs_state_idx ON cm_trigger_jobs USING btree (state);
 
 CREATE INDEX cm_webhooks_monitor ON cm_webhooks USING btree (monitor);
+
+CREATE UNIQUE INDEX codeintel_autoindex_queue_repository_id_commit ON codeintel_autoindex_queue USING btree (repository_id, rev);
 
 CREATE UNIQUE INDEX codeintel_langugage_support_requests_user_id_language ON codeintel_langugage_support_requests USING btree (user_id, language_id);
 
@@ -4013,6 +4332,18 @@ CREATE TRIGGER trig_delete_repo_ref_on_external_service_repos AFTER UPDATE OF de
 
 CREATE TRIGGER trig_invalidate_session_on_password_change BEFORE UPDATE OF passwd ON users FOR EACH ROW EXECUTE FUNCTION invalidate_session_for_userid_on_password_change();
 
+CREATE TRIGGER trig_recalc_gitserver_repos_statistics_on_delete AFTER DELETE ON gitserver_repos REFERENCING OLD TABLE AS oldtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_gitserver_repos_statistics_on_delete();
+
+CREATE TRIGGER trig_recalc_gitserver_repos_statistics_on_insert AFTER INSERT ON gitserver_repos REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_gitserver_repos_statistics_on_insert();
+
+CREATE TRIGGER trig_recalc_gitserver_repos_statistics_on_update AFTER UPDATE ON gitserver_repos REFERENCING OLD TABLE AS oldtab NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_gitserver_repos_statistics_on_update();
+
+CREATE TRIGGER trig_recalc_repo_statistics_on_repo_delete AFTER DELETE ON repo REFERENCING OLD TABLE AS oldtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_repo_delete();
+
+CREATE TRIGGER trig_recalc_repo_statistics_on_repo_insert AFTER INSERT ON repo REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_repo_insert();
+
+CREATE TRIGGER trig_recalc_repo_statistics_on_repo_update AFTER UPDATE ON repo REFERENCING OLD TABLE AS oldtab NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_repo_update();
+
 CREATE TRIGGER trig_soft_delete_user_reference_on_external_service AFTER UPDATE OF deleted_at ON users FOR EACH ROW EXECUTE FUNCTION soft_delete_user_reference_on_external_service();
 
 CREATE TRIGGER trigger_configuration_policies_delete AFTER DELETE ON lsif_configuration_policies REFERENCING OLD TABLE AS old FOR EACH STATEMENT EXECUTE FUNCTION func_configuration_policies_delete();
@@ -4069,6 +4400,9 @@ ALTER TABLE ONLY batch_spec_workspace_execution_jobs
 
 ALTER TABLE ONLY batch_spec_workspace_execution_last_dequeues
     ADD CONSTRAINT batch_spec_workspace_execution_last_dequeues_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
+
+ALTER TABLE ONLY batch_spec_workspace_files
+    ADD CONSTRAINT batch_spec_workspace_files_batch_spec_id_fkey FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY batch_spec_workspaces
     ADD CONSTRAINT batch_spec_workspaces_batch_spec_id_fkey FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE;

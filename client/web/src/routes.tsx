@@ -10,10 +10,6 @@ import { CodeIntelligenceProps } from './codeintel'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
 import type { LayoutProps } from './Layout'
-import { CreateNotebookPage } from './notebooks/createPage/CreateNotebookPage'
-import { NotebooksListPage } from './notebooks/listPage/NotebooksListPage'
-import { ConnectGitHubAppPage } from './org/settings/codeHosts/ConnectGitHubAppPage'
-import { InstallGitHubAppSuccessPage } from './org/settings/codeHosts/InstallGitHubAppSuccessPage'
 import { PageRoutes } from './routes.constants'
 import { SearchPageWrapper } from './search/SearchPageWrapper'
 import { getExperimentalFeatures, useExperimentalFeatures } from './stores'
@@ -26,8 +22,16 @@ const NotebookPage = lazyComponent(() => import('./notebooks/notebookPage/Notebo
 const SignInPage = lazyComponent(() => import('./auth/SignInPage'), 'SignInPage')
 const SignUpPage = lazyComponent(() => import('./auth/SignUpPage'), 'SignUpPage')
 const UnlockAccountPage = lazyComponent(() => import('./auth/UnlockAccount'), 'UnlockAccountPage')
-const PostSignUpPage = lazyComponent(() => import('./auth/PostSignUpPage'), 'PostSignUpPage')
 const SiteInitPage = lazyComponent(() => import('./site-admin/init/SiteInitPage'), 'SiteInitPage')
+const CreateNotebookPage = lazyComponent(
+    () => import('./notebooks/createPage/CreateNotebookPage'),
+    'CreateNotebookPage'
+)
+const NotebooksListPage = lazyComponent(() => import('./notebooks/listPage/NotebooksListPage'), 'NotebooksListPage')
+const InstallGitHubAppSuccessPage = lazyComponent(
+    () => import('./org/settings/codeHosts/InstallGitHubAppSuccessPage'),
+    'InstallGitHubAppSuccessPage'
+)
 
 export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof RouteParameters]?: string }>
     extends RouteComponentProps<RouteParameters>,
@@ -147,40 +151,13 @@ export const routes: readonly LayoutRouteProps<any>[] = ([
     },
     {
         path: PageRoutes.Welcome,
-        render: props =>
-            /**
-             * Welcome flow is allowed when auth'd and ?debug=1 is in the URL, OR:
-             * 1. user is authenticated
-             * 2. it's a DotComMode instance
-             * AND
-             * instance has enabled enablePostSignupFlow experimental feature
-             * OR
-             * user authenticated has a AllowUserViewPostSignup tag
-             */
-
-            !!props.authenticatedUser &&
-            (!!new URLSearchParams(props.location.search).get('debug') ||
-                (window.context.sourcegraphDotComMode && window.context.experimentalFeatures.enablePostSignupFlow) ||
-                props.authenticatedUser?.tags.includes('AllowUserViewPostSignup')) ? (
-                <PostSignUpPage
-                    authenticatedUser={props.authenticatedUser}
-                    telemetryService={props.telemetryService}
-                    context={window.context}
-                    setSelectedSearchContextSpec={props.setSelectedSearchContextSpec}
-                />
-            ) : (
-                <Redirect to={PageRoutes.Search} />
-            ),
-
+        // This route is deprecated after we removed the post-sign-up page experimental feature, but we keep it for now to not break links.
+        render: props => <Redirect to={PageRoutes.Search} />,
         exact: true,
     },
     {
         path: PageRoutes.InstallGitHubAppSuccess,
         render: () => <InstallGitHubAppSuccessPage />,
-    },
-    {
-        path: PageRoutes.InstallGitHubAppSelectOrg,
-        render: props => <ConnectGitHubAppPage {...props} />,
     },
     {
         path: PageRoutes.Settings,

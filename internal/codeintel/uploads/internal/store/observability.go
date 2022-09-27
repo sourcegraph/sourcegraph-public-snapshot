@@ -17,19 +17,26 @@ type operations struct {
 	updateSourcedCommits      *observation.Operation
 	getCommitsVisibleToUpload *observation.Operation
 	getOldestCommitDate       *observation.Operation
+	getCommitGraphMetadata    *observation.Operation
 	hasCommit                 *observation.Operation
 
 	// Repositories
-	getRepositoriesMaxStaleAge      *observation.Operation
-	setRepositoryAsDirty            *observation.Operation
-	setRepositoryAsDirtyWithTx      *observation.Operation
-	getDirtyRepositories            *observation.Operation
-	repoName                        *observation.Operation
-	setRepositoriesForRetentionScan *observation.Operation
-	hasRepository                   *observation.Operation
+	getRepositoriesForIndexScan             *observation.Operation
+	getRepositoriesMaxStaleAge              *observation.Operation
+	getRecentUploadsSummary                 *observation.Operation
+	getLastUploadRetentionScanForRepository *observation.Operation
+	setRepositoryAsDirty                    *observation.Operation
+	setRepositoryAsDirtyWithTx              *observation.Operation
+	getDirtyRepositories                    *observation.Operation
+	repoName                                *observation.Operation
+	setRepositoriesForRetentionScan         *observation.Operation
+	hasRepository                           *observation.Operation
 
 	// Uploads
 	getUploads                        *observation.Operation
+	getUploadByID                     *observation.Operation
+	getUploadsByIDs                   *observation.Operation
+	getVisibleUploadsMatchingMonikers *observation.Operation
 	updateUploadsVisibleToCommits     *observation.Operation
 	writeVisibleUploads               *observation.Operation
 	persistNearestUploads             *observation.Operation
@@ -44,7 +51,7 @@ type operations struct {
 	deleteUploadsStuckUploading       *observation.Operation
 	softDeleteExpiredUploads          *observation.Operation
 	hardDeleteUploadsByIDs            *observation.Operation
-	getVisibleUploadsMatchingMonikers *observation.Operation
+	deleteUploadByID                  *observation.Operation
 
 	// Dumps
 	findClosestDumps                   *observation.Operation
@@ -86,21 +93,28 @@ func newOperations(observationContext *observation.Context) *operations {
 		getCommitsVisibleToUpload: op("CommitsVisibleToUploads"),
 		getOldestCommitDate:       op("GetOldestCommitDate"),
 		getStaleSourcedCommits:    op("GetStaleSourcedCommits"),
+		getCommitGraphMetadata:    op("GetCommitGraphMetadata"),
 		deleteSourcedCommits:      op("DeleteSourcedCommits"),
 		updateSourcedCommits:      op("UpdateSourcedCommits"),
 		hasCommit:                 op("HasCommit"),
 
 		// Repositories
-		getRepositoriesMaxStaleAge:      op("GetRepositoriesMaxStaleAge"),
-		getDirtyRepositories:            op("GetDirtyRepositories"),
-		setRepositoryAsDirty:            op("SetRepositoryAsDirty"),
-		setRepositoryAsDirtyWithTx:      op("SetRepositoryAsDirtyWithTx"),
-		repoName:                        op("RepoName"),
-		setRepositoriesForRetentionScan: op("SetRepositoriesForRetentionScan"),
-		hasRepository:                   op("HasRepository"),
+		getRepositoriesForIndexScan:             op("GetRepositoriesForIndexScan"),
+		getRepositoriesMaxStaleAge:              op("GetRepositoriesMaxStaleAge"),
+		getRecentUploadsSummary:                 op("GetRecentUploadsSummary"),
+		getLastUploadRetentionScanForRepository: op("GetLastUploadRetentionScanForRepository"),
+		getDirtyRepositories:                    op("GetDirtyRepositories"),
+		setRepositoryAsDirty:                    op("SetRepositoryAsDirty"),
+		setRepositoryAsDirtyWithTx:              op("SetRepositoryAsDirtyWithTx"),
+		repoName:                                op("RepoName"),
+		setRepositoriesForRetentionScan:         op("SetRepositoriesForRetentionScan"),
+		hasRepository:                           op("HasRepository"),
 
 		// Uploads
 		getUploads:                        op("GetUploads"),
+		getUploadByID:                     op("GetUploadByID"),
+		getUploadsByIDs:                   op("GetUploadsByIDs"),
+		getVisibleUploadsMatchingMonikers: op("GetVisibleUploadsMatchingMonikers"),
 		updateUploadsVisibleToCommits:     op("UpdateUploadsVisibleToCommits"),
 		updateUploadRetention:             op("UpdateUploadRetention"),
 		backfillReferenceCountBatch:       op("BackfillReferenceCountBatch"),
@@ -111,7 +125,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		deleteUploadsWithoutRepository:    op("DeleteUploadsWithoutRepository"),
 		softDeleteExpiredUploads:          op("SoftDeleteExpiredUploads"),
 		hardDeleteUploadsByIDs:            op("HardDeleteUploadsByIDs"),
-		getVisibleUploadsMatchingMonikers: op("GetVisibleUploadsMatchingMonikers"),
+		deleteUploadByID:                  op("DeleteUploadByID"),
 
 		writeVisibleUploads:        op("writeVisibleUploads"),
 		persistNearestUploads:      op("persistNearestUploads"),

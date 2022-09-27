@@ -1,0 +1,17 @@
+# Explanations
+
+- [Introduction to code navigation](introduction_to_code_navigation.md)
+- [Precise code navigation](precise_code_navigation.md)
+  - [Code graph data uploads](uploads.md)
+- [Search-based code navigation](search_based_code_navigation.md)
+- [Code navigation features](features.md)
+  - [Popover](features.md#popover)
+  - [Go to definition](features.md#go-to-definition)
+  - [Find references](features.md#find-references)
+  - <span class="badge badge-beta">Beta</span> [Dependency navigation](features.md#dependency-navigation)
+  - [Find implementations](features.md#find-implementations)
+  - [Symbol search](features.md#symbol-search)
+- <span class="badge badge-beta">Beta</span> [Rockskip: faster search-based code navigation](rockskip.md)
+- [Writing an indexer](writing_an_indexer.md)
+- [Auto-indexing](auto_indexing.md)
+- [Auto-indexing inference](auto_indexing_inference.md)

@@ -6,7 +6,7 @@ import { marked } from 'marked'
 import sanitize from 'sanitize-html'
 import { Overwrite } from 'utility-types'
 
-import { logError } from '../logger'
+import { logger } from '../logger'
 
 /**
  * Escapes HTML by replacing characters like `<` with their HTML escape sequences like `&lt;`
@@ -39,7 +39,7 @@ export const highlightCodeSafe = (code: string, language?: string): string => {
         }
         return highlightAuto(code).value
     } catch (error) {
-        logError('Error syntax-highlighting hover markdown code block', error)
+        logger.warn('Error syntax-highlighting hover markdown code block', error)
         return escapeHTML(code)
     }
 }
@@ -105,7 +105,6 @@ export const renderMarkdown = (
                 'img',
                 'picture',
                 'source',
-                'object',
                 'svg',
                 'rect',
                 'defs',
@@ -126,8 +125,6 @@ export const renderMarkdown = (
                 img: [...sanitize.defaults.allowedAttributes.img, 'alt', 'width', 'height', 'align', 'style'],
                 // Support different images depending on media queries (e.g. color theme, reduced motion)
                 source: ['srcset', 'media'],
-                // Support SVGs for code insights.
-                object: ['data', { name: 'type', values: ['image/svg+xml'] }, 'width'],
                 svg: ['width', 'height', 'viewbox', 'version', 'preserveaspectratio', 'style'],
                 rect: ['x', 'y', 'width', 'height', 'transform', ...svgPresentationAttributes],
                 path: ['d', ...svgPresentationAttributes],

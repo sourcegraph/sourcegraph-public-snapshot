@@ -1,4 +1,5 @@
 ---
+name: hello
 json:
 - rigid
 - better for data interchange
@@ -8,6 +9,7 @@ yaml:
 object:
   key: value
   array:
+  - array_value: [1,2,3]
   - null_value:
   - boolean: true
   - integer: 1
@@ -22,6 +24,8 @@ content: |-
   convert line breaks
   to save space
 alias:
-  bar: baz
+  - "media/**"
+jobs:
+bar: baz
 alias_reuse:
   bar: baz

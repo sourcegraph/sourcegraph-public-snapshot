@@ -16,7 +16,7 @@ import { containsLiteralOrPattern } from '@sourcegraph/shared/src/search/query/v
 import { SearchType } from '@sourcegraph/shared/src/search/stream'
 import { Button, Link, createLinkUrl } from '@sourcegraph/wildcard'
 
-import styles from './SearchSidebarSection.module.scss'
+import styles from './SearchFilterSection.module.scss'
 
 export interface SearchTypeLinksProps extends Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     query: string

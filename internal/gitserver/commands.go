@@ -238,12 +238,11 @@ func parseShortLog(out []byte) ([]*gitdomain.ContributorCount, error) {
 // the following somewhat-common malformed syntax where a user has misconfigured
 // their email address as their name:
 //
-// 	foo@gmail.com <foo@gmail.com>
+//	foo@gmail.com <foo@gmail.com>
 //
 // As a valid name, whereas mail.ParseAddress would return an error:
 //
-// 	mail: expected single address, got "<foo@gmail.com>"
-//
+//	mail: expected single address, got "<foo@gmail.com>"
 func lenientParseAddress(address string) (*mail.Address, error) {
 	addr, err := mail.ParseAddress(address)
 	if err != nil && strings.Contains(err.Error(), "expected single address") {
@@ -1042,8 +1041,8 @@ func (c *clientImplementor) ListDirectoryChildren(
 // cleanDirectoriesForLsTree sanitizes the input dirnames to a git ls-tree command. There are a
 // few peculiarities handled here:
 //
-//   1. The root of the tree must be indicated with `.`, and
-//   2. In order for git ls-tree to return a directory's contents, the name must end in a slash.
+//  1. The root of the tree must be indicated with `.`, and
+//  2. In order for git ls-tree to return a directory's contents, the name must end in a slash.
 func cleanDirectoriesForLsTree(dirnames []string) []string {
 	var args []string
 	for _, dir := range dirnames {
@@ -1166,7 +1165,12 @@ func (c *clientImplementor) GetDefaultBranch(ctx context.Context, repo api.RepoN
 	if short {
 		args = append(args, "--short")
 	}
-	refBytes, _, exitCode, err := c.execSafe(ctx, repo, args)
+	cmd := c.gitCommand(repo, args...)
+	refBytes, _, err := cmd.DividedOutput(ctx)
+	exitCode := cmd.ExitStatus()
+	if exitCode != 0 && err != nil {
+		err = nil // the error must just indicate that the exit code was nonzero
+	}
 	refName = string(bytes.TrimSpace(refBytes))
 
 	if err == nil && exitCode == 0 {
@@ -1183,40 +1187,6 @@ func (c *clientImplementor) GetDefaultBranch(ctx context.Context, repo api.RepoN
 	}
 
 	return refName, commit, nil
-}
-
-// execSafe executes a Git subcommand iff it is allowed according to a allowlist.
-//
-// An error is only returned when there is a failure unrelated to the actual
-// command being executed. If the executed command exits with a nonzero exit
-// code, err == nil. This is similar to how http.Get returns a nil error for HTTP
-// non-2xx responses.
-//
-// execSafe should NOT be exported. We want to limit direct git calls to this
-// package.
-func (c *clientImplementor) execSafe(ctx context.Context, repo api.RepoName, params []string) (stdout, stderr []byte, exitCode int, err error) {
-	if Mocks.ExecSafe != nil {
-		return Mocks.ExecSafe(params)
-	}
-
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: execSafe")
-	defer span.Finish()
-
-	if len(params) == 0 {
-		return nil, nil, 0, errors.New("at least one argument required")
-	}
-
-	if !gitdomain.IsAllowedGitCmd(c.logger, params) {
-		return nil, nil, 0, errors.Errorf("command failed: %q is not a allowed git command", params)
-	}
-
-	cmd := c.gitCommand(repo, params...)
-	stdout, stderr, err = cmd.DividedOutput(ctx)
-	exitCode = cmd.ExitStatus()
-	if exitCode != 0 && err != nil {
-		err = nil // the error must just indicate that the exit code was nonzero
-	}
-	return stdout, stderr, exitCode, err
 }
 
 // MergeBase returns the merge base commit for the specified commits.

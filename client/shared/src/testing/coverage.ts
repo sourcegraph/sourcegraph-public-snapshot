@@ -3,7 +3,7 @@ import pTimeout from 'p-timeout'
 import { Browser, WebWorker } from 'puppeteer'
 import * as uuid from 'uuid'
 
-import { logError } from '@sourcegraph/common'
+import { logger } from '@sourcegraph/common'
 
 import { Driver } from './driver'
 
@@ -50,7 +50,7 @@ export async function recordCoverage(browser: Browser): Promise<void> {
                 2000,
                 () => {
                     if (!warnedNoCoverage) {
-                        logError(
+                        logger.error(
                             `No coverage found in target ${target.url()}\n` +
                                 'Run the dev Sourcegraph instance with COVERAGE_INSTRUMENT=true to track coverage.'
                         )

@@ -129,10 +129,6 @@ export type HovercardSource = (view: EditorView, position: UIPosition) => Observ
  * Some style overrides to replicate the existing hovercard style.
  */
 const hovercardTheme = EditorView.theme({
-    '.cm-code-intel-hovercard': {
-        // Without this all text in the hovercard is monospace
-        fontFamily: 'sans-serif',
-    },
     [`.${webOverlayStyles.webHoverOverlay}`]: {
         // This is normally "position: 'absolute'". CodeMirror does the
         // positioning. Without this CodeMirror thinks the hover content is
@@ -257,10 +253,12 @@ function isOffsetInHoverRange(offset: number, range: HovercardRange, textDocumen
 
 function getHoverOffsets(range: HovercardRange, textDocument: Text): { from: number; to: number } {
     if (range.providerRange) {
-        return {
-            from: uiPositionToOffset(textDocument, range.providerRange.start),
-            to: uiPositionToOffset(textDocument, range.providerRange.end),
-        }
+        const from = uiPositionToOffset(textDocument, range.providerRange.start)
+        const to = uiPositionToOffset(textDocument, range.providerRange.end)
+        // We only use the code intel range if it maps to a valid position
+        // within the document. Otherwise we fall back to the range
+        // determined by CodeMirror
+        return { from: from ?? range.from, to: to ?? range.to }
     }
     return range
 }

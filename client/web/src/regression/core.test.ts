@@ -3,6 +3,7 @@ import expect from 'expect'
 import { describe, before, beforeEach, after, afterEach, test } from 'mocha'
 import { map } from 'rxjs/operators'
 
+import { logger } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 // import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
@@ -67,8 +68,7 @@ describe('Core functionality regression test suite', () => {
             await driver.close()
         }
         if (screenshots.screenshots.length > 0) {
-            // TODO - should remove console.log or replace with logError function from @sourcegraph/commons
-            console.log(screenshots.verificationInstructions())
+            logger.log(screenshots.verificationInstructions())
         }
     })
 
@@ -120,7 +120,7 @@ describe('Core functionality regression test suite', () => {
             selectMethod: 'keyboard',
             enterTextMethod: 'type',
         })
-        await driver.findElementWithText('Save changes', { action: 'click' })
+        await driver.findElementWithText('Save', { action: 'click' })
         await driver.page.waitForFunction(
             () => document.evaluate("//*[text() = ' Saving...']", document).iterateNext() === null
         )

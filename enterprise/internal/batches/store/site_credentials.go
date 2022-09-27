@@ -65,7 +65,7 @@ func createSiteCredentialQuery(ctx context.Context, c *btypes.SiteCredential, ke
 		createSiteCredentialQueryFmtstr,
 		c.ExternalServiceType,
 		c.ExternalServiceID,
-		encryptedCredential,
+		[]byte(encryptedCredential),
 		keyID,
 		c.CreatedAt,
 		c.UpdatedAt,
@@ -270,7 +270,7 @@ func (s *Store) updateSiteCredentialQuery(ctx context.Context, c *btypes.SiteCre
 		updateSiteCredentialQueryFmtstr,
 		c.ExternalServiceType,
 		c.ExternalServiceID,
-		encryptedCredential,
+		[]byte(encryptedCredential),
 		keyID,
 		c.CreatedAt,
 		c.UpdatedAt,
@@ -290,7 +290,10 @@ var siteCredentialColumns = []*sqlf.Query{
 }
 
 func scanSiteCredential(c *btypes.SiteCredential, key encryption.Key, sc dbutil.Scanner) error {
-	var encryptedCredential, keyID string
+	var (
+		encryptedCredential []byte
+		keyID               string
+	)
 	if err := sc.Scan(
 		&c.ID,
 		&c.ExternalServiceType,
@@ -303,6 +306,6 @@ func scanSiteCredential(c *btypes.SiteCredential, key encryption.Key, sc dbutil.
 		return err
 	}
 
-	c.Credential = database.NewEncryptedCredential(encryptedCredential, keyID, key)
+	c.Credential = database.NewEncryptedCredential(string(encryptedCredential), keyID, key)
 	return nil
 }

@@ -181,8 +181,6 @@ ComplexDiagram(
         Terminal("case", {href: "#case"}),
         Terminal("fork", {href: "#fork"}),
         Terminal("archived", {href: "#archived"}),
-        Terminal("repohasfile", {href: "#repo-has-file"}),
-        Terminal("repohascommitafter", {href: "#repo-has-commit-after"}),
         Terminal("count", {href: "#count"}),
         Terminal("timeout", {href: "#timeout"}),
         Terminal("visibility", {href: "#visibility"}),
@@ -490,40 +488,6 @@ archives should be searched. Archived repositories are excluded by default.
 
 **Example:** [`archived:only repo:sourcegraph` ↗](https://sourcegraph.com/search?q=archived:only+repo:sourcegraph&patternType=regexp)
 
-### Repo has file
-
-<script>
-ComplexDiagram(
-    Choice(0,
-        Skip(),
-        Terminal("-"),
-        Sequence(
-            Terminal("NOT"),
-            Terminal("space", {href: "#whitespace"}))),
-    Terminal("repohasfile:"),
-    Terminal("regular expression", {href: "#regular-expression"})).addTo();
-</script>
-
-_Deprecated. Prefer [Repo contains file](#repo-contains-file)._ Only include results from repositories that contain a matching file. This
-keyword is a pure filter, so it requires at least one other search term in the
-query. Note: this filter currently only works on text matches and file path
-matches.
-
-**Example:** [`repohasfile:\.py file:Dockerfile$ pip` ↗](https://sourcegraph.com/search?q=repohasfile:%5C.py+file:Dockerfile%24+pip+repo:sourcegraph+&patternType=regexp)
-
-### Repo has commit after
-
-<script>
-ComplexDiagram(
-    Terminal("repohascommitafter:"),
-    Terminal("quoted string", {href: "#quoted-string"})).addTo();
-</script>
-
-_Deprecated. Prefer [Repo contains commit after](#repo-contains-commit-after)._ Filter out stale repositories that don’t
-contain commits past the specified time frame. This parameter is experimental.
-
-**Example:** [`repo:github\.com/sourcegraph repohascommitafter:"1 week ago"` ↗](https://sourcegraph.com/search?q=context:global+repo:github%5C.com/sourcegraph+repohascommitafter:%221+week+ago%22&patternType=literal)
-
 ### Count
 
 <script>
@@ -595,19 +559,36 @@ or structural search. This parameter is available as a command-line and accessib
 <script>
 ComplexDiagram(
     Choice(0,
-        Terminal("contains.content(...)", {href: "#repo-contains-content"}),
-        Terminal("contains.file(...)", {href: "#repo-contains-file"}),
-        Terminal("contains(...)", {href: "#repo-contains-file-and-content"}),
-        Terminal("contains.commit.after(...)", {href: "#repo-contains-commit-after"}),
-        Terminal("dependencies(...)", {href: "#repo-dependencies"}),
+        Terminal("has.file(...)", {href: "#repo-has-file"}),
+        Terminal("has.content(...)", {href: "#repo-has-content"}),
+        Terminal("has.path(...)", {href: "#repo-has-path"}),
+        Terminal("has.commit.after(...)", {href: "#repo-has-commit-after"}),
         Terminal("has.description(...)", {href: "#repo-has-description"}))).addTo();
 </script>
 
-### Repo contains file
+### Repo has file and content
 
 <script>
 ComplexDiagram(
-    Terminal("contains.file"),
+    Terminal("has.file"),
+    Terminal("("),
+    Stack(
+        Sequence(Terminal("path:"), Terminal("regexp", {href: "#regular-expression"}), Terminal("space", {href: "#whitespace"})),
+        Sequence(Terminal("content:"),Terminal("regexp", {href: "#regular-expression"}))),
+    Terminal(")")).addTo();
+</script>
+
+Search only inside repositories that contain a file matching the `path:` with `content:` filters.
+
+**Example:** [`repo:has.file(path:CHANGELOG content:fix)` ↗](https://sourcegraph.com/search?q=context:global+repo:github%5C.com/sourcegraph/.*+repo:has.file%28path:CHANGELOG+content:fix%29&patternType=standard)
+
+_Note:_ `repo:contains.file(...)` is an alias for `repo:has.file(...)` and behaves identically.
+
+### Repo has path
+
+<script>
+ComplexDiagram(
+    Terminal("has.path"),
     Terminal("("),
     Terminal("regexp", {href: "#regexp"}),
     Terminal(")")).addTo();
@@ -615,13 +596,15 @@ ComplexDiagram(
 
 Search only inside repositories that contain a file path matching the regular expression.
 
-**Example:** [`repo:contains.file(README)` ↗](https://sourcegraph.com/search?q=repo:github%5C.com/sourcegraph/.*+repo:contains.file%28README%29&patternType=literal)
+**Example:** [`repo:has.path(README)` ↗](https://sourcegraph.com/search?q=context:global+repo:github%5C.com/sourcegraph/.*+repo:has.path%28README%29&patternType=standard)
 
-### Repo contains content
+_Note:_ `repo:contains.path(...)` is an alias for `repo:has.path(..)` and behaves identically.
+
+### Repo has content
 
 <script>
 ComplexDiagram(
-    Terminal("contains.content"),
+    Terminal("has.content"),
     Terminal("("),
     Terminal("regexp", {href: "#regular-expression"}),
     Terminal(")")).addTo();
@@ -629,29 +612,15 @@ ComplexDiagram(
 
 Search only inside repositories that contain file content matching the regular expression.
 
-**Example:** [`repo:contains.content(TODO)` ↗](https://sourcegraph.com/search?q=repo:github%5C.com/sourcegraph/.*+repo:contains.content%28TODO%29&patternType=literal)
+**Example:** [`repo:has.content(TODO)` ↗](https://sourcegraph.com/search?q=context:global+repo:github%5C.com/sourcegraph/.*+repo:has.content%28TODO%29&patternType=standard)
 
-### Repo contains file and content
+_Note:_ `repo:contains.content(...)` is an alias for `repo:has.content(...)` and behaves identically.
 
-<script>
-ComplexDiagram(
-    Terminal("contains"),
-    Terminal("("),
-    Stack(
-        Sequence(Terminal("file:"), Terminal("regexp", {href: "#regular-expression"}), Terminal("space", {href: "#whitespace"})),
-        Sequence(Terminal("content:"),Terminal("regexp", {href: "#regular-expression"}))),
-    Terminal(")")).addTo();
-</script>
-
-Search only inside repositories that contain a file matching the `file:` with `content:` filters.
-
-**Example:** [`repo:contains(file:CHANGELOG content:fix)` ↗](https://sourcegraph.com/search?q=repo:github%5C.com/sourcegraph/.*+repo:contains%28file:CHANGELOG+content:fix%29&patternType=literal)
-
-### Repo contains commit after
+### Repo has commit after
 
 <script>
 ComplexDiagram(
-    Terminal("contains.commit.after"),
+    Terminal("has.commit.after"),
     Terminal("("),
     Terminal("string", {href: "#string"}),
     Terminal(")")).addTo();
@@ -662,7 +631,9 @@ time. See [git date formats](https://github.com/git/git/blob/master/Documentatio
 for accepted formats. Use this to filter out stale repositories that don’t contain
 commits past the specified time frame. This parameter is experimental.
 
-**Example:** [`repo:contains.commit.after(1 month ago)` ↗](https://sourcegraph.com/search?q=repo:.*sourcegraph.*+repo:contains.commit.after%281+month+ago%29&patternType=literal)
+**Example:** [`repo:has.commit.after(1 month ago)` ↗](https://sourcegraph.com/search?q=context:global+repo:.*sourcegraph.*+repo:has.commit.after%281+month+ago%29&patternType=standard)
+
+_Note:_ `repo:contains.commit.after(...)` is an alias for `repo:has.commit.after(...)` and behaves identically.
 
 ### Repo has description
 
@@ -684,16 +655,14 @@ Search only inside repositories having a description matching the given regular 
 <script>
 ComplexDiagram(
     Choice(0,
-        Terminal("contains.content(...)", {href: "#file-contains-content"}),
-        Terminal("contains(...)", {href: "#file-contains-content"}))).addTo();
+        Terminal("has.content(...)", {href: "#file-has-content"}))).addTo();
 </script>
 
-### File contains content
+### File has content
 
 <script>
 ComplexDiagram(
-    Terminal("contains"),
-	Optional(Terminal(".content")),
+    Terminal("has.content"),
     Terminal("("),
     Terminal("regexp", {href: "#regexp"}),
     Terminal(")")).addTo();
@@ -701,7 +670,9 @@ ComplexDiagram(
 
 Search only inside files that contain content matching the provided regexp pattern.
 
-**Example:** [`file:contains(github\.com/sourcegraph/sourcegraph)` ↗](https://sourcegraph.com/search?q=repo:github%5C.com/sourcegraph/.*+repo:contains.file%28README%29&patternType=literal)
+**Example:** [`file:has.content(test)` ↗](https://sourcegraph.com/search?q=context:global+repo:github%5C.com/sourcegraph/.*+file:has.content%28test%29&patternType=standard)
+
+_Note:_ `file:contains.content(...)` is an alias for `file:has.content(...)` and behaves identically.
 
 ## Regular expression
 

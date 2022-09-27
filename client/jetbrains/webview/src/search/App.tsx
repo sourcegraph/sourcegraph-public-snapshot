@@ -10,7 +10,6 @@ import {
     QueryState,
     SearchPatternType,
 } from '@sourcegraph/search'
-import type { TelemetryService } from '@sourcegraph/shared/out/src/telemetry/telemetryService'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import {
@@ -22,6 +21,7 @@ import {
 } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable, WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import { initializeSourcegraphSettings } from '../sourcegraphSettings'

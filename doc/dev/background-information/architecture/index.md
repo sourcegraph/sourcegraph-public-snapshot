@@ -64,15 +64,15 @@ If you want to learn more about search:
 
 Code navigation surfaces data (for example: doc comments for a symbol) and actions (for example: go to definition, find references) based on our semantic understanding of code (unlike search, which is completely text based).
 
-By default, Sourcegraph provides imprecise [search-based code navigation](../../../code_intelligence/explanations/search_based_code_intelligence.md). This reuses all the architecture that makes search fast, but it can result in false positives (for example: finding two definitions for a symbol, or references that aren't actually references), or false negatives (for example: not able to find the definition or all references). This is the default because it works with no extra configuration and is pretty good for many use cases and languages. We support a lot of languages this way because it only requires writing a few regular expressions.
+By default, Sourcegraph provides imprecise [search-based code navigation](../../../code_navigation/explanations/search_based_code_navigation.md). This reuses all the architecture that makes search fast, but it can result in false positives (for example: finding two definitions for a symbol, or references that aren't actually references), or false negatives (for example: not able to find the definition or all references). This is the default because it works with no extra configuration and is pretty good for many use cases and languages. We support a lot of languages this way because it only requires writing a few regular expressions.
 
-With some setup, customers can enable [precise code navigation](../../../code_intelligence/explanations/precise_code_intelligence.md). Repositories add a step to their build pipeline that computes the index for that revision of code and uploads it to Sourcegraph. We have to write language specific indexers, so adding precise code navigation support for new languages is a non-trivial task.
+With some setup, customers can enable [precise code navigation](../../../code_navigation/explanations/precise_code_navigation.md). Repositories add a step to their build pipeline that computes the index for that revision of code and uploads it to Sourcegraph. We have to write language specific indexers, so adding precise code navigation support for new languages is a non-trivial task.
 
 If you want to learn more about code navigation:
 
-- [Code navigation product documentation](../../../code_intelligence/index.md)
+- [Code navigation product documentation](../../../code_navigation/index.md)
 - [Code navigation developer documentation](../codeintel/index.md)
-- [Available indexers](../../../code_intelligence/references/indexers.md)
+- [Available indexers](../../../code_navigation/references/indexers.md)
 
 ### Dependencies
 

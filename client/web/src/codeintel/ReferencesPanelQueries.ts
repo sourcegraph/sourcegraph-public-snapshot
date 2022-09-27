@@ -168,19 +168,27 @@ export const LOAD_ADDITIONAL_IMPLEMENTATIONS_QUERY = gql`
 
 export const FETCH_HIGHLIGHTED_BLOB = gql`
     fragment HighlightedGitBlobFields on GitBlob {
-        highlight(disableTimeout: false) {
+        highlight(disableTimeout: false, format: $format) {
             aborted
-            html
+            html @include(if: $html)
+            lsif
         }
     }
 
-    query ReferencesPanelHighlightedBlob($repository: String!, $commit: String!, $path: String!) {
+    query ReferencesPanelHighlightedBlob(
+        $repository: String!
+        $commit: String!
+        $path: String!
+        $format: HighlightResponseFormat!
+        $html: Boolean!
+    ) {
         repository(name: $repository) {
             id
             commit(rev: $commit) {
                 id
                 blob(path: $path) {
                     ...HighlightedGitBlobFields
+                    content
                 }
             }
         }
@@ -188,7 +196,7 @@ export const FETCH_HIGHLIGHTED_BLOB = gql`
 `
 
 export const CODE_INTEL_SEARCH_QUERY = gql`
-    query CodeIntelSearch($query: String!) {
+    query CodeIntelSearch2($query: String!) {
         search(query: $query) {
             __typename
             results {

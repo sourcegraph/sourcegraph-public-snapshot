@@ -33,5 +33,5 @@ type Job interface {
 	// passed to a periodic routine should be a fresh context unattached to this,
 	// as the argument to this function will be canceled after all Routine invocations
 	// have exited after application startup.
-	Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error)
+	Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error)
 }

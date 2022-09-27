@@ -2,12 +2,13 @@ package command
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"os"
+	"path"
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
-	"time"
 
 	"github.com/inconshreveable/log15"
 
@@ -52,11 +53,42 @@ func formatFirecrackerCommand(spec CommandSpec, name string, options Options) co
 	}
 }
 
+// dockerDaemonConfig is a struct that marshals into a valid docker daemon config.
+type dockerDaemonConfig struct {
+	RegistryMirrors []string `json:"registry-mirrors"`
+}
+
+// dockerDaemonConfigFilename is the filename in the firecracker state tmp directory
+// for the optional docker daemon config file.
+const dockerDaemonConfigFilename = "docker-daemon.json"
+
+func newDockerDaemonConfig(tmpDir, mirrorAddress string) (_ string, err error) {
+	c, err := json.Marshal(&dockerDaemonConfig{RegistryMirrors: []string{mirrorAddress}})
+	if err != nil {
+		return "", errors.Wrap(err, "marshalling docker daemon config")
+	}
+
+	tmpFilePath := path.Join(tmpDir, dockerDaemonConfigFilename)
+	err = os.WriteFile(tmpFilePath, c, os.ModePerm)
+	return tmpFilePath, errors.Wrap(err, "writing docker daemon config file")
+}
+
 // setupFirecracker invokes a set of commands to provision and prepare a Firecracker virtual
 // machine instance. If a startup script path (an executable file on the host) is supplied,
-// it will be mounted into the new virtual machine instance and executed.
-func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, name, repoDir string, options Options, operations *Operations) error {
-	// Start the VM and wait for the SSH server to become available
+// it will be mounted into the new virtual machine instance and executed. Optionally,
+// a docker daemon config is created for FirecrackerOptions.DockerRegistryMirrorAddress
+// and mounted into the VM.
+func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, name, workspaceDevice, tmpDir string, options Options, operations *Operations) error {
+	var daemonConfigFile string
+	if options.FirecrackerOptions.DockerRegistryMirrorURL != "" {
+		var err error
+		daemonConfigFile, err = newDockerDaemonConfig(tmpDir, options.FirecrackerOptions.DockerRegistryMirrorURL)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Start the VM and wait for the SSH server to become available.
 	startCommand := command{
 		Key: "setup.firecracker.start",
 		Command: flatten(
@@ -64,7 +96,8 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, 
 			"--runtime", "docker",
 			"--network-plugin", "cni",
 			firecrackerResourceFlags(options.ResourceOptions),
-			firecrackerCopyfileFlags(repoDir, options.FirecrackerOptions.VMStartupScriptPath),
+			firecrackerCopyfileFlags(options.FirecrackerOptions.VMStartupScriptPath, daemonConfigFile),
+			firecrackerVolumeFlags(workspaceDevice, firecrackerContainerDir),
 			"--ssh",
 			"--name", name,
 			"--kernel-image", sanitizeImage(options.FirecrackerOptions.KernelImage),
@@ -73,7 +106,7 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, 
 		Operation: operations.SetupFirecrackerStart,
 	}
 
-	if err := callWithInstrumentedLock(operations, logger, func() error { return runner.RunCommand(ctx, startCommand, logger) }); err != nil {
+	if err := runner.RunCommand(ctx, startCommand, logger); err != nil {
 		return errors.Wrap(err, "failed to start firecracker vm")
 	}
 
@@ -91,43 +124,9 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, 
 	return nil
 }
 
-// We've recently seen issues with concurent VM creation. It's likely we
-// can do better here and run an empty VM at application startup, but I
-// want to do this quick and dirty to see if we can raise our concurrency
-// without other issues.
-//
-// https://github.com/weaveworks/ignite/issues/559
-// Following up in https://github.com/sourcegraph/sourcegraph/issues/21377.
-var igniteRunLock sync.Mutex
-
-// callWithInstrumentedLock calls f while holding the igniteRunLock. The duration of the wait
-// and active portions of this method are emitted as prometheus metrics.
-func callWithInstrumentedLock(operations *Operations, logger Logger, f func() error) error {
-	handle := logger.Log("setup.firecracker.runlock", nil)
-
-	lockRequestedAt := time.Now()
-
-	igniteRunLock.Lock()
-
-	lockAcquiredAt := time.Now()
-
-	handle.Finalize(0)
-	handle.Close()
-
-	err := f()
-
-	lockReleasedAt := time.Now()
-
-	igniteRunLock.Unlock()
-
-	operations.RunLockWaitTotal.Add(float64(lockAcquiredAt.Sub(lockRequestedAt) / time.Millisecond))
-	operations.RunLockHeldTotal.Add(float64(lockReleasedAt.Sub(lockAcquiredAt) / time.Millisecond))
-	return err
-}
-
 // teardownFirecracker issues a stop and a remove request for the Firecracker VM with
-// the given name.
-func teardownFirecracker(ctx context.Context, runner commandRunner, logger Logger, name string, operations *Operations) error {
+// the given name and removes the tmpDir.
+func teardownFirecracker(ctx context.Context, runner commandRunner, logger Logger, name, tmpDir string, operations *Operations) error {
 	removeCommand := command{
 		Key:       "teardown.firecracker.remove",
 		Command:   flatten("ignite", "rm", "-f", name),
@@ -135,6 +134,10 @@ func teardownFirecracker(ctx context.Context, runner commandRunner, logger Logge
 	}
 	if err := runner.RunCommand(ctx, removeCommand, logger); err != nil {
 		log15.Error("Failed to remove firecracker vm", "name", name, "err", err)
+	}
+
+	if err := os.RemoveAll(tmpDir); err != nil {
+		log15.Error("Failed to remove firecracker state tmp dir", "name", name, "tmpDir", tmpDir, "err", err)
 	}
 
 	return nil
@@ -148,17 +151,22 @@ func firecrackerResourceFlags(options ResourceOptions) []string {
 	}
 }
 
-func firecrackerCopyfileFlags(dir, vmStartupScriptPath string) []string {
+func firecrackerCopyfileFlags(vmStartupScriptPath, daemonConfigFile string) []string {
 	copyfiles := make([]string, 0, 2)
-	if dir != "" {
-		copyfiles = append(copyfiles, fmt.Sprintf("%s:%s", dir, firecrackerContainerDir))
-	}
 	if vmStartupScriptPath != "" {
 		copyfiles = append(copyfiles, fmt.Sprintf("%s:%s", vmStartupScriptPath, vmStartupScriptPath))
 	}
 
+	if daemonConfigFile != "" {
+		copyfiles = append(copyfiles, fmt.Sprintf("%s:%s", daemonConfigFile, "/etc/docker/daemon.json"))
+	}
+
 	sort.Strings(copyfiles)
 	return intersperse("--copy-files", copyfiles)
+}
+
+func firecrackerVolumeFlags(workspaceDevice, firecrackerContainerDir string) []string {
+	return []string{"--volumes", fmt.Sprintf("%s:%s", workspaceDevice, firecrackerContainerDir)}
 }
 
 var imagePattern = lazyregexp.New(`([^:@]+)(?::([^@]+))?(?:@sha256:([a-z0-9]{64}))?`)

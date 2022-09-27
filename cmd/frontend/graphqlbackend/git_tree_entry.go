@@ -69,7 +69,10 @@ func (r *GitTreeEntryResolver) Name() string { return path.Base(r.stat.Name()) }
 func (r *GitTreeEntryResolver) ToGitTree() (*GitTreeEntryResolver, bool) { return r, r.IsDirectory() }
 func (r *GitTreeEntryResolver) ToGitBlob() (*GitTreeEntryResolver, bool) { return r, !r.IsDirectory() }
 
-func (r *GitTreeEntryResolver) ToVirtualFile() (*virtualFileResolver, bool) { return nil, false }
+func (r *GitTreeEntryResolver) ToVirtualFile() (*VirtualFileResolver, bool) { return nil, false }
+func (r *GitTreeEntryResolver) ToBatchSpecWorkspaceFile() (BatchWorkspaceFileResolver, bool) {
+	return nil, false
+}
 
 func (r *GitTreeEntryResolver) ByteSize(ctx context.Context) (int32, error) {
 	content, err := r.Content(ctx)
@@ -112,7 +115,7 @@ func (r *GitTreeEntryResolver) Binary(ctx context.Context) (bool, error) {
 	return highlight.IsBinary([]byte(content)), nil
 }
 
-func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *HighlightArgs) (*highlightedFileResolver, error) {
+func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *HighlightArgs) (*HighlightedFileResolver, error) {
 	content, err := r.Content(ctx)
 	if err != nil {
 		return nil, err

@@ -174,52 +174,34 @@ func TestRepositoryLabel(t *testing.T) {
 func TestRepository_DefaultBranch(t *testing.T) {
 	ctx := context.Background()
 	ts := []struct {
-		name                string
-		symbolicRef         string
-		symbolicRefExitCode int
-		symbolicRefErr      error
-		resolveRevisionErr  error
-		wantBranch          *GitRefResolver
-		wantErr             error
+		name                    string
+		getDefaultBranchRefName string
+		getDefaultBranchErr     error
+		wantBranch              *GitRefResolver
+		wantErr                 error
 	}{
 		{
-			name:        "ref exists",
-			symbolicRef: "refs/heads/main",
-			wantBranch:  &GitRefResolver{name: "refs/heads/main"},
+			name:                    "ref exists",
+			getDefaultBranchRefName: "refs/heads/main",
+			wantBranch:              &GitRefResolver{name: "refs/heads/main"},
 		},
 		{
-			name:           "clone in progress",
-			symbolicRefErr: &gitdomain.RepoNotExistError{CloneInProgress: true},
+			// When clone is in progress GetDefaultBranch returns "", nil
+			name: "clone in progress",
 			// Expect it to not fail and not return a resolver.
 			wantBranch: nil,
 			wantErr:    nil,
 		},
 		{
 			name:                "symbolic ref fails",
-			symbolicRefExitCode: 1,
-			symbolicRefErr:      errors.New("bad git error"),
+			getDefaultBranchErr: errors.New("bad git error"),
 			wantErr:             errors.New("bad git error"),
-		},
-		{
-			name:               "default branch doesn't exist",
-			symbolicRef:        "refs/heads/main",
-			resolveRevisionErr: &gitdomain.RevisionNotFoundError{Repo: "repo", Spec: "refs/heads/main"},
-			// Expect it to not fail and not return a resolver.
-			wantBranch: nil,
-			wantErr:    nil,
 		},
 	}
 	for _, tt := range ts {
 		t.Run(tt.name, func(t *testing.T) {
-			gitserver.Mocks.ExecSafe = func(params []string) (stdout []byte, stderr []byte, exitCode int, err error) {
-				return []byte(tt.symbolicRef), nil, tt.symbolicRefExitCode, tt.symbolicRefErr
-			}
-			t.Cleanup(func() {
-				gitserver.Mocks.ExecSafe = nil
-			})
-
-			gitserver.Mocks.ResolveRevision = func(spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
-				return "", tt.resolveRevisionErr
+			gitserver.Mocks.GetDefaultBranch = func(repo api.RepoName) (refName string, commit api.CommitID, err error) {
+				return tt.getDefaultBranchRefName, "", tt.getDefaultBranchErr
 			}
 			t.Cleanup(func() {
 				gitserver.Mocks.ResolveRevision = nil

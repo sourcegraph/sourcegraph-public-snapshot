@@ -38,25 +38,39 @@ This page describes search pattern syntax and keywords available for code search
 
 This section documents the available search pattern syntax and interpretation in Sourcegraph. A search pattern is _required_ to match file content. A search pattern is _optional_ and may be omitted when searching for [commits](#keywords-diff-and-commit-searches-only), [filenames](#filename-search), or [repository names](#repository-name-search).
 
-### Literal search (default)
+### Standard search (default)
 
-Literal search interprets search patterns literally to simplify searching for words or punctuation.
+Standard search matches literal patterns exactly, including puncutation like quotes. Specify regular expressions inside `/.../`.
 
 | Search pattern syntax                                                             | Description                                                                                                                                                                                                                           |
 | ---                                                                               | ---                                                                                                                                                                                                                                   |
-| [`foo bar`](https://sourcegraph.com/search?q=foo+bar&patternType=literal)         | Match the string `foo bar`. Matching is ordered: match `foo` followed by `bar`, with exactly one space between the terms. Matching is case-_insensitive_ (toggle the <span class="toggle-container"><img class="toggle" src=../img/case.png alt="case"></span> button to change). |
-| [`"foo bar"`](https://sourcegraph.com/search?q=%22foo+bar%22&patternType=literal) | Match the string `"foo bar"`. The quotes are matched literally.                                                                                                                                                                       |
+| [`foo bar`](https://sourcegraph.com/search?q=foo+bar&patternType=standard)         | Match the string `foo bar` exactly. No need to add quotes, we match `foo` followed by `bar`, with exactly one space between the terms. |
+| [`"foo bar"`](https://sourcegraph.com/search?q=%22foo+bar%22&patternType=standard) | Match the string `"foo bar"` exactly. The quotes are matched literally.                                                                                                                                                                       |
+| [`/foo.*bar/`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+/foo.*bar/&patternType=standard) | Match the **regular expression** `foo.*bar`.                      We support [RE2 syntax](https://golang.org/s/re2syntax).                                                        |
+| [`foo` `AND` `bar`](https://sourcegraph.com/search?q=context:global+foo+AND+bar&patternType=standard) | Match documents containing both `foo` _and_ `bar` anywhere in the document. |
 
-### Regular expression search
+Matching is case-_insensitive_ (toggle the <span class="toggle-container"><img class="toggle" src=../img/case.png alt="case"></span> button to change).
 
-Click the <span class="toggle-container"><img class="toggle" src=../img/regex.png alt="regular expression"></span> toggle to interpret search patterns as regexps. [RE2 syntax](https://golang.org/s/re2syntax) is supported. In general, special characters may be escaped with `\`. Here is a list of valid syntax and behavior:
+<details>
+  <summary><strong>Dedicated regular expression search with <span class="toggle-container"><img class="toggle" src=../img/regex.png alt="regular expression"></span></strong></summary>
+
+Clicking the <span class="toggle-container"><img class="toggle" src=../img/regex.png alt="regular expression"></span> toggle interprets _all_
+search patterns as regular expressions.
+
+**Note.** You can achieve the same regular expression searches in the [default Standard mode](#standard-search-default) by enclosing patterns in `/.../`, so
+only use this mode if you find it more convenient to write out regular
+expressions without enclosing them in `/.../`. In this mode spaces between patterns mean "match anything". Patterns inside quotes mean "match
+exactly".
 
 | Search pattern syntax | Description |
 | --- | --- |
-| [`foo bar`](https://sourcegraph.com/search?q=foo+bar&patternType=regexp) | Search for the regexp `foo(.*?)bar`. Spaces between non-whitespace strings is converted to `.*?` to create a fuzzy search. Matching is case _insensitive_ (toggle the <span class="toggle-container"><img class="toggle" src=../img/case.png alt="case"></span> button to change). |
-| [`foo\ bar`](https://sourcegraph.com/search?q=foo%5C+bar&patternType=regexp) or<br/>[`/foo bar/`](https://sourcegraph.com/search?q=/foo+bar/&patternType=regexp) | Search for the regexp `foo bar`. The `\` escapes the space and treats the space as part of the pattern. Using the delimiter syntax `/ ... /` avoids the need for escaping spaces. |
+| [`foo bar`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+foo+bar&patternType=regexp) | Search for the regexp `foo(.*?)bar`. Spaces between non-whitespace strings is converted to `.*?` to create a fuzzy search. |
+| [`foo\ bar`](https://sourcegraph.com/search?q=foo%5C+bar&patternType=regexp) or<br/>[`/foo bar/`](https://sourcegraph.com/search?q=/foo+bar/&patternType=regexp) | Search for the regexp `foo bar`. The `\` escapes the space and treats the space as part of the pattern. Using the delimiter syntax `/.../` avoids the need for escaping spaces. |
 | [`foo\nbar`](https://sourcegraph.com/search?q=foo%5Cnbar&patternType=regexp) | Perform a multiline regexp search. `\n` is interpreted as a newline. |
-| [`"foo bar"`](https://sourcegraph.com/search?q=%27foo+bar%27&patternType=regexp) | Match the _string literal_ `foo bar`. Quoting strings when regexp is active means patterns are interpreted [literally](#literal-search-default), except that special characters like `"` and `\` may be escaped, and whitespace escape sequences like `\n` are interpreted normally. |
+| [`"foo bar"`](https://sourcegraph.com/search?q=%27foo+bar%27&patternType=regexp) | Match the _string literal_ `foo bar`. Quoting strings in this mode are interpreted exactly, except that special characters like `"` and `\` may be escaped, and whitespace escape sequences like `\n` are interpreted normally. |
+
+As in Standard search, we support [RE2 syntax](https://golang.org/s/re2syntax). Matching is case-_insensitive_ (toggle the <span class="toggle-container"><img class="toggle" src=../img/case.png alt="case"></span> button to change).
+</details>
 
 ### Structural search
 
@@ -86,10 +100,9 @@ The following keywords can be used on all searches (using [RE2 syntax](https://g
 | **case:yes**  | Perform a case sensitive query. Without this, everything is matched case insensitively. | [`OPEN_FILE case:yes`](https://sourcegraph.com/search?q=OPEN_FILE+case:yes) |
 | **fork:yes, fork:only** | Include results from repository forks or filter results to only repository forks. Results in repository forks are excluded by default. | [`fork:yes repo:sourcegraph`](https://sourcegraph.com/search?q=fork:yes+repo:sourcegraph) |
 | **archived:yes, archived:only** | The yes option, includes archived repositories. The only option, filters results to only archived repositories. Results in archived repositories are excluded by default. | [`repo:sourcegraph/ archived:only`](https://sourcegraph.com/search?q=repo:%5Egithub.com/sourcegraph/+archived:only) |
-| **repo:contains.file(...)** | Conditionally search inside repositories only if they contain a file path matching the regular expression. See [built-in predicates](language.md#built-in-predicate) for more. | [`repo:contains.file(\.py) file:Dockerfile pip`](https://sourcegraph.com/search?q=repo:.*sourcegraph.*+repo:contains.file%28%5C.py%29+file:Dockerfile+pip&patternType=literal) |
-| **-repohasfile:regexp-pattern** | Exclude results from repositories that contain a matching file. This keyword is a pure filter, so it requires at least one other search term in the query. Note: this filter currently only works on text matches and file path matches. | [`-repohasfile:Dockerfile docker`](https://sourcegraph.com/search?q=-repohasfile:Dockerfile+docker) |
-| **repo:contains.commit.after(...)** | Filter out stale repositories that don't contain commits past the specified time frame. | [`repo:contains.commit.after(yesterday)`](https://sourcegraph.com/search?q=repo:.*sourcegraph.*+repo:contains.commit.after%28yesterday%29&patternType=literal) <br> [`repo:contains.commit.after(june 25 2017)`](https://sourcegraph.com/search?q=repo:.*sourcegraph.*+repo:contains.commit.after%28june+25+2017%29&patternType=literal) |
-| **file:contains(...)** | Conditionally search files only if they contain contents that match the provided regex pattern. | [`file:contains(Copyright) Sourcegraph`](https://sourcegraph.com/search?q=context:global+file:contains%28Copyright%29+Sourcegraph&patternType=literal) |
+| **repo:has.path(...)** | Conditionally search inside repositories only if they contain a file path matching the regular expression. See [built-in predicates](language.md#built-in-repo-predicate) for more. | [`repo:has.path(\.py) file:Dockerfile pip`](https://sourcegraph.com/search?q=context:global+repo:has.path%28%5C.py%29+file:Dockerfile+pip&patternType=lucky) |
+| **repo:has.commit.after(...)** | Filter out stale repositories that don't contain commits past the specified time frame. See [built-in predicates](language.md#built-in-repo-predicate) for more. | [`repo:has.commit.after(yesterday)`](https://sourcegraph.com/search?q=context:global+repo:.*sourcegraph.*+repo:has.commit.after%28yesterday%29&patternType=lucky) <br> [`repo:has.commit.after(june 25 2017)`](https://sourcegraph.com/search?q=context:global+repo:.*sourcegraph.*+repo:has.commit.after%28june+25+2017%29&patternType=lucky) |
+| **file:has.content(...)** | Conditionally search files only if they contain contents that match the provided regex pattern. See [built-in predicates](language.md#built-in-repo-predicate) for more. | [`file:has.content(Copyright) Sourcegraph`](https://sourcegraph.com/search?q=context:global+file:has.content%28Copyright%29+Sourcegraph&patternType=lucky) |
 | **count:_N_,<br> count:all**<br/> | Retrieve <em>N</em> results. By default, Sourcegraph stops searching early and returns if it finds a full page of results. This is desirable for most interactive searches. To wait for all results, use **count:all**. | [`count:1000 function`](https://sourcegraph.com/search?q=count:1000+repo:sourcegraph/sourcegraph$+function) <br> [`count:all err`](https://sourcegraph.com/search?q=repo:github.com/sourcegraph/sourcegraph+err+count:all&patternType=literal) |
 | **timeout:_go-duration-value_**<br/> | Customizes the timeout for searches. The value of the parameter is a string that can be parsed by the [Go time package's `ParseDuration`](https://golang.org/pkg/time/#ParseDuration) (e.g. 10s, 100ms). By default, the timeout is set to 10 seconds, and the search will optimize for returning results as soon as possible. The timeout value cannot be set longer than 1 minute. When provided, the search is given the full timeout to complete. | [`repo:^github.com/sourcegraph timeout:15s func count:10000`](https://sourcegraph.com/search?q=repo:%5Egithub.com/sourcegraph/+timeout:15s+func+count:10000) |
 | **patterntype:literal, patterntype:regexp, patterntype:structural**  | Configure your query to be interpreted literally, as a regular expression, or a [structural search pattern](structural.md). Note: this keyword is available as an accessibility option in addition to the visual toggles. | [`test. patternType:literal`](https://sourcegraph.com/search?q=test.+patternType:literal)<br/>[`(open\|close)file patternType:regexp`](https://sourcegraph.com/search?q=%28open%7Cclose%29file&patternType=regexp) |

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/log/logtest"
@@ -406,7 +407,7 @@ func TestService(t *testing.T) {
 		changesetSpecs := make([]*btypes.ChangesetSpec, 0, len(rs))
 		changesetSpecRandIDs := make([]string, 0, len(rs))
 		for _, r := range rs {
-			cs := &btypes.ChangesetSpec{RepoID: r.ID, UserID: admin.ID, Spec: &batcheslib.ChangesetSpec{ExternalID: "123"}}
+			cs := &btypes.ChangesetSpec{BaseRepoID: r.ID, UserID: admin.ID, ExternalID: "123"}
 			if err := s.CreateChangesetSpec(ctx, cs); err != nil {
 				t.Fatal(err)
 			}
@@ -592,12 +593,44 @@ func TestService(t *testing.T) {
 				t.Fatalf("ChangesetSpec ID is 0")
 			}
 
-			wantFields := &batcheslib.ChangesetSpec{}
-			if err := json.Unmarshal([]byte(rawSpec), wantFields); err != nil {
-				t.Fatal(err)
+			want := &btypes.ChangesetSpec{
+				ID:   5,
+				Type: btypes.ChangesetSpecTypeBranch,
+				Diff: []byte(`diff --git INSTALL.md INSTALL.md
+index e5af166..d44c3fc 100644
+--- INSTALL.md
++++ INSTALL.md
+@@ -3,10 +3,10 @@
+ Line 1
+ Line 2
+ Line 3
+-Line 4
++This is cool: Line 4
+ Line 5
+ Line 6
+-Line 7
+-Line 8
++Another Line 7
++Foobar Line 8
+ Line 9
+ Line 10
+`),
+				DiffStatAdded:     3,
+				DiffStatDeleted:   3,
+				BaseRepoID:        1,
+				UserID:            1,
+				BaseRev:           "d34db33f",
+				BaseRef:           "refs/heads/master",
+				HeadRef:           "refs/heads/my-branch",
+				Title:             "the title",
+				Body:              "the body of the PR",
+				Published:         batcheslib.PublishedValue{Val: false},
+				CommitMessage:     "git commit message\n\nand some more content in a second paragraph.",
+				CommitAuthorName:  "Mary McButtons",
+				CommitAuthorEmail: "mary@example.com",
 			}
 
-			if diff := cmp.Diff(wantFields, spec.Spec); diff != "" {
+			if diff := cmp.Diff(want, spec, cmpopts.IgnoreFields(btypes.ChangesetSpec{}, "CreatedAt", "UpdatedAt", "RandID")); diff != "" {
 				t.Fatalf("wrong spec fields (-want +got):\n%s", diff)
 			}
 
@@ -1451,6 +1484,7 @@ func TestService(t *testing.T) {
 				bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
 					BatchSpec: spec.ID,
 					Repo:      r.ID,
+					Typ:       btypes.ChangesetSpecTypeBranch,
 				})
 			}
 
@@ -1505,6 +1539,76 @@ func TestService(t *testing.T) {
 				t.Fatalf("unexpected error: %s", err)
 			}
 		})
+
+		tests := []struct {
+			name    string
+			rawSpec string
+			wantErr error
+		}{
+			{
+				name:    "empty",
+				rawSpec: "",
+				wantErr: errors.New("Expected: object, given: null"),
+			},
+			{
+				name:    "invalid YAML",
+				rawSpec: "invalid YAML",
+				wantErr: errors.New("Expected: object, given: string"),
+			},
+			{
+				name:    "invalid name",
+				rawSpec: "name: invalid name",
+				wantErr: errors.New("The batch change name can only contain word characters, dots and dashes. No whitespace or newlines allowed."),
+			},
+			{
+				name: "requires changesetTemplate when steps are included",
+				rawSpec: `
+name: test
+on:
+  - repository: github.com/sourcegraph-testing/some-repo
+steps:
+  - run: echo "Hello world"
+    container: alpine:3`,
+				wantErr: errors.New("batch spec includes steps but no changesetTemplate"),
+			},
+			{
+				name: "unknown templating variable",
+				rawSpec: `
+name: hello
+on:
+  - repository: github.com/sourcegraph-testing/some-repo
+steps:
+  - run: echo "Hello ${{ resopitory.name }}" >> message.txt
+    container: alpine:3
+changesetTemplate:
+  title: Hello World
+  body: My first batch change!
+  branch: hello-world
+  commit:
+    message: Write a message to a text file
+`,
+				wantErr: errors.New("unknown templating variable: 'resopitory'"),
+			},
+		}
+
+		for _, tc := range tests {
+			t.Run("batchSpec has invalid raw spec: "+tc.name, func(t *testing.T) {
+				spec := createBatchSpecWithWorkspaces(t)
+
+				_, gotErr := svc.ReplaceBatchSpecInput(ctx, ReplaceBatchSpecInputOpts{
+					BatchSpecRandID: spec.RandID,
+					RawSpec:         tc.rawSpec,
+				})
+
+				if gotErr == nil {
+					t.Fatalf("unexpected nil error.\nwant=%s\n---\ngot=nil", tc.wantErr)
+				}
+
+				if !strings.Contains(gotErr.Error(), tc.wantErr.Error()) {
+					t.Fatalf("unexpected error.\nwant=%s\n---\ngot=%s", tc.wantErr, gotErr)
+				}
+			})
+		}
 
 		t.Run("batchSpec already has changeset specs", func(t *testing.T) {
 			assertNoChangesetSpecs := func(t *testing.T, batchSpecID int64) {
@@ -1760,12 +1864,12 @@ changesetTemplate:
 		batchSpec := bt.CreateBatchSpec(t, ctx, s, "matching-batch-spec", admin.ID, 0)
 		conflictingRef := "refs/heads/conflicting-head-ref"
 		for _, opts := range []bt.TestSpecOpts{
-			{HeadRef: conflictingRef, Repo: rs[0].ID, BatchSpec: batchSpec.ID},
-			{HeadRef: conflictingRef, Repo: rs[1].ID, BatchSpec: batchSpec.ID},
-			{HeadRef: conflictingRef, Repo: rs[1].ID, BatchSpec: batchSpec.ID},
-			{HeadRef: conflictingRef + "-2", Repo: rs[2].ID, BatchSpec: batchSpec.ID},
-			{HeadRef: conflictingRef + "-2", Repo: rs[2].ID, BatchSpec: batchSpec.ID},
-			{HeadRef: conflictingRef + "-2", Repo: rs[2].ID, BatchSpec: batchSpec.ID},
+			{HeadRef: conflictingRef, Typ: btypes.ChangesetSpecTypeBranch, Repo: rs[0].ID, BatchSpec: batchSpec.ID},
+			{HeadRef: conflictingRef, Typ: btypes.ChangesetSpecTypeBranch, Repo: rs[1].ID, BatchSpec: batchSpec.ID},
+			{HeadRef: conflictingRef, Typ: btypes.ChangesetSpecTypeBranch, Repo: rs[1].ID, BatchSpec: batchSpec.ID},
+			{HeadRef: conflictingRef + "-2", Typ: btypes.ChangesetSpecTypeBranch, Repo: rs[2].ID, BatchSpec: batchSpec.ID},
+			{HeadRef: conflictingRef + "-2", Typ: btypes.ChangesetSpecTypeBranch, Repo: rs[2].ID, BatchSpec: batchSpec.ID},
+			{HeadRef: conflictingRef + "-2", Typ: btypes.ChangesetSpecTypeBranch, Repo: rs[2].ID, BatchSpec: batchSpec.ID},
 		} {
 			bt.CreateChangesetSpec(t, ctx, s, opts)
 		}
@@ -1846,12 +1950,14 @@ changesetTemplate:
 				Repo:      rs[2].ID,
 				BatchSpec: spec.ID,
 				HeadRef:   "refs/heads/my-spec",
+				Typ:       btypes.ChangesetSpecTypeBranch,
 			})
 
 			changesetSpec2 := bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
 				Repo:      rs[2].ID,
 				BatchSpec: spec.ID,
 				HeadRef:   "refs/heads/my-spec-2",
+				Typ:       btypes.ChangesetSpecTypeBranch,
 			})
 
 			var workspaceIDs []int64
@@ -2064,12 +2170,14 @@ changesetTemplate:
 				Repo:      rs[2].ID,
 				BatchSpec: spec.ID,
 				HeadRef:   "refs/heads/my-spec",
+				Typ:       btypes.ChangesetSpecTypeBranch,
 			})
 
 			changesetSpec2 := bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
 				Repo:      rs[2].ID,
 				BatchSpec: spec.ID,
 				HeadRef:   "refs/heads/my-spec-2",
+				Typ:       btypes.ChangesetSpecTypeBranch,
 			})
 
 			var workspaceIDs []int64
@@ -2132,12 +2240,14 @@ changesetTemplate:
 				Repo:      rs[2].ID,
 				BatchSpec: spec.ID,
 				HeadRef:   "refs/heads/my-spec",
+				Typ:       btypes.ChangesetSpecTypeBranch,
 			})
 
 			changesetSpec2 := bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
 				Repo:      rs[2].ID,
 				BatchSpec: spec.ID,
 				HeadRef:   "refs/heads/my-spec-2",
+				Typ:       btypes.ChangesetSpecTypeBranch,
 			})
 
 			var workspaceIDs []int64

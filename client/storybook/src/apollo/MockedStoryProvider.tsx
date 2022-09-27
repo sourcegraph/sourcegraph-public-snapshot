@@ -4,6 +4,7 @@ import { ApolloLink } from '@apollo/client'
 import { MockedProvider, MockedProviderProps, MockedResponse, MockLink } from '@apollo/client/testing'
 import { getOperationName } from '@apollo/client/utilities'
 
+import { logger } from '@sourcegraph/common'
 import { cache } from '@sourcegraph/http-client'
 
 /**
@@ -16,8 +17,7 @@ const forceMockVariablesLink = (mocks: readonly MockedResponse[]): ApolloLink =>
         if (mock) {
             operation.variables = mock.request.variables || {}
         } else {
-            // TODO - should remove console.warn or replace with logError function from @sourcegraph/commons
-            console.warn(`Unable to find a mock for query: ${operation.operationName}. Did you mean to mock this?`)
+            logger.warn(`Unable to find a mock for query: ${operation.operationName}. Did you mean to mock this?`)
         }
         return forward(operation)
     })

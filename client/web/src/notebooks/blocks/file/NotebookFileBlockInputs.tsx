@@ -13,6 +13,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Icon, Button, Input, InputStatus } from '@sourcegraph/wildcard'
 
 import { BlockProps, FileBlockInput } from '../..'
+import { useExperimentalFeatures } from '../../../stores'
 import { parseLineRange, serializeLineRange } from '../../serialize'
 import { SearchTypeSuggestionsInput } from '../suggestions/SearchTypeSuggestionsInput'
 import { fetchSuggestions } from '../suggestions/suggestions'
@@ -47,6 +48,9 @@ const editorAttributes = [
 export const NotebookFileBlockInputs: React.FunctionComponent<
     React.PropsWithChildren<NotebookFileBlockInputsProps>
 > = ({ id, lineRange, onFileSelected, onLineRangeChange, globbing, isSourcegraphDotCom, ...inputProps }) => {
+    const applySuggestionsOnEnter =
+        useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
+
     const [lineRangeInput, setLineRangeInput] = useState(serializeLineRange(lineRange))
     const debouncedOnLineRangeChange = useMemo(() => debounce(onLineRangeChange, 300), [onLineRangeChange])
 
@@ -98,8 +102,9 @@ export const NotebookFileBlockInputs: React.FunctionComponent<
                 isSourcegraphDotCom,
                 globbing,
                 fetchSuggestions: fetchStreamSuggestions,
+                applyOnEnter: applySuggestionsOnEnter,
             }),
-        [isSourcegraphDotCom, globbing]
+        [isSourcegraphDotCom, globbing, applySuggestionsOnEnter]
     )
 
     return (

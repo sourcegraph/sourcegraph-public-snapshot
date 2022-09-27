@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	keytesting "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
+	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -71,7 +71,7 @@ func TestWebhookLogStore(t *testing.T) {
 			assert.Nil(t, err)
 			defer func() { _ = tx.Done(errors.New("rollback")) }()
 
-			store := tx.WebhookLogs(keytesting.TestKey{})
+			store := tx.WebhookLogs(et.ByteaTestKey{})
 
 			// Weirdly, Go doesn't have a HTTP constant for "418 I'm a Teapot".
 			log := createWebhookLog(0, 418, time.Now())
@@ -108,7 +108,7 @@ func TestWebhookLogStore(t *testing.T) {
 			assert.Nil(t, err)
 			defer func() { _ = tx.Done(errors.New("rollback")) }()
 
-			store := tx.WebhookLogs(&keytesting.BadKey{Err: errors.New("uh-oh")})
+			store := tx.WebhookLogs(&et.BadKey{Err: errors.New("uh-oh")})
 
 			log := createWebhookLog(0, http.StatusExpectationFailed, time.Now())
 			err = store.Create(ctx, log)
@@ -123,7 +123,7 @@ func TestWebhookLogStore(t *testing.T) {
 		assert.Nil(t, err)
 		defer func() { _ = tx.Done(errors.New("rollback")) }()
 
-		store := tx.WebhookLogs(keytesting.TestKey{})
+		store := tx.WebhookLogs(et.TestKey{})
 
 		log := createWebhookLog(0, http.StatusInternalServerError, time.Now())
 		err = store.Create(ctx, log)
@@ -141,7 +141,7 @@ func TestWebhookLogStore(t *testing.T) {
 		})
 
 		t.Run("different key", func(t *testing.T) {
-			store := tx.WebhookLogs(&keytesting.TransparentKey{})
+			store := tx.WebhookLogs(&et.TransparentKey{})
 			v, err := store.GetByID(ctx, log.ID)
 			assert.Nil(t, err)
 
@@ -166,7 +166,7 @@ func TestWebhookLogStore(t *testing.T) {
 		}
 		assert.Nil(t, esStore.Upsert(ctx, es))
 
-		store := tx.WebhookLogs(keytesting.TestKey{})
+		store := tx.WebhookLogs(et.TestKey{})
 
 		okTime := time.Date(2021, 10, 29, 18, 46, 0, 0, time.UTC)
 		okLog := createWebhookLog(es.ID, http.StatusOK, okTime)
@@ -282,7 +282,7 @@ func TestWebhookLogStore(t *testing.T) {
 		}
 		assert.Nil(t, esStore.Upsert(ctx, es))
 
-		store := tx.WebhookLogs(keytesting.TestKey{})
+		store := tx.WebhookLogs(et.TestKey{})
 		retention, err := time.ParseDuration("24h")
 		assert.Nil(t, err)
 

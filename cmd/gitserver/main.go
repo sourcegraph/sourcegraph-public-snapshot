@@ -15,18 +15,16 @@ import (
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/tidwall/gjson"
+	"go.opentelemetry.io/otel"
 	"go.uber.org/zap"
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 
-	sentrylib "github.com/getsentry/sentry-go"
-
+	"github.com/getsentry/sentry-go"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -50,6 +48,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -58,7 +57,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -90,7 +88,11 @@ func main() {
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
-	}, log.NewSentrySinkWithOptions(sentrylib.ClientOptions{SampleRate: 0.2})) // Experimental: DevX is observing how sampling affects the errors signal
+	}, log.NewSentrySinkWith(
+		log.SentrySink{
+			ClientOptions: sentry.ClientOptions{SampleRate: 0.2},
+		},
+	))
 	defer liblog.Sync()
 
 	conf.Init()
@@ -152,7 +154,7 @@ func main() {
 
 	observationContext := &observation.Context{
 		Logger:     logger,
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 	gitserver.RegisterMetrics(db, observationContext)
@@ -168,9 +170,10 @@ func main() {
 	// Create Handler now since it also initializes state
 	// TODO: Why do we set server state as a side effect of creating our handler?
 	handler := gitserver.Handler()
-	handler = actor.HTTPMiddleware(handler)
+	handler = actor.HTTPMiddleware(logger, handler)
 	handler = requestclient.HTTPMiddleware(handler)
-	handler = ot.HTTPMiddleware(trace.HTTPMiddleware(logger, handler, conf.DefaultClient()))
+	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
+	handler = instrumentation.HTTPMiddleware("", handler)
 
 	// Ready immediately
 	ready := make(chan struct{})
@@ -185,7 +188,7 @@ func main() {
 		logger.Warn("error performing initial site level rate limit sync", log.Error(err))
 	}
 
-	go syncRateLimiters(ctx, externalServiceStore, rateLimitSyncerLimitPerSecond)
+	go syncRateLimiters(ctx, logger, externalServiceStore, rateLimitSyncerLimitPerSecond)
 	go debugserver.NewServerRoutine(ready).Start()
 	go gitserver.Janitor(janitorInterval)
 	go gitserver.SyncRepoState(syncRepoStateInterval, syncRepoStateBatchSize, syncRepoStateUpdatePerSecond)
@@ -342,9 +345,8 @@ func getRemoteURLFunc(
 			continue
 		}
 
-		dotcomConfig := conf.SiteConfig().Dotcom
-		if envvar.SourcegraphDotComMode() &&
-			repos.IsGitHubAppCloudEnabled(dotcomConfig) &&
+		gitHubAppConfig := conf.SiteConfig().GitHubApp
+		if repos.IsGitHubAppEnabled(gitHubAppConfig) &&
 			svc.Kind == extsvc.KindGitHub {
 			rawConfig, err := svc.Config.Decrypt(ctx)
 			if err != nil {
@@ -352,7 +354,7 @@ func getRemoteURLFunc(
 			}
 			installationID := gjson.Get(rawConfig, "githubAppInstallationID").Int()
 			if installationID > 0 {
-				rawConfig, err = editGitHubAppExternalServiceConfigToken(ctx, externalServiceStore, svc, rawConfig, dotcomConfig, installationID, cli)
+				rawConfig, err = editGitHubAppExternalServiceConfigToken(ctx, externalServiceStore, svc, rawConfig, gitHubAppConfig, installationID, cli)
 				if err != nil {
 					return "", errors.Wrap(err, "edit GitHub App external service config token")
 				}
@@ -372,7 +374,7 @@ func editGitHubAppExternalServiceConfigToken(
 	externalServiceStore database.ExternalServiceStore,
 	svc *types.ExternalService,
 	rawConfig string,
-	dotcomConfig *schema.Dotcom,
+	gitHubAppConfig *schema.GitHubApp,
 	installationID int64,
 	cli httpcli.Doer,
 ) (string, error) {
@@ -388,12 +390,21 @@ func editGitHubAppExternalServiceConfigToken(
 		return "", errors.Errorf("only GitHub App on GitHub.com is supported, but got %q", baseURL)
 	}
 
-	pkey, err := base64.StdEncoding.DecodeString(dotcomConfig.GithubAppCloud.PrivateKey)
-	if err != nil {
-		return "", errors.Wrap(err, "decode private key")
+	var pkey []byte
+	var appID string
+
+	if gitHubAppConfig != nil {
+		pkey, err = base64.StdEncoding.DecodeString(gitHubAppConfig.PrivateKey)
+		if err != nil {
+			return "", errors.Wrap(err, "decode private key")
+		}
+
+		appID = gitHubAppConfig.AppID
+	} else {
+		return "", errors.Wrap(err, "no site-level GitHub App config found")
 	}
 
-	auther, err := auth.NewOAuthBearerTokenWithGitHubApp(dotcomConfig.GithubAppCloud.AppID, pkey)
+	auther, err := auth.NewOAuthBearerTokenWithGitHubApp(appID, pkey)
 	if err != nil {
 		return "", errors.Wrap(err, "new authenticator with GitHub App")
 	}
@@ -516,10 +527,10 @@ func syncSiteLevelExternalServiceRateLimiters(ctx context.Context, store databas
 
 // Sync rate limiters from config. Since we don't have a trigger that watches for
 // changes to rate limits we'll run this periodically in the background.
-func syncRateLimiters(ctx context.Context, store database.ExternalServiceStore, perSecond int) {
+func syncRateLimiters(ctx context.Context, logger log.Logger, store database.ExternalServiceStore, perSecond int) {
 	backoff := 5 * time.Second
 	batchSize := 50
-	logger := log.Scoped("syncRateLimiters", "sync rate limiters from config")
+	logger = logger.Scoped("syncRateLimiters", "sync rate limiters from config")
 
 	// perSecond should be spread across all gitserver instances and we want to wait
 	// until we know about at least one instance.

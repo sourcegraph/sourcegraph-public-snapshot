@@ -30,6 +30,7 @@ import { NotebookFields } from '../../graphql-operations'
 import { getLSPTextDocumentPositionParameters } from '../../repo/blob/Blob'
 import { PageRoutes } from '../../routes.constants'
 import { SearchStreamingProps } from '../../search'
+import { useExperimentalFeatures } from '../../stores'
 import { NotebookComputeBlock } from '../blocks/compute/NotebookComputeBlock'
 import { NotebookFileBlock } from '../blocks/file/NotebookFileBlock'
 import { NotebookMarkdownBlock } from '../blocks/markdown/NotebookMarkdownBlock'
@@ -110,13 +111,17 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
         settingsCascade,
         outlineContainerElement,
     }) => {
+        const enableGoImportsSearchQueryTransform = useExperimentalFeatures(
+            features => features.enableGoImportsSearchQueryTransform
+        )
         const notebook = useMemo(
             () =>
                 new Notebook(initialBlocks, {
                     extensionHostAPI: extensionsController !== null ? extensionsController.extHostAPI : null,
                     fetchHighlightedFileLineRanges,
+                    enableGoImportsSearchQueryTransform,
                 }),
-            [initialBlocks, fetchHighlightedFileLineRanges, extensionsController]
+            [initialBlocks, fetchHighlightedFileLineRanges, extensionsController, enableGoImportsSearchQueryTransform]
         )
 
         const notebookElement = useRef<HTMLDivElement | null>(null)

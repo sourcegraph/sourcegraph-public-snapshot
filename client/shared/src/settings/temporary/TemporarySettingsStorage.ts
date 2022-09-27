@@ -3,7 +3,7 @@ import { isEqual } from 'lodash'
 import { Observable, of, Subscription, from, ReplaySubject, Subscriber } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 
-import { logError } from '@sourcegraph/common'
+import { logger } from '@sourcegraph/common'
 import { fromObservableQuery } from '@sourcegraph/http-client'
 
 import { GetTemporarySettingsResult } from '../../graphql-operations'
@@ -94,7 +94,7 @@ class LocalStorageSettingsBackend implements SettingsBackend {
                         settingsLoaded = true
                     }
                 } catch (error: unknown) {
-                    logError(error)
+                    logger.error(error)
                 }
 
                 if (!settingsLoaded) {
@@ -122,7 +122,7 @@ class LocalStorageSettingsBackend implements SettingsBackend {
             const currentSettings = JSON.parse(encodedCurrentSettings) as TemporarySettings
             localStorage.setItem(this.TemporarySettingsKey, JSON.stringify({ ...currentSettings, ...newSettings }))
         } catch (error: unknown) {
-            logError(error)
+            logger.error(error)
         }
 
         return of()
@@ -168,7 +168,7 @@ class ServersideSettingsBackend implements SettingsBackend {
                     const settings = data.temporarySettings.contents
                     parsedSettings = JSON.parse(settings) as TemporarySettings
                 } catch (error: unknown) {
-                    logError(error)
+                    logger.error(error)
                 }
 
                 return parsedSettings || {}
@@ -206,7 +206,7 @@ class ServersideSettingsBackend implements SettingsBackend {
                 map(() => {}) // Ignore return value, always empty
             )
         } catch (error: unknown) {
-            logError(error)
+            logger.error(error)
         }
 
         return of()

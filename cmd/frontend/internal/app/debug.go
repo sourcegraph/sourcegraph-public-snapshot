@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"go.uber.org/atomic"
 
 	sglog "github.com/sourcegraph/log"
 
@@ -29,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/otlpenv"
 	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var (
@@ -270,6 +272,16 @@ func addJaeger(r *mux.Router, db database.DB) {
 	}
 }
 
+func clientOtelEnabled(s schema.SiteConfiguration) bool {
+	if s.ObservabilityClient == nil {
+		return false
+	}
+	if s.ObservabilityClient.OpenTelemetry == nil {
+		return false
+	}
+	return s.ObservabilityClient.OpenTelemetry.Endpoint != ""
+}
+
 // addOpenTelemetryProtocolAdapter registers handlers that forward OpenTelemetry protocol
 // (OTLP) requests in the http/json format to the configured backend.
 func addOpenTelemetryProtocolAdapter(r *mux.Router) {
@@ -281,19 +293,27 @@ func addOpenTelemetryProtocolAdapter(r *mux.Router) {
 				With(sglog.String("endpoint", endpoint), sglog.String("protocol", string(protocol)))
 	)
 
+	// Clients can take a while to receive new site configuration - since this debug
+	// tunnel should only be receiving OpenTelemetry from clients, if client OTEL is
+	// disabled this tunnel should no-op.
+	clientEnabled := atomic.NewBool(clientOtelEnabled(conf.SiteConfig()))
+	conf.Watch(func() {
+		clientEnabled.Store(clientOtelEnabled(conf.SiteConfig()))
+	})
+
 	// If no endpoint is configured, we export a no-op handler
 	if endpoint == "" {
 		logger.Error("unable to parse OTLP export target")
 
 		r.PathPrefix("/otlp").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprintf(w, `OpenTelemetry protocol tunnel: please configure an exporter endpoint with OTEL_EXPORTER_OTLP_HTTP_JSON_ENDPOINT, or OTEL_EXPORTER_OTLP_ENDPOINT and OTEL_EXPORTER_OTLP_PROTOCOL=http/json`)
+			fmt.Fprintf(w, `OpenTelemetry protocol tunnel: please configure an exporter endpoint with OTEL_EXPORTER_OTLP_ENDPOINT`)
 			w.WriteHeader(http.StatusNotFound)
 		})
 		return
 	}
 
 	// Register adapter endpoints
-	otlpadapter.Register(ctx, logger, protocol, endpoint, r)
+	otlpadapter.Register(ctx, logger, protocol, endpoint, r, clientEnabled)
 }
 
 // adminOnly is a HTTP middleware which only allows requests by admins.

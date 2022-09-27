@@ -3,7 +3,7 @@ import React from 'react'
 import { fetchEventSource } from '@microsoft/fetch-event-source'
 import ElmComponent from 'react-elm-components'
 
-import { logError } from '@sourcegraph/common'
+import { logger } from '@sourcegraph/common'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
@@ -56,6 +56,7 @@ const setupPorts = (sourcegraphURL: string, updateBlockInputWithID: (blockInput:
     }
 
     ports.openStream.subscribe((args: string[]) => {
+        logger.log(`stream: ${args[0]}`)
         const address = args[0]
 
         // Close any open streams if we receive a request to open a new stream before seeing 'done'.
@@ -73,7 +74,7 @@ const setupPorts = (sourcegraphURL: string, updateBlockInputWithID: (blockInput:
                 },
                 signal: ctrl.signal,
                 onerror(error) {
-                    logError(`Compute EventSource error: ${JSON.stringify(error)}`)
+                    logger.error(`Compute EventSource error: ${JSON.stringify(error)}`)
                 },
                 onclose() {
                     // Note: 'done:true' is sent in progress too. But we want a 'done' for the entire stream in case we don't see it.
@@ -87,7 +88,7 @@ const setupPorts = (sourcegraphURL: string, updateBlockInputWithID: (blockInput:
         }
 
         fetch().catch(error => {
-            logError(`Compute fetch error: ${JSON.stringify(error)}`)
+            logger.error(`Compute fetch error: ${JSON.stringify(error)}`)
         })
     })
 

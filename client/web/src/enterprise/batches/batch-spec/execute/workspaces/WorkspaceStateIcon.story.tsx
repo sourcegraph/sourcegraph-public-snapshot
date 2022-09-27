@@ -1,4 +1,3 @@
-import { boolean, withKnobs } from '@storybook/addon-knobs'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { BatchSpecWorkspaceState } from '@sourcegraph/shared/src/graphql-operations'
@@ -11,12 +10,19 @@ const decorator: DecoratorFn = story => <div className="p-3">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/batch-spec/execute/workspaces/WorkspaceStateIcon',
-    decorators: [decorator, withKnobs],
+    decorators: [decorator],
+    argTypes: {
+        cachedResultFound: {
+            name: 'Cache Found',
+            control: { type: 'boolean' },
+            defaultValue: false,
+        },
+    },
 }
 
 export default config
 
-export const WorkspaceStateIconStory: Story = () => (
+export const WorkspaceStateIconStory: Story = args => (
     <WebStory>
         {props => (
             <>
@@ -25,11 +31,7 @@ export const WorkspaceStateIconStory: Story = () => (
                     .map(value => (
                         <div key={value} className="p-1">
                             {value}:{' '}
-                            <WorkspaceStateIcon
-                                state={value}
-                                cachedResultFound={boolean('Cache Found', false)}
-                                {...props}
-                            />
+                            <WorkspaceStateIcon state={value} cachedResultFound={args.cachedResultFound} {...props} />
                         </div>
                     ))}
             </>

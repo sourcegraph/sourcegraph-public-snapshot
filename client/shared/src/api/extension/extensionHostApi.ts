@@ -27,7 +27,7 @@ import {
     isDefined,
     isExactly,
     isNot,
-    logError,
+    logger,
     property,
 } from '@sourcegraph/common'
 import * as clientType from '@sourcegraph/extension-api-types'
@@ -303,7 +303,7 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
         getTextDecorations: ({ viewerId }) => {
             const viewer = getViewer(viewerId)
             assertViewerType(viewer, 'CodeEditor')
-            return proxySubscribable(viewer.decorationsByType)
+            return proxySubscribable(viewer.mergedDecorations)
         },
 
         addTextDocumentIfNotExists: textDocumentData => {
@@ -399,7 +399,6 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
 
                         // TODO(sqs): Observe context so that we update immediately upon changes.
                         const computedContext = computeContext(activeEditor, settings, context, scope)
-
                         return multiContributions.map(contributions => {
                             try {
                                 const evaluatedContributions = evaluateContributions(computedContext, contributions)
@@ -409,7 +408,7 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
                             } catch (error) {
                                 // An error during evaluation causes all of the contributions in the same entry to be
                                 // discarded.
-                                logError('Discarding contributions: evaluating expressions or templates failed.', {
+                                logger.error('Discarding contributions: evaluating expressions or templates failed.', {
                                     contributions,
                                     error,
                                 })
@@ -457,7 +456,7 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
                         return providerResultToObservable(provider.viewProvider.provideView(context))
                     }),
                     catchError((error: unknown) => {
-                        logError('View provider errored:', error)
+                        logger.error('View provider errored:', error)
                         // Pass only primitive copied values because Error object is not
                         // cloneable in Firefox and Safari
                         const { message, name, stack } = asError(error)
@@ -577,7 +576,7 @@ export function callProviders<TRegisteredProvider, TProviderResult, TMergedResul
 ): Observable<MaybeLoadingResult<TMergedResult>> {
     const logError = (...args: any): void => {
         if (logErrors) {
-            logError('Provider errored:', ...args)
+            logger.error('Provider errored:', ...args)
         }
     }
     const safeInvokeProvider = (provider: TRegisteredProvider): sourcegraph.ProviderResult<TProviderResult> => {
@@ -723,7 +722,7 @@ function callViewProviders<W extends ContributableViewContainer>(
                         providerResultToObservable(viewProvider.provideView(context)).pipe(
                             defaultIfEmpty<sourcegraph.View | null | undefined>(null),
                             catchError((error: unknown): [ErrorLike] => {
-                                logError('View provider errored:', error)
+                                logger.error('View provider errored:', error)
                                 // Pass only primitive copied values because Error object is not
                                 // cloneable in Firefox and Safari
                                 const { message, name, stack } = asError(error)

@@ -114,7 +114,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 	}
 
 	res := &externalServiceResolver{logger: r.logger.Scoped("externalServiceResolver", ""), db: r.db, externalService: externalService}
-	if err = backend.SyncExternalService(ctx, externalService, syncExternalServiceTimeout, r.repoupdaterClient); err != nil {
+	if err = backend.SyncExternalService(ctx, r.logger, externalService, syncExternalServiceTimeout, r.repoupdaterClient); err != nil {
 		res.warning = fmt.Sprintf("External service created, but we encountered a problem while validating the external service: %s", err)
 	}
 
@@ -188,7 +188,7 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 	res := &externalServiceResolver{logger: r.logger.Scoped("externalServiceResolver", ""), db: r.db, externalService: es}
 
 	if oldConfig != newConfig {
-		err = backend.SyncExternalService(ctx, es, syncExternalServiceTimeout, r.repoupdaterClient)
+		err = backend.SyncExternalService(ctx, r.logger, es, syncExternalServiceTimeout, r.repoupdaterClient)
 		if err != nil {
 			res.warning = fmt.Sprintf("External service updated, but we encountered a problem while validating the external service: %s", err)
 		}
@@ -253,7 +253,7 @@ func (r *schemaResolver) deleteExternalService(ctx context.Context, id int64, es
 	// The user doesn't care if triggering syncing failed when deleting a
 	// service, so kick off in the background.
 	go func() {
-		if err := backend.SyncExternalService(context.Background(), es, syncExternalServiceTimeout, r.repoupdaterClient); err != nil {
+		if err := backend.SyncExternalService(context.Background(), r.logger, es, syncExternalServiceTimeout, r.repoupdaterClient); err != nil {
 			log15.Warn("Performing final sync after external service deletion", "err", err)
 		}
 	}()
@@ -468,6 +468,42 @@ func (r *schemaResolver) SyncExternalService(ctx context.Context, args *syncExte
 	// Enqueue a sync job for the external service, if none exists yet.
 	rstore := repos.NewStore(r.logger, r.db)
 	if err := rstore.EnqueueSingleSyncJob(ctx, es.ID); err != nil {
+		return nil, err
+	}
+
+	return &EmptyResponse{}, nil
+}
+
+type cancelExternalServiceSyncArgs struct {
+	ID graphql.ID
+}
+
+func (r *schemaResolver) CancelExternalServiceSync(ctx context.Context, args *cancelExternalServiceSyncArgs) (*EmptyResponse, error) {
+	start := time.Now()
+	var err error
+	var namespaceUserID, namespaceOrgID int32
+	defer reportExternalServiceDuration(start, Update, &err, &namespaceUserID, &namespaceOrgID)
+
+	id, err := unmarshalExternalServiceSyncJobID(args.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	esj, err := r.db.ExternalServices().GetSyncJobByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	es, err := r.db.ExternalServices().GetByID(ctx, esj.ExternalServiceID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: check access to external service.
+	if err = backend.CheckExternalServiceAccess(ctx, r.db, es.NamespaceUserID, es.NamespaceOrgID); err != nil {
+		return nil, err
+	}
+
+	if err := r.db.ExternalServices().CancelSyncJob(ctx, esj.ID); err != nil {
 		return nil, err
 	}
 

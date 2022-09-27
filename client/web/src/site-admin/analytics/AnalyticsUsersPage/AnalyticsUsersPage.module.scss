@@ -1,0 +1,15 @@
+.bar-chart {
+    // Default initial bar color values
+    --bar-color: var(--oc-blue-2);
+    --bar-fade-color: var(--oc-blue-1);
+
+    :global(.theme-dark) & {
+        --bar-color: var(--oc-blue-3);
+        --bar-fade-color: rgba(var(--oc-blue-2-rgb), 0.55);
+    }
+
+    :global(.theme-light) & {
+        --bar-color: var(--oc-blue-2);
+        --bar-fade-color: var(--oc-blue-1);
+    }
+}

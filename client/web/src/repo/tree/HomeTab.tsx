@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useState, useCallback } from 'react'
 
 import classNames from 'classnames'
 import { subYears, formatISO } from 'date-fns'
@@ -7,7 +7,7 @@ import { Observable } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
-import { asError, ErrorLike, pluralize, encodeURIPathComponent, logError } from '@sourcegraph/common'
+import { asError, ErrorLike, pluralize, encodeURIPathComponent } from '@sourcegraph/common'
 import { gql, useQuery } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -85,7 +85,7 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
                     switchMap(disableTimeout =>
                         fetchBlob({
                             repoName: repo.name,
-                            commitID,
+                            revision,
                             filePath: `${filePath}/README.md`,
                             disableTimeout,
                         })
@@ -131,12 +131,6 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
         },
         [nextFetchWithDisabledTimeout]
     )
-
-    useEffect(() => {
-        if (!blobInfoOrError) {
-            logError('error')
-        }
-    }, [blobInfoOrError])
 
     const [showOlderCommits, setShowOlderCommits] = useState(false)
 

@@ -23,10 +23,12 @@ import (
 //
 // 🚨 SECURITY: The caller MUST wrap the returned handler in middleware that checks authentication
 // and sets the actor in the request context.
-func NewHandler(db database.DB, logger log.Logger, githubAppCloudSetupHandler http.Handler) http.Handler {
+func NewHandler(db database.DB, logger log.Logger, githubAppSetupHandler http.Handler) http.Handler {
 	session.SetSessionStore(session.NewRedisStore(func() bool {
 		return globals.ExternalURL().Scheme == "https"
 	}))
+
+	logger = logger.Scoped("appHandler", "handles routes for all app related requests")
 
 	r := router.Router()
 
@@ -58,16 +60,16 @@ func NewHandler(db database.DB, logger log.Logger, githubAppCloudSetupHandler ht
 		time.Duration(lockoutOptions.LockoutPeriod)*time.Second,
 		time.Duration(lockoutOptions.ConsecutivePeriod)*time.Second,
 	)
-	r.Get(router.SignUp).Handler(trace.Route(userpasswd.HandleSignUp(db)))
-	r.Get(router.SiteInit).Handler(trace.Route(userpasswd.HandleSiteInit(db)))
-	r.Get(router.SignIn).Handler(trace.Route(userpasswd.HandleSignIn(db, lockoutStore)))
+	r.Get(router.SignUp).Handler(trace.Route(userpasswd.HandleSignUp(logger, db)))
+	r.Get(router.SiteInit).Handler(trace.Route(userpasswd.HandleSiteInit(logger, db)))
+	r.Get(router.SignIn).Handler(trace.Route(userpasswd.HandleSignIn(logger, db, lockoutStore)))
 	r.Get(router.SignOut).Handler(trace.Route(serveSignOutHandler(db)))
-	r.Get(router.UnlockAccount).Handler(trace.Route(userpasswd.HandleUnlockAccount(db, lockoutStore)))
-	r.Get(router.ResetPasswordInit).Handler(trace.Route(userpasswd.HandleResetPasswordInit(db)))
-	r.Get(router.ResetPasswordCode).Handler(trace.Route(userpasswd.HandleResetPasswordCode(db)))
+	r.Get(router.UnlockAccount).Handler(trace.Route(userpasswd.HandleUnlockAccount(logger, db, lockoutStore)))
+	r.Get(router.ResetPasswordInit).Handler(trace.Route(userpasswd.HandleResetPasswordInit(logger, db)))
+	r.Get(router.ResetPasswordCode).Handler(trace.Route(userpasswd.HandleResetPasswordCode(logger, db)))
 	r.Get(router.VerifyEmail).Handler(trace.Route(serveVerifyEmail(db)))
 
-	r.Get(router.CheckUsernameTaken).Handler(trace.Route(userpasswd.HandleCheckUsernameTaken(db)))
+	r.Get(router.CheckUsernameTaken).Handler(trace.Route(userpasswd.HandleCheckUsernameTaken(logger, db)))
 
 	r.Get(router.RegistryExtensionBundle).Handler(trace.Route(gziphandler.GzipHandler(registry.HandleRegistryExtensionBundle(db))))
 
@@ -80,8 +82,9 @@ func NewHandler(db database.DB, logger log.Logger, githubAppCloudSetupHandler ht
 	// Ping retrieval
 	r.Get(router.LatestPing).Handler(trace.Route(latestPingHandler(db)))
 
-	// Sourcegraph Cloud GitHub App setup
-	r.Get(router.SetupGitHubAppCloud).Handler(trace.Route(githubAppCloudSetupHandler))
+	// Sourcegraph GitHub App setup (Cloud and on-prem)
+	r.Get(router.SetupGitHubAppCloud).Handler(trace.Route(githubAppSetupHandler))
+	r.Get(router.SetupGitHubApp).Handler(trace.Route(githubAppSetupHandler))
 
 	r.Get(router.Editor).Handler(trace.Route(errorutil.Handler(serveEditor(db))))
 

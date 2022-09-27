@@ -9,7 +9,7 @@ module.exports = {
   overrides: [
     ...baseConfig.overrides,
     {
-      files: ['dev/**.js'],
+      files: ['dev/**/*.*'],
       rules: { 'no-console': 'off' },
     },
   ],

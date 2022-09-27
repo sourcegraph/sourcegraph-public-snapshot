@@ -29,7 +29,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
@@ -95,7 +94,6 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock bt.C
 	var (
 		added   int32 = 77
 		deleted int32 = 88
-		changed int32 = 99
 	)
 
 	t.Run("Create", func(t *testing.T) {
@@ -137,7 +135,6 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock bt.C
 			// we handle nil pointers correctly
 			if i != cap(changesets)-1 {
 				th.DiffStatAdded = &added
-				th.DiffStatChanged = &changed
 				th.DiffStatDeleted = &deleted
 
 				th.StartedAt = clock.Now()
@@ -1177,7 +1174,6 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock bt.C
 			ExternalReviewState: btypes.ChangesetReviewStatePending,
 			ExternalCheckState:  btypes.ChangesetCheckStatePending,
 			DiffStatAdded:       10,
-			DiffStatChanged:     10,
 			DiffStatDeleted:     10,
 			PublicationState:    btypes.ChangesetPublicationStateUnpublished,
 			UiPublicationState:  &unpublished,
@@ -1195,7 +1191,6 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock bt.C
 		cs.ExternalReviewState = btypes.ChangesetReviewStateApproved
 		cs.ExternalCheckState = btypes.ChangesetCheckStateFailed
 		cs.DiffStatAdded = intptr(100)
-		cs.DiffStatChanged = intptr(100)
 		cs.DiffStatDeleted = intptr(100)
 		cs.Metadata = &github.PullRequest{Title: "The title"}
 		want := cs.Clone()
@@ -1805,10 +1800,9 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 	// Let's define some helpers.
 	createChangesetSpec := func(title string) *btypes.ChangesetSpec {
 		spec := &btypes.ChangesetSpec{
-			Spec: &batcheslib.ChangesetSpec{
-				Title:      title,
-				ExternalID: "123",
-			},
+			Title:      title,
+			ExternalID: "123",
+			Type:       btypes.ChangesetSpecTypeExisting,
 		}
 		if err := s.CreateChangesetSpec(ctx, spec); err != nil {
 			t.Fatalf("creating changeset spec: %v", err)
@@ -2117,10 +2111,9 @@ func testStoreChangesetScheduling(t *testing.T, ctx context.Context, s *Store, c
 	createChangeset := func(title string, lastUpdated time.Time, state btypes.ReconcilerState) *btypes.Changeset {
 		// First, we need to create a changeset spec.
 		spec := &btypes.ChangesetSpec{
-			Spec: &batcheslib.ChangesetSpec{
-				Title:      "fake spec",
-				ExternalID: "123",
-			},
+			Title:      "fake spec",
+			ExternalID: "123",
+			Type:       btypes.ChangesetSpecTypeExisting,
 		}
 		if err := s.CreateChangesetSpec(ctx, spec); err != nil {
 			t.Fatalf("creating changeset spec: %v", err)

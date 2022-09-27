@@ -10,7 +10,7 @@ export interface AuthProvider {
     serviceType: 'github' | 'gitlab' | 'http-header' | 'openidconnect' | 'saml' | 'builtin'
     displayName: string
     isBuiltin: boolean
-    authenticationURL?: string
+    authenticationURL: string
 }
 
 export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'experimentalFeatures'> {
@@ -42,10 +42,6 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     debug: boolean
 
     sourcegraphDotComMode: boolean
-
-    githubAppCloudSlug: string
-
-    githubAppCloudClientID: string
 
     /**
      * siteID is the identifier of the Sourcegraph site.
@@ -161,11 +157,17 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** Whether the product research sign-up page is enabled on the site. */
     productResearchPageEnabled: boolean
 
-    /** The publishable key for the billing service (Stripe). */
-    billingPublishableKey?: string
-
     /** Whether the extension registry and the use of extensions are enabled. (Doesn't affect code intel and git extras.) */
     enableLegacyExtensions?: boolean
+
+    /** Contains information about the product license. */
+    licenseInfo?: {
+        currentPlan: 'old-starter-0' | 'old-enterprise-0' | 'team-0' | 'enterprise-0' | 'business-0' | 'enterprise-1'
+
+        codeScaleLimit?: string
+        codeScaleCloseToLimit?: boolean
+        codeScaleExceededLimit?: boolean
+    }
 
     /** Prompt users with browsers that would crash to download a modern browser. */
     RedirectUnsupportedBrowser?: boolean

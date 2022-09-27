@@ -2,10 +2,11 @@ import * as React from 'react'
 
 import { RouteComponentProps } from 'react-router'
 
-import { logError } from '@sourcegraph/common'
+import { logger } from '@sourcegraph/common'
 import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Container } from '@sourcegraph/wildcard'
 
 import { SettingsAreaPageProps } from './SettingsArea'
 import { SettingsFile } from './SettingsFile'
@@ -31,16 +32,18 @@ export class SettingsPage extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <SettingsFile
-                settings={this.props.data.subjects[this.props.data.subjects.length - 1].latestSettings}
-                jsonSchema={this.props.data.settingsJSONSchema}
-                commitError={this.state.commitError}
-                onDidCommit={this.onDidCommit}
-                onDidDiscard={this.onDidDiscard}
-                history={this.props.history}
-                isLightTheme={this.props.isLightTheme}
-                telemetryService={this.props.telemetryService}
-            />
+            <Container className="mb-3">
+                <SettingsFile
+                    settings={this.props.data.subjects[this.props.data.subjects.length - 1].latestSettings}
+                    jsonSchema={this.props.data.settingsJSONSchema}
+                    commitError={this.state.commitError}
+                    onDidCommit={this.onDidCommit}
+                    onDidDiscard={this.onDidDiscard}
+                    history={this.props.history}
+                    isLightTheme={this.props.isLightTheme}
+                    telemetryService={this.props.telemetryService}
+                />
+            </Container>
         )
     }
 
@@ -68,7 +71,7 @@ export class SettingsPage extends React.PureComponent<Props, State> {
             this.props.onUpdate()
         } catch (commitError) {
             this.setState({ commitError })
-            logError(commitError)
+            logger.error(commitError)
         }
     }
 

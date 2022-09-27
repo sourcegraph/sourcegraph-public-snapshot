@@ -418,7 +418,7 @@ type Mutation {
         date: String
     ): GitCommit
     """
-    Logs a user event.
+    Logs a user event. No longer used, only here for backwards compatibility with IDE and browser extensions.
     """
     logUserEvent(event: UserEvent!, userCookieID: String!): EmptyResponse @deprecated(reason: "use logEvent instead")
     """
@@ -554,10 +554,6 @@ type Mutation {
     Submits a user satisfaction (NPS) survey.
     """
     submitSurvey(input: SurveySubmissionInput!): EmptyResponse
-    """
-    Submits happiness feedback.
-    """
-    submitHappinessFeedback(input: HappinessFeedbackSubmissionInput!): EmptyResponse
     """
     Submits a request for a Sourcegraph Enterprise trial license.
     """
@@ -770,6 +766,13 @@ type Mutation {
     syncExternalService(id: ID!): EmptyResponse!
 
     """
+    Cancels an external service sync job. Must be in queued or processing state.
+
+    Site-admin or owner of the external service only.
+    """
+    cancelExternalServiceSync(id: ID!): EmptyResponse!
+
+    """
     Associate a new key-value pair with a repo.
     """
     addRepoKeyValuePair(repo: ID!, key: String!, value: String): EmptyResponse!
@@ -783,6 +786,19 @@ type Mutation {
     Delete a key-value pair associated with a repo.
     """
     deleteRepoKeyValuePair(repo: ID!, key: String!): EmptyResponse!
+
+    """
+    INTERNAL ONLY: Reclone a repository from the gitserver. This involves deleting
+    the file on disk, marking it as not-cloned in the database, and then initiating
+    a repo clone.
+    """
+    recloneRepository(repo: ID!): EmptyResponse!
+
+    """
+    INTERNAL ONLY: Delete a repository from the gitserver. This involves deleting
+    the file on disk, and marking it as not-cloned in the database.
+    """
+    deleteRepositoryFromDisk(repo: ID!): EmptyResponse!
 }
 
 """
@@ -1122,24 +1138,6 @@ input SurveySubmissionInput {
 }
 
 """
-Input for a happiness feedback submission.
-"""
-input HappinessFeedbackSubmissionInput {
-    """
-    User's happiness rating, from 1-4.
-    """
-    score: Int!
-    """
-    The answer to "What's going well? What could be better?".
-    """
-    feedback: String
-    """
-    The path that the happiness feedback will be submitted from.
-    """
-    currentPath: String
-}
-
-"""
 A query.
 """
 type Query {
@@ -1239,6 +1237,10 @@ type Query {
         """
         cloned: Boolean = true
         """
+        Include only repositories of the given clone status.
+        """
+        cloneStatus: CloneStatus
+        """
         Include repositories that are not yet cloned and for which cloning is not in progress.
         """
         notCloned: Boolean = true
@@ -1251,7 +1253,7 @@ type Query {
         """
         notIndexed: Boolean = true
         """
-        Include repositories that have encountered errors when cloning or fetching
+        Include only repositories that have encountered errors when cloning or fetching
         """
         failedFetch: Boolean = false
         """
@@ -1263,6 +1265,7 @@ type Query {
         """
         descending: Boolean = false
     ): RepositoryConnection!
+
     """
     Looks up a Phabricator repository by name.
     """
@@ -1398,8 +1401,20 @@ type Query {
         """
         The parser to use for this query.
         """
-        patternType: SearchPatternType = literal
-    ): JSONValue
+        patternType: SearchPatternType = standard
+        """
+        The output corresponding to a phase in the parser pipeline.
+        """
+        outputPhase: SearchQueryOutputPhase = PARSE_TREE
+        """
+        The parser output format.
+        """
+        outputFormat: SearchQueryOutputFormat = JSON
+        """
+        The level of output format verbosity.
+        """
+        outputVerbosity: SearchQueryOutputVerbosity = BASIC
+    ): String!
     """
     The current site.
     """
@@ -1699,6 +1714,14 @@ type Executor implements Node {
     The last time the executor sent a heartbeat to the Sourcegraph instance.
     """
     lastSeenAt: DateTime!
+    """
+    The compatibility of the executor with respect to the Sourcegraph instance.
+    If outdated, please make sure that the executor and the Sourcegraph backend are of compatible versions. This means they should match in major and minor version, but they may be 1 minor version apart.
+    If too new, please update the Sourcegraph instance to match the version of the executor or downgrade the executor.
+
+    Compatibility can be null if the executor or Sourcegraph instance runs in dev mode or there's a version mismatch.
+    """
+    compatibility: ExecutorCompatibility
 }
 
 """
@@ -1911,6 +1934,74 @@ enum SearchPatternType {
     structural
     lucky
     keyword
+}
+
+"""
+Represents phases in query parsing. The parse tree corresponds closely to the
+input query syntax. A subsequent processing phase on the parse tree generates a
+job tree. The job tree is an internal representation analogous to a database
+query plan. The job tree discards information about query syntax and corresponds
+closely to backend services (text search, git commit search, etc.).
+"""
+enum SearchQueryOutputPhase {
+    PARSE_TREE
+    JOB_TREE
+}
+
+"""
+The output format to emit for a parsed query.
+"""
+enum SearchQueryOutputVerbosity {
+    """
+    Minimal verbosity outputs only nodes.
+    """
+    MINIMAL
+    """
+    Basic verbosity outputs nodes and essential fields associated with nodes.
+    """
+    BASIC
+    """
+    Maximal verbosity outputs nodes and all information associated with nodes.
+    """
+    MAXIMAL
+}
+
+"""
+The output format to emit for a parsed query.
+"""
+enum SearchQueryOutputFormat {
+    """
+    JSON format.
+    """
+    JSON
+    """
+    S-expression format.
+    """
+    SEXP
+    """
+    Mermaid flowchart format.
+    """
+    MERMAID
+}
+
+"""
+The compatibility of the executor with the sourcegraph instance.
+"""
+enum ExecutorCompatibility {
+    """
+    Executor version is more than one version behind the Sourcegraph instance.
+    """
+    OUTDATED
+
+    """
+    Executor is up-to-date with the Sourcegraph instance.
+    """
+    UP_TO_DATE
+
+    """
+    Executor version is more than one version ahead of the Sourcegraph instance.
+    """
+    VERSION_AHEAD
 }
 
 """
@@ -2233,6 +2324,24 @@ type SearchQueryDescription {
     The query.
     """
     query: String!
+    """
+    Additional optional information describing attributes of this query.
+    """
+    annotations: [SearchQueryAnnotation!]
+}
+
+"""
+Additional information describing attributes of a query.
+"""
+type SearchQueryAnnotation {
+    """
+    A name for this query annotation label.
+    """
+    name: String!
+    """
+    An opaque value for this query annotation.
+    """
+    value: String!
 }
 
 """
@@ -2549,6 +2658,16 @@ enum ExternalServiceSyncJobState {
     Sync finished successfully.
     """
     COMPLETED
+
+    """
+    Sync job is being canceled.
+    """
+    CANCELING
+
+    """
+    Sync job has been canceled.
+    """
+    CANCELED
 }
 
 """
@@ -2852,6 +2971,11 @@ type Repository implements Node & GenericSearchResultInterface {
     A set of user-defined key-value pairs associated with the repo.
     """
     keyValuePairs: [KeyValuePair!]!
+
+    """
+    The size of repo when cloned on disk
+    """
+    diskSizeBytes: BigInt
 }
 
 """
@@ -2964,6 +3088,10 @@ type MirrorRepositoryInfo {
     The last error message, if any, returned when fetching or cloning the repo
     """
     lastError: String
+    """
+    The byte size of the repo.
+    """
+    byteSize: BigInt!
 }
 
 """
@@ -3425,15 +3553,11 @@ Statistics about a diff.
 """
 type DiffStat {
     """
-    Number of additions.
+    Number of lines added.
     """
     added: Int!
     """
-    Number of changes.
-    """
-    changed: Int!
-    """
-    Number of deletions.
+    Number of lines deleted.
     """
     deleted: Int!
 }
@@ -5022,43 +5146,6 @@ type User implements Node & SettingsSubject & Namespace {
     The name of this user namespace's component. For users, this is the username.
     """
     namespaceName: String!
-    """
-    Repositories from external services owned by this user.
-    """
-    repositories(
-        """
-        Returns the first n repositories from the list.
-        """
-        first: Int
-        """
-        Return repositories whose names match the query.
-        """
-        query: String
-        """
-        An opaque cursor that is used for pagination.
-        """
-        after: String
-        """
-        Include cloned repositories.
-        """
-        cloned: Boolean = true
-        """
-        Include repositories that are not yet cloned and for which cloning is not in progress.
-        """
-        notCloned: Boolean = true
-        """
-        Include repositories that have a text search index.
-        """
-        indexed: Boolean = true
-        """
-        Include repositories that do not have a text search index.
-        """
-        notIndexed: Boolean = true
-        """
-        Only include repositories from this external service.
-        """
-        externalServiceID: ID
-    ): RepositoryConnection!
 
     """
     publicRepositories returns the repos listed in user_public_repos for this user
@@ -5772,11 +5859,19 @@ type Site implements SettingsSubject {
         Returns users for the given lastActive enum period.
         When omitted does NOT apply and returns for all period available.
         """
-        lastActivePeriod: SiteUsersLastActivePeriod
+        lastActiveAt: SiteUsersDateRangeInput
         """
         Returns either deleted or not deleted users. Returns all users when omitted.
         """
-        deleted: Boolean
+        deletedAt: SiteUsersDateRangeInput
+        """
+        Returns users who where created within a given date time range.
+        """
+        createdAt: SiteUsersDateRangeInput
+        """
+        Returns users whose events count within a given range.
+        """
+        eventsCount: SiteUsersNumberRangeInput
     ): SiteUsers!
 
     """
@@ -5798,6 +5893,11 @@ type Site implements SettingsSubject {
     the GLOBAL_SETTINGS_FILE environment variable, site settings edits cannot be made through the API.
     """
     allowSiteSettingsEdits: Boolean!
+    """
+    Whether to enable the extension registry and the use of extensions.
+    Reflects the site configuration `enableLegacyExtensions` experimental feature value.
+    """
+    enableLegacyExtensions: Boolean!
 }
 
 """
@@ -6309,6 +6409,54 @@ type AnalyticsCodeIntelResult {
 }
 
 """
+CodeIntelByLanguage analytics.
+"""
+type AnalyticsCodeIntelByLanguageResult {
+    """
+    Language
+    """
+    language: String!
+    """
+    Precision
+    """
+    precision: String!
+    """
+    Count
+    """
+    count: Float!
+}
+
+"""
+CodeIntelTopRepositories analytics.
+"""
+type AnalyticsCodeIntelRepositoryResult {
+    """
+    Repository name
+    """
+    name: String!
+    """
+    Language
+    """
+    language: String!
+    """
+    Event kind
+    """
+    kind: String!
+    """
+    Event precision (either "search-based" or "precise")
+    """
+    precision: String!
+    """
+    Event count
+    """
+    events: Float!
+    """
+    Has precise
+    """
+    hasPrecise: Boolean!
+}
+
+"""
 Repositories summary.
 """
 type AnalyticsReposSummartResult {
@@ -6337,6 +6485,38 @@ type AnalyticsBatchChangesResult {
 }
 
 """
+Extentions analytics.
+"""
+type AnalyticsExtensionsResult {
+    """
+    JetBrains IDE plugin search events.
+    """
+    jetbrains: AnalyticsStatItem!
+    """
+    VSCode IDE extension search events.
+    """
+    vscode: AnalyticsStatItem!
+    """
+    Browser (chrome, firefox, safari) extensions code navigation events.
+    This includes events like "Go to Def", "Find ref" and "Find implementation"
+    """
+    browser: AnalyticsStatItem!
+}
+
+"""
+Code insights analytics.
+"""
+type AnalyticsCodesInsightsResult {
+    """
+    Insights hovers statistics.
+    """
+    insightHovers: AnalyticsStatItem!
+    """
+    Insights data point clicks statistics.
+    """
+    insightDataPointClicks: AnalyticsStatItem!
+}
+"""
 Analytics describes a new site statistics.
 """
 type Analytics {
@@ -6357,6 +6537,14 @@ type Analytics {
     """
     codeIntel(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsCodeIntelResult!
     """
+    Code-intelligence statistics grouped by language and precision.
+    """
+    codeIntelByLanguage(dateRange: AnalyticsDateRange): [AnalyticsCodeIntelByLanguageResult!]!
+    """
+    Top repositories by code-intelligence events.
+    """
+    codeIntelTopRepositories(dateRange: AnalyticsDateRange): [AnalyticsCodeIntelRepositoryResult!]!
+    """
     Repositories summary statistics.
     """
     repos: AnalyticsReposSummartResult!
@@ -6364,6 +6552,14 @@ type Analytics {
     Batch changes statistics
     """
     batchChanges(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsBatchChangesResult!
+    """
+    Extensions statistics
+    """
+    extensions(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsExtensionsResult!
+    """
+    Code insights statistics
+    """
+    codeInsights(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsCodesInsightsResult!
 }
 
 """
@@ -6440,13 +6636,39 @@ enum SiteUserOrderBy {
 }
 
 """
-SiteUsersLastActivePeriod enumerates the ways to filter based on users' last active date
+SiteUsersDateRangeInput argument to filter based on date range or date equals to null
 """
-enum SiteUsersLastActivePeriod {
-    ALL
-    TODAY
-    THIS_WEEK
-    THIS_MONTH
+input SiteUsersDateRangeInput {
+    """
+    Less than or equal to
+    """
+    lte: DateTime
+    """
+    Greater than or equal to
+    """
+    gte: DateTime
+    """
+    Negation
+    """
+    not: Boolean
+    """
+    Equal to Null
+    """
+    empty: Boolean
+}
+
+"""
+SiteUsersNumberRangeInput argument to filter based on the number range
+"""
+input SiteUsersNumberRangeInput {
+    """
+    Less than or equal to
+    """
+    gte: Float
+    """
+    Greater than or equal to
+    """
+    lte: Float
 }
 
 """
@@ -6462,9 +6684,13 @@ type SiteUsers {
     """
     nodes(
         """
-        Returns the first n users from the list.
+        Returns the "limit" number users from the list.
         """
-        first: Int
+        limit: Int
+        """
+        Skips initial "offset" number of users.
+        """
+        offset: Int
         """
         Returns users ordered by a given column.
         """
@@ -7104,16 +7330,6 @@ type CloningProgress {
 }
 
 """
-FOR INTERNAL USE ONLY: A status message produced when repositories are being indexed
-"""
-type IndexingProgress {
-    """
-    The message of this status message
-    """
-    message: String!
-}
-
-"""
 FOR INTERNAL USE ONLY: A status message produced when repositories could not
 be synced from an external service
 """
@@ -7140,20 +7356,9 @@ type SyncError {
 }
 
 """
-FOR INTERNAL USE ONLY: A status message produced when repositories could not
-be indexed
-"""
-type IndexingError {
-    """
-    The message of this status message
-    """
-    message: String!
-}
-
-"""
 FOR INTERNAL USE ONLY: A status message
 """
-union StatusMessage = CloningProgress | IndexingProgress | ExternalServiceSyncError | SyncError | IndexingError
+union StatusMessage = CloningProgress | ExternalServiceSyncError | SyncError
 
 """
 An arbitrarily large integer encoded as a decimal string.
@@ -7172,6 +7377,33 @@ type RepositoryStats {
     The number of lines indexed
     """
     indexedLinesCount: BigInt!
+
+    """
+    The number of all repositories in the instance, without soft-deleted or blocked repositories.
+    """
+    total: Int!
+    """
+    The number of cloned repositories in the instance. This number might be
+    higher than 'total', if soft-deleted repositories haven't been cleaned up
+    yet.
+    """
+    cloned: Int!
+    """
+    The number of repositories in the instance that are currently being cloned.
+    """
+    cloning: Int!
+    """
+    The number of repositories in the instance that not cloned yet.
+    """
+    notCloned: Int!
+    """
+    The number of repositories where initial cloning or subsequent fetching resulted in an error.
+    """
+    failedFetch: Int!
+    """
+    The number of indexed repositories
+    """
+    indexed: Int!
 }
 
 """
@@ -7444,4 +7676,13 @@ type WebhookLogHeader {
     The header values.
     """
     values: [String!]!
+}
+
+"""
+The clone status of a repository.
+"""
+enum CloneStatus {
+    NOT_CLONED
+    CLONING
+    CLONED
 }

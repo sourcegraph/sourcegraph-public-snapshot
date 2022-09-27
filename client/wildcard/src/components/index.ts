@@ -32,7 +32,7 @@ export { NavMenu } from './NavMenu'
 export { Text, Code, Heading, Label, H1, H2, H3, H4, H5, H6 } from './Typography'
 export { AnchorLink, RouterLink, setLinkComponent, Link, createLinkUrl } from './Link'
 export { Modal } from './Modal'
-export { FeedbackBadge, FeedbackText, FeedbackPrompt } from './Feedback'
+export { FeedbackBadge, FeedbackText } from './Feedback'
 export {
     Popover,
     PopoverTrigger,
@@ -45,17 +45,25 @@ export {
     createRectangle,
 } from './Popover'
 export { Collapse, CollapseHeader, CollapsePanel } from './Collapse'
+export {
+    Combobox,
+    ComboboxInput,
+    ComboboxPopover,
+    ComboboxList,
+    ComboboxOptionGroup,
+    ComboboxOption,
+    ComboboxOptionText,
+} from './Combobox'
 
 /**
  * Type Exports
  * `export type` is required to avoid Webpack warnings.
  */
-export type { FeedbackPromptSubmitEventHandler } from './Feedback'
 export type { AlertProps, AlertLinkProps } from './Alert'
 export type { MultiSelectProps, MultiSelectOption, MultiSelectState, SelectProps, InputProps } from './Form'
 export type { ButtonProps } from './Button'
 export type { ButtonLinkProps } from './ButtonLink'
-export type { Series, SeriesLikeChart, CategoricalLikeChart, LineChartProps } from './Charts'
+export type { Series, SeriesLikeChart, CategoricalLikeChart, LineChartProps, BarChartProps } from './Charts'
 export type { LinkProps } from './Link'
 export type { PopoverOpenEvent, Rectangle } from './Popover'
 export type { MenuLinkProps, MenuItemProps } from './Menu'

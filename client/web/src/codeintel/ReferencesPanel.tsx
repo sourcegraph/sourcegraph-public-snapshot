@@ -1,23 +1,28 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 
 import { mdiArrowCollapseRight, mdiChevronDown, mdiChevronRight, mdiFilterOutline } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { capitalize } from 'lodash'
-import { MemoryRouter, useHistory, useLocation } from 'react-router'
+import { MemoryRouter, useLocation } from 'react-router'
 
 import { HoveredToken } from '@sourcegraph/codeintellify'
 import {
     addLineRangeQueryParameter,
     ErrorLike,
     formatSearchParameters,
+    logger,
     lprToRange,
     pluralize,
     toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
+import { Position } from '@sourcegraph/extension-api-classes'
 import { useQuery } from '@sourcegraph/http-client'
+import { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
+import { findLanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/languages'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -29,6 +34,7 @@ import {
     FileSpec,
     ResolvedRevisionSpec,
     parseQueryAndHash,
+    toPrettyBlobURL,
 } from '@sourcegraph/shared/src/util/url'
 import {
     Link,
@@ -46,6 +52,7 @@ import {
     H4,
     Text,
     Tooltip,
+    useSessionStorage,
 } from '@sourcegraph/wildcard'
 
 import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
@@ -53,11 +60,8 @@ import { Blob } from '../repo/blob/Blob'
 import { Blob as CodeMirrorBlob } from '../repo/blob/CodeMirrorBlob'
 import { HoverThresholdProps } from '../repo/RepoContainer'
 import { useExperimentalFeatures } from '../stores'
-import { enableExtensionsDecorationsColumnViewFromSettings } from '../util/settings'
 import { parseBrowserRepoURL } from '../util/url'
 
-import { findLanguageSpec } from './language-specs/languages'
-import { LanguageSpec } from './language-specs/languagespec'
 import { Location, LocationGroup, locationGroupQuality, buildRepoLocationGroups, RepoLocationGroup } from './location'
 import { FETCH_HIGHLIGHTED_BLOB } from './ReferencesPanelQueries'
 import { newSettingsGetter } from './settings'
@@ -209,14 +213,6 @@ const SearchTokenFindingReferencesList: React.FunctionComponent<
     )
 }
 
-interface BlobMemoryHistoryState {
-    /**
-     * Whether or not to sync this change from the blob history object to the
-     * panel's history object.
-     */
-    syncToPanel?: boolean
-}
-
 const SHOW_SPINNER_DELAY_MS = 100
 
 export const ReferencesList: React.FunctionComponent<
@@ -284,68 +280,70 @@ export const ReferencesList: React.FunctionComponent<
     const definitions = useMemo(() => data?.definitions.nodes ?? [], [data])
     const implementations = useMemo(() => data?.implementations.nodes ?? [], [data])
 
-    // activeLocation is the location that is selected/clicked in the list of
-    // definitions/references/implementations.
-    const [activeLocation, setActiveLocation] = useState<Location>()
-    const isActiveLocation = (location: Location): boolean =>
-        activeLocation !== undefined && activeLocation.url === location.url
-    // We create an in-memory history here so we don't modify the browser
-    // location. This panel is detached from the URL state.
-    const blobMemoryHistory = useMemo(() => H.createMemoryHistory<BlobMemoryHistoryState>(), [])
+    // The "active URL" is the URL of the highlighted line number in SideBlob,
+    // which also influences which item gets highlighted inside
+    // CollapsibleLocationList. This URL is persisted to session storage so that
+    // it remains sticky between browser reloads and when pressing back/forward
+    // in the browser history.
+    const [activeURL, setActiveURL] = useSessionStorage<string | undefined>(
+        'sideblob-active-url' + sessionStorageKeyFromToken(props.token),
+        undefined
+    )
+    const setActiveLocation = useCallback(
+        (location: Location | undefined): void => {
+            if (!location) {
+                setActiveURL(undefined)
+                return
+            }
+            // Reconstruct the URL instead of using `location.url` to ensure that
+            // the commitID is included even when `location.url` doesn't include the
+            // commitID (because it's the default revision '').
+            const absoluteURL = toPrettyBlobURL({
+                filePath: location.file,
+                revision: location.commitID,
+                repoName: location.repo,
+                commitID: location.commitID,
+                position: location.range
+                    ? {
+                          line: location.range.start.line + 1,
+                          character: location.range.start.character,
+                      }
+                    : undefined,
+            })
+            setActiveURL(absoluteURL)
+        },
+        [setActiveURL]
+    )
 
-    // When the token for which we display data changed, we want to reset
-    // activeLocation.
-    // But only if we are not re-rendering with different token and the code
-    // blob already open.
-    useEffect(() => {
-        if (!props.jumpToFirst) {
-            setActiveLocation(undefined)
-        }
-    }, [props.jumpToFirst, props.token])
+    const sideblob = useMemo(() => parseSideBlobProps(activeURL), [activeURL])
+
+    const isActiveLocation = (location: Location): boolean => {
+        const result =
+            (sideblob?.position &&
+                location.range &&
+                sideblob.repository === location.repo &&
+                sideblob.file === location.file &&
+                sideblob.commitID === location.commitID &&
+                sideblob.position.line === location.range.start.line) ||
+            false
+        return result
+    }
 
     // If props.jumpToFirst is true and we finished loading (and have
     // definitions) we select the first definition. We set it as activeLocation
     // and push it to the blobMemoryHistory so the code blob is open.
     useEffect(() => {
         if (props.jumpToFirst && definitions.length > 0) {
-            blobMemoryHistory.push(definitions[0].url, { syncToPanel: false })
             setActiveLocation(definitions[0])
         }
-    }, [blobMemoryHistory, props.jumpToFirst, definitions])
+    }, [setActiveLocation, props.jumpToFirst, definitions, setActiveURL])
 
-    // When a user clicks on an item in the list of references, we push it to
-    // the memory history for the code blob on the right, so it will jump to &
-    // highlight the correct line.
-    const onReferenceClick = (location: Location | undefined): void => {
-        if (location) {
-            blobMemoryHistory.push(location.url, { syncToPanel: false })
-        }
-        setActiveLocation(location)
-    }
-
-    // This is the history of the panel, that is inside a memory router
-    const panelHistory = useHistory()
-    // When we user clicks on a token *inside* the code blob on the right, we
-    // update the history for the panel itself, which is inside a memory router.
-    //
-    // We also '#tab=references' and '?jumpToFirst=true' to the URL.
-    //
-    // '#tab=references' will cause the panel to show the references of the clicked token,
-    // but not navigate the main web app to it.
-    //
-    // '?jumpToFirst=true' causes the panel to select the first reference and
-    // open it in code blob on right.
     const onBlobNav = (url: string): void => {
-        // If we're going to navigate inside the same file in the same repo we
-        // can optimistically jump to that position in the code blob.
-        if (activeLocation !== undefined) {
-            const urlToken = tokenFromUrl(url)
-            if (urlToken.filePath === activeLocation.file && urlToken.repoName === activeLocation.repo) {
-                blobMemoryHistory.push(url, { syncToPanel: false })
-            }
-        }
-
-        panelHistory.push(appendJumpToFirstQueryParameter(url))
+        // Store the URL that the user promoted even if no definition/reference
+        // points to the same line. In case they press "back" in the browser history,
+        // the promoted line should be highlighted.
+        setActiveURL(url)
+        props.externalHistory.push(url)
     }
 
     const navigateToUrl = (url: string): void => {
@@ -369,16 +367,14 @@ export const ReferencesList: React.FunctionComponent<
         }
         return state
     }, [location])
-    const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
+    const [collapsed, setCollapsed] = useSessionStorage<Record<string, boolean>>(
+        'sideblob-collapse-state-' + sessionStorageKeyFromToken(props.token),
+        initialCollapseState
+    )
     const handleOpenChange = (id: string, isOpen: boolean): void =>
         setCollapsed(previous => ({ ...previous, [id]: isOpen }))
 
     const isOpen = (id: string): boolean | undefined => collapsed[id]
-
-    // But when the input changes, we reset the collapse state
-    useEffect(() => {
-        setCollapsed(initialCollapseState)
-    }, [props.token, initialCollapseState])
 
     if (loading && !data) {
         return <LoadingCodeIntel />
@@ -403,7 +399,7 @@ export const ReferencesList: React.FunctionComponent<
                             aria-hidden={true}
                             as={canShowSpinner ? LoadingSpinner : undefined}
                             svgPath={!canShowSpinner ? mdiFilterOutline : undefined}
-                            size="sm"
+                            size="md"
                             className={styles.filterIcon}
                         />
                     </small>
@@ -425,7 +421,7 @@ export const ReferencesList: React.FunctionComponent<
                         filter={debouncedFilter}
                         navigateToUrl={navigateToUrl}
                         isActiveLocation={isActiveLocation}
-                        setActiveLocation={onReferenceClick}
+                        setActiveLocation={setActiveLocation}
                         handleOpenChange={handleOpenChange}
                         isOpen={isOpen}
                     />
@@ -438,7 +434,7 @@ export const ReferencesList: React.FunctionComponent<
                         loadingMore={fetchMoreReferencesLoading}
                         filter={debouncedFilter}
                         navigateToUrl={navigateToUrl}
-                        setActiveLocation={onReferenceClick}
+                        setActiveLocation={setActiveLocation}
                         isActiveLocation={isActiveLocation}
                         handleOpenChange={handleOpenChange}
                         isOpen={isOpen}
@@ -451,7 +447,7 @@ export const ReferencesList: React.FunctionComponent<
                             hasMore={implementationsHasNextPage}
                             fetchMore={fetchMoreImplementations}
                             loadingMore={fetchMoreImplementationsLoading}
-                            setActiveLocation={onReferenceClick}
+                            setActiveLocation={setActiveLocation}
                             filter={debouncedFilter}
                             isActiveLocation={isActiveLocation}
                             navigateToUrl={navigateToUrl}
@@ -461,7 +457,7 @@ export const ReferencesList: React.FunctionComponent<
                     )}
                 </div>
             </div>
-            {activeLocation !== undefined && (
+            {sideblob && (
                 <div data-testid="right-pane" className={classNames('px-0 border-left', styles.rightSubPanel)}>
                     <CardHeader className={classNames('d-flex', styles.cardHeader)}>
                         <small>
@@ -481,26 +477,21 @@ export const ReferencesList: React.FunctionComponent<
                                     />
                                 </Button>
                             </Tooltip>
-                            <Link
-                                to={activeLocation.url}
-                                onClick={event => {
-                                    event.preventDefault()
-                                    navigateToUrl(activeLocation.url)
-                                }}
-                                className={styles.sideBlobFilename}
-                            >
-                                {activeLocation.file}{' '}
-                            </Link>
+                            {activeURL && (
+                                <Link
+                                    to={activeURL}
+                                    onClick={event => {
+                                        event.preventDefault()
+                                        navigateToUrl(activeURL)
+                                    }}
+                                    className={styles.sideBlobFilename}
+                                >
+                                    {sideblob.file}{' '}
+                                </Link>
+                            )}
                         </small>
                     </CardHeader>
-                    <SideBlob
-                        {...props}
-                        blobNav={onBlobNav}
-                        history={blobMemoryHistory}
-                        panelHistory={panelHistory}
-                        location={blobMemoryHistory.location}
-                        activeLocation={activeLocation}
-                    />
+                    <SideBlob {...props} {...sideblob} blobNav={onBlobNav} />
                 </div>
             )}
         </div>
@@ -547,9 +538,9 @@ const CollapsibleLocationList: React.FunctionComponent<
                         className="d-flex p-0 justify-content-start w-100"
                     >
                         {isOpen ? (
-                            <Icon aria-label="Close" svgPath={mdiChevronDown} />
+                            <Icon aria-hidden={true} svgPath={mdiChevronDown} />
                         ) : (
-                            <Icon aria-label="Expand" svgPath={mdiChevronRight} />
+                            <Icon aria-hidden={true} svgPath={mdiChevronRight} />
                         )}{' '}
                         <H4 className="mb-0">{capitalize(props.name)}</H4>
                         <span className={classNames('ml-2 text-muted small', styles.cardHeaderSmallText)}>
@@ -602,57 +593,64 @@ const CollapsibleLocationList: React.FunctionComponent<
     )
 }
 
-const SideBlob: React.FunctionComponent<
-    React.PropsWithChildren<
-        ReferencesPanelProps & {
-            activeLocation: Location
+interface SideBlobProps extends ReferencesPanelProps {
+    activeURL: string
+    repository: string
+    commitID: string
+    file: string
+    position?: Position
+    blobNav: (url: string) => void
+}
 
-            location: H.Location<BlobMemoryHistoryState>
-            history: H.History<BlobMemoryHistoryState>
-            blobNav: (url: string) => void
-            panelHistory: H.History
+function parseSideBlobProps(
+    activeURL: string | undefined
+): Pick<SideBlobProps, 'activeURL' | 'repository' | 'commitID' | 'file' | 'position'> | undefined {
+    if (!activeURL) {
+        return undefined
+    }
+    try {
+        const url = parseBrowserRepoURL(activeURL)
+        if (!url.repoName || !url.filePath) {
+            return undefined
         }
-    >
-> = props => {
-    const { history, panelHistory } = props
+
+        const position = url.position
+            ? new Position(Math.max(url.position.line - 1), Math.max(0, url.position.character - 1))
+            : undefined
+        return { activeURL, repository: url.repoName, commitID: url.commitID || '', file: url.filePath, position }
+    } catch (error) {
+        logger.error(`failed to parse activeURL ${activeURL}`, error)
+        return undefined
+    }
+}
+
+const SideBlob: React.FunctionComponent<React.PropsWithChildren<SideBlobProps>> = props => {
     const useCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
     const BlobComponent = useCodeMirror ? CodeMirrorBlob : Blob
 
-    // When using CodeMirror we have to forward history entries to the panel's
-    // router. That's because the CodeMirror <-> React integration uses its own
-    // Router and so clicks on <Link />s are not caught by the panel's router
-    // context.
-    useEffect(
-        () =>
-            history.listen((location, method) => {
-                if (useCodeMirror && location.state?.syncToPanel !== false) {
-                    switch (method) {
-                        case 'PUSH':
-                            panelHistory.push(location)
-                            break
-                        case 'REPLACE':
-                            panelHistory.replace(location)
-                            break
-                    }
-                }
-            }),
-        [useCodeMirror, history, panelHistory]
-    )
-
+    const highlightFormat = useCodeMirror ? HighlightResponseFormat.JSON_SCIP : HighlightResponseFormat.HTML_HIGHLIGHT
     const { data, error, loading } = useQuery<
         ReferencesPanelHighlightedBlobResult,
         ReferencesPanelHighlightedBlobVariables
     >(FETCH_HIGHLIGHTED_BLOB, {
         variables: {
-            repository: props.activeLocation.repo,
-            commit: props.activeLocation.commitID,
-            path: props.activeLocation.file,
+            repository: props.repository,
+            commit: props.commitID,
+            path: props.file,
+            format: highlightFormat,
+            html: highlightFormat === HighlightResponseFormat.HTML_HIGHLIGHT,
         },
         // Cache this data but always re-request it in the background when we revisit
         // this page to pick up newer changes.
         fetchPolicy: 'cache-and-network',
         nextFetchPolicy: 'network-only',
     })
+
+    const history = useMemo(() => H.createMemoryHistory(), [])
+    const location = useMemo(() => {
+        history.replace(props.activeURL)
+        return history.location
+    }, [history, props.activeURL])
 
     // If we're loading and haven't received any data yet
     if (loading && !data) {
@@ -661,7 +659,7 @@ const SideBlob: React.FunctionComponent<
                 <LoadingSpinner inline={false} className="mx-auto my-4" />
                 <Text alignment="center" className="text-muted">
                     <i>
-                        Loading <Code>{props.activeLocation.file}</Code>...
+                        Loading <Code>{props.file}</Code>...
                     </i>
                 </Text>
             </>
@@ -673,7 +671,7 @@ const SideBlob: React.FunctionComponent<
         return (
             <div>
                 <Text className="text-danger">
-                    Loading <Code>{props.activeLocation.file}</Code> failed:
+                    Loading <Code>{props.file}</Code> failed:
                 </Text>
                 <pre>{error.message}</pre>
             </div>
@@ -685,34 +683,29 @@ const SideBlob: React.FunctionComponent<
         return <>Nothing found</>
     }
 
-    const { html, aborted } = data?.repository?.commit?.blob?.highlight
-    if (aborted) {
-        return (
-            <Text alignment="center" className="text-warning">
-                <i>
-                    Highlighting <Code>{props.activeLocation.file}</Code> failed
-                </i>
-            </Text>
-        )
-    }
+    const { html, lsif } = data?.repository?.commit?.blob?.highlight
+
+    // TODO: display a helpful message if syntax highlighting aborted, see https://github.com/sourcegraph/sourcegraph/issues/40841
 
     return (
         <BlobComponent
             {...props}
             nav={props.blobNav}
-            history={props.history}
-            location={props.location}
+            history={history}
+            location={location}
             disableStatusBar={true}
-            disableDecorations={enableExtensionsDecorationsColumnViewFromSettings(props.settingsCascade)}
+            disableDecorations={true}
             wrapCode={true}
             className={styles.sideBlobCode}
+            navigateToLineOnAnyClick={true}
             blobInfo={{
-                html,
-                content: props.activeLocation.content,
-                filePath: props.activeLocation.file,
-                repoName: props.activeLocation.repo,
-                commitID: props.activeLocation.commitID,
-                revision: props.activeLocation.commitID,
+                html: html ?? '',
+                lsif: lsif ?? '',
+                content: data?.repository?.commit?.blob?.content ?? '',
+                filePath: props.file,
+                repoName: props.repository,
+                commitID: props.commitID,
+                revision: props.commitID,
                 mode: 'lspmode',
             }}
         />
@@ -780,7 +773,6 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<
     handleOpenChange,
     searchToken,
 }) => {
-    const repoUrl = `/${repoLocationGroup.repoName}`
     const open = isOpen(repoLocationGroup.repoName) ?? openByDefault
 
     return (
@@ -795,16 +787,9 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<
                 >
                     <Icon aria-hidden="true" svgPath={open ? mdiChevronDown : mdiChevronRight} />
                     <small>
-                        <Link
-                            to={repoUrl}
-                            onClick={event => {
-                                event.preventDefault()
-                                navigateToUrl(repoUrl)
-                            }}
-                            className={classNames('text-small', styles.repoLocationGroupHeaderRepoName)}
-                        >
+                        <span className={classNames('text-small', styles.repoLocationGroupHeaderRepoName)}>
                             {displayRepoName(repoLocationGroup.repoName)}
-                        </Link>
+                        </span>
                     </small>
                 </CollapseHeader>
 
@@ -838,13 +823,23 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                 navigateToUrl: (url: string) => void
             }
     >
-> = ({ group, setActiveLocation, isActiveLocation, filter, isOpen, handleOpenChange, navigateToUrl }) => {
+> = ({ group, setActiveLocation, isActiveLocation, filter, isOpen, handleOpenChange }) => {
+    // On the first load, update the scroll position towards the active
+    // location.  Without this behavior, the scroll position points at the top
+    // of the reference panel when reloading the page or going back/forward in
+    // the browser history.
+    useLayoutEffect(() => {
+        const activeLocationElement = document.querySelector('.' + styles.locationActive)
+        if (activeLocationElement) {
+            activeLocationElement.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'center' })
+        }
+    }, [])
+
     let highlighted = [group.path]
     if (filter !== undefined) {
         highlighted = group.path.split(filter)
     }
 
-    const fileUrl = group.locations[group.locations.length - 1].url.split('?')[0]
     const open = isOpen(group.path) ?? true
 
     return (
@@ -860,19 +855,14 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                     )}
                 >
                     {open ? (
-                        <Icon aria-label="Close" svgPath={mdiChevronDown} />
+                        <Icon aria-hidden={true} svgPath={mdiChevronDown} />
                     ) : (
-                        <Icon aria-label="Expand" svgPath={mdiChevronRight} />
+                        <Icon aria-hidden={true} svgPath={mdiChevronRight} />
                     )}
                     <small className={styles.locationGroupHeaderFilename}>
                         <span>
-                            <Link
+                            <span
                                 aria-label={`File path ${group.path}`}
-                                to={fileUrl}
-                                onClick={event => {
-                                    event.preventDefault()
-                                    navigateToUrl(fileUrl)
-                                }}
                                 className={classNames('text-small', styles.repoLocationGroupHeaderRepoName)}
                             >
                                 {highlighted.length === 2 ? (
@@ -884,8 +874,8 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                                 ) : (
                                     group.path
                                 )}{' '}
-                            </Link>
-                            <span className={classNames('ml-2 text-muted small', styles.cardHeaderSmallText)}>
+                            </span>
+                            <span className={classNames('ml-2 text-muted', styles.cardHeaderSmallText)}>
                                 ({group.locations.length}{' '}
                                 {pluralize('occurrence', group.locations.length, 'occurrences')})
                             </span>
@@ -1025,10 +1015,6 @@ export const appendJumpToFirstQueryParameter = (url: string): string => {
     return newUrl.pathname + `?${formatSearchParameters(newUrl.searchParams)}` + newUrl.hash
 }
 
-const tokenFromUrl = (url: string): { repoName: string; commitID?: string; filePath?: string } => {
-    const parsed = new URL(url, window.location.href)
-
-    const { filePath, repoName, commitID } = parseBrowserRepoURL(parsed.pathname)
-
-    return { repoName, filePath, commitID }
+function sessionStorageKeyFromToken(token: Token): string {
+    return `${token.repoName}@${token.commitID}/${token.filePath}?L${token.line}:${token.character}`
 }

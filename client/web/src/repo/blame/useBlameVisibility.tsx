@@ -1,21 +1,22 @@
-import React from 'react'
+import { useCallback } from 'react'
 
-const BlameContext = React.createContext<{
-    isBlameVisible: boolean
-    setIsBlameVisible: React.Dispatch<React.SetStateAction<boolean>>
-}>({
-    isBlameVisible: false,
-    setIsBlameVisible: () => {},
-})
+import { BehaviorSubject } from 'rxjs'
 
-export const BlameContextProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
-    const [isBlameVisible, setIsBlameVisible] = React.useState<boolean>(false)
+import { useLocalStorage, useObservable } from '@sourcegraph/wildcard'
 
-    return <BlameContext.Provider value={{ isBlameVisible, setIsBlameVisible }}>{children}</BlameContext.Provider>
-}
+const IS_BLAME_VISIBLE_STORAGE_KEY = 'GitBlame.isVisible'
+const isBlameVisible = new BehaviorSubject<boolean | undefined>(undefined)
 
-export const useBlameVisibility = (): [boolean, React.Dispatch<React.SetStateAction<boolean>>] => {
-    const { isBlameVisible, setIsBlameVisible } = React.useContext(BlameContext)
+export const useBlameVisibility = (): [boolean, (isVisible: boolean) => void] => {
+    const [isVisibleFromLocalStorage, updateLocalStorageValue] = useLocalStorage(IS_BLAME_VISIBLE_STORAGE_KEY, false)
+    const isVisibleFromObservable = useObservable(isBlameVisible)
+    const setIsBlameVisible = useCallback(
+        (isVisible: boolean): void => {
+            isBlameVisible.next(isVisible)
+            updateLocalStorageValue(isVisible)
+        },
+        [updateLocalStorageValue]
+    )
 
-    return [isBlameVisible, setIsBlameVisible]
+    return [isVisibleFromObservable ?? isVisibleFromLocalStorage, setIsBlameVisible]
 }

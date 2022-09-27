@@ -20,7 +20,7 @@ export interface PopoverContentProps extends Omit<FloatingPanelProps, 'target' |
     targetElement?: HTMLElement | null
 }
 
-export const PopoverContent = forwardRef((props, reference) => {
+export const PopoverContent = forwardRef(function PopoverContent(props, reference) {
     const {
         isOpen,
         children,
@@ -29,14 +29,15 @@ export const PopoverContent = forwardRef((props, reference) => {
         autoFocus = true,
         as: Component = 'div',
         role = 'dialog',
-        'aria-modal': ariaModel = true,
+        'aria-modal': ariaModal = true,
         ...otherProps
     } = props
+
+    const { renderRoot } = useContext(PopoverRoot)
 
     const { isOpen: isOpenContext, targetElement: contextTargetElement, tailElement, anchor, setOpen } = useContext(
         PopoverContext
     )
-    const { renderRoot } = useContext(PopoverRoot)
 
     const targetElement = contextTargetElement ?? propertyTargetElement
     const [focusLock, setFocusLock] = useState(false)
@@ -84,7 +85,7 @@ export const PopoverContent = forwardRef((props, reference) => {
             target={anchor?.current ?? targetElement}
             marker={tailElement}
             role={role}
-            aria-modal={ariaModel}
+            aria-modal={ariaModal}
             rootRender={renderRoot}
             className={classNames(styles.popover, otherProps.className)}
         >

@@ -5,14 +5,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/zoekt"
-	"github.com/google/zoekt/query"
 	"github.com/keegancsmith/rpc"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	sglog "github.com/sourcegraph/log"
+	"github.com/sourcegraph/zoekt"
+	"github.com/sourcegraph/zoekt/query"
 
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -98,7 +98,9 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 	if isLeaf && opts != nil && policy.ShouldTrace(ctx) {
 		// Replace any existing spanContext with a new one, given we've done additional tracing
 		spanContext := make(map[string]string)
-		if err := ot.GetTracer(ctx).Inject(opentracing.SpanFromContext(ctx).Context(), opentracing.TextMap, opentracing.TextMapCarrier(spanContext)); err == nil {
+		if span := opentracing.SpanFromContext(ctx); span == nil {
+			m.log.Warn("ctx does not have a trace span associated with it")
+		} else if err := ot.GetTracer(ctx).Inject(span.Context(), opentracing.TextMap, opentracing.TextMapCarrier(spanContext)); err == nil {
 			newOpts := *opts
 			newOpts.SpanContext = spanContext
 			opts = &newOpts

@@ -8,23 +8,18 @@ import (
 	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/segmentio/ksuid"
-
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
-	"golang.org/x/time/rate"
-
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/segmentio/ksuid"
 	sglog "github.com/sourcegraph/log"
-
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
@@ -42,6 +37,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
@@ -315,28 +311,27 @@ type RepoStore interface {
 //
 // It works roughly like this:
 //
-//   * For every repository on Sourcegraph (a subset on Sourcegraph.com):
-//     * Build a list of time frames that we should consider
-//	   * Check the commit index to see if any timeframes can be discarded (if they didn't change)
-//     * For each frame:
-//       * Find the oldest commit in the repository.
-//         * For every unique search insight series (i.e. search query):
-//           * Consider yielding/sleeping.
-//           * If the series has data for this timeframe+repo already, nothing to do.
-//           * If the timeframe we're generating data for is before the oldest commit in the repo, record a zero value.
-//           * Else, locate the commit nearest to the point in time we're trying to get data for and
-//             enqueue a queryrunner job to search that repository commit - recording historical data
-//            for it.
+//	For every repository on Sourcegraph (a subset on Sourcegraph.com):
+//	1. Build a list of time frames that we should consider
+//	   - Check the commit index to see if any timeframes can be discarded (if they didn't change)
+//	2. For each frame
+//	  - Find the oldest commit in the repository.
+//	3. For every unique pair of frame and search insight series (i.e. search query):
+//	  - Consider yielding/sleeping.
+//	  - If the series has data for this timeframe+repo already, nothing to do.
+//	  - If the timeframe we're generating data for is before the oldest commit in the repo, record a zero value.
+//	  - Else, locate the commit nearest to the point in time we're trying to get data for and
+//	    enqueue a queryrunner job to search that repository commit - recording historical data
+//	    for it.
 //
 // As you can no doubt see, there is much complexity and potential room for duplicative API calls
 // here (e.g. "for every timeframe we list every repository"). For this exact reason, we do two
 // things:
 //
-// 1. Cache duplicative calls to prevent performing heavy operations multiple times.
-// 2. Lift heavy operations to the layer/loop one level higher, when it is sane to do so.
-// 3. Ensure we perform work slowly, linearly, and with yielding/sleeping between any substantial
-//    work being performed.
-//
+//  1. Cache duplicative calls to prevent performing heavy operations multiple times.
+//  2. Lift heavy operations to the layer/loop one level higher, when it is sane to do so.
+//  3. Ensure we perform work slowly, linearly, and with yielding/sleeping between any substantial
+//     work being performed.
 type historicalEnqueuer struct {
 	// Required fields used for mocking in tests.
 	now                   func() time.Time
@@ -383,7 +378,7 @@ func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 
 	// Discover all global insights on the instance.
 	log15.Debug("Fetching data series for historical")
-	foundInsights, err := h.dataSeriesStore.GetDataSeries(ctx, store.GetDataSeriesArgs{BackfillIncomplete: true, GlobalOnly: true})
+	foundInsights, err := h.dataSeriesStore.GetDataSeries(ctx, store.GetDataSeriesArgs{BackfillNotQueued: true, GlobalOnly: true})
 	if err != nil {
 		return errors.Wrap(err, "Discover")
 	}
@@ -549,7 +544,7 @@ func (a *backfillAnalyzer) buildForRepo(ctx context.Context, definitions []itype
 
 	// For every series that we want to potentially gather historical data for, try.
 	for _, series := range definitions {
-		frames := query.BuildFrames(12, timeseries.TimeInterval{
+		frames := timeseries.BuildFrames(12, timeseries.TimeInterval{
 			Unit:  itypes.IntervalUnit(series.SampleIntervalUnit),
 			Value: series.SampleIntervalValue,
 		}, series.CreatedAt.Truncate(time.Hour*24))

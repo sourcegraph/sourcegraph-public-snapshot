@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react'
 
 import { gql, useMutation } from '@apollo/client'
 
-import { logError } from '@sourcegraph/common'
+import { logger } from '@sourcegraph/common'
 import { Link, Alert, AnchorLink, Checkbox, H1, Text } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../components/LoaderButton'
@@ -38,7 +38,7 @@ export const TosConsentModal: React.FunctionComponent<React.PropsWithChildren<{ 
                 await setTosAccepted()
                 afterTosAccepted()
             } catch (error) {
-                logError(error)
+                logger.error(error)
             }
         },
         [afterTosAccepted, setTosAccepted]

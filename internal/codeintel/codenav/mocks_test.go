@@ -26,17 +26,26 @@ import (
 // github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/store)
 // used for unit testing.
 type MockStore struct {
-	// ListFunc is an instance of a mock function object controlling the
-	// behavior of the method List.
-	ListFunc *StoreListFunc
+	// GetLanguagesRequestedByFunc is an instance of a mock function object
+	// controlling the behavior of the method GetLanguagesRequestedBy.
+	GetLanguagesRequestedByFunc *StoreGetLanguagesRequestedByFunc
+	// SetRequestLanguageSupportFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// SetRequestLanguageSupport.
+	SetRequestLanguageSupportFunc *StoreSetRequestLanguageSupportFunc
 }
 
 // NewMockStore creates a new mock of the Store interface. All methods
 // return zero values for all results, unless overwritten.
 func NewMockStore() *MockStore {
 	return &MockStore{
-		ListFunc: &StoreListFunc{
-			defaultHook: func(context.Context, store.ListOpts) (r0 []shared.Symbol, r1 error) {
+		GetLanguagesRequestedByFunc: &StoreGetLanguagesRequestedByFunc{
+			defaultHook: func(context.Context, int) (r0 []string, r1 error) {
+				return
+			},
+		},
+		SetRequestLanguageSupportFunc: &StoreSetRequestLanguageSupportFunc{
+			defaultHook: func(context.Context, int, string) (r0 error) {
 				return
 			},
 		},
@@ -47,9 +56,14 @@ func NewMockStore() *MockStore {
 // panic on invocation, unless overwritten.
 func NewStrictMockStore() *MockStore {
 	return &MockStore{
-		ListFunc: &StoreListFunc{
-			defaultHook: func(context.Context, store.ListOpts) ([]shared.Symbol, error) {
-				panic("unexpected invocation of MockStore.List")
+		GetLanguagesRequestedByFunc: &StoreGetLanguagesRequestedByFunc{
+			defaultHook: func(context.Context, int) ([]string, error) {
+				panic("unexpected invocation of MockStore.GetLanguagesRequestedBy")
+			},
+		},
+		SetRequestLanguageSupportFunc: &StoreSetRequestLanguageSupportFunc{
+			defaultHook: func(context.Context, int, string) error {
+				panic("unexpected invocation of MockStore.SetRequestLanguageSupport")
 			},
 		},
 	}
@@ -59,40 +73,45 @@ func NewStrictMockStore() *MockStore {
 // methods delegate to the given implementation, unless overwritten.
 func NewMockStoreFrom(i store.Store) *MockStore {
 	return &MockStore{
-		ListFunc: &StoreListFunc{
-			defaultHook: i.List,
+		GetLanguagesRequestedByFunc: &StoreGetLanguagesRequestedByFunc{
+			defaultHook: i.GetLanguagesRequestedBy,
+		},
+		SetRequestLanguageSupportFunc: &StoreSetRequestLanguageSupportFunc{
+			defaultHook: i.SetRequestLanguageSupport,
 		},
 	}
 }
 
-// StoreListFunc describes the behavior when the List method of the parent
-// MockStore instance is invoked.
-type StoreListFunc struct {
-	defaultHook func(context.Context, store.ListOpts) ([]shared.Symbol, error)
-	hooks       []func(context.Context, store.ListOpts) ([]shared.Symbol, error)
-	history     []StoreListFuncCall
+// StoreGetLanguagesRequestedByFunc describes the behavior when the
+// GetLanguagesRequestedBy method of the parent MockStore instance is
+// invoked.
+type StoreGetLanguagesRequestedByFunc struct {
+	defaultHook func(context.Context, int) ([]string, error)
+	hooks       []func(context.Context, int) ([]string, error)
+	history     []StoreGetLanguagesRequestedByFuncCall
 	mutex       sync.Mutex
 }
 
-// List delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockStore) List(v0 context.Context, v1 store.ListOpts) ([]shared.Symbol, error) {
-	r0, r1 := m.ListFunc.nextHook()(v0, v1)
-	m.ListFunc.appendCall(StoreListFuncCall{v0, v1, r0, r1})
+// GetLanguagesRequestedBy delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockStore) GetLanguagesRequestedBy(v0 context.Context, v1 int) ([]string, error) {
+	r0, r1 := m.GetLanguagesRequestedByFunc.nextHook()(v0, v1)
+	m.GetLanguagesRequestedByFunc.appendCall(StoreGetLanguagesRequestedByFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the List method of the
-// parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreListFunc) SetDefaultHook(hook func(context.Context, store.ListOpts) ([]shared.Symbol, error)) {
+// SetDefaultHook sets function that is called when the
+// GetLanguagesRequestedBy method of the parent MockStore instance is
+// invoked and the hook queue is empty.
+func (f *StoreGetLanguagesRequestedByFunc) SetDefaultHook(hook func(context.Context, int) ([]string, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// List method of the parent MockStore instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *StoreListFunc) PushHook(hook func(context.Context, store.ListOpts) ([]shared.Symbol, error)) {
+// GetLanguagesRequestedBy method of the parent MockStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *StoreGetLanguagesRequestedByFunc) PushHook(hook func(context.Context, int) ([]string, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -100,20 +119,20 @@ func (f *StoreListFunc) PushHook(hook func(context.Context, store.ListOpts) ([]s
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreListFunc) SetDefaultReturn(r0 []shared.Symbol, r1 error) {
-	f.SetDefaultHook(func(context.Context, store.ListOpts) ([]shared.Symbol, error) {
+func (f *StoreGetLanguagesRequestedByFunc) SetDefaultReturn(r0 []string, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) ([]string, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreListFunc) PushReturn(r0 []shared.Symbol, r1 error) {
-	f.PushHook(func(context.Context, store.ListOpts) ([]shared.Symbol, error) {
+func (f *StoreGetLanguagesRequestedByFunc) PushReturn(r0 []string, r1 error) {
+	f.PushHook(func(context.Context, int) ([]string, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreListFunc) nextHook() func(context.Context, store.ListOpts) ([]shared.Symbol, error) {
+func (f *StoreGetLanguagesRequestedByFunc) nextHook() func(context.Context, int) ([]string, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -126,35 +145,35 @@ func (f *StoreListFunc) nextHook() func(context.Context, store.ListOpts) ([]shar
 	return hook
 }
 
-func (f *StoreListFunc) appendCall(r0 StoreListFuncCall) {
+func (f *StoreGetLanguagesRequestedByFunc) appendCall(r0 StoreGetLanguagesRequestedByFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of StoreListFuncCall objects describing the
-// invocations of this function.
-func (f *StoreListFunc) History() []StoreListFuncCall {
+// History returns a sequence of StoreGetLanguagesRequestedByFuncCall
+// objects describing the invocations of this function.
+func (f *StoreGetLanguagesRequestedByFunc) History() []StoreGetLanguagesRequestedByFuncCall {
 	f.mutex.Lock()
-	history := make([]StoreListFuncCall, len(f.history))
+	history := make([]StoreGetLanguagesRequestedByFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// StoreListFuncCall is an object that describes an invocation of method
-// List on an instance of MockStore.
-type StoreListFuncCall struct {
+// StoreGetLanguagesRequestedByFuncCall is an object that describes an
+// invocation of method GetLanguagesRequestedBy on an instance of MockStore.
+type StoreGetLanguagesRequestedByFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 store.ListOpts
+	Arg1 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []shared.Symbol
+	Result0 []string
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -162,14 +181,124 @@ type StoreListFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c StoreListFuncCall) Args() []interface{} {
+func (c StoreGetLanguagesRequestedByFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c StoreListFuncCall) Results() []interface{} {
+func (c StoreGetLanguagesRequestedByFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// StoreSetRequestLanguageSupportFunc describes the behavior when the
+// SetRequestLanguageSupport method of the parent MockStore instance is
+// invoked.
+type StoreSetRequestLanguageSupportFunc struct {
+	defaultHook func(context.Context, int, string) error
+	hooks       []func(context.Context, int, string) error
+	history     []StoreSetRequestLanguageSupportFuncCall
+	mutex       sync.Mutex
+}
+
+// SetRequestLanguageSupport delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockStore) SetRequestLanguageSupport(v0 context.Context, v1 int, v2 string) error {
+	r0 := m.SetRequestLanguageSupportFunc.nextHook()(v0, v1, v2)
+	m.SetRequestLanguageSupportFunc.appendCall(StoreSetRequestLanguageSupportFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// SetRequestLanguageSupport method of the parent MockStore instance is
+// invoked and the hook queue is empty.
+func (f *StoreSetRequestLanguageSupportFunc) SetDefaultHook(hook func(context.Context, int, string) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetRequestLanguageSupport method of the parent MockStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *StoreSetRequestLanguageSupportFunc) PushHook(hook func(context.Context, int, string) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreSetRequestLanguageSupportFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int, string) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreSetRequestLanguageSupportFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int, string) error {
+		return r0
+	})
+}
+
+func (f *StoreSetRequestLanguageSupportFunc) nextHook() func(context.Context, int, string) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreSetRequestLanguageSupportFunc) appendCall(r0 StoreSetRequestLanguageSupportFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreSetRequestLanguageSupportFuncCall
+// objects describing the invocations of this function.
+func (f *StoreSetRequestLanguageSupportFunc) History() []StoreSetRequestLanguageSupportFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreSetRequestLanguageSupportFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreSetRequestLanguageSupportFuncCall is an object that describes an
+// invocation of method SetRequestLanguageSupport on an instance of
+// MockStore.
+type StoreSetRequestLanguageSupportFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreSetRequestLanguageSupportFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreSetRequestLanguageSupportFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // MockLsifStore is a mock implementation of the LsifStore interface (from

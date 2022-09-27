@@ -14,6 +14,7 @@ interface TimeSavedCalculatorGroupItem {
     label: string
     value: number
     minPerItem: number
+    onMinPerItemChange?: (minPerItem: number) => void
     description: string
     percentage?: number
     hoursSaved?: number
@@ -23,6 +24,7 @@ interface TimeSavedCalculatorGroupProps {
     page: string
     color: string
     value: number
+    itemsLabel?: string
     label: string
     description: string
     dateRange: AnalyticsDateRange
@@ -42,6 +44,7 @@ export const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculat
     items,
     color,
     value,
+    itemsLabel = 'Events',
     description,
     label,
     dateRange,
@@ -65,6 +68,7 @@ export const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculat
     const updateMinPerItem = (index: number, minPerItem: number): void => {
         const updatedItems = [...memoizedItems]
         updatedItems[index] = { ...memoizedItems[index], minPerItem }
+        updatedItems[index].onMinPerItemChange?.(minPerItem)
 
         setMemoizedItems(calculateHoursSaved(updatedItems))
     }
@@ -171,7 +175,7 @@ export const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculat
                     </Text>
                 ) : (
                     <Text as="span" alignment="center" className="text-muted">
-                        Events
+                        {itemsLabel}
                     </Text>
                 )}
                 <Text as="span" className="text-nowrap text-muted">

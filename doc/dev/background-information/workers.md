@@ -104,7 +104,7 @@ The target jobs table may have additional columns as the store only selects and 
 
 The shape of the target table is configured via options on the database-backed store instance. The `TableName` option specifies the name of the table used in `UPDATE` and `SELECT [FOR UPDATE]` statements. The `ViewName` option, if supplied, specifies the view used in `SELECT` statements (the data of which is ultimately passed to the handler hook). This can be useful when the job record has foreign keys to other relations that should be eagerly selected.
 
-The `ColumnExpressions` option is a list of `*sqlf.Query` values to select from the configured table or view. The `Scan` option specifies a function to call to read a job record from a `*sql.Rows` object. The values in the rows object are precisely the values selected via `ColumnExpressions`.
+The `ColumnExpressions` option is a list of `*sqlf.Query` values to select from the configured table or view. The `Scan` option specifies a function to call to read job records from a `*sql.Rows` object. The values available in each row in the rows object are precisely the values selected via `ColumnExpressions`.
 
 The `OrderByExpression` option specifies a `*sql.Query` expression which is used to order the records by priority. A dequeue operation will select the first record which is not currently being processed by another worker.
 
@@ -232,65 +232,55 @@ var exampleJobColumns = []*sqlf.Query{
 }
 ```
 
-Now, we define a function `scanFirstExampleJob` that consumes a `*sql.Rows` object and returns an `ExampleJob` struct value (hidden behind the abstract `workerutil.Record` type) and a boolean flag indicating whether the result rows were non-empty. We write this method to work specifically with the SQL expressions from `exampleJobColumns`, above.
+`ExampleJob` will need to implement the `workerutil.Record` interface to be returned from the scanning function, so let's also do that:
+
+```go
+func (j *ExampleJob) RecordID() int {
+	return j.ID
+}
+```
+
+Now, we define a function `scanExampleJob` that scans a single record (provided as a `dbutil.Scanner`) into an `ExampleJob`. We write this method to work specifically with the SQL expressions from `exampleJobColumns`, above.
 
 ```go
 import (
 	"database/sql"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-// scanFirstExampleJob scans a single job from the return value of `*Store.query`.
-func scanFirstExampleJob(rows *sql.Rows, queryErr error) (_ workerutil.Record, exists bool, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+func scanExampleJob(s dbutil.Scanner) (*ExampleJob, error) {
+	var job ExampleJob
+	var executionLogs []dbworkerstore.ExecutionLogEntry
 
-	if rows.Next() {
-		var job ExampleJob
-		var executionLogs []dbworkerstore.ExecutionLogEntry
-
-		if err := rows.Scan(
-			&job.ID,
-			&job.State,
-			&job.FailureMessage,
-			&job.QueuedAt,
-			&job.StartedAt,
-			&job.FinishedAt,
-			&job.ProcessAfter,
-			&job.NumResets,
-			&job.NumFailures,
-			&job.LastHeartbeatAt,
-			pq.Array(&executionLogs),
-			&job.WorkerHostname,
-			&job.Cancel,
-			&job.RepositoryID,
-			&job.RepositoryName,
-		); err != nil {
-			return nil, false, err
-		}
-
-		for _, entry := range executionLogs {
-			job.ExecutionLogs = append(job.ExecutionLogs, workerutil.ExecutionLogEntry(entry))
-		}
-
-		return job, true, nil
+	if err := s.Scan(
+		&job.ID,
+		&job.State,
+		&job.FailureMessage,
+		&job.QueuedAt,
+		&job.StartedAt,
+		&job.FinishedAt,
+		&job.ProcessAfter,
+		&job.NumResets,
+		&job.NumFailures,
+		&job.LastHeartbeatAt,
+		pq.Array(&executionLogs),
+		&job.WorkerHostname,
+		&job.Cancel,
+		&job.RepositoryID,
+		&job.RepositoryName,
+	); err != nil {
+		return nil, err
 	}
 
-	return ExampleJob{}, false, nil
+	for _, entry := range executionLogs {
+		job.ExecutionLogs = append(job.ExecutionLogs, workerutil.ExecutionLogEntry(entry))
+	}
+
+	return &job, nil
 }
-```
-
-This scanning function is a [basestore](./basestore.md) idiom which allows us to call it directly from the result of `*store.Query`:
-
-```go
-job, exists, err := scanFirstExampleJob(store.Query(
-	"SELECT %s FROM example_jobs_with_repository_name example_jobs LIMIT 1",
-	sqlf.Join(expressions, ", "),
-))
 ```
 
 #### Step 3: Configure the store
@@ -300,16 +290,16 @@ Given our table definition and new scanning function, we can configure a databas
 ```go
 import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-func makeStore(db dbutil.DB) store.Store {
+func makeStore(db dbutil.DB) dbworkerstore.Store {
 	return store.New(db, store.Options{
 		Name:              "example_job_worker_store",
 		TableName:         "example_jobs",
 		ViewName:          "example_jobs_with_repository_name example_jobs",
 		ColumnExpressions: exampleJobColumns,
-		Scan:              scanFirstExampleJob,
+		Scan:              dbworkerstore.BuildWorkerScan(scanExampleJob),
 		OrderByExpression: sqlf.Sprintf("example_jobs.repository_id, example_jobs.id"),
 		MaxNumResets:      5,
 		HeartbeatInterval: time.Second,
@@ -320,6 +310,8 @@ func makeStore(db dbutil.DB) store.Store {
 ```
 
 Notice here that we provided a table name and view name with an _alias_ back to the table name, which we can use to unambiguously refer to columns in the expressions listed in `exampleJobColumns`.
+
+`dbworkerstore.BuildWorkerScan` adapts a scanning function that scans a single record into a scanning function that can handle an entire `*sql.Rows` resultset.
 
 #### Step 4: Write the handler
 
@@ -350,10 +342,10 @@ func (h *handler) Handle(ctx context.Context, tx store.Store, rawRecord workerut
 	// Due to us registering our own Scan functions with the dbstore (see next step),
 	// we can guarantee that the value of rawRecord will always be of a particular
 	// processable type.
-	record := rawRecord.(MyRecord)
+	job := rawRecord.(*ExampleJob)
 
 	// Do the actual processing
-	return store.Process(record)
+	return store.Process(job)
 }
 ```
 

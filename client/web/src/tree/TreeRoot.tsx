@@ -15,7 +15,7 @@ import {
     takeUntil,
 } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike, logError } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { fetchTreeEntries } from '@sourcegraph/shared/src/backend/repo'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -59,6 +59,7 @@ export interface TreeRootProps extends AbsoluteRepo, ExtensionsControllerProps, 
     setChildNodes: (node: TreeNode, index: number) => void
     setActiveNode: (node: TreeNode) => void
     repoID: Scalars['ID']
+    enableMergedFileSymbolSidebar: boolean
 }
 
 const LOADING = 'loading' as const
@@ -116,7 +117,7 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                     // clear file decorations before latest file decorations come
                     this.setState({ treeOrError, fileDecorationsByPath: {} })
                 },
-                error => logError(error)
+                error => logger.error(error)
             )
         )
 
@@ -230,6 +231,9 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                                                     onHover={this.fetchChildContents}
                                                     setChildNodes={this.setChildNode}
                                                     fileDecorationsByPath={this.state.fileDecorationsByPath}
+                                                    enableMergedFileSymbolSidebar={
+                                                        this.props.enableMergedFileSymbolSidebar
+                                                    }
                                                 />
                                             </TreeRootContext.Provider>
                                         )

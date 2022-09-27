@@ -1,51 +1,152 @@
 ---
-title: 'Sourcegraph docs'
+title: Get Started
 ---
 
-<a href="https://sourcegraph.com"><picture><source srcset="assets/logo-theme-dark.svg" media="(prefers-color-scheme: dark)"/><img alt="Sourcegraph" src="assets/logo-theme-light.svg" height="48px" /></picture></a>
+<style>
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1em;
+    margin-bottom: 1em;
+  }
+  .app-btn {
+    cursor: pointer;
+    text-decoration: none;
+    height: 15em;
+    width: 100%;
+    border-radius: 1em;
+    border: 2px solid var(--input-focus-border);
+    color: var(--text-color);
+    background-color: var(--sidebar-bg);
+    text-align: center;
+    font-weight: 500;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
+  }
+  .app-btn:hover {
+    box-shadow: 0 0 10px var(--link-hover-color);
+  }
+  .app-btn > img {
+    height: 4em;
+  }
+  .app-btn > h3 {
+    font-size: 1.5em;
+    font-weight: 400;
+    margin-top: .2em;
+    margin-bottom: 1em;
+  }
+</style>
 
-<p class="subtitle">Code search and intelligence</p>
+# Get Started
 
-<p class="lead">
-Understand, fix, and automate across your codebase with Sourcegraph.
-</p>
+## Deploy Sourcegraph
 
-### Try Sourcegraph
+Sourcegraph is runnable in a variety of environments, from cloud to self-hosted to your local machine.
 
-You can quickly try Sourcegraph locally using Docker:
+- For most customers, we recommend Sourcegraph Cloud. A Sourcegraph Cloud instance is a single-tenant instance that is managed entirely by Sourcegraph.
+- For customers that want to self-host, we recommend one of the single-node [deployment options](admin/deploy/index.md).
+- For enterprise customers that require a multi-node, self-hosted deployment, we offer a Kubernetes option. We strongly encourage you to get in touch by email (sales@sourcegraph.com) if you pursue this option.
 
-<!--
-  DO NOT CHANGE THIS TO A CODEBLOCK.
-  We want line breaks for readability, but backslashes to escape them do not work cross-platform.
-  This uses line breaks that are rendered but not copy-pasted to the clipboard.
--->
+### Recommended
 
-<pre class="pre-wrap start-sourcegraph-command" id="dockerInstall"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.42.2<span class="iconify copy-text" data-icon="mdi:clipboard-arrow-left-outline" data-inline="false"></span></code>
-</pre>
+<form class="grid">
+  <!-- Sourcegraph Cloud -->
+  <button class="app-btn btn" formaction="cloud">
+			<img alt="sourcegraph-logo" src="https://handbook.sourcegraph.com/departments/engineering/design/brand_guidelines/logo/versions/Sourcegraph_Logomark_Color.svg"/>
+			<h3>Sourcegraph Cloud</h3>
+		  <p>Create a single-tenant instance managed by Sourcegraph</p>
+  </button>
+</form>
 
-For more information, see [single-container Docker deployment documentation](admin/deploy/docker-single-container/index.md).
+### Self-hosted
 
-To use Sourcegraph on 2 million open-source repositories, visit [Sourcegraph.com](https://sourcegraph.com/search).
+<form class="grid">
+  <!-- AWS AMI-->
+  <button class="app-btn btn" formaction="/admin/deploy/aws-ami">
+    <img alt="aws-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/1280px-Amazon_Web_Services_Logo.svg.png"/>
+    <h3>AWS</h3>
+    <p>Launch a pre-configured Sourcegraph instance from an AWS AMI</p>
+  </button>
+</form>
 
-**For production deployments:** [use Sourcegraph Cloud](cloud/index.md) or [deploy self-hosted Sourcegraph](admin/deploy/index.md).
+<form class="grid">
+  <!-- Azure -->
+  <button class="app-btn btn" formaction="/admin/deploy/docker-compose/azure">
+    <img alt="azure-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/azure.png"/>
+    <h3>Azure</h3>
+    <p>Deploy onto Microsoft Azure</p>
+  </button>
+  <!-- AWS One Click-->
+  <button class="app-btn btn" formaction="/admin/deploy/docker-compose/aws-oneclick">
+    <img alt="aws-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/1280px-Amazon_Web_Services_Logo.svg.png"/>
+    <h3>AWS One-Click</h3>
+    <span class="badge badge-warning">Coming soon</span> 
+    <!-- <p>Deploy onto AWS in one click</p> -->
+  </button>
+  <!-- Digital Ocean -->
+  <button class="app-btn btn" formaction="/admin/deploy/docker-compose/digitalocean">
+    <img alt="digital-ocean-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/DigitalOcean.png"/>
+    <h3>DigitalOcean</h3>
+    <p>Deploy onto DigitalOcean</p>
+  </button>
+  <!-- Docker Compose -->
+  <button class="app-btn btn" formaction="/admin/install/docker-compose">
+    <img alt="docker-compose-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/Docker.png"/>
+    <h3>Docker Compose</h3>
+    <p>Deploy with Docker Compose</p>
+  </button>
+  <!-- GCP -->
+  <button class="app-btn btn" formaction="/admin/deploy/docker-compose/google_cloud">
+    <img alt="gcp-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/googlecloud.png"/>
+    <h3>Google Cloud</h3>
+    <p>Deploy onto Google Cloud (GCP)</p>
+  </button>
+  <!-- Others -->
+  <button class="app-btn btn" formaction="/admin/deploy">
+    <img alt="private-cloud-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/cloud.png"/>
+    <h3>Private cloud</h3>
+    <p>Deploy into a generic cloud environment</p>
+  </button>
+  <!-- Kubernetes -->
+  <button class="app-btn btn" formaction="/admin/deploy/kubernetes">
+    <img alt="kubernetes-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/kubernetes.png"/>
+    <h3>Kubernetes</h3>
+    <p><strong>Enterprise-only</strong></p>
+	<p>Deploy a multi-node cluster</p>
+  </button>
+</form>
 
-## Popular documentation
+### Local machine
 
-- [Tour](getting-started/tour.md): A walkthrough of Sourcegraph's features, with real-world example use cases.
-- [Using Sourcegraph](getting-started/index.md)
-- [How to run a Sourcegraph trial](adopt/trial/index.md) at your company
-- [Integrations](integration/index.md) with GitHub, GitLab, Bitbucket, etc.
-- [Chrome and Firefox browser extensions](integration/browser_extension.md)
-- Reference:
-  - [Query syntax reference](code_search/reference/queries.md)
-  - [API documentation](api/index.md)
-  
-### Other links
+<form class="grid">
+  <button class="app-btn btn" formaction="/admin/deploy/docker-single-container">
+    <img alt="docker-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/Docker.png"/>
+    <h3>Docker Container</h3>
+    <p>Spin up a local Sourcegraph instance</p>
+  </button>
+  <div></div><div></div>
+</form>
 
-- [Sourcegraph changelog](./CHANGELOG.md)
-- [Sourcegraph handbook](https://handbook.sourcegraph.com/)
-- [Sourcegraph blog](https://about.sourcegraph.com/blog/)
-- [@sourcegraph on Twitter](https://twitter.com/sourcegraph)
+---
+
+## Quickstart
+
+- [Learn Sourcegraph](getting-started/index.md)
+  - Sourcegraph 101: how to use Sourcegraph
+- [Tour Sourcegraph](getting-started/tour.md)
+  - Take a tour of Sourcegraph’s features using real-world examples and use cases
+- [Trial Sourcegraph](adopt/trial/index.md)
+  - Start a Sourcegraph trail at your company
+
+## Community
+
+- [Blog](https://about.sourcegraph.com/blog/)
+- [Discord](https://discord.gg/s2qDtYGnAE)
+- [Twitter](https://twitter.com/sourcegraph)
+- [Handbook](https://handbook.sourcegraph.com/)
+
+## Support
+
 - [File an issue](https://github.com/sourcegraph/sourcegraph/issues/new?&title=Improve+Sourcegraph+quickstart+guide)
 - [Request a demo](https://about.sourcegraph.com/demo)
 - [Talk to a product specialist](https://about.sourcegraph.com/contact/request-info/)

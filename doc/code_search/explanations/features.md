@@ -28,7 +28,7 @@ See our [query syntax](../reference/queries.md#diff-and-commit-searches-only) do
 
 ## Symbol search
 
-Searching for symbols makes it easier to find specific functions, variables, and more. Use the `type:symbol` filter to search for symbol results. Symbol results also appear in typeahead suggestions, so you can jump directly to symbols by name. When on an [indexed](../../admin/search.md#indexed-search) commit, it uses Zoekt. Otherwise it uses the [symbols service](../../code_intelligence/explanations/features.md#symbol-search)
+Searching for symbols makes it easier to find specific functions, variables, and more. Use the `type:symbol` filter to search for symbol results. Symbol results also appear in typeahead suggestions, so you can jump directly to symbols by name. When on an [indexed](../../admin/search.md#indexed-search) commit, it uses Zoekt. Otherwise it uses the [symbols service](../../code_navigation/explanations/features.md#symbol-search)
 
 ## Saved searches
 

@@ -9,7 +9,7 @@ export const EmptyPoliciesList: React.FunctionComponent<React.PropsWithChildren<
         <Icon className="mb-2" svgPath={mdiMapSearch} inline={false} aria-hidden={true} />
         <br />
         {'No policies have been defined.  Enable precise code navigation by '}
-        <Link to="/help/code_intelligence/how-to/configure_data_retention" target="_blank" rel="noreferrer noopener">
+        <Link to="/help/code_navigation/how-to/configure_data_retention" target="_blank" rel="noreferrer noopener">
             configuring data retention policies
         </Link>
         .

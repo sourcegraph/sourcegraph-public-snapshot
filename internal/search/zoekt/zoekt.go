@@ -5,10 +5,10 @@ import (
 	"regexp/syntax" //nolint:depguard // zoekt requires this pkg
 	"time"
 
-	"github.com/google/zoekt"
-	zoektquery "github.com/google/zoekt/query"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
+	"github.com/sourcegraph/zoekt"
+	zoektquery "github.com/sourcegraph/zoekt/query"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
@@ -42,6 +42,10 @@ func parseRe(pattern string, filenameOnly bool, contentOnly bool, queryIsCaseSen
 	}
 	noOpAnyChar(re)
 
+	// OptimizeRegexp currently only converts capture groups into non-capture
+	// groups (faster for stdlib regexp to execute).
+	re = zoektquery.OptimizeRegexp(re, regexpFlags)
+
 	// zoekt decides to use its literal optimization at the query parser
 	// level, so we check if our regex can just be a literal.
 	if re.Op == syntax.OpLiteral {
@@ -66,9 +70,11 @@ func getSpanContext(ctx context.Context) (shouldTrace bool, spanContext map[stri
 	}
 
 	spanContext = make(map[string]string)
-	if err := ot.GetTracer(ctx).Inject(opentracing.SpanFromContext(ctx).Context(), opentracing.TextMap, opentracing.TextMapCarrier(spanContext)); err != nil {
-		log15.Warn("Error injecting span context into map: %s", err)
-		return true, nil
+	if span := opentracing.SpanFromContext(ctx); span != nil {
+		if err := ot.GetTracer(ctx).Inject(span.Context(), opentracing.TextMap, opentracing.TextMapCarrier(spanContext)); err != nil {
+			log15.Warn("Error injecting span context into map: %s", err)
+			return true, nil
+		}
 	}
 	return true, spanContext
 }

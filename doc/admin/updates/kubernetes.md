@@ -5,14 +5,42 @@
 ## Upgrade procedure
 
 1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
-2. Find the relevant entry for your update in the update notes on this page.
-3. After checking the relevant update notes, to upgrade your instance refer to either:
-    * [Kubernetes with Helm upgrade guide](../deploy/kubernetes/helm.md#upgrading-sourcegraph)
-    * [Kubernetes without Helm upgrade guide](../deploy/kubernetes/update.md)
+1. Find the relevant entry for your update in the update notes on this page.
+1. After checking the relevant update notes, refer to either of the following guides to upgrade your instance:
+    * [Kubernetes with Helm upgrade guide](../deploy/kubernetes/helm.md#standard-upgrades)
+    * [Kubernetes without Helm upgrade guide](../deploy/kubernetes/update.md#standard-upgrades)
+
+## Multi-version upgrade procedure
+
+1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
+1. Refer to either of the following guides to upgrade your instance:
+    * [Kubernetes with Helm upgrade guide](../deploy/kubernetes/helm.md#multi-version-upgrades)
+    * [Kubernetes without Helm upgrade guide](../deploy/kubernetes/update.md#multi-version-upgrades)
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
 ## Unreleased
+
+<!-- Add changes changes to this section before release. -->
+
+Follow the [steps](#upgrade-procedure) outlined at the top of this page to upgrade.
+
+
+## 3.43 -> 4.0.1
+
+* `jaeger-agent` sidecars have been removed in favor of an  [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) DaemonSet + Deployment configuration. See [Configure a tracing backend section.](#configure-a-tracing-backend)
+* Exporting traces to an external observability backend is now available. Read the [documentation](../deploy/kubernetes/configure.md#configure-a-tracing-backend) to configure.
+* The bundled Jaeger instance is now disabled by default. It can be [enabled](../deploy/kubernetes/configure.md#enable-the-bundled-jaeger-deployment) if you do not wish to utilise your own external tracing backend.
+
+<!-- Add changes changes to this section before release. -->
+
+Follow the [steps](#upgrade-procedure) outlined at the top of this page to upgrade.
+
+## 3.42 -> 3.43.2
+
+Follow the [standard upgrade procedure](../deploy/kubernetes/update.md) to upgrade your deployment.
+
+*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.43).*
 
 ## 3.41 -> 3.42.2
 
@@ -148,17 +176,20 @@ This upgrade adds a new `worker` service that runs a number of background jobs t
 
 ## 3.26 -> 3.27
 
-> Warning: ⚠️ Sourcegraph 3.27 now requires **Postgres 12+**.
+> WARNING: Sourcegraph 3.27 now requires **Postgres 12+**.
 
 If you are using an external
 database, [upgrade your database](https://docs.sourcegraph.com/admin/postgres#upgrading-external-postgresql-instances)
 to Postgres 12 or above prior to upgrading Sourcegraph. No action is required if you are using the supplied database
 images.
-> **Note**: The Postgres 12 database migration scales with the size of your database, and the resources provided to the container.
+
+> NOTE: The Postgres 12 database migration scales with the size of your database, and the resources provided to the container.
 > Expect to have downtime relative to the size of your database. Additionally, you must ensure that have enough storage
 > space to accommodate the migration. A rough guide would be 2x the current on-disk database size
 
-> Warning: ⚠️ We have updated the default replicas for `sourcegraph-frontend` and `precise-code-intel-worker` to `2`. If you use a custom value, make sure you do not merge the replica change.
+<!---->
+
+> WARNING: We have updated the default replicas for `sourcegraph-frontend` and `precise-code-intel-worker` to `2`. If you use a custom value, make sure you do not merge the replica change.
 
 Afterwards, follow the [standard upgrade method](../deploy/kubernetes/update.md) to upgrade your deployment.
 
@@ -170,7 +201,7 @@ out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?
 No manual migration required, follow the [standard upgrade method](../deploy/kubernetes/update.md) to upgrade your
 deployment.
 
-> NOTE: ⚠️ From **3.27** onwards we will only support PostgreSQL versions **starting from 12**.
+> NOTE: From **3.27** onwards we will only support PostgreSQL versions **starting from 12**.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.25).*
 
@@ -212,7 +243,7 @@ This release introduces a second database instance, `codeintel-db`. If you have 
 
 ### If you wish to keep existing LSIF data
 
-> Warning: **Do not upgrade out of the 3.21.x release branch** until you have seen the log message indicating the completion of the LSIF data migration, or verified that the `/lsif-storage/dbs` directory on the precise-code-intel-bundle-manager volume is empty. Otherwise, you risk data loss for precise code navigation.
+> WARNING: **Do not upgrade out of the 3.21.x release branch** until you have seen the log message indicating the completion of the LSIF data migration, or verified that the `/lsif-storage/dbs` directory on the precise-code-intel-bundle-manager volume is empty. Otherwise, you risk data loss for precise code navigation.
 
 If you had LSIF data uploaded prior to upgrading to 3.21.0, there is a background migration that moves all existing LSIF data into the `codeintel-db` upon upgrade. Once this process completes, the `/lsif-storage/dbs` directory on the precise-code-intel-bundle-manager volume should be empty, and the bundle manager should print the following log message:
 
@@ -233,7 +264,7 @@ No manual migration is required, follow the [standard upgrade method](../deploy/
 
 No manual migration is required, follow the [standard upgrade method](../deploy/kubernetes/update.md) to upgrade your deployment.
 
-> Warning: If you use an overlay that does not reference one of the provided overlays, please add `- ../bases/pvcs` as an additional base
+> WARNING: If you use an overlay that does not reference one of the provided overlays, please add `- ../bases/pvcs` as an additional base
 to your `kustomization.yaml` file. Otherwise the PVCs could be pruned if `kubectl apply -prune` is used.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.19).*
@@ -408,10 +439,6 @@ service and then create the new one (this will result in a few seconds of downti
 kubectl delete svc sourcegraph-frontend
 kubectl apply -f base/frontend/sourcegraph-frontend.Service.yaml
 ```
-
-### Language server deployment
-
-Sourcegraph 3.0 removed lsp-proxy and automatic language server deployment in favor of [Sourcegraph extensions](https://docs.sourcegraph.com/extensions). As a consequence, Sourcegraph 3.0 does not automatically run or manage language servers. If you had code navigation enabled in 2.x, you will need to follow the instructions for each language extension and deploy them individually. Read the [code navigation documentation](https://docs.sourcegraph.com/user/code_intelligence).
 
 ### HTTPS / TLS
 

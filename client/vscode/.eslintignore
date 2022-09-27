@@ -1,3 +1,4 @@
+src/graphql-operations.ts
 dist/
 package.json
 src/vendor/*.js

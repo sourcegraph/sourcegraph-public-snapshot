@@ -174,7 +174,7 @@ export const BATCH_CHANGES_BY_NAMESPACE_RESULT: BatchChangesByNamespaceResult = 
 export const getLicenseAndUsageInfoResult = (
     isLicensed = true,
     hasBatchChanges = true,
-    maxUnlicensedChangesets = 5
+    maxUnlicensedChangesets = 10
 ): GetLicenseAndUsageInfoResult => ({
     campaigns: isLicensed,
     batchChanges: isLicensed,

@@ -3,6 +3,7 @@ import { groupBy } from 'lodash'
 interface GetCategoriesInput<Datum> {
     data: Datum[]
     stacked: boolean
+    sortByValue?: boolean
     getDatumName: (datum: Datum) => string
     getDatumValue: (datum: Datum) => number
     getCategory: (datum: Datum) => string | undefined
@@ -16,7 +17,7 @@ export interface Category<Datum> {
 }
 
 export function getGroupedCategories<Datum>(input: GetCategoriesInput<Datum>): Category<Datum>[] {
-    const { data, stacked, getCategory, getDatumName, getDatumValue } = input
+    const { data, stacked, sortByValue, getCategory, getDatumName, getDatumValue } = input
 
     const categories = groupBy<Datum>(data, datum => getCategory(datum) ?? getDatumName(datum))
 
@@ -33,6 +34,10 @@ export function getGroupedCategories<Datum>(input: GetCategoriesInput<Datum>): C
             maxValue,
             stacked,
         })
+
+        if (sortByValue) {
+            return store.sort((a, b) => b.maxValue - a.maxValue)
+        }
 
         return store
     }, [])

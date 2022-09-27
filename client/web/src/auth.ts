@@ -1,7 +1,7 @@
 import { Observable, ReplaySubject } from 'rxjs'
 import { catchError, map, mergeMap, tap } from 'rxjs/operators'
 
-import { logError } from '@sourcegraph/common'
+import { logger } from '@sourcegraph/common'
 import { dataOrThrowErrors } from '@sourcegraph/http-client'
 import { AuthenticatedUser as SharedAuthenticatedUser, currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
 import { CurrentAuthStateResult } from '@sourcegraph/shared/src/graphql-operations'
@@ -49,7 +49,7 @@ if (window.context?.isAuthenticatedUser) {
     refreshAuthenticatedUser()
         .toPromise()
         .then(() => undefined)
-        .catch(error => logError(error))
+        .catch(error => logger.error(error))
 } else {
     authenticatedUser.next(null)
 }

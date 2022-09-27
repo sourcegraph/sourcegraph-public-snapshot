@@ -1,6 +1,6 @@
 import { useContext, useEffect, useState } from 'react'
 
-import { logError } from '@sourcegraph/common'
+import { logger } from '@sourcegraph/common'
 
 import { FeatureFlagName } from './featureFlags'
 import { FeatureFlagsContext } from './FeatureFlagsProvider'
@@ -26,7 +26,7 @@ export function useFeatureFlag(flagName: FeatureFlagName, defaultValue = false):
         if (!client) {
             const errorMessage =
                 '[useFeatureFlag]: No FeatureFlagClient is configured. All feature flags will default to "false" value.'
-            logError(errorMessage)
+            logger.warn(errorMessage)
             setResult(({ value }) => ({ value, status: 'error', error: new Error(errorMessage) }))
             return
         }

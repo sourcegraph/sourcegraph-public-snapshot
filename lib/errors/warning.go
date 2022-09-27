@@ -43,23 +43,23 @@ var _ Warning = (*warning)(nil)
 // Consumers of these errors should then use errors.As to check if the error is of a warning type
 // and based on that, should just log it as a warning. For example:
 //
-// var ref errors.Warning
-// err := someFunctionThatReturnsAWarningErrorOrACriticalError()
-// if err != nil && errors.As(err, &ref) {
-//     log.Warnf("failed to do X: %v", err)
-// }
+//	var ref errors.Warning
+//	err := someFunctionThatReturnsAWarningErrorOrACriticalError()
+//	if err != nil && errors.As(err, &ref) {
+//	    log.Warnf("failed to do X: %v", err)
+//	}
 //
-// if err != nil {
-//     return err
-// }
+//	if err != nil {
+//	    return err
+//	}
 func NewWarningError(err error) *warning {
 	return &warning{
 		error: err,
 	}
 }
 
-func (ce *warning) Error() string {
-	return ce.error.Error()
+func (w *warning) Error() string {
+	return w.error.Error()
 }
 
 // IsWarning always returns true. It exists to differentiate regular errors with Warning
@@ -67,6 +67,11 @@ func (ce *warning) Error() string {
 // types.
 func (w *warning) IsWarning() bool {
 	return true
+}
+
+// Unwrap returns the underlying error of the warning.
+func (w *warning) Unwrap() error {
+	return w.error
 }
 
 // As will return true if the target is of type warning.
@@ -78,5 +83,14 @@ func (w *warning) As(target any) bool {
 		return true
 	}
 
+	return false
+}
+
+// IsWarning is a helper to check whether the specified err is a Warning
+func IsWarning(err error) bool {
+	var ref Warning
+	if As(err, &ref) {
+		return ref.IsWarning()
+	}
 	return false
 }

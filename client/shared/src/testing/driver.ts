@@ -21,7 +21,7 @@ import { from, fromEvent, merge, Subscription } from 'rxjs'
 import { filter, map, concatAll, mergeMap, mergeAll, takeUntil } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
 
-import { isDefined } from '@sourcegraph/common'
+import { isDefined, logger } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql, GraphQLResult } from '@sourcegraph/http-client'
 
 import { ExternalServiceKind } from '../graphql-operations'
@@ -198,8 +198,8 @@ export class Driver {
                                 takeUntil(fromEvent(page, 'close'))
                             )
                         )
-                    )  // TODO - should remove console.log or replace with logError function from @sourcegraph/commons
-                    .subscribe(formattedLine => console.log(formattedLine))
+                    )
+                    .subscribe(formattedLine => logger.log(formattedLine))
             )
         }
     }
@@ -295,8 +295,7 @@ export class Driver {
         if (!this.keepBrowser) {
             await this.browser.close()
         }
-        // TODO - should remove console.log or replace with logError function from @sourcegraph/commons
-        console.log(
+        logger.log(
             '\n  Visited routes:\n' +
                 [
                     ...new Set(
@@ -408,8 +407,7 @@ export class Driver {
         }
 
         // Navigate to the add external service page.
-        // TODO - should remove console.log or replace with logError function from @sourcegraph/commons
-        console.log('Adding external service of kind', kind)
+        logger.log('Adding external service of kind', kind)
         await this.page.goto(this.sourcegraphBaseUrl + '/site-admin/external-services/new')
         await this.page.waitForSelector(`[data-test-external-service-card-link="${kind.toUpperCase()}"]`, {
             visible: true,
@@ -783,7 +781,7 @@ export async function createDriverForTest(options?: Partial<DriverOptions>): Pro
     )
 
     // Apply defaults
-    const resolvedOptions: typeof config & typeof options = {
+    const resolvedOptions: DriverOptions = {
         ...config,
         ...options,
     }
@@ -802,8 +800,7 @@ export async function createDriverForTest(options?: Partial<DriverOptions>): Pro
     args.push(`--window-size=${config.windowWidth},${config.windowHeight}`)
     if (process.getuid() === 0) {
         // TODO don't run as root in CI
-        // TODO - should remove console.warn or replace with logError function from @sourcegraph/commons
-        console.warn('Running as root, disabling sandbox')
+        logger.warn('Running as root, disabling sandbox')
         args.push('--no-sandbox', '--disable-setuid-sandbox')
     }
     if (loadExtension) {

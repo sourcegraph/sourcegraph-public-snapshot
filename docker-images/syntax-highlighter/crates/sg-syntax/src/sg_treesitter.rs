@@ -1,7 +1,7 @@
 use paste::paste;
 use protobuf::Message;
 use std::collections::{HashMap, VecDeque};
-use std::fmt::Write as _; // import without risk of name clashing
+use std::fmt::{Write as _}; // import without risk of name clashing
 use tree_sitter_highlight::Error;
 use tree_sitter_highlight::{Highlight, HighlightEvent};
 
@@ -393,9 +393,12 @@ pub fn dump_document_range(doc: &Document, source: &str, file_range: &Option<Fil
             }
 
             let range = PackedRange::from_vec(&occ.range);
-            if range.start_line != range.end_line {
-                continue;
-            }
+            let is_single_line = range.start_line == range.end_line;
+            let end_col = if is_single_line {
+                range.end_col
+            } else {
+                line.len() as i32
+            };
 
             match range.start_line.cmp(&(idx as i32)) {
                 std::cmp::Ordering::Less => continue,
@@ -404,13 +407,27 @@ pub fn dump_document_range(doc: &Document, source: &str, file_range: &Option<Fil
                     break;
                 }
                 std::cmp::Ordering::Equal => {
-                    let length = (range.end_col - range.start_col) as usize;
+                    let length = (end_col - range.start_col) as usize;
+                    let multiline_suffix = if is_single_line {
+                        "".to_string()
+                    } else {
+                        format!(
+                            " {}:{}..{}:{}",
+                            range.start_line, range.start_col, range.end_line, range.end_col
+                        )
+                    };
+                    let symbol_suffix = if occ.symbol.is_empty() {
+                        "".to_owned()
+                    } else {
+                        format!(" {}", occ.symbol)
+                    };
                     let _ = writeln!(
                         result,
-                        "//{}{} {:?}",
+                        "//{}{} {:?}{multiline_suffix} {}",
                         " ".repeat(range.start_col as usize),
                         "^".repeat(length),
-                        occ.syntax_kind
+                        occ.syntax_kind,
+                        symbol_suffix,
                     );
                 }
             }

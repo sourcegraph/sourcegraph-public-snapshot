@@ -4,21 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
-	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
-	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -281,123 +276,4 @@ func TestGitLabSource_WithAuthenticator(t *testing.T) {
 			})
 		}
 	})
-}
-
-func Test_maybeRefreshGitLabOAuthTokenFromCodeHost(t *testing.T) {
-	tests := []struct {
-		name    string
-		expired bool
-	}{
-		{
-			name:    "Expired token should be updated",
-			expired: true,
-		},
-		{
-			name:    "Not expired token should not be updated",
-			expired: false,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			var databaseHit bool
-			var httpServerHit bool
-			var newToken string
-
-			// perms syncer mocking
-			db := database.NewMockDB()
-			externalServices := database.NewMockExternalServiceStore()
-			externalServices.UpsertFunc.SetDefaultHook(func(ctx context.Context, services ...*types.ExternalService) error {
-				databaseHit = true
-				svc := services[0]
-				parsed, err := extsvc.ParseEncryptableConfig(ctx, extsvc.KindGitLab, svc.Config)
-				if err != nil {
-					t.Fatal(err)
-				}
-				config := parsed.(*schema.GitLabConnection)
-				newToken = config.Token
-
-				return nil
-			})
-			db.ExternalServicesFunc.SetDefaultReturn(externalServices)
-
-			// http mocking
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if r.URL.Path != "/oauth/token" {
-					t.Errorf("Expected to request '/oauth/token', got: %s", r.URL.Path)
-				}
-				httpServerHit = true
-				w.Header().Set("Content-Type", "application/json")
-				refreshedToken := json.RawMessage(fmt.Sprintf(`
-		{
-			"access_token":"cafebabea66306277915a6919a90ac7972853317d9df385a828b17d9200b7d4c",
-			"token_type":"Bearer",
-			"refresh_token":"cafebabe251f4c2295494ee29b6b66f7011dad92251ab988a376a23ef12ad041",
-			"expiry":"%s"
-		}`,
-					time.Now().Add(2*time.Hour).Format(time.RFC3339)))
-				w.Write(refreshedToken)
-			}))
-			t.Cleanup(func() { server.Close() })
-
-			// conf mocking
-			conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-				AuthProviders: []schema.AuthProviders{
-					{
-						Gitlab: &schema.GitLabAuthProvider{
-							ClientID:     "clientId",
-							ClientSecret: "clientSecret",
-							Url:          fmt.Sprintf("%s/", server.URL),
-						},
-					},
-				},
-			}})
-			t.Cleanup(func() { conf.Mock(nil) })
-
-			// test data mocking
-			expiryDate := time.Now().Add(1 * time.Hour)
-			if test.expired {
-				expiryDate = expiryDate.Add(-2 * time.Hour)
-			}
-
-			svc := &types.ExternalService{
-				ID:   1,
-				Kind: extsvc.KindGitLab,
-				Config: extsvc.NewUnencryptedConfig(fmt.Sprintf(`{
-   "url": "%s",
-   "token": "af865c51fb0ac7f7b6714ce25d837ad42f13f57006b651a592c810ac93d2e2cc",
-   "token.type": "oauth",
-   "token.oauth.refresh": "b84b0f06e306d1747ee9e87ef310aaa8784cc688d5a41590bee585634374f0c3",
-   "token.oauth.expiry": %d,
-   "projectQuery": [
-     "projects?id_before=0"
-   ],
-   "authorization": {
-     "identityProvider": {
-       "type": "oauth"
-     }
-   }
- }`, server.URL, expiryDate.Unix())),
-			}
-
-			refreshed, err := maybeRefreshGitLabOAuthTokenFromCodeHost(context.Background(), logtest.Scoped(t), db, svc)
-			if err != nil {
-				t.Error(err)
-			}
-
-			// When token is expired, DB and HTTP server should be hit (for token update)
-			want := test.expired
-			if want != databaseHit {
-				t.Errorf("Database hit:\ngot: %v\nwant: %v", databaseHit, want)
-			}
-			if want != httpServerHit {
-				t.Errorf("HTTP Server hit:\ngot: %v\nwant: %v", httpServerHit, want)
-			}
-			if test.expired {
-				wantToken := "cafebabea66306277915a6919a90ac7972853317d9df385a828b17d9200b7d4c"
-				assert.Equal(t, wantToken, newToken)
-				assert.Equal(t, wantToken, refreshed)
-			}
-		})
-	}
 }

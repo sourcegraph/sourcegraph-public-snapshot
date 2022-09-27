@@ -222,6 +222,11 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 		// Admins normally add to end of lists, so end of list most likely has new repos
 		// => stream them first.
 		for i := len(s.config.Repos) - 1; i >= 0; i-- {
+			if err := ctx.Err(); err != nil {
+				ch <- batch{err: err}
+				break
+			}
+
 			name := s.config.Repos[i]
 			ps := strings.SplitN(name, "/", 2)
 			if len(ps) != 2 {
@@ -278,7 +283,10 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 
 			repos, err := s.client.ProjectRepos(ctx, q)
 			if err != nil {
-				ch <- batch{err: errors.Wrapf(err, "bitbucketserver.projectKeys: query=%q", q)}
+				// Getting a "fatal" error for a single project key is not a strong
+				// enough reason to stop syncing, instead wrap this error as a warning
+				// so that the sync can continue.
+				ch <- batch{err: errors.NewWarningError(errors.Wrapf(err, "bitbucketserver.projectKeys: query=%q", q))}
 				return
 			}
 

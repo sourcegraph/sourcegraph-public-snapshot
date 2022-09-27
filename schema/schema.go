@@ -66,6 +66,16 @@ type ApiRatelimit struct {
 	PerUser int `json:"perUser"`
 }
 
+// AuditLog description: EXPERIMENTAL: Configuration for audit logging (specially formatted log entries for tracking sensitive events)
+type AuditLog struct {
+	// GitserverAccess description: Capture gitserver access logs as part of the audit log.
+	GitserverAccess bool `json:"gitserverAccess"`
+	// GraphQL description: Capture GraphQL requests and responses as part of the audit log.
+	GraphQL bool `json:"graphQL"`
+	// SecurityEvents description: Capture security events as part of the audit log.
+	SecurityEvents bool `json:"securityEvents"`
+}
+
 // AuthAccessTokens description: Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.
 type AuthAccessTokens struct {
 	// Allow description: Allow or restrict the use of access tokens. The default is "all-users-create", which enables all users to create access tokens. Use "none" to disable access tokens entirely. Use "site-admin-create" to restrict creation of new tokens to admin users (existing tokens will still work until revoked).
@@ -468,10 +478,10 @@ type DebugLog struct {
 
 // Dotcom description: Configuration options for Sourcegraph.com only.
 type Dotcom struct {
-	// GithubAppCloud description: The config options for Sourcegraph Cloud GitHub App.
-	GithubAppCloud *GithubAppCloud `json:"githubApp.cloud,omitempty"`
 	// SlackLicenseExpirationWebhook description: Slack webhook for upcoming license expiration notifications.
 	SlackLicenseExpirationWebhook string `json:"slackLicenseExpirationWebhook,omitempty"`
+	// SrcCliVersionCache description: Configuration related to the src-cli version cache. This should only be used on sourcegraph.com.
+	SrcCliVersionCache *SrcCliVersionCache `json:"srcCliVersionCache,omitempty"`
 }
 
 // EncryptionKey description: Config for a key
@@ -606,7 +616,7 @@ type ExperimentalFeatures struct {
 	// EnableGithubInternalRepoVisibility description: Enable support for visilibity of internal Github repositories
 	EnableGithubInternalRepoVisibility bool `json:"enableGithubInternalRepoVisibility,omitempty"`
 	// EnableLegacyExtensions description: Enable the extension registry and the use of extensions (doesn't affect code intel and git extras).
-	EnableLegacyExtensions bool `json:"enableLegacyExtensions,omitempty"`
+	EnableLegacyExtensions *bool `json:"enableLegacyExtensions,omitempty"`
 	// EnablePermissionsWebhooks description: Enables webhook consumers to sync permissions from external services faster than the defaults schedule
 	EnablePermissionsWebhooks bool `json:"enablePermissionsWebhooks,omitempty"`
 	// EnablePostSignupFlow description: Enables post sign-up user flow to add code hosts and sync code
@@ -621,6 +631,8 @@ type ExperimentalFeatures struct {
 	GitServerPinnedRepos map[string]string `json:"gitServerPinnedRepos,omitempty"`
 	// GoPackages description: Allow adding Go package host connections
 	GoPackages string `json:"goPackages,omitempty"`
+	// InsightsAlternateLoadingStrategy description: Use an in-memory strategy of loading Code Insights. Should only be used for benchmarking on large instances, not for customer use currently.
+	InsightsAlternateLoadingStrategy bool `json:"insightsAlternateLoadingStrategy,omitempty"`
 	// JvmPackages description: Allow adding JVM package host connections
 	JvmPackages string `json:"jvmPackages,omitempty"`
 	// NpmPackages description: Allow adding npm package code host connections
@@ -743,6 +755,20 @@ type GitCommitDescription struct {
 	Diff string `json:"diff"`
 	// Message description: The Git commit message.
 	Message string `json:"message"`
+}
+
+// GitHubApp description: The config options for Sourcegraph GitHub App.
+type GitHubApp struct {
+	// AppID description: The app ID of the GitHub App for Sourcegraph.
+	AppID string `json:"appID,omitempty"`
+	// ClientID description: The Client ID of the GitHub App for Sourcegraph, accessible from https://github.com/settings/apps .
+	ClientID string `json:"clientID,omitempty"`
+	// ClientSecret description: The Client Secret of the GitHub App for Sourcegraph, accessible from https://github.com/settings/apps .
+	ClientSecret string `json:"clientSecret,omitempty"`
+	// PrivateKey description: The base64-encoded private key of the GitHub App for Sourcegraph.
+	PrivateKey string `json:"privateKey,omitempty"`
+	// Slug description: The slug of the GitHub App for Sourcegraph.
+	Slug string `json:"slug,omitempty"`
 }
 
 // GitHubAuthProvider description: Configures the GitHub (or GitHub Enterprise) OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your GitHub instance: https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/. When a user signs into Sourcegraph or links their GitHub account to their existing Sourcegraph account, GitHub will prompt the user for the repo scope.
@@ -952,18 +978,16 @@ type GitLabWebhook struct {
 	Secret string `json:"secret"`
 }
 
-// GithubAppCloud description: The config options for Sourcegraph Cloud GitHub App.
-type GithubAppCloud struct {
-	// AppID description: The app ID of the GitHub App for Sourcegraph Cloud.
-	AppID string `json:"appID,omitempty"`
-	// ClientID description: The Client ID of the GitHub App for Sourcegraph Cloud, accessible from https://github.com/settings/apps .
-	ClientID string `json:"clientID,omitempty"`
-	// ClientSecret description: The Client Secret of the GitHub App for Sourcegraph Cloud, accessible from https://github.com/settings/apps .
-	ClientSecret string `json:"clientSecret,omitempty"`
-	// PrivateKey description: The base64-encoded private key of the GitHub App for Sourcegraph Cloud.
-	PrivateKey string `json:"privateKey,omitempty"`
-	// Slug description: The slug of the GitHub App for Sourcegraph Cloud.
-	Slug string `json:"slug,omitempty"`
+// Github description: GitHub configuration, both for queries and receiving release webhooks.
+type Github struct {
+	// Repository description: The repository to get the latest version of.
+	Repository *Repository `json:"repository,omitempty"`
+	// Token description: The access token to use when communicating with GitHub.
+	Token string `json:"token"`
+	// Uri description: The URI of the GitHub instance.
+	Uri string `json:"uri,omitempty"`
+	// WebhookSecret description: The release webhook secret.
+	WebhookSecret string `json:"webhookSecret"`
 }
 
 // GitoliteConnection description: Configuration for a connection to Gitolite.
@@ -1097,7 +1121,9 @@ type JVMPackagesConnection struct {
 
 // Log description: Configuration for logging and alerting, including to external services.
 type Log struct {
-	// GitserverAccessLogs description: Enable gitserver access logging.
+	// AuditLog description: EXPERIMENTAL: Configuration for audit logging (specially formatted log entries for tracking sensitive events)
+	AuditLog *AuditLog `json:"auditLog,omitempty"`
+	// GitserverAccessLogs description: DEPRECATED: Enable gitserver access logging. Use auditLog.gitserverAccess instead.
 	GitserverAccessLogs bool `json:"gitserver.accessLogs,omitempty"`
 	// Sentry description: Configuration for Sentry
 	Sentry *Sentry `json:"sentry,omitempty"`
@@ -1290,15 +1316,15 @@ type ObservabilityClient struct {
 	OpenTelemetry *OpenTelemetry `json:"openTelemetry,omitempty"`
 }
 
-// ObservabilityTracing description: Controls the settings for distributed tracing.
+// ObservabilityTracing description: Configures distributed tracing within Sourcegraph. To learn more, refer to https://docs.sourcegraph.com/admin/observability/tracing
 type ObservabilityTracing struct {
 	// Debug description: Turns on debug logging of tracing client requests. This can be useful for debugging connectivity issues between the tracing client and tracing backend, the performance overhead of tracing, and other issues related to the use of distributed tracing. May have performance implications in production.
 	Debug bool `json:"debug,omitempty"`
-	// Sampling description: Determines the requests for which distributed traces are recorded. "none" (default) turns off tracing entirely. "selective" sends traces whenever `?trace=1` is present in the URL. "all" sends traces on every request. Note that this only affects the behavior of the distributed tracing client. An appropriate tracing backend must be running for traces to be collected (for "opentracing", a Jaeger instance must be running as described in the Sourcegraph installation instructions). Additional downsampling can be configured in tracing backend (for Jaeger, see https://www.jaegertracing.io/docs/1.17/sampling).
+	// Sampling description: Determines the conditions under which distributed traces are recorded. "none" turns off tracing entirely. "selective" (default) sends traces whenever `?trace=1` is present in the URL (though background jobs may still emit traces). "all" sends traces on every request. Note that this only affects the behavior of the distributed tracing client. To learn more about additional sampling and traace export configuration with the default tracing type "opentelemetry", refer to https://docs.sourcegraph.com/admin/observability/opentelemetry#tracing
 	Sampling string `json:"sampling,omitempty"`
-	// Type description: Determines what tracing provider to enable. For "opentracing", the required backend is a Jaeger instance. For "opentelemetry" (EXPERIMENTAL), the required backend is a OpenTelemetry collector instance. "datadog" support has been removed, and the configuration option will be removed in a future release.
+	// Type description: Determines what tracing provider to enable. For "opentelemetry", the required backend is an OpenTelemetry collector instance (deployed by default with Sourcegraph). For "jaeger", a Jaeger instance is required to be configured via Jaeger client environment variables: https://github.com/jaegertracing/jaeger-client-go#environment-variables
 	Type string `json:"type,omitempty"`
-	// UrlTemplate description: Template for linking to trace URLs - '{{ .TraceID }}' is replaced with the trace ID, and {{ .ExternalURL }} is replaced with the value of 'externalURL'.
+	// UrlTemplate description: Template for linking to trace URLs - '{{ .TraceID }}' is replaced with the trace ID, and {{ .ExternalURL }} is replaced with the value of 'externalURL'. If none is set, no links are generated.
 	UrlTemplate string `json:"urlTemplate,omitempty"`
 }
 
@@ -1344,7 +1370,7 @@ type OpenIDConnectAuthProvider struct {
 
 // OpenTelemetry description: Configuration for the client OpenTelemetry exporter
 type OpenTelemetry struct {
-	// Endpoint description: OpenTelemetry tracing collector endpoint
+	// Endpoint description: OpenTelemetry tracing collector endpoint. By default, Sourcegraph's "/-/debug/otlp" endpoint forwards data to the configured collector backend.
 	Endpoint string `json:"endpoint,omitempty"`
 }
 
@@ -1526,6 +1552,12 @@ type QuickLink struct {
 
 // Ranking description: Experimental search result ranking options.
 type Ranking struct {
+	// MaxQueueMatchCount description: The maximum number of matches that can be buffered to sort results. The default is -1 (unbounded). Setting this to a positive integer protects frontend against OOMs for queries with extremely high count of matches per repository.
+	MaxQueueMatchCount *int `json:"maxQueueMatchCount,omitempty"`
+	// MaxQueueSizeBytes description: The maximum number of bytes that can be buffered to sort results. The default is -1 (unbounded). Setting this to a positive integer protects frontend against OOMs.
+	MaxQueueSizeBytes *int `json:"maxQueueSizeBytes,omitempty"`
+	// MaxReorderDurationMS description: The maximum time in milliseconds we wait until we flush the results queue. The default is 0 (unbounded). The larger the value the more stable the ranking and the higher the MEM pressure on frontend.
+	MaxReorderDurationMS int `json:"maxReorderDurationMS,omitempty"`
 	// MaxReorderQueueSize description: The maximum number of search results that can be buffered to sort results. -1 is unbounded. The default is 24. Set this to small integers to limit latency increases from slow backends.
 	MaxReorderQueueSize *int `json:"maxReorderQueueSize,omitempty"`
 	// RepoScores description: a map of URI directories to numeric scores for specifying search result importance, like {"github.com": 500, "github.com/sourcegraph": 300, "github.com/sourcegraph/sourcegraph": 100}. Would rank "github.com/sourcegraph/sourcegraph" as 500+300+100=900, and "github.com/other/foo" as 500.
@@ -1536,6 +1568,14 @@ type Repos struct {
 	Callsign string `json:"callsign"`
 	// Path description: Display path for the url e.g. gitolite/my/repo
 	Path string `json:"path"`
+}
+
+// Repository description: The repository to get the latest version of.
+type Repository struct {
+	// Name description: The repository name.
+	Name string `json:"name,omitempty"`
+	// Owner description: The repository namespace.
+	Owner string `json:"owner,omitempty"`
 }
 type Responders struct {
 	Id       string `json:"id,omitempty"`
@@ -1671,8 +1711,28 @@ type Settings struct {
 	AlertsHideObservabilitySiteAlerts *bool `json:"alerts.hideObservabilitySiteAlerts,omitempty"`
 	// AlertsShowPatchUpdates description: Whether to show alerts for patch version updates. Alerts for major and minor version updates will always be shown.
 	AlertsShowPatchUpdates bool `json:"alerts.showPatchUpdates,omitempty"`
+	// BasicCodeIntelGlobalSearchesEnabled description: Whether to run global searches over all repositories. On instances with many repositories, this can lead to issues such as: low quality results, slow response times, or significant load on the Sourcegraph instance. Defaults to true.
+	BasicCodeIntelGlobalSearchesEnabled bool `json:"basicCodeIntel.globalSearchesEnabled,omitempty"`
+	// BasicCodeIntelIncludeArchives description: Whether to include archived repositories in search results.
+	BasicCodeIntelIncludeArchives bool `json:"basicCodeIntel.includeArchives,omitempty"`
+	// BasicCodeIntelIncludeForks description: Whether to include forked repositories in search results.
+	BasicCodeIntelIncludeForks bool `json:"basicCodeIntel.includeForks,omitempty"`
+	// BasicCodeIntelIndexOnly description: Whether to use only indexed requests to the search API.
+	BasicCodeIntelIndexOnly bool `json:"basicCodeIntel.indexOnly,omitempty"`
+	// BasicCodeIntelUnindexedSearchTimeout description: The timeout (in milliseconds) for un-indexed search requests.
+	BasicCodeIntelUnindexedSearchTimeout float64 `json:"basicCodeIntel.unindexedSearchTimeout,omitempty"`
 	// CodeHostUseNativeTooltips description: Whether to use the code host's native hover tooltips when they exist (GitHub's jump-to-definition tooltips, for example).
 	CodeHostUseNativeTooltips bool `json:"codeHost.useNativeTooltips,omitempty"`
+	// CodeIntelDisableRangeQueries description: Whether to fetch multiple precise definitions and references on hover.
+	CodeIntelDisableRangeQueries bool `json:"codeIntel.disableRangeQueries,omitempty"`
+	// CodeIntelDisableSearchBased description: Never fall back to search-based code intelligence.
+	CodeIntelDisableSearchBased bool `json:"codeIntel.disableSearchBased,omitempty"`
+	// CodeIntelMixPreciseAndSearchBasedReferences description: Whether to supplement precise references with search-based results.
+	CodeIntelMixPreciseAndSearchBasedReferences bool `json:"codeIntel.mixPreciseAndSearchBasedReferences,omitempty"`
+	// CodeIntelReferencesPanel description: What kind of references panel to use for exploring definitions and references. The tabbed panel is deprecated.
+	CodeIntelReferencesPanel string `json:"codeIntel.referencesPanel,omitempty"`
+	// CodeIntelTraceExtension description: Whether to enable trace logging on the extension.
+	CodeIntelTraceExtension bool `json:"codeIntel.traceExtension,omitempty"`
 	// CodeIntelligenceAutoIndexPopularRepoLimit description: Up to this number of repos are auto-indexed automatically. Ordered by star count.
 	CodeIntelligenceAutoIndexPopularRepoLimit int `json:"codeIntelligence.autoIndexPopularRepoLimit,omitempty"`
 	// CodeIntelligenceAutoIndexRepositoryGroups description: A list of search.repositoryGroups that have auto-indexing enabled.
@@ -1693,6 +1753,8 @@ type Settings struct {
 	HistoryPreferAbsoluteTimestamps bool `json:"history.preferAbsoluteTimestamps,omitempty"`
 	// Insights description: EXPERIMENTAL: Code Insights
 	Insights []*Insight `json:"insights,omitempty"`
+	// InsightsAggregationsExtendedTimeout description: The number of seconds to execute the aggregation for when running in extended timeout mode. This value should always be less than any proxy timeout if one exists. The maximum value is equal to searchLimits.maxTimeoutSeconds
+	InsightsAggregationsExtendedTimeout int `json:"insights.aggregations.extendedTimeout,omitempty"`
 	// InsightsAllrepos description: EXPERIMENTAL: Backend-based Code Insights
 	InsightsAllrepos map[string]BackendInsight `json:"insights.allrepos,omitempty"`
 	// InsightsDashboards description: EXPERIMENTAL: Code Insights Dashboards
@@ -1714,7 +1776,9 @@ type Settings struct {
 	//
 	// Usually this setting is used in global and organization settings. If set in user settings, the message will only be displayed to that single user.
 	Notices []*Notice `json:"notices,omitempty"`
-	// Quicklinks description: Links that should be accessible quickly from the home and search pages.
+	// OpenInEditor description: Group of settings related to opening files in an editor.
+	OpenInEditor *SettingsOpenInEditor `json:"openInEditor,omitempty"`
+	// Quicklinks description: DEPRECATED: This setting will be removed in a future version of Sourcegraph.
 	Quicklinks []*QuickLink `json:"quicklinks,omitempty"`
 	// SearchContextLines description: The default number of lines to show as context below and above search results. Default is 1.
 	SearchContextLines int `json:"search.contextLines,omitempty"`
@@ -1777,18 +1841,24 @@ type SettingsExperimentalFeatures struct {
 	Editor *string `json:"editor,omitempty"`
 	// EnableCodeMirrorFileView description: Uses CodeMirror to display files. In this first iteration not all features of the current file view are available.
 	EnableCodeMirrorFileView *bool `json:"enableCodeMirrorFileView,omitempty"`
-	// EnableExtensionsDecorationsColumnView description: If extension supports column view show its decorations in a separate column in the blob view.
-	EnableExtensionsDecorationsColumnView *bool `json:"enableExtensionsDecorationsColumnView,omitempty"`
 	// EnableFastResultLoading description: Enables optimized search result loading (syntax highlighting / file contents fetching)
 	EnableFastResultLoading *bool `json:"enableFastResultLoading,omitempty"`
+	// EnableGoImportsSearchQueryTransform description: Lets you easily search for all files using a Go package. Adds a new operator `go.imports`: for all import statements of the package passed to the operator.
+	EnableGoImportsSearchQueryTransform *bool `json:"enableGoImportsSearchQueryTransform,omitempty"`
 	// EnableLazyBlobSyntaxHighlighting description: Fetch un-highlighted blob contents to render immediately, decorate with syntax highlighting once loaded.
 	EnableLazyBlobSyntaxHighlighting *bool `json:"enableLazyBlobSyntaxHighlighting,omitempty"`
+	// EnableLazyFileResultSyntaxHighlighting description: Fetch un-highlighted file result contents to render immediately, decorate with syntax highlighting once loaded.
+	EnableLazyFileResultSyntaxHighlighting *bool `json:"enableLazyFileResultSyntaxHighlighting,omitempty"`
+	// EnableMergedFileSymbolSidebar description: Enables the new file sidebar experience with merged file and symbol entries.
+	EnableMergedFileSymbolSidebar *bool `json:"enableMergedFileSymbolSidebar,omitempty"`
+	// EnableSearchFilePrefetch description: Pre-fetch plaintext file revisions from search results on hover/focus.
+	EnableSearchFilePrefetch *bool `json:"enableSearchFilePrefetch,omitempty"`
 	// EnableSearchStack description: REMOVED: This feature can now be enabled/disabled via the notepad button on the notebooks list page.
 	EnableSearchStack *bool `json:"enableSearchStack,omitempty"`
+	// EnableSidebarFilePrefetch description: Pre-fetch plaintext file revisions from sidebar on hover/focus.
+	EnableSidebarFilePrefetch *bool `json:"enableSidebarFilePrefetch,omitempty"`
 	// EnableSmartQuery description: REMOVED. Previously, added more syntax highlighting and hovers for queries in the web app. This behavior is active by default now.
 	EnableSmartQuery *bool `json:"enableSmartQuery,omitempty"`
-	// ExtensionsAsCoreFeatures description: Use default extensions (Git extras, Open in editor, Search export) functionality as core features instead of extensions.
-	ExtensionsAsCoreFeatures *bool `json:"extensionsAsCoreFeatures,omitempty"`
 	// FuzzyFinder description: Enables fuzzy finder with the keyboard shortcut `Cmd+K` on macOS and `Ctrl+K` on Linux/Windows.
 	FuzzyFinder *bool `json:"fuzzyFinder,omitempty"`
 	// FuzzyFinderCaseInsensitiveFileCountThreshold description: The maximum number of files a repo can have to use case-insensitive fuzzy finding
@@ -1799,8 +1869,14 @@ type SettingsExperimentalFeatures struct {
 	HomePanelsComputeSuggestions bool `json:"homePanelsComputeSuggestions,omitempty"`
 	// HomepageUserInvitation description: Shows a panel to invite collaborators to Sourcegraph on home page.
 	HomepageUserInvitation *bool `json:"homepageUserInvitation,omitempty"`
+	// InsightsAlternateLoadingStrategy description: Use an in-memory strategy of loading Code Insights. Should only be used for benchmarking on large instances, not for customer use currently.
+	InsightsAlternateLoadingStrategy bool `json:"insightsAlternateLoadingStrategy,omitempty"`
+	// ProactiveSearchResultsAggregations description: Search results aggregations are triggered automatically with a search.
+	ProactiveSearchResultsAggregations *bool `json:"proactiveSearchResultsAggregations,omitempty"`
 	// SearchContextsQuery description: DEPRECATED: This feature is now permanently enabled. Enables query based search contexts
 	SearchContextsQuery *bool `json:"searchContextsQuery,omitempty"`
+	// SearchResultsAggregations description: Display aggregations for your search results on the search screen.
+	SearchResultsAggregations *bool `json:"searchResultsAggregations,omitempty"`
 	// SearchStats description: Enables a button on the search results page that shows language statistics about the results for a search query.
 	SearchStats *bool `json:"searchStats,omitempty"`
 	// SearchStreaming description: DEPRECATED: This feature is now permanently enabled. Enables streaming search support.
@@ -1829,6 +1905,34 @@ type SettingsExperimentalFeatures struct {
 	ShowSearchNotebook *bool `json:"showSearchNotebook,omitempty"`
 	// TreeSitterEnabled description: DEPRECATED: Enables tree sitter for enabled filetypes.
 	TreeSitterEnabled *bool `json:"treeSitterEnabled,omitempty"`
+}
+
+// SettingsOpenInEditor description: Group of settings related to opening files in an editor.
+type SettingsOpenInEditor struct {
+	// CustomUrlPattern description: If you add "custom" to openineditor.editorIds, this must be set. Use the placeholders "%file", "%line", and "%col" to mark where the file path, line number, and column number must be insterted. Example URL for IntelliJ IDEA: "idea://open?file=%file&line=%line&column=%col"
+	CustomUrlPattern string `json:"custom.urlPattern,omitempty"`
+	// EditorIds description: The editor to open files in. If set to this to "custom", you must also set "custom.urlPattern"
+	EditorIds []string `json:"editorIds,omitempty"`
+	// JetbrainsForceApi description: Forces using protocol handlers (like ikea://open?file=...) or the built-in REST API (http://localhost:63342/api/file...). If omitted, protocol handlers are used if available, otherwise the built-in REST API is used.
+	JetbrainsForceApi string `json:"jetbrains.forceApi,omitempty"`
+	// ProjectPathsDefault description: The absolute path on your computer where your git repositories live. All git repos to open have to be cloned under this path with their original names. "/Users/yourusername/src" is a valid absolute path, "~/src" is not. Works both with and without a trailing slash.
+	ProjectPathsDefault string `json:"projectPaths.default,omitempty"`
+	// ProjectPathsLinux description: Overrides the default path when the browser detects Linux. Works both with and without a trailing slash.
+	ProjectPathsLinux string `json:"projectPaths.linux,omitempty"`
+	// ProjectPathsMac description: Overrides the default path when the browser detects macOS. Works both with and without a trailing slash.
+	ProjectPathsMac string `json:"projectPaths.mac,omitempty"`
+	// ProjectPathsWindows description: Overrides the default path when the browser detects Windows. Doesn't need a trailing backslash.
+	ProjectPathsWindows string `json:"projectPaths.windows,omitempty"`
+	// Replacements description: Each key will be replaced by the corresponding value in the final URL. Keys are regular expressions, values can contain backreferences ($1, $2, ...).
+	Replacements map[string]string `json:"replacements,omitempty"`
+	// VscodeIsProjectPathUNCPath description: Indicates that the given project path is a UNC (Universal Naming Convention) path.
+	VscodeIsProjectPathUNCPath bool `json:"vscode.isProjectPathUNCPath,omitempty"`
+	// VscodeRemoteHostForSSH description: The remote host as "USER@HOSTNAME". This needs you to install the extension called "Remote Development by Microsoft" in your VS Code.
+	VscodeRemoteHostForSSH string `json:"vscode.remoteHostForSSH,omitempty"`
+	// VscodeUseInsiders description: If set, files will open in VS Code Insiders rather than VS Code.
+	VscodeUseInsiders bool `json:"vscode.useInsiders,omitempty"`
+	// VscodeUseSSH description: If set, files will open on a remote server via SSH. This requires vscode.remoteHostForSSH to be specified and VS Code extension "Remote Development by Microsoft" installed in your VS Code.
+	VscodeUseSSH bool `json:"vscode.useSSH,omitempty"`
 }
 
 // SiteConfiguration description: Configuration for a Sourcegraph site.
@@ -1952,6 +2056,8 @@ type SiteConfiguration struct {
 	ExternalURL string `json:"externalURL,omitempty"`
 	// GitCloneURLToRepositoryName description: JSON array of configuration that maps from Git clone URL to repository name. Sourcegraph automatically resolves remote clone URLs to their proper code host. However, there may be non-remote clone URLs (e.g., in submodule declarations) that Sourcegraph cannot automatically map to a code host. In this case, use this field to specify the mapping. The mappings are tried in the order they are specified and take precedence over automatic mappings.
 	GitCloneURLToRepositoryName []*CloneURLToRepositoryName `json:"git.cloneURLToRepositoryName,omitempty"`
+	// GitHubApp description: The config options for Sourcegraph GitHub App.
+	GitHubApp *GitHubApp `json:"gitHubApp,omitempty"`
 	// GitLongCommandTimeout description: Maximum number of seconds that a long Git command (e.g. clone or remote update) is allowed to execute. The default is 3600 seconds, or 1 hour.
 	GitLongCommandTimeout int `json:"gitLongCommandTimeout,omitempty"`
 	// GitMaxCodehostRequestsPerSecond description: Maximum number of remote code host git operations (e.g. clone or ls-remote) to be run per second per gitserver. Default is -1, which is unlimited.
@@ -1972,6 +2078,10 @@ type SiteConfiguration struct {
 	HtmlHeadBottom string `json:"htmlHeadBottom,omitempty"`
 	// HtmlHeadTop description: HTML to inject at the top of the `<head>` element on each page, for analytics scripts
 	HtmlHeadTop string `json:"htmlHeadTop,omitempty"`
+	// InsightsAggregationsBufferSize description: The size of the buffer for aggregations ran in-memory. A higher limit might strain memory for the frontend
+	InsightsAggregationsBufferSize int `json:"insights.aggregations.bufferSize,omitempty"`
+	// InsightsAggregationsProactiveResultLimit description: The maximum number of results a proactive search aggregation can accept before stopping
+	InsightsAggregationsProactiveResultLimit int `json:"insights.aggregations.proactiveResultLimit,omitempty"`
 	// InsightsCommitIndexerInterval description: The interval (in minutes) at which the insights commit indexer will check for new commits.
 	InsightsCommitIndexerInterval int `json:"insights.commit.indexer.interval,omitempty"`
 	// InsightsCommitIndexerWindowDuration description: The number of days of commits the insights commit indexer will pull during each request (0 is no limit).
@@ -2010,7 +2120,7 @@ type SiteConfiguration struct {
 	ObservabilityLogSlowSearches int `json:"observability.logSlowSearches,omitempty"`
 	// ObservabilitySilenceAlerts description: Silence individual Sourcegraph alerts by identifier.
 	ObservabilitySilenceAlerts []string `json:"observability.silenceAlerts,omitempty"`
-	// ObservabilityTracing description: Controls the settings for distributed tracing.
+	// ObservabilityTracing description: Configures distributed tracing within Sourcegraph. To learn more, refer to https://docs.sourcegraph.com/admin/observability/tracing
 	ObservabilityTracing *ObservabilityTracing `json:"observability.tracing,omitempty"`
 	// OrganizationInvitations description: Configuration for organization invitations.
 	OrganizationInvitations *OrganizationInvitations `json:"organizationInvitations,omitempty"`
@@ -2054,6 +2164,16 @@ type SiteConfiguration struct {
 	UserReposMaxPerUser int `json:"userRepos.maxPerUser,omitempty"`
 	// WebhookLogging description: Configuration for logging incoming webhooks.
 	WebhookLogging *WebhookLogging `json:"webhook.logging,omitempty"`
+}
+
+// SrcCliVersionCache description: Configuration related to the src-cli version cache. This should only be used on sourcegraph.com.
+type SrcCliVersionCache struct {
+	// Enabled description: Enables the src-cli version cache API endpoint.
+	Enabled bool `json:"enabled"`
+	// Github description: GitHub configuration, both for queries and receiving release webhooks.
+	Github Github `json:"github"`
+	// Interval description: The interval between version checks, expressed as a string that can be parsed by Go's time.ParseDuration.
+	Interval string `json:"interval,omitempty"`
 }
 
 // Step description: A command to run (as part of a sequence) in a repository branch to produce the required changes.
@@ -2108,7 +2228,7 @@ type SyntaxHighlightingLanguagePatterns struct {
 
 // TlsExternal description: Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.
 type TlsExternal struct {
-	// Certificates description: TLS certificates to accept. This is only necessary if you are using self-signed certificates or an internal CA. Can be an internal CA certificate or a self-signed certificate. To get the certificate of a webserver run `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM`. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
+	// Certificates description: TLS certificates to accept. This is only necessary if you are using self-signed certificates or an internal CA. Can be an internal CA certificate or a self-signed certificate. To get the certificate of a webserver run `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM`. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh. NOTE: System Certificate Authorities are automatically included.
 	Certificates []string `json:"certificates,omitempty"`
 	// InsecureSkipVerify description: insecureSkipVerify controls whether a client verifies the server's certificate chain and host name.
 	// If InsecureSkipVerify is true, TLS accepts any certificate presented by the server and any host name in that certificate. In this mode, TLS is susceptible to man-in-the-middle attacks.

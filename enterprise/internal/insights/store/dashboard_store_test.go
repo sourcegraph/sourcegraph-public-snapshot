@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"sort"
 	"testing"
 	"time"
 
@@ -22,7 +23,7 @@ func TestGetDashboard(t *testing.T) {
 
 	_, err := insightsDB.ExecContext(context.Background(), `
 		INSERT INTO dashboard (id, title)
-		VALUES (1, 'test dashboard'), (2, 'private dashboard for user 3'), (3, 'private dashbord for org 1');`)
+		VALUES (1, 'test dashboard'), (2, 'private dashboard for user 3'), (3, 'private dashboard for org 1');`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -463,6 +464,11 @@ func TestAddViewsToDashboard(t *testing.T) {
 			t.Errorf("failed to fetch dashboard after adding insight")
 		}
 		got := dashboards[0]
+		unsorted := got.InsightIDs
+		sort.Slice(unsorted, func(i, j int) bool {
+			return unsorted[i] < unsorted[j]
+		})
+		got.InsightIDs = unsorted
 		autogold.Equal(t, got, autogold.ExportedOnly())
 	})
 }

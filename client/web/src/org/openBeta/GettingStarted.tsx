@@ -31,13 +31,6 @@ const GET_STARTED_INFO_QUERY = gql`
             membersCount
             invitesCount
         }
-        repoCount: node(id: $organization) {
-            ... on Org {
-                total: repositories(cloned: true, notCloned: true) {
-                    totalCount(precise: true)
-                }
-            }
-        }
         extServices: externalServices(namespace: $organization) {
             totalCount
         }
@@ -63,10 +56,6 @@ export const calculateLeftGetStartedSteps = (info: OrgSummary | undefined, orgNa
 
     let leftSteps = 0
     if (info.membersSummary.invitesCount === 0 && info.membersSummary.membersCount < 2) {
-        leftSteps += 1
-    }
-    if (info.repoCount.total.totalCount === 0) {
-        setSearchStep(orgName, 'incomplete')
         leftSteps += 1
     }
     if (info.extServices.totalCount === 0) {
@@ -105,7 +94,6 @@ export const showGetStartPage = (
 
     const firstStepsPending =
         (info.membersSummary.membersCount === 1 && info.membersSummary.invitesCount === 0) ||
-        info.repoCount.total.totalCount === 0 ||
         info.extServices.totalCount === 0
     let searchStatusPending = true
     try {
@@ -243,7 +231,8 @@ export const OpenBetaGetStartedPage: React.FunctionComponent<React.PropsWithChil
     const queryResult = data ? (data as OrgSummary & { membersList: { members: { nodes: Member[] } } }) : undefined
 
     const codeHostsCompleted = !!queryResult && queryResult.extServices.totalCount > 0
-    const repoCompleted = !!queryResult && queryResult.repoCount.total.totalCount > 0
+    // TODO: This is set to false after removal of org-owned repositories. Once we remove more of this, we can remove the whole file
+    const repoCompleted = false
     const membersCompleted =
         !!queryResult && (queryResult.membersSummary.membersCount > 1 || queryResult.membersSummary.invitesCount > 0)
     const allowSearch = codeHostsCompleted && repoCompleted

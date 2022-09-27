@@ -70,7 +70,7 @@ func main() {
 		"codeintel-auto-indexing": codeintel.NewIndexingJob(),
 	}
 
-	if err := shared.Start(logger, additionalJobs, migrations.RegisterEnterpriseMigrations); err != nil {
+	if err := shared.Start(logger, additionalJobs, migrations.RegisterEnterpriseMigrators); err != nil {
 		logger.Fatal(err.Error())
 	}
 }
@@ -97,7 +97,7 @@ func setAuthzProviders(logger log.Logger) {
 	db := database.NewDB(logger, sqlDB)
 
 	for range time.NewTicker(eiauthz.RefreshInterval()).C {
-		allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices(), db)
+		allowAccessByDefault, authzProviders, _, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices(), db)
 		authz.SetProviders(allowAccessByDefault, authzProviders)
 	}
 }

@@ -94,7 +94,7 @@ func TestBitbucketServerCloneURLs(t *testing.T) {
 		}
 
 		got := bitbucketServerCloneURL(repo, &cfg)
-		want := "https://asdine:abc@bitbucket.example.com/scm/sg/sourcegraph.git"
+		want := "https://username:abc@bitbucket.example.com/scm/sg/sourcegraph.git"
 		if got != want {
 			t.Fatalf("wrong cloneURL, got: %q, want: %q", got, want)
 		}
@@ -105,7 +105,7 @@ func TestBitbucketServerCloneURLs(t *testing.T) {
 		cfg.Token = ""
 
 		got := bitbucketServerCloneURL(repo, &cfg)
-		want := "https://asdine:password@bitbucket.example.com/scm/sg/sourcegraph.git"
+		want := "https://username:password@bitbucket.example.com/scm/sg/sourcegraph.git"
 		if got != want {
 			t.Fatalf("wrong cloneURL, got: %q, want: %q", got, want)
 		}

@@ -3,11 +3,13 @@ package users
 import (
 	"context"
 	"math/rand"
+	"strings"
 	"time"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/eventlogger"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 )
 
@@ -23,7 +25,8 @@ var (
 			SELECT
 				user_id,
 				MAX(timestamp) AS last_active_at,
-				COUNT(*) AS events_count
+				-- count billable only events for each user
+				COUNT(*) FILTER (WHERE name NOT IN ('` + strings.Join(eventlogger.NonActiveUserEvents, "','") + `')) AS events_count
 			FROM
 				event_logs
 			GROUP BY

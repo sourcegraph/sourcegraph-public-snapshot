@@ -11,15 +11,15 @@ NODE_ENV='' ./dev/ci/yarn-install-with-retry.sh
 
 cd "$1"
 echo "--- browserslist"
-NODE_ENV='' yarn -s run browserslist
+NODE_ENV='' yarn run browserslist
 
 echo "--- build"
-yarn -s run build --color
+yarn run build --color
 
 # Only run bundlesize if intended and if there is valid a script provided in the relevant package.json
 if [ "$CHECK_BUNDLESIZE" ] && jq -e '.scripts.bundlesize' package.json >/dev/null; then
   echo "--- bundlesize"
-  yarn -s run bundlesize --enable-github-checks
+  yarn run bundlesize --enable-github-checks
   echo "--- bundlesize:web:upload"
   HONEYCOMB_API_KEY="$CI_HONEYCOMB_CLIENT_ENV_API_KEY" yarn workspace @sourcegraph/observability-server run bundlesize:web:upload
 fi

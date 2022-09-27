@@ -109,7 +109,7 @@ export const AnalyticsBatchChangesPage: React.FunctionComponent<RouteComponentPr
 
     return (
         <>
-            <AnalyticsPageTitle>Analytics / Batch Changes</AnalyticsPageTitle>
+            <AnalyticsPageTitle>Batch Changes</AnalyticsPageTitle>
 
             <Card className="p-3 position-relative">
                 <div className="d-flex justify-content-end align-items-stretch mb-2 text-nowrap">

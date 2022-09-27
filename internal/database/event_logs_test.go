@@ -191,7 +191,7 @@ func TestEventLogs_CountUsersWithSetting(t *testing.T) {
 	}
 }
 
-func TestEventLogs_CountUniqueUsersPerPeriod(t *testing.T) {
+func TestEventLogs_SiteUsageMultiplePeriods(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -228,14 +228,14 @@ func TestEventLogs_CountUniqueUsersPerPeriod(t *testing.T) {
 		}
 	}
 
-	values, err := db.EventLogs().CountUniqueUsersPerPeriod(ctx, Daily, now, 3, nil)
+	values, err := db.EventLogs().SiteUsageMultiplePeriods(ctx, now, 3, 0, 0, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	assertUsageValue(t, values[0], startDate.Add(time.Hour*24*2), 4)
-	assertUsageValue(t, values[1], startDate.Add(time.Hour*24), 3)
-	assertUsageValue(t, values[2], startDate, 2)
+	assertUsageValue(t, values.DAUs[0], startDate.Add(time.Hour*24*2), 4, 4, 0, 0)
+	assertUsageValue(t, values.DAUs[1], startDate.Add(time.Hour*24), 3, 3, 0, 0)
+	assertUsageValue(t, values.DAUs[2], startDate, 2, 2, 0, 0)
 }
 
 func TestEventLogs_UsersUsageCounts(t *testing.T) {
@@ -381,7 +381,7 @@ func TestEventLogs_SiteUsage(t *testing.T) {
 	}
 
 	el := &eventLogStore{Store: basestore.NewWithHandle(db.Handle())}
-	summary, err := el.siteUsage(ctx, now)
+	summary, err := el.siteUsageCurrentPeriods(ctx, now, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -399,14 +399,6 @@ func TestEventLogs_SiteUsage(t *testing.T) {
 		IntegrationUniquesMonth: 11,
 		IntegrationUniquesWeek:  7,
 		IntegrationUniquesDay:   5,
-		ManageUniquesMonth:      9,
-		CodeUniquesMonth:        8,
-		VerifyUniquesMonth:      8,
-		MonitorUniquesMonth:     0,
-		ManageUniquesWeek:       6,
-		CodeUniquesWeek:         4,
-		VerifyUniquesWeek:       4,
-		MonitorUniquesWeek:      0,
 	}
 	if diff := cmp.Diff(expectedSummary, summary); diff != "" {
 		t.Fatal(diff)
@@ -1279,12 +1271,21 @@ func makeTestEvent(e *Event) *Event {
 	return e
 }
 
-func assertUsageValue(t *testing.T, v UsageValue, start time.Time, count int) {
-	if v.Start != start {
-		t.Errorf("got Start %q, want %q", v.Start, start)
+func assertUsageValue(t *testing.T, v *types.SiteActivityPeriod, start time.Time, userCount, registeredUserCount, anonymousUserCount, integrationUserCount int) {
+	if v.StartTime != start {
+		t.Errorf("got Start %q, want %q", v.StartTime, start)
 	}
-	if v.Count != count {
-		t.Errorf("got Count %d, want %d", v.Count, count)
+	if int(v.UserCount) != userCount {
+		t.Errorf("got Count %d, want %d", v.UserCount, userCount)
+	}
+	if int(v.RegisteredUserCount) != registeredUserCount {
+		t.Errorf("got Count %d, want %d", v.RegisteredUserCount, registeredUserCount)
+	}
+	if int(v.AnonymousUserCount) != anonymousUserCount {
+		t.Errorf("got Count %d, want %d", v.AnonymousUserCount, anonymousUserCount)
+	}
+	if int(v.IntegrationUserCount) != integrationUserCount {
+		t.Errorf("got Count %d, want %d", v.IntegrationUserCount, integrationUserCount)
 	}
 }
 

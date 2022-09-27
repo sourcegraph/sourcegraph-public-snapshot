@@ -1,3 +1,5 @@
+import { logger } from '@sourcegraph/common'
+
 import { SourcegraphContext } from '../jscontext'
 
 export function validatePassword(
@@ -73,6 +75,8 @@ export function getPasswordRequirements(
     let requirements: string = 'At least ' + context.authMinPasswordLength.toString() + ' characters'
 
     if (passwordPolicyReference?.enabled) {
+        logger.log('Using enhanced password policy.')
+
         if (
             passwordPolicyReference.numberOfSpecialCharacters &&
             passwordPolicyReference.numberOfSpecialCharacters > 0

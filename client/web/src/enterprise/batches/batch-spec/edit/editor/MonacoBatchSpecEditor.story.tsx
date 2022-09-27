@@ -1,5 +1,4 @@
 import { action } from '@storybook/addon-actions'
-import { boolean, withKnobs } from '@storybook/addon-knobs'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../../../../../components/WebStory'
@@ -11,19 +10,31 @@ const decorator: DecoratorFn = story => <div className="p-3 container">{story()}
 
 const config: Meta = {
     title: 'web/batches/batch-spec/edit/editor/MonacoBatchSpecEditor',
-    decorators: [decorator, withKnobs],
+    decorators: [decorator],
+    argTypes: {
+        readOnly: {
+            name: 'Read Only',
+            control: { type: 'boolean' },
+            defaultValue: false,
+        },
+        autoFocus: {
+            name: 'Auto Focus',
+            control: { type: 'boolean' },
+            defaultValue: false,
+        },
+    },
 }
 
 export default config
 
-export const MonacoBatchSpecEditorStory: Story = () => (
+export const MonacoBatchSpecEditorStory: Story = args => (
     <WebStory>
         {props => (
             <MonacoBatchSpecEditor
                 batchChangeName="hello-world"
                 value={sample}
-                readOnly={boolean('Read Only', false)}
-                autoFocus={boolean('Auto Focus', false)}
+                readOnly={args.readOnly}
+                autoFocus={args.autoFocus}
                 onChange={action('On Change')}
                 {...props}
             />

@@ -8,7 +8,7 @@ import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 import { Badged } from 'sourcegraph'
 
-import { asError, ErrorLike, isErrorLike, isDefined, property, logError } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, isDefined, property, logger } from '@sourcegraph/common'
 import { Location } from '@sourcegraph/extension-api-types'
 import { FileSearchResult, FetchFileParameters } from '@sourcegraph/search-ui'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
@@ -17,8 +17,6 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { parseRepoURI } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner, Alert, Icon } from '@sourcegraph/wildcard'
-
-import { ReferencePanelCta } from './ReferencePanelCta'
 
 import styles from './FileLocations.module.scss'
 
@@ -107,7 +105,7 @@ export class FileLocations extends React.PureComponent<Props, State> {
                 )
                 .subscribe(
                     stateUpdate => this.setState(stateUpdate),
-                    error => logError(error)
+                    error => logger.error(error)
                 )
         )
 
@@ -153,7 +151,6 @@ export class FileLocations extends React.PureComponent<Props, State> {
 
         return (
             <div className={classNames(styles.fileLocations, this.props.className)}>
-                <ReferencePanelCta />
                 <VirtualList<OrderedURI, { locationsByURI: Map<string, Location[]> }>
                     itemsToShow={this.state.itemsToShow}
                     onShowMoreItems={this.onShowMoreItems}

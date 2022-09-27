@@ -7,14 +7,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
 	"github.com/opentracing/opentracing-go/log"
 	"gopkg.in/yaml.v2"
 
 	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/global"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -29,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -44,10 +43,13 @@ func New(store *store.Store) *Service {
 // NewWithClock returns a Service the given clock used
 // to generate timestamps.
 func NewWithClock(store *store.Store, clock func() time.Time) *Service {
+	logger := sglog.Scoped("batches.Service", "batch changes service")
 	svc := &Service{
-		logger:     sglog.Scoped("NewWithClock", ""),
-		store:      store,
-		sourcer:    sources.NewSourcer(httpcli.ExternalClientFactory),
+		logger: logger,
+		store:  store,
+		sourcer: sources.NewSourcer(httpcli.NewExternalClientFactory(
+			httpcli.NewLoggingMiddleware(logger.Scoped("sourcer", "batches sourcer")),
+		)),
 		clock:      clock,
 		operations: newOperations(store.ObservationContext()),
 	}
@@ -175,7 +177,7 @@ func (s *Service) CreateEmptyBatchChange(ctx context.Context, opts CreateEmptyBa
 		return nil, errors.Wrap(err, "marshalling name")
 	}
 	// TODO: Should name require a minimum length?
-	spec, err := batcheslib.ParseBatchSpec(rawSpec, batcheslib.ParseBatchSpecOptions{})
+	spec, err := batcheslib.ParseBatchSpec(rawSpec)
 	if err != nil {
 		return nil, err
 	}
@@ -254,7 +256,12 @@ func (s *Service) UpsertEmptyBatchChange(ctx context.Context, opts UpsertEmptyBa
 		return nil, errors.Wrap(err, "marshalling name")
 	}
 
-	spec, err := batcheslib.ParseBatchSpec(rawSpec, batcheslib.ParseBatchSpecOptions{})
+	spec, err := batcheslib.ParseBatchSpec(rawSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = template.ValidateBatchSpecTemplate(string(rawSpec))
 	if err != nil {
 		return nil, err
 	}
@@ -352,8 +359,8 @@ func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts)
 	for _, changesetSpec := range cs {
 		// 🚨 SECURITY: We return an error if the user doesn't have access to one
 		// of the repositories associated with a ChangesetSpec.
-		if _, ok := accessibleReposByID[changesetSpec.RepoID]; !ok {
-			return nil, &database.RepoNotFoundErr{ID: changesetSpec.RepoID}
+		if _, ok := accessibleReposByID[changesetSpec.BaseRepoID]; !ok {
+			return nil, &database.RepoNotFoundErr{ID: changesetSpec.BaseRepoID}
 		}
 		byRandID[changesetSpec.RandID] = changesetSpec
 	}
@@ -467,6 +474,18 @@ func (s *Service) createBatchSpecForExecution(ctx context.Context, tx *store.Sto
 	// Temporarily prevent mounts for server-side processing.
 	if hasMount(opts.spec) {
 		return errors.New("mounts are not allowed for server-side processing")
+	}
+
+	// The global env is always mocked to be empty for executors, so we just
+	// want to throw a validation error here for now.
+	var errs error
+	for i, step := range opts.spec.Spec.Steps {
+		if !step.Env.IsStatic() {
+			errs = errors.Append(errs, batcheslib.NewValidationError(errors.Errorf("step %d includes one or more dynamic environment variables, which are unsupported in this Sourcegraph version", i+1)))
+		}
+	}
+	if errs != nil {
+		return errs
 	}
 
 	opts.spec.CreatedFromRaw = true
@@ -639,6 +658,14 @@ func (s *Service) ReplaceBatchSpecInput(ctx context.Context, opts ReplaceBatchSp
 		return nil, err
 	}
 
+	// Also validate that the batch spec only uses known templating variables and
+	// functions. If we get an error here that it's invalid, we also want to surface that
+	// error to the UI.
+	_, err = template.ValidateBatchSpecTemplate(opts.RawSpec)
+	if err != nil {
+		return nil, err
+	}
+
 	// Make sure the user has access.
 	batchSpec, err = s.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{RandID: opts.BatchSpecRandID})
 	if err != nil {
@@ -682,6 +709,11 @@ func (s *Service) UpsertBatchSpecInput(ctx context.Context, opts UpsertBatchSpec
 	spec, err = btypes.NewBatchSpecFromRaw(opts.RawSpec)
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing batch spec")
+	}
+
+	_, err = template.ValidateBatchSpecTemplate(opts.RawSpec)
+	if err != nil {
+		return nil, err
 	}
 
 	// Check whether the current user has access to either one of the namespaces.
@@ -765,14 +797,10 @@ func (s *Service) CreateChangesetSpec(ctx context.Context, rawSpec string, userI
 		return nil, err
 	}
 	spec.UserID = userID
-	spec.RepoID, err = graphqlbackend.UnmarshalRepositoryID(graphql.ID(spec.Spec.BaseRepository))
-	if err != nil {
-		return nil, err
-	}
 
 	// 🚨 SECURITY: We use database.Repos.Get to check whether the user has access to
 	// the repository or not.
-	if _, err = s.store.Repos().Get(ctx, spec.RepoID); err != nil {
+	if _, err = s.store.Repos().Get(ctx, spec.BaseRepoID); err != nil {
 		return nil, err
 	}
 
@@ -1120,14 +1148,11 @@ func (s *Service) FetchUsernameForBitbucketServerToken(ctx context.Context, exte
 	ctx, _, endObservation := s.operations.fetchUsernameForBitbucketServerToken.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	css, err := s.sourcer.ForExternalService(ctx, s.store, store.GetExternalServiceIDsOpts{
+	// Get a changeset source for the external service and use the given authenticator.
+	css, err := s.sourcer.ForExternalService(ctx, s.store, &auth.OAuthBearerToken{Token: token}, store.GetExternalServiceIDsOpts{
 		ExternalServiceType: externalServiceType,
 		ExternalServiceID:   externalServiceID,
 	})
-	if err != nil {
-		return "", err
-	}
-	css, err = css.WithAuthenticator(&auth.OAuthBearerToken{Token: token})
 	if err != nil {
 		return "", err
 	}
@@ -1162,14 +1187,11 @@ func (s *Service) ValidateAuthenticator(ctx context.Context, externalServiceID, 
 		return Mocks.ValidateAuthenticator(ctx, externalServiceID, externalServiceType, a)
 	}
 
-	css, err := s.sourcer.ForExternalService(ctx, s.store, store.GetExternalServiceIDsOpts{
+	// Get a changeset source for the external service and use the given authenticator.
+	css, err := s.sourcer.ForExternalService(ctx, s.store, a, store.GetExternalServiceIDsOpts{
 		ExternalServiceType: externalServiceType,
 		ExternalServiceID:   externalServiceID,
 	})
-	if err != nil {
-		return err
-	}
-	css, err = css.WithAuthenticator(a)
 	if err != nil {
 		return err
 	}

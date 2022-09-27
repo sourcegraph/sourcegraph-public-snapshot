@@ -1,72 +1,42 @@
 # Deployment Overview
 
-Sourcegraph supports two main deployment types: [Docker Compose](docker-compose/index.md) and [Kubernetes](kubernetes/index.md). Each deployment type will require a different level of investment and technical understanding. What works best depends on the needs and desired outcomes for your business. 
+Sourcegraph supports two main deployment types: [Docker Compose](docker-compose/index.md) and [Kubernetes](kubernetes/index.md). Each deployment type will require a different level of investment and technical understanding. What works best depends on the needs and desired outcomes for your business.
 
-If you aren't currently working with our Customer Engineering team, this overview will provide a high-level view of what's available and needed depending on the deployment type you choose. 
+If you aren't currently working with our Customer Engineering team, this overview will provide a high-level view of what's available and needed depending on the deployment type you choose.
 
-Specifically, the table provided in the [Deployment types](#deployment-types) section will provide some high-level guidance, followed by more detailed descriptions for each type.
+Sourcegraph provides a [resource estimator](resource_estimator.md) to help predict and plan the required resource for your deployment. This tool ensures you provision appropriate resources to scale your instance.
 
-Sourcegraph also provides a [resource estimator](#resource-planning) to help predict and plan the required resource for your deployment. This tool ensures you provision appropriate resources to scale your instance.
-
-If you are short on time and looking for a quick way to test Sourcegraph locally, consider running Sourcegraph via our [Docker Single Container](docker-single-container/index.md). 
-
-To just use Sourcegraph on 2 million open-source repositories, visit [Sourcegraph.com](https://sourcegraph.com/search).
-
-## Resource planning
-
-Sourcegraph has provided the [Resource Estimator](resource_estimator.md) as a starting point to determine necessary resources based on the size of your deployment. 
-
-The [Scaling Overview for Services docs](scale.md) provides a comprehensive overview of how each Sourcegraph service scales.
-
-We recommend the Kubernetes deployment type if your deployment scenario includes a large codebase and many users. The [Kubernetes docs](kubernetes/index.md) provide additional information for [scaling Kubernetes deployments](kubernetes/scale.md).
+If you are short on time and looking for a quick way to test Sourcegraph locally, consider running Sourcegraph via our [Docker Single Container](docker-single-container/index.md).
 
 ## Deployment types
 
-| Deployment Type | Suggested for | Setup time | Resource isolation | Auto-healing | Multi-machine | Complexity |
-| ---------------------------------------------------------------------- | ---------------------------------------------------------------- | ----------------- | :----------------: | :----------: | :-----------: | :--------: |
-| [Kubernetes with Helm](kubernetes/helm.md) | Production deployments of any size | 5 - 90 minutes | YES | YES | YES | Easy - Hard |
-| [Docker Compose](docker-compose/index.md) | Production deployments where Kubernetes with Helm is not viable | 5 - 30 minutes | YES | YES | NO | Easy - Medium |
-| [Kubernetes without Helm](kubernetes/index.md) | Production deployments of any size | 30 - 90 minutes | YES | YES | YES| Medium - Hard |
-| [Docker Single Container](docker-single-container/index.md) | Local testing _(Not recommended for production; no Code Insights support)_ | 1 minute | NO | NO | NO | Easy |
-
-Each of the deployment types listed in the table above provides a different level of capability. As mentioned previously, base your deployment type on the needs of your business. However, you should also consider the technical expertise available for your deployment. The sections below provide more detailed recommendations for each deployment type.
-
-### [Kubernetes with Helm](kubernetes/helm.md)
-
-We recommend Kubernetes with Helm for most production deployments. 
-
-Kubernetes provides resource isolation (from other services or applications), automated-healing, and far greater ability to scale.
-
-Helm provides a simple mechanism for deployment customizations, as well as a much simpler upgrade experience.
+Each of the deployment types listed below provides a different level of capability. As mentioned previously, base your deployment type on the needs of your business. However, you should also consider the technical expertise available for your deployment. The sections below provide more detailed recommendations for each deployment type.
 
 ### [Docker Compose](docker-compose/index.md)
 
-Docker Compose is recommended for small and medium-size deployments where Kubernetes with Helm is not a viable option. 
+We recommend Docker Compose for most production deployments due to how easily admins can install, configure, and upgrade Sourcegraph instances. It serves as a way to run multi-container applications on Docker using a defined Compose file format.
 
-It does not provide multi-machine capability such as high availability, but will require less setup time overall.
+Docker Compose is used for single-host instances such as AWS EC2 or GCP Compute Engine. It does not provide multi-machine capability such as high availability.
 
-### [Kubernetes without Helm](kubernetes/index.md)
+Docker Compose scales to fit the needs of the majority of customers. Refer to the [resource estimator](resource_estimator.md) to find the appropriate instance for you.
 
-Before making a decision to deploy via Kubernetes without Helm, checkout our [Kubernetes with Helm docs](kubernetes/helm.md) for additional information on why we [recommend using Helm](kubernetes/helm.md#why-use-helm).
+### Kubernetes [with Helm](kubernetes/helm.md) or [ without Helm](kubernetes/index.md)
 
-If you are unable to use Helm to deploy, but still want to use Kubernetes, follow our [Kubernetes deployment documentation](kubernetes/index.md). 
+Kubernetes is recommended for non-standard deployments where Docker Compose is not a viable option.
 
-This path will require advanced knowledge of Kubernetes. For team's without the ability to support this, please speak to your Sourcegraph contact about using Docker Compose instead. 
+This path will require advanced knowledge of Kubernetes. For teams without the ability to support this, please speak to your Sourcegraph contact about using Docker Compose instead.
 
-### [Docker Single Container](docker-single-container/index.md) 
+Helm provides a simple mechanism for deployment customizations, as well as a much simpler upgrade experience.
 
-The Docker Single container option is provided for **local proof-of-concept only** and is **not intended for testing or deployment at a pre-production/production level**. 
-
-Some features, such as [Code Insights](../../code_insights/index.md), are not available when using this deployment type.
+If you are unable to use Helm to deploy, but still want to use Kubernetes, follow our [Kubernetes deployment documentation](kubernetes/index.md). This path will require advanced knowledge of Kubernetes. For teams without the ability to support this, please speak to your Sourcegraph contact about using Docker Compose instead.
 
 ## Reference repositories
 
-For [Docker Compose](https://github.com/sourcegraph/deploy-sourcegraph-docker/),[Kubernetes with Helm](https://docs.sourcegraph.com/admin/install/kubernetes/helm), and [Kubernetes without Helm](https://github.com/sourcegraph/deploy-sourcegraph/) deployments, Sourcegraph provides reference repositories with branches corresponding to the version of Sourcegraph you wish to deploy. The reference repository contains everything you need to spin up and configure your instance depending on your deployment type, which also assists in your upgrade process going forward.
+Sourcegraph provides reference repositories with branches corresponding to the version of Sourcegraph you wish to deploy. The reference repository contains everything you need to spin up and configure your instance depending on your deployment type, which also assists in your upgrade process going forward.
 
-Before starting, you will need to decide your deployment type, including if you would like to use Kubernetes with Helm (vs. a more manual customization path). In the case of Kubernetes once you choose Helm (or not), it **can't be changed afterwards**. 
+Before starting, you will need to decide your deployment type, including if you would like to use Kubernetes with Helm (vs. a more manual customization path). In the case of Kubernetes once you choose Helm (or not), it **can't be changed afterwards**.
 
 For more information, follow the install and configuration docs for your specific deployment type: [Docker Compose](docker-compose/index.md), [Kubernetes with Helm](kubernetes/helm.md), or [Kubernetes without Helm](kubernetes/index.md).
-
 
 ## External services
 
@@ -77,11 +47,12 @@ By default, Sourcegraph provides versions of services it needs to operate, inclu
 - A [Redis](https://redis.io/) instance for storing short-term information such as user sessions.
 - A second Redis instance for storing cache data.
 - A [MinIO](https://min.io/) instance that serves as a local S3-compatible object storage to hold user uploads before processing. _This data is for temporary storage, and content will be automatically deleted once processed._
-- A [Jaeger](https://www.jaegertracing.io/) instance for end-to-end distributed tracing. 
+- A [Jaeger](https://www.jaegertracing.io/) instance for end-to-end distributed tracing.
 
 > NOTE: As a best practice, configure your Sourcegraph instance to use an external or managed version of these services. Using a managed version of PostgreSQL can make backups and recovery easier to manage and perform. Using a managed object storage service may decrease hosting costs as persistent volumes are often more expensive than object storage space.
 
 ### External services guides
+
 See the following guides to use an external or managed version of each service type.
 
 - [PostgreSQL Guide](../postgres.md)
@@ -117,4 +88,3 @@ Sourcegraph provides a number of options to monitor the health and usage of your
 A new version of Sourcegraph is released every month (with patch releases in between as needed). We actively maintain the two most recent monthly releases of Sourcegraph. The [changelog](../../CHANGELOG.md) provides all information related to any changes that are/were in a release.
 
 Depending on your current version and the version you are looking to upgrade, there may be specific upgrade instruction and requirements. Checkout the [Upgrade docs](../updates/index.md) for additional information and instructions.
-

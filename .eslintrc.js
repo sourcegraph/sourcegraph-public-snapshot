@@ -38,6 +38,7 @@ const config = {
     'no-console': 'error',
     'monorepo/no-relative-import': 'error',
     '@sourcegraph/sourcegraph/check-help-links': 'error',
+    '@typescript-eslint/consistent-type-exports': 'warn',
     'no-restricted-imports': [
       'error',
       {
@@ -56,20 +57,10 @@ const config = {
             message: 'Use the <Link /> component from @sourcegraph/wildcard instead.',
           },
           {
-            name: 'reactstrap',
-            importNames: ['Form'],
-            message: 'Use the <Form /> component from @sourcegraph/branded package instead',
-          },
-          {
             name: 'zustand',
             importNames: ['default'],
             message:
               'Our Zustand stores should be created in a single place. Create this store in client/web/src/stores',
-          },
-          {
-            name: 'reactstrap',
-            message:
-              'Please use components from the Wildcard component library instead. We work on removing `reactstrap` dependency.',
           },
           {
             name: 'chromatic/isChromatic',

@@ -1,19 +1,19 @@
 local path = require "path"
-local patterns = require "sg.patterns"
-local recognizers = require "sg.recognizers"
+local recognizer = require "sg.autoindex.recognizer"
+local pattern = require "sg.autoindex.patterns"
 
-local shared = loadfile "shared.lua"()
+local shared = require "sg.autoindex.shared"
 
 local indexer = "sourcegraph/lsif-go:latest"
 
-local exclude_paths = patterns.path_combine(shared.exclude_paths, {
-  patterns.path_segment "vendor",
+local exclude_paths = pattern.new_path_combine(shared.exclude_paths, {
+  pattern.new_path_segment "vendor",
 })
 
-local gomod_recognizer = recognizers.path_recognizer {
+local gomod_recognizer = recognizer.new_path_recognizer {
   patterns = {
-    patterns.path_basename "go.mod",
-    patterns.path_exclude(exclude_paths),
+    pattern.new_path_basename "go.mod",
+    pattern.new_path_exclude(exclude_paths),
   },
 
   -- Invoked when go.mod files exist
@@ -41,10 +41,10 @@ local gomod_recognizer = recognizers.path_recognizer {
   end,
 }
 
-local goext_recognizer = recognizers.path_recognizer {
+local goext_recognizer = recognizer.new_path_recognizer {
   patterns = {
-    patterns.path_extension "go",
-    patterns.path_exclude(exclude_paths),
+    pattern.new_path_extension "go",
+    pattern.new_path_exclude(exclude_paths),
   },
 
   -- Invoked when no go.mod files exist but go extensions exist somewhere
@@ -67,7 +67,7 @@ local goext_recognizer = recognizers.path_recognizer {
   end,
 }
 
-return recognizers.fallback_recognizer {
+return recognizer.new_fallback_recognizer {
   gomod_recognizer,
   goext_recognizer,
 }

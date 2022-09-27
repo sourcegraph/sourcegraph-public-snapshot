@@ -3,7 +3,7 @@ import { FunctionComponent, useCallback, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { logError } from '@sourcegraph/common'
+import { logger } from '@sourcegraph/common'
 import { gql, useLazyQuery, useMutation } from '@sourcegraph/http-client'
 import { IFeatureFlagOverride } from '@sourcegraph/shared/src/schema'
 import { Input, Alert, H2, Text } from '@sourcegraph/wildcard'
@@ -64,7 +64,7 @@ export const EarlyAccessOrgsCodeForm: FunctionComponent<EarlyAccessOrgsCodeFormP
         FeatureFlagOverrideResult,
         FeatureFlagOverrideVariables
     >(CREATE_FEATURE_FLAG_OVERRIDE, {
-        onError: apolloError => logError('Error when creating feature flag override', apolloError),
+        onError: apolloError => logger.error('Error when creating feature flag override', apolloError),
     })
 
     const [getOrgID, { loading: orgLoading, error: orgError }] = useLazyQuery<OrgResult, OrganizationVariables>(

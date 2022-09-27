@@ -59,3 +59,32 @@ func TestUpgradeRange(t *testing.T) {
 		}
 	}
 }
+
+func TestNextPrevious(t *testing.T) {
+	chain := []Version{
+		NewVersion(3, 41),
+		NewVersion(3, 42),
+		NewVersion(3, 43),
+		NewVersion(4, 0),
+		NewVersion(4, 1),
+		NewVersion(4, 2),
+	}
+
+	for i, version := range chain {
+		if i != 0 {
+			previous, ok := version.Previous()
+			if !ok {
+				t.Fatalf("no previous for %q", version)
+			}
+			if have, want := chain[i-1], previous; have.String() != want.String() {
+				t.Fatalf("unexpected previous for %q. want=%q have=%q", version, want, have)
+			}
+		}
+
+		if i+1 < len(chain) {
+			if have, want := version.Next(), chain[i+1]; have.String() != want.String() {
+				t.Fatalf("unexpected next for %q. want=%q have=%q", version, want, have)
+			}
+		}
+	}
+}

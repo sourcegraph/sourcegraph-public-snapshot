@@ -23,7 +23,7 @@ func TestSearch(t *testing.T) {
 	}
 
 	// Set up external service
-	_, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+	esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "gqltest-github-search",
 		Config: mustMarshalJSONString(struct {
@@ -50,6 +50,7 @@ func TestSearch(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	removeExternalServiceAfterTest(t, esID)
 
 	err = client.WaitForReposToBeCloned(
 		"github.com/sgtest/java-langserver",
@@ -1107,22 +1108,55 @@ func testSearchClient(t *testing.T, client searchClient) {
 		}{
 			{
 				name:   `repo contains file`,
-				query:  `repo:contains(file:go\.mod)`,
+				query:  `repo:contains.file(path:go\.mod)`,
 				counts: counts{Repo: 2},
 			},
 			{
+				name:   `repo contains file but not content`,
+				query:  `repo:contains.path(go\.mod) -repo:contains.content(go-diff)`,
+				counts: counts{Repo: 1},
+			},
+			{
+				name: `repo does not contain file, but search for another file`,
+				// reader_util_test.go exists in go-diff
+				// appdash.go exists in appdash
+				query:  `-repo:contains.path(reader_util_test.go) file:appdash.go`,
+				counts: counts{File: 1},
+			},
+			{
+				name: `repo does not contain content, but search for another file`,
+				// TestHunkNoChunksize exists in go-diff
+				// appdash.go exists in appdash
+				query:  `-repo:contains.content(TestParseHunkNoChunksize) file:appdash.go`,
+				counts: counts{File: 1},
+			},
+			{
+				name: `repo does not contain content, but search for another file`,
+				// reader_util_test.go exists in go-diff
+				// TestHunkNoChunksize exists in go-diff
+				query:  `-repo:contains.content(TestParseHunkNoChunksize) file:reader_util_test.go`,
+				counts: counts{},
+			},
+			{
+				name: `repo does not contain content, but search for another file`,
+				// reader_util_test.go exists in go-diff
+				// TestHunkNoChunksize exists in go-diff
+				query:  `-repo:contains.file(reader_util_test.go) TestHunkNoChunksize`,
+				counts: counts{},
+			},
+			{
 				name:   `no repo contains file`,
-				query:  `repo:contains(file:noexist.go)`,
+				query:  `repo:contains.file(path:noexist.go)`,
 				counts: counts{},
 			},
 			{
 				name:   `no repo contains file with pattern`,
-				query:  `repo:contains(file:noexist.go) test`,
+				query:  `repo:contains.file(path:noexist.go) test`,
 				counts: counts{},
 			},
 			{
 				name:   `repo contains content`,
-				query:  `repo:contains(content:nextFileFirstLine)`,
+				query:  `repo:contains.file(content:nextFileFirstLine)`,
 				counts: counts{Repo: 1},
 			},
 			{
@@ -1131,49 +1165,55 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts: counts{Repo: 1},
 			},
 			{
-				name:   `or-expression on repo:contains`,
-				query:  `repo:contains(content:does-not-exist-D2E1E74C7279) or repo:contains(content:nextFileFirstLine)`,
+				name:   `or-expression on repo:contains.file`,
+				query:  `repo:contains.file(content:does-not-exist-D2E1E74C7279) or repo:contains.file(content:nextFileFirstLine)`,
 				counts: counts{Repo: 1},
 			},
 			{
-				name:   `and-expression on repo:contains`,
-				query:  `repo:contains(content:does-not-exist-D2E1E74C7279) and repo:contains(content:nextFileFirstLine)`,
-				counts: counts{Repo: 0},
-			},
-			{
-				name:   `repo contains file then search common`,
-				query:  `repo:contains(file:go.mod) count:100 fmt`,
-				counts: counts{Content: 61},
-			},
-			{
-				name:   `repo contains file scoped predicate`,
-				query:  `repo:contains.file(go.mod) count:100 fmt`,
-				counts: counts{Content: 61},
-			},
-			{
-				name:   `repo contains with matching repo filter`,
-				query:  `repo:go-diff repo:contains(file:diff.proto)`,
+				name:   `negated repo:contains with another repo:contains`,
+				query:  `-repo:contains.content(does-not-exist-D2E1E74C7279) and repo:contains.content(nextFileFirstLine)`,
 				counts: counts{Repo: 1},
 			},
 			{
-				name:   `repo contains with non-matching repo filter`,
-				query:  `repo:nonexist repo:contains(file:diff.proto)`,
+				name:   `and-expression on repo:contains.file`,
+				query:  `repo:contains.file(content:does-not-exist-D2E1E74C7279) and repo:contains.file(content:nextFileFirstLine)`,
+				counts: counts{Repo: 0},
+			},
+			// Flakey tests see: https://buildkite.com/organizations/sourcegraph/pipelines/sourcegraph/builds/169653/jobs/0182e8df-8be9-4235-8f4d-a3d458354249/raw_log
+			// {
+			// 	name:   `repo contains file then search common`,
+			// 	query:  `repo:contains.file(path:go.mod) count:100 fmt`,
+			// 	counts: counts{Content: 61},
+			// },
+			// {
+			// 	name:   `repo contains path`,
+			// 	query:  `repo:contains.path(go.mod) count:100 fmt`,
+			// 	counts: counts{Content: 61},
+			// },
+			{
+				name:   `repo contains file with matching repo filter`,
+				query:  `repo:go-diff repo:contains.file(path:diff.proto)`,
+				counts: counts{Repo: 1},
+			},
+			{
+				name:   `repo contains file with non-matching repo filter`,
+				query:  `repo:nonexist repo:contains.file(path:diff.proto)`,
 				counts: counts{Repo: 0},
 			},
 			{
-				name:   `repo contains respects parameters that affect repo search (fork)`,
-				query:  `repo:sgtest/mux fork:yes repo:contains.file(README)`,
+				name:   `repo contains path respects parameters that affect repo search (fork)`,
+				query:  `repo:sgtest/mux fork:yes repo:contains.path(README)`,
 				counts: counts{Repo: 1},
 			},
 			{
 				name:   `commit results without repo filter`,
 				query:  `type:commit LSIF`,
-				counts: counts{Commit: 9},
+				counts: counts{Commit: 11},
 			},
 			{
 				name:   `commit results with repo filter`,
-				query:  `repo:contains(file:diff.pb.go) type:commit LSIF`,
-				counts: counts{Commit: 1},
+				query:  `repo:contains.file(path:diff.pb.go) type:commit LSIF`,
+				counts: counts{Commit: 2},
 			},
 			{
 				name:   `predicate logic does not conflict with unrecognized patterns`,
@@ -1206,6 +1246,11 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts: counts{Repo: 1},
 			},
 			{
+				name:   `repo has tag and not nonexistent tag`,
+				query:  `repo:has.tag(testtag) -repo:has.tag(noexist)`,
+				counts: counts{Repo: 1},
+			},
+			{
 				name:   `repo has kvp that does not exist`,
 				query:  `repo:has(noexist:false)`,
 				counts: counts{Repo: 0},
@@ -1213,6 +1258,11 @@ func testSearchClient(t *testing.T, client searchClient) {
 			{
 				name:   `repo has kvp`,
 				query:  `repo:has(testkey:testval)`,
+				counts: counts{Repo: 2},
+			},
+			{
+				name:   `repo has kvp and not nonexistent kvp`,
+				query:  `repo:has(testkey:testval) -repo:has(noexist:false)`,
 				counts: counts{Repo: 2},
 			},
 		}
@@ -1322,7 +1372,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 			{
 				name: `file contains content predicate type diff`,
 				// matches .travis.yml and in the last commit that added after_success, but not in previous commits
-				query:  `type:diff repo:go-diff file:contains(after_success)`,
+				query:  `type:diff repo:go-diff file:contains.content(after_success)`,
 				counts: counts{Commit: 1},
 			},
 			{

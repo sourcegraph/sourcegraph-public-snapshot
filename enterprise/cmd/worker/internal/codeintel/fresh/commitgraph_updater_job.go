@@ -3,8 +3,8 @@ package codeintel
 import (
 	"context"
 
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/log"
 
@@ -36,7 +36,7 @@ func (j *commitGraphUpdaterJob) Config() []env.Config {
 	}
 }
 
-func (j *commitGraphUpdaterJob) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
+func (j *commitGraphUpdaterJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	db, err := workerdb.Init()
 	if err != nil {
 		return nil, err
@@ -54,7 +54,7 @@ func (j *commitGraphUpdaterJob) Routines(ctx context.Context, logger log.Logger)
 
 	commitgraph.NewOperations(uploadSvc, &observation.Context{
 		Logger:     logger,
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	})
 

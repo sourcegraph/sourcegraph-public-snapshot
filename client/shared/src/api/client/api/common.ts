@@ -4,7 +4,7 @@ import { from, Observable, observable as symbolObservable, Subscription } from '
 import { mergeMap, finalize } from 'rxjs/operators'
 import { Subscribable } from 'sourcegraph'
 
-import { asError } from '@sourcegraph/common'
+import { asError, logger } from '@sourcegraph/common'
 
 import { ProxySubscribable } from '../../extension/api/common'
 import { isPromiseLike, syncRemoteSubscription } from '../../util'
@@ -111,8 +111,7 @@ export const wrapRemoteObservable = <T>(
 export const finallyReleaseProxy = <T>() => (source: Observable<T> & Partial<ProxySubscribed>): Observable<T> => {
     const { proxySubscription } = source
     if (!proxySubscription) {
-        // TODO - should remove console.warn or replace with logError function from @sourcegraph/commons
-        console.warn('finallyReleaseProxy() used on Observable without proxy subscription')
+        logger.warn('finallyReleaseProxy() used on Observable without proxy subscription')
         return source
     }
     return source.pipe(finalize(() => proxySubscription.unsubscribe()))

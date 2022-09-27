@@ -8,10 +8,11 @@ Out-of-band migrations allow for application-specific logic to exist in a migrat
 - re-hashing passwords
 - decoding and interpreting opaque payloads
 - fetching data from another remote API or data store based on existing data
-
-Additionally, the estimated _scale_ of data may be too large to migrate on application startup in an efficient manner - in which case an out of band migration is suitable.
+- transforming large scale data
 
 Remember - the longer we block application startup on migrations, the more vulnerable an instance will become to downtime as no _new_ frontend containers will be able to service requests. In these cases, you should define an _out of band_ migration, which is run in the background of the application over time instead of at startup.
+
+Some background tasks may seem initially well-suited for an out-of-band migration, but may actually be better installed as a permanent background job that runs periodically. Such jobs include data transformations that require external state to determine its progress. For example, database encryption jobs were originally written as out-of-band migrations. However, changing the external key in the site configuration can drop progress back to 0%, despite having already ran to completion.
 
 ## Overview
 
@@ -125,6 +126,12 @@ func scanSkunkPayloads(rows *sql.Rows, queryErr error) ([]string, error) {
 Now that we can read both formats, it is safe to start writing all _new_ records using the new format.
 
 #### Step 4: Register migrator
+
+> WARNING: The code that runs the out of band migration must exist in-tree, even after the migration has been deprecated.
+>
+> This is because we need to support upgrading older instances using a newer migrator, which must also run these migrations. This code should be written in a way that isolates it from changing behaviors in other parts of the code base. Where possible, stick to directly defining SQL queries and importing only utility libraries.
+>
+> Inlining types into the migrator implementation post-deprecation is a good idea to "lock" the migration behavior in-place.
 
 Next, we need to move all of the existing data in the old format into the new format. We'll first define a migrator instance.
 
@@ -295,8 +302,8 @@ New fields can be added to the existing migration metadata entry in the file `in
   introduced_version_major: 3
   introduced_version_minor: 34
   # NEW FIELDS:
-  deprecated_version_major: 3   -- The current major release
-  deprecated_version_minor: 39  -- The current minor release
+  deprecated_version_major: 3   -- The upcoming major release
+  deprecated_version_minor: 39  -- The upcoming minor release
 ```
 
 This date may be known at the time the migration is created, in which case it is fine to set both the introduced and the deprecated fields at the same time.
@@ -305,9 +312,7 @@ Note that it is not advised to set the deprecated version to the minor release o
 
 #### Step 6: Deprecation
 
-On or after the deprecation version of a migration, we can begin clean-up. This involves:
+On or after the deprecation version of a migration, we can begin clean-up of inactive code. This is not a critical step, but may be beneficial if the code supporting the old format gets in the way of feature implemetation or maintenance. Clean-up may include:
 
-- unregistering the migrator instance
-- removing the migrator code
-- cleaning up any backwards-compatible read routines to support only the new format
-- dropping columns that are no longer used by the new minimum supported format
+- removing the ability to read the old format of data
+- altering database constraint to more specifically describe the new format (e.g., column nullability, check constrants, etc)

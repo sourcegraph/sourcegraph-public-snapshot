@@ -6,7 +6,7 @@
     margin-bottom: 0;
     list-style: none;
     max-width: 100%;
-    overflow-x: scroll;
+    overflow-x: auto;
     // This prevents the active item border from being cut off, since .nav-item applies margin-bottom: -1px;
     // stylelint-disable-next-line declaration-property-unit-allowed-list
     padding-bottom: 1px;

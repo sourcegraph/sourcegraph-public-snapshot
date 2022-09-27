@@ -1,6 +1,7 @@
 package ci
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -32,9 +33,9 @@ type CoreTestOperationsOptions struct {
 // notably, this is what is used to define operations that run on PRs. Please read the
 // following notes:
 //
-// - opts should be used ONLY to adjust the behaviour of specific steps, e.g. by adding
-//   flags and not as a condition for adding steps or commands.
-// - be careful not to add duplicate steps.
+//   - opts should be used ONLY to adjust the behaviour of specific steps, e.g. by adding
+//     flags and not as a condition for adding steps or commands.
+//   - be careful not to add duplicate steps.
 //
 // If the conditions for the addition of an operation cannot be expressed using the above
 // arguments, please add it to the switch case within `GeneratePipeline` instead.
@@ -50,11 +51,6 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 	if targets := changed.GetLinterTargets(diff); len(targets) > 0 {
 		linterOps.Append(addSgLints(targets))
 	}
-	// Use for empty diff
-	if diff.Has(changed.None) {
-		linterOps.Append(noDiff)
-	}
-
 	ops.Merge(linterOps)
 
 	if diff.Has(changed.Client | changed.GraphQL) {
@@ -110,7 +106,7 @@ func addSgLints(targets []string) func(pipeline *bk.Pipeline) {
 		cmd = cmd + "-v "
 	}
 
-	cmd = cmd + "lint -annotations " + strings.Join(targets, " ")
+	cmd = cmd + "lint -annotations -fail-fast=false " + strings.Join(targets, " ")
 
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":pineapple::lint-roller: Run sg lint",
@@ -221,10 +217,10 @@ func addVsceIntegrationTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(
 		":vscode: Puppeteer tests for VS Code extension",
 		withYarnCache(),
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd("yarn --immutable --network-timeout 60000"),
 		bk.Cmd("yarn generate"),
-		bk.Cmd("yarn --cwd client/vscode -s build:test"),
-		bk.Cmd("yarn --cwd client/vscode -s test-integration --verbose"),
+		bk.Cmd("yarn workspace @sourcegraph/vscode run build:test"),
+		bk.Cmd("yarn workspace @sourcegraph/vscode run test-integration --verbose"),
 		bk.AutomaticRetry(1),
 	)
 }
@@ -243,8 +239,8 @@ func addBrowserExtensionIntegrationTests(parallelTestCount int) operations.Opera
 				bk.Env("POLLYJS_MODE", "replay"), // ensure that we use existing recordings
 				bk.Env("PERCY_ON", "true"),
 				bk.Env("PERCY_PARALLEL_TOTAL", strconv.Itoa(testCount)),
-				bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-				bk.Cmd("yarn workspace @sourcegraph/browser -s run build"),
+				bk.Cmd("yarn --immutable --network-timeout 60000"),
+				bk.Cmd("yarn workspace @sourcegraph/browser run build"),
 				bk.Cmd("yarn run cover-browser-integration"),
 				bk.Cmd("yarn nyc report -r json"),
 				bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
@@ -263,9 +259,9 @@ func recordBrowserExtensionIntegrationTests(pipeline *bk.Pipeline) {
 			bk.Env("BROWSER", browser),
 			bk.Env("LOG_BROWSER_CONSOLE", "false"),
 			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
-			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-			bk.Cmd("yarn workspace @sourcegraph/browser -s run build"),
-			bk.Cmd("yarn workspace @sourcegraph/browser -s run record-integration"),
+			bk.Cmd("yarn --immutable --network-timeout 60000"),
+			bk.Cmd("yarn workspace @sourcegraph/browser run build"),
+			bk.Cmd("yarn workspace @sourcegraph/browser run record-integration"),
 			// Retry may help in case if command failed due to hitting the rate limit or similar kind of error on the code host:
 			// https://docs.github.com/en/rest/reference/search#rate-limit
 			bk.AutomaticRetry(1),
@@ -288,9 +284,9 @@ func addBrowserExtensionUnitTests(pipeline *bk.Pipeline) {
 func addJetBrainsUnitTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":jest::java: Test (client/jetbrains)",
 		withYarnCache(),
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd("yarn --immutable --network-timeout 60000"),
 		bk.Cmd("yarn generate"),
-		bk.Cmd("yarn --cwd client/jetbrains -s build"),
+		bk.Cmd("yarn workspace @sourcegraph/jetbrains run build"),
 	)
 }
 
@@ -347,7 +343,7 @@ func clientChromaticTests(opts CoreTestOperationsOptions) operations.Operation {
 		}
 
 		// Upload storybook to Chromatic
-		chromaticCommand := "yarn chromatic --exit-zero-on-changes --exit-once-uploaded"
+		chromaticCommand := "yarn chromatic --exit-zero-on-changes --exit-once-uploaded --build-script-name=storybook:build"
 		if opts.ChromaticShouldAutoAccept {
 			chromaticCommand += " --auto-accept-changes"
 		} else {
@@ -468,9 +464,9 @@ func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
 			bk.Env("BROWSER", browser),
 			bk.Env("LOG_BROWSER_CONSOLE", "true"),
 			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
-			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-			bk.Cmd("yarn workspace @sourcegraph/browser -s run build"),
-			bk.Cmd("yarn -s mocha ./client/browser/src/end-to-end/github.test.ts ./client/browser/src/end-to-end/gitlab.test.ts"),
+			bk.Cmd("yarn --immutable --network-timeout 60000"),
+			bk.Cmd("yarn workspace @sourcegraph/browser run build"),
+			bk.Cmd("yarn mocha ./client/browser/src/end-to-end/github.test.ts ./client/browser/src/end-to-end/gitlab.test.ts"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 	}
 }
@@ -484,21 +480,21 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 	// Release to the Chrome Webstore
 	pipeline.AddStep(":rocket::chrome: Extension release",
 		withYarnCache(),
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("yarn workspace @sourcegraph/browser -s run build"),
+		bk.Cmd("yarn --immutable --network-timeout 60000"),
+		bk.Cmd("yarn workspace @sourcegraph/browser run build"),
 		bk.Cmd("yarn workspace @sourcegraph/browser release:chrome"))
 
 	// Build and self sign the FF add-on and upload it to a storage bucket
 	pipeline.AddStep(":rocket::firefox: Extension release",
 		withYarnCache(),
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd("yarn --immutable --network-timeout 60000"),
 		bk.Cmd("yarn workspace @sourcegraph/browser release:firefox"))
 
 	// Release to npm
 	pipeline.AddStep(":rocket::npm: npm Release",
 		withYarnCache(),
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("yarn workspace @sourcegraph/browser -s run build"),
+		bk.Cmd("yarn --immutable --network-timeout 60000"),
+		bk.Cmd("yarn workspace @sourcegraph/browser run build"),
 		bk.Cmd("yarn workspace @sourcegraph/browser release:npm"))
 }
 
@@ -507,9 +503,9 @@ func addVsceReleaseSteps(pipeline *bk.Pipeline) {
 	// Publish extension to the VS Code Marketplace
 	pipeline.AddStep(":vscode: Extension release",
 		withYarnCache(),
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd("yarn --immutable --network-timeout 60000"),
 		bk.Cmd("yarn generate"),
-		bk.Cmd("yarn --cwd client/vscode -s run release"))
+		bk.Cmd("yarn workspace @sourcegraph/vscode run release"))
 }
 
 // Adds a Buildkite pipeline "Wait".
@@ -531,11 +527,18 @@ func triggerAsync(buildOptions bk.BuildOptions) operations.Operation {
 func triggerReleaseBranchHealthchecks(minimumUpgradeableVersion string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		version := semver.MustParse(minimumUpgradeableVersion)
+
+		// HACK: we can't just subtract a single minor version once we roll over to 4.0,
+		// so hard-code the previous minor version.
+		previousMinorVersion := fmt.Sprintf("%d.%d", version.Major(), version.Minor()-1)
+		if version.Major() == 4 && version.Minor() == 0 {
+			previousMinorVersion = "3.43"
+		}
+
 		for _, branch := range []string{
 			// Most recent major.minor
 			fmt.Sprintf("%d.%d", version.Major(), version.Minor()),
-			// The previous major.minor-1
-			fmt.Sprintf("%d.%d", version.Major(), version.Minor()-1),
+			previousMinorVersion,
 		} {
 			name := fmt.Sprintf(":stethoscope: Trigger %s release branch healthcheck build", branch)
 			pipeline.AddTrigger(name, "sourcegraph",
@@ -584,7 +587,9 @@ func serverE2E(candidateTag string) operations.Operation {
 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
 			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
-			bk.Cmd("dev/ci/integration/e2e/run.sh"),
+			bk.AnnotatedCmd("dev/ci/integration/e2e/run.sh", bk.AnnotatedCmdOpts{
+				Annotations: &bk.AnnotationOpts{},
+			}),
 			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
 	}
 }
@@ -603,7 +608,9 @@ func serverQA(candidateTag string) operations.Operation {
 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
 			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
-			bk.Cmd("dev/ci/integration/qa/run.sh"),
+			bk.AnnotatedCmd("dev/ci/integration/qa/run.sh", bk.AnnotatedCmdOpts{
+				Annotations: &bk.AnnotationOpts{},
+			}),
 			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
 	}
 }
@@ -626,11 +633,6 @@ func testUpgrade(candidateTag, minimumUpgradeableVersion string) operations.Oper
 			bk.Cmd("dev/ci/integration/upgrade/run.sh"),
 			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
 	}
-}
-
-func noDiff(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":empty_nest: No valid diff found. No tests to run.",
-		bk.Cmd("echo 'No diff found on branch.'"))
 }
 
 func clusterQA(candidateTag string) operations.Operation {
@@ -931,6 +933,36 @@ func uploadBuildeventTrace() operations.Operation {
 			bk.Cmd("./enterprise/dev/ci/scripts/upload-buildevent-report.sh"),
 		)
 	}
+}
+
+func exposeBuildMetadata(c Config) (operations.Operation, error) {
+	overview := struct {
+		RunType      string       `json:"RunType"`
+		Version      string       `json:"Version"`
+		Diff         string       `json:"Diff"`
+		MessageFlags MessageFlags `json:"MessageFlags"`
+	}{
+		RunType:      c.RunType.String(),
+		Diff:         c.Diff.String(),
+		MessageFlags: c.MessageFlags,
+	}
+	data, err := json.Marshal(&overview)
+	if err != nil {
+		return nil, err
+	}
+
+	return func(p *bk.Pipeline) {
+		p.AddStep(":memo::pipeline: Pipeline metadata",
+			bk.SoftFail(),
+			bk.Env("BUILD_METADATA", string(data)),
+			bk.AnnotatedCmd("dev/ci/gen-metadata-annotation.sh", bk.AnnotatedCmdOpts{
+				Annotations: &bk.AnnotationOpts{
+					Type:         bk.AnnotationTypeInfo,
+					IncludeNames: false,
+				},
+			}),
+		)
+	}, nil
 }
 
 // Request render.com to create client preview app for current PR

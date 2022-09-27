@@ -27,14 +27,6 @@ func TestGroupSiteUsageStats(t *testing.T) {
 		IntegrationUniquesMonth: 7,
 		IntegrationUniquesWeek:  8,
 		IntegrationUniquesDay:   9,
-		ManageUniquesMonth:      10,
-		CodeUniquesMonth:        11,
-		VerifyUniquesMonth:      12,
-		MonitorUniquesMonth:     13,
-		ManageUniquesWeek:       14,
-		CodeUniquesWeek:         15,
-		VerifyUniquesWeek:       16,
-		MonitorUniquesWeek:      17,
 	}
 	siteUsageStats := groupSiteUsageStats(summary, false)
 
@@ -90,14 +82,6 @@ func TestGroupSiteUsageStatsMonthsOnly(t *testing.T) {
 		IntegrationUniquesMonth: 7,
 		IntegrationUniquesWeek:  8,
 		IntegrationUniquesDay:   9,
-		ManageUniquesMonth:      10,
-		CodeUniquesMonth:        11,
-		VerifyUniquesMonth:      12,
-		MonitorUniquesMonth:     13,
-		ManageUniquesWeek:       14,
-		CodeUniquesWeek:         15,
-		VerifyUniquesWeek:       16,
-		MonitorUniquesWeek:      17,
 	}
 	siteUsageStats := groupSiteUsageStats(summary, true)
 

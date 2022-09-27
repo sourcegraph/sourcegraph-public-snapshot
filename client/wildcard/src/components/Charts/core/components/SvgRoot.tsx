@@ -26,7 +26,7 @@ import { createRectangle, EMPTY_RECTANGLE, Rectangle } from '../../../Popover'
 
 import { AxisBottom, AxisLeft } from './axis/Axis'
 import { getMaxTickWidth, Tick, TickProps } from './axis/Tick'
-import { getXScaleTicks } from './axis/tick-formatters'
+import { GetScaleTicksOptions, getXScaleTicks } from './axis/tick-formatters'
 
 const DEFAULT_PADDING = { top: 16, right: 36, bottom: 0, left: 0 }
 
@@ -114,7 +114,9 @@ export const SvgRoot: FC<PropsWithChildren<SvgRootProps>> = props => {
     )
 }
 
-interface SvgAxisLeftProps {}
+interface SvgAxisLeftProps {
+    pixelsPerTick?: number
+}
 
 export const SvgAxisLeft: FC<SvgAxisLeftProps> = props => {
     const { content, yScale, setPadding } = useContext(SVGRootContext)
@@ -147,16 +149,21 @@ export const reverseTruncatedTick = (tick: string): string => (tick.length >= 15
 interface SvgAxisBottomProps<Tick> {
     tickFormat?: (tick: Tick) => string
     pixelsPerTick?: number
+    minRotateAngle?: number
     maxRotateAngle?: number
+    hideTicks?: boolean
     getTruncatedTick?: (formattedTick: string) => string
+    getScaleTicks?: <T>(options: GetScaleTicksOptions) => T[]
 }
-
 export function SvgAxisBottom<Tick = string>(props: SvgAxisBottomProps<Tick>): ReactElement {
     const {
         pixelsPerTick = 0,
-        maxRotateAngle = 90,
+        minRotateAngle = 0,
+        maxRotateAngle = 45,
         tickFormat = defaultToString,
         getTruncatedTick = defaultTruncatedTick,
+        getScaleTicks = getXScaleTicks,
+        hideTicks = false,
     } = props
     const { content, xScale, setPadding } = useContext(SVGRootContext)
 
@@ -167,7 +174,7 @@ export function SvgAxisBottom<Tick = string>(props: SvgAxisBottomProps<Tick>): R
     })
 
     const [, upperRangeBound] = xScale.range() as [number, number]
-    const ticks = getXScaleTicks<Tick>({ scale: xScale, space: content.width, pixelsPerTick })
+    const ticks = getScaleTicks<Tick>({ scale: xScale, space: content.width, pixelsPerTick })
 
     const maxWidth = useMemo(() => {
         const axisGroup = axisGroupRef.current
@@ -177,22 +184,29 @@ export function SvgAxisBottom<Tick = string>(props: SvgAxisBottomProps<Tick>): R
         }
 
         return getMaxTickWidth(axisGroup, ticks.map(tickFormat))
-    }, [ticks, tickFormat])
+    }, [tickFormat, ticks])
 
     const getXTickProps = (props: TickRendererProps): TickProps => {
+        // TODO: Improve rotation math see https://github.com/sourcegraph/sourcegraph/issues/41310
         const measuredSize = ticks.length * maxWidth
+        const fontSize = 12 // 0.75rem
         const rotate =
-            upperRangeBound < measuredSize
-                ? maxRotateAngle * Math.min(1, (measuredSize / upperRangeBound - 0.8) / 2)
+            upperRangeBound <= measuredSize
+                ? Math.max(maxRotateAngle * Math.min(1, (measuredSize / upperRangeBound - 0.8) / 2), minRotateAngle)
                 : 0
 
         if (rotate) {
+            const xCoord = props.x
+            const yCoord = hideTicks ? props.y - fontSize / 2 : props.y
+
             return {
                 ...props,
+                x: xCoord,
+                y: yCoord,
                 // Truncate ticks only if we rotate them, this means truncate labels only
                 // when they overlap
                 getTruncatedTick,
-                transform: `rotate(${rotate}, ${props.x} ${props.y})`,
+                transform: `rotate(${rotate}, ${xCoord} ${yCoord})`,
                 textAnchor: 'start',
             }
         }
@@ -210,6 +224,7 @@ export function SvgAxisBottom<Tick = string>(props: SvgAxisBottomProps<Tick>): R
             tickValues={ticks}
             tickComponent={props => <Tick {...getXTickProps(props)} />}
             tickFormat={tickFormat}
+            hideTicks={hideTicks}
         />
     )
 }

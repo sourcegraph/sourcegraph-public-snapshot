@@ -122,6 +122,10 @@ export type QueryUpdate =
           type: 'toggleSubquery'
           value: string
       }
+    | {
+          type: 'replaceQuery'
+          value: string
+      }
 
 export function updateQuery(query: string, updates: QueryUpdate[]): string {
     return updates.reduce((query, update) => {
@@ -135,6 +139,8 @@ export function updateQuery(query: string, updates: QueryUpdate[]): string {
                 return updateFilter(query, update.field, update.value)
             case 'toggleSubquery':
                 return toggleSubquery(query, update.value)
+            case 'replaceQuery':
+                return update.value
         }
         return query
     }, query)

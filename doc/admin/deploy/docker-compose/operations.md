@@ -5,9 +5,10 @@
 
 The Sourcegraph Docker Compose yaml file uses [Docker volumes](https://docs.docker.com/storage/volumes/) to store its data. These volumes are stored at `/var/lib/docker/volumes` by [default on Linux](https://docs.docker.com/storage/#choose-the-right-type-of-mount).
 
-Guides for managing cloud storage and backups are available in our [cloud-specific installation guides](./index.md#cloud-installation):
+Guides for managing cloud storage and backups are available in our cloud-specific installation guides:
 
 - [Storage and backups for Amazon Web Services](./aws.md#storage-and-backups)
+- [Storage and backups for Azure](./aws.md#storage-and-backups)
 - [Storage and backups for Google Cloud](./google_cloud.md#storage-and-backups)
 - [Storage and backups for Digital Ocean](./digitalocean.md#storage-and-backups)
 
@@ -21,11 +22,9 @@ docker exec -it codeintel-db psql -U sg #access codeintel-db container and run p
 ```
 ## Database Migrations
 
-> NOTE: The `migrator` service is only available in versions `3.37` and later.
-
 The `frontend` container in the `docker-compose.yaml` file will automatically run on startup and migrate the databases if any changes are required, however administrators may wish to migrate their databases before upgrading the rest of the system when working with large databases. Sourcegraph guarantees database backward compatibility to the most recent minor point release so the database can safely be upgraded before the application code.
 
-To execute the database migrations independently, follow the [docker-compose instructions on how to manually run database migrations](../../how-to/manual_database_migrations.md#docker-compose). Running the `up` (default) command on the `migrator` of the *version you are upgrading to* will apply all migrations required by the next version of Sourcegraph.
+To execute the database migrations independently, follow the [docker-compose instructions on how to manually run database migrations](../../how-to/manual_database_migrations.md#docker--docker-compose). Running the `up` (default) command on the `migrator` of the *version you are upgrading to* will apply all migrations required by the next version of Sourcegraph.
 
 ## Backup and restore
 
@@ -42,7 +41,7 @@ The following instructions are specific to backing up and restoring the Sourcegr
 
 ### Back up Sourcegraph databases
 
-These instructions will back up the primary `sourcegraph` database and the [codeintel](../../../code_intelligence/index.md) database.
+These instructions will back up the primary `sourcegraph` database and the [codeintel](../../../code_navigation/index.md) database.
 
 1\. `ssh` from your local machine into the machine hosting the `sourcegraph` deployment
 
@@ -234,4 +233,35 @@ You can monitor the health of a deployment in several ways:
 - Using [Sourcegraph's built-in observability suite](../../observability/index.md), which includes dashboards and alerting for Sourcegraph services.
 - Using [`docker ps`](https://docs.docker.com/engine/reference/commandline/ps/) to check on the status of containers within the deployment (any tooling designed to work with Docker containers and/or Docker Compose will work too).
   - This requires direct access to your instance's host machine.
-  
+
+## OpenTelemetry Collector
+
+Learn more about Sourcegraph's integrations with the [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) in our [OpenTelemetry documentation](../../observability/opentelemetry.md).
+
+### Configure a tracing backend
+
+[Tracing](../../observability/tracing.md) export can be configured via the [OpenTelemetry collector](../../observability/opentelemetry.md) deployed by default in all Sourcegraph docker-compose deployments.
+To get started, edit the mounted configuration file in `otel-collector/config.yaml` based on the [OpenTelemetry collector configuration guidance](../../observability/opentelemetry.md) and edit your `docker-compose.yaml` file to have the `otel-collector` service use the mounted configuration:
+
+```yaml
+services:
+  # ...
+  otel-collector:
+    # ...
+    command: ['--config', '/etc/otel-collector/config.yaml']
+    volumes:
+      - '../otel-collector/config.yaml:/etc/otel-collector/config.yaml'
+```
+
+#### Enable the bundled Jaeger deployment
+
+Alternatively, you can use the `jaeger` overlay to easily deploy Sourcegraph with some default configuration that exports traces to a standalone Jaeger instance:
+
+```sh
+docker-compose \
+    -f docker-compose/docker-compose.yaml \
+    -f docker-compose/jaeger/docker-compose.yaml \
+    up
+```
+
+Once a tracing backend has been set up, refer to the [tracing guidance](../../observability/tracing.md) for more details.

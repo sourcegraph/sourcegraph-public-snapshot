@@ -23,8 +23,10 @@ type operations struct {
 	getRetentionPolicyOverview *observation.Operation
 
 	// Repository
-	getPreviewRepositoryFilter *observation.Operation
-	getPreviewGitObjectFilter  *observation.Operation
+	getPreviewRepositoryFilter                  *observation.Operation
+	getPreviewGitObjectFilter                   *observation.Operation
+	selectPoliciesForRepositoryMembershipUpdate *observation.Operation
+	updateReposMatchingPatterns                 *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -59,7 +61,9 @@ func newOperations(observationContext *observation.Context) *operations {
 		getRetentionPolicyOverview: op("GetRetentionPolicyOverview"),
 
 		// Repository
-		getPreviewRepositoryFilter: op("GetPreviewRepositoryFilter"),
-		getPreviewGitObjectFilter:  op("GetPreviewGitObjectFilter"),
+		getPreviewRepositoryFilter:                  op("GetPreviewRepositoryFilter"),
+		getPreviewGitObjectFilter:                   op("GetPreviewGitObjectFilter"),
+		selectPoliciesForRepositoryMembershipUpdate: op("SelectPoliciesForRepositoryMembershipUpdate"),
+		updateReposMatchingPatterns:                 op("UpdateReposMatchingPatterns"),
 	}
 }

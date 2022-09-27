@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/log/logtest"
@@ -710,14 +712,12 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 			Repo:            repo.ID,
 			BatchChanges:    []btypes.BatchChangeAssoc{{BatchChangeID: batchChangeID}},
 			DiffStatAdded:   testDiffStatCount,
-			DiffStatChanged: testDiffStatCount,
 			DiffStatDeleted: testDiffStatCount,
 		})
 
 		{
 			want := &diff.Stat{
 				Added:   testDiffStatCount,
-				Changed: testDiffStatCount,
 				Deleted: testDiffStatCount,
 			}
 			opts := GetBatchChangeDiffStatOpts{BatchChangeID: batchChangeID}
@@ -772,14 +772,12 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 			Repo:            repo1.ID,
 			BatchChange:     batchChangeID,
 			DiffStatAdded:   testDiffStatCount1,
-			DiffStatChanged: testDiffStatCount1,
 			DiffStatDeleted: testDiffStatCount1,
 		})
 		bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
 			Repo:            repo1.ID,
 			BatchChange:     batchChangeID,
 			DiffStatAdded:   testDiffStatCount2,
-			DiffStatChanged: 0,
 			DiffStatDeleted: testDiffStatCount2,
 		})
 
@@ -788,7 +786,6 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 			Repo:            repo2.ID,
 			BatchChange:     batchChangeID,
 			DiffStatAdded:   testDiffStatCount2,
-			DiffStatChanged: testDiffStatCount2,
 			DiffStatDeleted: testDiffStatCount2,
 		})
 
@@ -803,7 +800,6 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 					repoID: repo1.ID,
 					want: &diff.Stat{
 						Added:   testDiffStatCount1 + testDiffStatCount2,
-						Changed: testDiffStatCount1,
 						Deleted: testDiffStatCount1 + testDiffStatCount2,
 					},
 				},
@@ -811,7 +807,6 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 					repoID: repo2.ID,
 					want: &diff.Stat{
 						Added:   testDiffStatCount2,
-						Changed: testDiffStatCount2,
 						Deleted: testDiffStatCount2,
 					},
 				},
@@ -819,7 +814,6 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 					repoID: repo3.ID,
 					want: &diff.Stat{
 						Added:   0,
-						Changed: 0,
 						Deleted: 0,
 					},
 				},
@@ -933,7 +927,7 @@ func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock b
 			t.Fatal(err)
 		}
 
-		var testBatchChangeIsGone = func() {
+		var testBatchChangeIsGone = func(expectedErr error) {
 			// We should now have the unowned batch change still be valid, but the
 			// owned batch change should have gone away.
 			cs, _, err := s.ListBatchChanges(ctx, ListBatchChangesOpts{})
@@ -958,8 +952,8 @@ func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock b
 			}
 
 			// And getting the batch change by its ID also shouldn't work.
-			if _, err := s.GetBatchChange(ctx, GetBatchChangeOpts{ID: ownedBatchChange.ID}); err == nil || err != ErrNoResults {
-				t.Fatalf("got invalid error, want=%+v have=%+v", ErrNoResults, err)
+			if _, err := s.GetBatchChange(ctx, GetBatchChangeOpts{ID: ownedBatchChange.ID}); err == nil || err != expectedErr {
+				t.Fatalf("got invalid error, want=%+v have=%+v", expectedErr, err)
 			}
 
 			// Both batch specs should still be in place, at least until we add
@@ -975,13 +969,69 @@ func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock b
 			}
 		}
 
-		testBatchChangeIsGone()
+		testBatchChangeIsGone(ErrDeletedNamespace)
 
 		// Now we hard-delete the user.
 		if err := database.UsersWith(logger, s).HardDelete(ctx, user.ID); err != nil {
 			t.Fatal(err)
 		}
 
-		testBatchChangeIsGone()
+		testBatchChangeIsGone(ErrNoResults)
+	})
+}
+
+func testBatchChangesDeletedNamespace(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
+	logger := logtest.Scoped(t)
+
+	t.Run("User Deleted", func(t *testing.T) {
+		user := bt.CreateTestUser(t, s.DatabaseDB(), false)
+
+		bc := &btypes.BatchChange{
+			Name:            "my-batch-change",
+			NamespaceUserID: user.ID,
+			CreatorID:       user.ID,
+			LastApplierID:   user.ID,
+			LastAppliedAt:   clock.Now(),
+		}
+		err := s.CreateBatchChange(ctx, bc)
+		require.NoError(t, err)
+
+		t.Cleanup(func() {
+			database.UsersWith(logger, s).HardDelete(ctx, user.ID)
+			s.DeleteBatchChange(ctx, bc.ID)
+		})
+
+		err = database.UsersWith(logger, s).Delete(ctx, user.ID)
+		require.NoError(t, err)
+
+		actual, err := s.GetBatchChange(ctx, GetBatchChangeOpts{ID: bc.ID})
+		assert.Error(t, err)
+		assert.ErrorIs(t, err, ErrDeletedNamespace)
+		assert.Nil(t, actual)
+	})
+
+	t.Run("Org Deleted", func(t *testing.T) {
+		orgID := bt.InsertTestOrg(t, s.DatabaseDB(), "my-org")
+
+		bc := &btypes.BatchChange{
+			Name:           "my-batch-change",
+			NamespaceOrgID: orgID,
+			LastAppliedAt:  clock.Now(),
+		}
+		err := s.CreateBatchChange(ctx, bc)
+		require.NoError(t, err)
+
+		t.Cleanup(func() {
+			database.OrgsWith(s).HardDelete(ctx, orgID)
+			s.DeleteBatchChange(ctx, bc.ID)
+		})
+
+		err = database.OrgsWith(s).Delete(ctx, orgID)
+		require.NoError(t, err)
+
+		actual, err := s.GetBatchChange(ctx, GetBatchChangeOpts{ID: bc.ID})
+		assert.Error(t, err)
+		assert.ErrorIs(t, err, ErrDeletedNamespace)
+		assert.Nil(t, actual)
 	})
 }

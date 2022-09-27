@@ -15,8 +15,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	autoindexingShared "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
-	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	uploadsShared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -87,6 +88,10 @@ func (r *Resolver) PoliciesResolver() resolvers.PoliciesResolver {
 	return r.resolver.PoliciesResolver()
 }
 
+func (r *Resolver) AutoIndexingResolver() resolvers.AutoIndexingResolver {
+	return r.resolver.AutoIndexingResolver()
+}
+
 // 🚨 SECURITY: dbstore layer handles authz for GetUploadByID
 func (r *Resolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (_ gql.LSIFUploadResolver, err error) {
 	ctx, traceErrs, endObservation := r.observationContext.lsifUploadByID.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
@@ -135,8 +140,9 @@ func (r *Resolver) LSIFUploadsByRepo(ctx context.Context, args *gql.LSIFReposito
 	// Create a new prefetcher here as we only want to cache upload and index records in
 	// the same graphQL request, not across different request.
 	prefetcher := NewPrefetcher(r.resolver)
+	uploadConnectionResolver := r.resolver.UploadsResolver().UploadsConnectionResolverFromFactory(opts)
 
-	return NewUploadConnectionResolver(r.db, r.gitserver, r.resolver, r.resolver.UploadConnectionResolver(opts), prefetcher, r.locationResolver, traceErrs), nil
+	return NewUploadConnectionResolver(r.db, r.gitserver, r.resolver, uploadConnectionResolver, prefetcher, r.locationResolver, traceErrs), nil
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence upload data
@@ -155,7 +161,7 @@ func (r *Resolver) DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphq
 		return nil, err
 	}
 
-	if err := r.resolver.DeleteUploadByID(ctx, int(uploadID)); err != nil {
+	if _, err := r.resolver.UploadsResolver().DeleteUploadByID(ctx, int(uploadID)); err != nil {
 		return nil, err
 	}
 
@@ -225,7 +231,11 @@ func (r *Resolver) LSIFIndexesByRepo(ctx context.Context, args *gql.LSIFReposito
 	// the same graphQL request, not across different request.
 	prefetcher := NewPrefetcher(r.resolver)
 
-	return NewIndexConnectionResolver(r.db, r.gitserver, r.resolver, r.resolver.IndexConnectionResolver(opts), prefetcher, r.locationResolver, traceErrs), nil
+	// Create a new indexConnectionResolver here as we only want to index records in
+	// the same graphQL request, not across different request.
+	indexConnectionResolver := r.resolver.AutoIndexingResolver().IndexConnectionResolverFromFactory(opts)
+
+	return NewIndexConnectionResolver(r.db, r.gitserver, r.resolver, indexConnectionResolver, prefetcher, r.locationResolver, traceErrs), nil
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence index data
@@ -247,7 +257,8 @@ func (r *Resolver) DeleteLSIFIndex(ctx context.Context, args *struct{ ID graphql
 		return nil, err
 	}
 
-	if err := r.resolver.DeleteIndexByID(ctx, int(indexID)); err != nil {
+	autoIndexingResolver := r.resolver.AutoIndexingResolver()
+	if err := autoIndexingResolver.DeleteIndexByID(ctx, int(indexID)); err != nil {
 		return nil, err
 	}
 
@@ -266,7 +277,9 @@ func (r *Resolver) CommitGraph(ctx context.Context, id graphql.ID) (_ gql.CodeIn
 		return nil, err
 	}
 
-	return r.resolver.CommitGraph(ctx, int(repositoryID))
+	commitGraphResolver := r.resolver.UploadsResolver().CommitGraphResolverFromFactory(ctx, int(repositoryID))
+
+	return commitGraphResolver, nil
 }
 
 // 🚨 SECURITY: Only site admins may queue auto-index jobs
@@ -298,7 +311,8 @@ func (r *Resolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *gql.Queu
 		configuration = *args.Configuration
 	}
 
-	indexes, err := r.resolver.QueueAutoIndexJobsForRepo(ctx, int(repositoryID), rev, configuration)
+	autoindexingResolver := r.resolver.AutoIndexingResolver()
+	indexes, err := autoindexingResolver.QueueAutoIndexJobsForRepo(ctx, int(repositoryID), rev, configuration)
 	if err != nil {
 		return nil, err
 	}
@@ -309,7 +323,8 @@ func (r *Resolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *gql.Queu
 
 	resolvers := make([]gql.LSIFIndexResolver, 0, len(indexes))
 	for i := range indexes {
-		resolvers = append(resolvers, NewIndexResolver(r.db, r.gitserver, r.resolver, indexes[i], prefetcher, r.locationResolver, traceErrs))
+		index := convertSharedIndexToDBStoreIndex(indexes[i])
+		resolvers = append(resolvers, NewIndexResolver(r.db, r.gitserver, r.resolver, index, prefetcher, r.locationResolver, traceErrs))
 	}
 	return resolvers, nil
 }
@@ -566,15 +581,40 @@ func (r *Resolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ gql.
 	if err != nil {
 		return nil, err
 	}
+	repoID := int(repositoryID)
+
+	uploadResolver := r.resolver.UploadsResolver()
+	recentUploads, err := uploadResolver.GetRecentUploadsSummary(ctx, repoID)
+	if err != nil {
+		return nil, err
+	}
+
+	lastUploadRetentionScan, err := uploadResolver.GetLastUploadRetentionScanForRepository(ctx, repoID)
+	if err != nil {
+		return nil, err
+	}
+
+	autoindexingResolver := r.resolver.AutoIndexingResolver()
+	recentIndexes, err := autoindexingResolver.GetRecentIndexesSummary(ctx, repoID)
+	if err != nil {
+		return nil, err
+	}
+
+	lastIndexScan, err := autoindexingResolver.GetLastIndexScanForRepository(ctx, repoID)
+	if err != nil {
+		return nil, err
+	}
+
+	summary := RepositorySummary{
+		RecentUploads:           recentUploads,
+		RecentIndexes:           recentIndexes,
+		LastUploadRetentionScan: lastUploadRetentionScan,
+		LastIndexScan:           lastIndexScan,
+	}
 
 	// Create a new prefetcher here as we only want to cache upload and index records in
 	// the same graphQL request, not across different request.
 	prefetcher := NewPrefetcher(r.resolver)
-
-	summary, err := r.resolver.RepositorySummary(ctx, int(repositoryID))
-	if err != nil {
-		return nil, err
-	}
 
 	return NewRepositorySummaryResolver(
 		r.db,
@@ -624,8 +664,8 @@ func (r *Resolver) UpdateRepositoryIndexConfiguration(ctx context.Context, args 
 	if err != nil {
 		return nil, err
 	}
-
-	if err := r.resolver.UpdateIndexConfigurationByRepositoryID(ctx, int(repositoryID), args.Configuration); err != nil {
+	autoIndexingResolver := r.resolver.AutoIndexingResolver()
+	if err := autoIndexingResolver.UpdateIndexConfigurationByRepositoryID(ctx, int(repositoryID), args.Configuration); err != nil {
 		return nil, err
 	}
 
@@ -718,17 +758,17 @@ func (r *Resolver) PreviewGitObjectFilter(ctx context.Context, id graphql.ID, ar
 
 // makeGetUploadsOptions translates the given GraphQL arguments into options defined by the
 // store.GetUploads operations.
-func makeGetUploadsOptions(args *gql.LSIFRepositoryUploadsQueryArgs) (store.GetUploadsOptions, error) {
+func makeGetUploadsOptions(args *gql.LSIFRepositoryUploadsQueryArgs) (uploadsShared.GetUploadsOptions, error) {
 	repositoryID, err := resolveRepositoryID(args.RepositoryID)
 	if err != nil {
-		return store.GetUploadsOptions{}, err
+		return uploadsShared.GetUploadsOptions{}, err
 	}
 
 	var dependencyOf int64
 	if args.DependencyOf != nil {
 		dependencyOf, err = unmarshalLSIFUploadGQLID(*args.DependencyOf)
 		if err != nil {
-			return store.GetUploadsOptions{}, err
+			return uploadsShared.GetUploadsOptions{}, err
 		}
 	}
 
@@ -736,16 +776,16 @@ func makeGetUploadsOptions(args *gql.LSIFRepositoryUploadsQueryArgs) (store.GetU
 	if args.DependentOf != nil {
 		dependentOf, err = unmarshalLSIFUploadGQLID(*args.DependentOf)
 		if err != nil {
-			return store.GetUploadsOptions{}, err
+			return uploadsShared.GetUploadsOptions{}, err
 		}
 	}
 
 	offset, err := graphqlutil.DecodeIntCursor(args.After)
 	if err != nil {
-		return store.GetUploadsOptions{}, err
+		return uploadsShared.GetUploadsOptions{}, err
 	}
 
-	return store.GetUploadsOptions{
+	return uploadsShared.GetUploadsOptions{
 		RepositoryID:       repositoryID,
 		State:              strings.ToLower(derefString(args.State, "")),
 		Term:               derefString(args.Query, ""),
@@ -761,18 +801,18 @@ func makeGetUploadsOptions(args *gql.LSIFRepositoryUploadsQueryArgs) (store.GetU
 
 // makeGetIndexesOptions translates the given GraphQL arguments into options defined by the
 // store.GetIndexes operations.
-func makeGetIndexesOptions(args *gql.LSIFRepositoryIndexesQueryArgs) (store.GetIndexesOptions, error) {
+func makeGetIndexesOptions(args *gql.LSIFRepositoryIndexesQueryArgs) (autoindexingShared.GetIndexesOptions, error) {
 	repositoryID, err := resolveRepositoryID(args.RepositoryID)
 	if err != nil {
-		return store.GetIndexesOptions{}, err
+		return autoindexingShared.GetIndexesOptions{}, err
 	}
 
 	offset, err := graphqlutil.DecodeIntCursor(args.After)
 	if err != nil {
-		return store.GetIndexesOptions{}, err
+		return autoindexingShared.GetIndexesOptions{}, err
 	}
 
-	return store.GetIndexesOptions{
+	return autoindexingShared.GetIndexesOptions{
 		RepositoryID: repositoryID,
 		State:        strings.ToLower(derefString(args.State, "")),
 		Term:         derefString(args.Query, ""),

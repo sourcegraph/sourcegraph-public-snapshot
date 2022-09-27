@@ -2,7 +2,7 @@ import { useMemo, useEffect } from 'react'
 
 import { ReplaySubject } from 'rxjs'
 
-import { logError } from '@sourcegraph/common'
+import { logger } from '@sourcegraph/common'
 
 import { ViewerId } from '../api/viewerTypes'
 import { ExtensionsControllerProps } from '../extensions/controller'
@@ -66,14 +66,14 @@ export function useCodeIntelViewerUpdates(props?: UseCodeIntelViewerUpdatesProps
                 })
             })
             .catch(error => {
-                logError('Extension host API error', error)
+                logger.error('Extension host API error', error)
             })
 
         return () => {
             // Remove from extension host
             extensionsController.extHostAPI
                 .then(extensionHostAPI => previousViewerId && extensionHostAPI.removeViewer(previousViewerId))
-                .catch(error => logError('Error removing viewer from extension host', error))
+                .catch(error => logger.error('Error removing viewer from extension host', error))
         }
     }, [props, viewerUpdates])
 

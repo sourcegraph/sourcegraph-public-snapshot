@@ -34,6 +34,7 @@ interface Props extends AbsoluteRepo, ExtensionsControllerProps, ThemeProps, Tel
     /** The localStorage key that stores the current size of the (resizable) RepoRevisionSidebar. */
     sizeKey: string
     repoID: Scalars['ID']
+    enableMergedFileSymbolSidebar: boolean
 }
 
 interface State {
@@ -346,6 +347,7 @@ export class Tree extends React.PureComponent<Props, State> {
                     extensionsController={this.props.extensionsController}
                     isLightTheme={this.props.isLightTheme}
                     telemetryService={this.props.telemetryService}
+                    enableMergedFileSymbolSidebar={this.props.enableMergedFileSymbolSidebar}
                 />
             </div>
         )

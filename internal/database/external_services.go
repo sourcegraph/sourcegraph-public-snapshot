@@ -34,7 +34,7 @@ import (
 
 // BeforeCreateExternalService (if set) is invoked as a hook prior to creating a
 // new external service in the database.
-var BeforeCreateExternalService func(context.Context, ExternalServiceStore) error
+var BeforeCreateExternalService func(context.Context, ExternalServiceStore, *types.ExternalService) error
 
 type ExternalServiceStore interface {
 	// Count counts all external services that satisfy the options (ignoring limit and offset).
@@ -68,13 +68,11 @@ type ExternalServiceStore interface {
 	// DistinctKinds returns the distinct list of external services kinds that are stored in the database.
 	DistinctKinds(ctx context.Context) ([]string, error)
 
-	// GetAffiliatedSyncErrors returns the most recent sync failure message for each
-	// external service affiliated with the supplied user. If the latest run did not
-	// have an error, the string will be empty. We fetch external services owned by
-	// the supplied user and if they are a site admin we additionally return site
-	// level external services. We exclude cloud_default repos as they are never
-	// synced.
-	GetAffiliatedSyncErrors(ctx context.Context, u *types.User) (map[int64]string, error)
+	// GetLatestSyncErrors returns the most recent sync failure message for
+	// each external service. If the latest sync did not have an error, the
+	// string will be empty. We exclude cloud_default external services as they
+	// are never synced.
+	GetLatestSyncErrors(ctx context.Context) (map[int64]string, error)
 
 	// GetByID returns the external service for id.
 	//
@@ -95,6 +93,10 @@ type ExternalServiceStore interface {
 
 	// CountSyncJobs counts all sync jobs.
 	CountSyncJobs(ctx context.Context, opt ExternalServicesGetSyncJobsOptions) (int64, error)
+
+	// CancelSyncJob cancels a given sync job. It returns an error when the job was not
+	// found or not in processing or queued state.
+	CancelSyncJob(ctx context.Context, id int64) error
 
 	// List returns external services under given namespace.
 	// If no namespace is given, it returns all external services.
@@ -591,7 +593,7 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 
 	// Prior to saving the record, run a validation hook.
 	if BeforeCreateExternalService != nil {
-		if err := BeforeCreateExternalService(ctx, NewDBWith(e.logger, e.Store).ExternalServices()); err != nil {
+		if err = BeforeCreateExternalService(ctx, NewDBWith(e.logger, e.Store).ExternalServices(), es); err != nil {
 			return err
 		}
 	}
@@ -1062,7 +1064,8 @@ SELECT
 	process_after,
 	num_resets,
 	external_service_id,
-	num_failures
+	num_failures,
+	cancel
 FROM
 	external_service_sync_jobs
 WHERE %s
@@ -1165,6 +1168,7 @@ func scanExternalServiceSyncJob(sc dbutil.Scanner, job *types.ExternalServiceSyn
 		&job.NumResets,
 		&dbutil.NullInt64{N: &job.ExternalServiceID},
 		&job.NumFailures,
+		&job.Cancel,
 	)
 }
 
@@ -1181,10 +1185,38 @@ LIMIT 1
 	return lastError, err
 }
 
-func (e *externalServiceStore) GetAffiliatedSyncErrors(ctx context.Context, u *types.User) (map[int64]string, error) {
-	if u == nil {
-		return nil, errors.New("nil user")
+func (e *externalServiceStore) CancelSyncJob(ctx context.Context, id int64) error {
+	now := timeutil.Now()
+	q := sqlf.Sprintf(`
+UPDATE
+	external_service_sync_jobs
+SET
+	cancel = TRUE,
+	-- If the sync job is still queued, we directly abort, otherwise we keep the
+	-- state, so the worker can do teardown and, at some point, mark it failed itself.
+	state = CASE WHEN external_service_sync_jobs.state = 'processing' THEN external_service_sync_jobs.state ELSE 'canceled' END,
+	finished_at = CASE WHEN external_service_sync_jobs.state = 'processing' THEN external_service_sync_jobs.finished_at ELSE %s END
+WHERE
+	id = %s
+	AND
+	state IN ('queued', 'processing')
+`, now, id)
+
+	res, err := e.ExecResult(ctx, q)
+	if err != nil {
+		return err
 	}
+	af, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if af != 1 {
+		return &errSyncJobNotFound{id: id}
+	}
+	return nil
+}
+
+func (e *externalServiceStore) GetLatestSyncErrors(ctx context.Context) (map[int64]string, error) {
 	q := sqlf.Sprintf(`
 SELECT DISTINCT ON (es.id) es.id, essj.failure_message
 FROM external_services es
@@ -1192,15 +1224,9 @@ FROM external_services es
                    ON es.id = essj.external_service_id
                        AND essj.state IN ('completed', 'errored', 'failed')
                        AND essj.finished_at IS NOT NULL
-WHERE
-  (
-    (es.namespace_user_id = %s) OR
-    (%s AND es.namespace_user_id IS NULL AND es.namespace_org_id IS NULL)
-  )
-  AND es.deleted_at IS NULL
-  AND NOT es.cloud_default
+WHERE es.deleted_at IS NULL AND NOT es.cloud_default
 ORDER BY es.id, essj.finished_at DESC
-`, u.ID, u.SiteAdmin)
+`)
 
 	rows, err := e.Query(ctx, q)
 	if err != nil {
