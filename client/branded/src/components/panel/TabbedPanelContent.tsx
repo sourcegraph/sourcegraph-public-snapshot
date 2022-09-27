@@ -395,7 +395,11 @@ function transformPanelContributions(contributions: Evaluated<Contributions>): E
         // work for the case this is hackily trying to prevent: multiple extensions generated with the
         // same manifest.
         const strings = new Set(panelMenuItems.map(menuItem => JSON.stringify(menuItem)))
-        const uniquePanelMenuItems = [...strings].map(string => JSON.parse(string))
+        const uniquePanelMenuItems = [...strings]
+            .map(string => JSON.parse(string))
+            // We render the MixPreciseAndSearchBasedReferencesToggle in React now
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+            .filter((item: any) => item.action !== 'mixPreciseAndSearchBasedReferences.toggle')
 
         return {
             ...contributions,
