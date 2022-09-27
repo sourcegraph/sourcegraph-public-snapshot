@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -189,7 +190,7 @@ func (h *handler) handle(ctx context.Context, logger log.Logger, upload store.Up
 			}
 			trace.Log(otlog.String("commitDate", commitDate.String()))
 
-			if err := tx.UpdateCommitedAt(ctx, upload.ID, commitDate); err != nil {
+			if err := tx.UpdateCommittedAt(ctx, upload.RepositoryID, upload.Commit, commitDate.Format(time.RFC3339)); err != nil {
 				return errors.Wrap(err, "store.CommitDate")
 			}
 
@@ -207,7 +208,7 @@ func (h *handler) handle(ctx context.Context, logger log.Logger, upload store.Up
 			// existing uploads, as well as the reference counts to all of this new upload's dependencies.
 			// We always keep this value up to date - we also decrement reference counts of dependencies
 			// on upload deletion or when the set of uploads providing an existing package change.
-			updated, err := tx.UpdateReferenceCounts(ctx, []int{upload.ID}, store.DependencyReferenceCountUpdateTypeAdd)
+			updated, err := tx.UpdateUploadsReferenceCounts(ctx, []int{upload.ID}, shared.DependencyReferenceCountUpdateTypeAdd)
 			if err != nil {
 				return errors.Wrap(err, "store.UpdateReferenceCount")
 			}
@@ -226,7 +227,7 @@ func (h *handler) handle(ctx context.Context, logger log.Logger, upload store.Up
 			// the entire set of data from scratch and we want to be able to coalesce requests for the same
 			// repository rather than having a set of uploads for the same repo re-calculate nearly identical
 			// data multiple times.
-			if err := tx.MarkRepositoryAsDirty(ctx, upload.RepositoryID); err != nil {
+			if err := tx.SetRepositoryAsDirty(ctx, upload.RepositoryID); err != nil {
 				return errors.Wrap(err, "store.MarkRepositoryAsDirty")
 			}
 

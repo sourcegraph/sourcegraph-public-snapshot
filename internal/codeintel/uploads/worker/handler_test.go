@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -56,6 +57,7 @@ func TestHandle(t *testing.T) {
 	}, nil)
 
 	expectedCommitDate := time.Unix(1587396557, 0).UTC()
+	expectedCommitDateStr := expectedCommitDate.Format(time.RFC3339)
 	gitserverClient.CommitDateFunc.SetDefaultReturn("deadbeef", expectedCommitDate, true, nil)
 
 	handler := &handler{
@@ -73,12 +75,14 @@ func TestHandle(t *testing.T) {
 		t.Errorf("unexpected requeue")
 	}
 
-	if calls := mockDBStore.UpdateCommitedAtFunc.History(); len(calls) != 1 {
+	if calls := mockDBStore.UpdateCommittedAtFunc.History(); len(calls) != 1 {
 		t.Errorf("unexpected number of UpdateCommitedAt calls. want=%d have=%d", 1, len(mockDBStore.UpdatePackagesFunc.History()))
-	} else if calls[0].Arg1 != 42 {
-		t.Errorf("unexpected UpdateCommitedAt upload id. want=%d have=%d", 42, calls[0].Arg1)
-	} else if calls[0].Arg2 != expectedCommitDate {
-		t.Errorf("unexpected UpdateCommitedAt commit date. want=%s have=%s", expectedCommitDate, calls[0].Arg2)
+	} else if calls[0].Arg1 != 50 {
+		t.Errorf("unexpected UpdateCommitedAt repository id. want=%d have=%d", 50, calls[0].Arg1)
+	} else if calls[0].Arg2 != "deadbeef" {
+		t.Errorf("unexpected UpdateCommitedAt commit. want=%s have=%s", "deadbeef", calls[0].Arg2)
+	} else if calls[0].Arg3 != expectedCommitDateStr {
+		t.Errorf("unexpected UpdateCommitedAt commit date. want=%s have=%s", expectedCommitDate, calls[0].Arg3)
 	}
 
 	expectedPackagesDumpID := 42
@@ -116,11 +120,11 @@ func TestHandle(t *testing.T) {
 	}
 
 	expectedIDsForRefcountUpdate := []int{42}
-	if len(mockDBStore.UpdateReferenceCountsFunc.History()) != 1 {
-		t.Errorf("unexpected number of UpdateReferenceCounts calls. want=%d have=%d", 1, len(mockDBStore.UpdateReferenceCountsFunc.History()))
-	} else if diff := cmp.Diff(expectedIDsForRefcountUpdate, mockDBStore.UpdateReferenceCountsFunc.History()[0].Arg1); diff != "" {
+	if len(mockDBStore.UpdateUploadsReferenceCountsFunc.History()) != 1 {
+		t.Errorf("unexpected number of UpdateReferenceCounts calls. want=%d have=%d", 1, len(mockDBStore.UpdateUploadsReferenceCountsFunc.History()))
+	} else if diff := cmp.Diff(expectedIDsForRefcountUpdate, mockDBStore.UpdateUploadsReferenceCountsFunc.History()[0].Arg1); diff != "" {
 		t.Errorf("unexpected UpdateReferenceCounts args (-want +got):\n%s", diff)
-	} else if diff := cmp.Diff(dbstore.DependencyReferenceCountUpdateTypeAdd, mockDBStore.UpdateReferenceCountsFunc.History()[0].Arg2); diff != "" {
+	} else if diff := cmp.Diff(shared.DependencyReferenceCountUpdateTypeAdd, mockDBStore.UpdateUploadsReferenceCountsFunc.History()[0].Arg2); diff != "" {
 		t.Errorf("unexpected UpdateReferenceCounts args (-want +got):\n%s", diff)
 	}
 
@@ -142,10 +146,10 @@ func TestHandle(t *testing.T) {
 		t.Errorf("unexpected value for indexer. want=%s have=%s", "lsif-go", mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg4)
 	}
 
-	if len(mockDBStore.MarkRepositoryAsDirtyFunc.History()) != 1 {
-		t.Errorf("unexpected number of MarkRepositoryAsDirty calls. want=%d have=%d", 1, len(mockDBStore.MarkRepositoryAsDirtyFunc.History()))
-	} else if mockDBStore.MarkRepositoryAsDirtyFunc.History()[0].Arg1 != 50 {
-		t.Errorf("unexpected value for repository id. want=%d have=%d", 50, mockDBStore.MarkRepositoryAsDirtyFunc.History()[0].Arg1)
+	if len(mockDBStore.SetRepositoryAsDirtyFunc.History()) != 1 {
+		t.Errorf("unexpected number of MarkRepositoryAsDirty calls. want=%d have=%d", 1, len(mockDBStore.SetRepositoryAsDirtyFunc.History()))
+	} else if mockDBStore.SetRepositoryAsDirtyFunc.History()[0].Arg1 != 50 {
+		t.Errorf("unexpected value for repository id. want=%d have=%d", 50, mockDBStore.SetRepositoryAsDirtyFunc.History()[0].Arg1)
 	}
 
 	if len(mockUploadStore.DeleteFunc.History()) != 1 {
@@ -185,7 +189,7 @@ func TestHandleError(t *testing.T) {
 	gitserverClient.CommitDateFunc.SetDefaultReturn("deadbeef", time.Now(), true, nil)
 
 	// Set a different tip commit
-	mockDBStore.MarkRepositoryAsDirtyFunc.SetDefaultReturn(errors.Errorf("uh-oh!"))
+	mockDBStore.SetRepositoryAsDirtyFunc.SetDefaultReturn(errors.Errorf("uh-oh!"))
 
 	handler := &handler{
 		dbStore:         mockDBStore,
