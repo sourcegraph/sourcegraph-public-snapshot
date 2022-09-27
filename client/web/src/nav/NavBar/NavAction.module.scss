@@ -28,7 +28,7 @@
     &:last-of-type {
         margin-right: 0;
     }
-    @media (--sm-breakpoint-down) {
+    @media (--xs-breakpoint-down) {
         margin: 0 0.25rem;
     }
 }

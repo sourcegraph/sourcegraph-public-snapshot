@@ -10,6 +10,12 @@ The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release v
 
 ### Changes
 
+### Fixes
+
+## 2.2.10
+
+### Changes
+
 - Remove tracking parameters from all shareable URLs [pull/42022](https://github.com/sourcegraph/sourcegraph/pull/42022)
 
 ### Fixes
