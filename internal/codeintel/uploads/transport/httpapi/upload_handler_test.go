@@ -110,7 +110,7 @@ func TestHandleEnqueueAuth(t *testing.T) {
 			},
 		}
 
-		NewUploadHandler(
+		newUploadHandler(
 			db,
 			mockDBStore,
 			mockUploadStore,

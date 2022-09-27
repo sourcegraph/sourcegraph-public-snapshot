@@ -22,7 +22,7 @@ import (
 
 var revhashPattern = lazyregexp.New(`^[a-z0-9]{40}$`)
 
-func NewUploadHandler(
+func newUploadHandler(
 	db database.DB,
 	dbStore uploadhandler.DBStore[UploadMetadata],
 	uploadStore uploadstore.Store,
