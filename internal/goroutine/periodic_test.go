@@ -36,8 +36,6 @@ func TestPeriodicGoroutine(t *testing.T) {
 }
 
 func TestPeriodicGoroutineError(t *testing.T) {
-	t.Skip("flaky") // See https://github.com/sourcegraph/sourcegraph/issues/42062
-
 	clock := glock.NewMockClock()
 	handler := NewMockHandlerWithErrorHandler()
 
