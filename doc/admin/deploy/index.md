@@ -1,6 +1,10 @@
 # Deployment Overview
 
-Sourcegraph supports two main deployment types: [Docker Compose](docker-compose/index.md) and [Kubernetes](kubernetes/index.md). Each deployment type will require a different level of investment and technical understanding. What works best depends on the needs and desired outcomes for your business.
+We highly recommend signing up for a Sourcegraph Cloud instance through [Sourcegraph Cloud](../../cloud/index.md) due to the nature of complications when maintaining a Sourcegraph instance. A Sourcegraph Cloud instance is a single-tenant instance that is managed entirely by Sourcegraph.
+
+For people who would like to self-host their Sourcegraph instances, we recommend deploying from a [Soucegraph AWS AMI](/aws-ami.md). 
+
+In general, Sourcegraph supports two main deployment types for self-host instances: [Docker Compose](docker-compose/index.md) and [Kubernetes](kubernetes/index.md). Each deployment type will require a different level of investment and technical understanding. What works best depends on the needs and desired outcomes for your business.
 
 If you aren't currently working with our Customer Engineering team, this overview will provide a high-level view of what's available and needed depending on the deployment type you choose.
 
@@ -8,19 +12,29 @@ Sourcegraph provides a [resource estimator](resource_estimator.md) to help predi
 
 If you are short on time and looking for a quick way to test Sourcegraph locally, consider running Sourcegraph via our [Docker Single Container](docker-single-container/index.md).
 
+## Deployment options
+
+Here is a list of deployment options for self-hosting _single-node_ and _multi-node_ Sourcegraph instances:
+
+|                 | [AWS AMI](/aws-ami.md) | [Docker Compose](docker-compose/index.md) | [Kubernetes](kubernetes/index.md) | [Kubernetes with Helm](kubernetes/helm.md) |
+|:---------------:|:----------------------:|:-----------------------------------------:|:---------------------------------:|:------------------------------------------:|
+| **multi-node**  |                        |                                           | x                                 | x                                          |
+| **single-node** | x                      | x                                         |                                   |                                            |
+
+
 ## Deployment types
 
 Each of the deployment types listed below provides a different level of capability. As mentioned previously, base your deployment type on the needs of your business. However, you should also consider the technical expertise available for your deployment. The sections below provide more detailed recommendations for each deployment type.
 
 ### [Docker Compose](docker-compose/index.md)
 
-We recommend Docker Compose for most production deployments due to how easily admins can install, configure, and upgrade Sourcegraph instances. It serves as a way to run multi-container applications on Docker using a defined Compose file format.
+If you are restricted from setting up a [Sourcegraph AWS AMI instance](/aws-ami.md), we recommend Docker Compose for most production deployments due to how easily admins can install, configure, and upgrade Sourcegraph instances. It serves as a way to run multi-container applications on Docker using a defined Compose file format.
 
-Docker Compose is used for single-host instances such as AWS EC2 or GCP Compute Engine. It does not provide multi-machine capability such as high availability.
+Docker Compose is used for *single-host* instances such as AWS EC2 or GCP Compute Engine. It does not provide multi-machine capability such as high availability.
 
 Docker Compose scales to fit the needs of the majority of customers. Refer to the [resource estimator](resource_estimator.md) to find the appropriate instance for you.
 
-### Kubernetes [with Helm](kubernetes/helm.md) or [ without Helm](kubernetes/index.md)
+### Kubernetes [with Helm](kubernetes/helm.md) or [without Helm](kubernetes/index.md)
 
 Kubernetes is recommended for non-standard deployments where Docker Compose is not a viable option.
 
