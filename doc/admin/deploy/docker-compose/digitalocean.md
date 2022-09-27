@@ -1,4 +1,4 @@
-# Install Sourcegraph on Digital Ocean
+# Install Sourcegraph on DigitalOcean
 
 This guide will take you through how to deploy a Sourcegraph instance to a single DigitalOcean Droplet with [Docker Compose](https://docs.docker.com/compose/).
 
@@ -6,7 +6,7 @@ This guide will take you through how to deploy a Sourcegraph instance to a singl
 
 ## Configure
 
-[Create a new Digital Ocean Droplet](https://cloud.digitalocean.com/droplets/new) first, then configure the droplet following the instructions below for each section:
+[Create a new DigitalOcean Droplet](https://cloud.digitalocean.com/droplets/new) first, then configure the droplet following the instructions below for each section:
 
 #### Choose an image
 
