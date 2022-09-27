@@ -9,8 +9,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/httpapi"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/httpapi/auth"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
@@ -21,6 +19,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	uploadshttp "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/http"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/httpapi"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/httpapi/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
