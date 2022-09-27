@@ -64,9 +64,18 @@ func (r *insightSeriesResolver) Points(ctx context.Context, _ *graphqlbackend.In
 		possibleOldest := frames[0].From
 		if possibleOldest.Before(oldest) {
 			oldest = possibleOldest
+			frames = timeseries.BuildFramesUntil(timeseries.TimeInterval{
+				Unit:  types.IntervalUnit(r.series.SampleIntervalUnit),
+				Value: r.series.SampleIntervalValue,
+			}, possibleOldest)
 		}
 	}
 	opts.From = &oldest
+
+	// Series points data is only recorded for non-zero results or preempted results (data for points in time before the
+	// first commit of a repository). However, we still want to return empty series points for points in time with no
+	// data. The recording times are calculated from the insight series settings (12 data frames or 1 year of data).
+	recordingTimes := timeseries.GetRecordingTimesFromFrames(frames)
 
 	includeRepo := func(regex ...string) {
 		opts.IncludeRepoRegex = append(opts.IncludeRepoRegex, regex...)
@@ -95,11 +104,54 @@ func (r *insightSeriesResolver) Points(ctx context.Context, _ *graphqlbackend.In
 		return nil, err
 	}
 
+	_ = augmentPointsForNoData(points, recordingTimes)
+
 	resolvers := make([]graphqlbackend.InsightsDataPointResolver, 0, len(points))
 	for _, point := range points {
 		resolvers = append(resolvers, insightsDataPointResolver{point})
 	}
 	return resolvers, nil
+}
+
+func augmentPointsForNoData(points []store.SeriesPoint, recordingTimes []time.Time) []store.SeriesPoint {
+	pointValues := []string{}
+	pointsMap := make(map[string]*store.SeriesPoint)
+	var seriesID string
+	for _, point := range points {
+		seriesID = point.SeriesID
+		capture := ""
+		if point.Capture != nil {
+			pointValues = append(pointValues, *point.Capture)
+			capture = *point.Capture
+		}
+		pointsMap[point.Time.Truncate(time.Hour*24).String()+capture] = &point
+	}
+	// If there's no capture values we add an empty string to signify a search insight.
+	if len(pointValues) == 0 {
+		pointValues = append(pointValues, "")
+	}
+
+	augmentedPoints := []store.SeriesPoint{}
+	// We have to pivot on potential capture values as well which makes this a double loop.
+	for _, recordingTime := range recordingTimes {
+		for _, pointValue := range pointValues {
+			if point, ok := pointsMap[recordingTime.Truncate(time.Hour*24).String()+pointValue]; ok {
+				augmentedPoints = append(augmentedPoints, *point)
+			} else {
+				var capture *string
+				if pointValue != "" {
+					capture = &pointValue
+				}
+				augmentedPoints = append(augmentedPoints, store.SeriesPoint{
+					SeriesID: seriesID,
+					Time:     recordingTime,
+					Value:    0,
+					Capture:  capture,
+				})
+			}
+		}
+	}
+	return augmentedPoints
 }
 
 // SearchContextLoader loads search contexts just from the full name of the

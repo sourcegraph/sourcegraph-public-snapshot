@@ -32,3 +32,11 @@ func BuildFrames(numPoints int, interval TimeInterval, now time.Time) []types.Fr
 	})
 	return frames
 }
+
+func BuildFramesUntil(interval TimeInterval, pointInTime time.Time) []types.Frame {
+	return []types.Frame{}
+}
+
+func GetRecordingTimesFromFrames(frames []types.Frame) []time.Time {
+	return []time.Time{}
+}
