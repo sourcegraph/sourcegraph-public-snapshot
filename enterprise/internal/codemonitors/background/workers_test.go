@@ -77,7 +77,7 @@ func TestActionRunner(t *testing.T) {
 			record, err := ts.GetActionJob(ctx, 1)
 			require.NoError(t, err)
 
-			a := actionRunner{s}
+			a := actionRunner{s, "loopback"}
 			err = a.Handle(ctx, logtest.Scoped(t), record)
 			require.NoError(t, err)
 

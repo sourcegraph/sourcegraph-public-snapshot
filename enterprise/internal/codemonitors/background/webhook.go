@@ -9,25 +9,26 @@ import (
 	"net/url"
 
 	"code.gitea.io/gitea/modules/hostmatcher"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func sendWebhookNotification(ctx context.Context, url string, args actionArgs) error {
-	return postWebhook(ctx, httpcli.ExternalDoer, url, generateWebhookPayload(args))
+	return postWebhook(ctx, url, args)
 }
 
-func postWebhook(ctx context.Context, doer httpcli.Doer, url string, payload webhookPayload) error {
+func postWebhook(ctx context.Context, url string, args actionArgs) error {
 
-	// create a HTTP transport that only allows external requests
-	allowList := hostmatcher.ParseHostMatchList("", "external")
+	// Create an allowList out of specified HostList
+	allowList := hostmatcher.ParseHostMatchList("", args.HostList)
+
 	webHookHttpClient := &http.Client{
 		Transport: &http.Transport{
-			DialContext: hostmatcher.NewDialContext("codemonitor-webhook", allowList, nil),
+			DialContext: hostmatcher.NewDialContext("code-monitor-webhook", allowList, nil),
 		},
 	}
 
+	payload := generateWebhookPayload(args)
 	raw, err := json.Marshal(payload)
 	if err != nil {
 		return errors.Wrap(err, "marshal failed")
@@ -52,13 +53,14 @@ func postWebhook(ctx context.Context, doer httpcli.Doer, url string, payload web
 	return nil
 }
 
-func SendTestWebhook(ctx context.Context, doer httpcli.Doer, description string, u string) error {
+func SendTestWebhook(ctx context.Context, description string, u string, hostList string) error {
 	args := actionArgs{
 		ExternalURL:        &url.URL{},
 		MonitorDescription: description,
 		Query:              "test query",
+		HostList:           hostList,
 	}
-	return postWebhook(ctx, httpcli.ExternalDoer, u, generateWebhookPayload(args))
+	return postWebhook(ctx, u, args)
 }
 
 type webhookPayload struct {

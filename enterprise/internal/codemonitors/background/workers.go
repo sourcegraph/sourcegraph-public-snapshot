@@ -83,7 +83,7 @@ func newActionRunner(ctx context.Context, logger log.Logger, s edb.CodeMonitorSt
 		HeartbeatInterval: 15 * time.Second,
 		Metrics:           metrics.workerMetrics,
 	}
-	worker := dbworker.NewWorker(ctx, createDBWorkerStoreForActionJobs(logger, s), &actionRunner{s}, options)
+	worker := dbworker.NewWorker(ctx, createDBWorkerStoreForActionJobs(logger, s), &actionRunner{s, "external"}, options)
 	return worker
 }
 
@@ -207,6 +207,7 @@ func (r *queryRunner) Handle(ctx context.Context, logger log.Logger, record work
 
 type actionRunner struct {
 	edb.CodeMonitorStore
+	hostList string
 }
 
 func (r *actionRunner) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
@@ -323,6 +324,7 @@ func (r *actionRunner) handleWebhook(ctx context.Context, j *edb.ActionJob) erro
 		MonitorOwnerName:   m.OwnerName,
 		Results:            m.Results,
 		IncludeResults:     w.IncludeResults,
+		HostList:           r.hostList,
 	}
 
 	return sendWebhookNotification(ctx, w.URL, args)
@@ -359,6 +361,7 @@ func (r *actionRunner) handleSlackWebhook(ctx context.Context, j *edb.ActionJob)
 		MonitorOwnerName:   m.OwnerName,
 		Results:            m.Results,
 		IncludeResults:     w.IncludeResults,
+		HostList:           r.hostList,
 	}
 
 	return sendSlackNotification(ctx, w.URL, args)

@@ -44,8 +44,7 @@ func TestSlackWebhook(t *testing.T) {
 		}))
 		defer s.Close()
 
-		client := s.Client()
-		err := postSlackWebhook(context.Background(), client, s.URL, slackPayload(action))
+		err := postSlackWebhook(context.Background(), s.URL, slackPayload(action), action.HostList)
 		require.NoError(t, err)
 	})
 
@@ -58,8 +57,7 @@ func TestSlackWebhook(t *testing.T) {
 		}))
 		defer s.Close()
 
-		client := s.Client()
-		err := postSlackWebhook(context.Background(), client, s.URL, slackPayload(action))
+		err := postSlackWebhook(context.Background(), s.URL, slackPayload(action), action.HostList)
 		require.Error(t, err)
 	})
 
@@ -94,7 +92,6 @@ func TestTriggerTestSlackWebhookAction(t *testing.T) {
 	}))
 	defer s.Close()
 
-	client := s.Client()
-	err := SendTestSlackWebhook(context.Background(), client, "My test monitor", s.URL)
+	err := SendTestSlackWebhook(context.Background(), "My test monitor", s.URL, "loopback")
 	require.NoError(t, err)
 }

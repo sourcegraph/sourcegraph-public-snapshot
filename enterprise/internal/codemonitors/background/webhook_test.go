@@ -26,6 +26,7 @@ func TestWebhook(t *testing.T) {
 		Query:              "repo:camdentest -file:id_rsa.pub BEGIN",
 		Results:            []*result.CommitMatch{&diffResultMock, &commitResultMock},
 		IncludeResults:     false,
+		HostList:           "loopback",
 	}
 
 	t.Run("no error", func(t *testing.T) {
@@ -37,8 +38,7 @@ func TestWebhook(t *testing.T) {
 		}))
 		defer s.Close()
 
-		client := s.Client()
-		err := postWebhook(context.Background(), client, s.URL, generateWebhookPayload(action))
+		err := postWebhook(context.Background(), s.URL, action)
 		require.NoError(t, err)
 	})
 
@@ -63,8 +63,22 @@ func TestWebhook(t *testing.T) {
 		}))
 		defer s.Close()
 
-		client := s.Client()
-		err := postWebhook(context.Background(), client, s.URL, generateWebhookPayload(action))
+		err := postWebhook(context.Background(), s.URL, action)
+		require.Error(t, err)
+	})
+
+	t.Run("loopback requests are blocked", func(t *testing.T) {
+		// only allow external requests, excluding loopback
+		action.HostList = "external"
+		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			b, err := io.ReadAll(r.Body)
+			require.NoError(t, err)
+			autogold.Equal(t, autogold.Raw(b))
+			w.WriteHeader(500)
+		}))
+		defer s.Close()
+
+		err := postWebhook(context.Background(), s.URL, action)
 		require.Error(t, err)
 	})
 }
@@ -78,7 +92,6 @@ func TestTriggerTestWebhookAction(t *testing.T) {
 	}))
 	defer s.Close()
 
-	client := s.Client()
-	err := SendTestWebhook(context.Background(), client, "My test monitor", s.URL)
+	err := SendTestWebhook(context.Background(), "My test monitor", s.URL, "loopback")
 	require.NoError(t, err)
 }
