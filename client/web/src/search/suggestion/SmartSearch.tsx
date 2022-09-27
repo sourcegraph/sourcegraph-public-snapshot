@@ -2,10 +2,9 @@ import { MouseEvent, useCallback } from 'react'
 
 import { mdiArrowRight, mdiChevronDown, mdiChevronUp } from '@mdi/js'
 
-import { formatSearchParameters, renderMarkdown } from '@sourcegraph/common'
+import { formatSearchParameters, pluralize } from '@sourcegraph/common'
 import { SyntaxHighlightedSearchQuery, smartSearchIconSvgPath } from '@sourcegraph/search-ui'
-import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
-import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
+import { AggregateStreamingSearchResults, AlertKind } from '@sourcegraph/shared/src/search/stream'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import {
     Link,
@@ -35,6 +34,35 @@ const processDescription = (description: string): string => {
     return split.join(', ')
 }
 
+const alertContent: { [key in AlertKind]: (queryCount: number) => { title: JSX.Element; subtitle: JSX.Element } } = {
+    'smart-search-additional-results': (queryCount: number) => ({
+        title: (
+            <>
+                <b>Smart Search</b> is also showing <b>additional results</b>.
+            </>
+        ),
+        subtitle: (
+            <>
+                Smart Search added results for the following similar {pluralize('query', queryCount, 'queries')} that
+                might interest you:
+            </>
+        ),
+    }),
+    'smart-search-pure-results': (queryCount: number) => ({
+        title: (
+            <>
+                <b>Smart Search</b> is showing <b>related results</b> as your query found <b>no results</b>.
+            </>
+        ),
+        subtitle: (
+            <>
+                To get additional results, Smart Search also ran {pluralize('this', queryCount, 'these')}{' '}
+                {pluralize('query', queryCount, 'queries')}:
+            </>
+        ),
+    }),
+}
+
 export const SmartSearch: React.FunctionComponent<React.PropsWithChildren<SmartSearchProps>> = ({
     alert,
     onDisableSmartSearch,
@@ -49,9 +77,16 @@ export const SmartSearch: React.FunctionComponent<React.PropsWithChildren<SmartS
         [onDisableSmartSearch]
     )
 
-    return alert?.kind &&
-        alert.kind !== 'smart-search-additional-results' &&
-        alert.kind !== 'smart-search-pure-results' ? null : (
+    if (
+        !alert?.kind ||
+        (alert.kind !== 'smart-search-additional-results' && alert.kind !== 'smart-search-pure-results')
+    ) {
+        return null
+    }
+
+    const content = alertContent[alert.kind](alert.proposedQueries?.length || 0)
+
+    return (
         <div className={styles.root}>
             <Collapse isOpen={!isCollapsed} onOpenChange={opened => setIsCollapsed(!opened)}>
                 <CollapseHeader className={styles.collapseButton}>
@@ -59,15 +94,9 @@ export const SmartSearch: React.FunctionComponent<React.PropsWithChildren<SmartS
                         <span className="d-flex align-items-center">
                             <Icon aria-hidden={true} svgPath={smartSearchIconSvgPath} className={styles.smartIcon} />
                             <span>
-                                <H2 className={styles.title}>
-                                    <Markdown
-                                        wrapper="span"
-                                        dangerousInnerHTML={renderMarkdown(
-                                            alert?.title || '**Smart Search** is also showing additional results.'
-                                        )}
-                                    />
-                                </H2>
+                                <H2 className={styles.title}>{content.title}</H2>
                                 <span className="text-muted">
+                                    {' '}
                                     Don't want these?{' '}
                                     <Button
                                         variant="link"
@@ -88,7 +117,7 @@ export const SmartSearch: React.FunctionComponent<React.PropsWithChildren<SmartS
                     </div>
                 </CollapseHeader>
                 <CollapsePanel>
-                    <Text className={styles.description}>{alert?.description}</Text>
+                    <Text className={styles.description}>{content.subtitle}</Text>
                     <ul className={styles.container}>
                         {alert?.proposedQueries?.map(entry => (
                             <li key={entry.query} className={styles.listItem}>
@@ -129,7 +158,7 @@ export const SmartSearch: React.FunctionComponent<React.PropsWithChildren<SmartS
     )
 }
 
-export const smartSearchEvent = (alertTitle: string, descriptions: string[]): string[] => {
+export const smartSearchEvent = (alertKind: AlertKind, alertTitle: string, descriptions: string[]): string[] => {
     const rules = descriptions.map(entry => {
         if (entry.match(/patterns as regular expressions/)) {
             return 'Regexp'
@@ -149,9 +178,7 @@ export const smartSearchEvent = (alertTitle: string, descriptions: string[]): st
         return 'Other'
     })
 
-    const prefix = alertTitle.match(/your query found \*\*no results\*\*/)
-        ? 'SearchResultsAutoPure'
-        : 'SearchResultsAutoAdded'
+    const prefix = alertKind === 'smart-search-pure-results' ? 'SearchResultsAutoPure' : 'SearchResultsAutoAdded'
 
     const events = []
     for (const rule of rules) {

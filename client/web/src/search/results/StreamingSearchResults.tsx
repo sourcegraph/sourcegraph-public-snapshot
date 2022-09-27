@@ -199,6 +199,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             results.alert.proposedQueries
         ) {
             const events = smartSearchEvent(
+                results.alert.kind,
                 results.alert.title,
                 results.alert.proposedQueries.map(entry => entry.description || '')
             )

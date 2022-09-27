@@ -13,10 +13,10 @@ const config: Meta = {
 }
 export default config
 
-const oneItemAlert: Required<AggregateStreamingSearchResults>['alert'] = {
-    title: '**Smart Search** is also showing **additional results**.',
-    description: 'Smart Search added results for the following similar queries that might interest you:',
-    kind: 'lucky-search-queries',
+const oneItemAdditionalAlert: Required<AggregateStreamingSearchResults>['alert'] = {
+    title: 'Smart search title.',
+    description: 'Smart search description.',
+    kind: 'smart-search-additional-results',
     proposedQueries: [
         {
             description: 'AND patterns together',
@@ -26,10 +26,41 @@ const oneItemAlert: Required<AggregateStreamingSearchResults>['alert'] = {
     ],
 }
 
-const twoItemAlert: Required<AggregateStreamingSearchResults>['alert'] = {
-    title: '**Smart Search** is showing **related results** as your query found **no results**.',
-    description: 'To get additional results, Smart Search also ran these queries:',
-    kind: 'lucky-search-queries',
+const oneItemPureAlert: Required<AggregateStreamingSearchResults>['alert'] = {
+    title: 'Smart search title.',
+    description: 'Smart search description.',
+    kind: 'smart-search-pure-results',
+    proposedQueries: [
+        {
+            description: 'AND patterns together',
+            query: 'context:global (test AND sourcegraph)',
+            annotations: [{ name: 'ResultCount', value: '500+ results' }],
+        },
+    ],
+}
+
+const twoItemAdditionalAlert: Required<AggregateStreamingSearchResults>['alert'] = {
+    title: 'Smart search title.',
+    description: 'Smart search description.',
+    kind: 'smart-search-additional-results',
+    proposedQueries: [
+        {
+            description: 'apply language filter for pattern',
+            query: 'context:global lang:Python test',
+            annotations: [{ name: 'ResultCount', value: '3 additional results' }],
+        },
+        {
+            description: 'AND patterns together',
+            query: 'context:global (test AND python)',
+            annotations: [{ name: 'ResultCount', value: '500+ results' }],
+        },
+    ],
+}
+
+const twoItemPureAlert: Required<AggregateStreamingSearchResults>['alert'] = {
+    title: 'Smart search title.',
+    description: 'Smart search description.',
+    kind: 'smart-search-pure-results',
     proposedQueries: [
         {
             description: 'apply language filter for pattern',
@@ -48,15 +79,26 @@ export const DefaultStory: Story = () => (
     <WebStory>
         {() => (
             <div style={{ padding: '1rem' }}>
-                <H2>One item</H2>
-                <SmartSearch alert={oneItemAlert} onDisableSmartSearch={() => {}} />
+                <H2>One item, additional results</H2>
+                <SmartSearch alert={oneItemAdditionalAlert} onDisableSmartSearch={() => {}} />
 
-                <H2>Many items</H2>
-                <SmartSearch alert={twoItemAlert} onDisableSmartSearch={() => {}} />
+                <H2>One item, pure results</H2>
+                <SmartSearch alert={oneItemPureAlert} onDisableSmartSearch={() => {}} />
 
-                <H2>Collapsed</H2>
+                <H2>Many items, additional results</H2>
+                <SmartSearch alert={twoItemAdditionalAlert} onDisableSmartSearch={() => {}} />
+
+                <H2>Many items, pure results</H2>
+                <SmartSearch alert={twoItemPureAlert} onDisableSmartSearch={() => {}} />
+
+                <H2>Collapsed, additional results</H2>
                 <MockTemporarySettings settings={{ 'search.results.collapseSmartSearch': true }}>
-                    <SmartSearch alert={oneItemAlert} onDisableSmartSearch={() => {}} />
+                    <SmartSearch alert={oneItemAdditionalAlert} onDisableSmartSearch={() => {}} />
+                </MockTemporarySettings>
+
+                <H2>Collapsed, pure results</H2>
+                <MockTemporarySettings settings={{ 'search.results.collapseSmartSearch': true }}>
+                    <SmartSearch alert={oneItemPureAlert} onDisableSmartSearch={() => {}} />
                 </MockTemporarySettings>
             </div>
         )}
