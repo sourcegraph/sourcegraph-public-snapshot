@@ -253,10 +253,12 @@ function isOffsetInHoverRange(offset: number, range: HovercardRange, textDocumen
 
 function getHoverOffsets(range: HovercardRange, textDocument: Text): { from: number; to: number } {
     if (range.providerRange) {
-        return {
-            from: uiPositionToOffset(textDocument, range.providerRange.start),
-            to: uiPositionToOffset(textDocument, range.providerRange.end),
-        }
+        const from = uiPositionToOffset(textDocument, range.providerRange.start)
+        const to = uiPositionToOffset(textDocument, range.providerRange.end)
+        // We only use the code intel range if it maps to a valid position
+        // within the document. Otherwise we fall back to the range
+        // determined by CodeMirror
+        return { from: from ?? range.from, to: to ?? range.to }
     }
     return range
 }

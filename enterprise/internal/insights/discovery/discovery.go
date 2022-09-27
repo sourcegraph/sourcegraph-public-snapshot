@@ -23,7 +23,7 @@ import (
 // SettingStore is a subset of the API exposed by the database.Settings() store.
 type SettingStore interface {
 	GetLatest(context.Context, api.SettingsSubject) (*api.Settings, error)
-	GetLastestSchemaSettings(context.Context, api.SettingsSubject) (*schema.Settings, error)
+	GetLatestSchemaSettings(context.Context, api.SettingsSubject) (*schema.Settings, error)
 }
 
 // InsightFilterArgs contains arguments that will filter out insights when discovered if matched.

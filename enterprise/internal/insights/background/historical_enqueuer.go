@@ -382,7 +382,7 @@ func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 
 	// Discover all global insights on the instance.
 	log15.Debug("Fetching data series for historical")
-	foundInsights, err := h.dataSeriesStore.GetDataSeries(ctx, store.GetDataSeriesArgs{BackfillIncomplete: true, GlobalOnly: true})
+	foundInsights, err := h.dataSeriesStore.GetDataSeries(ctx, store.GetDataSeriesArgs{BackfillNotQueued: true, GlobalOnly: true})
 	if err != nil {
 		return errors.Wrap(err, "Discover")
 	}

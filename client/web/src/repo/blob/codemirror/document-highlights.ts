@@ -7,7 +7,16 @@
  * and converted to CodeMirror decorations via the {@link showDocumentHighlights}
  * facet.
  */
-import { Extension, Facet, RangeSetBuilder, StateEffectType, StateField } from '@codemirror/state'
+import {
+    Extension,
+    Facet,
+    RangeSet,
+    RangeSetBuilder,
+    RangeValue,
+    StateEffectType,
+    StateField,
+    Text,
+} from '@codemirror/state'
 import { Decoration, DecorationSet, EditorView, ViewPlugin } from '@codemirror/view'
 import { from, fromEvent, Observable, Subscription } from 'rxjs'
 import { switchMap, filter, mergeAll, map, tap } from 'rxjs/operators'
@@ -41,29 +50,39 @@ export const showDocumentHighlights = Facet.define<DocumentHighlight[], Document
                     return decorations
                 }
 
-                if (documentHighlights) {
-                    const builder = new RangeSetBuilder<Decoration>()
-
-                    // Most of the time number of highlights is small and close
-                    // together so it's likely ok to iterate over all them and
-                    // not just the ones in the current viewport.
-                    for (const highlight of documentHighlights) {
-                        builder.add(
-                            positionToOffset(view.state.doc, highlight.range.start),
-                            positionToOffset(view.state.doc, highlight.range.end),
-                            highlightDecoration
-                        )
-                    }
-
-                    decorations = builder.finish()
-                } else {
-                    decorations = Decoration.none
-                }
-
-                return decorations
+                return (decorations = documentHighlightsToRangeSet(
+                    view.state.doc,
+                    documentHighlights,
+                    highlightDecoration
+                ))
             }
         }),
 })
+
+// This helper function is exported for testing purposes
+export function documentHighlightsToRangeSet<T extends RangeValue>(
+    textDocument: Text,
+    highlights: DocumentHighlight[],
+    rangeValue: T
+): RangeSet<T> {
+    if (documentHighlights?.length > 0) {
+        const builder = new RangeSetBuilder<T>()
+
+        // Most of the time number of highlights is small and close
+        // together so it's likely ok to iterate over all them and
+        // not just the ones in the current viewport.
+        for (const highlight of sortRangeValuesByStart(highlights)) {
+            const rangeStart = positionToOffset(textDocument, highlight.range.start)
+            const rangeEnd = positionToOffset(textDocument, highlight.range.end)
+            if (rangeStart !== null && rangeEnd !== null) {
+                builder.add(rangeStart, rangeEnd, rangeValue)
+            }
+        }
+
+        return builder.finish()
+    }
+    return RangeSet.empty
+}
 
 /**
  * Facet with which an extension can provide a document highlight source. Each
@@ -134,8 +153,7 @@ class DocumentHighlightsManager {
                     from(position ? view.state.facet(this.sources).map(source => source(position)) : []).pipe(
                         mergeAll()
                     )
-                ),
-                map(sortRangeValuesByStart)
+                )
             )
             .subscribe(highlights => {
                 if (highlights.length === 0 && view.state.field(documentHighlightsField).length === 0) {

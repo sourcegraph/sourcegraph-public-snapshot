@@ -33,7 +33,6 @@ import { AccountEmailAddresses } from '../../../dotcom/productSubscriptions/Acco
 import { AccountName } from '../../../dotcom/productSubscriptions/AccountName'
 import { ProductSubscriptionLabel } from '../../../dotcom/productSubscriptions/ProductSubscriptionLabel'
 import { LicenseGenerationKeyWarning } from '../../../productSubscription/LicenseGenerationKeyWarning'
-import { ProductSubscriptionHistory } from '../../../user/productSubscriptions/ProductSubscriptionHistory'
 
 import { SiteAdminGenerateProductLicenseForSubscriptionForm } from './SiteAdminGenerateProductLicenseForSubscriptionForm'
 import {
@@ -41,7 +40,6 @@ import {
     SiteAdminProductLicenseNode,
     SiteAdminProductLicenseNodeProps,
 } from './SiteAdminProductLicenseNode'
-import { SiteAdminProductSubscriptionBillingLink } from './SiteAdminProductSubscriptionBillingLink'
 
 interface Props extends RouteComponentProps<{ subscriptionUUID: string }> {
     /** For mocking in tests only. */
@@ -124,10 +122,6 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
 
     const toggleShowGenerate = useCallback((): void => setShowGenerate(previousValue => !previousValue), [])
 
-    /** Updates to the subscription. */
-    const updates = useMemo(() => new Subject<void>(), [])
-    const onUpdate = useCallback(() => updates.next(), [updates])
-
     /** Updates to the subscription's licenses. */
     const licenseUpdates = useMemo(() => new Subject<void>(), [])
     const onLicenseUpdate = useCallback(() => {
@@ -190,15 +184,6 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                                     </td>
                                 </tr>
                                 <tr>
-                                    <th className="text-nowrap">Billing</th>
-                                    <td className="w-100">
-                                        <SiteAdminProductSubscriptionBillingLink
-                                            productSubscription={productSubscription}
-                                            onDidUpdate={onUpdate}
-                                        />
-                                    </td>
-                                </tr>
-                                <tr>
                                     <th className="text-nowrap">Created at</th>
                                     <td className="w-100">
                                         <Timestamp date={productSubscription.createdAt} />
@@ -244,10 +229,6 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                             location={location}
                         />
                     </Card>
-                    <Card className="mt-3">
-                        <CardHeader>History</CardHeader>
-                        <ProductSubscriptionHistory productSubscription={productSubscription} />
-                    </Card>
                 </>
             )}
         </div>
@@ -271,23 +252,6 @@ function queryProductSubscription(uuid: string): Observable<GQL.IProductSubscrip
                                 verified
                             }
                         }
-                        invoiceItem {
-                            plan {
-                                billingPlanID
-                                name
-                                nameWithBrand
-                                pricePerUserPerYear
-                            }
-                            userCount
-                            expiresAt
-                        }
-                        events {
-                            id
-                            date
-                            title
-                            description
-                            url
-                        }
                         productLicenses {
                             nodes {
                                 id
@@ -307,7 +271,6 @@ function queryProductSubscription(uuid: string): Observable<GQL.IProductSubscrip
                         createdAt
                         isArchived
                         url
-                        urlForSiteAdminBilling
                     }
                 }
             }

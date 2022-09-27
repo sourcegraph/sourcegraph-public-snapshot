@@ -14,5 +14,5 @@ export const CodeIntelUploadOrIndexRepository: FunctionComponent<
     node.projectRoot ? (
         <Link to={node.projectRoot.repository.url}>{node.projectRoot.repository.name}</Link>
     ) : (
-        <span>unknown</span>
+        <span>Unknown repository</span>
     )
