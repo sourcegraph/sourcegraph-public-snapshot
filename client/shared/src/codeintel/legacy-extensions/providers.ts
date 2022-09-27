@@ -3,7 +3,7 @@ import { Observable, of } from 'rxjs'
 
 import * as sourcegraph from './api'
 import * as indicators from './indicators'
-import { LanguageSpec, LSIFSupport } from './language-specs/language-spec'
+import { LanguageSpec } from './language-specs/language-spec'
 import { Logger, NoopLogger } from './logging'
 import { createProviders as createLSIFProviders } from './lsif/providers'
 import { createProviders as createSearchProviders } from './search/providers'
@@ -193,7 +193,6 @@ export function createProviders(
         ),
 
         hover: createHoverProvider(
-            languageSpec.lsifSupport || LSIFSupport.None,
             lsifProviders.definitionAndHover,
             searchProviders.definition,
             searchProviders.hover,
@@ -515,7 +514,6 @@ function logLocationResults<T extends sourcegraph.Badged<sourcegraph.Location>, 
 /**
  * Creates a hover provider.
  *
- * @param lsifSupport The level of LSIF support of the active language.
  * @param lsifProvider The LSIF-based definition and hover provider.
  * @param searchDefinitionProvider The search-based definition provider.
  * @param searchHoverProvider The search-based hover provider.
@@ -523,7 +521,6 @@ function logLocationResults<T extends sourcegraph.Badged<sourcegraph.Location>, 
  * @param languageID The language the extension recognizes.
  */
 export function createHoverProvider(
-    lsifSupport: LSIFSupport,
     lsifProvider: DefinitionAndHoverProvider,
     searchDefinitionProvider: DefinitionProvider,
     searchHoverProvider: HoverProvider,
@@ -531,15 +528,6 @@ export function createHoverProvider(
     languageID: string = '',
     api = new API()
 ): sourcegraph.HoverProvider {
-    const searchAlerts =
-        lsifSupport === LSIFSupport.None
-            ? [indicators.searchLSIFSupportNone]
-            : lsifSupport === LSIFSupport.Experimental
-            ? [indicators.searchLSIFSupportExperimental]
-            : lsifSupport === LSIFSupport.Robust
-            ? [indicators.searchLSIFSupportRobust]
-            : undefined
-
     return {
         provideHover: wrapProvider(async function* (
             textDocument: sourcegraph.TextDocument,
@@ -571,11 +559,10 @@ export function createHoverProvider(
                 logger?.log({ provider: 'hover', precise: true, ...commonLogFields })
                 yield badgeHoverResult(
                     lsifWrapper.hover,
-                    // Display a partial data tooltip when there is a precise hover text but a
+                    // Display a partial data badge when there is a precise hover text but a
                     // search definition. This can happen if we haven't indexed the target
                     // repository, but the dependent repository still has hover information for
                     // externally defined symbols.
-                    [!hasSearchBasedDefinition ? indicators.lsif : indicators.lsifPartialHoverOnly],
                     [!hasSearchBasedDefinition ? indicators.preciseBadge : indicators.partialHoverNoDefinitionBadge]
                 )
 
@@ -595,21 +582,18 @@ export function createHoverProvider(
                     continue
                 }
 
-                const first = emitter.emitOnce('searchHover')
                 logger?.log({ provider: 'hover', precise: false, ...commonLogFields })
 
                 if (hasPreciseDefinition) {
                     // We have a precise definition but imprecise hover text
-                    const alerts = first ? [indicators.lsifPartialDefinitionOnly] : undefined
                     const aggregableBadges = [indicators.partialDefinitionNoHoverBadge]
-                    yield badgeHoverResult(searchResult, alerts, aggregableBadges)
+                    yield badgeHoverResult(searchResult, aggregableBadges)
                     continue
                 }
 
                 // Only search results for this token
-                const alerts = first ? searchAlerts : undefined
                 const aggregableBadges = [indicators.searchBasedBadge]
-                yield badgeHoverResult(searchResult, alerts, aggregableBadges)
+                yield badgeHoverResult(searchResult, aggregableBadges)
             }
         }),
     }
@@ -617,10 +601,9 @@ export function createHoverProvider(
 
 function badgeHoverResult(
     hover: sourcegraph.Hover,
-    alerts?: sourcegraph.HoverAlert[],
     aggregableBadges?: sourcegraph.AggregableBadge[]
 ): sourcegraph.Badged<sourcegraph.Hover> {
-    return { ...hover, ...(alerts ? { alerts } : {}), ...(aggregableBadges ? { aggregableBadges } : {}) }
+    return { ...hover, ...(aggregableBadges ? { aggregableBadges } : {}) }
 }
 
 /**

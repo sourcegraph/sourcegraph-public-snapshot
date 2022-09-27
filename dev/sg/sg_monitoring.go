@@ -123,6 +123,8 @@ Also refer to the generated reference documentation available for site admins:
 					for _, m := range uniqueMetrics {
 						md.WriteString(fmt.Sprintf("- `%s`\n", m))
 					}
+					md.WriteString(fmt.Sprintf("\nFound %d metrics in use.\n", len(uniqueMetrics)))
+
 					if err := std.Out.WriteMarkdown(md.String()); err != nil {
 						return err
 					}

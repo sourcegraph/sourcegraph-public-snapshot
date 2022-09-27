@@ -55,20 +55,20 @@ A brief summary of the pros and cons of each workflow is:
       <td>
         <ul>
           <li>
-            If you reuse your batch spec, or share it with others, the new batch changes will have the same changesets published
+            If you reuse your batch spec, or share it with others, the new batch changes will have the same changesets published.
           </li>
           <li>
-            Easy to publish changesets in large batch changes based on specific criteria, such as the organization each repository is in
+            Easy to publish changesets in large batch changes based on specific criteria, such as the organization each repository is in.
           </li>
         </ul>
       </td>
       <td>
         <ul>
           <li>
-            Requires the batch spec to be re-applied before changes take effect, which can be slower
+            Requires the batch spec to be re-applied before changes take effect, which can be slower.
           </li>
           <li>
-            Requires more context switching from the UI back to the spec file when previewing diffs
+            Requires more context switching from the UI back to the spec file when previewing diffs.
           </li>
         </ul>
       </td>
@@ -82,23 +82,25 @@ A brief summary of the pros and cons of each workflow is:
       <td>
         <ul>
           <li>
-            Rapid feedback loop: you can check a specific diff and immediately publish it
+            Rapid feedback loop: you can check a specific diff and immediately publish it.
           </li>
           <li>
-            Easy to publish random changesets without having to specify rules in the <code>published</code> field
+            Easy to publish random changesets without having to specify rules in the <code>published</code> field.
           </li>
         </ul>
       </td>
       <td>
         <ul>
           <li>
-            Publication state isn't reproducible across multiple batch changes
+            Publication state isn't reproducible across multiple batch changes.
           </li>
         </ul>
       </td>
     </tr>
   </tbody>
 </table>
+
+>NOTE: We currently do not support changing the state of a `published` changeset to `draft` or `unpublished`. Once a changeset is published, it can't be `unpublished` or changed to a `draft`.
 
 ### Within the spec
 

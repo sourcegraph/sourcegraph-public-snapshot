@@ -22,7 +22,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
--
+- Git server access logs are now compliant with the audit logging format. Breaking change: The 'actor' field is now nested under 'audit' field.  [#41865](https://github.com/sourcegraph/sourcegraph/pull/41865)
 
 ### Fixed
 
