@@ -1,6 +1,10 @@
 import { testUserID } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 
-import { InsightsDashboardNode, InsightsDashboardsResult } from '../../../graphql-operations'
+import {
+    GetDashboardInsightsResult,
+    InsightsDashboardNode,
+    InsightsDashboardsResult,
+} from '../../../graphql-operations'
 
 export const EMPTY_DASHBOARD: InsightsDashboardNode = {
     __typename: 'InsightsDashboard',
@@ -18,7 +22,7 @@ export const EMPTY_DASHBOARD: InsightsDashboardNode = {
     },
 }
 
-export const GET_DASHBOARD_INSIGHTS = {
+export const GET_DASHBOARD_INSIGHTS: GetDashboardInsightsResult = {
     insightsDashboards: {
         nodes: [
             {
