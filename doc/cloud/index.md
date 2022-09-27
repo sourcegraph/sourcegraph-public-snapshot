@@ -6,7 +6,21 @@ Sourcegraph provisions each instance in a completely isolated and secure cloud i
 
 [Contact us](https://about.sourcegraph.com/contact/sales) to get started with Sourcegraph Cloud.
 
+<<<<<<< Updated upstream
 # Service
+=======
+## Trials
+
+After you request a trial, we will look into your request. We currently have limited capacity to provision cloud instances, so we prioritise companies with more than a 100 developers. You should receive an email indicating the status of your request shortly after signing up.
+
+If you're not eligible for a cloud instance for now, we recommend trying [Sourcegraph self-hosted](https://docs.sourcegraph.com/#self-hosted).
+
+If you're eligible for a cloud instance, you will receive a link to the instance URL once it's provisioned. This normally takes less than one hour during business hours. From there, follow the [onboarding checklist](../getting-started/cloud-instance.md).
+
+Trials last 30 days. When the end of the trial approaches, Sourcegraph's customer success team will check-in with you to either help you setup a Cloud subscription or terminate your instance.
+
+# Cloud subscription
+>>>>>>> Stashed changes
 
 As part of this service you will receive a number of benefits from our team, including:
 
