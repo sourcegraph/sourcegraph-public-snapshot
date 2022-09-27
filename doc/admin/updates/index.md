@@ -10,7 +10,7 @@ A **standard upgrade** moves an instance from one version to an adjacent minor v
 
 > NOTE: Due to its compatibility with previous versions, we support the upgrade `v3.43 -> v4.0.1` as a one-minor-version "standard" upgrade.
 
-This upgrade process involves updating only infrastructure: containers must reflect new version tags, additions and removal of services must be addressed, resource allocation may need to be readjusted, etc. For environments that support rolling updates, this process minimizes instance downtime, and eventually will become a zero-downtime process.
+This upgrade process involves updating only infrastructure: containers must reflect new version tags, additions and removal of services must be addressed, resource allocation may need to be readjusted, etc. For environments that support rolling updates (Kubernetes with or without Helm), a standard upgrade minimizes service disruption as new and old versions of the instance can work with the same database schema for a short period.
 
 **We recommend following this upgrade process and keeping your instance up-to-date.** If your instance is currently more than one minor version behind the latest release, a single [multi-version upgrade](#multi-version-upgrades) can bring you up to speed.
 
