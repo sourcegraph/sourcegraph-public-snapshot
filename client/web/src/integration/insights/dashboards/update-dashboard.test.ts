@@ -1,14 +1,62 @@
 import assert from 'assert'
 
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
-import { testUserID } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
+import { GetDashboardInsightsResult, InsightsDashboardsResult } from '../../../graphql-operations'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../../context'
-import { EMPTY_DASHBOARD, GET_DASHBOARD_INSIGHTS, INSIGHTS_DASHBOARDS } from '../fixtures/dashboards'
+import { MIGRATION_TO_GQL_INSIGHT_DATA_FIXTURE } from '../fixtures/calculated-insights'
+import { createJITMigrationToGQLInsightMetadataFixture } from '../fixtures/insights-metadata'
 import { overrideInsightsGraphQLApi } from '../utils/override-insights-graphql-api'
 
-describe('Code insights empty dashboard', () => {
+const DASHBOARD_PAGE_METADATA: InsightsDashboardsResult = {
+    currentUser: {
+        __typename: 'User',
+        id: 'user001',
+        organizations: { nodes: [] },
+    },
+    insightsDashboards: {
+        nodes: [
+            {
+                __typename: 'InsightsDashboard',
+                id: 'codeInsightDashboard001',
+                title: 'Dashboard 001',
+                views: { nodes: [] },
+                grants: {
+                    __typename: 'InsightsPermissionGrants',
+                    users: [],
+                    organizations: [],
+                    global: true,
+                },
+            },
+        ],
+    },
+}
+
+const DASHBOARD_WITH_TWO_INSIGHTS_METADATA: GetDashboardInsightsResult = {
+    insightsDashboards: {
+        nodes: [
+            {
+                __typename: 'InsightsDashboard',
+                id: 'codeInsightDashboard001',
+                views: {
+                    nodes: [
+                        createJITMigrationToGQLInsightMetadataFixture({
+                            id: 'insight_001',
+                            type: 'calculated',
+                        }),
+                        createJITMigrationToGQLInsightMetadataFixture({
+                            id: 'insight_002',
+                            type: 'calculated',
+                        }),
+                    ],
+                },
+            },
+        ],
+    },
+}
+
+describe('Code insights dashboard', () => {
     let driver: Driver
     let testContext: WebIntegrationTestContext
 
@@ -31,26 +79,43 @@ describe('Code insights empty dashboard', () => {
     after(() => driver?.close())
     afterEachSaveScreenshotIfFailed(() => driver.page)
 
-    it('updates empty dashboard', async () => {
+    it('can be updated through UI', async () => {
         overrideInsightsGraphQLApi({
             testContext,
             overrides: {
-                InsightsDashboards: () => INSIGHTS_DASHBOARDS,
-                GetDashboardInsights: () => GET_DASHBOARD_INSIGHTS,
+                // Mock dashboard page (dashboard list)
+                InsightsDashboards: () => DASHBOARD_PAGE_METADATA,
+
+                // Mock particular (picked) dashboard insights configuration list
+                GetDashboardInsights: () => DASHBOARD_WITH_TWO_INSIGHTS_METADATA,
+
+                // Mock dashboard insights datasets (for both insights we will use one
+                // dataset)
+                GetInsightView: () => ({
+                    __typename: 'Query',
+                    insightViews: {
+                        __typename: 'InsightViewConnection',
+                        nodes: [MIGRATION_TO_GQL_INSIGHT_DATA_FIXTURE],
+                    },
+                }),
+
+                // Mock dashboard list of possible users/orgs where this dashboard can be
+                // included
                 InsightSubjects: () => ({
                     currentUser: {
                         __typename: 'User',
-                        id: testUserID,
+                        id: 'user_001',
                         organizations: { nodes: [] },
                     },
                     site: { __typename: 'Site', id: 'site_id' },
                 }),
+
                 UpdateDashboard: () => ({
                     updateInsightsDashboard: {
                         __typename: 'InsightsDashboardPayload',
                         dashboard: {
                             __typename: 'InsightsDashboard',
-                            id: EMPTY_DASHBOARD.id,
+                            id: '001',
                             title: '',
                             views: { nodes: [] },
                             grants: {
@@ -65,31 +130,29 @@ describe('Code insights empty dashboard', () => {
             },
         })
 
-        await driver.page.goto(driver.sourcegraphBaseUrl + `/insights/dashboards/${EMPTY_DASHBOARD.id}`)
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/codeInsightDashboard001')
+        await driver.page.waitForSelector('[aria-label="dashboard options"]')
+        await driver.page.click('[aria-label="dashboard options"]')
 
-        await driver.page.waitForSelector('[data-testid="dashboard-context-menu"]')
-        await driver.page.click('[data-testid="dashboard-context-menu"]')
-        await driver.page.click('[data-testid="configure-dashboard"]')
+        const [configureButton] = await driver.page.$x("//button[contains(., 'Configure dashboard')]")
+        await configureButton?.click()
 
         await driver.page.waitForSelector('form')
-
         await driver.page.type('[name="name"]', ' Edited test dashboard title')
-        await driver.page.click(`[name="visibility"][value="${testUserID}"]`)
+        await driver.page.click('[name="visibility"][value="user_001"]')
 
         const variables = await testContext.waitForGraphQLRequest(async () => {
             const [button] = await driver.page.$x("//button[contains(., 'Save changes')]")
 
-            if (button) {
-                await button.click()
-            }
+            await button?.click()
         }, 'UpdateDashboard')
 
         assert.deepStrictEqual(variables, {
-            id: EMPTY_DASHBOARD.id,
+            id: 'codeInsightDashboard001',
             input: {
-                title: 'Empty Dashboard Edited test dashboard title',
+                title: 'Dashboard 001 Edited test dashboard title',
                 grants: {
-                    users: [testUserID],
+                    users: ['user_001'],
                     organizations: [],
                     global: false,
                 },
