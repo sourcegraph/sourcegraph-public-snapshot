@@ -142,6 +142,10 @@
         background-color: var(--color-bg-2);
     }
 
+    &--link:hover {
+        cursor: pointer;
+    }
+
     &--link {
         display: flex;
         flex-direction: column;

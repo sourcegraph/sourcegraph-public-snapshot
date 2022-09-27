@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
+import React, { KeyboardEvent, MouseEvent, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 
 import { mdiArrowCollapseRight, mdiChevronDown, mdiChevronRight, mdiFilterOutline } from '@mdi/js'
 import classNames from 'classnames'
@@ -19,7 +19,7 @@ import {
 } from '@sourcegraph/common'
 import { Position } from '@sourcegraph/extension-api-classes'
 import { useQuery } from '@sourcegraph/http-client'
-import { CodeExcerpt, FetchFileParameters } from '@sourcegraph/search-ui'
+import { CodeExcerpt, FetchFileParameters, onClickCodeExcerptHref } from '@sourcegraph/search-ui'
 import { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
 import { findLanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/languages'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
@@ -963,18 +963,24 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                         <ul className="list-unstyled mb-0">
                             {group.locations.map(reference => {
                                 const className = isActiveLocation(reference) ? styles.locationActive : ''
+                                const selectReference = (
+                                    event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>
+                                ): void =>
+                                    onClickCodeExcerptHref(event, () => {
+                                        setActiveLocation(reference)
+                                    })
 
                                 return (
                                     <li
                                         key={reference.url}
                                         className={classNames('border-0 rounded-0 mb-0', styles.location, className)}
                                     >
-                                        <Button
-                                            onClick={event => {
-                                                event.preventDefault()
-                                                setActiveLocation(reference)
-                                            }}
-                                            data-test-reference-url={reference.url}
+                                        <div
+                                            role="link"
+                                            tabIndex={0}
+                                            onClick={selectReference}
+                                            onKeyDown={selectReference}
+                                            data-href={reference.url}
                                             className={styles.locationLink}
                                         >
                                             <CodeExcerpt
@@ -999,7 +1005,7 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                                                     fetchPlainTextFileRangeLines(reference)
                                                 }
                                             />
-                                        </Button>
+                                        </div>
                                     </li>
                                 )
                             })}
