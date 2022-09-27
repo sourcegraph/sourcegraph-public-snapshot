@@ -60,7 +60,23 @@ func (r *repositoryStatsResolver) Indexed(ctx context.Context) (int32, error) {
 	if err != nil {
 		return 0, err
 	}
-	return indexedRepos, nil
+
+	// Since the number of indexed repositories might lag behind the number of
+	// repositories in our database (if we recently deleted a repository but
+	// Zoekt hasn't removed it from memory yet), we use min(indexed, total)
+	// here, so we don't confuse users by returning indexed > total.
+	total, err := r.Total(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return min(indexedRepos, total), nil
+}
+
+func min(a, b int32) int32 {
+	if a < b {
+		return a
+	}
+	return b
 }
 
 func (r *repositoryStatsResolver) IndexedLinesCount(ctx context.Context) (BigInt, error) {
