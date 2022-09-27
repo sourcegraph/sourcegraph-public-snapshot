@@ -1,13 +1,16 @@
 import { of, Subscription } from 'rxjs'
-import { throttleTime } from 'rxjs/operators'
+import { map, switchMap, throttleTime } from 'rxjs/operators'
 import * as vscode from 'vscode'
 
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 
 import { ExtensionCoreAPI } from '../contract'
+import { SearchPatternType } from '../graphql-operations'
 import { VSCEStateMachine } from '../state'
 import { focusSearchPanel } from '../webview/commands'
+
+import { instanceVersionNumber } from './instanceVersion'
 
 export function createStreamSearch({
     context,
@@ -42,14 +45,23 @@ export function createStreamSearch({
         // (in case e.g. user initiates search from search sidebar when panel is hidden).
         focusSearchPanel()
 
-        previousSearchSubscription = aggregateStreamingSearch(
-            of(appendContextFilter(query, stateMachine.state.context.selectedSearchContextSpec)),
-            {
-                ...options,
-                sourcegraphURL,
-            }
-        )
-            .pipe(throttleTime(500, undefined, { leading: true, trailing: true }))
+        previousSearchSubscription = instanceVersionNumber()
+            .pipe(
+                map(versionNumber => {
+                    let patternType = options.patternType
+                    if (versionNumber && versionNumber < '3430' && patternType === SearchPatternType.standard) {
+                        // SearchPatternType.standard is not supported in earlier versions of Sourcegraph
+                        patternType = SearchPatternType.literal
+                    }
+                    return patternType
+                }),
+                switchMap(patternType =>
+                    aggregateStreamingSearch(
+                        of(appendContextFilter(query, stateMachine.state.context.selectedSearchContextSpec)),
+                        { ...options, patternType, sourcegraphURL }
+                    ).pipe(throttleTime(500, undefined, { leading: true, trailing: true }))
+                )
+            )
             .subscribe(searchResults => {
                 if (searchResults.state === 'error') {
                     // Pass only primitive copied values because Error object is not cloneable

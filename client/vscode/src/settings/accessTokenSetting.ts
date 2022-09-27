@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { getInstanceVersionNumber } from '../backend/instanceVersion'
+import { instanceVersionNumber } from '../backend/instanceVersion'
 
 import { endpointHostnameSetting, endpointProtocolSetting } from './endpointSetting'
 import { readConfiguration } from './readConfiguration'
@@ -22,7 +22,7 @@ export async function handleAccessTokenError(badToken?: string, endpointURL?: st
             ? `A valid access token is required to connect to ${endpointURL}`
             : `Connection to ${endpointURL} failed because the token is invalid. Please reload VS Code if your Sourcegraph instance URL has changed.`
 
-        const instanceVersion = await getInstanceVersionNumber()
+        const instanceVersion = await instanceVersionNumber().toPromise()
         const supportsTokenCallback = instanceVersion && instanceVersion < '3410'
         const action = await vscode.window.showErrorMessage(message, 'Get Token', 'Open Settings')
 
