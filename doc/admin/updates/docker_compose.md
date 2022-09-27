@@ -35,7 +35,7 @@ Some stepwise upgrade notes have multi-version considerations.
 Follow the [steps](#upgrade-procedure) outlined at the top of this page to upgrade.
 
 
-## 3.43 -> 4.0
+## 3.43 -> 4.0.1
 
 <!-- Add changes changes to this section before release. -->
 
