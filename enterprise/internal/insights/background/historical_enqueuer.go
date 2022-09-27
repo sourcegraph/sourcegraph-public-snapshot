@@ -8,16 +8,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/segmentio/ksuid"
-
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
-	"golang.org/x/time/rate"
-
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/segmentio/ksuid"
 	sglog "github.com/sourcegraph/log"
-
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
@@ -41,6 +37,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
