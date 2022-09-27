@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
@@ -548,7 +547,7 @@ func (a *backfillAnalyzer) buildForRepo(ctx context.Context, definitions []itype
 
 	// For every series that we want to potentially gather historical data for, try.
 	for _, series := range definitions {
-		frames := query.BuildFrames(12, timeseries.TimeInterval{
+		frames := timeseries.BuildFrames(12, timeseries.TimeInterval{
 			Unit:  itypes.IntervalUnit(series.SampleIntervalUnit),
 			Value: series.SampleIntervalValue,
 		}, series.CreatedAt.Truncate(time.Hour*24))
