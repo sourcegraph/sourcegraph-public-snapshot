@@ -110,7 +110,6 @@ func runOutOfBandMigrations(
 	}
 	sort.Ints(ids)
 
-	out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleReset, "Running out of band migrations %v", ids))
 	if dryRun {
 		return nil
 	}
