@@ -47,7 +47,7 @@ func (r *repositoryStatsResolver) computeGitDirBytes(ctx context.Context) (int64
 
 		var gitDirBytes int64
 		for _, stat := range stats {
-			gitDirBytes += int64(stat.GitDirBytes)
+			gitDirBytes += stat.GitDirBytes
 		}
 		r.gitDirBytes = gitDirBytes
 	})
