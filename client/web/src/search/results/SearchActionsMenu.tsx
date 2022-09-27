@@ -116,7 +116,7 @@ export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> 
                                             ? { svgPath: createCodeMonitorAction.icon }
                                             : { as: createCodeMonitorAction.icon })}
                                     />
-                                    Create Monitor
+                                    Create monitor
                                 </MenuLink>
                             </Tooltip>
                         )}
