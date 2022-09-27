@@ -969,16 +969,24 @@ func (e *externalServiceStore) Delete(ctx context.Context, id int64) (err error)
 	}
 	defer func() { err = tx.Done(err) }()
 
-	// If this external service is currently syncing, we should not allow deletion
-	count, err := e.CountSyncJobs(ctx, ExternalServicesGetSyncJobsOptions{
-		ExternalServiceID: id,
-		OnlyActive:        true,
-	})
-	if err != nil {
-		return errors.Wrap(err, "counting sync jobs")
+	isSyncing := func() error {
+		// If this external service is currently syncing, we should not allow deletion
+		count, err := tx.CountSyncJobs(ctx, ExternalServicesGetSyncJobsOptions{
+			ExternalServiceID: id,
+			OnlyActive:        true,
+		})
+		if err != nil {
+			return errors.Wrap(err, "counting sync jobs")
+		}
+		if count > 0 {
+			return errors.Errorf("service is syncing, deleting not allowed")
+		}
+		return nil
 	}
-	if count > 0 {
-		return errors.Errorf("service is syncing, deleting not allowed")
+
+	// Don't start deletion if service is syncing
+	if err := isSyncing(); err != nil {
+		return err
 	}
 
 	// Create a temporary table where we'll store repos affected by the deletion of
@@ -1045,6 +1053,13 @@ CREATE TEMPORARY TABLE IF NOT EXISTS
 	if nrows == 0 {
 		return externalServiceNotFoundError{id: id}
 	}
+
+	// Check again so that we don't commit the deletion if sync started while the
+	// deletion was in progress.
+	if err := isSyncing(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
