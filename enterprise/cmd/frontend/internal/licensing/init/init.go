@@ -2,7 +2,6 @@ package init
 
 import (
 	"context"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
@@ -31,7 +30,7 @@ func Init(ctx context.Context, db database.DB, conf conftypes.UnifiedWatchable, 
 
 	// Enforce non-site admin roles in Free tier.
 	database.AfterCreateUser = enforcement.NewAfterCreateUserHook()
-	// TODO(miveronese) - Uncomment this when licensing for this feature should be enforced.
+	// TODO(miveronese) - Uncomment this when the licensing for this feature should be enforced.
 	// See PR https://github.com/sourcegraph/sourcegraph/pull/41679 for more details.
 	//database.BeforeSetUserIsSiteAdmin = enforcement.NewBeforeSetUserIsSiteAdmin()
 
@@ -88,12 +87,6 @@ func Init(ctx context.Context, db database.DB, conf conftypes.UnifiedWatchable, 
 	// Make the Site.productSubscription.productNameWithBrand GraphQL field (and other places) use the
 	// proper product name.
 	graphqlbackend.GetProductNameWithBrand = licensing.ProductNameWithBrand
-
-	// TODO(miveronese): Uncomment this when licensing for FeatureBranding should be enforced.
-	// See PR https://github.com/sourcegraph/sourcegraph/pull/41679 for more details.
-	//globals.WatchBranding(func() error {
-	//	return licensing.Check(licensing.FeatureBranding)
-	//})
 
 	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, func(args graphqlbackend.AlertFuncArgs) []*graphqlbackend.Alert {
 		// Only site admins can act on this alert, so only show it to site admins.
