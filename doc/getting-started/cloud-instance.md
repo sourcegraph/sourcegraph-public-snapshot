@@ -2,11 +2,12 @@
 This is a compilation of the most important information you will need to get started.
 
 
-## 🔄 Sync Code Hosts
+## Sync Code Hosts
 
 Sourcegraph is nothing without your code, so connecting your code hosts is crucial. 
 
 How to connect to…
+
 - [GitHub](https://docs.sourcegraph.com/admin/external_service/github)
 - [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab)
 - [Bitbucket Cloud](https://docs.sourcegraph.com/admin/external_service/bitbucket_cloud)
@@ -15,7 +16,7 @@ How to connect to…
 - [Non git hosts](https://docs.sourcegraph.com/admin/external_service)
 
 
-## 👥 Inviting users and SSO
+## Inviting users and SSO
 
 A team is essential when using Sourcegraph. Be sure to spread the word and get everybody in.
 
@@ -37,13 +38,14 @@ Getting users into Sourcegraph is easy, you just need to navigate to:
 
 
 
-## ✉️ Setup Email Server
+## Setup Email Server
 
 By default the Sourcegraph instance cannot send emails. So features like password resets, email invites and email code monitors will not work.
+
 - [Configure email sending / SMTP server](https://docs.sourcegraph.com/admin/config/email)
 
 
-## 🎓 Learn Sourcegraph
+## Learn Sourcegraph
 
 Extra resources that we think are helpful:
 
@@ -51,6 +53,6 @@ Extra resources that we think are helpful:
 - [Search Examples](https://docs.sourcegraph.com/code_search/tutorials/examples)
 
 
-## 💬 Community and Support
+## Community and Support
 
 [Join our discord server](https://srcgr.ph/discord-cloud-onboarding). If you need support, reach to via support@sourcegraph.com.
