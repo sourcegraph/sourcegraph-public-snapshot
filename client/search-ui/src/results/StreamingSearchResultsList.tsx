@@ -131,6 +131,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                 results.alert.proposedQueries
             ) {
                 const event = smartSearchClickedEvent(
+                    results.alert.kind,
                     results.alert.title,
                     results.alert.proposedQueries.map(entry => entry.description || '')
                 )
