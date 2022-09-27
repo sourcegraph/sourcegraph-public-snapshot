@@ -1506,12 +1506,20 @@ func newHttpResponseState(statusCode int, headers http.Header) *httpResponseStat
 	}
 }
 
-func doRequest(ctx context.Context, oauthContext *oauthutil.OAuthContext, logger log.Logger, apiURL *url.URL, auth auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, httpClient httpcli.Doer, bearerToken *auth.OAuthBearerToken, tokenRefresher oauthutil.TokenRefresher, req *http.Request, result any) (responseState *httpResponseState, err error) {
+func doRequest(ctx context.Context, oauthContext *oauthutil.OAuthContext, logger log.Logger, apiURL *url.URL, auther auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, httpClient httpcli.Doer, bearerToken *auth.OAuthBearerToken, tokenRefresher oauthutil.TokenRefresher, req *http.Request, result any) (responseState *httpResponseState, err error) {
 	req.URL.Path = path.Join(apiURL.Path, req.URL.Path)
 	req.URL = apiURL.ResolveReference(req.URL)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	if auth != nil {
-		if err := auth.Authenticate(req); err != nil {
+
+    autherWithRefresh, isRefresh := auther.(auth.AuthenticatorWithRefresh)
+    if isRefresh {
+        // Check if we should pre-emptively refresh
+        autherWithRefresh.CheckRefresh()
+
+        autherWithRefresh.Refresh()
+    }
+	if auther != nil {
+		if err := auther.Authenticate(req); err != nil {
 			return nil, errors.Wrap(err, "authenticating request")
 		}
 	}
@@ -1535,8 +1543,8 @@ func doRequest(ctx context.Context, oauthContext *oauthutil.OAuthContext, logger
 	var header http.Header
 	var body []byte
 
-	if bearerToken != nil && oauthContext != nil {
-		code, header, body, err = oauthutil.DoRequest(ctx, httpClient, req, bearerToken, tokenRefresher, *oauthContext)
+	if bearerToken != nil && oauthContext != nil && isRefresh {
+		code, header, body, err = oauthutil.DoRequest(ctx, httpClient, req, autherWithRefresh, tokenRefresher, *oauthContext)
 		if err != nil {
 			return newHttpResponseState(code, header), errors.Wrap(err, "do request with retry and refresh")
 		}

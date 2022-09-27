@@ -16,6 +16,10 @@ import (
 // clients.
 type OAuthBearerToken struct {
 	Token string
+    RefreshToken string
+    Expiry time.Time
+    RefreshFunc func() error
+    ShouldRefreshFunc func() (bool, error)
 }
 
 var _ Authenticator = &OAuthBearerToken{}
@@ -35,6 +39,20 @@ func (token *OAuthBearerToken) WithToken(newToken string) *OAuthBearerToken {
 	return &OAuthBearerToken{
 		Token: newToken,
 	}
+}
+
+func (token *OAuthBearerToken) Refresh() error {
+    if token.RefreshFunc == nil {
+        return errors.New("refresh not implemented")
+    }
+    return token.RefreshFunc()
+}
+
+func (token *OAuthBearerToken) ShouldRefresh() (bool, error) {
+    if token.ShouldRefreshFunc == nil {
+        return false, errors.New("should refresh not implemented")
+    }
+    return token.ShouldRefreshFunc()
 }
 
 // OAuthBearerTokenWithSSH implements OAuth Bearer Token authentication for extsvc

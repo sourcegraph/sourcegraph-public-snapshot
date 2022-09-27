@@ -27,6 +27,13 @@ type Authenticator interface {
 	Hash() string
 }
 
+type AuthenticatorWithRefresh interface {
+	Authenticate(*http.Request) error
+	CheckRefresh() (bool, error)
+	Refresh() error
+	Hash() string
+}
+
 // AuthenticatorWithSSH wraps the Authenticator interface and augments it by
 // additional methods to authenticate over SSH with this credential, in addition
 // to the enclosed Authenticator. This can be used for a credential that needs
