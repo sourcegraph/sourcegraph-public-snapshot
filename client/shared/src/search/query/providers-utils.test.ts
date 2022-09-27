@@ -1,4 +1,4 @@
-import { getSuggestionQuery } from './providers'
+import { getSuggestionQuery } from './providers-utils'
 import { ScanResult, scanSearchQuery, ScanSuccess } from './scanner'
 import { Token } from './token'
 
