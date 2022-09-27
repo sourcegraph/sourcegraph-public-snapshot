@@ -15,7 +15,7 @@ const INFERENCE_SCRIPT = gql`
 `
 
 export const useInferenceScript = (): UseInferenceScriptResult => {
-    const { data, loading, error } = useQuery<CodeGraphInferenceScriptResult>(INFERENCE_SCRIPT, {})
+    const { data, loading, error } = useQuery<CodeGraphInferenceScriptResult>(INFERENCE_SCRIPT)
 
     return {
         inferenceScript: data?.codeIntelligenceInferenceScript ?? '',

@@ -28,9 +28,9 @@ export const InferenceScriptEditor: FunctionComponent<React.PropsWithChildren<In
     const { updateInferenceScript, isUpdating, updatingError } = useUpdateInferenceScript()
 
     const save = useCallback(
-        async (content: string) =>
+        async (script: string) =>
             updateInferenceScript({
-                variables: { script: content },
+                variables: { script },
                 update: cache => cache.modify({ fields: { node: () => {} } }),
             }).then(() => {
                 screenReaderAnnounce('Saved successfully')
@@ -40,7 +40,6 @@ export const InferenceScriptEditor: FunctionComponent<React.PropsWithChildren<In
     )
 
     const [dirty, setDirty] = useState<boolean>()
-    // const [_editor, setEditor] = useState<editor.ICodeEditor>()
 
     const customToolbar = useMemo<{
         saveToolbar: FunctionComponent<SaveToolbarProps>
@@ -77,7 +76,6 @@ export const InferenceScriptEditor: FunctionComponent<React.PropsWithChildren<In
                 <DynamicallyImportedMonacoSettingsEditor
                     value={inferenceScript}
                     language="lua"
-                    // jsonSchema={allConfigSchema}
                     canEdit={authenticatedUser?.siteAdmin}
                     readOnly={!authenticatedUser?.siteAdmin}
                     onSave={save}
@@ -88,7 +86,6 @@ export const InferenceScriptEditor: FunctionComponent<React.PropsWithChildren<In
                     telemetryService={telemetryService}
                     customSaveToolbar={authenticatedUser?.siteAdmin ? customToolbar : undefined}
                     onDirtyChange={setDirty}
-                    // onEditor={setEditor}
                 />
             )}
         </>
