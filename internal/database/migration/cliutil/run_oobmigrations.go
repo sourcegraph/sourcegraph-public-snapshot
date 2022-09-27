@@ -120,24 +120,16 @@ func runOutOfBandMigrations(
 
 	go runner.StartPartial(ids)
 	defer runner.Stop()
-
-	bars := make([]output.ProgressBar, 0, len(ids))
-	for _, id := range ids {
-		bars = append(bars, output.ProgressBar{
-			Label: fmt.Sprintf("Migration #%d", id),
-			Max:   1.0,
-		})
-	}
-	progress := out.Progress(bars, nil)
 	defer func() {
-		progress.Destroy()
-
 		if err == nil {
 			out.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "Out of band migrations complete"))
 		} else {
 			out.WriteLine(output.Linef(output.EmojiFailure, output.StyleFailure, "Out of band migrations failed: %s", err))
 		}
 	}()
+
+	updateMigrationProgress, cleanup := makeOutOfBandMigrationProgressUpdater(out, ids, true)
+	defer cleanup()
 
 	ticker := time.NewTicker(time.Second).C
 	for {
@@ -148,7 +140,7 @@ func runOutOfBandMigrations(
 		sort.Slice(migrations, func(i, j int) bool { return migrations[i].ID < migrations[j].ID })
 
 		for i, m := range migrations {
-			progress.SetValue(i, m.Progress)
+			updateMigrationProgress(i, m)
 		}
 
 		complete := true
@@ -171,6 +163,33 @@ func runOutOfBandMigrations(
 		case <-ticker:
 		}
 	}
+}
+
+// makeOutOfBandMigrationProgressUpdater returns a two functions: `update` should be called
+// when the updates to the progress of an out-of-band migration are made and should be reflected
+// in the output; and `cleanup` should be called on defer when the progress object should be
+// disposed.
+func makeOutOfBandMigrationProgressUpdater(out *output.Output, ids []int, animateProgress bool) (
+	update func(i int, m oobmigration.Migration),
+	cleanup func(),
+) {
+	if !animateProgress {
+		update = func(i int, m oobmigration.Migration) {
+			out.WriteLine(output.Linef("", output.StyleReset, "Migration #%d is %.2f%% complete", m.ID, m.Progress*100))
+		}
+		return update, func() {}
+	}
+
+	bars := make([]output.ProgressBar, 0, len(ids))
+	for _, id := range ids {
+		bars = append(bars, output.ProgressBar{
+			Label: fmt.Sprintf("Migration #%d", id),
+			Max:   1.0,
+		})
+	}
+
+	progress := out.Progress(bars, nil)
+	return func(i int, m oobmigration.Migration) { progress.SetValue(i, m.Progress) }, progress.Destroy
 }
 
 func getMigrations(ctx context.Context, store *oobmigration.Store, ids []int) ([]oobmigration.Migration, error) {
