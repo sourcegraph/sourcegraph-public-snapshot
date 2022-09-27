@@ -76,8 +76,8 @@ export type { BadgeProps, BadgeVariantType, ProductStatusType, BaseProductStatus
 export type { ModalProps } from './Modal'
 
 /**
- * Style exports to be used with plain DOM nodes.
+ * Class name helpers to be used with plain DOM nodes.
  * NOTE: Prefer using the React components is possible.
  */
-export { default as ButtonStyles } from './Button/Button.module.scss'
-export { default as LabelStyles } from './Typography/Label/Label.module.scss'
+export { getButtonClassName } from './Button/utils'
+export { getLabelClassName } from './Typography/Label/utils'

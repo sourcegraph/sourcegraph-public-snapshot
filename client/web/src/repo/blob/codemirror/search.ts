@@ -17,9 +17,12 @@ import { EditorView, keymap, Panel, runScopeHandlers, ViewUpdate } from '@codemi
 import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 
 import { createSVGIcon } from '@sourcegraph/shared/src/util/dom'
-import { ButtonStyles, LabelStyles } from '@sourcegraph/wildcard'
+import { getButtonClassName, getLabelClassName } from '@sourcegraph/wildcard'
 
 import { createElement } from '../../../util/dom'
+
+const buttonClassName = getButtonClassName({ size: 'sm', outline: true, variant: 'secondary' })
+const labelClassName = getLabelClassName({ size: 'small', mode: 'single-line' })
 
 class SearchPanel implements Panel {
     public dom: HTMLElement
@@ -34,13 +37,7 @@ class SearchPanel implements Panel {
             'button',
             {
                 type: 'button',
-                className: [
-                    ButtonStyles.btn,
-                    ButtonStyles.btnSm,
-                    ButtonStyles.btnOutline,
-                    ButtonStyles.btnSecondary,
-                    'mr-2',
-                ].join(' '),
+                className: [buttonClassName, 'mr-2'].join(' '),
                 onclick: () => findPrevious(view),
             },
             createSVGIcon(mdiChevronUp),
@@ -51,12 +48,7 @@ class SearchPanel implements Panel {
             'button',
             {
                 type: 'button',
-                className: [
-                    ButtonStyles.btn,
-                    ButtonStyles.btnSm,
-                    ButtonStyles.btnOutline,
-                    ButtonStyles.btnSecondary,
-                ].join(' '),
+                className: buttonClassName,
                 onclick: () => findNext(view),
             },
             createSVGIcon(mdiChevronDown),
@@ -86,16 +78,11 @@ class SearchPanel implements Panel {
             next,
             createElement(
                 'label',
-                { className: `form-check-label small mx-2 ml-3 ${LabelStyles.label}` },
+                { className: `form-check-label mx-2 ml-3 ${labelClassName}` },
                 this.caseSensitive,
                 'Match case'
             ),
-            createElement(
-                'label',
-                { className: `form-check-label small mx-2 ${LabelStyles.label}` },
-                this.regexp,
-                'Regexp'
-            )
+            createElement('label', { className: `form-check-label mx-2 ${labelClassName}` }, this.regexp, 'Regexp')
         )
 
         this.query = getSearchQuery(this.view.state)
@@ -177,8 +164,11 @@ export const search: Extension = [
             marginLeft: '-0.125rem',
             verticalAlign: 'text-bottom',
         },
-        '.cm-searchMatch:not(.cm-searchMatch-selected)': {
+        '.cm-searchMatch': {
             backgroundColor: 'var(--mark-bg)',
+        },
+        '.cm-searchMatch-selected': {
+            backgroundColor: 'var(--oc-orange-3)',
         },
     }),
     keymap.of(searchKeymap),
