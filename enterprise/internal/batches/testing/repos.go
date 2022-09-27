@@ -140,8 +140,9 @@ func CreateGitlabTestRepos(t *testing.T, ctx context.Context, db database.DB, co
 		Kind:        extsvc.KindGitLab,
 		DisplayName: "GitLab",
 		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitLabConnection{
-			Url:   "https://gitlab.com",
-			Token: "SECRETTOKEN",
+			Url:          "https://gitlab.com",
+			Token:        "SECRETTOKEN",
+			ProjectQuery: []string{"none"},
 		})),
 	}
 	if err := esStore.Upsert(ctx, ext); err != nil {

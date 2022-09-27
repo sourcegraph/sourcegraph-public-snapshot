@@ -1943,7 +1943,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 		})
 		want[0].Config.Set(`// {}`)
 
-		if err := tx.Upsert(ctx, want...); err != nil {
+		if err := tx.Upsert(ctx, want...); err == nil {
 			t.Fatalf("Wanted an error")
 		}
 	})
