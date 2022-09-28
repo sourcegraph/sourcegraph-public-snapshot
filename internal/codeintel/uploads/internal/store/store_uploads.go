@@ -1757,7 +1757,7 @@ CREATE TEMPORARY TABLE t_lsif_uploads_visible_at_tip (
 `
 
 // InsertUpload inserts a new upload and returns its identifier.
-func (s *store) InsertUpload(ctx context.Context, upload shared.Upload) (id int, err error) {
+func (s *store) InsertUpload(ctx context.Context, upload types.Upload) (id int, err error) {
 	ctx, _, endObservation := s.operations.insertUpload.With(ctx, &err, observation.Args{})
 	defer func() {
 		endObservation(1, observation.Args{LogFields: []log.Field{
