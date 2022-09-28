@@ -1,6 +1,10 @@
 package resolvers
 
 import (
+	autoindexinggraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql"
+	codenavgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql"
+	policiesgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
+	uploadsgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
 	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 )
 
@@ -11,51 +15,51 @@ import (
 // by the API.
 type Resolver interface {
 	ExecutorResolver() executor.Resolver
-	CodeNavResolver() CodeNavResolver
-	PoliciesResolver() PoliciesResolver
-	AutoIndexingResolver() AutoIndexingResolver
-	UploadsResolver() UploadsResolver
+	CodeNavResolver() codenavgraphql.RootResolver
+	PoliciesRootResolver() policiesgraphql.RootResolver
+	AutoIndexingRootResolver() autoindexinggraphql.RootResolver
+	UploadRootResolver() uploadsgraphql.RootResolver
 }
 
 type resolver struct {
-	executorResolver     executor.Resolver
-	codenavResolver      CodeNavResolver
-	policiesResolver     PoliciesResolver
-	autoIndexingResolver AutoIndexingResolver
-	uploadsResolver      UploadsResolver
+	executorResolver         executor.Resolver
+	codenavResolver          codenavgraphql.RootResolver
+	policiesRootResolver     policiesgraphql.RootResolver
+	autoIndexingRootResolver autoindexinggraphql.RootResolver
+	uploadsRootResolver      uploadsgraphql.RootResolver
 }
 
 // NewResolver creates a new resolver with the given services.
 func NewResolver(
-	codenavResolver CodeNavResolver,
+	codenavResolver codenavgraphql.RootResolver,
 	executorResolver executor.Resolver,
-	policiesResolver PoliciesResolver,
-	autoIndexingResolver AutoIndexingResolver,
-	uploadsResolver UploadsResolver,
+	policiesRootResolver policiesgraphql.RootResolver,
+	autoIndexingRootResolver autoindexinggraphql.RootResolver,
+	uploadsRootResolver uploadsgraphql.RootResolver,
 ) Resolver {
 	return &resolver{
-		executorResolver:     executorResolver,
-		codenavResolver:      codenavResolver,
-		policiesResolver:     policiesResolver,
-		autoIndexingResolver: autoIndexingResolver,
-		uploadsResolver:      uploadsResolver,
+		executorResolver:         executorResolver,
+		codenavResolver:          codenavResolver,
+		policiesRootResolver:     policiesRootResolver,
+		autoIndexingRootResolver: autoIndexingRootResolver,
+		uploadsRootResolver:      uploadsRootResolver,
 	}
 }
 
-func (r *resolver) CodeNavResolver() CodeNavResolver {
+func (r *resolver) CodeNavResolver() codenavgraphql.RootResolver {
 	return r.codenavResolver
 }
 
-func (r *resolver) PoliciesResolver() PoliciesResolver {
-	return r.policiesResolver
+func (r *resolver) PoliciesRootResolver() policiesgraphql.RootResolver {
+	return r.policiesRootResolver
 }
 
-func (r *resolver) AutoIndexingResolver() AutoIndexingResolver {
-	return r.autoIndexingResolver
+func (r *resolver) AutoIndexingRootResolver() autoindexinggraphql.RootResolver {
+	return r.autoIndexingRootResolver
 }
 
-func (r *resolver) UploadsResolver() UploadsResolver {
-	return r.uploadsResolver
+func (r *resolver) UploadRootResolver() uploadsgraphql.RootResolver {
+	return r.uploadsRootResolver
 }
 
 func (r *resolver) ExecutorResolver() executor.Resolver {

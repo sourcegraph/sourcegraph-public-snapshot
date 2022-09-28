@@ -24,13 +24,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 type Services struct {
-	dbStore *store.Store
-
 	// shared with executor queue
 	InternalUploadHandler http.Handler
 	ExternalUploadHandler http.Handler
@@ -73,7 +70,7 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 
 	// Initialize services
 	uploadSvc := uploads.GetService(db, codeIntelLsifStore, gitserverClient)
-	codenavSvc := codenav.GetService(db, codeIntelLsifStore, uploadSvc, gitserverClient, symbols.DefaultClient)
+	codenavSvc := codenav.GetService(db, codeIntelLsifStore, uploadSvc, gitserverClient)
 	policySvc := policies.GetService(db, uploadSvc, gitserverClient)
 	autoindexingSvc := autoindexing.GetService(db, uploadSvc, gitserverClient, repoUpdaterClient)
 
@@ -85,8 +82,6 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 	externalUploadHandler := newUploadHandler(true)
 
 	return &Services{
-		dbStore: dbStore,
-
 		InternalUploadHandler: internalUploadHandler,
 		ExternalUploadHandler: externalUploadHandler,
 

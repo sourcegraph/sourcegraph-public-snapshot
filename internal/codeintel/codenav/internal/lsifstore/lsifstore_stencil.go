@@ -6,12 +6,12 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // Stencil returns all ranges within a single document.
-func (s *store) GetStencil(ctx context.Context, bundleID int, path string) (_ []shared.Range, err error) {
+func (s *store) GetStencil(ctx context.Context, bundleID int, path string) (_ []types.Range, err error) {
 	ctx, trace, endObservation := s.operations.getStencil.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("path", path),
@@ -25,7 +25,7 @@ func (s *store) GetStencil(ctx context.Context, bundleID int, path string) (_ []
 
 	trace.Log(log.Int("numRanges", len(documentData.Document.Ranges)))
 
-	ranges := make([]shared.Range, 0, len(documentData.Document.Ranges))
+	ranges := make([]types.Range, 0, len(documentData.Document.Ranges))
 	for _, r := range documentData.Document.Ranges {
 		ranges = append(ranges, newRange(r.StartLine, r.StartCharacter, r.EndLine, r.EndCharacter))
 	}
