@@ -1730,7 +1730,7 @@ func TestInsertUploadUploading(t *testing.T) {
 
 	insertRepo(t, db, 50, "")
 
-	id, err := store.InsertUpload(context.Background(), shared.Upload{
+	id, err := store.InsertUpload(context.Background(), types.Upload{
 		Commit:       makeCommit(1),
 		Root:         "sub/",
 		State:        "uploading",
@@ -1742,7 +1742,7 @@ func TestInsertUploadUploading(t *testing.T) {
 		t.Fatalf("unexpected error enqueueing upload: %s", err)
 	}
 
-	expected := shared.Upload{
+	expected := types.Upload{
 		ID:             id,
 		Commit:         makeCommit(1),
 		Root:           "sub/",
@@ -1780,7 +1780,7 @@ func TestInsertUploadQueued(t *testing.T) {
 
 	insertRepo(t, db, 50, "")
 
-	id, err := store.InsertUpload(context.Background(), shared.Upload{
+	id, err := store.InsertUpload(context.Background(), types.Upload{
 		Commit:        makeCommit(1),
 		Root:          "sub/",
 		State:         "queued",
@@ -1794,7 +1794,7 @@ func TestInsertUploadQueued(t *testing.T) {
 	}
 
 	rank := 1
-	expected := shared.Upload{
+	expected := types.Upload{
 		ID:             id,
 		Commit:         makeCommit(1),
 		Root:           "sub/",
@@ -1834,7 +1834,7 @@ func TestInsertUploadWithAssociatedIndexID(t *testing.T) {
 	insertRepo(t, db, 50, "")
 
 	associatedIndexIDArg := 42
-	id, err := store.InsertUpload(context.Background(), shared.Upload{
+	id, err := store.InsertUpload(context.Background(), types.Upload{
 		Commit:            makeCommit(1),
 		Root:              "sub/",
 		State:             "queued",
@@ -1850,7 +1850,7 @@ func TestInsertUploadWithAssociatedIndexID(t *testing.T) {
 
 	rank := 1
 	associatedIndexIDResult := 42
-	expected := shared.Upload{
+	expected := types.Upload{
 		ID:                id,
 		Commit:            makeCommit(1),
 		Root:              "sub/",
@@ -1888,7 +1888,7 @@ func TestAddUploadPart(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(db, &observation.TestContext)
 
-	insertUploads(t, db, shared.Upload{ID: 1, State: "uploading"})
+	insertUploads(t, db, types.Upload{ID: 1, State: "uploading"})
 
 	for _, part := range []int{1, 5, 2, 3, 2, 2, 1, 6} {
 		if err := store.AddUploadPart(context.Background(), 1, part); err != nil {
@@ -1912,7 +1912,7 @@ func TestMarkQueued(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(db, &observation.TestContext)
 
-	insertUploads(t, db, shared.Upload{ID: 1, State: "uploading"})
+	insertUploads(t, db, types.Upload{ID: 1, State: "uploading"})
 
 	uploadSize := int64(300)
 	if err := store.MarkQueued(context.Background(), 1, &uploadSize); err != nil {
@@ -1939,7 +1939,7 @@ func TestMarkFailed(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(db, &observation.TestContext)
 
-	insertUploads(t, db, shared.Upload{ID: 1, State: "uploading"})
+	insertUploads(t, db, types.Upload{ID: 1, State: "uploading"})
 
 	failureReason := "didn't like it"
 	if err := store.MarkFailed(context.Background(), 1, failureReason); err != nil {

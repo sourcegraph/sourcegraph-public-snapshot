@@ -343,7 +343,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		InsertUploadFunc: &StoreInsertUploadFunc{
-			defaultHook: func(context.Context, shared.Upload) (r0 int, r1 error) {
+			defaultHook: func(context.Context, types.Upload) (r0 int, r1 error) {
 				return
 			},
 		},
@@ -590,7 +590,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		InsertUploadFunc: &StoreInsertUploadFunc{
-			defaultHook: func(context.Context, shared.Upload) (int, error) {
+			defaultHook: func(context.Context, types.Upload) (int, error) {
 				panic("unexpected invocation of MockStore.InsertUpload")
 			},
 		},
@@ -4235,15 +4235,15 @@ func (c StoreHasRepositoryFuncCall) Results() []interface{} {
 // StoreInsertUploadFunc describes the behavior when the InsertUpload method
 // of the parent MockStore instance is invoked.
 type StoreInsertUploadFunc struct {
-	defaultHook func(context.Context, shared.Upload) (int, error)
-	hooks       []func(context.Context, shared.Upload) (int, error)
+	defaultHook func(context.Context, types.Upload) (int, error)
+	hooks       []func(context.Context, types.Upload) (int, error)
 	history     []StoreInsertUploadFuncCall
 	mutex       sync.Mutex
 }
 
 // InsertUpload delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockStore) InsertUpload(v0 context.Context, v1 shared.Upload) (int, error) {
+func (m *MockStore) InsertUpload(v0 context.Context, v1 types.Upload) (int, error) {
 	r0, r1 := m.InsertUploadFunc.nextHook()(v0, v1)
 	m.InsertUploadFunc.appendCall(StoreInsertUploadFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -4251,7 +4251,7 @@ func (m *MockStore) InsertUpload(v0 context.Context, v1 shared.Upload) (int, err
 
 // SetDefaultHook sets function that is called when the InsertUpload method
 // of the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreInsertUploadFunc) SetDefaultHook(hook func(context.Context, shared.Upload) (int, error)) {
+func (f *StoreInsertUploadFunc) SetDefaultHook(hook func(context.Context, types.Upload) (int, error)) {
 	f.defaultHook = hook
 }
 
@@ -4259,7 +4259,7 @@ func (f *StoreInsertUploadFunc) SetDefaultHook(hook func(context.Context, shared
 // InsertUpload method of the parent MockStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreInsertUploadFunc) PushHook(hook func(context.Context, shared.Upload) (int, error)) {
+func (f *StoreInsertUploadFunc) PushHook(hook func(context.Context, types.Upload) (int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -4268,19 +4268,19 @@ func (f *StoreInsertUploadFunc) PushHook(hook func(context.Context, shared.Uploa
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *StoreInsertUploadFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, shared.Upload) (int, error) {
+	f.SetDefaultHook(func(context.Context, types.Upload) (int, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *StoreInsertUploadFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, shared.Upload) (int, error) {
+	f.PushHook(func(context.Context, types.Upload) (int, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreInsertUploadFunc) nextHook() func(context.Context, shared.Upload) (int, error) {
+func (f *StoreInsertUploadFunc) nextHook() func(context.Context, types.Upload) (int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -4318,7 +4318,7 @@ type StoreInsertUploadFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 shared.Upload
+	Arg1 types.Upload
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 int
