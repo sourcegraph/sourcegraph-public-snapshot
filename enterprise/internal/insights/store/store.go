@@ -85,6 +85,9 @@ type SeriesPoint struct {
 }
 
 func (s *SeriesPoint) String() string {
+	if s.Capture != nil {
+		return fmt.Sprintf("SeriesPoint{Time: %q, Capture: %q, Value: %v}", s.Time, *s.Capture, s.Value)
+	}
 	return fmt.Sprintf("SeriesPoint{Time: %q, Value: %v}", s.Time, s.Value)
 }
 

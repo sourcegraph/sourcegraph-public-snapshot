@@ -104,7 +104,7 @@ func (r *insightSeriesResolver) Points(ctx context.Context, _ *graphqlbackend.In
 		return nil, err
 	}
 
-	_ = augmentPointsForNoData(points, recordingTimes)
+	_ = augmentPointsForRecordingTimes(points, recordingTimes)
 
 	resolvers := make([]graphqlbackend.InsightsDataPointResolver, 0, len(points))
 	for _, point := range points {
@@ -113,34 +113,37 @@ func (r *insightSeriesResolver) Points(ctx context.Context, _ *graphqlbackend.In
 	return resolvers, nil
 }
 
-func augmentPointsForNoData(points []store.SeriesPoint, recordingTimes []time.Time) []store.SeriesPoint {
-	pointValues := []string{}
+type captureTimePair struct {
+	capture       string
+	recordingTime time.Time
+}
+
+func augmentPointsForRecordingTimes(points []store.SeriesPoint, recordingTimes []time.Time) []store.SeriesPoint {
 	pointsMap := make(map[string]*store.SeriesPoint)
+	captureValues := make(map[string]struct{})
 	var seriesID string
 	for _, point := range points {
-		seriesID = point.SeriesID
+		point := point
+		seriesID = point.SeriesID // this works for now as this is per-series.
 		capture := ""
 		if point.Capture != nil {
-			pointValues = append(pointValues, *point.Capture)
 			capture = *point.Capture
 		}
-		pointsMap[point.Time.Truncate(time.Hour*24).String()+capture] = &point
+		captureValues[capture] = struct{}{}
+		pointTime := point.Time.Truncate(time.Hour * 24)
+		pointsMap[pointTime.String()+capture] = &point
 	}
-	// If there's no capture values we add an empty string to signify a search insight.
-	if len(pointValues) == 0 {
-		pointValues = append(pointValues, "")
-	}
-
+	// We have to pivot on potential capture values as well.
 	augmentedPoints := []store.SeriesPoint{}
-	// We have to pivot on potential capture values as well which makes this a double loop.
 	for _, recordingTime := range recordingTimes {
-		for _, pointValue := range pointValues {
-			if point, ok := pointsMap[recordingTime.Truncate(time.Hour*24).String()+pointValue]; ok {
+		for captureValue := range captureValues {
+			captureValue := captureValue
+			if point, ok := pointsMap[recordingTime.Truncate(time.Hour*24).String()+captureValue]; ok {
 				augmentedPoints = append(augmentedPoints, *point)
 			} else {
 				var capture *string
-				if pointValue != "" {
-					capture = &pointValue
+				if captureValue != "" {
+					capture = &captureValue
 				}
 				augmentedPoints = append(augmentedPoints, store.SeriesPoint{
 					SeriesID: seriesID,
@@ -151,6 +154,7 @@ func augmentPointsForNoData(points []store.SeriesPoint, recordingTimes []time.Ti
 			}
 		}
 	}
+
 	return augmentedPoints
 }
 

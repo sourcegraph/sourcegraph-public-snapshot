@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"sort"
 	"testing"
 	"time"
 
@@ -88,6 +89,91 @@ func TestResolver_InsightSeries(t *testing.T) {
 	})
 }
 
-func Test_augmentPointsForNoData(t *testing.T) {
-	t.Skip()
+func Test_augmentPointsForRecordingTimes(t *testing.T) {
+	stringify := func(points []store.SeriesPoint) []string {
+		s := []string{}
+		for _, point := range points {
+			s = append(s, point.String())
+		}
+		// Sort for determinism. In practice, we'll always return a list ordered by time and then by capture.
+		// The capture value order is non-deterministic overall but remains the same per time.
+		sort.Strings(s)
+		return s
+	}
+
+	testTime := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
+
+	generateTimes := func(n int) []time.Time {
+		times := []time.Time{}
+		for i := 0; i < n; i++ {
+			times = append(times, testTime.AddDate(0, 0, i))
+		}
+		return times
+	}
+
+	capture := func(s string) *string {
+		return &s
+	}
+
+	testCases := []struct {
+		points         []store.SeriesPoint
+		recordingTimes []time.Time
+		want           autogold.Value
+	}{
+		{
+			nil,
+			nil,
+			autogold.Want("empty returns empty", []string{}),
+		},
+		{
+			[]store.SeriesPoint{{"seriesID", time.Now(), 12, nil}},
+			[]time.Time{},
+			autogold.Want("empty recording times returns empty", []string{}),
+		},
+		{
+			[]store.SeriesPoint{
+				{"1", testTime, 1, nil},
+			},
+			generateTimes(2),
+			autogold.Want("augment one data point", []string{
+				`SeriesPoint{Time: "2020-01-01 00:00:00 +0000 UTC", Value: 1}`,
+				`SeriesPoint{Time: "2020-01-02 00:00:00 +0000 UTC", Value: 0}`,
+			}),
+		},
+		{
+			[]store.SeriesPoint{
+				{"1", testTime, 1, capture("one")},
+				{"1", testTime, 2, capture("two")},
+				{"1", testTime, 3, capture("three")},
+				{"1", testTime.AddDate(0, 0, 1), 1, capture("one")},
+			},
+			generateTimes(2),
+			autogold.Want("augment capture data points", []string{
+				`SeriesPoint{Time: "2020-01-01 00:00:00 +0000 UTC", Capture: "one", Value: 1}`,
+				`SeriesPoint{Time: "2020-01-01 00:00:00 +0000 UTC", Capture: "three", Value: 3}`,
+				`SeriesPoint{Time: "2020-01-01 00:00:00 +0000 UTC", Capture: "two", Value: 2}`,
+				`SeriesPoint{Time: "2020-01-02 00:00:00 +0000 UTC", Capture: "one", Value: 1}`,
+				`SeriesPoint{Time: "2020-01-02 00:00:00 +0000 UTC", Capture: "three", Value: 0}`,
+				`SeriesPoint{Time: "2020-01-02 00:00:00 +0000 UTC", Capture: "two", Value: 0}`,
+			}),
+		},
+		{
+			[]store.SeriesPoint{
+				{"1", testTime, 11, nil},
+				{"1", testTime.AddDate(0, 0, 1), 22, nil},
+			},
+			append([]time.Time{testTime.AddDate(0, 0, -1)}, generateTimes(2)...),
+			autogold.Want("augment data point in the past", []string{
+				`SeriesPoint{Time: "2019-12-31 00:00:00 +0000 UTC", Value: 0}`,
+				`SeriesPoint{Time: "2020-01-01 00:00:00 +0000 UTC", Value: 11}`,
+				`SeriesPoint{Time: "2020-01-02 00:00:00 +0000 UTC", Value: 22}`,
+			}),
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.want.Name(), func(t *testing.T) {
+			got := augmentPointsForRecordingTimes(tc.points, tc.recordingTimes)
+			tc.want.Equal(t, stringify(got))
+		})
+	}
 }
