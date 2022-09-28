@@ -86,7 +86,7 @@ To perform a multi-version upgrade on a Sourcegraph instance running on Kubernet
   1. Edit the file `configure/migrator/migrator.Job.yaml` and set the value of the `command` key to `["upgrade", "--from=<old version>", "--to=<new version>"]`.
   1. Run `kubectl delete -f configure/migrator/migrator.Job.yaml` to ensure no previous job invocations will conflict with our current invocation.
   1. Start the migrator job via `kubectl apply -f configure/migrator/migrator.Job.yaml`.
-  1. Run `kubectl wait -f configure/migrator/migrator.Job.yaml --for=condition=complete --timeout=-1s` to wait for the job to complete.
+  1. Run `kubectl wait -f configure/migrator/migrator.Job.yaml --for=condition=complete --timeout=-1s` to wait for the job to complete. Run `kubectl logs job.batch/migrator -f` stream the migrator's stdout logs for progress.
 1. The remaining infrastructure can now be updated. The [standard upgrade procedure](#standard-upgrades) describes this step in more detail.
   - Ensure that the replica counts adjusted in the previous steps are turned back up.
   - Run `./kubectl-apply-all.sh` to deploy the new pods to the Kubernetes cluster.
