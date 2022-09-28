@@ -794,13 +794,11 @@ func (q *repositoryQuery) Do(ctx context.Context, results chan *githubResult) {
 			After: q.Cursor,
 		})
 		if err != nil {
-			for {
-				select {
-				case <-ctx.Done():
-				case results <- &githubResult{err: errors.Wrapf(err, "failed to search GitHub repositories with %q", q)}:
-				}
-				return
+			select {
+			case <-ctx.Done():
+			case results <- &githubResult{err: errors.Wrapf(err, "failed to search GitHub repositories with %q", q)}:
 			}
+			return
 		}
 
 		if res.TotalCount > q.Limit {
@@ -821,13 +819,11 @@ func (q *repositoryQuery) Do(ctx context.Context, results chan *githubResult) {
 				continue
 			}
 
-			for {
-				select {
-				case <-ctx.Done():
-				case results <- &githubResult{err: errors.Errorf("repositoryQuery %q couldn't be refined further, results would be missed", q)}:
-				}
-				return
+			select {
+			case <-ctx.Done():
+			case results <- &githubResult{err: errors.Errorf("repositoryQuery %q couldn't be refined further, results would be missed", q)}:
 			}
+			return
 		}
 		q.Logger.Info("repositoryQuery matched", log.String("query", q.String()), log.Int("total", res.TotalCount), log.Int("page", len(res.Repos)))
 		for i := range res.Repos {
