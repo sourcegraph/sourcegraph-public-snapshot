@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -87,5 +88,12 @@ func ExternalServiceTokenRefresher(db DB, externalServiceID int64, refreshToken 
 			return nil, errors.Wrap(err, "upsert external service")
 		}
 		return refreshedToken, nil
+	}
+}
+
+func GetRefreshAndStoreOAuthTokenFunc(db DB, externalServiceID int64, oauthContext *oauthutil.OAuthContext) func(*auth.OAuthBearerToken) (*auth.OAuthBearerToken, error) {
+	return func(a *auth.OAuthBearerToken) (*auth.OAuthBearerToken, error) {
+		tokenRefresher := ExternalServiceTokenRefresher(db, externalServiceID, a.RefreshToken)
+		return tokenRefresher(context.Background(), http.DefaultClient, *oauthContext)
 	}
 }

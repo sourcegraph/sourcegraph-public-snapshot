@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"net/http"
 	"net/url"
 	"strconv"
 	"time"
@@ -221,15 +220,13 @@ func newGithubSource(
 		return nil, err
 	}
 
-	expiry := time.Unix(int64(c.TokenOauthExpiry), 0)
-	token := &auth.OAuthBearerToken{AccessToken: c.Token, RefreshToken: c.TokenOauthRefresh, Expiry: expiry}
-	urn := svc.URN()
-
-	oauthContext := github.GetOAuthContext(apiURL.String())
-	token.RefreshFunc = func(a *auth.OAuthBearerToken) (*auth.OAuthBearerToken, error) {
-		tokenRefresher := database.ExternalServiceTokenRefresher(db, svc.ID, a.RefreshToken)
-		return tokenRefresher(context.Background(), http.DefaultClient, *oauthContext)
+	token := &auth.OAuthBearerToken{
+		AccessToken:  c.Token,
+		RefreshToken: c.TokenOauthRefresh,
+		Expiry:       time.Unix(int64(c.TokenOauthExpiry), 0),
+		RefreshFunc:  database.GetRefreshAndStoreOAuthTokenFunc(db, svc.ID, github.GetOAuthContext(apiURL.String())),
 	}
+	urn := svc.URN()
 
 	var (
 		v3ClientLogger = log.Scoped("source", "github client for github source")

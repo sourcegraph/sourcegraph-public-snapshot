@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"math/rand"
-	"net/http"
 	"net/url"
 	"sort"
 	"strings"
@@ -59,13 +58,11 @@ func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([
 	baseURL = extsvc.NormalizeBaseURL(baseURL)
 	githubUrl, _ := github.APIRoot(baseURL)
 
-	oauthContext := github.GetOAuthContext(githubUrl.String())
-
-	expiry := time.Unix(int64(githubCfg.TokenOauthExpiry), 0)
-	auther := &auth.OAuthBearerToken{AccessToken: githubCfg.Token, Expiry: expiry, RefreshToken: githubCfg.TokenOauthRefresh}
-	auther.RefreshFunc = func(a *auth.OAuthBearerToken) (*auth.OAuthBearerToken, error) {
-		tokenRefresher := database.ExternalServiceTokenRefresher(r.db, r.externalService.ID, a.RefreshToken)
-		return tokenRefresher(context.Background(), http.DefaultClient, *oauthContext)
+	auther := &auth.OAuthBearerToken{
+		AccessToken:  githubCfg.Token,
+		Expiry:       time.Unix(int64(githubCfg.TokenOauthExpiry), 0),
+		RefreshToken: githubCfg.TokenOauthRefresh,
+		RefreshFunc:  database.GetRefreshAndStoreOAuthTokenFunc(r.db, r.externalService.ID, github.GetOAuthContext(githubUrl.String())),
 	}
 
 	client := github.NewV4Client(r.externalService.URN(), githubUrl, auther, nil)
