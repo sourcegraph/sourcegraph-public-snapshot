@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/urfave/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/download"
 	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
@@ -59,15 +58,15 @@ func RunInstallAll(cliCtx *cli.Context, logger log.Logger, config *config.Config
 		return err
 	}
 
-	if err := ensureExecutorVMImage(cliCtx.Context, logger, config.FirecrackerOptions()); err != nil {
+	if err := ensureExecutorVMImage(cliCtx.Context, logger, config); err != nil {
 		return err
 	}
 
-	if err := ensureSandboxImage(cliCtx.Context, logger, config.FirecrackerOptions()); err != nil {
+	if err := ensureSandboxImage(cliCtx.Context, logger, config); err != nil {
 		return err
 	}
 
-	if err := ensureKernelImage(cliCtx.Context, logger, config.FirecrackerOptions()); err != nil {
+	if err := ensureKernelImage(cliCtx.Context, logger, config); err != nil {
 		return err
 	}
 
@@ -96,22 +95,22 @@ func RunInstallImage(cliCtx *cli.Context, logger log.Logger, config *config.Conf
 	img := strings.ToLower(cliCtx.Args().First())
 	switch img {
 	case "executor-vm":
-		return ensureExecutorVMImage(cliCtx.Context, logger, config.FirecrackerOptions())
+		return ensureExecutorVMImage(cliCtx.Context, logger, config)
 	case "sandbox":
-		return ensureSandboxImage(cliCtx.Context, logger, config.FirecrackerOptions())
+		return ensureSandboxImage(cliCtx.Context, logger, config)
 	case "kernel":
-		return ensureKernelImage(cliCtx.Context, logger, config.FirecrackerOptions())
+		return ensureKernelImage(cliCtx.Context, logger, config)
 	default:
 		return errors.Newf("invalid image provided %q, expected one of executor-vm, sandbox, kernel", img)
 	}
 }
 
-func ensureExecutorVMImage(ctx context.Context, logger log.Logger, c command.FirecrackerOptions) error {
+func ensureExecutorVMImage(ctx context.Context, logger log.Logger, c *config.Config) error {
 	// Make sure the image exists. When ignite imports these at runtime, there can
 	// be a race condition and it is imported multiple times. Also, this would
 	// happen for the first job, which is not desirable.
-	logger.Info("Ensuring VM image is imported", log.String("image", c.Image))
-	cmd := exec.CommandContext(ctx, "ignite", "image", "import", "--runtime", "docker", c.Image)
+	logger.Info("Ensuring VM image is imported", log.String("image", c.FirecrackerImage))
+	cmd := exec.CommandContext(ctx, "ignite", "image", "import", "--runtime", "docker", c.FirecrackerImage)
 	// Forward output.
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -122,12 +121,12 @@ func ensureExecutorVMImage(ctx context.Context, logger log.Logger, c command.Fir
 	return nil
 }
 
-func ensureKernelImage(ctx context.Context, logger log.Logger, c command.FirecrackerOptions) error {
+func ensureKernelImage(ctx context.Context, logger log.Logger, c *config.Config) error {
 	// Make sure the image exists. When ignite imports these at runtime, there can
 	// be a race condition and it is imported multiple times. Also, this would
 	// happen for the first job, which is not desirable.
-	logger.Info("Ensuring kernel is imported", log.String("image", c.KernelImage))
-	cmd := exec.CommandContext(ctx, "ignite", "kernel", "import", "--runtime", "docker", c.KernelImage)
+	logger.Info("Ensuring kernel is imported", log.String("image", c.FirecrackerKernelImage))
+	cmd := exec.CommandContext(ctx, "ignite", "kernel", "import", "--runtime", "docker", c.FirecrackerKernelImage)
 	// Forward output.
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -138,11 +137,11 @@ func ensureKernelImage(ctx context.Context, logger log.Logger, c command.Firecra
 	return nil
 }
 
-func ensureSandboxImage(ctx context.Context, logger log.Logger, c command.FirecrackerOptions) error {
+func ensureSandboxImage(ctx context.Context, logger log.Logger, c *config.Config) error {
 	// Make sure the image exists. When ignite imports these at runtime, there will
 	// be a slowdown on the first job run.
-	logger.Info("Ensuring sandbox image exists", log.String("image", c.SandboxImage))
-	cmd := exec.CommandContext(ctx, "docker", "pull", c.SandboxImage)
+	logger.Info("Ensuring sandbox image exists", log.String("image", c.FirecrackerSandboxImage))
+	cmd := exec.CommandContext(ctx, "docker", "pull", c.FirecrackerSandboxImage)
 	// Forward output.
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

@@ -68,7 +68,7 @@ func RunRun(cliCtx *cli.Context, logger log.Logger, cfg *config.Config) error {
 		}
 	}
 
-	apiWorkerOptions := cfg.APIWorkerOptions(telemetryOptions)
+	apiWorkerOptions := apiWorkerOptions(cfg, telemetryOptions)
 
 	gatherer := metrics.MakeExecutorMetricsGatherer(log.Scoped("executor-worker.metrics-gatherer", ""), prometheus.DefaultGatherer, apiWorkerOptions.NodeExporterEndpoint, apiWorkerOptions.DockerRegistryNodeExporterEndpoint)
 	queueStore := apiclient.New(apiWorkerOptions.ClientOptions, gatherer, observationContext)

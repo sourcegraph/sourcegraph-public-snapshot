@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"net"
 
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
@@ -43,3 +44,16 @@ var (
 	RequiredCLITools            = []string{"docker", "git", "src"}
 	RequiredCLIToolsFirecracker = []string{"dmsetup", "losetup", "mkfs.ext4"}
 )
+
+// CNISubnetCIDR is the CIDR range of the VMs in firecracker. This is the ignite
+// default and chosen so that it doesn't interfere with other common applications
+// such as docker. It also provides room for a large number of VMs.
+var CNISubnetCIDR = mustParseCIDR("10.61.0.0/16")
+
+func mustParseCIDR(val string) *net.IPNet {
+	_, net, err := net.ParseCIDR(val)
+	if err != nil {
+		panic(err)
+	}
+	return net
+}

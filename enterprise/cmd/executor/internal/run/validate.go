@@ -25,7 +25,7 @@ func RunValidate(cliCtx *cli.Context, logger log.Logger, config *config.Config) 
 
 	// TODO: Validate access token.
 	// TODO: Validate git version is >= 2.26
-	client := apiclient.New(config.APIWorkerOptions(apiclient.TelemetryOptions{}).ClientOptions, nil, &observation.TestContext)
+	client := apiclient.New(apiWorkerOptions(config, apiclient.TelemetryOptions{}).ClientOptions, nil, &observation.TestContext)
 	if err := validateSrcCLIVersion(cliCtx.Context, logger, client); err != nil {
 		return err
 	}

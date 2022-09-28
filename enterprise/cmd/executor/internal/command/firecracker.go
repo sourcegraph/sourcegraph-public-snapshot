@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net"
 	"os"
 	"path"
 	"sort"
@@ -15,6 +14,7 @@ import (
 
 	shellquote "github.com/kballard/go-shellquote"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -24,11 +24,6 @@ type commandRunner interface {
 }
 
 const firecrackerContainerDir = "/work"
-
-// cniSubnetCIDR is the CIDR range of the VMs in firecracker. This is the ignite
-// default and chosen so that it doesn't interfere with other common applications
-// such as docker. It also provides room for a large number of VMs.
-var cniSubnetCIDR = mustParseCIDR("10.61.0.0/16")
 
 // formatFirecrackerCommand constructs the command to run on the host via a Firecracker
 // virtual machine in order to invoke the given spec. If the spec specifies an image, then
@@ -102,34 +97,6 @@ const defaultCNIConfig = `
 }
 `
 
-const defaultCNIConfigPath = "/etc/cni/net.d/10-ignite.conflist"
-
-// writeDefaultCNIConfig writes the dfault settings for the CNI to disk. This is
-// useful so that it's easy to spin up a VM without using the executor for debugging.
-// TODO: Use this somewhere.
-// TODO: What if we added a command "executor run [NAME]" that just starts a VM
-// with all the defaults, like ignite run but doesn't require all these global
-// config files.
-func writeDefaultCNIConfig() error {
-	// Make sure the directory exists.
-	if err := os.MkdirAll(path.Dir(defaultCNIConfigPath), os.ModePerm); err != nil {
-		return nil
-	}
-	// Check if the config already exists. If so: quit.
-	if _, err := os.Stat(defaultCNIConfigPath); err != nil && !os.IsNotExist(err) {
-		return err
-	} else if os.IsExist(err) {
-		return nil
-	}
-	// Write the default config file.
-	f, err := os.Create(defaultCNIConfigPath)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	return os.WriteFile(f.Name(), []byte(cniConfig(500*1024*1024, 500*1024*1024)), os.ModePerm)
-}
-
 // Configures the CNI explicitly and adds the isolation plugin to the chain.
 // This is to prevent cross-network communication (which currently doesn't happen
 // as we only have 1 bridge).
@@ -138,7 +105,7 @@ func writeDefaultCNIConfig() error {
 func cniConfig(maxIngressBandwidth, maxEgressBandwidth int) string {
 	return fmt.Sprintf(
 		defaultCNIConfig,
-		cniSubnetCIDR,
+		config.CNISubnetCIDR,
 		maxIngressBandwidth,
 		2*maxIngressBandwidth,
 		maxEgressBandwidth,
@@ -222,7 +189,7 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, 
 			"--name", name,
 			"--kernel-image", sanitizeImage(options.FirecrackerOptions.KernelImage),
 			"--kernel-args", firecrackerKernelArgs,
-			"--sandbox-image", options.FirecrackerOptions.SandboxImage,
+			"--sandbox-image", sanitizeImage(options.FirecrackerOptions.SandboxImage),
 			sanitizeImage(options.FirecrackerOptions.Image),
 		),
 		Operation: operations.SetupFirecrackerStart,
@@ -306,12 +273,4 @@ func sanitizeImage(image string) string {
 	}
 
 	return image
-}
-
-func mustParseCIDR(val string) *net.IPNet {
-	_, net, err := net.ParseCIDR(val)
-	if err != nil {
-		panic(err)
-	}
-	return net
 }
