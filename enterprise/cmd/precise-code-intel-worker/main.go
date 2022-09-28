@@ -17,9 +17,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifuploadstore"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/worker"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -101,7 +100,7 @@ func main() {
 	// Initialize stores
 	dbStore := dbstore.NewWithDB(db, observationContext)
 	workerStore := dbstore.WorkerutilUploadStore(dbStore, makeObservationContext(observationContext, false))
-	lsifStore := lsifstore.NewStore(codeIntelDB, conf.Get(), observationContext)
+	// lsifStore := lsifstore.NewStore(codeIntelDB, conf.Get(), observationContext)
 	gitserverClient := gitserver.New(db, dbStore, observationContext)
 
 	uploadStore, err := lsifuploadstore.New(context.Background(), config.LSIFUploadStoreConfig, observationContext)
@@ -121,12 +120,15 @@ func main() {
 	// Initialize metrics
 	dbworker.InitPrometheusMetric(observationContext, workerStore, "codeintel", "upload", nil)
 
+	uploadsSvc := uploads.GetService(db, database.NewDBWith(logger, codeIntelDB), gitserverClient)
+	_ = uploadsSvc // TODO
+
 	// Initialize worker
 	rootContext := actor.WithInternalActor(context.Background())
-	handler := worker.NewHandler(
-		&worker.DBStoreShim{Store: dbStore},
+	handler := uploads.NewHandler(
+		nil, // TODO - &worker.DBStoreShim{Store: dbStore},
 		workerStore,
-		&worker.LSIFStoreShim{Store: lsifStore},
+		nil, // TODO - &worker.LSIFStoreShim{Store: lsifStore},
 		uploadStore,
 		gitserverClient,
 		config.WorkerConcurrency,

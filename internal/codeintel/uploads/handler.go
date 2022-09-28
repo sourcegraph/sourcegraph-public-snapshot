@@ -1,4 +1,4 @@
-package worker
+package uploads
 
 import (
 	"compress/gzip"
@@ -13,14 +13,18 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -30,10 +34,54 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+func NewHandler(
+	dbStore store.Store,
+	workerStore dbworkerstore.Store,
+	lsifStore lsifstore.LsifStore,
+	uploadStore uploadstore.Store,
+	gitserverClient GitserverClient,
+	numProcessorRoutines int,
+	budgetMax int64,
+) workerutil.Handler {
+	observationContext := observation.Context{
+		Tracer: &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
+		HoneyDataset: &honey.Dataset{
+			Name: "codeintel-worker",
+		},
+		Registerer: prometheus.DefaultRegisterer,
+	}
+
+	op := observationContext.Operation(observation.Op{
+		Name: "codeintel.uploadHandler",
+		ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
+			return observation.EmitForTraces | observation.EmitForHoney
+		},
+	})
+
+	uploadSizeGuage := prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "src_codeintel_upload_processor_upload_size",
+		Help: "The combined size of uploads being processed at this instant by this worker.",
+	})
+	observationContext.Registerer.MustRegister(uploadSizeGuage)
+
+	return &handler{
+		dbStore:           dbStore,
+		workerStore:       workerStore,
+		lsifStore:         lsifStore,
+		uploadStore:       uploadStore,
+		gitserverClient:   gitserverClient,
+		handleOp:          op,
+		budgetRemaining:   budgetMax,
+		enableBudget:      budgetMax > 0,
+		uncompressedSizes: make(map[int]uint64, numProcessorRoutines),
+		uploadSizeGuage:   uploadSizeGuage,
+	}
+}
+
 type handler struct {
-	dbStore         DBStore
+	dbStore         store.Store
 	workerStore     dbworkerstore.Store
-	lsifStore       LSIFStore
+	lsifStore       lsifstore.LsifStore
 	uploadStore     uploadstore.Store
 	gitserverClient GitserverClient
 	handleOp        *observation.Operation
@@ -56,7 +104,7 @@ var (
 var errCommitDoesNotExist = errors.Errorf("commit does not exist")
 
 func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
-	upload := record.(store.Upload)
+	upload := record.(shared.Upload)
 
 	var requeued bool
 
@@ -89,7 +137,7 @@ func (h *handler) PreDequeue(ctx context.Context, logger log.Logger) (bool, any,
 }
 
 func (h *handler) PreHandle(ctx context.Context, logger log.Logger, record workerutil.Record) {
-	upload := record.(store.Upload)
+	upload := record.(shared.Upload)
 
 	uncompressedSize := h.getUploadSize(upload.UncompressedSize)
 	h.uploadSizeGuage.Add(float64(uncompressedSize))
@@ -99,7 +147,7 @@ func (h *handler) PreHandle(ctx context.Context, logger log.Logger, record worke
 }
 
 func (h *handler) PostHandle(ctx context.Context, logger log.Logger, record workerutil.Record) {
-	upload := record.(store.Upload)
+	upload := record.(shared.Upload)
 
 	uncompressedSize := h.getUploadSize(upload.UncompressedSize)
 	h.uploadSizeGuage.Sub(float64(uncompressedSize))
@@ -118,7 +166,7 @@ func (h *handler) getUploadSize(field *int64) int64 {
 
 // handle converts a raw upload into a dump within the given transaction context. Returns true if the
 // upload record was requeued and false otherwise.
-func (h *handler) handle(ctx context.Context, logger log.Logger, upload store.Upload, trace observation.TraceLogger) (requeued bool, err error) {
+func (h *handler) handle(ctx context.Context, logger log.Logger, upload shared.Upload, trace observation.TraceLogger) (requeued bool, err error) {
 	db := database.NewDBWith(logger, h.workerStore)
 	repo, err := backend.NewRepos(logger, db).Get(ctx, api.RepoID(upload.RepositoryID))
 	if err != nil {
@@ -170,7 +218,7 @@ func (h *handler) handle(ctx context.Context, logger log.Logger, upload store.Up
 		// point fails, we want to update the upload record with an error message but do not want to
 		// alter any other data in the database. Rolling back to this savepoint will allow us to discard
 		// any other changes but still commit the transaction as a whole.
-		return inTransaction(ctx, h.dbStore, func(tx DBStore) error {
+		return inTransaction(ctx, h.dbStore, func(tx store.Store) error {
 			// Before we mark the upload as complete, we need to delete any existing completed uploads
 			// that have the same repository_id, commit, root, and indexer values. Otherwise the transaction
 			// will fail as these values form a unique constraint.
@@ -236,7 +284,7 @@ func (h *handler) handle(ctx context.Context, logger log.Logger, upload store.Up
 	})
 }
 
-func inTransaction(ctx context.Context, dbStore DBStore, fn func(tx DBStore) error) (err error) {
+func inTransaction(ctx context.Context, dbStore store.Store, fn func(tx store.Store) error) (err error) {
 	tx, err := dbStore.Transact(ctx)
 	if err != nil {
 		return errors.Wrap(err, "store.Transact")
@@ -255,7 +303,7 @@ const requeueDelay = time.Minute
 // cloning or if the commit does not exist, then the upload will be requeued and this function returns a true
 // valued flag. Otherwise, the repo does not exist or there is an unexpected infrastructure error, which we'll
 // fail on.
-func requeueIfCloningOrCommitUnknown(ctx context.Context, logger log.Logger, db database.DB, workerStore dbworkerstore.Store, upload store.Upload, repo *types.Repo) (requeued bool, _ error) {
+func requeueIfCloningOrCommitUnknown(ctx context.Context, logger log.Logger, db database.DB, workerStore dbworkerstore.Store, upload shared.Upload, repo *types.Repo) (requeued bool, _ error) {
 	_, err := backend.NewRepos(logger, db).ResolveRev(ctx, repo, upload.Commit)
 	if err == nil {
 		// commit is resolvable
@@ -317,7 +365,7 @@ func withUploadData(ctx context.Context, logger log.Logger, uploadStore uploadst
 }
 
 // writeData transactionally writes the given grouped bundle data into the given LSIF store.
-func writeData(ctx context.Context, lsifStore LSIFStore, upload store.Upload, repo *types.Repo, isDefaultBranch bool, groupedBundleData *precise.GroupedBundleDataChans, trace observation.TraceLogger) (err error) {
+func writeData(ctx context.Context, lsifStore lsifstore.LsifStore, upload shared.Upload, repo *types.Repo, isDefaultBranch bool, groupedBundleData *precise.GroupedBundleDataChans, trace observation.TraceLogger) (err error) {
 	tx, err := lsifStore.Transact(ctx)
 	if err != nil {
 		return err
@@ -365,7 +413,7 @@ func isUniqueConstraintViolation(err error) bool {
 	return errors.As(err, &e) && e.Code == "23505"
 }
 
-func createLogFields(upload store.Upload) []otlog.Field {
+func createLogFields(upload shared.Upload) []otlog.Field {
 	fields := []otlog.Field{
 		otlog.Int("uploadID", upload.ID),
 		otlog.Int("repositoryID", upload.RepositoryID),

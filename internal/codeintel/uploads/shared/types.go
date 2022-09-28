@@ -35,6 +35,10 @@ type Upload struct {
 	AssociatedIndexID *int
 }
 
+func (u Upload) RecordID() int {
+	return u.ID
+}
+
 // Dump is a subset of the lsif_uploads table (queried via the lsif_dumps_with_repository_name view)
 // and stores only processed records.
 type Dump struct {

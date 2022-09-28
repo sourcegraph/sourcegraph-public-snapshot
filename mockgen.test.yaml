@@ -57,17 +57,17 @@
   path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/queues/batches
   interfaces:
     - BatchesStore
-- filename: internal/codeintel/uploads/worker/mocks_test.go
-  sources:
-    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/worker
-      interfaces:
-        - DBStore
-        - GitserverClient
-        - LSIFStore
-    - path: github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store
-      interfaces:
-        - Store
-      prefix: Worker
+# - filename: internal/codeintel/uploads/mocks_test.go
+#   sources:
+#     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads
+#       interfaces:
+#         - DBStore
+#         - GitserverClient
+#         - LSIFStore
+#     - path: github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store
+#       interfaces:
+#         - Store
+#       prefix: Worker
 - filename: enterprise/cmd/worker/internal/codeintel/indexing/mocks_test.go
   sources:
     - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing
