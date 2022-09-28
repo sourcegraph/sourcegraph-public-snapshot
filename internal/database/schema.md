@@ -346,31 +346,31 @@ Foreign-key constraints:
 
 # Table "public.changeset_specs"
 ```
-       Column        |           Type           | Collation | Nullable |                   Default                   
----------------------+--------------------------+-----------+----------+---------------------------------------------
- id                  | bigint                   |           | not null | nextval('changeset_specs_id_seq'::regclass)
- rand_id             | text                     |           | not null | 
- spec                | jsonb                    |           |          | '{}'::jsonb
- batch_spec_id       | bigint                   |           |          | 
- repo_id             | integer                  |           | not null | 
- user_id             | integer                  |           |          | 
- diff_stat_added     | integer                  |           |          | 
- diff_stat_deleted   | integer                  |           |          | 
- created_at          | timestamp with time zone |           | not null | now()
- updated_at          | timestamp with time zone |           | not null | now()
- head_ref            | text                     |           |          | 
- title               | text                     |           |          | 
- external_id         | text                     |           |          | 
- fork_namespace      | citext                   |           |          | 
- diff                | bytea                    |           |          | 
- base_rev            | text                     |           |          | 
- base_ref            | text                     |           |          | 
- body                | text                     |           |          | 
- published           | text                     |           |          | 
- commit_message      | text                     |           |          | 
- commit_author_name  | text                     |           |          | 
- commit_author_email | text                     |           |          | 
- type                | text                     |           | not null | 
+       Column        |             Type              | Collation | Nullable |                   Default                   
+---------------------+-------------------------------+-----------+----------+---------------------------------------------
+ id                  | bigint                        |           | not null | nextval('changeset_specs_id_seq'::regclass)
+ rand_id             | text                          |           | not null | 
+ spec                | jsonb                         |           |          | '{}'::jsonb
+ batch_spec_id       | bigint                        |           |          | 
+ repo_id             | integer                       |           | not null | 
+ user_id             | integer                       |           |          | 
+ diff_stat_added     | integer                       |           |          | 
+ diff_stat_deleted   | integer                       |           |          | 
+ created_at          | timestamp with time zone      |           | not null | now()
+ updated_at          | timestamp with time zone      |           | not null | now()
+ head_ref            | text                          |           |          | 
+ title               | text                          |           |          | 
+ external_id         | text                          |           |          | 
+ fork_namespace      | citext                        |           |          | 
+ diff                | bytea                         |           |          | 
+ base_rev            | text                          |           |          | 
+ base_ref            | text                          |           |          | 
+ body                | text                          |           |          | 
+ published           | changeset_spec_published_enum |           |          | 
+ commit_message      | text                          |           |          | 
+ commit_author_name  | text                          |           |          | 
+ commit_author_email | text                          |           |          | 
+ type                | text                          |           | not null | 
 Indexes:
     "changeset_specs_pkey" PRIMARY KEY, btree (id)
     "changeset_specs_batch_spec_id" btree (batch_spec_id)
@@ -3360,6 +3360,12 @@ Foreign-key constraints:
 - UNPUBLISHED
 - DRAFT
 - PUBLISHED
+
+# Type changeset_spec_published_enum
+
+- true
+- false
+- draft
 
 # Type cm_email_priority
 
