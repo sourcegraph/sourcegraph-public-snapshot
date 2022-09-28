@@ -33,7 +33,7 @@
   path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/app
   interfaces:
     - githubClient
-- filename: enterprise/cmd/frontend/internal/codeintel/httpapi/mocks_test.go
+- filename: internal/codeintel/uploads/transport/http/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/uploadhandler
   interfaces:
     - DBStore
@@ -41,8 +41,8 @@
   path: github.com/sourcegraph/sourcegraph/internal/uploadhandler
   interfaces:
     - DBStore
-- filename: enterprise/cmd/frontend/internal/codeintel/httpapi/auth/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/httpapi/auth
+- filename: internal/codeintel/uploads/transport/http/auth/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/http/auth
   interfaces:
     - GitHubClient
 - filename: enterprise/cmd/frontend/internal/codeintel/resolvers/mocks_test.go

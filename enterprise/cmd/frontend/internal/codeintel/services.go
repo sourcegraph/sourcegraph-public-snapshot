@@ -9,8 +9,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/httpapi"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/httpapi/auth"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
@@ -66,7 +64,7 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 	codeIntelLsifStore := database.NewDBWith(observationContext.Logger, codeIntelDBConnection)
 	uploadStore, err := lsifuploadstore.New(context.Background(), config.LSIFUploadStoreConfig, observationContext)
 	if err != nil {
-		logger.Fatal("Failed to initialize upload store", log.Error(err))
+		return nil, err
 	}
 
 	// Initialize gitserver client & repoupdater
@@ -80,28 +78,11 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 	autoindexingSvc := autoindexing.GetService(db, uploadSvc, gitserverClient, repoUpdaterClient)
 
 	// Initialize http endpoints
-	operations := httpapi.NewOperations(observationContext)
-	newUploadHandler := func(internal bool) http.Handler {
-		if false {
-			// Until this handler has been implemented, we retain the origial
-			// LSIF update handler.
-			//
-			// See https://github.com/sourcegraph/sourcegraph/issues/33375
-
-			return uploadshttp.GetHandler(uploadSvc)
-		}
-
-		return httpapi.NewUploadHandler(
-			db,
-			&httpapi.DBStoreShim{Store: dbStore},
-			uploadStore,
-			internal,
-			auth.DefaultValidatorByCodeHost,
-			operations,
-		)
+	newUploadHandler := func(withCodeHostAuth bool) http.Handler {
+		return uploadshttp.GetHandler(uploadSvc, db, uploadStore, withCodeHostAuth)
 	}
-	internalUploadHandler := newUploadHandler(true)
-	externalUploadHandler := newUploadHandler(false)
+	internalUploadHandler := newUploadHandler(false)
+	externalUploadHandler := newUploadHandler(true)
 
 	return &Services{
 		dbStore: dbStore,

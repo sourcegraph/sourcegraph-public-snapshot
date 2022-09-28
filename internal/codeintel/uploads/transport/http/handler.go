@@ -1,17 +1,14 @@
-package httpapi
+package http
 
 import (
 	"context"
 	"net/http"
 
 	"github.com/sourcegraph/log"
-	sglog "github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/httpapi/auth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	uploads "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -20,35 +17,36 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+type Handler struct {
+	svc        *uploads.Service
+	operations *operations
+}
+
 var revhashPattern = lazyregexp.New(`^[a-z0-9]{40}$`)
 
-func NewUploadHandler(
-	db database.DB,
-	dbStore uploadhandler.DBStore[UploadMetadata],
+func newHandler(
+	repoStore RepoStore,
 	uploadStore uploadstore.Store,
-	internal bool,
-	authValidators auth.AuthValidatorMap,
-	operations *Operations,
+	dbStore uploadhandler.DBStore[uploads.UploadMetadata],
+	operations *uploadhandler.Operations,
 ) http.Handler {
-	logger := sglog.Scoped("UploadHandler", "").With(
-		sglog.Bool("internal", internal),
-	)
+	logger := log.Scoped("UploadHandler", "")
 
-	metadataFromRequest := func(ctx context.Context, r *http.Request) (UploadMetadata, int, error) {
+	metadataFromRequest := func(ctx context.Context, r *http.Request) (uploads.UploadMetadata, int, error) {
 		commit := getQuery(r, "commit")
 		if !revhashPattern.Match([]byte(commit)) {
-			return UploadMetadata{}, http.StatusBadRequest, errors.Errorf("commit must be a 40-character revhash")
+			return uploads.UploadMetadata{}, http.StatusBadRequest, errors.Errorf("commit must be a 40-character revhash")
 		}
 
 		// Ensure that the repository and commit given in the request are resolvable.
 		repositoryName := getQuery(r, "repository")
-		repositoryID, statusCode, err := ensureRepoAndCommitExist(ctx, logger, db, repositoryName, commit)
+		repositoryID, statusCode, err := ensureRepoAndCommitExist(ctx, repoStore, repositoryName, commit, logger)
 		if err != nil {
-			return UploadMetadata{}, statusCode, err
+			return uploads.UploadMetadata{}, statusCode, err
 		}
 
 		// Populate state from request
-		return UploadMetadata{
+		return uploads.UploadMetadata{
 			RepositoryID:      repositoryID,
 			Commit:            commit,
 			Root:              sanitizeRoot(getQuery(r, "root")),
@@ -62,20 +60,14 @@ func NewUploadHandler(
 		logger,
 		dbStore,
 		uploadStore,
-		operations.Operations,
+		operations,
 		metadataFromRequest,
 	)
-
-	if !internal {
-		// 🚨 SECURITY: Non-internal installations of this handler will require a user/repo
-		// visibility check with the remote code host (if enabled via site configuration).
-		handler = auth.AuthMiddleware(handler, db, authValidators, operations.authMiddleware)
-	}
 
 	return handler
 }
 
-func ensureRepoAndCommitExist(ctx context.Context, logger log.Logger, db database.DB, repoName, commit string) (int, int, error) {
+func ensureRepoAndCommitExist(ctx context.Context, repoStore RepoStore, repoName, commit string, logger log.Logger) (int, int, error) {
 	// 🚨 SECURITY: Bypass authz here; we've already determined that the current request is
 	// authorized to view the target repository; they are either a site admin or the code
 	// host has explicit listed them with some level of access (depending on the code host).
@@ -84,7 +76,7 @@ func ensureRepoAndCommitExist(ctx context.Context, logger log.Logger, db databas
 	//
 	// 1. Resolve repository
 
-	repo, err := backend.NewRepos(logger, db).GetByName(ctx, api.RepoName(repoName))
+	repo, err := repoStore.GetByName(ctx, api.RepoName(repoName))
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return 0, http.StatusNotFound, errors.Errorf("unknown repository %q", repoName)
@@ -96,7 +88,7 @@ func ensureRepoAndCommitExist(ctx context.Context, logger log.Logger, db databas
 	//
 	// 2. Resolve commit
 
-	if _, err := backend.NewRepos(logger, db).ResolveRev(ctx, repo, commit); err != nil {
+	if _, err := repoStore.ResolveRev(ctx, repo, commit); err != nil {
 		var reason string
 		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			reason = "commit not found"

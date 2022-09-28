@@ -1,9 +1,10 @@
-package httpapi
+package uploads
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/uploadhandler"
 )
 
@@ -16,26 +17,30 @@ type UploadMetadata struct {
 	AssociatedIndexID int
 }
 
-type DBStoreShim struct {
-	*dbstore.Store
+type uploadHandlerShim struct {
+	store.Store
 }
 
-func (s *DBStoreShim) Transact(ctx context.Context) (uploadhandler.DBStore[UploadMetadata], error) {
+func (s *Service) UploadHandlerStore() uploadhandler.DBStore[UploadMetadata] {
+	return &uploadHandlerShim{s.store}
+}
+
+func (s *uploadHandlerShim) Transact(ctx context.Context) (uploadhandler.DBStore[UploadMetadata], error) {
 	tx, err := s.Store.Transact(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return &DBStoreShim{tx}, nil
+	return &uploadHandlerShim{tx}, nil
 }
 
-func (s *DBStoreShim) InsertUpload(ctx context.Context, upload uploadhandler.Upload[UploadMetadata]) (int, error) {
+func (s *uploadHandlerShim) InsertUpload(ctx context.Context, upload uploadhandler.Upload[UploadMetadata]) (int, error) {
 	var associatedIndexID *int
 	if upload.Metadata.AssociatedIndexID != 0 {
 		associatedIndexID = &upload.Metadata.AssociatedIndexID
 	}
 
-	return s.Store.InsertUpload(ctx, dbstore.Upload{
+	return s.Store.InsertUpload(ctx, shared.Upload{
 		ID:                upload.ID,
 		State:             upload.State,
 		NumParts:          upload.NumParts,
@@ -51,7 +56,7 @@ func (s *DBStoreShim) InsertUpload(ctx context.Context, upload uploadhandler.Upl
 	})
 }
 
-func (s *DBStoreShim) GetUploadByID(ctx context.Context, uploadID int) (uploadhandler.Upload[UploadMetadata], bool, error) {
+func (s *uploadHandlerShim) GetUploadByID(ctx context.Context, uploadID int) (uploadhandler.Upload[UploadMetadata], bool, error) {
 	upload, ok, err := s.Store.GetUploadByID(ctx, uploadID)
 	if err != nil {
 		return uploadhandler.Upload[UploadMetadata]{}, false, err

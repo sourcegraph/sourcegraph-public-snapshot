@@ -15,7 +15,7 @@ import (
 
 // MockGitHubClient is a mock implementation of the GitHubClient interface
 // (from the package
-// github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/httpapi/auth)
+// github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/http/auth)
 // used for unit testing.
 type MockGitHubClient struct {
 	// GetRepositoryFunc is an instance of a mock function object
