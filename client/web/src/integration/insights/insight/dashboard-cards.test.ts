@@ -153,7 +153,7 @@ describe('Code insights [Dashboard card]', () => {
         assert.deepStrictEqual(menuOptions, ['Edit', 'Get shareable link', 'Remove from this dashboard', 'Delete'])
     })
 
-    it('renders lang stats insight card with proper options context', async () => {
+    it('renders capture group insight card with proper options context', async () => {
         overrideInsightsGraphQLApi({
             testContext,
             overrides: {
