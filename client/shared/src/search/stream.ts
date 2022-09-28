@@ -90,6 +90,7 @@ interface ChunkMatch {
     content: string
     contentStart: Location
     ranges: Range[]
+    aggregableBadges?: AggregableBadge[]
 }
 
 export interface SymbolMatch {
@@ -464,6 +465,7 @@ function initiateSearchStream(
             ['dk', (decorationKinds || ['html']).join('|')],
             ['dc', (decorationContextLines || '1').toString()],
             ['display', displayLimit.toString()],
+            ['cm', 't'], // Request chunk matches by default
         ]
         if (trace) {
             parameters.push(['trace', trace])

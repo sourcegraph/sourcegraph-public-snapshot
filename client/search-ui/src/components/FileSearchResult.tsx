@@ -137,13 +137,15 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
     const items: MatchItem[] = useMemo(
         () =>
             result.type === 'content'
-                ? result.lineMatches?.map(match => ({
-                      highlightRanges: match.offsetAndLengths.map(([start, highlightLength]) => ({
-                          start,
-                          highlightLength,
+                ? result.chunkMatches?.map(match => ({
+                      highlightRanges: match.ranges.map(range => ({
+                          startLine: range.start.line,
+                          startCharacter: range.start.column,
+                          endLine: range.end.line,
+                          endCharacter: range.end.column,
                       })),
-                      preview: match.line,
-                      line: match.lineNumber,
+                      content: match.content,
+                      startLine: match.contentStart.line,
                       aggregableBadges: match.aggregableBadges,
                   })) || []
                 : [],
@@ -219,9 +221,10 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
             result.hunks?.map(hunk => ({
                 blobLines: hunk.content.html?.split(/\r?\n/),
                 matches: hunk.matches.map(match => ({
-                    line: match.start.line,
-                    character: match.start.column,
-                    highlightLength: match.end.column - match.start.column,
+                    startLine: match.start.line,
+                    startCharacter: match.start.column,
+                    endLine: match.end.line,
+                    endCharacter: match.end.column,
                 })),
                 startLine: hunk.lineStart,
                 endLine: hunk.lineStart + hunk.lineCount,
@@ -338,14 +341,14 @@ export function limitGroup(group: MatchGroup, limit: number): MatchGroup {
     // Add matches on the same line and next line (context line) as the limited match
     const [lastMatch] = partialGroup.matches.slice(-1)
     for (const match of group.matches.slice(limit, undefined)) {
-        if (match.line <= lastMatch.line + 1) {
+        if (match.endLine <= lastMatch.endLine + 1) {
             // include an extra context line
             partialGroup.matches.push(match)
             continue
         }
         break
     }
-    partialGroup.endLine = lastMatch.line + 2 // include an extra context line
+    partialGroup.endLine = lastMatch.endLine + 2 // include an extra context line
     partialGroup.blobLines = partialGroup.blobLines?.slice(0, partialGroup.endLine - partialGroup.startLine)
     return partialGroup
 }

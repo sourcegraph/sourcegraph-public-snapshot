@@ -9,7 +9,7 @@ import { catchError, filter } from 'rxjs/operators'
 
 import { HoverMerged } from '@sourcegraph/client-api'
 import { DOMFunctions, findPositionsFromEvents, Hoverifier } from '@sourcegraph/codeintellify'
-import { asError, ErrorLike, isDefined, isErrorLike, highlightNode } from '@sourcegraph/common'
+import { asError, ErrorLike, isDefined, isErrorLike, highlightNodeMultiline } from '@sourcegraph/common'
 import { HighlightLineRange } from '@sourcegraph/search'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
@@ -61,17 +61,21 @@ interface Props extends Repo {
 
 export interface HighlightRange {
     /**
-     * The 0-based line number that this highlight appears in
+     * The 0-based line number where this highlight range begins
      */
-    line: number
+    startLine: number
     /**
-     * The 0-based character offset to start highlighting at
+     * The 0-based character offset from the beginning of startLine where this highlight range begins
      */
-    character: number
+    startCharacter: number
     /**
-     * The number of characters to highlight
+     * The 0-based line number where this highlight range ends
      */
-    highlightLength: number
+    endLine: number
+    /**
+     * The 0-based character offset from the beginning of endLine where this highlight range ends
+     */
+    endCharacter: number
 }
 
 const domFunctions: DOMFunctions = {
@@ -257,19 +261,30 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
         if (tableContainerElement) {
             const visibleRows = tableContainerElement.querySelectorAll('table tr')
             for (const highlight of highlightRanges) {
-                // Select the HTML row in the excerpt that corresponds to the line to be highlighted.
-                // highlight.line is the 0-indexed line number in the code file, and startLine is the 0-indexed
+                // Select the HTML rows in the excerpt that correspond to the first and last line to be highlighted.
+                // highlight.startLine is the 0-indexed line number in the code file, and startLine is the 0-indexed
                 // line number of the first visible line in the excerpt. So, subtract startLine
-                // from highlight.line to get the correct 0-based index in visibleRows that holds the HTML row.
-                const tableRow = visibleRows[highlight.line - startLine]
-                if (tableRow) {
-                    // Take the lastChild of the row to select the code portion of the table row (each table row consists of the line number and code).
-                    const code = tableRow.lastChild as HTMLTableCellElement
-                    highlightNode(code, highlight.character, highlight.highlightLength)
+                // from highlight.startLine to get the correct 0-based index in visibleRows that holds the HTML row
+                // where highlighting should begin. Subtract startLine from highlight.endLine to get the correct 0-based
+                // index in visibleRows that holds the HTML row where highlighting should end.
+                const startRowIndex = highlight.startLine - startLine
+                const endRowIndex = highlight.endLine - startLine
+                const startRow = visibleRows[startRowIndex]
+                const endRow = visibleRows[endRowIndex]
+                if (startRow && endRow) {
+                    highlightNodeMultiline(
+                        visibleRows as NodeListOf<HTMLElement>,
+                        startRow as HTMLElement,
+                        endRow as HTMLElement,
+                        startRowIndex,
+                        endRowIndex,
+                        highlight.startCharacter,
+                        highlight.endCharacter
+                    )
                 }
             }
         }
-    }, [highlightRanges, startLine, tableContainerElement, blobLinesOrError])
+    }, [highlightRanges, startLine, endLine, tableContainerElement, blobLinesOrError])
 
     // Hook up the hover tooltips
     useEffect(() => {

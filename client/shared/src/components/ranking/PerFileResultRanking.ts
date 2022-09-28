@@ -23,14 +23,19 @@ export interface RankingResult {
 
 export interface MatchItem extends ExtensionBadgeType {
     highlightRanges: {
-        start: number
-        highlightLength: number
+        startLine: number
+        startCharacter: number
+        endLine: number
+        endCharacter: number
     }[]
-    preview: string
     /**
-     * The 0-based line number of this match.
+     * The matched content, which contains all matched ranges in highlightRanges.
      */
-    line: number
+    content: string
+    /**
+     * The 0-based line number where the matched content begins.
+     */
+    startLine: number
     aggregableBadges?: AggregableBadge[]
 }
 
@@ -57,7 +62,8 @@ export interface MatchGroup {
 }
 
 export interface MatchGroupMatch {
-    line: number
-    character: number
-    highlightLength: number
+    startLine: number
+    startCharacter: number
+    endLine: number
+    endCharacter: number
 }

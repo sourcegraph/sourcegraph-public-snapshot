@@ -27,20 +27,20 @@ function newHunk(): Hunk {
 
 function addHunkItem(hunk: Hunk, item: MatchItem): void {
     hunk.matches.push(item)
-    hunk.startLine = Math.min(item.line, hunk.startLine)
-    hunk.endLine = Math.max(item.line, hunk.endLine)
+    hunk.startLine = Math.min(item.startLine, hunk.startLine)
+    hunk.endLine = Math.max(item.highlightRanges[item.highlightRanges.length - 1].endLine, hunk.endLine)
 }
 
 function sortHunkMatches(hunk: Hunk): void {
     hunk.matches.sort((a, b) => {
-        if (a.line < b.line) {
+        if (a.startLine < b.startLine) {
             return -1
         }
-        if (a.line === b.line) {
-            if (a.highlightRanges[0].start < b.highlightRanges[0].start) {
+        if (a.startLine === b.startLine) {
+            if (a.highlightRanges[0].startCharacter < b.highlightRanges[0].startCharacter) {
                 return -1
             }
-            if (a.highlightRanges[0].start === b.highlightRanges[0].start) {
+            if (a.highlightRanges[0].startCharacter === b.highlightRanges[0].startCharacter) {
                 return 0
             }
         }
@@ -49,7 +49,10 @@ function sortHunkMatches(hunk: Hunk): void {
 }
 
 function isMatchWithinGroup(group: Hunk, item: MatchItem, context: number): boolean {
-    return item.line + context + 1 >= group.startLine - context && item.line - context - 1 <= group.endLine + context
+    return (
+        item.startLine + context + 1 >= group.startLine - context &&
+        item.highlightRanges[item.highlightRanges.length - 1].endLine - context - 1 <= group.endLine + context
+    )
 }
 
 function results(matches: MatchItem[], maxResults: number, context: number): RankingResult {
@@ -79,9 +82,10 @@ function results(matches: MatchItem[], maxResults: number, context: number): Ran
             visibleMatches.push(match)
             for (const range of match.highlightRanges) {
                 groupMatches.push({
-                    line: match.line,
-                    character: range.start,
-                    highlightLength: range.highlightLength,
+                    startLine: range.startLine,
+                    startCharacter: range.startCharacter,
+                    endLine: range.endLine,
+                    endCharacter: range.endCharacter,
                 })
             }
         }
@@ -92,7 +96,7 @@ function results(matches: MatchItem[], maxResults: number, context: number): Ran
             startLine: Math.max(0, hunk.startLine - context),
             endLine: hunk.endLine + context + 1,
             // 1-based position describing the starting place of the matches.
-            position: { line: topGroupMatch.line + 1, character: topGroupMatch.character + 1 },
+            position: { line: topGroupMatch.startLine + 1, character: topGroupMatch.startCharacter + 1 },
         }
         groups.push(matchGroup)
     }
