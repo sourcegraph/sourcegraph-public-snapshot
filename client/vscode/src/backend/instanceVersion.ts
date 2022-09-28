@@ -16,7 +16,7 @@ import { requestGraphQLFromVSCode } from './requestGraphQl'
  *
  * @returns An Observable that emits flattened Sourcegraph instance version number or undefined in case of an error:
  * - regular instance version format: 3.38.2
- * - insider version format: 134683_2022-03-02_5188fes0101
+ * - insiders version format: 134683_2022-03-02_5188fes0101
  */
 export const observeInstanceVersionNumber = (): Observable<string | undefined> =>
     from(requestGraphQLFromVSCode<SiteVersionResult>(siteVersionQuery, {})).pipe(
