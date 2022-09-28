@@ -12,8 +12,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/keegancsmith/sqlf"
-
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -87,50 +85,6 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 					t.Errorf("unexpected status code: have %d; want %d", have, want)
 				}
 				assertBodyIncludes(t, resp.Body, "getting external service")
-			})
-
-			t.Run("malformed external service", func(t *testing.T) {
-				// TODO: Check with batch changes team
-				t.Skip("Can we remove this now that we don't allow invalid config?")
-
-				store := gitLabTestSetup(t, db)
-				h := NewGitLabWebhook(store)
-				es := createGitLabExternalService(t, ctx, store.ExternalServices())
-
-				// It's harder than it used to be to get invalid JSON into the
-				// database configuration, so let's just manipulate the database
-				// directly, since it won't make it through the
-				// ExternalServiceStore.
-				if err := store.Exec(
-					ctx,
-					sqlf.Sprintf(
-						"UPDATE external_services SET config = %s WHERE id = %s",
-						"invalid JSON",
-						es.ID,
-					),
-				); err != nil {
-					t.Fatal(err)
-				}
-
-				u, err := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, nil, "https://example.com/")
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				req, err := http.NewRequest("POST", u, nil)
-				if err != nil {
-					t.Fatal(err)
-				}
-				req.Header.Add(webhooks.TokenHeaderName, "not a valid secret")
-
-				rec := httptest.NewRecorder()
-				h.ServeHTTP(rec, req)
-
-				resp := rec.Result()
-				if have, want := resp.StatusCode, http.StatusInternalServerError; have != want {
-					t.Errorf("unexpected status code: have %d; want %d", have, want)
-				}
-				assertBodyIncludes(t, resp.Body, "validating the shared secret")
 			})
 
 			t.Run("missing secret", func(t *testing.T) {

@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/log/logtest"
@@ -83,38 +82,6 @@ func testBitbucketCloudWebhook(db *sql.DB) func(*testing.T) {
 				h.ServeHTTP(rec, req)
 
 				assert.EqualValues(t, http.StatusBadRequest, rec.Result().StatusCode)
-			})
-
-			t.Run("malformed external service", func(t *testing.T) {
-				store := bitbucketCloudTestSetup(t, db)
-				h := NewBitbucketCloudWebhook(store)
-				es := createBitbucketCloudExternalService(t, ctx, store.ExternalServices())
-
-				// It's harder than it used to be to get invalid JSON into the
-				// database configuration, so let's just manipulate the database
-				// directly, since it won't make it through the
-				// ExternalServiceStore.
-				if err := store.Exec(
-					ctx,
-					sqlf.Sprintf(
-						"UPDATE external_services SET config = %s WHERE id = %s",
-						"invalid JSON",
-						es.ID,
-					),
-				); err != nil {
-					t.Fatal(err)
-				}
-
-				u, err := extsvc.WebhookURL(extsvc.KindBitbucketCloud, es.ID, cfg, esURL)
-				assert.Nil(t, err)
-
-				req, err := http.NewRequest("POST", u, bytes.NewBufferString("{}"))
-				assert.Nil(t, err)
-
-				rec := httptest.NewRecorder()
-				h.ServeHTTP(rec, req)
-
-				assert.EqualValues(t, http.StatusUnauthorized, rec.Result().StatusCode)
 			})
 
 			t.Run("missing secret", func(t *testing.T) {
