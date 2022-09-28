@@ -95,6 +95,7 @@ describe('Code insights [Dashboard card]', () => {
     })
 
     after(() => driver?.close())
+    afterEach(() => testContext?.dispose())
     afterEachSaveScreenshotIfFailed(() => driver.page)
 
     it('renders lang stats insight card with proper options context', async () => {
@@ -142,7 +143,8 @@ describe('Code insights [Dashboard card]', () => {
         // by special "Other" category (5 original rendered groups + one special Other group = 6)
         assert.strictEqual(numberHeadings, 6)
 
-        await checkMenus(driver)
+        await checkOptionsMenu(driver)
+        await checkFilterMenu(driver, false)
     })
 
     it('renders capture group insight card with proper options context', async () => {
@@ -188,7 +190,8 @@ describe('Code insights [Dashboard card]', () => {
         assert.strictEqual(numberOfLines, 20)
         assert.strictEqual(numberOfPointLinks, 189)
 
-        await checkMenus(driver)
+        await checkOptionsMenu(driver)
+        await checkFilterMenu(driver, true)
     })
 
     it('renders search insight card with proper options context', async () => {
@@ -234,7 +237,8 @@ describe('Code insights [Dashboard card]', () => {
         assert.strictEqual(numberOfLines, 2)
         assert.strictEqual(numberOfPointLinks, 27)
 
-        await checkMenus(driver)
+        await checkOptionsMenu(driver, true)
+        await checkFilterMenu(driver, true)
     })
 
     it('renders compute insight card with proper options context', async () => {
@@ -299,19 +303,11 @@ describe('Code insights [Dashboard card]', () => {
         // Visx also renders a rectangle for the chart background. 1 series + 1 background = 2 rectangles
         assert.strictEqual(numberOfBars, 2)
 
-        await checkMenus(driver)
+        await checkOptionsMenu(driver)
+        await checkFilterMenu(driver, true)
     })
 })
-async function checkMenus(driver: Driver) {
-    await driver.page.click('[aria-label="Filters"]')
-    const filterPanel = await driver.page.$('[aria-label="Drill-down filters panel"]')
-
-    // Should open filter panel on filter panel icon click
-    assert.strictEqual(filterPanel !== null, true)
-
-    // // Toggle insight filters (close filters panel)
-    await driver.page.click('[aria-label="Filters"]')
-
+async function checkOptionsMenu(driver: Driver, shouldHaveYAxis = false): Promise<void> {
     await driver.page.click('[aria-label="Insight options"]')
 
     const menuOptions = await driver.page.$$eval('[role="dialog"][aria-modal="true"] [role="menuitem"]', elements =>
@@ -320,4 +316,30 @@ async function checkMenus(driver: Driver) {
 
     // Check that Line chart menu options
     assert.deepStrictEqual(menuOptions, ['Edit', 'Get shareable link', 'Remove from this dashboard', 'Delete'])
+
+    if (shouldHaveYAxis) {
+        const startYAxisAt0 = await driver.page.$eval(
+            '[role="dialog"][aria-modal="true"] [role="menuitemcheckbox"]',
+            element => element.textContent
+        )
+
+        assert.strictEqual(startYAxisAt0, 'Start Y Axis at 0')
+    }
+}
+async function checkFilterMenu(driver: Driver, shouldHaveFilterButton = true): Promise<void> {
+    if (shouldHaveFilterButton) {
+        await driver.page.click('[aria-label="Filters"]')
+        const filterPanel = await driver.page.$('[aria-label="Drill-down filters panel"]')
+
+        // Should open filter panel on filter panel icon click
+        assert.strictEqual(filterPanel !== null, true)
+
+        // // Toggle insight filters (close filters panel)
+        await driver.page.click('[aria-label="Filters"]')
+    } else {
+        const filtersButton = await driver.page.$('[aria-label="Active filters"], [aria-label="Filters"]')
+
+        // Lang's stats insight doesn't support filters functionality, so we shouldn't have any filter UI
+        assert.strictEqual(filtersButton, null)
+    }
 }
