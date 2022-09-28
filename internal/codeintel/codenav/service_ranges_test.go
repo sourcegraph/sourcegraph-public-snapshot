@@ -18,7 +18,7 @@ import (
 
 const rangesDiff = `
 diff --git a/changed.go b/changed.go
-index deadbeef..deadbeef1 100644
+index deadbeef1..deadbeef2 100644
 --- a/changed.go
 +++ b/changed.go
 @@ -12,7 +12,7 @@ const imageProcWorkers = 1
@@ -58,10 +58,10 @@ func TestRanges(t *testing.T) {
 	mockRequestState.SetLocalCommitCache(mockGitserverClient)
 	mockRequestState.SetLocalGitTreeTranslator(mockGitServer, &sgtypes.Repo{}, mockCommit, mockPath, 50)
 	uploads := []types.Dump{
-		{ID: 50, Commit: "deadbeef", Root: "sub1/", RepositoryID: 42},
-		{ID: 51, Commit: "deadbeef", Root: "sub2/", RepositoryID: 42},
-		{ID: 52, Commit: "deadbeef1", Root: "sub3/", RepositoryID: 42},
-		{ID: 53, Commit: "deadbeef", Root: "sub4/", RepositoryID: 42},
+		{ID: 50, Commit: "deadbeef1", Root: "sub1/", RepositoryID: 42},
+		{ID: 51, Commit: "deadbeef1", Root: "sub2/", RepositoryID: 42},
+		{ID: 52, Commit: "deadbeef2", Root: "sub3/", RepositoryID: 42},
+		{ID: 53, Commit: "deadbeef1", Root: "sub4/", RepositoryID: 42},
 	}
 	mockRequestState.SetUploadsDataLoader(uploads)
 
