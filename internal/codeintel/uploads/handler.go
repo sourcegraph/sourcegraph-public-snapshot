@@ -15,13 +15,11 @@ import (
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -37,6 +35,7 @@ import (
 
 func (s *Service) NewHandler(
 	dbStore store.Store,
+	repoStore RepoStore,
 	workerStore dbworkerstore.Store,
 	lsifStore lsifstore.LsifStore,
 	uploadStore uploadstore.Store,
@@ -68,6 +67,7 @@ func (s *Service) NewHandler(
 
 	return &handler{
 		dbStore:           dbStore,
+		repoStore:         repoStore,
 		workerStore:       workerStore,
 		lsifStore:         lsifStore,
 		uploadStore:       uploadStore,
@@ -82,6 +82,7 @@ func (s *Service) NewHandler(
 
 type handler struct {
 	dbStore         store.Store
+	repoStore       RepoStore
 	workerStore     dbworkerstore.Store
 	lsifStore       lsifstore.LsifStore
 	uploadStore     uploadstore.Store
@@ -169,13 +170,13 @@ func (h *handler) getUploadSize(field *int64) int64 {
 // handle converts a raw upload into a dump within the given transaction context. Returns true if the
 // upload record was requeued and false otherwise.
 func (h *handler) handle(ctx context.Context, logger log.Logger, upload codeinteltypes.Upload, trace observation.TraceLogger) (requeued bool, err error) {
-	db := database.NewDBWith(logger, h.workerStore)
-	repo, err := backend.NewRepos(logger, db).Get(ctx, api.RepoID(upload.RepositoryID))
+
+	repo, err := h.repoStore.Get(ctx, api.RepoID(upload.RepositoryID))
 	if err != nil {
 		return false, errors.Wrap(err, "Repos.Get")
 	}
 
-	if requeued, err := requeueIfCloningOrCommitUnknown(ctx, logger, db, h.workerStore, upload, repo); err != nil || requeued {
+	if requeued, err := requeueIfCloningOrCommitUnknown(ctx, logger, h.repoStore, h.workerStore, upload, repo); err != nil || requeued {
 		return requeued, err
 	}
 
@@ -305,8 +306,8 @@ const requeueDelay = time.Minute
 // cloning or if the commit does not exist, then the upload will be requeued and this function returns a true
 // valued flag. Otherwise, the repo does not exist or there is an unexpected infrastructure error, which we'll
 // fail on.
-func requeueIfCloningOrCommitUnknown(ctx context.Context, logger log.Logger, db database.DB, workerStore dbworkerstore.Store, upload codeinteltypes.Upload, repo *types.Repo) (requeued bool, _ error) {
-	_, err := backend.NewRepos(logger, db).ResolveRev(ctx, repo, upload.Commit)
+func requeueIfCloningOrCommitUnknown(ctx context.Context, logger log.Logger, repoStore RepoStore, workerStore dbworkerstore.Store, upload codeinteltypes.Upload, repo *types.Repo) (requeued bool, _ error) {
+	_, err := repoStore.ResolveRev(ctx, repo, upload.Commit)
 	if err == nil {
 		// commit is resolvable
 		return false, nil

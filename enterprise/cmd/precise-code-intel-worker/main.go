@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -125,6 +126,7 @@ func main() {
 	rootContext := actor.WithInternalActor(context.Background())
 	handler := uploadsSvc.NewHandler(
 		nil, // TODO - &worker.DBStoreShim{Store: dbStore},
+		backend.NewRepos(logger, db),
 		workerStore,
 		nil, // TODO - &worker.LSIFStoreShim{Store: lsifstore.NewStore(codeIntelDB, conf.Get(), observationContext)},
 		uploadStore,

@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type Locker interface {
@@ -25,4 +26,9 @@ type GitserverClient interface {
 	CommitDate(ctx context.Context, repositoryID int, commit string) (string, time.Time, bool, error)
 	ResolveRevision(ctx context.Context, repositoryID int, versionString string) (api.CommitID, error)
 	DefaultBranchContains(ctx context.Context, repositoryID int, commit string) (bool, error)
+}
+
+type RepoStore interface {
+	Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err error)
+	ResolveRev(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error)
 }
