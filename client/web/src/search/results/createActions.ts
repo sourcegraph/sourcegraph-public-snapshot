@@ -37,7 +37,7 @@ export function getSearchContextCreateAction(
     searchParameters.set('q', sanitizedQuery)
     const url = `/contexts/new?${searchParameters.toString()}`
 
-    return { url, icon: mdiMagnify, label: 'Create Context', tooltip: 'Create a search context based on this query' }
+    return { url, icon: mdiMagnify, label: 'Create context', tooltip: 'Create a search context based on this query' }
 }
 
 export function getInsightsCreateAction(
@@ -57,7 +57,7 @@ export function getInsightsCreateAction(
     return {
         url,
         icon: CodeInsightsIcon,
-        label: 'Create Insight',
+        label: 'Create insight',
         tooltip: 'Create Insight based on this search query',
     }
 }
@@ -77,7 +77,7 @@ export function getCodeMonitoringCreateAction(
     return {
         url,
         icon: CodeMonitoringLogo,
-        label: 'Monitor',
+        label: 'monitor',
         tooltip: 'Create a code monitor based on this query',
     }
 }
@@ -98,7 +98,7 @@ export function getBatchChangeCreateAction(
     return {
         url,
         icon: BatchChangesIcon,
-        label: 'Create Batch Change',
+        label: 'Create batch change',
         tooltip: 'Create a batch change based on this query',
         eventToLog: 'search_result_page:create_batch_change:clicked',
     }

@@ -10,10 +10,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	codeintelgitserver "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
-	uploadsShared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
@@ -27,13 +27,13 @@ func TestDefinitions(t *testing.T) {
 	mockGitServer := codeintelgitserver.New(database.NewMockDB(), mockDBStore, &observation.TestContext)
 
 	// Init service
-	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, nil, &observation.TestContext)
+	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, &observation.TestContext)
 
 	// Set up request state
 	mockRequestState := RequestState{}
 	mockRequestState.SetLocalCommitCache(mockGitserverClient)
-	mockRequestState.SetLocalGitTreeTranslator(mockGitServer, &types.Repo{}, mockCommit, mockPath, 50)
-	uploads := []shared.Dump{
+	mockRequestState.SetLocalGitTreeTranslator(mockGitServer, &sgtypes.Repo{}, mockCommit, mockPath, 50)
+	uploads := []types.Dump{
 		{ID: 50, Commit: mockCommit, Root: "sub1/"},
 		{ID: 51, Commit: mockCommit, Root: "sub2/"},
 		{ID: 52, Commit: mockCommit, Root: "sub3/"},
@@ -61,7 +61,7 @@ func TestDefinitions(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error querying definitions: %s", err)
 	}
-	expectedLocations := []shared.UploadLocation{
+	expectedLocations := []types.UploadLocation{
 		{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: mockCommit, TargetRange: testRange1},
 		{Dump: uploads[1], Path: "sub2/b.go", TargetCommit: mockCommit, TargetRange: testRange2},
 		{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: mockCommit, TargetRange: testRange3},
@@ -84,13 +84,13 @@ func TestDefinitionsWithSubRepoPermissions(t *testing.T) {
 	mockGitServer := codeintelgitserver.New(database.NewMockDB(), mockDBStore, &observation.TestContext)
 
 	// Init service
-	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, nil, &observation.TestContext)
+	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, &observation.TestContext)
 
 	// Set up request state
 	mockRequestState := RequestState{}
 	mockRequestState.SetLocalCommitCache(mockGitserverClient)
-	mockRequestState.SetLocalGitTreeTranslator(mockGitServer, &types.Repo{}, mockCommit, mockPath, 50)
-	uploads := []shared.Dump{
+	mockRequestState.SetLocalGitTreeTranslator(mockGitServer, &sgtypes.Repo{}, mockCommit, mockPath, 50)
+	uploads := []types.Dump{
 		{ID: 50, Commit: mockCommit, Root: "sub1/"},
 		{ID: 51, Commit: mockCommit, Root: "sub2/"},
 		{ID: 52, Commit: mockCommit, Root: "sub3/"},
@@ -133,7 +133,7 @@ func TestDefinitionsWithSubRepoPermissions(t *testing.T) {
 		t.Fatalf("unexpected error querying definitions: %s", err)
 	}
 
-	expectedLocations := []shared.UploadLocation{
+	expectedLocations := []types.UploadLocation{
 		{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange1},
 		{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange3},
 	}
@@ -152,17 +152,17 @@ func TestDefinitionsRemote(t *testing.T) {
 	mockGitServer := codeintelgitserver.New(database.NewMockDB(), mockDBStore, &observation.TestContext)
 
 	// Init service
-	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, nil, &observation.TestContext)
+	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, &observation.TestContext)
 
 	// Set up request state
 	mockRequestState := RequestState{}
 	mockRequestState.SetLocalCommitCache(mockGitserverClient)
-	err := mockRequestState.SetLocalGitTreeTranslator(mockGitServer, &types.Repo{ID: 42}, mockCommit, mockPath, 50)
+	err := mockRequestState.SetLocalGitTreeTranslator(mockGitServer, &sgtypes.Repo{ID: 42}, mockCommit, mockPath, 50)
 	if err != nil {
 		t.Fatalf("unexpected error setting local git tree translator: %s", err)
 	}
 	mockRequestState.GitTreeTranslator = mockedGitTreeTranslator()
-	uploads := []shared.Dump{
+	uploads := []types.Dump{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
 		{ID: 52, Commit: "deadbeef", Root: "sub3/"},
@@ -170,7 +170,7 @@ func TestDefinitionsRemote(t *testing.T) {
 	}
 	mockRequestState.SetUploadsDataLoader(uploads)
 
-	dumps := []uploadsShared.Dump{
+	dumps := []types.Dump{
 		{ID: 150, Commit: "deadbeef1", Root: "sub1/"},
 		{ID: 151, Commit: "deadbeef2", Root: "sub2/"},
 		{ID: 152, Commit: "deadbeef3", Root: "sub3/"},
@@ -224,15 +224,15 @@ func TestDefinitionsRemote(t *testing.T) {
 		t.Fatalf("unexpected error querying definitions: %s", err)
 	}
 
-	xLocations := []shared.UploadLocation{
+	xLocations := []types.UploadLocation{
 		{Dump: remoteUploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef2", TargetRange: testRange1},
 		{Dump: remoteUploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef2", TargetRange: testRange2},
 		{Dump: remoteUploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef2", TargetRange: testRange3},
 		{Dump: remoteUploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef2", TargetRange: testRange4},
 		{Dump: remoteUploads[1], Path: "sub2/c.go", TargetCommit: "deadbeef2", TargetRange: testRange5},
 	}
-	expectedLocations := uploadLocationsToAdjustedLocations(xLocations)
-	if diff := cmp.Diff(expectedLocations, adjustedLocations); diff != "" {
+
+	if diff := cmp.Diff(xLocations, adjustedLocations); diff != "" {
 		t.Errorf("unexpected locations (-want +got):\n%s", diff)
 	}
 
@@ -275,13 +275,13 @@ func TestDefinitionsRemoteWithSubRepoPermissions(t *testing.T) {
 	mockGitServer := codeintelgitserver.New(database.NewMockDB(), mockDBStore, &observation.TestContext)
 
 	// Init service
-	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, nil, &observation.TestContext)
+	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, &observation.TestContext)
 
 	// Set up request state
 	mockRequestState := RequestState{}
 	mockRequestState.SetLocalCommitCache(mockGitserverClient)
-	mockRequestState.SetLocalGitTreeTranslator(mockGitServer, &types.Repo{ID: 42}, mockCommit, mockPath, 50)
-	uploads := []shared.Dump{
+	mockRequestState.SetLocalGitTreeTranslator(mockGitServer, &sgtypes.Repo{ID: 42}, mockCommit, mockPath, 50)
+	uploads := []types.Dump{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
 		{ID: 52, Commit: "deadbeef", Root: "sub3/"},
@@ -303,7 +303,7 @@ func TestDefinitionsRemoteWithSubRepoPermissions(t *testing.T) {
 	})
 	mockRequestState.SetAuthChecker(checker)
 
-	dumps := []uploadsShared.Dump{
+	dumps := []types.Dump{
 		{ID: 150, Commit: "deadbeef1", Root: "sub1/"},
 		{ID: 151, Commit: "deadbeef2", Root: "sub2/"},
 		{ID: 152, Commit: "deadbeef3", Root: "sub3/"},
@@ -357,10 +357,10 @@ func TestDefinitionsRemoteWithSubRepoPermissions(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error querying definitions: %s", err)
 	}
-	remoteUploads := uploadDumpToCodeNavDump(dumps)
-	expectedLocations := []shared.UploadLocation{
-		{Dump: remoteUploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef2", TargetRange: testRange2},
-		{Dump: remoteUploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef2", TargetRange: testRange4},
+
+	expectedLocations := []types.UploadLocation{
+		{Dump: dumps[1], Path: "sub2/b.go", TargetCommit: "deadbeef2", TargetRange: testRange2},
+		{Dump: dumps[1], Path: "sub2/b.go", TargetCommit: "deadbeef2", TargetRange: testRange4},
 	}
 	if diff := cmp.Diff(expectedLocations, adjustedLocations); diff != "" {
 		t.Errorf("unexpected locations (-want +got):\n%s", diff)
@@ -400,84 +400,12 @@ func mockedGitTreeTranslator() GitTreeTranslator {
 	mockPositionAdjuster.GetTargetCommitPathFromSourcePathFunc.SetDefaultHook(func(ctx context.Context, commit string, path string, _ bool) (string, bool, error) {
 		return commit, true, nil
 	})
-	mockPositionAdjuster.GetTargetCommitPositionFromSourcePositionFunc.SetDefaultHook(func(ctx context.Context, commit string, pos shared.Position, _ bool) (string, shared.Position, bool, error) {
+	mockPositionAdjuster.GetTargetCommitPositionFromSourcePositionFunc.SetDefaultHook(func(ctx context.Context, commit string, pos types.Position, _ bool) (string, types.Position, bool, error) {
 		return commit, pos, true, nil
 	})
-	mockPositionAdjuster.GetTargetCommitRangeFromSourceRangeFunc.SetDefaultHook(func(ctx context.Context, commit string, path string, rx shared.Range, _ bool) (string, shared.Range, bool, error) {
+	mockPositionAdjuster.GetTargetCommitRangeFromSourceRangeFunc.SetDefaultHook(func(ctx context.Context, commit string, path string, rx types.Range, _ bool) (string, types.Range, bool, error) {
 		return commit, rx, true, nil
 	})
 
 	return mockPositionAdjuster
-}
-
-func uploadLocationsToAdjustedLocations(location []shared.UploadLocation) []shared.UploadLocation {
-	uploadLocation := make([]shared.UploadLocation, 0, len(location))
-	for _, loc := range location {
-		dump := shared.Dump{
-			ID:                loc.Dump.ID,
-			Commit:            loc.Dump.Commit,
-			Root:              loc.Dump.Root,
-			VisibleAtTip:      loc.Dump.VisibleAtTip,
-			UploadedAt:        loc.Dump.UploadedAt,
-			State:             loc.Dump.State,
-			FailureMessage:    loc.Dump.FailureMessage,
-			StartedAt:         loc.Dump.StartedAt,
-			FinishedAt:        loc.Dump.FinishedAt,
-			ProcessAfter:      loc.Dump.ProcessAfter,
-			NumResets:         loc.Dump.NumResets,
-			NumFailures:       loc.Dump.NumFailures,
-			RepositoryID:      loc.Dump.RepositoryID,
-			RepositoryName:    loc.Dump.RepositoryName,
-			Indexer:           loc.Dump.Indexer,
-			IndexerVersion:    loc.Dump.IndexerVersion,
-			AssociatedIndexID: loc.Dump.AssociatedIndexID,
-		}
-
-		targetRange := shared.Range{
-			Start: shared.Position{
-				Line:      loc.TargetRange.Start.Line,
-				Character: loc.TargetRange.Start.Character,
-			},
-			End: shared.Position{
-				Line:      loc.TargetRange.End.Line,
-				Character: loc.TargetRange.End.Character,
-			},
-		}
-
-		uploadLocation = append(uploadLocation, shared.UploadLocation{
-			Dump:         dump,
-			Path:         loc.Path,
-			TargetCommit: loc.TargetCommit,
-			TargetRange:  targetRange,
-		})
-	}
-
-	return uploadLocation
-}
-
-func uploadDumpToCodeNavDump(storeDumps []uploadsShared.Dump) []shared.Dump {
-	dumps := make([]shared.Dump, 0, len(storeDumps))
-	for _, d := range storeDumps {
-		dumps = append(dumps, shared.Dump{
-			ID:                d.ID,
-			Commit:            d.Commit,
-			Root:              d.Root,
-			VisibleAtTip:      d.VisibleAtTip,
-			UploadedAt:        d.UploadedAt,
-			State:             d.State,
-			FailureMessage:    d.FailureMessage,
-			StartedAt:         d.StartedAt,
-			FinishedAt:        d.FinishedAt,
-			ProcessAfter:      d.ProcessAfter,
-			NumResets:         d.NumResets,
-			NumFailures:       d.NumFailures,
-			RepositoryID:      d.RepositoryID,
-			RepositoryName:    d.RepositoryName,
-			Indexer:           d.Indexer,
-			IndexerVersion:    d.IndexerVersion,
-			AssociatedIndexID: d.AssociatedIndexID,
-		})
-	}
-
-	return dumps
 }

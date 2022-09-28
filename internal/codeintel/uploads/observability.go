@@ -69,6 +69,9 @@ type operations struct {
 	// Audit Logs
 	getAuditLogsForUpload *observation.Operation
 	deleteOldAuditLogs    *observation.Operation
+
+	// Tags
+	getListTags *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -148,5 +151,8 @@ func newOperations(observationContext *observation.Context) *operations {
 		// Audit Logs
 		getAuditLogsForUpload: op("GetAuditLogsForUpload"),
 		deleteOldAuditLogs:    op("DeleteOldAuditLogs"),
+
+		// Tags
+		getListTags: op("GetListTags"),
 	}
 }

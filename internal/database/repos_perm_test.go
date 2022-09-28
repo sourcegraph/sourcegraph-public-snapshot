@@ -495,7 +495,7 @@ func createGitHubExternalService(t *testing.T, db DB, userID int32) *types.Exter
 	svc := &types.ExternalService{
 		Kind:            extsvc.KindGitHub,
 		DisplayName:     "Github - Test",
-		Config:          extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "authorization": {}}`),
+		Config:          extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "authorization": {}, "token": "deadbeef", "repos": ["test/test"]}`),
 		NamespaceUserID: userID,
 		CreatedAt:       now,
 		UpdatedAt:       now,

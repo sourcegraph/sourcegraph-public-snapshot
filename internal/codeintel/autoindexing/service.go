@@ -2,17 +2,24 @@ package autoindexing
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
+	"github.com/grafana/regexp"
 	otlog "github.com/opentracing/opentracing-go/log"
+	traceLog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -27,26 +34,41 @@ type service interface {
 	DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (indexesDeleted int, err error)
 
 	// Indexes
-	GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (_ []shared.Index, _ int, err error)
-	GetIndexByID(ctx context.Context, id int) (_ shared.Index, _ bool, err error)
-	GetIndexesByIDs(ctx context.Context, ids ...int) (_ []shared.Index, err error)
+	GetIndexes(ctx context.Context, opts types.GetIndexesOptions) (_ []types.Index, _ int, err error)
+	GetIndexByID(ctx context.Context, id int) (_ types.Index, _ bool, err error)
+	GetIndexesByIDs(ctx context.Context, ids ...int) (_ []types.Index, err error)
 	GetRecentIndexesSummary(ctx context.Context, repositoryID int) (summaries []shared.IndexesWithRepositoryNamespace, err error)
 	GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error)
 	DeleteIndexByID(ctx context.Context, id int) (_ bool, err error)
 	DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error)
-	QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force, bypassLimit bool) (_ []shared.Index, err error)
+	QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force, bypassLimit bool) (_ []types.Index, err error)
 	QueueIndexesForPackage(ctx context.Context, pkg precise.Package) (err error)
 
 	// Index configurations
 	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (_ shared.IndexConfiguration, _ bool, err error)
 	InferIndexConfiguration(ctx context.Context, repositoryID int, commit string, bypassLimit bool) (_ *config.IndexConfiguration, hints []config.IndexJobHint, err error)
 	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, data []byte) (err error)
+
+	// Tags
+	GetListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) (_ []*gitdomain.Tag, err error)
+
+	// Utilities
+	GetUnsafeDB() database.DB
+	ListFiles(ctx context.Context, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error)
+
+	// Symbols client
+	GetSupportedByCtags(ctx context.Context, filepath string, repoName api.RepoName) (bool, string, error)
+
+	// Language Support
+	GetLanguagesRequestedBy(ctx context.Context, userID int) (_ []string, err error)
+	SetRequestLanguageSupport(ctx context.Context, userID int, language string) (err error)
 }
 
 type Service struct {
 	store            store.Store
 	uploadSvc        shared.UploadService
 	gitserverClient  shared.GitserverClient
+	symbolsClient    *symbols.Client
 	repoUpdater      shared.RepoUpdaterClient
 	inferenceService shared.InferenceService
 	operations       *operations
@@ -57,6 +79,7 @@ func newService(
 	store store.Store,
 	uploadSvc shared.UploadService,
 	gitserver shared.GitserverClient,
+	symbolsClient *symbols.Client,
 	repoUpdater shared.RepoUpdaterClient,
 	inferenceSvc shared.InferenceService,
 	observationContext *observation.Context,
@@ -65,6 +88,7 @@ func newService(
 		store:            store,
 		uploadSvc:        uploadSvc,
 		gitserverClient:  gitserver,
+		symbolsClient:    symbolsClient,
 		repoUpdater:      repoUpdater,
 		inferenceService: inferenceSvc,
 		operations:       newOperations(observationContext),
@@ -72,21 +96,21 @@ func newService(
 	}
 }
 
-func (s *Service) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (_ []shared.Index, _ int, err error) {
+func (s *Service) GetIndexes(ctx context.Context, opts types.GetIndexesOptions) (_ []types.Index, _ int, err error) {
 	ctx, _, endObservation := s.operations.getIndexes.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	return s.store.GetIndexes(ctx, opts)
 }
 
-func (s *Service) GetIndexByID(ctx context.Context, id int) (_ shared.Index, _ bool, err error) {
+func (s *Service) GetIndexByID(ctx context.Context, id int) (_ types.Index, _ bool, err error) {
 	ctx, _, endObservation := s.operations.getIndexByID.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	return s.store.GetIndexByID(ctx, id)
 }
 
-func (s *Service) GetIndexesByIDs(ctx context.Context, ids ...int) (_ []shared.Index, err error) {
+func (s *Service) GetIndexesByIDs(ctx context.Context, ids ...int) (_ []types.Index, err error) {
 	ctx, _, endObservation := s.operations.getIndexesByIDs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -203,6 +227,58 @@ func (s *Service) UpdateIndexConfigurationByRepositoryID(ctx context.Context, re
 	return s.store.UpdateIndexConfigurationByRepositoryID(ctx, repositoryID, data)
 }
 
+func (s *Service) GetUnsafeDB() database.DB {
+	return s.store.GetUnsafeDB()
+}
+
+func (s *Service) ListFiles(ctx context.Context, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error) {
+	return s.gitserverClient.ListFiles(ctx, repositoryID, commit, pattern)
+}
+
+func (s *Service) GetSupportedByCtags(ctx context.Context, filepath string, repoName api.RepoName) (bool, string, error) {
+	mappings, err := s.symbolsClient.ListLanguageMappings(ctx, repoName)
+	if err != nil {
+		return false, "", err
+	}
+
+	for language, globs := range mappings {
+		for _, glob := range globs {
+			if glob.Match(filepath) {
+				return true, language, nil
+			}
+		}
+	}
+
+	return false, "", nil
+}
+
+func (s *Service) SetRequestLanguageSupport(ctx context.Context, userID int, language string) (err error) {
+	ctx, _, endObservation := s.operations.setRequestLanguageSupport.With(ctx, &err, observation.Args{
+		LogFields: []traceLog.Field{traceLog.Int("userID", userID), traceLog.String("language", language)},
+	})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.SetRequestLanguageSupport(ctx, userID, language)
+}
+
+func (s *Service) GetLanguagesRequestedBy(ctx context.Context, userID int) (_ []string, err error) {
+	ctx, _, endObservation := s.operations.getLanguagesRequestedBy.With(ctx, &err, observation.Args{
+		LogFields: []traceLog.Field{traceLog.Int("userID", userID)},
+	})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.GetLanguagesRequestedBy(ctx, userID)
+}
+
+func (s *Service) GetListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) (_ []*gitdomain.Tag, err error) {
+	ctx, _, endObservation := s.operations.getListTags.With(ctx, &err, observation.Args{
+		LogFields: []traceLog.Field{traceLog.String("repo", string(repo)), traceLog.String("commitObjs", fmt.Sprintf("%v", commitObjs))},
+	})
+	defer endObservation(1, observation.Args{})
+
+	return s.gitserverClient.ListTags(ctx, repo, commitObjs...)
+}
+
 func (s *Service) QueueRepoRev(ctx context.Context, repositoryID int, rev string) (err error) {
 	ctx, _, endObservation := s.operations.queueRepoRev.With(ctx, &err, observation.Args{
 		LogFields: []otlog.Field{
@@ -256,7 +332,7 @@ func (s *Service) ProcessRepoRevs(ctx context.Context, batchSize int) (err error
 // If the force flag is false, then the presence of an upload or index record for this given repository and commit
 // will cause this method to no-op. Note that this is NOT a guarantee that there will never be any duplicate records
 // when the flag is false.
-func (s *Service) QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force, bypassLimit bool) (_ []shared.Index, err error) {
+func (s *Service) QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force, bypassLimit bool) (_ []types.Index, err error) {
 	ctx, trace, endObservation := s.operations.queueIndex.With(ctx, &err, observation.Args{
 		LogFields: []otlog.Field{
 			otlog.Int("repositoryID", repositoryID),
@@ -321,7 +397,7 @@ func (s *Service) QueueIndexesForPackage(ctx context.Context, pkg precise.Packag
 // If the force flag is false, then the presence of an upload or index record for this given repository and commit
 // will cause this method to no-op. Note that this is NOT a guarantee that there will never be any duplicate records
 // when the flag is false.
-func (s *Service) queueIndexForRepositoryAndCommit(ctx context.Context, repositoryID int, commit, configuration string, force, bypassLimit bool, trace observation.TraceLogger) ([]shared.Index, error) {
+func (s *Service) queueIndexForRepositoryAndCommit(ctx context.Context, repositoryID int, commit, configuration string, force, bypassLimit bool, trace observation.TraceLogger) ([]types.Index, error) {
 	if !force {
 		isQueued, err := s.store.IsQueued(ctx, repositoryID, commit)
 		if err != nil {
@@ -380,16 +456,16 @@ func (s *Service) inferIndexJobHintsFromRepositoryStructure(ctx context.Context,
 	return indexes, nil
 }
 
-type configurationFactoryFunc func(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]shared.Index, bool, error)
+type configurationFactoryFunc func(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]types.Index, bool, error)
 
 // getIndexRecords determines the set of index records that should be enqueued for the given commit.
 // For each repository, we look for index configuration in the following order:
 //
-//   - supplied explicitly via parameter
-//   - in the database
-//   - committed to `sourcegraph.yaml` in the repository
-//   - inferred from the repository structure
-func (s *Service) getIndexRecords(ctx context.Context, repositoryID int, commit, configuration string, bypassLimit bool) ([]shared.Index, error) {
+//  - supplied explicitly via parameter
+//  - in the database
+//  - committed to `sourcegraph.yaml` in the repository
+//  - inferred from the repository structure
+func (s *Service) getIndexRecords(ctx context.Context, repositoryID int, commit, configuration string, bypassLimit bool) ([]types.Index, error) {
 	fns := []configurationFactoryFunc{
 		makeExplicitConfigurationFactory(configuration),
 		s.getIndexRecordsFromConfigurationInDatabase,
@@ -413,7 +489,7 @@ func (s *Service) getIndexRecords(ctx context.Context, repositoryID int, commit,
 // flag is returned.
 func makeExplicitConfigurationFactory(configuration string) configurationFactoryFunc {
 	logger := log.Scoped("explicitConfigurationFactory", "")
-	return func(ctx context.Context, repositoryID int, commit string, _ bool) ([]shared.Index, bool, error) {
+	return func(ctx context.Context, repositoryID int, commit string, _ bool) ([]types.Index, bool, error) {
 		if configuration == "" {
 			return nil, false, nil
 		}
@@ -433,7 +509,7 @@ func makeExplicitConfigurationFactory(configuration string) configurationFactory
 
 // getIndexRecordsFromConfigurationInDatabase returns a set of index jobs configured via the UI for
 // the given repository. If no jobs are configured via the UI then a false valued flag is returned.
-func (s *Service) getIndexRecordsFromConfigurationInDatabase(ctx context.Context, repositoryID int, commit string, _ bool) ([]shared.Index, bool, error) {
+func (s *Service) getIndexRecordsFromConfigurationInDatabase(ctx context.Context, repositoryID int, commit string, _ bool) ([]types.Index, bool, error) {
 	indexConfigurationRecord, ok, err := s.store.GetIndexConfigurationByRepositoryID(ctx, repositoryID)
 	if err != nil {
 		return nil, false, errors.Wrap(err, "dbstore.GetIndexConfigurationByRepositoryID")
@@ -457,7 +533,7 @@ func (s *Service) getIndexRecordsFromConfigurationInDatabase(ctx context.Context
 // getIndexRecordsFromConfigurationInRepository returns a set of index jobs configured via a committed
 // configuration file at the given commit. If no jobs are configured within the repository then a false
 // valued flag is returned.
-func (s *Service) getIndexRecordsFromConfigurationInRepository(ctx context.Context, repositoryID int, commit string, _ bool) ([]shared.Index, bool, error) {
+func (s *Service) getIndexRecordsFromConfigurationInRepository(ctx context.Context, repositoryID int, commit string, _ bool) ([]types.Index, bool, error) {
 	isConfigured, err := s.gitserverClient.FileExists(ctx, repositoryID, commit, "sourcegraph.yaml")
 	if err != nil {
 		return nil, false, errors.Wrap(err, "gitserver.FileExists")
@@ -486,7 +562,7 @@ func (s *Service) getIndexRecordsFromConfigurationInRepository(ctx context.Conte
 // inferIndexRecordsFromRepositoryStructure looks at the repository contents at the given commit and
 // determines a set of index jobs that are likely to succeed. If no jobs could be inferred then a
 // false valued flag is returned.
-func (s *Service) inferIndexRecordsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]shared.Index, bool, error) {
+func (s *Service) inferIndexRecordsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]types.Index, bool, error) {
 	indexJobs, err := s.inferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, bypassLimit)
 	if err != nil || len(indexJobs) == 0 {
 		return nil, false, err
@@ -497,25 +573,25 @@ func (s *Service) inferIndexRecordsFromRepositoryStructure(ctx context.Context, 
 
 // convertIndexConfiguration converts an index configuration object into a set of index records to be
 // inserted into the database.
-func convertIndexConfiguration(repositoryID int, commit string, indexConfiguration config.IndexConfiguration) (indexes []shared.Index) {
+func convertIndexConfiguration(repositoryID int, commit string, indexConfiguration config.IndexConfiguration) (indexes []types.Index) {
 	for _, indexJob := range indexConfiguration.IndexJobs {
-		var dockerSteps []shared.DockerStep
+		var dockerSteps []types.DockerStep
 		for _, dockerStep := range indexConfiguration.SharedSteps {
-			dockerSteps = append(dockerSteps, shared.DockerStep{
+			dockerSteps = append(dockerSteps, types.DockerStep{
 				Root:     dockerStep.Root,
 				Image:    dockerStep.Image,
 				Commands: dockerStep.Commands,
 			})
 		}
 		for _, dockerStep := range indexJob.Steps {
-			dockerSteps = append(dockerSteps, shared.DockerStep{
+			dockerSteps = append(dockerSteps, types.DockerStep{
 				Root:     dockerStep.Root,
 				Image:    dockerStep.Image,
 				Commands: dockerStep.Commands,
 			})
 		}
 
-		indexes = append(indexes, shared.Index{
+		indexes = append(indexes, types.Index{
 			Commit:       commit,
 			RepositoryID: repositoryID,
 			State:        "queued",
@@ -533,18 +609,18 @@ func convertIndexConfiguration(repositoryID int, commit string, indexConfigurati
 
 // convertInferredConfiguration converts a set of index jobs into a set of index records to be inserted
 // into the database.
-func convertInferredConfiguration(repositoryID int, commit string, indexJobs []config.IndexJob) (indexes []shared.Index) {
+func convertInferredConfiguration(repositoryID int, commit string, indexJobs []config.IndexJob) (indexes []types.Index) {
 	for _, indexJob := range indexJobs {
-		var dockerSteps []shared.DockerStep
+		var dockerSteps []types.DockerStep
 		for _, dockerStep := range indexJob.Steps {
-			dockerSteps = append(dockerSteps, shared.DockerStep{
+			dockerSteps = append(dockerSteps, types.DockerStep{
 				Root:     dockerStep.Root,
 				Image:    dockerStep.Image,
 				Commands: dockerStep.Commands,
 			})
 		}
 
-		indexes = append(indexes, shared.Index{
+		indexes = append(indexes, types.Index{
 			RepositoryID: repositoryID,
 			Commit:       commit,
 			State:        "queued",
