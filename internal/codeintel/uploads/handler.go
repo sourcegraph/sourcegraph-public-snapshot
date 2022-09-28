@@ -13,7 +13,6 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
@@ -21,9 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -33,54 +30,27 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (s *Service) WorkerutilStore(observationContext *observation.Context) dbworkerstore.Store {
-	// TODO - extract observability stuff
-
-	return s.store.WorkerutilStore(observationContext)
+func (s *Service) WorkerutilStore() dbworkerstore.Store {
+	return s.workerutilStore
 }
 
-func (s *Service) NewHandler(
-	repoStore RepoStore,
-	workerStore dbworkerstore.Store,
+func (s *Service) WorkerutilHandler(
 	uploadStore uploadstore.Store,
 	numProcessorRoutines int,
 	budgetMax int64,
 ) workerutil.Handler {
-	// TODO - extract observability stuff
-
-	observationContext := observation.Context{
-		Tracer: &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		HoneyDataset: &honey.Dataset{
-			Name: "codeintel-worker",
-		},
-		Registerer: prometheus.DefaultRegisterer,
-	}
-
-	op := observationContext.Operation(observation.Op{
-		Name: "codeintel.uploadHandler",
-		ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
-			return observation.EmitForTraces | observation.EmitForHoney
-		},
-	})
-
-	uploadSizeGuage := prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "src_codeintel_upload_processor_upload_size",
-		Help: "The combined size of uploads being processed at this instant by this worker.",
-	})
-	observationContext.Registerer.MustRegister(uploadSizeGuage)
-
 	return &handler{
 		dbStore:           s.store,
-		repoStore:         repoStore,
-		workerStore:       workerStore,
+		repoStore:         s.repoStore,
+		workerStore:       s.workerutilStore,
 		lsifStore:         s.lsifstore,
 		uploadStore:       uploadStore,
 		gitserverClient:   s.gitserverClient,
-		handleOp:          op,
+		handleOp:          s.operations.op,
 		budgetRemaining:   budgetMax,
 		enableBudget:      budgetMax > 0,
 		uncompressedSizes: make(map[int]uint64, numProcessorRoutines),
-		uploadSizeGuage:   uploadSizeGuage,
+		uploadSizeGuage:   s.operations.uploadSizeGuage,
 	}
 }
 

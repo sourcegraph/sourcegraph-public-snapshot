@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/opentracing/opentracing-go/log"
-
 	logger "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -17,9 +16,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	gitserverOptions "github.com/sourcegraph/sourcegraph/internal/gitserver"
-
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -84,6 +84,8 @@ type service interface {
 
 type Service struct {
 	store           store.Store
+	repoStore       RepoStore
+	workerutilStore dbworkerstore.Store
 	lsifstore       lsifstore.LsifStore
 	gitserverClient GitserverClient
 	locker          Locker
@@ -91,14 +93,19 @@ type Service struct {
 	operations      *operations
 }
 
-func newService(store store.Store, lsifstore lsifstore.LsifStore, gsc GitserverClient, locker Locker, observationCtx *observation.Context) *Service {
+func newService(store store.Store, repoStore RepoStore, lsifstore lsifstore.LsifStore, gsc GitserverClient, locker Locker, observationContext *observation.Context) *Service {
+	workerutilStore := store.WorkerutilStore(observationContext)
+	dbworker.InitPrometheusMetric(observationContext, workerutilStore, "codeintel", "uploads", nil)
+
 	return &Service{
 		store:           store,
+		repoStore:       repoStore,
+		workerutilStore: workerutilStore,
 		lsifstore:       lsifstore,
 		gitserverClient: gsc,
 		locker:          locker,
 		logger:          logger.Scoped("uploads.service", ""),
-		operations:      newOperations(observationCtx),
+		operations:      newOperations(observationContext),
 	}
 }
 

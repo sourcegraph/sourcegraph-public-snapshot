@@ -3,6 +3,8 @@ package uploads
 import (
 	"fmt"
 
+	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -72,6 +74,10 @@ type operations struct {
 
 	// Tags
 	getListTags *observation.Operation
+
+	// WTF
+	uploadSizeGuage prometheus.Gauge
+	op              *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -89,6 +95,12 @@ func newOperations(observationContext *observation.Context) *operations {
 			Metrics:           m,
 		})
 	}
+
+	uploadSizeGuage := prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "src_codeintel_upload_processor_upload_size",
+		Help: "The combined size of uploads being processed at this instant by this worker.",
+	})
+	observationContext.Registerer.MustRegister(uploadSizeGuage)
 
 	return &operations{
 		// Not used yet.
@@ -154,5 +166,14 @@ func newOperations(observationContext *observation.Context) *operations {
 
 		// Tags
 		getListTags: op("GetListTags"),
+
+		// WTF
+		uploadSizeGuage: uploadSizeGuage,
+		op: observationContext.Operation(observation.Op{
+			Name: "codeintel.uploadHandler",
+			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
+				return observation.EmitForTraces | observation.EmitForHoney
+			},
+		}),
 	}
 }
