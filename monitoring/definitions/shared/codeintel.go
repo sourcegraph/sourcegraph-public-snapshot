@@ -483,6 +483,40 @@ func (codeIntelligence) NewExecutorAPIQueueClientGroup(containerName string) mon
 	})
 }
 
+// src_apiworker_apiclient_files_total
+// src_apiworker_apiclient_files_duration_seconds_bucket
+// src_apiworker_apiclient_files_errors_total
+func (codeIntelligence) NewExecutorAPIFilesClientGroup(containerName string) monitoring.Group {
+	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+		GroupConstructorOptions: GroupConstructorOptions{
+			Namespace:       "executor",
+			DescriptionRoot: "Files API client",
+			Hidden:          true,
+
+			ObservableConstructorOptions: ObservableConstructorOptions{
+				MetricNameRoot:        "apiworker_apiclient_files",
+				JobLabel:              "sg_job",
+				MetricDescriptionRoot: "client",
+				Filters:               nil,
+				By:                    []string{"op"},
+			},
+		},
+
+		SharedObservationGroupOptions: SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+		Aggregate: &SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+	})
+}
+
 // src_codeintel_dbstore_total
 // src_codeintel_dbstore_duration_seconds_bucket
 // src_codeintel_dbstore_errors_total
