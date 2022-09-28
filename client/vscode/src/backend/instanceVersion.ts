@@ -17,7 +17,7 @@ import { requestGraphQLFromVSCode } from './requestGraphQl'
  * - regular instance version format: '3.38.2' => '3382'
  * - insider version format: '134683_2022-03-02_5188fes0101' => '999999'
  */
-export const instanceVersionNumber = (): Observable<string | undefined> =>
+export const observeInstanceVersionNumber = (): Observable<string | undefined> =>
     from(requestGraphQLFromVSCode<SiteVersionResult>(siteVersionQuery, {})).pipe(
         map(dataOrThrowErrors),
         map(data => {
@@ -42,7 +42,7 @@ export function initializeInstanceVersionNumber(
 ): EventSource {
     // Check only if a user is trying to connect to a private instance with a valid access token provided
     if (instanceURL !== 'https://sourcegraph.com' && accessToken) {
-        instanceVersionNumber()
+        observeInstanceVersionNumber()
             .toPromise()
             .then(async flattenVersion => {
                 if (flattenVersion) {

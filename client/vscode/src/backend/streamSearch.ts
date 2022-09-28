@@ -10,7 +10,7 @@ import { SearchPatternType } from '../graphql-operations'
 import { VSCEStateMachine } from '../state'
 import { focusSearchPanel } from '../webview/commands'
 
-import { instanceVersionNumber } from './instanceVersion'
+import { observeInstanceVersionNumber } from './instanceVersion'
 
 export function createStreamSearch({
     context,
@@ -30,6 +30,8 @@ export function createStreamSearch({
         },
     })
 
+    const instanceVersionNumber = observeInstanceVersionNumber()
+
     return function streamSearch(query, options) {
         previousSearchSubscription?.unsubscribe()
 
@@ -45,7 +47,7 @@ export function createStreamSearch({
         // (in case e.g. user initiates search from search sidebar when panel is hidden).
         focusSearchPanel()
 
-        previousSearchSubscription = instanceVersionNumber()
+        previousSearchSubscription = instanceVersionNumber
             .pipe(
                 map(versionNumber => {
                     let patternType = options.patternType
