@@ -184,11 +184,11 @@ func GitserverPushConfig(repo *types.Repo, au auth.Authenticator) (*protocol.Pus
 	extSvcType := repo.ExternalRepo.ServiceType
 	switch av := au.(type) {
 	case *auth.OAuthBearerTokenWithSSH:
-		if err := setOAuthTokenAuth(cloneURL, extSvcType, av.Token); err != nil {
+		if err := setOAuthTokenAuth(cloneURL, extSvcType, av.AccessToken); err != nil {
 			return nil, err
 		}
 	case *auth.OAuthBearerToken:
-		if err := setOAuthTokenAuth(cloneURL, extSvcType, av.Token); err != nil {
+		if err := setOAuthTokenAuth(cloneURL, extSvcType, av.AccessToken); err != nil {
 			return nil, err
 		}
 

@@ -1130,7 +1130,7 @@ func (s *Service) FetchUsernameForBitbucketServerToken(ctx context.Context, exte
 	defer endObservation(1, observation.Args{})
 
 	// Get a changeset source for the external service and use the given authenticator.
-	css, err := s.sourcer.ForExternalService(ctx, s.store, &auth.OAuthBearerToken{Token: token}, store.GetExternalServiceIDsOpts{
+	css, err := s.sourcer.ForExternalService(ctx, s.store, &auth.OAuthBearerToken{AccessToken: token}, store.GetExternalServiceIDsOpts{
 		ExternalServiceType: externalServiceType,
 		ExternalServiceID:   externalServiceID,
 	})

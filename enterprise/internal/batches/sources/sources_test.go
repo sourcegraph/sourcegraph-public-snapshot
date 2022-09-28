@@ -178,7 +178,7 @@ func TestLoadExternalService(t *testing.T) {
 }
 
 func TestGitserverPushConfig(t *testing.T) {
-	oauthHTTPSAuthenticator := auth.OAuthBearerToken{Token: "bearer-test"}
+	oauthHTTPSAuthenticator := auth.OAuthBearerToken{AccessToken: "bearer-test"}
 	oauthSSHAuthenticator := auth.OAuthBearerTokenWithSSH{
 		OAuthBearerToken: oauthHTTPSAuthenticator,
 		PrivateKey:       "private-key",
@@ -348,8 +348,8 @@ func TestSourcer_ForChangeset(t *testing.T) {
 		},
 	}
 
-	siteToken := &auth.OAuthBearerToken{Token: "site"}
-	userToken := &auth.OAuthBearerToken{Token: "user"}
+	siteToken := &auth.OAuthBearerToken{AccessToken: "site"}
+	userToken := &auth.OAuthBearerToken{AccessToken: "user"}
 
 	t.Run("created changesets", func(t *testing.T) {
 		bc := &btypes.BatchChange{ID: 1, LastApplierID: 3}

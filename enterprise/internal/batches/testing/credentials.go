@@ -23,7 +23,7 @@ func CreateTestSiteCredential(t *testing.T, bstore createSiteCredentialer, repo 
 	if err := bstore.CreateSiteCredential(
 		context.Background(),
 		cred,
-		&auth.OAuthBearerToken{Token: "test"},
+		&auth.OAuthBearerToken{AccessToken: "test"},
 	); err != nil {
 		t.Fatal(err)
 	}

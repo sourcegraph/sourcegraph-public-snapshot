@@ -1637,7 +1637,7 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 
 	bstore := store.New(db, &observation.TestContext, nil)
 
-	authenticator := &auth.OAuthBearerToken{Token: "SOSECRET"}
+	authenticator := &auth.OAuthBearerToken{AccessToken: "SOSECRET"}
 	userCred, err := bstore.UserCredentials().Create(ctx, database.UserCredentialScope{
 		Domain:              database.UserCredentialDomainBatches,
 		ExternalServiceType: extsvc.TypeGitHub,
@@ -2292,7 +2292,7 @@ func TestCheckBatchChangesCredential(t *testing.T) {
 
 	bstore := store.New(db, &observation.TestContext, nil)
 
-	authenticator := &auth.OAuthBearerToken{Token: "SOSECRET"}
+	authenticator := &auth.OAuthBearerToken{AccessToken: "SOSECRET"}
 	userCred, err := bstore.UserCredentials().Create(ctx, database.UserCredentialScope{
 		Domain:              database.UserCredentialDomainBatches,
 		ExternalServiceType: extsvc.TypeGitHub,

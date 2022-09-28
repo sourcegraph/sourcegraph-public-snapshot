@@ -43,9 +43,9 @@ func newAppProvider(
 	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	tokenRefresher := database.ExternalServiceTokenRefresher(db, svc.ID, nil)
+	tokenRefresher := database.ExternalServiceTokenRefresher(db, svc.ID, "")
 
-	auther, err := auth.NewOAFuthBearerTokenWithGitHubApp(appID, pkey)
+	auther, err := auth.NewOAuthBearerTokenWithGitHubApp(appID, pkey)
 	if err != nil {
 		return nil, errors.Wrap(err, "new authenticator with GitHub App")
 	}
@@ -71,7 +71,7 @@ func newAppProvider(
 				With(log.String("appID", appID), log.Int64("installationID", installationID))
 
 			return &ClientAdapter{
-				V3Client: github.NewV3Client(logger, urn, apiURL, &auth.OAuthBearerToken{Token: token}, cli, tokenRefresher),
+				V3Client: github.NewV3Client(logger, urn, apiURL, &auth.OAuthBearerToken{AccessToken: token}, cli, tokenRefresher),
 			}, nil
 		},
 		InstallationID: &installationID,
