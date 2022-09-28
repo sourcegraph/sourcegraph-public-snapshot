@@ -6602,11 +6602,10 @@ Generated query for warning alert: `max((sum by(code) (increase(src_zoekt_reques
 
 - If you are running out of memory map areas, you could resolve this by:
 
-1) Creating additional Zoekt replicas: This spreads all the shards out amongst more replicas, which
+    - Creating additional Zoekt replicas: This spreads all the shards out amongst more replicas, which
 means that each _individual_ replica will have fewer shards. This, in turn, decreases the
-amount of memory map areas that a _single_ replica replica to create (to load the shards into memory).
-
-1) Increase the virtual memory subsystem`s `max_map_count` parameter which defines the upper limit of memory areas
+amount of memory map areas that a _single_ replica can create (in order to load the shards into memory).
+    - Increase the virtual memory subsystem`s `max_map_count` parameter which defines the upper limit of memory areas
 a process can use. The exact instructions for tuning this parameter can differ depending on your environment.
 See https://kernel.org/doc/Documentation/sysctl/vm.txt for more information.
 - More help interpreting this metric is available in the [dashboards reference](./dashboards.md#zoekt-memory-map-areas-percentage-used).
