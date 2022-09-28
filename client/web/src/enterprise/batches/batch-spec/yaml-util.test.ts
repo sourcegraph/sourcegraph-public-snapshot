@@ -429,11 +429,11 @@ describe('Batch spec yaml utils', () => {
                 'context:global hello: "world" patternType:standard',
                 true
             )
-            expect(spec).toEqual(
-                'name: hello-world\n' +
-                    'on:\n' +
-                    '    - repositoriesMatchingQuery: "context:global hello: \\"world\\" patternType:standard"\n' +
-                    '# - repositoriesMatchingQuery: file:README.md\n\n'
+            expect(spec).toEqual(`name: hello-world
+on:
+    - repositoriesMatchingQuery: "context:global hello: \\"world\\" patternType:standard"
+# - repositoriesMatchingQuery: file:README.md
+`
             )
         })
     })
