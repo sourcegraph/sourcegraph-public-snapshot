@@ -21,10 +21,10 @@ func (s *Server) handleListGitolite(w http.ResponseWriter, r *http.Request) {
 var defaultGitolite = gitoliteFetcher{client: gitoliteClient{}}
 
 type gitoliteFetcher struct {
-	client iGitoliteClient
+	client gitoliteRepoLister
 }
 
-type iGitoliteClient interface {
+type gitoliteRepoLister interface {
 	ListRepos(ctx context.Context, host string) ([]*gitolite.Repo, error)
 }
 
