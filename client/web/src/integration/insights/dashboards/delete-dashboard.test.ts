@@ -4,10 +4,10 @@ import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/dri
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../../context'
-import { EMPTY_DASHBOARD, GET_DASHBOARD_INSIGHTS_EMPTY, INSIGHTS_DASHBOARDS } from '../fixtures/dashboards'
+import { GET_DASHBOARD_INSIGHTS_EMPTY, INSIGHTS_DASHBOARDS } from '../fixtures/dashboards'
 import { overrideInsightsGraphQLApi } from '../utils/override-insights-graphql-api'
 
-describe('Code insights empty dashboard', () => {
+describe('Code insights dashboard', () => {
     let driver: Driver
     let testContext: WebIntegrationTestContext
 
@@ -26,32 +26,28 @@ describe('Code insights empty dashboard', () => {
     after(() => driver?.close())
     afterEachSaveScreenshotIfFailed(() => driver.page)
 
-    it('renders empty dashboard', async () => {
+    it('can be removed through UI', async () => {
         overrideInsightsGraphQLApi({
             testContext,
             overrides: {
                 InsightsDashboards: () => INSIGHTS_DASHBOARDS,
                 GetDashboardInsights: () => GET_DASHBOARD_INSIGHTS_EMPTY,
+                DeleteDashboard: () => ({ deleteInsightsDashboard: { alwaysNil: null } }),
             },
         })
 
-        await driver.page.goto(driver.sourcegraphBaseUrl + `/insights/dashboards/${EMPTY_DASHBOARD.id}`)
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/EMPTY_DASHBOARD')
+        await driver.page.waitForSelector('[aria-label="dashboard options"]')
+        await driver.page.click('[aria-label="dashboard options"]')
 
-        const dashboardSelectButton = await driver.page.waitForSelector('[data-testid="dashboard-select-button"')
-        const addInsightsButtonCard = await driver.page.waitForSelector('[data-testid="add-insights-button-card"')
+        const deleteDashboard = await testContext.waitForGraphQLRequest(async () => {
+            const [deleteButton] = await driver.page.$x("//button[contains(., 'Delete')]")
+            await deleteButton?.click()
 
-        assert(dashboardSelectButton)
+            const [deleteConfirmButton] = await driver.page.$x("//button[contains(., 'Delete forever')]")
+            await deleteConfirmButton?.click()
+        }, 'DeleteDashboard')
 
-        const dashboardSelectButtonText: string = (await driver.page.evaluate(
-            button => button.textContent,
-            dashboardSelectButton
-        )) as string
-        const addInsightsButtonCardText: string = (await driver.page.evaluate(
-            button => button.textContent,
-            addInsightsButtonCard
-        )) as string
-
-        assert(/empty dashboard/i.test(dashboardSelectButtonText))
-        assert(/add insights/i.test(addInsightsButtonCardText))
+        assert(deleteDashboard.id, 'EMPTY_DASHBOARD')
     })
 })
