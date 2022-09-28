@@ -1,14 +1,10 @@
-ALTER TABLE IF EXISTS repo_names
-    ADD COLUMN IF NOT EXISTS repo_id INT NOT NULL DEFAULT 0;
+CREATE TABLE IF NOT EXISTS sampled_repo_names
+(
+    id      SERIAL
+        CONSTRAINT sampled_repo_names_pk PRIMARY KEY,
+    repo_id INT  NOT NULL,
+    name    TEXT NOT NULL
+);
 
-DROP INDEX IF EXISTS repo_names_name_unique_idx;
-
-CREATE UNIQUE INDEX IF NOT EXISTS repo_names_repo_id_name_unique_idx ON repo_names (repo_id, name);
-
-UPDATE repo_names rn
-SET repo_id = sub.repo_id
-FROM (SELECT sp.repo_id, rni.id AS repo_name_id
-      FROM series_points sp
-               JOIN repo_names rni ON sp.repo_name_id = rni.id) AS sub
-WHERE sub.repo_name_id = rn.id
-  AND rn.repo_id = 0;
+CREATE UNIQUE INDEX IF NOT EXISTS sampled_repo_names_repo_name_unique_idx on sampled_repo_names(repo_id, name);
+CREATE INDEX IF NOT EXISTS sampled_repo_names_trgm_idx ON sampled_repo_names USING gin (name gin_trgm_ops);

@@ -27,8 +27,9 @@ type SampleStore interface {
 	Done(err error) error
 
 	// Sample Operations
+	Sample(ctx context.Context, key TimeSeriesKey, repoName string, sample RawSample) error
 	StoreRow(ctx context.Context, row UncompressedRow, seriesId uint32) error
-	LoadRows(ctx context.Context, opts SeriesPointsOpts) ([]UncompressedRow, error)
+	LoadRows(ctx context.Context, opts CompressedRowsOpts) ([]UncompressedRow, error)
 	Append(ctx context.Context, key TimeSeriesKey, samples []RawSample) error
 
 	// Snapshot Operations
@@ -136,7 +137,7 @@ func (s *sampleStore) StoreRow(ctx context.Context, row UncompressedRow, seriesI
 	return s.Exec(ctx, q)
 }
 
-func (s *sampleStore) LoadRows(ctx context.Context, opts SeriesPointsOpts) ([]UncompressedRow, error) {
+func (s *sampleStore) LoadRows(ctx context.Context, opts CompressedRowsOpts) ([]UncompressedRow, error) {
 	// i'd really like to rethink this and load it much earlier - this is getting reloaded for every insight series we fetch
 	// maybe a privilged access struct vs unprivd?
 	denylist, err := s.permStore.GetUnauthorizedRepoIDs(ctx)
@@ -168,7 +169,7 @@ func (s *sampleStore) LoadRows(ctx context.Context, opts SeriesPointsOpts) ([]Un
 	})
 }
 
-func loadRowsQuery(opts SeriesPointsOpts) *sqlf.Query {
+func loadRowsQuery(opts CompressedRowsOpts) *sqlf.Query {
 	baseQuery := `select spc.id, spc.repo_id, data, capture, snapshot_time, snapshot_value from series_points_compressed spc`
 	var preds []*sqlf.Query
 	joinCond := " JOIN repo_names rn ON spc.repo_id = rn.repo_id"
@@ -192,11 +193,14 @@ func loadRowsQuery(opts SeriesPointsOpts) *sqlf.Query {
 		}
 	}
 
-	if opts.SeriesID != nil {
-		preds = append(preds, sqlf.Sprintf("series_id = (select isn.id from insight_series as isn where isn.series_id = %s)", *opts.SeriesID))
+	if len(opts.UniversalSeriesID) != 0 {
+		preds = append(preds, sqlf.Sprintf("series_id = (select isn.id from insight_series as isn where isn.series_id = %s)", opts.UniversalSeriesID))
 	}
-	if opts.RepoID != nil {
-		preds = append(preds, sqlf.Sprintf("repo_id = %s", *opts.RepoID))
+	if opts.SeriesID != 0 {
+		preds = append(preds, sqlf.Sprintf("series_id = %s", opts.SeriesID))
+	}
+	if opts.RepoID != 0 {
+		preds = append(preds, sqlf.Sprintf("repo_id = %s", opts.RepoID))
 	}
 
 	if opts.Key != nil {
@@ -215,7 +219,9 @@ func loadRowsQuery(opts SeriesPointsOpts) *sqlf.Query {
 		baseQuery += " where %s"
 	}
 
-	log15.Info("final preds", "preds", preds)
+	if opts.ShouldLock {
+		baseQuery += " order by spc.id FOR UPDATE"
+	}
 
 	final := sqlf.Sprintf(baseQuery, sqlf.Join(preds, "AND"))
 	log15.Info("final", "q", final.Query(sqlf.PostgresBindVar), "args", final.Args())
@@ -229,8 +235,13 @@ func (s *sampleStore) Append(ctx context.Context, key TimeSeriesKey, samples []R
 	}
 	defer func() { err = tx.Done(err) }()
 
+	// err = tx.Exec(ctx, sqlf.Sprintf("LOCK TABLE series_points_compressed IN ROW EXCLUSIVE MODE;"))
+	// if err != nil {
+	// 	return errors.Wrap(err, "Append.Lock")
+	// }
+
 	var keyMatch *UncompressedRow
-	err = tx.streamRows(ctx, SeriesPointsOpts{Key: &key}, func(ctx context.Context, row *CompressedRow) error {
+	err = tx.streamRows(ctx, CompressedRowsOpts{Key: &key, ShouldLock: true}, func(ctx context.Context, row *CompressedRow) error {
 		decompressed, err := decompressSamples(row.Data)
 		if err != nil {
 			return errors.Wrap(err, "failed to decompress sample data")
@@ -242,9 +253,9 @@ func (s *sampleStore) Append(ctx context.Context, key TimeSeriesKey, samples []R
 		return nil
 	})
 	if err != nil {
-		return errors.Wrap(err, "failed to decompress row")
+		return errors.Wrapf(err, "failed to read row for key: %v", key)
 	}
-
+	// Sample: Sample.Append: failed to read row for key: {124 11 0xc001641f70}: ERROR: deadlock detected (SQLSTATE 40P01)
 	if keyMatch == nil {
 		// no data exists already for this key, so we will write a new row with the provided samples
 		keyMatch = &UncompressedRow{
@@ -291,7 +302,25 @@ func prepareSamplesForCompression(samples []RawSample) {
 
 type rowStreamFunc func(ctx context.Context, row *CompressedRow) error
 
-func (s *sampleStore) streamRows(ctx context.Context, opts SeriesPointsOpts, callback rowStreamFunc) error {
+// CompressedRowsOpts describes options for querying insights' series data points.
+type CompressedRowsOpts struct {
+	// SeriesID is the unique series ID to query, if non-nil.
+	UniversalSeriesID string
+	SeriesID          uint32
+	RepoID            uint32
+
+	IncludeRepoRegex []string
+	ExcludeRepoRegex []string
+
+	Key *TimeSeriesKey
+
+	// Limit is the number of data points to query, if non-zero.
+	Limit int
+
+	ShouldLock bool
+}
+
+func (s *sampleStore) streamRows(ctx context.Context, opts CompressedRowsOpts, callback rowStreamFunc) error {
 	return s.query(ctx, loadRowsQuery(opts), func(s scanner) (err error) {
 		var tmp CompressedRow
 		if err := s.Scan(
@@ -450,4 +479,28 @@ func (s *sampleStore) ClearSnapshots(ctx context.Context, seriesId uint32) error
 	q := "update series_points_compressed set snapshot_time = null, snapshot_value = null where series_id = %s"
 
 	return s.Exec(ctx, sqlf.Sprintf(q, seriesId))
+}
+
+func (s *sampleStore) Sample(ctx context.Context, key TimeSeriesKey, repoName string, sample RawSample) (err error) {
+	// tx, err := s.transact(ctx)
+	// if err != nil {
+	// 	return err
+	// }
+	// defer func() { err = tx.Done(err) }()
+
+	if err = s.Append(ctx, key, []RawSample{sample}); err != nil {
+		return errors.Wrap(err, "Sample.Append")
+	}
+
+	if err = s.sampleRepoName(ctx, key.RepoId, repoName); err != nil {
+		return errors.Wrap(err, "Sample.sampleRepoName")
+	}
+
+	return err
+}
+
+func (s *sampleStore) sampleRepoName(ctx context.Context, repoId uint32, repoName string) error {
+	q := "insert into sampled_repo_names (repo_id, name) values (%s, %s) on conflict do nothing;"
+
+	return s.Exec(ctx, sqlf.Sprintf(q, repoId, repoName))
 }

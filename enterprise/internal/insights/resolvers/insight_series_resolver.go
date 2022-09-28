@@ -404,7 +404,12 @@ func fetchSeries(ctx context.Context, definition types.InsightViewSeries, filter
 	if definition.DataFormat == storage.Gorilla {
 		log15.Info("new data format gogo")
 		sampleStore := store.SampleStoreFromLegacyStore(r.timeSeriesStore)
-		rows, err := sampleStore.LoadRows(ctx, *opts)
+		rows, err := sampleStore.LoadRows(ctx, store.CompressedRowsOpts{
+			UniversalSeriesID: definition.SeriesID,
+			RepoID:            0,
+			IncludeRepoRegex:  opts.IncludeRepoRegex,
+			ExcludeRepoRegex:  opts.ExcludeRepoRegex,
+		})
 		if err != nil {
 			return nil, errors.Wrap(err, "LoadAlternateFormat")
 		}

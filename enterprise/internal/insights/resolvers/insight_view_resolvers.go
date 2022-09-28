@@ -176,6 +176,7 @@ func (i *insightViewResolver) registerDataSeriesGenerators() {
 }
 
 func (i *insightViewResolver) DataSeries(ctx context.Context) ([]graphqlbackend.InsightSeriesResolver, error) {
+
 	return i.computeDataSeries(ctx)
 }
 

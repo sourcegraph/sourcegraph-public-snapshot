@@ -7,6 +7,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+
 	"github.com/hexops/autogold"
 	"github.com/sourcegraph/log/logtest"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
@@ -33,7 +38,7 @@ func TestAppend(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err := store.LoadRows(ctx, SeriesPointsOpts{Key: &tsk})
+	got, err := store.LoadRows(ctx, CompressedRowsOpts{Key: &tsk})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,4 +65,42 @@ func generateSamples(start time.Time, count int) (samples []RawSample) {
 		})
 	}
 	return samples
+}
+
+func BenchmarkLoadIntsFromDB(b *testing.B) {
+	ctx := context.Background()
+	// dsn := `postgres://sourcegraph:sourcegraph@localhost:5432/sourcegraph`
+	dsn := `postgres://postgres:password@localhost:5438/postgres`
+	handle, err := connections.EnsureNewCodeInsightsDB(dsn, "app", &observation.TestContext)
+	if err != nil {
+		b.Fatal(err)
+	}
+	logger := logtest.Scoped(b)
+	db := database.NewDB(logger, handle)
+	//
+	// seriesId := "29M8bMLrYk2I54tMRUwRMhCnLti"
+	//
+	permStore := NewInsightPermissionStore(db)
+	store := New(edb.NewInsightsDB(handle), permStore)
+	// sampleStore := SampleStoreFromLegacyStore(store)
+	nameQuery := "sourcegraph"
+
+	// 'test' = 204726 ns / op
+	// 'sourcegraph' = 268196 ns / op
+	// '12' = 11031399 ns / op ???? too short string lol
+	// 'repo-' = 25247946 / op
+
+	b.Run("load ints", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			// s := time.Now()
+			// _, err := basestore.ScanInts(store.Query(ctx, sqlf.Sprintf("select repo_id from repo_names_copy where name ~ %s", nameQuery)))
+			_, err := basestore.ScanInts(store.Query(ctx, sqlf.Sprintf("select id from repo_names where lower(name) ~ %s", nameQuery)))
+			if err != nil {
+				b.Fatal(err)
+			}
+			// e := time.Now()
+			// b.Log(fmt.Sprintf(""))
+			// b.Log(e.Sub(s).Nanoseconds())
+		}
+	})
 }
