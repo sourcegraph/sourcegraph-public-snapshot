@@ -111,7 +111,10 @@ var (
 var errCommitDoesNotExist = errors.Errorf("commit does not exist")
 
 func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
-	upload := record.(codeinteltypes.Upload)
+	upload, ok := record.(codeinteltypes.Upload)
+	if !ok {
+		return errors.Newf("unexpected record type %T", record)
+	}
 
 	var requeued bool
 
@@ -144,7 +147,10 @@ func (h *handler) PreDequeue(ctx context.Context, logger log.Logger) (bool, any,
 }
 
 func (h *handler) PreHandle(ctx context.Context, logger log.Logger, record workerutil.Record) {
-	upload := record.(codeinteltypes.Upload)
+	upload, ok := record.(codeinteltypes.Upload)
+	if !ok {
+		return
+	}
 
 	uncompressedSize := h.getUploadSize(upload.UncompressedSize)
 	h.uploadSizeGuage.Add(float64(uncompressedSize))
@@ -154,7 +160,10 @@ func (h *handler) PreHandle(ctx context.Context, logger log.Logger, record worke
 }
 
 func (h *handler) PostHandle(ctx context.Context, logger log.Logger, record workerutil.Record) {
-	upload := record.(codeinteltypes.Upload)
+	upload, ok := record.(codeinteltypes.Upload)
+	if !ok {
+		return
+	}
 
 	uncompressedSize := h.getUploadSize(upload.UncompressedSize)
 	h.uploadSizeGuage.Sub(float64(uncompressedSize))
@@ -174,7 +183,6 @@ func (h *handler) getUploadSize(field *int64) int64 {
 // handle converts a raw upload into a dump within the given transaction context. Returns true if the
 // upload record was requeued and false otherwise.
 func (h *handler) handle(ctx context.Context, logger log.Logger, upload codeinteltypes.Upload, trace observation.TraceLogger) (requeued bool, err error) {
-
 	repo, err := h.repoStore.Get(ctx, api.RepoID(upload.RepositoryID))
 	if err != nil {
 		return false, errors.Wrap(err, "Repos.Get")
