@@ -1,4 +1,4 @@
-package httpapi
+package http
 
 import (
 	"bytes"
@@ -12,14 +12,16 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/httpapi/auth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	uploads "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/http/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/uploadhandler"
 	uploadstoremocks "github.com/sourcegraph/sourcegraph/internal/uploadstore/mocks"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -32,7 +34,8 @@ func TestHandleEnqueueAuth(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	mockDBStore := NewMockDBStore[UploadMetadata]()
+	repoStore := backend.NewRepos(logger, db)
+	mockDBStore := NewMockDBStore[uploads.UploadMetadata]()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
 	conf.Mock(&conf.Unified{
@@ -110,13 +113,16 @@ func TestHandleEnqueueAuth(t *testing.T) {
 			},
 		}
 
-		NewUploadHandler(
-			db,
-			mockDBStore,
-			mockUploadStore,
-			false,
+		auth.AuthMiddleware(
+			newHandler(
+				repoStore,
+				mockUploadStore,
+				mockDBStore,
+				uploadhandler.NewOperations("test", &observation.TestContext),
+			),
+			db.Users(),
 			authValidators,
-			NewOperations(&observation.TestContext),
+			newOperations(&observation.TestContext).authMiddleware,
 		).ServeHTTP(w, r)
 
 		if w.Code != user.statusCode {

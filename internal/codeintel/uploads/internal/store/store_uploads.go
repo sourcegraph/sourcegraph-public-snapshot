@@ -1755,6 +1755,118 @@ CREATE TEMPORARY TABLE t_lsif_uploads_visible_at_tip (
 ) ON COMMIT DROP
 `
 
+// InsertUpload inserts a new upload and returns its identifier.
+func (s *store) InsertUpload(ctx context.Context, upload shared.Upload) (id int, err error) {
+	ctx, _, endObservation := s.operations.insertUpload.With(ctx, &err, observation.Args{})
+	defer func() {
+		endObservation(1, observation.Args{LogFields: []log.Field{
+			log.Int("id", id),
+		}})
+	}()
+
+	if upload.UploadedParts == nil {
+		upload.UploadedParts = []int{}
+	}
+
+	id, _, err = basestore.ScanFirstInt(s.db.Query(
+		ctx,
+		sqlf.Sprintf(
+			insertUploadQuery,
+			upload.Commit,
+			upload.Root,
+			upload.RepositoryID,
+			upload.Indexer,
+			upload.IndexerVersion,
+			upload.State,
+			upload.NumParts,
+			pq.Array(upload.UploadedParts),
+			upload.UploadSize,
+			upload.AssociatedIndexID,
+			upload.UncompressedSize,
+		),
+	))
+
+	return id, err
+}
+
+const insertUploadQuery = `
+-- source: internal/codeintel/stores/dbstore/uploads.go:InsertUpload
+INSERT INTO lsif_uploads (
+	commit,
+	root,
+	repository_id,
+	indexer,
+	indexer_version,
+	state,
+	num_parts,
+	uploaded_parts,
+	upload_size,
+	associated_index_id,
+	uncompressed_size
+) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+RETURNING id
+`
+
+// AddUploadPart adds the part index to the given upload's uploaded parts array. This method is idempotent
+// (the resulting array is deduplicated on update).
+func (s *store) AddUploadPart(ctx context.Context, uploadID, partIndex int) (err error) {
+	ctx, _, endObservation := s.operations.addUploadPart.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("uploadID", uploadID),
+		log.Int("partIndex", partIndex),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	return s.db.Exec(ctx, sqlf.Sprintf(addUploadPartQuery, partIndex, uploadID))
+}
+
+const addUploadPartQuery = `
+-- source: internal/codeintel/stores/dbstore/uploads.go:AddUploadPart
+UPDATE lsif_uploads SET uploaded_parts = array(SELECT DISTINCT * FROM unnest(array_append(uploaded_parts, %s))) WHERE id = %s
+`
+
+// MarkQueued updates the state of the upload to queued and updates the upload size.
+func (s *store) MarkQueued(ctx context.Context, id int, uploadSize *int64) (err error) {
+	ctx, _, endObservation := s.operations.markQueued.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("id", id),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	return s.db.Exec(ctx, sqlf.Sprintf(markQueuedQuery, uploadSize, id))
+}
+
+const markQueuedQuery = `
+-- source: internal/codeintel/stores/dbstore/uploads.go:MarkQueued
+UPDATE lsif_uploads
+SET
+	state = 'queued',
+	queued_at = clock_timestamp(),
+	upload_size = %s
+WHERE id = %s
+`
+
+// MarkFailed updates the state of the upload to failed, increments the num_failures column and sets the finished_at time
+func (s *store) MarkFailed(ctx context.Context, id int, reason string) (err error) {
+	ctx, _, endObservation := s.operations.markFailed.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("id", id),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	return s.db.Exec(ctx, sqlf.Sprintf(markFailedQuery, reason, id))
+}
+
+const markFailedQuery = `
+-- source: internal/codeintel/stores/dbstore/uploads.go:MarkFailed
+UPDATE
+	lsif_uploads
+SET
+	state = 'failed',
+	finished_at = clock_timestamp(),
+	failure_message = %s,
+	num_failures = num_failures + 1
+WHERE
+	id = %s
+`
+
 // countingWrite writes the given slice of interfaces to the given channel. This function returns true
 // if the write succeeded and false if the context was canceled. On success, the counter's underlying
 // value will be incremented (non-atomically).

@@ -38,7 +38,7 @@ var errVerificationNotSupported = errors.New(strings.Join([]string{
 // request contains sufficient evidence of authorship for the target repository.
 //
 // When LSIF auth is not enforced on the instance, this middleware no-ops.
-func AuthMiddleware(next http.Handler, db database.DB, authValidators AuthValidatorMap, operation *observation.Operation) http.Handler {
+func AuthMiddleware(next http.Handler, userStore UserStore, authValidators AuthValidatorMap, operation *observation.Operation) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		statusCode, err := func() (_ int, err error) {
 			ctx, trace, endObservation := operation.With(r.Context(), &err, observation.Args{})
@@ -47,7 +47,7 @@ func AuthMiddleware(next http.Handler, db database.DB, authValidators AuthValida
 			// Skip auth check if it's not enabled in the instance's site configuration, if this
 			// user is a site admin (who can upload LSIF to any repository on the instance), or
 			// if the request a subsequent request of a multi-part upload.
-			if !conf.Get().LsifEnforceAuth || isSiteAdmin(ctx, operation.Logger, db) || hasQuery(r, "uploadId") {
+			if !conf.Get().LsifEnforceAuth || isSiteAdmin(ctx, userStore, operation.Logger) || hasQuery(r, "uploadId") {
 				trace.Log(log.Event("bypassing code host auth check"))
 				return 0, nil
 			}
@@ -79,8 +79,8 @@ func AuthMiddleware(next http.Handler, db database.DB, authValidators AuthValida
 	})
 }
 
-func isSiteAdmin(ctx context.Context, logger sglog.Logger, db database.DB) bool {
-	user, err := db.Users().GetByCurrentAuthUser(ctx)
+func isSiteAdmin(ctx context.Context, userStore UserStore, logger sglog.Logger) bool {
+	user, err := userStore.GetByCurrentAuthUser(ctx)
 	if err != nil {
 		if errcode.IsNotFound(err) || err == database.ErrNoCurrentUser {
 			return false
