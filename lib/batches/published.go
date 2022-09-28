@@ -21,7 +21,7 @@ func (p *PublishedValue) True() bool {
 }
 
 // False is true if the enclosed value is a bool being false.
-func (p PublishedValue) False() bool {
+func (p *PublishedValue) False() bool {
 	if b, ok := p.Val.(bool); ok {
 		return !b
 	}
@@ -29,7 +29,7 @@ func (p PublishedValue) False() bool {
 }
 
 // Draft is true if the enclosed value is a string being "draft".
-func (p PublishedValue) Draft() bool {
+func (p *PublishedValue) Draft() bool {
 	if s, ok := p.Val.(string); ok {
 		return s == "draft"
 	}
@@ -37,7 +37,7 @@ func (p PublishedValue) Draft() bool {
 }
 
 // Nil is true if the enclosed value is a null or omitted.
-func (p PublishedValue) Nil() bool {
+func (p *PublishedValue) Nil() bool {
 	return p.Val == nil
 }
 
@@ -51,7 +51,7 @@ func (p *PublishedValue) Value() any {
 	return p.Val
 }
 
-func (p PublishedValue) MarshalJSON() ([]byte, error) {
+func (p *PublishedValue) MarshalJSON() ([]byte, error) {
 	if p.Nil() {
 		v := "null"
 		return []byte(v), nil
