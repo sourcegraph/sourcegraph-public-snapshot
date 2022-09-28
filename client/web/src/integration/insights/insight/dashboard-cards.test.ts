@@ -13,6 +13,8 @@ import {
     GET_INSIGHT_VIEW_CAPTURE_GROUP_INSIGHT,
     SEARCH_BASED_INSIGHT,
     GET_INSIGHT_VIEW_SEARCH_BASED_INSIGHT,
+    COMPUTE_INSIGHT,
+    GET_INSIGHT_VIEW_COMPUTE_INSIGHT,
 } from '../fixtures/dashboards'
 import { overrideInsightsGraphQLApi } from '../utils/override-insights-graphql-api'
 
@@ -259,6 +261,87 @@ describe('Code insights [Dashboard card]', () => {
         // Why 2 and 27? See GET_INSIGHT_VIEW_SEARCH_BASED_INSIGHT dataset mock, it has 2 lines and 27 points
         assert.strictEqual(numberOfLines, 2)
         assert.strictEqual(numberOfPointLinks, 27)
+
+        await driver.page.click('[aria-label="Filters"]')
+        const filterPanel = await driver.page.$('[aria-label="Drill-down filters panel"]')
+
+        // Should open filter panel on filter panel icon click
+        assert.strictEqual(filterPanel !== null, true)
+
+        // // Toggle insight filters (close filters panel)
+        await driver.page.click('[aria-label="Filters"]')
+
+        await driver.page.click('[aria-label="Insight options"]')
+
+        const menuOptions = await driver.page.$$eval('[role="dialog"][aria-modal="true"] [role="menuitem"]', elements =>
+            elements.map(element => element.textContent)
+        )
+
+        // Check that Line chart doesn't have anything non-related to capture group menu options
+        assert.deepStrictEqual(menuOptions, ['Edit', 'Get shareable link', 'Remove from this dashboard', 'Delete'])
+    })
+
+    it('renders compute insight card with proper options context', async () => {
+        overrideInsightsGraphQLApi({
+            testContext,
+            overrides: {
+                // Enable compute insights feature flag
+                ViewerSettings: () => ({
+                    viewerSettings: {
+                        __typename: 'SettingsCascade',
+                        subjects: [
+                            {
+                                __typename: 'DefaultSettings',
+                                settingsURL: null,
+                                viewerCanAdminister: false,
+                                latestSettings: {
+                                    id: 0,
+                                    contents: JSON.stringify({
+                                        experimentalFeatures: { codeInsightsCompute: true },
+                                    }),
+                                },
+                            },
+                        ],
+                        final: JSON.stringify({}),
+                    },
+                }),
+                // Mock list of possible code insights dashboards on the dashboard page
+                InsightsDashboards: () => ({
+                    currentUser: {
+                        __typename: 'User',
+                        id: testUserID,
+                        organizations: { nodes: [] },
+                    },
+                    insightsDashboards: {
+                        __typename: 'InsightsDashboardConnection',
+                        nodes: [
+                            createDashboard({
+                                id: 'DASHBOARD_WITH_COMPUTE',
+                                insightIds: [COMPUTE_INSIGHT.id],
+                            }),
+                        ],
+                    },
+                }),
+                // Mock dashboard configuration (dashboard content) with one capture group insight configuration
+                GetDashboardInsights: () =>
+                    createDashboardViewMock({
+                        id: 'DASHBOARD_WITH_COMPUTE',
+                        insightsMocks: [COMPUTE_INSIGHT],
+                    }),
+
+                // Mock capture group insight content
+                GetInsightView: () => GET_INSIGHT_VIEW_COMPUTE_INSIGHT,
+            },
+        })
+
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/DASHBOARD_WITH_COMPUTE')
+        await driver.page.waitForSelector('[aria-label="Bar chart"]')
+
+        const numberOfBars = await driver.page.$$eval('[aria-label="Bar chart"] rect', elements => elements.length)
+
+        // Why 2? See GET_INSIGHT_VIEW_COMPUTE_INSIGHT dataset mock, it has 1 series
+        // Visx also renders a rectangle for the chart background. 1 series + 1 background = 2 rectangles
+        assert.strictEqual(numberOfBars, 2)
 
         await driver.page.click('[aria-label="Filters"]')
         const filterPanel = await driver.page.$('[aria-label="Drill-down filters panel"]')
