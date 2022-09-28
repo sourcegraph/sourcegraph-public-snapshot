@@ -125,10 +125,8 @@ func main() {
 	// Initialize worker
 	rootContext := actor.WithInternalActor(context.Background())
 	handler := uploadsSvc.NewHandler(
-		nil, // TODO - &worker.DBStoreShim{Store: dbStore},
 		backend.NewRepos(logger, db),
 		workerStore,
-		nil, // TODO - &worker.LSIFStoreShim{Store: lsifstore.NewStore(codeIntelDB, conf.Get(), observationContext)},
 		uploadStore,
 		config.WorkerConcurrency,
 		config.WorkerBudget,

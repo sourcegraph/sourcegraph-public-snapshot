@@ -34,10 +34,8 @@ import (
 )
 
 func (s *Service) NewHandler(
-	dbStore store.Store,
 	repoStore RepoStore,
 	workerStore dbworkerstore.Store,
-	lsifStore lsifstore.LsifStore,
 	uploadStore uploadstore.Store,
 	numProcessorRoutines int,
 	budgetMax int64,
@@ -66,10 +64,10 @@ func (s *Service) NewHandler(
 	observationContext.Registerer.MustRegister(uploadSizeGuage)
 
 	return &handler{
-		dbStore:           dbStore,
+		dbStore:           s.store,
 		repoStore:         repoStore,
 		workerStore:       workerStore,
-		lsifStore:         lsifStore,
+		lsifStore:         s.lsifstore,
 		uploadStore:       uploadStore,
 		gitserverClient:   s.gitserverClient,
 		handleOp:          op,
