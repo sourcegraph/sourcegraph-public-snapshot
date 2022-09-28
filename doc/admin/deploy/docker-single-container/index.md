@@ -197,7 +197,9 @@ docker run \
   upgrade --from=${CURRENT_SG_VERSION} --to=${SG_VERSION}
 ```
 
-The remaining infrastructure can now be updated. All temporary containers can be stopped, and the Docker invocation for your `sourcegraph/server` container can be updated to use the new target version.
+It is recommended to also add the `--dry-run` flag on a trial invocation to detect if there are any issues with database connection, schema drift, or mismatched versions that need to be addressed.
+
+After this container exits successfully, the remaining infrastructure can now be updated. All temporary containers can be stopped, and the Docker invocation for your `sourcegraph/server` container can be updated to use the new target version.
 
 #### Running temporary Postgres containers
 
