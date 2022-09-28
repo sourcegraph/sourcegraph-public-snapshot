@@ -535,7 +535,7 @@ func (s *Service) getUploadLocations(ctx context.Context, args shared.RequestArg
 		if err != nil {
 			return nil, err
 		}
-		if includeFallbackLocations || !ok {
+		if !includeFallbackLocations && !ok {
 			continue
 		}
 
