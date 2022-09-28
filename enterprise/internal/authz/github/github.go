@@ -57,7 +57,7 @@ func NewProvider(urn string, opts ProviderOptions, tokenRefresher oauthutil.Toke
 	if opts.GitHubClient == nil {
 		apiURL, _ := github.APIRoot(opts.GitHubURL)
 		opts.GitHubClient = github.NewV3Client(log.Scoped("provider.github.v3", "provider github client"),
-			urn, apiURL, &auth.OAuthBearerToken{AccessToken: opts.BaseToken}, nil)
+			urn, apiURL, &auth.OAuthBearerToken{Token: opts.BaseToken}, nil)
 	}
 
 	codeHost := extsvc.NewCodeHost(opts.GitHubURL, extsvc.TypeGitHub)

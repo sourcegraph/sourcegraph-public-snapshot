@@ -59,7 +59,7 @@ func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([
 	githubUrl, _ := github.APIRoot(baseURL)
 
 	auther := &auth.OAuthBearerToken{
-		AccessToken:  githubCfg.Token,
+		Token:        githubCfg.Token,
 		Expiry:       time.Unix(int64(githubCfg.TokenOauthExpiry), 0),
 		RefreshToken: githubCfg.TokenOauthRefresh,
 		RefreshFunc:  database.GetRefreshAndStoreOAuthTokenFunc(r.db, r.externalService.ID, github.GetOAuthContext(githubUrl.String())),

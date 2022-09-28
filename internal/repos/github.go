@@ -221,7 +221,7 @@ func newGithubSource(
 	}
 
 	token := &auth.OAuthBearerToken{
-		AccessToken:  c.Token,
+		Token:        c.Token,
 		RefreshToken: c.TokenOauthRefresh,
 		Expiry:       time.Unix(int64(c.TokenOauthExpiry), 0),
 		RefreshFunc:  database.GetRefreshAndStoreOAuthTokenFunc(db, svc.ID, github.GetOAuthContext(apiURL.String())),
@@ -269,7 +269,7 @@ func newGithubSource(
 			return nil, errors.Wrap(err, "get or renew GitHub App installation access token")
 		}
 
-		auther = &auth.OAuthBearerToken{AccessToken: token}
+		auther = &auth.OAuthBearerToken{Token: token}
 		v3Client = github.NewV3Client(v3ClientLogger, urn, apiURL, auther, cli)
 		v4Client = github.NewV4Client(urn, apiURL, auther, cli)
 

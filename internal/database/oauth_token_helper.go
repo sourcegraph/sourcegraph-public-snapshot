@@ -17,7 +17,7 @@ import (
 // ExternalAccountTokenRefresher returns an oauthutil.TokenRefresher for the
 // given external account.
 func ExternalAccountTokenRefresher(db DB, externalAccountID int32, refreshToken string) oauthutil.TokenRefresher {
-	return func(ctx context.Context, doer httpcli.Doer, oauthCtx oauthutil.OAuthContext) (token *auth.OAuthBearerToken, err error) {
+	return func(ctx context.Context, doer httpcli.Doer, oauthCtx oauthutil.OAuthContext) (token *oauthutil.Token, err error) {
 		defer func() {
 			success := err == nil
 			gitlab.TokenRefreshCounter.WithLabelValues("external_account", strconv.FormatBool(success)).Inc()
@@ -48,7 +48,7 @@ func ExternalAccountTokenRefresher(db DB, externalAccountID int32, refreshToken 
 // ExternalServiceTokenRefresher returns an oauthutil.TokenRefresher for the
 // given external service.
 func ExternalServiceTokenRefresher(db DB, externalServiceID int64, refreshToken string) oauthutil.TokenRefresher {
-	return func(ctx context.Context, doer httpcli.Doer, oauthCtx oauthutil.OAuthContext) (token *auth.OAuthBearerToken, err error) {
+	return func(ctx context.Context, doer httpcli.Doer, oauthCtx oauthutil.OAuthContext) (token *oauthutil.Token, err error) {
 		defer func() {
 			success := err == nil
 			gitlab.TokenRefreshCounter.WithLabelValues("codehost", strconv.FormatBool(success)).Inc()
