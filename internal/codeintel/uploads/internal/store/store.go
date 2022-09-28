@@ -65,6 +65,7 @@ type Store interface {
 	FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, commitGraph *gitdomain.CommitGraph) (_ []shared.Dump, err error)
 	GetDumpsWithDefinitionsForMonikers(ctx context.Context, monikers []precise.QualifiedMonikerData) (_ []shared.Dump, err error)
 	GetDumpsByIDs(ctx context.Context, ids []int) (_ []shared.Dump, err error)
+	DeleteOverlappingDumps(ctx context.Context, repositoryID int, commit, root, indexer string) error
 
 	// Packages
 	UpdatePackages(ctx context.Context, dumpID int, packages []precise.Package) (err error)
@@ -76,8 +77,7 @@ type Store interface {
 	GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []shared.UploadLog, err error)
 	DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (count int, err error)
 
-	// TODO
-	DeleteOverlappingDumps(ctx context.Context, repositoryID int, commit, root, indexer string) error
+	// Dependencies
 	InsertDependencySyncingJob(ctx context.Context, uploadID int) (jobID int, err error)
 }
 
