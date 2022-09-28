@@ -91,6 +91,14 @@ func Indexed() zoekt.Streamer {
 	return indexedSearch
 }
 
+// ListAllIndexed lists all indexed repositories with `Minimal: true`. If
+// indexed search is disabled it returns ErrIndexDisabled.
+func ListAllIndexed(ctx context.Context) (*zoekt.RepoList, error) {
+	q := &query.Const{Value: true}
+	opts := &zoekt.ListOptions{Minimal: true}
+	return Indexed().List(ctx, q, opts)
+}
+
 func Indexers() *backend.Indexers {
 	indexersOnce.Do(func() {
 		indexers = &backend.Indexers{

@@ -23,7 +23,6 @@ import {
     getRevision,
 } from '@sourcegraph/shared/src/search/stream'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Badge } from '@sourcegraph/wildcard'
 
@@ -107,7 +106,6 @@ type CommonResultContainerProps = Omit<
 
 // This is a search result for types file (content), path, or symbol.
 export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
-    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
     const result = props.result
     const repoAtRevisionURL = getRepositoryUrl(result.repository, result.branches)
     const revisionDisplayName = getRevision(result.branches, result.commit)
@@ -115,10 +113,10 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
 
     const ranking = useMemo(() => {
         if (!isErrorLike(settings) && settings?.experimentalFeatures?.clientSearchResultRanking === BY_LINE_RANKING) {
-            return new LineRanking(coreWorkflowImprovementsEnabled ? 5 : 10)
+            return new LineRanking(5)
         }
-        return new ZoektRanking(coreWorkflowImprovementsEnabled ? 3 : 5)
-    }, [settings, coreWorkflowImprovementsEnabled])
+        return new ZoektRanking(3)
+    }, [settings])
 
     // The number of lines of context to show before and after each match.
     const context = useMemo(() => {
@@ -200,7 +198,7 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
                         ? `${props.repoDisplayName}${revisionDisplayName ? `@${revisionDisplayName}` : ''}`
                         : undefined
                 }
-                className={classNames(styles.titleInner, coreWorkflowImprovementsEnabled && styles.mutedRepoFileLink)}
+                className={classNames(styles.titleInner, styles.mutedRepoFileLink)}
             />
         ),
         allExpanded: props.allExpanded,
@@ -277,10 +275,8 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
                 collapsible: limitedMatchCount < matchCount,
                 collapsedChildren,
                 expandedChildren,
-                collapseLabel: coreWorkflowImprovementsEnabled ? 'Show less' : `Hide ${hideCount}`,
-                expandLabel: coreWorkflowImprovementsEnabled
-                    ? `Show ${hideCount} more ${pluralize('match', hideCount, 'matches')}`
-                    : `${hideCount} more`,
+                collapseLabel: 'Show less',
+                expandLabel: `Show ${hideCount} more ${pluralize('match', hideCount, 'matches')}`,
                 matchCountLabel,
             }
         }
@@ -300,10 +296,8 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
             description,
             collapsedChildren: <FileMatchChildren {...props} result={result} {...collapsedMatchGroups} />,
             expandedChildren,
-            collapseLabel: coreWorkflowImprovementsEnabled ? 'Show less' : `Hide ${length}`,
-            expandLabel: coreWorkflowImprovementsEnabled
-                ? `Show ${length} more ${pluralize('match', length, 'matches')}`
-                : `${length} more`,
+            collapseLabel: 'Show less',
+            expandLabel: `Show ${length} more ${pluralize('match', length, 'matches')}`,
             matchCountLabel,
             as: props.as,
         }

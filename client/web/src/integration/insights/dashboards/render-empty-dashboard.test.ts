@@ -4,7 +4,7 @@ import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/dri
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../../context'
-import { GET_DASHBOARD_INSIGHTS, INSIGHTS_DASHBOARDS } from '../fixtures/dashboards'
+import { EMPTY_DASHBOARD, GET_DASHBOARD_INSIGHTS, INSIGHTS_DASHBOARDS } from '../fixtures/dashboards'
 import { overrideInsightsGraphQLApi } from '../utils/override-insights-graphql-api'
 
 describe('Code insights empty dashboard', () => {
@@ -20,10 +20,6 @@ describe('Code insights empty dashboard', () => {
             driver,
             currentTest: this.currentTest!,
             directory: __dirname,
-            customContext: {
-                // Enforce using a new gql API for code insights pages
-                codeInsightsGqlApiEnabled: true,
-            },
         })
     })
 
@@ -39,7 +35,7 @@ describe('Code insights empty dashboard', () => {
             },
         })
 
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/EMPTY_DASHBOARD')
+        await driver.page.goto(driver.sourcegraphBaseUrl + `/insights/dashboards/${EMPTY_DASHBOARD.id}`)
 
         const dashboardSelectButton = await driver.page.waitForSelector('[data-testid="dashboard-select-button"')
         const addInsightsButtonCard = await driver.page.waitForSelector('[data-testid="add-insights-button-card"')
