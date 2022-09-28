@@ -303,8 +303,6 @@ func addOpenTelemetryProtocolAdapter(r *mux.Router) {
 
 	// If no endpoint is configured, we export a no-op handler
 	if endpoint == "" {
-		logger.Error("unable to parse OTLP export target")
-
 		r.PathPrefix("/otlp").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintf(w, `OpenTelemetry protocol tunnel: please configure an exporter endpoint with OTEL_EXPORTER_OTLP_ENDPOINT`)
 			w.WriteHeader(http.StatusNotFound)
