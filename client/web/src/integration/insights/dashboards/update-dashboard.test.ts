@@ -5,7 +5,7 @@ import { testUserID } from '@sourcegraph/shared/src/testing/integration/graphQlR
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../../context'
-import { EMPTY_DASHBOARD, GET_DASHBOARD_INSIGHTS, INSIGHTS_DASHBOARDS } from '../fixtures/dashboards'
+import { EMPTY_DASHBOARD, GET_DASHBOARD_INSIGHTS_EMPTY, INSIGHTS_DASHBOARDS } from '../fixtures/dashboards'
 import { overrideInsightsGraphQLApi } from '../utils/override-insights-graphql-api'
 
 describe('Code insights empty dashboard', () => {
@@ -36,7 +36,7 @@ describe('Code insights empty dashboard', () => {
             testContext,
             overrides: {
                 InsightsDashboards: () => INSIGHTS_DASHBOARDS,
-                GetDashboardInsights: () => GET_DASHBOARD_INSIGHTS,
+                GetDashboardInsights: () => GET_DASHBOARD_INSIGHTS_EMPTY,
                 InsightSubjects: () => ({
                     currentUser: {
                         __typename: 'User',
@@ -67,9 +67,11 @@ describe('Code insights empty dashboard', () => {
 
         await driver.page.goto(driver.sourcegraphBaseUrl + `/insights/dashboards/${EMPTY_DASHBOARD.id}`)
 
-        await driver.page.waitForSelector('[data-testid="dashboard-context-menu"]')
-        await driver.page.click('[data-testid="dashboard-context-menu"]')
-        await driver.page.click('[data-testid="configure-dashboard"]')
+        await driver.page.waitForSelector('[aria-label="Dashboard options"]')
+        await driver.page.click('[aria-label="Dashboard options"]')
+
+        const [configureButton] = await driver.page.$x("//button[contains(., 'Configure dashboard')]")
+        await configureButton?.click()
 
         await driver.page.waitForSelector('form')
 
