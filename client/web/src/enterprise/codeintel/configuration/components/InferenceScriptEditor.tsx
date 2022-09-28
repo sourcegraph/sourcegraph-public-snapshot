@@ -10,7 +10,7 @@ import { LoadingSpinner, screenReaderAnnounce } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../../../../auth'
 import { SaveToolbar, SaveToolbarProps, SaveToolbarPropsGenerator } from '../../../../components/SaveToolbar'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../../../settings/DynamicallyImportedMonacoSettingsEditor'
-import { useInferenceScript } from '../hooks/useInferenceScript'
+import { INFERENCE_SCRIPT, useInferenceScript } from '../hooks/useInferenceScript'
 import { useUpdateInferenceScript } from '../hooks/useUpdateInferenceScript'
 
 export interface InferenceScriptEditorProps extends ThemeProps, TelemetryProps {
@@ -31,7 +31,7 @@ export const InferenceScriptEditor: FunctionComponent<React.PropsWithChildren<In
         async (script: string) =>
             updateInferenceScript({
                 variables: { script },
-                update: cache => cache.modify({ fields: { node: () => {} } }),
+                refetchQueries: [INFERENCE_SCRIPT],
             }).then(() => {
                 screenReaderAnnounce('Saved successfully')
                 setDirty(false)

@@ -8,14 +8,16 @@ interface UseInferenceScriptResult {
     fetchError: ApolloError | undefined
 }
 
-const INFERENCE_SCRIPT = gql`
+export const INFERENCE_SCRIPT = gql`
     query CodeGraphInferenceScript {
         codeIntelligenceInferenceScript
     }
 `
 
 export const useInferenceScript = (): UseInferenceScriptResult => {
-    const { data, loading, error } = useQuery<CodeGraphInferenceScriptResult>(INFERENCE_SCRIPT)
+    const { data, loading, error } = useQuery<CodeGraphInferenceScriptResult>(INFERENCE_SCRIPT, {
+        nextFetchPolicy: 'cache-first',
+    })
 
     return {
         inferenceScript: data?.codeIntelligenceInferenceScript ?? '',
