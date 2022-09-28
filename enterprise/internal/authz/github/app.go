@@ -71,7 +71,7 @@ func newAppProvider(
 				With(log.String("appID", appID), log.Int64("installationID", installationID))
 
 			return &ClientAdapter{
-				V3Client: github.NewV3Client(logger, urn, apiURL, &auth.OAuthBearerToken{Token: token}, cli, tokenRefresher),
+				V3Client: github.NewV3Client(logger, urn, apiURL, &auth.OAuthBearerToken{AccessToken: token}, cli, tokenRefresher),
 			}, nil
 		},
 		InstallationID: &installationID,

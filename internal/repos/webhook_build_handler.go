@@ -70,7 +70,7 @@ func (w *webhookBuildHandler) handleKindGitHub(ctx context.Context, logger log.L
 	}
 
 	tokenRefresher := database.ExternalServiceTokenRefresher(w.db, svc.ID, conn.TokenOauthRefresh)
-	client := github.NewV3Client(logger, svc.URN(), baseURL, &auth.OAuthBearerToken{Token: conn.Token}, w.doer, tokenRefresher)
+	client := github.NewV3Client(logger, svc.URN(), baseURL, &auth.OAuthBearerToken{AccessToken: conn.Token}, w.doer, tokenRefresher)
 
 	webhookPayload, err := client.FindSyncWebhook(ctx, job.RepoName) // TODO: Not make an API call upon every request
 	if err != nil && err.Error() != "unable to find webhook" {

@@ -55,7 +55,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 			ExternalServiceID:   ghRepo.ExternalRepo.ServiceID,
 			ExternalServiceType: ghRepo.ExternalRepo.ServiceType,
 		}
-		token := &auth.OAuthBearerToken{Token: "SOSECRET"}
+		token := &auth.OAuthBearerToken{AccessToken: "SOSECRET"}
 		if err := bstore.CreateSiteCredential(ctx, cred, token); err != nil {
 			t.Fatal(err)
 		}
@@ -161,7 +161,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 			ExternalServiceID:   ghRepo.ExternalRepo.ServiceID,
 			ExternalServiceType: ghRepo.ExternalRepo.ServiceType,
 			UserID:              userID,
-		}, &auth.OAuthBearerToken{Token: "SOSECRET"})
+		}, &auth.OAuthBearerToken{AccessToken: "SOSECRET"})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -169,7 +169,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 			ExternalServiceID:   bbsRepo.ExternalRepo.ServiceID,
 			ExternalServiceType: bbsRepo.ExternalRepo.ServiceType,
 		}
-		token := &auth.OAuthBearerToken{Token: "SOSECRET"}
+		token := &auth.OAuthBearerToken{AccessToken: "SOSECRET"}
 		if err := bstore.CreateSiteCredential(ctx, siteCred, token); err != nil {
 			t.Fatal(err)
 		}

@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -45,16 +46,6 @@ import (
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-// Token contains the credentials used during the flow to retrieve and refresh an
-// expired token.
-type Token struct {
-	AccessToken  string    `json:"access_token"`
-	TokenType    string    `json:"token_type"`
-	RefreshToken string    `json:"refresh_token"`
-	Expiry       time.Time `json:"expiry"`
-	raw          interface{}
-}
 
 // tokenJSON represents the HTTP response.
 type tokenJSON struct {
@@ -131,7 +122,7 @@ func newTokenRequest(oauthCtx OAuthContext, refreshToken string, authStyle AuthS
 
 // RetrieveToken tries to retrieve a new access token in the given authentication
 // style.
-func RetrieveToken(doer httpcli.Doer, oauthCtx OAuthContext, refreshToken string, authStyle AuthStyle) (*Token, error) {
+func RetrieveToken(doer httpcli.Doer, oauthCtx OAuthContext, refreshToken string, authStyle AuthStyle) (*auth.OAuthBearerToken, error) {
 	req, err := newTokenRequest(oauthCtx, refreshToken, authStyle)
 	if err != nil {
 		return nil, err
@@ -148,7 +139,7 @@ func RetrieveToken(doer httpcli.Doer, oauthCtx OAuthContext, refreshToken string
 	return token, err
 }
 
-func doTokenRoundTrip(doer httpcli.Doer, req *http.Request) (*Token, error) {
+func doTokenRoundTrip(doer httpcli.Doer, req *http.Request) (*auth.OAuthBearerToken, error) {
 	r, err := doer.Do(req)
 	if err != nil {
 		return nil, errors.Wrap(err, "do request")
@@ -167,7 +158,7 @@ func doTokenRoundTrip(doer httpcli.Doer, req *http.Request) (*Token, error) {
 		}
 	}
 
-	var token *Token
+	var token *auth.OAuthBearerToken
 	content, _, _ := mime.ParseMediaType(r.Header.Get("Content-Type"))
 	switch content {
 	case "application/x-www-form-urlencoded", "text/plain":
@@ -182,7 +173,7 @@ func doTokenRoundTrip(doer httpcli.Doer, req *http.Request) (*Token, error) {
 				ErrorURI:         vals.Get("error_uri"),
 			}
 		}
-		token = &Token{
+		token = &auth.OAuthBearerToken{
 			AccessToken:  vals.Get("access_token"),
 			TokenType:    vals.Get("token_type"),
 			RefreshToken: vals.Get("refresh_token"),
@@ -204,7 +195,7 @@ func doTokenRoundTrip(doer httpcli.Doer, req *http.Request) (*Token, error) {
 				ErrorURI:         tj.ErrorURI,
 			}
 		}
-		token = &Token{
+		token = &auth.OAuthBearerToken{
 			AccessToken:  tj.AccessToken,
 			TokenType:    tj.TokenType,
 			RefreshToken: tj.RefreshToken,

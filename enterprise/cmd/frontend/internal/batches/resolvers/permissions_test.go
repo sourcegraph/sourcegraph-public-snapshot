@@ -451,7 +451,7 @@ func TestPermissionLevels(t *testing.T) {
 							ExternalServiceID:   "https://github.com/",
 							ExternalServiceType: extsvc.TypeGitHub,
 							UserID:              tc.user,
-						}, &auth.OAuthBearerToken{Token: "SOSECRET"})
+						}, &auth.OAuthBearerToken{AccessToken: "SOSECRET"})
 						if err != nil {
 							t.Fatal(err)
 						}
@@ -461,7 +461,7 @@ func TestPermissionLevels(t *testing.T) {
 							ExternalServiceID:   "https://github.com/",
 							ExternalServiceType: extsvc.TypeGitHub,
 						}
-						token := &auth.OAuthBearerToken{Token: "SOSECRET"}
+						token := &auth.OAuthBearerToken{AccessToken: "SOSECRET"}
 						if err := bstore.CreateSiteCredential(ctx, cred, token); err != nil {
 							t.Fatal(err)
 						}
@@ -762,7 +762,7 @@ query($includeLocallyExecutedSpecs: Boolean) {
 							ExternalServiceID:   "https://github.com/",
 							ExternalServiceType: extsvc.TypeGitHub,
 							UserID:              tc.user,
-						}, &auth.OAuthBearerToken{Token: "SOSECRET"})
+						}, &auth.OAuthBearerToken{AccessToken: "SOSECRET"})
 						if err != nil {
 							t.Fatal(err)
 						}
@@ -772,7 +772,7 @@ query($includeLocallyExecutedSpecs: Boolean) {
 							ExternalServiceID:   "https://github.com/",
 							ExternalServiceType: extsvc.TypeGitHub,
 						}
-						token := &auth.OAuthBearerToken{Token: "SOSECRET"}
+						token := &auth.OAuthBearerToken{AccessToken: "SOSECRET"}
 						if err := bstore.CreateSiteCredential(ctx, cred, token); err != nil {
 							t.Fatal(err)
 						}
@@ -1242,7 +1242,7 @@ query($includeLocallyExecutedSpecs: Boolean) {
 							ExternalServiceID:   "https://github.com/",
 							ExternalServiceType: extsvc.TypeGitHub,
 							UserID:              tc.user,
-						}, &auth.OAuthBearerToken{Token: "SOSECRET"})
+						}, &auth.OAuthBearerToken{AccessToken: "SOSECRET"})
 						if err != nil {
 							t.Fatal(err)
 						}
@@ -1252,7 +1252,7 @@ query($includeLocallyExecutedSpecs: Boolean) {
 							ExternalServiceID:   "https://github.com/",
 							ExternalServiceType: extsvc.TypeGitHub,
 						}
-						token := &auth.OAuthBearerToken{Token: "SOSECRET"}
+						token := &auth.OAuthBearerToken{AccessToken: "SOSECRET"}
 						if err := bstore.CreateSiteCredential(ctx, cred, token); err != nil {
 							t.Fatal(err)
 						}
