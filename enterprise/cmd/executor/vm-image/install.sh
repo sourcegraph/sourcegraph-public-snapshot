@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 set -ex -o nounset -o pipefail
 
-export IGNITE_VERSION=v0.10.4
-export CNI_VERSION=v0.9.1
-export RUNTIME_IMAGE="sourcegraph/ignite:${IGNITE_VERSION}"
-export KERNEL_IMAGE="sourcegraph/ignite-kernel:5.10.135-amd64"
 export EXECUTOR_FIRECRACKER_IMAGE="sourcegraph/executor-vm:$VERSION"
 export NODE_EXPORTER_VERSION=1.2.2
 export NODE_EXPORTER_ADDR="127.0.0.1:9100"
@@ -71,33 +67,44 @@ function install_git() {
   apt-get install -y git
 }
 
-## Install Weaveworks Ignite
-## Reference: https://ignite.readthedocs.io/en/stable/installation/
-function install_ignite() {
+## Install and configure executor service
+function install_executor() {
+  # Move binary into PATH
+  mv /tmp/executor /usr/local/bin
+
+  # Run all the installers:
+  # TODO: Replace this by executor install all. For that install images executor-vm
+  # has to work in this VM box though.
+
+  # Loads the required kernel image so it doesn't have to happen on the first VM start.
+  /usr/local/bin/executor install image kernel
+  # Loads the required sandbox docker image so it doesn't have to happen on the first VM start.
+  /usr/local/bin/executor install image sandbox
+  # Install Weaveworks Ignite
+  # Reference: https://ignite.readthedocs.io/en/stable/installation/
   # Install dependencies. Most of these are actually bundled by default, but
   # listing them out here explicitly makes it so that upstream image changes never
   # negatively impact us.
   apt-get update
   apt-get install -y mount tar binutils e2fsprogs openssh-client dmsetup
-
   # Download and install ignite binary.
-  curl -sfLo ignite https://github.com/sourcegraph/ignite/releases/download/${IGNITE_VERSION}/ignite-amd64
-  chmod +x ignite
-  mv ignite /usr/local/bin
-}
-
-## Install the CNI plus plugins, used by ignite.
-function install_cni() {
-  mkdir -p /opt/cni/bin
-  curl -sSL https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-linux-amd64-${CNI_VERSION}.tgz | tar -xz -C /opt/cni/bin
-  # Also install the isolation plugin.
-  curl -sSL https://github.com/AkihiroSuda/cni-isolation/releases/download/v0.0.4/cni-isolation-amd64.tgz | tar -xz -C /opt/cni/bin
-}
-
-## Install and configure executor service
-function install_executor() {
-  # Move binary into PATH
-  mv /tmp/executor /usr/local/bin
+  /usr/local/bin/executor install ignite
+  # Install the CNI plus plugins, used by ignite.
+  /usr/local/bin/executor install cni
+  # Install src-cli to the host system. It's needed for src steps outside of firecracker.
+  /usr/local/bin/executor install src-cli
+  # Configures iptables rules for our ignite VMs. We don't want to allow any local
+  # traffic except the traffic to nameservers. This is to prevent any internal attack
+  # vector and talking to link-local services like the google metadata server.
+  # Make sure the below install doesn't block.
+  echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
+  # Ensure iptables-persistent is installed.
+  apt-get install -y iptables-persistent
+  # Install all required rules.
+  /usr/local/bin/executor install iptables-rules
+  # Store the iptables config.
+  mkdir -p /etc/iptables
+  iptables-save >/etc/iptables/rules.v4
 
   # Create configuration file and stub environment file.
   # We also wait for docker to be ready, otherwise
@@ -147,6 +154,14 @@ EOF
   chmod +x /shutdown_executor.sh
 }
 
+## Verify executor is working properly.
+function verify_executor() {
+  # Start a VM to see if that succeeds. Then, clean up the VM so we don't leave it
+  # behind in the image.
+  VM="$(/usr/local/bin/executor test-vm --name-only)"
+  ignite rm --force "$VM"
+}
+
 function install_node_exporter() {
   useradd --system --shell /bin/false node_exporter
 
@@ -185,62 +200,15 @@ EOF
   systemctl enable node_exporter
 }
 
-# Install src-cli to the host system. It's needed for src steps outside of firecracker.
-function install_src_cli() {
-  curl -f -L -o src-cli.tar.gz "https://github.com/sourcegraph/src-cli/releases/download/${SRC_CLI_VERSION}/src-cli_${SRC_CLI_VERSION}_linux_amd64.tar.gz"
-  tar -xvzf src-cli.tar.gz src
-  mv src /usr/local/bin/src
-  chmod +x /usr/local/bin/src
-  rm -rf src-cli.tar.gz
-}
-
 ## Build the sourcegraph/executor-vm image for use in firecracker.
 ## Set SRC_CLI_VERSION to the minimum required version in internal/src-cli/consts.go
 function generate_ignite_base_image() {
+  # TODO: Find a way to use executor install image executor-vm here.
   docker build -t "${EXECUTOR_FIRECRACKER_IMAGE}" --build-arg SRC_CLI_VERSION="${SRC_CLI_VERSION}" /tmp/executor-vm
   ignite image import --runtime docker "${EXECUTOR_FIRECRACKER_IMAGE}"
   docker image rm "${EXECUTOR_FIRECRACKER_IMAGE}"
   # Remove intermediate layers and base image used in executor-vm.
   docker system prune --force
-}
-
-## Loads the required kernel image so it doesn't have to happen on the first VM start.
-function preheat_kernel_image() {
-  ignite kernel import --runtime docker "${KERNEL_IMAGE}"
-  # Also preload the runtime image.
-  docker pull "${RUNTIME_IMAGE}"
-}
-
-## Writes a config file with the default values we use for ignite in the executor.
-## This makes it easier to stand up a debugging VM with the same parameters,
-## without having to find the three image versions involved here.
-function configure_ignite() {
-  mkdir -p /etc/ignite
-  cat <<EOF >/etc/ignite/config.yaml
-apiVersion: ignite.weave.works/v1alpha4
-kind: Configuration
-metadata:
-  name: sourcegraph-executors-default
-spec:
-  runtime: docker
-  networkPlugin: cni
-  vmDefaults:
-    image:
-      oci: "${EXECUTOR_FIRECRACKER_IMAGE}"
-    sandbox:
-      oci: "${RUNTIME_IMAGE}"
-    kernel:
-      oci: "${KERNEL_IMAGE}"
-      # Explanation of arguments passed here:
-      # console: Default
-      # reboot: Default
-      # panic: Default
-      # pci: Default
-      # ip: Default
-      # random.trust_cpu: Found in https://github.com/firecracker-microvm/firecracker/blob/main/docs/snapshotting/random-for-clones.md, this makes RNG initialization much faster (saves ~1s on startup).
-      # i8042.X: Makes boot faster, doesn't poll on the i8042 device on boot. See https://github.com/firecracker-microvm/firecracker/blob/main/docs/api_requests/actions.md#intel-and-amd-only-sendctrlaltdel.
-      cmdLine: "console=ttyS0 reboot=k panic=1 pci=off ip=dhcp random.trust_cpu=on i8042.noaux i8042.nomux i8042.nopnp i8042.dumbkbd"
-EOF
 }
 
 function cleanup() {
@@ -251,24 +219,24 @@ function cleanup() {
   history -c
 }
 
-# Prerequisites
+# Install cloud specific helpers.
 if [ "${PLATFORM_TYPE}" == "gcp" ]; then
   install_ops_agent
 elif [ "${PLATFORM_TYPE}" == "aws" ]; then
   install_cloudwatch_agent
 fi
+
+# Install dependencies.
 install_docker
 install_git
-install_src_cli
-install_ignite
-install_cni
 
-# Services
-install_executor
+# Install the optional node exporter dependency.
 install_node_exporter
 
-# Service prep and cleanup
+# Install and setup executor.
+install_executor
 generate_ignite_base_image
-preheat_kernel_image
-configure_ignite
+verify_executor
+
+# Final cleanup.
 cleanup

@@ -184,11 +184,7 @@ func newDockerDaemonConfig(tmpDir, mirrorAddress string) (_ string, err error) {
 // setupFirecracker invokes a set of commands to provision and prepare a Firecracker virtual
 // machine instance. If a startup script path (an executable file on the host) is supplied,
 // it will be mounted into the new virtual machine instance and executed.
-func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, name, workspaceDevice string, options Options, operations *Operations) error {
-	tmpDir, err := os.MkdirTemp("", "firecracker-vm-state")
-	if err != nil {
-		return err
-	}
+func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, name, workspaceDevice, tmpDir string, options Options, operations *Operations) error {
 	var daemonConfigFile string
 	if options.FirecrackerOptions.DockerRegistryMirrorURL != "" {
 		var err error
@@ -199,7 +195,7 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, 
 	}
 
 	cniConfigDir := path.Join(tmpDir, "cni")
-	err = os.Mkdir(cniConfigDir, os.ModePerm)
+	err := os.Mkdir(cniConfigDir, os.ModePerm)
 	if err != nil {
 		return err
 	}

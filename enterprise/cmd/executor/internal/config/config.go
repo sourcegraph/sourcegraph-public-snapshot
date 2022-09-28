@@ -1,56 +1,28 @@
-package main
+package config
 
 import (
 	"fmt"
-	"os"
-	"path"
 	"runtime"
 	"strconv"
 	"time"
 
 	"github.com/c2h5oh/datasize"
 	"github.com/google/uuid"
+	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	apiworker "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
-	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-const (
-	defaultFirecrackerSandboxImage = "sourcegraph/ignite:v0.10.4"
-	defaultFirecrackerKernelImage  = "sourcegraph/ignite-kernel:5.10.135-amd64"
-)
-
-var defaultFirecrackerImage = func() string {
-	tag := version.Version()
-	// In dev, just use insiders for convenience.
-	if version.IsDev(tag) {
-		tag = "insiders"
-	}
-	return fmt.Sprintf("sourcegraph/executor-vm:%s", tag)
-}()
-
-const cniBinDir = "/opt/cni/bin"
-
-// requiredCNIPlugins is the list of CNI binaries that are expected to exist when using
-// firecracker.
-var requiredCNIPlugins = []string{
-	// Used to throttle bandwidth per VM so that none can drain the host completely.
-	"bandwidth",
-	"bridge",
-	"firewall",
-	"host-local",
-	// Used to isolate the ignite bridge from other bridges.
-	"isolation",
-	"loopback",
-	// Needed by ignite, but we don't actually do port mapping.
-	"portmap",
-}
 
 type Config struct {
 	env.BaseConfig
@@ -90,9 +62,9 @@ func (c *Config) Load() {
 	c.QueuePollInterval = c.GetInterval("EXECUTOR_QUEUE_POLL_INTERVAL", "1s", "Interval between dequeue requests.")
 	c.MaximumNumJobs = c.GetInt("EXECUTOR_MAXIMUM_NUM_JOBS", "1", "Number of virtual machines or containers that can be running at once.")
 	c.UseFirecracker = c.GetBool("EXECUTOR_USE_FIRECRACKER", strconv.FormatBool(runtime.GOOS == "linux"), "Whether to isolate commands in virtual machines. Requires ignite and firecracker. Linux hosts only.")
-	c.FirecrackerImage = c.Get("EXECUTOR_FIRECRACKER_IMAGE", defaultFirecrackerImage, "The base image to use for virtual machines.")
-	c.FirecrackerKernelImage = c.Get("EXECUTOR_FIRECRACKER_KERNEL_IMAGE", defaultFirecrackerKernelImage, "The base image containing the kernel binary to use for virtual machines.")
-	c.FirecrackerSandboxImage = c.Get("EXECUTOR_FIRECRACKER_SANDBOX_IMAGE", defaultFirecrackerSandboxImage, "The OCI image for the ignite VM sandbox.")
+	c.FirecrackerImage = c.Get("EXECUTOR_FIRECRACKER_IMAGE", DefaultFirecrackerImage, "The base image to use for virtual machines.")
+	c.FirecrackerKernelImage = c.Get("EXECUTOR_FIRECRACKER_KERNEL_IMAGE", DefaultFirecrackerKernelImage, "The base image containing the kernel binary to use for virtual machines.")
+	c.FirecrackerSandboxImage = c.Get("EXECUTOR_FIRECRACKER_SANDBOX_IMAGE", DefaultFirecrackerSandboxImage, "The OCI image for the ignite VM sandbox.")
 	c.VMStartupScriptPath = c.GetOptional("EXECUTOR_VM_STARTUP_SCRIPT_PATH", "A path to a file on the host that is loaded into a fresh virtual machine and executed on startup.")
 	c.VMPrefix = c.Get("EXECUTOR_VM_PREFIX", "executor", "A name prefix for virtual machines controlled by this instance.")
 	c.KeepWorkspaces = c.GetBool("EXECUTOR_KEEP_WORKSPACES", "false", "Whether to skip deletion of workspaces after a job completes (or fails). Note that when Firecracker is enabled that the workspace is initially copied into the VM, so modifications will not be observed.")
@@ -116,18 +88,22 @@ func (c *Config) Load() {
 }
 
 func (c *Config) Validate() error {
+	if c.QueueName != "" && c.QueueName != "batches" && c.QueueName != "codeintel" {
+		c.AddError(errors.New("EXECUTOR_QUEUE_NAME must be set to 'batches' or 'codeintel'"))
+	}
+
 	if c.UseFirecracker {
 		// Validate that firecracker can work on this host.
 		if runtime.GOOS != "linux" {
-			c.AddError(errors.Newf("EXECUTOR_USE_FIRECRACKER is only supported on linux hosts."))
+			c.AddError(errors.New("EXECUTOR_USE_FIRECRACKER is only supported on linux hosts."))
 		}
 		if runtime.GOARCH != "amd64" {
-			c.AddError(errors.Newf("EXECUTOR_USE_FIRECRACKER is only supported on amd64 hosts."))
+			c.AddError(errors.New("EXECUTOR_USE_FIRECRACKER is only supported on amd64 hosts."))
 		}
 
-		// Required by Firecracker: The vCPU number is invalid! The vCPU number can only be 1 or an even number when hyperthreading is enabled
+		// Required by Firecracker: The vCPU number can only be 1 or an even number when hyperthreading is enabled.
 		if c.JobNumCPUs != 1 && c.JobNumCPUs%2 != 0 {
-			c.AddError(errors.Newf("EXECUTOR_JOB_NUM_CPUS must be 1 or an even number"))
+			c.AddError(errors.New("EXECUTOR_JOB_NUM_CPUS must be 1 or an even number"))
 		}
 
 		// Make sure disk space is a valid datasize string.
@@ -136,52 +112,27 @@ func (c *Config) Validate() error {
 			c.AddError(errors.Wrapf(err, "invalid disk size provided for EXECUTOR_FIRECRACKER_DISK_SPACE: %q", c.FirecrackerDiskSpace))
 		}
 
-		// Make sure CNI is properly configured.
-		if stat, err := os.Stat(cniBinDir); err != nil {
-			if os.IsNotExist(err) {
-				c.AddError(errors.Newf("Cannot find directory %s. Are the CNI plugins for firecracker installed correctly?", cniBinDir))
-			} else {
-				c.AddError(errors.Wrap(err, "Checking for CNI_BIN_DIR"))
-			}
-		} else {
-			if !stat.IsDir() {
-				c.AddError(errors.Newf("%s expected to be a directory, but is a file", cniBinDir))
-			}
-			missingPlugins := []string{}
-			missingIsolationPlugin := false
-			for _, plugin := range requiredCNIPlugins {
-				pluginPath := path.Join(cniBinDir, plugin)
-				if stat, err := os.Stat(pluginPath); err != nil {
-					if os.IsNotExist(err) {
-						missingPlugins = append(missingPlugins, plugin)
-						if plugin == "isolation" {
-							missingIsolationPlugin = true
-						}
-					} else {
-						c.AddError(errors.Wrapf(err, "Checking for existence of CNI plugin %q", plugin))
-					}
-				} else {
-					if stat.IsDir() {
-						c.AddError(errors.Newf("Expected %s to be a file, but is a directory", pluginPath))
-					}
-				}
-			}
-			if len(missingPlugins) != 0 {
-				hint := `To install the CNI plugins used by ignite run the following:
-mkdir -p /opt/cni/bin
-curl -sSL https://github.com/containernetworking/plugins/releases/download/v0.9.1/cni-plugins-linux-amd64-v0.9.1.tgz | tar -xz -C /opt/cni/bin`
-				if missingIsolationPlugin {
-					hint += `
-To install the isolation plugin used by ignite run the following:
-curl -sSL https://github.com/AkihiroSuda/cni-isolation/releases/download/v0.0.4/cni-isolation-amd64.tgz | tar -xz -C /opt/cni/bin`
-				}
-				c.AddError(errors.Newf("Cannot find CNI plugins %v, are the CNI plugins for firecracker installed correctly?\n%s", missingPlugins, hint))
-			}
-		}
-	}
+		// Make sure ignite is installed.
+		// if err := validateIgniteInstalled(); err != nil {
+		// 	c.AddError(err)
+		// }
 
-	if c.QueueName != "batches" && c.QueueName != "codeintel" {
-		c.AddError(errors.Newf("EXECUTOR_QUEUE_NAME must be set to 'batches' or 'codeintel'"))
+		// Make sure CNI is properly configured.
+		// if errs := validateCNIInstalled(); errs != nil {
+		// 	if e, ok := errs.(errors.MultiError); ok {
+		// 		for _, err := range e.Errors() {
+		// 			c.AddError(err)
+		// 		}
+		// 	}
+		// }
+
+		// if errs := validateToolsRequired(c.UseFirecracker); errs != nil {
+		// 	if e, ok := errs.(errors.MultiError); ok {
+		// 		for _, err := range e.Errors() {
+		// 			c.AddError(err)
+		// 		}
+		// 	}
+		// }
 	}
 
 	return c.BaseConfig.Validate()
@@ -264,4 +215,21 @@ func (c *Config) EndpointOptions() apiclient.EndpointOptions {
 		URL:   c.FrontendURL,
 		Token: c.FrontendAuthorizationToken,
 	}
+}
+
+func makeWorkerMetrics(queueName string) workerutil.WorkerMetrics {
+	observationContext := &observation.Context{
+		Logger:     log.Scoped("executor_processor", "executor worker processor"),
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
+		Registerer: prometheus.DefaultRegisterer,
+	}
+
+	return workerutil.NewMetrics(observationContext, "executor_processor",
+		// derived from historic data, ideally we will use spare high-res histograms once they're a reality
+		// 										 30s 1m	 2.5m 5m   7.5m 10m  15m  20m	30m	  45m	1hr
+		workerutil.WithDurationBuckets([]float64{30, 60, 150, 300, 450, 600, 900, 1200, 1800, 2700, 3600}),
+		workerutil.WithLabels(map[string]string{
+			"queue": queueName,
+		}),
+	)
 }
