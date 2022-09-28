@@ -99,11 +99,14 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.Changeset
 				}
 			}
 
-			var published []byte
+			var published any
 			if c.Published.Val != nil {
-				published, err = json.Marshal(c.Published)
+				val, err := json.Marshal(c.Published.Val)
 				if err != nil {
 					return err
+				}
+				if val != nil {
+					published = string(val)
 				}
 			}
 
