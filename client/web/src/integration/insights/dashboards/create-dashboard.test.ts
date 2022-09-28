@@ -4,7 +4,6 @@ import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/dri
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../../context'
-import { GET_DASHBOARD_INSIGHTS_EMPTY, INSIGHTS_DASHBOARDS } from '../fixtures/dashboards'
 import { overrideInsightsGraphQLApi } from '../utils/override-insights-graphql-api'
 
 describe('[Code Insight] Dashboard', () => {
@@ -24,15 +23,12 @@ describe('[Code Insight] Dashboard', () => {
     })
 
     after(() => driver?.close())
-    afterEach(() => testContext?.dispose())
     afterEachSaveScreenshotIfFailed(() => driver.page)
 
     it('creates dashboard through dashboard creation UI', async () => {
         overrideInsightsGraphQLApi({
             testContext,
             overrides: {
-                InsightsDashboards: () => INSIGHTS_DASHBOARDS,
-                GetDashboardInsights: () => GET_DASHBOARD_INSIGHTS_EMPTY,
                 InsightSubjects: () => ({
                     currentUser: {
                         __typename: 'User',
