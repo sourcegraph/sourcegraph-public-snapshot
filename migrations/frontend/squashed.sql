@@ -34,12 +34,6 @@ CREATE TYPE batch_changes_changeset_ui_publication_state AS ENUM (
     'PUBLISHED'
 );
 
-CREATE TYPE changeset_spec_published_enum AS ENUM (
-    'true',
-    'false',
-    'draft'
-);
-
 CREATE TYPE cm_email_priority AS ENUM (
     'NORMAL',
     'CRITICAL'
@@ -1050,7 +1044,7 @@ CREATE TABLE changeset_specs (
     base_rev text,
     base_ref text,
     body text,
-    published changeset_spec_published_enum,
+    published text,
     commit_message text,
     commit_author_name text,
     commit_author_email text,
