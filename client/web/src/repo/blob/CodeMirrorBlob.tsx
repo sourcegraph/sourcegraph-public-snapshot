@@ -4,9 +4,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { search, searchKeymap } from '@codemirror/search'
 import { Compartment, EditorState, Extension } from '@codemirror/state'
-import { EditorView, keymap } from '@codemirror/view'
+import { EditorView } from '@codemirror/view'
 import { isEqual } from 'lodash'
 
 import {
@@ -24,6 +23,7 @@ import { showGitBlameDecorations } from './codemirror/blame-decorations'
 import { syntaxHighlight } from './codemirror/highlight'
 import { hovercardRanges } from './codemirror/hovercard'
 import { selectLines, selectableLineNumbers, SelectedLineRange } from './codemirror/linenumbers'
+import { search } from './codemirror/search'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
 import { isValidLineRange, offsetToUIPosition, uiPositionToOffset } from './codemirror/utils'
 
@@ -61,9 +61,8 @@ const staticExtensions: Extension = [
         },
     }),
     // Note that these only work out-of-the-box because the editor is
-    // *focusable* but read-only (see EditorState.readOnly above).
-    search({ top: true }),
-    keymap.of(searchKeymap),
+    // *focusable* by setting `tab-index: 0`.
+    search,
 ]
 
 // Compartments are used to reconfigure some parts of the editor without
@@ -256,7 +255,15 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [position, hasPin])
 
-    return <div ref={setContainer} aria-label={ariaLabel} role={role} className={`${className} overflow-hidden`} />
+    return (
+        <div
+            ref={setContainer}
+            aria-label={ariaLabel}
+            role={role}
+            data-testid="repo-blob"
+            className={`${className} overflow-hidden`}
+        />
+    )
 }
 
 /**
@@ -305,8 +312,12 @@ const [pinnedRangeField, updatePinnedRangeField] = createUpdateableField<LineOrP
         }
         const from = uiPositionToOffset(state.doc, startPosition, startLine)
 
+        if (from === null) {
+            return []
+        }
+
         let endPosition: UIPositionSpec['position']
-        let to: number
+        let to: number | null = null
 
         if (position.endLine && position.endCharacter) {
             endPosition = {
@@ -323,6 +334,10 @@ const [pinnedRangeField, updatePinnedRangeField] = createUpdateableField<LineOrP
             }
             to = word.to
             endPosition = offsetToUIPosition(state.doc, word.to)
+        }
+
+        if (to === null || endPosition === null) {
+            return []
         }
 
         return [

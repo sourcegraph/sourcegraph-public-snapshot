@@ -26,3 +26,22 @@ interface GetButtonDisplayParameters {
 
 export const getButtonDisplay = ({ display }: GetButtonDisplayParameters): string =>
     styles[`btn${upperFirst(display)}` as keyof typeof styles]
+
+/**
+ * Returns the class name to style a button with the given options. This can be
+ * used to for generating the right CSS class combination for plain DOM buttons,
+ * but it should be used sparingly.
+ */
+export function getButtonClassName({
+    variant,
+    display,
+    size,
+    outline,
+}: Partial<GetButtonStyleParameters & GetButtonSizeParameters & GetButtonDisplayParameters> = {}): string {
+    return classNames(
+        styles.btn,
+        variant && getButtonStyle({ variant, outline }),
+        display && getButtonDisplay({ display }),
+        size && getButtonSize({ size })
+    )
+}

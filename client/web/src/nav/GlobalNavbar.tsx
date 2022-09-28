@@ -18,7 +18,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, FeedbackPrompt, ButtonLink, PopoverTrigger, useWindowSize } from '@sourcegraph/wildcard'
+import { Button, Link, ButtonLink, useWindowSize } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -28,7 +28,7 @@ import { ActivationDropdown } from '../components/ActivationDropdown'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { WebCommandListPopoverButton } from '../components/shared'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
-import { useHandleSubmitFeedback, useRoutesMatch } from '../hooks'
+import { useRoutesMatch } from '../hooks'
 import { CodeInsightsProps } from '../insights/types'
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
 import { LayoutRouteProps } from '../routes'
@@ -46,7 +46,7 @@ import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '.'
 
 import styles from './GlobalNavbar.module.scss'
 
-interface Props
+export interface GlobalNavbarProps
     extends SettingsCascadeProps<Settings>,
         PlatformContextProps,
         ExtensionsControllerProps,
@@ -60,27 +60,15 @@ interface Props
     history: H.History
     location: H.Location
     authenticatedUser: AuthenticatedUser | null
-    authRequired: boolean
     isSourcegraphDotCom: boolean
     showSearchBox: boolean
     routes: readonly LayoutRouteProps<{}>[]
 
     // Whether globbing is enabled for filters.
     globbing: boolean
-
-    /**
-     * Which variation of the global navbar to render.
-     *
-     * 'low-profile' renders the the navbar with no border or background. Used on the search
-     * homepage.
-     *
-     * 'low-profile-with-logo' renders the low-profile navbar but with the homepage logo. Used on community search context pages.
-     */
-    variant: 'default' | 'low-profile' | 'low-profile-with-logo'
-
-    minimalNavLinks?: boolean
     isSearchAutoFocusRequired?: boolean
     isRepositoryRelatedPage?: boolean
+    enableLegacyExtensions?: boolean
     branding?: typeof window.context.branding
     showKeyboardShortcutsHelp: () => void
 }
@@ -92,8 +80,8 @@ interface Props
  */
 function useCalculatedNavLinkVariant(
     containerReference: React.MutableRefObject<HTMLDivElement | null>,
-    activation: Props['activation'],
-    authenticatedUser: Props['authenticatedUser']
+    activation: GlobalNavbarProps['activation'],
+    authenticatedUser: GlobalNavbarProps['authenticatedUser']
 ): 'compact' | undefined {
     const [navLinkVariant, setNavLinkVariant] = useState<'compact'>()
     const { width } = useWindowSize()
@@ -133,28 +121,24 @@ const AnalyticsNavItem: React.FunctionComponent = () => {
     )
 }
 
-export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    authRequired,
+export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<GlobalNavbarProps>> = ({
     showSearchBox,
-    variant,
     isLightTheme,
     branding,
     location,
     history,
-    minimalNavLinks,
     isSourcegraphDotCom,
     isRepositoryRelatedPage,
     codeInsightsEnabled,
     searchContextsEnabled,
+    extensionsController,
+    enableLegacyExtensions,
     ...props
 }) => {
     // Workaround: can't put this in optional parameter value because of https://github.com/babel/babel/issues/11166
     branding = branding ?? window.context?.branding
 
     const routeMatch = useRoutesMatch(props.routes)
-    const { handleSubmitFeedback } = useHandleSubmitFeedback({
-        routeMatch,
-    })
 
     const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext)
@@ -178,18 +162,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
     // isCodeInsightsEnabled selector controls appearance based on user settings flags
     const codeInsights = codeInsightsEnabled && isCodeInsightsEnabled(props.settingsCascade)
 
-    const searchNavBar = (
-        <SearchNavbarItem
-            {...props}
-            location={location}
-            history={history}
-            isLightTheme={isLightTheme}
-            isSourcegraphDotCom={isSourcegraphDotCom}
-            searchContextsEnabled={searchContextsEnabled}
-            isRepositoryRelatedPage={isRepositoryRelatedPage}
-        />
-    )
-
     const searchNavBarItems = useMemo(() => {
         const items: (NavDropdownItem | false)[] = [
             searchContextsEnabled &&
@@ -197,8 +169,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
         ]
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
     }, [searchContextsEnabled, showSearchContext])
-
-    const { extensionsController } = props
 
     return (
         <>
@@ -253,7 +223,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                             </NavLink>
                         </NavItem>
                     )}
-                    {window.context.enableLegacyExtensions && (
+                    {enableLegacyExtensions && (
                         <NavItem icon={PuzzleOutlineIcon}>
                             <NavLink variant={navLinkVariant} to="/extensions">
                                 Extensions
@@ -289,23 +259,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                         </>
                     )}
                     {props.authenticatedUser?.siteAdmin && <AnalyticsNavItem />}
-                    {props.authenticatedUser && (
-                        <NavAction>
-                            <FeedbackPrompt onSubmit={handleSubmitFeedback} productResearchEnabled={true}>
-                                <PopoverTrigger
-                                    as={Button}
-                                    aria-label="Feedback"
-                                    variant="secondary"
-                                    outline={true}
-                                    size="sm"
-                                    className={styles.feedbackTrigger}
-                                >
-                                    <span>Feedback</span>
-                                </PopoverTrigger>
-                            </FeedbackPrompt>
-                        </NavAction>
-                    )}
-                    {props.authenticatedUser && extensionsController !== null && window.context.enableLegacyExtensions && (
+                    {props.authenticatedUser && extensionsController !== null && enableLegacyExtensions && (
                         <NavAction>
                             <WebCommandListPopoverButton
                                 {...props}
@@ -359,7 +313,17 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
             </NavBar>
             {showSearchBox && (
                 <div className="w-100 px-3 pt-2">
-                    <div className="pb-2 border-bottom">{searchNavBar}</div>
+                    <div className="pb-2 border-bottom">
+                        <SearchNavbarItem
+                            {...props}
+                            location={location}
+                            history={history}
+                            isLightTheme={isLightTheme}
+                            isSourcegraphDotCom={isSourcegraphDotCom}
+                            searchContextsEnabled={searchContextsEnabled}
+                            isRepositoryRelatedPage={isRepositoryRelatedPage}
+                        />
+                    </div>
                 </div>
             )}
         </>

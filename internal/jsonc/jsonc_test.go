@@ -73,30 +73,3 @@ func TestParse(t *testing.T) {
 		})
 	}
 }
-
-func TestNormalize(t *testing.T) {
-	tests := []struct{ input, want string }{
-		{
-			input: `{
-// comment
-/* another comment */
-"hello": "world",
-}`,
-			want: `{"hello":"world"}`,
-		},
-		{
-			input: `// just
-// comments
-// here`,
-			want: "null",
-		},
-	}
-
-	for i, test := range tests {
-		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			if got := string(Normalize(test.input)); got != test.want {
-				t.Errorf("got %s, want %s\ninput: %s", got, test.want, test.input)
-			}
-		})
-	}
-}

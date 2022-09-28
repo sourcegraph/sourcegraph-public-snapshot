@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
-import { mdiSourceRepository, mdiChevronDown } from '@mdi/js'
+import { mdiSourceRepository } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { escapeRegExp } from 'lodash'
@@ -20,21 +20,10 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { escapeSpaces } from '@sourcegraph/shared/src/search/query/filters'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
-import {
-    Icon,
-    Button,
-    ButtonGroup,
-    useObservable,
-    Link,
-    Popover,
-    PopoverContent,
-    Position,
-    PopoverTrigger,
-} from '@sourcegraph/wildcard'
+import { Icon, Button, useObservable, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -60,7 +49,6 @@ import {
     RepoRevisionContainerContext,
     RepoRevisionContainerRoute,
 } from './RepoRevisionContainer'
-import { RepositoriesPopover } from './RepositoriesPopover'
 import { commitsPath, compareSpecPath } from './routes'
 import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
@@ -154,13 +142,11 @@ export interface HoverThresholdProps {
  * Renders a horizontal bar and content for a repository page.
  */
 export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<RepoContainerProps>> = props => {
-    const { extensionsController, telemetryService, globbing } = props
+    const { extensionsController, globbing } = props
 
     const { repoName, revision, rawRevision, filePath, commitRange, position, range } = parseBrowserRepoURL(
         location.pathname + location.search + location.hash
     )
-
-    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
 
     const resolvedRevisionOrError = useObservable(
         useMemo(
@@ -237,34 +223,9 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
 
             return {
                 key: 'repository',
-                element: coreWorkflowImprovementsEnabled ? (
-                    button // Don't show the repo dropdown if core workflow improvements are enabled
-                ) : (
-                    <Popover>
-                        <ButtonGroup className="d-inline-flex">
-                            {button}
-                            <PopoverTrigger
-                                as={Button}
-                                className={styles.repoChange}
-                                aria-label="Change repository"
-                                outline={true}
-                                variant="secondary"
-                                size="sm"
-                            >
-                                <Icon aria-hidden={true} svgPath={mdiChevronDown} />
-                            </PopoverTrigger>
-                        </ButtonGroup>
-                        <PopoverContent
-                            position={Position.bottomStart}
-                            className="pt-0 pb-0"
-                            aria-label="Change repository"
-                        >
-                            <RepositoriesPopover currentRepo={repoOrError?.id} telemetryService={telemetryService} />
-                        </PopoverContent>
-                    </Popover>
-                ),
+                element: button,
             }
-        }, [resolvedRevisionOrError, repoOrError, coreWorkflowImprovementsEnabled, telemetryService, repoName])
+        }, [resolvedRevisionOrError, repoOrError, repoName])
     )
 
     // Update the workspace roots service to reflect the current repo / resolved revision

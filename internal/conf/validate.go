@@ -165,11 +165,16 @@ func (ps Problems) ExternalService() (problems Problems) {
 // Validate validates the configuration against the JSON Schema and other
 // custom validation checks.
 func Validate(input conftypes.RawUnified) (problems Problems, err error) {
-	siteProblems := doValidate(input.Site, schema.SiteSchemaJSON)
+	siteJSON, err := jsonc.Parse(input.Site)
+	if err != nil {
+		return nil, err
+	}
+
+	siteProblems := doValidate(siteJSON, schema.SiteSchemaJSON)
 	problems = append(problems, NewSiteProblems(siteProblems...)...)
 
 	customProblems, err := validateCustomRaw(conftypes.RawUnified{
-		Site: string(jsonc.Normalize(input.Site)),
+		Site: string(siteJSON),
 	})
 	if err != nil {
 		return nil, err
@@ -332,13 +337,16 @@ func RedactSecrets(raw conftypes.RawUnified) (empty conftypes.RawUnified, err er
 
 // ValidateSettings validates the JSONC input against the settings JSON Schema, returning a list of
 // problems (if any).
-func ValidateSettings(input string) (problems []string) {
-	return doValidate(input, schema.SettingsSchemaJSON)
+func ValidateSettings(jsoncInput string) (problems []string) {
+	jsonInput, err := jsonc.Parse(jsoncInput)
+	if err != nil {
+		return []string{err.Error()}
+	}
+
+	return doValidate(jsonInput, schema.SettingsSchemaJSON)
 }
 
-func doValidate(inputStr, schema string) (messages []string) {
-	input := jsonc.Normalize(inputStr)
-
+func doValidate(input []byte, schema string) (messages []string) {
 	res, err := validate([]byte(schema), input)
 	if err != nil {
 		// We can't return more detailed problems because the input completely failed to parse, so

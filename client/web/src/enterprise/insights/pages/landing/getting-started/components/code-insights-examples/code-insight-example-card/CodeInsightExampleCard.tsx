@@ -127,7 +127,12 @@ interface CodeInsightCaptureExampleProps extends TelemetryProps {
 }
 
 const CodeInsightCaptureExample: FunctionComponent<CodeInsightCaptureExampleProps> = props => {
-    const { content, templateLink, className, telemetryService } = props
+    const {
+        content: { title, groupSearch, repositories, ...content },
+        templateLink,
+        className,
+        telemetryService,
+    } = props
     const seriesToggleState = useSeriesToggle()
 
     const {
@@ -152,13 +157,9 @@ const CodeInsightCaptureExample: FunctionComponent<CodeInsightCaptureExampleProp
     return (
         <InsightCard className={className} onMouseEnter={trackMouseEnter} onMouseLeave={trackMouseLeave}>
             <InsightCardHeader
-                title={content.title}
+                title={title}
                 subtitle={
-                    <CodeInsightsQueryBlock
-                        as={SyntaxHighlightedSearchQuery}
-                        query={content.repositories}
-                        className="mt-1"
-                    />
+                    <CodeInsightsQueryBlock as={SyntaxHighlightedSearchQuery} query={repositories} className="mt-1" />
                 }
             >
                 {templateLink && (
@@ -193,7 +194,7 @@ const CodeInsightCaptureExample: FunctionComponent<CodeInsightCaptureExampleProp
                 <InsightCardLegend series={content.series} className={styles.legend} />
             </div>
 
-            <CodeInsightsQueryBlock as={SyntaxHighlightedSearchQuery} query={content.groupSearch} className="mt-3" />
+            <CodeInsightsQueryBlock as={SyntaxHighlightedSearchQuery} query={groupSearch} className="mt-3" />
         </InsightCard>
     )
 }

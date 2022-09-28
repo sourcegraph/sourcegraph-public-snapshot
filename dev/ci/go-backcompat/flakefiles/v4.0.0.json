@@ -1,0 +1,7 @@
+[
+  {
+    "path": "internal/database",
+    "prefix": "TestUsers_ValidUsernames",
+    "reason": "The username column constraint has been updated to allow underscores. The change is not auto-reversible."
+  }
+]

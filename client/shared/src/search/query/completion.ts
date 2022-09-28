@@ -1,11 +1,12 @@
-import { escapeRegExp, startCase } from 'lodash'
+import { startCase } from 'lodash'
 import * as Monaco from 'monaco-editor'
 import { Omit } from 'utility-types'
 
 import { SymbolKind } from '../../graphql-operations'
-import { RepositoryMatch, SearchMatch } from '../stream'
+import { SearchMatch } from '../stream'
 
-import { FilterType, isNegatableFilter, resolveFilter, FILTERS, escapeSpaces, ResolvedFilter } from './filters'
+import { createFilterSuggestions, PREDICATE_REGEX, regexInsertText, repositoryInsertText } from './completion-utils'
+import { FilterType, resolveFilter, FILTERS, ResolvedFilter } from './filters'
 import { toMonacoSingleLineRange } from './monaco'
 import { CharacterRange, Filter, Pattern, Token, Whitespace } from './token'
 
@@ -13,8 +14,6 @@ export const repositoryCompletionItemKind = Monaco.languages.CompletionItemKind.
 const filterCompletionItemKind = Monaco.languages.CompletionItemKind.Issue
 
 type PartialCompletionItem = Omit<Monaco.languages.CompletionItem, 'range'>
-
-export const PREDICATE_REGEX = /^([.A-Za-z]+)\((.*?)\)?$/
 
 /**
  * COMPLETION_ITEM_SELECTED is a custom Monaco command that we fire after the user selects an autocomplete suggestion.
@@ -24,44 +23,6 @@ export const COMPLETION_ITEM_SELECTED: Monaco.languages.Command = {
     id: 'completionItemSelected',
     title: 'completion item selected',
 }
-
-/**
- * Given a list of filter types, this function returns a list of objects which
- * can be used for creating completion items. The result also includes negated
- * entries for negateable filters.
- */
-export const createFilterSuggestions = (
-    filter: FilterType[]
-): { label: string; insertText: string; filterText: string; detail: string }[] =>
-    filter.flatMap(filterType => {
-        const completionItem = {
-            label: filterType,
-            insertText: `${filterType}:`,
-            filterText: filterType,
-            detail: '',
-        }
-        if (isNegatableFilter(filterType)) {
-            return [
-                {
-                    ...completionItem,
-                    detail: FILTERS[filterType].description(false),
-                },
-                {
-                    ...completionItem,
-                    label: `-${filterType}`,
-                    insertText: `-${filterType}:`,
-                    filterText: `-${filterType}`,
-                    detail: FILTERS[filterType].description(true),
-                },
-            ]
-        }
-        return [
-            {
-                ...completionItem,
-                detail: FILTERS[filterType].description,
-            },
-        ]
-    })
 
 /**
  * Default filter completions for all filters.
@@ -76,24 +37,6 @@ const FILTER_TYPE_COMPLETIONS: Omit<Monaco.languages.CompletionItem, 'range'>[] 
         kind: filterCompletionItemKind,
         sortText: `0${index}`,
     }))
-
-/**
- * regexInsertText escapes the provided value so that it can be used as value
- * for a filter which expects a regular expression.
- */
-export const regexInsertText = (value: string, options: { globbing: boolean }): string => {
-    const insertText = options.globbing ? value : `^${escapeRegExp(value)}$`
-    return escapeSpaces(insertText)
-}
-
-/**
- * repositoryInsertText escapes the provides value so that it can be used as a
- * value for the `repo:` filter.
- */
-export const repositoryInsertText = (
-    { repository }: RepositoryMatch,
-    options: { globbing: boolean; filterValue?: string }
-): string => regexInsertText(repository, options)
 
 /**
  * Maps Sourcegraph SymbolKinds to Monaco CompletionItemKinds.
