@@ -67,12 +67,13 @@ func testBitbucketServerWebhook(db database.DB, userID int32) func(*testing.T) {
 				Webhooks: &schema.Webhooks{
 					Secret: secret,
 				},
+				Token: "abc",
 			})),
 		}
 
 		err := esStore.Upsert(ctx, extSvc)
 		if err != nil {
-			t.Fatal(t)
+			t.Fatal(err)
 		}
 
 		bitbucketSource, err := repos.NewBitbucketServerSource(ctx, logtest.Scoped(t), extSvc, cf)

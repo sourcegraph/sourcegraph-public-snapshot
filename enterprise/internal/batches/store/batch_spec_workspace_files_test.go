@@ -95,6 +95,18 @@ func testStoreBatchSpecWorkspaceFiles(t *testing.T, ctx context.Context, s *Stor
 	})
 
 	t.Run("Count", func(t *testing.T) {
+		t.Run("ByID", func(t *testing.T) {
+			count, err := s.CountBatchSpecWorkspaceFiles(ctx, ListBatchSpecWorkspaceFileOpts{ID: files[0].ID})
+			require.NoError(t, err)
+			assert.Equal(t, 1, count)
+		})
+
+		t.Run("ByRandID", func(t *testing.T) {
+			count, err := s.CountBatchSpecWorkspaceFiles(ctx, ListBatchSpecWorkspaceFileOpts{RandID: files[0].RandID})
+			require.NoError(t, err)
+			assert.Equal(t, 1, count)
+		})
+
 		t.Run("ByBatchSpecID", func(t *testing.T) {
 			count, err := s.CountBatchSpecWorkspaceFiles(ctx, ListBatchSpecWorkspaceFileOpts{BatchSpecID: spec.ID})
 			require.NoError(t, err)
