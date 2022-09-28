@@ -46,7 +46,7 @@ func (s *Service) WorkerutilHandler(
 		lsifStore:         s.lsifstore,
 		uploadStore:       uploadStore,
 		gitserverClient:   s.gitserverClient,
-		handleOp:          s.operations.op,
+		handleOp:          s.operations.uploadProcessor,
 		budgetRemaining:   budgetMax,
 		enableBudget:      budgetMax > 0,
 		uncompressedSizes: make(map[int]uint64, numProcessorRoutines),

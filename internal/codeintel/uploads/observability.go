@@ -5,6 +5,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -75,9 +76,9 @@ type operations struct {
 	// Tags
 	getListTags *observation.Operation
 
-	// WTF
+	// Worker metrics
+	uploadProcessor *observation.Operation
 	uploadSizeGuage prometheus.Gauge
-	op              *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -95,6 +96,15 @@ func newOperations(observationContext *observation.Context) *operations {
 			Metrics:           m,
 		})
 	}
+
+	honeyObservationContext := *observationContext
+	honeyObservationContext.HoneyDataset = &honey.Dataset{Name: "codeintel-worker"}
+	uploadProcessor := honeyObservationContext.Operation(observation.Op{
+		Name: "codeintel.uploadHandler",
+		ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
+			return observation.EmitForTraces | observation.EmitForHoney
+		},
+	})
 
 	uploadSizeGuage := prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "src_codeintel_upload_processor_upload_size",
@@ -167,13 +177,8 @@ func newOperations(observationContext *observation.Context) *operations {
 		// Tags
 		getListTags: op("GetListTags"),
 
-		// WTF
+		// Worker metrics
+		uploadProcessor: uploadProcessor,
 		uploadSizeGuage: uploadSizeGuage,
-		op: observationContext.Operation(observation.Op{
-			Name: "codeintel.uploadHandler",
-			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
-				return observation.EmitForTraces | observation.EmitForHoney
-			},
-		}),
 	}
 }
