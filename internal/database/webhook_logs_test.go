@@ -162,7 +162,7 @@ func TestWebhookLogStore(t *testing.T) {
 		es := &types.ExternalService{
 			Kind:        extsvc.KindGitLab,
 			DisplayName: "GitLab",
-			Config:      extsvc.NewEmptyConfig(),
+			Config:      extsvc.NewEmptyGitLabConfig(),
 		}
 		assert.Nil(t, esStore.Upsert(ctx, es))
 
@@ -170,11 +170,15 @@ func TestWebhookLogStore(t *testing.T) {
 
 		okTime := time.Date(2021, 10, 29, 18, 46, 0, 0, time.UTC)
 		okLog := createWebhookLog(es.ID, http.StatusOK, okTime)
-		store.Create(ctx, okLog)
+		if err := store.Create(ctx, okLog); err != nil {
+			t.Fatal(err)
+		}
 
 		errTime := time.Date(2021, 10, 29, 18, 47, 0, 0, time.UTC)
 		errLog := createWebhookLog(0, http.StatusInternalServerError, errTime)
-		store.Create(ctx, errLog)
+		if err := store.Create(ctx, errLog); err != nil {
+			t.Fatal(err)
+		}
 
 		for name, tc := range map[string]struct {
 			opts WebhookLogListOpts
@@ -278,7 +282,7 @@ func TestWebhookLogStore(t *testing.T) {
 		es := &types.ExternalService{
 			Kind:        extsvc.KindGitLab,
 			DisplayName: "GitLab",
-			Config:      extsvc.NewEmptyConfig(),
+			Config:      extsvc.NewEmptyGitLabConfig(),
 		}
 		assert.Nil(t, esStore.Upsert(ctx, es))
 

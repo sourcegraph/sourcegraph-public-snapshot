@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -43,8 +44,9 @@ func GetService(db database.DB, uploadSvc shared.UploadService, gitserver shared
 
 		s := store.New(db, oc("store"))
 		inf := inference.GetService(db)
+		sclient := symbols.DefaultClient
 
-		svc = newService(s, uploadSvc, gitserver, repoUpdater, inf, oc("service"))
+		svc = newService(s, uploadSvc, gitserver, sclient, repoUpdater, inf, oc("service"))
 	})
 
 	return svc

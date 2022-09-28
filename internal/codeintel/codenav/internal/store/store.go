@@ -1,9 +1,7 @@
 package store
 
 import (
-	"context"
-
-	"github.com/keegancsmith/sqlf"
+	logger "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -12,13 +10,13 @@ import (
 
 // Store provides the interface for codenav storage.
 type Store interface {
-	GetLanguagesRequestedBy(ctx context.Context, userID int) (_ []string, err error)
-	SetRequestLanguageSupport(ctx context.Context, userID int, language string) (err error)
+	GetUnsafeDB() database.DB
 }
 
 // store manages the codenav store.
 type store struct {
 	db         *basestore.Store
+	logger     logger.Logger
 	operations *operations
 }
 
@@ -26,35 +24,13 @@ type store struct {
 func New(db database.DB, observationContext *observation.Context) Store {
 	return &store{
 		db:         basestore.NewWithHandle(db.Handle()),
+		logger:     logger.Scoped("codenav.store", ""),
 		operations: newOperations(observationContext),
 	}
 }
 
-func (s *store) GetLanguagesRequestedBy(ctx context.Context, userID int) (_ []string, err error) {
-	ctx, _, endObservation := s.operations.getLanguagesRequestedBy.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	return basestore.ScanStrings(s.db.Query(ctx, sqlf.Sprintf(languagesRequestedByQuery, userID)))
+// GetUnsafeDB returns the underlying database handle. This is used by the
+// resolvers that have the old convention of using the database handle directly.
+func (s *store) GetUnsafeDB() database.DB {
+	return database.NewDBWith(s.logger, s.db)
 }
-
-const languagesRequestedByQuery = `
--- source: internal/codeintel/codenav/internal/store/store.go:GetLanguagesRequestedBy
-SELECT language_id
-FROM codeintel_langugage_support_requests
-WHERE user_id = %s
-ORDER BY language_id
-`
-
-func (s *store) SetRequestLanguageSupport(ctx context.Context, userID int, language string) (err error) {
-	ctx, _, endObservation := s.operations.setRequestLanguageSupport.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	return s.db.Exec(ctx, sqlf.Sprintf(requestLanguageSupportQuery, userID, language))
-}
-
-const requestLanguageSupportQuery = `
--- source: internal/codeintel/codenav/internal/store/store.go:SetRequestLanguageSupport
-INSERT INTO codeintel_langugage_support_requests (user_id, language_id)
-VALUES (%s, %s)
-ON CONFLICT DO NOTHING
-`

@@ -6,6 +6,8 @@ import (
 	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
@@ -21,6 +23,7 @@ type GitserverClient interface {
 	FileExists(ctx context.Context, repositoryID int, commit, file string) (bool, error)
 	RawContents(ctx context.Context, repositoryID int, commit, file string) ([]byte, error)
 	ResolveRevision(ctx context.Context, repositoryID int, versionString string) (api.CommitID, error)
+	ListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) (_ []*gitdomain.Tag, err error)
 }
 
 type InferenceService interface {
@@ -29,6 +32,7 @@ type InferenceService interface {
 }
 
 type UploadService interface {
-	GetRepoName(ctx context.Context, repositoryID int) (_ string, err error) // upload service
-	GetDirtyRepositories(ctx context.Context) (_ map[int]int, err error)     // upload service
+	GetRepoName(ctx context.Context, repositoryID int) (_ string, err error)       // upload service
+	GetDirtyRepositories(ctx context.Context) (_ map[int]int, err error)           // upload service
+	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []types.Upload, err error) // upload service
 }

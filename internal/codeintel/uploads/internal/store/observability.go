@@ -52,6 +52,10 @@ type operations struct {
 	softDeleteExpiredUploads          *observation.Operation
 	hardDeleteUploadsByIDs            *observation.Operation
 	deleteUploadByID                  *observation.Operation
+	insertUpload                      *observation.Operation
+	addUploadPart                     *observation.Operation
+	markQueued                        *observation.Operation
+	markFailed                        *observation.Operation
 
 	// Dumps
 	findClosestDumps                   *observation.Operation
@@ -126,6 +130,10 @@ func newOperations(observationContext *observation.Context) *operations {
 		softDeleteExpiredUploads:          op("SoftDeleteExpiredUploads"),
 		hardDeleteUploadsByIDs:            op("HardDeleteUploadsByIDs"),
 		deleteUploadByID:                  op("DeleteUploadByID"),
+		insertUpload:                      op("InsertUpload"),
+		addUploadPart:                     op("AddUploadPart"),
+		markQueued:                        op("MarkQueued"),
+		markFailed:                        op("MarkFailed"),
 
 		writeVisibleUploads:        op("writeVisibleUploads"),
 		persistNearestUploads:      op("persistNearestUploads"),

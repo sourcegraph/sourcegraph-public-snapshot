@@ -113,11 +113,8 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 		enq.analyzer.limiter.SetLimit(val)
 	})
 
-	// We use a periodic goroutine here just for metrics tracking. We specify 5s here so it runs as
-	// fast as possible without wasting CPU cycles, but in reality the handler itself can take
-	// minutes to hours to complete as it intentionally enqueues work slowly to avoid putting
-	// pressure on the system.
-	return goroutine.NewPeriodicGoroutineWithMetrics(ctx, 15*time.Minute, goroutine.NewHandlerWithErrorMessage(
+	// We specify 30s here, so insights are queued regularly for processing. The queue itself is rate limited.
+	return goroutine.NewPeriodicGoroutineWithMetrics(ctx, 30*time.Second, goroutine.NewHandlerWithErrorMessage(
 		"insights_historical_enqueuer",
 		enq.Handler,
 	), operation)
