@@ -62,7 +62,7 @@ func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([
 		AccessToken:  githubCfg.Token,
 		Expiry:       time.Unix(int64(githubCfg.TokenOauthExpiry), 0),
 		RefreshToken: githubCfg.TokenOauthRefresh,
-		RefreshFunc:  database.GetRefreshAndStoreOAuthTokenFunc(r.db, r.externalService.ID, github.GetOAuthContext(githubUrl.String())),
+		RefreshFunc:  database.GetServiceRefreshAndStoreOAuthTokenFunc(r.db, r.externalService.ID, github.GetOAuthContext(githubUrl.String())),
 	}
 
 	client := github.NewV4Client(r.externalService.URN(), githubUrl, auther, nil)

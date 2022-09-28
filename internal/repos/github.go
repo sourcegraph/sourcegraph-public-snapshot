@@ -224,7 +224,7 @@ func newGithubSource(
 		AccessToken:  c.Token,
 		RefreshToken: c.TokenOauthRefresh,
 		Expiry:       time.Unix(int64(c.TokenOauthExpiry), 0),
-		RefreshFunc:  database.GetRefreshAndStoreOAuthTokenFunc(db, svc.ID, github.GetOAuthContext(apiURL.String())),
+		RefreshFunc:  database.GetServiceRefreshAndStoreOAuthTokenFunc(db, svc.ID, github.GetOAuthContext(apiURL.String())),
 	}
 	urn := svc.URN()
 

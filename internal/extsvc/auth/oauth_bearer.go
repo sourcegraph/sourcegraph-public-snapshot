@@ -42,6 +42,10 @@ func (token *OAuthBearerToken) WithToken(newToken string) *OAuthBearerToken {
 }
 
 func (token *OAuthBearerToken) Refresh() error {
+	if token.RefreshToken == "" {
+		return errors.New("no refresh token available")
+	}
+
 	if token.RefreshFunc == nil {
 		return errors.New("refresh not implemented")
 	}

@@ -91,9 +91,16 @@ func ExternalServiceTokenRefresher(db DB, externalServiceID int64, refreshToken 
 	}
 }
 
-func GetRefreshAndStoreOAuthTokenFunc(db DB, externalServiceID int64, oauthContext *oauthutil.OAuthContext) func(*auth.OAuthBearerToken) (*auth.OAuthBearerToken, error) {
+func GetServiceRefreshAndStoreOAuthTokenFunc(db DB, externalServiceID int64, oauthContext *oauthutil.OAuthContext) func(*auth.OAuthBearerToken) (*auth.OAuthBearerToken, error) {
 	return func(a *auth.OAuthBearerToken) (*auth.OAuthBearerToken, error) {
 		tokenRefresher := ExternalServiceTokenRefresher(db, externalServiceID, a.RefreshToken)
+		return tokenRefresher(context.Background(), http.DefaultClient, *oauthContext)
+	}
+}
+
+func GetAccountRefreshAndStoreOAuthTokenFunc(db DB, externalAccountID int32, oauthContext *oauthutil.OAuthContext) func(*auth.OAuthBearerToken) (*auth.OAuthBearerToken, error) {
+	return func(a *auth.OAuthBearerToken) (*auth.OAuthBearerToken, error) {
+		tokenRefresher := ExternalAccountTokenRefresher(db, externalAccountID, a.RefreshToken)
 		return tokenRefresher(context.Background(), http.DefaultClient, *oauthContext)
 	}
 }
