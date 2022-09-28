@@ -19,6 +19,7 @@ type OAuthBearerToken struct {
 	TokenType    string    `json:"token_type"`
 	RefreshToken string    `json:"refresh_token"`
 	Expiry       time.Time `json:"expiry"`
+	RefreshFunc  func(*OAuthBearerToken) (*OAuthBearerToken, error)
 }
 
 var _ Authenticator = &OAuthBearerToken{}
@@ -50,7 +51,7 @@ func (token *OAuthBearerToken) Refresh() error {
 		return err
 	}
 
-	token.Token = newToken.Token
+	token.AccessToken = newToken.AccessToken
 	token.Expiry = newToken.Expiry
 	token.RefreshToken = newToken.RefreshToken
 

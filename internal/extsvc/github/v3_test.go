@@ -690,7 +690,7 @@ func TestV3Client_WithAuthenticator(t *testing.T) {
 		auth:   &auth.OAuthBearerToken{AccessToken: "old_token"},
 	}
 
-	newToken := &auth.OAuthBearerToken{Token: "new_token"}
+	newToken := &auth.OAuthBearerToken{AccessToken: "new_token"}
 	new := old.WithAuthenticator(newToken)
 	if old == new {
 		t.Fatal("both clients have the same address")
@@ -871,7 +871,7 @@ func TestSyncWebhook_CreateListFindDelete(t *testing.T) {
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
 			token := os.Getenv(fmt.Sprintf("%s_ACCESS_TOKEN", name))
-			client = client.WithAuthenticator(&auth.OAuthBearerToken{Token: token})
+			client = client.WithAuthenticator(&auth.OAuthBearerToken{AccessToken: token})
 
 			id, err := client.CreateSyncWebhook(ctx, tc.repoName, "https://target-url.com", "secret")
 			if err != nil {

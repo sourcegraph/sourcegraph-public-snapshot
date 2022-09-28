@@ -275,7 +275,7 @@ func (s *PermsSyncer) getUserGitHubAppInstallations(ctx context.Context, acct *e
 	}
 
 	oauthToken := &auth.OAuthBearerToken{
-		Token:        tok.AccessToken,
+		AccessToken:  tok.AccessToken,
 		RefreshToken: tok.RefreshToken,
 		Expiry:       tok.Expiry,
 	}

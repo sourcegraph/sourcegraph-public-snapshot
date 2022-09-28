@@ -220,11 +220,8 @@ func newGithubSource(
 		return nil, err
 	}
 
-	token := &auth.OAuthBearerToken{AccessToken: c.Token}
-	urn := svc.URN()
-
 	token := &auth.OAuthBearerToken{
-		Token:        c.Token,
+		AccessToken:  c.Token,
 		RefreshToken: c.TokenOauthRefresh,
 		Expiry:       time.Unix(int64(c.TokenOauthExpiry), 0),
 		RefreshFunc:  database.GetRefreshAndStoreOAuthTokenFunc(db, svc.ID, github.GetOAuthContext(apiURL.String())),

@@ -87,7 +87,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
+			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.OAuthBearerToken{AccessToken: token}, doer)
 
 			testDB := database.NewDB(logger, dbtest.NewDB(logger, t))
 			ctx := actor.WithInternalActor(context.Background())
@@ -167,7 +167,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
+			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.OAuthBearerToken{AccessToken: token}, doer)
 
 			testDB := database.NewDB(logger, dbtest.NewDB(logger, t))
 			ctx := actor.WithInternalActor(context.Background())
@@ -270,7 +270,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
+			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.OAuthBearerToken{AccessToken: token}, doer)
 
 			testDB := database.NewDB(logger, dbtest.NewDB(logger, t))
 			ctx := actor.WithInternalActor(context.Background())
@@ -353,7 +353,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
+			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.OAuthBearerToken{AccessToken: token}, doer)
 
 			testDB := database.NewDB(logger, dbtest.NewDB(logger, t))
 			ctx := actor.WithInternalActor(context.Background())
