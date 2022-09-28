@@ -4,7 +4,7 @@ import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/dri
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../../context'
-import { EMPTY_DASHBOARD, GET_DASHBOARD_INSIGHTS, INSIGHTS_DASHBOARDS } from '../fixtures/dashboards'
+import { EMPTY_DASHBOARD, GET_DASHBOARD_INSIGHTS_EMPTY, INSIGHTS_DASHBOARDS } from '../fixtures/dashboards'
 import { overrideInsightsGraphQLApi } from '../utils/override-insights-graphql-api'
 
 describe('Code insights empty dashboard', () => {
@@ -31,7 +31,7 @@ describe('Code insights empty dashboard', () => {
             testContext,
             overrides: {
                 InsightsDashboards: () => INSIGHTS_DASHBOARDS,
-                GetDashboardInsights: () => GET_DASHBOARD_INSIGHTS,
+                GetDashboardInsights: () => GET_DASHBOARD_INSIGHTS_EMPTY,
             },
         })
 
