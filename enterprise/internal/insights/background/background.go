@@ -16,9 +16,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/pipeline"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -62,7 +67,20 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 	// work to fill them - if not disabled.
 	disableHistorical, _ := strconv.ParseBool(os.Getenv("DISABLE_CODE_INSIGHTS_HISTORICAL"))
 	if !disableHistorical {
-		routines = append(routines, newInsightHistoricalEnqueuer(ctx, workerBaseStore, insightsMetadataStore, insightsStore, featureFlagStore, observationContext))
+		tmpFirstCommit := (&cachedGitFirstEverCommit{impl: discovery.GitFirstEverCommit}).gitFirstEverCommit
+		firstCommit := func(c context.Context, rn api.RepoName) (*gitdomain.Commit, error) {
+			return tmpFirstCommit(ctx, mainAppDB, rn)
+		}
+
+		recentCommit := func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error) {
+			return gitserver.NewClient(mainAppDB).Commits(ctx, repoName, gitserver.CommitsOptions{N: 1, Before: target.Format(time.RFC3339), DateOrder: true}, authz.DefaultSubRepoPermsChecker)
+		}
+		maxTime := time.Now().Add(-1 * 365 * 24 * time.Hour)
+		compressionPlan := compression.NewHistoricalFilter(true, maxTime, edb.NewInsightsDBWith(insightsStore))
+
+		pipelineFactory := pipeline.NewBackfillerFactory(firstCommit, recentCommit, pipeline.NewNilSearchClient, mainAppDB.Repos(), insightsStore, compressionPlan)
+
+		routines = append(routines, pipeline.NewPipelineRunner(ctx, insightsMetadataStore, pipelineFactory, observationContext))
 	}
 
 	// this flag will allow users to ENABLE the settings sync job. This is a last resort option if for some reason the new GraphQL API does not work. This
