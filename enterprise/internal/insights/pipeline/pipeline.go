@@ -114,12 +114,8 @@ func (b *backfiller) Run(ctx context.Context, reportProgress func(BackfillProgre
 		b.logger.Warn("backfilling for repo", log.String("repo", string(repo.Name)))
 
 		// Do the steps
-		plan, err := getSearchPlan(ctx, b.series, repo)
-		if plan == nil && err == nil {
-			b.queryProgressIndex++
-			continue
-		}
-		searchJobChan, _ := generateSearchJobs(ctx, b.series, repo, *plan)
+		plan, _ := getSearchPlan(ctx, b.series, repo)
+		searchJobChan, _ := generateSearchJobs(ctx, b.series, repo, plan)
 		searchResultsChan := runSearches(ctx, repo, searchJobChan)
 		_ = saveSearches(ctx, b.series, searchResultsChan)
 
@@ -283,11 +279,16 @@ func makeGetSearchJobsFunc(
 	logger log.Logger,
 	getFirstEverCommit FirstCommitFunc,
 	gitFindRecentCommit FindRecentCommitFunc,
-) func(ctx context.Context, series *types.InsightSeries, repo *itypes.Repo, plan compression.BackfillPlan) (<-chan generateJobResult, error) {
-	return func(ctx context.Context, series *types.InsightSeries, repo *itypes.Repo, plan compression.BackfillPlan) (<-chan generateJobResult, error) {
+) func(ctx context.Context, series *types.InsightSeries, repo *itypes.Repo, plan *compression.BackfillPlan) (<-chan generateJobResult, error) {
+	return func(ctx context.Context, series *types.InsightSeries, repo *itypes.Repo, plan *compression.BackfillPlan) (<-chan generateJobResult, error) {
 		//setup helper func
 		buildJob := makeSearchJobFunc(logger, gitFindRecentCommit)
 		outputChannel := make(chan generateJobResult)
+
+		if plan == nil {
+			close(outputChannel)
+			return outputChannel, nil
+		}
 
 		// don't want to duplciate this, but also don't want to hold ref to first commit
 		firstHEADCommit, err := getFirstEverCommit(ctx, repo.Name)

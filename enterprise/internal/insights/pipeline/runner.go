@@ -70,8 +70,10 @@ func (h *pipelineRunner) Handler(ctx context.Context) error {
 	// is responsible for calculating the work needed to backfill an insight series _without_ a user context. Repository permissions
 	// are filtered at view time of an insight.
 	ctx = actor.WithInternalActor(ctx)
-	h.logger.Debug("starting pipeline runner")
 
+	//TODO: Add a first step here that creates a backfill for new series and "scores" the cost of it
+
+	//TODO: Update this to pull all the not complete backfills
 	foundInsights, err := h.dataSeriesStore.GetDataSeries(ctx, store.GetDataSeriesArgs{BackfillNotQueued: true, ExcludeJustInTime: true})
 	if err != nil {
 		return errors.Wrap(err, "Discover")
