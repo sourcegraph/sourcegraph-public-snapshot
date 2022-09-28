@@ -56,7 +56,6 @@ export function initializeInstanceVersionNumber(
             .catch(noop) // We handle potential errors in instanceVersionNumber observable
 
         const version = localStorageService.getValue(INSTANCE_VERSION_NUMBER_KEY)
-
         // instances below 3.38.0 does not support EventSource.IDEEXTENSION and should fallback to BACKEND source
         return isInsidersVersion(version) || satisfies(version, '>=3.38.0')
             ? EventSource.IDEEXTENSION
