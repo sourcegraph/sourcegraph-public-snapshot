@@ -7,14 +7,14 @@ import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing
 import { GetDashboardInsightsResult, InsightsDashboardNode, InsightViewNode } from '../../../graphql-operations'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../../context'
 import {
-    LANG_STATS_INSIGHT,
-    LANG_STAT_INSIGHT_CONTENT,
     CAPTURE_GROUP_INSIGHT,
-    GET_INSIGHT_VIEW_CAPTURE_GROUP_INSIGHT,
-    SEARCH_BASED_INSIGHT,
-    GET_INSIGHT_VIEW_SEARCH_BASED_INSIGHT,
     COMPUTE_INSIGHT,
+    GET_INSIGHT_VIEW_CAPTURE_GROUP_INSIGHT,
     GET_INSIGHT_VIEW_COMPUTE_INSIGHT,
+    GET_INSIGHT_VIEW_SEARCH_BASED_INSIGHT,
+    LANG_STAT_INSIGHT_CONTENT,
+    LANG_STATS_INSIGHT,
+    SEARCH_BASED_INSIGHT,
 } from '../fixtures/dashboards'
 import { overrideInsightsGraphQLApi } from '../utils/override-insights-graphql-api'
 
