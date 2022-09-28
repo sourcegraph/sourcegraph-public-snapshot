@@ -141,9 +141,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<
                             history={history}
                             settingsCascade={props.settingsCascade}
                         />
-                    ) : (
-                        <></>
-                    )
+                    ) : null
                 }
                 className="test-batch-change-details-page mb-3"
             >
