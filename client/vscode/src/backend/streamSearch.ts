@@ -1,5 +1,6 @@
 import { of, Subscription } from 'rxjs'
 import { map, switchMap, throttleTime } from 'rxjs/operators'
+import { satisfies } from 'semver'
 import * as vscode from 'vscode'
 
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
@@ -10,7 +11,7 @@ import { SearchPatternType } from '../graphql-operations'
 import { VSCEStateMachine } from '../state'
 import { focusSearchPanel } from '../webview/commands'
 
-import { observeInstanceVersionNumber, parseVersion } from './instanceVersion'
+import { observeInstanceVersionNumber, isInsidersVersion } from './instanceVersion'
 
 export function createStreamSearch({
     context,
@@ -52,21 +53,18 @@ export function createStreamSearch({
                 map(version => {
                     let patternType = options.patternType
 
-                    if (version) {
-                        const parsedVersion = parseVersion(version)
-
-                        if (
-                            parsedVersion !== 'insiders' &&
-                            (parsedVersion.major < 3 || (parsedVersion.major === 3 && parsedVersion.minor < 43)) &&
-                            patternType === SearchPatternType.standard
-                        ) {
-                            /**
-                             * SearchPatternType.standard support was added in Sourcegraph v3.43.0.
-                             * Use SearchPatternType.literal for earlier versions instead (it was the default before v3.43.0).
-                             * See: https://docs.sourcegraph.com/CHANGELOG#3-43-0, https://github.com/sourcegraph/sourcegraph/pull/38141.
-                             */
-                            patternType = SearchPatternType.literal
-                        }
+                    if (
+                        version &&
+                        !isInsidersVersion(version) &&
+                        satisfies(version, '<3.43.0') &&
+                        patternType === SearchPatternType.standard
+                    ) {
+                        /**
+                         * SearchPatternType.standard support was added in Sourcegraph v3.43.0.
+                         * Use SearchPatternType.literal for earlier versions instead (it was the default before v3.43.0).
+                         * See: https://docs.sourcegraph.com/CHANGELOG#3-43-0, https://github.com/sourcegraph/sourcegraph/pull/38141.
+                         */
+                        patternType = SearchPatternType.literal
                     }
 
                     return patternType
