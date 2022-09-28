@@ -1,23 +1,21 @@
-import assert from 'assert';
+import assert from 'assert'
 
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { testUserID } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import {
-    GetDashboardInsightsResult,
-    InsightsDashboardNode,
-    InsightViewNode
-} from '../../../graphql-operations'
+import { GetDashboardInsightsResult, InsightsDashboardNode, InsightViewNode } from '../../../graphql-operations'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../../context'
 import {
     LANG_STATS_INSIGHT,
-    LANG_STAT_INSIGHT_CONTENT, CAPTURE_GROUP_INSIGHT, GET_INSIGHT_VIEW_CAPTURE_GROUP_INSIGHT,
+    LANG_STAT_INSIGHT_CONTENT,
+    CAPTURE_GROUP_INSIGHT,
+    GET_INSIGHT_VIEW_CAPTURE_GROUP_INSIGHT,
 } from '../fixtures/dashboards'
 import { overrideInsightsGraphQLApi } from '../utils/override-insights-graphql-api'
 
 interface DashboardMockOptions {
-    id?: string,
+    id?: string
     title?: string
     insightIds?: string[]
 }
@@ -26,12 +24,8 @@ interface DashboardMockOptions {
  * Creates dashboard mock entity in order to mock insight dashboard configurations.
  * It's used for easier mocking dashboards list gql handler see InsightsDashboards entry point.
  */
-function createDashboard(options: DashboardMockOptions): InsightsDashboardNode  {
-    const {
-        id = '001_dashboard',
-        title = 'Default dashboard',
-        insightIds = []
-    } = options
+function createDashboard(options: DashboardMockOptions): InsightsDashboardNode {
+    const { id = '001_dashboard', title = 'Default dashboard', insightIds = [] } = options
 
     return {
         __typename: 'InsightsDashboard',
@@ -51,7 +45,7 @@ function createDashboard(options: DashboardMockOptions): InsightsDashboardNode  
 }
 
 interface DashboardViewMockOptions {
-    id?: string,
+    id?: string
     insightsMocks?: InsightViewNode[]
 }
 
@@ -66,14 +60,17 @@ function createDashboardViewMock(options: DashboardViewMockOptions): GetDashboar
     return {
         insightsDashboards: {
             __typename: 'InsightsDashboardConnection',
-                nodes: [
+            nodes: [
                 {
                     __typename: 'InsightsDashboard',
                     id,
-                    views: { __typename: 'InsightViewConnection', nodes: insightsMocks.map(mock => ({ ... mock, __typename: 'InsightView' })) },
-                }
-            ]
-        }
+                    views: {
+                        __typename: 'InsightViewConnection',
+                        nodes: insightsMocks.map(mock => ({ ...mock, __typename: 'InsightView' })),
+                    },
+                },
+            ],
+        },
     }
 }
 
@@ -111,16 +108,17 @@ describe('Code insights [Dashboard card]', () => {
                         __typename: 'InsightsDashboardConnection',
                         nodes: [
                             createDashboard({ id: 'DASHBOARD_WITH_LANG_INSIGHT', insightIds: [LANG_STATS_INSIGHT.id] }),
-                        ]
-                    }
+                        ],
+                    },
                 }),
 
                 // Mock dashboard configuration (dashboard content)
-                GetDashboardInsights: () => createDashboardViewMock({ id: 'DASHBOARD_WITH_LANG_INSIGHT', insightsMocks: [LANG_STATS_INSIGHT] }),
+                GetDashboardInsights: () =>
+                    createDashboardViewMock({ id: 'DASHBOARD_WITH_LANG_INSIGHT', insightsMocks: [LANG_STATS_INSIGHT] }),
 
                 // Mock lang stats insight content
                 LangStatsInsightContent: () => LANG_STAT_INSIGHT_CONTENT,
-            }
+            },
         })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/DASHBOARD_WITH_LANG_INSIGHT')
@@ -147,9 +145,8 @@ describe('Code insights [Dashboard card]', () => {
 
         await driver.page.click('[aria-label="Insight options"]')
 
-        const menuOptions = await driver.page.$$eval(
-            '[role="dialog"][aria-modal="true"] [role="menuitem"]',
-                elements => elements.map(element => element.textContent)
+        const menuOptions = await driver.page.$$eval('[role="dialog"][aria-modal="true"] [role="menuitem"]', elements =>
+            elements.map(element => element.textContent)
         )
 
         // Check that Pie chart doesn't have anything non pie chart specific menu options
@@ -170,16 +167,23 @@ describe('Code insights [Dashboard card]', () => {
                     insightsDashboards: {
                         __typename: 'InsightsDashboardConnection',
                         nodes: [
-                            createDashboard({ id: 'DASHBOARD_WITH_CAPTURE_GROUP', insightIds: [CAPTURE_GROUP_INSIGHT.id] }),
-                        ]
-                    }
+                            createDashboard({
+                                id: 'DASHBOARD_WITH_CAPTURE_GROUP',
+                                insightIds: [CAPTURE_GROUP_INSIGHT.id],
+                            }),
+                        ],
+                    },
                 }),
                 // Mock dashboard configuration (dashboard content) with one capture group insight configuration
-                GetDashboardInsights: () => createDashboardViewMock({ id: 'DASHBOARD_WITH_CAPTURE_GROUP', insightsMocks: [CAPTURE_GROUP_INSIGHT] }),
+                GetDashboardInsights: () =>
+                    createDashboardViewMock({
+                        id: 'DASHBOARD_WITH_CAPTURE_GROUP',
+                        insightsMocks: [CAPTURE_GROUP_INSIGHT],
+                    }),
 
                 // Mock capture group insight content
-                GetInsightView: () => GET_INSIGHT_VIEW_CAPTURE_GROUP_INSIGHT
-            }
+                GetInsightView: () => GET_INSIGHT_VIEW_CAPTURE_GROUP_INSIGHT,
+            },
         })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/DASHBOARD_WITH_CAPTURE_GROUP')
@@ -203,9 +207,8 @@ describe('Code insights [Dashboard card]', () => {
 
         await driver.page.click('[aria-label="Insight options"]')
 
-        const menuOptions = await driver.page.$$eval(
-            '[role="dialog"][aria-modal="true"] [role="menuitem"]',
-            elements => elements.map(element => element.textContent)
+        const menuOptions = await driver.page.$$eval('[role="dialog"][aria-modal="true"] [role="menuitem"]', elements =>
+            elements.map(element => element.textContent)
         )
 
         // Check that Line chart doesn't have anything non-related to capture group menu options
