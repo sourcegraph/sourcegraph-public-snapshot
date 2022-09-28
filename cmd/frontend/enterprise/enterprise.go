@@ -16,25 +16,28 @@ import (
 // Services is a bag of HTTP handlers and factory functions that are registered by the
 // enterprise frontend setup hook.
 type Services struct {
-	GitHubWebhook               webhooks.Registerer
-	GitLabWebhook               http.Handler
-	BitbucketServerWebhook      http.Handler
-	BitbucketCloudWebhook       http.Handler
-	NewCodeIntelUploadHandler   NewCodeIntelUploadHandler
-	NewExecutorProxyHandler     NewExecutorProxyHandler
-	NewGitHubAppSetupHandler    NewGitHubAppSetupHandler
-	NewComputeStreamHandler     NewComputeStreamHandler
-	AuthzResolver               graphqlbackend.AuthzResolver
-	BatchChangesResolver        graphqlbackend.BatchChangesResolver
-	CodeIntelResolver           graphqlbackend.CodeIntelResolver
-	InsightsResolver            graphqlbackend.InsightsResolver
-	CodeMonitorsResolver        graphqlbackend.CodeMonitorsResolver
-	LicenseResolver             graphqlbackend.LicenseResolver
-	DotcomResolver              graphqlbackend.DotcomRootResolver
-	SearchContextsResolver      graphqlbackend.SearchContextsResolver
-	NotebooksResolver           graphqlbackend.NotebooksResolver
-	ComputeResolver             graphqlbackend.ComputeResolver
-	InsightsAggregationResolver graphqlbackend.InsightsAggregationResolver
+	GitHubWebhook                   webhooks.Registerer
+	GitLabWebhook                   http.Handler
+	BitbucketServerWebhook          http.Handler
+	BitbucketCloudWebhook           http.Handler
+	BatchesChangesFileGetHandler    http.Handler
+	BatchesChangesFileExistsHandler http.Handler
+	BatchesChangesFileUploadHandler http.Handler
+	NewCodeIntelUploadHandler       NewCodeIntelUploadHandler
+	NewExecutorProxyHandler         NewExecutorProxyHandler
+	NewGitHubAppSetupHandler        NewGitHubAppSetupHandler
+	NewComputeStreamHandler         NewComputeStreamHandler
+	AuthzResolver                   graphqlbackend.AuthzResolver
+	BatchChangesResolver            graphqlbackend.BatchChangesResolver
+	CodeIntelResolver               graphqlbackend.CodeIntelResolver
+	InsightsResolver                graphqlbackend.InsightsResolver
+	CodeMonitorsResolver            graphqlbackend.CodeMonitorsResolver
+	LicenseResolver                 graphqlbackend.LicenseResolver
+	DotcomResolver                  graphqlbackend.DotcomRootResolver
+	SearchContextsResolver          graphqlbackend.SearchContextsResolver
+	NotebooksResolver               graphqlbackend.NotebooksResolver
+	ComputeResolver                 graphqlbackend.ComputeResolver
+	InsightsAggregationResolver     graphqlbackend.InsightsAggregationResolver
 }
 
 // NewCodeIntelUploadHandler creates a new handler for the LSIF upload endpoint. The
@@ -56,14 +59,17 @@ type NewComputeStreamHandler func() http.Handler
 // DefaultServices creates a new Services value that has default implementations for all services.
 func DefaultServices() Services {
 	return Services{
-		GitHubWebhook:             registerFunc(func(webhook *webhooks.GitHubWebhook) {}),
-		GitLabWebhook:             makeNotFoundHandler("gitlab webhook"),
-		BitbucketServerWebhook:    makeNotFoundHandler("bitbucket server webhook"),
-		BitbucketCloudWebhook:     makeNotFoundHandler("bitbucket cloud webhook"),
-		NewCodeIntelUploadHandler: func(_ bool) http.Handler { return makeNotFoundHandler("code intel upload") },
-		NewExecutorProxyHandler:   func() http.Handler { return makeNotFoundHandler("executor proxy") },
-		NewGitHubAppSetupHandler:  func() http.Handler { return makeNotFoundHandler("Sourcegraph GitHub App setup") },
-		NewComputeStreamHandler:   func() http.Handler { return makeNotFoundHandler("compute streaming endpoint") },
+		GitHubWebhook:                   registerFunc(func(webhook *webhooks.GitHubWebhook) {}),
+		GitLabWebhook:                   makeNotFoundHandler("gitlab webhook"),
+		BitbucketServerWebhook:          makeNotFoundHandler("bitbucket server webhook"),
+		BitbucketCloudWebhook:           makeNotFoundHandler("bitbucket cloud webhook"),
+		BatchesChangesFileGetHandler:    makeNotFoundHandler("batches file get handler"),
+		BatchesChangesFileExistsHandler: makeNotFoundHandler("batches file exists handler"),
+		BatchesChangesFileUploadHandler: makeNotFoundHandler("batches file upload handler"),
+		NewCodeIntelUploadHandler:       func(_ bool) http.Handler { return makeNotFoundHandler("code intel upload") },
+		NewExecutorProxyHandler:         func() http.Handler { return makeNotFoundHandler("executor proxy") },
+		NewGitHubAppSetupHandler:        func() http.Handler { return makeNotFoundHandler("Sourcegraph GitHub App setup") },
+		NewComputeStreamHandler:         func() http.Handler { return makeNotFoundHandler("compute streaming endpoint") },
 	}
 }
 
@@ -99,7 +105,7 @@ func (e ErrBatchChangesDisabledForUser) Error() string {
 	return "batch changes are disabled for non-site-admin users. Ask a site admin to unset 'batchChanges.restrictToAdmins' in the site configuration to enable the feature for all users."
 }
 
-// Checks if Batch Changes are enabled at the site-level and returns `nil` if they are, or
+// BatchChangesEnabledForSite checks if Batch Changes are enabled at the site-level and returns `nil` if they are, or
 // else an error indicating why they're disabled
 func BatchChangesEnabledForSite() error {
 	if !conf.BatchChangesEnabled() {
@@ -114,7 +120,7 @@ func BatchChangesEnabledForSite() error {
 	return nil
 }
 
-// Checks if Batch Changes are enabled for the current user and returns `nil` if they are,
+// BatchChangesEnabledForUser checks if Batch Changes are enabled for the current user and returns `nil` if they are,
 // or else an error indicating why they're disabled
 func BatchChangesEnabledForUser(ctx context.Context, db database.DB) error {
 	if err := BatchChangesEnabledForSite(); err != nil {

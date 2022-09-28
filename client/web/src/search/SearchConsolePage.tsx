@@ -18,7 +18,6 @@ import { transformSearchQuery } from '@sourcegraph/shared/src/api/client/search'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
-import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { LoadingSpinner, Button, useObservable } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
@@ -50,10 +49,8 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
     const enableGoImportsSearchQueryTransform = useExperimentalFeatures(
         features => features.enableGoImportsSearchQueryTransform
     )
-    const [enableCoreWorkflowImprovements] = useCoreWorkflowImprovementsEnabled()
     const applySuggestionsOnEnter =
-        useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ??
-        enableCoreWorkflowImprovements
+        useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
     const searchQuery = useMemo(() => new BehaviorSubject<string>(parseSearchURLQuery(props.location.search) ?? ''), [
         props.location.search,

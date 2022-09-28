@@ -204,7 +204,6 @@ $theme-colors: (
         rgba(215, 240, 253, 0.25) 83.64%
     );
     --modal-bg: #{rgba($gray-04, 0.5)};
-    // Colors used in the search sidebar with .core-workflow-improvements-enabled
     --sidebar-bg: var(--color-bg-1);
     --sidebar-border-color: var(--border-color-2);
 }
@@ -296,7 +295,6 @@ $theme-colors: (
     --marketing-gradient: linear-gradient(90.64deg, rgba(108, 8, 223, 0.5) 3.11%, rgba(0, 165, 213, 0.5) 83.64%);
     --marketing-gradient-25: linear-gradient(90.64deg, rgba(108, 8, 223, 0.25) 3.11%, rgba(0, 165, 213, 0.25) 83.64%);
     --modal-bg: #{rgba($gray-08, 0.5)};
-    // Colors used in the search sidebar with .core-workflow-improvements-enabled
     --sidebar-bg: var(--black);
     --sidebar-border-color: var(--color-bg-2);
 }

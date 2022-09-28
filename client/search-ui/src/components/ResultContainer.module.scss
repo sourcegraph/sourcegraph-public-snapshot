@@ -4,31 +4,22 @@
     }
 
     &:not(:last-of-type) {
-        margin-bottom: 0.5rem;
-    }
-
-    :global(.core-workflow-improvements-enabled) &:not(:last-of-type) {
         // Prevents the sticky items below from affecting
         // anything outside of the result container.
         isolation: isolate;
-
         margin-bottom: 1rem;
     }
 }
 
 .header {
     padding: 0.5rem 0.5rem 0.5rem 0;
-    background-color: transparent;
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-
-    :global(.core-workflow-improvements-enabled) & {
-        position: sticky;
-        top: 0;
-        z-index: 1; // Show on top of search result contents
-        background-color: var(--body-bg);
-    }
+    position: sticky;
+    top: 0;
+    z-index: 1; // Show on top of search result contents
+    background-color: var(--body-bg);
 
     &-title {
         flex: 1 1 auto;

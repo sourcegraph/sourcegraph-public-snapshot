@@ -107,3 +107,68 @@ func TestInject(t *testing.T) {
 		})
 	}
 }
+
+func TestInjectAsAlert(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		expression string
+		matchers   []*labels.Matcher
+		vars       VariableApplier
+
+		want    string
+		wantErr bool
+	}{
+		{
+			name:       "valid expression, nothing to inject or drop",
+			expression: "foobar",
+			matchers:   []*labels.Matcher{},
+
+			want:    "foobar",
+			wantErr: false,
+		},
+		{
+			name:       "valid expression, nothing to drop",
+			expression: "foobar",
+			matchers:   []*labels.Matcher{labels.MustNewMatcher(labels.MatchEqual, "key", "value")},
+
+			want:    `foobar{key="value"}`,
+			wantErr: false,
+		},
+		{
+			name:       "valid expression, drop variable label",
+			expression: `foobar{foo="${var:foo}"}`,
+			matchers:   []*labels.Matcher{labels.MustNewMatcher(labels.MatchEqual, "key", "value")},
+			vars:       VariableApplier{"var": "asdf"},
+
+			want:    `foobar{key="value"}`,
+			wantErr: false,
+		},
+		{
+			name:       "undroppable label",
+			expression: `foobar[$time]`, // not valid promql
+			want:       "foobar[$time]",
+			wantErr:    true,
+		},
+		{
+			name:       "fancy example",
+			expression: `src_executor_processor_handlers{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}`,
+			vars:       VariableApplier{"queue": "foobar"},
+			want:       "src_executor_processor_handlers{sg_job=~\"^sourcegraph-executors.*\"}",
+			wantErr:    false,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := InjectAsAlert(tc.expression, tc.matchers, tc.vars)
+			if (err != nil) != tc.wantErr {
+				t.Errorf("unexpected result '%+v'", err)
+			}
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}
+
+func TestVarKeyRegexp(t *testing.T) {
+	re, err := newVarKeyRegexp("queue")
+	assert.NoError(t, err)
+	assert.True(t, re.MatchString(`src_executor_processor_handlers{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}`))
+}

@@ -19,12 +19,14 @@ import (
 	"github.com/tidwall/gjson"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
@@ -303,6 +305,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 		externalService  *types.ExternalService
 		wantUnrestricted bool
 		wantHasWebhooks  bool
+		wantError        bool
 	}{
 		{
 			name: "with webhooks",
@@ -353,7 +356,6 @@ func TestExternalServicesStore_Create(t *testing.T) {
 			},
 			wantUnrestricted: false,
 		},
-
 		{
 			name: "Cloud: auto-add authorization to code host connections for GitHub",
 			externalService: &types.ExternalService{
@@ -398,10 +400,28 @@ func TestExternalServicesStore_Create(t *testing.T) {
 			wantUnrestricted: false,
 			wantHasWebhooks:  false,
 		},
+		{
+			name: "Empty config not allowed",
+			externalService: &types.ExternalService{
+				Kind:        extsvc.KindGitLab,
+				DisplayName: "GITLAB #1",
+				Config:      extsvc.NewUnencryptedConfig(``),
+			},
+			wantUnrestricted: false,
+			wantHasWebhooks:  false,
+			wantError:        true,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			err := db.ExternalServices().Create(ctx, confGet, test.externalService)
+			if test.wantError {
+				if err == nil {
+					t.Fatal("wanted an error")
+				}
+				// We can bail out early here
+				return
+			}
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -499,6 +519,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		wantCloudDefault   bool
 		wantHasWebhooks    bool
 		wantTokenExpiresAt bool
+		wantError          bool
 	}{
 		{
 			name: "update with authorization",
@@ -564,10 +585,30 @@ func TestExternalServicesStore_Update(t *testing.T) {
 			wantCloudDefault:   true,
 			wantTokenExpiresAt: true,
 		},
+		{
+			name: "update with empty config",
+			update: &ExternalServiceUpdate{
+				Config: strptr(``),
+			},
+			wantError: true,
+		},
+		{
+			name: "update with comment config",
+			update: &ExternalServiceUpdate{
+				Config: strptr(`// {}`),
+			},
+			wantError: true,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			err = db.ExternalServices().Update(ctx, nil, es.ID, test.update)
+			if test.wantError {
+				if err == nil {
+					t.Fatal("Wanted an error")
+				}
+				return
+			}
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1352,6 +1393,111 @@ VALUES ($1,$2,'errored', now())
 	}
 }
 
+func TestExternalServiceStore_CancelSyncJob(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	// Create a new external service
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	es := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GITHUB #1",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
+	}
+	err := db.ExternalServices().Create(ctx, confGet, es)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Make sure "not found" is handled
+	err = db.ExternalServices().CancelSyncJob(ctx, 99999)
+	if !errors.HasType(err, &errSyncJobNotFound{}) {
+		t.Fatalf("Expected not-found error, have %q", err)
+	}
+
+	// Insert 'processing' sync job that can be canceled
+	syncJobID, _, err := basestore.ScanFirstInt64(db.Handle().QueryContext(ctx, `
+INSERT INTO external_service_sync_jobs (external_service_id, state, started_at)
+VALUES ($1, 'processing', now())
+RETURNING id
+`, es.ID))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = db.ExternalServices().CancelSyncJob(ctx, syncJobID)
+	if err != nil {
+		t.Fatalf("Cancel failed: %s", err)
+	}
+
+	// Make sure it was canceled
+	syncJob, err := db.ExternalServices().GetSyncJobByID(ctx, syncJobID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !syncJob.Cancel {
+		t.Fatalf("syncjob not canceled")
+	}
+	if syncJob.State != "processing" {
+		t.Fatalf("syncjob state unexpectedly changed")
+	}
+	if !syncJob.FinishedAt.IsZero() {
+		t.Fatalf("syncjob finishedAt is set but should not be")
+	}
+
+	// Insert 'queued' sync job that can be canceled
+	syncJobID, _, err = basestore.ScanFirstInt64(db.Handle().QueryContext(ctx, `
+INSERT INTO external_service_sync_jobs (external_service_id, state, started_at)
+VALUES ($1, 'queued', now())
+RETURNING id
+`, es.ID))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = db.ExternalServices().CancelSyncJob(ctx, syncJobID)
+	if err != nil {
+		t.Fatalf("Cancel failed: %s", err)
+	}
+
+	// Make sure it was canceled
+	syncJob, err = db.ExternalServices().GetSyncJobByID(ctx, syncJobID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !syncJob.Cancel {
+		t.Fatalf("syncjob not canceled")
+	}
+	if syncJob.State != "canceled" {
+		t.Fatalf("syncjob state not changed to 'canceled'")
+	}
+	if syncJob.FinishedAt.IsZero() {
+		t.Fatalf("syncjob finishedAt is not set")
+	}
+
+	// Insert sync job in state that is not cancelable
+	syncJobID, _, err = basestore.ScanFirstInt64(db.Handle().QueryContext(ctx, `
+INSERT INTO external_service_sync_jobs (external_service_id, state, started_at)
+VALUES ($1, 'completed', now())
+RETURNING id
+`, es.ID))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = db.ExternalServices().CancelSyncJob(ctx, syncJobID)
+	if !errors.HasType(err, &errSyncJobNotFound{}) {
+		t.Fatalf("Expected not-found error, have %q", err)
+	}
+}
+
 func TestExternalServicesStore_List(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -1813,18 +1959,11 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 			t.Fatalf("List:\n%s", diff)
 		}
 
-		// We'll update the external services, but being careful to keep the
-		// config valid as we go.
+		// We'll update the external services.
 		now := clock.Now()
 		suffix := "-updated"
 		for _, r := range want {
-			cfg, err := r.Config.Decrypt(ctx)
-			if err != nil {
-				t.Fatal(err)
-			}
-
 			r.DisplayName += suffix
-			r.Config.Set(`{"wanted":true,` + cfg[1:])
 			r.UpdatedAt = now
 			r.CreatedAt = now
 		}
@@ -1859,6 +1998,60 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 
 		if diff := cmp.Diff(have, []*types.ExternalService(nil), cmpopts.EquateEmpty(), et.CompareEncryptable); diff != "" {
 			t.Errorf("List:\n%s", diff)
+		}
+	})
+
+	t.Run("config can't be empty", func(t *testing.T) {
+		tx, err := db.ExternalServices().WithEncryptionKey(et.TestKey{}).Transact(ctx)
+		if err != nil {
+			t.Fatalf("Transact error: %s", err)
+		}
+		defer func() {
+			err = tx.Done(err)
+			if err != nil {
+				t.Fatalf("Done error: %s", err)
+			}
+		}()
+
+		want := typestest.GenerateExternalServices(1, svcs...)
+		oldValue, err := want[0].Config.Decrypt(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() {
+			want[0].Config.Set(oldValue)
+		})
+		want[0].Config.Set("")
+
+		if err := tx.Upsert(ctx, want...); err == nil {
+			t.Fatalf("Wanted an error")
+		}
+	})
+
+	t.Run("config can't be only comments", func(t *testing.T) {
+		tx, err := db.ExternalServices().WithEncryptionKey(et.TestKey{}).Transact(ctx)
+		if err != nil {
+			t.Fatalf("Transact error: %s", err)
+		}
+		defer func() {
+			err = tx.Done(err)
+			if err != nil {
+				t.Fatalf("Done error: %s", err)
+			}
+		}()
+
+		want := typestest.GenerateExternalServices(1, svcs...)
+		oldValue, err := want[0].Config.Decrypt(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() {
+			want[0].Config.Set(oldValue)
+		})
+		want[0].Config.Set(`// {}`)
+
+		if err := tx.Upsert(ctx, want...); err == nil {
+			t.Fatalf("Wanted an error")
 		}
 	})
 
@@ -1913,24 +2106,17 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 			t.Fatalf("List:\n%s", diff)
 		}
 
-		// We'll update the external services, but being careful to keep the
-		// config valid as we go.
+		// We'll update the external services.
 		now := clock.Now()
 		suffix := "-updated"
 		for _, r := range want {
-			cfg, err := r.Config.Decrypt(ctx)
-			if err != nil {
-				t.Fatal(err)
-			}
-
 			r.DisplayName += suffix
-			r.Config.Set(`{"wanted":true,` + cfg[1:])
 			r.UpdatedAt = now
 			r.CreatedAt = now
 		}
 
 		if err = tx.Upsert(ctx, want...); err != nil {
-			t.Errorf("Upsert error: %s", err)
+			t.Fatalf("Upsert error: %s", err)
 		}
 		have, err = tx.List(ctx, ExternalServicesListOptions{})
 		if err != nil {

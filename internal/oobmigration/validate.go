@@ -20,7 +20,7 @@ const RefreshInterval = time.Second * 30
 // left in an unexpected state for the current application version.
 func ValidateOutOfBandMigrationRunner(ctx context.Context, db database.DB, runner *Runner) error {
 	if version.IsDev(version.Version()) {
-		runner.logger.Warn("Skipping out-of-band migrations check (dev mode)", log.String("version", version.Version()))
+		// Skip check in development environments
 		return nil
 	}
 	currentVersionSemver, err := semver.NewVersion(version.Version())
@@ -34,10 +34,9 @@ func ValidateOutOfBandMigrationRunner(ctx context.Context, db database.DB, runne
 		return errors.Wrap(err, "failed to retrieve first instance version")
 	}
 	if !ok {
-		runner.logger.Warn("Skipping out-of-band migrations check (fresh instance)", log.String("version", version.Version()))
+		// Skip check on fresh instances
 		return nil
 	}
-
 	firstVersionSemver, err := semver.NewVersion(firstSemverString)
 	if err != nil {
 		runner.logger.Warn("Skipping out-of-band migrations check", log.Error(err), log.String("version", version.Version()))

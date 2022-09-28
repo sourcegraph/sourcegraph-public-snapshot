@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/repos/webhookworker"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -107,7 +108,7 @@ func (s *Syncer) Run(ctx context.Context, store Store, opts RunOptions) error {
 				s.Logger.Error("enqueuing sync jobs", log.Error(err))
 			}
 		}
-		sleep(ctx, opts.EnqueueInterval())
+		timeutil.SleepWithContext(ctx, opts.EnqueueInterval())
 	}
 
 	return ctx.Err()
@@ -126,14 +127,6 @@ func (s *syncHandler) Handle(ctx context.Context, logger log.Logger, record work
 	}
 
 	return s.syncer.SyncExternalService(ctx, sj.ExternalServiceID, s.minSyncInterval())
-}
-
-// sleep is a context aware time.Sleep
-func sleep(ctx context.Context, d time.Duration) {
-	select {
-	case <-ctx.Done():
-	case <-time.After(d):
-	}
 }
 
 // TriggerExternalServiceSync will enqueue a sync job for the supplied external
@@ -559,8 +552,10 @@ func (s *Syncer) SyncExternalService(
 		svc.NextSyncAt = now.Add(interval)
 		svc.LastSyncAt = now
 
-		// We only want to log this error, not return it
-		if err := s.Store.ExternalServiceStore().Upsert(ctx, svc); err != nil {
+		// We use context.Background() here because we want this update to
+		// succeed even if the job has been canceled.
+		if err := s.Store.ExternalServiceStore().Upsert(context.Background(), svc); err != nil {
+			// We only want to log this error, not return it
 			logger.Error("upserting external service", log.Error(err))
 		}
 
@@ -595,7 +590,6 @@ func (s *Syncer) SyncExternalService(
 	}
 
 	results := make(chan SourceResult)
-
 	go func() {
 		src.ListRepos(ctx, results)
 		close(results)

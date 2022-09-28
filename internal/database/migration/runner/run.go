@@ -128,14 +128,12 @@ func (r *Runner) runSchema(
 		}
 	}
 
-	logger.Warn("Schema not in expected state",
+	logger.Info("Schema is not in the expected state - applying migration delta",
 		log.Ints("targetDefinitions", extractIDs(definitions)),
 		log.Ints("appliedVersions", extractIDs(byState.applied)),
 		log.Ints("pendingVersions", extractIDs(byState.pending)),
 		log.Ints("failedVersions", extractIDs(byState.failed)),
 	)
-
-	logger.Info("Checking for active migrations")
 
 	for {
 		// Attempt to apply as many migrations as possible. We do this iteratively in chunks as we are unable

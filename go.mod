@@ -146,7 +146,6 @@ require (
 	github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images v0.0.0-20220203145655-4d2a39d3038a
 	github.com/sourcegraph/sourcegraph/lib v0.0.0-20220511160847-5a43d3ea24eb
 	github.com/stretchr/testify v1.8.0
-	github.com/stripe/stripe-go v70.15.0+incompatible
 	github.com/temoto/robotstxt v1.1.2
 	github.com/throttled/throttled/v2 v2.9.0
 	github.com/tidwall/gjson v1.14.0
@@ -174,7 +173,7 @@ require (
 	go.uber.org/ratelimit v0.2.0
 	go.uber.org/zap v1.23.0
 	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa
-	golang.org/x/net v0.0.0-20220809184613-07c6da5e1ced
+	golang.org/x/net v0.0.0-20220927171203-f486391704dc
 	golang.org/x/oauth2 v0.0.0-20220808172628-8227340efae7
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4
 	golang.org/x/sys v0.0.0-20220829200755-d48e67d00261
@@ -223,7 +222,7 @@ require (
 )
 
 require (
-	github.com/sourcegraph/zoekt v0.0.0-20220922012354-1a338228b6c9
+	github.com/sourcegraph/zoekt v0.0.0-20220926164410-5d80774098c6
 	github.com/stretchr/objx v0.4.0 // indirect
 )
 

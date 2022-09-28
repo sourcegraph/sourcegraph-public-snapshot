@@ -20,10 +20,11 @@ type FileResolver interface {
 	URL(ctx context.Context) (string, error)
 	CanonicalURL() string
 	ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error)
-	Highlight(ctx context.Context, args *HighlightArgs) (*highlightedFileResolver, error)
+	Highlight(ctx context.Context, args *HighlightArgs) (*HighlightedFileResolver, error)
 
 	ToGitBlob() (*GitTreeEntryResolver, bool)
-	ToVirtualFile() (*virtualFileResolver, bool)
+	ToVirtualFile() (*VirtualFileResolver, bool)
+	ToBatchSpecWorkspaceFile() (BatchWorkspaceFileResolver, bool)
 }
 
 func richHTML(content, ext string) (string, error) {

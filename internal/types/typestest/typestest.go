@@ -105,7 +105,7 @@ func GenerateRepos(n int, base ...*types.Repo) types.Repos {
 	return rs
 }
 
-// Maketypes.ExternalServices creates one configured external service per kind and returns the list.
+// MakeExternalServices creates one configured external service per kind and returns the list.
 func MakeExternalServices() types.ExternalServices {
 	clock := timeutil.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
@@ -222,7 +222,7 @@ func MakeNamespacedExternalServices(userID int32, orgID int32) types.ExternalSer
 	return services
 }
 
-// Generatetypes.ExternalServices takes a list of base external services and generates n ones with different names.
+// GenerateExternalServices takes a list of base external services and generates n ones with different names.
 func GenerateExternalServices(n int, base ...*types.ExternalService) types.ExternalServices {
 	if len(base) == 0 {
 		return nil
