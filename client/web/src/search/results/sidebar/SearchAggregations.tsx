@@ -103,11 +103,7 @@ export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
         }
 
         if (pingType) {
-            telemetryService.log(
-                pingType,
-                { aggregationMode, uiMode: 'sidebar' },
-                { aggregationMode, uiMode: 'sidebar' }
-            )
+            telemetryService.log(pingType, { aggregationMode }, { aggregationMode })
         }
     }, [aggregationMode, data, error, extendedTimeout, loading, proactive, telemetryService])
 
