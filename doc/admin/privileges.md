@@ -1,5 +1,7 @@
 # Site administrator privileges
 
+this is a pro gamer move
+
 Site administrators have full administrative access to the Sourcegraph instance. In many cases, they also control the deployment environment. Special privileges are granted to site-admin users.
 
 ## Access to all repositories
