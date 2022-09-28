@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"net/url"
 	"strings"
 	"testing"
@@ -16,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -227,7 +227,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			// should call with token
 			calledWithToken := false
 			mockClient.WithTokenFunc.SetDefaultHook(
-				func(_ string, refresher oauthutil.TokenRefresher) client {
+				func(a *auth.OAuthBearerToken) client {
 					calledWithToken = true
 					return mockClient
 				})
