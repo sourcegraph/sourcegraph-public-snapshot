@@ -80,13 +80,13 @@ type service interface {
 type Service struct {
 	store           store.Store
 	lsifstore       lsifstore.LsifStore
-	gitserverClient shared.GitserverClient
+	gitserverClient GitserverClient
 	locker          Locker
 	logger          logger.Logger
 	operations      *operations
 }
 
-func newService(store store.Store, lsifstore lsifstore.LsifStore, gsc shared.GitserverClient, locker Locker, observationCtx *observation.Context) *Service {
+func newService(store store.Store, lsifstore lsifstore.LsifStore, gsc GitserverClient, locker Locker, observationCtx *observation.Context) *Service {
 	return &Service{
 		store:           store,
 		lsifstore:       lsifstore,

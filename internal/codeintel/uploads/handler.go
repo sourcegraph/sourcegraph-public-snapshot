@@ -34,15 +34,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func NewHandler(
+func (s *Service) NewHandler(
 	dbStore store.Store,
 	workerStore dbworkerstore.Store,
 	lsifStore lsifstore.LsifStore,
 	uploadStore uploadstore.Store,
-	gitserverClient GitserverClient,
 	numProcessorRoutines int,
 	budgetMax int64,
 ) workerutil.Handler {
+	// TODO - extract observability stuff
+
 	observationContext := observation.Context{
 		Tracer: &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		HoneyDataset: &honey.Dataset{
@@ -69,7 +70,7 @@ func NewHandler(
 		workerStore:       workerStore,
 		lsifStore:         lsifStore,
 		uploadStore:       uploadStore,
-		gitserverClient:   gitserverClient,
+		gitserverClient:   s.gitserverClient,
 		handleOp:          op,
 		budgetRemaining:   budgetMax,
 		enableBudget:      budgetMax > 0,

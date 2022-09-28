@@ -100,7 +100,6 @@ func main() {
 	// Initialize stores
 	dbStore := dbstore.NewWithDB(db, observationContext)
 	workerStore := dbstore.WorkerutilUploadStore(dbStore, makeObservationContext(observationContext, false))
-	// lsifStore := lsifstore.NewStore(codeIntelDB, conf.Get(), observationContext)
 	gitserverClient := gitserver.New(db, dbStore, observationContext)
 
 	uploadStore, err := lsifuploadstore.New(context.Background(), config.LSIFUploadStoreConfig, observationContext)
@@ -121,16 +120,14 @@ func main() {
 	dbworker.InitPrometheusMetric(observationContext, workerStore, "codeintel", "upload", nil)
 
 	uploadsSvc := uploads.GetService(db, database.NewDBWith(logger, codeIntelDB), gitserverClient)
-	_ = uploadsSvc // TODO
 
 	// Initialize worker
 	rootContext := actor.WithInternalActor(context.Background())
-	handler := uploads.NewHandler(
+	handler := uploadsSvc.NewHandler(
 		nil, // TODO - &worker.DBStoreShim{Store: dbStore},
 		workerStore,
-		nil, // TODO - &worker.LSIFStoreShim{Store: lsifStore},
+		nil, // TODO - &worker.LSIFStoreShim{Store: lsifstore.NewStore(codeIntelDB, conf.Get(), observationContext)},
 		uploadStore,
-		gitserverClient,
 		config.WorkerConcurrency,
 		config.WorkerBudget,
 	)

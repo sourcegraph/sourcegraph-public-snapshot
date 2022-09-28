@@ -10,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -24,7 +23,7 @@ var (
 
 // GetService creates or returns an already-initialized uploads service. If the service is
 // new, it will use the given database handle.
-func GetService(db, codeIntelDB database.DB, gsc shared.GitserverClient) *Service {
+func GetService(db, codeIntelDB database.DB, gsc GitserverClient) *Service {
 	svcOnce.Do(func() {
 		oc := func(name string) *observation.Context {
 			return &observation.Context{
