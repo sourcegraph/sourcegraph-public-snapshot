@@ -647,10 +647,22 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 		return nil
 	}
 
+	authProviders := conf.Get().AuthProviders
 	for _, s := range svcs {
 		rawConfig, err := s.Config.Decrypt(ctx)
 		if err != nil {
 			return err
+		}
+
+		normalized, err := ValidateExternalServiceConfig(ctx, e, ValidateExternalServiceConfigOptions{
+			Kind:            s.Kind,
+			Config:          rawConfig,
+			AuthProviders:   authProviders,
+			NamespaceUserID: s.NamespaceUserID,
+			NamespaceOrgID:  s.NamespaceOrgID,
+		})
+		if err != nil {
+			return errors.Wrapf(err, "validating service of kind %q", s.Kind)
 		}
 
 		// 🚨 SECURITY: For all GitHub and GitLab code host connections on Sourcegraph
@@ -665,7 +677,7 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			s.Config.Set(rawConfig)
 		}
 
-		if err := e.recalculateFields(s, rawConfig); err != nil {
+		if err := e.recalculateFields(s, string(normalized)); err != nil {
 			return err
 		}
 	}
