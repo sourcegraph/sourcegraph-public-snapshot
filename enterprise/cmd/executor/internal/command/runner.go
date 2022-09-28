@@ -92,7 +92,7 @@ type ResourceOptions struct {
 	MaxEgressBandwidth int
 
 	// DockerHostMountPath, if supplied, replaces the workspace parent directory in the
-	// volume mounts of Docker containers. This option is used when running privilegled
+	// volume mounts of Docker containers. This option is used when running privileged
 	// executors in k8s or docker-compose without requiring the host and node paths to
 	// be identical.
 	DockerHostMountPath string

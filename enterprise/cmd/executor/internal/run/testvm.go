@@ -3,6 +3,7 @@ package run
 import (
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/sourcegraph/log"
 	"github.com/urfave/cli/v2"
 
@@ -17,6 +18,17 @@ func RunTestVM(cliCtx *cli.Context, logger log.Logger, config *config.Config) er
 	repoName := cliCtx.String("repo")
 	nameOnly := cliCtx.Bool("name-only")
 
+	vmNameSuffix, err := uuid.NewRandom()
+	if err != nil {
+		return err
+	}
+
+	// Construct a unique name for the VM prefixed by something that differentiates
+	// VMs created by this executor instance and another one that happens to run on
+	// the same host (as is the case in dev). This prefix is expected to match the
+	// prefix given to ignite.CurrentlyRunningVMs in other parts of this service.
+	name := fmt.Sprintf("%s-%s", config.VMPrefix, vmNameSuffix.String())
+
 	commandLogger := command.NewNoopLogger()
 	operations := command.NewOperations(&observation.TestContext)
 
@@ -25,10 +37,9 @@ func RunTestVM(cliCtx *cli.Context, logger log.Logger, config *config.Config) er
 		cliCtx.Context,
 		// Just enough to spin up a VM.
 		executor.Job{
-			ID:                  123,
-			RepositoryName:      repoName,
-			RepositoryDirectory: "repo",
-			Commit:              "HEAD",
+			ID:             123,
+			RepositoryName: repoName,
+			Commit:         "HEAD",
 		},
 		config.FirecrackerDiskSpace,
 		// Always keep the workspace in this debug command.
@@ -48,6 +59,14 @@ func RunTestVM(cliCtx *cli.Context, logger log.Logger, config *config.Config) er
 	}
 
 	runner := command.NewRunner(workspace.Path(), commandLogger, command.Options{
+		ExecutorName: name,
+		ResourceOptions: command.ResourceOptions{
+			NumCPUs:             config.JobNumCPUs,
+			Memory:              config.JobMemory,
+			DiskSpace:           config.FirecrackerDiskSpace,
+			MaxIngressBandwidth: config.FirecrackerBandwidthIngress,
+			MaxEgressBandwidth:  config.FirecrackerBandwidthEgress,
+		},
 		// TODO: Use helper to create firecracker options object.
 		FirecrackerOptions: command.FirecrackerOptions{
 			Enabled:                 true,
@@ -65,11 +84,10 @@ func RunTestVM(cliCtx *cli.Context, logger log.Logger, config *config.Config) er
 		return err
 	}
 
-	// TODO: Get the VM name from the runner.
 	if nameOnly {
-		fmt.Printf("executor-debug-vm-deadbeef")
+		fmt.Print(name)
 	} else {
-		fmt.Printf("Success! Connect to the VM using\n  $ ignite attach executor-debug-vm-deadbeef\n\nOnce done run\n  $ ignite rm --force executor-debug-vm-deadbeef\nto clean up the running VM.\n")
+		fmt.Printf("Success! Connect to the VM using\n  $ ignite attach %s\n\nOnce done run\n  $ ignite rm --force %s\nto clean up the running VM.\n", name, name)
 	}
 
 	return nil
