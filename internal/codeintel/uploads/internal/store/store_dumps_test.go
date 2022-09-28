@@ -15,7 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/commitgraph"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -41,7 +41,7 @@ func TestGetDumpsByIDs(t *testing.T) {
 	startedAt := uploadedAt.Add(time.Minute)
 	finishedAt := uploadedAt.Add(time.Minute * 2)
 	expectedAssociatedIndexID := 42
-	expected1 := shared.Dump{
+	expected1 := types.Dump{
 		ID:                1,
 		Commit:            makeCommit(1),
 		Root:              "sub/",
@@ -57,7 +57,7 @@ func TestGetDumpsByIDs(t *testing.T) {
 		IndexerVersion:    "latest",
 		AssociatedIndexID: &expectedAssociatedIndexID,
 	}
-	expected2 := shared.Dump{
+	expected2 := types.Dump{
 		ID:                2,
 		Commit:            makeCommit(2),
 		Root:              "other/",
@@ -107,7 +107,7 @@ func TestFindClosestDumps(t *testing.T) {
 	//       |              |           |
 	//       +-- [3] -- 4 --+           +--- 8
 
-	uploads := []shared.Upload{
+	uploads := []types.Upload{
 		{ID: 1, Commit: makeCommit(1)},
 		{ID: 2, Commit: makeCommit(3)},
 		{ID: 3, Commit: makeCommit(7)},
@@ -175,7 +175,7 @@ func TestFindClosestDumpsAlternateCommitGraph(t *testing.T) {
 	//              |
 	//              +-- 7 -- 8
 
-	uploads := []shared.Upload{
+	uploads := []types.Upload{
 		{ID: 1, Commit: makeCommit(2)},
 	}
 	insertUploads(t, db, uploads...)
@@ -231,7 +231,7 @@ func TestFindClosestDumpsAlternateCommitGraphWithOverwrittenVisibleUploads(t *te
 	//
 	// 1 -- [2] -- 3 -- 4 -- [5]
 
-	uploads := []shared.Upload{
+	uploads := []types.Upload{
 		{ID: 1, Commit: makeCommit(2)},
 		{ID: 2, Commit: makeCommit(5)},
 	}
@@ -284,7 +284,7 @@ func TestFindClosestDumpsDistinctRoots(t *testing.T) {
 	//
 	// [1] -- 2
 
-	uploads := []shared.Upload{
+	uploads := []types.Upload{
 		{ID: 1, Commit: makeCommit(1), Root: "root1/"},
 		{ID: 2, Commit: makeCommit(1), Root: "root2/"},
 	}
@@ -350,7 +350,7 @@ func TestFindClosestDumpsOverlappingRoots(t *testing.T) {
 	// | 8        | 5      | root2/  | lsif-go | (overwrites root2/ at commit 2)
 	// | 9        | 6      | root1/  | lsif-go | (overwrites root1/ at commit 2)
 
-	uploads := []shared.Upload{
+	uploads := []types.Upload{
 		{ID: 1, Commit: makeCommit(1), Indexer: "lsif-go", Root: "root3/"},
 		{ID: 2, Commit: makeCommit(1), Indexer: "scip-python", Root: "root4/"},
 		{ID: 3, Commit: makeCommit(2), Indexer: "lsif-go", Root: "root1/"},
@@ -414,7 +414,7 @@ func TestFindClosestDumpsIndexerName(t *testing.T) {
 	//
 	// [1] --+-- [2] --+-- [3] --+-- [4] --+-- 5
 
-	uploads := []shared.Upload{
+	uploads := []types.Upload{
 		{ID: 1, Commit: makeCommit(1), Root: "root1/", Indexer: "idx1"},
 		{ID: 2, Commit: makeCommit(2), Root: "root2/", Indexer: "idx1"},
 		{ID: 3, Commit: makeCommit(3), Root: "root3/", Indexer: "idx1"},
@@ -503,7 +503,7 @@ func TestFindClosestDumpsIntersectingPath(t *testing.T) {
 	//
 	// [1]
 
-	uploads := []shared.Upload{
+	uploads := []types.Upload{
 		{ID: 1, Commit: makeCommit(1), Root: "web/src/", Indexer: "lsif-eslint"},
 	}
 	insertUploads(t, db, uploads...)
@@ -551,7 +551,7 @@ func TestFindClosestDumpsFromGraphFragment(t *testing.T) {
 	//       |                ||       /
 	//       +-- [5] -- 6 --- || -----+
 
-	uploads := []shared.Upload{
+	uploads := []types.Upload{
 		{ID: 1, Commit: makeCommit(1)},
 		{ID: 2, Commit: makeCommit(5)},
 	}
@@ -639,7 +639,7 @@ func TestDefinitionDumps(t *testing.T) {
 	uploadedAt := time.Unix(1587396557, 0).UTC()
 	startedAt := uploadedAt.Add(time.Minute)
 	finishedAt := uploadedAt.Add(time.Minute * 2)
-	expected1 := shared.Dump{
+	expected1 := types.Dump{
 		ID:             1,
 		Commit:         makeCommit(1),
 		Root:           "sub/",
@@ -654,7 +654,7 @@ func TestDefinitionDumps(t *testing.T) {
 		Indexer:        "lsif-go",
 		IndexerVersion: "latest",
 	}
-	expected2 := shared.Dump{
+	expected2 := types.Dump{
 		ID:                2,
 		Commit:            makeCommit(2),
 		Root:              "other/",
@@ -670,7 +670,7 @@ func TestDefinitionDumps(t *testing.T) {
 		IndexerVersion:    "1.2.3",
 		AssociatedIndexID: nil,
 	}
-	expected3 := shared.Dump{
+	expected3 := types.Dump{
 		ID:             3,
 		Commit:         makeCommit(3),
 		Root:           "sub/",
@@ -742,8 +742,8 @@ func TestDefinitionDumps(t *testing.T) {
 	})
 }
 
-func dumpToUpload(expected shared.Dump) shared.Upload {
-	return shared.Upload{
+func dumpToUpload(expected types.Dump) types.Upload {
+	return types.Upload{
 		ID:                expected.ID,
 		Commit:            expected.Commit,
 		Root:              expected.Root,
@@ -763,7 +763,7 @@ func dumpToUpload(expected shared.Dump) shared.Upload {
 	}
 }
 
-func toCommitGraphView(uploads []shared.Upload) *commitgraph.CommitGraphView {
+func toCommitGraphView(uploads []types.Upload) *commitgraph.CommitGraphView {
 	commitGraphView := commitgraph.NewCommitGraphView()
 	for _, upload := range uploads {
 		commitGraphView.Add(commitgraph.UploadMeta{UploadID: upload.ID}, upload.Commit, fmt.Sprintf("%s:%s", upload.Root, upload.Indexer))
@@ -860,7 +860,7 @@ func testFindClosestDumps(t *testing.T, store Store, testCases []FindClosestDump
 			testCase.indexer,
 		)
 
-		assertDumpIDs := func(t *testing.T, dumps []shared.Dump) {
+		assertDumpIDs := func(t *testing.T, dumps []types.Dump) {
 			if len(testCase.anyOfIDs) > 0 {
 				testAnyOf(t, dumps, testCase.anyOfIDs)
 				return
@@ -901,7 +901,7 @@ func testFindClosestDumps(t *testing.T, store Store, testCases []FindClosestDump
 	}
 }
 
-func testAnyOf(t *testing.T, dumps []shared.Dump, expectedIDs []int) {
+func testAnyOf(t *testing.T, dumps []types.Dump, expectedIDs []int) {
 	if len(dumps) != 1 {
 		t.Errorf("unexpected nearest dump length. want=%d have=%d", 1, len(dumps))
 		return
@@ -922,7 +922,7 @@ func testPresence(needle int, haystack []int) bool {
 	return false
 }
 
-func testAllOf(t *testing.T, dumps []shared.Dump, expectedIDs []int) {
+func testAllOf(t *testing.T, dumps []types.Dump, expectedIDs []int) {
 	if len(dumps) != len(expectedIDs) {
 		t.Errorf("unexpected nearest dump length. want=%d have=%d", 1, len(dumps))
 	}

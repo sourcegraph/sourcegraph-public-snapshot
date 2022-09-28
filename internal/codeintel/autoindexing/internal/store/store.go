@@ -7,6 +7,7 @@ import (
 	logger "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -24,10 +25,10 @@ type Store interface {
 	DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration) (indexesDeleted int, err error)
 
 	// Indexes
-	InsertIndexes(ctx context.Context, indexes []shared.Index) (_ []shared.Index, err error)
-	GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (_ []shared.Index, _ int, err error)
-	GetIndexByID(ctx context.Context, id int) (_ shared.Index, _ bool, err error)
-	GetIndexesByIDs(ctx context.Context, ids ...int) (_ []shared.Index, err error)
+	InsertIndexes(ctx context.Context, indexes []types.Index) (_ []types.Index, err error)
+	GetIndexes(ctx context.Context, opts types.GetIndexesOptions) (_ []types.Index, _ int, err error)
+	GetIndexByID(ctx context.Context, id int) (_ types.Index, _ bool, err error)
+	GetIndexesByIDs(ctx context.Context, ids ...int) (_ []types.Index, err error)
 	GetRecentIndexesSummary(ctx context.Context, repositoryID int) (summaries []shared.IndexesWithRepositoryNamespace, err error)
 	GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error)
 	DeleteIndexByID(ctx context.Context, id int) (_ bool, err error)
@@ -40,12 +41,14 @@ type Store interface {
 	// Index configurations
 	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (_ shared.IndexConfiguration, _ bool, err error)
 	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, data []byte) (err error)
-}
 
-type RepoRev struct {
-	ID           int
-	RepositoryID int
-	Rev          string
+	// Language support
+	GetLanguagesRequestedBy(ctx context.Context, userID int) (_ []string, err error)
+	SetRequestLanguageSupport(ctx context.Context, userID int, language string) (err error)
+
+	// GetUnsafeDB returns the underlying database handle. This is used by the
+	// resolvers that have the old convention of using the database handle directly.
+	GetUnsafeDB() database.DB
 }
 
 // store manages the autoindexing store.
@@ -83,4 +86,10 @@ func (s *store) transact(ctx context.Context) (*store, error) {
 
 func (s *store) Done(err error) error {
 	return s.db.Done(err)
+}
+
+// GetUnsafeDB returns the underlying database handle. This is used by the
+// resolvers that have the old convention of using the database handle directly.
+func (s *store) GetUnsafeDB() database.DB {
+	return database.NewDBWith(s.logger, s.db)
 }

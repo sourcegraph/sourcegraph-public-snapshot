@@ -6,6 +6,7 @@ import (
 
 	logger "github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -41,9 +42,9 @@ type Store interface {
 	HasRepository(ctx context.Context, repositoryID int) (_ bool, err error)
 
 	// Uploads
-	GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (_ []shared.Upload, _ int, err error)
-	GetUploadByID(ctx context.Context, id int) (_ shared.Upload, _ bool, err error)
-	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []shared.Upload, err error)
+	GetUploads(ctx context.Context, opts types.GetUploadsOptions) (_ []types.Upload, _ int, err error)
+	GetUploadByID(ctx context.Context, id int) (_ types.Upload, _ bool, err error)
+	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []types.Upload, err error)
 	GetUploadIDsWithReferences(ctx context.Context, orderedMonikers []precise.QualifiedMonikerData, ignoreIDs []int, repositoryID int, commit string, limit int, offset int, trace observation.TraceLogger) (ids []int, recordsScanned int, totalCount int, err error)
 	GetVisibleUploadsMatchingMonikers(ctx context.Context, repositoryID int, commit string, orderedMonikers []precise.QualifiedMonikerData, limit, offset int) (_ shared.PackageReferenceScanner, _ int, err error)
 	GetRecentUploadsSummary(ctx context.Context, repositoryID int) (upload []shared.UploadsWithRepositoryNamespace, err error)
@@ -67,10 +68,10 @@ type Store interface {
 	MarkFailed(ctx context.Context, id int, reason string) error
 
 	// Dumps
-	FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) (_ []shared.Dump, err error)
-	FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, commitGraph *gitdomain.CommitGraph) (_ []shared.Dump, err error)
-	GetDumpsWithDefinitionsForMonikers(ctx context.Context, monikers []precise.QualifiedMonikerData) (_ []shared.Dump, err error)
-	GetDumpsByIDs(ctx context.Context, ids []int) (_ []shared.Dump, err error)
+	FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) (_ []types.Dump, err error)
+	FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, commitGraph *gitdomain.CommitGraph) (_ []types.Dump, err error)
+	GetDumpsWithDefinitionsForMonikers(ctx context.Context, monikers []precise.QualifiedMonikerData) (_ []types.Dump, err error)
+	GetDumpsByIDs(ctx context.Context, ids []int) (_ []types.Dump, err error)
 
 	// Packages
 	UpdatePackages(ctx context.Context, dumpID int, packages []precise.Package) (err error)
@@ -79,7 +80,7 @@ type Store interface {
 	UpdatePackageReferences(ctx context.Context, dumpID int, references []precise.PackageReference) (err error)
 
 	// Audit Logs
-	GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []shared.UploadLog, err error)
+	GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []types.UploadLog, err error)
 	DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (count int, err error)
 }
 
