@@ -449,10 +449,10 @@ func (codeIntelligence) NewExecutorTeardownCommandGroup(containerName string) mo
 	})
 }
 
-// src_apiworker_apiclient_total
-// src_apiworker_apiclient_duration_seconds_bucket
-// src_apiworker_apiclient_errors_total
-func (codeIntelligence) NewExecutorAPIClientGroup(containerName string) monitoring.Group {
+// src_apiworker_apiclient_queue_total
+// src_apiworker_apiclient_queue_duration_seconds_bucket
+// src_apiworker_apiclient_queue_errors_total
+func (codeIntelligence) NewExecutorAPIQueueClientGroup(containerName string) monitoring.Group {
 	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "executor",
@@ -460,7 +460,7 @@ func (codeIntelligence) NewExecutorAPIClientGroup(containerName string) monitori
 			Hidden:          true,
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "apiworker_apiclient",
+				MetricNameRoot:        "apiworker_apiclient_queue",
 				JobLabel:              "sg_job",
 				MetricDescriptionRoot: "client",
 				Filters:               nil,

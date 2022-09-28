@@ -17660,7 +17660,7 @@ Query: `sum(increase(src_executor_processor_errors_total{queue=~"${queue:regex}"
 
 ### Executor: Executor: Queue API client
 
-#### executor: apiworker_apiclient_total
+#### executor: apiworker_apiclient_queue_total
 
 <p class="subtitle">Aggregate client operations every 5m</p>
 
@@ -17673,13 +17673,13 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100200`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_apiclient_total{sg_job=~"^sourcegraph-executors.*"}[5m]))`
+Query: `sum(increase(src_apiworker_apiclient_queue_total{sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### executor: apiworker_apiclient_99th_percentile_duration
+#### executor: apiworker_apiclient_queue_99th_percentile_duration
 
 <p class="subtitle">Aggregate successful client operation duration distribution over 5m</p>
 
@@ -17692,13 +17692,13 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100201`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_apiworker_apiclient_duration_seconds_bucket{sg_job=~"^sourcegraph-executors.*"}[5m]))`
+Query: `sum  by (le)(rate(src_apiworker_apiclient_queue_duration_seconds_bucket{sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### executor: apiworker_apiclient_errors_total
+#### executor: apiworker_apiclient_queue_errors_total
 
 <p class="subtitle">Aggregate client operation errors every 5m</p>
 
@@ -17711,13 +17711,13 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100202`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_apiclient_errors_total{sg_job=~"^sourcegraph-executors.*"}[5m]))`
+Query: `sum(increase(src_apiworker_apiclient_queue_errors_total{sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### executor: apiworker_apiclient_error_rate
+#### executor: apiworker_apiclient_queue_error_rate
 
 <p class="subtitle">Aggregate client operation error rate over 5m</p>
 
@@ -17730,13 +17730,13 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100203`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_apiworker_apiclient_errors_total{sg_job=~"^sourcegraph-executors.*"}[5m])) / (sum(increase(src_apiworker_apiclient_total{sg_job=~"^sourcegraph-executors.*"}[5m])) + sum(increase(src_apiworker_apiclient_errors_total{sg_job=~"^sourcegraph-executors.*"}[5m]))) * 100`
+Query: `sum(increase(src_apiworker_apiclient_queue_errors_total{sg_job=~"^sourcegraph-executors.*"}[5m])) / (sum(increase(src_apiworker_apiclient_queue_total{sg_job=~"^sourcegraph-executors.*"}[5m])) + sum(increase(src_apiworker_apiclient_queue_errors_total{sg_job=~"^sourcegraph-executors.*"}[5m]))) * 100`
 
 </details>
 
 <br />
 
-#### executor: apiworker_apiclient_total
+#### executor: apiworker_apiclient_queue_total
 
 <p class="subtitle">Client operations every 5m</p>
 
@@ -17749,13 +17749,13 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100210`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_apiclient_total{sg_job=~"^sourcegraph-executors.*"}[5m]))`
+Query: `sum by (op)(increase(src_apiworker_apiclient_queue_total{sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### executor: apiworker_apiclient_99th_percentile_duration
+#### executor: apiworker_apiclient_queue_99th_percentile_duration
 
 <p class="subtitle">99th percentile successful client operation duration over 5m</p>
 
@@ -17768,13 +17768,13 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100211`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_apiworker_apiclient_duration_seconds_bucket{sg_job=~"^sourcegraph-executors.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_apiworker_apiclient_queue_duration_seconds_bucket{sg_job=~"^sourcegraph-executors.*"}[5m])))`
 
 </details>
 
 <br />
 
-#### executor: apiworker_apiclient_errors_total
+#### executor: apiworker_apiclient_queue_errors_total
 
 <p class="subtitle">Client operation errors every 5m</p>
 
@@ -17787,13 +17787,13 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100212`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_apiclient_errors_total{sg_job=~"^sourcegraph-executors.*"}[5m]))`
+Query: `sum by (op)(increase(src_apiworker_apiclient_queue_errors_total{sg_job=~"^sourcegraph-executors.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### executor: apiworker_apiclient_error_rate
+#### executor: apiworker_apiclient_queue_error_rate
 
 <p class="subtitle">Client operation error rate over 5m</p>
 
@@ -17806,7 +17806,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100213`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_apiworker_apiclient_errors_total{sg_job=~"^sourcegraph-executors.*"}[5m])) / (sum by (op)(increase(src_apiworker_apiclient_total{sg_job=~"^sourcegraph-executors.*"}[5m])) + sum by (op)(increase(src_apiworker_apiclient_errors_total{sg_job=~"^sourcegraph-executors.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_apiworker_apiclient_queue_errors_total{sg_job=~"^sourcegraph-executors.*"}[5m])) / (sum by (op)(increase(src_apiworker_apiclient_queue_total{sg_job=~"^sourcegraph-executors.*"}[5m])) + sum by (op)(increase(src_apiworker_apiclient_queue_errors_total{sg_job=~"^sourcegraph-executors.*"}[5m]))) * 100`
 
 </details>
 
