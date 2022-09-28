@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -228,8 +229,6 @@ type ExternalServiceReposListOptions ExternalServicesGetSyncJobsOptions
 
 type ExternalServicesGetSyncJobsOptions struct {
 	ExternalServiceID int64
-	// Only include jobs that are active, ie in the 'processing' or `queued` state.
-	OnlyActive bool
 
 	*LimitOffset
 }
@@ -969,24 +968,15 @@ func (e *externalServiceStore) Delete(ctx context.Context, id int64) (err error)
 	}
 	defer func() { err = tx.Done(err) }()
 
-	isSyncing := func() error {
-		// If this external service is currently syncing, we should not allow deletion
-		count, err := tx.CountSyncJobs(ctx, ExternalServicesGetSyncJobsOptions{
-			ExternalServiceID: id,
-			OnlyActive:        true,
-		})
-		if err != nil {
-			return errors.Wrap(err, "counting sync jobs")
-		}
-		if count > 0 {
-			return errors.Errorf("service is syncing, deleting not allowed")
-		}
-		return nil
+	// We take an advisory lock here and also when syncing an external service to
+	// ensure that they can't happen at the same time
+	lock := locker.NewWith(tx, "external_service")
+	locked, err := lock.LockInTransaction(ctx, locker.StringKey(fmt.Sprintf("%d", id)), false)
+	if err != nil {
+		return errors.Wrap(err, "getting advisory lock")
 	}
-
-	// Don't start deletion if service is syncing
-	if err := isSyncing(); err != nil {
-		return err
+	if !locked {
+		return errors.Errorf("could not advisory lock for service %d", id)
 	}
 
 	// Create a temporary table where we'll store repos affected by the deletion of
@@ -1054,12 +1044,6 @@ CREATE TEMPORARY TABLE IF NOT EXISTS
 		return externalServiceNotFoundError{id: id}
 	}
 
-	// Check again so that we don't commit the deletion if sync started while the
-	// deletion was in progress.
-	if err := isSyncing(); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -1098,16 +1082,11 @@ ORDER BY
 %s
 `
 
-var activeStateClause = "state IN ('processing', 'queued')"
-
 func (e *externalServiceStore) GetSyncJobs(ctx context.Context, opt ExternalServicesGetSyncJobsOptions) (_ []*types.ExternalServiceSyncJob, err error) {
 	var preds []*sqlf.Query
 
 	if opt.ExternalServiceID != 0 {
 		preds = append(preds, sqlf.Sprintf("external_service_id = %s", opt.ExternalServiceID))
-	}
-	if opt.OnlyActive {
-		preds = append(preds, sqlf.Sprintf(activeStateClause))
 	}
 
 	if len(preds) == 0 {
@@ -1149,9 +1128,6 @@ func (e *externalServiceStore) CountSyncJobs(ctx context.Context, opt ExternalSe
 
 	if opt.ExternalServiceID != 0 {
 		preds = append(preds, sqlf.Sprintf("external_service_id = %s", opt.ExternalServiceID))
-	}
-	if opt.OnlyActive {
-		preds = append(preds, sqlf.Sprintf(activeStateClause))
 	}
 
 	if len(preds) == 0 {
