@@ -10,7 +10,7 @@ import { SearchPatternType } from '../graphql-operations'
 import { VSCEStateMachine } from '../state'
 import { focusSearchPanel } from '../webview/commands'
 
-import { observeInstanceVersionNumber } from './instanceVersion'
+import { observeInstanceVersionNumber, parseVersion } from './instanceVersion'
 
 export function createStreamSearch({
     context,
@@ -49,16 +49,26 @@ export function createStreamSearch({
 
         previousSearchSubscription = instanceVersionNumber
             .pipe(
-                map(versionNumber => {
+                map(version => {
                     let patternType = options.patternType
-                    if (versionNumber && versionNumber < '3430' && patternType === SearchPatternType.standard) {
-                        /**
-                         * SearchPatternType.standard support was added in Sourcegraph v3.43.0.
-                         * Use SearchPatternType.literal for earlier versions instead (it was the default before v3.43.0).
-                         * See: https://docs.sourcegraph.com/CHANGELOG#3-43-0, https://github.com/sourcegraph/sourcegraph/pull/38141.
-                         */
-                        patternType = SearchPatternType.literal
+
+                    if (version) {
+                        const parsedVersion = parseVersion(version)
+
+                        if (
+                            parsedVersion !== 'insiders' &&
+                            (parsedVersion.major < 3 || (parsedVersion.major === 3 && parsedVersion.minor < 43)) &&
+                            patternType === SearchPatternType.standard
+                        ) {
+                            /**
+                             * SearchPatternType.standard support was added in Sourcegraph v3.43.0.
+                             * Use SearchPatternType.literal for earlier versions instead (it was the default before v3.43.0).
+                             * See: https://docs.sourcegraph.com/CHANGELOG#3-43-0, https://github.com/sourcegraph/sourcegraph/pull/38141.
+                             */
+                            patternType = SearchPatternType.literal
+                        }
                     }
+
                     return patternType
                 }),
                 switchMap(patternType =>
