@@ -169,7 +169,7 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 			return
 		}
 
-		auther, err := eauth.NewOAuthBearerTokenWithGitHubApp(appID, privateKey)
+		auther, err := eauth.NewGitHubAppAuthenticator(appID, privateKey)
 		if err != nil {
 			logger.Error("Unexpected error while creating Auth token.", log.Error(err))
 			http.Error(w, "Unexpected error while fetching installation data.", http.StatusBadRequest)
@@ -177,7 +177,7 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 		}
 
 		client := github.NewV3Client(logger,
-			extsvc.URNGitHubApp, &url.URL{Host: "github.com"}, auther, nil, nil)
+			extsvc.URNGitHubApp, &url.URL{Host: "github.com"}, auther, nil)
 
 		installation, err := client.GetAppInstallation(req.Context(), installationID)
 		if err != nil {

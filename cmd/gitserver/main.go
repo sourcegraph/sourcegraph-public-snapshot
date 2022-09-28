@@ -406,7 +406,7 @@ func editGitHubAppExternalServiceConfigToken(
 		return "", errors.Wrap(err, "no site-level GitHub App config found")
 	}
 
-	auther, err := auth.NewOAuthBearerTokenWithGitHubApp(appID, pkey)
+	auther, err := auth.NewGitHubAppAuthenticator(appID, pkey)
 	if err != nil {
 		return "", errors.Wrap(err, "new authenticator with GitHub App")
 	}
@@ -420,7 +420,7 @@ func editGitHubAppExternalServiceConfigToken(
 		return "", nil
 	}
 
-	client := github.NewV3Client(logger, svc.URN(), apiURL, auther, cli, nil)
+	client := github.NewV3Client(logger, svc.URN(), apiURL, auther, cli)
 
 	externalServiceStore := db.ExternalServices()
 	token, err := repos.GetOrRenewGitHubAppInstallationAccessToken(ctx, log.Scoped("GetOrRenewGitHubAppInstallationAccessToken", ""), externalServiceStore, svc, client, installationID)

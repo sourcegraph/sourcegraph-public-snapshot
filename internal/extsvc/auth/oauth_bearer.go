@@ -15,29 +15,29 @@ import (
 // OAuthBearerToken implements OAuth Bearer Token authentication for extsvc
 // clients.
 type OAuthBearerToken struct {
-	Token             string
-	RefreshToken      string
-	Expiry            time.Time
-	RefreshFunc       func() error
-	ShouldRefreshFunc func() (bool, error)
+	AccessToken  string    `json:"access_token"`
+	RefreshToken string    `json:"refresh_token"`
+	TokenType    string    `json:"token_type"`
+	Expiry       time.Time `json:"expiry"`
+	RefreshFunc  func(*OAuthBearerToken) (*OAuthBearerToken, error)
 }
 
 var _ Authenticator = &OAuthBearerToken{}
 
 func (token *OAuthBearerToken) Authenticate(req *http.Request) error {
-	req.Header.Set("Authorization", "Bearer "+token.Token)
+	req.Header.Set("Authorization", "Bearer "+token.AccessToken)
 	return nil
 }
 
 func (token *OAuthBearerToken) Hash() string {
-	key := sha256.Sum256([]byte(token.Token))
+	key := sha256.Sum256([]byte(token.AccessToken))
 	return hex.EncodeToString(key[:])
 }
 
 // WithToken returns an Oauth Bearer Token authenticator with a new token
 func (token *OAuthBearerToken) WithToken(newToken string) *OAuthBearerToken {
 	return &OAuthBearerToken{
-		Token: newToken,
+		AccessToken: newToken,
 	}
 }
 
@@ -45,14 +45,22 @@ func (token *OAuthBearerToken) Refresh() error {
 	if token.RefreshFunc == nil {
 		return errors.New("refresh not implemented")
 	}
-	return token.RefreshFunc()
+
+	newToken, err := token.RefreshFunc(token)
+	if err != nil {
+		return err
+	}
+
+	token.AccessToken = newToken.AccessToken
+	token.Expiry = newToken.Expiry
+	token.RefreshToken = newToken.RefreshToken
+
+	return nil
 }
 
-func (token *OAuthBearerToken) IsExpired() (bool, error) {
-	if token.ShouldRefreshFunc == nil {
-		return false, errors.New("should refresh not implemented")
-	}
-	return token.ShouldRefreshFunc()
+func (token *OAuthBearerToken) ShouldRefresh() bool {
+	// Refresh 5 minutes before expiry
+	return time.Until(token.Expiry) > 5*time.Minute
 }
 
 // OAuthBearerTokenWithSSH implements OAuth Bearer Token authentication for extsvc
@@ -77,26 +85,26 @@ func (token *OAuthBearerTokenWithSSH) SSHPublicKey() string {
 }
 
 func (token *OAuthBearerTokenWithSSH) Hash() string {
-	shaSum := sha256.Sum256([]byte(token.Token + token.PrivateKey + token.Passphrase + token.PublicKey))
+	shaSum := sha256.Sum256([]byte(token.AccessToken + token.PrivateKey + token.Passphrase + token.PublicKey))
 	return hex.EncodeToString(shaSum[:])
 }
 
-// oauthBearerTokenWithGitHubApp implements OAuth Bearer Token authentication for
+// gitHubAppAuthenticator implements OAuth Bearer Token authentication for
 // GitHub Apps.
-type oauthBearerTokenWithGitHubApp struct {
+type gitHubAppAuthenticator struct {
 	appID  string
 	key    *rsa.PrivateKey
 	rawKey []byte
 }
 
-// NewOAuthBearerTokenWithGitHubApp constructs a new OAuth Bearer Token
+// NewGitHubAppAuthenticator constructs a new OAuth Bearer Token
 // authenticator for GitHub Apps using given appID and private key.
-func NewOAuthBearerTokenWithGitHubApp(appID string, privateKey []byte) (Authenticator, error) {
+func NewGitHubAppAuthenticator(appID string, privateKey []byte) (Authenticator, error) {
 	key, err := jwt.ParseRSAPrivateKeyFromPEM(privateKey)
 	if err != nil {
 		return nil, errors.Wrap(err, "parse private key")
 	}
-	return &oauthBearerTokenWithGitHubApp{
+	return &gitHubAppAuthenticator{
 		appID:  appID,
 		key:    key,
 		rawKey: privateKey,
@@ -105,7 +113,7 @@ func NewOAuthBearerTokenWithGitHubApp(appID string, privateKey []byte) (Authenti
 
 // Authenticate is a modified version of
 // https://github.com/bradleyfalzon/ghinstallation/blob/24e56b3fb7669f209134a01eff731d7e2ef72a5c/appsTransport.go#L66.
-func (token *oauthBearerTokenWithGitHubApp) Authenticate(r *http.Request) error {
+func (token *gitHubAppAuthenticator) Authenticate(r *http.Request) error {
 	// The payload computation is following GitHub App's Ruby example shown in
 	// https://docs.github.com/en/developers/apps/building-github-apps/authenticating-with-github-apps#authenticating-as-a-github-app.
 	//
@@ -130,7 +138,44 @@ func (token *oauthBearerTokenWithGitHubApp) Authenticate(r *http.Request) error 
 	return nil
 }
 
-func (token *oauthBearerTokenWithGitHubApp) Hash() string {
+func (token *gitHubAppAuthenticator) Hash() string {
 	shaSum := sha256.Sum256(token.rawKey)
 	return hex.EncodeToString(shaSum[:])
+}
+
+// GitHubAppInstallationAuthenticator implements OAuth Bearer Token authentication for
+// GitHub Apps.
+type GitHubAppInstallationAuthenticator struct {
+	installationID          int64
+	InstallationAccessToken string
+	Expiry                  time.Time
+	refreshFunc             func(*GitHubAppInstallationAuthenticator) error
+}
+
+// NewGitHubAppAuthenticator constructs a new OAuth Bearer Token
+// authenticator for GitHub Apps using given appID and private key.
+func NewGitHubAppInstallationAuthenticator(installationID int64, installationAccessToken string, refreshFunc func(*GitHubAppInstallationAuthenticator) error) (Authenticator, error) {
+	return &GitHubAppInstallationAuthenticator{
+		installationID:          installationID,
+		InstallationAccessToken: installationAccessToken,
+		refreshFunc:             refreshFunc,
+	}, nil
+}
+
+func (token *GitHubAppInstallationAuthenticator) Authenticate(r *http.Request) error {
+	r.Header.Set("Authorization", "Bearer "+token.InstallationAccessToken)
+	return nil
+}
+
+func (token *GitHubAppInstallationAuthenticator) Hash() string {
+	shaSum := sha256.Sum256([]byte(token.InstallationAccessToken))
+	return hex.EncodeToString(shaSum[:])
+}
+
+func (token *GitHubAppInstallationAuthenticator) ShouldRefresh() bool {
+	return time.Until(token.Expiry) < 5*time.Minute
+}
+
+func (token *GitHubAppInstallationAuthenticator) Refresh() error {
+	return token.refreshFunc(token)
 }

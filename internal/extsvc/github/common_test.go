@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/oauth2"
 	"io"
 	"net/http"
 	"net/url"
@@ -99,31 +98,20 @@ func TestClient_doRequestWithV3Client(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	mockOauthContext := &oauthutil.OAuthContext{
-		ClientID:     "client_id",
-		ClientSecret: "client_secret",
-		Endpoint: oauth2.Endpoint{
-			AuthURL:  "url/login/oauth/authorize",
-			TokenURL: "url/login/oauth/access_token",
-		},
-	}
 
 	uri, err := url.Parse("https://github.com")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	bearerToken := &auth.OAuthBearerToken{Token: "bad token"}
-	tokenRefresherFunc := func(ctx context.Context, doer httpcli.Doer, oauthCtxt oauthutil.OAuthContext) (string, error) {
-		return "refreshed-token", nil
-	}
+	bearerToken := &auth.OAuthBearerToken{AccessToken: "bad token"}
 
-	v3Client := NewV3Client(logtest.Scoped(t), "Test", uri, bearerToken, doer, tokenRefresherFunc)
+	v3Client := NewV3Client(logtest.Scoped(t), "Test", uri, bearerToken, doer)
 	req, err := http.NewRequest(http.MethodGet, "url", nil)
 	require.NoError(t, err)
 
 	var result map[string]any
-	_, err = doRequest(ctx, mockOauthContext, logtest.Scoped(t), v3Client.apiURL, v3Client.auth, v3Client.rateLimitMonitor, doer, bearerToken, v3Client.tokenRefresher, req, &result)
+	_, err = doRequest(ctx, logtest.Scoped(t), v3Client.apiURL, v3Client.auth, v3Client.rateLimitMonitor, doer, req, &result)
 
 	require.NoError(t, err)
 }
@@ -150,18 +138,8 @@ func TestClient_doRequestWithV4Client(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	mockOauthContext := &oauthutil.OAuthContext{
-		ClientID:     "client_id",
-		ClientSecret: "client_secret",
-		Endpoint: oauth2.Endpoint{
-			AuthURL:  "url/login/oauth/authorize",
-			TokenURL: "url/login/oauth/access_token",
-		},
-	}
-
-	bearerToken := &auth.OAuthBearerToken{Token: "bad token"}
-	tokenRefresherFunc := func(ctx context.Context, doer httpcli.Doer, oauthCtxt oauthutil.OAuthContext) (string, error) {
-		return "refreshed-token", nil
+	tokenRefresherFunc := func(ctx context.Context, doer httpcli.Doer, oauthCtxt oauthutil.OAuthContext) (*auth.OAuthBearerToken, error) {
+		return &auth.OAuthBearerToken{AccessToken: "refreshed-token"}, nil
 	}
 
 	v4Client, save := newV4Client(t, "GetAuthenticatedUserV4", tokenRefresherFunc)
@@ -171,7 +149,7 @@ func TestClient_doRequestWithV4Client(t *testing.T) {
 	require.NoError(t, err)
 
 	var result map[string]any
-	_, err = doRequest(ctx, mockOauthContext, logtest.Scoped(t), v4Client.apiURL, v4Client.auth, v4Client.rateLimitMonitor, doer, bearerToken, v4Client.tokenRefresher, req, &result)
+	_, err = doRequest(ctx, logtest.Scoped(t), v4Client.apiURL, v4Client.auth, v4Client.rateLimitMonitor, doer, req, &result)
 
 	require.NoError(t, err)
 }
@@ -198,29 +176,21 @@ func TestClient_doRequestWithoutARefresher(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	mockOauthContext := &oauthutil.OAuthContext{
-		ClientID:     "client_id",
-		ClientSecret: "client_secret",
-		Endpoint: oauth2.Endpoint{
-			AuthURL:  "url/login/oauth/authorize",
-			TokenURL: "url/login/oauth/access_token",
-		},
-	}
 
 	uri, err := url.Parse("https://github.com")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	bearerToken := &auth.OAuthBearerToken{Token: "bad token"}
+	bearerToken := &auth.OAuthBearerToken{AccessToken: "bad token"}
 
-	v3Client := NewV3Client(logtest.Scoped(t), "Test", uri, bearerToken, doer, nil)
+	v3Client := NewV3Client(logtest.Scoped(t), "Test", uri, bearerToken, doer)
 	req, err := http.NewRequest(http.MethodGet, "url", nil)
 	require.NoError(t, err)
 
 	expectedError := "do request with retry and refresh: could not refresh token. Refresher is missing *oauthutil.oauthError"
 	var result map[string]any
-	_, err = doRequest(ctx, mockOauthContext, logtest.Scoped(t), v3Client.apiURL, v3Client.auth, v3Client.rateLimitMonitor, doer, bearerToken, v3Client.tokenRefresher, req, &result)
+	_, err = doRequest(ctx, logtest.Scoped(t), v3Client.apiURL, v3Client.auth, v3Client.rateLimitMonitor, doer, req, &result)
 
 	if err == nil || err.Error() != expectedError {
 		t.Fatalf("received error: %v, want %s", err, expectedError)

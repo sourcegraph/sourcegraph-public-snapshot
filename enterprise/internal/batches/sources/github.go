@@ -64,12 +64,12 @@ func newGithubSource(urn string, c *schema.GitHubConnection, cf *httpcli.Factory
 
 	var authr = au
 	if au == nil {
-		authr = &auth.OAuthBearerToken{Token: c.Token}
+		authr = &auth.OAuthBearerToken{AccessToken: c.Token}
 	}
 
 	return &GithubSource{
 		au:     authr,
-		client: github.NewV4Client(urn, apiURL, authr, cli, nil),
+		client: github.NewV4Client(urn, apiURL, authr, cli),
 	}, nil
 }
 
@@ -89,7 +89,7 @@ func (s GithubSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, 
 
 	sc := s
 	sc.au = a
-	sc.client = sc.client.WithAuthenticator(a, nil)
+	sc.client = sc.client.WithAuthenticator(a)
 
 	return &sc, nil
 }

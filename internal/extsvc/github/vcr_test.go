@@ -15,13 +15,13 @@ import (
 // Please use the token of the "sourcegraph-vcr" user for GITHUB_TOKEN, which can be found
 // in 1Password.
 var vcrToken = &auth.OAuthBearerToken{
-	Token: os.Getenv("GITHUB_TOKEN"),
+	AccessToken: os.Getenv("GITHUB_TOKEN"),
 }
 
 // Please use the token of the "GitHub Enterprise Admin Account" user for GHE_TOKEN,
 // which can be found in 1Password.
 var gheToken = &auth.OAuthBearerToken{
-	Token: os.Getenv("GHE_TOKEN"),
+	AccessToken: os.Getenv("GHE_TOKEN"),
 }
 
 var updateRegex = flag.String("update", "", "Update testdata of tests matching the given regex")

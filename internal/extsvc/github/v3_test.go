@@ -33,7 +33,7 @@ func newTestClientWithAuthenticator(t *testing.T, auth auth.Authenticator, cli h
 	rcache.SetupForTest(t)
 
 	apiURL := &url.URL{Scheme: "https", Host: "example.com", Path: "/"}
-	return NewV3Client(logtest.Scoped(t), "Test", apiURL, auth, cli, nil)
+	return NewV3Client(logtest.Scoped(t), "Test", apiURL, auth, cli)
 }
 
 func TestListAffiliatedRepositories(t *testing.T) {
@@ -595,7 +595,7 @@ func TestListOrganizations(t *testing.T) {
 		}))
 
 		uri, _ := url.Parse(testServer.URL)
-		testCli := NewV3Client(logtest.Scoped(t), "Test", uri, gheToken, testServer.Client(), nil)
+		testCli := NewV3Client(logtest.Scoped(t), "Test", uri, gheToken, testServer.Client())
 
 		runTest := func(since int, expectedNextSince int, expectedOrgs []*Org) {
 			orgs, nextSince, err := testCli.ListOrganizations(context.Background(), since)
@@ -687,11 +687,11 @@ func TestV3Client_WithAuthenticator(t *testing.T) {
 	old := &V3Client{
 		log:    logtest.Scoped(t),
 		apiURL: uri,
-		auth:   &auth.OAuthBearerToken{Token: "old_token"},
+		auth:   &auth.OAuthBearerToken{AccessToken: "old_token"},
 	}
 
-	newToken := &auth.OAuthBearerToken{Token: "new_token"}
-	new := old.WithAuthenticator(newToken, nil)
+	newToken := &auth.OAuthBearerToken{AccessToken: "new_token"}
+	new := old.WithAuthenticator(newToken)
 	if old == new {
 		t.Fatal("both clients have the same address")
 	}
@@ -764,7 +764,7 @@ func newV3TestClient(t testing.TB, name string) (*V3Client, func()) {
 		t.Fatal(err)
 	}
 
-	return NewV3Client(logtest.Scoped(t), "Test", uri, vcrToken, doer, nil), save
+	return NewV3Client(logtest.Scoped(t), "Test", uri, vcrToken, doer), save
 }
 
 func newV3TestEnterpriseClient(t testing.TB, name string) (*V3Client, func()) {
@@ -781,7 +781,7 @@ func newV3TestEnterpriseClient(t testing.TB, name string) (*V3Client, func()) {
 		t.Fatal(err)
 	}
 
-	return NewV3Client(logtest.Scoped(t), "Test", uri, gheToken, doer, nil), save
+	return NewV3Client(logtest.Scoped(t), "Test", uri, gheToken, doer), save
 }
 
 func strPtr(s string) *string { return &s }
@@ -871,7 +871,7 @@ func TestSyncWebhook_CreateListFindDelete(t *testing.T) {
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
 			token := os.Getenv(fmt.Sprintf("%s_ACCESS_TOKEN", name))
-			client = client.WithAuthenticator(&auth.OAuthBearerToken{Token: token}, nil)
+			client = client.WithAuthenticator(&auth.OAuthBearerToken{AccessToken: token})
 
 			id, err := client.CreateSyncWebhook(ctx, tc.repoName, "https://target-url.com", "secret")
 			if err != nil {

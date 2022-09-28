@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"golang.org/x/oauth2"
 	"io"
 	"net/http"
+	"strings"
+
+	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -57,7 +59,7 @@ func getOAuthErrorDetails(body []byte) error {
 }
 
 // TokenRefresher is a function to refresh and return the new OAuth token.
-type TokenRefresher func(ctx context.Context, doer httpcli.Doer, oauthCtx OAuthContext) (string, error)
+type TokenRefresher func(ctx context.Context, doer httpcli.Doer, oauthCtx OAuthContext) (*auth.OAuthBearerToken, error)
 
 // DoRequest is a function that uses the httpcli.Doer interface to make HTTP
 // requests and to handle "401 Unauthorized" errors. When the 401 error is due to

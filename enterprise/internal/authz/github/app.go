@@ -3,9 +3,11 @@ package github
 import (
 	"context"
 	"encoding/base64"
+	"net/url"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"net/url"
 
 	"github.com/sourcegraph/log"
 
@@ -14,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -43,9 +44,8 @@ func newAppProvider(
 	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	tokenRefresher := database.ExternalServiceTokenRefresher(db, svc.ID, nil)
 
-	auther, err := auth.NewOAFuthBearerTokenWithGitHubApp(appID, pkey)
+	appAuther, err := auth.NewGitHubAppAuthenticator(appID, pkey)
 	if err != nil {
 		return nil, errors.Wrap(err, "new authenticator with GitHub App")
 	}
@@ -54,24 +54,44 @@ func newAppProvider(
 	appClient := github.NewV3Client(
 		log.Scoped("app", "github client for github app").
 			With(log.String("appID", appID)),
-		urn, apiURL, auther, cli, tokenRefresher)
+		urn, apiURL, appAuther, cli)
 
 	externalServicesStore := db.ExternalServices()
+
+	installationRefreshFunc := func(auther *auth.GitHubAppInstallationAuthenticator) error {
+		token, err := appClient.CreateAppInstallationAccessToken(context.Background(), installationID)
+		if err != nil {
+			return err
+		}
+
+		auther.InstallationAccessToken = token.GetToken()
+		auther.Expiry = token.GetExpiresAt()
+
+		rawConfig, err = jsonc.Edit(rawConfig, *token.Token, "token")
+
+		externalServicesStore.Update(context.Background(),
+			conf.Get().AuthProviders,
+			svc.ID,
+			&database.ExternalServiceUpdate{
+				Config:         &rawConfig,
+				TokenExpiresAt: token.ExpiresAt,
+			},
+		)
+
+		return nil
+	}
+
+	installationAuther, err := auth.NewGitHubAppInstallationAuthenticator(installationID, "", installationRefreshFunc)
 
 	return &Provider{
 		urn:      urn,
 		codeHost: extsvc.NewCodeHost(baseURL, extsvc.TypeGitHub),
 		client: func() (client, error) {
-			token, err := repos.GetOrRenewGitHubAppInstallationAccessToken(context.Background(), log.Scoped("GetOrRenewGitHubAppInstallationAccessToken", ""), externalServicesStore, svc, appClient, installationID)
-			if err != nil {
-				return nil, errors.Wrap(err, "get or renew GitHub App installation access token")
-			}
-
 			logger := log.Scoped("installation", "github client for installation").
 				With(log.String("appID", appID), log.Int64("installationID", installationID))
 
 			return &ClientAdapter{
-				V3Client: github.NewV3Client(logger, urn, apiURL, &auth.OAuthBearerToken{Token: token}, cli, tokenRefresher),
+				V3Client: github.NewV3Client(logger, urn, apiURL, installationAuther, cli),
 			}, nil
 		},
 		InstallationID: &installationID,

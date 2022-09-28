@@ -28,10 +28,18 @@ type Authenticator interface {
 }
 
 type AuthenticatorWithRefresh interface {
-	Authenticate(*http.Request) error
-	IsExpired() bool
+	// Must implement the base Authenticator interface
+	Authenticator
+
+	// ShouldRefresh returns true if the Authenticator is no longer valid and
+	// needs to be refreshed, such as checking if an OAuth token is close to
+	// expiry or already expired.
+	ShouldRefresh() bool
+
+	// Refresh refreshes the Authenticator. This should be an in-place mutation,
+	// and if any storage updates should happen after refreshing, that is done
+	// here as well.
 	Refresh() error
-	Hash() string
 }
 
 // AuthenticatorWithSSH wraps the Authenticator interface and augments it by
