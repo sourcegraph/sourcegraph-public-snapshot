@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"reflect"
 	"strings"
 	"testing"
 
@@ -180,7 +179,7 @@ func TestSiteCreateIfUpToDate(t *testing.T) {
 			for _, p := range test.sequence {
 				output, err := db.Conf().SiteCreateIfUpToDate(ctx, &p.input.lastID, p.input.contents)
 				if err != nil {
-					if reflect.DeepEqual(err, p.expected.err) {
+					if errors.Is(err, p.expected.err) {
 						continue
 					}
 					t.Fatal(err)
