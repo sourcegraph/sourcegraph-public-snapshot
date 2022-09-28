@@ -83,6 +83,10 @@ func NewEmptyConfig() *EncryptableConfig {
 	return NewUnencryptedConfig("{}")
 }
 
+func NewEmptyGitLabConfig() *EncryptableConfig {
+	return NewUnencryptedConfig(`{"url": "https://gitlab.com", "token": "abdef", "projectQuery":["none"]}`)
+}
+
 func NewUnencryptedConfig(value string) *EncryptableConfig {
 	return encryption.NewUnencrypted(value)
 }

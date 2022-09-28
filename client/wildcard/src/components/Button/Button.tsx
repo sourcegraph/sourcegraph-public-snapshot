@@ -6,9 +6,7 @@ import { useWildcardTheme } from '../../hooks'
 import { ForwardReferenceComponent } from '../../types'
 
 import { BUTTON_VARIANTS, BUTTON_SIZES, BUTTON_DISPLAY } from './constants'
-import { getButtonSize, getButtonStyle, getButtonDisplay } from './utils'
-
-import styles from './Button.module.scss'
+import { getButtonClassName } from './utils'
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     /**
@@ -45,7 +43,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
  * Tips:
  * - Avoid using button styling for links where possible. Buttons should typically trigger an action, links should navigate to places.
  */
-// eslint-disable-next-line react/display-name
+
 export const Button = React.forwardRef(
     (
         {
@@ -65,12 +63,7 @@ export const Button = React.forwardRef(
     ) => {
         const { isBranded } = useWildcardTheme()
 
-        const brandedButtonClassname = classNames(
-            styles.btn,
-            variant && getButtonStyle({ variant, outline }),
-            display && getButtonDisplay({ display }),
-            size && getButtonSize({ size })
-        )
+        const brandedButtonClassname = getButtonClassName({ variant, outline, display, size })
 
         return (
             <Component
