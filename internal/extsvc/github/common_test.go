@@ -182,7 +182,7 @@ func TestClient_doRequestWithoutARefresher(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	bearerToken := &auth.OAuthBearerToken{Token: "bad token"}
+	bearerToken := &auth.OAuthBearerToken{AccessToken: "bad token"}
 
 	v3Client := NewV3Client(logtest.Scoped(t), "Test", uri, bearerToken, doer)
 	req, err := http.NewRequest(http.MethodGet, "url", nil)

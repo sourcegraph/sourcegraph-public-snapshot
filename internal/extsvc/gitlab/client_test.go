@@ -115,7 +115,7 @@ func TestClient_doWithBaseURL(t *testing.T) {
 		return &auth.OAuthBearerToken{Token: "refreshed-token"}, nil
 	})
 
-	client := provider.getClient(&auth.OAuthBearerToken{Token: "bad token"})
+	client := provider.getClient(&auth.OAuthBearerToken{AccessToken: "bad token"})
 
 	req, err := http.NewRequest(http.MethodGet, "url", nil)
 	require.NoError(t, err)

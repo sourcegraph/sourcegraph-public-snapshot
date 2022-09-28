@@ -793,7 +793,7 @@ func TestV4Client_WithAuthenticator(t *testing.T) {
 
 	old := &V4Client{
 		apiURL: uri,
-		auth:   &auth.OAuthBearerToken{Token: "old_token"},
+		auth:   &auth.OAuthBearerToken{AccessToken: "old_token"},
 	}
 
 	newToken := &auth.OAuthBearerToken{Token: "new_token"}
