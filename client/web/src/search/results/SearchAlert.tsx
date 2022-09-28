@@ -30,9 +30,9 @@ export const SearchAlert: React.FunctionComponent<React.PropsWithChildren<Search
             <Markdown
                 className="mb-3"
                 dangerousInnerHTML={renderMarkdown(alert.description, {
-                    // Disable autolinks to rev specs are not rendered as email links
-                    // (e.g. sourcegraph@4.0.1)
-                    disableAutolink: true,
+                    // Disable autolinks so revision specifications are not rendered as email links
+                    // (for exaple, "sourcegraph@4.0.1")
+                    disableAutolinks: true,
                 })}
             />
         )}

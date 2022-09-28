@@ -58,7 +58,7 @@ export const renderMarkdown = (
         /** Whether to render line breaks as HTML `<br>`s */
         breaks?: boolean
         /** Whether to disable autolinks. Explicit links using `[text](url)` are still allowed. */
-        disableAutolink?: boolean
+        disableAutolinks?: boolean
         renderer?: marked.Renderer
         headerPrefix?: string
     } & (
@@ -76,9 +76,10 @@ export const renderMarkdown = (
     ) = {}
 ): string => {
     const tokenizer = new marked.Tokenizer()
-    if (options.disableAutolink) {
-        // Returning undefined is not allowed by the type definition
-        // but is the recommended way to easily disable autolinks.
+    if (options.disableAutolinks) {
+        // Why the odd double-casting below?
+        // Because returning undefined is the recommended way to easily disable autolinks
+        // but the type definition does not allow it.
         // More context here: https://github.com/markedjs/marked/issues/882
         tokenizer.url = () => (undefined as unknown) as marked.Tokens.Link
     }
