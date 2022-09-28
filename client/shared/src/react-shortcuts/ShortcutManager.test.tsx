@@ -4,6 +4,8 @@ import { act, createEvent, fireEvent, render } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import * as sinon from 'sinon'
 
+import { platform } from '../testing/dom-utils'
+
 import { ModifierKey } from './keys'
 
 import { Shortcut, ShortcutProvider } from '.'
@@ -258,6 +260,38 @@ describe('ShortcutManager', () => {
             userEvent.keyboard('{Control>}{Shift>}/{/Shift}{/Control}')
 
             sinon.assert.notCalled(fooSpy)
+        })
+
+        it('maps the special value "Mod" to "Control"', () => {
+            const fooSpy = sinon.spy()
+
+            render(
+                <ShortcutProvider>
+                    <Shortcut held={['Mod']} ordered={['/']} onMatch={fooSpy} />
+                </ShortcutProvider>
+            )
+
+            userEvent.keyboard('{Control>}/{/Control}')
+
+            sinon.assert.called(fooSpy)
+        })
+
+        it('maps the special value "Mod" to "Meta" (Cmd) on macOS', () => {
+            platform.set('mac')
+
+            const fooSpy = sinon.spy()
+
+            render(
+                <ShortcutProvider>
+                    <Shortcut held={['Mod']} ordered={['/']} onMatch={fooSpy} />
+                </ShortcutProvider>
+            )
+
+            userEvent.keyboard('{Meta>}/{/Meta}')
+
+            sinon.assert.called(fooSpy)
+
+            platform.reset()
         })
     })
 })

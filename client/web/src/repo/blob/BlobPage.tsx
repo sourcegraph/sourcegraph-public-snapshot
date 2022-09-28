@@ -483,6 +483,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                         ariaLabel="File blob"
                         isBlameVisible={isBlameVisible}
                         blameHunks={blameDecorations}
+                        overrideBrowserSearchKeybinding={true}
                     />
                 </TraceSpanProvider>
             )}
