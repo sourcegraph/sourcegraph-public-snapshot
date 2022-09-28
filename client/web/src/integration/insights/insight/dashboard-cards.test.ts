@@ -4,7 +4,12 @@ import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/dri
 import { testUserID } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { GetDashboardInsightsResult, InsightsDashboardNode, InsightViewNode } from '../../../graphql-operations'
+import {
+    GetDashboardInsightsResult,
+    GetInsightViewResult,
+    InsightsDashboardNode,
+    InsightViewNode,
+} from '../../../graphql-operations'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../../context'
 import {
     CAPTURE_GROUP_INSIGHT,
@@ -16,7 +21,7 @@ import {
     LANG_STATS_INSIGHT,
     SEARCH_BASED_INSIGHT,
 } from '../fixtures/dashboards'
-import { overrideInsightsGraphQLApi } from '../utils/override-insights-graphql-api'
+import { OverrideGraphQLExtensionsProps, overrideInsightsGraphQLApi } from '../utils/override-insights-graphql-api'
 
 interface DashboardMockOptions {
     id?: string
@@ -99,31 +104,10 @@ describe('Code insights [Dashboard card]', () => {
     afterEachSaveScreenshotIfFailed(() => driver.page)
 
     it('renders lang stats insight card with proper options context', async () => {
-        overrideInsightsGraphQLApi({
+        makeOverrides({
             testContext,
-            overrides: {
-                // Mock list of possible code insights dashboards on the dashboard page
-                InsightsDashboards: () => ({
-                    currentUser: {
-                        __typename: 'User',
-                        id: testUserID,
-                        organizations: { nodes: [] },
-                    },
-                    insightsDashboards: {
-                        __typename: 'InsightsDashboardConnection',
-                        nodes: [
-                            createDashboard({ id: 'DASHBOARD_WITH_LANG_INSIGHT', insightIds: [LANG_STATS_INSIGHT.id] }),
-                        ],
-                    },
-                }),
-
-                // Mock dashboard configuration (dashboard content)
-                GetDashboardInsights: () =>
-                    createDashboardViewMock({ id: 'DASHBOARD_WITH_LANG_INSIGHT', insightsMocks: [LANG_STATS_INSIGHT] }),
-
-                // Mock lang stats insight content
-                LangStatsInsightContent: () => LANG_STAT_INSIGHT_CONTENT,
-            },
+            dashboardId: 'DASHBOARD_WITH_LANG_INSIGHT',
+            insightMock: LANG_STATS_INSIGHT,
         })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/DASHBOARD_WITH_LANG_INSIGHT')
@@ -148,36 +132,11 @@ describe('Code insights [Dashboard card]', () => {
     })
 
     it('renders capture group insight card with proper options context', async () => {
-        overrideInsightsGraphQLApi({
+        makeOverrides({
             testContext,
-            overrides: {
-                // Mock list of possible code insights dashboards on the dashboard page
-                InsightsDashboards: () => ({
-                    currentUser: {
-                        __typename: 'User',
-                        id: testUserID,
-                        organizations: { nodes: [] },
-                    },
-                    insightsDashboards: {
-                        __typename: 'InsightsDashboardConnection',
-                        nodes: [
-                            createDashboard({
-                                id: 'DASHBOARD_WITH_CAPTURE_GROUP',
-                                insightIds: [CAPTURE_GROUP_INSIGHT.id],
-                            }),
-                        ],
-                    },
-                }),
-                // Mock dashboard configuration (dashboard content) with one capture group insight configuration
-                GetDashboardInsights: () =>
-                    createDashboardViewMock({
-                        id: 'DASHBOARD_WITH_CAPTURE_GROUP',
-                        insightsMocks: [CAPTURE_GROUP_INSIGHT],
-                    }),
-
-                // Mock capture group insight content
-                GetInsightView: () => GET_INSIGHT_VIEW_CAPTURE_GROUP_INSIGHT,
-            },
+            dashboardId: 'DASHBOARD_WITH_CAPTURE_GROUP',
+            insightMock: CAPTURE_GROUP_INSIGHT,
+            insightViewMock: GET_INSIGHT_VIEW_CAPTURE_GROUP_INSIGHT,
         })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/DASHBOARD_WITH_CAPTURE_GROUP')
@@ -195,36 +154,11 @@ describe('Code insights [Dashboard card]', () => {
     })
 
     it('renders search insight card with proper options context', async () => {
-        overrideInsightsGraphQLApi({
+        makeOverrides({
             testContext,
-            overrides: {
-                // Mock list of possible code insights dashboards on the dashboard page
-                InsightsDashboards: () => ({
-                    currentUser: {
-                        __typename: 'User',
-                        id: testUserID,
-                        organizations: { nodes: [] },
-                    },
-                    insightsDashboards: {
-                        __typename: 'InsightsDashboardConnection',
-                        nodes: [
-                            createDashboard({
-                                id: 'DASHBOARD_WITH_SEARCH',
-                                insightIds: [SEARCH_BASED_INSIGHT.id],
-                            }),
-                        ],
-                    },
-                }),
-                // Mock dashboard configuration (dashboard content) with one capture group insight configuration
-                GetDashboardInsights: () =>
-                    createDashboardViewMock({
-                        id: 'DASHBOARD_WITH_SEARCH',
-                        insightsMocks: [SEARCH_BASED_INSIGHT],
-                    }),
-
-                // Mock capture group insight content
-                GetInsightView: () => GET_INSIGHT_VIEW_SEARCH_BASED_INSIGHT,
-            },
+            dashboardId: 'DASHBOARD_WITH_SEARCH',
+            insightMock: SEARCH_BASED_INSIGHT,
+            insightViewMock: GET_INSIGHT_VIEW_SEARCH_BASED_INSIGHT,
         })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/DASHBOARD_WITH_SEARCH')
@@ -242,56 +176,11 @@ describe('Code insights [Dashboard card]', () => {
     })
 
     it('renders compute insight card with proper options context', async () => {
-        overrideInsightsGraphQLApi({
+        makeOverrides({
             testContext,
-            overrides: {
-                // Enable compute insights feature flag
-                ViewerSettings: () => ({
-                    viewerSettings: {
-                        __typename: 'SettingsCascade',
-                        subjects: [
-                            {
-                                __typename: 'DefaultSettings',
-                                settingsURL: null,
-                                viewerCanAdminister: false,
-                                latestSettings: {
-                                    id: 0,
-                                    contents: JSON.stringify({
-                                        experimentalFeatures: { codeInsightsCompute: true },
-                                    }),
-                                },
-                            },
-                        ],
-                        final: JSON.stringify({}),
-                    },
-                }),
-                // Mock list of possible code insights dashboards on the dashboard page
-                InsightsDashboards: () => ({
-                    currentUser: {
-                        __typename: 'User',
-                        id: testUserID,
-                        organizations: { nodes: [] },
-                    },
-                    insightsDashboards: {
-                        __typename: 'InsightsDashboardConnection',
-                        nodes: [
-                            createDashboard({
-                                id: 'DASHBOARD_WITH_COMPUTE',
-                                insightIds: [COMPUTE_INSIGHT.id],
-                            }),
-                        ],
-                    },
-                }),
-                // Mock dashboard configuration (dashboard content) with one capture group insight configuration
-                GetDashboardInsights: () =>
-                    createDashboardViewMock({
-                        id: 'DASHBOARD_WITH_COMPUTE',
-                        insightsMocks: [COMPUTE_INSIGHT],
-                    }),
-
-                // Mock capture group insight content
-                GetInsightView: () => GET_INSIGHT_VIEW_COMPUTE_INSIGHT,
-            },
+            dashboardId: 'DASHBOARD_WITH_COMPUTE',
+            insightMock: COMPUTE_INSIGHT,
+            insightViewMock: GET_INSIGHT_VIEW_COMPUTE_INSIGHT,
         })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/DASHBOARD_WITH_COMPUTE')
@@ -307,6 +196,73 @@ describe('Code insights [Dashboard card]', () => {
         await checkFilterMenu(driver, true)
     })
 })
+
+interface MakeOverridesOptions {
+    testContext: WebIntegrationTestContext
+    dashboardId: string
+    insightMock: InsightViewNode
+    insightViewMock?: GetInsightViewResult
+}
+
+function makeOverrides({ testContext, dashboardId, insightMock, insightViewMock }: MakeOverridesOptions) {
+    const overrides: OverrideGraphQLExtensionsProps['overrides'] = {
+        ViewerSettings: () => ({
+            viewerSettings: {
+                __typename: 'SettingsCascade',
+                subjects: [
+                    {
+                        __typename: 'DefaultSettings',
+                        settingsURL: null,
+                        viewerCanAdminister: false,
+                        latestSettings: {
+                            id: 0,
+                            contents: JSON.stringify({
+                                experimentalFeatures: { codeInsightsCompute: true },
+                            }),
+                        },
+                    },
+                ],
+                final: JSON.stringify({}),
+            },
+        }),
+        // Mock list of possible code insights dashboards on the dashboard page
+        InsightsDashboards: () => ({
+            currentUser: {
+                __typename: 'User',
+                id: testUserID,
+                organizations: { nodes: [] },
+            },
+            insightsDashboards: {
+                __typename: 'InsightsDashboardConnection',
+                nodes: [
+                    createDashboard({
+                        id: dashboardId,
+                        insightIds: [insightMock.id],
+                    }),
+                ],
+            },
+        }),
+        // Mock dashboard configuration (dashboard content) with one capture group insight configuration
+        GetDashboardInsights: () =>
+            createDashboardViewMock({
+                id: dashboardId,
+                insightsMocks: [insightMock],
+            }),
+
+        // Mock lang stats insight content
+        LangStatsInsightContent: () => LANG_STAT_INSIGHT_CONTENT,
+    }
+
+    if (insightViewMock) {
+        overrides.GetInsightView = () => insightViewMock
+    }
+
+    overrideInsightsGraphQLApi({
+        testContext,
+        overrides,
+    })
+}
+
 async function checkOptionsMenu(driver: Driver, shouldHaveYAxis = false): Promise<void> {
     await driver.page.click('[aria-label="Insight options"]')
 
@@ -326,6 +282,7 @@ async function checkOptionsMenu(driver: Driver, shouldHaveYAxis = false): Promis
         assert.strictEqual(startYAxisAt0, 'Start Y Axis at 0')
     }
 }
+
 async function checkFilterMenu(driver: Driver, shouldHaveFilterButton = true): Promise<void> {
     if (shouldHaveFilterButton) {
         await driver.page.click('[aria-label="Filters"]')
