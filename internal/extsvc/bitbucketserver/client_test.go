@@ -1085,7 +1085,7 @@ func TestAuth(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			want := &auth.OAuthBearerToken{AccessToken: "foo"}
+			want := &auth.OAuthBearerToken{Token: "foo"}
 			if have, ok := client.Auth.(*auth.OAuthBearerToken); !ok {
 				t.Errorf("unexpected Authenticator: have=%T want=%T", client.Auth, want)
 			} else if diff := cmp.Diff(have, want); diff != "" {
@@ -1194,7 +1194,7 @@ func TestAuth(t *testing.T) {
 
 		t.Run("errors", func(t *testing.T) {
 			for name, a := range map[string]auth.Authenticator{
-				"OAuth 2 token": &auth.OAuthBearerToken{AccessToken: "abcdef"},
+				"OAuth 2 token": &auth.OAuthBearerToken{Token: "abcdef"},
 				"nil":           nil,
 			} {
 				t.Run(name, func(t *testing.T) {
@@ -1220,7 +1220,7 @@ func TestClient_WithAuthenticator(t *testing.T) {
 		Auth:      &auth.BasicAuth{Username: "johnsson", Password: "mothersmaidenname"},
 	}
 
-	newToken := &auth.OAuthBearerToken{AccessToken: "new_token"}
+	newToken := &auth.OAuthBearerToken{Token: "new_token"}
 	newClient := old.WithAuthenticator(newToken)
 	if old == newClient {
 		t.Fatal("both clients have the same address")

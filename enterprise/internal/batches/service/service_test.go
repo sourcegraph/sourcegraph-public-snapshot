@@ -904,7 +904,7 @@ index e5af166..d44c3fc 100644
 				ctx,
 				"https://github.com/",
 				extsvc.TypeGitHub,
-				&auth.OAuthBearerToken{AccessToken: "test123"},
+				&auth.OAuthBearerToken{Token: "test123"},
 			); err != nil {
 				t.Fatal(err)
 			}
@@ -919,7 +919,7 @@ index e5af166..d44c3fc 100644
 				ctx,
 				"https://github.com/",
 				extsvc.TypeGitHub,
-				&auth.OAuthBearerToken{AccessToken: "test123"},
+				&auth.OAuthBearerToken{Token: "test123"},
 			); err == nil {
 				t.Fatal("unexpected nil-error returned from ValidateAuthenticator")
 			}

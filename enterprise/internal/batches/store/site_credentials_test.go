@@ -29,7 +29,7 @@ func testStoreSiteCredentials(t *testing.T, ctx context.Context, s *Store, clock
 				ExternalServiceType: externalServiceTypes[i],
 				ExternalServiceID:   "https://someurl.test",
 			}
-			token := &auth.OAuthBearerToken{AccessToken: "123"}
+			token := &auth.OAuthBearerToken{Token: "123"}
 
 			if err := s.CreateSiteCredential(ctx, cred, token); err != nil {
 				t.Fatal(err)

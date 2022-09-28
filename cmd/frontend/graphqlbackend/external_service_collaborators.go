@@ -59,7 +59,7 @@ func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([
 	githubUrl, _ := github.APIRoot(baseURL)
 
 	tokenRefresher := database.ExternalServiceTokenRefresher(r.db, r.externalService.ID, githubCfg.TokenOauthRefresh)
-	client := github.NewV4Client(r.externalService.URN(), githubUrl, &auth.OAuthBearerToken{AccessToken: githubCfg.Token}, nil, tokenRefresher)
+	client := github.NewV4Client(r.externalService.URN(), githubUrl, &auth.OAuthBearerToken{Token: githubCfg.Token}, nil, tokenRefresher)
 
 	possibleRepos := githubCfg.Repos
 	if len(possibleRepos) == 0 {

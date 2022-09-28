@@ -54,6 +54,6 @@ type ClientAdapter struct {
 
 func (c *ClientAdapter) WithToken(token string, tokenRefresher oauthutil.TokenRefresher) client {
 	return &ClientAdapter{
-		V3Client: c.V3Client.WithAuthenticator(&auth.OAuthBearerToken{AccessToken: token}, tokenRefresher),
+		V3Client: c.V3Client.WithAuthenticator(&auth.OAuthBearerToken{Token: token}, tokenRefresher),
 	}
 }

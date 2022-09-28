@@ -63,7 +63,7 @@ func newGitLabSource(urn string, c *schema.GitLabConnection, cf *httpcli.Factory
 	if c.Token != "" {
 		switch c.TokenType {
 		case "oauth":
-			authr = &auth.OAuthBearerToken{AccessToken: c.Token}
+			authr = &auth.OAuthBearerToken{Token: c.Token}
 		default:
 			authr = &gitlab.SudoableToken{Token: c.Token}
 		}
