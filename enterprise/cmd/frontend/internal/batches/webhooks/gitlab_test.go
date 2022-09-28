@@ -246,28 +246,17 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 			})
 
 			t.Run("error from handleEvent", func(t *testing.T) {
-				// TODO: Check with batch changes team
-				t.Skip("Can we remove this now that we don't allow invalid config?")
-
 				store := gitLabTestSetup(t, db)
 				repoStore := database.ReposWith(logger, store)
+
 				h := NewGitLabWebhook(store)
+				// Force a failure
+				h.failHandleEvent = errors.New("oops")
+
 				es := createGitLabExternalService(t, ctx, store.ExternalServices())
 				repo := createGitLabRepo(t, ctx, repoStore, es)
 				changeset := createGitLabChangeset(t, ctx, store, repo)
 				body := createMergeRequestPayload(t, repo, changeset, "close")
-
-				// Remove the URL from the GitLab configuration.
-				cfg, err := es.Configuration(ctx)
-				if err != nil {
-					t.Fatal(err)
-				}
-				conn := cfg.(*schema.GitLabConnection)
-				conn.Url = ""
-				es.Config.Set(bt.MarshalJSON(t, conn))
-				if err := store.ExternalServices().Upsert(ctx, es); err != nil {
-					t.Fatal(err)
-				}
 
 				u, err := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, nil, "https://example.com/")
 				if err != nil {
@@ -287,7 +276,7 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 				if have, want := resp.StatusCode, http.StatusInternalServerError; have != want {
 					t.Errorf("unexpected status code: have %d; want %d", have, want)
 				}
-				assertBodyIncludes(t, resp.Body, "could not determine service id")
+				assertBodyIncludes(t, resp.Body, "oops")
 			})
 
 			// The valid tests below are pretty "happy path": specific unit
