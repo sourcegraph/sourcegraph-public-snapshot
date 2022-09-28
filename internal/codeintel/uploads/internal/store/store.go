@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
@@ -86,6 +87,9 @@ type Store interface {
 
 	// Dependencies
 	InsertDependencySyncingJob(ctx context.Context, uploadID int) (jobID int, err error)
+
+	// Workerutil
+	WorkerutilStore(observationContext *observation.Context) dbworkerstore.Store
 }
 
 // store manages the database operations for uploads.

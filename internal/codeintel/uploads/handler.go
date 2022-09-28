@@ -33,6 +33,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+func (s *Service) WorkerutilStore(observationContext *observation.Context) dbworkerstore.Store {
+	// TODO - extract observability stuff
+
+	return s.store.WorkerutilStore(observationContext)
+}
+
 func (s *Service) NewHandler(
 	repoStore RepoStore,
 	workerStore dbworkerstore.Store,

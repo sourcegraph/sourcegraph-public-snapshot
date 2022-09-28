@@ -100,7 +100,6 @@ func main() {
 
 	// Initialize stores
 	dbStore := dbstore.NewWithDB(db, observationContext)
-	workerStore := dbstore.WorkerutilUploadStore(dbStore, makeObservationContext(observationContext, false))
 	gitserverClient := gitserver.New(db, dbStore, observationContext)
 
 	uploadStore, err := lsifuploadstore.New(context.Background(), config.LSIFUploadStoreConfig, observationContext)
@@ -117,10 +116,8 @@ func main() {
 		logger.Fatal("Failed to create sub-repo client", log.Error(err))
 	}
 
-	// Initialize metrics
-	dbworker.InitPrometheusMetric(observationContext, workerStore, "codeintel", "upload", nil)
-
 	uploadsSvc := uploads.GetService(db, database.NewDBWith(logger, codeIntelDB), gitserverClient)
+	workerStore := uploadsSvc.WorkerutilStore(observationContext)
 
 	// Initialize worker
 	rootContext := actor.WithInternalActor(context.Background())
@@ -139,6 +136,9 @@ func main() {
 		Metrics:              makeWorkerMetrics(observationContext),
 		MaximumRuntimePerJob: config.MaximumRuntimePerJob,
 	})
+
+	// Initialize metrics
+	dbworker.InitPrometheusMetric(observationContext, workerStore, "codeintel", "upload", nil)
 
 	// Initialize health server
 	server := httpserver.NewFromAddr(addr, &http.Server{
