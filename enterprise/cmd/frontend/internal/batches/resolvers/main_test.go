@@ -133,7 +133,7 @@ func newGitHubExternalService(t *testing.T, store database.ExternalServiceStore)
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "Github - Test",
 		// The authorization field is needed to enforce permissions
-		Config:    extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "authorization": {}}`),
+		Config:    extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "authorization": {}, "token": "abc", "repos": ["owner/name"]}`),
 		CreatedAt: now,
 		UpdatedAt: now,
 	}

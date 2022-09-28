@@ -36,18 +36,22 @@ func testSyncRateLimiters(store repos.Store) func(*testing.T) {
 			for i := 0; i < toCreate; i++ {
 				svc := &types.ExternalService{
 					ID:          int64(i) + 1,
-					Kind:        "GitHub",
-					DisplayName: "GitHub",
+					Kind:        "GITLAB",
+					DisplayName: "GitLab",
 					CreatedAt:   now,
 					UpdatedAt:   now,
 					DeletedAt:   time.Time{},
 					Config:      extsvc.NewEmptyConfig(),
 				}
 				config := schema.GitLabConnection{
-					Url: fmt.Sprintf("http://example%d.com/", i),
+					Token: "abc",
+					Url:   fmt.Sprintf("http://example%d.com/", i),
 					RateLimit: &schema.GitLabRateLimit{
 						RequestsPerHour: 3600,
 						Enabled:         true,
+					},
+					ProjectQuery: []string{
+						"None",
 					},
 				}
 				data, err := json.Marshal(config)
@@ -522,7 +526,7 @@ func mkExternalServices(now time.Time) types.ExternalServices {
 	githubSvc := types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "Github - Test",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com"}`),
+		Config:      extsvc.NewUnencryptedConfig(basicGitHubConfig),
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -530,7 +534,7 @@ func mkExternalServices(now time.Time) types.ExternalServices {
 	gitlabSvc := types.ExternalService{
 		Kind:        extsvc.KindGitLab,
 		DisplayName: "GitLab - Test",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://gitlab.com"}`),
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://gitlab.com", "token": "abc", "projectQuery": ["none"]}`),
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -538,7 +542,7 @@ func mkExternalServices(now time.Time) types.ExternalServices {
 	bitbucketServerSvc := types.ExternalService{
 		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "Bitbucket Server - Test",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://bitbucket.com"}`),
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://bitbucket.com", "token": "abc", "username": "user", "repos": ["owner/name"]}`),
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -546,7 +550,7 @@ func mkExternalServices(now time.Time) types.ExternalServices {
 	bitbucketCloudSvc := types.ExternalService{
 		Kind:        extsvc.KindBitbucketCloud,
 		DisplayName: "Bitbucket Cloud - Test",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://bitbucket.com"}`),
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://bitbucket.com", "username": "user", "appPassword": "password"}`),
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -554,7 +558,7 @@ func mkExternalServices(now time.Time) types.ExternalServices {
 	awsSvc := types.ExternalService{
 		Kind:        extsvc.KindAWSCodeCommit,
 		DisplayName: "AWS Code - Test",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://aws.com"}`),
+		Config:      extsvc.NewUnencryptedConfig(`{"region": "us-east-1", "accessKeyID": "abc", "secretAccessKey": "abc", "gitCredentials": {"username": "user", "password": "pass"}}`),
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -562,7 +566,7 @@ func mkExternalServices(now time.Time) types.ExternalServices {
 	otherSvc := types.ExternalService{
 		Kind:        extsvc.KindOther,
 		DisplayName: "Other - Test",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://other.com"}`),
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://other.com", "repos": ["repo"]}`),
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -570,7 +574,7 @@ func mkExternalServices(now time.Time) types.ExternalServices {
 	gitoliteSvc := types.ExternalService{
 		Kind:        extsvc.KindGitolite,
 		DisplayName: "Gitolite - Test",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://gitolite.com"}`),
+		Config:      extsvc.NewUnencryptedConfig(`{"prefix": "pre", "host": "host.com"}`),
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
