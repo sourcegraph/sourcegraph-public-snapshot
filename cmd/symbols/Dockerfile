@@ -1,5 +1,5 @@
 # NOTE: This layer of the docker image is also used in local development as a wrapper around universal-ctags
-FROM sourcegraph/alpine-3.14:166590_2022-08-11_7ebaa5ea4d88@sha256:f6b878c33efb48a151f112a996f3f71b59e3052288cade537bc6b538f0a2450e AS ctags
+FROM sourcegraph/alpine-3.14:174825_2022-09-28_291dca5d9725@sha256:0bfed82a206a1f313b7276521375dc4d27caa45c324f99e7da0453cecbd31980 AS ctags
 # hadolint ignore=DL3002
 USER root
 
@@ -38,7 +38,7 @@ RUN \
   -o /symbols \
   $PKG
 
-FROM sourcegraph/alpine-3.14:166590_2022-08-11_7ebaa5ea4d88@sha256:f6b878c33efb48a151f112a996f3f71b59e3052288cade537bc6b538f0a2450e AS symbols
+FROM sourcegraph/alpine-3.14:174825_2022-09-28_291dca5d9725@sha256:0bfed82a206a1f313b7276521375dc4d27caa45c324f99e7da0453cecbd31980 AS symbols
 
 # TODO(security): This container should not run as root!
 #
