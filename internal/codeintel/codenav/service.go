@@ -514,9 +514,8 @@ func (s *Service) getPageRemoteLocations(
 }
 
 // getUploadLocations translates a set of locations into an equivalent set of locations in the requested
-// commit. If includeFallbackLocations is true, then for any ranges in the indexed commit that have been changed
-// since, the untranslated range is returned (including the revhash of the indexed commit). If false, then
-// they are simply dropped.
+// commit. If includeFallbackLocations is true, then any range in the indexed commit that cannot be translated
+// will use the indexed location. Otherwise, such location are dropped.
 func (s *Service) getUploadLocations(ctx context.Context, args shared.RequestArgs, requestState RequestState, locations []shared.Location, includeFallbackLocations bool) ([]types.UploadLocation, error) {
 	uploadLocations := make([]types.UploadLocation, 0, len(locations))
 
