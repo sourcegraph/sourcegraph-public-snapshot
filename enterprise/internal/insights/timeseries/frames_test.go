@@ -213,3 +213,55 @@ func TestBuildFrames(t *testing.T) {
 		}).Equal(t, buildFrameTest(6, TimeInterval{Unit: types.Year, Value: 1}, startTime))
 	})
 }
+
+func TestBuildFramesBetween(t *testing.T) {
+	convert := func(frames []types.Frame) [][]string {
+		var got [][]string
+		for _, result := range frames {
+			got = append(got, []string{result.From.String(), result.To.String()})
+		}
+		return got
+	}
+
+	fromTime := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
+
+	testCases := []struct {
+		from     time.Time
+		to       time.Time
+		interval TimeInterval
+		want     autogold.Value
+	}{
+		{
+			fromTime,
+			fromTime.AddDate(0, 1, 0),
+			TimeInterval{Unit: types.Week, Value: 1},
+			autogold.Want("frames for one month at 1 week intervals", [][]string{
+				{"2021-01-01 00:00:00 +0000 UTC", "2021-01-08 00:00:00 +0000 UTC"},
+				{"2021-01-08 00:00:00 +0000 UTC", "2021-01-15 00:00:00 +0000 UTC"},
+				{"2021-01-15 00:00:00 +0000 UTC", "2021-01-22 00:00:00 +0000 UTC"},
+				{"2021-01-22 00:00:00 +0000 UTC", "2021-01-29 00:00:00 +0000 UTC"},
+				{"2021-01-29 00:00:00 +0000 UTC", "2021-02-05 00:00:00 +0000 UTC"},
+			}),
+		},
+		{
+			fromTime,
+			fromTime.AddDate(0, 6, 0),
+			TimeInterval{Unit: types.Week, Value: 4},
+			autogold.Want("frames for 6 months at 4 week intervals", [][]string{
+				{"2021-01-01 00:00:00 +0000 UTC", "2021-01-29 00:00:00 +0000 UTC"},
+				{"2021-01-29 00:00:00 +0000 UTC", "2021-02-26 00:00:00 +0000 UTC"},
+				{"2021-02-26 00:00:00 +0000 UTC", "2021-03-26 00:00:00 +0000 UTC"},
+				{"2021-03-26 00:00:00 +0000 UTC", "2021-04-23 00:00:00 +0000 UTC"},
+				{"2021-04-23 00:00:00 +0000 UTC", "2021-05-21 00:00:00 +0000 UTC"},
+				{"2021-05-21 00:00:00 +0000 UTC", "2021-06-18 00:00:00 +0000 UTC"},
+				{"2021-06-18 00:00:00 +0000 UTC", "2021-07-16 00:00:00 +0000 UTC"},
+			}),
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.want.Name(), func(t *testing.T) {
+			got := BuildFramesBetween(tc.from, tc.to, tc.interval)
+			tc.want.Equal(t, convert(got))
+		})
+	}
+}

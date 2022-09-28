@@ -64,7 +64,7 @@ func (r *insightSeriesResolver) Points(ctx context.Context, _ *graphqlbackend.In
 		possibleOldest := frames[0].From
 		if possibleOldest.Before(oldest) {
 			oldest = possibleOldest
-			frames = timeseries.BuildFramesUntil(timeseries.TimeInterval{
+			frames = timeseries.BuildFramesBetween(timeseries.TimeInterval{
 				Unit:  types.IntervalUnit(r.series.SampleIntervalUnit),
 				Value: r.series.SampleIntervalValue,
 			}, possibleOldest)
@@ -75,7 +75,7 @@ func (r *insightSeriesResolver) Points(ctx context.Context, _ *graphqlbackend.In
 	// Series points data is only recorded for non-zero results or preempted results (data for points in time before the
 	// first commit of a repository). However, we still want to return empty series points for points in time with no
 	// data. The recording times are calculated from the insight series settings (12 data frames or 1 year of data).
-	recordingTimes := timeseries.GetRecordingTimesFromFrames(frames)
+	recordingTimes := timeseries.GetStartTimesFromFrames(frames)
 
 	includeRepo := func(regex ...string) {
 		opts.IncludeRepoRegex = append(opts.IncludeRepoRegex, regex...)

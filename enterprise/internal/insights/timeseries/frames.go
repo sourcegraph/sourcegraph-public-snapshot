@@ -1,6 +1,7 @@
 package timeseries
 
 import (
+	"fmt"
 	"sort"
 	"time"
 
@@ -33,10 +34,33 @@ func BuildFrames(numPoints int, interval TimeInterval, now time.Time) []types.Fr
 	return frames
 }
 
-func BuildFramesUntil(interval TimeInterval, pointInTime time.Time) []types.Frame {
-	return []types.Frame{}
+// BuildFramesBetween builds frames that have a From time starting at `from` up until `to` at the given interval.
+func BuildFramesBetween(from time.Time, to time.Time, interval TimeInterval) []types.Frame {
+	times := []time.Time{from}
+
+	current := from
+	for current.Before(to) {
+		current = interval.StepForwards(current)
+		times = append(times, current)
+	}
+
+	frames := make([]types.Frame, 0, len(times)-1)
+	for i := 1; i < len(times); i++ {
+		prev := times[i-1]
+		fmt.Println(times[i], prev)
+		frames = append(frames, types.Frame{
+			From: prev,
+			To:   times[i],
+		})
+	}
+
+	return frames
 }
 
-func GetRecordingTimesFromFrames(frames []types.Frame) []time.Time {
-	return []time.Time{}
+func GetStartTimesFromFrames(frames []types.Frame) []time.Time {
+	startTimes := make([]time.Time, 0, len(frames))
+	for _, frame := range frames {
+		startTimes = append(startTimes, frame.From)
+	}
+	return startTimes
 }
