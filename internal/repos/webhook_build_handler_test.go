@@ -26,6 +26,11 @@ func TestWebhookBuildHandle(t *testing.T) {
 	ctx := context.Background()
 
 	token := os.Getenv("GITHUB_TOKEN")
+	if token == "" {
+		// We need this so that the config validation below passes even when we're
+		// running against VCR data
+		token = "faketoken"
+	}
 
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := NewStore(logger, db)
@@ -47,9 +52,9 @@ func TestWebhookBuildHandle(t *testing.T) {
 	}
 
 	ghConn := &schema.GitHubConnection{
-		Url:      extsvc.KindGitHub,
+		Url:      "https://github.com",
 		Token:    token,
-		Repos:    []string{string(repo.Name)},
+		Repos:    []string{"milton/test"},
 		Webhooks: []*schema.GitHubWebhook{{Org: "ghe.sgdev.org", Secret: "secret"}},
 	}
 

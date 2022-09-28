@@ -118,7 +118,6 @@ export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<
                         variant="secondary"
                         disabled={addRemovePermissions.disabled}
                         onClick={() => handleSelect(DashboardMenuAction.AddRemoveInsights)}
-                        data-testid="add-or-remove-insights"
                     >
                         Add or remove insights
                     </Button>

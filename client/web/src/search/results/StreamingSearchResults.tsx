@@ -199,6 +199,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             results.alert.proposedQueries
         ) {
             const events = smartSearchEvent(
+                results.alert.kind,
                 results.alert.title,
                 results.alert.proposedQueries.map(entry => entry.description || '')
             )
@@ -288,6 +289,18 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     // hide aggregation panel from the sidebar
     const showAggregationPanel = results?.state === 'complete' ? (results?.results.length ?? 0) > 0 : true
 
+    const onDisableSmartSearch = useCallback(
+        () =>
+            submitSearch({
+                ...props,
+                caseSensitive,
+                patternType: SearchPatternType.standard,
+                query: submittedURLQuery,
+                source: 'smartSearchDisabled',
+            }),
+        [caseSensitive, props, submittedURLQuery]
+    )
+
     return (
         <div className={classNames(styles.container, sidebarCollapsed && styles.containerWithSidebarHidden)}>
             <PageTitle key="page-title" title={submittedURLQuery} />
@@ -364,7 +377,9 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                             selectedSearchContextSpec={props.selectedSearchContextSpec}
                         />
 
-                        {results?.alert?.kind && <SmartSearch alert={results?.alert} />}
+                        {results?.alert?.kind && (
+                            <SmartSearch alert={results?.alert} onDisableSmartSearch={onDisableSmartSearch} />
+                        )}
 
                         <GettingStartedTour.Info
                             className="mt-2 mb-3"
