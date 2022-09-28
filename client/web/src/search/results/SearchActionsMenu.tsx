@@ -79,7 +79,7 @@ export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> 
                                 </MenuItem>
                                 <MenuItem onSelect={requestSearchResultsExport}>
                                     <Icon aria-hidden={true} className="mr-1" svgPath={mdiDownload} />
-                                    Export Results
+                                    Export results
                                 </MenuItem>
                             </>
                         )}
@@ -116,7 +116,7 @@ export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> 
                                             ? { svgPath: createCodeMonitorAction.icon }
                                             : { as: createCodeMonitorAction.icon })}
                                     />
-                                    Create Monitor
+                                    Create monitor
                                 </MenuLink>
                             </Tooltip>
                         )}
