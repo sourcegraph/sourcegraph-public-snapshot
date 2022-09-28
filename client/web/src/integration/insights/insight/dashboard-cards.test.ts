@@ -142,19 +142,7 @@ describe('Code insights [Dashboard card]', () => {
         // by special "Other" category (5 original rendered groups + one special Other group = 6)
         assert.strictEqual(numberHeadings, 6)
 
-        const filtersButton = await driver.page.$('[aria-label="Active filters"], [aria-label="Filters"]')
-
-        // Lang's stats insight doesn't support filters functionality, so we shouldn't have any filter UI
-        assert.strictEqual(filtersButton, null)
-
-        await driver.page.click('[aria-label="Insight options"]')
-
-        const menuOptions = await driver.page.$$eval('[role="dialog"][aria-modal="true"] [role="menuitem"]', elements =>
-            elements.map(element => element.textContent)
-        )
-
-        // Check that Pie chart doesn't have anything non pie chart specific menu options
-        assert.deepStrictEqual(menuOptions, ['Edit', 'Get shareable link', 'Remove from this dashboard', 'Delete'])
+        await checkMenus(driver)
     })
 
     it('renders capture group insight card with proper options context', async () => {
@@ -200,23 +188,7 @@ describe('Code insights [Dashboard card]', () => {
         assert.strictEqual(numberOfLines, 20)
         assert.strictEqual(numberOfPointLinks, 189)
 
-        await driver.page.click('[aria-label="Filters"]')
-        const filterPanel = await driver.page.$('[aria-label="Drill-down filters panel"]')
-
-        // Should open filter panel on filter panel icon click
-        assert.strictEqual(filterPanel !== null, true)
-
-        // // Toggle insight filters (close filters panel)
-        await driver.page.click('[aria-label="Filters"]')
-
-        await driver.page.click('[aria-label="Insight options"]')
-
-        const menuOptions = await driver.page.$$eval('[role="dialog"][aria-modal="true"] [role="menuitem"]', elements =>
-            elements.map(element => element.textContent)
-        )
-
-        // Check that Line chart doesn't have anything non-related to capture group menu options
-        assert.deepStrictEqual(menuOptions, ['Edit', 'Get shareable link', 'Remove from this dashboard', 'Delete'])
+        await checkMenus(driver)
     })
 
     it('renders search insight card with proper options context', async () => {
@@ -262,23 +234,7 @@ describe('Code insights [Dashboard card]', () => {
         assert.strictEqual(numberOfLines, 2)
         assert.strictEqual(numberOfPointLinks, 27)
 
-        await driver.page.click('[aria-label="Filters"]')
-        const filterPanel = await driver.page.$('[aria-label="Drill-down filters panel"]')
-
-        // Should open filter panel on filter panel icon click
-        assert.strictEqual(filterPanel !== null, true)
-
-        // // Toggle insight filters (close filters panel)
-        await driver.page.click('[aria-label="Filters"]')
-
-        await driver.page.click('[aria-label="Insight options"]')
-
-        const menuOptions = await driver.page.$$eval('[role="dialog"][aria-modal="true"] [role="menuitem"]', elements =>
-            elements.map(element => element.textContent)
-        )
-
-        // Check that Line chart doesn't have anything non-related to capture group menu options
-        assert.deepStrictEqual(menuOptions, ['Edit', 'Get shareable link', 'Remove from this dashboard', 'Delete'])
+        await checkMenus(driver)
     })
 
     it('renders compute insight card with proper options context', async () => {
@@ -343,22 +299,25 @@ describe('Code insights [Dashboard card]', () => {
         // Visx also renders a rectangle for the chart background. 1 series + 1 background = 2 rectangles
         assert.strictEqual(numberOfBars, 2)
 
-        await driver.page.click('[aria-label="Filters"]')
-        const filterPanel = await driver.page.$('[aria-label="Drill-down filters panel"]')
-
-        // Should open filter panel on filter panel icon click
-        assert.strictEqual(filterPanel !== null, true)
-
-        // // Toggle insight filters (close filters panel)
-        await driver.page.click('[aria-label="Filters"]')
-
-        await driver.page.click('[aria-label="Insight options"]')
-
-        const menuOptions = await driver.page.$$eval('[role="dialog"][aria-modal="true"] [role="menuitem"]', elements =>
-            elements.map(element => element.textContent)
-        )
-
-        // Check that Line chart doesn't have anything non-related to capture group menu options
-        assert.deepStrictEqual(menuOptions, ['Edit', 'Get shareable link', 'Remove from this dashboard', 'Delete'])
+        await checkMenus(driver)
     })
 })
+async function checkMenus(driver: Driver) {
+    await driver.page.click('[aria-label="Filters"]')
+    const filterPanel = await driver.page.$('[aria-label="Drill-down filters panel"]')
+
+    // Should open filter panel on filter panel icon click
+    assert.strictEqual(filterPanel !== null, true)
+
+    // // Toggle insight filters (close filters panel)
+    await driver.page.click('[aria-label="Filters"]')
+
+    await driver.page.click('[aria-label="Insight options"]')
+
+    const menuOptions = await driver.page.$$eval('[role="dialog"][aria-modal="true"] [role="menuitem"]', elements =>
+        elements.map(element => element.textContent)
+    )
+
+    // Check that Line chart menu options
+    assert.deepStrictEqual(menuOptions, ['Edit', 'Get shareable link', 'Remove from this dashboard', 'Delete'])
+}
