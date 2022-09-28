@@ -25,6 +25,14 @@
       ]
     },
     {
+      "Name": "changeset_spec_published_enum",
+      "Labels": [
+        "true",
+        "false",
+        "\"draft\""
+      ]
+    },
+    {
       "Name": "cm_email_priority",
       "Labels": [
         "NORMAL",
@@ -3667,7 +3675,7 @@
         {
           "Name": "published",
           "Index": 20,
-          "TypeName": "text",
+          "TypeName": "changeset_spec_published_enum",
           "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
