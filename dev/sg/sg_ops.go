@@ -6,10 +6,12 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/sourcegraph/run"
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/docker"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/images"
+	sgrun "github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -64,6 +66,31 @@ var (
 			},
 		},
 		Action: opsUpdateImage,
+	}
+
+	opsDeployImagesDeploymentKindFlag string
+	opsDeployImagesNamespaceFlag      string
+	opsDeployImagesCommand            = &cli.Command{
+		Name:        "deploy-images",
+		Usage:       "<helm chart name> <helm repository name> <path to values file>",
+		Description: "",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:        "kind",
+				Aliases:     []string{"k"},
+				Usage:       "the `kind` of deployment (currently only 'helm' is supported)",
+				Value:       string(images.DeploymentTypeHelm),
+				Destination: &opsDeployImagesDeploymentKindFlag,
+			},
+			&cli.StringFlag{
+				Name:        "namespace",
+				Aliases:     []string{"n"},
+				Usage:       "the namespace in which to deploy",
+				Destination: &opsDeployImagesNamespaceFlag,
+				Required:    true,
+			},
+		},
+		Action: opsDeployImage,
 	}
 
 	opsTagDetailsCommand = &cli.Command{
@@ -161,4 +188,42 @@ func opsUpdateImage(ctx *cli.Context) error {
 	}
 
 	return images.Update(args[0], *dockerCredentials, images.DeploymentType(opsUpdateImagesDeploymentKindFlag), opsUpdateImagesPinTagFlag)
+}
+
+func opsDeployImage(ctx *cli.Context) error {
+	if opsDeployImagesDeploymentKindFlag != images.DeploymentTypeHelm {
+		return errors.New("")
+	}
+	args := ctx.Args().Slice()
+	if len(args) != 3 {
+		std.Out.WriteLine(output.Styled(output.StyleWarning, "Unexpected amount of arguments provided. Expected: <helm chart name> <helm repository name> <path to values file>"))
+		return flag.ErrHelp
+	}
+
+	currentVersionCmd := run.Cmd(ctx.Context, fmt.Sprintf("helm list --filter '%s' -o json", args[0]))
+	out, err := currentVersionCmd.Run().JQ(".[].chart")
+	if err != nil {
+		return err
+	}
+	version := strings.ReplaceAll(string(out), fmt.Sprintf("%s-", args[0]), "")
+
+	defaultBranch, err := sgrun.TrimResult(sgrun.GitCmd("rev-parse", "--abbrev-ref", "origin/HEAD"))
+	defaultBranch = strings.ReplaceAll(defaultBranch, "origin/", "")
+	if err != nil {
+		return err
+	}
+	branch, err := sgrun.TrimResult(sgrun.GitCmd("branch", "--show-current"))
+	if err != nil {
+		return err
+	}
+	if branch != defaultBranch {
+		return errors.Newf("Can only deploy images from the default branch '%s'", defaultBranch)
+	}
+
+	helmCmdString := fmt.Sprintf("helm upgrade --install --values %s --version %s %s %s -n %s", args[2], version, args[0], fmt.Sprintf("%s/%s", args[0], args[1], opsDeployImagesNamespaceFlag))
+	helmUpgradeCmd, err := run.Cmd(ctx.Context, ).Run().Lines()
+	if err != nil {
+		return err
+	}
+
 }
