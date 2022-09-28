@@ -204,6 +204,9 @@ interface MakeOverridesOptions {
     insightViewMock?: GetInsightViewResult
 }
 
+/**
+ * Helper function to remove some of the boiler plate when overriding gql calls.
+ */
 function makeOverrides({ testContext, dashboardId, insightMock, insightViewMock }: MakeOverridesOptions) {
     const overrides: OverrideGraphQLExtensionsProps['overrides'] = {
         ViewerSettings: () => ({
@@ -263,6 +266,9 @@ function makeOverrides({ testContext, dashboardId, insightMock, insightViewMock 
     })
 }
 
+/**
+ * Asserts the options menu renders the correct options
+ */
 async function checkOptionsMenu(driver: Driver, shouldHaveYAxis = false): Promise<void> {
     await driver.page.click('[aria-label="Insight options"]')
 
@@ -283,6 +289,9 @@ async function checkOptionsMenu(driver: Driver, shouldHaveYAxis = false): Promis
     }
 }
 
+/**
+ * Asserts the filter menu renders the correct options
+ */
 async function checkFilterMenu(driver: Driver, shouldHaveFilterButton = true): Promise<void> {
     if (shouldHaveFilterButton) {
         await driver.page.click('[aria-label="Filters"]')
