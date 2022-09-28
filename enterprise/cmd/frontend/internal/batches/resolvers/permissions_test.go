@@ -10,7 +10,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -68,13 +67,7 @@ func TestPermissionLevels(t *testing.T) {
 	nonOrgUserID := bt.CreateTestUser(t, db, false).ID
 
 	// Create an organisation that only has userID in it.
-	orgStore := database.OrgsWith(bstore)
-	org, err := orgStore.Create(ctx, "org", strPtr("Org"))
-	require.NoError(t, err)
-
-	orgMemberStore := database.OrgMembersWith(bstore)
-	orgMemberStore.Create(ctx, org.ID, userID)
-	require.NoError(t, err)
+	orgID := bt.CreateTestOrg(t, db, "org", userID).ID
 
 	repoStore := database.ReposWith(logger, bstore)
 	esStore := database.ExternalServicesWith(logger, bstore)
@@ -131,7 +124,7 @@ func TestPermissionLevels(t *testing.T) {
 	createBatchSpec := func(t *testing.T, s *store.Store, ns namespace) (randID string, id int64) {
 		t.Helper()
 
-		cs := &btypes.BatchSpec{UserID: userID, NamespaceUserID: ns.userID, NamespaceOrgID: ns.orgID}
+		cs := &btypes.BatchSpec{UserID: ns.userID, NamespaceUserID: ns.userID, NamespaceOrgID: ns.orgID}
 		if err := s.CreateBatchSpec(ctx, cs); err != nil {
 			t.Fatal(err)
 		}
@@ -219,16 +212,16 @@ func TestPermissionLevels(t *testing.T) {
 		adminBatchChange := createBatchChange(t, bstore, namespace{userID: adminID}, "admin", adminID, adminBatchSpecID)
 		userBatchSpec, userBatchSpecID := createBatchSpec(t, bstore, namespace{userID: userID})
 		userBatchChange := createBatchChange(t, bstore, namespace{userID: userID}, "user", userID, userBatchSpecID)
-		orgBatchSpec, orgBatchSpecID := createBatchSpec(t, bstore, namespace{orgID: org.ID})
+		orgBatchSpec, orgBatchSpecID := createBatchSpec(t, bstore, namespace{orgID: orgID})
 		// Note that we intentionally apply the batch spec with the admin, not
 		// the regular user, to test that the regular user still has the
 		// expected admin access to the batch change even when they didn't
 		// apply it.
-		orgBatchChange := createBatchChange(t, bstore, namespace{orgID: org.ID}, "org", adminID, orgBatchSpecID)
+		orgBatchChange := createBatchChange(t, bstore, namespace{orgID: orgID}, "org", adminID, orgBatchSpecID)
 
 		adminBatchSpecCreatedFromRawRandID, _ := createBatchSpecFromRaw(t, bstore, namespace{userID: adminID}, adminID)
 		userBatchSpecCreatedFromRawRandID, _ := createBatchSpecFromRaw(t, bstore, namespace{userID: userID}, userID)
-		orgBatchSpecCreatedFromRawRandID, _ := createBatchSpecFromRaw(t, bstore, namespace{orgID: org.ID}, adminID)
+		orgBatchSpecCreatedFromRawRandID, _ := createBatchSpecFromRaw(t, bstore, namespace{orgID: orgID}, adminID)
 
 		t.Run("BatchChangeByID", func(t *testing.T) {
 			tests := []struct {

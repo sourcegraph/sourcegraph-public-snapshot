@@ -32,13 +32,8 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 		adminUser  = bt.CreateTestUser(t, s.DatabaseDB(), true)
 		orgUser    = bt.CreateTestUser(t, s.DatabaseDB(), false)
 		nonOrgUser = bt.CreateTestUser(t, s.DatabaseDB(), false)
+		org        = bt.CreateTestOrg(t, s.DatabaseDB(), "org", orgUser.ID)
 	)
-
-	org, err := database.OrgsWith(s.DatabaseDB()).Create(ctx, "org", nil)
-	require.NoError(t, err)
-
-	_, err = database.OrgMembersWith(s.DatabaseDB()).Create(ctx, org.ID, orgUser.ID)
-	require.NoError(t, err)
 
 	t.Run("Create", func(t *testing.T) {
 		// We're going to create five batch changes, both to unit test the
@@ -885,7 +880,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 }
 
 func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
-	orgID := bt.InsertTestOrg(t, s.DatabaseDB(), "user-delete-cascades")
+	orgID := bt.CreateTestOrg(t, s.DatabaseDB(), "user-delete-cascades").ID
 	user := bt.CreateTestUser(t, s.DatabaseDB(), false)
 
 	logger := logtest.Scoped(t)
@@ -1023,7 +1018,7 @@ func testBatchChangesDeletedNamespace(t *testing.T, ctx context.Context, s *Stor
 	})
 
 	t.Run("Org Deleted", func(t *testing.T) {
-		orgID := bt.InsertTestOrg(t, s.DatabaseDB(), "my-org")
+		orgID := bt.CreateTestOrg(t, s.DatabaseDB(), "my-org").ID
 
 		bc := &btypes.BatchChange{
 			Name:           "my-batch-change",
