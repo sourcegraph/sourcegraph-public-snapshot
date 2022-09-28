@@ -62,7 +62,7 @@ type Store interface {
 	DeleteUploadByID(ctx context.Context, id int) (_ bool, err error)
 
 	// Uploads (uploading)
-	InsertUpload(ctx context.Context, upload shared.Upload) (int, error)
+	InsertUpload(ctx context.Context, upload types.Upload) (int, error)
 	AddUploadPart(ctx context.Context, uploadID, partIndex int) error
 	MarkQueued(ctx context.Context, id int, uploadSize *int64) error
 	MarkFailed(ctx context.Context, id int, reason string) error
