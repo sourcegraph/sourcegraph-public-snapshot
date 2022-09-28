@@ -20,6 +20,8 @@ type ExecutorResolver struct {
 	executor types.Executor
 }
 
+const oneMonth = 30 * 24 * time.Hour
+
 func NewExecutorResolver(executor Executor) *ExecutorResolver {
 	return &ExecutorResolver{executor: executor}
 }
@@ -92,10 +94,19 @@ func calculateExecutorCompatibility(ev string) (*string, error) {
 			return nil, err
 		}
 
-		if et.Before(st) {
-			compatibility = ExecutorCompatibilityOutdated
-		} else if et.After(st) {
+		hst := st.Add(oneMonth)
+		lst := st.Add(-1 * oneMonth)
+
+		if et.After(hst) {
+			// We check if the executor build date is after 30 days + sourcegraph build date.
+			// if this is true then we assume the executor's version is ahead.
+
+			// We use a month as the constant because Sourcegraph is released on a monthly basis.
 			compatibility = ExecutorCompatibilityVersionAhead
+		} else if et.Before(lst) {
+			// if the executor date occurs 30 days behind the current build date of the Sourcegraph
+			// instance then we assume that the executor is outdated.
+			compatibility = ExecutorCompatibilityOutdated
 		}
 
 		return compatibility.ToGraphQL(), nil
