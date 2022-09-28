@@ -23,66 +23,6 @@ import {
 } from '../fixtures/dashboards'
 import { OverrideGraphQLExtensionsProps, overrideInsightsGraphQLApi } from '../utils/override-insights-graphql-api'
 
-interface DashboardMockOptions {
-    id?: string
-    title?: string
-    insightIds?: string[]
-}
-
-/**
- * Creates dashboard mock entity in order to mock insight dashboard configurations.
- * It's used for easier mocking dashboards list gql handler see InsightsDashboards entry point.
- */
-function createDashboard(options: DashboardMockOptions): InsightsDashboardNode {
-    const { id = '001_dashboard', title = 'Default dashboard', insightIds = [] } = options
-
-    return {
-        __typename: 'InsightsDashboard',
-        id,
-        title,
-        views: {
-            __typename: 'InsightViewConnection',
-            nodes: insightIds.map(id => ({ __typename: 'InsightView', id })),
-        },
-        grants: {
-            __typename: 'InsightsPermissionGrants',
-            users: [testUserID],
-            organizations: [],
-            global: false,
-        },
-    }
-}
-
-interface DashboardViewMockOptions {
-    id?: string
-    insightsMocks?: InsightViewNode[]
-}
-
-/**
- * Creates mocks for the dashboard view entity, you may ask what difference between createDashboard
- * and this mock helper. Dashboard view mock contains insight configurations, dashboard mocks contain
- * only insight ids. (we should mock dashboard view only when this dashboard is opened on the page)
- */
-function createDashboardViewMock(options: DashboardViewMockOptions): GetDashboardInsightsResult {
-    const { id = '001_dashboard', insightsMocks = [] } = options
-
-    return {
-        insightsDashboards: {
-            __typename: 'InsightsDashboardConnection',
-            nodes: [
-                {
-                    __typename: 'InsightsDashboard',
-                    id,
-                    views: {
-                        __typename: 'InsightViewConnection',
-                        nodes: insightsMocks.map(mock => ({ ...mock, __typename: 'InsightView' })),
-                    },
-                },
-            ],
-        },
-    }
-}
-
 describe('Code insights [Dashboard card]', () => {
     let driver: Driver
     let testContext: WebIntegrationTestContext
@@ -196,6 +136,66 @@ describe('Code insights [Dashboard card]', () => {
         await checkFilterMenu(driver, true)
     })
 })
+
+interface DashboardMockOptions {
+    id?: string
+    title?: string
+    insightIds?: string[]
+}
+
+/**
+ * Creates dashboard mock entity in order to mock insight dashboard configurations.
+ * It's used for easier mocking dashboards list gql handler see InsightsDashboards entry point.
+ */
+function createDashboard(options: DashboardMockOptions): InsightsDashboardNode {
+    const { id = '001_dashboard', title = 'Default dashboard', insightIds = [] } = options
+
+    return {
+        __typename: 'InsightsDashboard',
+        id,
+        title,
+        views: {
+            __typename: 'InsightViewConnection',
+            nodes: insightIds.map(id => ({ __typename: 'InsightView', id })),
+        },
+        grants: {
+            __typename: 'InsightsPermissionGrants',
+            users: [testUserID],
+            organizations: [],
+            global: false,
+        },
+    }
+}
+
+interface DashboardViewMockOptions {
+    id?: string
+    insightsMocks?: InsightViewNode[]
+}
+
+/**
+ * Creates mocks for the dashboard view entity, you may ask what difference between createDashboard
+ * and this mock helper. Dashboard view mock contains insight configurations, dashboard mocks contain
+ * only insight ids. (we should mock dashboard view only when this dashboard is opened on the page)
+ */
+function createDashboardViewMock(options: DashboardViewMockOptions): GetDashboardInsightsResult {
+    const { id = '001_dashboard', insightsMocks = [] } = options
+
+    return {
+        insightsDashboards: {
+            __typename: 'InsightsDashboardConnection',
+            nodes: [
+                {
+                    __typename: 'InsightsDashboard',
+                    id,
+                    views: {
+                        __typename: 'InsightViewConnection',
+                        nodes: insightsMocks.map(mock => ({ ...mock, __typename: 'InsightView' })),
+                    },
+                },
+            ],
+        },
+    }
+}
 
 interface MakeOverridesOptions {
     testContext: WebIntegrationTestContext
