@@ -51,9 +51,10 @@ type ProviderOptions struct {
 	BaseToken      string
 	GroupsCacheTTL time.Duration
 	IsApp          bool
+	DB             database.DB
 }
 
-func NewProvider(urn string, opts ProviderOptions, tokenRefresher oauthutil.TokenRefresher) *Provider {
+func NewProvider(urn string, opts ProviderOptions) *Provider {
 	if opts.GitHubClient == nil {
 		apiURL, _ := github.APIRoot(opts.GitHubURL)
 		opts.GitHubClient = github.NewV3Client(log.Scoped("provider.github.v3", "provider github client"),
@@ -78,6 +79,7 @@ func NewProvider(urn string, opts ProviderOptions, tokenRefresher oauthutil.Toke
 		client: func() (client, error) {
 			return &ClientAdapter{V3Client: opts.GitHubClient}, nil
 		},
+		db: opts.DB,
 	}
 }
 
@@ -329,9 +331,6 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 // has read access on the code host. The repository ID has the same value as it would be
 // used as api.ExternalRepoSpec.ID. The returned list only includes private repository IDs.
 //
-// The client used by this method will be in charge of updating the OAuth token
-// if it has expired and retrying the request.
-//
 // This method may return partial but valid results in case of error, and it is up to
 // callers to decide whether to discard.
 //
@@ -352,6 +351,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 	}
 
 	tokenRefresher := database.ExternalAccountTokenRefresher(p.db, account.ID, tok.RefreshToken)
+
 	return p.fetchUserPermsByToken(ctx, extsvc.AccountID(account.AccountID), tok.AccessToken, tokenRefresher, opts)
 }
 

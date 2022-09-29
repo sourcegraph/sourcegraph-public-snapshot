@@ -78,5 +78,6 @@ func newAppProvider(
 			}, nil
 		},
 		InstallationID: &installationID,
+		db:             db,
 	}, nil
 }
