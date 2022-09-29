@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
-	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifuploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/repoupdater"
@@ -51,9 +50,6 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	// Initialize stores
-	dbStore := store.NewWithDB(db, observationContext)
-
 	// Connect to the separate LSIF database
 	codeIntelDBConnection := mustInitializeCodeIntelDB(logger)
 
@@ -65,7 +61,7 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 	}
 
 	// Initialize gitserver client & repoupdater
-	gitserverClient := gitserver.New(db, dbStore, observationContext)
+	gitserverClient := gitserver.New(db, observationContext)
 	repoUpdaterClient := repoupdater.New(observationContext)
 
 	// Initialize services
