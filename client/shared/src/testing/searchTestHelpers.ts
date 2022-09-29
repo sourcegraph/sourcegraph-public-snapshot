@@ -14,12 +14,29 @@ export const RESULT: ContentMatch = {
     type: 'content',
     path: '.travis.yml',
     repository: 'github.com/golang/oauth2',
-    lineMatches: [
+    chunkMatches: [
         {
-            line: '  - go test -v golang.org/x/oauth2/...',
-            lineNumber: 12,
-            offsetAndLengths: [[7, 4]],
-        },
+            content: '  - go test -v golang.org/x/oauth2/...',
+            contentStart: {
+                line: 12,
+                offset: 12,
+                column: 0,
+            },
+            ranges: [
+                {
+                    start: {
+                        line: 12,
+                        offset: 7,
+                        column: 7,
+                    },
+                    end: {
+                        line: 12,
+                        offset: 11,
+                        column: 11,
+                    },
+                }
+            ]
+        }
     ],
 }
 
@@ -56,60 +73,228 @@ export const MULTIPLE_MATCH_RESULT: ContentMatch = {
     type: 'content',
     path: 'clientcredentials/clientcredentials_test.go',
     repository: 'github.com/golang/oauth2',
-    lineMatches: [
+    chunkMatches: [
         {
-            line: '\t"net/http/httptest"',
-            lineNumber: 11,
-            offsetAndLengths: [[15, 4]],
-        },
-        {
-            line: '\t"testing"',
-            lineNumber: 13,
-            offsetAndLengths: [[2, 4]],
-        },
-        {
-            line: 'func TestTokenSourceGrantTypeOverride(t *testing.T) {',
-            lineNumber: 36,
-            offsetAndLengths: [
-                [5, 4],
-                [41, 4],
+            content: '\t"net/http/httptest"',
+            contentStart: {
+                line: 11,
+                offset: 11,
+                column: 0,
+            },
+            ranges: [
+                {
+                    start: {
+                       line: 11,
+                       offset: 15,
+                       column: 15,
+                    },
+                    end: {
+                        line: 11,
+                        offset: 19,
+                        column: 19,
+                    },
+                },
             ],
         },
         {
-            line: '\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {',
-            lineNumber: 39,
-            offsetAndLengths: [[11, 4]],
-        },
-        {
-            line: 'func TestTokenRequest(t *testing.T) {',
-            lineNumber: 73,
-            offsetAndLengths: [
-                [5, 4],
-                [25, 4],
+            content: '\t"testing"',
+            contentStart: {
+                line: 13,
+                offset: 13,
+                column: 0,
+            },
+            ranges: [
+                {
+                    start: {
+                       line: 13,
+                       offset: 2,
+                       column: 2,
+                    },
+                    end: {
+                        line: 13,
+                        offset: 6,
+                        column: 6,
+                    },
+                },
             ],
         },
         {
-            line: '\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {',
-            lineNumber: 74,
-            offsetAndLengths: [[11, 4]],
-        },
-        {
-            line: 'func TestTokenRefreshRequest(t *testing.T) {',
-            lineNumber: 115,
-            offsetAndLengths: [
-                [5, 4],
-                [32, 4],
+            content: 'func TestTokenSourceGrantTypeOverride(t *testing.T) {',
+            contentStart: {
+                line: 36,
+                offset: 36,
+                column: 0,
+            },
+            ranges: [
+                {
+                    start: {
+                        line: 36,
+                        offset: 5,
+                        column: 5,
+                    },
+                    end: {
+                        line: 36,
+                        offset: 9,
+                        column: 9,
+                    },
+                },
+                {
+                    start: {
+                        line: 36,
+                        offset: 41,
+                        column: 41,
+                    },
+                    end: {
+                        line: 36,
+                        offset: 45,
+                        column: 45,
+                    },
+                },
             ],
         },
         {
-            line: '\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {',
-            lineNumber: 117,
-            offsetAndLengths: [[11, 4]],
+            content: '\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {',
+            contentStart: {
+                line: 39,
+                offset: 39,
+                column: 0,
+            },
+            ranges: [
+                {
+                    start: {
+                        line: 39,
+                        offset: 11,
+                        column: 11,
+                    },
+                    end: {
+                        line: 39,
+                        offset: 15,
+                        column: 15,
+                    },
+                },
+            ],
         },
         {
-            line: '\t\tio.WriteString(w, `{"access_token": "foo", "refresh_token": "bar"}`)',
-            lineNumber: 134,
-            offsetAndLengths: [[8, 4]],
+           content: 'func TestTokenRequest(t *testing.T) {',
+            contentStart: {
+               line: 73,
+                offset: 73,
+                column: 0,
+            },
+            ranges: [
+                {
+                    start: {
+                        line: 73,
+                        offset: 5,
+                        column: 5,
+                    },
+                    end: {
+                        line: 73,
+                        offset: 9,
+                        column: 9,
+                    },
+                },
+                {
+                    start: {
+                        line: 73,
+                        offset: 25,
+                        column: 25,
+                    },
+                    end: {
+                        line: 73,
+                        offset: 29,
+                        column: 29,
+                    },
+                },
+            ],
+        },
+        {
+            content: '\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {',
+            contentStart: {
+                line: 74,
+                offset: 74,
+                column: 0,
+            },
+            ranges: [
+                {
+                    start: {
+                        line: 74,
+                        offset: 11,
+                        column: 11,
+                    },
+                    end: {
+                        line: 74,
+                        offset: 15,
+                        column: 15,
+                    },
+                },
+            ],
+        },
+        {
+            content: 'func TestTokenRefreshRequest(t *testing.T) {',
+            contentStart: {
+                line: 115,
+                offset: 115,
+                column: 0,
+            },
+            ranges: [
+                {
+                    start: {
+                        line: 115,
+                        offset: 5,
+                        column: 5,
+                    },
+                    end: {
+                        line: 115,
+                        offset: 9,
+                        column: 9,
+                    },
+                },
+            ],
+        },
+        {
+            content: '\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {',
+            contentStart: {
+                line: 117,
+                offset: 117,
+                column: 0,
+            },
+            ranges: [
+                {
+                    start: {
+                        line: 117,
+                        offset: 11,
+                        column: 11,
+                    },
+                    end: {
+                        line: 117,
+                        offset: 15,
+                        column: 15,
+                    },
+                },
+            ],
+        },
+        {
+            content: '\t\tio.WriteString(w, `{"access_token": "foo", "refresh_token": "bar"}`)',
+            contentStart: {
+                line: 134,
+                offset: 134,
+                column: 0,
+            },
+            ranges: [
+                {
+                    start: {
+                        line: 134,
+                        offset: 8,
+                        column: 8,
+                    },
+                    end: {
+                        line: 134,
+                        offset: 12,
+                        column: 12,
+                    },
+                },
+            ],
         },
     ],
 }
@@ -150,11 +335,28 @@ export const MULTIPLE_SEARCH_RESULT: AggregateStreamingSearchResults = {
             path: 'example_test.go',
             commit: 'abcd1234',
             repository: 'github.com/golang/oauth2',
-            lineMatches: [
+            chunkMatches: [
                 {
-                    line: 'package oauth2_test',
-                    lineNumber: 4,
-                    offsetAndLengths: [[15, 4]],
+                    content: 'package oauth2_test',
+                    contentStart: {
+                        line: 4,
+                        offset: 4,
+                        column: 0,
+                    },
+                    ranges: [
+                        {
+                            start: {
+                                line: 4,
+                                offset: 15,
+                                column: 15,
+                            },
+                            end: {
+                                line: 4,
+                                offset: 19,
+                                column: 19,
+                            },
+                        },
+                    ],
                 },
             ],
             repoStars: 42,
@@ -178,61 +380,148 @@ export const COLLAPSABLE_SEARCH_RESULT: AggregateStreamingSearchResults = {
             path: 'example_test.go',
             commit: 'abcd1234',
             repository: 'github.com/golang/oauth2',
-            lineMatches: [
+            chunkMatches: [
                 {
-                    line: 'package oauth2_test',
-                    lineNumber: 4,
-                    offsetAndLengths: [[15, 4]],
-                },
-                {
-                    line: 'package oauth2_test',
-                    lineNumber: 4,
-                    offsetAndLengths: [[15, 4]],
-                },
-                {
-                    line: 'package oauth2_test',
-                    lineNumber: 4,
-                    offsetAndLengths: [[15, 4]],
-                },
-                {
-                    line: 'package oauth2_test',
-                    lineNumber: 4,
-                    offsetAndLengths: [[15, 4]],
-                },
-                {
-                    line: 'package oauth2_test',
-                    lineNumber: 4,
-                    offsetAndLengths: [[15, 4]],
-                },
-                {
-                    line: 'package oauth2_test',
-                    lineNumber: 4,
-                    offsetAndLengths: [[15, 4]],
-                },
-                {
-                    line: 'package oauth2_test',
-                    lineNumber: 4,
-                    offsetAndLengths: [[15, 4]],
-                },
-                {
-                    line: 'package oauth2_test',
-                    lineNumber: 4,
-                    offsetAndLengths: [[15, 4]],
-                },
-                {
-                    line: 'package oauth2_test',
-                    lineNumber: 4,
-                    offsetAndLengths: [[15, 4]],
-                },
-                {
-                    line: 'package oauth2_test',
-                    lineNumber: 4,
-                    offsetAndLengths: [[15, 4]],
-                },
-                {
-                    line: 'package oauth2_test',
-                    lineNumber: 4,
-                    offsetAndLengths: [[15, 4]],
+                    content: 'package oauth2_test',
+                    contentStart: {
+                        line: 4,
+                        offset: 4,
+                        column: 0,
+                    },
+                    ranges: [
+                        {
+                            start: {
+                                line: 4,
+                                offset: 15,
+                                column: 15,
+                            },
+                            end: {
+                                line: 4,
+                                offset: 19,
+                                column: 19,
+                            },
+                        },
+                        {
+                            start: {
+                                line: 4,
+                                offset: 15,
+                                column: 15,
+                            },
+                            end: {
+                                line: 4,
+                                offset: 19,
+                                column: 19,
+                            },
+                        },
+                        {
+                            start: {
+                                line: 4,
+                                offset: 15,
+                                column: 15,
+                            },
+                            end: {
+                                line: 4,
+                                offset: 19,
+                                column: 19,
+                            },
+                        },
+                        {
+                            start: {
+                                line: 4,
+                                offset: 15,
+                                column: 15,
+                            },
+                            end: {
+                                line: 4,
+                                offset: 19,
+                                column: 19,
+                            },
+                        },
+                        {
+                            start: {
+                                line: 4,
+                                offset: 15,
+                                column: 15,
+                            },
+                            end: {
+                                line: 4,
+                                offset: 19,
+                                column: 19,
+                            },
+                        },
+                        {
+                            start: {
+                                line: 4,
+                                offset: 15,
+                                column: 15,
+                            },
+                            end: {
+                                line: 4,
+                                offset: 19,
+                                column: 19,
+                            },
+                        },
+                        {
+                            start: {
+                                line: 4,
+                                offset: 15,
+                                column: 15,
+                            },
+                            end: {
+                                line: 4,
+                                offset: 19,
+                                column: 19,
+                            },
+                        },
+                        {
+                            start: {
+                                line: 4,
+                                offset: 15,
+                                column: 15,
+                            },
+                            end: {
+                                line: 4,
+                                offset: 19,
+                                column: 19,
+                            },
+                        },
+                        {
+                            start: {
+                                line: 4,
+                                offset: 15,
+                                column: 15,
+                            },
+                            end: {
+                                line: 4,
+                                offset: 19,
+                                column: 19,
+                            },
+                        },
+                        {
+                            start: {
+                                line: 4,
+                                offset: 15,
+                                column: 15,
+                            },
+                            end: {
+                                line: 4,
+                                offset: 19,
+                                column: 19,
+                            },
+                        },
+                        {
+                            start: {
+                                line: 4,
+                                offset: 15,
+                                column: 15,
+                            },
+                            end: {
+                                line: 4,
+                                offset: 19,
+                                column: 19,
+                            },
+                        },
+                    ],
                 },
             ],
             repoStars: 42,
