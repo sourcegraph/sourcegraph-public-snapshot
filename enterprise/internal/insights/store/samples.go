@@ -559,6 +559,9 @@ func toTimeseries(data []UncompressedRow, seriesId string, extra []writeAheadRec
 		return *s
 	}
 
+	lgr := logger.Scoped("toTimeseries", "asdf")
+	lgr.Info("totimeseries", logger.Int("rows", len(data)), logger.Int("extra", len(extra)))
+
 	byCapture := make(map[string][]UncompressedRow)
 	for _, datum := range data {
 		byCapture[getKey(datum.Capture)] = append(byCapture[getKey(datum.Capture)], datum)
@@ -573,6 +576,13 @@ func toTimeseries(data []UncompressedRow, seriesId string, extra []writeAheadRec
 			return coal
 		}
 		return *val
+	}
+
+	toPtr := func(s string) *string {
+		if s == "" {
+			return nil
+		}
+		return &s
 	}
 
 	for key, vals := range byCapture {
@@ -594,13 +604,6 @@ func toTimeseries(data []UncompressedRow, seriesId string, extra []writeAheadRec
 			}
 		}
 
-		toPtr := func(s string) *string {
-			if s == "" {
-				return nil
-			}
-			return &s
-		}
-
 		for utime, agg := range mapped {
 			results = append(results, SeriesPoint{
 				SeriesID: seriesId,
@@ -615,6 +618,25 @@ func toTimeseries(data []UncompressedRow, seriesId string, extra []writeAheadRec
 				SeriesID: seriesId,
 				Time:     time.Unix(int64(utime), 0),
 				Value:    agg,
+				Capture:  toPtr(key),
+			})
+
+			delete(extraByCapture, key)
+		}
+	}
+
+	for key, records := range extraByCapture {
+		mapped := make(map[uint32]float64)
+
+		for _, val := range records {
+			mapped[val.time] += val.value
+		}
+
+		for mapkey, mapval := range mapped {
+			results = append(results, SeriesPoint{
+				SeriesID: seriesId,
+				Time:     time.Unix(int64(mapkey), 0),
+				Value:    mapval,
 				Capture:  toPtr(key),
 			})
 		}
@@ -701,4 +723,8 @@ func (s *sampleStore) AppendWriteAhead(ctx context.Context, samples []RepoSample
 		}
 	}
 	return inserter.Flush(ctx)
+}
+
+func (s *sampleStore) compact(ctx context.Context, key TimeSeriesKey) error {
+	return nil
 }
