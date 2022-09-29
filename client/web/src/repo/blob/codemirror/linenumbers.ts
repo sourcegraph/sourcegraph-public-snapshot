@@ -164,10 +164,14 @@ function selectOnClick(): Extension {
     let preventTextSelection = false
 
     return [
-        EditorState.transactionFilter.of(tr => {
+        EditorState.transactionFilter.of(transaction => {
             // If the user tries to select a text range (and doesn't just click
             // somewhere)
-            if (tr.isUserEvent('select') && tr.selection && tr.selection.main.from !== tr.selection.main.to) {
+            if (
+                transaction.isUserEvent('select') &&
+                transaction.selection &&
+                transaction.selection.main.from !== transaction.selection.main.to
+            ) {
                 if (preventTextSelection) {
                     return []
                 }
@@ -175,7 +179,7 @@ function selectOnClick(): Extension {
                 // selection then we don't want to select a line.
                 maybeSelectLine = false
             }
-            return tr
+            return transaction
         }),
         EditorView.domEventHandlers({
             mousedown(event, view) {
