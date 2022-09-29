@@ -56,7 +56,7 @@ export const isOlderThan = (instanceVersion: string, comparedVersion: RegularVer
     const version = parseVersion(instanceVersion)
     return (
         version !== 'insiders' &&
-        (version.major < version.major ||
+        (version.major < comparedVersion.major ||
             (version.major === comparedVersion.major && version.minor < comparedVersion.minor))
     )
 }
