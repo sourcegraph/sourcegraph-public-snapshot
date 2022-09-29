@@ -76,10 +76,6 @@ function install_executor() {
   # TODO: Replace this by executor install all. For that install images executor-vm
   # has to work in this VM box though.
 
-  # Loads the required kernel image so it doesn't have to happen on the first VM start.
-  /usr/local/bin/executor install image kernel
-  # Loads the required sandbox docker image so it doesn't have to happen on the first VM start.
-  /usr/local/bin/executor install image sandbox
   # Install Weaveworks Ignite
   # Reference: https://ignite.readthedocs.io/en/stable/installation/
   # Install dependencies. Most of these are actually bundled by default, but
@@ -93,6 +89,10 @@ function install_executor() {
   /usr/local/bin/executor install cni
   # Install src-cli to the host system. It's needed for src steps outside of firecracker.
   /usr/local/bin/executor install src-cli
+  # Loads the required kernel image so it doesn't have to happen on the first VM start.
+  /usr/local/bin/executor install image kernel
+  # Loads the required sandbox docker image so it doesn't have to happen on the first VM start.
+  /usr/local/bin/executor install image sandbox
   # Configures iptables rules for our ignite VMs. We don't want to allow any local
   # traffic except the traffic to nameservers. This is to prevent any internal attack
   # vector and talking to link-local services like the google metadata server.
