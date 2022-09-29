@@ -25,14 +25,6 @@
       ]
     },
     {
-      "Name": "changeset_spec_published_enum",
-      "Labels": [
-        "true",
-        "false",
-        "\"draft\""
-      ]
-    },
-    {
       "Name": "cm_email_priority",
       "Labels": [
         "NORMAL",
@@ -3675,7 +3667,7 @@
         {
           "Name": "published",
           "Index": 20,
-          "TypeName": "changeset_spec_published_enum",
+          "TypeName": "text",
           "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
@@ -3856,6 +3848,13 @@
           "RefTableName": "batch_specs",
           "IsDeferrable": true,
           "ConstraintDefinition": "FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE"
+        },
+        {
+          "Name": "changeset_specs_published_valid_values",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK (published = 'true'::text OR published = 'false'::text OR published = '\"draft\"'::text OR published IS NULL)"
         },
         {
           "Name": "changeset_specs_repo_id_fkey",
