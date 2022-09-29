@@ -28,16 +28,18 @@ if [[ "$BRANCH" != "main" ]]; then
   echo "--- generate statoscope comparison report"
   pushd "../.." >/dev/null
 
+  ls -la ./ui/assets/
+
   branchFile="./ui/assets/stats-${BRANCH}.json"
   mergeBaseFile="./ui/assets/stats-${MERGE_BASE}.json"
-  if [[ -f $branchFile ]] && [[ -f $mergeBaseFile ]]; then
-    ./node_modules/.bin/statoscope generate \
-      -i "${branchFile}" \
-      -r "${mergeBaseFile}" \
-      -t ./ui/assets/compare-report.html
-  else
-    echo 'No stats file found, skipping.'
-  fi
+  # if [[ -f $branchFile ]] && [[ -f $mergeBaseFile ]]; then
+  ./node_modules/.bin/statoscope generate \
+    -i "${branchFile}" \
+    -r "${mergeBaseFile}" \
+    -t ./ui/assets/compare-report.html
+  # else
+  #   echo 'No stats file found, skipping.'
+  # fi
 
   popd >/dev/null || exit
 fi
