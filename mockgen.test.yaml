@@ -149,7 +149,6 @@
       interfaces:
         - UploadService
         - GitTreeTranslator
-        - DBStore
         - GitserverClient
 - filename: internal/codeintel/uploads/mocks_test.go
   sources:
