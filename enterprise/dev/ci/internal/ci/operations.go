@@ -210,7 +210,7 @@ func addWebApp(pipeline *bk.Pipeline) {
 	// the changes in this branch and report that to the GitHub UI.
 	if branch != "main" {
 		var mergeBaseBytes []byte
-		mergeBaseBytes, err := exec.Command("git merge-base HEAD main").Output()
+		mergeBaseBytes, err := exec.Command("git", "merge-base", "HEAD", "main").Output()
 		if err != nil {
 			log.Fatal(err)
 		}
