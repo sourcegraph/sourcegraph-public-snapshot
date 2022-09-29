@@ -557,6 +557,12 @@ WHERE name = $1::TEXT AND timestamp > DATE_TRUNC('week', $2::TIMESTAMP)
 GROUP BY argument;
 `
 
+const getGroupResultSearchesSql = `
+SELECT COUNT(*), argument::json->>'aggregationMode' as aggregationMode FROM event_logs
+WHERE name = $1::TEXT AND timestamp > DATE_TRUNC('week', $2::TIMESTAMP)
+GROUP BY argument;
+`
+
 const InsightsTotalCountPingName = `INSIGHT_TOTAL_COUNTS`
 const InsightsTotalCountCriticalPingName = `INSIGHT_TOTAL_COUNT_CRITICAL`
 const InsightsIntervalCountsPingName = `INSIGHT_TIME_INTERVALS`
