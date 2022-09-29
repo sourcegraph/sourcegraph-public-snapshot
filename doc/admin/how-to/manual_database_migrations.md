@@ -18,21 +18,26 @@ The `upgrade` command performs database schema migrations and out-of-band migrat
 
 ```
 upgrade \
-    --from=<current version> \
-    --to=<target version> \
-    [--dry-run=false] \
-    [--skip-version-check=false]
+    -from=<current version> -to=<target version> \
+    [-dry-run=false] \
+    [-skip-version-check=false] [-skip-drift-check=false] \
+    [-disable-animation=false] \
+    [-unprivileged-only=false] [-noop-privileged=false] [-privileged-hash=<hash>]
 ```
 
-The `--from` and `--to` flags both accept Sourcegraph release versions _without the patch_ (e.g., `v3.42`) and dictate the bounds of the migration.
+**Required arguments**:
 
-If the flag `--dry-run` is supplied, then the upgrade plan will be printed but not executed.
+- The `-from` and `-to` flags both accept Sourcegraph release versions _without the patch_ (e.g., `v3.42`) and dictate the bounds of the migration.
 
-If the flag `--skip-version-check` is supplied, then the `migrator` will not assert that the previously running instance version matches the given `--from` value.
+**Optional arguments**:
 
-The flags `--unprivileged-only` and `--noop-privileged` are also defined on this command to control the behavior of the `migrator` in the presence of [privileged migrations](./privileged_migrations.md).
+- If the flag `-dry-run` is supplied, then the upgrade plan will be printed but not executed.
+- If the flag `-skip-version-check` is supplied, then the `migrator` will not assert that the previously running instance version matches the given `-from` value.
+- `-skip-drift-check` TODO
+- `-disable-animation` TODO
+- The flags `-unprivileged-only` and `-noop-privileged` are also defined on this command to control the behavior of the `migrator` in the presence of [privileged migrations](./privileged_migrations.md).
 
-Note that the flags `--ignore-single-dirty-log` and `ignore-single-pending-log` available on the commands `up`, `upto`, and `downto` are essentially on-by-default for this command. Successive invocations of `upgrade` and `downgrade` will always re-attempt the last failed or attempted-but-unfinished migration.
+Note that the flags `-ignore-single-dirty-log` and `ignore-single-pending-log` available on the commands `up`, `upto`, and `downto` are essentially on-by-default for this command. Successive invocations of `upgrade` and `downgrade` will always re-attempt the last failed or attempted-but-unfinished migration.
 
 ### drift
 
@@ -41,15 +46,20 @@ The `drift` command describes the current (live) database schema and compares it
 ```
 drift \
     -db=<schema> \
-    [--version=<version>] \
-    [--file=<path to description file>]
+    [-version=<version>] \
+    [-file=<path to description file>]
 ```
 
-The `--version` flag is expected to be a Sourcegraph release version _including a patch_ (e.g., `v3.42.1`).
+**Required arguments**:
 
-If the flag `--file` is supplied, then the given filepath is read as the schema description file. This is useful for airgapped instances that do not have access to the public Sourcegraph GitHub repository or the public GCS bucket where old revisions have been backfilled.
+- The `-db` flag specifies the target schema to inspect.
 
-Exactly one of `--version` and `--file` must be supplied.
+**Mutually exclusive arguments**:
+
+Exactly one of `-version` and `-file` must be supplied.
+
+- The `-version` flag is expected to be a Sourcegraph release version _including a patch_ (e.g., `v3.42.1`).
+- If the flag `-file` is supplied, then the given filepath is read as the schema description file. This is useful for airgapped instances that do not have access to the public Sourcegraph GitHub repository or the public GCS bucket where old revisions have been backfilled.
 
 ### downgrade
 
@@ -57,25 +67,30 @@ The `downgrade` command performs database schema migrations and (reverse-applied
 
 ```
 downgrade \
-    --from=<current version> \
-    --to=<target version> \
-    o[--skip-version-check=false] \
-    [--dry-run=false]
+    -from=<current version> -to=<target version> \
+    [-dry-run=false] \
+    [-skip-version-check=false] [-skip-drift-check=false] \
+    [-disable-animation=false] \
+    [-unprivileged-only=false] [-noop-privileged=false] [-privileged-hash=<hash>]
 ```
 
-The `--from` and `--to` flags both accept Sourcegraph release versions _without the patch_ (e.g., `v3.42`) and dictate the bounds of the migration.
+**Required arguments**:
 
-If the flag `--skip-version-check` is supplied, then the `migrator` will not assert that the previously running instance version matches the given `--from` value.
+- The `-from` and `-to` flags both accept Sourcegraph release versions _without the patch_ (e.g., `v3.42`) and dictate the bounds of the migration.
 
-If the flag `--dry-run` is supplied, then the downgrade plan will be printed but not executed.
+**Optional arguments**:
 
-The flags `--unprivileged-only` and `--noop-privileged` are also defined on this command to control the behavior of the `migrator` in the presence of [privileged migrations](./privileged_migrations.md).
+- If the flag `-dry-run` is supplied, then the downgrade plan will be printed but not executed.
+- If the flag `-skip-version-check` is supplied, then the `migrator` will not assert that the previously running instance version matches the given `-from` value.
+- `-skip-drift-check` TODO
+- `-disable-animation` TODO
+- The flags `-unprivileged-only` and `-noop-privileged` are also defined on this command to control the behavior of the `migrator` in the presence of [privileged migrations](./privileged_migrations.md).
 
-Note that the flags `--ignore-single-dirty-log` and `ignore-single-pending-log` available on the commands `up`, `upto`, and `downto` are essentially on-by-default for this command. Successive invocations of `downgrade` and `upgrade` will always re-attempt the last failed or attempted-but-unfinished migration.
+Note that the flags `-ignore-single-dirty-log` and `ignore-single-pending-log` available on the commands `up`, `upto`, and `downto` are essentially on-by-default for this command. Successive invocations of `downgrade` and `upgrade` will always re-attempt the last failed or attempted-but-unfinished migration.
 
 ### add-log
 
-The `add-log` command adds an entry to the migration log after a site administrator has explicitly applied the contents of a migration file.
+The `add-log` command adds an entry to the migration log after a site administrator has explicitly applied the contents of a migration file. This command may be performed by a site-administrator as part of [repairing a dirty database](./dirty_database.md#3-add-a-migration-log-entry).
 
 ```
 add-log \
@@ -84,11 +99,14 @@ add-log \
     [-up=true]
 ```
 
-The `-db` flag specifies the target schema to modify.
+**Required arguments**:
 
-The `-version` flag specifies the migration version. The `-up` flag specifies the migration direction.
+- The `-db` flag specifies the target schema to modify.
+- The `-version` flag specifies the migration version. 
 
-This command may be performed by a site-administrator as part of [repairing a dirty database](./dirty_database.md#3-add-a-migration-log-entry).
+**Optional arguments**:
+
+- The `-up` flag specifies the migration direction.
 
 ### validate
 
@@ -97,12 +115,13 @@ The `validate` command validates the current state of the database (both schema 
 ```
 validate \
     [-db=all] \
-    [--skip-out-of-band-migrations=false]
+    [-skip-out-of-band-migrations=false]
 ```
 
-The `-db` flag signifies the target schema(s) to validate. Comma-separated values are accepted. Supply `all` (the default) to validate all schemas.
+**Optional arguments**:
 
-Note that if `-db=all`, the configuration flag `DISABLE_CODE_INSIGHTS` is not enabled, and the `codeinsights-db` is unavailable, the operation will fail. In this case, supply an explicit `-db` flag (e.g., `-db=frontend,codeintel`).
+- The `-db` flag signifies the target schema(s) to validate. Comma-separated values are accepted. Supply `all` (the default) to validate all schemas. Note that if `-db=all`, the configuration flag `DISABLE_CODE_INSIGHTS` is not enabled, and the `codeinsights-db` is unavailable, the operation will fail. In this case, supply an explicit `-db` flag (e.g., `-db=frontend,codeintel`).
+- `skip-out-of-band-migrations` TODO
 
 ### up
 
@@ -113,19 +132,20 @@ The `up` command (the default behavior of the `migrator` service) applies all mi
 ```
 up \
     [-db=all] \
-    [--skip-upgrade-validation=false] \
-    [--skip-oobmigration-validation=false]
+    [-skip-upgrade-validation=false] \
+    [-skip-oobmigration-validation=false]
+    [-ignore-single-dirty-log=false] [-ignore-single-pending-log=false] \
+    [-unprivileged-only=false] [-noop-privileged=false] [-privileged-hash=<hash>]
 ```
 
-The `-db` flag signifies the target schema(s) to modify. Comma-separated values are accepted. Supply `all` (the default) to migrate all schemas.
+**Optional arguments**:
 
-Note that if `-db=all`, the configuration flag `DISABLE_CODE_INSIGHTS` is not enabled, and the `codeinsights-db` is unavailable, the operation will fail. In this case, supply an explicit `-db` flag (e.g., `-db=frontend,codeintel`).
+- The `-db` flag signifies the target schema(s) to modify. Comma-separated values are accepted. Supply `all` (the default) to migrate all schemas. Note that if `-db=all`, the configuration flag `DISABLE_CODE_INSIGHTS` is not enabled, and the `codeinsights-db` is unavailable, the operation will fail. In this case, supply an explicit `-db` flag (e.g., `-db=frontend,codeintel`).
 
-If the flag `--skip-upgrade-validation` is supplied, then the current version of the schema will not be read to assert the [standard upgrade policy](../updates/index.md#standard-upgrades) is being followed. If the flag `--skip-oobmigration-validation` is supplied, then the progress of out-fo-band migrations will not be read to assert completion of newly deprecated migrations.
-
-The flags `--ignore-single-dirty-log` and `--ignore-single-pending-log` can be supplied to re-attempt to apply the **next** migration that was marked as errored or as incomplete (respectively). For usage, see the guide on [How to troubleshoot a dirty database](dirty_database.md#0-attempt-re-application).
-
-The flags `--unprivileged-only` and `--noop-privileged` are also defined on this command to control the behavior of the `migrator` in the presence of [privileged migrations](./privileged_migrations.md).
+- If the flag `-skip-upgrade-validation` is supplied, then the current version of the schema will not be read to assert the [standard upgrade policy](../updates/index.md#standard-upgrades) is being followed. 
+- If the flag `-skip-oobmigration-validation` is supplied, then the progress of out-fo-band migrations will not be read to assert completion of newly deprecated migrations.
+- The flags `-ignore-single-dirty-log` and `-ignore-single-pending-log` can be supplied to re-attempt to apply the **next** migration that was marked as errored or as incomplete (respectively). For usage, see the guide on [How to troubleshoot a dirty database](dirty_database.md#0-attempt-re-application).
+- The flags `-unprivileged-only` and `-noop-privileged` are also defined on this command to control the behavior of the `migrator` in the presence of [privileged migrations](./privileged_migrations.md).
 
 ### upto
 
@@ -134,18 +154,22 @@ The `upto` command ensures a given migration has been applied, and may apply dep
 ```
 upto \
     -db=<schema> \
-    -target=<target>,<target>,...
+    -target=<target>,<target>,... \
+    [-ignore-single-dirty-log=false] [-ignore-single-pending-log=false] \
+    [-unprivileged-only=false] [-noop-privileged=false] [-privileged-hash=<hash>]
 ```
 
-The `-db` flag signifies the target schema to modify.
+**Required arguments**:
 
-The `-target` flag signifies the migration to apply. Comma-separated values are accepted.
+- The `-db` flag signifies the target schema to modify.
+- The `-target` flag signifies the migration to apply. Comma-separated values are accepted.
 
-If the flag `--skip-upgrade-validation` is supplied, then the current version of the schema will not be read to assert the [standard upgrade policy](../updates/index.md#standard-upgrades) is being followed. If the flag `--skip-oobmigration-validation` is supplied, then the progress of out-fo-band migrationsw ill not be read to assert completion of newly deprecated migrations.
+**Optional arguments**:
 
-The flags `--ignore-single-dirty-log` and `--ignore-single-pending-log` can be supplied to re-attempt to apply the **next** migration that was marked as errored or as incomplete (respectively). For usage, see the guide on [How to troubleshoot a dirty database](dirty_database.md#0-attempt-re-application).
-
-The flags `--unprivileged-only` and `--noop-privileged` are also defined on this command to control the behavior of the `migrator` in the presence of [privileged migrations](./privileged_migrations.md).
+- If the flag `-skip-upgrade-validation` is supplied, then the current version of the schema will not be read to assert the [standard upgrade policy](../updates/index.md#standard-upgrades) is being followed. 
+- If the flag `-skip-oobmigration-validation` is supplied, then the progress of out-fo-band migrationsw ill not be read to assert completion of newly deprecated migrations.
+- The flags `-ignore-single-dirty-log` and `-ignore-single-pending-log` can be supplied to re-attempt to apply the **next** migration that was marked as errored or as incomplete (respectively). For usage, see the guide on [How to troubleshoot a dirty database](dirty_database.md#0-attempt-re-application).
+- The flags `-unprivileged-only` and `-noop-privileged` are also defined on this command to control the behavior of the `migrator` in the presence of [privileged migrations](./privileged_migrations.md).
 
 ### downto
 
@@ -154,32 +178,63 @@ The `downto` command revert any applied migrations that are children of the give
 ```
 downto \
     -db=<schema> \
-    -target=<target>,<target>,...
+    -target=<target>,<target>,... \
+    [-ignore-single-dirty-log=false] [-ignore-single-pending-log=false] \
+    [-unprivileged-only=false] [-noop-privileged=false] [-privileged-hash=<hash>]
 ```
+**Required arguments**:
 
-The `-db` flag signifies the target schema to modify.
+- The `-db` flag signifies the target schema to modify.
+- The `-target` flag signifies a set of targets whose proper ancestors should be reverted. Comma-separated values are accepted.
 
-The `-target` flag signifies a set of targets whose proper ancestors should be reverted. Comma-separated values are accepted.
+**Optional arguments**:
 
-The flags `--ignore-single-dirty-log` and `--ignore-single-pending-log` can be supplied to re-attempt to apply the **next** migration that was marked as errored or as incomplete (respectively). For usage, see the guide on [How to troubleshoot a dirty database](dirty_database.md#0-attempt-re-application).
-
-The flags `--unprivileged-only` and `--noop-privileged` are also defined on this command to control the behavior of the `migrator` in the presence of [privileged migrations](./privileged_migrations.md).
+- The flags `-ignore-single-dirty-log` and `-ignore-single-pending-log` can be supplied to re-attempt to apply the **next** migration that was marked as errored or as incomplete (respectively). For usage, see the guide on [How to troubleshoot a dirty database](dirty_database.md#0-attempt-re-application).
+- The flags `-unprivileged-only` and `-noop-privileged` are also defined on this command to control the behavior of the `migrator` in the presence of [privileged migrations](./privileged_migrations.md).
 
 ### run-out-of-band-migrations
 
-The `run-out-of-band-migrations` command runs out-of-band migrations within the `migrator`.
+The `run-out-of-band-migrations` command runs out-of-band migrations within the `migrator`. This command may be performed by a site-administrator as part of [repairing an unfinished migration](./unfinished_migration.md).
 
 ```
 run-out-of-band-migrations \
-    [-id <id> [, -id <id> ...]] \
-    [--apply-reverse=false]
+    [-id <id>]+ \
+    [-apply-reverse=false] \
+    [-disable-animation=false]
 ```
 
-If no `-id` is supplied, then all registered out-of-band migrations will be invoked.
+**Required arguments**:
 
-If the flag `--apply-reverse` is supplied, then the invoked migrations will be migrated in the down direction.
+- If no `-id` is supplied, then all registered out-of-band migrations will be invoked.
+- If the flag `-apply-reverse` is supplied, then the invoked migrations will be migrated in the down direction.
 
-This command may be performed by a site-administrator as part of [repairing an unfinished migration](./unfinished_migration.md).
+**Optional arguments**:
+
+- `-disable-animation` TODO
+
+### describe
+
+The `describe` command outputs a dump of your database schema.
+
+```
+describe \
+    -db=<schema> \
+    -format=<json|psql> \
+    [-out=stdout] \
+    [-force=false] \
+    [-no-color=false]
+```
+
+**Required arguments**:
+
+- `-db` TODO
+- `-format` TODO
+
+**Optional arguments**:
+
+- `-out` TODO
+- `-force` TODO
+- `-no-color` TODO
 
 ## Environments
 
