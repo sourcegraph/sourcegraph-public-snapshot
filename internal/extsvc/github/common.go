@@ -1542,7 +1542,7 @@ func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auther a
 	if autherWithRefresh != nil {
 		resp, err = oauthutil.DoRequest(ctx, httpClient, req, autherWithRefresh)
 		if err != nil {
-			return newHttpResponseState(resp.StatusCode, resp.Header), errors.Wrap(err, "do request with retry and refresh")
+			return nil, errors.Wrap(err, "do request with retry and refresh")
 		}
 	} else {
 		resp, err = httpClient.Do(req.WithContext(ctx))

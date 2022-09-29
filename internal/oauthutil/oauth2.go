@@ -85,8 +85,6 @@ func DoRequest(ctx context.Context, doer httpcli.Doer, req *http.Request, auther
 			if err != nil {
 				return resp, errors.Wrap(err, "refresh token")
 			}
-
-			// auther = auther.WithToken(newToken)
 			continue
 		}
 		return resp, nil
