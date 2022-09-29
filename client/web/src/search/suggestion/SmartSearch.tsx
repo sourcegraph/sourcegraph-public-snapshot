@@ -95,7 +95,7 @@ export const SmartSearch: React.FunctionComponent<React.PropsWithChildren<SmartS
                             <Icon aria-hidden={true} svgPath={smartSearchIconSvgPath} className={styles.smartIcon} />
                             <span>
                                 <H2 className={styles.title}>{content.title}</H2>
-                                <span className="text-muted">
+                                <span className="text-muted text-nowrap">
                                     {' '}
                                     Don't want these?{' '}
                                     <Button
@@ -109,11 +109,19 @@ export const SmartSearch: React.FunctionComponent<React.PropsWithChildren<SmartS
                                 </span>
                             </span>
                         </span>
-                        {isCollapsed ? (
-                            <Icon aria-label="Expand" svgPath={mdiChevronDown} />
-                        ) : (
-                            <Icon aria-label="Collapse" svgPath={mdiChevronUp} />
-                        )}
+                        <span className="d-flex align-items-center flex-shrink-0">
+                            {isCollapsed ? (
+                                <>
+                                    <span className="text-muted mr-2 flex-shrink-0">Show queries</span>
+                                    <Icon aria-label="Expand" svgPath={mdiChevronDown} />
+                                </>
+                            ) : (
+                                <>
+                                    <span className="text-muted mr-2 flex-shrink-0">Hide queries</span>
+                                    <Icon aria-label="Collapse" svgPath={mdiChevronUp} />
+                                </>
+                            )}
+                        </span>
                     </div>
                 </CollapseHeader>
                 <CollapsePanel>
