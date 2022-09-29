@@ -56,8 +56,8 @@ func (s *store) SetInferenceScript(ctx context.Context, script string) (err erro
 
 const setInferenceScriptQuery = `
 -- source: internal/codeintel/stores/dbstore/configuration.go:GetInferenceScript
-UPDATE codeintel_inference_scripts
-SET script = %s
+INSERT INTO codeintel_inference_scripts(script)
+VALUES(%s)
 `
 
 func (s *store) GetInferenceScript(ctx context.Context) (script string, err error) {
@@ -71,4 +71,6 @@ func (s *store) GetInferenceScript(ctx context.Context) (script string, err erro
 const getInferenceScriptQuery = `
 -- source: internal/codeintel/stores/dbstore/configuration.go:GetInferenceScript
 SELECT script FROM codeintel_inference_scripts
+ORDER BY timestamp DESC
+LIMIT 1
 `
