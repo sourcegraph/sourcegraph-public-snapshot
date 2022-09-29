@@ -308,58 +308,6 @@ kubectl delete deployment lsif-server-migrator
 kubectl delete pvc lsif-server
 ```
 
-## 3.11
-
-In 3.11 we removed the management console. If you make use of `CRITICAL_CONFIG_FILE` or `SITE_CONFIG_FILE`, please refer to the [migration notes for Sourcegraph 3.11+](https://docs.sourcegraph.com/admin/migration/3_11).
-
-## 3.10
-
-In 3.9 we migrated `indexed-search` to a StatefulSet. However, we didn't migrate the `indexed-search` service to a headless service. You can't mutate a service, so you will need to replace the service before running `kubectl-apply-all.sh`:
-
-``` bash
-# Replace since we can't mutate services
-kubectl replace --force -f base/indexed-search/indexed-search.Service.yaml
-
-# Now apply all so frontend knows how to speak to the new service address
-# for indexed-search
-./kubectl-apply-all.sh
-```
-
-## 3.9
-
-In 3.9 `indexed-search` is migrated from a Kubernetes [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) to a [StatefulSet](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/). By default Kubernetes will assign a new volume to `indexed-search`, leading to it being unavailable while it reindexes. To avoid that we need to update the [PersistentVolume](https://kubernetes.io/docs/concepts/storage/persistent-volumes/)'s claim to the new indexed-search pod (from `indexed-search` to `data-indexed-search-0`. This can be achieved by running the commands in the script below before upgrading. Please read the script closely to understand what it does before following it.
-
-``` bash
-# Set the reclaim policy to retain so when we delete the volume claim the volume is not deleted.
-kubectl patch pv -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}' $(kubectl get pv -o json | jq -r '.items[] | select(.spec.claimRef.name == "indexed-search").metadata.name')
-
-# Stop indexed search so we can migrate it. This means indexed search will be down!
-kubectl scale deploy/indexed-search --replicas=0
-
-# Remove the existing claim on the volume
-kubectl delete pvc indexed-search
-
-# Move the claim to data-indexed-search-0, which is the name created by stateful set.
-kubectl patch pv -p '{"spec":{"claimRef":{"name":"data-indexed-search-0","uuid":null}}}' $(kubectl get pv -o json | jq -r '.items[] | select(.spec.claimRef.name == "indexed-search").metadata.name')
-
-# Create the stateful set
-kubectl apply -f base/indexed-search/indexed-search.StatefulSet.yaml
-```
-
-## 3.8
-
-If you're deploying Sourcegraph into a non-default namespace, refer to ["Use non-default namespace" in docs/configure.md](../deploy/kubernetes/configure.md#use-non-default-namespace) for further configuration instructions.
-
-## 3.7.2
-
-Before upgrading or downgrading 3.7, please consult the [v3.7.2 migration guide](https://docs.sourcegraph.com/admin/migration/3_7) to ensure you have enough free disk space.
-
-## 3.0
-
-🚨 If you have not migrated off of helm yet, please refer to [helm.migrate.md](https://github.com/sourcegraph/deploy-sourcegraph/blob/v3.15.1/docs/helm.migrate.md) before reading the following notes for migrating to Sourcegraph 3.0.
-
-🚨 Please upgrade your Sourcegraph instance to 2.13.x before reading the following notes for migrating to Sourcegraph 3.0.
-
 ### Configuration
 
 In Sourcegraph 3.0 all site configuration has been moved out of the `config-file.ConfigMap.yaml` and into the PostgreSQL database. We have an automatic migration if you use version 3.2 or before. Please do not upgrade directly from 2.x to 3.3 or higher.
@@ -387,7 +335,3 @@ If you previously configured `TLS_KEY` and `TLS_CERT` environment variables, you
 ### Postgres 11.1
 
 Sourcegraph 3.0 ships with Postgres 11.1. The upgrade procedure is mostly automatic. Please read [this page](https://docs.sourcegraph.com/admin/postgres) for detailed information.
-
-## 2.12
-
-Beginning in version 2.12.0, Sourcegraph's Kubernetes deployment [requires an Enterprise license key](https://about.sourcegraph.com/pricing). Follow the steps in [docs/configure.md](../deploy/kubernetes/configure.md#add-a-license-key).

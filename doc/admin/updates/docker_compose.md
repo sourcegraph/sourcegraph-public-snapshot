@@ -286,28 +286,3 @@ Please upgrade to the [`v3.14.4` tag of deploy-sourcegraph-docker](https://githu
 No manual migration is required.
 
 Please upgrade to the [`v3.14.2` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.14.2/docker-compose) by following the [standard upgrade procedure](../deploy/docker-compose/upgrade.md).
-
-## v3.13 -> 3.14
-
-No manual migration is required.
-
-Please be sure to upgrade to the [`v3.14.0-1` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.14.0-1/docker-compose) by following the [standard upgrade procedure](../deploy/docker-compose/upgrade.md).
-
-If you have upgrade to `v3.14.0` already (not the `v3.14.0-1` version) and are experiencing restarts of lsif-server, please run the following on the host machine to correct it:
-
-```sh
-docker run --rm -it -v /var/lib/docker:/docker alpine:latest sh -c 'chown -R 100:101 /docker/volumes/docker-compose_lsif-server'
-docker restart lsif-server
-```
-
-## v3.12 -> v3.13
-
-A manual migration is required. Please follow the [standard upgrade procedure](../deploy/docker-compose/upgrade.md) to take down the current deployment, perform the manual migration, and then upgrade using the [`v3.13.2` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.13.2/docker-compose).
-
-### Manual migration step: adjust file permissions
-
-Please adjust the redis-store and redis-cache volume permissions by running the following on the host machine:
-
-```
-docker run --rm -it -v /var/lib/docker:/docker alpine:latest sh -c 'chown -R 999:1000 /docker/volumes/docker-compose_redis-store /docker/volumes/docker-compose_redis-cache'
-```
