@@ -6,7 +6,7 @@ A new version of Sourcegraph is released every month (with patch releases in bet
 
 ### Standard upgrades
 
-A **standard upgrade** moves an instance from one version to an adjacent minor version, for example the upgrade `v3.41 -> v3.42`. Note that patch releases do not have to be adopted when moving between minor versions. For example, upgrading from `v3.41.0 -> v3.41.1 -> v.3.42.0` has an unnecessary step.
+A **standard upgrade** moves an instance from one version to an adjacent minor version, for example the upgrade `v3.41 -> v3.42`. Note that patch releases do not have to be adopted when moving between minor versions. For example, upgrading from `v3.41.0 -> v3.41.1 -> v3.42.0` has an unnecessary step.
 
 > NOTE: Due to its compatibility with previous versions, we support the upgrade `v3.43 -> v4.0.1` as a one-minor-version "standard" upgrade.
 
