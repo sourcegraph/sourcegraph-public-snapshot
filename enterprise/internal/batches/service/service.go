@@ -1125,6 +1125,11 @@ func (s *Service) CheckNamespaceAccess(ctx context.Context, namespaceUserID, nam
 	return s.checkNamespaceAccessWithDB(ctx, s.store.DatabaseDB(), namespaceUserID, namespaceOrgID)
 }
 
+// CanAdministerInNamespace checks whether the current user can administer a
+// batch change in the given namespace. This essentially wraps
+// CheckNamespaceAccess and returns false, nil if a valid user is logged in but
+// they simply don't have access, whereas CheckNamespaceAccess will return an
+// error in that case.
 func (s *Service) CanAdministerInNamespace(ctx context.Context, namespaceUserID, namespaceOrgID int32) (bool, error) {
 	err := s.CheckNamespaceAccess(ctx, namespaceUserID, namespaceOrgID)
 	if err != nil && (err == backend.ErrNotAnOrgMember || errcode.IsUnauthorized(err)) {
