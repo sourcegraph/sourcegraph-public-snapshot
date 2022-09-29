@@ -195,8 +195,8 @@ func addWebApp(pipeline *bk.Pipeline) {
 		bk.Env("CHECK_BUNDLESIZE", "1"),
 		// To ensure the Bundlesize output can be diffed to the baseline on main
 		bk.Env("WEBPACK_USE_NAMED_CHUNKS", "true"),
-		// Todo: explain
-		bk.Env("EXPORT_STATS", "true"))
+		// Emit a stats.json file for bundle size diffs
+		bk.Env("WEBPACK_EXPORT_STATS", "true"))
 
 	// Webapp tests
 	pipeline.AddStep(":jest::globe_with_meridians: Test (client/web)",
