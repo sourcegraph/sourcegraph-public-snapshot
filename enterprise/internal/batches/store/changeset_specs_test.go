@@ -1516,11 +1516,8 @@ func testStoreChangesetSpecsPublishedValues(t *testing.T, ctx context.Context, s
 	esStore := database.ExternalServicesWith(logger, s)
 
 	repo := bt.TestRepo(t, esStore, extsvc.KindGitHub)
-	deletedRepo := bt.TestRepo(t, esStore, extsvc.KindGitHub).With(typestest.Opt.RepoDeletedAt(clock.Now()))
 
 	err := repoStore.Create(ctx, repo)
-	require.NoError(t, err)
-	err = repoStore.Delete(ctx, deletedRepo.ID)
 	require.NoError(t, err)
 
 	t.Run("NULL", func(t *testing.T) {
@@ -1613,5 +1610,18 @@ func testStoreChangesetSpecsPublishedValues(t *testing.T, ctx context.Context, s
 		actual, err := s.GetChangesetSpec(ctx, GetChangesetSpecOpts{ID: c.ID})
 		require.NoError(t, err)
 		assert.True(t, actual.Published.Draft())
+	})
+
+	t.Run("Invalid", func(t *testing.T) {
+		c := &btypes.ChangesetSpec{
+			UserID:      int32(1234),
+			BatchSpecID: int64(910),
+			BaseRepoID:  repo.ID,
+			Published:   batcheslib.PublishedValue{Val: "foo-bar"},
+		}
+
+		err := s.CreateChangesetSpec(ctx, c)
+		assert.Error(t, err)
+		assert.Equal(t, "json: error calling MarshalJSON for type batches.PublishedValue: invalid PublishedValue: foo-bar (string)", err.Error())
 	})
 }
