@@ -56,7 +56,9 @@ interface UpdateMirrorRepositoryActionContainerProps {
     history: H.History
 }
 
-const UpdateMirrorRepositoryActionContainer: React.FunctionComponent<UpdateMirrorRepositoryActionContainerProps> = props => {
+const UpdateMirrorRepositoryActionContainer: React.FunctionComponent<
+    UpdateMirrorRepositoryActionContainerProps
+> = props => {
     const [updateRepo] = useMutation<UpdateMirrorRepositoryResult, UpdateMirrorRepositoryVariables>(
         UPDATE_MIRROR_REPOSITORY,
         { variables: { repository: props.repo.id } }
@@ -140,7 +142,9 @@ interface CheckMirrorRepositoryConnectionActionContainerProps {
     history: H.History
 }
 
-const CheckMirrorRepositoryConnectionActionContainer: React.FunctionComponent<CheckMirrorRepositoryConnectionActionContainerProps> = props => {
+const CheckMirrorRepositoryConnectionActionContainer: React.FunctionComponent<
+    CheckMirrorRepositoryConnectionActionContainerProps
+> = props => {
     const [checkConnection, { data, loading, error }] = useMutation<
         CheckMirrorRepositoryConnectionResult,
         CheckMirrorRepositoryConnectionVariables
@@ -154,20 +158,22 @@ const CheckMirrorRepositoryConnectionActionContainer: React.FunctionComponent<Ch
         },
     })
 
-    const onClick = useCallback(async () => {
-        await checkConnection()
-    }, [checkConnection])
-
     useEffect(() => {
-        onClick()
-    }, [onClick])
+        checkConnection().catch(() => {})
+    }, [checkConnection])
 
     return (
         <BaseActionContainer
             title="Check connection to remote repository"
             description={<span>Diagnose problems cloning or updating from the remote repository.</span>}
             action={
-                <Button disabled={loading} onClick={onClick} variant="primary">
+                <Button
+                    disabled={loading}
+                    onClick={() => {
+                        checkConnection().catch(() => {})
+                    }}
+                    variant="primary"
+                >
                     Check connection
                 </Button>
             }
