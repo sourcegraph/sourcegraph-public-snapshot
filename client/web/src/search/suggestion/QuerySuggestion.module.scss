@@ -33,10 +33,11 @@
 }
 
 .smart-icon {
-    align-self: baseline;
     flex-shrink: 0;
     font-size: 1.125rem;
     margin-right: 0.25rem;
+    margin-top: -0.125rem;
+    align-self: flex-start;
 }
 
 .disable-button {
