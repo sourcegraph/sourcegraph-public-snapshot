@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"math/rand"
 	"net/url"
 
@@ -62,19 +61,21 @@ func (w *webhookBuildHandler) handleKindGitHub(ctx context.Context, logger log.L
 		return errcode.MakeNonRetryable(errors.Newf("handleKindGitHub: expected *schema.GitHubConnection, got %T", parsed))
 	}
 
+	// TODO: What parse an empty string here?
 	baseURL, err := url.Parse("")
 	if err != nil {
 		return errcode.MakeNonRetryable(errors.Wrap(err, "handleKindGitHub: parse baseURL failed"))
 	}
 	client := github.NewV3Client(logger, svc.URN(), baseURL, &auth.OAuthBearerToken{Token: conn.Token}, w.doer)
 
-	webhookPayload, err := client.FindSyncWebhook(ctx, job.RepoName) // TODO: Not make an API call upon every request
+	// TODO: Not make an API call upon every request: We should check the config and not attempt to create
+	// a webhook if one already exists
+	webhookPayload, err := client.FindSyncWebhook(ctx, job.RepoName)
 	if err != nil && err.Error() != "unable to find webhook" {
 		return errors.Wrap(err, "handleKindGitHub: FindSyncWebhook failed")
 	}
 
-	// found webhook from GitHub API
-	// don't build a new one
+	// found webhook from GitHub API, don't build a new one
 	if webhookPayload != nil {
 		if err := addWebhookToExtSvc(svc, conn, job.Org, webhookPayload.Config.Secret); err != nil {
 			return errors.Wrap(err, "handleKindGitHub: Webhook found but addWebhookToExtSvc failed")
@@ -89,7 +90,7 @@ func (w *webhookBuildHandler) handleKindGitHub(ctx context.Context, logger log.L
 		return errcode.MakeNonRetryable(errors.Wrap(err, "handleKindGitHub: secret generation failed"))
 	}
 
-	id, err := client.CreateSyncWebhook(ctx, job.RepoName, fmt.Sprintf("https://%s", globals.ExternalURL().Host), secret) // TODO: store the webhook
+	id, err := client.CreateSyncWebhook(ctx, job.RepoName, globals.ExternalURL().Host, secret)
 	if err != nil {
 		return errors.Wrap(err, "handleKindGitHub: CreateSyncWebhook failed")
 	}
@@ -128,6 +129,7 @@ func webhookExistsInConfig(webhooks []*schema.GitHubWebhook, org string) bool {
 	return false
 }
 
+// TODO: Add unit tests to check this
 func randomHex(n int) (string, error) {
 	r := make([]byte, n/2)
 	_, err := rand.Read(r)
