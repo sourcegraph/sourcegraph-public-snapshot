@@ -64,6 +64,11 @@ interface GetThemeRequest {
     action: 'getTheme'
 }
 
+interface IndicateSearchError {
+    action: 'indicateSearchError'
+    arguments: { errorMessage: string, timeAsISOString: string }
+}
+
 export interface SaveLastSearchRequest {
     action: 'saveLastSearch'
     arguments: Search
@@ -88,6 +93,7 @@ export type Request =
     | OpenRequest
     | GetConfigRequest
     | GetThemeRequest
+    | IndicateSearchError
     | SaveLastSearchRequest
     | LoadLastSearchRequest
     | ClearPreviewRequest
@@ -120,6 +126,18 @@ export async function getThemeAlwaysFulfill(): Promise<Theme> {
             isDarkTheme: false,
             intelliJTheme: {},
         }
+    }
+}
+
+export async function onSearchError(errorMessage: string): Promise<void> {
+    try {
+        lastPreviewUpdateCallSendDateTime = new Date()
+        await callJava({
+            action: 'indicateSearchError',
+            arguments: { errorMessage, timeAsISOString: lastPreviewUpdateCallSendDateTime.toISOString() },
+        })
+    } catch (error) {
+        console.error(`Failed to indicate search error: ${(error as Error).message}`)
     }
 }
 

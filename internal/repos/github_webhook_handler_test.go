@@ -48,9 +48,9 @@ func TestGitHubWebhookHandle(t *testing.T) {
 	}
 
 	conn := *&schema.GitHubConnection{
-		Url:      extsvc.KindGitHub,
+		Url:      "https://github.com",
 		Token:    "token",
-		Repos:    []string{},
+		Repos:    []string{"owner/name"},
 		Webhooks: []*schema.GitHubWebhook{{Org: "ghe.sgdev.org", Secret: "secret"}},
 	}
 

@@ -1,5 +1,6 @@
 // accesslog provides instrumentation to record logs of access made by a given actor to a repo at
 // the http handler level.
+// access logs may optionally (as per site configuration) be included in the audit log.
 package accesslog
 
 import (
@@ -9,9 +10,8 @@ import (
 	"github.com/sourcegraph/log"
 	"go.uber.org/atomic"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/audit"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -74,21 +74,7 @@ func (a *accessLogger) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Otherwise, log this access
-	var (
-		cli    = requestclient.FromContext(ctx)
-		act    = actor.FromContext(ctx)
-		fields []log.Field
-	)
-
-	// Log the actor and client
-	if cli != nil {
-		fields = append(fields, log.Object(
-			"actor",
-			log.String("ip", cli.IP),
-			log.String("X-Forwarded-For", cli.ForwardedFor),
-			log.Int32("actorUID", act.UID),
-		))
-	}
+	var fields []log.Field
 
 	// Now we've gone through the handler, we can get the params that the handler
 	// got from the request body.
@@ -112,7 +98,11 @@ func (a *accessLogger) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		fields = append(fields, log.String("params", "nil"))
 	}
 
-	a.logger.Info(accessEventMessage, fields...)
+	audit.Log(ctx, a.logger, audit.Record{
+		Entity: "gitserver",
+		Action: "access",
+		Fields: fields,
+	})
 }
 
 // HTTPMiddleware will extract actor information and params collected by Record that has
@@ -147,5 +137,8 @@ func shouldLog(c schema.SiteConfiguration) bool {
 	if c.Log == nil {
 		return false
 	}
-	return c.Log.GitserverAccessLogs
+	if c.Log.GitserverAccessLogs { // legacy setting
+		return true
+	}
+	return c.Log.AuditLog != nil && c.Log.AuditLog.GitserverAccess
 }

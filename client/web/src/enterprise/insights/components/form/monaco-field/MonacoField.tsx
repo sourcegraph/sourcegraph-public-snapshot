@@ -7,7 +7,6 @@ import * as Monaco from 'monaco-editor'
 import { QueryChangeSource } from '@sourcegraph/search'
 import { LazyMonacoQueryInput, DEFAULT_MONACO_OPTIONS } from '@sourcegraph/search-ui'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { ForwardReferenceComponent } from '@sourcegraph/wildcard'
 
 import { useExperimentalFeatures } from '../../../../../stores'
@@ -85,10 +84,8 @@ export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props
 
     const { enhancedThemePreference } = useTheme()
     const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
-    const [enableCoreWorkflowImprovements] = useCoreWorkflowImprovementsEnabled()
     const applySuggestionsOnEnter =
-        useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ??
-        enableCoreWorkflowImprovements
+        useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
     const monacoOptions = useMemo(() => ({ ...MONACO_OPTIONS, readOnly: disabled }), [disabled])
 
     return (

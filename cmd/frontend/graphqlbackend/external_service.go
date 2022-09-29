@@ -324,11 +324,14 @@ func (r *externalServiceSyncJobResolver) ID() graphql.ID {
 }
 
 func (r *externalServiceSyncJobResolver) State() string {
+	if r.job.Cancel && r.job.State == "processing" {
+		return "CANCELING"
+	}
 	return strings.ToUpper(r.job.State)
 }
 
 func (r *externalServiceSyncJobResolver) FailureMessage() *string {
-	if r.job.FailureMessage == "" {
+	if r.job.FailureMessage == "" || r.job.Cancel {
 		return nil
 	}
 

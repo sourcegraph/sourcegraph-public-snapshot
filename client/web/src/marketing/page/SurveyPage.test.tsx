@@ -56,7 +56,7 @@ describe('SurveyPage', () => {
             expect(otherUseCaseInput).toBeVisible()
             fireEvent.change(otherUseCaseInput, { target: { value: mockVariables.otherUseCase } })
 
-            const reasonInput = renderResult.getByLabelText('What would make Sourcegraph better?')
+            const reasonInput = renderResult.getByLabelText('How can we make Sourcegraph better?')
             expect(reasonInput).toBeVisible()
             fireEvent.change(reasonInput, { target: { value: mockVariables.better } })
 

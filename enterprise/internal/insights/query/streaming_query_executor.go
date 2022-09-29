@@ -45,9 +45,9 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 	}
 	log15.Debug("Generated repoIds", "repoids", repoIds)
 
-	frames := BuildFrames(7, interval, c.clock().Truncate(time.Hour*24))
+	frames := timeseries.BuildFrames(7, interval, c.clock().Truncate(time.Hour*24))
 	points := timeCounts{}
-	timeseries := []TimeDataPoint{}
+	timeDataPoints := []TimeDataPoint{}
 
 	for _, repository := range repositories {
 		firstCommit, err := discovery.GitFirstEverCommit(ctx, c.db, api.RepoName(repository))
@@ -105,19 +105,19 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 	}
 
 	for pointTime, pointCount := range points {
-		timeseries = append(timeseries, TimeDataPoint{
+		timeDataPoints = append(timeDataPoints, TimeDataPoint{
 			Time:  pointTime,
 			Count: pointCount,
 		})
 	}
 
-	sort.Slice(timeseries, func(i, j int) bool {
-		return timeseries[i].Time.Before(timeseries[j].Time)
+	sort.Slice(timeDataPoints, func(i, j int) bool {
+		return timeDataPoints[i].Time.Before(timeDataPoints[j].Time)
 	})
 	generated := []GeneratedTimeSeries{{
 		Label:    seriesLabel,
 		SeriesId: seriesID,
-		Points:   timeseries,
+		Points:   timeDataPoints,
 	}}
 	return generated, nil
 

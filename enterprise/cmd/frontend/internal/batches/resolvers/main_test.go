@@ -120,7 +120,7 @@ func parseJSONTime(t testing.TB, ts string) time.Time {
 }
 
 func newSchema(db database.DB, r graphqlbackend.BatchChangesResolver) (*graphql.Schema, error) {
-	return graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	return graphqlbackend.NewSchemaWithBatchChangesResolver(db, r)
 }
 
 func newGitHubExternalService(t *testing.T, store database.ExternalServiceStore) *types.ExternalService {
@@ -133,7 +133,7 @@ func newGitHubExternalService(t *testing.T, store database.ExternalServiceStore)
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "Github - Test",
 		// The authorization field is needed to enforce permissions
-		Config:    extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "authorization": {}}`),
+		Config:    extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "authorization": {}, "token": "abc", "repos": ["owner/name"]}`),
 		CreatedAt: now,
 		UpdatedAt: now,
 	}

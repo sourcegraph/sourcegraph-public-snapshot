@@ -121,7 +121,7 @@ Note that if `-db=all`, the configuration flag `DISABLE_CODE_INSIGHTS` is not en
 To run a `migrator` command, follow the guide for your Sourcegraph distribution type:
 
 - [Kubernetes](#kubernetes) 
-- [Docker-compose](#docker-compose)
+- [Docker / Docker-compose](#docker--docker-compose)
 - [Local development](#local-development)
 
 ### Kubernetes
@@ -158,6 +158,9 @@ kubectl delete -f configure/migrator/migrator.Job.yaml --ignore-not-found=true
 # Note: -1s timeout will wait "forever"
 kubectl apply -f configure/migrator/migrator.Job.yaml
 kubectl wait -f configure/migrator/migrator.Job.yaml --for=condition=complete --timeout=-1s
+
+# Optionally: check migrator logs for progress
+kubectl logs job.batch/migrator -f
 ```
 
 You should see something like the following printed to the terminal:
@@ -170,7 +173,7 @@ job.batch/migrator condition met
 
 The log output of the `migrator` should include `INFO`-level logs and successfully terminate with `migrator exited with code 0`. If you see an error message or any of the databases have been flagged as "dirty", please follow ["How to troubleshoot a dirty database"](../../../admin/how-to/dirty_database.md). A dirty database will not affect your ability to use Sourcegraph however it will need to be resolved to upgrade further. If you are unable to resolve the issues, contact support at <mailto:support@sourcegraph.com> for further assistance. Otherwise, you are now safe to upgrade Sourcegraph.
 
-### Docker compose
+### Docker / Docker compose
 
 Run the following commands on your Docker host.
 

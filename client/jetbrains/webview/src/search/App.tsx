@@ -14,6 +14,7 @@ import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import {
     aggregateStreamingSearch,
+    AggregateStreamingSearchResults,
     LATEST_VERSION,
     Progress,
     SearchMatch,
@@ -45,7 +46,9 @@ interface Props {
     onPreviewChange: (match: SearchMatch, lineOrSymbolMatchIndex?: number) => Promise<void>
     onPreviewClear: () => Promise<void>
     onOpen: (match: SearchMatch, lineOrSymbolMatchIndex?: number) => Promise<void>
+    onSearchError: (errorMessage: string) => Promise<void>
     initialSearch: Search | null
+    backendVersion: string | null
     authenticatedUser: AuthenticatedUser | null
     telemetryService: TelemetryService
 }
@@ -54,18 +57,30 @@ function fetchStreamSuggestionsWithStaticUrl(query: string): Observable<SearchMa
     return fetchStreamSuggestions(query, getInstanceURL() + '.api')
 }
 
+function fallbackToLiteralSearchIfNeeded(patternType: SearchPatternType | undefined, backendVersion: string | null): SearchPatternType | undefined {
+    if (backendVersion === null || patternType !== SearchPatternType.standard) {
+        return patternType
+    }
+
+    const [major, minor] = backendVersion.split('.').map(Number)
+    // SearchPatternType.standard is not supported by versions before 3.43.0
+    return (major < 3 || (major === 3 && minor < 43)) ? SearchPatternType.literal : SearchPatternType.standard
+}
+
 export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    isDarkTheme,
-    instanceURL,
-    isGlobbingEnabled,
-    accessToken,
-    onPreviewChange,
-    onPreviewClear,
-    onOpen,
-    initialSearch,
-    authenticatedUser,
-    telemetryService,
-}: Props) => {
+                                                                                 isDarkTheme,
+                                                                                 instanceURL,
+                                                                                 isGlobbingEnabled,
+                                                                                 accessToken,
+                                                                                 onPreviewChange,
+                                                                                 onPreviewClear,
+                                                                                 onOpen,
+                                                                                 onSearchError,
+                                                                                 initialSearch,
+                                                                                 backendVersion,
+                                                                                 authenticatedUser,
+                                                                                 telemetryService,
+                                                                             }) => {
     const authState = authenticatedUser !== null ? 'success' : 'failure'
 
     const requestGraphQL = useCallback<PlatformContext['requestGraphQL']>(
@@ -98,7 +113,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
         initialSearch ?? {
             query: '',
             caseSensitive: false,
-            patternType: SearchPatternType.standard,
+            patternType: fallbackToLiteralSearchIfNeeded(SearchPatternType.standard, backendVersion) || SearchPatternType.literal,
             selectedSearchContextSpec: 'global',
         }
     )
@@ -121,7 +136,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
         }) => {
             const query = userQueryState.query ?? ''
             const caseSensitive = options?.caseSensitive
-            const patternType = options?.patternType
+            const patternType = fallbackToLiteralSearchIfNeeded(options?.patternType, backendVersion)
             const contextSpec = options?.contextSpec
             const forceNewSearch = options?.forceNewSearch ?? false
 
@@ -158,7 +173,12 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                     decorationContextLines: 0,
                     displayLimit: 200,
                 }
-            ).subscribe(searchResults => {
+            ).subscribe((searchResults: AggregateStreamingSearchResults) => {
+                if (searchResults.state === 'error') {
+                    setProgressState('error')
+                    onSearchError(searchResults.error.message).then(() => {}).catch(() => {})
+                    return
+                }
                 setMatches(searchResults.results)
                 setProgress(searchResults.progress)
                 setProgressState(searchResults.state)
@@ -168,7 +188,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
             saveLastSearch(nextSearch)
             telemetryService.log('IDESearchSubmitted')
         },
-        [lastSearch, userQueryState.query, telemetryService, instanceURL]
+        [lastSearch, backendVersion, userQueryState.query, telemetryService, instanceURL, onSearchError]
     )
 
     const [didInitialSubmit, setDidInitialSubmit] = useState(false)

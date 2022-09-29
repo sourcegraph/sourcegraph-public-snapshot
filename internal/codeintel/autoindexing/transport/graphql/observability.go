@@ -9,18 +9,29 @@ import (
 
 type operations struct {
 	// Indexes
-	getIndexByID                  *observation.Operation
-	getIndexesByIDs               *observation.Operation
 	getRecentIndexesSummary       *observation.Operation
 	getLastIndexScanForRepository *observation.Operation
-	deleteIndexByID               *observation.Operation
+	deleteLsifIndexes             *observation.Operation
 	queueAutoIndexJobsForRepo     *observation.Operation
+	lsifIndexByID                 *observation.Operation
+	lsifIndexes                   *observation.Operation
+	lsifIndexesByRepo             *observation.Operation
+	indexConfiguration            *observation.Operation
+	updateIndexConfiguration      *observation.Operation
 
 	// Index Configuration
-	getIndexConfiguration                  *observation.Operation
-	updateIndexConfigurationByRepositoryID *observation.Operation
-	inferedIndexConfiguration              *observation.Operation
-	inferedIndexConfigurationHints         *observation.Operation
+	inferedIndexConfiguration      *observation.Operation
+	inferedIndexConfigurationHints *observation.Operation
+
+	// Language Support
+	requestLanguageSupport    *observation.Operation
+	requestedLanguageSupport  *observation.Operation
+	setRequestLanguageSupport *observation.Operation
+
+	// Misc
+	repositorySummary    *observation.Operation
+	getSupportedByCtags  *observation.Operation
+	gitBlobCodeIntelInfo *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -41,17 +52,28 @@ func newOperations(observationContext *observation.Context) *operations {
 
 	return &operations{
 		// Indexes
-		getIndexByID:                  op("GetIndexByID"),
-		getIndexesByIDs:               op("GetIndexesByIDs"),
 		getRecentIndexesSummary:       op("GetRecentIndexesSummary"),
 		getLastIndexScanForRepository: op("GetLastIndexScanForRepository"),
-		deleteIndexByID:               op("DeleteIndexByID"),
 		queueAutoIndexJobsForRepo:     op("QueueAutoIndexJobsForRepo"),
+		deleteLsifIndexes:             op("DeleteLsifIndexes"),
+		lsifIndexByID:                 op("LsifIndexByID"),
+		lsifIndexes:                   op("LsifIndexes"),
+		lsifIndexesByRepo:             op("LsifIndexesByRepo"),
+		indexConfiguration:            op("IndexConfiguration"),
+		updateIndexConfiguration:      op("UpdateIndexConfiguration"),
 
 		// Index Configuration
-		getIndexConfiguration:                  op("IndexConfiguration"),
-		updateIndexConfigurationByRepositoryID: op("UpdateIndexConfigurationByRepositoryID"),
-		inferedIndexConfiguration:              op("InferedIndexConfiguration"),
-		inferedIndexConfigurationHints:         op("InferedIndexConfigurationHints"),
+		inferedIndexConfiguration:      op("InferedIndexConfiguration"),
+		inferedIndexConfigurationHints: op("InferedIndexConfigurationHints"),
+
+		// Language Support
+		requestLanguageSupport:    op("RequestLanguageSupport"),
+		requestedLanguageSupport:  op("RequestedLanguageSupport"),
+		setRequestLanguageSupport: op("SetRequestLanguageSupport"),
+
+		// Misc
+		repositorySummary:    op("RepositorySummary"),
+		getSupportedByCtags:  op("GetSupportedByCtags"),
+		gitBlobCodeIntelInfo: op("GitBlobCodeIntelInfo"),
 	}
 }

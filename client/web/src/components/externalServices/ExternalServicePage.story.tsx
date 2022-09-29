@@ -1,4 +1,5 @@
 import { DecoratorFn, Story, Meta } from '@storybook/react'
+import { subMinutes } from 'date-fns'
 import { of } from 'rxjs'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
@@ -6,7 +7,7 @@ import { getDocumentNode } from '@sourcegraph/http-client'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
-import { ExternalServiceFields, ExternalServiceKind } from '../../graphql-operations'
+import { ExternalServiceFields, ExternalServiceKind, ExternalServiceSyncJobState } from '../../graphql-operations'
 import { WebStory } from '../WebStory'
 
 import { FETCH_EXTERNAL_SERVICE, queryExternalServiceSyncJobs as _queryExternalServiceSyncJobs } from './backend'
@@ -51,9 +52,42 @@ const externalService = {
 
 const queryExternalServiceSyncJobs: typeof _queryExternalServiceSyncJobs = () =>
     of({
-        totalCount: 0,
+        totalCount: 4,
         pageInfo: { endCursor: null, hasNextPage: false },
-        nodes: [],
+        nodes: [
+            {
+                __typename: 'ExternalServiceSyncJob',
+                failureMessage: null,
+                startedAt: subMinutes(new Date(), 25).toISOString(),
+                finishedAt: null,
+                id: 'SYNCJOB1',
+                state: ExternalServiceSyncJobState.CANCELING,
+            },
+            {
+                __typename: 'ExternalServiceSyncJob',
+                failureMessage: null,
+                startedAt: subMinutes(new Date(), 25).toISOString(),
+                finishedAt: null,
+                id: 'SYNCJOB1',
+                state: ExternalServiceSyncJobState.PROCESSING,
+            },
+            {
+                __typename: 'ExternalServiceSyncJob',
+                failureMessage: 'Very bad error syncing with the code host.',
+                startedAt: subMinutes(new Date(), 25).toISOString(),
+                finishedAt: subMinutes(new Date(), 25).toISOString(),
+                id: 'SYNCJOB1',
+                state: ExternalServiceSyncJobState.FAILED,
+            },
+            {
+                __typename: 'ExternalServiceSyncJob',
+                failureMessage: null,
+                startedAt: subMinutes(new Date(), 25).toISOString(),
+                finishedAt: subMinutes(new Date(), 25).toISOString(),
+                id: 'SYNCJOB1',
+                state: ExternalServiceSyncJobState.COMPLETED,
+            },
+        ],
     })
 
 function newFetchMock(node: { __typename: 'ExternalService' } & ExternalServiceFields): WildcardMockLink {

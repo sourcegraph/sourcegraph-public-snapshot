@@ -597,6 +597,7 @@ type ExternalServiceSyncJob struct {
 	NumResets         int
 	ExternalServiceID int64
 	NumFailures       int
+	Cancel            bool
 }
 
 // URN returns a unique resource identifier of this external service,

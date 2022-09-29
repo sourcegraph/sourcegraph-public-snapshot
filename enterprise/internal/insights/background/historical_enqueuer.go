@@ -8,23 +8,18 @@ import (
 	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/segmentio/ksuid"
-
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
-	"golang.org/x/time/rate"
-
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/segmentio/ksuid"
 	sglog "github.com/sourcegraph/log"
-
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
@@ -42,6 +37,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
@@ -117,11 +113,8 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 		enq.analyzer.limiter.SetLimit(val)
 	})
 
-	// We use a periodic goroutine here just for metrics tracking. We specify 5s here so it runs as
-	// fast as possible without wasting CPU cycles, but in reality the handler itself can take
-	// minutes to hours to complete as it intentionally enqueues work slowly to avoid putting
-	// pressure on the system.
-	return goroutine.NewPeriodicGoroutineWithMetrics(ctx, 15*time.Minute, goroutine.NewHandlerWithErrorMessage(
+	// We specify 30s here, so insights are queued regularly for processing. The queue itself is rate limited.
+	return goroutine.NewPeriodicGoroutineWithMetrics(ctx, 30*time.Second, goroutine.NewHandlerWithErrorMessage(
 		"insights_historical_enqueuer",
 		enq.Handler,
 	), operation)
@@ -382,7 +375,7 @@ func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 
 	// Discover all global insights on the instance.
 	log15.Debug("Fetching data series for historical")
-	foundInsights, err := h.dataSeriesStore.GetDataSeries(ctx, store.GetDataSeriesArgs{BackfillIncomplete: true, GlobalOnly: true})
+	foundInsights, err := h.dataSeriesStore.GetDataSeries(ctx, store.GetDataSeriesArgs{BackfillNotQueued: true, GlobalOnly: true})
 	if err != nil {
 		return errors.Wrap(err, "Discover")
 	}
@@ -548,7 +541,7 @@ func (a *backfillAnalyzer) buildForRepo(ctx context.Context, definitions []itype
 
 	// For every series that we want to potentially gather historical data for, try.
 	for _, series := range definitions {
-		frames := query.BuildFrames(12, timeseries.TimeInterval{
+		frames := timeseries.BuildFrames(12, timeseries.TimeInterval{
 			Unit:  itypes.IntervalUnit(series.SampleIntervalUnit),
 			Value: series.SampleIntervalValue,
 		}, series.CreatedAt.Truncate(time.Hour*24))

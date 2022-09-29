@@ -16,43 +16,46 @@ import (
 // FileContentFunc is a closure that returns the contents of a file and is used by the VirtualFileResolver.
 type FileContentFunc func(ctx context.Context) (string, error)
 
-func NewVirtualFileResolver(stat fs.FileInfo, fileContent FileContentFunc) *virtualFileResolver {
-	return &virtualFileResolver{
+func NewVirtualFileResolver(stat fs.FileInfo, fileContent FileContentFunc) *VirtualFileResolver {
+	return &VirtualFileResolver{
 		stat:        stat,
 		fileContent: fileContent,
 	}
 }
 
-type virtualFileResolver struct {
+type VirtualFileResolver struct {
 	fileContent FileContentFunc
 	// stat is this tree entry's file info. Its Name method must return the full path relative to
 	// the root, not the basename.
 	stat fs.FileInfo
 }
 
-func (r *virtualFileResolver) Path() string      { return r.stat.Name() }
-func (r *virtualFileResolver) Name() string      { return path.Base(r.stat.Name()) }
-func (r *virtualFileResolver) IsDirectory() bool { return r.stat.Mode().IsDir() }
+func (r *VirtualFileResolver) Path() string      { return r.stat.Name() }
+func (r *VirtualFileResolver) Name() string      { return path.Base(r.stat.Name()) }
+func (r *VirtualFileResolver) IsDirectory() bool { return r.stat.Mode().IsDir() }
 
-func (r *virtualFileResolver) ToGitBlob() (*GitTreeEntryResolver, bool)    { return nil, false }
-func (r *virtualFileResolver) ToVirtualFile() (*virtualFileResolver, bool) { return r, true }
+func (r *VirtualFileResolver) ToGitBlob() (*GitTreeEntryResolver, bool)    { return nil, false }
+func (r *VirtualFileResolver) ToVirtualFile() (*VirtualFileResolver, bool) { return r, true }
+func (r *VirtualFileResolver) ToBatchSpecWorkspaceFile() (BatchWorkspaceFileResolver, bool) {
+	return nil, false
+}
 
-func (r *virtualFileResolver) URL(ctx context.Context) (string, error) {
+func (r *VirtualFileResolver) URL(ctx context.Context) (string, error) {
 	// Todo: allow viewing arbitrary files in the webapp.
 	return "", nil
 }
 
-func (r *virtualFileResolver) CanonicalURL() string {
+func (r *VirtualFileResolver) CanonicalURL() string {
 	// Todo: allow viewing arbitrary files in the webapp.
 	return ""
 }
 
-func (r *virtualFileResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
+func (r *VirtualFileResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
 	// Todo: allow viewing arbitrary files in the webapp.
 	return []*externallink.Resolver{}, nil
 }
 
-func (r *virtualFileResolver) ByteSize(ctx context.Context) (int32, error) {
+func (r *VirtualFileResolver) ByteSize(ctx context.Context) (int32, error) {
 	content, err := r.Content(ctx)
 	if err != nil {
 		return 0, err
@@ -60,11 +63,11 @@ func (r *virtualFileResolver) ByteSize(ctx context.Context) (int32, error) {
 	return int32(len([]byte(content))), nil
 }
 
-func (r *virtualFileResolver) Content(ctx context.Context) (string, error) {
+func (r *VirtualFileResolver) Content(ctx context.Context) (string, error) {
 	return r.fileContent(ctx)
 }
 
-func (r *virtualFileResolver) RichHTML(ctx context.Context) (string, error) {
+func (r *VirtualFileResolver) RichHTML(ctx context.Context) (string, error) {
 	content, err := r.Content(ctx)
 	if err != nil {
 		return "", err
@@ -72,7 +75,7 @@ func (r *virtualFileResolver) RichHTML(ctx context.Context) (string, error) {
 	return richHTML(content, path.Ext(r.Path()))
 }
 
-func (r *virtualFileResolver) Binary(ctx context.Context) (bool, error) {
+func (r *VirtualFileResolver) Binary(ctx context.Context) (bool, error) {
 	content, err := r.Content(ctx)
 	if err != nil {
 		return false, err
@@ -85,7 +88,7 @@ var highlightHistogram = promauto.NewHistogram(prometheus.HistogramOpts{
 	Help: "This measures the time for highlighting requests",
 })
 
-func (r *virtualFileResolver) Highlight(ctx context.Context, args *HighlightArgs) (*highlightedFileResolver, error) {
+func (r *VirtualFileResolver) Highlight(ctx context.Context, args *HighlightArgs) (*HighlightedFileResolver, error) {
 	content, err := r.Content(ctx)
 	if err != nil {
 		return nil, err

@@ -67,12 +67,13 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 				Url:      "https://github.com",
 				Repos:    []string{"sourcegraph/sourcegraph"},
 				Webhooks: []*schema.GitHubWebhook{{Org: "sourcegraph", Secret: secret}},
+				Token:    "abc",
 			})),
 		}
 
 		err := esStore.Upsert(ctx, extSvc)
 		if err != nil {
-			t.Fatal(t)
+			t.Fatal(err)
 		}
 
 		githubSrc, err := repos.NewGithubSource(ctx, logtest.Scoped(t), db.ExternalServices(), extSvc, cf)

@@ -347,7 +347,8 @@ type GetDataSeriesArgs struct {
 	NextRecordingBefore time.Time
 	NextSnapshotBefore  time.Time
 	IncludeDeleted      bool
-	BackfillIncomplete  bool
+	BackfillNotQueued   bool
+	BackfillNotComplete bool
 	SeriesID            string
 	GlobalOnly          bool
 	ExcludeJustInTime   bool
@@ -368,8 +369,11 @@ func (s *InsightStore) GetDataSeries(ctx context.Context, args GetDataSeriesArgs
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("%s", "TRUE"))
 	}
-	if args.BackfillIncomplete {
+	if args.BackfillNotQueued {
 		preds = append(preds, sqlf.Sprintf("backfill_queued_at IS NULL"))
+	}
+	if args.BackfillNotComplete {
+		preds = append(preds, sqlf.Sprintf("backfill_completed_at IS NULL"))
 	}
 	if len(args.SeriesID) > 0 {
 		preds = append(preds, sqlf.Sprintf("series_id = %s", args.SeriesID))
@@ -947,6 +951,10 @@ func (s *InsightStore) UnfreezeGlobalInsights(ctx context.Context, count int) er
 	return s.Exec(ctx, sqlf.Sprintf(unfreezeGlobalInsightsSql, count))
 }
 
+func (s *InsightStore) SetSeriesBackfillComplete(ctx context.Context, seriesId string, timestamp time.Time) error {
+	return s.Exec(ctx, sqlf.Sprintf(setSeriesBackfillComplete, timestamp, seriesId))
+}
+
 const setSeriesStatusSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:SetSeriesStatus
 UPDATE insight_series
@@ -1169,4 +1177,9 @@ WHERE id IN (
 const getUnfrozenInsightUniqueIdsSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:UnfreezeGlobalInsights
 SELECT unique_id FROM insight_view WHERE is_frozen = FALSE;
+`
+
+const setSeriesBackfillComplete = `
+-- source: enterprise/internal/insights/store/insight_store.go:SetSeriesBackfillComplete
+update insight_series set backfill_completed_at = %s where series_id = %s;
 `

@@ -58,6 +58,11 @@ func Upgrade(
 		Usage:    "Print the upgrade plan but do not execute it.",
 		Required: false,
 	}
+	disableAnimation := &cli.BoolFlag{
+		Name:     "disable-animation",
+		Usage:    "If set, progress bar animations are not displayed.",
+		Required: false,
+	}
 
 	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
 		from, ok := oobmigration.NewVersionFromString(fromFlag.Get(cmd))
@@ -109,6 +114,7 @@ func Upgrade(
 			skipDriftCheckFlag.Get(cmd),
 			dryRunFlag.Get(cmd),
 			true, // up
+			!disableAnimation.Get(cmd),
 			registerMigrators,
 			expectedSchemaFactories,
 			out,
@@ -129,6 +135,7 @@ func Upgrade(
 			skipVersionCheckFlag,
 			skipDriftCheckFlag,
 			dryRunFlag,
+			disableAnimation,
 		},
 	}
 }

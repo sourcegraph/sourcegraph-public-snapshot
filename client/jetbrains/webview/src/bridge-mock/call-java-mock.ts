@@ -8,7 +8,9 @@ import type { Search, Theme } from '../search/types'
 import { dark } from './theme-snapshots/dark'
 import { light } from './theme-snapshots/light'
 
+/* Set these to connect to a different server */
 const instanceURL = 'https://sourcegraph.com/'
+const accessToken = null
 
 let isDarkTheme = false
 
@@ -16,12 +18,13 @@ const savedSearchFromLocalStorage = localStorage.getItem('savedSearch')
 let savedSearch: Search = savedSearchFromLocalStorage
     ? (JSON.parse(savedSearchFromLocalStorage) as Search)
     : {
-          query: 'r:github.com/sourcegraph/sourcegraph jetbrains',
-          caseSensitive: false,
-          patternType: SearchPatternType.literal,
-          selectedSearchContextSpec: 'global',
-      }
+        query: 'r:github.com/sourcegraph/sourcegraph jetbrains',
+        caseSensitive: false,
+        patternType: SearchPatternType.literal,
+        selectedSearchContextSpec: 'global',
+    }
 
+const webviewOverlay = document.querySelector('#webview-overlay') as HTMLPreElement
 const codeDetailsNode = document.querySelector('#code-details') as HTMLPreElement
 
 let previewContent: PreviewRequest['arguments'] | null = null
@@ -52,7 +55,7 @@ function handleRequest(
                 JSON.stringify({
                     instanceURL,
                     isGlobbingEnabled: true,
-                    accessToken: null,
+                    accessToken,
                     anonymousUserId: 'test',
                     pluginVersion: '1.2.3',
                 })
@@ -66,13 +69,21 @@ function handleRequest(
             break
         }
 
+        case 'indicateSearchError': {
+            setOverlay(`Search error: ${request.arguments.errorMessage}`)
+            onSuccessCallback('null')
+            break
+        }
+
         case 'previewLoading': {
+            setOverlay(null)
             codeDetailsNode.innerHTML = 'Loading...'
             onSuccessCallback('null')
             break
         }
 
         case 'preview': {
+            setOverlay(null)
             previewContent = request.arguments
 
             const start =
@@ -105,6 +116,7 @@ function handleRequest(
         }
 
         case 'clearPreview': {
+            setOverlay(null)
             codeDetailsNode.textContent = ''
             onSuccessCallback('null')
             break
@@ -134,6 +146,7 @@ function handleRequest(
         }
 
         case 'indicateFinishedLoading': {
+            setOverlay(null)
             onSuccessCallback('null')
             break
         }
@@ -154,6 +167,11 @@ function handleRequest(
 
 export function setDarkMode(value: boolean): void {
     isDarkTheme = value
+}
+
+function setOverlay(content: string | null): void {
+    webviewOverlay.style.visibility = content !== null ? 'visible' : 'hidden'
+    webviewOverlay.innerHTML = content || ''
 }
 
 function escapeHTML(unsafe: string): string {

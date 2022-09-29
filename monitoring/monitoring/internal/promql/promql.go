@@ -1,6 +1,10 @@
 package promql
 
 import (
+	"fmt"
+
+	"github.com/grafana/regexp"
+
 	"github.com/prometheus/prometheus/model/labels"
 	promqlparser "github.com/prometheus/prometheus/promql/parser"
 
@@ -49,6 +53,61 @@ func Inject(expression string, matchers []*labels.Matcher, vars VariableApplier)
 	return revertExpr(expr)
 }
 
+// InjectAsAlert does the same thing as Inject, but also converts expression into a valid
+// query that can be used for alerting by removing selectors with variable values, or an
+// error if it can't.
+func InjectAsAlert(expression string, matchers []*labels.Matcher, vars VariableApplier) (string, error) {
+	// Generate AST
+	expr, err := replaceAndParse(expression, vars)
+	if err != nil {
+		return expression, err // return original
+	}
+
+	// Inject matchers into selectors, but also remove selectors that have variables in
+	// them.
+	promqlparser.Inspect(expr, func(n promqlparser.Node, path []promqlparser.Node) error {
+		if vec, ok := n.(*promqlparser.VectorSelector); ok {
+			validMatchers := make([]*labels.Matcher, 0, len(vec.LabelMatchers)+len(matchers))
+			for _, lm := range vec.LabelMatchers {
+				// vars.ApplySentinelValues does not replace vars that are used in string
+				// values, so we will find them here in the value intact
+				var hasVar bool
+				for varName := range vars {
+					// We use regexp here because we want to be stricter than
+					// VariableApplier - we need to catch any possible usage of this var.
+					varKey, err := newVarKeyRegexp(varName)
+					if err != nil {
+						return errors.Wrapf(err, "generating regexp for variable %q", varName)
+					}
+					if varKey.MatchString(lm.Value) || varKey.MatchString(lm.GetRegexString()) {
+						hasVar = true
+						break
+					}
+				}
+				if !hasVar {
+					validMatchers = append(validMatchers, lm)
+				}
+			}
+
+			vec.LabelMatchers = append(validMatchers, matchers...)
+		}
+		return nil
+	})
+
+	// Revert any remaining variables
+	rendered := expr.String()
+	if vars != nil {
+		rendered = vars.RevertDefaults(expression, rendered)
+	}
+
+	// Validate that the result is a valid query for use in alerting
+	if _, err := promqlparser.ParseExpr(rendered); err != nil {
+		return rendered, errors.Wrap(err, "invalid alert expression")
+	}
+
+	return rendered, nil
+}
+
 // ListMetrics returns all unique metrics used in the expression.
 func ListMetrics(expression string, vars VariableApplier) ([]string, error) {
 	// Generate AST
@@ -60,11 +119,26 @@ func ListMetrics(expression string, vars VariableApplier) ([]string, error) {
 	// Collect all metrics mentioned in the expression
 	foundMetrics := make(map[string]struct{})
 	var metrics []string
+	addMetric := func(m string) {
+		if _, exists := foundMetrics[m]; !exists {
+			metrics = append(metrics, m)
+			foundMetrics[m] = struct{}{}
+		}
+	}
+
 	promqlparser.Inspect(expr, func(n promqlparser.Node, path []promqlparser.Node) error {
 		if vec, ok := n.(*promqlparser.VectorSelector); ok {
-			if _, exists := foundMetrics[vec.Name]; !exists {
-				metrics = append(metrics, vec.Name)
-				foundMetrics[vec.Name] = struct{}{}
+			// Handle '{__name__=~"..."}' selectors
+			if vec.Name == "" {
+				for _, matcher := range vec.LabelMatchers {
+					if matcher.Name == "__name__" {
+						// This may be an arbitrary regex or something, but oh well
+						addMetric(matcher.Value)
+					}
+				}
+			} else {
+				// Otherwise just add the vector
+				addMetric(vec.Name)
 			}
 		}
 		return nil
@@ -82,4 +156,10 @@ func replaceAndParse(expression string, vars VariableApplier) (promqlparser.Expr
 		return nil, errors.Wrapf(err, "%q", expression)
 	}
 	return expr, nil
+}
+
+const varKeyRegexpFormat = `(\$%[1]s|\${%[1]s}|\${%[1]s:[^}]*})`
+
+func newVarKeyRegexp(name string) (*regexp.Regexp, error) {
+	return regexp.Compile(fmt.Sprintf(varKeyRegexpFormat, name))
 }

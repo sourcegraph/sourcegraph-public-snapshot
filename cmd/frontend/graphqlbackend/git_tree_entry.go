@@ -17,10 +17,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/cloneurls"
+	autoindexinggraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql"
+	codenavgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -69,7 +71,10 @@ func (r *GitTreeEntryResolver) Name() string { return path.Base(r.stat.Name()) }
 func (r *GitTreeEntryResolver) ToGitTree() (*GitTreeEntryResolver, bool) { return r, r.IsDirectory() }
 func (r *GitTreeEntryResolver) ToGitBlob() (*GitTreeEntryResolver, bool) { return r, !r.IsDirectory() }
 
-func (r *GitTreeEntryResolver) ToVirtualFile() (*virtualFileResolver, bool) { return nil, false }
+func (r *GitTreeEntryResolver) ToVirtualFile() (*VirtualFileResolver, bool) { return nil, false }
+func (r *GitTreeEntryResolver) ToBatchSpecWorkspaceFile() (BatchWorkspaceFileResolver, bool) {
+	return nil, false
+}
 
 func (r *GitTreeEntryResolver) ByteSize(ctx context.Context) (int32, error) {
 	content, err := r.Content(ctx)
@@ -112,7 +117,7 @@ func (r *GitTreeEntryResolver) Binary(ctx context.Context) (bool, error) {
 	return highlight.IsBinary([]byte(content)), nil
 }
 
-func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *HighlightArgs) (*highlightedFileResolver, error) {
+func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *HighlightArgs) (*HighlightedFileResolver, error) {
 	content, err := r.Content(ctx)
 	if err != nil {
 		return nil, err
@@ -230,7 +235,7 @@ func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 	return len(entries) == 1, nil
 }
 
-func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName *string }) (GitBlobLSIFDataResolver, error) {
+func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName *string }) (codenavgraphql.GitBlobLSIFDataResolver, error) {
 	codeIntelRequests.WithLabelValues(trace.RequestOrigin(ctx)).Inc()
 
 	var toolName string
@@ -243,7 +248,7 @@ func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName 
 		return nil, err
 	}
 
-	return EnterpriseResolvers.codeIntelResolver.GitBlobLSIFData(ctx, &GitBlobLSIFDataArgs{
+	return EnterpriseResolvers.codeIntelResolver.GitBlobLSIFData(ctx, &codenavgraphql.GitBlobLSIFDataArgs{
 		Repo:      repo,
 		Commit:    api.CommitID(r.Commit().OID()),
 		Path:      r.Path(),
@@ -252,25 +257,25 @@ func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName 
 	})
 }
 
-func (r *GitTreeEntryResolver) CodeIntelSupport(ctx context.Context) (GitBlobCodeIntelSupportResolver, error) {
+func (r *GitTreeEntryResolver) CodeIntelSupport(ctx context.Context) (autoindexinggraphql.GitBlobCodeIntelSupportResolver, error) {
 	repo, err := r.commit.repoResolver.repo(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return EnterpriseResolvers.codeIntelResolver.GitBlobCodeIntelInfo(ctx, &GitTreeEntryCodeIntelInfoArgs{
+	return EnterpriseResolvers.codeIntelResolver.GitBlobCodeIntelInfo(ctx, &autoindexinggraphql.GitTreeEntryCodeIntelInfoArgs{
 		Repo: repo,
 		Path: r.Path(),
 	})
 }
 
-func (r *GitTreeEntryResolver) CodeIntelInfo(ctx context.Context) (GitTreeCodeIntelSupportResolver, error) {
+func (r *GitTreeEntryResolver) CodeIntelInfo(ctx context.Context) (autoindexinggraphql.GitTreeCodeIntelSupportResolver, error) {
 	repo, err := r.commit.repoResolver.repo(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return EnterpriseResolvers.codeIntelResolver.GitTreeCodeIntelInfo(ctx, &GitTreeEntryCodeIntelInfoArgs{
+	return EnterpriseResolvers.codeIntelResolver.GitTreeCodeIntelInfo(ctx, &autoindexinggraphql.GitTreeEntryCodeIntelInfoArgs{
 		Repo:   repo,
 		Commit: string(r.Commit().OID()),
 		Path:   r.Path(),
