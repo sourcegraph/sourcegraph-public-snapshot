@@ -517,12 +517,6 @@ read    group   Dev1    *   -//-depot/-main/.../dev/foo.java
 			canReadAll:    []string{"dev/bar.java", "/-minus/dev/bar.java"},
 			cannotReadAny: []string{"dev/foo.java"},
 		},
-		{
-			name:          "Test protects from manual testing doc",
-			depot:         "//depot/foo/bar/",
-			protectsFile:  "testdata/sample-protects-manual.txt",
-			cannotReadAny: []string{"depot/foo/bar"},
-		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := logtest.Scoped(t)
