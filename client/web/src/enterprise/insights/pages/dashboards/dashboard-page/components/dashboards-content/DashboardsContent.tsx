@@ -10,7 +10,7 @@ import { Button, Tooltip } from '@sourcegraph/wildcard'
 import { HeroPage } from '../../../../../../../components/HeroPage'
 import { LimitedAccessLabel } from '../../../../../components'
 import { InsightDashboard, isVirtualDashboard, ALL_INSIGHTS_DASHBOARD } from '../../../../../core'
-import { useCopyURLHandler , useUiFeatures } from '../../../../../hooks'
+import { useCopyURLHandler, useUiFeatures } from '../../../../../hooks'
 import { AddInsightModal } from '../add-insight-modal/AddInsightModal'
 import { DashboardMenu, DashboardMenuAction } from '../dashboard-menu/DashboardMenu'
 import { DashboardSelect } from '../dashboard-select/DashboardSelect'
@@ -34,7 +34,7 @@ export interface DashboardsContentProps extends TelemetryProps {
 }
 
 export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<DashboardsContentProps>> = props => {
-    const { currentDashboard, dashboards, telemetryService,  } = props
+    const { currentDashboard, dashboards, telemetryService } = props
 
     const history = useHistory()
     const { dashboard: dashboardPermission, licensed } = useUiFeatures()

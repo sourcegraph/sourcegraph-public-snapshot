@@ -6,8 +6,15 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Button, Input, Link, Label, Checkbox } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../../components/LoaderButton'
-import { AccessibleInsight } from '../../../../../../../../../graphql-operations';
-import { TruncatedText , useCheckboxes , useField , SubmissionErrors, useForm, FORM_ERROR } from '../../../../../../../components'
+import { AccessibleInsight } from '../../../../../../../../../graphql-operations'
+import {
+    TruncatedText,
+    useCheckboxes,
+    useField,
+    SubmissionErrors,
+    useForm,
+    FORM_ERROR,
+} from '../../../../../../../components'
 
 import styles from './AddInsightModalContent.module.scss'
 

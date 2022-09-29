@@ -5,13 +5,13 @@ import expect from 'expect'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { GetDashboardAccessibleInsightsResult } from '../../../graphql-operations';
+import { GetDashboardAccessibleInsightsResult } from '../../../graphql-operations'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../../context'
 import { GET_DASHBOARD_INSIGHTS_EMPTY, INSIGHTS_DASHBOARDS } from '../fixtures/dashboards'
 import { overrideInsightsGraphQLApi } from '../utils/override-insights-graphql-api'
 
 const ALL_AVAILABLE_INSIGHTS_LIST: GetDashboardAccessibleInsightsResult = {
-    dashboardInsightsIds: { nodes: [ { views: { nodes: [] } } ] },
+    dashboardInsightsIds: { nodes: [{ views: { nodes: [] } }] },
     accessibleInsights: {
         nodes: [
             {
