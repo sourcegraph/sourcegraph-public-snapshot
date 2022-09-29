@@ -1,4 +1,4 @@
-import { isInputElement } from './dom'
+import { createSVGIcon, isInputElement } from './dom'
 
 describe('isInputElement', () => {
     test('detect <input> elements as input', () => {
@@ -31,5 +31,20 @@ describe('isInputElement', () => {
         parent.append(element)
 
         expect(isInputElement(element)).toBe(true)
+    })
+})
+
+describe('createSVGIcon', () => {
+    test('create SVG icon', () => {
+        expect(createSVGIcon('M 10 10')).toMatchInlineSnapshot(`
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="M 10 10"
+              />
+            </svg>
+        `)
     })
 })

@@ -33,10 +33,10 @@ export const KEYBOARD_SHORTCUTS: KEYBOARD_SHORTCUT_MAPPING = {
     },
     fuzzyFinder: {
         title: 'Fuzzy search files',
-        keybindings: [{ held: [isMacPlatform() ? 'Meta' : 'Control'], ordered: ['k'] }],
+        keybindings: [{ held: ['Mod'], ordered: ['k'] }],
     },
     copyFullQuery: {
         title: 'Copy full query',
-        keybindings: [{ held: [isMacPlatform() ? 'Meta' : 'Control', 'Shift'], ordered: ['c'] }],
+        keybindings: [{ held: ['Mod', 'Shift'], ordered: ['c'] }],
     },
 }

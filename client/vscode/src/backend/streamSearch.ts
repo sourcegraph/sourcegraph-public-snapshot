@@ -1,13 +1,16 @@
 import { of, Subscription } from 'rxjs'
-import { throttleTime } from 'rxjs/operators'
+import { map, switchMap, throttleTime } from 'rxjs/operators'
 import * as vscode from 'vscode'
 
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 
 import { ExtensionCoreAPI } from '../contract'
+import { SearchPatternType } from '../graphql-operations'
 import { VSCEStateMachine } from '../state'
 import { focusSearchPanel } from '../webview/commands'
+
+import { isOlderThan, observeInstanceVersionNumber } from './instanceVersion'
 
 export function createStreamSearch({
     context,
@@ -27,6 +30,8 @@ export function createStreamSearch({
         },
     })
 
+    const instanceVersionNumber = observeInstanceVersionNumber()
+
     return function streamSearch(query, options) {
         previousSearchSubscription?.unsubscribe()
 
@@ -42,14 +47,29 @@ export function createStreamSearch({
         // (in case e.g. user initiates search from search sidebar when panel is hidden).
         focusSearchPanel()
 
-        previousSearchSubscription = aggregateStreamingSearch(
-            of(appendContextFilter(query, stateMachine.state.context.selectedSearchContextSpec)),
-            {
-                ...options,
-                sourcegraphURL,
-            }
-        )
-            .pipe(throttleTime(500, undefined, { leading: true, trailing: true }))
+        previousSearchSubscription = instanceVersionNumber
+            .pipe(
+                map(version => {
+                    let patternType = options.patternType
+
+                    if (version && isOlderThan(version, { major: 3, minor: 43 })) {
+                        /**
+                         * SearchPatternType.standard support was added in Sourcegraph v3.43.0.
+                         * Use SearchPatternType.literal for earlier versions instead (it was the default before v3.43.0).
+                         * See: https://docs.sourcegraph.com/CHANGELOG#3-43-0, https://github.com/sourcegraph/sourcegraph/pull/38141.
+                         */
+                        patternType = SearchPatternType.literal
+                    }
+
+                    return patternType
+                }),
+                switchMap(patternType =>
+                    aggregateStreamingSearch(
+                        of(appendContextFilter(query, stateMachine.state.context.selectedSearchContextSpec)),
+                        { ...options, patternType, sourcegraphURL }
+                    ).pipe(throttleTime(500, undefined, { leading: true, trailing: true }))
+                )
+            )
             .subscribe(searchResults => {
                 if (searchResults.state === 'error') {
                     // Pass only primitive copied values because Error object is not cloneable

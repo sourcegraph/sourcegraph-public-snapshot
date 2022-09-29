@@ -6,15 +6,15 @@ This page lists the changes that are relevant for [upgrading Sourcegraph on Dock
 
 1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
 1. Find the relevant entry for your update in the update notes on this page.
-1. After checking the relevant update notes, refer to the [upgrade procedure](../deploy/docker-compose/upgrade.md#standard-upgrades) to upgrade your instance.
+1. After checking the relevant update notes, refer to the [standard upgrade procedure](../deploy/docker-compose/upgrade.md#standard-upgrades) to upgrade your instance.
 
 ## Multi-version upgrade procedure
 
 1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
-1. Refer to the [upgrade procedure](../deploy/docker-compose/upgrade.md#multi-version-upgrades) to upgrade your instance.
+1. Find the relevant entries for your update in the update notes on this page. These notes may contain relevant information about the infrastructure update such as resource requirement changes or versions of depencies (Docker, Docker Compse, externalized databases).
+1. After checking the relevant update notes, refer to the [multi-version upgrade procedure](../deploy/docker-compose/upgrade.md#multi-version-upgrades) to upgrade your instance.
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
-
 ## Unreleased
 
 <!-- Add changes changes to this section before release. -->
@@ -233,7 +233,7 @@ Please upgrade to the [`v3.20.1` tag of deploy-sourcegraph-docker](https://githu
 
 ## 3.20.1 -> 3.21.0
 
-Please upgrade to the [`v3.21.0` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v.3.21.0/docker-compose) by following the [standard upgrade procedure](../deploy/docker-compose/upgrade.md).
+Please upgrade to the [`v3.21.0` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.21.0/docker-compose) by following the [standard upgrade procedure](../deploy/docker-compose/upgrade.md).
 
 This release introduces a second database instance, `codeintel-db`. If you have configured Sourcegraph with an external database, then update the `CODEINTEL_PG*` environment variables to point to a new external database as described in the [external database documentation](../external_services/postgres.md). Again, these must not point to the same database or the Sourcegraph instance will refuse to start.
 

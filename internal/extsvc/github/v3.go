@@ -790,7 +790,7 @@ type Config struct {
 //
 // Cloud API docs: https://docs.github.com/en/enterprise-cloud@latest/rest/webhooks/repos#create-a-repository-webhook
 // Server API docs: https://docs.github.com/en/enterprise-server@3.3/rest/webhooks/repos#create-a-repository-webhook
-func (c *V3Client) CreateSyncWebhook(ctx context.Context, repoName, targetURL, secret string) (int, error) {
+func (c *V3Client) CreateSyncWebhook(ctx context.Context, repoName, targetHost, secret string) (int, error) {
 	url, err := webhookURLBuilder(repoName)
 	if err != nil {
 		return 0, err
@@ -800,7 +800,7 @@ func (c *V3Client) CreateSyncWebhook(ctx context.Context, repoName, targetURL, s
 		Name:   "web",
 		Active: true,
 		Config: Config{
-			URL:         fmt.Sprintf("%s/github-webhooks", targetURL),
+			URL:         fmt.Sprintf("https://%s/github-webhooks", targetHost),
 			ContentType: "json",
 			Secret:      secret,
 			InsecureSSL: "0",

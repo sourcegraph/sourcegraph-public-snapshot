@@ -49,7 +49,7 @@ type Test struct {
 	ExpectedTrailers http.Header
 }
 
-func TestRequest(t *testing.T) {
+func TestExecRequest(t *testing.T) {
 	tests := []Test{
 		{
 			Name:         "HTTP GET",
@@ -57,7 +57,6 @@ func TestRequest(t *testing.T) {
 			ExpectedCode: http.StatusMethodNotAllowed,
 			ExpectedBody: "",
 		},
-
 		{
 			Name:         "Command",
 			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/mux", "args": ["testcommand"]}`)),
