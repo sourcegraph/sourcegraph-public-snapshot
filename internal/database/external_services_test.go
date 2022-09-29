@@ -2193,15 +2193,6 @@ func TestExternalServiceStore_GetSyncJobs(t *testing.T) {
 	if diff := cmp.Diff(want, have[0], cmpopts.IgnoreFields(types.ExternalServiceSyncJob{}, "ID", "QueuedAt")); diff != "" {
 		t.Fatal(diff)
 	}
-
-	want = &types.ExternalServiceSyncJob{
-		ID:                1,
-		State:             "queued",
-		ExternalServiceID: es.ID,
-	}
-	if diff := cmp.Diff(want, have[0], cmpopts.IgnoreFields(types.ExternalServiceSyncJob{}, "ID", "QueuedAt")); diff != "" {
-		t.Fatal(diff)
-	}
 }
 
 func TestExternalServiceStore_CountSyncJobs(t *testing.T) {
