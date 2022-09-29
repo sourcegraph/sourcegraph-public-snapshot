@@ -119,7 +119,7 @@ func RunInstallImage(cliCtx *cli.Context, logger log.Logger, config *config.Conf
 }
 
 func ensureExecutorVMImage(ctx context.Context, logger log.Logger, c *config.Config) error {
-	if err := validateIgniteInstalled(); err != nil {
+	if err := validateIgniteInstalled(ctx); err != nil {
 		return err
 	}
 
@@ -139,7 +139,7 @@ func ensureExecutorVMImage(ctx context.Context, logger log.Logger, c *config.Con
 }
 
 func ensureKernelImage(ctx context.Context, logger log.Logger, c *config.Config) error {
-	if err := validateIgniteInstalled(); err != nil {
+	if err := validateIgniteInstalled(ctx); err != nil {
 		return err
 	}
 
@@ -159,7 +159,7 @@ func ensureKernelImage(ctx context.Context, logger log.Logger, c *config.Config)
 }
 
 func ensureSandboxImage(ctx context.Context, logger log.Logger, c *config.Config) error {
-	if err := validateIgniteInstalled(); err != nil {
+	if err := validateIgniteInstalled(ctx); err != nil {
 		return err
 	}
 

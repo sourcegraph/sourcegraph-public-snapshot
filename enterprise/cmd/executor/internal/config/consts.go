@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/Masterminds/semver"
+
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
@@ -47,8 +49,12 @@ var (
 		"portmap",
 	}
 	// RequiredCLITools contains all the programs that are expected to exist in
-	// PATH when running the executor.
-	RequiredCLITools = []string{"docker", "git", "src"}
+	// PATH when running the executor and a help text on installation.
+	RequiredCLITools = map[string]string{
+		"docker": "Check out https://docs.docker.com/get-docker/ on how to install.",
+		"git":    "Use your package manager, or build from source.",
+		"src":    "Run executor install src-cli, or refer to https://github.com/sourcegraph/src-cli to install src-cli yourself.",
+	}
 	// RequiredCLIToolsFirecracker contains all the programs that are expected to
 	// exist in PATH when running the executor with firecracker enabled.
 	RequiredCLIToolsFirecracker = []string{"dmsetup", "losetup", "mkfs.ext4"}
@@ -56,7 +62,17 @@ var (
 	// default and chosen so that it doesn't interfere with other common applications
 	// such as docker. It also provides room for a large number of VMs.
 	CNISubnetCIDR = mustParseCIDR("10.61.0.0/16")
+	// MitGitVersionConstraint is the minimum version of git required by the executor.
+	MinGitVersionConstraint = mustParseConstraint(">= 2.26")
 )
+
+func mustParseConstraint(constraint string) *semver.Constraints {
+	c, err := semver.NewConstraint(constraint)
+	if err != nil {
+		panic(err)
+	}
+	return c
+}
 
 func mustParseCIDR(val string) *net.IPNet {
 	_, net, err := net.ParseCIDR(val)

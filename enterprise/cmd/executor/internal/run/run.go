@@ -3,10 +3,8 @@ package run
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
-	"github.com/Masterminds/semver"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
@@ -25,18 +23,8 @@ import (
 )
 
 func RunRun(cliCtx *cli.Context, logger log.Logger, cfg *config.Config) error {
-	shouldRunVerify := cliCtx.Bool("verify")
-
-	if shouldRunVerify {
-		// TODO: validate docker is installed.
-		// TODO: validate git is installed.
-		// TODO: validate src-cli is installed and a good version, helper for that at the end of the file..
-	}
-
 	if err := cfg.Validate(); err != nil {
-		logger.Error(err.Error())
-		// logger.Error("failed to read config", log.Error(err))
-		os.Exit(1)
+		return err
 	}
 
 	// Initialize tracing/metrics
@@ -52,26 +40,49 @@ func RunRun(cliCtx *cli.Context, logger log.Logger, cfg *config.Config) error {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		return apiclient.NewTelemetryOptions(ctx, cfg.UseFirecracker)
+		return newTelemetryOptions(ctx, cfg.UseFirecracker)
 	}()
 	logger.Info("Telemetry information gathered", log.String("info", fmt.Sprintf("%+v", telemetryOptions)))
-	if cfg.UseFirecracker {
-		want, err := semver.NewVersion(config.DefaultIgniteVersion)
-		if err != nil {
-			return err
-		}
-		have, err := semver.NewVersion(telemetryOptions.IgniteVersion)
-		if err != nil {
-			logger.Warn("failed to parse ignite version", log.Error(err))
-		} else if !want.Equal(have) {
-			logger.Warn("using unsupported ignite version, if things don't work alright, consider switching to the supported version", log.String("have", have.String()), log.String("want", want.String()))
-		}
-	}
 
 	apiWorkerOptions := apiWorkerOptions(cfg, telemetryOptions)
 
 	gatherer := metrics.MakeExecutorMetricsGatherer(log.Scoped("executor-worker.metrics-gatherer", ""), prometheus.DefaultGatherer, apiWorkerOptions.NodeExporterEndpoint, apiWorkerOptions.DockerRegistryNodeExporterEndpoint)
 	queueStore := apiclient.New(apiWorkerOptions.ClientOptions, gatherer, observationContext)
+
+	// TODO: This is too similar to the RunValidate func. Make it share even more code.
+	if cliCtx.Bool("verify") {
+		// Then, validate all tools that are required are installed.
+		if err := validateToolsRequired(cfg.UseFirecracker); err != nil {
+			return err
+		}
+
+		// Validate git is of the right version.
+		if err := validateGitVersion(telemetryOptions); err != nil {
+			return err
+		}
+
+		// TODO: Validate access token.
+		// Validate src-cli is of a good version, rely on the connected instance to tell
+		// us what "good" means.
+		if err := validateSrcCLIVersion(cliCtx.Context, logger, queueStore); err != nil {
+			return err
+		}
+
+		if cfg.UseFirecracker {
+			// Validate ignite is installed.
+			if err := validateIgniteInstalled(cliCtx.Context); err != nil {
+				return err
+			}
+
+			// Validate all required CNI plugins are installed.
+			if err := validateCNIInstalled(); err != nil {
+				return err
+			}
+
+			// TODO: Validate ignite images are pulled and imported. Sadly, the
+			// output of ignite is not very parser friendly.
+		}
+	}
 
 	nameSet := janitor.NewNameSet()
 	ctx, cancel := context.WithCancel(cliCtx.Context)
@@ -90,14 +101,6 @@ func RunRun(cliCtx *cli.Context, logger log.Logger, cfg *config.Config) error {
 		))
 
 		mustRegisterVMCountMetric(observationContext, cfg.VMPrefix)
-
-		// If this causes harm, we can disable it.
-		// if _, ok := os.LookupEnv("EXECUTOR_SKIP_FIRECRACKER_SETUP"); !ok {
-		// 	if err := prepareFirecracker(ctx, logger, config.FirecrackerOptions()); err != nil {
-		// 		logger.Error("failed to prepare firecracker environment", log.Error(err))
-		// 		os.Exit(1)
-		// 	}
-		// }
 	}
 
 	go func() {

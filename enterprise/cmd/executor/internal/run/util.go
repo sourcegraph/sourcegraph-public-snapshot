@@ -1,9 +1,14 @@
 package run
 
 import (
+	"context"
 	"fmt"
+	"os/exec"
+	"runtime"
+	"strings"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel"
@@ -14,8 +19,79 @@ import (
 	apiworker "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
+
+func newTelemetryOptions(ctx context.Context, useFirecracker bool) apiclient.TelemetryOptions {
+	t := apiclient.TelemetryOptions{
+		OS:              runtime.GOOS,
+		Architecture:    runtime.GOARCH,
+		ExecutorVersion: version.Version(),
+	}
+
+	var err error
+
+	t.GitVersion, err = getGitVersion(ctx)
+	if err != nil {
+		log15.Error("Failed to get git version", "err", err)
+	}
+
+	t.SrcCliVersion, err = getSrcVersion(ctx)
+	if err != nil {
+		log15.Error("Failed to get src-cli version", "err", err)
+	}
+
+	t.DockerVersion, err = getDockerVersion(ctx)
+	if err != nil {
+		log15.Error("Failed to get docker version", "err", err)
+	}
+
+	if useFirecracker {
+		t.IgniteVersion, err = getIgniteVersion(ctx)
+		if err != nil {
+			log15.Error("Failed to get ignite version", "err", err)
+		}
+	}
+
+	return t
+}
+
+func getGitVersion(ctx context.Context) (string, error) {
+	cmd := exec.CommandContext(ctx, "git", "version")
+	out, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimPrefix(strings.TrimSpace(string(out)), "git version "), nil
+}
+
+func getSrcVersion(ctx context.Context) (string, error) {
+	cmd := exec.CommandContext(ctx, "src", "version", "-client-only")
+	out, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimPrefix(strings.TrimSpace(string(out)), "Current version: "), nil
+}
+
+func getDockerVersion(ctx context.Context) (string, error) {
+	cmd := exec.CommandContext(ctx, "docker", "version", "-f", "{{.Server.Version}}")
+	out, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(out)), nil
+}
+
+func getIgniteVersion(ctx context.Context) (string, error) {
+	cmd := exec.CommandContext(ctx, "ignite", "version", "-o", "short")
+	out, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(out)), nil
+}
 
 func apiWorkerOptions(c *config.Config, telemetryOptions apiclient.TelemetryOptions) apiworker.Options {
 	return apiworker.Options{
