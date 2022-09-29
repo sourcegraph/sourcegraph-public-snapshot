@@ -15,7 +15,6 @@ import (
 )
 
 const ShardTimeoutSkippedReason = streamapi.ShardTimeout
-const LuckySearchAlertKind = "lucky-search-queries"
 
 type SearchClient interface {
 	Search(ctx context.Context, query string, patternType *string, sender streaming.Sender) (*search.Alert, error)

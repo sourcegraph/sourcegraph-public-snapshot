@@ -10,6 +10,8 @@ import (
 
 	logger "github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
@@ -43,9 +45,9 @@ type service interface {
 	SetRepositoriesForRetentionScan(ctx context.Context, processDelay time.Duration, limit int) (_ []int, err error)
 
 	// Uploads
-	GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (uploads []shared.Upload, totalCount int, err error)
-	GetUploadByID(ctx context.Context, id int) (_ shared.Upload, _ bool, err error)
-	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []shared.Upload, err error)
+	GetUploads(ctx context.Context, opts types.GetUploadsOptions) (uploads []types.Upload, totalCount int, err error)
+	GetUploadByID(ctx context.Context, id int) (_ types.Upload, _ bool, err error)
+	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []types.Upload, err error)
 	GetUploadIDsWithReferences(ctx context.Context, orderedMonikers []precise.QualifiedMonikerData, ignoreIDs []int, repositoryID int, commit string, limit int, offset int) (ids []int, recordsScanned int, totalCount int, err error)
 	GetUploadDocumentsForPath(ctx context.Context, bundleID int, pathPattern string) ([]string, int, error)
 	GetRecentUploadsSummary(ctx context.Context, repositoryID int) (upload []shared.UploadsWithRepositoryNamespace, err error)
@@ -58,13 +60,13 @@ type service interface {
 	DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_ int, err error)
 	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error)
 	DeleteUploadByID(ctx context.Context, id int) (_ bool, err error)
-	InferClosestUploads(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) ([]shared.Dump, error)
+	InferClosestUploads(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) ([]types.Dump, error)
 
 	// Dumps
-	FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) (_ []shared.Dump, err error)
-	FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, commitGraph *gitdomain.CommitGraph) (_ []shared.Dump, err error)
-	GetDumpsWithDefinitionsForMonikers(ctx context.Context, monikers []precise.QualifiedMonikerData) (_ []shared.Dump, err error)
-	GetDumpsByIDs(ctx context.Context, ids []int) (_ []shared.Dump, err error)
+	FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) (_ []types.Dump, err error)
+	FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, commitGraph *gitdomain.CommitGraph) (_ []types.Dump, err error)
+	GetDumpsWithDefinitionsForMonikers(ctx context.Context, monikers []precise.QualifiedMonikerData) (_ []types.Dump, err error)
+	GetDumpsByIDs(ctx context.Context, ids []int) (_ []types.Dump, err error)
 
 	// Packages
 	UpdatePackages(ctx context.Context, dumpID int, packages []precise.Package) (err error)
@@ -73,8 +75,11 @@ type service interface {
 	UpdatePackageReferences(ctx context.Context, dumpID int, references []precise.PackageReference) (err error)
 
 	// Audit Logs
-	GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []shared.UploadLog, err error)
+	GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []types.UploadLog, err error)
 	DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (count int, err error)
+
+	// Tags
+	GetListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) (_ []*gitdomain.Tag, err error)
 }
 
 type Service struct {
@@ -321,7 +326,7 @@ func (s *Service) GetDirtyRepositories(ctx context.Context) (_ map[int]int, err 
 	return s.store.GetDirtyRepositories(ctx)
 }
 
-func (s *Service) GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (uploads []shared.Upload, totalCount int, err error) {
+func (s *Service) GetUploads(ctx context.Context, opts types.GetUploadsOptions) (uploads []types.Upload, totalCount int, err error) {
 	ctx, _, endObservation := s.operations.getUploads.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{log.Int("repositoryID", opts.RepositoryID), log.String("state", opts.State), log.String("term", opts.Term)},
 	})
@@ -331,14 +336,14 @@ func (s *Service) GetUploads(ctx context.Context, opts shared.GetUploadsOptions)
 }
 
 // TODO: Not being used in the resolver layer
-func (s *Service) GetUploadByID(ctx context.Context, id int) (_ shared.Upload, _ bool, err error) {
+func (s *Service) GetUploadByID(ctx context.Context, id int) (_ types.Upload, _ bool, err error) {
 	ctx, _, endObservation := s.operations.getUploadByID.With(ctx, &err, observation.Args{LogFields: []log.Field{log.Int("id", id)}})
 	defer endObservation(1, observation.Args{})
 
 	return s.store.GetUploadByID(ctx, id)
 }
 
-func (s *Service) GetUploadsByIDs(ctx context.Context, ids ...int) (_ []shared.Upload, err error) {
+func (s *Service) GetUploadsByIDs(ctx context.Context, ids ...int) (_ []types.Upload, err error) {
 	ctx, _, endObservation := s.operations.getUploadsByIDs.With(ctx, &err, observation.Args{LogFields: []log.Field{log.String("ids", fmt.Sprintf("%v", ids))}})
 	defer endObservation(1, observation.Args{})
 
@@ -456,7 +461,8 @@ const numAncestors = 100
 // the graph. This will not always produce the full set of visible commits - some responses may not contain
 // all results while a subsequent request made after the lsif_nearest_uploads has been updated to include
 // this commit will.
-func (s *Service) InferClosestUploads(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) (_ []shared.Dump, err error) {
+//
+func (s *Service) InferClosestUploads(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) (_ []types.Dump, err error) {
 	ctx, _, endObservation := s.operations.inferClosestUploads.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{log.Int("repositoryID", repositoryID), log.String("commit", commit), log.String("path", path), log.Bool("exactPath", exactPath), log.String("indexer", indexer)},
 	})
@@ -511,7 +517,7 @@ func (s *Service) InferClosestUploads(ctx context.Context, repositoryID int, com
 	return dumps, nil
 }
 
-func (s *Service) FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) (_ []shared.Dump, err error) {
+func (s *Service) FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) (_ []types.Dump, err error) {
 	ctx, _, endObservation := s.operations.findClosestDumps.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", repositoryID), log.String("commit", commit), log.String("path", path),
@@ -523,7 +529,7 @@ func (s *Service) FindClosestDumps(ctx context.Context, repositoryID int, commit
 	return s.store.FindClosestDumps(ctx, repositoryID, commit, path, rootMustEnclosePath, indexer)
 }
 
-func (s *Service) FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, commitGraph *gitdomain.CommitGraph) (_ []shared.Dump, err error) {
+func (s *Service) FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, commitGraph *gitdomain.CommitGraph) (_ []types.Dump, err error) {
 	ctx, _, endObservation := s.operations.findClosestDumpsFromGraphFragment.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", repositoryID), log.String("commit", commit), log.String("path", path),
@@ -535,7 +541,7 @@ func (s *Service) FindClosestDumpsFromGraphFragment(ctx context.Context, reposit
 	return s.store.FindClosestDumpsFromGraphFragment(ctx, repositoryID, commit, path, rootMustEnclosePath, indexer, commitGraph)
 }
 
-func (s *Service) GetDumpsWithDefinitionsForMonikers(ctx context.Context, monikers []precise.QualifiedMonikerData) (_ []shared.Dump, err error) {
+func (s *Service) GetDumpsWithDefinitionsForMonikers(ctx context.Context, monikers []precise.QualifiedMonikerData) (_ []types.Dump, err error) {
 	ctx, _, endObservation := s.operations.getDumpsWithDefinitionsForMonikers.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{log.String("monikers", fmt.Sprintf("%v", monikers))},
 	})
@@ -544,7 +550,7 @@ func (s *Service) GetDumpsWithDefinitionsForMonikers(ctx context.Context, monike
 	return s.store.GetDumpsWithDefinitionsForMonikers(ctx, monikers)
 }
 
-func (s *Service) GetDumpsByIDs(ctx context.Context, ids []int) (_ []shared.Dump, err error) {
+func (s *Service) GetDumpsByIDs(ctx context.Context, ids []int) (_ []types.Dump, err error) {
 	ctx, _, endObservation := s.operations.getDumpsByIDs.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{log.Int("total_ids", len(ids)), log.String("ids", fmt.Sprintf("%v", ids))},
 	})
@@ -558,7 +564,7 @@ func (s *Service) HardDeleteExpiredUploads(ctx context.Context) (count int, err 
 	defer endObservation(1, observation.Args{})
 
 	const uploadsBatchSize = 100
-	options := shared.GetUploadsOptions{
+	options := types.GetUploadsOptions{
 		State:            "deleted",
 		Limit:            uploadsBatchSize,
 		AllowExpired:     true,
@@ -611,7 +617,7 @@ func (s *Service) UpdatePackageReferences(ctx context.Context, dumpID int, refer
 	return s.store.UpdatePackageReferences(ctx, dumpID, references)
 }
 
-func (s *Service) GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []shared.UploadLog, err error) {
+func (s *Service) GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []types.UploadLog, err error) {
 	ctx, _, endObservation := s.operations.getAuditLogsForUpload.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{log.Int("uploadID", uploadID)},
 	})
@@ -717,7 +723,16 @@ func (s *Service) getCommitDate(ctx context.Context, repositoryID int, commit st
 	return commitDateString, nil
 }
 
-func uploadIDs(uploads []shared.Upload) []int {
+func (s *Service) GetListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) (_ []*gitdomain.Tag, err error) {
+	ctx, _, endObservation := s.operations.getListTags.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.String("repo", string(repo)), log.String("commitObjs", fmt.Sprintf("%v", commitObjs))},
+	})
+	defer endObservation(1, observation.Args{})
+
+	return s.gitserverClient.ListTags(ctx, repo, commitObjs...)
+}
+
+func uploadIDs(uploads []types.Upload) []int {
 	ids := make([]int, 0, len(uploads))
 	for i := range uploads {
 		ids = append(ids, uploads[i].ID)

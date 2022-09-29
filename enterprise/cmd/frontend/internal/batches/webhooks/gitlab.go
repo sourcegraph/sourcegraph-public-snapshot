@@ -25,10 +25,14 @@ import (
 
 type GitLabWebhook struct {
 	*Webhook
+
+	// failHandleEvent is here so that we can explicity force a failure in the event
+	// handler in tests
+	failHandleEvent error
 }
 
 func NewGitLabWebhook(store *store.Store) *GitLabWebhook {
-	return &GitLabWebhook{&Webhook{store, extsvc.TypeGitLab}}
+	return &GitLabWebhook{Webhook: &Webhook{store, extsvc.TypeGitLab}}
 }
 
 // ServeHTTP implements the http.Handler interface.
@@ -138,6 +142,13 @@ func (h *GitLabWebhook) getExternalServiceFromRawID(ctx context.Context, raw str
 // to perform whatever changeset action is appropriate for that event.
 func (h *GitLabWebhook) handleEvent(ctx context.Context, extSvc *types.ExternalService, event any) *httpError {
 	log15.Debug("GitLab webhook received", "type", fmt.Sprintf("%T", event))
+
+	if h.failHandleEvent != nil {
+		return &httpError{
+			code: http.StatusInternalServerError,
+			err:  h.failHandleEvent,
+		}
+	}
 
 	esID, err := extractExternalServiceID(ctx, extSvc)
 	if err != nil {

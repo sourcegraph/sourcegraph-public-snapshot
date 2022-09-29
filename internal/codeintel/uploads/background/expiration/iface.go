@@ -5,18 +5,17 @@ import (
 	"time"
 
 	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
-	policyShared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
-	uploadShared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 )
 
 type PolicyService interface {
-	GetConfigurationPolicies(ctx context.Context, opts policyShared.GetConfigurationPoliciesOptions) ([]policyShared.ConfigurationPolicy, int, error)
+	GetConfigurationPolicies(ctx context.Context, opts types.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error)
 }
 
 type UploadService interface {
 	// Uploads
-	GetUploads(ctx context.Context, opts uploadShared.GetUploadsOptions) (uploads []uploadShared.Upload, totalCount int, err error)
+	GetUploads(ctx context.Context, opts types.GetUploadsOptions) (uploads []types.Upload, totalCount int, err error)
 	UpdateUploadRetention(ctx context.Context, protectedIDs, expiredIDs []int) (err error)
 	BackfillReferenceCountBatch(ctx context.Context, batchSize int) error
 

@@ -158,6 +158,9 @@ kubectl delete -f configure/migrator/migrator.Job.yaml --ignore-not-found=true
 # Note: -1s timeout will wait "forever"
 kubectl apply -f configure/migrator/migrator.Job.yaml
 kubectl wait -f configure/migrator/migrator.Job.yaml --for=condition=complete --timeout=-1s
+
+# Optionally: check migrator logs for progress
+kubectl logs job.batch/migrator -f
 ```
 
 You should see something like the following printed to the terminal:

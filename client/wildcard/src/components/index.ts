@@ -74,3 +74,10 @@ export type { TooltipProps } from './Tooltip'
 export type { HeadingProps, HeadingElement } from './Typography'
 export type { BadgeProps, BadgeVariantType, ProductStatusType, BaseProductStatusBadgeProps } from './Badge'
 export type { ModalProps } from './Modal'
+
+/**
+ * Class name helpers to be used with plain DOM nodes.
+ * NOTE: Prefer using the React components is possible.
+ */
+export { getButtonClassName } from './Button/utils'
+export { getLabelClassName } from './Typography/Label/utils'

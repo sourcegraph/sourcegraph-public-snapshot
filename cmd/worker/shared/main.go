@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -66,6 +67,7 @@ func Start(logger log.Logger, additionalJobs map[string]job.Job, registerEnterpr
 	conf.Init()
 	logging.Init()
 	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
+	trace.Init()
 	profiler.Init()
 
 	if err := keyring.Init(context.Background()); err != nil {
