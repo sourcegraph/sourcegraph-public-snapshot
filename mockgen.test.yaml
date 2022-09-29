@@ -53,17 +53,6 @@
   path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/queues/batches
   interfaces:
     - BatchesStore
-- filename: enterprise/cmd/precise-code-intel-worker/internal/worker/mocks_test.go
-  sources:
-    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/worker
-      interfaces:
-        - DBStore
-        - GitserverClient
-        - LSIFStore
-    - path: github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store
-      interfaces:
-        - Store
-      prefix: Worker
 - filename: enterprise/cmd/worker/internal/codeintel/indexing/mocks_test.go
   sources:
     - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing
@@ -167,9 +156,23 @@
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store
       interfaces:
         - Store
-    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared
+    - path: internal/codeintel/uploads
+      interfaces:
+        - RepoStore
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore
+      interfaces:
+        - LSIFStore
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads
       interfaces:
         - GitserverClient
+# TODO - cannot merge with the one above because 'Store' is looked for in multiple packages.
+# This is a deficiency of go-mockgen filed in https://github.com/derision-test/go-mockgen/issues/36.
+- filename: internal/codeintel/uploads/mocks2_test.go
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store
+      interfaces:
+        - Store
+      prefix: Worker
 - filename: internal/codeintel/uploads/background/cleanup/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/background/cleanup
   interfaces:

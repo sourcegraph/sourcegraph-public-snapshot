@@ -1,4 +1,4 @@
-package worker
+package uploads
 
 import (
 	"context"
@@ -9,12 +9,12 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -26,7 +26,7 @@ import (
 func TestHandle(t *testing.T) {
 	setupRepoMocks(t)
 
-	upload := dbstore.Upload{
+	upload := codeinteltypes.Upload{
 		ID:           42,
 		Root:         "root/",
 		Commit:       "deadbeef",
@@ -35,8 +35,9 @@ func TestHandle(t *testing.T) {
 	}
 
 	mockWorkerStore := NewMockWorkerStore()
-	mockDBStore := NewMockDBStore()
-	mockLSIFStore := NewMockLSIFStore()
+	mockDBStore := NewMockStore()
+	mockRepoStore := NewMockRepoStore()
+	mockLSIFStore := NewMockLsifStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 	gitserverClient := NewMockGitserverClient()
 
@@ -57,10 +58,12 @@ func TestHandle(t *testing.T) {
 	}, nil)
 
 	expectedCommitDate := time.Unix(1587396557, 0).UTC()
+	expectedCommitDateStr := expectedCommitDate.Format(time.RFC3339)
 	gitserverClient.CommitDateFunc.SetDefaultReturn("deadbeef", expectedCommitDate, true, nil)
 
 	handler := &handler{
 		dbStore:         mockDBStore,
+		repoStore:       mockRepoStore,
 		workerStore:     mockWorkerStore,
 		lsifStore:       mockLSIFStore,
 		uploadStore:     mockUploadStore,
@@ -74,12 +77,14 @@ func TestHandle(t *testing.T) {
 		t.Errorf("unexpected requeue")
 	}
 
-	if calls := mockDBStore.UpdateCommitedAtFunc.History(); len(calls) != 1 {
+	if calls := mockDBStore.UpdateCommittedAtFunc.History(); len(calls) != 1 {
 		t.Errorf("unexpected number of UpdateCommitedAt calls. want=%d have=%d", 1, len(mockDBStore.UpdatePackagesFunc.History()))
-	} else if calls[0].Arg1 != 42 {
-		t.Errorf("unexpected UpdateCommitedAt upload id. want=%d have=%d", 42, calls[0].Arg1)
-	} else if calls[0].Arg2 != expectedCommitDate {
-		t.Errorf("unexpected UpdateCommitedAt commit date. want=%s have=%s", expectedCommitDate, calls[0].Arg2)
+	} else if calls[0].Arg1 != 50 {
+		t.Errorf("unexpected UpdateCommitedAt repository id. want=%d have=%d", 50, calls[0].Arg1)
+	} else if calls[0].Arg2 != "deadbeef" {
+		t.Errorf("unexpected UpdateCommitedAt commit. want=%s have=%s", "deadbeef", calls[0].Arg2)
+	} else if calls[0].Arg3 != expectedCommitDateStr {
+		t.Errorf("unexpected UpdateCommitedAt commit date. want=%s have=%s", expectedCommitDate, calls[0].Arg3)
 	}
 
 	expectedPackagesDumpID := 42
@@ -117,11 +122,11 @@ func TestHandle(t *testing.T) {
 	}
 
 	expectedIDsForRefcountUpdate := []int{42}
-	if len(mockDBStore.UpdateReferenceCountsFunc.History()) != 1 {
-		t.Errorf("unexpected number of UpdateReferenceCounts calls. want=%d have=%d", 1, len(mockDBStore.UpdateReferenceCountsFunc.History()))
-	} else if diff := cmp.Diff(expectedIDsForRefcountUpdate, mockDBStore.UpdateReferenceCountsFunc.History()[0].Arg1); diff != "" {
+	if len(mockDBStore.UpdateUploadsReferenceCountsFunc.History()) != 1 {
+		t.Errorf("unexpected number of UpdateReferenceCounts calls. want=%d have=%d", 1, len(mockDBStore.UpdateUploadsReferenceCountsFunc.History()))
+	} else if diff := cmp.Diff(expectedIDsForRefcountUpdate, mockDBStore.UpdateUploadsReferenceCountsFunc.History()[0].Arg1); diff != "" {
 		t.Errorf("unexpected UpdateReferenceCounts args (-want +got):\n%s", diff)
-	} else if diff := cmp.Diff(dbstore.DependencyReferenceCountUpdateTypeAdd, mockDBStore.UpdateReferenceCountsFunc.History()[0].Arg2); diff != "" {
+	} else if diff := cmp.Diff(shared.DependencyReferenceCountUpdateTypeAdd, mockDBStore.UpdateUploadsReferenceCountsFunc.History()[0].Arg2); diff != "" {
 		t.Errorf("unexpected UpdateReferenceCounts args (-want +got):\n%s", diff)
 	}
 
@@ -143,10 +148,10 @@ func TestHandle(t *testing.T) {
 		t.Errorf("unexpected value for indexer. want=%s have=%s", "lsif-go", mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg4)
 	}
 
-	if len(mockDBStore.MarkRepositoryAsDirtyFunc.History()) != 1 {
-		t.Errorf("unexpected number of MarkRepositoryAsDirty calls. want=%d have=%d", 1, len(mockDBStore.MarkRepositoryAsDirtyFunc.History()))
-	} else if mockDBStore.MarkRepositoryAsDirtyFunc.History()[0].Arg1 != 50 {
-		t.Errorf("unexpected value for repository id. want=%d have=%d", 50, mockDBStore.MarkRepositoryAsDirtyFunc.History()[0].Arg1)
+	if len(mockDBStore.SetRepositoryAsDirtyFunc.History()) != 1 {
+		t.Errorf("unexpected number of MarkRepositoryAsDirty calls. want=%d have=%d", 1, len(mockDBStore.SetRepositoryAsDirtyFunc.History()))
+	} else if mockDBStore.SetRepositoryAsDirtyFunc.History()[0].Arg1 != 50 {
+		t.Errorf("unexpected value for repository id. want=%d have=%d", 50, mockDBStore.SetRepositoryAsDirtyFunc.History()[0].Arg1)
 	}
 
 	if len(mockUploadStore.DeleteFunc.History()) != 1 {
@@ -157,7 +162,7 @@ func TestHandle(t *testing.T) {
 func TestHandleError(t *testing.T) {
 	setupRepoMocks(t)
 
-	upload := dbstore.Upload{
+	upload := codeinteltypes.Upload{
 		ID:           42,
 		Root:         "root/",
 		Commit:       "deadbeef",
@@ -166,8 +171,9 @@ func TestHandleError(t *testing.T) {
 	}
 
 	mockWorkerStore := NewMockWorkerStore()
-	mockDBStore := NewMockDBStore()
-	mockLSIFStore := NewMockLSIFStore()
+	mockDBStore := NewMockStore()
+	mockRepoStore := NewMockRepoStore()
+	mockLSIFStore := NewMockLsifStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 	gitserverClient := NewMockGitserverClient()
 
@@ -186,10 +192,11 @@ func TestHandleError(t *testing.T) {
 	gitserverClient.CommitDateFunc.SetDefaultReturn("deadbeef", time.Now(), true, nil)
 
 	// Set a different tip commit
-	mockDBStore.MarkRepositoryAsDirtyFunc.SetDefaultReturn(errors.Errorf("uh-oh!"))
+	mockDBStore.SetRepositoryAsDirtyFunc.SetDefaultReturn(errors.Errorf("uh-oh!"))
 
 	handler := &handler{
 		dbStore:         mockDBStore,
+		repoStore:       mockRepoStore,
 		workerStore:     mockWorkerStore,
 		lsifStore:       mockLSIFStore,
 		uploadStore:     mockUploadStore,
@@ -215,23 +222,7 @@ func TestHandleError(t *testing.T) {
 }
 
 func TestHandleCloneInProgress(t *testing.T) {
-	t.Cleanup(func() {
-		backend.Mocks.Repos.Get = nil
-		backend.Mocks.Repos.ResolveRev = nil
-	})
-
-	backend.Mocks.Repos.Get = func(ctx context.Context, repoID api.RepoID) (*types.Repo, error) {
-		if repoID != api.RepoID(50) {
-			t.Errorf("unexpected repository name. want=%d have=%d", 50, repoID)
-		}
-		return &types.Repo{ID: repoID}, nil
-	}
-
-	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
-		return "", &gitdomain.RepoNotExistError{Repo: repo.Name, CloneInProgress: true}
-	}
-
-	upload := dbstore.Upload{
+	upload := codeinteltypes.Upload{
 		ID:           42,
 		Root:         "root/",
 		Commit:       "deadbeef",
@@ -240,12 +231,24 @@ func TestHandleCloneInProgress(t *testing.T) {
 	}
 
 	mockWorkerStore := NewMockWorkerStore()
-	mockDBStore := NewMockDBStore()
+	mockDBStore := NewMockStore()
+	mockRepoStore := NewMockRepoStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 	gitserverClient := NewMockGitserverClient()
 
+	mockRepoStore.GetFunc.SetDefaultHook(func(ctx context.Context, repoID api.RepoID) (*types.Repo, error) {
+		if repoID != api.RepoID(50) {
+			t.Errorf("unexpected repository name. want=%d have=%d", 50, repoID)
+		}
+		return &types.Repo{ID: repoID}, nil
+	})
+	mockRepoStore.ResolveRevFunc.SetDefaultHook(func(ctx context.Context, repo *types.Repo, _ string) (api.CommitID, error) {
+		return "", &gitdomain.RepoNotExistError{Repo: repo.Name, CloneInProgress: true}
+	})
+
 	handler := &handler{
 		dbStore:         mockDBStore,
+		repoStore:       mockRepoStore,
 		workerStore:     mockWorkerStore,
 		uploadStore:     mockUploadStore,
 		gitserverClient: gitserverClient,
@@ -267,7 +270,7 @@ func TestHandleCloneInProgress(t *testing.T) {
 //
 
 func copyTestDump(ctx context.Context, key string) (io.ReadCloser, error) {
-	return os.Open("../../testdata/dump1.lsif.gz")
+	return os.Open("./testdata/dump1.lsif.gz")
 }
 
 func setupRepoMocks(t *testing.T) {

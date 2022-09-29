@@ -93,6 +93,10 @@ type Upload struct {
 	AssociatedIndexID *int
 }
 
+func (u Upload) RecordID() int {
+	return u.ID
+}
+
 type GetUploadsOptions struct {
 	RepositoryID            int
 	State                   string
