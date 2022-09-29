@@ -1,6 +1,6 @@
-import path from 'path'
+const path = require('path')
 
-import shelljs from 'shelljs'
+const shelljs = require('shelljs')
 
 const queryFile = path.join(__dirname, 'report-bundle-jora-query')
 
