@@ -110,6 +110,7 @@
 
     &--link:hover {
         background-color: var(--color-bg-2);
+        cursor: pointer;
     }
 
     &--active:hover {
@@ -159,10 +160,6 @@
         font-family: 'SF Mono', monospace;
         font-weight: 400;
         font-size: 0.75rem;
-    }
-
-    &--link:hover {
-        cursor: pointer;
     }
 }
 

@@ -960,7 +960,7 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                 <CollapsePanel id={group.repoName + group.path} className="ml-0">
                     <div className={styles.locationContainer}>
                         <ul className="list-unstyled mb-0">
-                            {group.locations.map(reference => {
+                            {group.locations.map((reference, index) => {
                                 const locationActive = isActiveLocation(reference) ? styles.locationActive : ''
                                 const selectReference = (
                                     event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>
@@ -976,7 +976,7 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                                     >
                                         <div
                                             role="link"
-                                            data-testid="reference-item"
+                                            data-testid={`reference-item-${group.path}-${index}`}
                                             tabIndex={0}
                                             onClick={selectReference}
                                             onKeyDown={selectReference}
