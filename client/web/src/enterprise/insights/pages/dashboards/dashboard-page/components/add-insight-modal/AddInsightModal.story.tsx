@@ -41,8 +41,10 @@ const mockInsights: MockedResponse<GetDashboardAccessibleInsightsResult> = {
         data: {
             dashboardInsightsIds: { nodes: [{ views: { nodes: [] } }] },
             accessibleInsights: {
+                __typename: 'InsightViewConnection',
                 nodes: [
                     {
+                        __typename: 'InsightView',
                         id: 'searchInsights.insight.personalGraphQLTypesMigration',
                         presentation: {
                             __typename: 'LineChartInsightViewPresentation',
@@ -50,6 +52,7 @@ const mockInsights: MockedResponse<GetDashboardAccessibleInsightsResult> = {
                         }
                     },
                     {
+                        __typename: 'InsightView',
                         id: 'searchInsights.insight.testOrg1graphQLTypesMigration',
                         presentation: {
                             __typename: 'LineChartInsightViewPresentation',
@@ -57,6 +60,7 @@ const mockInsights: MockedResponse<GetDashboardAccessibleInsightsResult> = {
                         }
                     },
                     {
+                        __typename: 'InsightView',
                         id: 'searchInsights.insight.testOrg1graphQLTypesMigration1',
                         presentation: {
                             __typename: 'LineChartInsightViewPresentation',
@@ -64,6 +68,7 @@ const mockInsights: MockedResponse<GetDashboardAccessibleInsightsResult> = {
                         }
                     },
                     {
+                        __typename: 'InsightView',
                         id: 'searchInsights.insight.testOrg1graphQLTypesMigration2',
                         presentation: {
                             __typename: 'LineChartInsightViewPresentation',
@@ -71,6 +76,7 @@ const mockInsights: MockedResponse<GetDashboardAccessibleInsightsResult> = {
                         }
                     },
                     {
+                        __typename: 'InsightView',
                         id: 'searchInsights.insight.testOrg2graphQLTypesMigration',
                         presentation: {
                             __typename: 'LineChartInsightViewPresentation',
