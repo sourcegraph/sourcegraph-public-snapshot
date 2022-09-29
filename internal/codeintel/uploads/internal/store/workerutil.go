@@ -46,7 +46,7 @@ var uploadColumnsWithNullRank = []*sqlf.Query{
 }
 
 var uploadWorkerStoreOptions = dbworkerstore.Options{
-	Name:              "codeintel_upload2", // TODO - change me
+	Name:              "codeintel_upload",
 	TableName:         "lsif_uploads",
 	ViewName:          "lsif_uploads_with_repository_name u",
 	ColumnExpressions: uploadColumnsWithNullRank,
