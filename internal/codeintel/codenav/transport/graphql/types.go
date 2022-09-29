@@ -1,8 +1,8 @@
 package graphql
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 // AdjustedLocation is a path and range pair from within a particular upload. The adjusted commit
@@ -28,7 +28,10 @@ type AdjustedCodeIntelligenceRange struct {
 // AdjustedDiagnostic is a diagnostic from within a particular upload. The adjusted commit denotes
 // the target commit for which the location was adjusted (the originally requested commit).
 type AdjustedDiagnostic struct {
-	lsifstore.Diagnostic
+	DumpID int
+	Path   string
+	precise.DiagnosticData
+
 	Dump           types.Dump
 	AdjustedCommit string
 	AdjustedRange  types.Range
