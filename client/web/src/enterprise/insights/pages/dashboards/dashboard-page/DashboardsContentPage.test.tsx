@@ -103,6 +103,7 @@ const mocks: MockedResponse[] = [
     {
         request: {
             query: GET_ACCESSIBLE_INSIGHTS_LIST,
+            variables: { id: 'foo' },
         },
         result: {
             data: {
