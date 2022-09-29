@@ -88,7 +88,11 @@ export function initializeInstanceVersionNumber(
 
         const version = localStorageService.getValue(INSTANCE_VERSION_NUMBER_KEY)
         // instances below 3.38.0 does not support EventSource.IDEEXTENSION and should fallback to BACKEND source
-        return version && isOlderThan(version, { major: 3, minor: 38 }) ? EventSource.BACKEND : EventSource.IDEEXTENSION
+        return version
+            ? isOlderThan(version, { major: 3, minor: 38 })
+                ? EventSource.BACKEND
+                : EventSource.IDEEXTENSION
+            : EventSource.BACKEND
     }
     return EventSource.IDEEXTENSION
 }
