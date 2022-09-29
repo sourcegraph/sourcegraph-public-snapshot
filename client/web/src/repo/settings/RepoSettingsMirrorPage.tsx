@@ -4,11 +4,10 @@ import { mdiLock } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { RouteComponentProps } from 'react-router'
-import { interval, Subject, Subscription } from 'rxjs'
-import { catchError, switchMap, tap } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError } from '@sourcegraph/common'
+import { useMutation, useQuery } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import {
     Container,
@@ -31,6 +30,8 @@ import {
     RecloneRepositoryResult,
     RecloneRepositoryVariables,
     SettingsAreaRepositoryFields,
+    SettingsAreaRepositoryResult,
+    SettingsAreaRepositoryVariables,
 } from '../../graphql-operations'
 import {
     checkMirrorRepositoryConnection,
@@ -40,11 +41,10 @@ import {
 import { eventLogger } from '../../tracking/eventLogger'
 import { DirectImportRepoAlert } from '../DirectImportRepoAlert'
 
-import { fetchSettingsAreaRepository } from './backend'
+import { FETCH_SETTINGS_AREA_REPOSITORY_GQL } from './backend'
 import { ActionContainer, BaseActionContainer } from './components/ActionContainer'
 
 import styles from './RepoSettingsMirrorPage.module.scss'
-import { useMutation } from '@sourcegraph/http-client'
 
 interface UpdateMirrorRepositoryActionContainerProps {
     repo: SettingsAreaRepositoryFields
@@ -54,102 +54,79 @@ interface UpdateMirrorRepositoryActionContainerProps {
     history: H.History
 }
 
-class UpdateMirrorRepositoryActionContainer extends React.PureComponent<UpdateMirrorRepositoryActionContainerProps> {
-    private componentUpdates = new Subject<UpdateMirrorRepositoryActionContainerProps>()
-    private subscriptions = new Subscription()
+const UpdateMirrorRepositoryActionContainer: React.FunctionComponent<
+    UpdateMirrorRepositoryActionContainerProps
+> = props => {
+    const thisUpdateMirrorRepository = async (): Promise<void> => {
+        await updateMirrorRepository({ repository: props.repo.id }).toPromise()
+        props.onDidUpdateRepository()
+    }
 
-    public componentDidMount(): void {
-        this.subscriptions.add(
-            interval(3000).subscribe(() => {
-                this.props.onDidUpdateRepository()
-            })
+    let title: React.ReactNode
+    let description: React.ReactNode
+    let buttonLabel: React.ReactNode
+    let buttonDisabled = false
+    let info: React.ReactNode
+    if (props.repo.mirrorInfo.cloneInProgress) {
+        title = 'Cloning in progress...'
+        description =
+            <Code>{props.repo.mirrorInfo.cloneProgress}</Code> ||
+            'This repository is currently being cloned from its remote repository.'
+        buttonLabel = (
+            <span>
+                <LoadingSpinner /> Cloning...
+            </span>
         )
-    }
-
-    public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
-    }
-
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
-
-    public render(): JSX.Element | null {
-        let title: React.ReactNode
-        let description: React.ReactNode
-        let buttonLabel: React.ReactNode
-        let buttonDisabled = false
-        let info: React.ReactNode
-        if (this.props.repo.mirrorInfo.cloneInProgress) {
-            title = 'Cloning in progress...'
-            description =
-                <Code>{this.props.repo.mirrorInfo.cloneProgress}</Code> ||
-                'This repository is currently being cloned from its remote repository.'
-            buttonLabel = (
-                <span>
-                    <LoadingSpinner /> Cloning...
-                </span>
-            )
-            buttonDisabled = true
-            info = <DirectImportRepoAlert className={styles.alert} />
-        } else if (this.props.repo.mirrorInfo.cloned) {
-            const updateSchedule = this.props.repo.mirrorInfo.updateSchedule
-            title = (
-                <>
+        buttonDisabled = true
+        info = <DirectImportRepoAlert className={styles.alert} />
+    } else if (props.repo.mirrorInfo.cloned) {
+        const updateSchedule = props.repo.mirrorInfo.updateSchedule
+        title = (
+            <>
+                <div>
+                    Last refreshed:{' '}
+                    {props.repo.mirrorInfo.updatedAt ? <Timestamp date={props.repo.mirrorInfo.updatedAt} /> : 'unknown'}{' '}
+                </div>
+                {updateSchedule && (
                     <div>
-                        Last refreshed:{' '}
-                        {this.props.repo.mirrorInfo.updatedAt ? (
-                            <Timestamp date={this.props.repo.mirrorInfo.updatedAt} />
-                        ) : (
-                            'unknown'
-                        )}{' '}
+                        Next scheduled update <Timestamp date={updateSchedule.due} /> (position{' '}
+                        {updateSchedule.index + 1} out of {updateSchedule.total} in the schedule)
                     </div>
-                    {updateSchedule && (
-                        <div>
-                            Next scheduled update <Timestamp date={updateSchedule.due} /> (position{' '}
-                            {updateSchedule.index + 1} out of {updateSchedule.total} in the schedule)
-                        </div>
-                    )}
-                    {this.props.repo.mirrorInfo.updateQueue && !this.props.repo.mirrorInfo.updateQueue.updating && (
-                        <div>
-                            Queued for update (position {this.props.repo.mirrorInfo.updateQueue.index + 1} out of{' '}
-                            {this.props.repo.mirrorInfo.updateQueue.total} in the queue)
-                        </div>
-                    )}
-                </>
-            )
-            if (!updateSchedule) {
-                description = 'This repository is automatically updated when accessed by a user.'
-            } else {
-                description =
-                    'This repository is automatically updated from its remote repository periodically and when accessed by a user.'
-            }
-            buttonLabel = 'Refresh now'
-        } else {
-            title = 'Clone this repository'
-            description = 'This repository has not yet been cloned from its remote repository.'
-            buttonLabel = 'Clone now'
-        }
-
-        return (
-            <ActionContainer
-                title={title}
-                description={<div>{description}</div>}
-                buttonLabel={buttonLabel}
-                buttonDisabled={buttonDisabled || this.props.disabled}
-                buttonSubtitle={this.props.disabledReason}
-                flashText="Added to queue"
-                info={info}
-                run={this.updateMirrorRepository}
-                history={this.props.history}
-            />
+                )}
+                {props.repo.mirrorInfo.updateQueue && !props.repo.mirrorInfo.updateQueue.updating && (
+                    <div>
+                        Queued for update (position {props.repo.mirrorInfo.updateQueue.index + 1} out of{' '}
+                        {props.repo.mirrorInfo.updateQueue.total} in the queue)
+                    </div>
+                )}
+            </>
         )
+        if (!updateSchedule) {
+            description = 'This repository is automatically updated when accessed by a user.'
+        } else {
+            description =
+                'This repository is automatically updated from its remote repository periodically and when accessed by a user.'
+        }
+        buttonLabel = 'Refresh now'
+    } else {
+        title = 'Clone this repository'
+        description = 'This repository has not yet been cloned from its remote repository.'
+        buttonLabel = 'Clone now'
     }
 
-    private updateMirrorRepository = async (): Promise<void> => {
-        await updateMirrorRepository({ repository: this.props.repo.id }).toPromise()
-        this.props.onDidUpdateRepository()
-    }
+    return (
+        <ActionContainer
+            title={title}
+            description={<div>{description}</div>}
+            buttonLabel={buttonLabel}
+            buttonDisabled={buttonDisabled || props.disabled}
+            buttonSubtitle={props.disabledReason}
+            flashText="Added to queue"
+            info={info}
+            run={thisUpdateMirrorRepository}
+            history={props.history}
+        />
+    )
 }
 
 interface CheckMirrorRepositoryConnectionActionContainerProps {
@@ -158,107 +135,74 @@ interface CheckMirrorRepositoryConnectionActionContainerProps {
     history: H.History
 }
 
-interface CheckMirrorRepositoryConnectionActionContainerState {
-    loading: boolean
-    result?: GQL.ICheckMirrorRepositoryConnectionResult | null
-    errorDescription?: string
-}
+const CheckMirrorRepositoryConnectionActionContainer: React.FunctionComponent<
+    CheckMirrorRepositoryConnectionActionContainerProps
+> = props => {
+    const [loading, setLoading] = useState<boolean>(false)
+    const [errorDescription, setErrorDescription] = useState<string>()
+    const [result, setResult] = useState<GQL.ICheckMirrorRepositoryConnectionResult>()
 
-class CheckMirrorRepositoryConnectionActionContainer extends React.PureComponent<
-    CheckMirrorRepositoryConnectionActionContainerProps,
-    CheckMirrorRepositoryConnectionActionContainerState
-> {
-    public state: CheckMirrorRepositoryConnectionActionContainerState = { loading: false }
-
-    private checkRequests = new Subject<void>()
-    private subscriptions = new Subscription()
-
-    public componentDidMount(): void {
-        this.subscriptions.add(
-            this.checkRequests
-                .pipe(
-                    tap(() => {
-                        this.setState({ errorDescription: undefined, result: undefined, loading: true })
-                        this.props.onDidUpdateReachability(undefined)
-                    }),
-                    switchMap(() =>
-                        checkMirrorRepositoryConnection({ repository: this.props.repo.id }).pipe(
-                            catchError(error => {
-                                this.setState({
-                                    errorDescription: asError(error).message,
-                                    result: undefined,
-                                    loading: false,
-                                })
-                                this.props.onDidUpdateReachability(false)
-                                return []
-                            })
-                        )
-                    )
-                )
-                .subscribe(
-                    result => {
-                        this.setState({ result, loading: false })
-                        this.props.onDidUpdateReachability(result.error === null)
-                    },
-                    error => console.log(error)
-                )
-        )
-
-        // Run the check upon initial mount, so the user sees the information without needing to click.
-        this.checkRequests.next()
+    const thisCheckMirrorRepositoryConnection = (): void => {
+        checkMirrorRepositoryConnection({ repository: props.repo.id })
+            .toPromise()
+            .then(result => {
+                setResult(result)
+                setLoading(false)
+                props.onDidUpdateReachability(result.error === null)
+            })
+            .catch(error => {
+                setLoading(false)
+                setErrorDescription(asError(error).message)
+                setResult(undefined)
+                props.onDidUpdateReachability(false)
+                return []
+            })
     }
+    useEffect(() => {
+        setLoading(true)
+        setErrorDescription(undefined)
+        setResult(undefined)
+        props.onDidUpdateReachability(undefined)
+        thisCheckMirrorRepositoryConnection()
+    }, [])
 
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
-
-    public render(): JSX.Element | null {
-        return (
-            <BaseActionContainer
-                title="Check connection to remote repository"
-                description={<span>Diagnose problems cloning or updating from the remote repository.</span>}
-                action={
-                    <Button
-                        disabled={this.state.loading}
-                        onClick={this.checkMirrorRepositoryConnection}
-                        variant="primary"
-                    >
-                        Check connection
-                    </Button>
-                }
-                details={
-                    <>
-                        {this.state.errorDescription && (
-                            <ErrorAlert className={styles.alert} error={this.state.errorDescription} />
-                        )}
-                        {this.state.loading && (
-                            <Alert className={classNames('mb-0', styles.alert)} variant="primary">
-                                <LoadingSpinner /> Checking connection...
+    return (
+        <BaseActionContainer
+            title="Check connection to remote repository"
+            description={<span>Diagnose problems cloning or updating from the remote repository.</span>}
+            action={
+                <Button disabled={loading} onClick={thisCheckMirrorRepositoryConnection} variant="primary">
+                    Check connection
+                </Button>
+            }
+            details={
+                <>
+                    {errorDescription && <ErrorAlert className={styles.alert} error={errorDescription} />}
+                    {loading && (
+                        <Alert className={classNames('mb-0', styles.alert)} variant="primary">
+                            <LoadingSpinner /> Checking connection...
+                        </Alert>
+                    )}
+                    {result &&
+                        (result.error === null ? (
+                            <Alert className={classNames('mb-0', styles.alert)} variant="success">
+                                The remote repository is reachable.
                             </Alert>
-                        )}
-                        {this.state.result &&
-                            (this.state.result.error === null ? (
-                                <Alert className={classNames('mb-0', styles.alert)} variant="success">
-                                    The remote repository is reachable.
-                                </Alert>
-                            ) : (
-                                <Alert className={classNames('mb-0', styles.alert)} variant="danger">
-                                    <Text>The remote repository is unreachable. Logs follow.</Text>
-                                    <div>
-                                        <pre className={styles.log}>
-                                            <Code>{this.state.result.error}</Code>
-                                        </pre>
-                                    </div>
-                                </Alert>
-                            ))}
-                    </>
-                }
-                className="mb-0"
-            />
-        )
-    }
-
-    private checkMirrorRepositoryConnection = (): void => this.checkRequests.next()
+                        ) : (
+                            <Alert className={classNames('mb-0', styles.alert)} variant="danger">
+                                <Text>The remote repository is unreachable. Logs follow.</Text>
+                                <div>
+                                    <pre className={styles.log}>
+                                        <Code>{result.error}</Code>
+                                    </pre>
+                                </div>
+                            </Alert>
+                        ))}
+                </>
+            }
+            className="mb-0"
+        />
+    )
 }
 
 interface RepoSettingsMirrorPageProps extends RouteComponentProps<{}> {
@@ -272,12 +216,9 @@ interface RepoSettingsMirrorPageProps extends RouteComponentProps<{}> {
 export const RepoSettingsMirrorPage: React.FunctionComponent<
     React.PropsWithChildren<RepoSettingsMirrorPageProps>
 > = props => {
-    const repoUpdates = new Subject<void>()
-    const subscriptions = new Subscription()
-
     const [repo, setRepo] = useState<SettingsAreaRepositoryFields>(props.repo)
-    const [error, setError] = useState<string>()
     const [reachable, setReachable] = useState<boolean>()
+    const [error, setError] = useState<string>()
     const [recloneRepository] = useMutation<RecloneRepositoryResult, RecloneRepositoryVariables>(
         RECLONE_REPOSITORY_MUTATION,
         {
@@ -285,23 +226,36 @@ export const RepoSettingsMirrorPage: React.FunctionComponent<
         }
     )
 
+    const fetchRepo = useQuery<SettingsAreaRepositoryResult, SettingsAreaRepositoryVariables>(
+        FETCH_SETTINGS_AREA_REPOSITORY_GQL,
+        {
+            variables: { name: repo.name },
+        }
+    )
+
+    const updateRepo = async (): Promise<void> => {
+        const { data, error } = await fetchRepo.refetch()
+
+        if (data?.repository) {
+            setRepo(data.repository)
+        }
+
+        if (error) {
+            setError(error.message)
+        }
+    }
+
     useEffect(() => {
         eventLogger.logPageView('RepoSettingsMirror')
+        updateRepo()
 
-        subscriptions.add(
-            repoUpdates.pipe(switchMap(() => fetchSettingsAreaRepository(props.repo.name))).subscribe(
-                repo => setRepo(repo),
-                error => setError(asError(error).message)
-            )
-        )
-
-        return () => {
-            subscriptions.unsubscribe()
-        }
-    })
+        setInterval(() => {
+            updateRepo()
+        }, 3000)
+    }, [])
 
     const onDidUpdateRepository = (): void => {
-        repoUpdates.next()
+        updateRepo()
     }
 
     const onDidUpdateReachability = (reachable: boolean | undefined): void => setReachable(reachable)
@@ -373,7 +327,7 @@ export const RepoSettingsMirrorPage: React.FunctionComponent<
                     buttonDisabled={repo.mirrorInfo.cloneInProgress}
                     flashText="Recloning repo"
                     run={async () => {
-                        recloneRepository()
+                        await recloneRepository()
                     }}
                     history={props.history}
                 />
