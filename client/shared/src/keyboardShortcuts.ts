@@ -17,7 +17,7 @@ export interface KeyboardShortcut {
 /** A key sequence (that triggers a keyboard shortcut). */
 export interface Keybinding {
     /** Keys that must be held down. */
-    held?: ModifierKey[]
+    held?: (ModifierKey | 'Mod')[]
 
     /** Keys that must be pressed in order (when holding the `held` keys). */
     ordered: Key[]

@@ -6,6 +6,7 @@ import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { KEYBOARD_SHORTCUTS } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { ModifierKey, Key } from '@sourcegraph/shared/src/react-shortcuts'
+import { getModKey } from '@sourcegraph/shared/src/react-shortcuts/ShortcutManager'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { Button, Modal, Icon, H4, Label } from '@sourcegraph/wildcard'
 
@@ -28,6 +29,7 @@ const LEGACY_KEYBOARD_SHORTCUTS: Record<string, KeyboardShortcut> = {
 }
 
 const KEY_TO_NAMES: { [P in Key | ModifierKey | string]?: string } = {
+    Mod: ((modKey: string) => (modKey === 'Meta' ? 'Cmd' : 'Ctrl'))(getModKey()),
     Meta: 'Cmd',
     Control: 'Ctrl',
     '†': 't',
