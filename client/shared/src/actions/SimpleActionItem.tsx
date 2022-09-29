@@ -15,7 +15,7 @@ export const SimpleActionItem: React.FunctionComponent<SimpleActionItemProps> = 
     const { isActive, tooltip, children, className, ...buttonLinkProps } = props
 
     return (
-        <Tooltip content={props.tooltip}>
+        <Tooltip content={props.tooltip} placement="left">
             <span>
                 {/**
                  * This <ButtonLink> must be wrapped with an additional span, since the tooltip currently has an issue that will
