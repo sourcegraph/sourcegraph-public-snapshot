@@ -119,7 +119,7 @@ describe('ReferencesPanel', () => {
         const definitionsList = result.getByTestId('definitions')
         const referencesList = result.getByTestId('references')
 
-        const referenceButton = within(referencesList).getByRole('button', { name: 'line 16' })
+        const referenceButton = within(referencesList).getByTestId('reference-item', { name: 'line 16' })
         const fullReferenceURL =
             '/github.com/sourcegraph/go-diff@9d1f353a285b3094bc33bdae277a19aedabe8b71/-/blob/diff/diff.go?L16:2-16:10'
         expect(referenceButton).toHaveAttribute('data-test-reference-url', fullReferenceURL)
@@ -131,7 +131,7 @@ describe('ReferencesPanel', () => {
         // Reference is marked as active
         expect(referenceButton.parentNode).toHaveClass('locationActive')
         // But we have the same in Definitions too, and that should be marked active too
-        const definitionButton = within(definitionsList).getByRole('button', { name: 'line 16' })
+        const definitionButton = within(definitionsList).getByTestId('reference-item', { name: 'line 16' })
         expect(definitionButton.parentNode).toHaveClass('locationActive')
 
         // Expect "Loading" message

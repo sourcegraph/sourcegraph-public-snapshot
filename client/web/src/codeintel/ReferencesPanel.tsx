@@ -874,7 +874,6 @@ const CollapsibleLocationGroup: React.FunctionComponent<
         () =>
             group.locations.map(location => ({
                 startLine: location.range?.start.line ?? 0,
-                // TODO: off-by-one danger?
                 endLine: (location.range?.end.line ?? 0) + 1,
             })),
         [group.locations]
@@ -962,7 +961,7 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                     <div className={styles.locationContainer}>
                         <ul className="list-unstyled mb-0">
                             {group.locations.map(reference => {
-                                const className = isActiveLocation(reference) ? styles.locationActive : ''
+                                const locationActive = isActiveLocation(reference) ? styles.locationActive : ''
                                 const selectReference = (
                                     event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>
                                 ): void =>
@@ -973,15 +972,16 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                                 return (
                                     <li
                                         key={reference.url}
-                                        className={classNames('border-0 rounded-0 mb-0', styles.location, className)}
+                                        className={classNames('border-0 rounded-0 mb-0', styles.location)}
                                     >
                                         <div
                                             role="link"
+                                            data-testid="reference-item"
                                             tabIndex={0}
                                             onClick={selectReference}
                                             onKeyDown={selectReference}
                                             data-href={reference.url}
-                                            className={styles.locationLink}
+                                            className={classNames(styles.locationLink, locationActive)}
                                         >
                                             <CodeExcerpt
                                                 className={styles.locationLinkCodeExcerpt}

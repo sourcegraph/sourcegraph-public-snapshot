@@ -100,11 +100,29 @@
     flex-direction: column;
     min-height: 18px;
 
-    &:not(:last-child) > button {
+    &:not(:last-child) > &--link {
         border-bottom: 1px solid var(--body-bg);
     }
 
-    button {
+    &--active {
+        background-color: var(--color-bg-3);
+    }
+
+    &--link:hover {
+        background-color: var(--color-bg-2);
+    }
+
+    &--active:hover {
+        // Needed to override `&--link:hover`
+        background-color: var(--color-bg-3);
+    }
+
+    &--link {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        color: inherit;
+
         padding-top: 0;
         padding-bottom: 0;
         width: 100%;
@@ -118,10 +136,15 @@
         font-family: 'SF Mono', monospace;
 
         border: none;
-    }
 
-    button:hover {
-        background-color: var(--color-bg-2);
+        &--code-excerpt {
+            flex: 1;
+            width: 100%;
+
+            :global(.line) {
+                min-width: 2.5rem;
+            }
+        }
     }
 
     code {
@@ -138,28 +161,8 @@
         font-size: 0.75rem;
     }
 
-    &--active {
-        background-color: var(--color-bg-2);
-    }
-
     &--link:hover {
         cursor: pointer;
-    }
-
-    &--link {
-        display: flex;
-        flex-direction: column;
-        flex: 1;
-        color: inherit;
-
-        &--code-excerpt {
-            flex: 1;
-            width: 100%;
-
-            :global(.line) {
-                min-width: 2.5rem;
-            }
-        }
     }
 }
 
