@@ -1,4 +1,4 @@
-import * as React from 'react'
+import React, { useEffect, useState } from 'react'
 
 import { mdiLock } from '@mdi/js'
 import classNames from 'classnames'
@@ -25,10 +25,13 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { TerminalLine } from '../../auth/Terminal'
-import { requestGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
-import { SettingsAreaRepositoryFields } from '../../graphql-operations'
+import {
+    RecloneRepositoryResult,
+    RecloneRepositoryVariables,
+    SettingsAreaRepositoryFields,
+} from '../../graphql-operations'
 import {
     checkMirrorRepositoryConnection,
     RECLONE_REPOSITORY_MUTATION,
@@ -41,6 +44,7 @@ import { fetchSettingsAreaRepository } from './backend'
 import { ActionContainer, BaseActionContainer } from './components/ActionContainer'
 
 import styles from './RepoSettingsMirrorPage.module.scss'
+import { useMutation } from '@sourcegraph/http-client'
 
 interface UpdateMirrorRepositoryActionContainerProps {
     repo: SettingsAreaRepositoryFields
@@ -262,177 +266,150 @@ interface RepoSettingsMirrorPageProps extends RouteComponentProps<{}> {
     history: H.History
 }
 
-interface RepoSettingsMirrorPageState {
-    /**
-     * The repository object, refreshed after we make changes that modify it.
-     */
-    repo: SettingsAreaRepositoryFields
-
-    /**
-     * Whether the repository connection check reports that the repository is reachable.
-     */
-    reachable?: boolean
-
-    loading: boolean
-    error?: string
-}
-
 /**
  * The repository settings mirror page.
  */
-export class RepoSettingsMirrorPage extends React.PureComponent<
-    RepoSettingsMirrorPageProps,
-    RepoSettingsMirrorPageState
-> {
-    private repoUpdates = new Subject<void>()
-    private subscriptions = new Subscription()
+export const RepoSettingsMirrorPage: React.FunctionComponent<
+    React.PropsWithChildren<RepoSettingsMirrorPageProps>
+> = props => {
+    const repoUpdates = new Subject<void>()
+    const subscriptions = new Subscription()
 
-    constructor(props: RepoSettingsMirrorPageProps) {
-        super(props)
-
-        this.state = {
-            loading: false,
-            repo: props.repo,
+    const [repo, setRepo] = useState<SettingsAreaRepositoryFields>(props.repo)
+    const [error, setError] = useState<string>()
+    const [reachable, setReachable] = useState<boolean>()
+    const [recloneRepository] = useMutation<RecloneRepositoryResult, RecloneRepositoryVariables>(
+        RECLONE_REPOSITORY_MUTATION,
+        {
+            variables: { repo: repo.id },
         }
-    }
+    )
 
-    public componentDidMount(): void {
-        eventLogger.logViewEvent('RepoSettingsMirror')
+    useEffect(() => {
+        eventLogger.logPageView('RepoSettingsMirror')
 
-        this.subscriptions.add(
-            this.repoUpdates.pipe(switchMap(() => fetchSettingsAreaRepository(this.props.repo.name))).subscribe(
-                repo => this.setState({ repo }),
-                error => this.setState({ error: asError(error).message })
+        subscriptions.add(
+            repoUpdates.pipe(switchMap(() => fetchSettingsAreaRepository(props.repo.name))).subscribe(
+                repo => setRepo(repo),
+                error => setError(asError(error).message)
             )
         )
+
+        return () => {
+            subscriptions.unsubscribe()
+        }
+    })
+
+    const onDidUpdateRepository = (): void => {
+        repoUpdates.next()
     }
 
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
+    const onDidUpdateReachability = (reachable: boolean | undefined): void => setReachable(reachable)
 
-    public render(): JSX.Element | null {
-        return (
-            <>
-                <PageTitle title="Mirror settings" />
-                <PageHeader path={[{ text: 'Mirroring and cloning' }]} headingElement="h2" className="mb-3" />
-                <Container className="repo-settings-mirror-page">
-                    {this.state.loading && <LoadingSpinner />}
-                    {this.state.error && <ErrorAlert error={this.state.error} />}
+    return (
+        <>
+            <PageTitle title="Mirror settings" />
+            <PageHeader path={[{ text: 'Mirroring and cloning' }]} headingElement="h2" className="mb-3" />
+            <Container className="repo-settings-mirror-page">
+                {error && <ErrorAlert error={error} />}
 
-                    <div className="form-group">
-                        <Input
-                            value={this.props.repo.mirrorInfo.remoteURL || '(unknown)'}
-                            readOnly={true}
-                            className="mb-0"
-                            label={
-                                <>
-                                    {' '}
-                                    Remote repository URL{' '}
-                                    <small className="text-info">
-                                        <Icon aria-hidden={true} svgPath={mdiLock} /> Only visible to site admins
-                                    </small>
-                                </>
-                            }
-                        />
-                        {this.state.repo.viewerCanAdminister && (
-                            <small className="form-text text-muted">
-                                Configure repository mirroring in{' '}
-                                <Link to="/site-admin/external-services">external services</Link>.
-                            </small>
-                        )}
-                    </div>
-                    {this.state.repo.mirrorInfo.lastError && (
-                        <Alert variant="warning">
-                            <TerminalLine>Error updating repo:</TerminalLine>
-                            <TerminalLine>{this.state.repo.mirrorInfo.lastError}</TerminalLine>
-                        </Alert>
-                    )}
-                    <UpdateMirrorRepositoryActionContainer
-                        repo={this.state.repo}
-                        onDidUpdateRepository={this.onDidUpdateRepository}
-                        disabled={typeof this.state.reachable === 'boolean' && !this.state.reachable}
-                        disabledReason={
-                            typeof this.state.reachable === 'boolean' && !this.state.reachable
-                                ? 'Not reachable'
-                                : undefined
+                <div className="form-group">
+                    <Input
+                        value={repo.mirrorInfo.remoteURL || '(unknown)'}
+                        readOnly={true}
+                        className="mb-0"
+                        label={
+                            <>
+                                {' '}
+                                Remote repository URL{' '}
+                                <small className="text-info">
+                                    <Icon aria-hidden={true} svgPath={mdiLock} /> Only visible to site admins
+                                </small>
+                            </>
                         }
-                        history={this.props.history}
                     />
-                    <ActionContainer
-                        title="Reclone repository"
-                        description={
-                            <div>
-                                This will delete the repository from disk and reclone it.
-                                <div className="mt-2">
-                                    <span className="font-weight-bold text-danger">WARNING</span>: This can take a long time, depending
-                                    on how large the repository is. The repository will be unsearchable while the
-                                    reclone is in progress.
-                                </div>
+                    {repo.viewerCanAdminister && (
+                        <small className="form-text text-muted">
+                            Configure repository mirroring in{' '}
+                            <Link to="/site-admin/external-services">external services</Link>.
+                        </small>
+                    )}
+                </div>
+                {repo.mirrorInfo.lastError && (
+                    <Alert variant="warning">
+                        <TerminalLine>Error updating repo:</TerminalLine>
+                        <TerminalLine>{repo.mirrorInfo.lastError}</TerminalLine>
+                    </Alert>
+                )}
+                <UpdateMirrorRepositoryActionContainer
+                    repo={repo}
+                    onDidUpdateRepository={onDidUpdateRepository}
+                    disabled={typeof reachable === 'boolean' && !reachable}
+                    disabledReason={typeof reachable === 'boolean' && !reachable ? 'Not reachable' : undefined}
+                    history={props.history}
+                />
+                <ActionContainer
+                    title="Reclone repository"
+                    description={
+                        <div>
+                            This will delete the repository from disk and reclone it.
+                            <div className="mt-2">
+                                <span className="font-weight-bold text-danger">WARNING</span>: This can take a long
+                                time, depending on how large the repository is. The repository will be unsearchable
+                                while the reclone is in progress.
                             </div>
-                        }
-                        buttonVariant="danger"
-                        buttonLabel={
-                            this.state.repo.mirrorInfo.cloneInProgress ? (
-                                <span>
-                                    <LoadingSpinner /> Cloning...
-                                </span>
-                            ) : (
-                                'Reclone'
-                            )
-                        }
-                        buttonDisabled={this.state.repo.mirrorInfo.cloneInProgress}
-                        flashText="Recloning repo"
-                        run={async () => {
-                            await requestGraphQL(RECLONE_REPOSITORY_MUTATION, {
-                                repo: this.state.repo.id,
-                            }).toPromise()
-                        }}
-                        history={this.props.history}
-                    />
-                    <CheckMirrorRepositoryConnectionActionContainer
-                        repo={this.state.repo}
-                        onDidUpdateReachability={this.onDidUpdateReachability}
-                        history={this.props.history}
-                    />
-                    {typeof this.state.reachable === 'boolean' && !this.state.reachable && (
-                        <Alert variant="info">
-                            Problems cloning or updating this repository?
-                            <ul className={styles.steps}>
-                                <li className={styles.step}>
-                                    Inspect the <strong>Check connection</strong> error log output to see why the remote
-                                    repository is not reachable.
-                                </li>
-                                <li className={styles.step}>
-                                    <Code weight="bold">
-                                        No ECDSA host key is known ... Host key verification failed?
-                                    </Code>{' '}
-                                    See{' '}
-                                    <Link to="/help/admin/repo/auth#ssh-authentication-config-keys-known-hosts">
-                                        SSH repository authentication documentation
-                                    </Link>{' '}
-                                    for how to provide an SSH <Code>known_hosts</Code> file with the remote host's SSH
-                                    host key.
-                                </li>
-                                <li className={styles.step}>
-                                    Consult{' '}
-                                    <Link to="/help/admin/repo/add">Sourcegraph repositories documentation</Link> for
-                                    resolving other authentication issues (such as HTTPS certificates and SSH keys).
-                                </li>
-                                <li className={styles.step}>
-                                    <FeedbackText headerText="Questions?" />
-                                </li>
-                            </ul>
-                        </Alert>
-                    )}
-                </Container>
-            </>
-        )
-    }
-
-    private onDidUpdateRepository = (): void => {
-        this.repoUpdates.next()
-    }
-
-    private onDidUpdateReachability = (reachable: boolean | undefined): void => this.setState({ reachable })
+                        </div>
+                    }
+                    buttonVariant="danger"
+                    buttonLabel={
+                        repo.mirrorInfo.cloneInProgress ? (
+                            <span>
+                                <LoadingSpinner /> Cloning...
+                            </span>
+                        ) : (
+                            'Reclone'
+                        )
+                    }
+                    buttonDisabled={repo.mirrorInfo.cloneInProgress}
+                    flashText="Recloning repo"
+                    run={async () => {
+                        recloneRepository()
+                    }}
+                    history={props.history}
+                />
+                <CheckMirrorRepositoryConnectionActionContainer
+                    repo={repo}
+                    onDidUpdateReachability={onDidUpdateReachability}
+                    history={props.history}
+                />
+                {typeof reachable === 'boolean' && !reachable && (
+                    <Alert variant="info">
+                        Problems cloning or updating this repository?
+                        <ul className={styles.steps}>
+                            <li className={styles.step}>
+                                Inspect the <strong>Check connection</strong> error log output to see why the remote
+                                repository is not reachable.
+                            </li>
+                            <li className={styles.step}>
+                                <Code weight="bold">No ECDSA host key is known ... Host key verification failed?</Code>{' '}
+                                See{' '}
+                                <Link to="/help/admin/repo/auth#ssh-authentication-config-keys-known-hosts">
+                                    SSH repository authentication documentation
+                                </Link>{' '}
+                                for how to provide an SSH <Code>known_hosts</Code> file with the remote host's SSH host
+                                key.
+                            </li>
+                            <li className={styles.step}>
+                                Consult <Link to="/help/admin/repo/add">Sourcegraph repositories documentation</Link>{' '}
+                                for resolving other authentication issues (such as HTTPS certificates and SSH keys).
+                            </li>
+                            <li className={styles.step}>
+                                <FeedbackText headerText="Questions?" />
+                            </li>
+                        </ul>
+                    </Alert>
+                )}
+            </Container>
+        </>
+    )
 }
