@@ -518,25 +518,40 @@ func (s *Syncer) SyncExternalService(
 	ctx, save := s.observeSync(ctx, "Syncer.SyncExternalService", "")
 	defer func() { save(svc, err) }()
 
-	// We take an advisory lock here and also when deleting and external service to
-	// ensure that they can't happen at the same time
-	lock := locker.NewWith(s.Store, "external_service")
-	locked, unlocker, err := lock.Lock(ctx, locker.StringKey(fmt.Sprintf("%d", svc.ID)), false)
-	if err != nil {
-		return errors.Wrap(err, "getting advisory lock")
-	}
-	if !locked {
-		return errors.Errorf("could not advisory lock for service %d", svc.ID)
-	}
-	defer func() {
-		err = unlocker(err)
-	}()
-
 	// We don't use tx here as the sourcing process below can be slow and we don't
 	// want to hold a lock on the external_services table for too long.
 	svc, err = s.Store.ExternalServiceStore().GetByID(ctx, externalServiceID)
 	if err != nil {
 		return errors.Wrap(err, "fetching external services")
+	}
+
+	// We take an advisory lock here and also when deleting and external service to
+	// ensure that they can't happen at the same time
+	lock := locker.NewWith(s.Store, "external_service")
+
+	var locked bool
+	var unlocker locker.UnlockFunc
+	if s.Store.Handle().InTransaction() {
+		// TODO: Double check why we're in a transaction sometimes, maybe tests?
+		locked, err = lock.LockInTransaction(ctx, locker.StringKey(fmt.Sprintf("%d", svc.ID)), false)
+		if err != nil {
+			return errors.Wrap(err, "getting advisory lock")
+		}
+		if !locked {
+			return errors.Errorf("could not advisory lock for service %d", svc.ID)
+		}
+	} else {
+		// We're NOT in a transaction
+		locked, unlocker, err = lock.Lock(ctx, locker.StringKey(fmt.Sprintf("%d", svc.ID)), false)
+		if err != nil {
+			return errors.Wrap(err, "getting advisory lock")
+		}
+		if !locked {
+			return errors.Errorf("could not advisory lock for service %d", svc.ID)
+		}
+		defer func() {
+			err = unlocker(err)
+		}()
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
