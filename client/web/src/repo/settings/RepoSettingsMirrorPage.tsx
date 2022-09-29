@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import { mdiLock } from '@mdi/js'
 import classNames from 'classnames'
@@ -56,9 +56,7 @@ interface UpdateMirrorRepositoryActionContainerProps {
     history: H.History
 }
 
-const UpdateMirrorRepositoryActionContainer: React.FunctionComponent<
-    UpdateMirrorRepositoryActionContainerProps
-> = props => {
+const UpdateMirrorRepositoryActionContainer: React.FunctionComponent<UpdateMirrorRepositoryActionContainerProps> = props => {
     const [updateRepo] = useMutation<UpdateMirrorRepositoryResult, UpdateMirrorRepositoryVariables>(
         UPDATE_MIRROR_REPOSITORY,
         { variables: { repository: props.repo.id } }
@@ -142,9 +140,7 @@ interface CheckMirrorRepositoryConnectionActionContainerProps {
     history: H.History
 }
 
-const CheckMirrorRepositoryConnectionActionContainer: React.FunctionComponent<
-    CheckMirrorRepositoryConnectionActionContainerProps
-> = props => {
+const CheckMirrorRepositoryConnectionActionContainer: React.FunctionComponent<CheckMirrorRepositoryConnectionActionContainerProps> = props => {
     const [checkConnection, { data, loading, error }] = useMutation<
         CheckMirrorRepositoryConnectionResult,
         CheckMirrorRepositoryConnectionVariables
