@@ -25,11 +25,14 @@ if [ "$CHECK_BUNDLESIZE" ] && jq -e '.scripts.bundlesize' package.json >/dev/nul
 fi
 
 if [[ "$BRANCH" != "main" ]]; then
-  echo "--- diff bundle size"
+  echo "--- generate statoscope comparison report"
+  pushd "../.." >/dev/null
 
-  ls -la ui/assets
+  ls -la ./ui/assets
   ./node_modules/.bin/statoscope generate \
     -i "./ui/assets/stats-${BRANCH}.json" \
     -r "./ui/assets/stats-${MERGE_BASE}.json" \
     -o -t ./ui/assets/compare-report.html
+
+  popd >/dev/null || exit
 fi
