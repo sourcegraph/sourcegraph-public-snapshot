@@ -129,14 +129,12 @@ func webhookExistsInConfig(webhooks []*schema.GitHubWebhook, org string) bool {
 	return false
 }
 
-// TODO: Add unit tests to check this
 func randomHex(n int) (string, error) {
-	r := make([]byte, n/2)
+	r := make([]byte, (n+1)/2)
 	_, err := rand.Read(r)
-
 	if err != nil {
 		return "", err
 	}
 
-	return hex.EncodeToString(r), nil
+	return hex.EncodeToString(r)[:n], nil
 }
