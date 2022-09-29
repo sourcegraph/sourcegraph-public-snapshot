@@ -55,7 +55,7 @@ func (v Version) String() string {
 }
 
 func (v Version) GitTag() string {
-	v.GitTagWithPatch(0)
+	return v.GitTagWithPatch(0)
 }
 
 func (v Version) GitTagWithPatch(patch int) string {
