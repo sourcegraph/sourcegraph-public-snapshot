@@ -79,8 +79,6 @@ func createVM(ctx context.Context, config *config.Config, repositoryName string)
 		FirecrackerOptions: fopts,
 	}, operations)
 
-	fmt.Printf("Spawning ignite VM with %s cloned into the workspace...\n", repositoryName)
-
 	if err := runner.Setup(ctx); err != nil {
 		return "", err
 	}

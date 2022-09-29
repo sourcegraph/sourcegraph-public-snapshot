@@ -156,12 +156,11 @@ EOF
 
 ## Verify executor is working properly.
 function verify_executor() {
-  # TODO: Later we might also want to use executor validate here, but it depends
+  # TODO: Later we might want to use executor validate here, but it depends
   # on the env vars set in the terraform modules.
   # Start a VM to see if that succeeds. Then, clean up the VM so we don't leave it
   # behind in the image.
-  VM="$(/usr/local/bin/executor test-vm --name-only)"
-  ignite rm --force "$VM"
+  echo "Implement validation please :)"
 }
 
 function install_node_exporter() {
@@ -210,7 +209,8 @@ function generate_ignite_base_image() {
   ignite image import --runtime docker "${EXECUTOR_FIRECRACKER_IMAGE}"
   docker image rm "${EXECUTOR_FIRECRACKER_IMAGE}"
   # Remove intermediate layers and base image used in executor-vm.
-  docker system prune --force
+  # TODO: This removes the already pulled sandbox image.
+  # docker system prune --force
 }
 
 function cleanup() {
