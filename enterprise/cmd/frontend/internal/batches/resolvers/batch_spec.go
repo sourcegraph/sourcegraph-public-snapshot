@@ -607,9 +607,31 @@ func (r *batchSpecResolver) computeState(ctx context.Context) (btypes.BatchSpecS
 }
 
 func (r *batchSpecResolver) computeCanAdminister(ctx context.Context) (bool, error) {
-	// TODO: This should only check namespace access.
 	r.canAdministerOnce.Do(func() {
-		r.canAdminister, r.canAdministerErr = checkSiteAdminOrSameUser(ctx, r.store.DatabaseDB(), r.batchSpec.UserID)
+		svc := service.New(r.store)
+		r.canAdminister, r.canAdministerErr = svc.CanAdministerInNamespace(ctx, r.batchSpec.NamespaceUserID, r.batchSpec.NamespaceOrgID)
 	})
 	return r.canAdminister, r.canAdministerErr
+}
+
+func (r *batchSpecResolver) Files(ctx context.Context, args *graphqlbackend.ListBatchSpecWorkspaceFilesArgs) (_ graphqlbackend.BatchSpecWorkspaceFileConnectionResolver, err error) {
+	if err := validateFirstParamDefaults(args.First); err != nil {
+		return nil, err
+	}
+	opts := store.ListBatchSpecWorkspaceFileOpts{
+		LimitOpts: store.LimitOpts{
+			Limit: int(args.First),
+		},
+		BatchSpecRandID: r.batchSpec.RandID,
+	}
+
+	if args.After != nil {
+		id, err := strconv.Atoi(*args.After)
+		if err != nil {
+			return nil, err
+		}
+		opts.Cursor = int64(id)
+	}
+
+	return &batchSpecWorkspaceFileConnectionResolver{store: r.store, opts: opts}, nil
 }

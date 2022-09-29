@@ -55,7 +55,7 @@ func (r *insightSeriesResolver) Points(ctx context.Context, _ *graphqlbackend.In
 	opts.SeriesID = &seriesID
 
 	// Default to last 12 frames of data
-	frames := query.BuildFrames(12, timeseries.TimeInterval{
+	frames := timeseries.BuildFrames(12, timeseries.TimeInterval{
 		Unit:  types.IntervalUnit(r.series.SampleIntervalUnit),
 		Value: r.series.SampleIntervalValue,
 	}, time.Now())
@@ -334,7 +334,7 @@ func getRecordedSeriesPointOpts(ctx context.Context, db database.DB, definition 
 	opts.SeriesID = &seriesID
 
 	// Default to last 12 points of data
-	frames := query.BuildFrames(12, timeseries.TimeInterval{
+	frames := timeseries.BuildFrames(12, timeseries.TimeInterval{
 		Unit:  types.IntervalUnit(definition.SampleIntervalUnit),
 		Value: definition.SampleIntervalValue,
 	}, time.Now())

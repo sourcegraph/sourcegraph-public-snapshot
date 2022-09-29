@@ -335,8 +335,9 @@ loop:
 			panic("SearchResults.Sparkline unexpected union type state")
 		}
 	}
-	span := opentracing.SpanFromContext(ctx)
-	span.SetTag("blame_ops", blameOps)
+	if span := opentracing.SpanFromContext(ctx); span != nil {
+		span.SetTag("blame_ops", blameOps)
+	}
 	return sparkline, nil
 }
 

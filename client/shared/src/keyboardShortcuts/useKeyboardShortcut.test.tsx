@@ -57,7 +57,7 @@ describe('useKeyboardShortcut', () => {
                   "keybindings": [
                     {
                       "held": [
-                        "Control"
+                        "Mod"
                       ],
                       "ordered": [
                         "k"
@@ -103,7 +103,7 @@ describe('useKeyboardShortcut', () => {
                   "keybindings": [
                     {
                       "held": [
-                        "Control"
+                        "Mod"
                       ],
                       "ordered": [
                         "k"

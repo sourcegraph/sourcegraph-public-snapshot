@@ -3,13 +3,12 @@ import React from 'react'
 import classNames from 'classnames'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { FilterLink, RevisionsProps, SyntaxHighlightedSearchQuery, TabIndex } from '@sourcegraph/search-ui'
+import { FilterLink, RevisionsProps, TabIndex } from '@sourcegraph/search-ui'
 // eslint-disable-next-line no-restricted-imports
 import styles from '@sourcegraph/search-ui/src/results/sidebar/SearchFilterSection.module.scss'
 import { GitRefType } from '@sourcegraph/shared/src/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { Button, LoadingSpinner, Tab, TabList, TabPanel, TabPanels, Tabs, Text } from '@sourcegraph/wildcard'
 
 import { useConnection } from '../../../components/FilteredConnection/hooks/useConnection'
@@ -50,8 +49,6 @@ export const GIT_REVS_QUERY = gql`
     }
 `
 
-const revisionLabel = (value: string): React.ReactElement => <SyntaxHighlightedSearchQuery query={`rev:${value}`} />
-
 interface RevisionListProps {
     repoName: string
     type: GitRefType
@@ -67,8 +64,6 @@ const RevisionList: React.FunctionComponent<React.PropsWithChildren<RevisionList
     pluralNoun,
     query,
 }) => {
-    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
-
     const { connection, fetchMore, hasNextPage, loading, error } = useConnection<
         SearchSidebarGitRefsResult,
         SearchSidebarGitRefsVariables,
@@ -124,7 +119,6 @@ const RevisionList: React.FunctionComponent<React.PropsWithChildren<RevisionList
                         key={node.name}
                         label={node.displayName}
                         value={node.name}
-                        labelConverter={coreWorkflowImprovementsEnabled ? undefined : revisionLabel}
                         onFilterChosen={onFilterClick}
                     />
                 ))}

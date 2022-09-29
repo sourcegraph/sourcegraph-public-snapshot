@@ -7,31 +7,13 @@ This document describes the exact changes needed to update a single-node Sourceg
 
 1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
 1. Find the relevant entry for your update in the update notes on this page.
-1. After checking the relevant update notes, refer to the [upgrade procedure](../deploy/docker-single-container/index.md#standard-upgrades) to upgrade your instance.
+1. After checking the relevant update notes, refer to the [standard upgrade procedure](../deploy/docker-single-container/index.md#standard-upgrades) to upgrade your instance.
 
 ## Multi-version upgrade procedure
 
 1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
-1. For each version within the multi-version upgrade range, read the stepwise update notes on this page. For example, when upgrading from 3.20 to 3.23, update notes for existing stepwise updates (here, [3.20 -> 3.21](#3-20-3-21) is relevant). Neglecting this step can cause you to [miss important upgrade notes](#if-you-wish-to-keep-existing-precise-code-navigation-indexes) and data that required special treatment can be lost permanently.
-1. Check the [update notes](#multi-version-upgrade-notes) specific to multi-version upgrades.
-1. After checking the relevant update notes, refer to the [upgrade procedure](../deploy/docker-single-container/index.md#multi-version-upgrades) to upgrade your instance.
-
-### Multi-version upgrade notes
-
-Step 2 of performing a [multi-version upgrade](../deploy/docker-single-container/index.md#multi-version-upgrades) on a Docker Single Server with built-in database requires starting an equivalent Postgres container locally. The version of this Postgres container is dependent on the version of the instance prior to upgrade.
-
-| `${SG_VERSION}`     | `${PG_VERSION}` | `${PG_VERSION_TAG}` |
-| ------------------- | --------------- | ------------------- |
-| `3.20.X` - `3.26.X` | `11`            | `11.4`              |
-| `3.27.X` - `3.29.X` | `12`            | `12.6`              |
-| `3.30.X` - `3.37.X` | `12`            | `12.6-alpine`       |
-| `3.38.X` -          | `12`            | `12-alpine`         |
-
-Some stepwise upgrade notes have multi-version considerations.
-
-- **Upgrades crossing 3.26 -> 3.27** will require an update to Postgres 12.
-    - If you are using an external database, follow the [upgrade instructions](../postgres.md#upgrading-external-postgresql-instances) prior to starting the upgrade procedure.
-    - If you are using the provided database containers, update the `pgsql` and `codeintel-db` images to the new version prior to starting the upgrade procedure. These images will convert postgres 9.6 data on-disk to a Postgres 12-compatible format.
+1. Find the relevant entry for your update in the update notes on this page. These notes may contain relevant information about the infrastructure update such as resource requirement changes or versions of depencies (Docker, externalized databases).
+1. After checking the relevant update notes, refer to the [multi-version upgrade procedure](../deploy/docker-single-container/index.md#multi-version-upgrades) to upgrade your instance.
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
@@ -41,8 +23,7 @@ Some stepwise upgrade notes have multi-version considerations.
 
 Follow the [steps](#upgrade-procedure) outlined at the top of this page to upgrade.
 
-
-## 3.43 -> 4.0
+## 3.43 -> 4.0.1
 
 <!-- Add changes changes to this section before release. -->
 
@@ -52,49 +33,33 @@ Follow the [steps](#upgrade-procedure) outlined at the top of this page to upgra
 
 Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
 
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.43).*
-
 ## 3.41 -> 3.42.2
 
 Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
-
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.42).*
 
 ## 3.40 -> 3.41
 
 Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
 
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.41).*
-
 ## 3.39 -> 3.40.2
 
 Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
-
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.40).*
 
 ## 3.39.0 -> 3.39.1
 
 Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
 
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.39.1).*
-
 ## 3.38 -> 3.39
 
 Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
-
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.39).*
 
 ## 3.38.0 -> 3.38.1
 
 Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
 
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.38.1).*
-
 ## 3.37 -> 3.38
 
 Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
-
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.37).*
 
 ## 3.36 -> 3.37
 

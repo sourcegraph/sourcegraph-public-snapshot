@@ -94,6 +94,10 @@ type ExternalServiceStore interface {
 	// CountSyncJobs counts all sync jobs.
 	CountSyncJobs(ctx context.Context, opt ExternalServicesGetSyncJobsOptions) (int64, error)
 
+	// CancelSyncJob cancels a given sync job. It returns an error when the job was not
+	// found or not in processing or queued state.
+	CancelSyncJob(ctx context.Context, id int64) error
+
 	// List returns external services under given namespace.
 	// If no namespace is given, it returns all external services.
 	//
@@ -643,10 +647,22 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 		return nil
 	}
 
+	authProviders := conf.Get().AuthProviders
 	for _, s := range svcs {
 		rawConfig, err := s.Config.Decrypt(ctx)
 		if err != nil {
 			return err
+		}
+
+		normalized, err := ValidateExternalServiceConfig(ctx, e, ValidateExternalServiceConfigOptions{
+			Kind:            s.Kind,
+			Config:          rawConfig,
+			AuthProviders:   authProviders,
+			NamespaceUserID: s.NamespaceUserID,
+			NamespaceOrgID:  s.NamespaceOrgID,
+		})
+		if err != nil {
+			return errors.Wrapf(err, "validating service of kind %q", s.Kind)
 		}
 
 		// 🚨 SECURITY: For all GitHub and GitLab code host connections on Sourcegraph
@@ -661,7 +677,7 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			s.Config.Set(rawConfig)
 		}
 
-		if err := e.recalculateFields(s, rawConfig); err != nil {
+		if err := e.recalculateFields(s, string(normalized)); err != nil {
 			return err
 		}
 	}
@@ -1060,7 +1076,8 @@ SELECT
 	process_after,
 	num_resets,
 	external_service_id,
-	num_failures
+	num_failures,
+	cancel
 FROM
 	external_service_sync_jobs
 WHERE %s
@@ -1163,6 +1180,7 @@ func scanExternalServiceSyncJob(sc dbutil.Scanner, job *types.ExternalServiceSyn
 		&job.NumResets,
 		&dbutil.NullInt64{N: &job.ExternalServiceID},
 		&job.NumFailures,
+		&job.Cancel,
 	)
 }
 
@@ -1177,6 +1195,37 @@ LIMIT 1
 
 	lastError, _, err := basestore.ScanFirstNullString(e.Query(ctx, q))
 	return lastError, err
+}
+
+func (e *externalServiceStore) CancelSyncJob(ctx context.Context, id int64) error {
+	now := timeutil.Now()
+	q := sqlf.Sprintf(`
+UPDATE
+	external_service_sync_jobs
+SET
+	cancel = TRUE,
+	-- If the sync job is still queued, we directly abort, otherwise we keep the
+	-- state, so the worker can do teardown and, at some point, mark it failed itself.
+	state = CASE WHEN external_service_sync_jobs.state = 'processing' THEN external_service_sync_jobs.state ELSE 'canceled' END,
+	finished_at = CASE WHEN external_service_sync_jobs.state = 'processing' THEN external_service_sync_jobs.finished_at ELSE %s END
+WHERE
+	id = %s
+	AND
+	state IN ('queued', 'processing')
+`, now, id)
+
+	res, err := e.ExecResult(ctx, q)
+	if err != nil {
+		return err
+	}
+	af, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if af != 1 {
+		return &errSyncJobNotFound{id: id}
+	}
+	return nil
 }
 
 func (e *externalServiceStore) GetLatestSyncErrors(ctx context.Context) (map[int64]string, error) {

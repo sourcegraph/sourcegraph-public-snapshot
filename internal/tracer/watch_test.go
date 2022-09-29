@@ -44,7 +44,10 @@ func TestConfigWatcher(t *testing.T) {
 		update()
 
 		// should all be no-op
-		assert.Equal(t, oteltrace.NewNoopTracerProvider().Tracer(""), switchableOTel.Tracer(""))
+		assert.Equal(t,
+			oteltrace.NewNoopTracerProvider().Tracer(""),
+			// should be a wrapped tracer
+			switchableOTel.Tracer("").(*shouldTraceTracer).tracer)
 		assert.Equal(t, opentracing.NoopTracer{}, switchableOT.tracer)
 	})
 

@@ -1,14 +1,36 @@
 import * as React from 'react'
 
 import { Key, ModifierKey } from './keys'
+import { Data } from './ShortcutManager'
 import { Consumer, Context } from './ShortcutProvider'
 
 export interface Props {
+    /**
+     * Order in which they keys should be pressed. At the moment the values used
+     * need to take into account any modifier key (e.g. to register a keyboard
+     * shortcut for 'Alt+t', you'd have to specify the character '†').
+     */
     ordered: Key[]
-    held?: ModifierKey[]
-    node?: HTMLElement | null
+    /**
+     * Which modifiers keys need to be pressed for the handler to be triggered.
+     * 'Mod' is a special value that translates to 'Meta' (Cmd) on macOS and
+     * 'Ctrl' on other platforms.
+     */
+    held?: (ModifierKey | 'Mod')[]
+    /**
+     * Be default keybindings are not triggered when the keyboard events
+     * originate from an input element. Set this to `true` to also react to
+     * keyboard events originaing from input elements.
+     */
     ignoreInput?: boolean
+    /**
+     * The function to be called when the keybinding is triggered.
+     */
     onMatch(matched: { ordered: Key[]; held?: ModifierKey[] }): void
+    /**
+     * By default the browser's default action for the event is prevented. Set
+     * to `true` to allow the default action.
+     */
     allowDefault?: boolean
 }
 
@@ -16,13 +38,16 @@ export interface Subscription {
     unsubscribe(): void
 }
 
+/**
+ * Registers a global keyboard shortcut.
+ */
 export const Shortcut: React.FunctionComponent<Props> = props => (
     <Consumer>{(context: Context) => <ShortcutConsumer {...props} {...context} />}</Consumer>
 )
 
 class ShortcutConsumer extends React.Component<Props & Context, never> {
-    public data = {
-        node: this.props.node,
+    public data: Data = {
+        node: null,
         ordered: this.props.ordered,
         held: this.props.held,
         ignoreInput: this.props.ignoreInput || false,

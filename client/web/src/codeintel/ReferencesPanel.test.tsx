@@ -1,21 +1,18 @@
 import { render, RenderResult, within, fireEvent } from '@testing-library/react'
 import * as H from 'history'
 import { EMPTY, NEVER, noop, of, Subscription } from 'rxjs'
-import { HoverThresholdProps } from 'src/repo/RepoContainer'
 
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { pretendProxySubscribable, pretendRemote } from '@sourcegraph/shared/src/api/util'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
-import { Controller, ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { PlatformContext, PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Controller } from '@sourcegraph/shared/src/extensions/controller'
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import '@sourcegraph/shared/dev/mockReactVisibilitySensor'
 
-import { Location } from './location'
-import { getLineContent, ReferencesPanelWithMemoryRouter } from './ReferencesPanel'
-import { buildReferencePanelMocks } from './ReferencesPanel.mocks'
+import { ReferencesPanelProps, ReferencesPanelWithMemoryRouter } from './ReferencesPanel'
+import { buildReferencePanelMocks, highlightedLinesDiffGo, highlightedLinesGoDiffGo } from './ReferencesPanel.mocks'
 
 const NOOP_SETTINGS_CASCADE = {
     subjects: null,
@@ -46,12 +43,7 @@ const NOOP_EXTENSIONS_CONTROLLER: Controller = {
     unsubscribe: noop,
 }
 
-const defaultProps: SettingsCascadeProps &
-    PlatformContextProps<'urlToFile' | 'requestGraphQL' | 'settings'> &
-    TelemetryProps &
-    HoverThresholdProps &
-    ExtensionsControllerProps &
-    ThemeProps = {
+const defaultProps: Omit<ReferencesPanelProps, 'externalHistory' | 'externalLocation'> = {
     extensionsController: NOOP_EXTENSIONS_CONTROLLER,
     telemetryService: NOOP_TELEMETRY_SERVICE,
     settingsCascade: {
@@ -60,6 +52,16 @@ const defaultProps: SettingsCascadeProps &
     },
     platformContext: NOOP_PLATFORM_CONTEXT,
     isLightTheme: false,
+    fetchHighlightedFileLineRanges: args => {
+        if (args.filePath === 'cmd/go-diff/go-diff.go') {
+            return of(highlightedLinesGoDiffGo)
+        }
+        if (args.filePath === 'diff/diff.go') {
+            return of(highlightedLinesDiffGo)
+        }
+        console.error('attempt to fetch highlighted lines for file without mocks', args.filePath)
+        return of([])
+    },
 }
 
 describe('ReferencesPanel', () => {
@@ -88,16 +90,12 @@ describe('ReferencesPanel', () => {
 
         expect(result.getByText('Definitions')).toBeVisible()
 
-        const definitions = [['', 'string']]
+        // See MOCK_DEFINITIONS and highlightedLinesDiffGo/highlightedLinesGoDiffGo to see how these expectations here came to be
+        const definitions = ['line 16']
 
         const definitionsList = result.getByTestId('definitions')
         for (const line of definitions) {
-            for (const surrounding of line) {
-                if (surrounding === '') {
-                    continue
-                }
-                expect(within(definitionsList).getByText(surrounding)).toBeVisible()
-            }
+            expect(within(definitionsList).getByText(line)).toBeVisible()
         }
     })
 
@@ -106,20 +104,12 @@ describe('ReferencesPanel', () => {
 
         expect(result.getByText('References')).toBeVisible()
 
-        const references = [
-            ['', 'string'],
-            ['label = fmt.Sprintf("orig(%s) new(%s)", fdiff.', ', fdiff.NewName)'],
-            ['if err := printFileHeader(&buf, "--- ", d.', ', d.OrigTime); err != nil {'],
-        ]
+        // See MOCK_REFERENCES and highlightedLinesDiffGo/highlightedLinesGoDiffGo to see how these expectations here came to be
+        const references = ['line 46', 'line 16', 'line 52']
 
         const referencesList = result.getByTestId('references')
         for (const line of references) {
-            for (const surrounding of line) {
-                if (surrounding === '') {
-                    continue
-                }
-                expect(within(referencesList).getByText(surrounding)).toBeVisible()
-            }
+            expect(within(referencesList).getByText(line)).toBeVisible()
         }
     })
 
@@ -129,20 +119,21 @@ describe('ReferencesPanel', () => {
         const definitionsList = result.getByTestId('definitions')
         const referencesList = result.getByTestId('references')
 
-        const referenceButton = within(referencesList).getByRole('button', { name: '16: OrigName string' })
+        console.log({ referencesList })
+        const referenceButton = within(referencesList).getByTestId('reference-item-diff/diff.go-0')
         const fullReferenceURL =
             '/github.com/sourcegraph/go-diff@9d1f353a285b3094bc33bdae277a19aedabe8b71/-/blob/diff/diff.go?L16:2-16:10'
-        expect(referenceButton).toHaveAttribute('data-test-reference-url', fullReferenceURL)
-        expect(referenceButton.parentNode).not.toHaveClass('locationActive')
+        expect(referenceButton).toHaveAttribute('data-href', fullReferenceURL)
+        expect(referenceButton).not.toHaveClass('locationActive')
 
         // Click on reference
         fireEvent.click(referenceButton)
 
         // Reference is marked as active
-        expect(referenceButton.parentNode).toHaveClass('locationActive')
+        expect(referenceButton).toHaveClass('locationActive')
         // But we have the same in Definitions too, and that should be marked active too
-        const definitionButton = within(definitionsList).getByRole('button', { name: '16: OrigName string' })
-        expect(definitionButton.parentNode).toHaveClass('locationActive')
+        const definitionButton = within(definitionsList).getByTestId('reference-item-diff/diff.go-0')
+        expect(definitionButton).toHaveClass('locationActive')
 
         // Expect "Loading" message
         const loadingText = result.getByText('Loading ...')
@@ -164,83 +155,5 @@ describe('ReferencesPanel', () => {
         // Assert the code view is rendered, by doing a partial match against its content
         const codeView = within(rightPane).getByRole('table')
         expect(codeView).toHaveTextContent('package diff import')
-    })
-})
-
-describe('getLineContent', () => {
-    const testFileLines = [
-        'package main',
-        '',
-        'import "fmt"',
-        '',
-        'type Animal interface {',
-        '\tSound() string',
-        '}',
-        '',
-        'var _ Animal = Cat{}',
-        '',
-        'type Cat struct{}',
-        '',
-        'func (c Cat) Sound() string { return "i am a cat" }',
-        '',
-        'type Dog struct{}',
-        '',
-        'func (d Dog) Sound() string { return "it is i, the dog" }',
-        '',
-        'func animalFarm() {',
-        '\tmakeSound(Cat{})',
-        '\tmakeSound(Dog{})',
-        '}',
-        '',
-        'func makeSound(a Animal) {',
-        '\tfmt.Printf("animal made a sound: %s", a.Sound())',
-        '',
-        '\tfoo := a',
-        '',
-        '\tfmt.Printf("another animal: %s", foo.Sound())',
-        '}',
-        '',
-    ]
-
-    it('returns pre/post and token of line', () => {
-        const location: Location = {
-            repo: 'a',
-            file: 'file',
-            commitID: 'f00b4r',
-            url: 'url',
-            precise: true,
-            content: '',
-            lines: testFileLines,
-            range: {
-                start: { line: 23, character: 5 },
-                end: { line: 23, character: 14 },
-            },
-        }
-
-        const content = getLineContent(location)
-        expect(content.prePostToken?.pre).toEqual('func ')
-        expect(content.prePostToken?.token).toEqual('makeSound')
-        expect(content.prePostToken?.post).toEqual('(a Animal) {')
-    })
-
-    it('handles token on multiple lines', () => {
-        const location: Location = {
-            repo: 'a',
-            file: 'file',
-            commitID: 'f00b4r',
-            url: 'url',
-            precise: true,
-            content: '',
-            lines: ['line0 start-of-tok', 'en-ends-here line1'],
-            range: {
-                start: { line: 0, character: 6 },
-                end: { line: 1, character: 12 },
-            },
-        }
-
-        const content = getLineContent(location)
-        expect(content.prePostToken?.pre).toEqual('line0 ')
-        expect(content.prePostToken?.token).toEqual('start-of-tok')
-        expect(content.prePostToken?.post).toEqual('')
     })
 })

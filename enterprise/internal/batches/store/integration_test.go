@@ -30,6 +30,7 @@ func TestIntegration(t *testing.T) {
 		t.Run("ListChangesetSyncData", storeTest(db, nil, testStoreListChangesetSyncData))
 		t.Run("ListChangesetsTextSearch", storeTest(db, nil, testStoreListChangesetsTextSearch))
 		t.Run("BatchSpecs", storeTest(db, nil, testStoreBatchSpecs))
+		t.Run("BatchSpecWorkspaceFiles", storeTest(db, nil, testStoreBatchSpecWorkspaceFiles))
 		t.Run("ChangesetSpecs", storeTest(db, nil, testStoreChangesetSpecs))
 		t.Run("GetRewirerMappingWithArchivedChangesets", storeTest(db, nil, testStoreGetRewirerMappingWithArchivedChangesets))
 		t.Run("ChangesetSpecsCurrentState", storeTest(db, nil, testStoreChangesetSpecsCurrentState))

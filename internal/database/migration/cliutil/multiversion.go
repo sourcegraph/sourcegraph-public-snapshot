@@ -114,6 +114,7 @@ func runMigration(
 	skipDriftCheck bool,
 	dryRun bool,
 	up bool,
+	animateProgress bool,
 	registerMigratorsWithStore func(storeFactory migrations.StoreFactory) oobmigration.RegisterMigratorsFunc,
 	expectedSchemaFactories []ExpectedSchemaFactory,
 	out *output.Output,
@@ -203,6 +204,7 @@ func runMigration(
 				db,
 				dryRun,
 				up,
+				animateProgress,
 				registerMigrators,
 				out,
 				step.outOfBandMigrationIDs,
@@ -220,7 +222,7 @@ func runMigration(
 		//
 		// Note that we don't want to get rid of that check entirely from the frontend, as we do
 		// still want to catch the cases where site-admins "jump forward" several versions while
-		// using the zero-downtime upgrade path (not the migrator upgrade utility).
+		// using the standard upgrade path (not a multi-version upgrade that handles these cases).
 
 		if err := setServiceVersion(ctx, r, plan.to); err != nil {
 			return err

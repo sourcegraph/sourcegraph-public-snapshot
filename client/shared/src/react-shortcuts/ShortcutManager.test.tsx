@@ -1,8 +1,8 @@
-import * as React from 'react'
-
-import { act, createEvent, fireEvent, render } from '@testing-library/react'
+import { createEvent, fireEvent, render } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import * as sinon from 'sinon'
+
+import { platform } from '../testing/dom-utils'
 
 import { ModifierKey } from './keys'
 
@@ -130,24 +130,6 @@ describe('ShortcutManager', () => {
         sinon.assert.notCalled(spy)
     })
 
-    it.skip('calls shortcuts that are scoped to a specific node only when that node is focused', () => {
-        // This test is meaningless atm because the current implementation of
-        // Shortcut doesn't actually work for scoped events.
-
-        const spy = sinon.spy()
-
-        act(() => {
-            render(
-                <ShortcutProvider>
-                    <ShortcutWithFocus spy={spy} />
-                </ShortcutProvider>
-            )
-        })
-
-        userEvent.keyboard('z')
-        sinon.assert.called(spy)
-    })
-
     it('only registers a unique shortcut once', () => {
         const spy = sinon.spy()
 
@@ -259,49 +241,37 @@ describe('ShortcutManager', () => {
 
             sinon.assert.notCalled(fooSpy)
         })
+
+        it('maps the special value "Mod" to "Control"', () => {
+            const fooSpy = sinon.spy()
+
+            render(
+                <ShortcutProvider>
+                    <Shortcut held={['Mod']} ordered={['/']} onMatch={fooSpy} />
+                </ShortcutProvider>
+            )
+
+            userEvent.keyboard('{Control>}/{/Control}')
+
+            sinon.assert.called(fooSpy)
+        })
+
+        it('maps the special value "Mod" to "Meta" (Cmd) on macOS', () => {
+            platform.set('mac')
+
+            const fooSpy = sinon.spy()
+
+            render(
+                <ShortcutProvider>
+                    <Shortcut held={['Mod']} ordered={['/']} onMatch={fooSpy} />
+                </ShortcutProvider>
+            )
+
+            userEvent.keyboard('{Meta>}/{/Meta}')
+
+            sinon.assert.called(fooSpy)
+
+            platform.reset()
+        })
     })
 })
-
-interface Props {
-    spy: sinon.SinonSpy
-}
-
-interface State {
-    node: HTMLElement | null
-}
-
-// This component isn't used currently. It and the corresponding test need
-// to be updated.
-// eslint-disable-next-line react/no-unsafe
-class ShortcutWithFocus extends React.Component<Props, State> {
-    public state: State = {
-        node: null,
-    }
-
-    public UNSAFE_componentWillUpdate(): void {
-        const { node } = this.state
-
-        if (!node) {
-            return
-        }
-
-        node.focus()
-    }
-
-    public render(): React.ReactNode {
-        const { spy } = this.props
-        const { node } = this.state
-        return (
-            <div className="app">
-                <button type="button" ref={this.setRef} />
-                <Shortcut ordered={['z']} onMatch={spy} node={node} />
-            </div>
-        )
-    }
-
-    private setRef = (node: HTMLElement | null) => {
-        this.setState({
-            node,
-        })
-    }
-}

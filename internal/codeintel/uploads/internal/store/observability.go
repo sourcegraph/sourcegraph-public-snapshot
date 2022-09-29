@@ -52,12 +52,17 @@ type operations struct {
 	softDeleteExpiredUploads          *observation.Operation
 	hardDeleteUploadsByIDs            *observation.Operation
 	deleteUploadByID                  *observation.Operation
+	insertUpload                      *observation.Operation
+	addUploadPart                     *observation.Operation
+	markQueued                        *observation.Operation
+	markFailed                        *observation.Operation
 
 	// Dumps
 	findClosestDumps                   *observation.Operation
 	findClosestDumpsFromGraphFragment  *observation.Operation
 	getDumpsWithDefinitionsForMonikers *observation.Operation
 	getDumpsByIDs                      *observation.Operation
+	deleteOverlappingDumps             *observation.Operation
 
 	// Packages
 	updatePackages *observation.Operation
@@ -67,6 +72,9 @@ type operations struct {
 
 	// Audit logs
 	deleteOldAuditLogs *observation.Operation
+
+	// Dependencies
+	insertDependencySyncingJob *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -126,6 +134,10 @@ func newOperations(observationContext *observation.Context) *operations {
 		softDeleteExpiredUploads:          op("SoftDeleteExpiredUploads"),
 		hardDeleteUploadsByIDs:            op("HardDeleteUploadsByIDs"),
 		deleteUploadByID:                  op("DeleteUploadByID"),
+		insertUpload:                      op("InsertUpload"),
+		addUploadPart:                     op("AddUploadPart"),
+		markQueued:                        op("MarkQueued"),
+		markFailed:                        op("MarkFailed"),
 
 		writeVisibleUploads:        op("writeVisibleUploads"),
 		persistNearestUploads:      op("persistNearestUploads"),
@@ -137,6 +149,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		findClosestDumpsFromGraphFragment:  op("FindClosestDumpsFromGraphFragment"),
 		getDumpsWithDefinitionsForMonikers: op("GetUploadsWithDefinitionsForMonikers"),
 		getDumpsByIDs:                      op("GetDumpsByIDs"),
+		deleteOverlappingDumps:             op("DeleteOverlappingDumps"),
 
 		// Packages
 		updatePackages: op("UpdatePackages"),
@@ -146,5 +159,8 @@ func newOperations(observationContext *observation.Context) *operations {
 
 		// Audit logs
 		deleteOldAuditLogs: op("DeleteOldAuditLogs"),
+
+		// Dependencies
+		insertDependencySyncingJob: op("InsertDependencySyncingJob"),
 	}
 }

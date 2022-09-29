@@ -15,11 +15,9 @@ type VariableApplier map[string]string
 // that the expression is a valid Prometheus query.
 func (vars VariableApplier) ApplySentinelValues(expression string) string {
 	for name, sentinelValue := range vars {
-		varKey := "$" + name
+		varKey := newSimpleVarKey(name)
 
-		// If the expression uses the variable in a quoted context ("$var") then it's
-		// interpreted as valid PromQL, we don't need to replace it!
-		if strings.Contains(expression, fmt.Sprintf("%q", varKey)) {
+		if !shouldApplyVar(expression, varKey) {
 			continue
 		}
 
@@ -33,7 +31,7 @@ func (vars VariableApplier) ApplySentinelValues(expression string) string {
 // and revert any defaults applied to it.
 func (vars VariableApplier) RevertDefaults(originalExpression, appliedExpression string) string {
 	for name, sentinelValue := range vars {
-		varKey := "$" + name
+		varKey := newSimpleVarKey(name)
 
 		if !shouldApplyVar(originalExpression, varKey) {
 			continue
@@ -44,8 +42,19 @@ func (vars VariableApplier) RevertDefaults(originalExpression, appliedExpression
 	return appliedExpression
 }
 
+// newSimpleVarKey returns a string "$varName" that is typically used to represent
+// Grafana variables in queries.
+//
+// There are other cases, "${var}" and "${var:...}", but we just ignore those for
+// replacements for simplicity - the PromQL parser will error if any are used in places
+// it doesn't understand.
+func newSimpleVarKey(varName string) string {
+	return "$" + varName
+}
+
 // If the expression uses the variable in a quoted context ("$var") then it's
 // interpreted as valid PromQL, we don't need to replace it!
 func shouldApplyVar(originalExpression string, varKey string) bool {
-	return !strings.Contains(originalExpression, fmt.Sprintf("%q", varKey))
+	quotedVarKey := fmt.Sprintf("%q", varKey)
+	return !strings.Contains(originalExpression, quotedVarKey)
 }
