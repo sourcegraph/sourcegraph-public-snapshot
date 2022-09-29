@@ -59,38 +59,25 @@
 * Quickly see the status on your repository and permissions syncing
 * Measure precise code navigation coverage with an enhanced analytics dashboard
 
-## Try it now
+## Deploy Sourcegraph
 
-Sourcegraph has three editions:
+### Recommended
 
-- [Sourcegraph.com](https://sourcegraph.com) lets you search over the open source ecosystem. [Search strings](https://sourcegraph.com/search?q=context:global+failed+to+ensure+HEAD+exists&patternType=literal), [search patterns](https://sourcegraph.com/search?q=context:global+lang:python+range%28len%28:%5B1%5D%29%29&patternType=structural), [search symbols](https://sourcegraph.com/search?q=context:global+type:symbol+lang:typescript+%28OA%7Coa%7COa%29uth+%5BHh%5Dandler+-file:%28%5E%7C/%29node_modules/+&patternType=regexp&case=yes) and [find references](https://sourcegraph.com/github.com/spf13/cobra@a684a6d7f5e37385d954dd3b5a14fc6912c6ab9d/-/blob/command.go?L221:19&subtree=true#tab=references) across your entire codebase and the open source world.
+* [Sourcegraph Cloud](https://docs.sourcegraph.com/cloud): create a single-tenant instance managed by Sourcegraph
 
-> Source code for all three editions is contained in this repository. See the [License section](#license) for more details.
+### Self-hosted
 
-More:
+* [AWS](https://docs.sourcegraph.com/admin/deploy/aws-ami)
+* [Azure](https://docs.sourcegraph.com/admin/deploy/docker-compose/azure)
+* [DigitalOcean](https://docs.sourcegraph.com/admin/deploy/docker-compose/digitalocean)
+* [Docker](https://docs.sourcegraph.com/admin/deploy/docker-compose)
+* [Google Cloud (GCP)](https://docs.sourcegraph.com/admin/deploy/docker-compose/google_cloud)
+* [Private Cloud](https://docs.sourcegraph.com/admin/deploy)
+* [Kubernetes (Enterprise-only)](https://docs.sourcegraph.com/admin/deploy/kubernetes)
 
-- Install the open source [browser extension](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en) to add Sourcegraph-like powers to your code review and code host.
-- File feature requests and bug reports in [our issue tracker](https://github.com/sourcegraph/sourcegraph/issues).
-- Visit [about.sourcegraph.com](https://about.sourcegraph.com) for more information about features, use cases, and organizations that use Sourcegraph.
+### Local machine
 
-## Sourcegraph Self-hosted
-
-### Sourcegraph Enterprise (free up to 10 users)
-
-The fastest way to run Sourcegraph self-hosted is with the Docker container. See the [quickstart installation guide](https://docs.sourcegraph.com/#getting-started). There are also several additional ways of running a [production instance](https://docs.sourcegraph.com/admin/install).
-
-### Sourcegraph OSS
-
-1. Go through [Quickstart](https://docs.sourcegraph.com/dev/setup/quickstart) to install `sg` and dependencies
-1. Start the development environment in OSS mode:
-
-   ```sh
-   sg start oss
-   ```
-
-Sourcegraph should now be running at https://sourcegraph.test:3443.
-
-For detailed instructions and troubleshooting, see the [local development documentation](https://docs.sourcegraph.com/dev).
+* [Docker](https://docs.sourcegraph.com/admin/deploy/docker-single-container)
 
 ## Development
 
