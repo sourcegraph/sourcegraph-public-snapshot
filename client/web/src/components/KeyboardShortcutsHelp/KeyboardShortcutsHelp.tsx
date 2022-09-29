@@ -29,7 +29,7 @@ const LEGACY_KEYBOARD_SHORTCUTS: Record<string, KeyboardShortcut> = {
 }
 
 const KEY_TO_NAMES: { [P in Key | ModifierKey | string]?: string } = {
-    Mod: ((modKey: string) => (modKey === 'Meta' ? 'Cmd' : modKey))(getModKey()),
+    Mod: ((modKey: string) => (modKey === 'Meta' ? 'Cmd' : 'Ctrl'))(getModKey()),
     Meta: 'Cmd',
     Control: 'Ctrl',
     '†': 't',
