@@ -16,8 +16,8 @@ func withYarnCache() buildkite.StepOpt {
 func cacheBundleSize() buildkite.StepOpt {
 	return buildkite.Cache(&buildkite.CacheOptions{
 		ID:          "bundle_size_cache",
-		Key:         "bundle_size_cache-{{ git rev-parse HEAD }}",
-		RestoreKeys: []string{"bundle_size_cache-{{ git rev-parse HEAD }}"},
+		Key:         "bundle_size_cache-{{ git.commit }}",
+		RestoreKeys: []string{"bundle_size_cache-{{ git.commit }}"},
 		Paths:       []string{"ui/assets/stats.json"},
 		Compress:    true,
 	})
