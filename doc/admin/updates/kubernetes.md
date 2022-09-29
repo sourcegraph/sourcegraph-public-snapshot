@@ -13,7 +13,8 @@
 ## Multi-version upgrade procedure
 
 1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
-1. Refer to either of the following guides to upgrade your instance:
+1. Find the relevant entry for your update in the update notes on this page. These notes may contain relevant information about the infrastructure update such as resource requirement changes or versions of depencies (Docker, Kubernetes, externalized databases).
+1. After checking the relevant update notes, refer to either of the following guides to upgrade your instance:
     * [Kubernetes with Helm upgrade guide](../deploy/kubernetes/helm.md#multi-version-upgrades)
     * [Kubernetes without Helm upgrade guide](../deploy/kubernetes/update.md#multi-version-upgrades)
 
