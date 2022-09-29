@@ -11,7 +11,7 @@ import { SmartSearch } from './SmartSearch'
 const config: Meta = {
     title: 'web/searc/suggestion/SmartSearch',
     parameters: {
-        chromatic: { disableSnapshot: false },
+        chromatic: { viewports: [480, 993], disableSnapshot: false },
     },
 }
 export default config
