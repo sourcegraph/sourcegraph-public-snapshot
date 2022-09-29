@@ -488,12 +488,34 @@ read   group   Rome    *   -//depot/dev/prodA/...   ## Except files in this dire
 			name:  "Deny all, grant some",
 			depot: "//depot/main/",
 			protects: `
-read    group   Dev1    *   //depot/main/...
+read    group   Dev1    *   -//depot/main/...
 read    group   Dev1    *   -//depot/main/.../*.java
 read    group   Dev1    *   //depot/main/.../dev/foo.java
 `,
 			canReadAll:    []string{"dev/foo.java"},
 			cannotReadAny: []string{"dev/bar.java"},
+		},
+		{
+			name:  "Grant all, deny some",
+			depot: "//depot/main/",
+			protects: `
+read    group   Dev1    *   //depot/main/...
+read    group   Dev1    *   //depot/main/.../*.java
+read    group   Dev1    *   -//depot/main/.../dev/foo.java
+`,
+			canReadAll:    []string{"dev/bar.java"},
+			cannotReadAny: []string{"dev/foo.java"},
+		},
+		{
+			name:  "Tricky minus names",
+			depot: "//-depot/-main/",
+			protects: `
+read    group   Dev1    *   //-depot/-main/...
+read    group   Dev1    *   //-depot/-main/.../*.java
+read    group   Dev1    *   -//-depot/-main/.../dev/foo.java
+`,
+			canReadAll:    []string{"dev/bar.java", "/-minus/dev/bar.java"},
+			cannotReadAny: []string{"dev/foo.java"},
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
