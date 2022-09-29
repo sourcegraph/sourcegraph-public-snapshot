@@ -135,16 +135,6 @@ Follow the [standard upgrade procedure](../deploy/docker-single-container/index.
 
 This release introduces a second database instance, `codeintel-db`. If you have configured Sourcegraph with an external database, then update the `CODEINTEL_PG*` environment variables to point to a new external database as described in the [external database documentation](../external_services/postgres.md). Again, these must not point to the same database or the Sourcegraph instance will refuse to start.
 
-### If you wish to keep existing precise code navigation indexes
-
-> WARNING: **Do not upgrade out of the 3.21.x release branch** until you have seen the log message indicating the completion of the precise code intel data migration, or verified that the `/lsif-storage/dbs` directory on the precise-code-intel-bundle-manager volume is empty. Otherwise, you risk data loss for precise code navigation.
-
-If you had precise code intel indexes uploaded prior to upgrading to 3.21.0, there is a background migration that moves all existing indexes into the `codeintel-db` upon upgrade. Once this process completes, the `/lsif-storage/dbs` directory on the precise-code-intel-bundle-manager volume should be empty, and the bundle manager should print the following log message:
-
-> Migration to Postgres has completed. All existing LSIF bundles have moved to the path /lsif-storage/db-backups and can be removed from the filesystem to reclaim space.
-
-**Wait for the above message to be printed in `docker logs precise-code-intel-bundle-manager` before upgrading to the next Sourcegraph version**.
-
 ### Turn off database secrets encryption
 
 > WARNING: Please delete the secret key file `/var/lib/sourcegraph/token` inside the container before attempting to upgrade to 3.21.x.

@@ -192,16 +192,6 @@ Follow the [standard upgrade method](../deploy/kubernetes/update.md) to upgrade 
 
 This release introduces a second database instance, `codeintel-db`. If you have configured Sourcegraph with an external database, then update the `CODEINTEL_PG*` environment variables to point to a new external database as described in the [external database documentation](../external_services/postgres.md). Again, these must not point to the same database or the Sourcegraph instance will refuse to start.
 
-### If you wish to keep existing LSIF data
-
-> WARNING: **Do not upgrade out of the 3.21.x release branch** until you have seen the log message indicating the completion of the LSIF data migration, or verified that the `/lsif-storage/dbs` directory on the precise-code-intel-bundle-manager volume is empty. Otherwise, you risk data loss for precise code navigation.
-
-If you had LSIF data uploaded prior to upgrading to 3.21.0, there is a background migration that moves all existing LSIF data into the `codeintel-db` upon upgrade. Once this process completes, the `/lsif-storage/dbs` directory on the precise-code-intel-bundle-manager volume should be empty, and the bundle manager should print the following log message:
-
-> Migration to Postgres has completed. All existing LSIF bundles have moved to the path /lsif-storage/db-backups and can be removed from the filesystem to reclaim space.
-
-**Wait for the above message to be printed in `docker logs precise-code-intel-bundle-manager` before upgrading to the next Sourcegraph version**.
-
 ## 3.20
 
 No manual migration is required, follow the [standard upgrade method](../deploy/kubernetes/update.md) to upgrade your deployment.
@@ -245,14 +235,6 @@ Resource _requests and limits_ for Grafana and Prometheus are now equal to the f
 - Prometheus: 500M -> 3G
 
 This change was made to ensure that even if another Sourcegraph service starts consuming more memory than expected and the Kubernetes node has been over-provisioned, that Sourcegraph's monitoring will still have enough memory to run and monitor / send alerts to the site admin. For additional information see [#638](https://github.com/sourcegraph/deploy-sourcegraph/pull/638)
-
-### (optional) Keep LSIF data through manual migration
-
-If you have previously uploaded code graph data and wish to retain it after upgrading, you will need to perform this migration.
-
-**Skipping the migration**
-
-If you choose not to migrate the data, Sourcegraph will use search-based code navigation until you upload code graph data again.
 
 You may run the following commands to remove the now unused resources:
 
