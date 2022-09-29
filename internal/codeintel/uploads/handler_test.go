@@ -13,7 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -26,7 +26,7 @@ import (
 func TestHandle(t *testing.T) {
 	setupRepoMocks(t)
 
-	upload := dbstore.Upload{
+	upload := codeinteltypes.Upload{
 		ID:           42,
 		Root:         "root/",
 		Commit:       "deadbeef",
@@ -160,7 +160,7 @@ func TestHandle(t *testing.T) {
 func TestHandleError(t *testing.T) {
 	setupRepoMocks(t)
 
-	upload := dbstore.Upload{
+	upload := codeinteltypes.Upload{
 		ID:           42,
 		Root:         "root/",
 		Commit:       "deadbeef",
