@@ -17,7 +17,11 @@ The `migrator` service exposes the following commands:
 The `upgrade` command performs database schema migrations and out-of-band migrations to transform existing data into the shaped expected by a given Sourcegraph instance version. This command is used by site-administrators to perform [multi-version upgrades](../updates/index.md#multi-version-upgrades).
 
 ```
-upgrade --from=<current version> --to=<target version> [--skip-version-check=false] [--dry-run=false]
+upgrade \
+    --from=<current version> \
+    --to=<target version> \
+    [--skip-version-check=false] \
+    [--dry-run=false]
 ```
 
 The `--from` and `--to` flags both accept Sourcegraph release versions _without the patch_ (e.g., `v3.42`) and dictate the bounds of the migration.
@@ -35,7 +39,10 @@ Note that the flags `--ignore-single-dirty-log` and `ignore-single-pending-log` 
 The `drift` command describes the current (live) database schema and compares it against the expected schema at the given version. The output of this command will include all relevant schema differences that could affect application correctness and performance. When schema drift is detected, a diff of the expected and actual Postgres object definitions will be shown, along with instructions on how to manually resolve the disparity.
 
 ```
-drift -db=<schema> [--version=<version>] [--file=<path to description file>]
+drift \
+    -db=<schema> \
+    [--version=<version>] \
+    [--file=<path to description file>]
 ```
 
 The `--version` flag is expected to be a Sourcegraph release version _including a patch_ (e.g., `v3.42.1`).
@@ -49,7 +56,11 @@ Exactly one of `--version` and `--file` must be supplied.
 The `downgrade` command performs database schema migrations and (reverse-applied) out-of-band migrations to transform existing data into the shaped expected by an older Sourcegraph instance version.
 
 ```
-downgrade --from=<current version> --to=<target version> [--skip-version-check=false] [--dry-run=false]
+downgrade \
+    --from=<current version> \
+    --to=<target version> \
+    o[--skip-version-check=false] \
+    [--dry-run=false]
 ```
 
 The `--from` and `--to` flags both accept Sourcegraph release versions _without the patch_ (e.g., `v3.42`) and dictate the bounds of the migration.
@@ -67,7 +78,10 @@ Note that the flags `--ignore-single-dirty-log` and `ignore-single-pending-log` 
 The `add-log` command adds an entry to the migration log after a site administrator has explicitly applied the contents of a migration file.
 
 ```
-add-log -db=<schema> -version=<version> [-up=true]
+add-log \
+    -db=<schema> \
+    -version=<version> \
+    [-up=true]
 ```
 
 The `-db` flag specifies the target schema to modify.
@@ -81,7 +95,9 @@ This command may be performed by a site-administrator as part of [repairing a di
 The `validate` command validates the current state of the database (both schema as well as data related to out-of-band migrations). This command is used on Sourcegraph instance startup of database-dependent services to ensure that the migrator has been run to the expected version.
 
 ```
-validate [-db=all] [--skip-out-of-band-migrations=false]
+validate \
+    [-db=all] \
+    [--skip-out-of-band-migrations=false]
 ```
 
 The `-db` flag signifies the target schema(s) to validate. Comma-separated values are accepted. Supply `all` (the default) to validate all schemas.
@@ -95,7 +111,10 @@ The `up` command (the default behavior of the `migrator` service) applies all mi
 > WARNING: The target migration leaves of this command are defined at `migrator` **compile time** and does not accept a version argument. This is the only command where the Sourcegraph instance version and `migrator` version are expected to match.
 
 ```
-up [-db=all] [--skip-upgrade-validation=false] [--skip-oobmigration-validation=false]
+up \
+    [-db=all] \
+    [--skip-upgrade-validation=false] \
+    [--skip-oobmigration-validation=false]
 ```
 
 The `-db` flag signifies the target schema(s) to modify. Comma-separated values are accepted. Supply `all` (the default) to migrate all schemas.
@@ -113,7 +132,9 @@ The flags `--unprivileged-only` and `--noop-privileged` are also defined on this
 The `upto` command ensures a given migration has been applied, and may apply dependency migrations.
 
 ```
-upto -db=<schema> -target=<target>,<target>,...
+upto \
+    -db=<schema> \
+    -target=<target>,<target>,...
 ```
 
 The `-db` flag signifies the target schema to modify.
@@ -131,7 +152,9 @@ The flags `--unprivileged-only` and `--noop-privileged` are also defined on this
 The `downto` command revert any applied migrations that are children of the given targets - this effectively "resets" the schema to the target version.
 
 ```
-downto -db=<schema> -target=<target>,<target>,...
+downto \
+    -db=<schema> \
+    -target=<target>,<target>,...
 ```
 
 The `-db` flag signifies the target schema to modify.
@@ -147,7 +170,9 @@ The flags `--unprivileged-only` and `--noop-privileged` are also defined on this
 The `run-out-of-band-migrations` command runs out-of-band migrations within the `migrator`.
 
 ```
-run-out-of-band-migrations [-id <id> [, -id <id> ...]] [--apply-reverse=false]
+run-out-of-band-migrations \
+    [-id <id> [, -id <id> ...]] \
+    [--apply-reverse=false]
 ```
 
 If no `-id` is supplied, then all registered out-of-band migrations will be invoked.
