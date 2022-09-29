@@ -100,28 +100,6 @@ func (c *Config) Validate() error {
 		if err != nil {
 			c.AddError(errors.Wrapf(err, "invalid disk size provided for EXECUTOR_FIRECRACKER_DISK_SPACE: %q", c.FirecrackerDiskSpace))
 		}
-
-		// Make sure ignite is installed.
-		// if err := validateIgniteInstalled(); err != nil {
-		// 	c.AddError(err)
-		// }
-
-		// Make sure CNI is properly configured.
-		// if errs := validateCNIInstalled(); errs != nil {
-		// 	if e, ok := errs.(errors.MultiError); ok {
-		// 		for _, err := range e.Errors() {
-		// 			c.AddError(err)
-		// 		}
-		// 	}
-		// }
-
-		// if errs := validateToolsRequired(c.UseFirecracker); errs != nil {
-		// 	if e, ok := errs.(errors.MultiError); ok {
-		// 		for _, err := range e.Errors() {
-		// 			c.AddError(err)
-		// 		}
-		// 	}
-		// }
 	}
 
 	return c.BaseConfig.Validate()

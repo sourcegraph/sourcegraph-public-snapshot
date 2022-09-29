@@ -3,7 +3,6 @@ package run
 import (
 	"context"
 	"fmt"
-	"net"
 	"os"
 	"os/exec"
 	"path"
@@ -46,26 +45,47 @@ func RunInstallIPTablesRules(cliCtx *cli.Context, logger log.Logger, config *con
 	}
 
 	recreateChain := cliCtx.Bool("recreate-chain")
+	if !recreateChain {
+		logger.Info("Creating iptables entries for CNI_ADMIN chain if not present")
+	} else {
+		logger.Info("Recreating iptables entries for CNI_ADMIN chain")
+	}
 
-	logger.Info("Creating iptables entries for CNI_ADMIN chain")
 	return setupIPTables(recreateChain)
 }
 
 func RunInstallAll(cliCtx *cli.Context, logger log.Logger, config *config.Config) error {
-	// TODO: Call all other handlers in here sequentially.
+	logger.Info("Running executor install ignite")
+	if err := installIgnite(cliCtx); err != nil {
+		return err
+	}
 
+	logger.Info("Running executor install cni")
+	if err := installCNIPlugins(cliCtx); err != nil {
+		return err
+	}
+
+	logger.Info("Running executor install src-cli")
+	if err := installSrc(cliCtx); err != nil {
+		return err
+	}
+
+	logger.Info("Running executor install iptables-rules")
 	if err := setupIPTables(false); err != nil {
 		return err
 	}
 
+	logger.Info("Running executor install image executor-vm")
 	if err := ensureExecutorVMImage(cliCtx.Context, logger, config); err != nil {
 		return err
 	}
 
+	logger.Info("Running executor install image sandbox")
 	if err := ensureSandboxImage(cliCtx.Context, logger, config); err != nil {
 		return err
 	}
 
+	logger.Info("Running executor install image kernel")
 	if err := ensureKernelImage(cliCtx.Context, logger, config); err != nil {
 		return err
 	}
@@ -74,9 +94,9 @@ func RunInstallAll(cliCtx *cli.Context, logger log.Logger, config *config.Config
 }
 
 func RunInstallImage(cliCtx *cli.Context, logger log.Logger, config *config.Config) error {
-	// if !hostMightBeAbleToRunIgnite() {
-	// 	return ErrNoIgniteSupport
-	// }
+	if !hostMightBeAbleToRunIgnite() {
+		return ErrNoIgniteSupport
+	}
 
 	if !cliCtx.Args().Present() {
 		return errors.New("no image specified")
@@ -84,13 +104,6 @@ func RunInstallImage(cliCtx *cli.Context, logger log.Logger, config *config.Conf
 	if cliCtx.Args().Len() != 1 {
 		return errors.New("too many arguments")
 	}
-
-	// if err := config.Validate(); err != nil {
-	// 	return errors.Wrap(err, "failed to validate config")
-	// }
-	// if err := validateIgniteInstalled(); err != nil {
-	// 	return err
-	// }
 
 	img := strings.ToLower(cliCtx.Args().First())
 	switch img {
@@ -106,6 +119,10 @@ func RunInstallImage(cliCtx *cli.Context, logger log.Logger, config *config.Conf
 }
 
 func ensureExecutorVMImage(ctx context.Context, logger log.Logger, c *config.Config) error {
+	if err := validateIgniteInstalled(); err != nil {
+		return err
+	}
+
 	// Make sure the image exists. When ignite imports these at runtime, there can
 	// be a race condition and it is imported multiple times. Also, this would
 	// happen for the first job, which is not desirable.
@@ -122,6 +139,10 @@ func ensureExecutorVMImage(ctx context.Context, logger log.Logger, c *config.Con
 }
 
 func ensureKernelImage(ctx context.Context, logger log.Logger, c *config.Config) error {
+	if err := validateIgniteInstalled(); err != nil {
+		return err
+	}
+
 	// Make sure the image exists. When ignite imports these at runtime, there can
 	// be a race condition and it is imported multiple times. Also, this would
 	// happen for the first job, which is not desirable.
@@ -138,6 +159,10 @@ func ensureKernelImage(ctx context.Context, logger log.Logger, c *config.Config)
 }
 
 func ensureSandboxImage(ctx context.Context, logger log.Logger, c *config.Config) error {
+	if err := validateIgniteInstalled(); err != nil {
+		return err
+	}
+
 	// Make sure the image exists. When ignite imports these at runtime, there will
 	// be a slowdown on the first job run.
 	logger.Info("Ensuring sandbox image exists", log.String("image", c.FirecrackerSandboxImage))
@@ -161,12 +186,7 @@ func setupIPTables(recreateChain bool) error {
 		return errors.Newf("iptables not found, is it installed?")
 	}
 
-	cniSubnetCIDR := "10.61.0.0/16"
-	_, _, err = net.ParseCIDR(cniSubnetCIDR)
-	if err != nil {
-		return err
-	}
-	// TODO: Use net below instead of hard coded CIDRs.
+	// TODO: Use config.CNISubnetCIDR below instead of hard coded CIDRs.
 
 	ipt, err := iptables.NewWithProtocol(iptables.ProtocolIPv4)
 	if err != nil {
@@ -279,6 +299,7 @@ func installSrc(cliCtx *cli.Context) error {
 		binDir = "/usr/local/bin"
 	}
 
+	// TODO: Not only use srccli.MinimumVersion, but actually the maximum suitable version, fetched from the backend.
 	return download.ArchivedExecutable(cliCtx.Context, fmt.Sprintf("https://github.com/sourcegraph/src-cli/releases/download/%s/src-cli_%s_%s_%s.tar.gz", srccli.MinimumVersion, srccli.MinimumVersion, runtime.GOOS, runtime.GOARCH), path.Join(binDir, "src"), "src")
 }
 

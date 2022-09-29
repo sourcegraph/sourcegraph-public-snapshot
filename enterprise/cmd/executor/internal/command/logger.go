@@ -136,24 +136,6 @@ func NewLogger(store ExecutionLogEntryStore, job executor.Job, recordID int, rep
 	return l
 }
 
-func NewNoopLogger() Logger {
-	return &noopLogger{}
-}
-
-type noopLogger struct{}
-
-func (*noopLogger) Flush() error                              { return nil }
-func (*noopLogger) Log(key string, command []string) LogEntry { return &noopLogEntry{} }
-
-type noopLogEntry struct{}
-
-func (*noopLogEntry) Write(p []byte) (n int, err error) { return len(p), nil }
-func (*noopLogEntry) Close() error                      { return nil }
-func (*noopLogEntry) Finalize(exitCode int)             {}
-func (*noopLogEntry) CurrentLogEntry() workerutil.ExecutionLogEntry {
-	return workerutil.ExecutionLogEntry{}
-}
-
 func (l *logger) Flush() error {
 	close(l.handles)
 	<-l.done
@@ -287,4 +269,22 @@ func redact(entry *workerutil.ExecutionLogEntry, replacer *strings.Replacer) {
 		entry.Command[i] = replacer.Replace(arg)
 	}
 	entry.Out = replacer.Replace(entry.Out)
+}
+
+func NewNoopLogger() Logger {
+	return &noopLogger{}
+}
+
+type noopLogger struct{}
+
+func (*noopLogger) Flush() error                              { return nil }
+func (*noopLogger) Log(key string, command []string) LogEntry { return &noopLogEntry{} }
+
+type noopLogEntry struct{}
+
+func (*noopLogEntry) Write(p []byte) (n int, err error) { return len(p), nil }
+func (*noopLogEntry) Close() error                      { return nil }
+func (*noopLogEntry) Finalize(exitCode int)             {}
+func (*noopLogEntry) CurrentLogEntry() workerutil.ExecutionLogEntry {
+	return workerutil.ExecutionLogEntry{}
 }

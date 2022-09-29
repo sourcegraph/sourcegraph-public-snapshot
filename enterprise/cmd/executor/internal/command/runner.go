@@ -59,7 +59,7 @@ type FirecrackerOptions struct {
 	// virtual machines.
 	KernelImage string
 
-	// SandboxImae is the docker image used by ignite for isolation of the Firecracker
+	// SandboxImage is the docker image used by ignite for isolation of the Firecracker
 	// process.
 	SandboxImage string
 
