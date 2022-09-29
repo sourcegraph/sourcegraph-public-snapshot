@@ -89,26 +89,6 @@ func Init(ctx context.Context, db database.DB, conf conftypes.UnifiedWatchable, 
 	// proper product name.
 	graphqlbackend.GetProductNameWithBrand = licensing.ProductNameWithBrand
 
-	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, func(args graphqlbackend.AlertFuncArgs) []*graphqlbackend.Alert {
-		// Only site admins can act on this alert, so only show it to site admins.
-		if !args.IsSiteAdmin {
-			return nil
-		}
-
-		if licensing.IsFeatureEnabledLenient(licensing.FeatureBranding) {
-			return nil
-		}
-
-		if conf.SiteConfig().Branding == nil {
-			return nil
-		}
-
-		return []*graphqlbackend.Alert{{
-			TypeValue:    graphqlbackend.AlertTypeError,
-			MessageValue: "A Sourcegraph license is required to custom branding for the instance. [**Get a license.**](/site-admin/license)",
-		}}
-	})
-
 	// Make the Site.productSubscription.actualUserCount and Site.productSubscription.actualUserCountDate
 	// GraphQL fields return the proper max user count and timestamp on the current license.
 	graphqlbackend.ActualUserCount = licensing.ActualUserCount
