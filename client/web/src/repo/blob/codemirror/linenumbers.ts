@@ -1,4 +1,13 @@
-import { Annotation, Extension, RangeSet, Range, RangeSetBuilder, StateEffect, StateField } from '@codemirror/state'
+import {
+    Annotation,
+    Extension,
+    RangeSet,
+    Range,
+    RangeSetBuilder,
+    StateEffect,
+    StateField,
+    EditorState,
+} from '@codemirror/state'
 import {
     EditorView,
     Decoration,
@@ -10,7 +19,7 @@ import {
     gutterLineClass,
 } from '@codemirror/view'
 
-import { isValidLineRange } from './utils'
+import { isValidLineRange, preciseOffsetAtCoords } from './utils'
 
 /**
  * Represents the currently selected line range. null means no lines are
@@ -136,6 +145,98 @@ const scrollIntoView = ViewPlugin.fromClass(
 )
 
 /**
+ * This plugin handles selecting lines by clicking on the end empty after them.
+ * What makes this complex is handling text selection properly, and not such
+ * figuring out that a user is selecting text (that's easy) but to prevent text
+ * selection from being rendered if the user actually want to select multiple
+ * lines by shift clicking.
+ *
+ * Desired behavior:
+ * - Drag to select text
+ * - Click to select line
+ * - Shift click to select text when there is already other selected text
+ * - Shift click to select line range if there is no selected text
+ */
+function selectOnClick(): Extension {
+    // Maybe it would be better to use state fields for this (I don't know). It
+    // works though.
+    let maybeSelectLine = false
+    let preventTextSelection = false
+
+    return [
+        EditorState.transactionFilter.of(tr => {
+            // If the user tries to select a text range (and doesn't just click
+            // somewhere)
+            if (tr.isUserEvent('select') && tr.selection && tr.selection.main.from !== tr.selection.main.to) {
+                if (preventTextSelection) {
+                    return []
+                }
+                // If we are selecting a text range and not already prevent text
+                // selection then we don't want to select a line.
+                maybeSelectLine = false
+            }
+            return tr
+        }),
+        EditorView.domEventHandlers({
+            mousedown(event, view) {
+                maybeSelectLine = true
+                preventTextSelection = false
+
+                if (event.shiftKey) {
+                    // Selecting text via shift click is only supported when
+                    // there is already other selected text.
+                    if (hasTextSelection(view.state)) {
+                        maybeSelectLine = false
+                    } else {
+                        // Otherwise we need to prevent CodeMirror/the browser
+                        // from applying text selection
+                        preventTextSelection = true
+                    }
+                }
+            },
+            mouseup(event, view) {
+                preventTextSelection = false
+
+                if (!maybeSelectLine) {
+                    return
+                }
+
+                maybeSelectLine = false
+
+                // IMPORTANT: This gives the offset of the character *closest*
+                // to the clicked position, not *at* the clicked position.
+                const offset = view.posAtCoords(event)
+                // Ignore clicks outside the document
+                if (offset === null) {
+                    return
+                }
+
+                let selectedLine: number | null = null
+
+                const clickedLine = view.state.doc.lineAt(offset)
+                if (offset === clickedLine.to) {
+                    // If the offset is the same value as the end position of
+                    // the line then click happend after the last charcater.
+                    selectedLine = clickedLine.number
+                } else if (offset === clickedLine.from && preciseOffsetAtCoords(view, event) === null) {
+                    // `preciseOffsetAtCoords(...) === null` allows us to recognize clicks before the actual text content
+                    // while `offset === clickedLine.from` ensures that we ignore clicks between lines
+                    selectedLine = clickedLine.number
+                }
+
+                if (selectedLine !== null) {
+                    view.dispatch({
+                        effects: event.shiftKey
+                            ? setEndLine.of(selectedLine)
+                            : setSelectedLines.of({ line: selectedLine }),
+                    })
+                }
+            },
+        }),
+    ]
+}
+
+/**
  * This extension provides a line gutter that allows selecting (ranges of) lines
  * by clicking (and dragging over) the line numbers. Shift+click to select a
  * range is also supported.
@@ -173,6 +274,8 @@ export function selectableLineNumbers(config: {
                                 ? setEndLine.of(line)
                                 : setSelectedLines.of(isSingleLine(range) && range?.line === line ? null : { line }),
                             annotations: lineSelectionSource.of('gutter'),
+                            // Collapse/reset text selection
+                            selection: { anchor: view.state.selection.main.anchor },
                         })
                     }
 
@@ -219,6 +322,7 @@ export function selectableLineNumbers(config: {
                 },
             },
         }),
+        selectOnClick(),
         EditorView.theme({
             '.cm-lineNumbers': {
                 cursor: 'pointer',
@@ -265,4 +369,15 @@ function shouldScrollIntoView(view: EditorView, range: SelectedLineRange): boole
 
 function isSingleLine(range: SelectedLineRange): boolean {
     return !!range && (!range.endLine || range.line === range.endLine)
+}
+
+/**
+ * Helper function that returns true if the user has selected any text in the
+ * document. A CodeMirror always has a "selection", which determines the cursor
+ * position but only if its start and end are different it actually represents
+ * selected text.
+ */
+function hasTextSelection(state: EditorState): boolean {
+    const range = state.selection.asSingle().main
+    return range.from !== range.to
 }
