@@ -525,20 +525,22 @@ func (s *Syncer) SyncExternalService(
 		return errors.Wrap(err, "fetching external services")
 	}
 
-	// We take an advisory lock here and also when deleting and external service to
-	// ensure that they can't happen at the same time
+	// We take an advisory lock here and also when deleting an external service to
+	// ensure that they can't happen at the same time.
 	lock := locker.NewWith(s.Store, "external_service")
 
 	var locked bool
 	var unlocker locker.UnlockFunc
+	// We need both code paths here since our production code doesn't use a
+	// transaction but most of our tests DO run in transactions in order to make
+	// rolling back test state easier.
 	if s.Store.Handle().InTransaction() {
-		// TODO: Double check why we're in a transaction sometimes, maybe tests?
 		locked, err = lock.LockInTransaction(ctx, locker.StringKey(fmt.Sprintf("%d", svc.ID)), false)
 		if err != nil {
 			return errors.Wrap(err, "getting advisory lock")
 		}
 		if !locked {
-			return errors.Errorf("could not advisory lock for service %d", svc.ID)
+			return errors.Errorf("could not get advisory lock for service %d", svc.ID)
 		}
 	} else {
 		// We're NOT in a transaction
