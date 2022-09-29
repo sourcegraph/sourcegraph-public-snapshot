@@ -3,12 +3,11 @@ package database
 import (
 	"context"
 	"database/sql"
-	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/jsonx"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -133,11 +132,9 @@ RETURNING %s -- siteConfigColumns
 `
 
 func (s *confStore) createIfUpToDate(ctx context.Context, lastID *int32, contents string) (*SiteConfig, error) {
-	// Validate config for syntax and by the JSON Schema.
-	if problems, err := conf.ValidateSite(contents); err != nil {
-		return nil, errors.Errorf("failed to validate site configuration: %w", err)
-	} else if len(problems) > 0 {
-		return nil, errors.Errorf("site configuration is invalid: %s", strings.Join(problems, ","))
+	// Validate JSON syntax before saving.
+	if _, errs := jsonx.Parse(contents, jsonx.ParseOptions{Comments: true, TrailingCommas: true}); len(errs) > 0 {
+		return nil, errors.Errorf("invalid settings JSON: %v", errs)
 	}
 
 	latest, err := s.getLatest(ctx)
