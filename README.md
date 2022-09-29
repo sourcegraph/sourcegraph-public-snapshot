@@ -40,7 +40,11 @@
 * A faster, simpler search experience
 * Configure precise code navigation for 9 languages (Ruby, Rust, Go, Java, Scala, Kotlin, Python, TypeScript, JavaScript) in a matter of minutes with auto-indexing
 * Your favorite extensions are now available by default
-* Quickly access answers within your codebase with a revamped reference panel 
+* Quickly access answers within your codebase with a revamped reference panel
+
+<p align="center">
+<img src="https://p21.p4.n0.cdn.getcloudapp.com/items/WnuDk91g/a854f742-0611-49b5-9a0f-a605371e6154.gif" width="75%">
+</p>
 
 ### 🏗️ High-leverage ways to improve your entire codebase
 * Make changes across all of your codebase at enterprise scale with server-side Batch Changes (beta)
