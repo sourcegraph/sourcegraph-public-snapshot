@@ -270,11 +270,15 @@ func (c *Client) doWithBaseURL(ctx context.Context, oauthContext *oauthutil.OAut
 
 	oauthAuther, ok := c.Auth.(auth.AuthenticatorWithRefresh)
 	if ok {
-		code, header, body, err = oauthutil.DoRequest(ctx, c.httpClient, req, oauthAuther)
+		resp, err := oauthutil.DoRequest(ctx, c.httpClient, req, oauthAuther)
 		if err != nil {
 			trace("GitLab API error", "method", req.Method, "url", req.URL.String(), "err", err)
 			return nil, 0, errors.Wrap(err, "do request with retry and refresh")
 		}
+		code = resp.StatusCode
+		header = resp.Header
+		body, _ = io.ReadAll(resp.Body)
+		resp.Body.Close()
 	} else {
 		if c.Auth != nil {
 			if err := c.Auth.Authenticate(req); err != nil {

@@ -697,7 +697,7 @@ func TestV3Client_WithAuthenticator(t *testing.T) {
 	}
 
 	if new.auth != newToken {
-		t.Fatalf("token: want %q but got %q", newToken, new.auth)
+		t.Fatalf("token: want %p but got %p", newToken, new.auth)
 	}
 }
 
