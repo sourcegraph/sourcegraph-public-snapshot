@@ -44,7 +44,7 @@ describe('Code insights [Dashboard card]', () => {
     afterEachSaveScreenshotIfFailed(() => driver.page)
 
     it('renders lang stats insight card with proper options context', async () => {
-        makeOverrides({
+        mockDashboardWithInsights({
             testContext,
             dashboardId: 'DASHBOARD_WITH_LANG_INSIGHT',
             insightMock: LANG_STATS_INSIGHT,
@@ -72,7 +72,7 @@ describe('Code insights [Dashboard card]', () => {
     })
 
     it('renders capture group insight card with proper options context', async () => {
-        makeOverrides({
+        mockDashboardWithInsights({
             testContext,
             dashboardId: 'DASHBOARD_WITH_CAPTURE_GROUP',
             insightMock: CAPTURE_GROUP_INSIGHT,
@@ -94,7 +94,7 @@ describe('Code insights [Dashboard card]', () => {
     })
 
     it('renders search insight card with proper options context', async () => {
-        makeOverrides({
+        mockDashboardWithInsights({
             testContext,
             dashboardId: 'DASHBOARD_WITH_SEARCH',
             insightMock: SEARCH_BASED_INSIGHT,
@@ -116,11 +116,32 @@ describe('Code insights [Dashboard card]', () => {
     })
 
     it('renders compute insight card with proper options context', async () => {
-        makeOverrides({
+        mockDashboardWithInsights({
             testContext,
             dashboardId: 'DASHBOARD_WITH_COMPUTE',
             insightMock: COMPUTE_INSIGHT,
             insightViewMock: GET_INSIGHT_VIEW_COMPUTE_INSIGHT,
+            overrides: {
+                ViewerSettings: () => ({
+                    viewerSettings: {
+                        __typename: 'SettingsCascade',
+                        subjects: [
+                            {
+                                __typename: 'DefaultSettings',
+                                settingsURL: null,
+                                viewerCanAdminister: false,
+                                latestSettings: {
+                                    id: 0,
+                                    contents: JSON.stringify({
+                                        experimentalFeatures: { codeInsightsCompute: true },
+                                    }),
+                                },
+                            },
+                        ],
+                        final: JSON.stringify({}),
+                    },
+                }),
+            },
         })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/DASHBOARD_WITH_COMPUTE')
@@ -202,32 +223,20 @@ interface MakeOverridesOptions {
     dashboardId: string
     insightMock: InsightViewNode
     insightViewMock?: GetInsightViewResult
+    overrides?: OverrideGraphQLExtensionsProps['overrides']
 }
 
 /**
  * Helper function to remove some of the boiler plate when overriding gql calls.
  */
-function makeOverrides({ testContext, dashboardId, insightMock, insightViewMock }: MakeOverridesOptions) {
-    const overrides: OverrideGraphQLExtensionsProps['overrides'] = {
-        ViewerSettings: () => ({
-            viewerSettings: {
-                __typename: 'SettingsCascade',
-                subjects: [
-                    {
-                        __typename: 'DefaultSettings',
-                        settingsURL: null,
-                        viewerCanAdminister: false,
-                        latestSettings: {
-                            id: 0,
-                            contents: JSON.stringify({
-                                experimentalFeatures: { codeInsightsCompute: true },
-                            }),
-                        },
-                    },
-                ],
-                final: JSON.stringify({}),
-            },
-        }),
+function mockDashboardWithInsights({
+    testContext,
+    dashboardId,
+    insightMock,
+    insightViewMock,
+    overrides,
+}: MakeOverridesOptions) {
+    const defaultOverrides: OverrideGraphQLExtensionsProps['overrides'] = {
         // Mock list of possible code insights dashboards on the dashboard page
         InsightsDashboards: () => ({
             currentUser: {
@@ -257,12 +266,12 @@ function makeOverrides({ testContext, dashboardId, insightMock, insightViewMock 
     }
 
     if (insightViewMock) {
-        overrides.GetInsightView = () => insightViewMock
+        defaultOverrides.GetInsightView = () => insightViewMock
     }
 
     overrideInsightsGraphQLApi({
         testContext,
-        overrides,
+        overrides: { ...defaultOverrides, ...overrides },
     })
 }
 
@@ -299,9 +308,6 @@ async function checkFilterMenu(driver: Driver, shouldHaveFilterButton = true): P
 
         // Should open filter panel on filter panel icon click
         assert.strictEqual(filterPanel !== null, true)
-
-        // // Toggle insight filters (close filters panel)
-        await driver.page.click('[aria-label="Filters"]')
     } else {
         const filtersButton = await driver.page.$('[aria-label="Active filters"], [aria-label="Filters"]')
 
