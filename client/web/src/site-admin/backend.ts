@@ -242,22 +242,13 @@ export function fetchAllRepositoriesAndPollIfEmptyOrAnyCloning(
     )
 }
 
-export function updateMirrorRepository(args: { repository: Scalars['ID'] }): Observable<void> {
-    return requestGraphQL<UpdateMirrorRepositoryResult, UpdateMirrorRepositoryVariables>(
-        gql`
-            mutation UpdateMirrorRepository($repository: ID!) {
-                updateMirrorRepository(repository: $repository) {
-                    alwaysNil
-                }
-            }
-        `,
-        args
-    ).pipe(
-        map(dataOrThrowErrors),
-        tap(() => resetAllMemoizationCaches()),
-        map(() => undefined)
-    )
-}
+export const UPDATE_MIRROR_REPOSITORY = gql`
+    mutation UpdateMirrorRepository($repository: ID!) {
+        updateMirrorRepository(repository: $repository) {
+            alwaysNil
+        }
+    }
+`
 
 export function checkMirrorRepositoryConnection(
     args:

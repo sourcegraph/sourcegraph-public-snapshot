@@ -32,11 +32,13 @@ import {
     SettingsAreaRepositoryFields,
     SettingsAreaRepositoryResult,
     SettingsAreaRepositoryVariables,
+    UpdateMirrorRepositoryResult,
+    UpdateMirrorRepositoryVariables,
 } from '../../graphql-operations'
 import {
     checkMirrorRepositoryConnection,
     RECLONE_REPOSITORY_MUTATION,
-    updateMirrorRepository,
+    UPDATE_MIRROR_REPOSITORY,
 } from '../../site-admin/backend'
 import { eventLogger } from '../../tracking/eventLogger'
 import { DirectImportRepoAlert } from '../DirectImportRepoAlert'
@@ -54,11 +56,14 @@ interface UpdateMirrorRepositoryActionContainerProps {
     history: H.History
 }
 
-const UpdateMirrorRepositoryActionContainer: React.FunctionComponent<
-    UpdateMirrorRepositoryActionContainerProps
-> = props => {
-    const thisUpdateMirrorRepository = async (): Promise<void> => {
-        await updateMirrorRepository({ repository: props.repo.id }).toPromise()
+const UpdateMirrorRepositoryActionContainer: React.FunctionComponent<UpdateMirrorRepositoryActionContainerProps> = props => {
+    const [updateRepo] = useMutation<UpdateMirrorRepositoryResult, UpdateMirrorRepositoryVariables>(
+        UPDATE_MIRROR_REPOSITORY,
+        { variables: { repository: props.repo.id } }
+    )
+
+    const run = async (): Promise<void> => {
+        await updateRepo()
         await props.onDidUpdateRepository()
     }
 
@@ -123,7 +128,7 @@ const UpdateMirrorRepositoryActionContainer: React.FunctionComponent<
             buttonSubtitle={props.disabledReason}
             flashText="Added to queue"
             info={info}
-            run={thisUpdateMirrorRepository}
+            run={run}
             history={props.history}
         />
     )
@@ -135,9 +140,7 @@ interface CheckMirrorRepositoryConnectionActionContainerProps {
     history: H.History
 }
 
-const CheckMirrorRepositoryConnectionActionContainer: React.FunctionComponent<
-    CheckMirrorRepositoryConnectionActionContainerProps
-> = props => {
+const CheckMirrorRepositoryConnectionActionContainer: React.FunctionComponent<CheckMirrorRepositoryConnectionActionContainerProps> = props => {
     const [loading, setLoading] = useState<boolean>(true)
     const [errorDescription, setErrorDescription] = useState<string | undefined>(undefined)
     const [result, setResult] = useState<GQL.ICheckMirrorRepositoryConnectionResult | undefined>(undefined)
