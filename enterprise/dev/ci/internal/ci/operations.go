@@ -179,10 +179,6 @@ func addClientLintersForChangedFiles(pipeline *bk.Pipeline) {
 
 // Adds steps for the OSS and Enterprise web app builds. Runs the web app tests.
 func addWebApp(pipeline *bk.Pipeline) {
-	commit := os.Getenv("BUILDKITE_COMMIT")
-	branch := os.Getenv("BUILDKITE_BRANCH")
-	statsFilename := "stats-" + commit + ".json"
-
 	// Webapp build
 	pipeline.AddStep(":webpack::globe_with_meridians: Build",
 		withYarnCache(),
@@ -190,18 +186,24 @@ func addWebApp(pipeline *bk.Pipeline) {
 		bk.Env("NODE_ENV", "production"),
 		bk.Env("ENTERPRISE", ""))
 
-	// Webapp enterprise build
-	pipeline.AddStep(":webpack::globe_with_meridians::moneybag: Enterprise build",
+	addWebEnterpriseBuild(pipeline)
+
+	// Webapp tests
+	pipeline.AddStep(":jest::globe_with_meridians: Test (client/web)",
 		withYarnCache(),
-		withBundleSizeCache(commit, statsFilename),
-		bk.Cmd("dev/ci/yarn-build.sh client/web"),
-		bk.Env("NODE_ENV", "production"),
-		bk.Env("ENTERPRISE", "1"),
-		bk.Env("CHECK_BUNDLESIZE", "1"),
-		// To ensure the Bundlesize output can be diffed to the baseline on main
-		bk.Env("WEBPACK_USE_NAMED_CHUNKS", "true"),
-		// Emit a stats.json file for bundle size diffs
-		bk.Env("WEBPACK_EXPORT_STATS_FILENAME", statsFilename))
+		bk.AnnotatedCmd("dev/ci/yarn-test.sh client/web", bk.AnnotatedCmdOpts{
+			TestReports: &bk.TestReportOpts{
+				TestSuiteKeyVariableName: "BUILDKITE_ANALYTICS_FRONTEND_UNIT_TEST_SUITE_API_KEY",
+			},
+		}),
+		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
+}
+
+// Webapp enterprise build
+func addWebEnterpriseBuild(pipeline *bk.Pipeline) {
+	commit := os.Getenv("BUILDKITE_COMMIT")
+	branch := os.Getenv("BUILDKITE_BRANCH")
+	statsFilename := "stats-" + commit + ".json"
 
 	// When we are not on the main branch, we compute the merge base with main
 	// and download the associated stats.json.
@@ -216,25 +218,39 @@ func addWebApp(pipeline *bk.Pipeline) {
 		}
 
 		if mergeBaseBytes != nil {
-			mergeBase := string(mergeBaseBytes)
+			// For testing purposes we assume that this is the latest main build
+			// since we have no data for main yet.
+			mergeBase := "f12576386530d060ef4f2a620dcd5f95a2b2e9ac" // string(mergeBaseBytes)
 
-			pipeline.AddStep("Measure enterprise build",
+			pipeline.AddStep(":webpack::globe_with_meridians::moneybag: Enterprise build",
 				withYarnCache(),
+				// withBundleSizeCache(commit, statsFilename),
 				withBundleSizeCache(mergeBase, "stats-"+mergeBase+".json"),
+				bk.Cmd("dev/ci/yarn-build.sh client/web"),
 				bk.Cmd("dev/ci/diff-bundle-size.sh"),
-			)
+				bk.Env("NODE_ENV", "production"),
+				bk.Env("ENTERPRISE", "1"),
+				bk.Env("CHECK_BUNDLESIZE", "1"),
+				// To ensure the Bundlesize output can be diffed to the baseline on main
+				bk.Env("WEBPACK_USE_NAMED_CHUNKS", "true"),
+				// Emit a stats.json file for bundle size diffs
+				bk.Env("WEBPACK_EXPORT_STATS_FILENAME", statsFilename))
+
+			return
 		}
 	}
 
-	// Webapp tests
-	pipeline.AddStep(":jest::globe_with_meridians: Test (client/web)",
+	pipeline.AddStep(":webpack::globe_with_meridians::moneybag: Enterprise build",
 		withYarnCache(),
-		bk.AnnotatedCmd("dev/ci/yarn-test.sh client/web", bk.AnnotatedCmdOpts{
-			TestReports: &bk.TestReportOpts{
-				TestSuiteKeyVariableName: "BUILDKITE_ANALYTICS_FRONTEND_UNIT_TEST_SUITE_API_KEY",
-			},
-		}),
-		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
+		withBundleSizeCache(commit, statsFilename),
+		bk.Cmd("dev/ci/yarn-build.sh client/web"),
+		bk.Env("NODE_ENV", "production"),
+		bk.Env("ENTERPRISE", "1"),
+		bk.Env("CHECK_BUNDLESIZE", "1"),
+		// To ensure the Bundlesize output can be diffed to the baseline on main
+		bk.Env("WEBPACK_USE_NAMED_CHUNKS", "true"),
+		// Emit a stats.json file for bundle size diffs
+		bk.Env("WEBPACK_EXPORT_STATS_FILENAME", statsFilename))
 }
 
 var browsers = []string{"chrome"}
