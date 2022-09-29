@@ -18,7 +18,7 @@ import {
     reactManualTracer,
 } from '@sourcegraph/observability-client'
 import { SearchContextProps } from '@sourcegraph/search'
-import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
+import { FetchFileParameters, StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { HighlightResponseFormat, Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -84,6 +84,8 @@ interface BlobPageProps
     isSourcegraphDotCom: boolean
     repoID?: Scalars['ID']
     repoUrl?: string
+
+    fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
 
 /**
