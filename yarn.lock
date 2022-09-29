@@ -8889,6 +8889,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/webpack-stats-plugin@npm:^0.3.2":
+  version: 0.3.2
+  resolution: "@types/webpack-stats-plugin@npm:0.3.2"
+  dependencies:
+    "@types/webpack": ^4
+  checksum: 2236ac444b9d07f4bca9865f01dd3a2389cc3c64ba5722bf1618a89e026a617d325b39c25b4238e46d1307b1e495d034c129aea556d080035767db0ec34e2523
+  languageName: node
+  linkType: hard
+
 "@types/webpack@npm:^4, @types/webpack@npm:^4.41.26, @types/webpack@npm:^4.41.8":
   version: 4.41.27
   resolution: "@types/webpack@npm:4.41.27"
@@ -28902,6 +28911,7 @@ pvutils@latest:
     "@types/webpack-bundle-analyzer": 4.4.1
     "@types/webpack-dev-server": 4.0.3
     "@types/webpack-manifest-plugin": 3.0.5
+    "@types/webpack-stats-plugin": ^0.3.2
     "@types/yauzl": ^2.9.2
     "@visx/annotation": ^2.10.0
     "@visx/axis": ^2.11.1
@@ -29114,6 +29124,7 @@ pvutils@latest:
     webpack-cli: ^4.7.2
     webpack-dev-server: ^4.0.0
     webpack-manifest-plugin: ^3.1.0
+    webpack-stats-plugin: ^1.1.0
     wildcard-mock-link: ^2.0.1
     worker-loader: ^3.0.8
     yaml-ast-parser: ^0.0.43
@@ -33585,6 +33596,13 @@ pvutils@latest:
   version: 3.2.3
   resolution: "webpack-sources@npm:3.2.3"
   checksum: 989e401b9fe3536529e2a99dac8c1bdc50e3a0a2c8669cbafad31271eadd994bc9405f88a3039cd2e29db5e6d9d0926ceb7a1a4e7409ece021fe79c37d9c4607
+  languageName: node
+  linkType: hard
+
+"webpack-stats-plugin@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "webpack-stats-plugin@npm:1.1.0"
+  checksum: f692f3003813122a1745607c1db78fbcdf51dca570984a591f53f8e6e4a856ebb1490c43837ad4728ca2b62aed9bdadecb79e5e04efc5bff41ff075e5d809c54
   languageName: node
   linkType: hard
 

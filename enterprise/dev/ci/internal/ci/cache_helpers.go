@@ -12,3 +12,13 @@ func withYarnCache() buildkite.StepOpt {
 		Compress: false,
 	})
 }
+
+func cacheBundleSize() buildkite.StepOpt {
+	return buildkite.Cache(&buildkite.CacheOptions{
+		ID:          "bundle_size_cache",
+		Key:         "bundle_size_cache-{{ git rev-parse HEAD }}",
+		RestoreKeys: []string{"bundle_size_cache-{{ git rev-parse HEAD }}"},
+		Paths:       []string{"ui/assets/stats.json"},
+		Compress:    true,
+	})
+}

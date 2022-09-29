@@ -10,6 +10,7 @@ const mapValues = require('lodash/mapValues')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const webpack = require('webpack')
 const { WebpackManifestPlugin } = require('webpack-manifest-plugin')
+const { StatsWriterPlugin } = require('webpack-stats-plugin')
 
 const {
   ROOT_PATH,

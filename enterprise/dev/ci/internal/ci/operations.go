@@ -189,11 +189,14 @@ func addWebApp(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":webpack::globe_with_meridians::moneybag: Enterprise build",
 		withYarnCache(),
 		bk.Cmd("dev/ci/yarn-build.sh client/web"),
+		cacheBundleSize(),
 		bk.Env("NODE_ENV", "production"),
 		bk.Env("ENTERPRISE", "1"),
 		bk.Env("CHECK_BUNDLESIZE", "1"),
 		// To ensure the Bundlesize output can be diffed to the baseline on main
-		bk.Env("WEBPACK_USE_NAMED_CHUNKS", "true"))
+		bk.Env("WEBPACK_USE_NAMED_CHUNKS", "true"),
+		// Todo: explain
+		bk.Env("EXPORT_STATS", "true"))
 
 	// Webapp tests
 	pipeline.AddStep(":jest::globe_with_meridians: Test (client/web)",
