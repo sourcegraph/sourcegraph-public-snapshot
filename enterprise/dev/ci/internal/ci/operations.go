@@ -181,13 +181,7 @@ func addClientLintersForChangedFiles(pipeline *bk.Pipeline) {
 func addWebApp(pipeline *bk.Pipeline) {
 	commit := os.Getenv("BUILDKITE_COMMIT")
 	branch := os.Getenv("BUILDKITE_BRANCH")
-	statsFilename := "stats-" + branch + ".json"
-
-	var mergeBaseBytes []byte
-	mergeBaseBytes, err := exec.Command("git merge-base HEAD main").Output()
-	if err != nil {
-		log.Fatal(err)
-	}
+	statsFilename := "stats-" + commit + ".json"
 
 	// Webapp build
 	pipeline.AddStep(":webpack::globe_with_meridians: Build",
@@ -209,12 +203,27 @@ func addWebApp(pipeline *bk.Pipeline) {
 		// Emit a stats.json file for bundle size diffs
 		bk.Env("WEBPACK_EXPORT_STATS_FILENAME", statsFilename))
 
-	if branch != "main" && mergeBaseBytes != nil {
-		pipeline.AddStep("Measure enterprise build",
-			withYarnCache(),
-			withBundleSizeCache(string(mergeBaseBytes), "stats-main.json"),
-			bk.Cmd("dev/ci/diff-bundle-size.sh"),
-		)
+	// When we are not on the main branch, we compute the merge base with main
+	// and download the associated stats.json.
+	//
+	// If this is present, we can compute a difference in bundle size caused by
+	// the changes in this branch and report that to the GitHub UI.
+	if branch != "main" {
+		var mergeBaseBytes []byte
+		mergeBaseBytes, err := exec.Command("git merge-base HEAD main").Output()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if mergeBaseBytes != nil {
+			mergeBase := string(mergeBaseBytes)
+
+			pipeline.AddStep("Measure enterprise build",
+				withYarnCache(),
+				withBundleSizeCache(mergeBase, "stats-"+mergeBase+".json"),
+				bk.Cmd("dev/ci/diff-bundle-size.sh"),
+			)
+		}
 	}
 
 	// Webapp tests
