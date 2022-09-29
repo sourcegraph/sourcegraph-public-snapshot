@@ -521,6 +521,7 @@ const (
 	CloneStatusNotCloned CloneStatus = "not_cloned"
 	CloneStatusCloning   CloneStatus = "cloning"
 	CloneStatusCloned    CloneStatus = "cloned"
+	CloneStatusCorrupted CloneStatus = "corrupted"
 )
 
 func ParseCloneStatus(s string) CloneStatus {
