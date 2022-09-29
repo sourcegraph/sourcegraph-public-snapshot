@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
 import { mdiLock } from '@mdi/js'
 import classNames from 'classnames'
@@ -48,7 +48,7 @@ import styles from './RepoSettingsMirrorPage.module.scss'
 
 interface UpdateMirrorRepositoryActionContainerProps {
     repo: SettingsAreaRepositoryFields
-    onDidUpdateRepository: () => void
+    onDidUpdateRepository: () => Promise<void>
     disabled: boolean
     disabledReason: string | undefined
     history: H.History
@@ -59,7 +59,7 @@ const UpdateMirrorRepositoryActionContainer: React.FunctionComponent<
 > = props => {
     const thisUpdateMirrorRepository = async (): Promise<void> => {
         await updateMirrorRepository({ repository: props.repo.id }).toPromise()
-        props.onDidUpdateRepository()
+        await props.onDidUpdateRepository()
     }
 
     let title: React.ReactNode
@@ -138,11 +138,11 @@ interface CheckMirrorRepositoryConnectionActionContainerProps {
 const CheckMirrorRepositoryConnectionActionContainer: React.FunctionComponent<
     CheckMirrorRepositoryConnectionActionContainerProps
 > = props => {
-    const [loading, setLoading] = useState<boolean>(false)
-    const [errorDescription, setErrorDescription] = useState<string>()
-    const [result, setResult] = useState<GQL.ICheckMirrorRepositoryConnectionResult>()
+    const [loading, setLoading] = useState<boolean>(true)
+    const [errorDescription, setErrorDescription] = useState<string | undefined>(undefined)
+    const [result, setResult] = useState<GQL.ICheckMirrorRepositoryConnectionResult | undefined>(undefined)
 
-    const thisCheckMirrorRepositoryConnection = (): void => {
+    const thisCheckMirrorRepositoryConnection = useCallback(() => {
         checkMirrorRepositoryConnection({ repository: props.repo.id })
             .toPromise()
             .then(result => {
@@ -157,14 +157,11 @@ const CheckMirrorRepositoryConnectionActionContainer: React.FunctionComponent<
                 props.onDidUpdateReachability(false)
                 return []
             })
-    }
+    }, [props])
+
     useEffect(() => {
-        setLoading(true)
-        setErrorDescription(undefined)
-        setResult(undefined)
-        props.onDidUpdateReachability(undefined)
         thisCheckMirrorRepositoryConnection()
-    }, [])
+    }, [thisCheckMirrorRepositoryConnection])
 
     return (
         <BaseActionContainer
@@ -216,47 +213,24 @@ interface RepoSettingsMirrorPageProps extends RouteComponentProps<{}> {
 export const RepoSettingsMirrorPage: React.FunctionComponent<
     React.PropsWithChildren<RepoSettingsMirrorPageProps>
 > = props => {
-    const [repo, setRepo] = useState<SettingsAreaRepositoryFields>(props.repo)
+    eventLogger.logPageView('RepoSettingsMirror')
     const [reachable, setReachable] = useState<boolean>()
-    const [error, setError] = useState<string>()
     const [recloneRepository] = useMutation<RecloneRepositoryResult, RecloneRepositoryVariables>(
         RECLONE_REPOSITORY_MUTATION,
         {
-            variables: { repo: repo.id },
+            variables: { repo: props.repo.id },
         }
     )
 
-    const fetchRepo = useQuery<SettingsAreaRepositoryResult, SettingsAreaRepositoryVariables>(
+    const { data, error, refetch } = useQuery<SettingsAreaRepositoryResult, SettingsAreaRepositoryVariables>(
         FETCH_SETTINGS_AREA_REPOSITORY_GQL,
         {
-            variables: { name: repo.name },
+            variables: { name: props.repo.name },
+            pollInterval: 3000,
         }
     )
 
-    const updateRepo = async (): Promise<void> => {
-        const { data, error } = await fetchRepo.refetch()
-
-        if (data?.repository) {
-            setRepo(data.repository)
-        }
-
-        if (error) {
-            setError(error.message)
-        }
-    }
-
-    useEffect(() => {
-        eventLogger.logPageView('RepoSettingsMirror')
-        updateRepo()
-
-        setInterval(() => {
-            updateRepo()
-        }, 3000)
-    }, [])
-
-    const onDidUpdateRepository = (): void => {
-        updateRepo()
-    }
+    const repo = data?.repository ? data.repository : props.repo
 
     const onDidUpdateReachability = (reachable: boolean | undefined): void => setReachable(reachable)
 
@@ -297,7 +271,9 @@ export const RepoSettingsMirrorPage: React.FunctionComponent<
                 )}
                 <UpdateMirrorRepositoryActionContainer
                     repo={repo}
-                    onDidUpdateRepository={onDidUpdateRepository}
+                    onDidUpdateRepository={async () => {
+                        await refetch()
+                    }}
                     disabled={typeof reachable === 'boolean' && !reachable}
                     disabledReason={typeof reachable === 'boolean' && !reachable ? 'Not reachable' : undefined}
                     history={props.history}
