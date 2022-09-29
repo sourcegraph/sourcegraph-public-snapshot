@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/jsonx"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -46,7 +47,12 @@ func (s *settingsStore) Transact(ctx context.Context) (SettingsStore, error) {
 }
 
 func (o *settingsStore) CreateIfUpToDate(ctx context.Context, subject api.SettingsSubject, lastID *int32, authorUserID *int32, contents string) (latestSetting *api.Settings, err error) {
-	// Validate settings for syntax and by the JSON Schema.
+	// Validate JSON syntax before saving.
+	if _, errs := jsonx.Parse(contents, jsonx.ParseOptions{Comments: true, TrailingCommas: true}); len(errs) > 0 {
+		return nil, errors.Errorf("invalid settings JSON: %v", errs)
+	}
+
+	// Validate setting schema
 	if problems := conf.ValidateSettings(contents); len(problems) > 0 {
 		return nil, errors.Errorf("invalid settings: %s", strings.Join(problems, ","))
 	}
