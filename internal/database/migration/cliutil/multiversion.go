@@ -139,7 +139,16 @@ func runMigration(
 	registerMigrators := registerMigratorsWithStore(basestoreExtractor{r})
 
 	if !skipVersionCheck {
-		if err := checkServiceVersion(ctx, r, plan); err != nil {
+		version, ok, err := getServiceVersion(ctx, r)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			err := errors.Newf("version assertion failed: unknown version != %q", plan.from)
+			return errors.Newf("%s. Re-invoke with --skip-version-check to ignore this check", err)
+		}
+		if oobmigration.CompareVersions(version, plan.from) != oobmigration.VersionOrderEqual {
+			err := errors.Newf("version assertion failed: %q != %q", version, plan.from)
 			return errors.Newf("%s. Re-invoke with --skip-version-check to ignore this check", err)
 		}
 	}
@@ -257,29 +266,26 @@ func filterStitchedMigrationsForTags(tags []string) (map[string]shared.StitchedM
 	return filteredStitchedMigrationBySchemaName, nil
 }
 
-func checkServiceVersion(ctx context.Context, r Runner, plan migrationPlan) error {
+func getServiceVersion(ctx context.Context, r Runner) (oobmigration.Version, bool, error) {
 	db, err := extractDatabase(ctx, r)
 	if err != nil {
-		return err
+		return oobmigration.Version{}, false, err
 	}
 
 	versionStr, ok, err := upgradestore.New(db).GetServiceVersion(ctx, "frontend")
 	if err != nil {
-		return err
+		return oobmigration.Version{}, false, err
 	}
-	if ok {
-		version, ok := oobmigration.NewVersionFromString(versionStr)
-		if !ok {
-			return errors.Newf("cannot parse version: %q - expected [v]X.Y[.Z]", versionStr)
-		}
-		if oobmigration.CompareVersions(version, plan.from) == oobmigration.VersionOrderEqual {
-			return nil
-		}
-
-		return errors.Newf("version assertion failed: %q != %q", version, plan.from)
+	if !ok {
+		return oobmigration.Version{}, false, nil
 	}
 
-	return errors.Newf("version assertion failed: unknown version != %q", plan.from)
+	version, ok := oobmigration.NewVersionFromString(versionStr)
+	if !ok {
+		return oobmigration.Version{}, false, errors.Newf("cannot parse version: %q - expected [v]X.Y[.Z]", versionStr)
+	}
+
+	return version, true, nil
 }
 
 func setServiceVersion(ctx context.Context, r Runner, version oobmigration.Version) error {
