@@ -82,11 +82,11 @@ To perform a multi-version upgrade on a Sourcegraph instance running on Kubernet
           - Run `kubectl exec codeintel-db -- psql -U sg -c 'REINDEX database sg;'` to issue a reindex command to Postgres.
       1. Leave these versions of the databases running while the subsequent migration steps are performed. If `codeinsights-db` is a container new to your instance, now is a good time to start it as well.
 1. Pull the upstream changes for the target instance version and resolve any git merge conflicts. The [standard upgrade procedure](#standard-upgrades) describes this step in more detail.
-1. Follow the instructions on [how to run the migrator job in Kubernetes](https://sourcegraph.com/admin/how-to/manual_database_migrations#kubernetes) to perform the upgrade migration. For specific documentation on the `upgrade` command, see the [command documentation](./../../how-to/manual_database_migrations.md#upgrade). The following specific steps are an easy way to run the upgrade command:
-  1. Edit the file `configure/migrator/migrator.Job.yaml` and set the value of the `command` key to `["upgrade", "--from=<old version>", "--to=<new version>"]`.
+1. Follow the instructions on [how to run the migrator job in Kubernetes](../../how-to/manual_database_migrations.md#kubernetes) to perform the upgrade migration. For specific documentation on the `upgrade` command, see the [command documentation](../../how-to/manual_database_migrations.md#upgrade). The following specific steps are an easy way to run the upgrade command:
+  1. Edit the file `configure/migrator/migrator.Job.yaml` and set the value of the `command` key to `["upgrade", "--from=<old version>", "--to=<new version>"]`. If your instance has in-use code intelligence data it's recommended to also temporarily increase the CPU and memory resources allocated to this job. A symptom of underprovisioning this job will result in an `OOMKilled`-status container.
   1. Run `kubectl delete -f configure/migrator/migrator.Job.yaml` to ensure no previous job invocations will conflict with our current invocation.
   1. Start the migrator job via `kubectl apply -f configure/migrator/migrator.Job.yaml`.
-  1. Run `kubectl wait -f configure/migrator/migrator.Job.yaml --for=condition=complete --timeout=-1s` to wait for the job to complete.
+  1. Run `kubectl wait -f configure/migrator/migrator.Job.yaml --for=condition=complete --timeout=-1s` to wait for the job to complete. Run `kubectl logs job.batch/migrator -f` stream the migrator's stdout logs for progress.
 1. The remaining infrastructure can now be updated. The [standard upgrade procedure](#standard-upgrades) describes this step in more detail.
   - Ensure that the replica counts adjusted in the previous steps are turned back up.
   - Run `./kubectl-apply-all.sh` to deploy the new pods to the Kubernetes cluster.

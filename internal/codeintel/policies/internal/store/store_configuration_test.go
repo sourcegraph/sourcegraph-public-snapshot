@@ -12,7 +12,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -108,7 +108,7 @@ func TestGetConfigurationPolicies(t *testing.T) {
 		)
 
 		t.Run(name, func(t *testing.T) {
-			policies, totalCount, err := store.GetConfigurationPolicies(ctx, shared.GetConfigurationPoliciesOptions{
+			policies, totalCount, err := store.GetConfigurationPolicies(ctx, types.GetConfigurationPoliciesOptions{
 				RepositoryID:     testCase.repositoryID,
 				Term:             testCase.term,
 				ForDataRetention: testCase.forDataRetention,
@@ -160,10 +160,10 @@ func TestDeleteConfigurationPolicyByID(t *testing.T) {
 	d1 := time.Hour * 5
 	d2 := time.Hour * 6
 
-	configurationPolicy := shared.ConfigurationPolicy{
+	configurationPolicy := types.ConfigurationPolicy{
 		RepositoryID:              &repositoryID,
 		Name:                      "name",
-		Type:                      shared.GitObjectTypeCommit,
+		Type:                      types.GitObjectTypeCommit,
 		Pattern:                   "deadbeef",
 		RetentionEnabled:          false,
 		RetentionDuration:         &d1,
@@ -204,10 +204,10 @@ func TestDeleteConfigurationProtectedPolicy(t *testing.T) {
 	d1 := time.Hour * 5
 	d2 := time.Hour * 6
 
-	configurationPolicy := shared.ConfigurationPolicy{
+	configurationPolicy := types.ConfigurationPolicy{
 		RepositoryID:              &repositoryID,
 		Name:                      "name",
-		Type:                      shared.GitObjectTypeCommit,
+		Type:                      types.GitObjectTypeCommit,
 		Pattern:                   "deadbeef",
 		RetentionEnabled:          false,
 		RetentionDuration:         &d1,

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/urfave/cli/v2"
+	"gopkg.in/yaml.v3"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/cliutil"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
@@ -26,19 +27,27 @@ var runCommand = &cli.Command{
 	Usage:     "Run the given commands",
 	ArgsUsage: "[command]",
 	UsageText: `
-# Run specific commands:
+# Run specific commands
 sg run gitserver
 sg run frontend
 
-# List available commands (defined under 'commands:' in 'sg.config.yaml'):
+# List available commands (defined under 'commands:' in 'sg.config.yaml')
 sg run -help
 
-# Run multiple commands:
+# Run multiple commands
 sg run gitserver frontend repo-updater
-	`,
+
+# View configuration for a command
+sg run -describe jaeger
+`,
 	Category: CategoryDev,
-	Flags:    []cli.Flag{},
-	Action:   runExec,
+	Flags: []cli.Flag{
+		&cli.BoolFlag{
+			Name:  "describe",
+			Usage: "Print details about selected run target",
+		},
+	},
+	Action: runExec,
 	BashComplete: cliutil.CompleteOptions(func() (options []string) {
 		config, _ := getConfig()
 		if config == nil {
@@ -71,6 +80,18 @@ func runExec(ctx *cli.Context) error {
 			return flag.ErrHelp
 		}
 		cmds = append(cmds, cmd)
+	}
+
+	if ctx.Bool("describe") {
+		for _, cmd := range cmds {
+			out, err := yaml.Marshal(cmd)
+			if err != nil {
+				return err
+			}
+			std.Out.WriteMarkdown(fmt.Sprintf("# %s\n\n```yaml\n%s\n```\n\n", cmd.Name, string(out)))
+		}
+
+		return nil
 	}
 
 	return run.Commands(ctx.Context, config.Env, verbose, cmds...)
