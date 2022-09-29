@@ -170,6 +170,17 @@ function buildMockLocation({
     }
 }
 
+// Fake highlighting for lines 16 and 52 in diff/diff.go
+export const highlightedLinesDiffGo = [
+    ['<tr><td class="line" data-line="16"></td><td class="code">line 16</td></tr>'],
+    ['<tr><td class="line" data-line="52"></td><td class="code">line 52</td></tr>'],
+]
+
+// Fake highlighting for line 46 in cmd/go-diff/go-diff.go
+export const highlightedLinesGoDiffGo = [
+    ['<tr><td class="line" data-line="46"></td><td class="code">line 46</td></tr>'],
+]
+
 const MOCK_DEFINITIONS: LocationFields[] = [
     buildMockLocation({
         repo: 'github.com/sourcegraph/go-diff',
@@ -283,6 +294,7 @@ const HIGHLIGHTED_FILE_MOCK = {
                     highlight: {
                         aborted: false,
                         html: highlightedDiffFileContent,
+                        lsif: false,
                         __typename: 'HighlightedFile',
                     },
                     __typename: 'GitBlob',
