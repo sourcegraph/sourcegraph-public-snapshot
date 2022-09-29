@@ -154,7 +154,7 @@ func runMigration(
 	}
 
 	if !skipDriftCheck {
-		if err := checkDrift(ctx, r, plan, out, expectedSchemaFactories); err != nil {
+		if err := checkDrift(ctx, r, plan.from.GitTag(), out, expectedSchemaFactories); err != nil {
 			return err
 		}
 	}
@@ -301,7 +301,7 @@ func setServiceVersion(ctx context.Context, r Runner, version oobmigration.Versi
 	)
 }
 
-func checkDrift(ctx context.Context, r Runner, plan migrationPlan, out *output.Output, expectedSchemaFactories []ExpectedSchemaFactory) error {
+func checkDrift(ctx context.Context, r Runner, version string, out *output.Output, expectedSchemaFactories []ExpectedSchemaFactory) error {
 	schemasWithDrift := make([]string, 0, len(schemas.SchemaNames))
 	for _, schemaName := range schemas.SchemaNames {
 		store, err := r.Store(ctx, schemaName)
@@ -317,7 +317,7 @@ func checkDrift(ctx context.Context, r Runner, plan migrationPlan, out *output.O
 		var buf bytes.Buffer
 		noopOutput := output.NewOutput(&buf, output.OutputOpts{})
 
-		if err := compareByFactories(schemaName, plan.from.GitTag(), schema, noopOutput, expectedSchemaFactories); err != nil {
+		if err := compareByFactories(schemaName, version, schema, noopOutput, expectedSchemaFactories); err != nil {
 			schemasWithDrift = append(schemasWithDrift, schemaName)
 		}
 	}
