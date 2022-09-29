@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -379,7 +380,12 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 		newFx := newApplyPreviewTestFixture(t, ctx, bstore, userID, repo.ID, "already published")
 
 		// We need to modify the changeset spec to not have a published field.
-		q := sqlf.Sprintf(`UPDATE changeset_specs SET published = %s WHERE id = %s`, nil, newFx.specPublished.ID)
+		newFx.specPublished.Published = batches.PublishedValue{Val: nil}
+		published, err := json.Marshal(newFx.specPublished.Published)
+		if err != nil {
+			t.Fatal(err)
+		}
+		q := sqlf.Sprintf(`UPDATE changeset_specs SET published = %s WHERE id = %s`, published, newFx.specPublished.ID)
 		if _, err := db.ExecContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 			t.Fatal(err)
 		}
