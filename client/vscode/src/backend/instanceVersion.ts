@@ -27,18 +27,19 @@ export const observeInstanceVersionNumber = (): Observable<string | undefined> =
         })
     )
 
+type Version = { major: number; minor: number } | 'insiders'
+
 /**
  * Parses the Sourcegraph instance version number.
  *
  * @returns Major, minor and patch version numbers if it's a regular version, or `'insiders'` if it's an insiders version.
  */
-export const parseVersion = (version: string): { major: number; minor: number; patch: number } | 'insiders' => {
+export const parseVersion = (version: string): Version => {
     const versionParts = version.split('.')
     if (versionParts.length === 3) {
         return {
             major: parseInt(versionParts[0], 10),
             minor: parseInt(versionParts[1], 10),
-            patch: parseInt(versionParts[2], 10),
         }
     }
     return 'insiders'
