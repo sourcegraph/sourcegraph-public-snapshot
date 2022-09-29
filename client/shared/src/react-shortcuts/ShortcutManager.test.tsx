@@ -132,24 +132,6 @@ describe('ShortcutManager', () => {
         sinon.assert.notCalled(spy)
     })
 
-    it.skip('calls shortcuts that are scoped to a specific node only when that node is focused', () => {
-        // This test is meaningless atm because the current implementation of
-        // Shortcut doesn't actually work for scoped events.
-
-        const spy = sinon.spy()
-
-        act(() => {
-            render(
-                <ShortcutProvider>
-                    <ShortcutWithFocus spy={spy} />
-                </ShortcutProvider>
-            )
-        })
-
-        userEvent.keyboard('z')
-        sinon.assert.called(spy)
-    })
-
     it('only registers a unique shortcut once', () => {
         const spy = sinon.spy()
 
@@ -295,47 +277,3 @@ describe('ShortcutManager', () => {
         })
     })
 })
-
-interface Props {
-    spy: sinon.SinonSpy
-}
-
-interface State {
-    node: HTMLElement | null
-}
-
-// This component isn't used currently. It and the corresponding test need
-// to be updated.
-// eslint-disable-next-line react/no-unsafe
-class ShortcutWithFocus extends React.Component<Props, State> {
-    public state: State = {
-        node: null,
-    }
-
-    public UNSAFE_componentWillUpdate(): void {
-        const { node } = this.state
-
-        if (!node) {
-            return
-        }
-
-        node.focus()
-    }
-
-    public render(): React.ReactNode {
-        const { spy } = this.props
-        const { node } = this.state
-        return (
-            <div className="app">
-                <button type="button" ref={this.setRef} />
-                <Shortcut ordered={['z']} onMatch={spy} node={node} />
-            </div>
-        )
-    }
-
-    private setRef = (node: HTMLElement | null) => {
-        this.setState({
-            node,
-        })
-    }
-}
