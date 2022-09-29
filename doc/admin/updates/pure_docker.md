@@ -14,7 +14,6 @@ Each section comprehensively describes the changes needed in Docker images, envi
 
 Follow the [steps](#upgrade-procedure) outlined at the top of this page to upgrade.
 
-
 ## 3.43 -> 4.0.1
 
 <!-- Add changes changes to this section before release. -->
@@ -25,19 +24,13 @@ Follow the [steps](#upgrade-procedure) outlined at the top of this page to upgra
 
 To upgrade, please perform the changes in the following diff: https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/a189e495813bc33d544b302eb98c197d70eacc87
 
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.43).*
-
 ## 3.41 -> 3.42.2
 
 To upgrade, please perform the changes in the following diff: https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/a189e495813bc33d544b302eb98c197d70eacc87
 
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.42).*
-
 ## 3.40.2 -> 3.41.0
 
 To upgrade, please perform the changes in the following diff: https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/8bfd70892c1bf56c5a88db0329826800c7a1097b
-
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.41).*
 
 ## 3.40.1 -> 3.40.2
 
@@ -64,8 +57,6 @@ In this release we need to remove timescaledb from `shared_preload_libraries` co
 
 To upgrade, please perform the changes in the following diff: https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/b37367c738d28ef7e27c8b1f833eb9355bd9e8b1
 
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.39).*
-
 ## 3.38.0 -> 3.38.1
 
 To upgrade, please perform the changes in the following diff:
@@ -78,16 +69,12 @@ This release adds the requirement that the environment variables `SRC_GIT_SERVER
 To upgrade, please perform the changes in the following diff:
 [https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/a66a74ce9a120a9da743eb44c6fea3a55f51842a](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/a66a74ce9a120a9da743eb44c6fea3a55f51842a)
 
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.37).*
-
 ## 3.36 -> 3.37
 
 This release adds a new container that runs database migrations (`migrator`) independently of the frontend container. Confirm the environment variables on this new container match your database settings. [Read more about manual operation of the migrator](https://docs.sourcegraph.com/admin/how-to/manual_database_migrations)
 
 To upgrade, please perform the changes in the following diff:
 [https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/9e369ec86cdef50b9e2a8350040d011cf2c7cd49](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/9e369ec86cdef50b9e2a8350040d011cf2c7cd49)
-
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.36).*
 
 ## 3.36.2 -> 3.36.3
 
@@ -103,8 +90,6 @@ To upgrade, please perform the changes in the following diff:
 
 To upgrade, please perform the changes in the following diff:
 [https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/25cdf1858de7fe3d0a3e3479a7e5620a02ac6a2c](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/25cdf1858de7fe3d0a3e3479a7e5620a02ac6a2c)
-
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.35).*
 
 ## 3.35.1 -> 3.35.2
 
@@ -128,8 +113,6 @@ The `query-runner` service has been decomissioned in the 3.35.0 release. You can
 To upgrade, please perform the changes in the following diff:
 [https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/33b076a123c23930cc3339167bdd5502bebc5a3c](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/33b076a123c23930cc3339167bdd5502bebc5a3c)
 
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.34).*
-
 ## 3.34.x -> 3.34.2
 
 To upgrade, please perform the changes in the following diff:
@@ -144,21 +127,15 @@ __Please upgrade directly to 3.34.2.__
 
 A bug in our 3.34 and 3.34.1 release causes some repositories from older Sourcegraph versions to not appear in search results due to a database change.
 
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.33).*
-
 ## 3.32 -> 3.33
 
 To upgrade, please perform the changes in the following diff:
 [https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/f6dc5c4a859b09faaea44a34e3ba8e85c92fcf58](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/f6dc5c4a859b09faaea44a34e3ba8e85c92fcf58)
 
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.32).*
-
 ## 3.31 -> 3.32
 
 To upgrade, please perform the changes in the following diff:
 [https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/2c4c283ae9f89fa48232f0b99ed1982008034fee](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/2c4c283ae9f89fa48232f0b99ed1982008034fee)
-
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.32).*
 
 ## 3.30.3 -> 3.31
 
@@ -183,16 +160,12 @@ All users that use our bundled (built-in) database instances **must** read throu
 To upgrade, please perform the changes in the following diff:
 [https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/63802ca5966754162c2b3e077e64e60687138874](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/63802ca5966754162c2b3e077e64e60687138874)
 
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.29).*
-
 ## 3.28 -> 3.29
 
 To upgrade, please perform the changes in the following diff:
 [https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/940100429fdd59f930436d47e226f5a7116bf6d9](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/940100429fdd59f930436d47e226f5a7116bf6d9)
 
 This upgrade adds a new `worker` service that runs a number of background jobs that were previously run in the `frontend` service. See [notes on deploying workers](../workers.md#deploying-workers) for additional details. Good initial values for CPU and memory resources allocated to this new service should match the `frontend` service.
-
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.28).*
 
 ## 3.27 -> 3.28
 
@@ -261,7 +234,6 @@ https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/223c11dacffafb98
 This upgrade removes the `code intel bundle manager`. This service has been deprecated and all references to it have been removed.
 
 This upgrade also adds a MinIO container that doesn't require any custom configuration. You can find more detailed documentation in https://docs.sourcegraph.com/admin/external_services/object_storage.
-
 
 ## 3.20.1 -> 3.21.2
 

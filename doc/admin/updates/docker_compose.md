@@ -21,7 +21,6 @@ This page lists the changes that are relevant for [upgrading Sourcegraph on Dock
 
 Follow the [steps](#upgrade-procedure) outlined at the top of this page to upgrade.
 
-
 ## 3.43 -> 4.0.1
 
 <!-- Add changes changes to this section before release. -->
@@ -36,13 +35,9 @@ Follow the [steps](#upgrade-procedure) outlined at the top of this page to upgra
 
 Follow the [standard upgrade procedure](../deploy/docker-compose/upgrade.md) to upgrade your deployment.
 
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.43).*
-
 ## 3.41 -> 3.42.2
 
 Follow the [standard upgrade procedure](../deploy/docker-compose/upgrade.md) to upgrade your deployment.
-
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.42).*
 
 ## 3.40 -> 3.41
 
@@ -51,21 +46,15 @@ Follow the [standard upgrade procedure](../deploy/docker-compose/upgrade.md) to 
 
 Follow the [standard upgrade procedure](../deploy/docker-compose/upgrade.md) to upgrade your deployment.
 
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.41).*
-
 ## 3.39 -> 3.40.2
 
 - `cadvisor` now defaults to run in `privileged` mode. This allows `cadvisor` to collect out of memory events happening to containers which can be used to discover underprovisoned resources. [#804](https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/804)
 
 Follow the [standard upgrade procedure](../deploy/docker-compose/upgrade.md) to upgrade your deployment.
 
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.40).*
-
 ## 3.39.0 -> 3.39.1
 
 Follow the [standard upgrade procedure](../deploy/docker-compose/upgrade.md) to upgrade your deployment.
-
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.39).*
 
 ## 3.38 -> 3.39
 
@@ -77,13 +66,9 @@ We made a number of changes to our built-in postgres databases (the `pgsql`, `co
 
 Follow the [standard upgrade procedure](../deploy/docker-compose/upgrade.md) to upgrade your deployment.
 
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.39).*
-
 ## 3.38.0 -> 3.38.1
 
 Follow the [standard upgrade procedure](../deploy/docker-compose/upgrade.md) to upgrade your deployment.
-
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.38).*
 
 ## 3.37 -> 3.38
 
@@ -93,21 +78,15 @@ This release adds the requirement that the environment variables `SRC_GIT_SERVER
 
 Follow the [standard upgrade procedure](../deploy/docker-compose/upgrade.md) to upgrade your deployment.
 
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.37).*
-
 ## 3.36 -> 3.37
 
 This release adds a new container that runs database migrations (`migrator`) independently of the frontend container. Confirm the environment variables on this new container match your database settings. [Docs](../deploy/docker-compose/index.md#database-migrations)
 
 Follow the [standard upgrade procedure](../deploy/docker-compose/upgrade.md) to upgrade your deployment.
 
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.36).*
-
 ## 3.35 -> 3.36
 
 No manual migration is required - follow the [standard upgrade procedure](../deploy/docker-compose/upgrade.md) to upgrade your deployment.
-
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.35).*
 
 ## 3.35.0 -> 3.35.1
 
@@ -124,25 +103,17 @@ The `query-runner` service has been decommissioned in the 3.35 release and will 
 Follow the [standard upgrade procedure](../deploy/docker-compose/upgrade.md) to upgrade your deployment.
 To delete the `query-runner` service, specify `--remove-orphans` to your `docker-compose` command.
 
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.34).*
-
 ## 3.33 -> 3.34
 
 No manual migration is required - follow the [standard upgrade procedure](../deploy/docker-compose/upgrade.md) to upgrade your deployment.
-
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.33).*
 
 ## 3.32 -> 3.33
 
 No manual migration is required - follow the [standard upgrade procedure](../deploy/docker-compose/upgrade.md) to upgrade your deployment.
 
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.32).*
-
 ## 3.31 -> 3.32
 
 No manual migration is required - follow the [standard upgrade procedure](../deploy/docker-compose/upgrade.md) to upgrade your deployment.
-
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.31).*
 
 ## 3.30.3 -> 3.31
 
@@ -151,8 +122,6 @@ The **built-in** main Postgres (`pgsql`) and codeintel (`codeintel-db`) database
 If you have already upgraded to 3.30.3, which uses the new alpine-based Docker images, all users that use our bundled (built-in) database instances should have already performed [the necessary re-indexing](../migration/3_31.md).
 
 > NOTE: The above does not apply to users that use external databases (e.x: Amazon RDS, Google Cloud SQL, etc.).
-
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.30).*
 
 ## 3.30.x -> 3.31.2
 
@@ -174,13 +143,9 @@ Please upgrade to the [`v3.30.2` tag of deploy-sourcegraph-docker](https://githu
 
 This upgrade adds a new `worker` service that runs a number of background jobs that were previously run in the `frontend` service. See [notes on deploying workers](../workers.md#deploying-workers) for additional details. Good initial values for CPU and memory resources allocated to this new service should match the `frontend` service.
 
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.28).*
-
 ## 3.27 -> 3.28
 
 - The memory requirements for `redis-cache` and `redis-store` have been increased by 1GB. See https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/373 for more context.
-
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.27).*
 
 ## 3.26 -> 3.27
 
@@ -189,8 +154,6 @@ This upgrade adds a new `worker` service that runs a number of background jobs t
 If you are using an external database, [upgrade your database](https://docs.sourcegraph.com/admin/postgres#upgrading-external-postgresql-instances) to Postgres 12 or above prior to upgrading Sourcegraph. No action is required if you are using the supplied supplied database images.
 
 Afterwards, please upgrade to the [`v3.27.0` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.27.0/docker-compose) by following the [standard upgrade procedure](../deploy/docker-compose/upgrade.md).
-
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.26).*
 
 ## 3.25 -> 3.26
 
