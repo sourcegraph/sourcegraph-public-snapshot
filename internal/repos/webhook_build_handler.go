@@ -61,15 +61,14 @@ func (w *webhookBuildHandler) handleKindGitHub(ctx context.Context, logger log.L
 		return errcode.MakeNonRetryable(errors.Newf("handleKindGitHub: expected *schema.GitHubConnection, got %T", parsed))
 	}
 
-	// TODO: Why parse an empty string here?
-	baseURL, err := url.Parse("")
+	baseURL, err := url.Parse(conn.Url)
 	if err != nil {
 		return errcode.MakeNonRetryable(errors.Wrap(err, "handleKindGitHub: parse baseURL failed"))
 	}
 	client := github.NewV3Client(logger, svc.URN(), baseURL, &auth.OAuthBearerToken{Token: conn.Token}, w.doer)
 
-	// TODO: Not make an API call upon every request: We should check the config and not attempt to create
-	// a webhook if one already exists
+	// TODO: Not make an API call upon every request. We would need a way to save
+	// whether or not we created a hook locally
 	webhookPayload, err := client.FindSyncWebhook(ctx, job.RepoName)
 	if err != nil && err.Error() != "unable to find webhook" {
 		return errors.Wrap(err, "handleKindGitHub: FindSyncWebhook failed")
