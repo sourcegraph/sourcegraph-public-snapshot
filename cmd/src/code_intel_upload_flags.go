@@ -229,20 +229,20 @@ func convertSCIPToLSIFGraph(out *output.Output, inputFile, outputFile string) er
 
 	data, err := os.ReadFile(inputFile)
 	if err != nil {
-		panic(err)
+		return errors.Wrapf(err, "failed to read SCIP index '%s'", inputFile)
 	}
 	index := scip.Index{}
 	err = proto.Unmarshal(data, &index)
 	if err != nil {
-		panic(errors.Wrapf(err, "failed to parse protobuf file '%s'", inputFile))
+		return errors.Wrapf(err, "failed to parse protobuf file '%s'", inputFile)
 	}
 	els, err := scip.ConvertSCIPToLSIF(&index)
 	if err != nil {
-		panic(errors.Wrapf(err, "failed reader.ConvertTypedIndexToGraphIndex"))
+		return errors.Wrapf(err, "failed to convert SCIP index at '%s' to LSIF", inputFile)
 	}
 	err = scip.WriteNDJSON(scip.ElementsToJsonElements(els), tmp)
 	if err != nil {
-		panic(err)
+		return errors.Wrapf(err, "failed to write LSIF JSON output to '%s'", tmp.Name())
 	}
 	err = tmp.Close()
 	if err != nil {
