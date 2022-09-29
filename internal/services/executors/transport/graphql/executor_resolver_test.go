@@ -104,15 +104,15 @@ func TestExecutorResolver(t *testing.T) {
 				expected:           ExecutorCompatibilityOutdated.ToGraphQL(),
 				description:        "executor version is less than the 30days - Sourcegraph build date (insiders)",
 			},
-			// The executor is too new if the executor version is greater than the 30 days + sourcegraph build date (insiders)
+			// The executor is too new if the executor version is greater than the one release cycle + sourcegraph build date (insiders)
 			{
 				executorVersion:    "executor-patch-notest-es-ignite-debug_168065_2022-10-20_e94e18c4ebcc_patch",
 				sourcegraphVersion: "169135_2022-09-15_a2b623dce148",
 				isActive:           true,
 				expected:           ExecutorCompatibilityVersionAhead.ToGraphQL(),
-				description:        "executor version is greater than the 30 days + Sourcegraph build date (insiders)",
+				description:        "executor version is greater than the one release cycle + Sourcegraph build date (insiders)",
 			},
-			// The executor is up to date if the build date isn't greater than 30 days + sourcegraph build date (insiders)
+			// The executor is up to date if the build date isn't greater than one release cycle + sourcegraph build date (insiders)
 			{
 				executorVersion:    "executor-patch-notest-es-ignite-debug_168065_2022-08-20_e94e18c4ebcc_patch",
 				sourcegraphVersion: "169135_2022-08-15_a2b623dce148",

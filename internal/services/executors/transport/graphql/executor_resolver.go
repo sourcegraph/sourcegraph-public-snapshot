@@ -14,6 +14,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+const oneReleaseCycle = 30 * 24 * time.Hour
+
 var insiderBuildRegex = regexp.MustCompile(`^[\w-]+_(\d{4}-\d{2}-\d{2})_\w+`)
 
 type ExecutorResolver struct {
@@ -94,17 +96,15 @@ func calculateExecutorCompatibility(ev string) (*string, error) {
 			return nil, err
 		}
 
-		hst := st.Add(oneMonth)
-		lst := st.Add(-1 * oneMonth)
+		hst := st.Add(oneReleaseCycle)
+		lst := st.Add(-1 * oneReleaseCycle)
 
 		if et.After(hst) {
-			// We check if the executor build date is after 30 days + sourcegraph build date.
+			// We check if the executor build date is after a release cycle + sourcegraph build date.
 			// if this is true then we assume the executor's version is ahead.
-
-			// We use a month as the constant because Sourcegraph is released on a monthly basis.
 			compatibility = ExecutorCompatibilityVersionAhead
 		} else if et.Before(lst) {
-			// if the executor date occurs 30 days behind the current build date of the Sourcegraph
+			// if the executor date is a release cycle behind the current build date of the Sourcegraph
 			// instance then we assume that the executor is outdated.
 			compatibility = ExecutorCompatibilityOutdated
 		}
