@@ -42,6 +42,8 @@ Once the instance has started, please allow ~5 minutes for Sourcegraph to initia
 
 To configure SSL, and lock down the instance from the public internet, see the [networking](#networking) section.
 
+> NOTE: If you cannot access the Sourcegraph homepage after 8 minutes, please try reboot your instance.
+
 ### Instance size chart
 
 Select an AMI according to the number of users and repositories you have using this table. If you fall between two sizes, choose the larger of the two.
