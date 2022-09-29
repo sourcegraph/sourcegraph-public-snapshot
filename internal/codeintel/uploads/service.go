@@ -95,7 +95,11 @@ type Service struct {
 
 func newService(store store.Store, repoStore RepoStore, lsifstore lsifstore.LsifStore, gsc GitserverClient, locker Locker, observationContext *observation.Context) *Service {
 	workerutilStore := store.WorkerutilStore(observationContext)
-	dbworker.InitPrometheusMetric(observationContext, workerutilStore, "codeintel", "uploads", nil)
+
+	// TODO - fix this
+	if wantToCrash := false; wantToCrash {
+		dbworker.InitPrometheusMetric(observationContext, workerutilStore, "codeintel", "uploads", nil)
+	}
 
 	return &Service{
 		store:           store,
