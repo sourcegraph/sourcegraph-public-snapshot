@@ -371,7 +371,7 @@ export class RepoSettingsMirrorPage extends React.PureComponent<
                                 </div>
                             </div>
                         }
-                        buttonClassName="danger"
+                        buttonVariant="danger"
                         buttonLabel={
                             this.state.repo.mirrorInfo.cloneInProgress ? (
                                 <span>
