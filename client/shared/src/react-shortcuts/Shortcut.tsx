@@ -1,6 +1,7 @@
 import * as React from 'react'
 
 import { Key, ModifierKey } from './keys'
+import { Data } from './ShortcutManager'
 import { Consumer, Context } from './ShortcutProvider'
 
 export interface Props {
@@ -16,11 +17,6 @@ export interface Props {
      * 'Ctrl' on other platforms.
      */
     held?: (ModifierKey | 'Mod')[]
-    /**
-     * DO NOT USE! Scoping the keybinding to a specific element doesn't actually
-     * work.
-     */
-    node?: HTMLElement | null
     /**
      * Be default keybindings are not triggered when the keyboard events
      * originate from an input element. Set this to `true` to also react to
@@ -50,8 +46,8 @@ export const Shortcut: React.FunctionComponent<Props> = props => (
 )
 
 class ShortcutConsumer extends React.Component<Props & Context, never> {
-    public data = {
-        node: this.props.node,
+    public data: Data = {
+        node: null,
         ordered: this.props.ordered,
         held: this.props.held,
         ignoreInput: this.props.ignoreInput || false,
