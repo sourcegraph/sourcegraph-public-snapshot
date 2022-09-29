@@ -129,7 +129,7 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
                         label="Description"
                         autoFocus={true}
                     />
-                    <Label className="w-100">
+                    <Label className={classNames('w-100 form-group', styles.label)}>
                         <div className="mb-2">Query</div>
 
                         <LazyMonacoQueryInput
