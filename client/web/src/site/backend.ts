@@ -35,9 +35,7 @@ export function refreshSiteFlags(): Observable<never> {
                     needsRepositoryConfiguration
                     freeUsersExceeded
                     alerts {
-                        type
-                        message
-                        isDismissibleWithKey
+                        ...AlertFields
                     }
                     sendsEmailVerificationEmails
                     productSubscription {
@@ -46,6 +44,11 @@ export function refreshSiteFlags(): Observable<never> {
                         }
                         noLicenseWarningUserCount
                     }
+                }
+                fragment AlertFields on Alert {
+                    type
+                    message
+                    isDismissibleWithKey
                 }
             `)
         ),

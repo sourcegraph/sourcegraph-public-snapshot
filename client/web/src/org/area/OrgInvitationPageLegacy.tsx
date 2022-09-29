@@ -9,7 +9,6 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { OrganizationInvitationResponseType } from '@sourcegraph/shared/src/graphql-operations'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { LoadingSpinner, Button, Link, Alert, H3, Text } from '@sourcegraph/wildcard'
 
 import { orgURL } from '..'
@@ -191,9 +190,7 @@ export const OrgInvitationPageLegacy = withAuthenticatedUser(
             this.responses.next(OrganizationInvitationResponseType.REJECT)
         }
 
-        private respondToOrganizationInvitation = (
-            args: GQL.IRespondToOrganizationInvitationOnMutationArguments
-        ): Observable<void> =>
+        private respondToOrganizationInvitation = (args: RespondToOrganizationInvitationVariables): Observable<void> =>
             requestGraphQL<RespondToOrganizationInvitationResult, RespondToOrganizationInvitationVariables>(
                 gql`
                     mutation RespondToOrganizationInvitation(

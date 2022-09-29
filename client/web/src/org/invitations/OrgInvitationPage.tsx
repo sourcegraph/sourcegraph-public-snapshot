@@ -5,14 +5,19 @@ import { RouteComponentProps } from 'react-router-dom'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { gql, useMutation, useQuery } from '@sourcegraph/http-client'
-import { Maybe, OrganizationInvitationResponseType } from '@sourcegraph/shared/src/graphql-operations'
-import { IEmptyResponse, IOrganizationInvitation } from '@sourcegraph/shared/src/schema'
+import { OrganizationInvitationResponseType } from '@sourcegraph/shared/src/graphql-operations'
 import { Alert, AnchorLink, Button, LoadingSpinner, Link, H2, H3 } from '@sourcegraph/wildcard'
 
 import { orgURL } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { ModalPage } from '../../components/ModalPage'
 import { PageTitle } from '../../components/PageTitle'
+import {
+    InvitationByTokenResult,
+    InvitationByTokenVariables,
+    RespondToOrgInvitationResult,
+    RespondToOrgInvitationVariables,
+} from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { userURL } from '../../user'
 import { UserAvatar } from '../../user/UserAvatar'
@@ -25,15 +30,6 @@ interface Props extends RouteComponentProps<{ token: string }> {
     className?: string
 }
 
-interface RespondToOrgInvitationResult {
-    respondToOrganizationInvitation: Maybe<IEmptyResponse>
-}
-
-interface RespondToOrgInvitationVariables {
-    id: string
-    response: OrganizationInvitationResponseType
-}
-
 export const RESPOND_TO_ORG_INVITATION = gql`
     mutation RespondToOrgInvitation($id: ID!, $response: OrganizationInvitationResponseType!) {
         respondToOrganizationInvitation(organizationInvitation: $id, responseType: $response) {
@@ -42,30 +38,27 @@ export const RESPOND_TO_ORG_INVITATION = gql`
     }
 `
 
-interface InviteResult {
-    invitationByToken: Maybe<IOrganizationInvitation>
-}
-
-interface InviteVariables {
-    token: string
-}
-
 export const INVITATION_BY_TOKEN = gql`
     query InvitationByToken($token: String!) {
         invitationByToken(token: $token) {
-            createdAt
+            ...OrganizationInvitationFields
+        }
+    }
+
+    fragment OrganizationInvitationFields on OrganizationInvitation {
+        createdAt
+        id
+        isVerifiedEmail
+        organization {
             id
-            isVerifiedEmail
-            organization {
-                displayName
-                name
-            }
-            recipientEmail
-            sender {
-                avatarURL
-                displayName
-                username
-            }
+            displayName
+            name
+        }
+        recipientEmail
+        sender {
+            avatarURL
+            displayName
+            username
         }
     }
 `
@@ -81,15 +74,15 @@ export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<
 }) => {
     const token = match.params.token
 
-    const { data: inviteData, loading: inviteLoading, error: inviteError } = useQuery<InviteResult, InviteVariables>(
-        INVITATION_BY_TOKEN,
-        {
-            skip: !authenticatedUser || !token,
-            variables: {
-                token,
-            },
-        }
-    )
+    const { data: inviteData, loading: inviteLoading, error: inviteError } = useQuery<
+        InvitationByTokenResult,
+        InvitationByTokenVariables
+    >(INVITATION_BY_TOKEN, {
+        skip: !authenticatedUser || !token,
+        variables: {
+            token,
+        },
+    })
 
     const data = inviteData?.invitationByToken
     const orgName = data?.organization.name

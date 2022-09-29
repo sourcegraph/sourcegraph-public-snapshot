@@ -9,14 +9,17 @@ import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, ta
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { Container, PageHeader, Button, Link, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { queryGraphQL } from '../../../backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
-import { OrgAreaOrganizationFields } from '../../../graphql-operations'
+import {
+    OrgAreaOrganizationFields,
+    OrganizationMembersResult,
+    OrganizationMemberNode,
+} from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { userURL } from '../../../user'
 import { OrgAreaPageProps } from '../../area/OrgArea'
@@ -28,7 +31,7 @@ import styles from './OrgSettingsMembersPage.module.scss'
 
 interface UserNodeProps {
     /** The user to display in this list item. */
-    node: GQL.IUser
+    node: OrganizationMemberNode
 
     /** The organization being displayed. */
     org: OrgAreaOrganization
@@ -47,6 +50,8 @@ interface HasOneMember {
 }
 
 type OrgAreaOrganization = OrgAreaOrganizationFields & HasOneMember
+
+type OrgNode = Extract<OrganizationMembersResult['node'], { __typename?: 'Org' }>
 
 interface UserNodeState {
     /** Undefined means in progress, null means done or not started. */
@@ -240,7 +245,7 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
                             onDidUpdateOrganizationMembers={this.onDidUpdateOrganizationMembers}
                         />
                     )}
-                    <FilteredConnection<GQL.IUser, Omit<UserNodeProps, 'node'>>
+                    <FilteredConnection<OrganizationMemberNode, Omit<UserNodeProps, 'node'>>
                         className="list-group list-group-flush test-org-members"
                         noun="member"
                         pluralNoun="members"
@@ -268,7 +273,7 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
 
     private onDidUpdateOrganizationMembers = (): void => this.userUpdates.next()
 
-    private fetchOrgMembers = (): Observable<GQL.IUserConnection> =>
+    private fetchOrgMembers = (): Observable<OrgNode['members']> =>
         queryGraphQL(
             gql`
                 query OrganizationMembers($id: ID!) {
@@ -277,15 +282,19 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
                             viewerCanAdminister
                             members {
                                 nodes {
-                                    id
-                                    username
-                                    displayName
-                                    avatarURL
+                                    ...OrganizationMemberNode
                                 }
                                 totalCount
                             }
                         }
                     }
+                }
+
+                fragment OrganizationMemberNode on User {
+                    id
+                    username
+                    displayName
+                    avatarURL
                 }
             `,
             { id: this.props.org.id }
@@ -295,7 +304,7 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
                     this.setState({ viewerCanAdminister: false, hasOneMember: false })
                     throw createAggregateError(errors)
                 }
-                const org = data.node as GQL.IOrg
+                const org = data.node as OrgNode
                 if (!org.members) {
                     this.setState({ viewerCanAdminister: false, hasOneMember: false })
                     throw createAggregateError(errors)
