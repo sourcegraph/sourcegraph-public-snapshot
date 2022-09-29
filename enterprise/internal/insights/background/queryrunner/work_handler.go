@@ -3,7 +3,6 @@ package queryrunner
 import (
 	"context"
 	"fmt"
-	"sort"
 	"sync"
 	"time"
 
@@ -250,6 +249,8 @@ func (r *workHandler) persistRecordings(ctx context.Context, job *Job, series *t
 	}
 	defer func() { err = tx.Done(err) }()
 
+	lgr := log.Scoped("persistRecordings", "store that shit yo")
+
 	if store.PersistMode(job.PersistMode) == store.SnapshotMode {
 		// The purpose of the snapshot is for low fidelity but recently updated data points.
 		// We store one snapshot of an insight at any time, so we prune the table whenever adding a new series.
@@ -275,28 +276,27 @@ func (r *workHandler) persistRecordings(ctx context.Context, job *Job, series *t
 	}
 
 	if series.DataFormat == storage.Gorilla && store.PersistMode(job.PersistMode) == store.RecordMode {
-		sampleStore := store.SampleStoreFromLegacyStore(tx)
+		sampleStore := store.SampleStoreFromLegacyStore(r.insightsStore)
 
-		// I think the deadlock is because this list is going in some arbitrary order
-		// worker A might go {1, 5, 3, 9}
-		// worker B might go {9, 3, 5, 1}
-		// since the entire set of wrapped in a tx we lock the rows as we go and eventually find a conflict where worker A can't do anything
-		// this seems weird though because shouldn't the lock be released after each row?
-		sort.Slice(recordings, func(i, j int) bool {
-			return *recordings[i].RepoID < *recordings[j].RepoID && *recordings[i].Point.Capture < *recordings[j].Point.Capture
-		})
+		lgr.Info("converting recordings", log.Int("length", len(recordings)))
+
+		var samples []store.RepoSample
 		for _, recording := range recordings {
-			sample := store.RawSample{
-				Time:  uint32(recording.Point.Time.Unix()),
-				Value: recording.Point.Value,
-			}
-			if err = sampleStore.Sample(ctx, store.TimeSeriesKey{
-				SeriesId: uint32(series.ID),
-				RepoId:   uint32(int(*recording.RepoID)),
-				Capture:  recording.Point.Capture,
-			}, *recording.RepoName, sample); err != nil {
-				return errors.Wrap(err, "Sample")
-			}
+			samples = append(samples, store.RepoSample{
+				RepoName: *recording.RepoName,
+				TimeSeriesKey: store.TimeSeriesKey{
+					SeriesId: uint32(series.ID),
+					RepoId:   uint32(int(*recording.RepoID)),
+					Capture:  recording.Point.Capture,
+				},
+				RawSample: store.RawSample{
+					Time:  uint32(recording.Point.Time.Unix()),
+					Value: recording.Point.Value,
+				},
+			})
+		}
+		if err = sampleStore.Sample(ctx, samples); err != nil {
+			return errors.Wrap(err, "Sample")
 		}
 	} else if series.DataFormat == storage.Gorilla && store.PersistMode(job.PersistMode) == store.SnapshotMode {
 		sampleStore := store.SampleStoreFromLegacyStore(tx)

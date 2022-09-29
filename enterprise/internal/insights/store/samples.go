@@ -8,6 +8,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/batch"
+
 	logger "github.com/sourcegraph/log"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
@@ -27,14 +29,23 @@ type SampleStore interface {
 	Done(err error) error
 
 	// Sample Operations
-	Sample(ctx context.Context, key TimeSeriesKey, repoName string, sample RawSample) error
+	Sample(ctx context.Context, samples []RepoSample) error
 	StoreRow(ctx context.Context, row UncompressedRow, seriesId uint32) error
 	LoadRows(ctx context.Context, opts CompressedRowsOpts) ([]UncompressedRow, error)
 	Append(ctx context.Context, key TimeSeriesKey, samples []RawSample) error
+	LoadTimeseries(ctx context.Context, opts CompressedRowsOpts) (timeseries []SeriesPoint, err error)
 
 	// Snapshot Operations
 	Snapshot(ctx context.Context, key TimeSeriesKey, snapshot RawSample) error
 	ClearSnapshots(ctx context.Context, seriesId uint32) error
+}
+
+type SampleWriter interface {
+	Append(ctx context.Context, key TimeSeriesKey, samples []RawSample) error
+}
+
+type SampleReader interface {
+	LoadRows(ctx context.Context, opts CompressedRowsOpts) ([]UncompressedRow, error)
 }
 
 type sampleStore struct {
@@ -150,6 +161,10 @@ func (s *sampleStore) LoadRows(ctx context.Context, opts CompressedRowsOpts) ([]
 		denyBitmap.Add(uint32(id))
 	}
 
+	return s.loadRows(ctx, opts, denyBitmap)
+}
+
+func (s *sampleStore) loadRows(ctx context.Context, opts CompressedRowsOpts, denyBitmap *roaring.Bitmap) ([]UncompressedRow, error) {
 	var rows []UncompressedRow
 	return rows, s.streamRows(ctx, opts, func(ctx context.Context, row *CompressedRow) (err error) {
 		if denyBitmap.Contains(row.RepoId) {
@@ -227,6 +242,83 @@ func loadRowsQuery(opts CompressedRowsOpts) *sqlf.Query {
 	final := sqlf.Sprintf(baseQuery, sqlf.Join(preds, "AND"))
 	// log15.Info("final", "q", final.Query(sqlf.PostgresBindVar), "args", final.Args())
 	return final
+}
+
+func (s *sampleStore) LoadWriteAhead(ctx context.Context, opts CompressedRowsOpts, denyBitmap *roaring.Bitmap) (rows []writeAheadRecord, err error) {
+	var preds []*sqlf.Query
+	baseQuery := "select spc.repo_id, spc.capture, spc.time, spc.value from samples_write_ahead spc"
+	joinCond := " JOIN repo_names rn ON spc.repo_id = rn.repo_id"
+	hasJoin := false
+
+	if len(opts.UniversalSeriesID) != 0 {
+		preds = append(preds, sqlf.Sprintf("series_id = (select isn.id from insight_series as isn where isn.series_id = %s)", opts.UniversalSeriesID))
+	}
+	if len(opts.IncludeRepoRegex) > 0 {
+		hasJoin = true
+		for _, regex := range opts.IncludeRepoRegex {
+			if len(regex) == 0 {
+				continue
+			}
+			preds = append(preds, sqlf.Sprintf("rn.name ~ %s", regex))
+		}
+	}
+	if len(opts.ExcludeRepoRegex) > 0 {
+		hasJoin = true
+		for _, regex := range opts.ExcludeRepoRegex {
+			if len(regex) == 0 {
+				continue
+			}
+			preds = append(preds, sqlf.Sprintf("rn.name !~ %s", regex))
+		}
+	}
+	if hasJoin {
+		baseQuery += joinCond
+	}
+	if len(preds) > 0 {
+		baseQuery += " where %s"
+	}
+
+	return rows, s.query(ctx, sqlf.Sprintf(baseQuery, sqlf.Join(preds, "AND")), func(sc scanner) (err error) {
+		var tmp writeAheadRecord
+		if err := sc.Scan(
+			&tmp.RepoId,
+			&tmp.Capture,
+			&tmp.time,
+			&tmp.value,
+		); err != nil {
+			return err
+		}
+		if denyBitmap.Contains(tmp.RepoId) {
+			return nil
+		}
+		rows = append(rows, tmp)
+
+		return nil
+	})
+}
+
+func (s *sampleStore) LoadTimeseries(ctx context.Context, opts CompressedRowsOpts) (timeseries []SeriesPoint, err error) {
+	// i'd really like to rethink this and load it much earlier - this is getting reloaded for every insight series we fetch
+	// maybe a privilged access struct vs unprivd?
+	denylist, err := s.permStore.GetUnauthorizedRepoIDs(ctx)
+	if err != nil {
+		return nil, err
+	}
+	denyBitmap := roaring.New()
+	for _, id := range denylist {
+		denyBitmap.Add(uint32(id))
+	}
+
+	rows, err := s.loadRows(ctx, opts, denyBitmap)
+	if err != nil {
+		return nil, errors.Wrap(err, "LoadRows")
+	}
+	writeAhead, err := s.LoadWriteAhead(ctx, opts, denyBitmap)
+	if err != nil {
+		return nil, errors.Wrap(err, "LoadWriteAhead")
+	}
+
+	return toTimeseries(rows, opts.UniversalSeriesID, writeAhead), nil
 }
 
 func (s *sampleStore) Append(ctx context.Context, key TimeSeriesKey, samples []RawSample) (err error) {
@@ -459,7 +551,7 @@ func (s *sampleStore) query(ctx context.Context, q *sqlf.Query, sc scanFunc) err
 	return scanAll(rows, sc)
 }
 
-func ToTimeseries(data []UncompressedRow, seriesId string) (results []SeriesPoint) {
+func toTimeseries(data []UncompressedRow, seriesId string, extra []writeAheadRecord) (results []SeriesPoint) {
 	getKey := func(s *string) string {
 		if s == nil {
 			return ""
@@ -470,6 +562,10 @@ func ToTimeseries(data []UncompressedRow, seriesId string) (results []SeriesPoin
 	byCapture := make(map[string][]UncompressedRow)
 	for _, datum := range data {
 		byCapture[getKey(datum.Capture)] = append(byCapture[getKey(datum.Capture)], datum)
+	}
+	extraByCapture := make(map[string][]writeAheadRecord)
+	for _, extraRecord := range extra {
+		extraByCapture[getKey(extraRecord.Capture)] = append(extraByCapture[getKey(extraRecord.Capture)], extraRecord)
 	}
 
 	coalesce := func(val *float64, coal float64) float64 {
@@ -483,12 +579,18 @@ func ToTimeseries(data []UncompressedRow, seriesId string) (results []SeriesPoin
 		mapped := make(map[uint32]float64)
 		snapshots := make(map[uint32]float64)
 
+		extraPts := extraByCapture[key]
+
 		for _, val := range vals {
 			for _, sample := range val.Samples {
 				mapped[sample.Time] += sample.Value
 			}
 			if val.Snapshot.Time != nil {
 				snapshots[*val.Snapshot.Time] += coalesce(val.Snapshot.Value, 0)
+			}
+			for _, record := range extraPts {
+				mapped[record.time] += record.value
+				// if there are any extra points for this capture add them here (ie aggregate across repo_id)
 			}
 		}
 
@@ -545,26 +647,58 @@ func (s *sampleStore) ClearSnapshots(ctx context.Context, seriesId uint32) error
 	return s.Exec(ctx, sqlf.Sprintf(q, seriesId))
 }
 
-func (s *sampleStore) Sample(ctx context.Context, key TimeSeriesKey, repoName string, sample RawSample) (err error) {
-	// tx, err := s.transact(ctx)
-	// if err != nil {
-	// 	return err
-	// }
-	// defer func() { err = tx.Done(err) }()
+type RepoSample struct {
+	RepoName string
+	TimeSeriesKey
+	RawSample
+}
 
-	if err = s.Append(ctx, key, []RawSample{sample}); err != nil {
-		return errors.Wrap(err, "Sample.Append")
+func (s *sampleStore) Sample(ctx context.Context, samples []RepoSample) (err error) {
+	tx, err := s.transact(ctx)
+	if err != nil {
+		return err
 	}
+	defer func() { err = tx.Done(err) }()
 
-	// if err = s.sampleRepoName(ctx, key.RepoId, repoName); err != nil {
-	// 	return errors.Wrap(err, "Sample.sampleRepoName")
-	// }
-
+	if err = tx.AppendWriteAhead(ctx, samples); err != nil {
+		return errors.Wrap(err, "Sample.AppendWriteAhead")
+	}
+	for _, sample := range samples {
+		if err = tx.sampleRepoName(ctx, sample.RepoId, sample.RepoName); err != nil {
+			return errors.Wrap(err, "Sample.sampleRepoName")
+		}
+	}
 	return err
 }
 
 func (s *sampleStore) sampleRepoName(ctx context.Context, repoId uint32, repoName string) error {
 	q := "insert into sampled_repo_names (repo_id, name) values (%s, %s) on conflict do nothing;"
-
 	return s.Exec(ctx, sqlf.Sprintf(q, repoId, repoName))
+}
+
+type writeAheadRecord struct {
+	Id       uint32
+	SeriesId string
+	RepoId   uint32
+	Capture  *string
+	time     uint32
+	value    float64
+}
+
+var writeAheadColumns = []string{"series_id", "repo_id", "capture", "time", "value"}
+
+func (s *sampleStore) AppendWriteAhead(ctx context.Context, samples []RepoSample) (err error) {
+	tx, err := s.transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	inserter := batch.NewInserter(ctx, tx.Handle(), "samples_write_ahead", batch.MaxNumPostgresParameters, writeAheadColumns...)
+	for _, sample := range samples {
+		if err = inserter.Insert(ctx, sample.SeriesId, sample.RepoId, sample.Capture, sample.Time, sample.Value); err != nil {
+			return errors.Wrap(err, "inserter.Insert")
+		}
+	}
+	return inserter.Flush(ctx)
 }
