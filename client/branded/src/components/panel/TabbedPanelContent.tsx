@@ -319,7 +319,6 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
                                     <ActionsNavItems
                                         {...props}
                                         extensionsController={extensionsController}
-                                        listClass="r"
                                         listItemClass="px-2 mx-2"
                                         actionItemClass={classNames(
                                             styles.actionItemUnconstrained,
