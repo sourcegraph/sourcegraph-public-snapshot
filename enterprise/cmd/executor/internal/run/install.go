@@ -211,44 +211,44 @@ func setupIPTables(recreateChain bool) error {
 	// Explicitly allow DNS traffic (currently, the DNS server lives in the private
 	// networks for GCP and AWS. Ideally we'd want to use an internet-only DNS server
 	// to prevent leaking any network details).
-	if err := ipt.AppendUnique("filter", "CNI-ADMIN", "-p udp --dport 53 -j ACCEPT"); err != nil {
+	if err := ipt.AppendUnique("filter", "CNI-ADMIN", "-p", "udp", "--dport", "53", "-j", "ACCEPT"); err != nil {
 		return err
 	}
 
 	// Disallow any host-VM network traffic from the guests, except connections made
 	// FROM the host (to ssh into the guest).
-	if err := ipt.AppendUnique("filter", "INPUT", "-d 10.61.0.0/16 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT"); err != nil {
+	if err := ipt.AppendUnique("filter", "INPUT", "-d", "10.61.0.0/16", "-m", "conntrack", "--ctstate", "RELATED,ESTABLISHED", "-j", "ACCEPT"); err != nil {
 		return err
 	}
-	if err := ipt.AppendUnique("filter", "INPUT", "-s 10.61.0.0/16 -j DROP"); err != nil {
+	if err := ipt.AppendUnique("filter", "INPUT", "-s", "10.61.0.0/16", "-j", "DROP"); err != nil {
 		return err
 	}
 
 	// Disallow any inter-VM traffic.
 	// But allow to reach the gateway for internet access.
-	if err := ipt.AppendUnique("filter", "CNI-ADMIN", "-s 10.61.0.1/32 -d 10.61.0.0/16 -j ACCEPT"); err != nil {
+	if err := ipt.AppendUnique("filter", "CNI-ADMIN", "-s", "10.61.0.1/32", "-d", "10.61.0.0/16", "-j", "ACCEPT"); err != nil {
 		return err
 	}
-	if err := ipt.AppendUnique("filter", "CNI-ADMIN", "-d 10.61.0.0/16 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT"); err != nil {
+	if err := ipt.AppendUnique("filter", "CNI-ADMIN", "-d", "10.61.0.0/16", "-m", "conntrack", "--ctstate", "RELATED,ESTABLISHED", "-j", "ACCEPT"); err != nil {
 		return err
 	}
-	if err := ipt.AppendUnique("filter", "CNI-ADMIN", "-s 10.61.0.0/16 -d 10.61.0.0/16 -j DROP"); err != nil {
+	if err := ipt.AppendUnique("filter", "CNI-ADMIN", "-s", "10.61.0.0/16", "-d", "10.61.0.0/16", "-j", "DROP"); err != nil {
 		return err
 	}
 
 	// Disallow local networks access.
-	if err := ipt.AppendUnique("filter", "CNI-ADMIN", "-s 10.61.0.0/16 -d 10.0.0.0/8 -p tcp -j DROP"); err != nil {
+	if err := ipt.AppendUnique("filter", "CNI-ADMIN", "-s", "10.61.0.0/16", "-d", "10.0.0.0/8", "-p", "tcp", "-j", "DROP"); err != nil {
 		return err
 	}
-	if err := ipt.AppendUnique("filter", "CNI-ADMIN", "-s 10.61.0.0/16 -d 192.168.0.0/16 -p tcp -j DROP"); err != nil {
+	if err := ipt.AppendUnique("filter", "CNI-ADMIN", "-s", "10.61.0.0/16", "-d", "192.168.0.0/16", "-p", "tcp", "-j", "DROP"); err != nil {
 		return err
 	}
-	if err := ipt.AppendUnique("filter", "CNI-ADMIN", "-s 10.61.0.0/16 -d 172.16.0.0/12 -p tcp -j DROP"); err != nil {
+	if err := ipt.AppendUnique("filter", "CNI-ADMIN", "-s", "10.61.0.0/16", "-d", "172.16.0.0/12", "-p", "tcp", "-j", "DROP"); err != nil {
 		return err
 	}
 	// Disallow link-local traffic, too. This usually contains cloud provider
 	// resources that we don't want to expose.
-	if err := ipt.AppendUnique("filter", "CNI-ADMIN", "-s 10.61.0.0/16 -d 169.254.0.0/16 -j DROP"); err != nil {
+	if err := ipt.AppendUnique("filter", "CNI-ADMIN", "-s", "10.61.0.0/16", "-d", "169.254.0.0/16", "-j", "DROP"); err != nil {
 		return err
 	}
 
