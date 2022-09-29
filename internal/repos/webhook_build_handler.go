@@ -61,7 +61,7 @@ func (w *webhookBuildHandler) handleKindGitHub(ctx context.Context, logger log.L
 		return errcode.MakeNonRetryable(errors.Newf("handleKindGitHub: expected *schema.GitHubConnection, got %T", parsed))
 	}
 
-	// TODO: What parse an empty string here?
+	// TODO: Why parse an empty string here?
 	baseURL, err := url.Parse("")
 	if err != nil {
 		return errcode.MakeNonRetryable(errors.Wrap(err, "handleKindGitHub: parse baseURL failed"))
