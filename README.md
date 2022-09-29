@@ -43,7 +43,7 @@
 * Quickly access answers within your codebase with a revamped reference panel
 
 <p align="center">
-<img src="https://p21.p4.n0.cdn.getcloudapp.com/items/WnuDk91g/a854f742-0611-49b5-9a0f-a605371e6154.gif" width="75%">
+<img src="https://storage.googleapis.com/sourcegraph-assets/blog/release-post/4.0/New-Search-UI.png" width="75%">
 </p>
 
 ### 🏗️ High-leverage ways to improve your entire codebase
@@ -63,6 +63,10 @@
 * Quickly see the status on your repository and permissions syncing
 * Measure precise code navigation coverage with an enhanced analytics dashboard
 
+<p align="center">
+<img src="https://storage.googleapis.com/sourcegraph-assets/blog/release-post/4.0/Search.png" width="75%">
+</p>
+
 ## Deploy Sourcegraph
 
 ### Recommended
@@ -74,7 +78,7 @@
 * [AWS](https://docs.sourcegraph.com/admin/deploy/aws-ami)
 * [Azure](https://docs.sourcegraph.com/admin/deploy/docker-compose/azure)
 * [DigitalOcean](https://docs.sourcegraph.com/admin/deploy/docker-compose/digitalocean)
-* [Docker](https://docs.sourcegraph.com/admin/deploy/docker-compose)
+* [Docker Compose](https://docs.sourcegraph.com/admin/deploy/docker-compose)
 * [Google Cloud (GCP)](https://docs.sourcegraph.com/admin/deploy/docker-compose/google_cloud)
 * [Private Cloud](https://docs.sourcegraph.com/admin/deploy)
 * [Kubernetes (Enterprise-only)](https://docs.sourcegraph.com/admin/deploy/kubernetes)
