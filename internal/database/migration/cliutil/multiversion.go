@@ -138,8 +138,12 @@ func runMigration(
 	}
 	registerMigrators := registerMigratorsWithStore(basestoreExtractor{r})
 
+	// Note: Error is correctly checked here; we want to use the return value
+	// `patch` below but only if we can best-effort fetch it. We want to allow
+	// the user to skip erroring here if they are explicitly skipping this
+	// version check.
+	version, patch, ok, err := getServiceVersion(ctx, r)
 	if !skipVersionCheck {
-		version, ok, err := getServiceVersion(ctx, r)
 		if err != nil {
 			return err
 		}
@@ -154,7 +158,7 @@ func runMigration(
 	}
 
 	if !skipDriftCheck {
-		if err := checkDrift(ctx, r, plan.from.GitTag(), out, expectedSchemaFactories); err != nil {
+		if err := checkDrift(ctx, r, plan.from.GitTagWithPatch(patch), out, expectedSchemaFactories); err != nil {
 			return err
 		}
 	}
@@ -266,26 +270,26 @@ func filterStitchedMigrationsForTags(tags []string) (map[string]shared.StitchedM
 	return filteredStitchedMigrationBySchemaName, nil
 }
 
-func getServiceVersion(ctx context.Context, r Runner) (oobmigration.Version, bool, error) {
+func getServiceVersion(ctx context.Context, r Runner) (_ oobmigration.Version, patch int, ok bool, _ error) {
 	db, err := extractDatabase(ctx, r)
 	if err != nil {
-		return oobmigration.Version{}, false, err
+		return oobmigration.Version{}, 0, false, err
 	}
 
 	versionStr, ok, err := upgradestore.New(db).GetServiceVersion(ctx, "frontend")
 	if err != nil {
-		return oobmigration.Version{}, false, err
+		return oobmigration.Version{}, 0, false, err
 	}
 	if !ok {
-		return oobmigration.Version{}, false, nil
+		return oobmigration.Version{}, 0, false, nil
 	}
 
-	version, ok := oobmigration.NewVersionFromString(versionStr)
+	version, patch, ok := oobmigration.NewVersionAndPatchFromString(versionStr)
 	if !ok {
-		return oobmigration.Version{}, false, errors.Newf("cannot parse version: %q - expected [v]X.Y[.Z]", versionStr)
+		return oobmigration.Version{}, 0, false, errors.Newf("cannot parse version: %q - expected [v]X.Y[.Z]", versionStr)
 	}
 
-	return version, true, nil
+	return version, patch, true, nil
 }
 
 func setServiceVersion(ctx context.Context, r Runner, version oobmigration.Version) error {

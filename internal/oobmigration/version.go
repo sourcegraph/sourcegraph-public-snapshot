@@ -55,7 +55,11 @@ func (v Version) String() string {
 }
 
 func (v Version) GitTag() string {
-	return fmt.Sprintf("v%d.%d.0", v.Major, v.Minor)
+	v.GitTagWithPatch(0)
+}
+
+func (v Version) GitTagWithPatch(patch int) string {
+	return fmt.Sprintf("v%d.%d.%d", v.Major, v.Minor, patch)
 }
 
 var lastMinorVersionInMajorRelease = map[int]int{
