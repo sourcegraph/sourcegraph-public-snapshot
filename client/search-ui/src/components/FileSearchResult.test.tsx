@@ -44,11 +44,28 @@ describe('FileSearchResult', () => {
             type: 'content',
             path: '.travis.yml',
             repository: 'github.com/golang/oauth2',
-            lineMatches: [
+            chunkMatches: [
                 {
-                    line: '  - go test -v golang.org/x/oauth2/...',
-                    lineNumber: 4,
-                    offsetAndLengths: [[7, 4]],
+                   content: '  - go test -v golang.org/x/oauth2/...',
+                    contentStart: {
+                       line: 4,
+                        offset: 7,
+                        column: 7,
+                    },
+                  ranges: [
+                      {
+                          start: {
+                              line: 4,
+                              offset: 7,
+                              column: 7,
+                          },
+                          end: {
+                              line: 4,
+                              offset: 11,
+                              column: 11,
+                          },
+                      }
+                  ],
                 },
             ],
         }
@@ -84,14 +101,16 @@ describe('limitGroup', () => {
             blobLines: ['line0', 'line1', 'line2'],
             matches: [
                 {
-                    line: 0,
-                    character: 0,
-                    highlightLength: 1,
+                    startLine: 0,
+                    startCharacter: 0,
+                    endLine: 0,
+                    endCharacter: 1,
                 },
                 {
-                    line: 2,
-                    character: 0,
-                    highlightLength: 1,
+                    startLine: 2,
+                    startCharacter: 0,
+                    endLine: 2,
+                    endCharacter: 1,
                 },
             ],
             position: {
@@ -106,9 +125,10 @@ describe('limitGroup', () => {
             blobLines: ['line0', 'line1'],
             matches: [
                 {
-                    line: 0,
-                    character: 0,
-                    highlightLength: 1,
+                    startLine: 0,
+                    startCharacter: 0,
+                    endLine: 0,
+                    endCharacter: 1,
                 },
             ],
             position: {
@@ -127,9 +147,10 @@ describe('limitGroup', () => {
             blobLines: ['line0', 'line1', 'line2'],
             matches: [
                 {
-                    line: 0,
-                    character: 0,
-                    highlightLength: 1,
+                    startLine: 0,
+                    startCharacter: 0,
+                    endLine: 0,
+                    endCharacter: 1,
                 },
             ],
             position: {
@@ -148,14 +169,16 @@ describe('limitGroup', () => {
             blobLines: ['line0', 'line1', 'line2'],
             matches: [
                 {
-                    line: 0,
-                    character: 0,
-                    highlightLength: 1,
+                    startLine: 0,
+                    startCharacter: 0,
+                    endLine: 0,
+                    endCharacter: 1,
                 },
                 {
-                    line: 1,
-                    character: 0,
-                    highlightLength: 1,
+                    startLine: 1,
+                    startCharacter: 0,
+                    endLine: 1,
+                    endCharacter: 1,
                 },
             ],
             position: {
@@ -170,14 +193,16 @@ describe('limitGroup', () => {
             blobLines: ['line0', 'line1'],
             matches: [
                 {
-                    line: 0,
-                    character: 0,
-                    highlightLength: 1,
+                    startLine: 0,
+                    startCharacter: 0,
+                    endLine: 0,
+                    endCharacter: 1,
                 },
                 {
-                    line: 1,
-                    character: 0,
-                    highlightLength: 1,
+                    startLine: 1,
+                    startCharacter: 0,
+                    endLine: 1,
+                    endCharacter: 1,
                 },
             ],
             position: {
@@ -196,14 +221,16 @@ describe('limitGroup', () => {
             blobLines: ['line0', 'line1', 'line2'],
             matches: [
                 {
-                    line: 0,
-                    character: 0,
-                    highlightLength: 1,
+                    startLine: 0,
+                    startCharacter: 0,
+                    endLine: 0,
+                    endCharacter: 1,
                 },
                 {
-                    line: 0,
-                    character: 2,
-                    highlightLength: 3,
+                    startLine: 0,
+                    startCharacter: 2,
+                    endLine: 0,
+                    endCharacter: 5,
                 },
             ],
             position: {
@@ -218,14 +245,16 @@ describe('limitGroup', () => {
             blobLines: ['line0', 'line1'],
             matches: [
                 {
-                    line: 0,
-                    character: 0,
-                    highlightLength: 1,
+                    startLine: 0,
+                    startCharacter: 0,
+                    endLine: 0,
+                    endCharacter: 1,
                 },
                 {
-                    line: 0,
-                    character: 2,
-                    highlightLength: 3,
+                    startLine: 0,
+                    startCharacter: 2,
+                    endLine: 0,
+                    endCharacter: 5,
                 },
             ],
             position: {
