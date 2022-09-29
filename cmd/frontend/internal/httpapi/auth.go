@@ -59,18 +59,29 @@ func AccessTokenAuthMiddleware(db database.DB, next http.Handler) http.Handler {
 				return
 			}
 
+			accessToken, err := db.AccessTokens().Lookup(r.Context(), token)
+			// convert scopes to a map for faster lookup
+			scopes := make(map[string]bool)
+			for _, scope := range accessToken.Scopes {
+				scopes[scope] = true
+			}
 			// Validate access token.
 			//
 			// 🚨 SECURITY: It's important we check for the correct scopes to know what this token
 			// is allowed to do.
-			var requiredScope string
+			var hasRequiredScope bool
 			if sudoUser == "" {
-				requiredScope = authz.ScopeUserAll
+				ok := scopes[authz.ScopeUserAll]
+				// we require either user:all scope or any other scope to be present
+				hasRequiredScope = ok || len(accessToken.Scopes) > 0
 			} else {
-				requiredScope = authz.ScopeSiteAdminSudo
+				hasRequiredScope = scopes[authz.ScopeSiteAdminSudo]
 			}
-			subjectUserID, err := db.AccessTokens().Lookup(r.Context(), token, requiredScope)
-			if err != nil {
+			if !hasRequiredScope {
+				err = database.ErrAccessTokenNotFound
+			}
+
+			if err != nil || !hasRequiredScope {
 				if err == database.ErrAccessTokenNotFound || errors.HasType(err, database.InvalidTokenError{}) {
 					log15.Error("AccessTokenAuthMiddleware.invalidAccessToken", "token", token, "error", err)
 					http.Error(w, "Invalid access token.", http.StatusUnauthorized)
@@ -85,12 +96,12 @@ func AccessTokenAuthMiddleware(db database.DB, next http.Handler) http.Handler {
 			// Determine the actor's user ID.
 			var actorUserID int32
 			if sudoUser == "" {
-				actorUserID = subjectUserID
+				actorUserID = accessToken.SubjectUserID
 			} else {
 				// 🚨 SECURITY: Confirm that the sudo token's subject is still a site admin, to
 				// prevent users from retaining site admin privileges after being demoted.
-				if err := auth.CheckUserIsSiteAdmin(r.Context(), db, subjectUserID); err != nil {
-					log15.Error("Sudo access token's subject is not a site admin.", "subjectUserID", subjectUserID, "err", err)
+				if err := auth.CheckUserIsSiteAdmin(r.Context(), db, accessToken.SubjectUserID); err != nil {
+					log15.Error("Sudo access token's subject is not a site admin.", "subjectUserID", accessToken.SubjectUserID, "err", err)
 					http.Error(w, "The subject user of a sudo access token must be a site admin.", http.StatusForbidden)
 					return
 				}
@@ -110,10 +121,10 @@ func AccessTokenAuthMiddleware(db database.DB, next http.Handler) http.Handler {
 					return
 				}
 				actorUserID = user.ID
-				log15.Debug("HTTP request used sudo token.", "requestURI", r.URL.RequestURI(), "tokenSubjectUserID", subjectUserID, "actorUserID", actorUserID, "actorUsername", user.Username)
+				log15.Debug("HTTP request used sudo token.", "requestURI", r.URL.RequestURI(), "tokenSubjectUserID", accessToken.SubjectUserID, "actorUserID", actorUserID, "actorUsername", user.Username)
 			}
 
-			r = r.WithContext(actor.WithActor(r.Context(), &actor.Actor{UID: actorUserID}))
+			r = r.WithContext(actor.WithActor(r.Context(), &actor.Actor{UID: actorUserID, Scopes: scopes, FromToken: true}))
 		}
 
 		next.ServeHTTP(w, r)

@@ -15,6 +15,7 @@ import (
 	"github.com/graph-gophers/graphql-go/introspection"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/graph-gophers/graphql-go/trace"
+	gqltypes "github.com/graph-gophers/graphql-go/types"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -490,6 +491,9 @@ func NewSchema(
 		resolver,
 		graphql.Tracer(&prometheusTracer{}),
 		graphql.UseStringDescriptions(),
+		graphql.DirectiveVisitors(map[string]gqltypes.DirectiveVisitor{
+			"authz": &authzDirectiveVisitor{},
+		}),
 	)
 }
 
@@ -847,4 +851,31 @@ func (r *schemaResolver) CodeHostSyncDue(ctx context.Context, args *struct {
 		ids[i] = id
 	}
 	return r.db.ExternalServices().SyncDue(ctx, ids, time.Duration(args.Seconds)*time.Second)
+}
+
+type authzDirectiveVisitor struct{}
+
+func (v *authzDirectiveVisitor) Before(ctx context.Context, directive *gqltypes.Directive, input interface{}) error {
+	if scopesAttr, ok := directive.Arguments.Get("scopes"); ok {
+		a := actor.FromContext(ctx)
+		// only care about token based auth and non-internal tokens for now
+		if a.FromToken && !a.Internal {
+			requiredScopes := scopesAttr.Deserialize(nil).([]interface{})
+			if len(requiredScopes) < 1 {
+				return errors.Errorf("Authorization required, but no scopes are given in graphql schema")
+			}
+			// for now all scopes are required, but this can be changed in the future
+			// to be more flexible
+			for _, scope := range requiredScopes {
+				if ok := a.Scopes[scope.(string)]; !ok {
+					return errors.Errorf("Missing token scope %s", scope)
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func (v *authzDirectiveVisitor) After(ctx context.Context, directive *gqltypes.Directive, output interface{}) (interface{}, error) {
+	return output, nil
 }

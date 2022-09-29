@@ -114,9 +114,9 @@ type AccessTokenStore interface {
 	//
 	// Calling Lookup also updates the access token's last-used-at date.
 	//
-	// 🚨 SECURITY: This returns a user ID if and only if the tokenHexEncoded corresponds to a valid,
+	// 🚨 SECURITY: This returns an access token if and only if the tokenHexEncoded corresponds to a valid,
 	// non-deleted access token.
-	Lookup(ctx context.Context, tokenHexEncoded, requiredScope string) (subjectUserID int32, err error)
+	Lookup(ctx context.Context, tokenHexEncoded string) (*AccessToken, error)
 
 	Transact(context.Context) (AccessTokenStore, error)
 	With(basestore.ShareableStore) AccessTokenStore
@@ -187,15 +187,13 @@ INSERT INTO access_tokens(subject_user_id, scopes, value_sha256, note, creator_u
 	return id, token, nil
 }
 
-func (s *accessTokenStore) Lookup(ctx context.Context, tokenHexEncoded, requiredScope string) (subjectUserID int32, err error) {
-	if requiredScope == "" {
-		return 0, errors.New("no scope provided in access token lookup")
-	}
-
+func (s *accessTokenStore) Lookup(ctx context.Context, tokenHexEncoded string) (*AccessToken, error) {
 	token, err := decodeToken(tokenHexEncoded)
 	if err != nil {
-		return 0, errors.Wrap(err, "AccessTokens.Lookup")
+		return nil, errors.Wrap(err, "AccessTokens.Lookup")
 	}
+
+	t := &AccessToken{}
 
 	if err := s.Handle().QueryRowContext(ctx,
 		// Ensure that subject and creator users still exist.
@@ -205,19 +203,18 @@ WHERE t.id IN (
 	SELECT t2.id FROM access_tokens t2
 	JOIN users subject_user ON t2.subject_user_id=subject_user.id AND subject_user.deleted_at IS NULL
 	JOIN users creator_user ON t2.creator_user_id=creator_user.id AND creator_user.deleted_at IS NULL
-	WHERE t2.value_sha256=$1 AND t2.deleted_at IS NULL AND
-	$2 = ANY (t2.scopes)
+	WHERE t2.value_sha256=$1 AND t2.deleted_at IS NULL
 )
-RETURNING t.subject_user_id
+RETURNING t.id, t.subject_user_id, t.scopes, t.creator_user_id, t.internal, t.created_at
 `,
-		toSHA256Bytes(token), requiredScope,
-	).Scan(&subjectUserID); err != nil {
+		toSHA256Bytes(token),
+	).Scan(&t.ID, &t.SubjectUserID, pq.Array(&t.Scopes), &t.CreatorUserID, &t.Internal, &t.CreatedAt); err != nil {
 		if err == sql.ErrNoRows {
-			return 0, ErrAccessTokenNotFound
+			return nil, ErrAccessTokenNotFound
 		}
-		return 0, err
+		return nil, err
 	}
-	return subjectUserID, nil
+	return t, nil
 }
 
 func (s *accessTokenStore) GetByID(ctx context.Context, id int64) (*AccessToken, error) {

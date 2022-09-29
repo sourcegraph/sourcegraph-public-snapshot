@@ -2,6 +2,10 @@ module github.com/sourcegraph/sourcegraph
 
 go 1.18
 
+// TODO: do not merge this local hack
+// source is from this PR: https://github.com/graph-gophers/graphql-go/pull/446
+replace github.com/graph-gophers/graphql-go => /Users/milan/work/graphql-go
+
 require (
 	cloud.google.com/go/kms v1.4.0
 	cloud.google.com/go/monitoring v1.2.0

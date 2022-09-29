@@ -48,6 +48,11 @@ type Actor struct {
 
 	// mockUser indicates this user was created in the context of a test.
 	mockUser bool
+
+	// true if actor was created from a token
+	FromToken bool
+	// list of scopes of a token in case token auth is used
+	Scopes map[string]bool
 }
 
 // FromUser returns an actor corresponding to the user with the given ID

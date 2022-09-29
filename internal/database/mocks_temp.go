@@ -130,7 +130,7 @@ func NewMockAccessTokenStore() *MockAccessTokenStore {
 			},
 		},
 		LookupFunc: &AccessTokenStoreLookupFunc{
-			defaultHook: func(context.Context, string, string) (r0 int32, r1 error) {
+			defaultHook: func(context.Context, string) (r0 *AccessToken, r1 error) {
 				return
 			},
 		},
@@ -202,7 +202,7 @@ func NewStrictMockAccessTokenStore() *MockAccessTokenStore {
 			},
 		},
 		LookupFunc: &AccessTokenStoreLookupFunc{
-			defaultHook: func(context.Context, string, string) (int32, error) {
+			defaultHook: func(context.Context, string) (*AccessToken, error) {
 				panic("unexpected invocation of MockAccessTokenStore.Lookup")
 			},
 		},
@@ -1361,24 +1361,24 @@ func (c AccessTokenStoreListFuncCall) Results() []interface{} {
 // AccessTokenStoreLookupFunc describes the behavior when the Lookup method
 // of the parent MockAccessTokenStore instance is invoked.
 type AccessTokenStoreLookupFunc struct {
-	defaultHook func(context.Context, string, string) (int32, error)
-	hooks       []func(context.Context, string, string) (int32, error)
+	defaultHook func(context.Context, string) (*AccessToken, error)
+	hooks       []func(context.Context, string) (*AccessToken, error)
 	history     []AccessTokenStoreLookupFuncCall
 	mutex       sync.Mutex
 }
 
 // Lookup delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockAccessTokenStore) Lookup(v0 context.Context, v1 string, v2 string) (int32, error) {
-	r0, r1 := m.LookupFunc.nextHook()(v0, v1, v2)
-	m.LookupFunc.appendCall(AccessTokenStoreLookupFuncCall{v0, v1, v2, r0, r1})
+func (m *MockAccessTokenStore) Lookup(v0 context.Context, v1 string) (*AccessToken, error) {
+	r0, r1 := m.LookupFunc.nextHook()(v0, v1)
+	m.LookupFunc.appendCall(AccessTokenStoreLookupFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Lookup method of the
 // parent MockAccessTokenStore instance is invoked and the hook queue is
 // empty.
-func (f *AccessTokenStoreLookupFunc) SetDefaultHook(hook func(context.Context, string, string) (int32, error)) {
+func (f *AccessTokenStoreLookupFunc) SetDefaultHook(hook func(context.Context, string) (*AccessToken, error)) {
 	f.defaultHook = hook
 }
 
@@ -1386,7 +1386,7 @@ func (f *AccessTokenStoreLookupFunc) SetDefaultHook(hook func(context.Context, s
 // Lookup method of the parent MockAccessTokenStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *AccessTokenStoreLookupFunc) PushHook(hook func(context.Context, string, string) (int32, error)) {
+func (f *AccessTokenStoreLookupFunc) PushHook(hook func(context.Context, string) (*AccessToken, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1394,20 +1394,20 @@ func (f *AccessTokenStoreLookupFunc) PushHook(hook func(context.Context, string,
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *AccessTokenStoreLookupFunc) SetDefaultReturn(r0 int32, r1 error) {
-	f.SetDefaultHook(func(context.Context, string, string) (int32, error) {
+func (f *AccessTokenStoreLookupFunc) SetDefaultReturn(r0 *AccessToken, r1 error) {
+	f.SetDefaultHook(func(context.Context, string) (*AccessToken, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *AccessTokenStoreLookupFunc) PushReturn(r0 int32, r1 error) {
-	f.PushHook(func(context.Context, string, string) (int32, error) {
+func (f *AccessTokenStoreLookupFunc) PushReturn(r0 *AccessToken, r1 error) {
+	f.PushHook(func(context.Context, string) (*AccessToken, error) {
 		return r0, r1
 	})
 }
 
-func (f *AccessTokenStoreLookupFunc) nextHook() func(context.Context, string, string) (int32, error) {
+func (f *AccessTokenStoreLookupFunc) nextHook() func(context.Context, string) (*AccessToken, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1446,12 +1446,9 @@ type AccessTokenStoreLookupFuncCall struct {
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
 	Arg1 string
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 int32
+	Result0 *AccessToken
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -1460,7 +1457,7 @@ type AccessTokenStoreLookupFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c AccessTokenStoreLookupFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this

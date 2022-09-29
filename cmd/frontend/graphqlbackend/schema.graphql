@@ -1141,6 +1141,8 @@ input SurveySubmissionInput {
     better: String
 }
 
+directive @authz(scopes: [String]!) on QUERY | FIELD_DEFINITION | OBJECT
+
 """
 Input for a happiness feedback submission.
 """
@@ -1217,7 +1219,7 @@ type Query {
     ): RepositoryRedirect
     """
     Lists external services under given namespace.
-    If no namespace is given, it returns all external services.
+    If no namespace is given, it returns all external services
     """
     externalServices(
         """
@@ -1233,7 +1235,8 @@ type Query {
         Opaque pagination cursor.
         """
         after: String
-    ): ExternalServiceConnection!
+    ): ExternalServiceConnection! @authz(scopes: ["external_services:read"])
+
     """
     List all repositories.
     """
@@ -1501,7 +1504,7 @@ type Query {
     """
     Retrieve the list of defined feature flags
     """
-    featureFlags: [FeatureFlag!]!
+    featureFlags: [FeatureFlag!]! @authz(scopes: ["feature_flags:read"])
 
     """
     Retrieve a feature flag
@@ -2330,7 +2333,7 @@ type Highlight {
 """
 A list of external services.
 """
-type ExternalServiceConnection {
+type ExternalServiceConnection @authz(scopes: ["external_services:read"]) {
     """
     A list of external services.
     """
@@ -2391,7 +2394,7 @@ type ExternalService implements Node {
     """
     The JSON configuration of the external service.
     """
-    config: JSONCString!
+    config: JSONCString! @authz(scopes: ["external_services:admin"])
 
     """
     When the external service was created.
