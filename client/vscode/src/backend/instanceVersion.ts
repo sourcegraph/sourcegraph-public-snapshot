@@ -1,7 +1,6 @@
 import { noop } from 'lodash'
 import { from, Observable } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
-import { satisfies } from 'semver'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { EventSource } from '@sourcegraph/shared/src/graphql-operations'
@@ -28,7 +27,22 @@ export const observeInstanceVersionNumber = (): Observable<string | undefined> =
         })
     )
 
-export const isInsidersVersion = (version: string): boolean => version.split('.').length < 3
+/**
+ * Parses the Sourcegraph instance version number.
+ *
+ * @returns Major, minor and patch version numbers if it's a regular version, or `'insiders'` if it's an insiders version.
+ */
+export const parseVersion = (version: string): { major: number; minor: number; patch: number } | 'insiders' => {
+    const versionParts = version.split('.')
+    if (versionParts.length === 3) {
+        return {
+            major: parseInt(versionParts[0], 10),
+            minor: parseInt(versionParts[1], 10),
+            patch: parseInt(versionParts[2], 10),
+        }
+    }
+    return 'insiders'
+}
 
 /**
  * This function will return the EventSource Type based
@@ -45,7 +59,11 @@ export function initializeInstanceVersionNumber(
             .toPromise()
             .then(async version => {
                 if (version) {
-                    if (!isInsidersVersion(version) && satisfies(version, '<3.32.0')) {
+                    const parsedVersion = parseVersion(version)
+                    if (
+                        parsedVersion !== 'insiders' &&
+                        (parsedVersion.major < 3 || (parsedVersion.major === 3 && parsedVersion.minor < 32))
+                    ) {
                         displayWarning(
                             'Your Sourcegraph instance version is not fully compatible with the Sourcegraph extension. Please ask your site admin to upgrade to version 3.32.0 or above. Read more about version support in our [troubleshooting docs](https://docs.sourcegraph.com/admin/how-to/troubleshoot-sg-extension#unsupported-features-by-sourcegraph-version).'
                         ).catch(() => {})
@@ -56,8 +74,11 @@ export function initializeInstanceVersionNumber(
             .catch(noop) // We handle potential errors in instanceVersionNumber observable
 
         const version = localStorageService.getValue(INSTANCE_VERSION_NUMBER_KEY)
+        const parsedVersion = parseVersion(version)
         // instances below 3.38.0 does not support EventSource.IDEEXTENSION and should fallback to BACKEND source
-        return isInsidersVersion(version) || satisfies(version, '>=3.38.0')
+        return parsedVersion === 'insiders' ||
+            parsedVersion.major > 3 ||
+            (parsedVersion.major === 3 && parsedVersion.minor >= 38)
             ? EventSource.IDEEXTENSION
             : EventSource.BACKEND
     }
