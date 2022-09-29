@@ -37,6 +37,10 @@ if [[ "$BRANCH" != "main" ]]; then
       -i "${commitFile}" \
       -r "${mergeBaseFile}" \
       -t ./ui/assets/compare-report.html
+
+    yarn workspace @sourcegraph/web run report-bundle-diff \
+      "${commitFile}" \
+      "${mergeBaseFile}"
   else
     echo 'No stats file found, skipping.'
   fi
