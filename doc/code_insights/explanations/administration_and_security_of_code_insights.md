@@ -20,6 +20,16 @@ If you are concerned about the security of extension-provided insights, then you
 
 If you want to disable Sourcegraph-extension-provided code insights, you can do so the same way you would disable any other extension. Refer to [Disabling remote extensions](../../admin/extensions.md#use-extensions-from-sourcegraph-com-or-disable-remote-extensions) and [Allow only specific extensions](../../admin/extensions.md#use-extensions-from-sourcegraph-com-or-disable-remote-extensions).
 
+## Code Insights Site Configuration
+
+While the default configuration is appropriate for most deployments, in the site configuration there are values that allow admins more control over the rate at which insights runs in the background. 
+Raising these values will increase the speed at which insights are populated however will it cause insights to consume more system resources.  
+Care should be taken when changing these values and it is recommended to update them in small increments.
+
+- `insights.historical.worker.rateLimit` - Maximum number of historical Code Insights data frames that may be analyzed per second.
+- `insights.query.worker.rateLimit` - Maximum number of Code Insights queries initiated per second on a worker node.
+- `insights.query.worker.concurrency` - Number of concurrent executions of a code insight query on a worker node.
+
 ## Insight and Dashboard permissions
 
 Note: there are no separate read/write permissions. If a user can view an insight or dashboard, they can also edit it.
