@@ -303,7 +303,7 @@ func addOpenTelemetryProtocolAdapter(r *mux.Router) {
 
 	// If no endpoint is configured, we export a no-op handler
 	if endpoint == "" {
-		logger.Info("No OTLP endpoint configured, telemetry data will not be exported")
+		logger.Info("no OTLP endpoint configured, data received at /-/debug/otlp will not be exported")
 
 		r.PathPrefix("/otlp").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintf(w, `OpenTelemetry protocol tunnel: please configure an exporter endpoint with OTEL_EXPORTER_OTLP_ENDPOINT`)
