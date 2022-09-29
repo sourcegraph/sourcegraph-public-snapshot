@@ -51,7 +51,6 @@ export interface ContentMatch {
     repoLastFetched?: string
     branches?: string[]
     commit?: string
-    lineMatches: LineMatch[]
     chunkMatches?: ChunkMatch[]
     hunks?: DecoratedHunk[]
 }
@@ -77,13 +76,6 @@ export interface Location {
     offset: number
     line: number
     column: number
-}
-
-interface LineMatch {
-    line: string
-    lineNumber: number
-    offsetAndLengths: number[][]
-    aggregableBadges?: AggregableBadge[]
 }
 
 interface ChunkMatch {
