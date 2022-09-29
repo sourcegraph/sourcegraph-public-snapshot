@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -178,6 +179,16 @@ func addClientLintersForChangedFiles(pipeline *bk.Pipeline) {
 
 // Adds steps for the OSS and Enterprise web app builds. Runs the web app tests.
 func addWebApp(pipeline *bk.Pipeline) {
+	commit := os.Getenv("BUILDKITE_COMMIT")
+	branch := os.Getenv("BUILDKITE_BRANCH")
+	statsFilename := "stats-" + branch + ".json"
+
+	var mergeBaseBytes []byte
+	mergeBaseBytes, err := exec.Command("git merge-base HEAD main").Output()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// Webapp build
 	pipeline.AddStep(":webpack::globe_with_meridians: Build",
 		withYarnCache(),
@@ -188,15 +199,23 @@ func addWebApp(pipeline *bk.Pipeline) {
 	// Webapp enterprise build
 	pipeline.AddStep(":webpack::globe_with_meridians::moneybag: Enterprise build",
 		withYarnCache(),
+		withBundleSizeCache(commit, statsFilename),
 		bk.Cmd("dev/ci/yarn-build.sh client/web"),
-		cacheBundleSize(),
 		bk.Env("NODE_ENV", "production"),
 		bk.Env("ENTERPRISE", "1"),
 		bk.Env("CHECK_BUNDLESIZE", "1"),
 		// To ensure the Bundlesize output can be diffed to the baseline on main
 		bk.Env("WEBPACK_USE_NAMED_CHUNKS", "true"),
 		// Emit a stats.json file for bundle size diffs
-		bk.Env("WEBPACK_EXPORT_STATS", "true"))
+		bk.Env("WEBPACK_EXPORT_STATS_FILENAME", statsFilename))
+
+	if branch != "main" && mergeBaseBytes != nil {
+		pipeline.AddStep("Measure enterprise build",
+			withYarnCache(),
+			withBundleSizeCache(string(mergeBaseBytes), "stats-main.json"),
+			bk.Cmd("dev/ci/diff-bundle-size.sh"),
+		)
+	}
 
 	// Webapp tests
 	pipeline.AddStep(":jest::globe_with_meridians: Test (client/web)",

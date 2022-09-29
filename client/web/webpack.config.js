@@ -42,7 +42,7 @@ const {
   ENABLE_OPEN_TELEMETRY,
   SOURCEGRAPH_API_URL,
   WEBPACK_BUNDLE_ANALYZER,
-  WEBPACK_EXPORT_STATS,
+  WEBPACK_EXPORT_STATS_FILENAME,
   WEBPACK_SERVE_INDEX,
   WEBPACK_STATS_NAME,
   WEBPACK_USE_NAMED_CHUNKS,
@@ -203,9 +203,9 @@ const config = {
         release: `frontend@${VERSION}`,
         include: path.join(STATIC_ASSETS_PATH, 'scripts', '*.map'),
       }),
-    WEBPACK_EXPORT_STATS &&
+    WEBPACK_EXPORT_STATS_FILENAME &&
       new StatsWriterPlugin({
-        filename: 'stats.json',
+        filename: WEBPACK_EXPORT_STATS_FILENAME,
         stats: {
           all: false, // disable all the stats
           hash: true, // compilation hash
