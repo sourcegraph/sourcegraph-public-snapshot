@@ -156,6 +156,8 @@ EOF
 
 ## Verify executor is working properly.
 function verify_executor() {
+  # TODO: Later we might also want to use executor validate here, but it depends
+  # on the env vars set in the terraform modules.
   # Start a VM to see if that succeeds. Then, clean up the VM so we don't leave it
   # behind in the image.
   VM="$(/usr/local/bin/executor test-vm --name-only)"

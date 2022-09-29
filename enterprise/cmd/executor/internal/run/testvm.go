@@ -1,6 +1,7 @@
 package run
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -18,69 +19,8 @@ func RunTestVM(cliCtx *cli.Context, logger log.Logger, config *config.Config) er
 	repoName := cliCtx.String("repo")
 	nameOnly := cliCtx.Bool("name-only")
 
-	vmNameSuffix, err := uuid.NewRandom()
+	name, err := createVM(cliCtx.Context, config, repoName)
 	if err != nil {
-		return err
-	}
-
-	// Construct a unique name for the VM prefixed by something that differentiates
-	// VMs created by this executor instance and another one that happens to run on
-	// the same host (as is the case in dev). This prefix is expected to match the
-	// prefix given to ignite.CurrentlyRunningVMs in other parts of this service.
-	name := fmt.Sprintf("%s-%s", config.VMPrefix, vmNameSuffix.String())
-
-	commandLogger := command.NewNoopLogger()
-	operations := command.NewOperations(&observation.TestContext)
-
-	hostRunner := command.NewRunner("", commandLogger, command.Options{}, operations)
-	workspace, err := workspace.NewFirecrackerWorkspace(
-		cliCtx.Context,
-		// Just enough to spin up a VM.
-		executor.Job{
-			ID:             123,
-			RepositoryName: repoName,
-			Commit:         "HEAD",
-		},
-		config.FirecrackerDiskSpace,
-		// Always keep the workspace in this debug command.
-		true,
-		hostRunner,
-		commandLogger,
-		workspace.CloneOptions{
-			EndpointURL: config.FrontendURL,
-			// TODO: Validate this is correct.
-			GitServicePath: ".api/executor/",
-			ExecutorToken:  config.FrontendAuthorizationToken,
-		},
-		operations,
-	)
-	if err != nil {
-		return err
-	}
-
-	runner := command.NewRunner(workspace.Path(), commandLogger, command.Options{
-		ExecutorName: name,
-		ResourceOptions: command.ResourceOptions{
-			NumCPUs:             config.JobNumCPUs,
-			Memory:              config.JobMemory,
-			DiskSpace:           config.FirecrackerDiskSpace,
-			MaxIngressBandwidth: config.FirecrackerBandwidthIngress,
-			MaxEgressBandwidth:  config.FirecrackerBandwidthEgress,
-		},
-		// TODO: Use helper to create firecracker options object.
-		FirecrackerOptions: command.FirecrackerOptions{
-			Enabled:                 true,
-			Image:                   config.FirecrackerImage,
-			KernelImage:             config.FirecrackerKernelImage,
-			SandboxImage:            config.FirecrackerSandboxImage,
-			VMStartupScriptPath:     config.VMStartupScriptPath,
-			DockerRegistryMirrorURL: config.DockerRegistryMirrorURL,
-		},
-	}, command.NewOperations(&observation.TestContext))
-
-	fmt.Printf("Spawning ignite VM with %s cloned into the workspace...\n", repoName)
-
-	if err := runner.Setup(cliCtx.Context); err != nil {
 		return err
 	}
 
@@ -91,4 +31,59 @@ func RunTestVM(cliCtx *cli.Context, logger log.Logger, config *config.Config) er
 	}
 
 	return nil
+}
+
+func createVM(ctx context.Context, config *config.Config, repositoryName string) (string, error) {
+	vmNameSuffix, err := uuid.NewRandom()
+	if err != nil {
+		return "", err
+	}
+	// Use a static prefix, so these VMs aren't cleaned up by a running executor
+	// VM janitor.
+	name := fmt.Sprintf("%s-%s", "executor-test-vm", vmNameSuffix.String())
+
+	commandLogger := command.NewNoopLogger()
+	operations := command.NewOperations(&observation.TestContext)
+
+	hostRunner := command.NewRunner("", commandLogger, command.Options{}, operations)
+	workspace, err := workspace.NewFirecrackerWorkspace(
+		ctx,
+		// Just enough to spin up a VM.
+		executor.Job{
+			RepositoryName: repositoryName,
+			Commit:         "HEAD",
+		},
+		config.FirecrackerDiskSpace,
+		// Always keep the workspace in this debug command.
+		true,
+		hostRunner,
+		commandLogger,
+		// TODO: get git service path from config.
+		workspace.CloneOptions{
+			EndpointURL:    config.FrontendURL,
+			GitServicePath: "/.executors/git",
+			ExecutorToken:  config.FrontendAuthorizationToken,
+		},
+		operations,
+	)
+	if err != nil {
+		return "", err
+	}
+
+	fopts := firecrackerOptions(config)
+	fopts.Enabled = true
+
+	runner := command.NewRunner(workspace.Path(), commandLogger, command.Options{
+		ExecutorName:       name,
+		ResourceOptions:    resourceOptions(config),
+		FirecrackerOptions: fopts,
+	}, operations)
+
+	fmt.Printf("Spawning ignite VM with %s cloned into the workspace...\n", repositoryName)
+
+	if err := runner.Setup(ctx); err != nil {
+		return "", err
+	}
+
+	return name, nil
 }
