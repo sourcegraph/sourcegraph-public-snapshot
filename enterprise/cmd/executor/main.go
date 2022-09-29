@@ -37,14 +37,6 @@ func main() {
 
 	logger := log.Scoped("executor", "the executor service polls the public Sourcegraph frontend API for work to perform")
 
-	// images currently relies on an ignite config file, the fact that iptables are preconfigured
-	// and the cni config to be written to disk, otherwise the VM that ignite
-	// gives us is very different from the one that the executor runs.
-	// We currently cannot ask a customer to "simply spawn a VM and tell us if it works",
-	// this command shall change that, and potentially print additional debug info
-	// in the future. TODO: Make sure this supports creating a loop device that is
-	// mounted as well to ensure that this also works correctly.
-
 	makeActionHandler := func(handler func(cliCtx *cli.Context, logger log.Logger, config *config.Config) error) func(*cli.Context) error {
 		return func(ctx *cli.Context) error {
 			return handler(ctx, logger, cfg)
@@ -53,7 +45,7 @@ func main() {
 
 	app := &cli.App{
 		Version: version.Version(),
-		// TODO: More info, link to docs etc.
+		// TODO: More info, link to docs, some inline documentation etc.
 		Description:    "The Sourcegraph untrusted jobs runner. See https://docs.sourcegraph.com/admin/executors to learn more about setup, how it works and how to configure features that depend on it.",
 		Name:           "executor",
 		Usage:          "The Sourcegraph untrusted jobs runner.",
@@ -101,6 +93,7 @@ func main() {
 					},
 					{
 						Name:   "image",
+						Usage:  "Ensures required runtime images are pulled and imported properly. Firecracker only.",
 						Action: makeActionHandler(run.RunInstallImage),
 					},
 					{
