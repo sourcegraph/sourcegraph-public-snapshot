@@ -27,6 +27,8 @@ import { TerminalLine } from '../../auth/Terminal'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import {
+    CheckMirrorRepositoryConnectionResult,
+    CheckMirrorRepositoryConnectionVariables,
     RecloneRepositoryResult,
     RecloneRepositoryVariables,
     SettingsAreaRepositoryFields,
@@ -37,6 +39,7 @@ import {
 } from '../../graphql-operations'
 import {
     checkMirrorRepositoryConnection,
+    CHECK_MIRROR_REPOSITORY_CONNECTION,
     RECLONE_REPOSITORY_MUTATION,
     UPDATE_MIRROR_REPOSITORY,
 } from '../../site-admin/backend'
@@ -141,50 +144,49 @@ interface CheckMirrorRepositoryConnectionActionContainerProps {
 }
 
 const CheckMirrorRepositoryConnectionActionContainer: React.FunctionComponent<CheckMirrorRepositoryConnectionActionContainerProps> = props => {
-    const [loading, setLoading] = useState<boolean>(true)
-    const [errorDescription, setErrorDescription] = useState<string | undefined>(undefined)
-    const [result, setResult] = useState<GQL.ICheckMirrorRepositoryConnectionResult | undefined>(undefined)
-
-    const thisCheckMirrorRepositoryConnection = useCallback(() => {
-        checkMirrorRepositoryConnection({ repository: props.repo.id })
-            .toPromise()
-            .then(result => {
-                setResult(result)
-                setLoading(false)
-                props.onDidUpdateReachability(result.error === null)
-            })
-            .catch(error => {
-                setLoading(false)
-                setErrorDescription(asError(error).message)
-                setResult(undefined)
-                props.onDidUpdateReachability(false)
-                return []
-            })
-    }, [props])
+    const [checkConnection, { data, loading, error }] = useMutation<
+        CheckMirrorRepositoryConnectionResult,
+        CheckMirrorRepositoryConnectionVariables
+    >(CHECK_MIRROR_REPOSITORY_CONNECTION, {
+        variables: { repository: props.repo.id, name: null },
+        onCompleted: result => {
+            props.onDidUpdateReachability(result.checkMirrorRepositoryConnection.error === null)
+        },
+        onError: () => {
+            props.onDidUpdateReachability(false)
+        },
+    })
 
     useEffect(() => {
-        thisCheckMirrorRepositoryConnection()
-    }, [thisCheckMirrorRepositoryConnection])
+        checkConnection()
+    }, [checkConnection])
 
     return (
         <BaseActionContainer
             title="Check connection to remote repository"
             description={<span>Diagnose problems cloning or updating from the remote repository.</span>}
             action={
-                <Button disabled={loading} onClick={thisCheckMirrorRepositoryConnection} variant="primary">
+                <Button
+                    disabled={loading}
+                    onClick={async () => {
+                        await checkConnection()
+                    }}
+                    variant="primary"
+                >
                     Check connection
                 </Button>
             }
             details={
                 <>
-                    {errorDescription && <ErrorAlert className={styles.alert} error={errorDescription} />}
+                    {error && <ErrorAlert className={styles.alert} error={error} />}
                     {loading && (
                         <Alert className={classNames('mb-0', styles.alert)} variant="primary">
                             <LoadingSpinner /> Checking connection...
                         </Alert>
                     )}
-                    {result &&
-                        (result.error === null ? (
+                    {data &&
+                        !loading &&
+                        (data.checkMirrorRepositoryConnection.error === null ? (
                             <Alert className={classNames('mb-0', styles.alert)} variant="success">
                                 The remote repository is reachable.
                             </Alert>
@@ -193,7 +195,7 @@ const CheckMirrorRepositoryConnectionActionContainer: React.FunctionComponent<Ch
                                 <Text>The remote repository is unreachable. Logs follow.</Text>
                                 <div>
                                     <pre className={styles.log}>
-                                        <Code>{result.error}</Code>
+                                        <Code>{data.checkMirrorRepositoryConnection.error}</Code>
                                     </pre>
                                 </div>
                             </Alert>
