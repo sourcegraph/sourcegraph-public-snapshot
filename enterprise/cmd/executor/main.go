@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -53,18 +54,20 @@ func main() {
 	app := &cli.App{
 		Version: version.Version(),
 		// TODO: More info, link to docs etc.
-		Description:           "The Sourcegraph untrusted jobs runner. See https://docs.sourcegraph.com/admin/executors to learn more about setup, how it works and how to configure features that depend on it.",
-		Name:                  "executor",
-		Usage:                 "The Sourcegraph untrusted jobs runner.",
-		CustomAppHelpTemplate: cli.AppHelpTemplate + env.HelpString(),
-		DefaultCommand:        "run",
+		Description:    "The Sourcegraph untrusted jobs runner. See https://docs.sourcegraph.com/admin/executors to learn more about setup, how it works and how to configure features that depend on it.",
+		Name:           "executor",
+		Usage:          "The Sourcegraph untrusted jobs runner.",
+		DefaultCommand: "run",
 		CommandNotFound: func(ctx *cli.Context, s string) {
 			fmt.Printf("Unknown command %s. Use %s help to learn more.\n", s, ctx.App.HelpName)
+			os.Exit(1)
 		},
 		Commands: []*cli.Command{
 			{
 				Name:  "run",
 				Usage: "Runs the executor. Connects to the job queue and processes jobs.",
+				// Also show the env vars supported.
+				CustomHelpTemplate: cli.CommandHelpTemplate + env.HelpString(),
 				Flags: []cli.Flag{
 					&cli.BoolFlag{
 						Name:     "verify",
@@ -158,7 +161,7 @@ func main() {
 		},
 	}
 
-	if err := app.Run(os.Args); err != nil {
+	if err := app.RunContext(context.Background(), os.Args); err != nil {
 		println(err.Error())
 		os.Exit(1)
 	}
