@@ -2046,7 +2046,8 @@ func GetOAuthContext(baseURL string) *oauthutil.OAuthContext {
 		if authProvider.Github != nil {
 			p := authProvider.Github
 			ghURL := strings.TrimSuffix(p.Url, "/")
-			if !strings.HasPrefix(baseURL, ghURL) {
+
+			if !strings.HasPrefix(baseURL, ghURL) && !strings.HasPrefix(baseURL, githubProxyRawURL) {
 				continue
 			}
 

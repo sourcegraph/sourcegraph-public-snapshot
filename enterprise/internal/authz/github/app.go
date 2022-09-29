@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"net/url"
 
@@ -29,6 +30,7 @@ func newAppProvider(
 	privateKey string,
 	installationID int64,
 	cli httpcli.Doer,
+	tokenRefresher oauthutil.TokenRefresher,
 ) (*Provider, error) {
 	pkey, err := base64.StdEncoding.DecodeString(privateKey)
 	if err != nil {
@@ -43,9 +45,10 @@ func newAppProvider(
 	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	tokenRefresher := database.ExternalServiceTokenRefresher(db, svc.ID, nil)
 
-	auther, err := auth.NewOAFuthBearerTokenWithGitHubApp(appID, pkey)
+	//tokenRefresher := database.ExternalServiceTokenRefresher(db, svc.ID, c.TokenOauthRefresh)
+
+	auther, err := auth.NewOAuthBearerTokenWithGitHubApp(appID, pkey)
 	if err != nil {
 		return nil, errors.Wrap(err, "new authenticator with GitHub App")
 	}
@@ -54,7 +57,7 @@ func newAppProvider(
 	appClient := github.NewV3Client(
 		log.Scoped("app", "github client for github app").
 			With(log.String("appID", appID)),
-		urn, apiURL, auther, cli, tokenRefresher)
+		urn, apiURL, auther, cli, nil)
 
 	externalServicesStore := db.ExternalServices()
 

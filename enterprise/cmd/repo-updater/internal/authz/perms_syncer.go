@@ -4,6 +4,7 @@ import (
 	"container/heap"
 	"context"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -282,7 +283,7 @@ func (s *PermsSyncer) getUserGitHubAppInstallations(ctx context.Context, acct *e
 
 	tokenRefresher := database.ExternalAccountTokenRefresher(s.db, acct.ID, tok.RefreshToken)
 	ghClient := github.NewV3Client(log.Scoped("perms_syncer.github.v3", "github v3 client for perms syncer"),
-		extsvc.URNGitHubOAuth, apiURL, &auth.OAuthBearerToken{Token: tok.AccessToken}, nil, tokenRefresher)
+		extsvc.URNGitHubOAuth, apiURL, &auth.OAuthBearerToken{Token: tok.AccessToken}, httpcli.ExternalDoer, tokenRefresher)
 
 	installations, err := ghClient.GetUserInstallations(ctx)
 	if err != nil {
@@ -302,6 +303,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 	// NOTE: OAuth scope on sourcegraph.com does not grant access to read private
 	//  repositories, therefore it is no point wasting effort and code host API rate
 	//  limit quota on trying.
+
 	if envvar.SourcegraphDotComMode() {
 		return []uint32{}, nil, nil
 	}
@@ -313,6 +315,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 			ExcludeExpired: true,
 		},
 	)
+
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "list external accounts")
 	}

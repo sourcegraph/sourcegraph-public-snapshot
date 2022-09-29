@@ -128,7 +128,7 @@ func newAuthzProvider(
 
 		gitHubAppConfig := conf.SiteConfig().GitHubApp
 		if repos.IsGitHubAppEnabled(gitHubAppConfig) {
-			return newAppProvider(db, c.ExternalService, c.GitHubConnection.URN, baseURL, gitHubAppConfig.AppID, gitHubAppConfig.PrivateKey, installationID, nil)
+			return newAppProvider(db, c.ExternalService, c.GitHubConnection.URN, baseURL, gitHubAppConfig.AppID, gitHubAppConfig.PrivateKey, installationID, nil, nil)
 		}
 
 		return nil, errors.Errorf("connection contains an GitHub App installation ID while GitHub App for Sourcegraph is not enabled")
