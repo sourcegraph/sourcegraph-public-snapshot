@@ -7,9 +7,32 @@ import {
     rangesContain,
     sortRangeValuesByStart,
     uiPositionToOffset,
+    zeroToOneBasedPosition,
+    zeroToOneBasedRange,
 } from './utils'
 
 describe('blob/codemirror/utils', () => {
+    describe('zeroToOneBased...', () => {
+        it('converts zero-based to one-based positions', () => {
+            expect(zeroToOneBasedPosition({ line: 5, character: 10 })).toEqual({
+                line: 6,
+                character: 11,
+            })
+        })
+        it('converts zero-based to one-based ranges', () => {
+            expect(zeroToOneBasedRange({ start: { line: 5, character: 10 }, end: { line: 7, character: 3 } })).toEqual({
+                start: {
+                    line: 6,
+                    character: 11,
+                },
+                end: {
+                    line: 8,
+                    character: 4,
+                },
+            })
+        })
+    })
+
     describe('rangeContains', () => {
         const ranges = [
             { from: 10, to: 20 },
