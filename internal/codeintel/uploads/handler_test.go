@@ -270,7 +270,7 @@ func TestHandleCloneInProgress(t *testing.T) {
 //
 
 func copyTestDump(ctx context.Context, key string) (io.ReadCloser, error) {
-	return os.Open("../testdata/dump1.lsif.gz")
+	return os.Open("./testdata/dump1.lsif.gz")
 }
 
 func setupRepoMocks(t *testing.T) {
