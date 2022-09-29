@@ -14,15 +14,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const oneReleaseCycle = 30 * 24 * time.Hour
+const oneReleaseCycle = 35 * 24 * time.Hour
 
 var insiderBuildRegex = regexp.MustCompile(`^[\w-]+_(\d{4}-\d{2}-\d{2})_\w+`)
 
 type ExecutorResolver struct {
 	executor types.Executor
 }
-
-const oneMonth = 35 * 24 * time.Hour
 
 func NewExecutorResolver(executor Executor) *ExecutorResolver {
 	return &ExecutorResolver{executor: executor}
