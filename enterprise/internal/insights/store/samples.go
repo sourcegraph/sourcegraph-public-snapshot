@@ -8,7 +8,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	logger "github.com/sourcegraph/log"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 
@@ -40,6 +40,7 @@ type SampleStore interface {
 type sampleStore struct {
 	*basestore.Store
 	permStore InsightPermissionStore
+	logger    logger.Logger
 }
 
 var _ SampleStore = &sampleStore{}
@@ -224,7 +225,7 @@ func loadRowsQuery(opts CompressedRowsOpts) *sqlf.Query {
 	}
 
 	final := sqlf.Sprintf(baseQuery, sqlf.Join(preds, "AND"))
-	log15.Info("final", "q", final.Query(sqlf.PostgresBindVar), "args", final.Args())
+	// log15.Info("final", "q", final.Query(sqlf.PostgresBindVar), "args", final.Args())
 	return final
 }
 
@@ -233,44 +234,88 @@ func (s *sampleStore) Append(ctx context.Context, key TimeSeriesKey, samples []R
 	if err != nil {
 		return err
 	}
-	defer func() { err = tx.Done(err) }()
+	defer func() {
+		txErr := tx.Done(err)
+		if txErr != nil {
+			err = errors.Wrap(err, "txErr")
+		}
+	}()
+
+	lgr := logger.Scoped("Append", "append")
 
 	// err = tx.Exec(ctx, sqlf.Sprintf("LOCK TABLE series_points_compressed IN ROW EXCLUSIVE MODE;"))
 	// if err != nil {
 	// 	return errors.Wrap(err, "Append.Lock")
 	// }
 
-	var keyMatch *UncompressedRow
-	err = tx.streamRows(ctx, CompressedRowsOpts{Key: &key, ShouldLock: true}, func(ctx context.Context, row *CompressedRow) error {
-		decompressed, err := decompressSamples(row.Data)
+	var keyMatch UncompressedRow
+	// var count int
+
+	got, err := tx.consistentReadRow(ctx, key)
+	if err != nil {
+		return errors.Wrap(err, "consistentReadRow")
+	} else if got.Id == 0 {
+		lgr.Info("trying to fetch")
+		// lets try loading it instead
+		err = tx.streamRows(ctx, CompressedRowsOpts{Key: &key, ShouldLock: true}, func(ctx context.Context, row *CompressedRow) error {
+			// decompressed, err := decompressSamples(row.Data)
+			// if err != nil {
+			// 	return errors.Wrap(err, "failed to decompress sample data")
+			// }
+			// keyMatch = &UncompressedRow{
+			// 	altFormatRowMetadata: row.altFormatRowMetadata,
+			// 	Samples:              decompressed,
+			// }
+			got = *row
+			return nil
+		})
+		if err != nil {
+			return errors.Wrap(err, "inner stream rows")
+		}
+	}
+	if got.Id == 0 {
+
+		return errors.New("unable to load row")
+	}
+	keyMatch = UncompressedRow{
+		altFormatRowMetadata: got.altFormatRowMetadata,
+		Samples:              nil,
+		Snapshot:             got.Snapshot,
+	}
+	if len(got.Data) > 0 {
+		keyMatch.Samples, err = decompressSamples(got.Data)
 		if err != nil {
 			return errors.Wrap(err, "failed to decompress sample data")
 		}
-		keyMatch = &UncompressedRow{
-			altFormatRowMetadata: row.altFormatRowMetadata,
-			Samples:              decompressed,
-		}
-		return nil
-	})
-	if err != nil {
-		return errors.Wrapf(err, "failed to read row for key: %v", key)
 	}
+	lgr.Info("consistent load",
+		logger.String("key", fmt.Sprintf("%v", key)),
+		logger.String("compressed", fmt.Sprintf("%v", got)),
+		logger.String("uncompressed", fmt.Sprintf("%v", keyMatch)))
+	//
+	// if err != nil {
+	// 	return errors.Wrapf(err, "failed to read row for key: %v", key)
+	// }
+	// log15.Info("num_rows", "rows", count, "key", key, "capture", *key.Capture)
+
 	// Sample: Sample.Append: failed to read row for key: {124 11 0xc001641f70}: ERROR: deadlock detected (SQLSTATE 40P01)
-	if keyMatch == nil {
-		// no data exists already for this key, so we will write a new row with the provided samples
-		keyMatch = &UncompressedRow{
-			altFormatRowMetadata: altFormatRowMetadata{
-				RepoId:  key.RepoId,
-				Capture: key.Capture,
-			},
-			Samples: nil, // not setting this because this is the "original" samples, we will append the new ones later
-		}
-	}
+	// if keyMatch == nil {
+	// 	// no data exists already for this key, so we will write a new row with the provided samples
+	// 	keyMatch = &UncompressedRow{
+	// 		altFormatRowMetadata: altFormatRowMetadata{
+	// 			RepoId:  key.RepoId,
+	// 			Capture: key.Capture,
+	// 		},
+	// 		Samples: nil, // not setting this because this is the "original" samples, we will append the new ones later
+	// 	}
+	// }
+	lgr.Info("before store")
 	keyMatch.Samples = append(keyMatch.Samples, samples...)
-	err = tx.StoreRow(ctx, *keyMatch, key.SeriesId)
+	err = tx.StoreRow(ctx, keyMatch, key.SeriesId)
 	if err != nil {
-		return errors.Wrap(err, "StoreAlternateFormat")
+		return errors.Wrap(err, "StoreRow")
 	}
+	lgr.Info("after store")
 	return nil
 }
 
@@ -321,9 +366,9 @@ type CompressedRowsOpts struct {
 }
 
 func (s *sampleStore) streamRows(ctx context.Context, opts CompressedRowsOpts, callback rowStreamFunc) error {
-	return s.query(ctx, loadRowsQuery(opts), func(s scanner) (err error) {
+	return s.query(ctx, loadRowsQuery(opts), func(sc scanner) (err error) {
 		var tmp CompressedRow
-		if err := s.Scan(
+		if err := sc.Scan(
 			&tmp.Id,
 			&tmp.RepoId,
 			&tmp.Data,
@@ -336,6 +381,25 @@ func (s *sampleStore) streamRows(ctx context.Context, opts CompressedRowsOpts, c
 
 		return callback(ctx, &tmp)
 	})
+}
+
+func (s *sampleStore) consistentReadRow(ctx context.Context, key TimeSeriesKey) (row CompressedRow, err error) {
+	q := "insert into series_points_compressed (series_id, repo_id, capture) values (%s, %s, %s) ON CONFLICT DO NOTHING RETURNING id, repo_id, data, capture, snapshot_time, snapshot_value"
+
+	err = s.query(ctx, sqlf.Sprintf(q, key.SeriesId, key.RepoId, key.Capture), func(sc scanner) (err error) {
+		if err := sc.Scan(
+			&row.Id,
+			&row.RepoId,
+			&row.Data,
+			&row.Capture,
+			&row.Snapshot.Time,
+			&row.Snapshot.Value,
+		); err != nil {
+			return err
+		}
+		return nil
+	})
+	return row, err
 }
 
 func decompressSamples(data []byte) (samples []RawSample, err error) {
@@ -492,9 +556,9 @@ func (s *sampleStore) Sample(ctx context.Context, key TimeSeriesKey, repoName st
 		return errors.Wrap(err, "Sample.Append")
 	}
 
-	if err = s.sampleRepoName(ctx, key.RepoId, repoName); err != nil {
-		return errors.Wrap(err, "Sample.sampleRepoName")
-	}
+	// if err = s.sampleRepoName(ctx, key.RepoId, repoName); err != nil {
+	// 	return errors.Wrap(err, "Sample.sampleRepoName")
+	// }
 
 	return err
 }

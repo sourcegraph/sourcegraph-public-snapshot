@@ -99,7 +99,7 @@ func (c *converter) uncompressedToGorilla(ctx context.Context, seriesDefinition 
 
 			err = sampleStore.StoreRow(ctx, row, uint32(seriesDefinition.ID))
 			if err != nil {
-				return errors.Wrap(err, "StoreAlternateFormat")
+				return errors.Wrap(err, "StoreRow")
 			}
 		}
 	}
