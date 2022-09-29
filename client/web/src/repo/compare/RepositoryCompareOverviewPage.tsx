@@ -167,8 +167,8 @@ export class RepositoryCompareOverviewPage extends React.PureComponent<Props, St
                 ) : (
                     <>
                         {/* The query to load the list of commits does not currently support filtering them for just a single file, so only render the commits
-                         * when all files will be shown (i.e. no single file path was specified) to avoid innacurate results. */}
-                        {this.props.path === null && <RepositoryCompareCommitsPage {...this.props} />}
+                         * when all files will be shown (i.e. no `path` to a single file was provided) to avoid innacurate results. */}
+                        {this.props.path ? null : <RepositoryCompareCommitsPage {...this.props} />}
                         <div className="mb-3" />
                         <RepositoryCompareDiffPage
                             {...this.props}
