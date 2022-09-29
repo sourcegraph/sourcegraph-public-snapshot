@@ -36,8 +36,6 @@ import {
     InvalidateSessionsByIDVariables,
     DeleteUserResult,
     DeleteUserVariables,
-    UpdateMirrorRepositoryResult,
-    UpdateMirrorRepositoryVariables,
     ScheduleRepositoryPermissionsSyncResult,
     ScheduleRepositoryPermissionsSyncVariables,
     OutOfBandMigrationFields,

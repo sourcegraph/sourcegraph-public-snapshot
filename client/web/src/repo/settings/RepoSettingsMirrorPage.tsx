@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 
 import { mdiLock } from '@mdi/js'
 import classNames from 'classnames'
@@ -6,9 +6,7 @@ import * as H from 'history'
 import { RouteComponentProps } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { asError } from '@sourcegraph/common'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import {
     Container,
     PageHeader,
@@ -38,7 +36,6 @@ import {
     UpdateMirrorRepositoryVariables,
 } from '../../graphql-operations'
 import {
-    checkMirrorRepositoryConnection,
     CHECK_MIRROR_REPOSITORY_CONNECTION,
     RECLONE_REPOSITORY_MUTATION,
     UPDATE_MIRROR_REPOSITORY,
@@ -139,7 +136,7 @@ const UpdateMirrorRepositoryActionContainer: React.FunctionComponent<UpdateMirro
 
 interface CheckMirrorRepositoryConnectionActionContainerProps {
     repo: SettingsAreaRepositoryFields
-    onDidUpdateReachability: (reachable: boolean | undefined) => void
+    onDidUpdateReachability: (reachable: boolean) => void
     history: H.History
 }
 
@@ -157,22 +154,20 @@ const CheckMirrorRepositoryConnectionActionContainer: React.FunctionComponent<Ch
         },
     })
 
-    useEffect(() => {
-        checkConnection()
+    const onClick = useCallback(async () => {
+        await checkConnection()
     }, [checkConnection])
+
+    useEffect(() => {
+        onClick()
+    }, [onClick])
 
     return (
         <BaseActionContainer
             title="Check connection to remote repository"
             description={<span>Diagnose problems cloning or updating from the remote repository.</span>}
             action={
-                <Button
-                    disabled={loading}
-                    onClick={async () => {
-                        await checkConnection()
-                    }}
-                    variant="primary"
-                >
+                <Button disabled={loading} onClick={onClick} variant="primary">
                     Check connection
                 </Button>
             }
@@ -317,7 +312,7 @@ export const RepoSettingsMirrorPage: React.FunctionComponent<
                     onDidUpdateReachability={onDidUpdateReachability}
                     history={props.history}
                 />
-                {typeof reachable === 'boolean' && !reachable && (
+                {reachable === false && (
                     <Alert variant="info">
                         Problems cloning or updating this repository?
                         <ul className={styles.steps}>
