@@ -20,15 +20,15 @@ The `upgrade` command performs database schema migrations and out-of-band migrat
 upgrade \
     --from=<current version> \
     --to=<target version> \
-    [--skip-version-check=false] \
-    [--dry-run=false]
+    [--dry-run=false] \
+    [--skip-version-check=false]
 ```
 
 The `--from` and `--to` flags both accept Sourcegraph release versions _without the patch_ (e.g., `v3.42`) and dictate the bounds of the migration.
 
-If the flag `--skip-version-check` is supplied, then the `migrator` will not assert that the previously running instance version matches the given `--from` value.
-
 If the flag `--dry-run` is supplied, then the upgrade plan will be printed but not executed.
+
+If the flag `--skip-version-check` is supplied, then the `migrator` will not assert that the previously running instance version matches the given `--from` value.
 
 The flags `--unprivileged-only` and `--noop-privileged` are also defined on this command to control the behavior of the `migrator` in the presence of [privileged migrations](./privileged_migrations.md).
 
