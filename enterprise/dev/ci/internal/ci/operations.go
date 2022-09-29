@@ -227,10 +227,10 @@ func addWebEnterpriseBuild(pipeline *bk.Pipeline) {
 				// withBundleSizeCache(commit, statsFilename),
 				withBundleSizeCache(mergeBase, "stats-"+mergeBase+".json"),
 				bk.Cmd("dev/ci/yarn-build.sh client/web"),
-				bk.Cmd("dev/ci/diff-bundle-size.sh"),
 				bk.Env("NODE_ENV", "production"),
 				bk.Env("ENTERPRISE", "1"),
 				bk.Env("CHECK_BUNDLESIZE", "1"),
+				bk.Env("BRANCH", branch),
 				// To ensure the Bundlesize output can be diffed to the baseline on main
 				bk.Env("WEBPACK_USE_NAMED_CHUNKS", "true"),
 				// Emit a stats.json file for bundle size diffs

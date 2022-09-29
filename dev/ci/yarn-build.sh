@@ -4,6 +4,7 @@ set -e
 
 echo "ENTERPRISE=$ENTERPRISE"
 echo "NODE_ENV=$NODE_ENV"
+echo "BRANCH=$BRANCH"
 echo "# Note: NODE_ENV only used for build command"
 
 echo "--- Yarn install in root"
@@ -22,4 +23,9 @@ if [ "$CHECK_BUNDLESIZE" ] && jq -e '.scripts.bundlesize' package.json >/dev/nul
   yarn run bundlesize --enable-github-checks
   echo "--- bundlesize:web:upload"
   HONEYCOMB_API_KEY="$CI_HONEYCOMB_CLIENT_ENV_API_KEY" yarn workspace @sourcegraph/observability-server run bundlesize:web:upload
+fi
+
+if [[ "$BRANCH" != "main" ]]; then
+  echo "--- diff bundle size"
+  ls -la ui/assets
 fi
