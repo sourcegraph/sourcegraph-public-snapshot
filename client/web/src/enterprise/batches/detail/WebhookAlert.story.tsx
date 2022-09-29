@@ -45,7 +45,7 @@ const batchChange = (totalCount: number, hasNextPage: boolean) => ({
                 },
                 {
                     externalServiceKind: 'BITBUCKETSERVER' as ExternalServiceKind,
-                    externalServiceURL: 'https://bitbucket.com/',
+                    externalServiceURL: 'https://bitbucket.org/',
                 },
             ],
             pageInfo: { hasNextPage },

@@ -39,9 +39,9 @@ func TestRepo(t *testing.T, store database.ExternalServiceStore, serviceKind str
 	case extsvc.KindGitLab:
 		svc.Config = extsvc.NewUnencryptedConfig(`{"url": "https://gitlab.com", "token": "abc", "projectQuery": ["repo"]}`)
 	case extsvc.KindBitbucketCloud:
-		svc.Config = extsvc.NewUnencryptedConfig(`{"url": "https://bitbucket.com", "username": "user", "appPassword": "pass"}`)
+		svc.Config = extsvc.NewUnencryptedConfig(`{"url": "https://bitbucket.org", "username": "user", "appPassword": "pass"}`)
 	case extsvc.KindBitbucketServer:
-		svc.Config = extsvc.NewUnencryptedConfig(`{"url": "https://bitbucket.com", "username": "user", "token": "abc", "repos": ["owner/name"]}`)
+		svc.Config = extsvc.NewUnencryptedConfig(`{"url": "https://bitbucket.org", "username": "user", "token": "abc", "repos": ["owner/name"]}`)
 	case extsvc.KindAWSCodeCommit:
 		svc.Config = extsvc.NewUnencryptedConfig(`{"region": "us-east-1", "accessKeyID": "abc", "secretAccessKey": "abc", "gitCredentials": {"username": "user", "password": "pass"}}`)
 	default:
