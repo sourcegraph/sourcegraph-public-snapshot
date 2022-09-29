@@ -18,7 +18,7 @@ import (
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-var client = codeintelgitserver.New(database.NewMockDB(), NewMockDBStore(), &observation.TestContext)
+var client = codeintelgitserver.New(database.NewMockDB(), &observation.TestContext)
 
 func TestGetTargetCommitPathFromSourcePath(t *testing.T) {
 	args := &requestArgs{
