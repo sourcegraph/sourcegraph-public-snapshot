@@ -4,7 +4,6 @@ set -e
 
 echo "ENTERPRISE=$ENTERPRISE"
 echo "NODE_ENV=$NODE_ENV"
-echo "BRANCH=$BRANCH"
 echo "# Note: NODE_ENV only used for build command"
 
 echo "--- Yarn install in root"
@@ -27,5 +26,10 @@ fi
 
 if [[ "$BRANCH" != "main" ]]; then
   echo "--- diff bundle size"
+
   ls -la ui/assets
+  ./node_modules/.bin/statoscope generate \
+    -i "./ui/assets/stats-${BRANCH}.json" \
+    -r "./ui/assets/stats-${MERGE_BASE}.json" \
+    -o -t ./ui/assets/compare-report.html
 fi

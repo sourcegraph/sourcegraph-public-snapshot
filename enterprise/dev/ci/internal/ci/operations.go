@@ -231,6 +231,8 @@ func addWebEnterpriseBuild(pipeline *bk.Pipeline) {
 				bk.Env("ENTERPRISE", "1"),
 				bk.Env("CHECK_BUNDLESIZE", "1"),
 				bk.Env("BRANCH", branch),
+				bk.Env("COMMIT", commit),
+				bk.Env("MERGE_BASE", mergeBase),
 				// To ensure the Bundlesize output can be diffed to the baseline on main
 				bk.Env("WEBPACK_USE_NAMED_CHUNKS", "true"),
 				// Emit a stats.json file for bundle size diffs
