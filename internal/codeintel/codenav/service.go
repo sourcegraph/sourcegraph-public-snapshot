@@ -300,7 +300,7 @@ func (s *Service) GetReferences(ctx context.Context, args shared.RequestArgs, re
 	// Adjust the locations back to the appropriate range in the target commits. This adjusts
 	// locations within the repository the user is browsing so that it appears all references
 	// are occurring at the same commit they are looking at.
-	referenceLocations, err := s.getUploadLocations(ctx, args, requestState, locations)
+	referenceLocations, err := s.getUploadLocations(ctx, args, requestState, locations, true)
 	if err != nil {
 		return nil, cursor, err
 	}
@@ -514,8 +514,9 @@ func (s *Service) getPageRemoteLocations(
 }
 
 // getUploadLocations translates a set of locations into an equivalent set of locations in the requested
-// commit.
-func (s *Service) getUploadLocations(ctx context.Context, args shared.RequestArgs, requestState RequestState, locations []shared.Location) ([]types.UploadLocation, error) {
+// commit. If includeFallbackLocations is true, then any range in the indexed commit that cannot be translated
+// will use the indexed location. Otherwise, such location are dropped.
+func (s *Service) getUploadLocations(ctx context.Context, args shared.RequestArgs, requestState RequestState, locations []shared.Location, includeFallbackLocations bool) ([]types.UploadLocation, error) {
 	uploadLocations := make([]types.UploadLocation, 0, len(locations))
 
 	checkerEnabled := authz.SubRepoEnabled(requestState.authChecker)
@@ -529,9 +530,12 @@ func (s *Service) getUploadLocations(ctx context.Context, args shared.RequestArg
 			continue
 		}
 
-		adjustedLocation, err := s.getUploadLocation(ctx, args, requestState, upload, location)
+		adjustedLocation, ok, err := s.getUploadLocation(ctx, args, requestState, upload, location)
 		if err != nil {
 			return nil, err
+		}
+		if !includeFallbackLocations && !ok {
+			continue
 		}
 
 		if !checkerEnabled {
@@ -551,11 +555,11 @@ func (s *Service) getUploadLocations(ctx context.Context, args shared.RequestArg
 
 // getUploadLocation translates a location (relative to the indexed commit) into an equivalent location in
 // the requested commit. If the translation fails, then the original commit and range are used as the
-// commit and range of the adjusted location.
-func (s *Service) getUploadLocation(ctx context.Context, args shared.RequestArgs, requestState RequestState, dump types.Dump, location shared.Location) (types.UploadLocation, error) {
-	adjustedCommit, adjustedRange, _, err := s.getSourceRange(ctx, args, requestState, dump.RepositoryID, dump.Commit, dump.Root+location.Path, location.Range)
+// commit and range of the adjusted location and a false flag is returned.
+func (s *Service) getUploadLocation(ctx context.Context, args shared.RequestArgs, requestState RequestState, dump types.Dump, location shared.Location) (types.UploadLocation, bool, error) {
+	adjustedCommit, adjustedRange, ok, err := s.getSourceRange(ctx, args, requestState, dump.RepositoryID, dump.Commit, dump.Root+location.Path, location.Range)
 	if err != nil {
-		return types.UploadLocation{}, err
+		return types.UploadLocation{}, ok, err
 	}
 
 	return types.UploadLocation{
@@ -563,7 +567,7 @@ func (s *Service) getUploadLocation(ctx context.Context, args shared.RequestArgs
 		Path:         dump.Root + location.Path,
 		TargetCommit: adjustedCommit,
 		TargetRange:  adjustedRange,
-	}, nil
+	}, ok, nil
 }
 
 // getSourceRange translates a range (relative to the indexed commit) into an equivalent range in the requested
@@ -775,7 +779,7 @@ func (s *Service) GetImplementations(ctx context.Context, args shared.RequestArg
 	// locations within the repository the user is browsing so that it appears all implementations
 	// are occurring at the same commit they are looking at.
 
-	implementationLocations, err := s.getUploadLocations(ctx, args, requestState, locations)
+	implementationLocations, err := s.getUploadLocations(ctx, args, requestState, locations, true)
 	if err != nil {
 		return nil, cursor, err
 	}
@@ -826,7 +830,7 @@ func (s *Service) GetDefinitions(ctx context.Context, args shared.RequestArgs, r
 		}
 		if len(locations) > 0 {
 			// If we have a local definition, we won't find a better one and can exit early
-			return s.getUploadLocations(ctx, args, requestState, locations)
+			return s.getUploadLocations(ctx, args, requestState, locations, true)
 		}
 	}
 
@@ -863,7 +867,7 @@ func (s *Service) GetDefinitions(ctx context.Context, args shared.RequestArgs, r
 	// locations within the repository the user is browsing so that it appears all definitions
 	// are occurring at the same commit they are looking at.
 
-	adjustedLocations, err := s.getUploadLocations(ctx, args, requestState, locations)
+	adjustedLocations, err := s.getUploadLocations(ctx, args, requestState, locations, true)
 	if err != nil {
 		return nil, err
 	}
@@ -1066,17 +1070,17 @@ func (s *Service) getCodeIntelligenceRange(ctx context.Context, args shared.Requ
 		return shared.AdjustedCodeIntelligenceRange{}, false, err
 	}
 
-	definitions, err := s.getUploadLocations(ctx, args, requestState, rn.Definitions)
+	definitions, err := s.getUploadLocations(ctx, args, requestState, rn.Definitions, false)
 	if err != nil {
 		return shared.AdjustedCodeIntelligenceRange{}, false, err
 	}
 
-	references, err := s.getUploadLocations(ctx, args, requestState, rn.References)
+	references, err := s.getUploadLocations(ctx, args, requestState, rn.References, false)
 	if err != nil {
 		return shared.AdjustedCodeIntelligenceRange{}, false, err
 	}
 
-	implementations, err := s.getUploadLocations(ctx, args, requestState, rn.Implementations)
+	implementations, err := s.getUploadLocations(ctx, args, requestState, rn.Implementations, false)
 	if err != nil {
 		return shared.AdjustedCodeIntelligenceRange{}, false, err
 	}
