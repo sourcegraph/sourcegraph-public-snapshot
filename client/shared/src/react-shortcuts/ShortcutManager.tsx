@@ -116,7 +116,10 @@ function isModifierHeld(held: Exclude<Data['held'], undefined>, event: KeyboardE
     return held.every(key => event.getModifierState(key === 'Mod' ? modKey : key))
 }
 
-function getModKey(): 'Control' | 'Meta' {
+/**
+ * Returns the physicial key for the virtual 'Mod' key for the current platform.
+ */
+export function getModKey(): 'Control' | 'Meta' {
     return isMacPlatform() ? 'Meta' : 'Control'
 }
 

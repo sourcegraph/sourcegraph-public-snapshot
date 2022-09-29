@@ -1,6 +1,4 @@
-import * as React from 'react'
-
-import { act, createEvent, fireEvent, render } from '@testing-library/react'
+import { createEvent, fireEvent, render } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import * as sinon from 'sinon'
 
