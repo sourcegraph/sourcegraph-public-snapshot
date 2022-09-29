@@ -12,11 +12,9 @@ Each section comprehensively describes the changes needed in Docker images, envi
 
 <!-- Add changes changes to this section before release. -->
 
-Follow the [steps](#upgrade-procedure) outlined at the top of this page to upgrade.
+TODO - replace me
 
 ## 3.43 -> 4.0.1
-
-<!-- Add changes changes to this section before release. -->
 
 Follow the [steps](#upgrade-procedure) outlined at the top of this page to upgrade.
 
