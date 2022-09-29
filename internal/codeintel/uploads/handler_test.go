@@ -35,8 +35,9 @@ func TestHandle(t *testing.T) {
 	}
 
 	mockWorkerStore := NewMockWorkerStore()
-	mockDBStore := NewMockDBStore()
-	mockLSIFStore := NewMockLSIFStore()
+	mockDBStore := NewMockStore()
+	mockRepoStore := NewMockRepoStore()
+	mockLSIFStore := NewMockLsifStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 	gitserverClient := NewMockGitserverClient()
 
@@ -62,6 +63,7 @@ func TestHandle(t *testing.T) {
 
 	handler := &handler{
 		dbStore:         mockDBStore,
+		repoStore:       mockRepoStore,
 		workerStore:     mockWorkerStore,
 		lsifStore:       mockLSIFStore,
 		uploadStore:     mockUploadStore,
@@ -169,8 +171,9 @@ func TestHandleError(t *testing.T) {
 	}
 
 	mockWorkerStore := NewMockWorkerStore()
-	mockDBStore := NewMockDBStore()
-	mockLSIFStore := NewMockLSIFStore()
+	mockDBStore := NewMockStore()
+	mockRepoStore := NewMockRepoStore()
+	mockLSIFStore := NewMockLsifStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 	gitserverClient := NewMockGitserverClient()
 
@@ -193,6 +196,7 @@ func TestHandleError(t *testing.T) {
 
 	handler := &handler{
 		dbStore:         mockDBStore,
+		repoStore:       mockRepoStore,
 		workerStore:     mockWorkerStore,
 		lsifStore:       mockLSIFStore,
 		uploadStore:     mockUploadStore,
@@ -218,23 +222,7 @@ func TestHandleError(t *testing.T) {
 }
 
 func TestHandleCloneInProgress(t *testing.T) {
-	t.Cleanup(func() {
-		backend.Mocks.Repos.Get = nil
-		backend.Mocks.Repos.ResolveRev = nil
-	})
-
-	backend.Mocks.Repos.Get = func(ctx context.Context, repoID api.RepoID) (*types.Repo, error) {
-		if repoID != api.RepoID(50) {
-			t.Errorf("unexpected repository name. want=%d have=%d", 50, repoID)
-		}
-		return &types.Repo{ID: repoID}, nil
-	}
-
-	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
-		return "", &gitdomain.RepoNotExistError{Repo: repo.Name, CloneInProgress: true}
-	}
-
-	upload := dbstore.Upload{
+	upload := codeinteltypes.Upload{
 		ID:           42,
 		Root:         "root/",
 		Commit:       "deadbeef",
@@ -243,12 +231,24 @@ func TestHandleCloneInProgress(t *testing.T) {
 	}
 
 	mockWorkerStore := NewMockWorkerStore()
-	mockDBStore := NewMockDBStore()
+	mockDBStore := NewMockStore()
+	mockRepoStore := NewMockRepoStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 	gitserverClient := NewMockGitserverClient()
 
+	mockRepoStore.GetFunc.SetDefaultHook(func(ctx context.Context, repoID api.RepoID) (*types.Repo, error) {
+		if repoID != api.RepoID(50) {
+			t.Errorf("unexpected repository name. want=%d have=%d", 50, repoID)
+		}
+		return &types.Repo{ID: repoID}, nil
+	})
+	mockRepoStore.ResolveRevFunc.SetDefaultHook(func(ctx context.Context, repo *types.Repo, _ string) (api.CommitID, error) {
+		return "", &gitdomain.RepoNotExistError{Repo: repo.Name, CloneInProgress: true}
+	})
+
 	handler := &handler{
 		dbStore:         mockDBStore,
+		repoStore:       mockRepoStore,
 		workerStore:     mockWorkerStore,
 		uploadStore:     mockUploadStore,
 		gitserverClient: gitserverClient,
