@@ -27,14 +27,18 @@ export const observeInstanceVersionNumber = (): Observable<string | undefined> =
         })
     )
 
-type Version = { major: number; minor: number } | 'insiders'
+interface RegularVersion {
+    major: number
+    minor: number
+}
+type Version = RegularVersion | 'insiders'
 
 /**
  * Parses the Sourcegraph instance version number.
  *
- * @returns Major, minor and patch version numbers if it's a regular version, or `'insiders'` if it's an insiders version.
+ * @returns Major and minor version numbers if it's a regular version, or `'insiders'` if it's an insiders version.
  */
-export const parseVersion = (version: string): Version => {
+const parseVersion = (version: string): Version => {
     const versionParts = version.split('.')
     if (versionParts.length === 3) {
         return {
@@ -43,6 +47,18 @@ export const parseVersion = (version: string): Version => {
         }
     }
     return 'insiders'
+}
+
+/**
+ * Checks if the Sourcegraph instance version is older than the given version.
+ * */
+export const isOlderThan = (instanceVersion: string, comparedVersion: RegularVersion): boolean => {
+    const version = parseVersion(instanceVersion)
+    return (
+        version !== 'insiders' &&
+        (version.major < version.major ||
+            (version.major === comparedVersion.major && version.minor < comparedVersion.minor))
+    )
 }
 
 /**
@@ -60,11 +76,7 @@ export function initializeInstanceVersionNumber(
             .toPromise()
             .then(async version => {
                 if (version) {
-                    const parsedVersion = parseVersion(version)
-                    if (
-                        parsedVersion !== 'insiders' &&
-                        (parsedVersion.major < 3 || (parsedVersion.major === 3 && parsedVersion.minor < 32))
-                    ) {
+                    if (isOlderThan(version, { major: 3, minor: 32 })) {
                         displayWarning(
                             'Your Sourcegraph instance version is not fully compatible with the Sourcegraph extension. Please ask your site admin to upgrade to version 3.32.0 or above. Read more about version support in our [troubleshooting docs](https://docs.sourcegraph.com/admin/how-to/troubleshoot-sg-extension#unsupported-features-by-sourcegraph-version).'
                         ).catch(() => {})
@@ -75,13 +87,8 @@ export function initializeInstanceVersionNumber(
             .catch(noop) // We handle potential errors in instanceVersionNumber observable
 
         const version = localStorageService.getValue(INSTANCE_VERSION_NUMBER_KEY)
-        const parsedVersion = parseVersion(version)
         // instances below 3.38.0 does not support EventSource.IDEEXTENSION and should fallback to BACKEND source
-        return parsedVersion === 'insiders' ||
-            parsedVersion.major > 3 ||
-            (parsedVersion.major === 3 && parsedVersion.minor >= 38)
-            ? EventSource.IDEEXTENSION
-            : EventSource.BACKEND
+        return version && isOlderThan(version, { major: 3, minor: 38 }) ? EventSource.BACKEND : EventSource.IDEEXTENSION
     }
     return EventSource.IDEEXTENSION
 }
