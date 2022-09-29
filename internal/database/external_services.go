@@ -1059,7 +1059,6 @@ CREATE TEMPORARY TABLE IF NOT EXISTS
 	if nrows == 0 {
 		return externalServiceNotFoundError{id: id}
 	}
-
 	return nil
 }
 
