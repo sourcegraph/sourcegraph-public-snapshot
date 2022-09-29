@@ -82,6 +82,8 @@ func TestNewAppProvider(t *testing.T) {
 		}
 
 		db := database.NewMockDB()
+		externalServices := database.NewMockExternalServiceStore()
+		db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 		provider, err := newAppProvider(db, svc, "", baseURL, "1234", bogusKey, 1234, doer)
 		require.NoError(t, err)
 

@@ -15,11 +15,11 @@ import (
 // OAuthBearerToken implements OAuth Bearer Token authentication for extsvc
 // clients.
 type OAuthBearerToken struct {
-	AccessToken  string    `json:"access_token"`
-	TokenType    string    `json:"token_type"`
-	RefreshToken string    `json:"refresh_token"`
-	Expiry       time.Time `json:"expiry"`
-	RefreshFunc  func(*OAuthBearerToken) (*OAuthBearerToken, error)
+	AccessToken  string                                             `json:"access_token"`
+	TokenType    string                                             `json:"token_type,omitempty"`
+	RefreshToken string                                             `json:"refresh_token,omitempty"`
+	Expiry       time.Time                                          `json:"expiry,omitempty"`
+	RefreshFunc  func(*OAuthBearerToken) (*OAuthBearerToken, error) `json:"-"`
 }
 
 var _ Authenticator = &OAuthBearerToken{}

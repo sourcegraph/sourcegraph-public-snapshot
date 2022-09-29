@@ -36,52 +36,56 @@ func newAppProvider(
 		return nil, errors.Wrap(err, "decode private key")
 	}
 
-	rawConfig, err := svc.Config.Decrypt(context.Background())
-	if err != nil {
-		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
-	}
-	var c schema.GitHubConnection
-	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
-		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
-	}
-
-	appAuther, err := auth.NewGitHubAppAuthenticator(appID, pkey)
-	if err != nil {
-		return nil, errors.Wrap(err, "new authenticator with GitHub App")
-	}
-
 	apiURL, _ := github.APIRoot(baseURL)
-	appClient := github.NewV3Client(
-		log.Scoped("app", "github client for github app").
-			With(log.String("appID", appID)),
-		urn, apiURL, appAuther, cli)
-
-	externalServicesStore := db.ExternalServices()
-
-	installationRefreshFunc := func(auther *auth.GitHubAppInstallationAuthenticator) error {
-		token, err := appClient.CreateAppInstallationAccessToken(context.Background(), installationID)
+	var installationAuther auth.Authenticator
+	if svc != nil {
+		rawConfig, err := svc.Config.Decrypt(context.Background())
 		if err != nil {
-			return err
+			return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+		}
+		var c schema.GitHubConnection
+		if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
+			return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 		}
 
-		auther.InstallationAccessToken = token.GetToken()
-		auther.Expiry = token.GetExpiresAt()
+		appAuther, err := auth.NewGitHubAppAuthenticator(appID, pkey)
+		if err != nil {
+			return nil, errors.Wrap(err, "new authenticator with GitHub App")
+		}
 
-		rawConfig, err = jsonc.Edit(rawConfig, *token.Token, "token")
+		apiURL, _ := github.APIRoot(baseURL)
+		appClient := github.NewV3Client(
+			log.Scoped("app", "github client for github app").
+				With(log.String("appID", appID)),
+			urn, apiURL, appAuther, cli)
 
-		externalServicesStore.Update(context.Background(),
-			conf.Get().AuthProviders,
-			svc.ID,
-			&database.ExternalServiceUpdate{
-				Config:         &rawConfig,
-				TokenExpiresAt: token.ExpiresAt,
-			},
-		)
+		externalServicesStore := db.ExternalServices()
 
-		return nil
+		installationRefreshFunc := func(auther *auth.GitHubAppInstallationAuthenticator) error {
+			token, err := appClient.CreateAppInstallationAccessToken(context.Background(), installationID)
+			if err != nil {
+				return err
+			}
+
+			auther.InstallationAccessToken = token.GetToken()
+			auther.Expiry = token.GetExpiresAt()
+
+			rawConfig, err = jsonc.Edit(rawConfig, *token.Token, "token")
+
+			externalServicesStore.Update(context.Background(),
+				conf.Get().AuthProviders,
+				svc.ID,
+				&database.ExternalServiceUpdate{
+					Config:         &rawConfig,
+					TokenExpiresAt: token.ExpiresAt,
+				},
+			)
+
+			return nil
+		}
+
+		installationAuther, err = auth.NewGitHubAppInstallationAuthenticator(installationID, "", installationRefreshFunc)
 	}
-
-	installationAuther, err := auth.NewGitHubAppInstallationAuthenticator(installationID, "", installationRefreshFunc)
 
 	return &Provider{
 		urn:      urn,
