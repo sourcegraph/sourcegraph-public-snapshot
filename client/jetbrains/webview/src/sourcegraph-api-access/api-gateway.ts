@@ -45,7 +45,7 @@ export const siteVersionAndUserQuery = gql`
 `
 
 export interface SiteVersionAndCurrentUser {
-    site: {productVersion: string} | null,
+    site: { productVersion: string } | null
     currentUser: AuthenticatedUser | null
 }
 
@@ -54,7 +54,7 @@ export async function getSiteVersionAndAuthenticatedUser(
     accessToken: string | null
 ): Promise<SiteVersionAndCurrentUser> {
     if (!instanceURL) {
-        return {site: null, currentUser: null}
+        return { site: null, currentUser: null }
     }
 
     const result = await requestGraphQLCommon<SiteVersionAndCurrentAuthStateResult, CurrentAuthStateVariables>({
@@ -69,5 +69,5 @@ export async function getSiteVersionAndAuthenticatedUser(
         },
     }).toPromise()
 
-    return result.data ?? {site: null, currentUser: null}
+    return result.data ?? { site: null, currentUser: null }
 }

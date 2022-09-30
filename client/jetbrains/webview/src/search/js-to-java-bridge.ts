@@ -66,7 +66,7 @@ interface GetThemeRequest {
 
 interface IndicateSearchError {
     action: 'indicateSearchError'
-    arguments: { errorMessage: string, timeAsISOString: string }
+    arguments: { errorMessage: string; timeAsISOString: string }
 }
 
 export interface SaveLastSearchRequest {
