@@ -6,5 +6,4 @@ export const releaseTemplate = `${divider}
 
 <!-- Add changes changes to this section before release. -->
 
-TODO - replace me
-`
+_Upgrade notes for the next version will appear here._`
