@@ -96,7 +96,7 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
     <p>Deploy onto DigitalOcean</p>
   </a>
   <!-- Docker Compose -->
-  <a class="app-btn btn" href="/admin/install/docker-compose">
+  <a class="app-btn btn" href="/admin/deploy/docker-compose">
     <img alt="docker-compose-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/Docker.png"/>
     <h3>Docker Compose</h3>
     <p>Deploy with Docker Compose</p>
