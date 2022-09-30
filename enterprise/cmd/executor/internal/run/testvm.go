@@ -3,6 +3,7 @@ package run
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/google/uuid"
 	"github.com/sourcegraph/log"
@@ -42,7 +43,7 @@ func createVM(ctx context.Context, config *config.Config, repositoryName string)
 	// VM janitor.
 	name := fmt.Sprintf("%s-%s", "executor-test-vm", vmNameSuffix.String())
 
-	commandLogger := command.NewNoopLogger()
+	commandLogger := command.NewWriterLogger(os.Stdout)
 	operations := command.NewOperations(&observation.TestContext)
 
 	hostRunner := command.NewRunner("", commandLogger, command.Options{}, operations)

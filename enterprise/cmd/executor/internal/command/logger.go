@@ -3,6 +3,7 @@ package command
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"strings"
 	"sync"
@@ -271,20 +272,29 @@ func redact(entry *workerutil.ExecutionLogEntry, replacer *strings.Replacer) {
 	entry.Out = replacer.Replace(entry.Out)
 }
 
-func NewNoopLogger() Logger {
-	return &noopLogger{}
+func NewWriterLogger(w io.Writer) Logger {
+	return &noopLogger{w}
 }
 
-type noopLogger struct{}
+type noopLogger struct {
+	w io.Writer
+}
 
-func (*noopLogger) Flush() error                              { return nil }
-func (*noopLogger) Log(key string, command []string) LogEntry { return &noopLogEntry{} }
+func (*noopLogger) Flush() error { return nil }
+func (l *noopLogger) Log(key string, command []string) LogEntry {
+	fmt.Fprintf(l.w, "%s: %s", key, strings.Join(command, " "))
+	return &noopLogEntry{w: l.w}
+}
 
-type noopLogEntry struct{}
+type noopLogEntry struct {
+	w io.Writer
+}
 
-func (*noopLogEntry) Write(p []byte) (n int, err error) { return len(p), nil }
-func (*noopLogEntry) Close() error                      { return nil }
-func (*noopLogEntry) Finalize(exitCode int)             {}
+func (l *noopLogEntry) Write(p []byte) (n int, err error) {
+	return fmt.Fprint(l.w, p)
+}
+func (*noopLogEntry) Close() error          { return nil }
+func (*noopLogEntry) Finalize(exitCode int) {}
 func (*noopLogEntry) CurrentLogEntry() workerutil.ExecutionLogEntry {
 	return workerutil.ExecutionLogEntry{}
 }
