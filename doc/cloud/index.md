@@ -39,8 +39,6 @@ Sourcegraph Cloud is a single-tenant cloud solution. Cloud instances are private
 
 Sourcegraph provisions each instance in an isolated and secure cloud environment. Access is restricted to only your organization through your SSO provider of choice. Enterprise VPN is available upon request.
 
-To get started with a cloud trial, just [signup](https://signup.sourcegraph.com) or [contact us](https://about.sourcegraph.com/contact/sales) if you have specific requirements (VPN) or either more than 500 users, more than 1,000 repos or monorepos larger than 5 GB.
-
 ## Start a Sourcegraph Cloud trial
 
 <form class="grid">
