@@ -21,7 +21,6 @@ const DASHBOARD_PAGE_METADATA: InsightsDashboardsResult = {
                 __typename: 'InsightsDashboard',
                 id: 'codeInsightDashboard001',
                 title: 'Dashboard 001',
-                views: { nodes: [] },
                 grants: {
                     __typename: 'InsightsPermissionGrants',
                     users: [],

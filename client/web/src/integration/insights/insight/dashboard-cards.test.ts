@@ -161,7 +161,6 @@ describe('Code insights [Dashboard card]', () => {
 interface DashboardMockOptions {
     id?: string
     title?: string
-    insightIds?: string[]
 }
 
 /**
@@ -169,16 +168,12 @@ interface DashboardMockOptions {
  * It's used for easier mocking dashboards list gql handler see InsightsDashboards entry point.
  */
 function createDashboard(options: DashboardMockOptions): InsightsDashboardNode {
-    const { id = '001_dashboard', title = 'Default dashboard', insightIds = [] } = options
+    const { id = '001_dashboard', title = 'Default dashboard' } = options
 
     return {
         __typename: 'InsightsDashboard',
         id,
         title,
-        views: {
-            __typename: 'InsightViewConnection',
-            nodes: insightIds.map(id => ({ __typename: 'InsightView', id })),
-        },
         grants: {
             __typename: 'InsightsPermissionGrants',
             users: [testUserID],
@@ -246,12 +241,7 @@ function mockDashboardWithInsights({
             },
             insightsDashboards: {
                 __typename: 'InsightsDashboardConnection',
-                nodes: [
-                    createDashboard({
-                        id: dashboardId,
-                        insightIds: [insightMock.id],
-                    }),
-                ],
+                nodes: [createDashboard({ id: dashboardId })],
             },
         }),
         // Mock dashboard configuration (dashboard content) with one capture group insight configuration
