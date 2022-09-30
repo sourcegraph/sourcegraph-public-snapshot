@@ -1,51 +1,91 @@
-# <a href="https://sourcegraph.com"><picture><source srcset="https://raw.githubusercontent.com/sourcegraph/sourcegraph/main/ui/assets/img/sourcegraph-head-logo.svg" media="(prefers-color-scheme: dark)"/><img alt="Sourcegraph" src="https://raw.githubusercontent.com/sourcegraph/sourcegraph/main/ui/assets/img/sourcegraph-logo-light.svg" height="48px" /></picture></a>
+<p align="center">
+  <a href="https://about.sourcegraph.com/sourcegraph-4" target="_blank">
+    <img src="https://p21.p4.n0.cdn.getcloudapp.com/items/YEuWmEJA/38872827-37f4-4d2f-992d-c6870d794f57.svg" alt="Sourcegraph 4.0" width="300px">
+  </a>
 
-[![build](https://badge.buildkite.com/00bbe6fa9986c78b8e8591cffeb0b0f2e8c4bb610d7e339ff6.svg?branch=main)](https://buildkite.com/sourcegraph/sourcegraph)
+<p align="center">
+    <a href="https://docs.sourcegraph.com">Docs</a> •
+    <a href="https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CONTRIBUTING.md">Contributing</a> •
+    <a href="https://twitter.com/sourcegraph">Twitter</a>
+    <br /><br />
+    <a href="https://buildkite.com/sourcegraph/sourcegraph">
+        <img src="https://badge.buildkite.com/00bbe6fa9986c78b8e8591cffeb0b0f2e8c4bb610d7e339ff6.svg?branch=main" alt="Build status" />
+    </a>
+    <a href="https://api.securityscorecards.dev/projects/github.com/sourcegraph/sourcegraph">
+        <img src="https://img.shields.io/ossf-scorecard/github.com/sourcegraph/sourcegraph?label=openssf%20scorecard" alt="Scorecard" />
+    </a>
+    <a href="https://github.com/sourcegraph/sourcegraph/releases/">
+        <img src="https://img.shields.io/github/release/sourcegraph/Sourcegraph.svg" alt="Latest release" />
+    </a>
+    <a href="https://srcgr.ph/discord">
+        <img src="https://img.shields.io/discord/969688426372825169?color=5765F2" alt="Discord" />
+    </a>
+    <a href="https://github.com/sourcegraph/sourcegraph/contributors/">
+        <img src="https://img.shields.io/github/contributors/sourcegraph/Sourcegraph.svg?color=000000" alt="Contributors" />
+    </a>
+</p>
+<br />
+<p align="center">
+  <b>Understand, fix, and automate across your codebase with Sourcegraph's code intelligence platform</b>
+</p>
 
-[Sourcegraph](https://about.sourcegraph.com/) is a fast and featureful code search and navigation engine.
+&nbsp;
 
-![sourcegraph com_github com_golang_go_-_blob_src_net_http_request go_L855_6](https://user-images.githubusercontent.com/989826/126650657-cef98203-1505-4848-aab6-57acda1ec35f.png)
+---
 
-**Features**
+## 4.0 Features
 
-- Fast global code search with a hybrid backend that combines a trigram index with in-memory streaming.
-- Code intelligence for many languages via the [Language Server Index Format](https://lsif.dev/).
-- Enhances GitHub, GitLab, Phabricator, and other code hosts and code review tools via the [Sourcegraph browser extension](https://docs.sourcegraph.com/integration/browser_extension).
-- Integration with third-party developer tools via the [Sourcegraph extension API](https://docs.sourcegraph.com/extensions).
+### 🧠 Code intelligence: uplevel your code search
+* Understand usage and search structure with high-level aggregations of search results
+* A faster, simpler search experience
+* Configure precise code navigation for 9 languages (Ruby, Rust, Go, Java, Scala, Kotlin, Python, TypeScript, JavaScript) in a matter of minutes with auto-indexing
+* Your favorite extensions are now available by default
+* Quickly access answers within your codebase with a revamped reference panel
 
-## Try it now
+<p align="center">
+<img src="https://storage.googleapis.com/sourcegraph-assets/blog/release-post/4.0/New-Search-UI.png" width="75%">
+</p>
 
-Sourcegraph has three editions:
+### 🏗️ High-leverage ways to improve your entire codebase
+* Make changes across all of your codebase at enterprise scale with server-side Batch Changes (beta)
+  * Run large-scale or resource-intensive batch changes without clogging your local machine
+  * Run large batch changes quickly by distributing them across an autoscaled pool of compute instances
+  * Get a better debugging experience with the streaming of logs directly into Sourcegraph.
 
-- [Sourcegraph Cloud](https://sourcegraph.com) lets you search over the open-source ecosystem plus your private code. [Search strings](https://sourcegraph.com/search?q=context:global+failed+to+ensure+HEAD+exists&patternType=literal), [search patterns](https://sourcegraph.com/search?q=context:global+lang:python+range%28len%28:%5B1%5D%29%29&patternType=structural), [search symbols](https://sourcegraph.com/search?q=context:global+type:symbol+lang:typescript+%28OA%7Coa%7COa%29uth+%5BHh%5Dandler+-file:%28%5E%7C/%29node_modules/+&patternType=regexp&case=yes) and [find references](https://sourcegraph.com/github.com/spf13/cobra@a684a6d7f5e37385d954dd3b5a14fc6912c6ab9d/-/blob/command.go?L221:19&subtree=true#tab=references) across your entire codebase and the open-source world.
-- [Sourcegraph Enterprise](https://docs.sourcegraph.com/#getting-started) lets you run your own Sourcegraph instance in your own environment.
-- [Sourcegraph OSS](#sourcegraph-oss) is an open-source version of Sourcegraph that provides the core functionality of Sourcegraph (code search, code browsing, basic code navigation), but lacks more advanced features (enterprise authentication, repository permissions, admin controls, advanced code navigation, etc.)
+### ☁️ Dedicated Sourcegraph Cloud instances for enterprise
+* Sourcegraph Cloud now offers dedicated, single-tenant instances of Sourcegraph
 
-> Source code for all three editions is contained in this repository. See the [License section](#license) for more details.
+### 📈 Advanced admin capabilities
+* Save time upgrading to Sourcegraph 4.0 with multi-version upgrades
+* View usage and measure the value of our platform with new and enhanced in-product analytics
+* Uncover developer time saved using Browser and IDE extensions
+* Easily export traces using OpenTelemetry
+* Quickly see the status on your repository and permissions syncing
+* Measure precise code navigation coverage with an enhanced analytics dashboard
 
-More:
+<p align="center">
+<img src="https://storage.googleapis.com/sourcegraph-assets/blog/release-post/4.0/Search.png" width="75%">
+</p>
 
-- Install the open-source [browser extension](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en) to add Sourcegraph-like powers to your code review and code host.
-- File feature requests and bug reports in [our issue tracker](https://github.com/sourcegraph/sourcegraph/issues).
-- Visit [about.sourcegraph.com](https://about.sourcegraph.com) for more information about features, use cases, and organizations that use Sourcegraph.
+## Deploy Sourcegraph
 
-## Self-hosted installation
+### Recommended
 
-### Sourcegraph Enterprise (free up to 10 users)
+* [Sourcegraph Cloud](https://docs.sourcegraph.com/cloud): create a single-tenant instance managed by Sourcegraph
 
-The fastest way to run Sourcegraph self-hosted is with the Docker container. See the [quickstart installation guide](https://docs.sourcegraph.com/#getting-started). There are also several additional ways of running a [production instance](https://docs.sourcegraph.com/admin/install).
+### Self-hosted
 
-### Sourcegraph OSS
+* [AWS](https://docs.sourcegraph.com/admin/deploy/aws-ami)
+* [Azure](https://docs.sourcegraph.com/admin/deploy/docker-compose/azure)
+* [DigitalOcean](https://docs.sourcegraph.com/admin/deploy/docker-compose/digitalocean)
+* [Docker Compose](https://docs.sourcegraph.com/admin/deploy/docker-compose)
+* [Google Cloud (GCP)](https://docs.sourcegraph.com/admin/deploy/docker-compose/google_cloud)
+* [Private Cloud](https://docs.sourcegraph.com/admin/deploy)
+* [Kubernetes (Enterprise-only)](https://docs.sourcegraph.com/admin/deploy/kubernetes)
 
-1. Go through [Quickstart](https://docs.sourcegraph.com/dev/setup/quickstart) to install `sg` and dependencies
-1. Start the development environment in OSS mode:
-   ```sh
-   sg start oss
-   ```
+### Local machine
 
-Sourcegraph should now be running at https://sourcegraph.test:3443.
-
-For detailed instructions and troubleshooting, see the [local development documentation](https://docs.sourcegraph.com/dev).
+* [Docker](https://docs.sourcegraph.com/admin/deploy/docker-single-container)
 
 ## Development
 
