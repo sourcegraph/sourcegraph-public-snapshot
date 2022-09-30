@@ -1,3 +1,4 @@
+load("@aspect_bazel_lib//lib:copy_to_bin.bzl", "copy_to_bin")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 npm_link_all_packages(name = "node_modules")
 
@@ -13,5 +14,12 @@ jest_test(
         "//:babel.config",
         "//:package_json",
     ],
-    log_level = "debug",
+    # log_level = "debug",
+)
+
+copy_to_bin(
+    name = "dev",
+    # srcs = ["//client/shared:dev/jest-environment.js"],
+    srcs = glob(["dev/**/*.js", "dev/**/*.ts"]),
+    visibility = ["//client:__subpackages__"],
 )

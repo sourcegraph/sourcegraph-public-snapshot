@@ -6,11 +6,6 @@ load("@npm//:defs.bzl", "npm_link_all_packages")
 npm_link_all_packages(
     name = "node_modules",
 )
-#
-# exports_files(
-#     ["jest.config.base.js"],
-#     visibility = ["//visibility:public"],
-# )
 
 copy_to_bin(
     name = "jest.config.base",
@@ -31,11 +26,6 @@ copy_to_bin(
     visibility = ["//client:__subpackages__"],
 )
 
-# copy_to_bin(
-#     name = "jest-environment",
-#     srcs = ["//client/shared:dev/jest-environment.js"],
-#     visibility = ["//client:__subpackages__"],
-# )
 
 # webpack_bundle(name, args, data, deps, entry_point, entry_points, output_dir, srcs,
 #               supports_workers, webpack, webpack_config, webpack_worker)
