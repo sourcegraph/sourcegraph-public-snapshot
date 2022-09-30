@@ -261,12 +261,9 @@ func installIgnite(cliCtx *cli.Context) error {
 		binDir = "/usr/local/bin"
 	}
 
-	found, err := download.Executable(cliCtx.Context, fmt.Sprintf("https://github.com/sourcegraph/ignite/releases/download/%s/ignite-amd64", config.DefaultIgniteVersion), path.Join(binDir, "ignite"))
+	_, err := download.Executable(cliCtx.Context, fmt.Sprintf("https://github.com/sourcegraph/ignite/releases/download/%s/ignite-amd64", config.DefaultIgniteVersion), path.Join(binDir, "ignite"))
 	if err != nil {
 		return err
-	}
-	if !found {
-		return errors.Newf("ignite version %s not found", config.DefaultIgniteVersion)
 	}
 	return nil
 }

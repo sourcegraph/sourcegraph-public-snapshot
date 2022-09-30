@@ -12,7 +12,7 @@ import (
 const (
 	// DefaultIgniteVersion is the sourcegraph/ignite version to be used by this
 	// executor build.
-	DefaultIgniteVersion = "v0.10.4"
+	DefaultIgniteVersion = "v0.10.5"
 	// DefaultFirecrackerKernelImage is the kernel source image to extract the vmlinux
 	// image from.
 	DefaultFirecrackerKernelImage = "sourcegraph/ignite-kernel:5.10.135-amd64"

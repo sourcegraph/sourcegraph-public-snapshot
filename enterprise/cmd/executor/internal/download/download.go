@@ -30,7 +30,7 @@ func Executable(ctx context.Context, url string, path string) (bool, error) {
 
 	// Sometimes the release is available, but the binaries are not
 	if resp.StatusCode == http.StatusNotFound {
-		return false, nil
+		return false, errors.Newf("%s not found", url)
 	}
 
 	if resp.StatusCode != http.StatusOK {
