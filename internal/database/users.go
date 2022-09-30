@@ -859,13 +859,13 @@ FROM users
 ORDER BY id ASC
 `
 const listUsersInactiveCond = `
-NOT EXISTS (
+(NOT EXISTS (
 	SELECT 1 FROM event_logs
 	WHERE
 		event_logs.user_id = u.id
 	AND
 		timestamp >= %s
-)
+))
 `
 
 func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {

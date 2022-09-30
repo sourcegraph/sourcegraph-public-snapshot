@@ -3,12 +3,12 @@ package graphqlbackend
 import (
 	"context"
 	"sync"
-	"time"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
@@ -20,7 +20,7 @@ type usersArgs struct {
 	Query         *string
 	Tag           *string
 	ActivePeriod  *string
-	InactiveSince *time.Time
+	InactiveSince *graphql.DateTime
 }
 
 func (r *schemaResolver) Users(args *usersArgs) *userConnectionResolver {
@@ -32,7 +32,7 @@ func (r *schemaResolver) Users(args *usersArgs) *userConnectionResolver {
 		opt.Tag = *args.Tag
 	}
 	if args.InactiveSince != nil {
-		opt.InactiveSince = *args.InactiveSince
+		opt.InactiveSince = args.InactiveSince.Time
 	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
 	return &userConnectionResolver{db: r.db, opt: opt, activePeriod: args.ActivePeriod}
