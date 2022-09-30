@@ -20,6 +20,15 @@
 
         <!-- Default to light theme if no JavaScript -->
 		<body class="theme-light">
+            <script>
+                // If dark theme is requested, set it immediately to avoid flashing.
+                // The rest of theme handling happens in docsite.js.
+                const pref = localStorage.getItem('theme-preference') || 'auto'
+                if (pref === 'dark' || (pref === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    document.body.classList.remove('theme-light')
+                    document.body.classList.add('theme-dark')
+                }
+            </script>
 			<aside id="sidebar">
                 <header>
 				    <h1 id="logo"><a href="/">
