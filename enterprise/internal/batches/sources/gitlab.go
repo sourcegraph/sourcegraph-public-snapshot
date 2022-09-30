@@ -439,7 +439,7 @@ func (s *GitLabSource) determineVersion(ctx context.Context) (*semver.Version, e
 		return cv, nil
 	}
 
-	return nil, errors.New("Cannot determine gitlab version")
+	return nil, errors.New("missing gitlab version")
 }
 
 // UpdateChangeset updates the merge request on GitLab to reflect the local
