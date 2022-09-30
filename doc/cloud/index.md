@@ -1,10 +1,56 @@
-# Sourcegraph Cloud (managed instances)
+<style>
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1em;
+    margin-bottom: 1em;
+  }
+  .app-btn {
+    cursor: pointer;
+    text-decoration: none;
+    height: 15em;
+    width: 100%;
+    border-radius: 1em;
+    border: 2px solid var(--input-focus-border);
+    color: var(--text-color);
+    background-color: var(--sidebar-bg);
+    text-align: center;
+    font-weight: 500;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
+  }
+  .app-btn:hover {
+    box-shadow: 0 0 10px var(--link-hover-color);
+  }
+  .app-btn > img {
+    height: 4em;
+  }
+  .app-btn > h3 {
+    font-size: 1.5em;
+    font-weight: 400;
+    margin-top: .2em;
+    margin-bottom: 1em;
+  }
+</style>
+
+# Sourcegraph Cloud
 
 Sourcegraph Cloud is a single-tenant cloud (formerly known as managed instances). Cloud instances are private, dedicated Sourcegraph instances provisioned and managed by Sourcegraph.
 
 Sourcegraph provisions each instance in a completely isolated and secure cloud infrastructure. Access is restricted to only your organization through your SSO provider of choice. Enterprise VPN is available upon request.
 
 To get started with a cloud trial, just [signup](https://signup.sourcegraph.com) or [contact us](https://about.sourcegraph.com/contact/sales) if you have specific requirements (VPN) or either more than 500 users, more than 1,000 repos or monorepos larger than 5 GB.
+
+## Start a Sourcegraph Cloud trial
+
+<form class="grid">
+  <!-- Sourcegraph Cloud -->
+  <button class="app-btn btn" formaction="cloud">
+			<img alt="sourcegraph-logo" src="https://signup.sourcegraph.com"/>
+			<h3>Sourcegraph Cloud</h3>
+		  <p>Sign up for a trial</p>
+  </button>
+</form>
 
 ## Trials
 
