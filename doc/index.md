@@ -67,7 +67,8 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
 <div class="grid">
   <!-- AWS AMI-->
   <a class="app-btn btn" href="/admin/deploy/aws-ami">
-    <img alt="aws-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/1280px-Amazon_Web_Services_Logo.svg.png"/>
+    <img alt="aws-logo" src="/assets/other-logos/aws-light.svg" class="theme-light-only" />
+    <img alt="aws-logo" src="/assets/other-logos/aws-dark.svg" class="theme-dark-only" />
     <h3>AWS</h3>
     <p>Launch a pre-configured Sourcegraph instance from an AWS AMI</p>
   </a>
@@ -82,7 +83,8 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
   </a>
   <!-- AWS One Click-->
   <a class="app-btn btn" href="/admin/deploy/docker-compose/aws-oneclick">
-    <img alt="aws-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/1280px-Amazon_Web_Services_Logo.svg.png"/>
+    <img alt="aws-logo" src="/assets/other-logos/aws-light.svg" class="theme-light-only" />
+    <img alt="aws-logo" src="/assets/other-logos/aws-dark.svg" class="theme-dark-only" />
     <h3>AWS One-Click</h3>
     <span class="badge badge-warning">Coming soon</span> 
     <!-- <p>Deploy onto AWS in one click</p> -->
