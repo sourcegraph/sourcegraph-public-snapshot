@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -53,7 +52,7 @@ type ProviderOptions struct {
 	IsApp          bool
 }
 
-func NewProvider(urn string, opts ProviderOptions, tokenRefresher oauthutil.TokenRefresher) *Provider {
+func NewProvider(urn string, opts ProviderOptions, db database.DB) *Provider {
 	if opts.GitHubClient == nil {
 		apiURL, _ := github.APIRoot(opts.GitHubURL)
 		opts.GitHubClient = github.NewV3Client(log.Scoped("provider.github.v3", "provider github client"),
@@ -78,6 +77,7 @@ func NewProvider(urn string, opts ProviderOptions, tokenRefresher oauthutil.Toke
 		client: func() (client, error) {
 			return &ClientAdapter{V3Client: opts.GitHubClient}, nil
 		},
+		db: db,
 	}
 }
 
@@ -355,7 +355,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 		AccessToken:  tok.AccessToken,
 		RefreshToken: tok.RefreshToken,
 		Expiry:       tok.Expiry,
-		RefreshFunc:  database.GetAccountRefreshAndStoreOAuthTokenFunc(p.db, account.ID, github.GetOAuthContext(p.URN())),
+		RefreshFunc:  database.GetAccountRefreshAndStoreOAuthTokenFunc(p.db, account.ID, github.GetOAuthContext(p.codeHost.BaseURL.String())),
 	}
 	return p.fetchUserPermsByToken(ctx, extsvc.AccountID(account.AccountID), oauthToken, opts)
 }

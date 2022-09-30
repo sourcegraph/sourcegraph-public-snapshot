@@ -1519,7 +1519,6 @@ func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auther a
 		if ok && autherWithRefresh.ShouldRefresh() {
 			autherWithRefresh.Refresh()
 		}
-
 		if err := auther.Authenticate(req); err != nil {
 			return nil, errors.Wrap(err, "authenticating request")
 		}

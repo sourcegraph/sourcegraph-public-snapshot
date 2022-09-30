@@ -64,7 +64,7 @@ func (token *OAuthBearerToken) Refresh() error {
 
 func (token *OAuthBearerToken) ShouldRefresh() bool {
 	// Refresh 5 minutes before expiry
-	return time.Until(token.Expiry) > 5*time.Minute
+	return time.Until(token.Expiry) < 5*time.Minute
 }
 
 // OAuthBearerTokenWithSSH implements OAuth Bearer Token authentication for extsvc
