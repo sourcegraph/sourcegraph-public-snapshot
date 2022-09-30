@@ -31,6 +31,9 @@ func (r *schemaResolver) Users(args *usersArgs) *userConnectionResolver {
 	if args.Tag != nil {
 		opt.Tag = *args.Tag
 	}
+	if args.InactiveSince != nil {
+		opt.InactiveSince = *args.InactiveSince
+	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
 	return &userConnectionResolver{db: r.db, opt: opt, activePeriod: args.ActivePeriod}
 }
