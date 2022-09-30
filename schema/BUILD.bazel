@@ -1,0 +1,8 @@
+load("@aspect_bazel_lib//lib:copy_to_bin.bzl", "copy_to_bin")
+
+copy_to_bin(
+    name = "schema",
+    # srcs = ["//client/shared:dev/jest-environment.js"],
+    srcs = glob(["*.json"]),
+    visibility = ["//client:__subpackages__"],
+)

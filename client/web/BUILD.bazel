@@ -1,39 +1,19 @@
 load("@npm//:defs.bzl", "npm_link_all_packages")
-load("@aspect_rules_webpack//webpack:defs.bzl", "webpack_bundle")
-load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_run_binary", "js_test")
-
 npm_link_all_packages(name = "node_modules")
 
-# load("@aspect_rules_ts//ts:defs.bzl", "ts_project")
-# load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("@aspect_rules_jest//jest:defs.bzl", "jest_test")
 
-# js_test(
-#     name = "test_test",
-#     # data = ["//:node_modules/@types/node"],
-#     entry_point = "foobar.js",
-#     # data = [ 
-#     #   "//:node_modules", 
-#     # ]
-# )
-# ts_project(
-#     name = "ts",
-#     srcs = glob(["**/*.ts"]),
-#     extends = "//tsconfig"
-#     # declaration = True,
-#     # Note, the tsconfig attribute defaults to the tsconfig.json file in this directory.
-#     # tsconfig = "<default>",
-#     # deps = _DEPS,
-# )
+FILES = glob(["**/*.ts", "**/*.js", "**/*.tsx", "**/*.tsx.snap"])
 
-
-# webpack_bundle(
-#   name = "web", 
-#   entry_point = "src/main.tsx",
-#   webpack_config = "webpack.config.js",
-#   deps = [ "//:node_modules" ]
-# )
-
-# webpack_bundle(name, args, data, deps, entry_point, entry_points, output_dir, srcs,
-#               supports_workers, webpack, webpack_config, webpack_worker)
-
-
+jest_test(
+    name = "test",
+    config = "jest.config.js",
+    data = FILES + [
+        "//:jest.config.base",
+        "//:babel.config",
+        "//:package_json",
+        "//client/shared:dev",
+        "//schema:schema"
+    ],
+    # log_level = "debug",
+)
