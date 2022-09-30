@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react'
 
 import { mdiOpenInNew, mdiCheckCircle } from '@mdi/js'
-import { parseISO } from 'date-fns'
 import classNames from 'classnames'
+import { parseISO } from 'date-fns'
 import formatDistance from 'date-fns/formatDistance'
 import { SiteUpdateCheckResult, SiteUpdateCheckVariables } from 'src/graphql-operations'
 
