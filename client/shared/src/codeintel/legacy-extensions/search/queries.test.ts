@@ -23,7 +23,7 @@ describe('search requests', () => {
                     '^token$',
                     'type:symbol',
                     'patternType:regexp',
-                    'count:50',
+                    'count:51',
                     'case:yes',
                     'file:\\.(cpp)$',
                 ],
