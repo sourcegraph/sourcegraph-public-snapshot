@@ -15,8 +15,3 @@ jest_test(
     ],
     log_level = "debug",
 )
-
-
-# /jest.config.base.js
-# /client/common/jest.config.js 
-# /client/common/src/url.test.ts <- 
