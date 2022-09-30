@@ -23,124 +23,167 @@ This document describes the exact changes needed to update a single-node Sourceg
 
 TODO - replace me
 
-## 3.43 -> 4.0.1
+## v3.43 -> v4.0
 
-Follow the [steps](#upgrade-procedure) outlined at the top of this page to upgrade.
+**Patch releases**:
 
-## 3.42 -> 3.43.2
+- `v4.0.1`
 
-Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
+## v3.42 -> v3.43
 
-## 3.41 -> 3.42.2
+**Patch releases**:
 
-Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
+- `v3.43.1`
+- `v3.43.2`
 
-## 3.40 -> 3.41
+## v3.41 -> v3.42
 
-Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
+**Patch releases**:
 
-## 3.39 -> 3.40.2
+- `v3.42.1`
+- `v3.42.2`
 
-Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
+## v3.40 -> v3.41
 
-## 3.39.0 -> 3.39.1
+No upgrade notes.
 
-Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
+## v3.39 -> v3.40
 
-## 3.38 -> 3.39
+**Patch releases**:
 
-Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
+- `v3.40.1`
+- `v3.40.2`
 
-## 3.38.0 -> 3.38.1
+## v3.38 -> v3.39
 
-Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
+**Patched releases**:
 
-## 3.37 -> 3.38
+- `v3.39.1`
 
-Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
+## v3.37 -> v3.38
 
-## 3.36 -> 3.37
+**Patch releases**:
 
-Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
+- `v3.38.1`
 
-## 3.35 -> 3.36
+## v3.36 -> v3.37
 
-Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
+No upgrade notes.
 
-## 3.35.0 -> 3.35.1
-**Due to issues related to Code Insights on the 3.35.0 release, users are advised to upgrade to 3.35.1 as soon as possible.**
+## v3.35 -> v3.36
 
-There is a [known issue](../../code_insights/how-tos/Troubleshooting.md#oob-migration-has-made-progress-but-is-stuck-before-reaching-100) with the Code Insights out-of-band settings migration not reaching 100% complete when encountering deleted users or organizations.
+No upgrade notes.
 
-## 3.34 -> 3.35.1
+## v3.34 -> v3.35
 
-**Due to issues related to Code Insights on the 3.35.0 release, Users are advised to upgrade directly to 3.35.1.**
+**Patch releases**:
 
-## 3.33 -> 3.34
+- `v3.35.1`
 
-Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
+**Notes**:
 
-## 3.32 -> 3.33
+- There is a [known issue](../../code_insights/how-tos/Troubleshooting.md#oob-migration-has-made-progress-but-is-stuck-before-reaching-100) with the Code Insights out-of-band settings migration not reaching 100% complete when encountering deleted users or organizations.
 
-Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
+## v3.33 -> v3.34
 
-## 3.31 -> 3.32
+No upgrade notes.
 
-Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
+## v3.32 -> v3.33
 
-## 3.30 -> 3.31
+No upgrade notes.
 
-The **built-in** main Postgres (`pgsql`) and codeintel (`codeintel-db`) databases have switched to an alpine-based Docker image. Upon upgrading, Sourcegraph will need to re-index the entire database.
+## v3.31 -> v3.32
 
-All users that use our bundled (built-in) database instances **must** read through the [3.31 upgrade guide](../migration/3_31.md) _before_ upgrading.
+No upgrade notes.
 
-> NOTE: The above does not apply to users that use external databases (e.x: Amazon RDS, Google Cloud SQL, etc.).
+## v3.30 -> v3.31
 
-## 3.29 -> 3.30.3
+> WARNING: **This upgrade must originate from `v3.30.3`.**
 
-> WARNING: **Users on 3.29.x are advised to upgrade directly to 3.30.3**. If you have already upgraded to 3.30.0, 3.30.1, or 3.30.2 please follow [this migration guide](../migration/3_30.md).
+**Notes**:
 
-To update, just use the newer `sourcegraph/server:N.N.N` Docker image (where `N.N.N` is the version number) in place of the older one, using the same Docker volumes. Your server's data will be migrated automatically if needed.
+- The **built-in** main Postgres (`pgsql`) and codeintel (`codeintel-db`) databases have switched to an alpine-based Docker image. Upon upgrading, Sourcegraph will need to re-index the entire database. All users that use our bundled (built-in) database instances **must** read through the [3.31 upgrade guide](../migration/3_31.md) _before_ upgrading.
 
-You can always find the version number of the latest release at [docs.sourcegraph.com](https://docs.sourcegraph.com) in the `docker run` command's image tag.
+## v3.29 -> v3.30
 
-## 3.28 -> 3.29
+> WARNING: **If you have already upgraded to 3.30.0, 3.30.1, or 3.30.2** please follow [this migration guide](../migration/3_30.md).
 
-Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
+**Patch releases**:
 
-## 3.27 -> 3.28
+- `v3.30.1`
+- `v3.30.2`
+- `v3.30.3`
 
-Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
+## v3.28 -> v3.29
 
-## 3.26 -> 3.27
+No upgrade notes.
 
-> Warning: ⚠️ Sourcegraph 3.27 now requires **Postgres 12+**.
+## v3.27 -> v3.28
 
-If you are using an external database, [upgrade your database](https://docs.sourcegraph.com/admin/postgres#upgrading-external-postgresql-instances) to Postgres 12 or above prior to upgrading Sourcegraph. If you are using the embedded database, [prepare your data for migration](https://docs.sourcegraph.com/admin/postgres#upgrading-single-node-docker-deployments) prior to upgrading Sourcegraph.
+No upgrade notes.
 
-## 3.25 -> 3.26
+## v3.26 -> v3.27
 
-Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
+> WARNING: Sourcegraph 3.27 now requires **Postgres 12+**.
 
-> NOTE: ⚠️ From **3.27** onwards we will only support PostgreSQL versions **starting from 12**.
+**Notes**:
 
-## 3.24 -> 3.25
+- If you are using an external database, [upgrade your database](https://docs.sourcegraph.com/admin/postgres#upgrading-external-postgresql-instances) to Postgres 12 or above prior to upgrading Sourcegraph. If you are using the embedded database, [prepare your data for migration](https://docs.sourcegraph.com/admin/postgres#upgrading-single-node-docker-deployments) prior to upgrading Sourcegraph.
+
+## v3.25 -> v3.26
+
+No upgrade notes.
+
+## v3.24 -> v3.25
+
+No upgrade notes.
+
+**Notes**:
 
 - Go `1.15` introduced changes to SSL/TLS connection validation which requires certificates to include a `SAN`. This field was not included in older certificates and clients relied on the `CN` field. You might see an error like `x509: certificate relies on legacy Common Name field`. We recommend that customers using Sourcegraph with an external database and and connecting to it using SSL/TLS check whether the certificate is up to date.
   - AWS RDS customers please reference [AWS' documentation on updating the SSL/TLS certificate](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL-certificate-rotation.html) for steps to rotate your certificate.
 
-## 3.20 -> 3.21
+## v3.23 -> v3.24
 
-- A [bug](https://github.com/sourcegraph/customer/issues/144) exists in the version requiring upgrade from a patch release. **When upgrading please upgrade from v3.20.0 -> v3.20.1 -> v3.21.x**
+No upgrade notes.
+## v3.22 -> v3.23
 
-This release introduces a second database instance, `codeintel-db`. If you have configured Sourcegraph with an external database, then update the `CODEINTEL_PG*` environment variables to point to a new external database as described in the [external database documentation](../external_services/postgres.md). Again, these must not point to the same database or the Sourcegraph instance will refuse to start.
+No upgrade notes.
+## v3.21 -> v3.22
 
-### Turn off database secrets encryption
+> WARNING: **This upgrade must originate from `v3.20.1`.**
 
-> WARNING: Please delete the secret key file `/var/lib/sourcegraph/token` inside the container before attempting to upgrade to 3.21.x.
+No upgrade notes.
+## v3.20 -> v3.21
 
-In Sourcegraph version 3.20, we would automatically generate a secret key file (`/var/lib/sourcegraph/token`) inside the container for encrypting secrets stored in the database. However, it is not yet ready for general use and format of the secret key file might change. Therefore, it is best to delete the secret key file (`/var/lib/sourcegraph/token`) and turn off the database secrets encryption.
+> WARNING: **This upgrade must originate from `v3.17.2`** due to a [patched](https://github.com/sourcegraph/sourcegraph/pull/11633) [bug](https://github.com/sourcegraph/sourcegraph/issues/11618) in our release.
 
-## 3.16 -> 3.17
+**Notes**:
 
-- There was [a bug](https://github.com/sourcegraph/sourcegraph/issues/11618) in release that caused the version displayed on the `site-admin/update` page to be `0.0.0+dev` instead of `3.17.0`. This issue [was fixed](https://github.com/sourcegraph/sourcegraph/pull/11633) in the `3.17.2` release. We recommend that you avoid this issue by upgrading past `3.17.0` to `3.17.2` using the [Standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade) listed below.
+- This release introduces a second database instance, `codeintel-db`. If you have configured Sourcegraph with an external database, then update the `CODEINTEL_PG*` environment variables to point to a new external database as described in the [external database documentation](../external_services/postgres.md). Again, these must not point to the same database or the Sourcegraph instance will refuse to start.
+- **Turn off database secrets encryption**. In Sourcegraph version 3.20, we would automatically generate a secret key file (`/var/lib/sourcegraph/token`) inside the container for encrypting secrets stored in the database. However, it is not yet ready for general use and format of the secret key file might change. Therefore, it is best to delete the secret key file (`/var/lib/sourcegraph/token`) and turn off the database secrets encryption.
+
+## v3.19 -> v3.20
+
+No upgrade notes.
+
+## v3.18 -> v3.19
+
+No upgrade notes.
+
+## v3.17 -> v3.18
+
+No upgrade notes.
+
+## v3.16 -> v3.17
+
+**Patch releases**:
+
+- `v3.17.2`
+
+## v3.15 -> v3.16
+
+No upgrade notes.
+## v3.14 -> v3.15
+
+No upgrade notes.
