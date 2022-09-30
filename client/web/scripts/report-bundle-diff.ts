@@ -127,7 +127,8 @@ async function createOrUpdateComment(body: string): Promise<void> {
                 issue_number: pullRequest,
                 body,
             })
-        } catch {
+        } catch (error) {
+            console.error(error)
             console.log(
                 "Error creating comment. This can happen for PR's originating from a fork without write permissions."
             )
@@ -140,7 +141,8 @@ async function createOrUpdateComment(body: string): Promise<void> {
                 comment_id: sizeLimitComment.id,
                 body,
             })
-        } catch {
+        } catch (error) {
+            console.error(error)
             console.log(
                 "Error updating comment. This can happen for PR's originating from a fork without write permissions."
             )
