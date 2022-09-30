@@ -15,6 +15,10 @@ class CacheCandidate {
     }
 }
 
+// The 0.2 value was chosen by manually observing the behavior and confirming
+// that it seems to give relevant results without too much noise.
+const FZY_MINIMUM_SCORE_THRESHOLD = 0.2
+
 /**
  * FuzzySearch implementation that uses the original fzy filtering algorithm from https://github.com/jhawthorn/fzy.js
  */
@@ -56,7 +60,7 @@ export class CaseInsensitiveFuzzySearch extends FuzzySearch {
                         score += partScore
                     }
                 }
-                const isAcceptableScore = !isNaN(score) && isFinite(score) && score > 0.2
+                const isAcceptableScore = !isNaN(score) && isFinite(score) && score > FZY_MINIMUM_SCORE_THRESHOLD
                 if (isEmptyQuery || isAcceptableScore) {
                     candidates.push({
                         score,
