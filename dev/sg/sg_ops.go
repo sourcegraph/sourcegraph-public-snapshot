@@ -11,7 +11,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/docker"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/images"
-	sgrun "github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -28,6 +27,7 @@ var (
 		Subcommands: []*cli.Command{
 			opsUpdateImagesCommand,
 			opsTagDetailsCommand,
+			opsDeployImagesCommand,
 		},
 	}
 
@@ -71,9 +71,13 @@ var (
 	opsDeployImagesDeploymentKindFlag string
 	opsDeployImagesNamespaceFlag      string
 	opsDeployImagesCommand            = &cli.Command{
-		Name:        "deploy-images",
-		Usage:       "<helm chart name> <helm repository name> <path to values file>",
-		Description: "",
+		Name:      "deploy-images",
+		ArgsUsage: "<helm chart name> <helm repository name> <path to values file>",
+		Usage:     "Deploys images as defined on the default branch of the git repository",
+		UsageText: `
+# Deploying images for the 'sourcegraph' chart in the chart repository named 'insiders' and namespace 'sourcegraph'
+sg ops deploy-images sourcegraph insiders ./helm/values.yaml -n sourcegraph
+		`,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:        "kind",
@@ -191,15 +195,17 @@ func opsUpdateImage(ctx *cli.Context) error {
 }
 
 func opsDeployImage(ctx *cli.Context) error {
-	if opsDeployImagesDeploymentKindFlag != images.DeploymentTypeHelm {
-		return errors.New("")
+	if images.DeploymentType(opsDeployImagesDeploymentKindFlag) != images.DeploymentTypeHelm {
+		return errors.New("deploy-image currently only supports deployments of type 'helm'")
 	}
+
 	args := ctx.Args().Slice()
 	if len(args) != 3 {
 		std.Out.WriteLine(output.Styled(output.StyleWarning, "Unexpected amount of arguments provided. Expected: <helm chart name> <helm repository name> <path to values file>"))
 		return flag.ErrHelp
 	}
 
+	std.Out.Write("Getting currently deployed helm chart version")
 	currentVersionCmd := run.Cmd(ctx.Context, fmt.Sprintf("helm list --filter '%s' -o json", args[0]))
 	out, err := currentVersionCmd.Run().JQ(".[].chart")
 	if err != nil {
@@ -207,23 +213,43 @@ func opsDeployImage(ctx *cli.Context) error {
 	}
 	version := strings.ReplaceAll(string(out), fmt.Sprintf("%s-", args[0]), "")
 
-	defaultBranch, err := sgrun.TrimResult(sgrun.GitCmd("rev-parse", "--abbrev-ref", "origin/HEAD"))
+	defaultBranch, err := run.Cmd(ctx.Context, "git rev-parse --abbrev-ref origin/HEAD").Run().String()
+	if err != nil {
+		return err
+	}
 	defaultBranch = strings.ReplaceAll(defaultBranch, "origin/", "")
+	currentBranch, err := run.Cmd(ctx.Context, "git branch --show-current").Run().String()
 	if err != nil {
 		return err
 	}
-	branch, err := sgrun.TrimResult(sgrun.GitCmd("branch", "--show-current"))
-	if err != nil {
-		return err
-	}
-	if branch != defaultBranch {
+	if currentBranch != defaultBranch {
 		return errors.Newf("Can only deploy images from the default branch '%s'", defaultBranch)
 	}
+	std.Out.Write("Updating branches with latest remote changes")
+	err = run.Cmd(ctx.Context, "git remote update").Run().Wait()
+	if err != nil {
+		return err
+	}
+	revisionsBehind, err := run.Cmd(ctx.Context, "git rev-list --count HEAD..@{u}").Run().String()
+	if err != nil {
+		return err
+	}
+	revisionsAhead, err := run.Cmd(ctx.Context, "git rev-list --count @{u}..HEAD").Run().String()
+	if err != nil {
+		return err
+	}
+	if revisionsBehind != "0" || revisionsAhead != "0" {
+		return errors.Newf("Branch '%s' is not in sync with the remote. Update your local branch or merge uncommitted changes first", currentBranch)
+	}
 
-	helmCmdString := fmt.Sprintf("helm upgrade --install --values %s --version %s %s %s -n %s", args[2], version, args[0], fmt.Sprintf("%s/%s", args[0], args[1], opsDeployImagesNamespaceFlag))
-	helmUpgradeCmd, err := run.Cmd(ctx.Context, ).Run().Lines()
+	std.Out.Writef("Upgrading helm chart '%s' in repository '%s/%s' at version '%s' in namespace '%s'", args[0], args[1], args[0], version, opsDeployImagesNamespaceFlag)
+	helmCmdString := fmt.Sprintf("helm upgrade --install --values %s --version %s %s %s -n %s", args[2], version, args[0], fmt.Sprintf("%s/%s", args[1], args[0]), opsDeployImagesNamespaceFlag)
+	err = run.Cmd(ctx.Context, helmCmdString).Run().Wait()
 	if err != nil {
 		return err
 	}
 
+	std.Out.WriteSuccessf("Images deployed successfully (or no changes to deploy)")
+	// Any failed helm command returns a non-zero exit code and yields an error, so upgrade must have terminated successfully here
+	return nil
 }
