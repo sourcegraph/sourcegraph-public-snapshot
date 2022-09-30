@@ -37,6 +37,8 @@ if [ "$CHECK_BUNDLESIZE" ] && jq -e '.scripts.bundlesize' package.json >/dev/nul
         -r "${mergeBaseFile}" \
         -t ./ui/assets/compare-report.html
 
+      gsutil cp ./ui/assets/compare-report.html "gs://sourcegraph_reports/statoscope-report-${COMMIT}"
+
       yarn workspace @sourcegraph/web run report-bundle-diff \
         "${commitFile}" \
         "${mergeBaseFile}"
