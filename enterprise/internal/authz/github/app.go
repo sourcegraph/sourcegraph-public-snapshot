@@ -71,6 +71,9 @@ func newAppProvider(
 			auther.Expiry = token.GetExpiresAt()
 
 			rawConfig, err = jsonc.Edit(rawConfig, *token.Token, "token")
+			if err != nil {
+				return err
+			}
 
 			externalServicesStore.Update(context.Background(),
 				conf.Get().AuthProviders,
