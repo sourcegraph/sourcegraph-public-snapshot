@@ -1,6 +1,6 @@
 import { FC, useContext, useMemo } from 'react'
 
-import { gql, useQuery } from '@apollo/client'
+import { useQuery } from '@apollo/client'
 import { mdiClose } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 
@@ -20,41 +20,9 @@ import {
     AddInsightFormValues,
     AddInsightModalContent,
 } from './components/add-insight-modal-content/AddInsightModalContent'
+import { GET_ACCESSIBLE_INSIGHTS_LIST } from './query'
 
 import styles from './AddInsightModal.module.scss'
-
-export const GET_ACCESSIBLE_INSIGHTS_LIST = gql`
-    fragment AccessibleInsight on InsightView {
-        id
-        presentation {
-            __typename
-            ... on LineChartInsightViewPresentation {
-                title
-            }
-            ... on PieChartInsightViewPresentation {
-                title
-            }
-        }
-    }
-
-    query GetDashboardAccessibleInsights($id: ID!) {
-        dashboardInsightsIds: insightsDashboards(id: $id) {
-            nodes {
-                views {
-                    nodes {
-                        id
-                    }
-                }
-            }
-        }
-
-        accessibleInsights: insightViews {
-            nodes {
-                ...AccessibleInsight
-            }
-        }
-    }
-`
 
 export interface AddInsightModalProps {
     dashboard: CustomInsightDashboard

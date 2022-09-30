@@ -25,7 +25,7 @@ import {
     GET_INSIGHTS_DASHBOARD_OWNERS_GQL,
 } from '../../../core/backend/gql-backend'
 
-import { GET_ACCESSIBLE_INSIGHTS_LIST } from './components/add-insight-modal/AddInsightModal'
+import { GET_ACCESSIBLE_INSIGHTS_LIST } from './components/add-insight-modal'
 import { DashboardsContentPage } from './DashboardsContentPage'
 
 type UserEvent = typeof userEvent

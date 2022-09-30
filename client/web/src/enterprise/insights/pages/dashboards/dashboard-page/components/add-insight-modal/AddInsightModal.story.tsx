@@ -10,7 +10,8 @@ import { WebStory } from '../../../../../../../components/WebStory'
 import { GetDashboardAccessibleInsightsResult } from '../../../../../../../graphql-operations'
 import { CustomInsightDashboard, InsightsDashboardOwnerType, InsightsDashboardType } from '../../../../../core'
 
-import { AddInsightModal, GET_ACCESSIBLE_INSIGHTS_LIST } from './AddInsightModal'
+import { AddInsightModal } from './AddInsightModal'
+import { GET_ACCESSIBLE_INSIGHTS_LIST } from './query'
 
 const decorator: DecoratorFn = story => <WebStory>{() => story()}</WebStory>
 
