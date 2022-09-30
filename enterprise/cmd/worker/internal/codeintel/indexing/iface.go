@@ -12,7 +12,6 @@ import (
 	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -26,10 +25,6 @@ type DBStore interface {
 	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (int, error)
 }
 
-type DBStoreShim struct {
-	*dbstore.Store
-}
-
 type IndexingSettingStore interface {
 	GetLatestSchemaSettings(context.Context, api.SettingsSubject) (*schema.Settings, error)
 }
@@ -37,10 +32,6 @@ type IndexingSettingStore interface {
 type IndexingRepoStore interface {
 	ListMinimalRepos(ctx context.Context, opt database.ReposListOptions) (results []types.MinimalRepo, err error)
 	ListIndexableRepos(ctx context.Context, opts database.ListIndexableReposOptions) (results []types.MinimalRepo, err error)
-}
-
-func (s *DBStoreShim) With(other basestore.ShareableStore) DBStore {
-	return &DBStoreShim{s.Store.With(s)}
 }
 
 type RepoUpdaterClient interface {

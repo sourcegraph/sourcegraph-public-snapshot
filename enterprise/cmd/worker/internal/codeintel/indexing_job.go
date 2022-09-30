@@ -59,7 +59,6 @@ func (j *indexingJob) Routines(startupCtx context.Context, logger log.Logger) ([
 	if err != nil {
 		return nil, err
 	}
-	dbStoreShim := &indexing.DBStoreShim{Store: dbStore}
 
 	rawCodeIntelDB, err := codeintel.InitCodeIntelDatabase()
 	if err != nil {
@@ -94,8 +93,8 @@ func (j *indexingJob) Routines(startupCtx context.Context, logger log.Logger) ([
 	autoindexingSvc := autoindexing.GetService(databaseDB, uploadSvc, gitserverClient, repoUpdaterClient)
 
 	routines := []goroutine.BackgroundRoutine{
-		indexing.NewDependencySyncScheduler(dbStoreShim, dependencySyncStore, extSvcStore, syncMetrics, observationContext),
-		indexing.NewDependencyIndexingScheduler(dbStoreShim, repoStore, dependencyIndexingStore, extSvcStore, gitserverRepoStore, repoUpdaterClient, autoindexingSvc, indexingConfigInst.DependencyIndexerSchedulerPollInterval, indexingConfigInst.DependencyIndexerSchedulerConcurrency, queueingMetrics),
+		indexing.NewDependencySyncScheduler(dbStore, dependencySyncStore, extSvcStore, syncMetrics, observationContext),
+		indexing.NewDependencyIndexingScheduler(dbStore, repoStore, dependencyIndexingStore, extSvcStore, gitserverRepoStore, repoUpdaterClient, autoindexingSvc, indexingConfigInst.DependencyIndexerSchedulerPollInterval, indexingConfigInst.DependencyIndexerSchedulerConcurrency, queueingMetrics),
 	}
 
 	return routines, nil
