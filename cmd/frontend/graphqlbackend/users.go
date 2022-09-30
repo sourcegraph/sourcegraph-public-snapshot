@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	"github.com/sourcegraph/log"
@@ -33,7 +32,6 @@ func (r *schemaResolver) Users(args *usersArgs) *userConnectionResolver {
 		opt.Tag = *args.Tag
 	}
 	if args.InactiveSince != nil {
-		fmt.Printf("inactiveSince=%s\n", args.InactiveSince.Time)
 		opt.InactiveSince = args.InactiveSince.Time
 	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
