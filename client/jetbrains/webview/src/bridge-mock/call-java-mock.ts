@@ -18,11 +18,11 @@ const savedSearchFromLocalStorage = localStorage.getItem('savedSearch')
 let savedSearch: Search = savedSearchFromLocalStorage
     ? (JSON.parse(savedSearchFromLocalStorage) as Search)
     : {
-        query: 'r:github.com/sourcegraph/sourcegraph jetbrains',
-        caseSensitive: false,
-        patternType: SearchPatternType.literal,
-        selectedSearchContextSpec: 'global',
-    }
+          query: 'r:github.com/sourcegraph/sourcegraph jetbrains',
+          caseSensitive: false,
+          patternType: SearchPatternType.literal,
+          selectedSearchContextSpec: 'global',
+      }
 
 const webviewOverlay = document.querySelector('#webview-overlay') as HTMLPreElement
 const codeDetailsNode = document.querySelector('#code-details') as HTMLPreElement

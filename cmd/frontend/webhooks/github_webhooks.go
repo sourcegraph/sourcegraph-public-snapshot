@@ -135,7 +135,7 @@ func (h *GitHubWebhook) getExternalService(r *http.Request, body []byte) (*types
 	}
 	gc, ok := c.(*schema.GitHubConnection)
 	if !ok {
-		return nil, errors.Errorf("invalid configuration, recieved github webhook for non-github external service: %v", externalServiceID)
+		return nil, errors.Errorf("invalid configuration, received github webhook for non-github external service: %v", externalServiceID)
 	}
 
 	// 🚨 SECURITY: Try to authenticate the request with any of the stored secrets

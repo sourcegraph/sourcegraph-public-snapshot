@@ -20,9 +20,8 @@ func TestHover(t *testing.T) {
 	mockStore := NewMockStore()
 	mockLsifStore := NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
-	mockDBStore := NewMockDBStore()
 	mockGitserverClient := NewMockGitserverClient()
-	mockGitServer := codeintelgitserver.New(database.NewMockDB(), mockDBStore, &observation.TestContext)
+	mockGitServer := codeintelgitserver.New(database.NewMockDB(), &observation.TestContext)
 
 	// Init service
 	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, &observation.TestContext)
@@ -75,9 +74,8 @@ func TestHoverRemote(t *testing.T) {
 	mockStore := NewMockStore()
 	mockLsifStore := NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
-	mockDBStore := NewMockDBStore()
 	mockGitserverClient := NewMockGitserverClient()
-	mockGitServer := codeintelgitserver.New(database.NewMockDB(), mockDBStore, &observation.TestContext)
+	mockGitServer := codeintelgitserver.New(database.NewMockDB(), &observation.TestContext)
 
 	// Init service
 	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, &observation.TestContext)

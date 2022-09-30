@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifuploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
@@ -97,8 +96,7 @@ func main() {
 	close(ready)
 
 	// Initialize stores
-	dbStore := dbstore.NewWithDB(db, observationContext)
-	gitserverClient := gitserver.New(db, dbStore, observationContext)
+	gitserverClient := gitserver.New(db, observationContext)
 
 	uploadStore, err := lsifuploadstore.New(context.Background(), config.LSIFUploadStoreConfig, observationContext)
 	if err != nil {
