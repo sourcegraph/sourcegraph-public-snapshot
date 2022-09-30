@@ -82,11 +82,11 @@ describe('ReferencesPanel', () => {
         )
         await waitForNextApolloResponse()
         await waitForNextApolloResponse()
-        return result
+        return { result, externalHistory: fakeExternalHistory }
     }
 
     it('renders definitions correctly', async () => {
-        const result = await renderReferencesPanel()
+        const { result } = await renderReferencesPanel()
 
         expect(result.getByText('Definitions')).toBeVisible()
 
@@ -100,7 +100,7 @@ describe('ReferencesPanel', () => {
     })
 
     it('renders references correctly', async () => {
-        const result = await renderReferencesPanel()
+        const { result } = await renderReferencesPanel()
 
         expect(result.getByText('References')).toBeVisible()
 
@@ -114,12 +114,11 @@ describe('ReferencesPanel', () => {
     })
 
     it('renders a code view when clicking on a location', async () => {
-        const result = await renderReferencesPanel()
+        const { result, externalHistory } = await renderReferencesPanel()
 
         const definitionsList = result.getByTestId('definitions')
         const referencesList = result.getByTestId('references')
 
-        console.log({ referencesList })
         const referenceButton = within(referencesList).getByTestId('reference-item-diff/diff.go-0')
         const fullReferenceURL =
             '/github.com/sourcegraph/go-diff@9d1f353a285b3094bc33bdae277a19aedabe8b71/-/blob/diff/diff.go?L16:2-16:10'
@@ -155,5 +154,13 @@ describe('ReferencesPanel', () => {
         // Assert the code view is rendered, by doing a partial match against its content
         const codeView = within(rightPane).getByRole('table')
         expect(codeView).toHaveTextContent('package diff import')
+
+        // Assert the current URL points at the reference panel
+        expect(externalHistory.createHref(externalHistory.location)).toBe(
+            '/github.com/sourcegraph/go-diff/-/blob/diff/diff.go?L16:2&subtree=true#tab=references'
+        )
+        // Click on reference the second time promotes the active location to the URL (and main blob view)
+        fireEvent.click(referenceButton)
+        expect(externalHistory.createHref(externalHistory.location)).toBe(fullReferenceURL)
     })
 })
