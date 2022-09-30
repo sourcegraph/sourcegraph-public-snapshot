@@ -156,6 +156,11 @@ func HTTPMiddleware(logger log.Logger, next http.Handler, siteConfig conftypes.S
 		ext.HTTPUrl.Set(span, r.URL.String())
 		ext.HTTPMethod.Set(span, r.Method)
 		span.SetTag("http.referer", r.Header.Get("referer"))
+		camel, ok := ctx.Value("sampling-camel").(bool)
+		if camel && ok {
+			println("🐪")
+			span.SetTag("alwaysOn", "true")
+		}
 		defer span.Finish()
 
 		// get trace ID
