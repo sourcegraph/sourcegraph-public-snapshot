@@ -37,20 +37,24 @@ func (j *commitGraphUpdaterJob) Config() []env.Config {
 }
 
 func (j *commitGraphUpdaterJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	db, err := workerdb.Init()
+	rawDB, err := workerdb.Init()
 	if err != nil {
 		return nil, err
 	}
-	lsifStore, err := codeintel.InitLSIFStore()
+	db := database.NewDB(logger, rawDB)
+
+	rawCodeIntelDB, err := codeintel.InitCodeIntelDatabase()
 	if err != nil {
 		return nil, err
 	}
+	codeIntelDB := database.NewDB(logger, rawCodeIntelDB)
+
 	gitserver, err := codeintel.InitGitserverClient()
 	if err != nil {
 		return nil, err
 	}
 
-	uploadSvc := uploads.GetService(database.NewDB(logger, db), database.NewDBWith(logger, lsifStore), gitserver)
+	uploadSvc := uploads.GetService(db, codeIntelDB, gitserver)
 
 	commitgraph.NewOperations(uploadSvc, &observation.Context{
 		Logger:     logger,

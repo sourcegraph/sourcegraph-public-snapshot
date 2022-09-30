@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
+	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/background/backfill"
@@ -32,23 +33,24 @@ func (j *uploadBackfillerJob) Config() []env.Config {
 }
 
 func (j *uploadBackfillerJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	dbStore, err := codeintel.InitDBStore()
+	rawDB, err := workerdb.Init()
 	if err != nil {
 		return nil, err
 	}
+	db := database.NewDB(logger, rawDB)
+
+	rawCodeIntelDB, err := codeintel.InitCodeIntelDatabase()
+	if err != nil {
+		return nil, err
+	}
+	codeIntelDB := database.NewDB(logger, rawCodeIntelDB)
 
 	gitserverClient, err := codeintel.InitGitserverClient()
 	if err != nil {
 		return nil, err
 	}
 
-	lsifStore, err := codeintel.InitLSIFStore()
-	if err != nil {
-		return nil, err
-	}
-
-	db := database.NewDBWith(logger, dbStore)
-	uploadSvc := uploads.GetService(db, database.NewDBWith(logger, lsifStore), gitserverClient)
+	uploadSvc := uploads.GetService(db, codeIntelDB, gitserverClient)
 
 	return []goroutine.BackgroundRoutine{
 		backfill.NewCommittedAtBackfiller(uploadSvc),

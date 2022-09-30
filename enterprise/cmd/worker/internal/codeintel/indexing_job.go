@@ -61,11 +61,11 @@ func (j *indexingJob) Routines(startupCtx context.Context, logger log.Logger) ([
 	}
 	dbStoreShim := &indexing.DBStoreShim{Store: dbStore}
 
-	lsifStore, err := codeintel.InitLSIFStore()
+	rawCodeIntelDB, err := codeintel.InitCodeIntelDatabase()
 	if err != nil {
 		return nil, err
 	}
-	codeIntelLsifStore := database.NewDBWith(logger, lsifStore)
+	codeIntelDB := database.NewDB(logger, rawCodeIntelDB)
 
 	dependencySyncStore, err := codeintel.InitDependencySyncingStore()
 	if err != nil {
@@ -90,7 +90,7 @@ func (j *indexingJob) Routines(startupCtx context.Context, logger log.Logger) ([
 	}
 
 	// Get services
-	uploadSvc := uploads.GetService(databaseDB, codeIntelLsifStore, gitserverClient)
+	uploadSvc := uploads.GetService(databaseDB, codeIntelDB, gitserverClient)
 	autoindexingSvc := autoindexing.GetService(databaseDB, uploadSvc, gitserverClient, repoUpdaterClient)
 
 	routines := []goroutine.BackgroundRoutine{

@@ -46,16 +46,17 @@ func (j *autoindexingScheduler) Routines(startupCtx context.Context, logger log.
 	}
 
 	// Initialize stores
-	db, err := workerdb.Init()
+	rawDB, err := workerdb.Init()
 	if err != nil {
 		return nil, err
 	}
-	databaseDB := database.NewDB(logger, db)
+	db := database.NewDB(logger, rawDB)
 
-	lsifStore, err := codeintel.InitLSIFStore()
+	rawCodeIntelDB, err := codeintel.InitCodeIntelDatabase()
 	if err != nil {
 		return nil, err
 	}
+	codeintelDB := database.NewDB(logger, rawCodeIntelDB)
 
 	// Initialize necessary clients
 	gitserverClient, err := codeintel.InitGitserverClient()
@@ -66,9 +67,9 @@ func (j *autoindexingScheduler) Routines(startupCtx context.Context, logger log.
 	policyMatcher := policiesEnterprise.NewMatcher(gitserverClient, policiesEnterprise.IndexingExtractor, false, true)
 
 	// Initialize services
-	uploadSvc := uploads.GetService(databaseDB, database.NewDBWith(logger, lsifStore), gitserverClient)
-	autoindexingSvc := autoindexing.GetService(databaseDB, uploadSvc, gitserverClient, repoUpdater)
-	policySvc := policies.GetService(databaseDB, uploadSvc, gitserverClient)
+	uploadSvc := uploads.GetService(db, codeintelDB, gitserverClient)
+	autoindexingSvc := autoindexing.GetService(db, uploadSvc, gitserverClient, repoUpdater)
+	policySvc := policies.GetService(db, uploadSvc, gitserverClient)
 
 	// Initialize services
 	return []goroutine.BackgroundRoutine{
