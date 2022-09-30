@@ -46,26 +46,26 @@ describe('FileSearchResult', () => {
             repository: 'github.com/golang/oauth2',
             chunkMatches: [
                 {
-                   content: '  - go test -v golang.org/x/oauth2/...',
+                    content: '  - go test -v golang.org/x/oauth2/...',
                     contentStart: {
-                       line: 4,
-                        offset: 7,
-                        column: 7,
+                        line: 4,
+                        offset: 4,
+                        column: 0,
                     },
-                  ranges: [
-                      {
-                          start: {
-                              line: 4,
-                              offset: 7,
-                              column: 7,
-                          },
-                          end: {
-                              line: 4,
-                              offset: 11,
-                              column: 11,
-                          },
-                      }
-                  ],
+                    ranges: [
+                        {
+                            start: {
+                                line: 4,
+                                offset: 7,
+                                column: 7,
+                            },
+                            end: {
+                                line: 4,
+                                offset: 11,
+                                column: 11,
+                            },
+                        },
+                    ],
                 },
             ],
         }
