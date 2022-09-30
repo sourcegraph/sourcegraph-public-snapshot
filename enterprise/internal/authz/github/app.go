@@ -88,6 +88,11 @@ func newAppProvider(
 		}
 
 		installationAuther, err = auth.NewGitHubAppInstallationAuthenticator(installationID, "", installationRefreshFunc)
+		if err != nil {
+			if err != nil {
+				return nil, errors.Wrap(err, "new GitHub App installation auther")
+			}
+		}
 	}
 
 	return &Provider{
