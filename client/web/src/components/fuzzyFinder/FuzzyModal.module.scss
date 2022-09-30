@@ -61,3 +61,17 @@
 .show-more {
     align-self: center;
 }
+
+.tab:hover {
+    cursor: pointer;
+}
+.tab {
+    flex: 2 1 auto;
+    padding-top: 0.5rem;
+}
+.tab-centered-text {
+    text-align: center;
+}
+.active-tab {
+    background-color: var(--color-bg-2);
+}

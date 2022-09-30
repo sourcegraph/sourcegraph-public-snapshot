@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import React, { SetStateAction, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
@@ -18,7 +18,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, FeedbackPrompt, ButtonLink, PopoverTrigger, useWindowSize } from '@sourcegraph/wildcard'
+import { Button, Link, ButtonLink, useWindowSize, FeedbackPrompt, PopoverTrigger } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -26,6 +26,7 @@ import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { ActivationDropdown } from '../components/ActivationDropdown'
 import { BrandLogo } from '../components/branding/BrandLogo'
+import { getFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinderFeatureFlag'
 import { WebCommandListPopoverButton } from '../components/shared'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { useHandleSubmitFeedback, useRoutesMatch } from '../hooks'
@@ -71,6 +72,8 @@ export interface GlobalNavbarProps
     enableLegacyExtensions?: boolean
     branding?: typeof window.context.branding
     showKeyboardShortcutsHelp: () => void
+
+    setFuzzyFinderIsVisible: React.Dispatch<SetStateAction<boolean>>
 }
 
 /**
@@ -105,6 +108,19 @@ function useCalculatedNavLinkVariant(
     return navLinkVariant
 }
 
+function FuzzyFinderNavItem(setFuzzyFinderVisible: React.Dispatch<SetStateAction<boolean>>): JSX.Element {
+    return (
+        <NavAction className="d-none d-sm-flex">
+            <Button
+                onClick={() => setFuzzyFinderVisible(true)}
+                className={classNames(styles.fuzzyFinderItem)}
+                size="sm"
+            >
+                &#8984;K
+            </Button>
+        </NavAction>
+    )
+}
 const AnalyticsNavItem: React.FunctionComponent = () => {
     const [isAdminAnalyticsDisabled] = useFeatureFlag('admin-analytics-disabled', false)
 
@@ -172,6 +188,8 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
         ]
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
     }, [searchContextsEnabled, showSearchContext])
+
+    const { fuzzyFinderNavbar } = getFuzzyFinderFeatureFlags(props.settingsCascade.final) ?? false
 
     return (
         <>
@@ -262,6 +280,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         </>
                     )}
                     {props.authenticatedUser?.siteAdmin && <AnalyticsNavItem />}
+                    {fuzzyFinderNavbar && FuzzyFinderNavItem(props.setFuzzyFinderIsVisible)}
                     {props.authenticatedUser && (
                         <NavAction>
                             <FeedbackPrompt onSubmit={handleSubmitFeedback} productResearchEnabled={true}>
