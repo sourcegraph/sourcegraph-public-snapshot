@@ -13,8 +13,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	autoindexingShared "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
-	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -162,23 +160,23 @@ func (f fileInfo) Mode() os.FileMode {
 func (f fileInfo) ModTime() time.Time { return time.Now() }
 func (f fileInfo) Sys() any           { return any(nil) }
 
-func convertSharedIndexesWithRepositoryNamespaceToDBStoreIndexesWithRepositoryNamespace(shared autoindexingShared.IndexesWithRepositoryNamespace) dbstore.IndexesWithRepositoryNamespace {
-	indexes := make([]dbstore.Index, 0, len(shared.Indexes))
+func convertSharedIndexesWithRepositoryNamespaceToDBStoreIndexesWithRepositoryNamespace(shared autoindexingShared.IndexesWithRepositoryNamespace) IndexesWithRepositoryNamespace {
+	indexes := make([]types.Index, 0, len(shared.Indexes))
 	for _, index := range shared.Indexes {
 		indexes = append(indexes, convertSharedIndexToDBStoreIndex(index))
 	}
 
-	return dbstore.IndexesWithRepositoryNamespace{
+	return IndexesWithRepositoryNamespace{
 		Root:    shared.Root,
 		Indexer: shared.Indexer,
 		Indexes: indexes,
 	}
 }
 
-func convertSharedIndexToDBStoreIndex(index types.Index) store.Index {
-	dockerSteps := make([]store.DockerStep, 0, len(index.DockerSteps))
+func convertSharedIndexToDBStoreIndex(index types.Index) types.Index {
+	dockerSteps := make([]types.DockerStep, 0, len(index.DockerSteps))
 	for _, step := range index.DockerSteps {
-		dockerSteps = append(dockerSteps, store.DockerStep(step))
+		dockerSteps = append(dockerSteps, types.DockerStep(step))
 	}
 
 	executionLogs := make([]workerutil.ExecutionLogEntry, 0, len(index.ExecutionLogs))
@@ -186,7 +184,7 @@ func convertSharedIndexToDBStoreIndex(index types.Index) store.Index {
 		executionLogs = append(executionLogs, workerutil.ExecutionLogEntry(log))
 	}
 
-	return store.Index{
+	return types.Index{
 		ID:                 index.ID,
 		Commit:             index.Commit,
 		QueuedAt:           index.QueuedAt,

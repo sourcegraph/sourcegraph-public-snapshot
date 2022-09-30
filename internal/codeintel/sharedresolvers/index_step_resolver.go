@@ -1,6 +1,9 @@
 package sharedresolvers
 
-import "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+import (
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+)
 
 type IndexStepResolver interface {
 	IndexerArgs() []string
@@ -11,10 +14,10 @@ type IndexStepResolver interface {
 type indexStepResolver struct {
 	svc   AutoIndexingService
 	index types.Index
-	entry *types.ExecutionLogEntry
+	entry *workerutil.ExecutionLogEntry
 }
 
-func NewIndexStepResolver(svc AutoIndexingService, index types.Index, entry *types.ExecutionLogEntry) IndexStepResolver {
+func NewIndexStepResolver(svc AutoIndexingService, index types.Index, entry *workerutil.ExecutionLogEntry) IndexStepResolver {
 	return &indexStepResolver{
 		svc:   svc,
 		index: index,

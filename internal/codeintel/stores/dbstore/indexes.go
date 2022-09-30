@@ -1,47 +1,16 @@
 package dbstore
 
 import (
-	"time"
-
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-// Index is a subset of the lsif_indexes table and stores both processed and unprocessed
-// records.
-type Index struct {
-	ID                 int                            `json:"id"`
-	Commit             string                         `json:"commit"`
-	QueuedAt           time.Time                      `json:"queuedAt"`
-	State              string                         `json:"state"`
-	FailureMessage     *string                        `json:"failureMessage"`
-	StartedAt          *time.Time                     `json:"startedAt"`
-	FinishedAt         *time.Time                     `json:"finishedAt"`
-	ProcessAfter       *time.Time                     `json:"processAfter"`
-	NumResets          int                            `json:"numResets"`
-	NumFailures        int                            `json:"numFailures"`
-	RepositoryID       int                            `json:"repositoryId"`
-	LocalSteps         []string                       `json:"local_steps"`
-	RepositoryName     string                         `json:"repositoryName"`
-	DockerSteps        []DockerStep                   `json:"docker_steps"`
-	Root               string                         `json:"root"`
-	Indexer            string                         `json:"indexer"`
-	IndexerArgs        []string                       `json:"indexer_args"` // TODO - convert this to `IndexCommand string`
-	Outfile            string                         `json:"outfile"`
-	ExecutionLogs      []workerutil.ExecutionLogEntry `json:"execution_logs"`
-	Rank               *int                           `json:"placeInQueue"`
-	AssociatedUploadID *int                           `json:"associatedUpload"`
-}
-
-func (i Index) RecordID() int {
-	return i.ID
-}
-
-func scanIndex(s dbutil.Scanner) (index Index, err error) {
+func scanIndex(s dbutil.Scanner) (index types.Index, err error) {
 	var executionLogs []dbworkerstore.ExecutionLogEntry
 	if err := s.Scan(
 		&index.ID,
@@ -76,12 +45,6 @@ func scanIndex(s dbutil.Scanner) (index Index, err error) {
 	return index, nil
 }
 
-const indexAssociatedUploadIDQueryFragment = `
-(
-	SELECT MAX(id) FROM lsif_uploads WHERE associated_index_id = u.id
-) AS associated_upload_id
-`
-
 var indexColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("u.id"),
 	sqlf.Sprintf("u.commit"),
@@ -103,11 +66,5 @@ var indexColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf(`u.execution_logs`),
 	sqlf.Sprintf("NULL"),
 	sqlf.Sprintf(`u.local_steps`),
-	sqlf.Sprintf(indexAssociatedUploadIDQueryFragment),
-}
-
-type IndexesWithRepositoryNamespace struct {
-	Root    string
-	Indexer string
-	Indexes []Index
+	sqlf.Sprintf(`(SELECT MAX(id) FROM lsif_uploads WHERE associated_index_id = u.id) AS associated_upload_id`),
 }

@@ -3,7 +3,6 @@ package sharedresolvers
 import (
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 )
 
@@ -14,11 +13,11 @@ type LSIFIndexesWithRepositoryNamespaceResolver interface {
 }
 
 type lsifIndexesWithRepositoryNamespaceResolver struct {
-	indexesSummary dbstore.IndexesWithRepositoryNamespace
+	indexesSummary IndexesWithRepositoryNamespace
 	indexResolvers []LSIFIndexResolver
 }
 
-func NewLSIFIndexesWithRepositoryNamespaceResolver(indexesSummary dbstore.IndexesWithRepositoryNamespace, indexResolvers []LSIFIndexResolver) LSIFIndexesWithRepositoryNamespaceResolver {
+func NewLSIFIndexesWithRepositoryNamespaceResolver(indexesSummary IndexesWithRepositoryNamespace, indexResolvers []LSIFIndexResolver) LSIFIndexesWithRepositoryNamespaceResolver {
 	return &lsifIndexesWithRepositoryNamespaceResolver{
 		indexesSummary: indexesSummary,
 		indexResolvers: indexResolvers,
