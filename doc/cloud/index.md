@@ -91,7 +91,7 @@ As part of this service you will receive a number of benefits from our team, inc
 ## Health monitoring, support, and SLAs
 
 - Instance performance and health [monitored](../admin/observability/index.md) by our team's on-call engineers.
-- [Responding to support requests and maintaining SLAs](https://handbook.sourcegraph.com/support#for-customers-with-managed-instances)
+- [Support and SLAs](https://handbook.sourcegraph.com/support#for-customers-with-managed-instances).
 
 ## Backup and restore
 
