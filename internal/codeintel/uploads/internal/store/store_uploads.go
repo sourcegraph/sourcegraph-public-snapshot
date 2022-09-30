@@ -577,7 +577,11 @@ const softDeleteExpiredUploadsQuery = `
 WITH candidates AS (
 	SELECT u.id
 	FROM lsif_uploads u
-	WHERE u.state = 'completed' AND u.expired AND u.reference_count = 0
+	JOIN lsif_uploads_reference_counts urc ON urc.upload_id = u.id
+	WHERE
+		u.state = 'completed' AND
+		u.expired AND
+		urc.reference_count = 0
 	-- Lock these rows in a deterministic order so that we don't
 	-- deadlock with other processes updating the lsif_uploads table.
 	ORDER BY u.id FOR UPDATE
@@ -758,7 +762,13 @@ const backfillReferenceCountBatchQuery = `
 -- source: internal/codeintel/uploads/internal/store/store_uploads.go:BackfillReferenceCountBatch
 SELECT u.id
 FROM lsif_uploads u
-WHERE u.state = 'completed' AND u.reference_count IS NULL
+WHERE
+	u.state = 'completed' AND
+	NOT EXISTS (
+		SELECT 1
+		FROM lsif_uploads_reference_counts urc
+		WHERE urc.upload_id = u.id
+	)
 ORDER BY u.id
 FOR UPDATE SKIP LOCKED
 LIMIT %s
@@ -947,7 +957,7 @@ canonical_package_reference_counts AS (
 	WHERE ru.rank = 1
 ),
 
--- Count (and ranks) the set of edges that cross over from the target list of uploads
+-- Count (and rank) the set of edges that cross over from the target list of uploads
 -- to existing uploads that provide a dependent package. This is the modifier by which
 -- dependency reference counts must be altered in order for existing package reference
 -- counts to remain up-to-date.
@@ -981,11 +991,10 @@ canonical_dependency_reference_counts AS (
 	GROUP BY rc.id
 ),
 
--- Determine the set of reference count values to write to the lsif_uploads table, then
--- lock all of the affected rows in a deterministic order. This should prevent hitting
--- deadlock conditions when multiple bulk operations are happening over intersecting
--- rows of the same table.
-locked_uploads AS (
+-- Determine the set of reference count values to write to the lsif_uploads_reference_counts
+-- table. We will actually persist these values in two steps: a distinct insert and a distinct
+-- update to minimize lock contention on existing rows.
+calculated_reference_counts AS (
 	SELECT
 		u.id,
 
@@ -994,7 +1003,7 @@ locked_uploads AS (
 		-- this row is a dependency of the target upload list and we only be incrementally
 		-- modifying the row's reference count.
 		--
-		CASE WHEN ru.id IS NOT NULL THEN COALESCE(pkg_refcount.count, 0) ELSE u.reference_count END +
+		CASE WHEN ru.id IS NOT NULL THEN COALESCE(pkg_refcount.count, 0) ELSE urc.reference_count END +
 
 		-- If ru.id IN canonical_dependency_reference_counts, then we incrementally modify
 		-- the row's reference count proportional the number of additional dependent edges
@@ -1002,18 +1011,41 @@ locked_uploads AS (
 		-- to specify if we are adding or removing a set of upload records.
 		COALESCE(dep_refcount.count, 0) * %s AS reference_count
 	FROM lsif_uploads u
+	LEFT JOIN lsif_uploads_reference_counts urc ON urc.upload_id = u.id
 	LEFT JOIN ranked_uploads_providing_packages ru ON ru.id = u.id
 	LEFT JOIN canonical_package_reference_counts pkg_refcount ON pkg_refcount.id = u.id
 	LEFT JOIN canonical_dependency_reference_counts dep_refcount ON dep_refcount.id = u.id
 	-- Prevent creating no-op updates for every row in the table
 	WHERE ru.id IS NOT NULL OR dep_refcount.id IS NOT NULL
-	ORDER BY u.id FOR UPDATE
+),
+
+-- Insert reference counts for uploads that don't already exist
+new_reference_counts AS (
+	INSERT INTO lsif_uploads_reference_counts (upload_id, reference_count)
+	SELECT crc.id, crc.reference_count FROM calculated_reference_counts crc
+	ON CONFLICT DO NOTHING
+	RETURNING upload_id AS id
+),
+
+-- Deterministically order the reference counts that already exist but need to be
+-- updated. This ordering/locking sequence should prevent hitting deadlock conditions
+-- when multiple bulk operations are happening over intersecting rows of the same table.
+
+locked_updates AS (
+	SELECT
+		urc.upload_id,
+		crc.reference_count
+	FROM lsif_uploads_reference_counts urc
+	JOIN calculated_reference_counts crc ON crc.id = urc.upload_id
+	WHERE urc.upload_id NOT IN (SELECT id FROM new_reference_counts)
+	ORDER BY urc.upload_id
+	FOR UPDATE
 )
 
--- Perform deterministically ordered update
-UPDATE lsif_uploads u
+-- Perform the update actual
+UPDATE lsif_uploads_reference_counts urc
 SET reference_count = lu.reference_count
-FROM locked_uploads lu WHERE lu.id = u.id
+FROM locked_updates lu WHERE lu.upload_id = urc.upload_id
 `
 
 // UpdateUploadsVisibleToCommits uses the given commit graph and the tip of non-stale branches and tags to determine the
