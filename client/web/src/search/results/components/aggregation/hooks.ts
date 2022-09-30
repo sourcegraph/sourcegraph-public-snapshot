@@ -1,14 +1,16 @@
-import { useCallback, useLayoutEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import { gql, useQuery } from '@apollo/client'
 import { useHistory, useLocation } from 'react-router'
 
-import { SearchAggregationMode } from '@sourcegraph/shared/src/graphql-operations'
+import { NotAvailableReasonType, SearchAggregationMode } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
+import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { GetSearchAggregationResult, GetSearchAggregationVariables } from '../../../../graphql-operations'
 
 import { AGGREGATION_MODE_URL_KEY, AGGREGATION_UI_MODE_URL_KEY } from './constants'
+import { GroupResultsPing } from './pings'
 import { AggregationUIMode } from './types'
 
 interface URLStateOptions<State, SerializedState> {
@@ -317,4 +319,75 @@ export const isNonExhaustiveAggregationResults = (response?: GetSearchAggregatio
     }
 
     return response.searchQueryAggregate?.aggregations?.__typename === 'NonExhaustiveSearchAggregationResult'
+}
+
+interface UseAggregationPingsArgs {
+    aggregationMode: SearchAggregationMode | null
+    data: GetSearchAggregationResult | undefined
+    extendedTimeout: boolean
+    proactive: boolean
+    telemetryService: TelemetryService
+}
+
+export const useAggregationLimitPing = ({
+    aggregationMode,
+    data,
+    extendedTimeout,
+    proactive,
+    telemetryService,
+}: UseAggregationPingsArgs): void => {
+    // We only want to send pings when data changes
+    // so we store the previous data object for comparison
+
+    // Example scenario that would result in duplicate ProactiveLimitHit pings:
+    // 1. Aggregation times out
+    // 2. User clicks "Run aggregation" which updates extendedTimeout to true
+    // 3. This causes useEffect to run again. We still have aggregationUnavailable
+    //    because data hasn't updated yet (the request is still in flight)
+    const previousData = useRef<GetSearchAggregationResult | undefined>(data)
+
+    useEffect(() => {
+        if (!data?.searchQueryAggregate?.aggregations || data === previousData.current) {
+            return
+        }
+
+        previousData.current = data
+
+        const aggregation = data.searchQueryAggregate.aggregations
+        const aggregationType = aggregation.__typename
+        const aggregationAvailable =
+            aggregationType === 'ExhaustiveSearchAggregationResult' ||
+            aggregationType === 'NonExhaustiveSearchAggregationResult'
+        const aggregationUnavailable = aggregationType === 'SearchAggregationNotAvailable'
+
+        let pingType
+
+        if (aggregationUnavailable) {
+            const extensionAvailable = aggregation.reasonType === NotAvailableReasonType.TIMEOUT_EXTENSION_AVAILABLE
+            const noExtensionAvailable =
+                aggregation.reasonType === NotAvailableReasonType.TIMEOUT_NO_EXTENSION_AVAILABLE
+
+            if (proactive && extensionAvailable) {
+                pingType = GroupResultsPing.ProactiveLimitHit
+            }
+
+            if (noExtensionAvailable) {
+                pingType = GroupResultsPing.ExplicitLimitHit
+            }
+        }
+
+        if (aggregationAvailable) {
+            if (proactive) {
+                pingType = GroupResultsPing.ProactiveLimitSuccess
+            }
+
+            if (extendedTimeout) {
+                pingType = GroupResultsPing.ExplicitLimitSuccess
+            }
+        }
+
+        if (pingType) {
+            telemetryService.log(pingType, { aggregationMode }, { aggregationMode })
+        }
+    }, [aggregationMode, data, extendedTimeout, proactive, telemetryService])
 }

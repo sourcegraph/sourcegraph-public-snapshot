@@ -6,7 +6,6 @@ import { SearchAggregationMode, SearchPatternType } from '@sourcegraph/shared/sr
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Icon } from '@sourcegraph/wildcard'
 
-import { NotAvailableReasonType } from '../../../graphql-operations'
 import {
     AggregationChartCard,
     AggregationModeControls,
@@ -17,6 +16,7 @@ import {
     useSearchAggregationData,
     isNonExhaustiveAggregationResults,
     GroupResultsPing,
+    useAggregationLimitPing,
 } from '../components/aggregation'
 
 import styles from './SearchAggregations.module.scss'
@@ -61,51 +61,10 @@ export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
         extendedTimeout,
     })
 
+    useAggregationLimitPing({ aggregationMode, data, extendedTimeout, proactive, telemetryService })
+
     // When query is updated reset extendedTimeout as per business rules
     useEffect(() => setExtendedTimeoutLocal(false), [query])
-
-    useEffect(() => {
-        if (loading || error || !data.searchQueryAggregate.aggregations) {
-            return
-        }
-
-        const aggregation = data.searchQueryAggregate.aggregations
-        const aggregationType = aggregation.__typename
-        const aggregationAvailable =
-            aggregationType === 'ExhaustiveSearchAggregationResult' ||
-            aggregationType === 'NonExhaustiveSearchAggregationResult'
-        const aggregationUnavailable = aggregationType === 'SearchAggregationNotAvailable'
-
-        let pingType
-
-        if (aggregationUnavailable) {
-            const extensionAvailable = aggregation.reasonType === NotAvailableReasonType.TIMEOUT_EXTENSION_AVAILABLE
-            const noExtensionAvailable =
-                aggregation.reasonType === NotAvailableReasonType.TIMEOUT_NO_EXTENSION_AVAILABLE
-
-            if (proactive && extensionAvailable) {
-                pingType = GroupResultsPing.ProactiveLimitHit
-            }
-
-            if (noExtensionAvailable) {
-                pingType = GroupResultsPing.ExplicitLimitHit
-            }
-        }
-
-        if (aggregationAvailable) {
-            if (proactive) {
-                pingType = GroupResultsPing.ProactiveLimitSuccess
-            }
-
-            if (extendedTimeout) {
-                pingType = GroupResultsPing.ExplicitLimitSuccess
-            }
-        }
-
-        if (pingType) {
-            telemetryService.log(pingType, { aggregationMode }, { aggregationMode })
-        }
-    }, [aggregationMode, data, error, extendedTimeout, loading, proactive, telemetryService])
 
     const handleExtendTimeout = (): void => setExtendedTimeoutLocal(true)
 
