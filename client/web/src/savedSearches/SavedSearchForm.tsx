@@ -133,7 +133,7 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
                         <div className="mb-2">Query</div>
 
                         <LazyMonacoQueryInput
-                            className="form-control"
+                            className={classNames('form-control', styles.queryInput)}
                             editorComponent={editorComponent}
                             isLightTheme={props.isLightTheme}
                             patternType={SearchPatternType.standard}
@@ -143,7 +143,6 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
                             onChange={setQueryState}
                             globbing={false}
                             preventNewLine={true}
-                            autoFocus={true}
                             applySuggestionsOnEnter={applySuggestionsOnEnter}
                         />
                     </Label>

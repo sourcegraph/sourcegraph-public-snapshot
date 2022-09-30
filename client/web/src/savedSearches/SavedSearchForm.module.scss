@@ -7,6 +7,17 @@
     font-weight: bold;
 }
 
+.query-input {
+    display: flex;
+    align-items: center;
+    cursor: text;
+
+    &:focus-within {
+        border: 1px solid var(--input-focus-border-color);
+        box-shadow: 0 0 0 2px rgba(28, 126, 214, 0.25);
+    }
+}
+
 .submit-button {
     margin-bottom: 1rem;
 }
