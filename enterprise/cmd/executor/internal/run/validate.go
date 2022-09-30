@@ -34,7 +34,7 @@ func RunValidate(cliCtx *cli.Context, logger log.Logger, config *config.Config) 
 		return err
 	}
 
-	telemetryOptions := newTelemetryOptions(cliCtx.Context, config.UseFirecracker)
+	telemetryOptions := newTelemetryOptions(cliCtx.Context, config.UseFirecracker, logger)
 	copts := clientOptions(config, telemetryOptions)
 	client := apiclient.NewBaseClient(copts.BaseClientOptions)
 	// TODO: Validate access token.
