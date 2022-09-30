@@ -56,8 +56,15 @@ func Init(ctx context.Context, db database.DB, conf conftypes.UnifiedWatchable, 
 			return nil
 		}
 
+		hasCodeInsights := false
+		licenseErrorHasCodeInsights := licensing.Check(licensing.FeatureCodeInsights)
+		if licenseErrorHasCodeInsights == nil {
+			hasCodeInsights = true
+		}
+
 		licenseInfo := &hooks.LicenseInfo{
-			CurrentPlan: string(info.Plan()),
+			CurrentPlan:     string(info.Plan()),
+			HasCodeInsights: hasCodeInsights,
 		}
 		if info.Plan() == licensing.PlanBusiness0 {
 			const codeScaleLimit = 100 * 1024 * 1024 * 1024
