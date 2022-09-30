@@ -29,12 +29,12 @@ func RunValidate(cliCtx *cli.Context, logger log.Logger, config *config.Config) 
 		return err
 	}
 
-	telemetryOptions := newTelemetryOptions(cliCtx.Context, config.UseFirecracker)
-
 	// Validate git is of the right version.
-	if err := validateGitVersion(telemetryOptions); err != nil {
+	if err := validateGitVersion(cliCtx.Context); err != nil {
 		return err
 	}
+
+	telemetryOptions := newTelemetryOptions(cliCtx.Context, config.UseFirecracker)
 	copts := clientOptions(config, telemetryOptions)
 	client := apiclient.NewBaseClient(copts.BaseClientOptions)
 	// TODO: Validate access token.
@@ -63,16 +63,16 @@ func RunValidate(cliCtx *cli.Context, logger log.Logger, config *config.Config) 
 	return nil
 }
 
-func validateGitVersion(telemetryOptions apiclient.TelemetryOptions) error {
-	if telemetryOptions.GitVersion == "" {
-		return errors.New("git version not detected, is it installed?")
-	} else {
-		have, err := semver.NewVersion(telemetryOptions.GitVersion)
-		if err != nil {
-			return errors.Newf("failed to semver parse git version: %s", telemetryOptions.GitVersion)
-		} else if !config.MinGitVersionConstraint.Check(have) {
-			return errors.Newf("git version is too old, install at least git 2.26, current version: %s", telemetryOptions.GitVersion)
-		}
+func validateGitVersion(ctx context.Context) error {
+	gitVersion, err := getGitVersion(ctx)
+	if err != nil {
+		return errors.Wrap(err, "getting git version")
+	}
+	have, err := semver.NewVersion(gitVersion)
+	if err != nil {
+		return errors.Newf("failed to semver parse git version: %s", gitVersion)
+	} else if !config.MinGitVersionConstraint.Check(have) {
+		return errors.Newf("git version is too old, install at least git 2.26, current version: %s", gitVersion)
 	}
 	return nil
 }

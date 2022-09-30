@@ -97,9 +97,10 @@ const defaultCNIConfig = `
 }
 `
 
-// Configures the CNI explicitly and adds the isolation plugin to the chain.
-// This is to prevent cross-network communication (which currently doesn't happen
-// as we only have 1 bridge).
+// cniConfig generates a config file that configures the CNI explicitly and adds
+// the isolation plugin to the chain.
+// This is used to prevent cross-network communication (which currently doesn't
+// happen as we only have 1 bridge).
 // We also set the maximum bandwidth usable per VM to the configured value to avoid
 // abuse and to make sure multiple VMs on the same host won't starve others.
 func cniConfig(maxIngressBandwidth, maxEgressBandwidth int) string {
@@ -112,21 +113,6 @@ func cniConfig(maxIngressBandwidth, maxEgressBandwidth int) string {
 		2*maxEgressBandwidth,
 	)
 }
-
-// firecrackerKernelArgs are the arguments passed to the Linux kernel of our firecracker
-// VMs.
-//
-// Explanation of arguments passed here:
-// console: Default
-// reboot: Default
-// panic: Default
-// pci: Default
-// ip: Default
-// random.trust_cpu: Found in https://github.com/firecracker-microvm/firecracker/blob/main/docs/snapshotting/random-for-clones.md,
-// this makes RNG initialization much faster (saves ~1s on startup).
-// i8042.X: Makes boot faster, doesn't poll on the i8042 device on boot. See
-// https://github.com/firecracker-microvm/firecracker/blob/main/docs/api_requests/actions.md#intel-and-amd-only-sendctrlaltdel.
-const firecrackerKernelArgs = "console=ttyS0 reboot=k panic=1 pci=off ip=dhcp random.trust_cpu=on i8042.noaux i8042.nomux i8042.nopnp i8042.dumbkbd"
 
 // dockerDaemonConfig is a struct that marshals into a valid docker daemon config.
 type dockerDaemonConfig struct {
@@ -161,6 +147,8 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, 
 		}
 	}
 
+	// Make subdirectory called "cni" to store CNI config in. All files from a directory
+	// will be considered so this has to be it's own directory with just our config file.
 	cniConfigDir := path.Join(tmpDir, "cni")
 	err := os.Mkdir(cniConfigDir, os.ModePerm)
 	if err != nil {
@@ -175,9 +163,9 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, 
 	// Start the VM and wait for the SSH server to become available.
 	startCommand := command{
 		Key: "setup.firecracker.start",
-		// Tell ignite to use our temporary config.
-		// TODO: This requires a new ignite release.
-		Env: []string{fmt.Sprintf("CNI_CONF_DIR=%s", tmpDir)},
+		// Tell ignite to use our temporary config file for maximum isolation of
+		// envs.
+		Env: []string{fmt.Sprintf("CNI_CONF_DIR=%s", cniConfigDir)},
 		Command: flatten(
 			"ignite", "run",
 			"--runtime", "docker",
@@ -188,7 +176,7 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, 
 			"--ssh",
 			"--name", name,
 			"--kernel-image", sanitizeImage(options.FirecrackerOptions.KernelImage),
-			"--kernel-args", firecrackerKernelArgs,
+			"--kernel-args", config.FirecrackerKernelArgs,
 			"--sandbox-image", sanitizeImage(options.FirecrackerOptions.SandboxImage),
 			sanitizeImage(options.FirecrackerOptions.Image),
 		),
