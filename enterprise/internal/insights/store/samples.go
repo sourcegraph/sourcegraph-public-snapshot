@@ -187,6 +187,15 @@ func (s *sampleStore) loadRows(ctx context.Context, opts CompressedRowsOpts, den
 
 func loadRowsQuery(opts CompressedRowsOpts) *sqlf.Query {
 	baseQuery := `select spc.id, spc.repo_id, data, capture, snapshot_time, snapshot_value from series_points_compressed spc`
+	return buildQuery(baseQuery, opts)
+}
+
+func loadWriteAheadQuery(opts CompressedRowsOpts) *sqlf.Query {
+	baseQuery := "select spc.repo_id, spc.capture, spc.time, spc.value from samples_write_ahead spc"
+	return buildQuery(baseQuery, opts)
+}
+
+func buildQuery(baseQuery string, opts CompressedRowsOpts) *sqlf.Query {
 	var preds []*sqlf.Query
 	joinCond := " JOIN repo_names rn ON spc.repo_id = rn.repo_id"
 	hasJoin := false
@@ -238,47 +247,12 @@ func loadRowsQuery(opts CompressedRowsOpts) *sqlf.Query {
 	if opts.ShouldLock {
 		baseQuery += " order by spc.id FOR UPDATE"
 	}
-
-	final := sqlf.Sprintf(baseQuery, sqlf.Join(preds, "AND"))
-	// log15.Info("final", "q", final.Query(sqlf.PostgresBindVar), "args", final.Args())
-	return final
+	return sqlf.Sprintf(baseQuery, sqlf.Join(preds, "AND"))
 }
 
-func (s *sampleStore) LoadWriteAhead(ctx context.Context, opts CompressedRowsOpts, denyBitmap *roaring.Bitmap) (rows []writeAheadRecord, err error) {
-	var preds []*sqlf.Query
-	baseQuery := "select spc.repo_id, spc.capture, spc.time, spc.value from samples_write_ahead spc"
-	joinCond := " JOIN repo_names rn ON spc.repo_id = rn.repo_id"
-	hasJoin := false
-
-	if len(opts.UniversalSeriesID) != 0 {
-		preds = append(preds, sqlf.Sprintf("series_id = (select isn.id from insight_series as isn where isn.series_id = %s)", opts.UniversalSeriesID))
-	}
-	if len(opts.IncludeRepoRegex) > 0 {
-		hasJoin = true
-		for _, regex := range opts.IncludeRepoRegex {
-			if len(regex) == 0 {
-				continue
-			}
-			preds = append(preds, sqlf.Sprintf("rn.name ~ %s", regex))
-		}
-	}
-	if len(opts.ExcludeRepoRegex) > 0 {
-		hasJoin = true
-		for _, regex := range opts.ExcludeRepoRegex {
-			if len(regex) == 0 {
-				continue
-			}
-			preds = append(preds, sqlf.Sprintf("rn.name !~ %s", regex))
-		}
-	}
-	if hasJoin {
-		baseQuery += joinCond
-	}
-	if len(preds) > 0 {
-		baseQuery += " where %s"
-	}
-
-	return rows, s.query(ctx, sqlf.Sprintf(baseQuery, sqlf.Join(preds, "AND")), func(sc scanner) (err error) {
+func (s *sampleStore) loadWriteAhead(ctx context.Context, opts CompressedRowsOpts, denyBitmap *roaring.Bitmap) (rows []writeAheadRecord, err error) {
+	q := loadWriteAheadQuery(opts)
+	return rows, s.query(ctx, q, func(sc scanner) (err error) {
 		var tmp writeAheadRecord
 		if err := sc.Scan(
 			&tmp.RepoId,
@@ -313,9 +287,9 @@ func (s *sampleStore) LoadTimeseries(ctx context.Context, opts CompressedRowsOpt
 	if err != nil {
 		return nil, errors.Wrap(err, "LoadRows")
 	}
-	writeAhead, err := s.LoadWriteAhead(ctx, opts, denyBitmap)
+	writeAhead, err := s.loadWriteAhead(ctx, opts, denyBitmap)
 	if err != nil {
-		return nil, errors.Wrap(err, "LoadWriteAhead")
+		return nil, errors.Wrap(err, "loadWriteAhead")
 	}
 
 	return toTimeseries(rows, opts.UniversalSeriesID, writeAhead), nil
@@ -626,6 +600,7 @@ func toTimeseries(data []UncompressedRow, seriesId string, extra []writeAheadRec
 	}
 
 	for key, records := range extraByCapture {
+		// this is so ugly :(
 		mapped := make(map[uint32]float64)
 
 		for _, val := range records {
@@ -708,6 +683,7 @@ type writeAheadRecord struct {
 }
 
 var writeAheadColumns = []string{"series_id", "repo_id", "capture", "time", "value"}
+var writeAheadTable = "samples_write_ahead"
 
 func (s *sampleStore) AppendWriteAhead(ctx context.Context, samples []RepoSample) (err error) {
 	tx, err := s.transact(ctx)
@@ -716,7 +692,7 @@ func (s *sampleStore) AppendWriteAhead(ctx context.Context, samples []RepoSample
 	}
 	defer func() { err = tx.Done(err) }()
 
-	inserter := batch.NewInserter(ctx, tx.Handle(), "samples_write_ahead", batch.MaxNumPostgresParameters, writeAheadColumns...)
+	inserter := batch.NewInserter(ctx, tx.Handle(), writeAheadTable, batch.MaxNumPostgresParameters, writeAheadColumns...)
 	for _, sample := range samples {
 		if err = inserter.Insert(ctx, sample.SeriesId, sample.RepoId, sample.Capture, sample.Time, sample.Value); err != nil {
 			return errors.Wrap(err, "inserter.Insert")
@@ -725,6 +701,61 @@ func (s *sampleStore) AppendWriteAhead(ctx context.Context, samples []RepoSample
 	return inserter.Flush(ctx)
 }
 
-func (s *sampleStore) compact(ctx context.Context, key TimeSeriesKey) error {
+// Compact will truncate the write ahead records and compress the values for a given time series key.
+func (s *sampleStore) Compact(ctx context.Context, key TimeSeriesKey) error {
+	// consider locking the entire table?
+
+	tx, err := s.transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	type whKey struct {
+		seriesId uint32
+		repoId   uint32
+		capture  string
+		time     uint32
+	}
+
+	uniques := make(map[whKey]float64)
+
+	var preds []*sqlf.Query
+	q := "delete from samples_write_ahead where %s returning repo_id, capture, time, value;"
+	preds = append(preds, sqlf.Sprintf("series_id = %s", key.SeriesId))
+	preds = append(preds, sqlf.Sprintf("repo_id = %s", key.RepoId))
+	if key.Capture == nil {
+		preds = append(preds, sqlf.Sprintf("capture is null"))
+	} else {
+		preds = append(preds, sqlf.Sprintf("capture = %s", *key.Capture))
+	}
+
+	if err = tx.query(ctx, sqlf.Sprintf(q, sqlf.Join(preds, "AND")), func(sc scanner) (err error) {
+		var tmp whKey
+		var val float64
+		if err := sc.Scan(
+			&tmp.seriesId,
+			&tmp.repoId,
+			&tmp.capture,
+			&tmp.time,
+			&val,
+		); err != nil {
+			return err
+		}
+		if _, ok := uniques[tmp]; ok {
+			// duplicate, skip the row
+			return nil
+		}
+		uniques[tmp] = val
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	// select some rows
+	// group
+	// for each group select compressed row
+	// what do we do if there are failures writing? :sad:
+
 	return nil
 }
