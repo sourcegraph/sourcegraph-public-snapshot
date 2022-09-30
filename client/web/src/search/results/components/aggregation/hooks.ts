@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import { gql, useQuery } from '@apollo/client'
 import { useHistory, useLocation } from 'react-router'
@@ -212,6 +212,7 @@ interface SearchAggregationDataInput {
     caseSensitive: boolean
     extendedTimeout: boolean
     proactive?: boolean
+    telemetryService: TelemetryService
 }
 
 interface AggregationState {
@@ -227,7 +228,15 @@ type SearchAggregationResults =
     | { data: GetSearchAggregationResult; loading: false; error: undefined }
 
 export const useSearchAggregationData = (input: SearchAggregationDataInput): SearchAggregationResults => {
-    const { query, patternType, aggregationMode, proactive, caseSensitive, extendedTimeout } = input
+    const {
+        query,
+        patternType,
+        aggregationMode,
+        proactive = false,
+        caseSensitive,
+        extendedTimeout,
+        telemetryService,
+    } = input
 
     const [, setAggregationMode] = useAggregationSearchMode()
     const [state, setState] = useState<AggregationState>(INITIAL_STATE)
@@ -288,12 +297,27 @@ export const useSearchAggregationData = (input: SearchAggregationDataInput): Sea
         setState(state => ({ ...state, calculatedMode: null }))
     }, [aggregationQuery, patternType, extendedTimeout])
 
+    // We only want to send pings when data changes
+    // so we store the previous data object for comparison
+
+    // Example scenario that would result in duplicate ProactiveLimitHit pings:
+    // 1. Aggregation times out
+    // 2. User clicks "Run aggregation" which updates extendedTimeout to true
+    // 3. This causes hook to run again. We still have aggregationUnavailable
+    //    because data hasn't updated yet (the request is still in flight)
+    const previousData = useRef<GetSearchAggregationResult | undefined>(state.data)
+
     if (loading) {
         return { data: undefined, error: undefined, loading: true }
     }
 
     if (error) {
         return { data: state.data, error, loading: false }
+    }
+
+    if (state.data !== previousData.current) {
+        previousData.current = state.data
+        sendAggregationPing({ data: state.data, aggregationMode, extendedTimeout, proactive, telemetryService })
     }
 
     return {
@@ -322,72 +346,57 @@ export const isNonExhaustiveAggregationResults = (response?: GetSearchAggregatio
 }
 
 interface UseAggregationPingsArgs {
-    aggregationMode: SearchAggregationMode | null
     data: GetSearchAggregationResult | undefined
-    extendedTimeout: boolean
     proactive: boolean
+    extendedTimeout: boolean
     telemetryService: TelemetryService
+    aggregationMode: SearchAggregationMode | null
 }
 
-export const useAggregationLimitPing = ({
-    aggregationMode,
+function sendAggregationPing({
     data,
-    extendedTimeout,
     proactive,
+    extendedTimeout,
     telemetryService,
-}: UseAggregationPingsArgs): void => {
-    // We only want to send pings when data changes
-    // so we store the previous data object for comparison
+    aggregationMode,
+}: UseAggregationPingsArgs): void {
+    if (!data?.searchQueryAggregate.aggregations) {
+        return
+    }
 
-    // Example scenario that would result in duplicate ProactiveLimitHit pings:
-    // 1. Aggregation times out
-    // 2. User clicks "Run aggregation" which updates extendedTimeout to true
-    // 3. This causes useEffect to run again. We still have aggregationUnavailable
-    //    because data hasn't updated yet (the request is still in flight)
-    const previousData = useRef<GetSearchAggregationResult | undefined>(data)
+    const aggregation = data.searchQueryAggregate.aggregations
+    const aggregationType = aggregation.__typename
+    const aggregationAvailable =
+        aggregationType === 'ExhaustiveSearchAggregationResult' ||
+        aggregationType === 'NonExhaustiveSearchAggregationResult'
+    const aggregationUnavailable = aggregationType === 'SearchAggregationNotAvailable'
 
-    useEffect(() => {
-        if (!data?.searchQueryAggregate?.aggregations || data === previousData.current) {
-            return
+    let pingType
+
+    if (aggregationUnavailable) {
+        const extensionAvailable = aggregation.reasonType === NotAvailableReasonType.TIMEOUT_EXTENSION_AVAILABLE
+        const noExtensionAvailable = aggregation.reasonType === NotAvailableReasonType.TIMEOUT_NO_EXTENSION_AVAILABLE
+
+        if (proactive && extensionAvailable) {
+            pingType = GroupResultsPing.ProactiveLimitHit
         }
 
-        previousData.current = data
+        if (noExtensionAvailable) {
+            pingType = GroupResultsPing.ExplicitLimitHit
+        }
+    }
 
-        const aggregation = data.searchQueryAggregate.aggregations
-        const aggregationType = aggregation.__typename
-        const aggregationAvailable =
-            aggregationType === 'ExhaustiveSearchAggregationResult' ||
-            aggregationType === 'NonExhaustiveSearchAggregationResult'
-        const aggregationUnavailable = aggregationType === 'SearchAggregationNotAvailable'
-
-        let pingType
-
-        if (aggregationUnavailable) {
-            const extensionAvailable = aggregation.reasonType === NotAvailableReasonType.TIMEOUT_EXTENSION_AVAILABLE
-            const noExtensionAvailable =
-                aggregation.reasonType === NotAvailableReasonType.TIMEOUT_NO_EXTENSION_AVAILABLE
-
-            if (proactive && extensionAvailable) {
-                pingType = GroupResultsPing.ProactiveLimitHit
-            }
-
-            if (noExtensionAvailable) {
-                pingType = GroupResultsPing.ExplicitLimitHit
-            }
+    if (aggregationAvailable) {
+        if (proactive) {
+            pingType = GroupResultsPing.ProactiveLimitSuccess
         }
 
-        if (aggregationAvailable) {
-            if (proactive) {
-                pingType = GroupResultsPing.ProactiveLimitSuccess
-            }
-
-            if (extendedTimeout) {
-                pingType = GroupResultsPing.ExplicitLimitSuccess
-            }
+        if (extendedTimeout) {
+            pingType = GroupResultsPing.ExplicitLimitSuccess
         }
+    }
 
-        if (pingType) {
-            telemetryService.log(pingType, { aggregationMode }, { aggregationMode })
-        }
-    }, [aggregationMode, data, extendedTimeout, proactive, telemetryService])
+    if (pingType) {
+        telemetryService.log(pingType, { aggregationMode }, { aggregationMode })
+    }
 }

@@ -16,7 +16,6 @@ import {
     useSearchAggregationData,
     isNonExhaustiveAggregationResults,
     GroupResultsPing,
-    useAggregationLimitPing,
 } from '../components/aggregation'
 
 import styles from './SearchAggregations.module.scss'
@@ -59,9 +58,8 @@ export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
         proactive,
         caseSensitive,
         extendedTimeout,
+        telemetryService,
     })
-
-    useAggregationLimitPing({ aggregationMode, data, extendedTimeout, proactive, telemetryService })
 
     // When query is updated reset extendedTimeout as per business rules
     useEffect(() => setExtendedTimeoutLocal(false), [query])
