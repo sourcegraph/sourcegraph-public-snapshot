@@ -31,7 +31,7 @@ Browser extension telemetry data is sent only to the connected Sourcegraph insta
 - `source`: constant `CODEHOSTINTEGRATION`
 - `userCookieID`: anonymous identifier for this user (allows site admins on a private Sourcegraph instance to see a count of unique users on a daily, weekly, and monthly basis)
 - `url`: connected/configured Sourcegraph URL
-- `argument` / `publicArgument`: detected platform name (one of `chrome-extension` | `safari-extension` | `firefox-extension` | `phabricator-integration` | `bitbucket-integration` | `gitlab-integration`) and version
+- `argument` / `publicArgument`: detected platform name (one of `chrome-extension` | `safari-extension` | `firefox-extension`) and version
 
 **Following event logs are triggered from the browser extension:**
 
