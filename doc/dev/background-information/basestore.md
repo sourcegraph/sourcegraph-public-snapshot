@@ -75,7 +75,7 @@ func DoSomethingAtomicOverTwoStores(ctx context.Context, store *MyStore, otherSt
 
 The [`Store`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.25.0/-/blob/internal/database/basestore/store.go#L37:6) struct defined in [github.com/sourcegraph/sourcegraph/internal/database/basestore](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.25.0/-/tree/internal/database/basestore) can be used to quickly bootstrap the base functionalities described above.
 
-First, _embed_ a basestore pointer into your own store instance, as follows. Your store may need access to additional data for configuration or state - additional fields can be freely defined on this struct.
+First, _embed_ a basestore pointer into your own store instance, as follows. Your store may need access to additional data for configuration or state—additional fields can be freely defined on this struct.
 
 ```go
 import "github.com/sourcegraph/sourcegraph/internal/database/basestore"

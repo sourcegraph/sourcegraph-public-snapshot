@@ -26,7 +26,7 @@ Our Helm chart has a lot of sensible defaults baked into the values.yaml. Not on
 ## High-level overview of how to use Helm with Sourcegraph
 
 1. Prepare any required customizations
-   - Most environments are likely to need changes from the defaults - use the guidance in [Configuration](#configuration).
+   - Most environments are likely to need changes from the defaults—use the guidance in [Configuration](#configuration).
 1. Review the changes
    - There are [three mechanisms](#reviewing-changes) that can be used to review any customizations made, this is an optional step, but may be useful the first time you deploy Sourcegraph, for peace of mind.
 1. Select your deployment method and follow the guidance:
@@ -78,7 +78,7 @@ Providing the override file to Helm is done with the inclusion of the values fla
 ```sh
 helm upgrade --install --values ./override.yaml --version 4.4.1 sourcegraph sourcegraph/sourcegraph
 ```
-When making configuration changes, it's recommended to review the changes that will be applied - see [Reviewing Changes](#reviewing-changes).
+When making configuration changes, it's recommended to review the changes that will be applied—see [Reviewing Changes](#reviewing-changes).
 
 ### Specific Configuration Scenarios
 
@@ -464,7 +464,7 @@ helm repo add sourcegraph https://helm.sourcegraph.com/release
 
 #### Steps {#gke-steps}
 
-**1** – Create your override file and add in any configuration override settings you need - see [configuration](#configuration) for more information on override files and the options for what can be configured.
+**1** – Create your override file and add in any configuration override settings you need—see [configuration](#configuration) for more information on override files and the options for what can be configured.
 
 Add into your override file the below values to configure both your ingress hostname and your storage class. We recommend configuring Ingress to use [Container-native load balancing] to expose Sourcegraph publicly on a domain of your choosing and setting the Storage Class to use [Compute Engine persistent disk]. (For an example file see [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/gcp/override.yaml))
 
@@ -598,7 +598,7 @@ helm repo add sourcegraph https://helm.sourcegraph.com/release
 
 #### Steps {#eks-steps}
 
-**1** – Create your override file and add in any configuration override settings you need - see [configuration](#configuration) for more information on override files and the options around what can be configured.
+**1** – Create your override file and add in any configuration override settings you need—see [configuration](#configuration) for more information on override files and the options around what can be configured.
 
 We recommend adding the following values into your override file to configure Ingress to use [AWS Load Balancer Controller] to expose Sourcegraph publicly on a domain of your choosing, and to configure the Storage Class to use [AWS EBS CSI driver]. For an example, see [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/aws/override.yaml).
 
@@ -683,7 +683,7 @@ helm repo add sourcegraph https://helm.sourcegraph.com/release
 
 #### Steps {#aks-steps}
 
-**1** – Create your override file and add in any configuration override settings you need - see [configuration](#configuration) for more information on override files and the options around what can be configured.
+**1** – Create your override file and add in any configuration override settings you need—see [configuration](#configuration) for more information on override files and the options around what can be configured.
 
 Add into your override file the below values to configure both your ingress hostname and your storage class. We recommend configuring Ingress to use [Application Gateway](https://azure.microsoft.com/en-us/services/application-gateway) to expose Sourcegraph publicly on a domain of your choosing and Storage Class to use [Azure Disk CSI driver](https://docs.microsoft.com/en-us/azure/aks/azure-disk-csi). For an example see [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/azure/override.yaml).
 
@@ -769,7 +769,7 @@ helm repo add sourcegraph https://helm.sourcegraph.com/release
 
 #### Steps {#others-steps}
 
-**1** – Create your override file and add in any configuration override settings you need - see [configuration](#configuration) for more information on override files and the options around what can be configured.
+**1** – Create your override file and add in any configuration override settings you need—see [configuration](#configuration) for more information on override files and the options around what can be configured.
 
 Read <https://kubernetes.io/docs/concepts/storage/storage-classes/> to configure the `storageClass.provisioner` and `storageClass.parameters` fields for your cloud provider or consult documentation of the storage solution in your on-prem environment.
 
@@ -898,7 +898,7 @@ A [standard upgrade](../../updates/index.md#standard-upgrades) occurs between tw
 helm repo update sourcegraph
 ```
 
-1. (Optional) Review the changes that will be applied - see [Reviewing Changes](#reviewing-changes) for options.
+1. (Optional) Review the changes that will be applied—see [Reviewing Changes](#reviewing-changes) for options.
 
 1.  Install the new version:
 

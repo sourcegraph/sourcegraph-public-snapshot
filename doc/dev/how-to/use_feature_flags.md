@@ -92,7 +92,7 @@ When writing code that uses feature flags, you may wish to avoid needing to pass
 Depending on how you implement a feature flag, you can disable a feature flag to turn off a feature.
 To do so, go to `/site-admin/feature-flags`, click "Create feature flag", and create a flag corresponding to your feature flag name.
 
-There are two types of feature flags - see [How it works](#how-it-works) for more details.
+There are two types of feature flags—see [How it works](#how-it-works) for more details.
 
 Creating a feature flag can also be done with a GraphQL query like the following from `/api/console`:
 

@@ -2355,7 +2355,7 @@ Generated query for critical alert: `min((pg_up) <= 0)`
 
 **Next steps**
 
-- Drop and re-create the invalid trigger - please contact Sourcegraph to supply the trigger definition.
+- Drop and re-create the invalid trigger—please contact Sourcegraph to supply the trigger definition.
 - More help interpreting this metric is available in the [dashboards reference](./dashboards.md#postgres-invalid-indexes).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -2417,7 +2417,7 @@ Generated query for warning alert: `max((pg_exporter_last_scrape_error) >= 1)`
 
 **Next steps**
 
-- The database migration has been in progress for 5 or more minutes - please contact Sourcegraph if this persists.
+- The database migration has been in progress for 5 or more minutes—please contact Sourcegraph if this persists.
 - More help interpreting this metric is available in the [dashboards reference](./dashboards.md#postgres-migration-in-progress).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
