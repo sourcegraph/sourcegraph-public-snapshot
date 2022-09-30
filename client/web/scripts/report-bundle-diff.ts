@@ -56,6 +56,7 @@ function parseReport(commitFilename: string, mergeBaseFilename: string): Report 
 }
 
 function reportToMarkdown(report: Report): string {
+    const { diffWith, hash } = report[0]
     const initialSizeMetric = report[1]
     const totalSizeMetric = report[2]
     const asyncSizeMetric = report[3]
@@ -66,13 +67,15 @@ function reportToMarkdown(report: Report): string {
     const asyncSize = describeMetric(asyncSizeMetric, 10000) // 10kb
     const modules = describeMetric(modulesMetric, 0)
 
+    const url = `https://storage.cloud.google.com/sourcegraph_reports/statoscope-report-${process.env.BUILDKITE_COMMIT}#diff&diffWith=${diffWith}&hash=${hash}`
+
     return `${COMMENT_HEADING}
 
 | Initial size | Total size | Async size | Modules |
 | --- | --- | --- | --- |
 | ${initialSize} | ${totalSize} | ${asyncSize} | ${modules} |
 
-[View change in Statoscope report](#)
+[View change in Statoscope report](${url})
 
 <details>
 <summary>See raw data and explaination</summary>
