@@ -227,7 +227,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			trivyScanCandidateImage(executorVMImage, c.candidateImageTag()),
 			buildExecutor(c, true),
 			buildExecutorDockerMirror(c),
-			// wait,
+			wait,
 			publishFinalDockerImage(c, executorVMImage),
 			publishExecutor(c, true),
 			publishExecutorDockerMirror(c),

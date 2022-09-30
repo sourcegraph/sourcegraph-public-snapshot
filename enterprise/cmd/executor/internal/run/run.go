@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/ignite"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -46,9 +45,6 @@ func RunRun(cliCtx *cli.Context, logger log.Logger, cfg *config.Config) error {
 
 	apiWorkerOptions := apiWorkerOptions(cfg, telemetryOptions)
 
-	gatherer := metrics.MakeExecutorMetricsGatherer(log.Scoped("executor-worker.metrics-gatherer", ""), prometheus.DefaultGatherer, apiWorkerOptions.NodeExporterEndpoint, apiWorkerOptions.DockerRegistryNodeExporterEndpoint)
-	queueStore := apiclient.New(apiWorkerOptions.ClientOptions, gatherer, observationContext)
-
 	// TODO: This is too similar to the RunValidate func. Make it share even more code.
 	if cliCtx.Bool("verify") {
 		// Then, validate all tools that are required are installed.
@@ -64,7 +60,8 @@ func RunRun(cliCtx *cli.Context, logger log.Logger, cfg *config.Config) error {
 		// TODO: Validate access token.
 		// Validate src-cli is of a good version, rely on the connected instance to tell
 		// us what "good" means.
-		if err := validateSrcCLIVersion(cliCtx.Context, logger, queueStore); err != nil {
+		client := apiclient.NewBaseClient(apiWorkerOptions.ClientOptions.BaseClientOptions)
+		if err := validateSrcCLIVersion(cliCtx.Context, logger, client, apiWorkerOptions.ClientOptions.EndpointOptions); err != nil {
 			return err
 		}
 
@@ -86,7 +83,7 @@ func RunRun(cliCtx *cli.Context, logger log.Logger, cfg *config.Config) error {
 
 	nameSet := janitor.NewNameSet()
 	ctx, cancel := context.WithCancel(cliCtx.Context)
-	worker := worker.NewWorker(nameSet, queueStore, apiWorkerOptions, observationContext)
+	worker := worker.NewWorker(nameSet, apiWorkerOptions, observationContext)
 
 	routines := []goroutine.BackgroundRoutine{
 		worker,

@@ -14,7 +14,7 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/download"
+	"github.com/sourcegraph/sourcegraph/internal/download"
 	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -261,7 +261,7 @@ func installIgnite(cliCtx *cli.Context) error {
 		binDir = "/usr/local/bin"
 	}
 
-	_, err := download.Executable(cliCtx.Context, fmt.Sprintf("https://github.com/sourcegraph/ignite/releases/download/%s/ignite-amd64", config.DefaultIgniteVersion), path.Join(binDir, "ignite"))
+	_, err := download.Executable(cliCtx.Context, fmt.Sprintf("https://github.com/sourcegraph/ignite/releases/download/%s/ignite-amd64", config.DefaultIgniteVersion), path.Join(binDir, "ignite"), true)
 	if err != nil {
 		return err
 	}

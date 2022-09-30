@@ -17,7 +17,7 @@ import (
 
 // Executable downloads a binary from the given URL, updates the given path if different, and
 // makes the downloaded file executable.
-func Executable(ctx context.Context, url string, path string) (bool, error) {
+func Executable(ctx context.Context, url string, path string, failOn404 bool) (bool, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return false, err
@@ -30,7 +30,10 @@ func Executable(ctx context.Context, url string, path string) (bool, error) {
 
 	// Sometimes the release is available, but the binaries are not
 	if resp.StatusCode == http.StatusNotFound {
-		return false, errors.Newf("%s not found", url)
+		if failOn404 {
+			return false, errors.Newf("%s not found", url)
+		}
+		return false, nil
 	}
 
 	if resp.StatusCode != http.StatusOK {
@@ -58,7 +61,7 @@ func Executable(ctx context.Context, url string, path string) (bool, error) {
 
 // ArchivedExecutable downloads an executable that's in an archive and extracts
 // it.
-func ArchivedExecutable(ctx context.Context, url, targetFile string, fileInArchive string) error {
+func ArchivedExecutable(ctx context.Context, url, targetFile, fileInArchive string) error {
 	if ok, _ := fileExists(targetFile); ok {
 		return nil
 	}
@@ -79,7 +82,7 @@ func ArchivedExecutable(ctx context.Context, url, targetFile string, fileInArchi
 	defer resp.Body.Close()
 
 	// Create a temp directory to unarchive files to
-	tmpDirName, err := os.MkdirTemp("", "sg-binary-download*")
+	tmpDirName, err := os.MkdirTemp("", "archived-executable-download*")
 	if err != nil {
 		return err
 	}
@@ -91,7 +94,7 @@ func ArchivedExecutable(ctx context.Context, url, targetFile string, fileInArchi
 	// Only extract the file that we want
 	opts := unpack.Opts{
 		Filter: func(path string, file fs.FileInfo) bool {
-			return filepath.Clean(path) == fileInArchive && !file.IsDir()
+			return path == fileInArchive && !file.IsDir()
 		},
 	}
 	if err := unpack.Tgz(resp.Body, tmpDirName, opts); err != nil {

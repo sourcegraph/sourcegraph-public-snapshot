@@ -29,7 +29,7 @@ func RunTestVM(cliCtx *cli.Context, logger log.Logger, config *config.Config) er
 
 	var logOutput io.Writer = os.Stdout
 	if nameOnly {
-		logOutput = io.Discard
+		logOutput = os.Stderr
 	}
 	name, err := createVM(cliCtx.Context, config, repoName, revision, logOutput)
 	if err != nil {

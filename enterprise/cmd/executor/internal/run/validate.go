@@ -3,6 +3,7 @@ package run
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"os/exec"
 	"path"
@@ -13,7 +14,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -35,12 +35,12 @@ func RunValidate(cliCtx *cli.Context, logger log.Logger, config *config.Config) 
 	if err := validateGitVersion(telemetryOptions); err != nil {
 		return err
 	}
-
-	client := apiclient.New(apiWorkerOptions(config, telemetryOptions).ClientOptions, nil, &observation.TestContext)
+	copts := clientOptions(config, telemetryOptions)
+	client := apiclient.NewBaseClient(copts.BaseClientOptions)
 	// TODO: Validate access token.
 	// Validate src-cli is of a good version, rely on the connected instance to tell
 	// us what "good" means.
-	if err := validateSrcCLIVersion(cliCtx.Context, logger, client); err != nil {
+	if err := validateSrcCLIVersion(cliCtx.Context, logger, client, copts.EndpointOptions); err != nil {
 		return err
 	}
 
@@ -80,8 +80,8 @@ func validateGitVersion(telemetryOptions apiclient.TelemetryOptions) error {
 // validateSrcCLIVersion queries the latest recommended version of src-cli and makes sure it
 // matches what is installed. If not, a warning message recommending to use a different
 // version is logged.
-func validateSrcCLIVersion(ctx context.Context, logger log.Logger, client *apiclient.Client) error {
-	latestVersion, err := client.LatestSrcCLIVersion(ctx)
+func validateSrcCLIVersion(ctx context.Context, logger log.Logger, client *apiclient.BaseClient, options apiclient.EndpointOptions) error {
+	latestVersion, err := latestSrcCLIVersion(ctx, client, options)
 	if err != nil {
 		return errors.Wrap(err, "cannot retrieve latest compatible src-cli version")
 	}
@@ -112,6 +112,23 @@ func validateSrcCLIVersion(ctx context.Context, logger log.Logger, client *apicl
 	}
 
 	return nil
+}
+
+func latestSrcCLIVersion(ctx context.Context, client *apiclient.BaseClient, options apiclient.EndpointOptions) (_ string, err error) {
+	req, err := client.MakeRequest(http.MethodGet, options.URL, ".api/src-cli/version", nil)
+	if err != nil {
+		return "", err
+	}
+
+	type versionPayload struct {
+		Version string `json:"version"`
+	}
+	var v versionPayload
+	if _, err := client.DoAndDecode(ctx, req, &v); err != nil {
+		return "", err
+	}
+
+	return v.Version, nil
 }
 
 func validateToolsRequired(useFirecracker bool) error {

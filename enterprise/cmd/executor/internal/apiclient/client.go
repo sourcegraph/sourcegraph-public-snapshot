@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"net/url"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -65,34 +64,6 @@ func New(options Options, metricsGatherer prometheus.Gatherer, observationContex
 		metricsGatherer: metricsGatherer,
 		operations:      newOperations(observationContext),
 	}
-}
-
-// TODO: Should this live here?
-// TODO: Should we also add a method to download that src cli version?
-// That would only work on a non-airgapped executor though.
-func (c *Client) LatestSrcCLIVersion(ctx context.Context) (_ string, err error) {
-	u, err := makeRelativeURL(
-		c.options.EndpointOptions.URL,
-		".api/src-cli/version",
-	)
-	if err != nil {
-		return "", err
-	}
-
-	req, err := MakeJSONRequest(http.MethodGet, u, nil)
-	if err != nil {
-		return "", err
-	}
-
-	type versionPayload struct {
-		Version string `json:"version"`
-	}
-	var v versionPayload
-	if _, err := c.client.DoAndDecode(ctx, req, &v); err != nil {
-		return "", err
-	}
-
-	return v.Version, nil
 }
 
 func (c *Client) Dequeue(ctx context.Context, queueName string, job *executor.Job) (_ bool, err error) {
@@ -276,31 +247,13 @@ func (c *Client) Heartbeat(ctx context.Context, queueName string, jobIDs []int) 
 const SchemeExecutorToken = "token-executor"
 
 func (c *Client) makeRequest(method, path string, payload any) (*http.Request, error) {
-	u, err := makeRelativeURL(
-		c.options.EndpointOptions.URL,
-		c.options.PathPrefix,
-		path,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	r, err := MakeJSONRequest(method, u, payload)
+	r, err := c.client.MakeRequest(method, c.options.EndpointOptions.URL, filepath.Join(c.options.PathPrefix, path), payload)
 	if err != nil {
 		return nil, err
 	}
 
 	r.Header.Add("Authorization", fmt.Sprintf("%s %s", SchemeExecutorToken, c.options.EndpointOptions.Token))
 	return r, nil
-}
-
-func makeRelativeURL(base string, path ...string) (*url.URL, error) {
-	baseURL, err := url.Parse(base)
-	if err != nil {
-		return nil, err
-	}
-
-	return baseURL.ResolveReference(&url.URL{Path: filepath.Join(path...)}), nil
 }
 
 func intsToString(ints []int) string {

@@ -8,19 +8,19 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
+	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-// canceledJobsPollInterval denotes the time in between calls to the API to get a
-// list of canceled jobs.
-const canceledJobsPollInterval = 1 * time.Second
 
 type Options struct {
 	// VMPrefix is a unique string used to namespace virtual machines controlled by
@@ -75,7 +75,9 @@ type Options struct {
 // as a heartbeat routine that will periodically hit the remote API with the work that is
 // currently being performed, which is necessary so the job queue API doesn't hand out jobs
 // it thinks may have been dropped.
-func NewWorker(nameSet *janitor.NameSet, queueStore *apiclient.Client, options Options, observationContext *observation.Context) goroutine.WaitableBackgroundRoutine {
+func NewWorker(nameSet *janitor.NameSet, options Options, observationContext *observation.Context) goroutine.WaitableBackgroundRoutine {
+	gatherer := metrics.MakeExecutorMetricsGatherer(log.Scoped("executor-worker.metrics-gatherer", ""), prometheus.DefaultGatherer, options.NodeExporterEndpoint, options.DockerRegistryNodeExporterEndpoint)
+	queueStore := apiclient.New(options.ClientOptions, gatherer, observationContext)
 	store := &storeShim{queueName: options.QueueName, queueStore: queueStore}
 
 	if !connectToFrontend(queueStore, options) {
