@@ -291,7 +291,7 @@ type noopLogEntry struct {
 }
 
 func (l *noopLogEntry) Write(p []byte) (n int, err error) {
-	return fmt.Fprint(l.w, p)
+	return fmt.Fprint(l.w, string(p))
 }
 func (*noopLogEntry) Close() error          { return nil }
 func (*noopLogEntry) Finalize(exitCode int) {}

@@ -3,6 +3,7 @@ package run
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/google/uuid"
@@ -20,7 +21,11 @@ func RunTestVM(cliCtx *cli.Context, logger log.Logger, config *config.Config) er
 	repoName := cliCtx.String("repo")
 	nameOnly := cliCtx.Bool("name-only")
 
-	name, err := createVM(cliCtx.Context, config, repoName)
+	var logOutput io.Writer = os.Stdout
+	if nameOnly {
+		logOutput = io.Discard
+	}
+	name, err := createVM(cliCtx.Context, config, repoName, logOutput)
 	if err != nil {
 		return err
 	}
@@ -34,7 +39,7 @@ func RunTestVM(cliCtx *cli.Context, logger log.Logger, config *config.Config) er
 	return nil
 }
 
-func createVM(ctx context.Context, config *config.Config, repositoryName string) (string, error) {
+func createVM(ctx context.Context, config *config.Config, repositoryName string, logOutput io.Writer) (string, error) {
 	vmNameSuffix, err := uuid.NewRandom()
 	if err != nil {
 		return "", err
@@ -43,7 +48,7 @@ func createVM(ctx context.Context, config *config.Config, repositoryName string)
 	// VM janitor.
 	name := fmt.Sprintf("%s-%s", "executor-test-vm", vmNameSuffix.String())
 
-	commandLogger := command.NewWriterLogger(os.Stdout)
+	commandLogger := command.NewWriterLogger(logOutput)
 	operations := command.NewOperations(&observation.TestContext)
 
 	hostRunner := command.NewRunner("", commandLogger, command.Options{}, operations)
