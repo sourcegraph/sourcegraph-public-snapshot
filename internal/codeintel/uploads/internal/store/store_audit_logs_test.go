@@ -7,7 +7,7 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -19,8 +19,8 @@ func TestUploadAuditLogs(t *testing.T) {
 	db := database.NewDB(logger, sqlDB)
 	store := New(db, &observation.TestContext)
 
-	insertUploads(t, db, shared.Upload{ID: 1})
-	updateUploads(t, db, shared.Upload{ID: 1, State: "deleting"})
+	insertUploads(t, db, types.Upload{ID: 1})
+	updateUploads(t, db, types.Upload{ID: 1, State: "deleting"})
 
 	logs, err := store.GetAuditLogsForUpload(context.Background(), 1)
 	if err != nil {

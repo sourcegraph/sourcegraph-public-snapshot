@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -162,7 +163,8 @@ type CreateEmptyBatchChangeOpts struct {
 // namespace permissions of the caller and validates that the combination of name +
 // namespace is unique.
 func (s *Service) CreateEmptyBatchChange(ctx context.Context, opts CreateEmptyBatchChangeOpts) (batchChange *btypes.BatchChange, err error) {
-	// Check whether the current user has access to either one of the namespaces.
+	// 🚨 SECURITY: Check whether the current user has access to either one of
+	// the namespaces.
 	err = s.CheckNamespaceAccess(ctx, opts.NamespaceUserID, opts.NamespaceOrgID)
 	if err != nil {
 		return nil, err
@@ -419,7 +421,8 @@ func (s *Service) CreateBatchSpecFromRaw(ctx context.Context, opts CreateBatchSp
 		return nil, err
 	}
 
-	// Check whether the current user has access to either one of the namespaces.
+	// 🚨 SECURITY: Check whether the current user has access to either one of
+	// the namespaces.
 	err = s.CheckNamespaceAccess(ctx, opts.NamespaceUserID, opts.NamespaceOrgID)
 	if err != nil {
 		return nil, err
@@ -446,8 +449,11 @@ func (s *Service) CreateBatchSpecFromRaw(ctx context.Context, opts CreateBatchSp
 			return nil, err
 		}
 
-		// 🚨 SECURITY: Only the Author of the batch change can create a batchSpec from raw assigned to it.
-		if err := backend.CheckSiteAdminOrSameUser(ctx, tx.DatabaseDB(), batchChange.CreatorID); err != nil {
+		// 🚨 SECURITY: Check whether the current user has access to the
+		// namespace of the batch change. Note that this may be different to the
+		// user-controlled namespace options — we need to check before changing
+		// anything in the database!
+		if err := s.CheckNamespaceAccess(ctx, batchChange.NamespaceUserID, batchChange.NamespaceOrgID); err != nil {
 			return nil, err
 		}
 	}
@@ -1117,6 +1123,22 @@ func (s *Service) ReenqueueChangeset(ctx context.Context, id int64) (changeset *
 // If both values are zero, an error is returned.
 func (s *Service) CheckNamespaceAccess(ctx context.Context, namespaceUserID, namespaceOrgID int32) (err error) {
 	return s.checkNamespaceAccessWithDB(ctx, s.store.DatabaseDB(), namespaceUserID, namespaceOrgID)
+}
+
+// CanAdministerInNamespace checks whether the current user can administer a
+// batch change in the given namespace. This essentially wraps
+// CheckNamespaceAccess and returns false, nil if a valid user is logged in but
+// they simply don't have access, whereas CheckNamespaceAccess will return an
+// error in that case.
+func (s *Service) CanAdministerInNamespace(ctx context.Context, namespaceUserID, namespaceOrgID int32) (bool, error) {
+	err := s.CheckNamespaceAccess(ctx, namespaceUserID, namespaceOrgID)
+	if err != nil && (err == backend.ErrNotAnOrgMember || errcode.IsUnauthorized(err)) {
+		// These errors indicate that the viewer is valid, but that they simply
+		// don't have access to administer this batch change. We don't want to
+		// propagate that error to the caller.
+		return false, nil
+	}
+	return err == nil, err
 }
 
 func (s *Service) checkNamespaceAccessWithDB(ctx context.Context, db database.DB, namespaceUserID, namespaceOrgID int32) (err error) {
