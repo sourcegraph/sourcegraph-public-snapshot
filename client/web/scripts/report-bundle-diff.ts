@@ -45,7 +45,7 @@ function parseReport(commitFilename: string, mergeBaseFilename: string): Report 
     const commitFile = path.join('..', '..', commitFilename)
     const mergeBaseFile = path.join('..', '..', mergeBaseFilename)
 
-    const statoscope = 'statoscope' // path.join(__dirname, '..', '..', '..', 'node_modules', '.bin', 'statoscope')
+    const statoscope = path.join(__dirname, '..', '..', '..', 'node_modules', '.bin', 'statoscope')
 
     console.log({ queryFile, commitFile, mergeBaseFile, statoscope })
 
