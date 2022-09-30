@@ -13,7 +13,6 @@ title: Get Started
     font-size: 0.85rem;
     cursor: pointer;
     text-decoration: none;
-    height: 15em;
     padding-top: 1.5rem !important;
     width: 100%;
     border-radius: 1em;
@@ -30,6 +29,9 @@ title: Get Started
   }
   .app-btn > img {
     height: 4em;
+  }
+  .app-btn > p {
+    margin-bottom: 0 !important;
   }
   .app-btn > h3 {
     font-size: 1.5em;
@@ -113,8 +115,8 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
   <a class="app-btn btn" href="/admin/deploy/kubernetes">
     <img alt="kubernetes-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/kubernetes.png"/>
     <h3>Kubernetes</h3>
+	  <p>Deploy a multi-node cluster</p>
     <p><strong>Enterprise-only</strong></p>
-	<p>Deploy a multi-node cluster</p>
   </a>
 </div>
 
