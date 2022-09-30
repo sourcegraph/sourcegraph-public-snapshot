@@ -328,13 +328,11 @@ func (s *GitHubSource) WithAuthenticator(a auth.Authenticator) (Source, error) {
 		return nil, newUnsupportedAuthenticatorError("GitHubSource", a)
 	}
 
-	tokenRefresher := database.ExternalServiceTokenRefresher(s.db, s.svc.ID, s.config.TokenOauthRefresh)
-
 	sc := *s
 
-	sc.v3Client = sc.v3Client.WithAuthenticator(a, tokenRefresher)
-	sc.v4Client = sc.v4Client.WithAuthenticator(a, tokenRefresher)
-	sc.searchClient = sc.searchClient.WithAuthenticator(a, tokenRefresher)
+	sc.v3Client = sc.v3Client.WithAuthenticator(a)
+	sc.v4Client = sc.v4Client.WithAuthenticator(a)
+	sc.searchClient = sc.searchClient.WithAuthenticator(a)
 
 	return &sc, nil
 }

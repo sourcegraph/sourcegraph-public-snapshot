@@ -109,8 +109,8 @@ func NewV4Client(urn string, apiURL *url.URL, a auth.Authenticator, cli httpcli.
 // WithAuthenticator returns a new V4Client that uses the same configuration as
 // the current V4Client, except authenticated as the GitHub user with the given
 // authenticator instance (most likely a token).
-func (c *V4Client) WithAuthenticator(a auth.Authenticator, tokenRefresher oauthutil.TokenRefresher) *V4Client {
-	return NewV4Client(c.urn, c.apiURL, a, c.httpClient, tokenRefresher)
+func (c *V4Client) WithAuthenticator(a auth.Authenticator) *V4Client {
+	return NewV4Client(c.urn, c.apiURL, a, c.httpClient, c.tokenRefresher)
 }
 
 // RateLimitMonitor exposes the rate limit monitor.

@@ -89,7 +89,7 @@ func (s GithubSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, 
 
 	sc := s
 	sc.au = a
-	sc.client = sc.client.WithAuthenticator(a, nil)
+	sc.client = sc.client.WithAuthenticator(a)
 
 	return &sc, nil
 }
