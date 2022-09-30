@@ -26,7 +26,7 @@
 
 _Upgrade notes for the next version will appear here._
 
-## v3.43 -> v4.0
+## v3.43 ➔ v4.0
 
 **Patch releases**:
 
@@ -38,27 +38,27 @@ _Upgrade notes for the next version will appear here._
 - Exporting traces to an external observability backend is now available. Read the [documentation](../deploy/kubernetes/configure.md#configure-a-tracing-backend) to configure.
 - The bundled Jaeger instance is now disabled by default. It can be [enabled](../deploy/kubernetes/configure.md#enable-the-bundled-jaeger-deployment) if you do not wish to utilise your own external tracing backend.
 
-## v3.42 -> v3.43
+## v3.42 ➔ v3.43
 
 **Patch releases**:
 
 - `3.43.1`
 - `3.43.2`
 
-## v3.41 -> v3.42
+## v3.41 ➔ v3.42
 
 **Patch releases**:
 
 - `3.42.1`
 - `3.42.2`
 
-## v3.40 -> v3.41
+## v3.40 ➔ v3.41
 
 **Notes**:
 
 - The Postgres DBs `frontend` and `codeintel-db` are now given 1 hour to begin accepting connections before Kubernetes restarts the containers. [#4136](https://github.com/sourcegraph/deploy-sourcegraph/pull/4136)
 
-## v3.39 -> v3.40
+## v3.39 ➔ v3.40
 
 **Patch releases**:
 
@@ -72,30 +72,30 @@ _Upgrade notes for the next version will appear here._
  controller may be necessary if your deployment used the manifests provided in `configure/ingress-nginx`. [#4128](https://github.com/sourcegraph/deploy-sourcegraph/pull/4128)
 - The alpine-3.12 docker images used as init containers for some deployments have been replaced with images based on alpine-3.14. [#4129](https://github.com/sourcegraph/deploy-sourcegraph/pull/4129)
 
-## v3.38 -> v3.39
+## v3.38 ➔ v3.39
 
 **Notes**:
 
 - The`codeinsights-db` container no longer uses TimescaleDB and is now based on the standard Postgres image [sourcegraph/deploy-sourcegraph#4103](https://github.com/sourcegraph/deploy-sourcegraph/pull/4103). Metrics scraping is also enabled.
 - **CAUTION**: If you use a custom Code Insights postgres config, you must update the `shared_preload_libraries` list to remove timescaledb. The [above PR](https://github.com/sourcegraph/deploy-sourcegraph/pull/4103/files#diff-e5f8d6e46f8c9335c489c0d8e9ae9be4f4655f878f3ac569c73ebb3865b0eeeeL695-R688) demonstrates this change.
 
-## v3.37 -> v3.38
+## v3.37 ➔ v3.38
 
 No upgrade notes.
 
-## v3.36 -> v3.37
+## v3.36 ➔ v3.37
 
 **Notes**:
 
 - This release adds a new `migrator` initContainer to the frontend deployment to run database migrations. Confirm the environment variables on this new container match your database settings. [Docs](https://docs.sourcegraph.com/admin/deploy/kubernetes/update#database-migrations)
 
-## v3.35 -> v3.36
+## v3.35 ➔ v3.36
 
 **Notes**:
 
 - The `backend` service has been removed, so if you deploy with a method other than `kubectl-apply-all.sh`, a manual removal of the service may be necessary.
 
-## v3.34 -> v3.35
+## v3.34 ➔ v3.35
 
 **Patch releases**:
 
@@ -107,19 +107,19 @@ No upgrade notes.
 Follow the [standard upgrade procedure](../deploy/kubernetes/update.md) to upgrade your deployment.
 - There is a [known issue](../../code_insights/how-tos/Troubleshooting.md#oob-migration-has-made-progress-but-is-stuck-before-reaching-100) with the Code Insights out-of-band settings migration not reaching 100% complete when encountering deleted users or organizations.
 
-## v3.33 -> v3.34
+## v3.33 ➔ v3.34
 
 No upgrade notes.
 
-## v3.32 -> v3.33
+## v3.32 ➔ v3.33
 
 No upgrade notes.
 
-## v3.31 -> v3.32
+## v3.31 ➔ v3.32
 
 No upgrade notes.
 
-## v3.30 -> v3.31
+## v3.30 ➔ v3.31
 
 > WARNING: **This upgrade must originate from `v3.30.3`.**
 
@@ -127,7 +127,7 @@ No upgrade notes.
 
 - The **built-in** main Postgres (`pgsql`) and codeintel (`codeintel-db`) databases have switched to an alpine-based Docker image. Upon upgrading, Sourcegraph will need to re-index the entire database. All users that use our bundled (built-in) database instances **must** read through the [3.31 upgrade guide](../migration/3_31.md) _before_ upgrading.
 
-## v3.29 -> v3.30
+## v3.29 ➔ v3.30
 
 > WARNING: **If you have already upgraded to 3.30.0, 3.30.1, or 3.30.2** please follow [this migration guide](../migration/3_30.md).
 
@@ -142,20 +142,20 @@ No upgrade notes.
 - This upgrade removes the `non-root` overlay, in favor of using only the `non-privileged` overlay for deploying Sourcegraph in secure environments. If you were
 previously deploying using the `non-root` overlay, you should now generate overlays using the `non-privileged` overlay.
 
-## v3.28 -> v3.29
+## v3.28 ➔ v3.29
 
 **Notes**:
 
 - This upgrade adds a new `worker` service that runs a number of background jobs that were previously run in the `frontend` service. See [notes on deploying workers](../workers.md#deploying-workers) for additional details. Good initial values for CPU and memory resources allocated to this new service should match the `frontend` service.
 
-## v3.27 -> v3.28
+## v3.27 ➔ v3.28
 
 **Notes**:
 
 - All Sourcegraph images now have a registry prefix. [#2901](https://github.com/sourcegraph/deploy-sourcegraph/pull/2901)
 - The memory requirements for `redis-cache` and `redis-store` have been increased by 1GB. See https://github.com/sourcegraph/deploy-sourcegraph/pull/2898 for more context.
 
-## v3.26 -> v3.27
+## v3.26 ➔ v3.27
 
 > WARNING: Sourcegraph 3.27 now requires **Postgres 12+**.
 
@@ -171,57 +171,57 @@ previously deploying using the `non-root` overlay, you should now generate overl
 
 - If you are using an external database, [upgrade your database](https://docs.sourcegraph.com/admin/postgres#upgrading-external-postgresql-instances) to Postgres 12 or above prior to upgrading Sourcegraph. No action is required if you are using the supplied database images.
 
-## v3.25 -> v3.26
+## v3.25 ➔ v3.26
 
 No upgrade notes.
 
-## v3.24 -> v3.25
+## v3.24 ➔ v3.25
 
 **Notes**:
 
 - Go `1.15` introduced changes to SSL/TLS connection validation which requires certificates to include a `SAN`. This field was not included in older certificates and clients relied on the `CN` field. You might see an error like `x509: certificate relies on legacy Common Name field`. We recommend that customers using Sourcegraph with an external database and and connecting to it using SSL/TLS check whether the certificate is up to date.
   - AWS RDS customers please reference [AWS' documentation on updating the SSL/TLS certificate](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL-certificate-rotation.html) for steps to rotate your certificate.
 
-## v3.23 -> v3.24
+## v3.23 ➔ v3.24
 
 No upgrade notes.
 
-## v3.22 -> v3.23
+## v3.22 ➔ v3.23
 
 No upgrade notes.
 
-## v3.21 -> v3.22
+## v3.21 ➔ v3.22
 
 **Notes**:
 
 - This upgrade removes the `code intel bundle manager`. This service has been deprecated and all references to it have been removed.
 - This upgrade also adds a MinIO container that doesn't require any custom configuration. You can find more detailed documentation in https://docs.sourcegraph.com/admin/external_services/object_storage.
 
-## v3.20 -> v3.21
+## v3.20 ➔ v3.21
 
 **Notes**:
 
 - This release introduces a second database instance, `codeintel-db`. If you have configured Sourcegraph with an external database, then update the `CODEINTEL_PG*` environment variables to point to a new external database as described in the [external database documentation](../external_services/postgres.md). Again, these must not point to the same database or the Sourcegraph instance will refuse to start.
 
-## v3.19 -> v3.20
+## v3.19 ➔ v3.20
 
 No upgrade notes.
 
-## v3.18 -> v3.19
+## v3.18 ➔ v3.19
 
 **Notes**:
 
 - **WARNING**: If you use an overlay that does not reference one of the provided overlays, please add `- ../bases/pvcs` as an additional base to your `kustomization.yaml` file. Otherwise the PVCs could be pruned if `kubectl apply -prune` is used.
 
-## v3.17 -> v3.18
+## v3.17 ➔ v3.18
 
 No upgrade notes.
 
-## v3.16 -> v3.17
+## v3.16 ➔ v3.17
 
 No upgrade notes.
 
-## v3.15 -> v3.16
+## v3.15 ➔ v3.16
 
 **Notes**:
 
@@ -232,7 +232,7 @@ No upgrade notes.
   - precise-code-intel-bundle-manager
   - prometheus
 
-## v3.14 -> v3.15
+## v3.14 ➔ v3.15
 
 **Prometheus and Grafana resource requirements increase**
 

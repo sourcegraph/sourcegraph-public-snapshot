@@ -14,45 +14,45 @@ Each section comprehensively describes the changes needed in Docker images, envi
 
 _Upgrade notes for the next version will appear here._
 
-## v3.43 -> v4.0
+## v3.43 ➔ v4.0
 
 As a template, perform the same actions as the following diffs in your own deployment:
 
-- [`-> v4.0.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/916d2f79e04955e5bef2a47dba738d68655f20ac)
+- [`➔ v4.0.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/916d2f79e04955e5bef2a47dba738d68655f20ac)
 
 **Patch releases**:
 
 - `v4.0.1`
 
-## v3.42 -> v3.43
+## v3.42 ➔ v3.43
 
 As a template, perform the same actions as the following diffs in your own deployment:
 
-- [`-> v3.43.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/94be340c1b0e57c866d2f530c489da4f65d453e2)
+- [`➔ v3.43.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/94be340c1b0e57c866d2f530c489da4f65d453e2)
 
 **Patch releases**:
 
 - `v3.43.1`
 - `v3.43.2`
 
-## v3.41 -> v3.42
+## v3.41 ➔ v3.42
 
 As a template, perform the same actions as the following diffs in your own deployment:
 
-- [`-> v3.42.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/a189e495813bc33d544b302eb98c197d70eacc87)
+- [`➔ v3.42.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/a189e495813bc33d544b302eb98c197d70eacc87)
 
 **Patch releases**:
 
 - `v3.42.1`
 - `v3.42.2`
 
-## v3.40 -> v3.41
+## v3.40 ➔ v3.41
 
 As a template, perform the same actions as the following diffs in your own deployment:
 
-- [`-> v3.41.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/8bfd70892c1bf56c5a88db0329826800c7a1097b)
+- [`➔ v3.41.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/8bfd70892c1bf56c5a88db0329826800c7a1097b)
 
-## v3.39 -> v3.40
+## v3.39 ➔ v3.40
 
 As a template, perform the same actions as the following diffs in your own deployment:
 
@@ -70,7 +70,7 @@ As a template, perform the same actions as the following diffs in your own deplo
 broke the default behavior. In order to guard against this, all command line arguments are explicitly set in the deployment manifest.
 - **CAUTION** Added the ability to customize postgres server configuration by mounting external configuration files. If you have customized the config in any way, you should copy your changes to the added `postgresql.conf` files [sourcegraph/deploy-sourcegraph-docker#806](https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/806)
 
-## v3.38 -> v3.39
+## v3.38 ➔ v3.39
 
 As a template, perform the same actions as the following diffs in your own deployment:
 
@@ -85,12 +85,12 @@ As a template, perform the same actions as the following diffs in your own deplo
 
 - In this release we need to remove timescaledb from `shared_preload_libraries` configuration in `codeinsights-db`'s `postgresql.conf`. This step will be [performed automatically](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/b37367c738d28ef7e27c8b1f833eb9355bd9e8b1#diff-916162e35509bb582798c4306953fec9f43779d82420cb4435576e2873869f78R17). It can be performed manually instead of run as part of the deploy script.
 
-## v3.37 -> v3.38
+## v3.37 ➔ v3.38
 
 As a template, perform the same actions as the following diffs in your own deployment:
 
-- [`-> v3.38.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/a66a74ce9a120a9da743eb44c6fea3a55f51842a)
-- [`-> v3.38.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/19735936834aab31134888c179bf07387f09a647)
+- [`➔ v3.38.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/a66a74ce9a120a9da743eb44c6fea3a55f51842a)
+- [`➔ v3.38.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/19735936834aab31134888c179bf07387f09a647)
 
 **Patch releases**:
 
@@ -100,23 +100,23 @@ As a template, perform the same actions as the following diffs in your own deplo
 
 - This release adds the requirement that the environment variables `SRC_GIT_SERVERS`, `SEARCHER_URL`, `SYMBOLS_URL`, and `INDEXED_SEARCH_SERVERS` are set for the worker process.
 
-## v3.36 -> v3.37
+## v3.36 ➔ v3.37
 
 As a template, perform the same actions as the following diffs in your own deployment:
 
-- [`-> v3.37.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/9e369ec86cdef50b9e2a8350040d011cf2c7cd49)
+- [`➔ v3.37.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/9e369ec86cdef50b9e2a8350040d011cf2c7cd49)
 
 **Notes**:
 
 - This release adds a new container that runs database migrations (`migrator`) independently of the frontend container. Confirm the environment variables on this new container match your database settings. [Read more about manual operation of the migrator](https://docs.sourcegraph.com/admin/how-to/manual_database_migrations)
 
-## v3.35 -> v3.36
+## v3.35 ➔ v3.36
 
 As a template, perform the same actions as the following diffs in your own deployment:
 
-- [`-> v3.36.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/25cdf1858de7fe3d0a3e3479a7e5620a02ac6a2c)
-- [`-> v3.36.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/45946fd69dd061cb39c85cfd06a037aeeaf74808)
-- [`-> v3.36.3`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/3273d3c7da750ff15ba9d4f24d1e09e835bf11d9)
+- [`➔ v3.36.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/25cdf1858de7fe3d0a3e3479a7e5620a02ac6a2c)
+- [`➔ v3.36.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/45946fd69dd061cb39c85cfd06a037aeeaf74808)
+- [`➔ v3.36.3`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/3273d3c7da750ff15ba9d4f24d1e09e835bf11d9)
 
 **Patch releases**:
 
@@ -124,13 +124,13 @@ As a template, perform the same actions as the following diffs in your own deplo
 - `v3.36.3`
 - `v3.36.3`
 
-## v3.34 -> v3.35
+## v3.34 ➔ v3.35
 
 As a template, perform the same actions as the following diffs in your own deployment:
 
-- [`-> v3.35.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/33b076a123c23930cc3339167bdd5502bebc5a3c)
-- [`-> v3.35.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/ba0d94eb945fd3371ed888e4b7177828b33acd3d)
-- [`-> v3.35.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/abc948e60a489f559ebd5cc8f0affcd3c4371fa4)
+- [`➔ v3.35.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/33b076a123c23930cc3339167bdd5502bebc5a3c)
+- [`➔ v3.35.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/ba0d94eb945fd3371ed888e4b7177828b33acd3d)
+- [`➔ v3.35.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/abc948e60a489f559ebd5cc8f0affcd3c4371fa4)
 
 **Patch releases**:
 
@@ -143,30 +143,30 @@ As a template, perform the same actions as the following diffs in your own deplo
 - There is a [known issue](../../code_insights/how-tos/Troubleshooting.md#oob-migration-has-made-progress-but-is-stuck-before-reaching-100) with the Code Insights out-of-band settings migration not reaching 100% complete when encountering deleted users or organizations.
 
 
-## v3.33 -> v3.34
+## v3.33 ➔ v3.34
 
 As a template, perform the same actions as the following diffs in your own deployment:
 
-- [`-> v3.34.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/d615dd5f63ec0984d60076aecf0bc598d9ffc1a8)
+- [`➔ v3.34.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/d615dd5f63ec0984d60076aecf0bc598d9ffc1a8)
 
 **Patch releases**:
 
 - `v3.34.1`
 - `v3.34.2`
 
-## v3.32 -> v3.33
+## v3.32 ➔ v3.33
 
 As a template, perform the same actions as the following diffs in your own deployment:
 
-- [`-> v3.33.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/f6dc5c4a859b09faaea44a34e3ba8e85c92fcf58)
+- [`➔ v3.33.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/f6dc5c4a859b09faaea44a34e3ba8e85c92fcf58)
 
-## v3.31 -> v3.32
+## v3.31 ➔ v3.32
 
 As a template, perform the same actions as the following diffs in your own deployment:
 
-- [`-> v3.32.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/2c4c283ae9f89fa48232f0b99ed1982008034fee)
+- [`➔ v3.32.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/2c4c283ae9f89fa48232f0b99ed1982008034fee)
 
-## v3.30 -> v3.31
+## v3.30 ➔ v3.31
 
 > WARNING: **This upgrade must originate from `v3.30.3`.**
 
@@ -174,13 +174,13 @@ As a template, perform the same actions as the following diffs in your own deplo
 
 - The **built-in** main Postgres (`pgsql`) and codeintel (`codeintel-db`) databases have switched to an alpine-based Docker image. Upon upgrading, Sourcegraph will need to re-index the entire database. All users that use our bundled (built-in) database instances **must** read through the [3.31 upgrade guide](../migration/3_31.md) _before_ upgrading.
 
-## v3.29 -> v3.30
+## v3.29 ➔ v3.30
 
 > WARNING: **If you have already upgraded to 3.30.0, 3.30.1, or 3.30.2** please follow [this migration guide](../migration/3_30.md).
 
 As a template, perform the same actions as the following diffs in your own deployment:
 
-- [`-> v3.30.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/63802ca5966754162c2b3e077e64e60687138874)
+- [`➔ v3.30.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/63802ca5966754162c2b3e077e64e60687138874)
 
 **Patch releases**:
 
@@ -188,11 +188,11 @@ As a template, perform the same actions as the following diffs in your own deplo
 - `v3.30.2`
 - `v3.30.3`
 
-## v3.28 -> v3.29
+## v3.28 ➔ v3.29
 
 As a template, perform the same actions as the following diffs in your own deployment:
 
-- [`-> v3.29.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/940100429fdd59f930436d47e226f5a7116bf6d9)
+- [`➔ v3.29.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/940100429fdd59f930436d47e226f5a7116bf6d9)
 
 **Patch releases**:
 
@@ -202,19 +202,19 @@ As a template, perform the same actions as the following diffs in your own deplo
 
 - This upgrade adds a new `worker` service that runs a number of background jobs that were previously run in the `frontend` service. See [notes on deploying workers](../workers.md#deploying-workers) for additional details. Good initial values for CPU and memory resources allocated to this new service should match the `frontend` service.
 
-## v3.27 -> v3.28
+## v3.27 ➔ v3.28
 
 As a template, perform the same actions as the following diffs in your own deployment:
 
-- [`-> v3.28.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/fa9bd6b4749697e09a4a74537e180e8331d84a5b)
+- [`➔ v3.28.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/fa9bd6b4749697e09a4a74537e180e8331d84a5b)
 
-## v3.26 -> v3.27
+## v3.26 ➔ v3.27
 
 > WARNING: Sourcegraph 3.27 now requires **Postgres 12+**.
 
 As a template, perform the same actions as the following diffs in your own deployment:
 
-- [`-> v3.27.4`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/1d01302a86d219a0f00f6dcbd27d4a511581ff27)
+- [`➔ v3.27.4`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/1d01302a86d219a0f00f6dcbd27d4a511581ff27)
 
 **Patch releases**:
 
@@ -227,23 +227,23 @@ As a template, perform the same actions as the following diffs in your own deplo
 
 - If you are using an external database, [upgrade your database](https://docs.sourcegraph.com/admin/postgres#upgrading-external-postgresql-instances) to Postgres 12.5 or above prior to upgrading Sourcegraph. No action is required if you are using the supplied supplied database images.
 
-## v3.26 -> v3.26
+## v3.26 ➔ v3.26
 
 As a template, perform the same actions as the following diffs in your own deployment:
 
-- [`-> v3.26.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/68ffad230fc6f99477cedd303a55b91a8c4d9acb)
-- [`-> v3.26.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/de80a4af2ef2eeb23526e3ea560f7f72e1a71a5f)
+- [`➔ v3.26.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/68ffad230fc6f99477cedd303a55b91a8c4d9acb)
+- [`➔ v3.26.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/de80a4af2ef2eeb23526e3ea560f7f72e1a71a5f)
 
 **Patch releases**:
 
 - `v3.26.1`
 - `v3.26.2`
 
-## v3.24 -> v3.25
+## v3.24 ➔ v3.25
 
 As a template, perform the same actions as the following diffs in your own deployment:
 
-- [`-> v3.25.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/ee2cbb59c80a382fb6cc649d4547b044d9a8b28d)
+- [`➔ v3.25.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/ee2cbb59c80a382fb6cc649d4547b044d9a8b28d)
 
 **Notes**:
 
@@ -256,34 +256,34 @@ As a template, perform the same actions as the following diffs in your own deplo
 sudo chown -R 999:999 ~/sourcegraph-docker/codeinsights-db-disk/
 ```
 
-## v3.23 -> v3.24
+## v3.23 ➔ v3.24
 
 As a template, perform the same actions as the following diffs in your own deployment:
 
-- [`-> v3.24.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/4acc4c7ed5d49ce41b1f68d654a3f4e2f35bd622)
+- [`➔ v3.24.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/4acc4c7ed5d49ce41b1f68d654a3f4e2f35bd622)
 
-## v3.22 -> v3.23
-
-As a template, perform the same actions as the following diffs in your own deployment:
-
-- [`-> v3.23.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/10de1a4e34ab2c716bd63e52a68a6af896bd81b7)
-
-## v3.21 -> v3.22
+## v3.22 ➔ v3.23
 
 As a template, perform the same actions as the following diffs in your own deployment:
 
-- [`-> v3.22.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/223c11dacffafb985c2d29b6c6a9b84bcc8255be)
+- [`➔ v3.23.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/10de1a4e34ab2c716bd63e52a68a6af896bd81b7)
+
+## v3.21 ➔ v3.22
+
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`➔ v3.22.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/223c11dacffafb985c2d29b6c6a9b84bcc8255be)
 
 **Notes**:
 
 - This upgrade removes the `code intel bundle manager`. This service has been deprecated and all references to it have been removed.
 - This upgrade also adds a MinIO container that doesn't require any custom configuration. You can find more detailed documentation in https://docs.sourcegraph.com/admin/external_services/object_storage.
 
-## v3.20 -> v3.21
+## v3.20 ➔ v3.21
 
 As a template, perform the same actions as the following diffs in your own deployment:
 
-- [`-> v3.21.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/4629ddfcdfd070b41801106199817ae903ead510)
+- [`➔ v3.21.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/4629ddfcdfd070b41801106199817ae903ead510)
 
 **Patch releases**:
 
@@ -295,11 +295,11 @@ As a template, perform the same actions as the following diffs in your own deplo
 - This upgrade includes a new code-intel DB (`deploy-codeintel-db.sh`) and a new service `minio` (`deploy-minio.sh`) to store precise code intel indexes.
 - There is a new environment variable for frontend and frontend-internal called `CODEINTEL_PGHOST`.
 
-## v3.19 -> v3.20
+## v3.19 ➔ v3.20
 
 As a template, perform the same actions as the following diffs in your own deployment:
 
-- [`-> v3.20.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/7c57315a1ce05981d436860d79ca01553931e274)
+- [`➔ v3.20.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/7c57315a1ce05981d436860d79ca01553931e274)
 
 **Patch releases**:
 
@@ -313,11 +313,11 @@ As a template, perform the same actions as the following diffs in your own deplo
 sudo chown -R 100:101 ~/sourcegraph-docker/lsif-server-disk/ ~/sourcegraph-docker/lsif-server-disk/
 ```
 
-## v3.18 -> v3.19
+## v3.18 ➔ v3.19
 
 As a template, perform the same actions as the following diffs in your own deployment:
 
-- [`-> v3.19.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/a1648452c6f7c16637b0e069776df12604c27f73)
+- [`➔ v3.19.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/a1648452c6f7c16637b0e069776df12604c27f73)
 
 **Patch releases**:
 
@@ -331,27 +331,27 @@ As a template, perform the same actions as the following diffs in your own deplo
 sudo chown -R 100:101 ~/sourcegraph-docker/lsif-server-disk/ ~/sourcegraph-docker/lsif-server-disk/
 ```
 
-## v3.17 -> v3.18
+## v3.17 ➔ v3.18
 
 As a template, perform the same actions as the following diffs in your own deployment:
 
-- [`-> v3.18.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/7e6b23cdfead3be639048c5fa7fffe07441610f2)
+- [`➔ v3.18.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/7e6b23cdfead3be639048c5fa7fffe07441610f2)
 
 **Notes**:
 
 - `deploy-grafana.sh` and `deploy-prometheus.sh` had environment variables changed, otherwise only image tags have changed.
 
-## v3.16 -> v3.17
+## v3.16 ➔ v3.17
 
 As a template, perform the same actions as the following diffs in your own deployment:
 
-- [`-> v3.17.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/2895236661de3ff633ee56fe0b87e9a0f530cc60)
+- [`➔ v3.17.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/2895236661de3ff633ee56fe0b87e9a0f530cc60)
 
 **Patch releases**:
 
 - `v3.17.2`
 
-## v3.15 -> v3.16
+## v3.15 ➔ v3.16
 
 As a template, perform the same actions as this [diff](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/customer-replica-v3.15.1...customer-replica-v3.16.0) in your own deployment.
 
@@ -360,7 +360,7 @@ As a template, perform the same actions as this [diff](https://github.com/source
 1. Change `3.15.1` image tags to `3.16.0`.
 1. Update `prometheus/prometheus_targets.yml` [as shown here](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/customer-replica-v3.15.1...customer-replica-v3.16.0#diff-1d4c5a677b37d150c65ea8356cad978a).
 
-## v3.14 -> v3.15
+## v3.14 ➔ v3.15
 
 **Patch releases**:
 
