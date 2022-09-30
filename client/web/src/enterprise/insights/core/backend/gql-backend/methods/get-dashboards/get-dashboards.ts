@@ -39,7 +39,6 @@ export const getDashboards = (apolloClient: ApolloClient<unknown>, id?: string):
                         id: dashboard.id,
                         type: InsightsDashboardType.Custom,
                         title: dashboard.title,
-                        insightIds: dashboard.views?.nodes.map(view => view.id) ?? [],
                         owners: deserializeDashboardsOwners(dashboard, currentUser),
                     })
                 ),

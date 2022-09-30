@@ -6,6 +6,37 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
+func TestNewVersionFromString(t *testing.T) {
+	testCases := []struct {
+		v       string
+		version Version
+		patch   int
+		ok      bool
+	}{
+		{"3.50", NewVersion(3, 50), 0, true},
+		{"v3.50.3", NewVersion(3, 50), 3, true},
+		{"v3.50", NewVersion(3, 50), 0, true},
+		{"3.50.3", NewVersion(3, 50), 3, true},
+		{"350", Version{}, 0, false},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.v, func(t *testing.T) {
+			version, patch, ok := NewVersionAndPatchFromString(testCase.v)
+			if ok != testCase.ok {
+				t.Errorf("unexpected ok. want=%v have=%v", testCase.ok, ok)
+			} else {
+				if version != testCase.version {
+					t.Errorf("unexpected version. want=%s have=%s", testCase.version, version)
+				}
+				if patch != testCase.patch {
+					t.Errorf("unexpected patch. want=%d have=%d", testCase.patch, patch)
+				}
+			}
+		})
+	}
+}
+
 func TestCompareVersions(t *testing.T) {
 	testCases := []struct {
 		left     Version

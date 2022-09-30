@@ -129,7 +129,7 @@ func MakeExternalServices() types.ExternalServices {
 	bitbucketServerSvc := types.ExternalService{
 		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "Bitbucket Server - Test",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://bitbucket.com", "username": "foo", "token": "abc", "repositoryQuery": ["none"]}`),
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://bitbucket.org", "username": "foo", "token": "abc", "repositoryQuery": ["none"]}`),
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -137,7 +137,7 @@ func MakeExternalServices() types.ExternalServices {
 	bitbucketCloudSvc := types.ExternalService{
 		Kind:        extsvc.KindBitbucketCloud,
 		DisplayName: "Bitbucket Cloud - Test",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://bitbucket.com", "username": "foo", "appPassword": "abc"}`),
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://bitbucket.org", "username": "foo", "appPassword": "abc"}`),
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
