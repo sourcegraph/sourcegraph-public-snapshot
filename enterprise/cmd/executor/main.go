@@ -143,6 +143,12 @@ func main() {
 
 						Required: false,
 					},
+					&cli.StringFlag{
+						Name:  "revision",
+						Usage: "Provide a revision to check out when using --repo. Required when using --repo.",
+
+						Required: false,
+					},
 					&cli.BoolFlag{
 						Name:     "name-only",
 						Usage:    "Only print the vm name on stdout. Can be used to call ignite attach programmatically.",

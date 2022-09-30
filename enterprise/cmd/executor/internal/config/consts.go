@@ -57,7 +57,7 @@ var (
 	}
 	// RequiredCLIToolsFirecracker contains all the programs that are expected to
 	// exist in PATH when running the executor with firecracker enabled.
-	RequiredCLIToolsFirecracker = []string{"dmsetup", "losetup", "mkfs.ext4"}
+	RequiredCLIToolsFirecracker = []string{"dmsetup", "losetup", "mkfs.ext4", "strings"}
 	// CNISubnetCIDR is the CIDR range of the VMs in firecracker. This is the ignite
 	// default and chosen so that it doesn't interfere with other common applications
 	// such as docker. It also provides room for a large number of VMs.

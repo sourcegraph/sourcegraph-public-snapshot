@@ -15,17 +15,23 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func RunTestVM(cliCtx *cli.Context, logger log.Logger, config *config.Config) error {
 	repoName := cliCtx.String("repo")
+	revision := cliCtx.String("revision")
 	nameOnly := cliCtx.Bool("name-only")
+
+	if repoName != "" && revision == "" {
+		return errors.New("must specify revision when setting --repo")
+	}
 
 	var logOutput io.Writer = os.Stdout
 	if nameOnly {
 		logOutput = io.Discard
 	}
-	name, err := createVM(cliCtx.Context, config, repoName, logOutput)
+	name, err := createVM(cliCtx.Context, config, repoName, revision, logOutput)
 	if err != nil {
 		return err
 	}
@@ -39,7 +45,7 @@ func RunTestVM(cliCtx *cli.Context, logger log.Logger, config *config.Config) er
 	return nil
 }
 
-func createVM(ctx context.Context, config *config.Config, repositoryName string, logOutput io.Writer) (string, error) {
+func createVM(ctx context.Context, config *config.Config, repositoryName, revision string, logOutput io.Writer) (string, error) {
 	vmNameSuffix, err := uuid.NewRandom()
 	if err != nil {
 		return "", err
@@ -57,7 +63,7 @@ func createVM(ctx context.Context, config *config.Config, repositoryName string,
 		// Just enough to spin up a VM.
 		executor.Job{
 			RepositoryName: repositoryName,
-			Commit:         "HEAD",
+			Commit:         revision,
 		},
 		config.FirecrackerDiskSpace,
 		// Always keep the workspace in this debug command.
