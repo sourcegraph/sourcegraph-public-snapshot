@@ -58,7 +58,7 @@ describe('search requests', () => {
                     '\\btoken\\b',
                     'type:file',
                     'patternType:regexp',
-                    'count:500',
+                    'count:502',
                     'case:yes',
                     'file:\\.(cpp)$',
                 ],

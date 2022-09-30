@@ -57,7 +57,7 @@ export function referencesQuery({
     if (/\w$/.test(searchToken)) {
         pattern += '\\b'
     }
-    return [pattern, 'type:file', 'patternType:regexp', 'count:500', 'case:yes', fileExtensionTerm(path, fileExts)]
+    return [pattern, 'type:file', 'patternType:regexp', 'count:501', 'case:yes', fileExtensionTerm(path, fileExts)]
 }
 /**
  * Constructs a file term containing include-listed extensions. If the current

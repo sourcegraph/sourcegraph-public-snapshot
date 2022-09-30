@@ -58,7 +58,7 @@ export function referencesQuery({
     if (/\w$/.test(searchToken)) {
         pattern += '\\b'
     }
-    return [pattern, 'type:file', 'patternType:regexp', 'count:500', 'case:yes', fileExtensionTerm(doc, fileExts)]
+    return [pattern, 'type:file', 'patternType:regexp', 'count:502', 'case:yes', fileExtensionTerm(doc, fileExts)]
 }
 
 const excludelist = new Set(['thrift', 'proto', 'graphql'])
