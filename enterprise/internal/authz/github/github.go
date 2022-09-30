@@ -3,7 +3,6 @@ package github
 import (
 	"context"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -13,6 +12,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
