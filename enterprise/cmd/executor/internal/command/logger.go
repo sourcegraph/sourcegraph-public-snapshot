@@ -273,28 +273,28 @@ func redact(entry *workerutil.ExecutionLogEntry, replacer *strings.Replacer) {
 }
 
 func NewWriterLogger(w io.Writer) Logger {
-	return &noopLogger{w}
+	return &writerLogger{w}
 }
 
-type noopLogger struct {
+type writerLogger struct {
 	w io.Writer
 }
 
-func (*noopLogger) Flush() error { return nil }
-func (l *noopLogger) Log(key string, command []string) LogEntry {
+func (*writerLogger) Flush() error { return nil }
+func (l *writerLogger) Log(key string, command []string) LogEntry {
 	fmt.Fprintf(l.w, "%s: %s", key, strings.Join(command, " "))
-	return &noopLogEntry{w: l.w}
+	return &writerLogEntry{w: l.w}
 }
 
-type noopLogEntry struct {
+type writerLogEntry struct {
 	w io.Writer
 }
 
-func (l *noopLogEntry) Write(p []byte) (n int, err error) {
+func (l *writerLogEntry) Write(p []byte) (n int, err error) {
 	return fmt.Fprint(l.w, string(p))
 }
-func (*noopLogEntry) Close() error          { return nil }
-func (*noopLogEntry) Finalize(exitCode int) {}
-func (*noopLogEntry) CurrentLogEntry() workerutil.ExecutionLogEntry {
+func (*writerLogEntry) Close() error          { return nil }
+func (*writerLogEntry) Finalize(exitCode int) {}
+func (*writerLogEntry) CurrentLogEntry() workerutil.ExecutionLogEntry {
 	return workerutil.ExecutionLogEntry{}
 }
