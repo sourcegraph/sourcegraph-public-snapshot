@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel"
@@ -23,7 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
-func newTelemetryOptions(ctx context.Context, useFirecracker bool) apiclient.TelemetryOptions {
+func newTelemetryOptions(ctx context.Context, useFirecracker bool, logger log.Logger) apiclient.TelemetryOptions {
 	t := apiclient.TelemetryOptions{
 		OS:              runtime.GOOS,
 		Architecture:    runtime.GOARCH,
@@ -34,23 +33,23 @@ func newTelemetryOptions(ctx context.Context, useFirecracker bool) apiclient.Tel
 
 	t.GitVersion, err = getGitVersion(ctx)
 	if err != nil {
-		log15.Error("Failed to get git version", "err", err)
+		logger.Error("Failed to get git version", log.Error(err))
 	}
 
 	t.SrcCliVersion, err = getSrcVersion(ctx)
 	if err != nil {
-		log15.Error("Failed to get src-cli version", "err", err)
+		logger.Error("Failed to get src-cli version", log.Error(err))
 	}
 
 	t.DockerVersion, err = getDockerVersion(ctx)
 	if err != nil {
-		log15.Error("Failed to get docker version", "err", err)
+		logger.Error("Failed to get docker version", log.Error(err))
 	}
 
 	if useFirecracker {
 		t.IgniteVersion, err = getIgniteVersion(ctx)
 		if err != nil {
-			log15.Error("Failed to get ignite version", "err", err)
+			logger.Error("Failed to get ignite version", log.Error(err))
 		}
 	}
 
