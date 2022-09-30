@@ -530,7 +530,7 @@ func (s *Syncer) SyncExternalService(
 	lock := locker.NewWith(s.Store, "external_service")
 
 	var locked bool
-	var unlocker locker.UnlockFunc
+	var unlock locker.UnlockFunc
 	// We need both code paths here since our production code doesn't use a
 	// transaction but most of our tests DO run in transactions in order to make
 	// rolling back test state easier.
@@ -544,7 +544,7 @@ func (s *Syncer) SyncExternalService(
 		}
 	} else {
 		// We're NOT in a transaction
-		locked, unlocker, err = lock.Lock(ctx, locker.StringKey(fmt.Sprintf("%d", svc.ID)), false)
+		locked, unlock, err = lock.Lock(ctx, locker.StringKey(fmt.Sprintf("%d", svc.ID)), false)
 		if err != nil {
 			return errors.Wrap(err, "getting advisory lock")
 		}
@@ -552,7 +552,7 @@ func (s *Syncer) SyncExternalService(
 			return errors.Errorf("could not get advisory lock for service %d", svc.ID)
 		}
 		defer func() {
-			err = unlocker(err)
+			err = unlock(err)
 		}()
 	}
 
