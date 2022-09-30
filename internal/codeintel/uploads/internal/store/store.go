@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
@@ -72,6 +73,7 @@ type Store interface {
 	FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, commitGraph *gitdomain.CommitGraph) (_ []types.Dump, err error)
 	GetDumpsWithDefinitionsForMonikers(ctx context.Context, monikers []precise.QualifiedMonikerData) (_ []types.Dump, err error)
 	GetDumpsByIDs(ctx context.Context, ids []int) (_ []types.Dump, err error)
+	DeleteOverlappingDumps(ctx context.Context, repositoryID int, commit, root, indexer string) error
 
 	// Packages
 	UpdatePackages(ctx context.Context, dumpID int, packages []precise.Package) (err error)
@@ -82,6 +84,12 @@ type Store interface {
 	// Audit Logs
 	GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []types.UploadLog, err error)
 	DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (count int, err error)
+
+	// Dependencies
+	InsertDependencySyncingJob(ctx context.Context, uploadID int) (jobID int, err error)
+
+	// Workerutil
+	WorkerutilStore(observationContext *observation.Context) dbworkerstore.Store
 }
 
 // store manages the database operations for uploads.

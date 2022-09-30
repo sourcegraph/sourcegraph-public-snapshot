@@ -73,8 +73,8 @@ const filters: Filter[] = [
         kind: 'repo',
     },
     {
-        label: 'bitbucket.com/com/test',
-        value: 'repo:^bitbucket\\.com/com/test$',
+        label: 'bitbucket.org/com/test',
+        value: 'repo:^bitbucket\\.org/com/test$',
         count: 1,
         limitHit: true,
         kind: 'repo',

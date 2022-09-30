@@ -9,7 +9,11 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { useMutation } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import {
+    SettingsCascadeProps,
+    SettingsOrgSubject,
+    SettingsUserSubject,
+} from '@sourcegraph/shared/src/settings/settings'
 import { Alert, Button, Container, Icon, Input, RadioButton, Tooltip } from '@sourcegraph/wildcard'
 
 import {
@@ -86,37 +90,15 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
     const loading = batchChangeLoading || batchSpecLoading
     const error = batchChangeError || batchSpecError
 
-    const { namespaces, defaultSelectedNamespace: _defaultSelectedNamespace, userNamespace } = useNamespaces(
+    const { namespaces, defaultSelectedNamespace } = useNamespaces(
         settingsCascade,
         batchChange?.namespace.id || initialNamespaceID
     )
 
-    // TODO: As we haven't finished implementing support for orgs, we've temporary
-    // disabled the namespace selector. This code should be uncommented to restore the
-    // selector.
-    // // The namespace selected for creating the new batch change under.
-    // const [selectedNamespace, setSelectedNamespace] = useState<SettingsUserSubject | SettingsOrgSubject>(
-    //     defaultSelectedNamespace
-    // )
-    const selectedNamespace = userNamespace
-
-    const namespacesSelector = isReadOnly ? (
-        <NamespaceSelector
-            namespaces={[batchChange.namespace]}
-            selectedNamespace={batchChange.namespace.id}
-            disabled={true}
-        />
-    ) : (
-        <NamespaceSelector
-            namespaces={namespaces}
-            selectedNamespace={selectedNamespace.id}
-            // TODO: As we haven't finished implementing support for orgs, we've temporary
-            // disabled the namespace selector. This code should be uncommented to restore it
-            // onSelect={setSelectedNamespace}
-            // disabled={isReadOnly}
-            disabled={true}
-        />
-    )
+    // The namespace selected for creating the new batch change under.
+    const [selectedNamespace, setSelectedNamespace] = useState<
+        Pick<SettingsUserSubject, 'id'> | Pick<SettingsOrgSubject, 'id'>
+    >(defaultSelectedNamespace)
 
     const [nameInput, setNameInput] = useState(batchChange?.name || '')
     const [isNameValid, setIsNameValid] = useState<boolean>()
@@ -187,7 +169,12 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
                     </Alert>
                 )}
                 {error && <ErrorAlert error={error} />}
-                {namespacesSelector}
+                <NamespaceSelector
+                    namespaces={namespaces}
+                    selectedNamespace={selectedNamespace.id}
+                    onSelect={setSelectedNamespace}
+                    disabled={isReadOnly}
+                />
                 <Input
                     autoFocus={true}
                     label="Batch change name"

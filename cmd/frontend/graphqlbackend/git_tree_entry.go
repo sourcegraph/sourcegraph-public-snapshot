@@ -12,8 +12,6 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
@@ -27,18 +25,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-)
-
-var (
-	metricLabels      = []string{"origin"}
-	codeIntelRequests = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "src_lsif_requests",
-		Help: "Counts LSIF requests.",
-	}, metricLabels)
 )
 
 // GitTreeEntryResolver resolves an entry in a Git tree in a repository. The entry can be any Git
@@ -236,8 +225,6 @@ func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 }
 
 func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName *string }) (codenavgraphql.GitBlobLSIFDataResolver, error) {
-	codeIntelRequests.WithLabelValues(trace.RequestOrigin(ctx)).Inc()
-
 	var toolName string
 	if args.ToolName != nil {
 		toolName = *args.ToolName
