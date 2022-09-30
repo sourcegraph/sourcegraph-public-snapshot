@@ -6,9 +6,10 @@
     margin-bottom: 1em;
   }
   .app-btn {
+    font-size: 0.85rem;
     cursor: pointer;
     text-decoration: none;
-    height: 15em;
+    padding-top: 1.5rem !important;
     width: 100%;
     border-radius: 1em;
     border: 2px solid var(--input-focus-border);
@@ -24,6 +25,9 @@
   }
   .app-btn > img {
     height: 4em;
+  }
+  .app-btn > p {
+    margin-bottom: 0 !important;
   }
   .app-btn > h3 {
     font-size: 1.5em;
@@ -41,14 +45,14 @@ Sourcegraph provisions each instance in an isolated and secure cloud environment
 
 ## Start a Sourcegraph Cloud trial
 
-<form class="grid">
+<div class="grid">
   <!-- Sourcegraph Cloud -->
-  <button class="app-btn btn" formaction="http://signup.sourcegraph.com">
+  <a class="app-btn btn" href="http://signup.sourcegraph.com">
 			<img alt="sourcegraph-logo" src="https://handbook.sourcegraph.com/departments/engineering/design/brand_guidelines/logo/versions/Sourcegraph_Logomark_Color.svg"/>
 			<h3>Sourcegraph Cloud</h3>
 		  <p>Sign up for a trial</p>
-  </button>
-</form>
+  </a>
+</div>
 
 Use the button above to sign up for a free 30-day trial of Sourcegraph Cloud. Please [contact us](https://about.sourcegraph.com/contact/sales) if you have specific VPN requirements or you require a large deployment with >500 users, >1,000 repos, or monorepos >5 GB.
 
