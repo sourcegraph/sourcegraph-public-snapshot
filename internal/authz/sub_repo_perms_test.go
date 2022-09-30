@@ -405,6 +405,14 @@ func TestSubRepoPermissionsCanReadDirectoriesInPath(t *testing.T) {
 			paths:         []string{"/*/foo/bar/thing.txt"},
 			cannotReadAny: []string{"foo/", "foo/bar/"},
 		},
+		{
+			paths:      []string{"-/**", "/storage/redis/**"},
+			canReadAll: []string{"storage/", "/storage/", "/storage/redis/"},
+		},
+		{
+			paths:      []string{"-/**", "-/storage/**", "/storage/redis/**"},
+			canReadAll: []string{"storage/", "/storage/", "/storage/redis/"},
+		},
 	}
 
 	for _, tc := range testCases {

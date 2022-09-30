@@ -132,7 +132,9 @@ type path struct {
 
 type compiledRules struct {
 	paths []path
-	dirs  []path
+	// parent directories of all included paths so that we can still see
+	// the paths in file navigation
+	dirs []glob.Glob
 }
 
 // GetPermissionsForPath tries to match a given path to a list of rules.
@@ -140,25 +142,22 @@ type compiledRules struct {
 // traversed in reverse, and the function returns as soon as a match is found.
 // If no match is found, None is returned.
 func (rules compiledRules) GetPermissionsForPath(path string) Perms {
+	// We want to match any directories above paths that we include so that we
+	// can browse down the file hierarchy.
+	if strings.HasSuffix(path, "/") {
+		for _, dir := range rules.dirs {
+			if dir.Match(path) {
+				return Read
+			}
+		}
+	}
+
 	for i := len(rules.paths) - 1; i >= 0; i-- {
 		if rules.paths[i].globPath.Match(path) {
 			if rules.paths[i].exclusion {
 				return None
 			}
 			return Read
-		}
-	}
-
-	// We also want to match any directories above paths that we include so that we
-	// can browse down the file hierarchy.
-	if strings.HasSuffix(path, "/") {
-		for i := len(rules.dirs) - 1; i >= 0; i-- {
-			if rules.dirs[i].globPath.Match(path) {
-				if rules.dirs[i].exclusion {
-					return None
-				}
-				return Read
-			}
 		}
 	}
 
@@ -352,7 +351,7 @@ func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32)
 		}
 		for repo, perms := range repoPerms {
 			paths := make([]path, 0, len(perms.Paths))
-			allDirs := make([]path, 0)
+			allDirs := make([]glob.Glob, 0)
 			dirSeen := make(map[string]struct{})
 			for _, rule := range perms.Paths {
 				exclusion := strings.HasPrefix(rule, "-")
@@ -379,7 +378,10 @@ func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32)
 					if err != nil {
 						return nil, errors.Wrap(err, "building include matcher for dir")
 					}
-					allDirs = append(allDirs, path{g, exclusion})
+					if exclusion {
+						continue
+					}
+					allDirs = append(allDirs, g)
 					dirSeen[dir] = struct{}{}
 				}
 			}
