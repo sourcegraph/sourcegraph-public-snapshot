@@ -207,11 +207,26 @@ function referencesToContentMatch(uri: string, references: Badged<Location>[]): 
         path: parsedUri.filePath || '',
         commit: (parsedUri.commitID || parsedUri.revision)!,
         repository: parsedUri.repoName,
-        lineMatches: references.filter(property('range', isDefined)).map(reference => ({
-            line: '',
-            lineNumber: reference.range.start.line,
-            offsetAndLengths: [
-                [reference.range.start.character, reference.range.end.character - reference.range.start.character],
+        chunkMatches: references.filter(property('range', isDefined)).map(reference => ({
+            content: '',
+            contentStart: {
+                line: reference.range.start.line,
+                offset: 0,
+                column: 0,
+            },
+            ranges: [
+                {
+                   start: {
+                       line: reference.range.start.line,
+                       offset: reference.range.start.character,
+                       column: reference.range.start.character,
+                   },
+                   end: {
+                       line: reference.range.end.line,
+                       offset: reference.range.end.character,
+                       column: reference.range.end.character,
+                   },
+                },
             ],
             aggregableBadges: reference.aggregableBadges,
         })),
