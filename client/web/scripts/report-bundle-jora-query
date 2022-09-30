@@ -4,7 +4,7 @@
 // Usage:
 //   cat query > statoscope query -i stats.json -i stats-base.json
 
-$useCompressedSize: false;
+$useCompressedSize: true;
 
 $getChunksAssetsSize: => (
     files.[].[not false].(getAssetSize($$, $useCompressedSize))
@@ -27,6 +27,12 @@ $assetsAsyncSizeA: $chunksAsyncA.$getChunksAssetsSize(compilations[0].hash).redu
 $assetsAsyncSizeB: $chunksAsyncB.$getChunksAssetsSize(compilations[1].hash).reduce(=> size + $$, 0);
 
 [
+  // These hashes are neede to generate a the diff link in the Statoscope report
+  // e.g. #diff&diffWith=fd291e3f6ddc5daf0412&hash=adb653b96df5a0f24aec
+  {
+    hash: compilations[0].hash,
+    diffWith: compilations[1].hash,
+  },
   {
     $value: $assetsInitialSizeB - $assetsInitialSizeA;
     $valueP: $assetsInitialSizeB.percentFrom($assetsInitialSizeA);
@@ -94,8 +100,8 @@ $assetsAsyncSizeB: $chunksAsyncB.$getChunksAssetsSize(compilations[1].hash).redu
     visible: $value
   },
   {
-    $packagesSizeA: compilations[0].nodeModules.instances.modules.(getModuleSize(compilations[0].hash, $useCompressedSize)).reduce(=> size + $$, 0);
-    $packagesSizeB: compilations[1].nodeModules.instances.modules.(getModuleSize(compilations[1].hash, $useCompressedSize)).reduce(=> size + $$, 0);
+    $packagesSizeA: compilations[0].nodeModules.instances.modules.(getModuleSize($$, compilations[0].hash, $useCompressedSize)).reduce(=> size + $$, 0);
+    $packagesSizeB: compilations[1].nodeModules.instances.modules.(getModuleSize($$, compilations[1].hash, $useCompressedSize)).reduce(=> size + $$, 0);
     $value: $packagesSizeB - $packagesSizeA;
     $valueP: $packagesSizeB.percentFrom($packagesSizeA);
     value: $value,
