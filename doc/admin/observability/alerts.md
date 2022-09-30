@@ -6623,9 +6623,9 @@ See https://kernel.org/doc/Documentation/sysctl/vm.txt for more information.
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max(((proc_metrics_memory_map_current_count{instance=~"${instance:regex}"} / proc_metrics_memory_map_max_limit{instance=~"${instance:regex}"}) * 100) >= 70)`
+Generated query for warning alert: `max(((proc_metrics_memory_map_current_count / proc_metrics_memory_map_max_limit) * 100) >= 70)`
 
-Generated query for critical alert: `max(((proc_metrics_memory_map_current_count{instance=~"${instance:regex}"} / proc_metrics_memory_map_max_limit{instance=~"${instance:regex}"}) * 100) >= 90)`
+Generated query for critical alert: `max(((proc_metrics_memory_map_current_count / proc_metrics_memory_map_max_limit) * 100) >= 90)`
 
 </details>
 

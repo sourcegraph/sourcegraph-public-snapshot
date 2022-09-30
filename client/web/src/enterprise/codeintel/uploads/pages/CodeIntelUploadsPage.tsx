@@ -3,10 +3,12 @@ import { FunctionComponent, useCallback, useEffect, useMemo, useState } from 're
 import { useApolloClient } from '@apollo/client'
 import classNames from 'classnames'
 import { RouteComponentProps, useLocation } from 'react-router'
-import { of } from 'rxjs'
+import { of, Subject } from 'rxjs'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, PageHeader, useObservable } from '@sourcegraph/wildcard'
+import { Button, Container, PageHeader, useObservable } from '@sourcegraph/wildcard'
 
 import {
     FilteredConnection,
@@ -14,7 +16,7 @@ import {
     FilteredConnectionQueryArguments,
 } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
-import { LsifUploadFields, LSIFUploadState } from '../../../../graphql-operations'
+import { DeleteLsifUploadsVariables, LsifUploadFields, LSIFUploadState } from '../../../../graphql-operations'
 import { FlashMessage } from '../../configuration/components/FlashMessage'
 import { queryCommitGraphMetadata as defaultQueryCommitGraphMetadata } from '../../indexes/hooks/queryCommitGraphMetadata'
 import { CodeIntelUploadNode, CodeIntelUploadNodeProps } from '../components/CodeIntelUploadNode'
@@ -22,6 +24,8 @@ import { CommitGraphMetadata } from '../components/CommitGraphMetadata'
 import { EmptyUploads } from '../components/EmptyUploads'
 import { queryLsifUploadsByRepository as defaultQueryLsifUploadsByRepository } from '../hooks/queryLsifUploadsByRepository'
 import { queryLsifUploadsList as defaultQueryLsifUploadsList } from '../hooks/queryLsifUploadsList'
+import { useDeleteLsifUpload } from '../hooks/useDeleteLsifUpload'
+import { useDeleteLsifUploads } from '../hooks/useDeleteLsifUploads'
 
 import styles from './CodeIntelUploadsPage.module.scss'
 
@@ -134,6 +138,29 @@ export const CodeIntelUploadsPage: FunctionComponent<React.PropsWithChildren<Cod
         }
     }, [location.state])
 
+    const [args, setArgs] = useState<DeleteLsifUploadsVariables>()
+
+    // selection has the same type as CodeIntelUploadNode's prop because there is no CodeIntelUploadNodeProps
+    const [selection, setSelection] = useState<CodeIntelUploadNodeProps['selection']>(new Set())
+    const onCheckboxToggle = useCallback<CodeIntelUploadNodeProps['onCheckboxToggle']>((id, checked) => {
+        setSelection(selection => {
+            if (selection === 'all') {
+                return selection
+            }
+            if (checked) {
+                selection.add(id)
+            } else {
+                selection.delete(id)
+            }
+            return new Set(selection)
+        })
+    }, [])
+
+    const { handleDeleteLsifUpload, deleteError } = useDeleteLsifUpload()
+    const { handleDeleteLsifUploads, deletesError } = useDeleteLsifUploads()
+
+    const deletes = useMemo(() => new Subject<undefined>(), [])
+
     return (
         <div className="code-intel-uploads">
             <PageTitle title="Code graph data uploads" />
@@ -164,6 +191,61 @@ export const CodeIntelUploadsPage: FunctionComponent<React.PropsWithChildren<Cod
             )}
 
             <Container>
+                <div className="mb-3">
+                    <Button
+                        className="mr-2"
+                        variant="primary"
+                        disabled={selection !== 'all' && selection.size === 0}
+                        // eslint-disable-next-line @typescript-eslint/no-misused-promises
+                        onClick={async () => {
+                            if (selection === 'all') {
+                                if (args === undefined) {
+                                    return
+                                }
+
+                                if (
+                                    !confirm(
+                                        `Delete all uploads matching the filter criteria?\n\n${Object.entries(args)
+                                            .map(([key, value]) => `${key}: ${value}`)
+                                            .join('\n')}`
+                                    )
+                                ) {
+                                    return
+                                }
+
+                                await handleDeleteLsifUploads({
+                                    variables: args,
+                                    update: cache => cache.modify({ fields: { node: () => {} } }),
+                                })
+
+                                deletes.next()
+
+                                return
+                            }
+
+                            for (const id of selection) {
+                                await handleDeleteLsifUpload({
+                                    variables: { id },
+                                    update: cache => cache.modify({ fields: { node: () => {} } }),
+                                })
+                            }
+
+                            deletes.next()
+                        }}
+                    >
+                        Delete {selection === 'all' ? 'matching' : selection.size === 0 ? '' : selection.size}
+                    </Button>
+                    <Button
+                        variant="secondary"
+                        onClick={() => setSelection(selection => (selection === 'all' ? new Set() : 'all'))}
+                    >
+                        {selection === 'all' ? 'Deselect' : 'Select matching'}
+                    </Button>
+                </div>
+
+                {isErrorLike(deleteError) && <ErrorAlert prefix="Error deleting LSIF upload" error={deleteError} />}
+                {isErrorLike(deletesError) && <ErrorAlert prefix="Error deleting LSIF uploads" error={deletesError} />}
+
                 <div className="list-group position-relative">
                     <FilteredConnection<LsifUploadFields, Omit<CodeIntelUploadNodeProps, 'node'>>
                         listComponent="div"
@@ -172,13 +254,24 @@ export const CodeIntelUploadsPage: FunctionComponent<React.PropsWithChildren<Cod
                         noun="upload"
                         pluralNoun="uploads"
                         nodeComponent={CodeIntelUploadNode}
-                        nodeComponentProps={{ now }}
-                        queryConnection={queryLsifUploads}
+                        nodeComponentProps={{ now, selection, onCheckboxToggle }}
+                        queryConnection={args => {
+                            setArgs({
+                                query: args.query ?? null,
+                                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+                                state: (args as any).state ?? null,
+                                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+                                isLatestForRepo: (args as any).isLatestForRepo ?? null,
+                            })
+                            setSelection(new Set())
+                            return queryLsifUploads(args)
+                        }}
                         history={history}
                         location={props.location}
                         cursorPaging={true}
                         filters={filters}
                         emptyElement={<EmptyUploads />}
+                        updates={deletes}
                     />
                 </div>
             </Container>

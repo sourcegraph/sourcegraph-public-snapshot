@@ -61,6 +61,7 @@ type Store interface {
 	DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_ int, err error)
 	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error)
 	DeleteUploadByID(ctx context.Context, id int) (_ bool, err error)
+	DeleteUploads(ctx context.Context, opts types.DeleteUploadsOptions) (err error)
 
 	// Uploads (uploading)
 	InsertUpload(ctx context.Context, upload types.Upload) (int, error)

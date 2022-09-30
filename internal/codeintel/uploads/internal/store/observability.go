@@ -56,6 +56,7 @@ type operations struct {
 	addUploadPart                     *observation.Operation
 	markQueued                        *observation.Operation
 	markFailed                        *observation.Operation
+	deleteUploads                     *observation.Operation
 
 	// Dumps
 	findClosestDumps                   *observation.Operation
@@ -138,6 +139,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		addUploadPart:                     op("AddUploadPart"),
 		markQueued:                        op("MarkQueued"),
 		markFailed:                        op("MarkFailed"),
+		deleteUploads:                     op("DeleteUploads"),
 
 		writeVisibleUploads:        op("writeVisibleUploads"),
 		persistNearestUploads:      op("persistNearestUploads"),

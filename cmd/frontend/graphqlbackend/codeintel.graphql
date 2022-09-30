@@ -72,6 +72,27 @@ extend type Mutation {
     deleteLSIFUpload(id: ID!): EmptyResponse
 
     """
+    Deletes LSIF uploads by filter criteria.
+    """
+    deleteLSIFUploads(
+        """
+        An (optional) search query that filters the state, repository name,
+        commit, root, and indexer properties.
+        """
+        query: String
+
+        """
+        The upload state.
+        """
+        state: LSIFUploadState
+
+        """
+        When specified, only deletes uploads that are latest for the given repository.
+        """
+        isLatestForRepo: Boolean
+    ): EmptyResponse
+
+    """
     Deletes an LSIF index.
     """
     deleteLSIFIndex(id: ID!): EmptyResponse

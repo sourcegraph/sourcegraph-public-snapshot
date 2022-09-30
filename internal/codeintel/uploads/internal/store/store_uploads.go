@@ -28,10 +28,10 @@ import (
 
 // GetUploads returns a list of uploads and the total count of records matching the given conditions.
 func (s *store) GetUploads(ctx context.Context, opts types.GetUploadsOptions) (uploads []types.Upload, totalCount int, err error) {
-	ctx, trace, endObservation := s.operations.getUploads.With(ctx, &err, observation.Args{LogFields: buildLogFields(opts)})
+	ctx, trace, endObservation := s.operations.getUploads.With(ctx, &err, observation.Args{LogFields: buildGetUploadsLogFields(opts)})
 	defer endObservation(1, observation.Args{})
 
-	tableExpr, conds, cte := buildConditionsAndCte(opts)
+	tableExpr, conds, cte := buildGetConditionsAndCte(opts)
 	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
 	if err != nil {
 		return nil, 0, err
@@ -673,6 +673,59 @@ func (s *store) DeleteUploadByID(ctx context.Context, id int) (_ bool, err error
 const deleteUploadByIDQuery = `
 -- source: internal/codeintel/stores/dbstore/uploads.go:DeleteUploadByID
 UPDATE lsif_uploads u SET state = CASE WHEN u.state = 'completed' THEN 'deleting' ELSE 'deleted' END WHERE id = %s RETURNING repository_id
+`
+
+// DeleteUploads deletes uploads by filter criteria. The associated repositories will be marked as dirty
+// so that their commit graphs will be updated in the background.
+func (s *store) DeleteUploads(ctx context.Context, opts types.DeleteUploadsOptions) (err error) {
+	ctx, _, endObservation := s.operations.deleteUploads.With(ctx, &err, observation.Args{LogFields: buildDeleteUploadsLogFields(opts)})
+	defer endObservation(1, observation.Args{})
+
+	conds := buildDeleteConditions(opts)
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
+	if err != nil {
+		return err
+	}
+	conds = append(conds, authzConds)
+
+	tx, err := s.transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	unset, _ := tx.db.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "direct delete by filter criteria request")
+	defer unset(ctx)
+
+	query := sqlf.Sprintf(
+		deleteUploadsQuery,
+		sqlf.Join(conds, " AND "),
+	)
+	repoIDs, err := basestore.ScanInts(s.db.Query(ctx, query))
+	if err != nil {
+		return err
+	}
+
+	var dirtyErr error
+	for _, repoID := range repoIDs {
+		if err := tx.SetRepositoryAsDirty(ctx, repoID); err != nil {
+			dirtyErr = err
+		}
+	}
+	if dirtyErr != nil {
+		err = dirtyErr
+	}
+
+	return err
+}
+
+const deleteUploadsQuery = `
+-- source: internal/codeintel/stores/dbstore/uploads.go:DeleteUploads
+UPDATE lsif_uploads u
+SET state = CASE WHEN u.state = 'completed' THEN 'deleting' ELSE 'deleted' END
+FROM repo
+WHERE repo.id = u.repository_id AND %s
+RETURNING repository_id
 `
 
 // UpdateUploadRetention updates the last data retention scan timestamp on the upload
@@ -1899,7 +1952,7 @@ func nilTimeToString(t *time.Time) string {
 	return t.String()
 }
 
-func buildConditionsAndCte(opts types.GetUploadsOptions) (*sqlf.Query, []*sqlf.Query, []cteDefinition) {
+func buildGetConditionsAndCte(opts types.GetUploadsOptions) (*sqlf.Query, []*sqlf.Query, []cteDefinition) {
 	conds := make([]*sqlf.Query, 0, 12)
 
 	allowDeletedUploads := (opts.AllowDeletedUpload && opts.State == "") || opts.State == "deleted"
@@ -2015,6 +2068,23 @@ func buildConditionsAndCte(opts types.GetUploadsOptions) (*sqlf.Query, []*sqlf.Q
 	return sourceTableExpr, conds, cteDefinitions
 }
 
+func buildDeleteConditions(opts types.DeleteUploadsOptions) []*sqlf.Query {
+	conds := []*sqlf.Query{}
+	conds = append(conds, sqlf.Sprintf("repo.deleted_at IS NULL"))
+	conds = append(conds, sqlf.Sprintf("u.state != 'deleted'"))
+	if opts.Term != "" {
+		conds = append(conds, makeSearchCondition(opts.Term))
+	}
+	if opts.State != "" {
+		conds = append(conds, makeStateCondition(opts.State))
+	}
+	if opts.VisibleAtTip {
+		conds = append(conds, sqlf.Sprintf("EXISTS ("+visibleAtTipSubselectQuery+")"))
+	}
+
+	return conds
+}
+
 // makeSearchCondition returns a disjunction of LIKE clauses against all searchable columns of an upload.
 func makeSearchCondition(term string) *sqlf.Query {
 	searchableColumns := []string{
@@ -2066,7 +2136,7 @@ func buildCTEPrefix(cteDefinitions []cteDefinition) *sqlf.Query {
 	return sqlf.Sprintf("WITH\n%s", sqlf.Join(cteQueries, ",\n"))
 }
 
-func buildLogFields(opts types.GetUploadsOptions) []log.Field {
+func buildGetUploadsLogFields(opts types.GetUploadsOptions) []log.Field {
 	return []log.Field{
 		log.Int("repositoryID", opts.RepositoryID),
 		log.String("state", opts.State),
@@ -2082,5 +2152,13 @@ func buildLogFields(opts types.GetUploadsOptions) []log.Field {
 		log.Bool("oldestFirst", opts.OldestFirst),
 		log.Int("limit", opts.Limit),
 		log.Int("offset", opts.Offset),
+	}
+}
+
+func buildDeleteUploadsLogFields(opts types.DeleteUploadsOptions) []log.Field {
+	return []log.Field{
+		log.String("state", opts.State),
+		log.String("term", opts.Term),
+		log.Bool("visibleAtTip", opts.VisibleAtTip),
 	}
 }

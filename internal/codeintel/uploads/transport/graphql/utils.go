@@ -120,6 +120,16 @@ func makeGetUploadsOptions(args *LSIFRepositoryUploadsQueryArgs) (types.GetUploa
 	}, nil
 }
 
+// makeDeleteUploadsOptions translates the given GraphQL arguments into options defined by the
+// store.DeleteUploads operations.
+func makeDeleteUploadsOptions(args *DeleteLSIFUploadsArgs) types.DeleteUploadsOptions {
+	return types.DeleteUploadsOptions{
+		State:        strings.ToLower(derefString(args.State, "")),
+		Term:         derefString(args.Query, ""),
+		VisibleAtTip: derefBool(args.IsLatestForRepo, false),
+	}
+}
+
 // resolveRepositoryByID gets a repository's internal identifier from a GraphQL identifier.
 func resolveRepositoryID(id graphql.ID) (int, error) {
 	if id == "" {

@@ -449,6 +449,13 @@ func (s *Service) DeleteUploadByID(ctx context.Context, id int) (_ bool, err err
 	return s.store.DeleteUploadByID(ctx, id)
 }
 
+func (s *Service) DeleteUploads(ctx context.Context, opts types.DeleteUploadsOptions) (err error) {
+	ctx, _, endObservation := s.operations.deleteUploadByID.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.DeleteUploads(ctx, opts)
+}
+
 // numAncestors is the number of ancestors to query from gitserver when trying to find the closest
 // ancestor we have data for. Setting this value too low (relative to a repository's commit rate)
 // will cause requests for an unknown commit return too few results; setting this value too high
