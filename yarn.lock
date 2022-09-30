@@ -8597,21 +8597,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/jsonwebtoken@npm:^8.3.3":
+"@types/jsonwebtoken@npm:^8.3.3, @types/jsonwebtoken@npm:^8.5.0":
   version: 8.5.9
   resolution: "@types/jsonwebtoken@npm:8.5.9"
   dependencies:
     "@types/node": "*"
   checksum: 33815ab02d1371b423118316b7706d2f2ec03eeee5e1494be72da50425d2384e5e0a09ea193f7a5ab4b4f6a9c5847147305f50e965f3d927a95bdf8adb471b2a
-  languageName: node
-  linkType: hard
-
-"@types/jsonwebtoken@npm:^8.5.0":
-  version: 8.5.0
-  resolution: "@types/jsonwebtoken@npm:8.5.0"
-  dependencies:
-    "@types/node": "*"
-  checksum: e8f9ab96ec5cf76195c0d31cf555371824b673939064efec698ca99525ce46476af54debd1f66bd732e6079e134848b97163797009c4b47a767448a0c6ddaeda
   languageName: node
   linkType: hard
 
@@ -10291,17 +10282,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"aggregate-error@npm:^3.0.0":
-  version: 3.0.1
-  resolution: "aggregate-error@npm:3.0.1"
-  dependencies:
-    clean-stack: ^2.0.0
-    indent-string: ^4.0.0
-  checksum: 1f922d00cc51cf9f7f6f729c0b925689ed5a464aefc1fac8309924f622000ee3741d314d864b2d776f9627236ea79daf5a83d093f6b72edc52160571160eff82
-  languageName: node
-  linkType: hard
-
-"aggregate-error@npm:^3.1.0":
+"aggregate-error@npm:^3.0.0, aggregate-error@npm:^3.1.0":
   version: 3.1.0
   resolution: "aggregate-error@npm:3.1.0"
   dependencies:
@@ -18203,14 +18184,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"fromentries@npm:^1.2.0":
-  version: 1.2.0
-  resolution: "fromentries@npm:1.2.0"
-  checksum: ff5b279fdad143ff5c6f402c2f452412fbe0b0612f003ae5cdeb05fd32c12ecd2942d0992d880f05a08bb496eece372acc47eef89b33bd22ebb70390b9d0b430
-  languageName: node
-  linkType: hard
-
-"fromentries@npm:^1.3.1":
+"fromentries@npm:^1.2.0, fromentries@npm:^1.3.1":
   version: 1.3.2
   resolution: "fromentries@npm:1.3.2"
   checksum: 33729c529ce19f5494f846f0dd4945078f4e37f4e8955f4ae8cc7385c218f600e9d93a7d225d17636c20d1889106fd87061f911550861b7072f53bf891e6b341
