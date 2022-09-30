@@ -166,6 +166,11 @@ func startExec(ctx *cli.Context) error {
 		}
 	}
 
+	if pid, exists := run.PidExistsWithArgs(os.Args[1:]); exists {
+		std.Out.WriteAlertf("Found 'sg %s' already running. Process: %d", strings.Join(os.Args[1:], " "), pid)
+		return errors.New("no double sg allowed")
+	}
+
 	commandset := args[0]
 	set, ok := config.Commandsets[commandset]
 	if !ok {

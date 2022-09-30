@@ -3,6 +3,7 @@ package run
 import (
 	"context"
 	"crypto/md5"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -16,6 +17,7 @@ import (
 	"github.com/grafana/regexp"
 	"github.com/rjeczalik/notify"
 	"golang.org/x/sync/semaphore"
+	"k8s.io/utils/strings/slices"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -27,6 +29,71 @@ import (
 )
 
 const MAX_CONCURRENT_BUILD_PROCS = 4
+
+type pidFile struct {
+	Args []string `json:"args"`
+	Pid  int      `json:"pid"`
+}
+
+func PidExistsWithArgs(args []string) (int, bool) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return 0, false
+	}
+
+	pattern := filepath.Join(homeDir, ".sourcegraph", "sg.pid.*")
+	matches, err := filepath.Glob(pattern)
+	if err != nil {
+		return 0, false
+	}
+
+	for _, match := range matches {
+		f, err := os.Open(match)
+		if err != nil {
+			return 0, false
+		}
+		defer f.Close()
+
+		var content pidFile
+		if err := json.NewDecoder(f).Decode(&content); err != nil {
+			return 0, false
+		}
+
+		if slices.Equal(content.Args, args) {
+			return content.Pid, true
+		}
+	}
+
+	return 0, false
+}
+
+func writePid() error {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return err
+	}
+
+	pidFileName := fmt.Sprintf("sg.pid.%d.json", os.Getpid())
+	pidFilePath := filepath.Join(homeDir, ".sourcegraph", pidFileName)
+
+	content := pidFile{
+		Args: os.Args[1:],
+		Pid:  os.Getpid(),
+	}
+
+	b, err := json.Marshal(content)
+	if err != nil {
+		return err
+	}
+
+	if err := os.WriteFile(pidFilePath, b, 0644); err != nil {
+		return err
+	}
+
+	interrupt.Register(func() { os.Remove(pidFilePath) })
+
+	return nil
+}
 
 func Commands(ctx context.Context, parentEnv map[string]string, verbose bool, cmds ...Command) error {
 	chs := make([]<-chan struct{}, 0, len(cmds))
@@ -107,6 +174,10 @@ func Commands(ctx context.Context, parentEnv map[string]string, verbose bool, cm
 		return err
 	}
 
+	if err := writePid(); err != nil {
+		return err
+	}
+
 	wg.Wait()
 
 	select {
@@ -128,6 +199,8 @@ type cmdRunner struct {
 
 	repositoryRoot string
 	parentEnv      map[string]string
+
+	processes map[string]int
 }
 
 func (c *cmdRunner) runAndWatch(ctx context.Context, cmd Command, reload <-chan struct{}) error {
