@@ -10,9 +10,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
+	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executorqueue"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -40,19 +42,19 @@ func (j *janitorJob) Routines(startupCtx context.Context, logger log.Logger) ([]
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	dbStore, err := codeintel.InitDBStore()
+	rawDB, err := workerdb.Init()
 	if err != nil {
 		return nil, err
 	}
+	db := database.NewDB(logger, rawDB)
 
 	dependencyIndexingStore, err := codeintel.InitDependencySyncingStore()
 	if err != nil {
 		return nil, err
 	}
 
-	dbStoreShim := &janitor.DBStoreShim{Store: dbStore}
-	uploadWorkerStore := dbstore.WorkerutilUploadStore(dbStoreShim, observationContext)
-	indexWorkerStore := dbstore.WorkerutilIndexStore(dbStoreShim, observationContext)
+	uploadWorkerStore := dbstore.WorkerutilUploadStore(db, observationContext)
+	indexWorkerStore := dbstore.WorkerutilIndexStore(db, observationContext)
 	metrics := janitor.NewMetrics(observationContext)
 
 	executorMetricsReporter, err := executorqueue.NewMetricReporter(observationContext, "codeintel", indexWorkerStore, janitorConfigInst.MetricsConfig)
