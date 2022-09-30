@@ -7,9 +7,8 @@ import (
 	"github.com/sourcegraph/log"
 
 	policiesEnterprise "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
-	policyShared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
-	uploadShared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -88,7 +87,7 @@ func (e *expirer) handleRepository(ctx context.Context, repositoryID int, now ti
 		// out new uploads that would happen to be visible to no commits since they were never
 		// installed into the commit graph.
 
-		uploads, _, err := e.uploadSvc.GetUploads(ctx, uploadShared.GetUploadsOptions{
+		uploads, _, err := e.uploadSvc.GetUploads(ctx, types.GetUploadsOptions{
 			State:                   "completed",
 			RepositoryID:            repositoryID,
 			AllowExpired:            false,
@@ -115,12 +114,12 @@ func (e *expirer) handleRepository(ctx context.Context, repositoryID int, now ti
 func (e *expirer) buildCommitMap(ctx context.Context, repositoryID int, now time.Time) (map[string][]policiesEnterprise.PolicyMatch, error) {
 	var (
 		offset   int
-		policies []policyShared.ConfigurationPolicy
+		policies []types.ConfigurationPolicy
 	)
 
 	for {
 		// Retrieve the complete set of configuration policies that affect data retention for this repository
-		policyBatch, totalCount, err := e.policySvc.GetConfigurationPolicies(ctx, policyShared.GetConfigurationPoliciesOptions{
+		policyBatch, totalCount, err := e.policySvc.GetConfigurationPolicies(ctx, types.GetConfigurationPoliciesOptions{
 			RepositoryID:     repositoryID,
 			ForDataRetention: true,
 			Limit:            ConfigInst.PolicyBatchSize,
@@ -147,7 +146,7 @@ func (e *expirer) buildCommitMap(ctx context.Context, repositoryID int, now time
 func (e *expirer) handleUploads(
 	ctx context.Context,
 	commitMap map[string][]policiesEnterprise.PolicyMatch,
-	uploads []uploadShared.Upload,
+	uploads []types.Upload,
 	now time.Time,
 ) (err error) {
 	// Categorize each upload as protected or expired
@@ -201,7 +200,7 @@ func (e *expirer) handleUploads(
 func (e *expirer) isUploadProtectedByPolicy(
 	ctx context.Context,
 	commitMap map[string][]policiesEnterprise.PolicyMatch,
-	upload uploadShared.Upload,
+	upload types.Upload,
 	now time.Time,
 ) (bool, error) {
 	e.metrics.numUploadsScanned.Inc()
@@ -241,7 +240,7 @@ func (e *expirer) isUploadProtectedByPolicy(
 	return false, nil
 }
 
-func convertConfigPolicies(configs []policyShared.ConfigurationPolicy) []dbstore.ConfigurationPolicy {
+func convertConfigPolicies(configs []types.ConfigurationPolicy) []dbstore.ConfigurationPolicy {
 	configPolicy := make([]dbstore.ConfigurationPolicy, 0, len(configs))
 	for _, c := range configs {
 		configPolicy = append(configPolicy, dbstore.ConfigurationPolicy{

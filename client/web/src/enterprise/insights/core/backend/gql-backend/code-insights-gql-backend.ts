@@ -6,7 +6,6 @@ import {
     DeleteDashboardResult,
     ExampleFirstRepositoryResult,
     ExampleTodoRepositoryResult,
-    GetAccessibleInsightsListResult,
     GetDashboardInsightsResult,
     GetFrozenInsightsCountResult,
     GetInsightsResult,
@@ -21,7 +20,6 @@ import { ALL_INSIGHTS_DASHBOARD } from '../../constants'
 import { Insight, InsightDashboard, InsightsDashboardOwner, isComputeInsight } from '../../types'
 import { CodeInsightsBackend } from '../code-insights-backend'
 import {
-    AccessibleInsightInfo,
     AssignInsightsToDashboardInput,
     DashboardCreateInput,
     DashboardDeleteInput,
@@ -43,7 +41,6 @@ import { getRepositorySuggestions } from '../core/api/get-repository-suggestions
 import { getResolvedSearchRepositories } from '../core/api/get-resolved-search-repositories'
 
 import { createInsightView } from './deserialization/create-insight-view'
-import { GET_ACCESSIBLE_INSIGHTS_LIST } from './gql/GetAccessibleInsightsList'
 import { GET_DASHBOARD_INSIGHTS_GQL } from './gql/GetDashboardInsights'
 import { GET_EXAMPLE_FIRST_REPOSITORY_GQL, GET_EXAMPLE_TODO_REPOSITORY_GQL } from './gql/GetExampleRepository'
 import { GET_INSIGHTS_GQL } from './gql/GetInsights'
@@ -158,20 +155,6 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     // limitations about title field in gql api remove this method and async validation for
     // title field as soon as setting-based api will be deprecated
     public findInsightByName = (): Observable<Insight | null> => of(null)
-
-    public getAccessibleInsightsList = (): Observable<AccessibleInsightInfo[]> =>
-        fromObservableQuery(
-            this.apolloClient.watchQuery<GetAccessibleInsightsListResult>({
-                query: GET_ACCESSIBLE_INSIGHTS_LIST,
-            })
-        ).pipe(
-            map(response =>
-                response.data.insightViews.nodes.map(view => ({
-                    id: view.id,
-                    title: view.presentation.title,
-                }))
-            )
-        )
 
     public getBuiltInInsightData = getBuiltInInsight
 

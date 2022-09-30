@@ -3,6 +3,9 @@ package uploads
 import (
 	"fmt"
 
+	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -69,6 +72,13 @@ type operations struct {
 	// Audit Logs
 	getAuditLogsForUpload *observation.Operation
 	deleteOldAuditLogs    *observation.Operation
+
+	// Tags
+	getListTags *observation.Operation
+
+	// Worker metrics
+	uploadProcessor *observation.Operation
+	uploadSizeGuage prometheus.Gauge
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -86,6 +96,21 @@ func newOperations(observationContext *observation.Context) *operations {
 			Metrics:           m,
 		})
 	}
+
+	honeyObservationContext := *observationContext
+	honeyObservationContext.HoneyDataset = &honey.Dataset{Name: "codeintel-worker"}
+	uploadProcessor := honeyObservationContext.Operation(observation.Op{
+		Name: "codeintel.uploadHandler",
+		ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
+			return observation.EmitForTraces | observation.EmitForHoney
+		},
+	})
+
+	uploadSizeGuage := prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "src_codeintel_upload_processor_upload_size",
+		Help: "The combined size of uploads being processed at this instant by this worker.",
+	})
+	observationContext.Registerer.MustRegister(uploadSizeGuage)
 
 	return &operations{
 		// Not used yet.
@@ -148,5 +173,12 @@ func newOperations(observationContext *observation.Context) *operations {
 		// Audit Logs
 		getAuditLogsForUpload: op("GetAuditLogsForUpload"),
 		deleteOldAuditLogs:    op("DeleteOldAuditLogs"),
+
+		// Tags
+		getListTags: op("GetListTags"),
+
+		// Worker metrics
+		uploadProcessor: uploadProcessor,
+		uploadSizeGuage: uploadSizeGuage,
 	}
 }

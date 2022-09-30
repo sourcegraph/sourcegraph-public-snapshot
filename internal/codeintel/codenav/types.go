@@ -3,16 +3,16 @@ package codenav
 import (
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 // visibleUpload pairs an upload visible from the current target commit with the
 // current target path and position matched to the data within the underlying index.
 type visibleUpload struct {
-	Upload                shared.Dump
+	Upload                types.Dump
 	TargetPath            string
-	TargetPosition        shared.Position
+	TargetPosition        types.Position
 	TargetPathWithoutRoot string
 }
 

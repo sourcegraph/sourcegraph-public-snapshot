@@ -128,6 +128,18 @@ describe('CodeMirror blob view', () => {
                 'search form is not presetn'
             )
         })
+
+        it('opens in-document when pressing ctrl-f anywhere on the page', async () => {
+            await driver.page.goto(`${driver.sourcegraphBaseUrl}${filePaths['test.ts']}`)
+            await driver.page.waitForSelector(blobSelector)
+            // Wait for page to "settle" so that focus management works better
+            await driver.page.waitForTimeout(1000)
+
+            // Focus file view and trigger in-document search
+            await driver.page.click('body')
+            await pressCtrlF()
+            await driver.page.waitForSelector('.search-container')
+        })
     })
 })
 

@@ -529,7 +529,7 @@ func TestService(t *testing.T) {
 		})
 
 		t.Run("missing access to namespace org", func(t *testing.T) {
-			orgID := bt.InsertTestOrg(t, db, "test-org")
+			orgID := bt.CreateTestOrg(t, db, "test-org").ID
 
 			opts := CreateBatchSpecOpts{
 				NamespaceOrgID:       orgID,
@@ -749,7 +749,7 @@ index e5af166..d44c3fc 100644
 		t.Run("new org namespace", func(t *testing.T) {
 			batchChange := createBatchChange(t, "old-name-1", admin.ID, admin.ID, 0)
 
-			orgID := bt.InsertTestOrg(t, db, "org")
+			orgID := bt.CreateTestOrg(t, db, "org").ID
 
 			opts := MoveBatchChangeOpts{BatchChangeID: batchChange.ID, NewNamespaceOrgID: orgID}
 			moved, err := svc.MoveBatchChange(ctx, opts)
@@ -769,7 +769,7 @@ index e5af166..d44c3fc 100644
 		t.Run("new org namespace but current user is missing access", func(t *testing.T) {
 			batchChange := createBatchChange(t, "old-name-2", user.ID, user.ID, 0)
 
-			orgID := bt.InsertTestOrg(t, db, "org-no-access")
+			orgID := bt.CreateTestOrg(t, db, "org-no-access").ID
 
 			opts := MoveBatchChangeOpts{BatchChangeID: batchChange.ID, NewNamespaceOrgID: orgID}
 

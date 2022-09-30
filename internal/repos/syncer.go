@@ -647,9 +647,10 @@ func (s *Syncer) SyncExternalService(
 
 			id, err := webhookworker.EnqueueJob(ctx, basestore.NewWithHandle(s.Store.Handle()), job)
 			if err != nil {
-				logger.Error("unable to enqueue webhook build job")
+				logger.Error("enqueueing webhook build job", log.Error(err))
+			} else {
+				logger.Info("enqueued webhook build job", log.Int("ID", id))
 			}
-			logger.Info("enqueued webhook build job", log.Int("ID", id))
 		}
 	}
 

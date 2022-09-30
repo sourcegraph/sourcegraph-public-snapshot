@@ -1,10 +1,12 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
+import React, { KeyboardEvent, MouseEvent, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 
 import { mdiArrowCollapseRight, mdiChevronDown, mdiChevronRight, mdiFilterOutline } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { capitalize } from 'lodash'
 import { MemoryRouter, useLocation } from 'react-router'
+import { Observable, of } from 'rxjs'
+import { map } from 'rxjs/operators'
 
 import { HoveredToken } from '@sourcegraph/codeintellify'
 import {
@@ -17,6 +19,7 @@ import {
 } from '@sourcegraph/common'
 import { Position } from '@sourcegraph/extension-api-classes'
 import { useQuery } from '@sourcegraph/http-client'
+import { CodeExcerpt, FetchFileParameters, onClickCodeExcerptHref } from '@sourcegraph/search-ui'
 import { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
 import { findLanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/languages'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
@@ -73,13 +76,18 @@ import styles from './ReferencesPanel.module.scss'
 
 type Token = HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
 
-interface ReferencesPanelProps
+interface HighlightedFileLineRangesProps {
+    fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
+}
+
+export interface ReferencesPanelProps
     extends SettingsCascadeProps,
         PlatformContextProps<'urlToFile' | 'requestGraphQL' | 'settings'>,
         TelemetryProps,
         HoverThresholdProps,
         ExtensionsControllerProps,
-        ThemeProps {
+        ThemeProps,
+        HighlightedFileLineRangesProps {
     /** Whether to show the first loaded reference in mini code view */
     jumpToFirst?: boolean
 
@@ -302,10 +310,16 @@ export const ReferencesList: React.FunctionComponent<
                 revision: location.commitID,
                 repoName: location.repo,
                 commitID: location.commitID,
-                position: location.range
+                range: location.range
                     ? {
-                          line: location.range.start.line + 1,
-                          character: location.range.start.character,
+                          start: {
+                              line: location.range.start.line + 1,
+                              character: location.range.start.character + 1,
+                          },
+                          end: {
+                              line: location.range.end.line + 1,
+                              character: location.range.end.character + 1,
+                          },
                       }
                     : undefined,
             })
@@ -418,6 +432,7 @@ export const ReferencesList: React.FunctionComponent<
                         hasMore={false}
                         loadingMore={false}
                         filter={debouncedFilter}
+                        activeURL={activeURL || ''}
                         navigateToUrl={navigateToUrl}
                         isActiveLocation={isActiveLocation}
                         setActiveLocation={setActiveLocation}
@@ -432,6 +447,7 @@ export const ReferencesList: React.FunctionComponent<
                         fetchMore={fetchMoreReferences}
                         loadingMore={fetchMoreReferencesLoading}
                         filter={debouncedFilter}
+                        activeURL={activeURL || ''}
                         navigateToUrl={navigateToUrl}
                         setActiveLocation={setActiveLocation}
                         isActiveLocation={isActiveLocation}
@@ -449,6 +465,7 @@ export const ReferencesList: React.FunctionComponent<
                             setActiveLocation={setActiveLocation}
                             filter={debouncedFilter}
                             isActiveLocation={isActiveLocation}
+                            activeURL={activeURL || ''}
                             navigateToUrl={navigateToUrl}
                             handleOpenChange={handleOpenChange}
                             isOpen={isOpen}
@@ -511,7 +528,11 @@ interface ActiveLocationProps {
     setActiveLocation: (reference: Location | undefined) => void
 }
 
-interface CollapsibleLocationListProps extends ActiveLocationProps, CollapseProps, SearchTokenProps {
+interface CollapsibleLocationListProps
+    extends ActiveLocationProps,
+        CollapseProps,
+        SearchTokenProps,
+        HighlightedFileLineRangesProps {
     name: string
     locations: Location[]
     filter: string | undefined
@@ -519,6 +540,7 @@ interface CollapsibleLocationListProps extends ActiveLocationProps, CollapseProp
     fetchMore?: () => void
     loadingMore: boolean
     navigateToUrl: (url: string) => void
+    activeURL: string
 }
 
 const CollapsibleLocationList: React.FunctionComponent<
@@ -556,9 +578,11 @@ const CollapsibleLocationList: React.FunctionComponent<
                             isActiveLocation={props.isActiveLocation}
                             setActiveLocation={props.setActiveLocation}
                             filter={props.filter}
+                            activeURL={props.activeURL}
                             navigateToUrl={props.navigateToUrl}
                             handleOpenChange={(id, isOpen) => props.handleOpenChange(props.name + id, isOpen)}
                             isOpen={id => props.isOpen(props.name + id)}
+                            fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
                         />
                     ) : (
                         <Text className="text-muted pl-2">
@@ -711,10 +735,15 @@ const SideBlob: React.FunctionComponent<React.PropsWithChildren<SideBlobProps>> 
     )
 }
 
-interface LocationsListProps extends ActiveLocationProps, CollapseProps, SearchTokenProps {
+interface LocationsListProps
+    extends ActiveLocationProps,
+        CollapseProps,
+        SearchTokenProps,
+        HighlightedFileLineRangesProps {
     locations: Location[]
     filter: string | undefined
     navigateToUrl: (url: string) => void
+    activeURL: string
 }
 
 const LocationsList: React.FunctionComponent<React.PropsWithChildren<LocationsListProps>> = ({
@@ -726,6 +755,8 @@ const LocationsList: React.FunctionComponent<React.PropsWithChildren<LocationsLi
     handleOpenChange,
     isOpen,
     searchToken,
+    fetchHighlightedFileLineRanges,
+    activeURL,
 }) => {
     const repoLocationGroups = useMemo(() => buildRepoLocationGroups(locations), [locations])
     const openByDefault = repoLocationGroups.length === 1
@@ -735,6 +766,7 @@ const LocationsList: React.FunctionComponent<React.PropsWithChildren<LocationsLi
             {repoLocationGroups.map(group => (
                 <CollapsibleRepoLocationGroup
                     key={group.repoName}
+                    activeURL={activeURL}
                     searchToken={searchToken}
                     repoLocationGroup={group}
                     openByDefault={openByDefault}
@@ -744,6 +776,7 @@ const LocationsList: React.FunctionComponent<React.PropsWithChildren<LocationsLi
                     navigateToUrl={navigateToUrl}
                     handleOpenChange={handleOpenChange}
                     isOpen={isOpen}
+                    fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                 />
             ))}
         </>
@@ -754,11 +787,13 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<
     React.PropsWithChildren<
         ActiveLocationProps &
             CollapseProps &
-            SearchTokenProps & {
+            SearchTokenProps &
+            HighlightedFileLineRangesProps & {
                 filter: string | undefined
                 navigateToUrl: (url: string) => void
                 repoLocationGroup: RepoLocationGroup
                 openByDefault: boolean
+                activeURL: string
             }
     >
 > = ({
@@ -771,6 +806,8 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<
     isOpen,
     handleOpenChange,
     searchToken,
+    fetchHighlightedFileLineRanges,
+    activeURL,
 }) => {
     const open = isOpen(repoLocationGroup.repoName) ?? openByDefault
 
@@ -796,6 +833,7 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<
                     {repoLocationGroup.referenceGroups.map(group => (
                         <CollapsibleLocationGroup
                             key={group.path + group.repoName}
+                            activeURL={activeURL}
                             searchToken={searchToken}
                             group={group}
                             isActiveLocation={isActiveLocation}
@@ -804,6 +842,7 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<
                             handleOpenChange={(id, isOpen) => handleOpenChange(repoLocationGroup.repoName + id, isOpen)}
                             isOpen={id => isOpen(repoLocationGroup.repoName + id)}
                             navigateToUrl={navigateToUrl}
+                            fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                         />
                     ))}
                 </CollapsePanel>
@@ -816,13 +855,25 @@ const CollapsibleLocationGroup: React.FunctionComponent<
     React.PropsWithChildren<
         ActiveLocationProps &
             CollapseProps &
-            SearchTokenProps & {
+            SearchTokenProps &
+            HighlightedFileLineRangesProps & {
                 group: LocationGroup
                 filter: string | undefined
                 navigateToUrl: (url: string) => void
+                activeURL: string
             }
     >
-> = ({ group, setActiveLocation, isActiveLocation, filter, isOpen, handleOpenChange }) => {
+> = ({
+    group,
+    setActiveLocation,
+    isActiveLocation,
+    filter,
+    isOpen,
+    handleOpenChange,
+    fetchHighlightedFileLineRanges,
+    navigateToUrl,
+    activeURL,
+}) => {
     // On the first load, update the scroll position towards the active
     // location.  Without this behavior, the scroll position points at the top
     // of the reference panel when reloading the page or going back/forward in
@@ -833,10 +884,51 @@ const CollapsibleLocationGroup: React.FunctionComponent<
             activeLocationElement.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'center' })
         }
     }, [])
-
     let highlighted = [group.path]
     if (filter !== undefined) {
         highlighted = group.path.split(filter)
+    }
+
+    const { repo, commitID, file } = useMemo(() => group.locations[0], [group])
+    const ranges = useMemo(
+        () =>
+            group.locations.map(location => ({
+                startLine: location.range?.start.line ?? 0,
+                endLine: (location.range?.end.line ?? 0) + 1,
+            })),
+        [group.locations]
+    )
+
+    const fetchHighlightedFileRangeLines = useCallback(
+        (startLine: number, endLine: number): Observable<string[]> =>
+            fetchHighlightedFileLineRanges(
+                {
+                    repoName: repo,
+                    commitID,
+                    filePath: file,
+                    disableTimeout: false,
+                    format: HighlightResponseFormat.HTML_HIGHLIGHT,
+                    ranges,
+                },
+                false
+            ).pipe(
+                map(
+                    lines =>
+                        lines[ranges.findIndex(group => group.startLine === startLine && group.endLine === endLine + 1)]
+                )
+            ),
+        [fetchHighlightedFileLineRanges, repo, commitID, file, ranges]
+    )
+
+    const fetchPlainTextFileRangeLines = (location: Location): Observable<string[]> => {
+        const range = location.range
+        if (range !== undefined) {
+            const lineNumber = range.start.line + 1
+            const lineContent = location.lines[range.start.line]
+            const tableLine = `<tr><td class="line" data-line="${lineNumber}"></td><td class="code">${lineContent}</td></tr>`
+            return of([tableLine])
+        }
+        return of([])
     }
 
     const open = isOpen(group.path) ?? true
@@ -888,51 +980,58 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                 <CollapsePanel id={group.repoName + group.path} className="ml-0">
                     <div className={styles.locationContainer}>
                         <ul className="list-unstyled mb-0">
-                            {group.locations.map(reference => {
-                                const className = isActiveLocation(reference) ? styles.locationActive : ''
-
-                                const locationLine = getLineContent(reference)
-                                const lineWithHighlightedToken = locationLine.prePostToken ? (
-                                    <>
-                                        {locationLine.prePostToken.pre === '' ? (
-                                            <></>
-                                        ) : (
-                                            <Code>{locationLine.prePostToken.pre}</Code>
-                                        )}
-                                        <mark className="p-0 selection-highlight sourcegraph-document-highlight">
-                                            <Code>{locationLine.prePostToken.token}</Code>
-                                        </mark>
-                                        {locationLine.prePostToken.post === '' ? (
-                                            <></>
-                                        ) : (
-                                            <Code>{locationLine.prePostToken.post}</Code>
-                                        )}
-                                    </>
-                                ) : locationLine.line ? (
-                                    <Code>{locationLine.line}</Code>
-                                ) : (
-                                    ''
-                                )
+                            {group.locations.map((reference, index) => {
+                                const isActive = isActiveLocation(reference)
+                                const locationActive = isActive ? styles.locationActive : ''
+                                const selectReference = (
+                                    event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>
+                                ): void => {
+                                    onClickCodeExcerptHref(event, () => {
+                                        if (isActive && activeURL) {
+                                            navigateToUrl(activeURL)
+                                        } else {
+                                            setActiveLocation(reference)
+                                        }
+                                    })
+                                }
 
                                 return (
                                     <li
                                         key={reference.url}
-                                        className={classNames('border-0 rounded-0 mb-0', styles.location, className)}
+                                        className={classNames('border-0 rounded-0 mb-0', styles.location)}
                                     >
-                                        <Button
-                                            onClick={event => {
-                                                event.preventDefault()
-                                                setActiveLocation(reference)
-                                            }}
-                                            data-test-reference-url={reference.url}
-                                            className={styles.locationLink}
+                                        <div
+                                            role="link"
+                                            data-testid={`reference-item-${group.path}-${index}`}
+                                            tabIndex={0}
+                                            onClick={selectReference}
+                                            onKeyDown={selectReference}
+                                            data-href={reference.url}
+                                            className={classNames(styles.locationLink, locationActive)}
                                         >
-                                            <span className={styles.locationLinkLineNumber}>
-                                                {(reference.range?.start?.line ?? 0) + 1}
-                                                {': '}
-                                            </span>
-                                            {lineWithHighlightedToken}
-                                        </Button>
+                                            <CodeExcerpt
+                                                className={styles.locationLinkCodeExcerpt}
+                                                commitID={reference.commitID}
+                                                filePath={reference.file}
+                                                repoName={reference.repo}
+                                                highlightRanges={[
+                                                    {
+                                                        line: reference.range?.start.line ?? 0,
+                                                        character: reference.range?.start.character ?? 0,
+                                                        highlightLength:
+                                                            (reference.range?.end.character ?? 0) -
+                                                            (reference.range?.start.character ?? 0),
+                                                    },
+                                                ]}
+                                                startLine={reference.range?.start.line ?? 0}
+                                                endLine={reference.range?.end.line ?? 0}
+                                                fetchHighlightedFileRangeLines={fetchHighlightedFileRangeLines}
+                                                visibilityOffset={{ bottom: 0 }}
+                                                fetchPlainTextFileRangeLines={(): Observable<string[]> =>
+                                                    fetchPlainTextFileRangeLines(reference)
+                                                }
+                                            />
+                                        </div>
                                     </li>
                                 )
                             })}
@@ -942,38 +1041,6 @@ const CollapsibleLocationGroup: React.FunctionComponent<
             </div>
         </Collapse>
     )
-}
-
-interface LocationLine {
-    prePostToken?: { pre: string; token: string; post: string }
-    line?: string
-}
-
-export const getLineContent = (location: Location): LocationLine => {
-    const range = location.range
-    if (range !== undefined) {
-        const line = location.lines[range.start.line]
-
-        if (range.end.line === range.start.line) {
-            return {
-                prePostToken: {
-                    pre: line.slice(0, range.start.character).trimStart(),
-                    token: line.slice(range.start.character, range.end.character),
-                    post: line.slice(range.end.character),
-                },
-                line: line.trimStart(),
-            }
-        }
-        return {
-            prePostToken: {
-                pre: line.slice(0, range.start.character).trimStart(),
-                token: line.slice(range.start.character),
-                post: '',
-            },
-            line: line.trimStart(),
-        }
-    }
-    return {}
 }
 
 const LoadingCodeIntel: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
