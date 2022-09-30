@@ -421,25 +421,33 @@ func readPipelines(it func() ([]*gitlab.Pipeline, error)) ([]*gitlab.Pipeline, e
 }
 
 func (s *GitLabSource) determineVersion(ctx context.Context) (*semver.Version, error) {
+	var v string
 	chvs, err := versions.GetVersions()
 	if err != nil {
 		return nil, err
 	}
 
 	for _, chv := range chvs {
-		if chv.ExternalServiceKind != extsvc.KindGitLab {
+		if chv.ExternalServiceKind != extsvc.KindGitLab && chv.Key != s.client.Urn() {
 			continue
 		}
 
-		cv, err := semver.NewVersion(chv.Version)
+		v = chv.Version
+		break
+
+	}
+
+	if v == "" {
+		// if we couldn't get the version of this source from Redis, we default to making a request
+		// to the codehost to get the version.
+		v, err = s.client.GetVersion(ctx)
 		if err != nil {
 			return nil, err
 		}
-
-		return cv, nil
 	}
 
-	return nil, errors.New("missing gitlab version")
+	version, err := semver.NewVersion(v)
+	return version, err
 }
 
 // UpdateChangeset updates the merge request on GitLab to reflect the local

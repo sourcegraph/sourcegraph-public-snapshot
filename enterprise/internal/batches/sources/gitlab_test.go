@@ -30,20 +30,35 @@ var mockVersion2 = semver.MustParse("14.10.0-pre")
 
 func TestGitLabSource(t *testing.T) {
 	t.Run("determineVersion", func(t *testing.T) {
-		p := newGitLabChangesetSourceTestProvider(t)
+		t.Run("external service is cached in redis", func(t *testing.T) {
+			p := newGitLabChangesetSourceTestProvider(t)
 
-		p.mockGetVersions(mockVersion.String())
-		v, err := p.source.determineVersion(p.ctx)
+			p.mockGetVersions(mockVersion.String(), false)
+			v, err := p.source.determineVersion(p.ctx)
 
-		assert.NoError(t, err)
-		assert.True(t, mockVersion.Equal(v), fmt.Sprintf("expected: %s, got: %s", v.String(), mockVersion.String()))
+			assert.NoError(t, err)
+			assert.True(t, mockVersion.Equal(v), fmt.Sprintf("expected: %s, got: %s", v.String(), mockVersion.String()))
+			assert.False(t, p.isGetVersionCalled, "Client.GetVersion should not be called")
+		})
+
+		t.Run("external service is not cached in redis", func(t *testing.T) {
+			p := newGitLabChangesetSourceTestProvider(t)
+
+			p.mockGetVersions("", true)
+			p.mockGetVersion(mockVersion.String())
+			v, err := p.source.determineVersion(p.ctx)
+
+			assert.NoError(t, err)
+			assert.True(t, mockVersion.Equal(v), fmt.Sprintf("expected: %s, got: %s", v.String(), mockVersion.String()))
+			assert.True(t, p.isGetVersionCalled, "Client.GetVersion should be called")
+		})
 	})
 
 	t.Run("CreateDraftChangeset", func(t *testing.T) {
 		t.Run("GitLab version is greater than 14.0.0", func(t *testing.T) {
 			p := newGitLabChangesetSourceTestProvider(t)
 
-			p.mockGetVersions(mockVersion2.String())
+			p.mockGetVersions(mockVersion2.String(), false)
 			p.mockCreateMergeRequest(gitlab.CreateMergeRequestOpts{
 				SourceBranch: p.mr.SourceBranch,
 				TargetBranch: p.mr.TargetBranch,
@@ -61,7 +76,7 @@ func TestGitLabSource(t *testing.T) {
 		t.Run("GitLab Version is less than 14.0.0", func(t *testing.T) {
 			p := newGitLabChangesetSourceTestProvider(t)
 
-			p.mockGetVersions(mockVersion.String())
+			p.mockGetVersions(mockVersion.String(), false)
 			p.mockCreateMergeRequest(gitlab.CreateMergeRequestOpts{
 				SourceBranch: p.mr.SourceBranch,
 				TargetBranch: p.mr.TargetBranch,
@@ -682,7 +697,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			out := &gitlab.MergeRequest{}
 
 			p := newGitLabChangesetSourceTestProvider(t)
-			p.mockGetVersions(mockVersion2.String())
+			p.mockGetVersions(mockVersion2.String(), false)
 			p.changeset.Changeset.Metadata = in
 
 			oldMock := gitlab.MockUpdateMergeRequest
@@ -713,7 +728,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			out := &gitlab.MergeRequest{}
 
 			p := newGitLabChangesetSourceTestProvider(t)
-			p.mockGetVersions(mockVersion.String())
+			p.mockGetVersions(mockVersion.String(), false)
 			p.changeset.Changeset.Metadata = in
 
 			oldMock := gitlab.MockUpdateMergeRequest
@@ -952,6 +967,8 @@ type gitLabChangesetSourceTestProvider struct {
 	mr        *gitlab.MergeRequest
 	source    *GitLabSource
 	t         *testing.T
+
+	isGetVersionCalled bool
 }
 
 // newGitLabChangesetSourceTestProvider provides a set of useful pre-canned
@@ -1109,14 +1126,25 @@ func (p *gitLabChangesetSourceTestProvider) mockCreateComment(expected string, e
 	}
 }
 
-func (p *gitLabChangesetSourceTestProvider) mockGetVersions(expected string) {
+func (p *gitLabChangesetSourceTestProvider) mockGetVersions(expected string, isEmpty bool) {
 	versions.MockGetVersions = func() ([]*versions.Version, error) {
+		if isEmpty {
+			return []*versions.Version{}, nil
+		}
 		return []*versions.Version{
 			{
 				ExternalServiceKind: extsvc.KindGitLab,
 				Version:             expected,
+				Key:                 p.source.client.Urn(),
 			},
 		}, nil
+	}
+}
+
+func (p *gitLabChangesetSourceTestProvider) mockGetVersion(expected string) {
+	gitlab.MockGetVersion = func(ctx context.Context) (string, error) {
+		p.isGetVersionCalled = true
+		return expected, nil
 	}
 }
 
