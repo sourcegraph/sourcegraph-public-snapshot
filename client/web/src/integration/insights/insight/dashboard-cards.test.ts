@@ -241,12 +241,7 @@ function mockDashboardWithInsights({
             },
             insightsDashboards: {
                 __typename: 'InsightsDashboardConnection',
-                nodes: [
-                    createDashboard({
-                        id: dashboardId,
-                        insightIds: [insightMock.id],
-                    }),
-                ],
+                nodes: [createDashboard({ id: dashboardId })],
             },
         }),
         // Mock dashboard configuration (dashboard content) with one capture group insight configuration
