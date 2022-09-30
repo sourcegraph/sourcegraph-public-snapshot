@@ -63,7 +63,7 @@ async function createOrUpdateComment(body: string): Promise<void> {
     const [owner, _repo] =
         process.env.BUILDKITE_PULL_REQUEST_REPO?.replace('https://github.com/', '').replace('.git', '').split('/') ?? []
     const repo = { owner, repo: _repo }
-    const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN })
+    const octokit = new Octokit({ auth: process.env.GH_TOKEN })
     if (!pullRequest || !owner || !_repo) {
         console.log({ pullRequest, owner, _repo })
         throw new Error('No BUILDKITE_PULL_REQUEST or BUILDKITE_PULL_REQUEST_REPO env vars set')
