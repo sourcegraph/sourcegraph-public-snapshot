@@ -94,7 +94,7 @@ func ArchivedExecutable(ctx context.Context, url, targetFile, fileInArchive stri
 	// Only extract the file that we want
 	opts := unpack.Opts{
 		Filter: func(path string, file fs.FileInfo) bool {
-			return path == fileInArchive && !file.IsDir()
+			return filepath.Clean(path) == fileInArchive && !file.IsDir()
 		},
 	}
 	if err := unpack.Tgz(resp.Body, tmpDirName, opts); err != nil {
