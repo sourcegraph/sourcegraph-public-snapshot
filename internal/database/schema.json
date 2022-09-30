@@ -3850,6 +3850,13 @@
           "ConstraintDefinition": "FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE"
         },
         {
+          "Name": "changeset_specs_published_valid_values",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK (published = 'true'::text OR published = 'false'::text OR published = '\"draft\"'::text OR published IS NULL)"
+        },
+        {
           "Name": "changeset_specs_repo_id_fkey",
           "ConstraintType": "f",
           "RefTableName": "repo",

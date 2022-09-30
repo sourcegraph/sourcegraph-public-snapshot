@@ -1048,7 +1048,8 @@ CREATE TABLE changeset_specs (
     commit_message text,
     commit_author_name text,
     commit_author_email text,
-    type text NOT NULL
+    type text NOT NULL,
+    CONSTRAINT changeset_specs_published_valid_values CHECK (((published = 'true'::text) OR (published = 'false'::text) OR (published = '"draft"'::text) OR (published IS NULL)))
 );
 
 CREATE TABLE changesets (
