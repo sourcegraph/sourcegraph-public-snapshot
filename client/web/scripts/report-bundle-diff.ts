@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-require-imports */
+
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 const path = require('path')
 
@@ -55,7 +56,46 @@ function parseReport(commitFilename: string, mergeBaseFilename: string): Report 
 }
 
 function reportToMarkdown(report: Report): string {
-    return COMMENT_HEADING + '\n\n```\n' + JSON.stringify(report, null, 2) + '\n```'
+    const initialSizeMetric = report[1]
+    const totalSizeMetric = report[2]
+    const asyncSizeMetric = report[3]
+    const modulesMetric = report[9]
+
+    const initialSize = describeMetric(initialSizeMetric, 5000) // 5kb
+    const totalSize = describeMetric(totalSizeMetric, 10000) // 10kb
+    const asyncSize = describeMetric(asyncSizeMetric, 10000) // 10kb
+    const modules = describeMetric(modulesMetric, 0)
+
+    return `${COMMENT_HEADING}
+
+| Initial size | Total size | Async size | Modules |
+| --- | --- | --- | --- |
+| ${initialSize} | ${totalSize} | ${asyncSize} | ${modules} |
+
+[View change in Statoscope report](#)
+
+<details>
+<summary>See raw data and explaination</summary>
+
+- \`Initial size\` is the size of the initial bundle (the one that is loaded when you open the page)
+- \`Total size\` is the size of the initial bundle + all the async loaded chunks
+- \`Async size\` is the size of all the async loaded chunks
+- \`Modules\` is the number of modules in the initial bundle
+
+\`\`\`
+${JSON.stringify(report, null, 2)}
+\`\`\`
+</details>`
+}
+
+function describeMetric(metric: Metric, treshold: number): string {
+    if (metric.value > treshold) {
+        return `${metric.valueTextP} (+${metric.valueText}) 🔺`
+    }
+    if (metric.value < -treshold) {
+        return `${metric.valueTextP} (+${metric.valueText}) 🔽`
+    }
+    return `${metric.valueTextP} (${metric.value > 0 ? '+' : ''}${metric.valueText})`
 }
 
 async function createOrUpdateComment(body: string): Promise<void> {
