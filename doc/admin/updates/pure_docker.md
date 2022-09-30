@@ -16,7 +16,9 @@ TODO - replace me
 
 ## v3.43 -> v4.0
 
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/916d2f79e04955e5bef2a47dba738d68655f20ac
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`-> v4.0.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/916d2f79e04955e5bef2a47dba738d68655f20ac)
 
 **Patch releases**:
 
@@ -24,7 +26,9 @@ https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/916d2f79e04955e5
 
 ## v3.42 -> v3.43
 
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/a189e495813bc33d544b302eb98c197d70eacc87
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`-> v3.43.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/94be340c1b0e57c866d2f530c489da4f65d453e2)
 
 **Patch releases**:
 
@@ -33,7 +37,9 @@ https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/a189e495813bc33d
 
 ## v3.41 -> v3.42
 
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/a189e495813bc33d544b302eb98c197d70eacc87
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`-> v3.42.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/a189e495813bc33d544b302eb98c197d70eacc87)
 
 **Patch releases**:
 
@@ -42,12 +48,16 @@ https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/a189e495813bc33d
 
 ## v3.40 -> v3.41
 
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/8bfd70892c1bf56c5a88db0329826800c7a1097b
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`-> v3.41.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/8bfd70892c1bf56c5a88db0329826800c7a1097b)
 
 ## v3.39 -> v3.40
 
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/312b9f8308148cf9403cc7868eee7b5c9611b121
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/2c94a1fb5fa396759d4800a717af6658548943f7
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`-> 3.40.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/2c94a1fb5fa396759d4800a717af6658548943f7)
+- [`-> 3.40.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/312b9f8308148cf9403cc7868eee7b5c9611b121)
 
 **Patch releases**:
 
@@ -62,8 +72,10 @@ broke the default behavior. In order to guard against this, all command line arg
 
 ## v3.38 -> v3.39
 
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/c2450311e385f077679d7666c09fd5a2aa7a6b6e
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/b37367c738d28ef7e27c8b1f833eb9355bd9e8b1
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`-> 3.39.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/b37367c738d28ef7e27c8b1f833eb9355bd9e8b1)
+- [`-> 3.39.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/c2450311e385f077679d7666c09fd5a2aa7a6b6e)
 
 **Patch releases**:
 
@@ -75,8 +87,14 @@ https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/b37367c738d28ef7
 
 ## v3.37 -> v3.38
 
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/19735936834aab31134888c179bf07387f09a647
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/a66a74ce9a120a9da743eb44c6fea3a55f51842a
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`-> v3.38.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/a66a74ce9a120a9da743eb44c6fea3a55f51842a)
+- [`-> v3.38.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/19735936834aab31134888c179bf07387f09a647)
+
+**Patch releases**:
+
+- `v3.38.1`
 
 **Notes**:
 
@@ -84,7 +102,9 @@ https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/a66a74ce9a120a9d
 
 ## v3.36 -> v3.37
 
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/9e369ec86cdef50b9e2a8350040d011cf2c7cd49
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`-> v3.37.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/9e369ec86cdef50b9e2a8350040d011cf2c7cd49)
 
 **Notes**:
 
@@ -92,9 +112,11 @@ https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/9e369ec86cdef50b
 
 ## v3.35 -> v3.36
 
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/3273d3c7da750ff15ba9d4f24d1e09e835bf11d9
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/45946fd69dd061cb39c85cfd06a037aeeaf74808
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/25cdf1858de7fe3d0a3e3479a7e5620a02ac6a2c
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`-> v3.36.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/25cdf1858de7fe3d0a3e3479a7e5620a02ac6a2c)
+- [`-> v3.36.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/45946fd69dd061cb39c85cfd06a037aeeaf74808)
+- [`-> v3.36.3`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/3273d3c7da750ff15ba9d4f24d1e09e835bf11d9)
 
 **Patch releases**:
 
@@ -104,9 +126,11 @@ https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/25cdf1858de7fe3d
 
 ## v3.34 -> v3.35
 
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/abc948e60a489f559ebd5cc8f0affcd3c4371fa4
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/ba0d94eb945fd3371ed888e4b7177828b33acd3d
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/33b076a123c23930cc3339167bdd5502bebc5a3c
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`-> v3.35.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/33b076a123c23930cc3339167bdd5502bebc5a3c)
+- [`-> v3.35.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/ba0d94eb945fd3371ed888e4b7177828b33acd3d)
+- [`-> v3.35.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/abc948e60a489f559ebd5cc8f0affcd3c4371fa4)
 
 **Patch releases**:
 
@@ -121,8 +145,9 @@ https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/33b076a123c23930
 
 ## v3.33 -> v3.34
 
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/e88d0f4615fc231576d37819b816576ac75b28d7
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/d615dd5f63ec0984d60076aecf0bc598d9ffc1a8
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`-> v3.34.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/d615dd5f63ec0984d60076aecf0bc598d9ffc1a8)
 
 **Patch releases**:
 
@@ -131,11 +156,15 @@ https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/d615dd5f63ec0984
 
 ## v3.32 -> v3.33
 
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/f6dc5c4a859b09faaea44a34e3ba8e85c92fcf58
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`-> v3.33.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/f6dc5c4a859b09faaea44a34e3ba8e85c92fcf58)
 
 ## v3.31 -> v3.32
 
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/2c4c283ae9f89fa48232f0b99ed1982008034fee
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`-> v3.32.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/2c4c283ae9f89fa48232f0b99ed1982008034fee)
 
 ## v3.30 -> v3.31
 
@@ -149,7 +178,9 @@ https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/2c4c283ae9f89fa4
 
 > WARNING: **If you have already upgraded to 3.30.0, 3.30.1, or 3.30.2** please follow [this migration guide](../migration/3_30.md).
 
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/63802ca5966754162c2b3e077e64e60687138874
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`-> v3.30.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/63802ca5966754162c2b3e077e64e60687138874)
 
 **Patch releases**:
 
@@ -159,7 +190,13 @@ https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/63802ca596675416
 
 ## v3.28 -> v3.29
 
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/940100429fdd59f930436d47e226f5a7116bf6d9
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`-> v3.29.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/940100429fdd59f930436d47e226f5a7116bf6d9)
+
+**Patch releases**:
+
+- `v3.29.1`
 
 **Notes**:
 
@@ -167,13 +204,24 @@ https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/940100429fdd59f9
 
 ## v3.27 -> v3.28
 
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/fa9bd6b4749697e09a4a74537e180e8331d84a5b
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`-> v3.28.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/fa9bd6b4749697e09a4a74537e180e8331d84a5b)
 
 ## v3.26 -> v3.27
 
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/1d01302a86d219a0f00f6dcbd27d4a511581ff27
-
 > WARNING: Sourcegraph 3.27 now requires **Postgres 12+**.
+
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`-> v3.27.4`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/1d01302a86d219a0f00f6dcbd27d4a511581ff27)
+
+**Patch releases**:
+
+- `v3.27.1`
+- `v3.27.2`
+- `v3.27.3`
+- `v3.27.4`
 
 **Notes**:
 
@@ -181,8 +229,10 @@ https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/1d01302a86d219a0
 
 ## v3.26 -> v3.26
 
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/de80a4af2ef2eeb23526e3ea560f7f72e1a71a5f
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/68ffad230fc6f99477cedd303a55b91a8c4d9acb
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`-> v3.26.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/68ffad230fc6f99477cedd303a55b91a8c4d9acb)
+- [`-> v3.26.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/de80a4af2ef2eeb23526e3ea560f7f72e1a71a5f)
 
 **Patch releases**:
 
@@ -191,7 +241,9 @@ https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/68ffad230fc6f994
 
 ## v3.24 -> v3.25
 
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/ee2cbb59c80a382fb6cc649d4547b044d9a8b28d
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`-> v3.25.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/ee2cbb59c80a382fb6cc649d4547b044d9a8b28d)
 
 **Notes**:
 
@@ -206,15 +258,21 @@ sudo chown -R 999:999 ~/sourcegraph-docker/codeinsights-db-disk/
 
 ## v3.23 -> v3.24
 
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/4acc4c7ed5d49ce41b1f68d654a3f4e2f35bd622
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`-> v3.24.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/4acc4c7ed5d49ce41b1f68d654a3f4e2f35bd622)
 
 ## v3.22 -> v3.23
 
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/10de1a4e34ab2c716bd63e52a68a6af896bd81b7
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`-> v3.23.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/10de1a4e34ab2c716bd63e52a68a6af896bd81b7)
 
 ## v3.21 -> v3.22
 
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/223c11dacffafb985c2d29b6c6a9b84bcc8255be
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`-> v3.22.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/223c11dacffafb985c2d29b6c6a9b84bcc8255be)
 
 **Notes**:
 
@@ -223,7 +281,9 @@ https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/223c11dacffafb98
 
 ## v3.20 -> v3.21
 
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/4629ddfcdfd070b41801106199817ae903ead510
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`-> v3.21.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/4629ddfcdfd070b41801106199817ae903ead510)
 
 **Patch releases**:
 
@@ -237,7 +297,9 @@ https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/4629ddfcdfd070b4
 
 ## v3.19 -> v3.20
 
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/7c57315a1ce05981d436860d79ca01553931e274
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`-> v3.20.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/7c57315a1ce05981d436860d79ca01553931e274)
 
 **Patch releases**:
 
@@ -253,7 +315,9 @@ sudo chown -R 100:101 ~/sourcegraph-docker/lsif-server-disk/ ~/sourcegraph-docke
 
 ## v3.18 -> v3.19
 
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/a1648452c6f7c16637b0e069776df12604c27f73
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`-> v3.19.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/a1648452c6f7c16637b0e069776df12604c27f73)
 
 **Patch releases**:
 
@@ -269,7 +333,9 @@ sudo chown -R 100:101 ~/sourcegraph-docker/lsif-server-disk/ ~/sourcegraph-docke
 
 ## v3.17 -> v3.18
 
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/7e6b23cdfead3be639048c5fa7fffe07441610f2
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`-> v3.18.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/7e6b23cdfead3be639048c5fa7fffe07441610f2)
 
 **Notes**:
 
@@ -277,7 +343,9 @@ https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/7e6b23cdfead3be6
 
 ## v3.16 -> v3.17
 
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/2895236661de3ff633ee56fe0b87e9a0f530cc60
+As a template, perform the same actions as the following diffs in your own deployment:
+
+- [`-> v3.17.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/2895236661de3ff633ee56fe0b87e9a0f530cc60)
 
 **Patch releases**:
 
@@ -285,7 +353,7 @@ https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/2895236661de3ff6
 
 ## v3.15 -> v3.16
 
-https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/customer-replica-v3.15.1...customer-replica-v3.16.0
+As a template, perform the same actions as this [diff](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/customer-replica-v3.15.1...customer-replica-v3.16.0) in your own deployment.
 
 **Steps**:
 

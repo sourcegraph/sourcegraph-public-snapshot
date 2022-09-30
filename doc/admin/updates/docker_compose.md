@@ -68,6 +68,7 @@ Target the tag [`v3.40.2`](https://github.com/sourcegraph/deploy-sourcegraph-doc
 
 **Patch releases**:
 
+- `v3.40.1`
 - `v3.40.2`
 
 **Notes**:
@@ -258,10 +259,6 @@ Target the tag [`v3.18.0-1`](https://github.com/sourcegraph/deploy-sourcegraph-d
 **Patch releases**:
 
 - `v3.18.0-1`
-
-**Notes**:
-
-- This release fixes `observability.alerts` in the site configuration. No manual migration required.
 
 ## v3.16 -> v3.17
 
