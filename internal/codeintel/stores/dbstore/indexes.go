@@ -1,7 +1,6 @@
 package dbstore
 
 import (
-	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
@@ -43,28 +42,4 @@ func scanIndex(s dbutil.Scanner) (index types.Index, err error) {
 	}
 
 	return index, nil
-}
-
-var indexColumnsWithNullRank = []*sqlf.Query{
-	sqlf.Sprintf("u.id"),
-	sqlf.Sprintf("u.commit"),
-	sqlf.Sprintf("u.queued_at"),
-	sqlf.Sprintf("u.state"),
-	sqlf.Sprintf("u.failure_message"),
-	sqlf.Sprintf("u.started_at"),
-	sqlf.Sprintf("u.finished_at"),
-	sqlf.Sprintf("u.process_after"),
-	sqlf.Sprintf("u.num_resets"),
-	sqlf.Sprintf("u.num_failures"),
-	sqlf.Sprintf("u.repository_id"),
-	sqlf.Sprintf(`u.repository_name`),
-	sqlf.Sprintf(`u.docker_steps`),
-	sqlf.Sprintf(`u.root`),
-	sqlf.Sprintf(`u.indexer`),
-	sqlf.Sprintf(`u.indexer_args`),
-	sqlf.Sprintf(`u.outfile`),
-	sqlf.Sprintf(`u.execution_logs`),
-	sqlf.Sprintf("NULL"),
-	sqlf.Sprintf(`u.local_steps`),
-	sqlf.Sprintf(`(SELECT MAX(id) FROM lsif_uploads WHERE associated_index_id = u.id) AS associated_upload_id`),
 }

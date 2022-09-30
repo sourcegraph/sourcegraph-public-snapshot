@@ -46,18 +46,6 @@ func scanDependencySyncingJob(s dbutil.Scanner) (job DependencySyncingJob, err e
 	)
 }
 
-var dependencySyncingJobColumns = []*sqlf.Query{
-	sqlf.Sprintf("lsif_dependency_syncing_jobs.id"),
-	sqlf.Sprintf("lsif_dependency_syncing_jobs.state"),
-	sqlf.Sprintf("lsif_dependency_syncing_jobs.failure_message"),
-	sqlf.Sprintf("lsif_dependency_syncing_jobs.started_at"),
-	sqlf.Sprintf("lsif_dependency_syncing_jobs.finished_at"),
-	sqlf.Sprintf("lsif_dependency_syncing_jobs.process_after"),
-	sqlf.Sprintf("lsif_dependency_syncing_jobs.num_resets"),
-	sqlf.Sprintf("lsif_dependency_syncing_jobs.num_failures"),
-	sqlf.Sprintf("lsif_dependency_syncing_jobs.upload_id"),
-}
-
 // DependencyIndexingJob is a subset of the lsif_dependency_indexing_jobs table and acts as the
 // queue and execution record for indexing the dependencies of a particular completed upload.
 type DependencyIndexingJob struct {
@@ -92,20 +80,6 @@ func scanDependencyIndexingJob(s dbutil.Scanner) (job DependencyIndexingJob, err
 		&job.ExternalServiceKind,
 		&job.ExternalServiceSync,
 	)
-}
-
-var dependencyIndexingJobColumns = []*sqlf.Query{
-	sqlf.Sprintf("lsif_dependency_indexing_jobs.id"),
-	sqlf.Sprintf("lsif_dependency_indexing_jobs.state"),
-	sqlf.Sprintf("lsif_dependency_indexing_jobs.failure_message"),
-	sqlf.Sprintf("lsif_dependency_indexing_jobs.started_at"),
-	sqlf.Sprintf("lsif_dependency_indexing_jobs.finished_at"),
-	sqlf.Sprintf("lsif_dependency_indexing_jobs.process_after"),
-	sqlf.Sprintf("lsif_dependency_indexing_jobs.num_resets"),
-	sqlf.Sprintf("lsif_dependency_indexing_jobs.num_failures"),
-	sqlf.Sprintf("lsif_dependency_indexing_jobs.upload_id"),
-	sqlf.Sprintf("lsif_dependency_indexing_jobs.external_service_kind"),
-	sqlf.Sprintf("lsif_dependency_indexing_jobs.external_service_sync"),
 }
 
 func (s *Store) InsertCloneableDependencyRepo(ctx context.Context, dependency precise.Package) (new bool, err error) {

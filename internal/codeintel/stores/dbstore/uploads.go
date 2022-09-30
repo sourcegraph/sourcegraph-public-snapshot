@@ -111,28 +111,3 @@ func scanUpload(s dbutil.Scanner) (upload types.Upload, _ error) {
 
 // scanFirstUpload scans a slice of uploads from the return value of `*Store.query` and returns the first.
 var scanFirstUpload = basestore.NewFirstScanner(scanUpload)
-
-var uploadColumnsWithNullRank = []*sqlf.Query{
-	sqlf.Sprintf("u.id"),
-	sqlf.Sprintf("u.commit"),
-	sqlf.Sprintf("u.root"),
-	sqlf.Sprintf("EXISTS (" + visibleAtTipSubselectQuery + ") AS visible_at_tip"),
-	sqlf.Sprintf("u.uploaded_at"),
-	sqlf.Sprintf("u.state"),
-	sqlf.Sprintf("u.failure_message"),
-	sqlf.Sprintf("u.started_at"),
-	sqlf.Sprintf("u.finished_at"),
-	sqlf.Sprintf("u.process_after"),
-	sqlf.Sprintf("u.num_resets"),
-	sqlf.Sprintf("u.num_failures"),
-	sqlf.Sprintf("u.repository_id"),
-	sqlf.Sprintf("u.repository_name"),
-	sqlf.Sprintf("u.indexer"),
-	sqlf.Sprintf("u.indexer_version"),
-	sqlf.Sprintf("u.num_parts"),
-	sqlf.Sprintf("u.uploaded_parts"),
-	sqlf.Sprintf("u.upload_size"),
-	sqlf.Sprintf("u.associated_index_id"),
-	sqlf.Sprintf("NULL"), // rank
-	sqlf.Sprintf("u.uncompressed_size"),
-}
