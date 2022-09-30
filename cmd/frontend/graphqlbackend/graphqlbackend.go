@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -859,7 +860,9 @@ func (v *authzDirectiveVisitor) Before(ctx context.Context, directive *gqltypes.
 	if scopesAttr, ok := directive.Arguments.Get("scopes"); ok {
 		a := actor.FromContext(ctx)
 		// only care about token based auth and non-internal tokens for now
-		if a.FromToken && !a.Internal {
+		isUserAll := a.Scopes[authz.ScopeUserAll]
+		isSiteAdminSudo := a.Scopes[authz.ScopeSiteAdminSudo]
+		if a.FromToken && !a.Internal && !(isUserAll || isSiteAdminSudo) {
 			requiredScopes := scopesAttr.Deserialize(nil).([]interface{})
 			if len(requiredScopes) < 1 {
 				return errors.Errorf("Authorization required, but no scopes are given in graphql schema")
