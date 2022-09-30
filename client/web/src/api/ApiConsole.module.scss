@@ -1,10 +1,21 @@
+:root {
+    --toolbar-spacer: 0.313rem;
+}
+
 .api-console {
     display: flex;
     flex-direction: column;
     flex: 1 1 auto;
 }
+
 .loader {
     align-self: center;
     margin-top: auto;
     margin-bottom: auto;
+}
+
+:global(.graphiql-container) .toolbar-button {
+    margin-left: var(--toolbar-spacer);
+    margin-right: var(--toolbar-spacer);
+    color: var(--body-color);
 }

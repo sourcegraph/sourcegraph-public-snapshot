@@ -21,7 +21,7 @@ func TestJavaGenerator(t *testing.T) {
 					LocalSteps:  nil,
 					Root:        "",
 					Indexer:     "sourcegraph/scip-java",
-					IndexerArgs: []string{"scip-java", "index", "--build-tool=lsif"},
+					IndexerArgs: []string{"scip-java", "index", "--build-tool=scip"},
 					Outfile:     "index.scip",
 				},
 			},

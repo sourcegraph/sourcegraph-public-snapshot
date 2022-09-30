@@ -14,15 +14,15 @@ const spanCategoryKey attribute.Key = "sg.span_category"
 
 // StartSpan starts an OpenTelemetry span from context. Example:
 //
-// 	ctx, span := analytics.StartSpan(ctx, spanName,
+//	ctx, span := analytics.StartSpan(ctx, spanName,
 //		trace.WithAttributes(...)
 //	defer span.End()
-//  // ... do your things
+//	// ... do your things
 //
 // Span provides convenience functions for setting the status of the span.
 func StartSpan(ctx context.Context, spanName string, category string, opts ...trace.SpanStartOption) (context.Context, *Span) {
 	opts = append(opts, trace.WithAttributes(spanCategoryKey.String(category)))
-	ctx, s := otel.GetTracerProvider().Tracer("dev/sg/anaytics").Start(ctx, spanName, opts...)
+	ctx, s := otel.GetTracerProvider().Tracer("dev/sg/analytics").Start(ctx, spanName, opts...)
 	return ctx, &Span{s}
 }
 

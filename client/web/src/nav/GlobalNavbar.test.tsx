@@ -12,7 +12,7 @@ import {
 import { extensionsController, NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { useExperimentalFeatures } from '../stores'
-import { ThemePreference } from '../stores/themeState'
+import { ThemePreference } from '../theme'
 
 import { GlobalNavbar } from './GlobalNavbar'
 
@@ -22,11 +22,9 @@ jest.mock('../components/branding/BrandLogo', () => ({ BrandLogo: 'BrandLogo' })
 const history = createMemoryHistory()
 const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     authenticatedUser: null,
-    authRequired: false,
     extensionsController,
     location: createLocation('/'),
     history,
-    keyboardShortcuts: [],
     isSourcegraphDotCom: false,
     onThemePreferenceChange: () => undefined,
     isLightTheme: true,
@@ -41,7 +39,6 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => undefined,
     defaultSearchContextSpec: '',
-    variant: 'default',
     globbing: false,
     branding: undefined,
     routes: [],
@@ -49,26 +46,25 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
+    showKeyboardShortcutsHelp: () => undefined,
 }
 
 describe('GlobalNavbar', () => {
+    const origContext = window.context
     beforeEach(() => {
         useExperimentalFeatures.setState({ codeMonitoring: false, showSearchContext: true })
+        window.context = {
+            enableLegacyExtensions: false,
+        } as any
+    })
+    afterEach(() => {
+        window.context = origContext
     })
 
     test('default', () => {
         const { asFragment } = renderWithBrandedContext(
             <MockedTestProvider>
                 <GlobalNavbar {...PROPS} />
-            </MockedTestProvider>
-        )
-        expect(asFragment()).toMatchSnapshot()
-    })
-
-    test('low-profile', () => {
-        const { asFragment } = renderWithBrandedContext(
-            <MockedTestProvider>
-                <GlobalNavbar {...PROPS} variant="low-profile" />
             </MockedTestProvider>
         )
         expect(asFragment()).toMatchSnapshot()

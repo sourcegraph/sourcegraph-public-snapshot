@@ -97,10 +97,10 @@ func createMessage(td TemplateData) (bytes.Buffer, error) {
 	var msg bytes.Buffer
 
 	var slackTemplate = `:warning: *{{.Environment}}*'s version may be out of date.
-Current version: ` + "`{{ .Version }}`" + ` was committed *{{ .VersionAge }} hours ago*. 
+Current version: ` + "`{{ .Version }}`" + ` was committed *{{ .VersionAge }} hours ago*.
 
 *Alerts*:
-{{- if not .InAllowedCommits}} 
+{{- if not .InAllowedCommits}}
 • ` + "`{{.Version}}`" + ` was not found in the last ` + "`{{.NumCommits}}`" + ` commits.
 {{- end}}
 {{- if .CommitTooOld}}
@@ -109,7 +109,7 @@ Current version: ` + "`{{ .Version }}`" + ` was committed *{{ .VersionAge }} hou
 
 Check <https://github.com/sourcegraph/deploy-sourcegraph-cloud/pulls|deploy-sourcegraph-cloud> to see if a release is blocked.
 
-cc <!subteam^S02NFV6A536|devops-support>`
+cc <!subteam^S02J9TTQLBU|dev-experience-support>`
 
 	tpl, err := template.New("slack-message").Parse(slackTemplate)
 	if err != nil {

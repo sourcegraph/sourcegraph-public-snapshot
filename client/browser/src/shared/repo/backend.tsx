@@ -10,7 +10,6 @@ import {
     isCloneInProgressErrorLike,
 } from '@sourcegraph/shared/src/backend/errors'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import {
     FileSpec,
     makeRepoURI,
@@ -20,6 +19,12 @@ import {
     RevisionSpec,
 } from '@sourcegraph/shared/src/util/url'
 
+import {
+    BlobContentResult,
+    ResolvePrivateRepoResult,
+    ResolveRepoResult,
+    ResolveRevResult,
+} from '../../graphql-operations'
 import { NotAuthenticatedError } from '../code-hosts/shared/errors'
 
 /**
@@ -29,7 +34,7 @@ import { NotAuthenticatedError } from '../code-hosts/shared/errors'
  */
 export const resolveRepo = memoizeObservable(
     ({ rawRepoName, requestGraphQL }: RawRepoSpec & Pick<PlatformContext, 'requestGraphQL'>): Observable<string> =>
-        requestGraphQL<GQL.IQuery>({
+        requestGraphQL<ResolveRepoResult>({
             request: gql`
                 query ResolveRepo($rawRepoName: String!) {
                     repository(name: $rawRepoName) {
@@ -68,7 +73,7 @@ export const resolvePrivateRepo = memoizeObservable(
     }: { rawRepoName: string } & Pick<PlatformContext, 'requestGraphQL'>): Observable<boolean> =>
         from(sha256(rawRepoName.toLowerCase())).pipe(
             switchMap(hashedRepoName =>
-                requestGraphQL<GQL.IQuery>({
+                requestGraphQL<ResolvePrivateRepoResult>({
                     request: gql`
                         query ResolvePrivateRepo($hashedRepoName: String!) {
                             repositoryRedirect(hashedName: $hashedRepoName) {
@@ -125,7 +130,7 @@ export const resolveRevision = memoizeObservable(
         ...context
     }: RepoSpec & Partial<RevisionSpec> & Pick<PlatformContext, 'requestGraphQL'>): Observable<string> =>
         from(
-            requestGraphQL<GQL.IQuery>({
+            requestGraphQL<ResolveRevResult>({
                 request: gql`
                     query ResolveRev($repoName: String!, $revision: String!) {
                         repository(name: $repoName) {
@@ -190,7 +195,7 @@ export const fetchBlobContentLines = memoizeObservable(
         ...context
     }: RepoSpec & ResolvedRevisionSpec & FileSpec & Pick<PlatformContext, 'requestGraphQL'>): Observable<string[]> =>
         from(
-            requestGraphQL<GQL.IQuery>({
+            requestGraphQL<BlobContentResult>({
                 request: gql`
                     query BlobContent($repoName: String!, $commitID: String!, $filePath: String!) {
                         repository(name: $repoName) {

@@ -8,15 +8,7 @@
   ],
   "externalURL": "http://localhost:3080/",
   "update.channel": "release",
-  "experimentalFeatures": {
-    "passwordPolicy": {
-      "enabled": true,
-      "minimumLength": 12,
-      "numberOfSpecialCharacters": 1,
-      "requireAtLeastOneNumber": true,
-      "requireUpperandLowerCase": true
-    }
-  },
+  "experimentalFeatures": {},
   "disablePublicRepoRedirects": true,
   "repoListUpdateInterval": 1,
   "externalService.userMode": "all"

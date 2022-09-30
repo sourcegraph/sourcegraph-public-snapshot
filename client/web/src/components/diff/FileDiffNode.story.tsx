@@ -1,4 +1,3 @@
-import { boolean } from '@storybook/addon-knobs'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { FileDiffFields } from '../../graphql-operations'
@@ -11,7 +10,7 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
     {
         hunks: DEMO_HUNKS,
         internalID: 'abcdef123',
-        stat: { added: 0, changed: 1, deleted: 0 },
+        stat: { added: 1, deleted: 1 },
         oldFile: null,
         newFile: {
             __typename: 'VirtualFile',
@@ -28,7 +27,7 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
     {
         hunks: DEMO_HUNKS,
         internalID: 'abcdef123',
-        stat: { added: 0, changed: 1, deleted: 0 },
+        stat: { added: 1, deleted: 1 },
         newFile: null,
         oldFile: {
             __typename: 'VirtualFile',
@@ -45,7 +44,7 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
     {
         hunks: [],
         internalID: 'abcdef123',
-        stat: { added: 0, changed: 0, deleted: 0 },
+        stat: { added: 0, deleted: 0 },
         oldFile: null,
         newFile: {
             __typename: 'VirtualFile',
@@ -62,7 +61,7 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
     {
         hunks: [],
         internalID: 'abcdef123',
-        stat: { added: 0, changed: 0, deleted: 0 },
+        stat: { added: 0, deleted: 0 },
         newFile: null,
         oldFile: {
             __typename: 'VirtualFile',
@@ -79,7 +78,7 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
     {
         hunks: DEMO_HUNKS,
         internalID: 'abcdef123',
-        stat: { added: 0, changed: 1, deleted: 0 },
+        stat: { added: 1, deleted: 1 },
         oldFile: {
             __typename: 'VirtualFile',
             binary: false,
@@ -100,7 +99,7 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
     {
         hunks: DEMO_HUNKS,
         internalID: 'abcdef123',
-        stat: { added: 0, changed: 1, deleted: 0 },
+        stat: { added: 1, deleted: 1 },
         oldFile: {
             __typename: 'GitBlob',
             binary: false,
@@ -121,7 +120,7 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
     {
         hunks: DEMO_HUNKS,
         internalID: 'abcdef123',
-        stat: { added: 0, changed: 1, deleted: 0 },
+        stat: { added: 1, deleted: 1 },
         oldFile: {
             __typename: 'VirtualFile',
             binary: false,
@@ -142,7 +141,7 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
     {
         hunks: DEMO_HUNKS,
         internalID: 'abcdef123',
-        stat: { added: 0, changed: 1, deleted: 0 },
+        stat: { added: 1, deleted: 1 },
         oldFile: {
             __typename: 'VirtualFile',
             binary: false,
@@ -163,7 +162,7 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
     {
         hunks: [],
         internalID: 'abcdef123',
-        stat: { added: 0, changed: 0, deleted: 0 },
+        stat: { added: 0, deleted: 0 },
         oldFile: {
             __typename: 'VirtualFile',
             binary: false,
@@ -189,11 +188,21 @@ const config: Meta = {
     title: 'web/diffs/FileDiffNode',
     decorators: [decorator],
     includeStories: ['AllUnifiedFileNode', 'AllSplitFileNode'],
+    argTypes: {
+        persistLines: {
+            control: { type: 'boolean' },
+            defaultValue: true,
+        },
+        lineNumbers: {
+            control: { type: 'boolean' },
+            defaultValue: true,
+        },
+    },
 }
 
 export default config
 
-export const AllUnifiedFileNode: Story = () => (
+export const AllUnifiedFileNode: Story = args => (
     <WebStory>
         {webProps => (
             <ul className="list-unstyled">
@@ -202,8 +211,8 @@ export const AllUnifiedFileNode: Story = () => (
                         {...webProps}
                         diffMode="unified"
                         key={index}
-                        persistLines={boolean('persistLines', true)}
-                        lineNumbers={boolean('lineNumbers', true)}
+                        persistLines={args.persistLines}
+                        lineNumbers={args.lineNumbers}
                         node={node}
                         className="abcdef"
                     />
@@ -215,7 +224,7 @@ export const AllUnifiedFileNode: Story = () => (
 
 AllUnifiedFileNode.storyName = 'All unified file node states overview'
 
-export const AllSplitFileNode: Story = () => (
+export const AllSplitFileNode: Story = args => (
     <WebStory>
         {webProps => (
             <ul className="list-unstyled">
@@ -224,8 +233,8 @@ export const AllSplitFileNode: Story = () => (
                         {...webProps}
                         diffMode="split"
                         key={index}
-                        persistLines={boolean('persistLines', true)}
-                        lineNumbers={boolean('lineNumbers', true)}
+                        persistLines={args.persistLines}
+                        lineNumbers={args.lineNumbers}
                         node={node}
                         className="abcdef"
                     />

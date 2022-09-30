@@ -8,7 +8,8 @@ import (
 )
 
 var (
-	// gitCmdAllowlist are commands and arguments that are allowed to execute when calling execSafe.
+	// gitCmdAllowlist are commands and arguments that are allowed to execute and are
+	// checked by IsAllowedGitCmd
 	gitCmdAllowlist = map[string][]string{
 		"log":    append([]string{}, gitCommonAllowlist...),
 		"show":   append([]string{}, gitCommonAllowlist...),
@@ -28,7 +29,7 @@ var (
 		"tag":          {"--list", "--sort", "-creatordate", "--format", "--points-at"},
 		"merge-base":   {"--"},
 		"show-ref":     {"--heads"},
-		"shortlog":     {"-s", "-n", "-e", "--no-merges"},
+		"shortlog":     {"-s", "-n", "-e", "--no-merges", "--after", "--before"},
 		"cat-file":     {},
 
 		// Used in tests to simulate errors with runCommand in handleExec of gitserver.

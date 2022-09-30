@@ -206,8 +206,8 @@ func TestRepositoryComparison(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			want := "2 added, 7 changed, 1 deleted"
-			if have := fmt.Sprintf("%d added, %d changed, %d deleted", diffStat.Added(), diffStat.Changed(), diffStat.Deleted()); have != want {
+			want := "9 added, 8 deleted"
+			if have := fmt.Sprintf("%d added, %d deleted", diffStat.Added(), diffStat.Deleted()); have != want {
 				t.Fatalf("wrong diffstat. want=%q, have=%q", want, have)
 			}
 		})
@@ -264,12 +264,12 @@ func TestRepositoryComparison(t *testing.T) {
 				t.Fatalf("wrong NewPath: %s", diff)
 			}
 
-			wantStat := "1 added, 2 changed, 1 deleted"
+			wantStat := "3 added, 3 deleted"
 			haveStat := n.Stat()
 			if haveStat == nil {
 				t.Fatalf("no diff stat")
 			}
-			if have := fmt.Sprintf("%d added, %d changed, %d deleted", haveStat.Added(), haveStat.Changed(), haveStat.Deleted()); have != wantStat {
+			if have := fmt.Sprintf("%d added, %d deleted", haveStat.Added(), haveStat.Deleted()); have != wantStat {
 				t.Fatalf("wrong diffstat. want=%q, have=%q", wantStat, have)
 			}
 
@@ -683,6 +683,102 @@ index 4d14577..9fe9a4f 100644
 	})
 }
 
+func TestDiffHunk4(t *testing.T) {
+	// This test exists to protect against an edge case bug illustrated in
+	// https://github.com/sourcegraph/sourcegraph/pull/39377
+
+	ctx := context.Background()
+	// Ran 'git diff --cached --no-prefix --binary' on a local repo to generate this diff (with the starting lines
+	// changes to 1)
+	filediff := `diff --git toggle.go toggle.go
+index d206c4c..bb06461 100644
+--- toggle.go
++++ toggle.go
+@@ -1,10 +1,3 @@ func AddFeatures(features map[string]bool) {
+ func AddFeature(key string, isEnabled bool) {
+        features[strings.ToLower(key)] = isEnabled
+ }
+-
+-// IsEnabled determines if the specified feature is enabled. Determining if a feature is enabled is
+-// case insensitive.
+-// If a feature is not present, it defaults to false.
+-func IsEnabled(key string) bool {
+-       return features[strings.ToLower(key)]
+-}`
+
+	dr := diff.NewMultiFileDiffReader(strings.NewReader(filediff))
+	// We only read the first file diff from testDiff
+	fileDiff, err := dr.ReadFile()
+	if err != nil && err != io.EOF {
+		t.Fatalf("parsing diff failed: %s", err)
+	}
+
+	hunk := &DiffHunk{hunk: fileDiff.Hunks[0]}
+
+	t.Run("Highlight", func(t *testing.T) {
+		hunk.highlighter = &dummyFileHighlighter{
+			// We don't care about the actual html formatting, just the number + order of
+			// the lines we get back after "applying" the diff to the highlighting.
+			highlightedBase: []template.HTML{
+				"func AddFeature(key string, isEnabled bool) {",
+				"features[strings.ToLower(key)] = isEnabled",
+				"}",
+				"",
+				"// IsEnabled determines if the specified feature is enabled. Determining if a feature is enabled is",
+				"// case insensitive.",
+				"// If a feature is not present, it defaults to false.",
+				"func IsEnabled(key string) bool {",
+				"return features[strings.ToLower(key)]",
+				"}",
+			},
+			highlightedHead: []template.HTML{
+				"func AddFeature(key string, isEnabled bool) {",
+				"features[strings.ToLower(key)] = isEnabled",
+				"}",
+			},
+		}
+
+		body, err := hunk.Highlight(ctx, &HighlightArgs{
+			DisableTimeout:     false,
+			HighlightLongLines: false,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if body.Aborted() {
+			t.Fatal("highlighting is aborted")
+		}
+
+		wantLines := []struct {
+			kind, html string
+		}{
+			{kind: "UNCHANGED", html: "features[strings.ToLower(key)] = isEnabled"},
+			{kind: "UNCHANGED", html: "}"},
+			{kind: "UNCHANGED", html: ""},
+			{kind: "DELETED", html: "// IsEnabled determines if the specified feature is enabled. Determining if a feature is enabled is"},
+			{kind: "DELETED", html: "// case insensitive."},
+			{kind: "DELETED", html: "// If a feature is not present, it defaults to false."},
+			{kind: "DELETED", html: "func IsEnabled(key string) bool {"},
+			{kind: "DELETED", html: "return features[strings.ToLower(key)]"},
+			{kind: "DELETED", html: "}"},
+		}
+
+		lines := body.Lines()
+		if have, want := len(lines), len(wantLines); have != want {
+			t.Fatalf("len(Highlight.Lines) is wrong. want = %d, have = %d", want, have)
+		}
+		for i, n := range lines {
+			wantedLine := wantLines[i]
+			if n.Kind() != wantedLine.kind {
+				t.Fatalf("Kind is wrong. want = %q, have = %q", wantedLine.kind, n.Kind())
+			}
+			if n.HTML() != wantedLine.html {
+				t.Fatalf("HTML is wrong. want = %q, have = %q", wantedLine.html, n.HTML())
+			}
+		}
+	})
+}
+
 const testDiffFiles = 3
 const testDiff = `diff --git INSTALL.md INSTALL.md
 index e5af166..d44c3fc 100644
@@ -898,7 +994,7 @@ func (d *dummyFileResolver) ExternalURLs(ctx context.Context) ([]*externallink.R
 	return []*externallink.Resolver{}, nil
 }
 
-func (d *dummyFileResolver) Highlight(ctx context.Context, args *HighlightArgs) (*highlightedFileResolver, error) {
+func (d *dummyFileResolver) Highlight(ctx context.Context, args *HighlightArgs) (*HighlightedFileResolver, error) {
 	return nil, errors.New("not implemented")
 }
 
@@ -906,7 +1002,11 @@ func (d *dummyFileResolver) ToGitBlob() (*GitTreeEntryResolver, bool) {
 	return nil, false
 }
 
-func (d *dummyFileResolver) ToVirtualFile() (*virtualFileResolver, bool) {
+func (d *dummyFileResolver) ToVirtualFile() (*VirtualFileResolver, bool) {
+	return nil, false
+}
+
+func (d *dummyFileResolver) ToBatchSpecWorkspaceFile() (BatchWorkspaceFileResolver, bool) {
 	return nil, false
 }
 

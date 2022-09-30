@@ -27,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
-	"github.com/sourcegraph/sourcegraph/internal/search/predicate"
 	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -110,19 +109,14 @@ func Settings(ctx context.Context) (_ *schema.Settings, err error) {
 
 func Search(ctx context.Context, logger log.Logger, db database.DB, query string, monitorID int64, settings *schema.Settings) (_ []*result.CommitMatch, err error) {
 	searchClient := client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs())
-	inputs, err := searchClient.Plan(ctx, "V2", nil, query, search.Streaming, settings, envvar.SourcegraphDotComMode())
+	inputs, err := searchClient.Plan(ctx, "V3", nil, query, search.Streaming, settings, envvar.SourcegraphDotComMode())
 	if err != nil {
 		return nil, errcode.MakeNonRetryable(err)
 	}
 
 	// Inline job creation so we can mutate the commit job before running it
 	clients := searchClient.JobClients()
-	plan, err := predicate.Expand(ctx, clients, inputs, inputs.Plan)
-	if err != nil {
-		return nil, errcode.MakeNonRetryable(err)
-	}
-
-	planJob, err := jobutil.NewPlanJob(inputs, plan)
+	planJob, err := jobutil.NewPlanJob(inputs, inputs.Plan)
 	if err != nil {
 		return nil, errcode.MakeNonRetryable(err)
 	}
@@ -186,18 +180,13 @@ func Search(ctx context.Context, logger log.Logger, db database.DB, query string
 // be searched from the beginning.
 func Snapshot(ctx context.Context, logger log.Logger, db database.DB, query string, monitorID int64, settings *schema.Settings) error {
 	searchClient := client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs())
-	inputs, err := searchClient.Plan(ctx, "V2", nil, query, search.Streaming, settings, envvar.SourcegraphDotComMode())
+	inputs, err := searchClient.Plan(ctx, "V3", nil, query, search.Streaming, settings, envvar.SourcegraphDotComMode())
 	if err != nil {
 		return err
 	}
 
 	clients := searchClient.JobClients()
-	plan, err := predicate.Expand(ctx, clients, inputs, inputs.Plan)
-	if err != nil {
-		return err
-	}
-
-	planJob, err := jobutil.NewPlanJob(inputs, plan)
+	planJob, err := jobutil.NewPlanJob(inputs, inputs.Plan)
 	if err != nil {
 		return err
 	}

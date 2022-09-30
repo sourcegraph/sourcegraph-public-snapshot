@@ -103,7 +103,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				ServiceID:   "https://github.com/",
 			},
 			AccountData: extsvc.AccountData{
-				AuthData: &authData,
+				AuthData: extsvc.NewUnencryptedData(authData),
 			},
 		}
 

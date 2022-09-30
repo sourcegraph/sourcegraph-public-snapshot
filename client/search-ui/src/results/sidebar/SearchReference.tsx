@@ -33,8 +33,8 @@ import {
     Text,
 } from '@sourcegraph/wildcard'
 
+import sidebarStyles from './SearchFilterSection.module.scss'
 import styles from './SearchReference.module.scss'
-import sidebarStyles from './SearchSidebarSection.module.scss'
 
 const SEARCH_REFERENCE_TAB_KEY = 'SearchProduct.SearchReference.Tab'
 
@@ -137,10 +137,10 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         examples: ['file:.js$ httptest', 'file:internal/ httptest', 'file:.js$ -file:test http'],
     },
     {
-        ...createQueryExampleFromString('contains.content({regexp-pattern})'),
+        ...createQueryExampleFromString('has.content({regexp-pattern})'),
         field: FilterType.file,
         description: 'Search only inside files that contain content matching the provided regexp pattern.',
-        examples: ['file:contains.content(github.com/sourcegraph/sourcegraph)'],
+        examples: ['file:has.content(github.com/sourcegraph/sourcegraph)'],
     },
     {
         ...createQueryExampleFromString('{yes/only}'),
@@ -179,50 +179,34 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         ],
     },
     {
-        ...createQueryExampleFromString('contains.file({path})'),
+        ...createQueryExampleFromString('has.path({path})'),
         field: FilterType.repo,
         description: 'Search only inside repositories that contain a file path matching the regular expression.',
-        examples: ['repo:contains.file(README)'],
+        examples: ['repo:has.path(README)', 'repo:has.path(src/main/)'],
         showSuggestions: false,
     },
     {
-        ...createQueryExampleFromString('contains.content({content})'),
+        ...createQueryExampleFromString('has.content({content})'),
         field: FilterType.repo,
         description: 'Search only inside repositories that contain file content matching the regular expression.',
-        examples: ['repo:contains.content(TODO)'],
+        examples: ['repo:has.content(TODO)'],
         showSuggestions: false,
     },
     {
-        ...createQueryExampleFromString('contains({file:path content:content})'),
+        ...createQueryExampleFromString('has.file({path:path content:content})'),
         field: FilterType.repo,
         description:
-            'Search only inside repositories that contain a file matching the `file:` with `content:` filters.',
-        examples: ['repo:contains(file:CHANGELOG content:fix)'],
+            'Search only inside repositories that contain a file path matching the `path:` and/or `content:` filters.',
+        examples: ['repo:has.file(path:README content:fix)'],
         showSuggestions: false,
     },
     {
-        ...createQueryExampleFromString('contains.commit.after({date})'),
+        ...createQueryExampleFromString('has.commit.after({date})'),
         field: FilterType.repo,
         description:
             'Search only inside repositories that contain a a commit after some specified time. See [git date formats](https://github.com/git/git/blob/master/Documentation/date-formats.txt) for accepted formats. Use this to filter out stale repositories that don’t contain commits past the specified time frame. This parameter is experimental.',
-        examples: ['repo:contains.commit.after(1 month ago)', 'repo:contains.commit.after(june 25 2017)'],
+        examples: ['repo:has.commit.after(1 month ago)', 'repo:has.commit.after(june 25 2017)'],
         showSuggestions: false,
-    },
-    {
-        ...createQueryExampleFromString('dependencies({regex-pattern})'),
-        field: FilterType.repo,
-        description:
-            'Search inside repositories that are dependencies of repositories matched by the provided regex pattern. This parameter is experimental.',
-        examples: ['repo:deps(^github\\.com/sourcegraph/sourcegraph$@3.36:3.35)'],
-        showSuggestions: false,
-    },
-    {
-        ...createQueryExampleFromString('dependents({regex-pattern})'),
-        field: FilterType.repo,
-        description:
-            'Search inside repositories that depend on repositories matched by the provided regex pattern. This parameter is experimental.',
-        examples: ['repo:revdeps(^go/github\\.com/google/go-cmp$@v0.5.8)'],
-        showSuggestions: true,
     },
     {
         ...createQueryExampleFromString('has.description({regex-pattern})'),
@@ -359,8 +343,7 @@ const SearchReferenceExample: React.FunctionComponent<React.PropsWithChildren<Se
     example,
     onClick,
 }) => {
-    // All current examples are literal queries
-    const scanResult = scanSearchQuery(example, false, SearchPatternType.literal)
+    const scanResult = scanSearchQuery(example, false, SearchPatternType.standard)
     // We only use valid queries as examples, so this will always be true
     if (scanResult.type === 'success') {
         return (
@@ -578,7 +561,7 @@ const SearchReference = React.memo(
                 {hasFilter ? (
                     filterList
                 ) : (
-                    <Tabs defaultIndex={persistedTabIndex} onChange={setPersistedTabIndex}>
+                    <Tabs className={styles.tabs} defaultIndex={persistedTabIndex} onChange={setPersistedTabIndex}>
                         <TabList>
                             <Tab>Common</Tab>
                             <Tab>All filters</Tab>

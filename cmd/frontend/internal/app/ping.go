@@ -13,7 +13,7 @@ import (
 
 // latestPingHandler fetches the most recent ping data from the event log
 // (if any is present) and returns it as JSON.
-func latestPingHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
+func latestPingHandler(db database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// 🚨SECURITY: Only site admins may access ping data.
 		if err := backend.CheckCurrentUserIsSiteAdmin(r.Context(), db); err != nil {
@@ -27,7 +27,7 @@ func latestPingHandler(db database.DB) func(w http.ResponseWriter, r *http.Reque
 		case sql.ErrNoRows:
 			_, _ = io.WriteString(w, "{}")
 		case nil:
-			_, _ = io.WriteString(w, ping.Argument)
+			_, _ = io.WriteString(w, string(ping.Argument))
 		default:
 			log15.Error("pings.latest", "error", err)
 			w.WriteHeader(http.StatusInternalServerError)

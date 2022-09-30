@@ -3,12 +3,10 @@ import { bufferTime, catchError, concatMap, map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
-import { UserEvent, EventSource, Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { EventSource, Scalars } from '@sourcegraph/shared/src/graphql-operations'
 
 import { requestGraphQL } from '../../backend/graphql'
 import {
-    LogUserEventResult,
-    LogUserEventVariables,
     SetUserEmailVerifiedResult,
     SetUserEmailVerifiedVariables,
     UpdatePasswordResult,
@@ -89,38 +87,6 @@ export function setUserEmailVerified(user: Scalars['ID'], email: string, verifie
     )
 }
 
-/**
- * Log a user action (used to allow site admins on a Sourcegraph instance
- * to see a count of unique users on a daily, weekly, and monthly basis).
- *
- * Not used at all for public/sourcegraph.com usage.
- *
- * @deprecated Use logEvent
- */
-export function logUserEvent(event: UserEvent): void {
-    requestGraphQL<LogUserEventResult, LogUserEventVariables>(
-        gql`
-            mutation LogUserEvent($event: UserEvent!, $userCookieID: String!) {
-                logUserEvent(event: $event, userCookieID: $userCookieID) {
-                    alwaysNil
-                }
-            }
-        `,
-        { event, userCookieID: eventLogger.getAnonymousUserID() }
-    )
-        .pipe(
-            map(({ data, errors }) => {
-                if (!data || (errors && errors.length > 0)) {
-                    throw createAggregateError(errors)
-                }
-                return
-            })
-        )
-        // Event logs are best-effort and non-blocking
-        // eslint-disable-next-line rxjs/no-ignored-subscription
-        .subscribe()
-}
-
 // Log events in batches.
 const batchedEvents = new Subject<Event>()
 
@@ -154,10 +120,8 @@ batchedEvents
             }
             return EMPTY
         }),
-        catchError(error => {
-            console.error('Error logging events:', error)
-            return []
-        })
+        // TODO: log errors to Sentry
+        catchError(() => [])
     )
     // eslint-disable-next-line rxjs/no-ignored-subscription
     .subscribe()
@@ -200,8 +164,8 @@ function createEvent(event: string, eventProperties?: unknown, publicArgument?: 
         source: EventSource.WEB,
         argument: eventProperties ? JSON.stringify(eventProperties) : null,
         publicArgument: publicArgument ? JSON.stringify(publicArgument) : null,
-        deviceID: window.context.sourcegraphDotComMode ? eventLogger.getDeviceID() : null,
-        eventID: window.context.sourcegraphDotComMode ? eventLogger.getEventID() : null,
-        insertID: window.context.sourcegraphDotComMode ? eventLogger.getInsertID() : null,
+        deviceID: eventLogger.getDeviceID(),
+        eventID: eventLogger.getEventID(),
+        insertID: eventLogger.getInsertID(),
     }
 }

@@ -80,6 +80,49 @@ func Worker() *monitoring.Dashboard {
 		),
 	}
 
+	recordEncrypterGroup := monitoring.Group{
+		Title:  "Database record encrypter",
+		Hidden: true,
+		Rows: []monitoring.Row{
+			{
+				func(containerName string, owner monitoring.ObservableOwner) shared.Observable {
+					return shared.Observable{
+						Name:        "records_encrypted_at_rest_percentage",
+						Description: "percentage of database records encrypted at rest",
+						Query:       `(max(src_records_encrypted_at_rest_total) by (tableName)) / ((max(src_records_encrypted_at_rest_total) by (tableName)) + (max(src_records_unencrypted_at_rest_total) by (tableName))) * 100`,
+						Panel:       monitoring.Panel().LegendFormat("{{tableName}}").Unit(monitoring.Percentage).Min(0).Max(100),
+						Owner:       owner,
+					}
+				}(containerName, monitoring.ObservableOwnerRepoManagement).WithNoAlerts(`
+					Percentage of encrypted database records
+				`).Observable(),
+
+				shared.Standard.Count("records encrypted")(shared.ObservableConstructorOptions{
+					MetricNameRoot:        "records_encrypted",
+					MetricDescriptionRoot: "database",
+					By:                    []string{"tableName"},
+				})(containerName, monitoring.ObservableOwnerRepoManagement).WithNoAlerts(`
+					Number of encrypted database records every 5m
+				`).Observable(),
+
+				shared.Standard.Count("records decrypted")(shared.ObservableConstructorOptions{
+					MetricNameRoot:        "records_decrypted",
+					MetricDescriptionRoot: "database",
+					By:                    []string{"tableName"},
+				})(containerName, monitoring.ObservableOwnerRepoManagement).WithNoAlerts(`
+					Number of encrypted database records every 5m
+				`).Observable(),
+
+				shared.Observation.Errors(shared.ObservableConstructorOptions{
+					MetricNameRoot:        "record_encryption",
+					MetricDescriptionRoot: "encryption",
+				})(containerName, monitoring.ObservableOwnerRepoManagement).WithNoAlerts(`
+					Number of database record encryption/decryption errors every 5m
+				`).Observable(),
+			},
+		},
+	}
+
 	return &monitoring.Dashboard{
 		Name:        "worker",
 		Title:       "Worker",
@@ -88,13 +131,19 @@ func Worker() *monitoring.Dashboard {
 			// src_worker_jobs
 			activeJobsGroup,
 
+			// src_records_encrypted_at_rest_total
+			// src_records_unencrypted_at_rest_total
+			// src_records_encrypted_total
+			// src_records_decrypted_total
+			// src_record_encryption_errors_total
+			recordEncrypterGroup,
+
 			shared.CodeIntelligence.NewCommitGraphQueueGroup(containerName),
 			shared.CodeIntelligence.NewCommitGraphProcessorGroup(containerName),
 			shared.CodeIntelligence.NewDependencyIndexQueueGroup(containerName),
 			shared.CodeIntelligence.NewDependencyIndexProcessorGroup(containerName),
 			shared.CodeIntelligence.NewJanitorGroup(containerName),
 			shared.CodeIntelligence.NewIndexSchedulerGroup(containerName),
-			shared.CodeIntelligence.NewAutoIndexEnqueuerGroup(containerName),
 			shared.CodeIntelligence.NewDBStoreGroup(containerName),
 			shared.CodeIntelligence.NewLSIFStoreGroup(containerName),
 			shared.CodeIntelligence.NewDependencyIndexDBWorkerStoreGroup(containerName),
@@ -181,7 +230,7 @@ func Worker() *monitoring.Dashboard {
 					Name:           "insights_queue_unutilized_size",
 					Description:    "insights queue size that is not utilized (not processing)",
 					Owner:          monitoring.ObservableOwnerCodeInsights,
-					Query:          "max(src_insights_search_queue_total{job=~\"^worker.*\"}) > 0 and on(job) sum by (op)(increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_total{job=~\"^worker.*\",op=\"Dequeue\"}[5m])) < 1",
+					Query:          "max(src_query_runner_worker_total{job=~\"^worker.*\"}) > 0 and on(job) sum by (op)(increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_total{job=~\"^worker.*\",op=\"Dequeue\"}[5m])) < 1",
 					DataMustExist:  false,
 					Warning:        monitoring.Alert().Greater(0.0).For(time.Minute * 30),
 					NextSteps:      "Verify code insights worker job has successfully started. Restart worker service and monitoring startup logs, looking for worker panics.",

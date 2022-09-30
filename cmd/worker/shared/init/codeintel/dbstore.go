@@ -1,8 +1,8 @@
 package codeintel
 
 import (
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/log"
 
@@ -24,7 +24,7 @@ var initDBStore = memo.NewMemoizedConstructor(func() (*dbstore.Store, error) {
 	logger := log.Scoped("store", "codeintel db store")
 	observationContext := &observation.Context{
 		Logger:     logger,
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
@@ -44,7 +44,7 @@ func InitDependencySyncingStore() (dbworkerstore.Store, error) {
 var initDependencySyncStore = memo.NewMemoizedConstructor(func() (dbworkerstore.Store, error) {
 	observationContext := &observation.Context{
 		Logger:     log.Scoped("store.dependency_sync", "dependency sync store"),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
@@ -63,7 +63,7 @@ func InitDependencyIndexingStore() (dbworkerstore.Store, error) {
 var initDependenyIndexStore = memo.NewMemoizedConstructor(func() (dbworkerstore.Store, error) {
 	observationContext := &observation.Context{
 		Logger:     log.Scoped("store.dependency_index", "dependency index store"),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 

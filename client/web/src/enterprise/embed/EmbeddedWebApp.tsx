@@ -3,7 +3,7 @@ import React, { Suspense, useEffect, useMemo } from 'react'
 import { BrowserRouter, Route, RouteComponentProps, Switch, useHistory } from 'react-router-dom'
 import { CompatRouter } from 'react-router-dom-v5-compat'
 
-import { createController as createExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
+import { createController as createExtensionsController } from '@sourcegraph/shared/src/extensions/createSyncLoadedController'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Alert, LoadingSpinner, setLinkComponent, WildcardTheme, WildcardThemeContext } from '@sourcegraph/wildcard'
 
@@ -11,8 +11,7 @@ import '../../SourcegraphWebApp.scss'
 
 import { GlobalContributions } from '../../contributions'
 import { createPlatformContext } from '../../platform/context'
-import { ThemePreference } from '../../stores/themeState'
-import { useTheme } from '../../theme'
+import { useTheme, ThemePreference } from '../../theme'
 
 import { OpenNewTabAnchorLink } from './OpenNewTabAnchorLink'
 

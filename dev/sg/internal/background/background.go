@@ -52,9 +52,13 @@ func Run(ctx context.Context, job func(ctx context.Context, out *std.Output)) {
 	b := new(bytes.Buffer)
 	out := std.NewOutput(b, jobs.verbose)
 	go func() {
+		// Do not let the job run forever
 		jobCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		defer cancel()
+		// Execute job
 		job(jobCtx, out)
+		// Signal the completion of this job
+		jobs.count.Dec()
 		jobs.output <- strings.TrimSpace(b.String())
 	}()
 }
@@ -63,18 +67,20 @@ func Run(ctx context.Context, job func(ctx context.Context, out *std.Output)) {
 // they complete.
 func Wait(ctx context.Context, out *std.Output) {
 	jobs := loadFromContext(ctx)
-	count := jobs.count.Load()
+	count := int(jobs.count.Load())
 	if count == 0 {
-		return // no jobs registered
+		return // no jobs left
 	}
 
 	_, span := analytics.StartSpan(ctx, "background_wait", "",
-		trace.WithAttributes(attribute.Int("jobs", int(count))))
+		trace.WithAttributes(attribute.Int("jobs", count)))
 	defer span.End()
 
 	firstResultWithOutput := true
-	out.VerboseLine(output.Styledf(output.StylePending, "Waiting for remaining background jobs to complete (%d total)...", count))
+	out.WriteLine(output.Styledf(output.StylePending, "Waiting for %d remaining background %s to complete...",
+		count, pluralize("job", "jobs", count)))
 	go func() {
+		// Stream job output as they complete
 		for jobOutput := range jobs.output {
 			if jobOutput != "" {
 				if firstResultWithOutput {
@@ -90,6 +96,13 @@ func Wait(ctx context.Context, out *std.Output) {
 
 	// Done!
 	close(jobs.output)
-	out.VerboseLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "Background jobs done!"))
+	out.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "Background jobs done!"))
 	span.Succeeded()
+}
+
+func pluralize(single, plural string, count int) string {
+	if count != 1 {
+		return plural
+	}
+	return single
 }

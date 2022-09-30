@@ -52,7 +52,7 @@ interface ExtensionsAreaProps
         PlatformContextProps,
         ThemeProps,
         TelemetryProps {
-    routes: readonly ExtensionsAreaRoute[]
+    routes?: readonly ExtensionsAreaRoute[]
 
     /**
      * The currently authenticated user.
@@ -61,7 +61,7 @@ interface ExtensionsAreaProps
 
     viewerSubject: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'>
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
-    extensionsAreaHeaderActionButtons: readonly ExtensionsAreaHeaderActionButton[]
+    extensionsAreaHeaderActionButtons?: readonly ExtensionsAreaHeaderActionButton[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
     isSourcegraphDotCom: boolean
 }
@@ -91,24 +91,28 @@ export const ExtensionsArea: React.FunctionComponent<React.PropsWithChildren<Ext
 
     return (
         <Page className={styles.extensionsArea}>
-            <ExtensionsAreaHeader
-                {...props}
-                {...context}
-                actionButtons={props.extensionsAreaHeaderActionButtons}
-                isPrimaryHeader={props.location.pathname === props.match.path}
-            />
+            {props.extensionsAreaHeaderActionButtons ? (
+                <ExtensionsAreaHeader
+                    {...props}
+                    {...context}
+                    actionButtons={props.extensionsAreaHeaderActionButtons}
+                    isPrimaryHeader={props.location.pathname === props.match.path}
+                />
+            ) : null}
             <Switch>
-                {props.routes.map(
-                    ({ path, exact, condition = () => true, render }) =>
-                        condition(context) && (
-                            <Route
-                                key="hardcoded-key"
-                                path={props.match.url + path}
-                                exact={exact}
-                                render={routeComponentProps => render({ ...context, ...routeComponentProps })}
-                            />
-                        )
-                )}
+                {props.routes
+                    ? props.routes.map(
+                          ({ path, exact, condition = () => true, render }) =>
+                              condition(context) && (
+                                  <Route
+                                      key="hardcoded-key"
+                                      path={props.match.url + path}
+                                      exact={exact}
+                                      render={routeComponentProps => render({ ...context, ...routeComponentProps })}
+                                  />
+                              )
+                      )
+                    : null}
                 <Route key="hardcoded-key" component={NotFoundPage} />
             </Switch>
         </Page>

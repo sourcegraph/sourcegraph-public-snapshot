@@ -183,4 +183,13 @@ describe('parseBrowserRepoURL', () => {
             },
         })
     })
+
+    test('should parse repo with revisions containing @', () => {
+        const parsed = parseBrowserRepoURL('https://sourcegraph.com/github.com/emotion-js/emotion@@emotion/core@11.0.0')
+        assertDeepStrictEqual(parsed, {
+            repoName: 'github.com/emotion-js/emotion',
+            revision: '@emotion/core@11.0.0',
+            rawRevision: '@emotion/core@11.0.0',
+        })
+    })
 })

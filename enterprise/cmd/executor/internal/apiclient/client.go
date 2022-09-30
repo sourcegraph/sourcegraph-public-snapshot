@@ -1,6 +1,7 @@
 package apiclient
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"net/http"
@@ -8,19 +9,27 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
-	"github.com/opentracing/opentracing-go/log"
+	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/common/expfmt"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Client is the client used to communicate with a remote job queue API.
 type Client struct {
-	options    Options
-	client     *BaseClient
-	operations *operations
+	options         Options
+	client          *BaseClient
+	logger          log.Logger
+	metricsGatherer prometheus.Gatherer
+	operations      *operations
 }
 
 type Options struct {
@@ -48,17 +57,19 @@ type EndpointOptions struct {
 	Token string
 }
 
-func New(options Options, observationContext *observation.Context) *Client {
+func New(options Options, metricsGatherer prometheus.Gatherer, observationContext *observation.Context) *Client {
 	return &Client{
-		options:    options,
-		client:     NewBaseClient(options.BaseClientOptions),
-		operations: newOperations(observationContext),
+		options:         options,
+		client:          NewBaseClient(options.BaseClientOptions),
+		logger:          log.Scoped("executor-api-client", "The API client adapter for executors to use dbworkers over HTTP"),
+		metricsGatherer: metricsGatherer,
+		operations:      newOperations(observationContext),
 	}
 }
 
 func (c *Client) Dequeue(ctx context.Context, queueName string, job *executor.Job) (_ bool, err error) {
-	ctx, _, endObservation := c.operations.dequeue.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("queueName", queueName),
+	ctx, _, endObservation := c.operations.dequeue.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.String("queueName", queueName),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -73,9 +84,9 @@ func (c *Client) Dequeue(ctx context.Context, queueName string, job *executor.Jo
 }
 
 func (c *Client) AddExecutionLogEntry(ctx context.Context, queueName string, jobID int, entry workerutil.ExecutionLogEntry) (entryID int, err error) {
-	ctx, _, endObservation := c.operations.addExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("queueName", queueName),
-		log.Int("jobID", jobID),
+	ctx, _, endObservation := c.operations.addExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.String("queueName", queueName),
+		otlog.Int("jobID", jobID),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -93,10 +104,10 @@ func (c *Client) AddExecutionLogEntry(ctx context.Context, queueName string, job
 }
 
 func (c *Client) UpdateExecutionLogEntry(ctx context.Context, queueName string, jobID, entryID int, entry workerutil.ExecutionLogEntry) (err error) {
-	ctx, _, endObservation := c.operations.updateExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("queueName", queueName),
-		log.Int("jobID", jobID),
-		log.Int("entryID", entryID),
+	ctx, _, endObservation := c.operations.updateExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.String("queueName", queueName),
+		otlog.Int("jobID", jobID),
+		otlog.Int("entryID", entryID),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -114,9 +125,9 @@ func (c *Client) UpdateExecutionLogEntry(ctx context.Context, queueName string, 
 }
 
 func (c *Client) MarkComplete(ctx context.Context, queueName string, jobID int) (err error) {
-	ctx, _, endObservation := c.operations.markComplete.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("queueName", queueName),
-		log.Int("jobID", jobID),
+	ctx, _, endObservation := c.operations.markComplete.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.String("queueName", queueName),
+		otlog.Int("jobID", jobID),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -132,9 +143,9 @@ func (c *Client) MarkComplete(ctx context.Context, queueName string, jobID int) 
 }
 
 func (c *Client) MarkErrored(ctx context.Context, queueName string, jobID int, errorMessage string) (err error) {
-	ctx, _, endObservation := c.operations.markErrored.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("queueName", queueName),
-		log.Int("jobID", jobID),
+	ctx, _, endObservation := c.operations.markErrored.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.String("queueName", queueName),
+		otlog.Int("jobID", jobID),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -151,9 +162,9 @@ func (c *Client) MarkErrored(ctx context.Context, queueName string, jobID int, e
 }
 
 func (c *Client) MarkFailed(ctx context.Context, queueName string, jobID int, errorMessage string) (err error) {
-	ctx, _, endObservation := c.operations.markFailed.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("queueName", queueName),
-		log.Int("jobID", jobID),
+	ctx, _, endObservation := c.operations.markFailed.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.String("queueName", queueName),
+		otlog.Int("jobID", jobID),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -197,11 +208,17 @@ func (c *Client) Ping(ctx context.Context, queueName string, jobIDs []int) (err 
 }
 
 func (c *Client) Heartbeat(ctx context.Context, queueName string, jobIDs []int) (knownIDs []int, err error) {
-	ctx, _, endObservation := c.operations.heartbeat.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("queueName", queueName),
-		log.String("jobIDs", intsToString(jobIDs)),
+	ctx, _, endObservation := c.operations.heartbeat.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.String("queueName", queueName),
+		otlog.String("jobIDs", intsToString(jobIDs)),
 	}})
 	defer endObservation(1, observation.Args{})
+
+	metrics, err := gatherMetrics(c.logger, c.metricsGatherer)
+	if err != nil {
+		c.logger.Error("Failed to collect prometheus metrics for heartbeat", log.Error(err))
+		// Continue, no metrics should not prevent heartbeats.
+	}
 
 	req, err := c.makeRequest("POST", fmt.Sprintf("%s/heartbeat", queueName), executor.HeartbeatRequest{
 		ExecutorName: c.options.ExecutorName,
@@ -214,6 +231,8 @@ func (c *Client) Heartbeat(ctx context.Context, queueName string, jobIDs []int) 
 		GitVersion:      c.options.TelemetryOptions.GitVersion,
 		IgniteVersion:   c.options.TelemetryOptions.IgniteVersion,
 		SrcCliVersion:   c.options.TelemetryOptions.SrcCliVersion,
+
+		PrometheusMetrics: metrics,
 	})
 	if err != nil {
 		return nil, err
@@ -263,4 +282,28 @@ func intsToString(ints []int) string {
 	}
 
 	return strings.Join(segments, ", ")
+}
+
+func gatherMetrics(logger log.Logger, gatherer prometheus.Gatherer) (string, error) {
+	maxDuration := 3 * time.Second
+	ctx, cancel := context.WithTimeout(context.Background(), maxDuration)
+	defer cancel()
+	go func() {
+		<-ctx.Done()
+		if ctx.Err() == context.DeadlineExceeded {
+			logger.Warn("gathering metrics took longer than expected", log.Duration("maxDuration", maxDuration))
+		}
+	}()
+	mfs, err := gatherer.Gather()
+	if err != nil {
+		return "", err
+	}
+	var buf bytes.Buffer
+	enc := expfmt.NewEncoder(&buf, expfmt.FmtText)
+	for _, mf := range mfs {
+		if err := enc.Encode(mf); err != nil {
+			return "", errors.Wrap(err, "encoding metric family")
+		}
+	}
+	return buf.String(), nil
 }

@@ -37,6 +37,7 @@ type DB interface {
 	OrgStats() OrgStatsStore
 	Phabricator() PhabricatorStore
 	Repos() RepoStore
+	RepoKVPs() RepoKVPStore
 	SavedSearches() SavedSearchStore
 	SearchContexts() SearchContextsStore
 	Settings() SettingsStore
@@ -48,6 +49,7 @@ type DB interface {
 	UserPublicRepos() UserPublicRepoStore
 	Users() UserStore
 	WebhookLogs(encryption.Key) WebhookLogStore
+	RepoStatistics() RepoStatisticsStore
 
 	Transact(context.Context) (DB, error)
 	Done(error) error
@@ -166,6 +168,10 @@ func (d *db) Repos() RepoStore {
 	return ReposWith(d.logger, d.Store)
 }
 
+func (d *db) RepoKVPs() RepoKVPStore {
+	return &repoKVPStore{d.Store}
+}
+
 func (d *db) SavedSearches() SavedSearchStore {
 	return SavedSearchesWith(d.Store)
 }
@@ -208,4 +214,8 @@ func (d *db) Users() UserStore {
 
 func (d *db) WebhookLogs(key encryption.Key) WebhookLogStore {
 	return WebhookLogsWith(d.Store, key)
+}
+
+func (d *db) RepoStatistics() RepoStatisticsStore {
+	return RepoStatisticsWith(d.Store)
 }

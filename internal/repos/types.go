@@ -96,7 +96,7 @@ func (r *RateLimitSyncer) SyncLimitersSince(ctx context.Context, updateAfter tim
 		}
 		cursor.Offset += len(services)
 
-		if err := r.SyncServices(services); err != nil {
+		if err := r.SyncServices(ctx, services); err != nil {
 			return errors.Wrap(err, "syncing services")
 		}
 
@@ -109,9 +109,9 @@ func (r *RateLimitSyncer) SyncLimitersSince(ctx context.Context, updateAfter tim
 
 // SyncServices syncs a know slice of services without fetching them from the
 // database.
-func (r *RateLimitSyncer) SyncServices(services []*types.ExternalService) error {
+func (r *RateLimitSyncer) SyncServices(ctx context.Context, services []*types.ExternalService) error {
 	for _, svc := range services {
-		limit, err := extsvc.ExtractRateLimit(svc.Config, svc.Kind)
+		limit, err := extsvc.ExtractEncryptableRateLimit(ctx, svc.Config, svc.Kind)
 		if err != nil {
 			if errors.HasType(err, extsvc.ErrRateLimitUnsupported{}) {
 				continue
@@ -161,7 +161,7 @@ func GrantedScopes(ctx context.Context, logger log.Logger, cache ScopeCache, db 
 		}
 
 		// Slow path
-		src, err := NewGithubSource(logger.Scoped("GithubSource", ""), externalServicesStore, svc, nil)
+		src, err := NewGithubSource(ctx, logger.Scoped("GithubSource", ""), externalServicesStore, svc, nil)
 		if err != nil {
 			return nil, errors.Wrap(err, "creating source")
 		}

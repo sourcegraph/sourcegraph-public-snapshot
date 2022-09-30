@@ -7,8 +7,7 @@ buildkite-agent artifact download 'client.tar.gz' . --step 'puppeteer:prep'
 tar -xf client.tar.gz -C .
 
 echo "--- Yarn install in root"
-# mutex is necessary since CI runs various yarn installs in parallel
-yarn --mutex network --frozen-lockfile --network-timeout 60000 --silent
+./dev/ci/yarn-install-with-retry.sh
 
 echo "--- Run integration test suite"
 yarn percy exec --quiet -- yarn _cover-integration "$@"

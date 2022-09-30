@@ -154,7 +154,7 @@ func TestCanonicalizeQuery(t *testing.T) {
 		{"kitchen sink", testFrontmatter + "\n\nBEGIN;\n\nMY QUERY;\n\nCOMMIT;\n", "MY QUERY;"},
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
-			if query := canonicalizeQuery(testCase.input); query != testCase.expected {
+			if query := CanonicalizeQuery(testCase.input); query != testCase.expected {
 				t.Errorf("unexpected canonical query. want=%q have=%q", testCase.expected, query)
 			}
 		})

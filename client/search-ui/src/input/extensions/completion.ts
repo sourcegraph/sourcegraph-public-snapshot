@@ -8,6 +8,10 @@ import {
     Completion,
     snippet,
     CompletionSource,
+    acceptCompletion,
+    selectedCompletion,
+    currentCompletions,
+    setSelectedCompletion,
 } from '@codemirror/autocomplete'
 import { Extension, Prec } from '@codemirror/state'
 import { keymap, EditorView } from '@codemirror/view'
@@ -22,6 +26,7 @@ import {
     mdiFileDocument,
     mdiFilterOutline,
     mdiFunction,
+    mdiHistory,
     mdiKey,
     mdiLink,
     mdiMatrix,
@@ -48,18 +53,18 @@ import {
     PREDICATE_REGEX,
     regexInsertText,
     repositoryInsertText,
-} from '@sourcegraph/shared/src/search/query/completion'
-import { DecoratedToken } from '@sourcegraph/shared/src/search/query/decoratedToken'
+} from '@sourcegraph/shared/src/search/query/completion-utils'
+import { decorate, DecoratedToken, toDecoration } from '@sourcegraph/shared/src/search/query/decoratedToken'
 import { FILTERS, FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
-import { getSuggestionQuery } from '@sourcegraph/shared/src/search/query/providers'
+import { getSuggestionQuery } from '@sourcegraph/shared/src/search/query/providers-utils'
+import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Filter, Token } from '@sourcegraph/shared/src/search/query/token'
 import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
+import { createSVGIcon } from '@sourcegraph/shared/src/util/dom'
 
 import { queryTokens } from './parsedQuery'
 
-import styles from '../CodeMirrorQueryInput.module.scss'
-
-type CompletionType = SymbolKind | 'queryfilter' | 'repository'
+type CompletionType = SymbolKind | 'queryfilter' | 'repository' | 'searchhistory'
 
 // See SymbolIcon
 const typeIconMap: Record<CompletionType, string> = {
@@ -92,19 +97,7 @@ const typeIconMap: Record<CompletionType, string> = {
     UNKNOWN: mdiShape,
     queryfilter: mdiFilterOutline,
     repository: mdiSourceBranch,
-}
-
-function createIcon(pathSpec: string): Node {
-    const svgNS = 'http://www.w3.org/2000/svg'
-    const svg = document.createElementNS(svgNS, 'svg')
-    svg.setAttributeNS(null, 'viewBox', '0 0 24 24')
-    svg.setAttribute('aria-hidden', 'true')
-
-    const path = document.createElementNS(svgNS, 'path')
-    path.setAttribute('d', pathSpec)
-
-    svg.append(path)
-    return svg
+    searchhistory: mdiHistory,
 }
 
 interface SuggestionContext {
@@ -125,12 +118,17 @@ type SuggestionSource<R, C extends SuggestionContext> = (
     tokenAtPosition?: Token
 ) => R | null | Promise<R | null>
 
+export type StandardSuggestionSource = SuggestionSource<CompletionResult | null, SuggestionContext>
+
 /**
  * searchQueryAutocompletion registers extensions for automcompletion, using the
  * provided suggestion sources.
  */
 export function searchQueryAutocompletion(
-    sources: SuggestionSource<CompletionResult | null, SuggestionContext>[]
+    sources: StandardSuggestionSource[],
+    // By default we do not enable suggestion selection with enter because that
+    // interferes with the query submission logic.
+    applyOnEnter = false
 ): Extension {
     const override: CompletionSource[] = sources.map(source => context => {
         const position = context.pos
@@ -143,14 +141,79 @@ export function searchQueryAutocompletion(
         )
     })
 
+    // Customizing how completion items are rendered
+    const addToOptions: NonNullable<Parameters<typeof autocompletion>[0]>['addToOptions'] = [
+        // This renders the completion icon
+        {
+            render(completion) {
+                return createSVGIcon(
+                    completion.type && completion.type in typeIconMap
+                        ? typeIconMap[completion.type as CompletionType]
+                        : typeIconMap[SymbolKind.UNKNOWN]
+                )
+            },
+            // Per CodeMirror documentation, 20 is the default icon
+            // position
+            position: 20,
+        },
+        {
+            render(completion) {
+                if (completion.type !== 'searchhistory') {
+                    return null
+                }
+                const tokens = scanSearchQuery(completion.label)
+                if (tokens.type !== 'success') {
+                    throw new Error('this should not happen')
+                }
+                const nodes = tokens.term
+                    .flatMap(token => decorate(token))
+                    .map(token => {
+                        const decoration = toDecoration(completion.label, token)
+                        const node = document.createElement('span')
+                        node.className = decoration.className
+                        node.textContent = decoration.value
+                        return node
+                    })
+
+                const container = document.createElement('div')
+                container.style.whiteSpace = 'initial'
+                for (const node of nodes) {
+                    container.append(node)
+                }
+                return container
+            },
+            position: 30,
+        },
+    ]
+
     return [
         // Uses the default keymapping but changes accepting suggestions from Enter
         // to Tab
         Prec.highest(
             keymap.of(
-                completionKeymap.map(keybinding =>
-                    keybinding.key === 'Enter' ? { ...keybinding, key: 'Tab' } : keybinding
-                )
+                applyOnEnter
+                    ? [
+                          ...completionKeymap,
+                          {
+                              key: 'Tab',
+                              run(view) {
+                                  // Select first completion item if none is selected
+                                  // and items are available.
+                                  if (selectedCompletion(view.state) === null) {
+                                      if (currentCompletions(view.state).length > 0) {
+                                          view.dispatch({ effects: setSelectedCompletion(0) })
+                                          return true
+                                      }
+                                      return false
+                                  }
+                                  // Otherwise apply the selected completion item
+                                  return acceptCompletion(view)
+                              },
+                          },
+                      ]
+                    : completionKeymap.map(keybinding =>
+                          keybinding.key === 'Enter' ? { ...keybinding, key: 'Tab' } : keybinding
+                      )
             )
         ),
         EditorView.theme({
@@ -167,6 +230,13 @@ export function searchQueryAutocompletion(
             },
             '.cm-tooltip-autocomplete svg path': {
                 fillOpacity: 0.6,
+            },
+            '.completion-type-searchhistory > .cm-completionLabel': {
+                display: 'none',
+            },
+            'li.completion-type-searchhistory': {
+                height: 'initial !important',
+                minHeight: '1.3rem',
             },
         }),
         EditorView.updateListener.of(update => {
@@ -187,35 +257,19 @@ export function searchQueryAutocompletion(
             optionClass: completionItem => 'completion-type-' + (completionItem.type ?? ''),
             icons: false,
             closeOnBlur: true,
-            addToOptions: [
-                // This renders the completion icon
-                {
-                    render(completion) {
-                        return createIcon(
-                            completion.type && completion.type in typeIconMap
-                                ? typeIconMap[completion.type as CompletionType]
-                                : typeIconMap[SymbolKind.UNKNOWN]
-                        )
-                    },
-                    // Per CodeMirror documentation, 20 is the default icon
-                    // position
-                    position: 20,
-                },
-                // This renders the "Tab" indicator after the details text. It's
-                // only visible for the currently selected suggestion (handled
-                // by CSS).
-                {
-                    render() {
-                        const node = document.createElement('span')
-                        node.classList.add('completion-hint', styles.tabStyle)
-                        node.textContent = 'Tab'
-                        return node
-                    },
-                    position: 200,
-                },
-            ],
+            selectOnOpen: !applyOnEnter,
+            addToOptions,
         }),
     ]
+}
+
+export interface DefaultSuggestionSourcesOptions {
+    fetchSuggestions: (query: string, onAbort: (listener: () => void) => void) => Promise<SearchMatch[]>
+    isSourcegraphDotCom: boolean
+    globbing: boolean
+    disableFilterCompletion?: true
+    disableSymbolCompletion?: true
+    showWhenEmpty?: boolean
 }
 
 /**
@@ -223,20 +277,20 @@ export function searchQueryAutocompletion(
  * suggestions for the current pattern and static and dynamic suggestions for
  * the current filter value.
  */
-export function createDefaultSuggestionSources(options: {
-    fetchSuggestions: (query: string, onAbort: (listener: () => void) => void) => Promise<SearchMatch[]>
-    isSourcegraphDotCom: boolean
-    globbing: boolean
-    disableFilterCompletion?: true
-    disableSymbolCompletion?: true
-}): SuggestionSource<CompletionResult | null, SuggestionContext>[] {
+export function createDefaultSuggestionSources(
+    options: DefaultSuggestionSourcesOptions
+): SuggestionSource<CompletionResult | null, SuggestionContext>[] {
     const sources: SuggestionSource<CompletionResult | null, SuggestionContext>[] = []
 
     if (options.disableFilterCompletion !== true) {
         sources.push(
             // Static suggestions shown if the current position is outside a
             // filter value
-            createDefaultSource((context, _tokens, token) => {
+            createDefaultSource((context, tokens, token) => {
+                if (tokens.length === 0 && options.showWhenEmpty === false) {
+                    return null
+                }
+
                 // Default to the current cursor position (e.g. if the token is a
                 // whitespace, we want the suggestion to be inserted after it)
                 let from = context.position

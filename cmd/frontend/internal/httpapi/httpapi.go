@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/releasecache"
 	apirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/webhookhandlers"
 	frontendsearch "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
@@ -33,6 +34,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -40,12 +42,15 @@ import (
 )
 
 type Handlers struct {
-	GitHubWebhook             webhooks.Registerer
-	GitLabWebhook             http.Handler
-	BitbucketServerWebhook    http.Handler
-	BitbucketCloudWebhook     http.Handler
-	NewCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler
-	NewComputeStreamHandler   enterprise.NewComputeStreamHandler
+	GitHubWebhook                   webhooks.Registerer
+	GitLabWebhook                   http.Handler
+	BitbucketServerWebhook          http.Handler
+	BitbucketCloudWebhook           http.Handler
+	BatchesChangesFileGetHandler    http.Handler
+	BatchesChangesFileExistsHandler http.Handler
+	BatchesChangesFileUploadHandler http.Handler
+	NewCodeIntelUploadHandler       enterprise.NewCodeIntelUploadHandler
+	NewComputeStreamHandler         enterprise.NewComputeStreamHandler
 }
 
 // NewHandler returns a new API handler that uses the provided API
@@ -61,6 +66,8 @@ func NewHandler(
 	rateLimiter graphqlbackend.LimitWatcher,
 	handlers *Handlers,
 ) http.Handler {
+	logger := sglog.Scoped("Handler", "frontend HTTP API handler")
+
 	if m == nil {
 		m = apirouter.New(nil)
 	}
@@ -93,11 +100,17 @@ func NewHandler(
 	m.Get(apirouter.GitLabWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.GitLabWebhook)))
 	m.Get(apirouter.BitbucketServerWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.BitbucketServerWebhook)))
 	m.Get(apirouter.BitbucketCloudWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.BitbucketCloudWebhook)))
+	m.Get(apirouter.BatchesFileGet).Handler(trace.Route(handlers.BatchesChangesFileGetHandler))
+	m.Get(apirouter.BatchesFileExists).Handler(trace.Route(handlers.BatchesChangesFileExistsHandler))
+	m.Get(apirouter.BatchesFileUpload).Handler(trace.Route(handlers.BatchesChangesFileUploadHandler))
 	m.Get(apirouter.LSIFUpload).Handler(trace.Route(handlers.NewCodeIntelUploadHandler(false)))
 	m.Get(apirouter.ComputeStream).Handler(trace.Route(handlers.NewComputeStreamHandler()))
 
+	ghSync := repos.GitHubWebhookHandler{}
+	ghSync.Register(&gh)
+
 	if envvar.SourcegraphDotComMode() {
-		m.Path("/updates").Methods("GET", "POST").Name("updatecheck").Handler(trace.Route(http.HandlerFunc(updatecheck.Handler)))
+		m.Path("/updates").Methods("GET", "POST").Name("updatecheck").Handler(trace.Route(http.HandlerFunc(updatecheck.HandlerWithLog(logger))))
 	}
 
 	m.Get(apirouter.GraphQL).Handler(trace.Route(handler(serveGraphQL(schema, rateLimiter, false))))
@@ -105,8 +118,11 @@ func NewHandler(
 	m.Get(apirouter.SearchStream).Handler(trace.Route(frontendsearch.StreamHandler(db)))
 
 	// Return the minimum src-cli version that's compatible with this instance
-	m.Get(apirouter.SrcCliVersion).Handler(trace.Route(handler(srcCliVersionServe)))
-	m.Get(apirouter.SrcCliDownload).Handler(trace.Route(handler(srcCliDownloadServe)))
+	m.Get(apirouter.SrcCli).Handler(trace.Route(newSrcCliVersionHandler(logger)))
+
+	// Set up the src-cli version cache handler (this will effectively be a
+	// no-op anywhere other than dot-com).
+	m.Get(apirouter.SrcCliVersionCache).Handler(trace.Route(releasecache.NewHandler(logger)))
 
 	m.Get(apirouter.Registry).Handler(trace.Route(handler(registry.HandleRegistry(db))))
 
@@ -137,7 +153,6 @@ func NewInternalHandler(m *mux.Router, db database.DB, schema *graphql.Schema, n
 	})
 
 	m.Get(apirouter.ExternalServiceConfigs).Handler(trace.Route(handler(serveExternalServiceConfigs(db))))
-	m.Get(apirouter.PhabricatorRepoCreate).Handler(trace.Route(handler(servePhabricatorRepoCreate(db))))
 
 	// zoekt-indexserver endpoints
 	indexer := &searchIndexerServer{
@@ -156,7 +171,6 @@ func NewInternalHandler(m *mux.Router, db database.DB, schema *graphql.Schema, n
 
 	m.Get(apirouter.ExternalURL).Handler(trace.Route(handler(serveExternalURL)))
 	m.Get(apirouter.SendEmail).Handler(trace.Route(handler(serveSendEmail)))
-	m.Get(apirouter.GitResolveRevision).Handler(trace.Route(handler(serveGitResolveRevision(db))))
 	gitService := &gitServiceHandler{
 		Gitserver: gitserver.NewClient(db),
 	}
@@ -225,7 +239,7 @@ func (h *errorHandler) Handle(w http.ResponseWriter, r *http.Request, status int
 	}
 	http.Error(w, displayErrBody, status)
 	traceID := trace.ID(r.Context())
-	traceURL := trace.URL(traceID, conf.ExternalURL(), conf.Tracer())
+	traceURL := trace.URL(traceID, conf.DefaultClient())
 
 	if status < 200 || status >= 500 {
 		log15.Error("API HTTP handler error response", "method", r.Method, "request_uri", r.URL.RequestURI(), "status_code", status, "error", err, "trace", traceURL, "traceID", traceID)

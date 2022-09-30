@@ -460,13 +460,13 @@ func createCodeHostConnectionHelper(t *testing.T, serviceExists bool) {
 			{
 				Kind:        extsvc.KindGitHub,
 				DisplayName: fmt.Sprintf("GitHub (%s)", deref(ghUser.Login)),
-				Config: fmt.Sprintf(`
+				Config: extsvc.NewUnencryptedConfig(fmt.Sprintf(`
 {
   "url": "%s",
   "token": "%s",
   "orgs": []
 }
-`, mockGitHubCom.ServiceID, "a-token-that-should-be-replaced"),
+`, mockGitHubCom.ServiceID, "a-token-that-should-be-replaced")),
 				NamespaceUserID: act.UID,
 				CreatedAt:       now,
 				UpdatedAt:       now,
@@ -491,13 +491,13 @@ func createCodeHostConnectionHelper(t *testing.T, serviceExists bool) {
 	want := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: fmt.Sprintf("GitHub (%s)", deref(ghUser.Login)),
-		Config: fmt.Sprintf(`
+		Config: extsvc.NewUnencryptedConfig(fmt.Sprintf(`
 {
   "url": "%s",
   "token": "%s",
   "orgs": []
 }
-`, mockGitHubCom.ServiceID, tok.AccessToken),
+`, mockGitHubCom.ServiceID, tok.AccessToken)),
 		NamespaceUserID: act.UID,
 		CreatedAt:       now,
 		UpdatedAt:       now,

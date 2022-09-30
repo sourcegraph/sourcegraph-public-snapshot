@@ -38,6 +38,12 @@ export const stringHuman = (tokens: Token[]): string => {
                 }
                 break
             case 'pattern':
+                if (token.delimited) {
+                    result.push(`/${token.value}/`)
+                } else {
+                    result.push(token.value)
+                }
+                break
             case 'keyword':
             case 'comment':
                 result.push(token.value)

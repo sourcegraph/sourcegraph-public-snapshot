@@ -1,4 +1,3 @@
-import { boolean } from '@storybook/addon-knobs'
 import { useMemo, useCallback } from '@storybook/addons'
 import { Meta, Story, DecoratorFn } from '@storybook/react'
 import { subDays } from 'date-fns'
@@ -63,11 +62,14 @@ const batchChangeDefaults: BatchChangeFields = {
     id: 'specid',
     url: '/users/alice/batch-changes/specid',
     namespace: {
+        __typename: 'User',
         id: '1234',
+        displayName: null,
+        username: 'alice',
         namespaceName: 'alice',
         url: '/users/alice',
     },
-    diffStat: { added: 1000, changed: 2000, deleted: 1000, __typename: 'DiffStat' },
+    diffStat: { added: 3000, deleted: 3000, __typename: 'DiffStat' },
     viewerCanAdminister: true,
     closedAt: null,
     description: '## What this batch change does\n\nTruly awesome things for example.',
@@ -87,6 +89,11 @@ const batchChangeDefaults: BatchChangeFields = {
             nodes: [],
             pageInfo: { hasNextPage: false },
             totalCount: 0,
+        },
+        viewerBatchChangesCodeHosts: {
+            __typename: 'BatchChangesCodeHostConnection',
+            totalCount: 0,
+            nodes: [],
         },
     },
     batchSpecs: {
@@ -153,7 +160,6 @@ const queryChangesets: typeof _queryChangesets = () =>
                 diffStat: {
                     __typename: 'DiffStat',
                     added: 10,
-                    changed: 9,
                     deleted: 1,
                 },
                 externalID: '123',
@@ -201,7 +207,6 @@ const queryChangesets: typeof _queryChangesets = () =>
                 diffStat: {
                     __typename: 'DiffStat',
                     added: 10,
-                    changed: 9,
                     deleted: 1,
                 },
                 externalID: null,
@@ -251,8 +256,8 @@ const queryEmptyExternalChangesetWithFileDiffs: typeof queryExternalChangesetWit
         },
     })
 
-export const Overview: Story = () => {
-    const viewerCanAdminister = boolean('viewerCanAdminister', true)
+export const Overview: Story = args => {
+    const viewerCanAdminister = args.viewerCanAdminister
     const batchChange: BatchChangeFields = useMemo(
         () => ({
             ...batchChangeDefaults,
@@ -278,6 +283,12 @@ export const Overview: Story = () => {
             )}
         </WebStory>
     )
+}
+Overview.argTypes = {
+    viewerCanAdminister: {
+        control: { type: 'boolean' },
+        defaultValue: true,
+    },
 }
 
 export const NoOpenChangesets: Story = () => {

@@ -77,7 +77,7 @@ func getCommit(client *http.Client, sha string) (Commit, error) {
 	return commit, nil
 }
 
-// getCommitLog fetches the last 20 commits of sourcegraph/sourcegraph@main from the Github API
+// getCommitLog fetches the last numCommits commits of sourcegraph/sourcegraph@main from the Github API
 func getCommitLog(client *http.Client, numCommits int) ([]Commit, error) {
 	var commits []Commit
 
@@ -86,39 +86,64 @@ func getCommitLog(client *http.Client, numCommits int) ([]Commit, error) {
 
 	url := "https://api.github.com/repos/sourcegraph/sourcegraph/commits"
 
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
-	if err != nil {
-		return commits, err
-	}
-
-	q := req.URL.Query()
-	q.Add("branch", "main")
-	q.Add("per_page", fmt.Sprintf("%v", numCommits))
-	q.Add("page", "1")
-
-	req.URL.RawQuery = q.Encode()
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return commits, err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return commits, errors.Newf("received non-200 status code %v", resp.StatusCode)
-	}
-
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return commits, err
-	}
-
 	var gh GithubResponse
-	err = json.Unmarshal(body, &gh)
-	if err != nil {
-		return commits, err
+
+	page := 1
+	for len(gh) < numCommits {
+		temp, err := func() (GithubResponse, error) {
+			req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+			if err != nil {
+				return nil, err
+			}
+
+			commitsToGet := numCommits - (page-1)*100
+			if commitsToGet > 100 {
+				commitsToGet = 100
+			}
+
+			q := req.URL.Query()
+			q.Add("branch", "main")
+			q.Add("per_page", fmt.Sprintf("%v", commitsToGet))
+			q.Add("page", fmt.Sprintf("%v", page))
+
+			req.URL.RawQuery = q.Encode()
+
+			resp, err := client.Do(req)
+			if err != nil {
+				return nil, err
+			}
+
+			defer resp.Body.Close()
+
+			if resp.StatusCode != http.StatusOK {
+				return nil, errors.Newf("received non-200 status code %v", resp.StatusCode)
+			}
+
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+
+			var temp GithubResponse
+			err = json.Unmarshal(body, &temp)
+			if err != nil {
+				return nil, err
+			}
+			gh = append(gh, temp...)
+
+			page += 1
+			return temp, nil
+		}()
+		if err != nil {
+			return commits, err
+		}
+
+		// numCommits is greater than total amount of commits so stop querying
+		if len(temp) < 100 {
+			break
+		}
 	}
+
 	if len(gh) != numCommits {
 		return commits, errors.Newf("did not receive the expected number of commits. got: %v", len(gh))
 	}

@@ -6,7 +6,7 @@ import classNames from 'classnames'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
 import { CurrentAuthStateResult, CurrentAuthStateVariables } from '@sourcegraph/shared/src/graphql-operations'
-import { Alert, Text, Link, Input, H5 } from '@sourcegraph/wildcard'
+import { Alert, Text, Link, Input, H5, Button } from '@sourcegraph/wildcard'
 
 import {
     VSCE_LINK_DOTCOM,
@@ -129,9 +129,9 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
     const renderCommon = (content: JSX.Element): JSX.Element => (
         <div className={classNames(styles.ctaContainer)}>
             <Form onSubmit={validateAccessToken}>
-                <button type="button" className={classNames('btn btn-outline-secondary', styles.ctaTitle)}>
+                <Button variant="secondary" outline={true} className={styles.ctaTitle}>
                     <H5 className="flex-grow-1">Search your private code</H5>
-                </button>
+                </Button>
                 {content}
             </Form>
         </div>
@@ -145,18 +145,14 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
                     multiple repositories & commit history, monitor code changes, save searches, and more.
                 </Text>
                 <Link to={signUpURL}>
-                    <VSCodeButton
-                        type="button"
+                    <Button
+                        as={VSCodeButton}
                         onClick={onSignUpClick}
-                        className={classNames(
-                            'btn my-1 p-0',
-                            styles.ctaButton,
-                            styles.ctaButtonWrapperWithContextBelow
-                        )}
+                        className={classNames('my-1 p-0', styles.ctaButton, styles.ctaButtonWrapperWithContextBelow)}
                         autofocus={false}
                     >
                         Create an account
-                    </VSCodeButton>
+                    </Button>
                 </Link>
                 <VSCodeLink className="my-0" onClick={() => setHasAccount(true)}>
                     Have an account?
@@ -191,17 +187,18 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
             {isSourcegraphDotCom && authenticatedUser?.displayName === 'sourcegraph' && (
                 <Text className={classNames(styles.ctaParagraph)}>
                     <Link to={isSourcegraphDotCom}>
-                        <VSCodeButton
-                            type="button"
+                        <Button
+                            as={VSCodeButton}
+                            onClick={onSignUpClick}
                             className={classNames(
-                                'btn my-1 p-0',
+                                'my-1 p-0',
                                 styles.ctaButton,
                                 styles.ctaButtonWrapperWithContextBelow
                             )}
                             autofocus={false}
                         >
                             Continue in browser
-                        </VSCodeButton>
+                        </Button>
                     </Link>
                 </Text>
             )}
@@ -242,13 +239,14 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
                     />
                 </Text>
             )}
-            <VSCodeButton
+            <Button
+                as={VSCodeButton}
                 type="submit"
                 disabled={state === 'validating'}
-                className={classNames('btn my-1 p-0', styles.ctaButton, styles.ctaButtonWrapperWithContextBelow)}
+                className={classNames('my-1 p-0', styles.ctaButton, styles.ctaButtonWrapperWithContextBelow)}
             >
                 Authenticate account
-            </VSCodeButton>
+            </Button>
             {state === 'failure' && (
                 <Alert variant="danger" className={classNames(styles.ctaParagraph, 'my-1')}>
                     Unable to verify your access token for {hostname}. Please try again with a new access token or
@@ -277,9 +275,9 @@ export const AuthSidebarCta: React.FunctionComponent<React.PropsWithChildren<Aut
 
     return (
         <div>
-            <button type="button" className={classNames('btn btn-outline-secondary', styles.ctaTitle)}>
+            <Button variant="secondary" outline={true} className={styles.ctaTitle}>
                 <H5 className="flex-grow-1">Welcome</H5>
-            </button>
+            </Button>
             <Text className={classNames(styles.ctaParagraph)}>
                 The Sourcegraph extension allows you to search millions of open source repositories without cloning them
                 to your local machine.

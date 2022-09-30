@@ -28,7 +28,7 @@ export interface WebIntegrationTestContext
     /**
      * Overrides `window.context` from the default created by `createJsContext()`.
      */
-    overrideJsContext: (jsContext: SourcegraphContext) => void
+    overrideJsContext: (jsContext: Partial<SourcegraphContext>) => void
 
     /**
      * Configures fake responses for streaming search
@@ -121,7 +121,7 @@ export const createWebIntegrationTestContext = async ({
     return {
         ...sharedTestContext,
         overrideJsContext: overrides => {
-            jsContext = overrides
+            jsContext = { ...jsContext, ...overrides }
         },
         overrideSearchStreamEvents: overrides => {
             searchStreamEventOverrides = overrides

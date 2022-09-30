@@ -780,6 +780,19 @@
           "Comment": ""
         },
         {
+          "Name": "backfill_completed_at",
+          "Index": 21,
+          "TypeName": "timestamp without time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "backfill_queued_at",
           "Index": 9,
           "TypeName": "timestamp without time zone",
@@ -902,6 +915,19 @@
           "TypeName": "timestamp without time zone",
           "IsNullable": true,
           "Default": "(CURRENT_TIMESTAMP - '10 years'::interval)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "needs_migration",
+          "Index": 20,
+          "TypeName": "boolean",
+          "IsNullable": true,
+          "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -1548,6 +1574,19 @@
       "Name": "migration_logs",
       "Comment": "",
       "Columns": [
+        {
+          "Name": "backfilled",
+          "Index": 10,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
         {
           "Name": "error_message",
           "Index": 9,

@@ -132,7 +132,7 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<React.PropsWith
                         'mb-0': noThirdPartyProviders,
                     })}
                 >
-                    <Button className="btn-block" type="submit" disabled={loading} variant="primary">
+                    <Button display="block" type="submit" disabled={loading} variant="primary">
                         {loading ? <LoadingSpinner /> : 'Sign in'}
                     </Button>
                 </div>

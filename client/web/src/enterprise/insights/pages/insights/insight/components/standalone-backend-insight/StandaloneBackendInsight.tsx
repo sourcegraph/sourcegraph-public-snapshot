@@ -33,6 +33,7 @@ import {
     BackendInsightErrorAlert,
     DrillDownFiltersFormValues,
     DrillDownInsightCreationFormValues,
+    parseSeriesLimit,
 } from '../../../../../components/insights-view-grid/components/backend-insight/components'
 import {
     BackendInsightData,
@@ -83,15 +84,16 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
         excludeRepoRegex: debouncedFilters.excludeRepoRegexp,
         searchContexts: [debouncedFilters.context],
     }
-    const displayInput: SeriesDisplayOptionsInput = {
-        limit: insight.seriesDisplayOptions?.limit,
-        sortOptions: insight.seriesDisplayOptions?.sortOptions,
+
+    const seriesDisplayOptions: SeriesDisplayOptionsInput = {
+        limit: parseSeriesLimit(debouncedFilters.seriesDisplayOptions.limit),
+        sortOptions: debouncedFilters.seriesDisplayOptions.sortOptions,
     }
 
     const { error, loading, stopPolling } = useQuery<GetInsightViewResult, GetInsightViewVariables>(
         GET_INSIGHT_VIEW_GQL,
         {
-            variables: { id: insight.id, filters: filterInput, seriesDisplayOptions: displayInput },
+            variables: { id: insight.id, filters: filterInput, seriesDisplayOptions },
             fetchPolicy: 'cache-and-network',
             pollInterval: pollingInterval,
             context: { concurrentRequests: { key: 'GET_INSIGHT_VIEW' } },
@@ -145,7 +147,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
             }).toPromise()
 
             setOriginalInsightFilters(filters)
-            history.push(`/insights/dashboard${ALL_INSIGHTS_DASHBOARD.id}`)
+            history.push(`/insights/dashboard/${ALL_INSIGHTS_DASHBOARD.id}`)
             telemetryService.log('CodeInsightsSearchBasedFilterInsightCreation')
         } catch (error) {
             return { [FORM_ERROR]: asError(error) }

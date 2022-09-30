@@ -117,7 +117,7 @@ export function registerWebviews({
 
             if (selectedQuery) {
                 extensionCoreAPI.streamSearch(selectedQuery, {
-                    patternType: SearchPatternType.literal,
+                    patternType: SearchPatternType.standard,
                     caseSensitive: false,
                     version: LATEST_VERSION,
                     trace: undefined,

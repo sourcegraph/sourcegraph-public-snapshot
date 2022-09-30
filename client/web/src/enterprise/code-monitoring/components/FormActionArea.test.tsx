@@ -11,6 +11,16 @@ import { mockAuthenticatedUser } from '../testing/util'
 import { FormActionArea } from './FormActionArea'
 
 describe('FormActionArea', () => {
+    const origContext = window.context
+    beforeEach(() => {
+        window.context = {
+            emailEnabled: true,
+        } as any
+    })
+    afterEach(() => {
+        window.context = origContext
+    })
+
     const mockActions: CodeMonitorFields['actions'] = {
         nodes: [
             {

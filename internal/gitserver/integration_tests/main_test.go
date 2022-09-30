@@ -64,6 +64,10 @@ func init() {
 		log.Fatal(err)
 	}
 
+	db := database.NewMockDB()
+	gr := database.NewMockGitserverRepoStore()
+	db.GitserverReposFunc.SetDefaultReturn(gr)
+
 	srv := &http.Server{
 		Handler: (&server.Server{
 			Logger:   sglog.Scoped("server", "the gitserver service"),
@@ -75,6 +79,7 @@ func init() {
 				return &server.GitRepoSyncer{}, nil
 			},
 			GlobalBatchLogSemaphore: semaphore.NewWeighted(32),
+			DB:                      db,
 		}).Handler(),
 	}
 	go func() {
@@ -84,7 +89,7 @@ func init() {
 	}()
 
 	serverAddress := l.Addr().String()
-	testGitserverClient = gitserver.NewTestClient(httpcli.InternalDoer, database.NewMockDB(), []string{serverAddress})
+	testGitserverClient = gitserver.NewTestClient(httpcli.InternalDoer, db, []string{serverAddress})
 	gitserverAddresses = []string{serverAddress}
 }
 

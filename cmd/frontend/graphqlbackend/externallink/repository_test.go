@@ -164,7 +164,7 @@ func TestFileOrDir(t *testing.T) {
 		db := database.NewMockDB()
 		db.PhabricatorFunc.SetDefaultReturn(phabricator)
 
-		gitserver.Mocks.GetDefaultBranchShort = func(repo api.RepoName) (refName string, commit api.CommitID, err error) {
+		gitserver.Mocks.GetDefaultBranch = func(repo api.RepoName) (refName string, commit api.CommitID, err error) {
 			return "mybranch", "", nil
 		}
 		defer gitserver.ResetMocks()

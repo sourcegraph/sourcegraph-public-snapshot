@@ -18,11 +18,13 @@ describe('SignUpPage', () => {
             displayName: 'Builtin username-password authentication',
             isBuiltin: true,
             serviceType: 'builtin',
+            authenticationURL: '',
         },
         {
             serviceType: 'github',
             displayName: 'GitHub',
             isBuiltin: false,
+            authenticationURL: '/.auth/github/login?pc=f00bar',
         },
     ]
 
@@ -41,6 +43,7 @@ describe('SignUpPage', () => {
                                         allowSignup: true,
                                         sourcegraphDotComMode: false,
                                         experimentalFeatures: { enablePostSignupFlow: false },
+                                        authMinPasswordLength: 12,
                                         authProviders,
                                         xhrHeaders: {},
                                     }}
@@ -70,6 +73,7 @@ describe('SignUpPage', () => {
                                         allowSignup: true,
                                         sourcegraphDotComMode: true,
                                         experimentalFeatures: { enablePostSignupFlow: false },
+                                        authMinPasswordLength: 12,
                                         authProviders,
                                         xhrHeaders: {},
                                     }}
@@ -107,6 +111,7 @@ describe('SignUpPage', () => {
                                         allowSignup: true,
                                         sourcegraphDotComMode: false,
                                         experimentalFeatures: { enablePostSignupFlow: false },
+                                        authMinPasswordLength: 12,
                                         authProviders,
                                         xhrHeaders: {},
                                     }}

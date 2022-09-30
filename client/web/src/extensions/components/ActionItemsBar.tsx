@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { mdiMenuUp, mdiMenuDown, mdiPlus, mdiChevronDoubleUp, mdiPuzzleOutline } from '@mdi/js'
+import { mdiChevronDoubleDown, mdiChevronDoubleUp, mdiMenuDown, mdiMenuUp, mdiPlus, mdiPuzzleOutline } from '@mdi/js'
 import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 import * as H from 'history'
 import { head, last } from 'lodash'
-import { BehaviorSubject } from 'rxjs'
+import { BehaviorSubject, of } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 import { focusable, FocusableElement } from 'tabbable'
 import { Key } from 'ts-key-enum'
@@ -18,10 +18,16 @@ import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/feature
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, LoadingSpinner, useObservable, Link, ButtonLink, Icon, Tooltip } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, Icon, Link, LoadingSpinner, Tooltip, useObservable } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { useCarousel } from '../../components/useCarousel'
+import { RepositoryFields } from '../../graphql-operations'
+import { OpenInEditorActionItem } from '../../open-in-editor/OpenInEditorActionItem'
+import { GoToCodeHostAction } from '../../repo/actions/GoToCodeHostAction'
+import { ToggleBlameAction } from '../../repo/actions/ToggleBlameAction'
+import { fetchFileExternalLinks } from '../../repo/backend'
+import { parseBrowserRepoURL } from '../../util/url'
 
 import styles from './ActionItemsBar.module.scss'
 
@@ -171,8 +177,10 @@ export function useWebActionItems(): Pick<ActionItemsBarProps, 'useActionItemsBa
 }
 
 export interface ActionItemsBarProps extends ExtensionsControllerProps, TelemetryProps, PlatformContextProps {
+    repo?: RepositoryFields
     useActionItemsBar: () => { isOpen: boolean | undefined; barReference: React.RefCallback<HTMLElement> }
     location: H.Location
+    source?: 'compare' | 'commit' | 'blob'
 }
 
 const actionItemClassName = classNames(
@@ -181,10 +189,14 @@ const actionItemClassName = classNames(
 )
 
 /**
- * TODO: description
+ * Renders extensions (both migrated to the core workflow and legacy) actions items in the sidebar.
  */
 export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionItemsBar(props) {
+    const { extensionsController, location, source } = props
     const { isOpen, barReference } = props.useActionItemsBar()
+    const { repoName, rawRevision, filePath, commitRange, position, range } = parseBrowserRepoURL(
+        location.pathname + location.search + location.hash
+    )
 
     const {
         carouselReference,
@@ -195,7 +207,11 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
     } = useCarousel({ direction: 'topToBottom' })
 
     const haveExtensionsLoaded = useObservable(
-        useMemo(() => haveInitialExtensionsLoaded(props.extensionsController.extHostAPI), [props.extensionsController])
+        useMemo(
+            () =>
+                extensionsController !== null ? haveInitialExtensionsLoaded(extensionsController.extHostAPI) : of(true),
+            [extensionsController]
+        )
     )
 
     if (!isOpen) {
@@ -218,56 +234,88 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
                         <Icon aria-hidden={true} svgPath={mdiMenuUp} />
                     </Button>
                 )}
-                <ActionsContainer
-                    menu={ContributableMenu.EditorTitle}
-                    returnInactiveMenuItems={true}
-                    extensionsController={props.extensionsController}
-                    empty={null}
-                    location={props.location}
-                    platformContext={props.platformContext}
-                    telemetryService={props.telemetryService}
-                >
-                    {items => (
-                        <ul className={classNames('list-unstyled m-0', styles.list)} ref={carouselReference}>
-                            {items.map((item, index) => {
-                                const hasIconURL = !!item.action.actionItem?.iconURL
-                                const className = classNames(
-                                    actionItemClassName,
-                                    !hasIconURL && classNames(styles.actionNoIcon, getIconClassName(index), 'text-sm')
-                                )
-                                const inactiveClassName = classNames(
-                                    styles.actionInactive,
-                                    !hasIconURL && styles.actionNoIconInactive
-                                )
-                                const listItemClassName = classNames(
-                                    styles.listItem,
-                                    index !== items.length - 1 && 'mb-1'
-                                )
 
-                                const dataContent = !hasIconURL ? item.action.category?.slice(0, 1) : undefined
+                {source !== 'compare' && source !== 'commit' && (
+                    <GoToCodeHostAction
+                        source="actionItemsBar"
+                        repo={props.repo} // We need a revision to generate code host URLs, if revision isn't available, we use the default branch or HEAD.
+                        revision={rawRevision || props.repo?.defaultBranch?.displayName || 'HEAD'}
+                        filePath={filePath}
+                        commitRange={commitRange}
+                        position={position}
+                        range={range}
+                        repoName={repoName}
+                        actionType="nav"
+                        fetchFileExternalLinks={fetchFileExternalLinks}
+                    />
+                )}
 
-                                return (
-                                    <li key={item.action.id} className={listItemClassName}>
-                                        <ActionItem
-                                            {...props}
-                                            {...item}
-                                            className={className}
-                                            dataContent={dataContent}
-                                            variant="actionItem"
-                                            iconClassName={styles.icon}
-                                            pressedClassName={styles.actionPressed}
-                                            inactiveClassName={inactiveClassName}
-                                            hideLabel={true}
-                                            tabIndex={-1}
-                                            hideExternalLinkIcon={true}
-                                            disabledDuringExecution={true}
-                                        />
-                                    </li>
-                                )
-                            })}
-                        </ul>
-                    )}
-                </ActionsContainer>
+                {source === 'blob' && (
+                    <>
+                        <ToggleBlameAction />
+                        {window.context.isAuthenticatedUser && (
+                            <OpenInEditorActionItem
+                                platformContext={props.platformContext}
+                                externalServiceType={props.repo?.externalRepository?.serviceType}
+                            />
+                        )}
+                    </>
+                )}
+
+                {extensionsController !== null ? (
+                    <ActionsContainer
+                        menu={ContributableMenu.EditorTitle}
+                        returnInactiveMenuItems={true}
+                        extensionsController={extensionsController}
+                        empty={null}
+                        location={props.location}
+                        platformContext={props.platformContext}
+                        telemetryService={props.telemetryService}
+                    >
+                        {items => (
+                            <ul className={classNames('list-unstyled m-0', styles.list)} ref={carouselReference}>
+                                {items.map((item, index) => {
+                                    const hasIconURL = !!item.action.actionItem?.iconURL
+                                    const className = classNames(
+                                        actionItemClassName,
+                                        !hasIconURL &&
+                                            classNames(styles.actionNoIcon, getIconClassName(index), 'text-sm')
+                                    )
+                                    const inactiveClassName = classNames(
+                                        styles.actionInactive,
+                                        !hasIconURL && styles.actionNoIconInactive
+                                    )
+                                    const listItemClassName = classNames(
+                                        styles.listItem,
+                                        index !== items.length - 1 && 'mb-1'
+                                    )
+
+                                    const dataContent = !hasIconURL ? item.action.category?.slice(0, 1) : undefined
+
+                                    return (
+                                        <li key={item.action.id} className={listItemClassName}>
+                                            <ActionItem
+                                                {...props}
+                                                {...item}
+                                                extensionsController={extensionsController}
+                                                className={className}
+                                                dataContent={dataContent}
+                                                variant="actionItem"
+                                                iconClassName={styles.icon}
+                                                pressedClassName={styles.actionPressed}
+                                                inactiveClassName={inactiveClassName}
+                                                hideLabel={true}
+                                                tabIndex={-1}
+                                                hideExternalLinkIcon={true}
+                                                disabledDuringExecution={true}
+                                            />
+                                        </li>
+                                    )
+                                })}
+                            </ul>
+                        )}
+                    </ActionsContainer>
+                ) : null}
                 {canScrollPositive && (
                     <Button
                         className={classNames('p-0 border-0', styles.scroll, styles.listItem)}
@@ -281,17 +329,19 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
                 )}
                 {haveExtensionsLoaded && <ActionItemsDivider />}
                 <div className="list-unstyled m-0">
-                    <div className={styles.listItem}>
-                        <Tooltip content="Add extensions">
-                            <Link
-                                to="/extensions"
-                                className={classNames(styles.listItem, styles.auxIcon, actionItemClassName)}
-                                aria-label="Add"
-                            >
-                                <Icon aria-hidden={true} svgPath={mdiPlus} />
-                            </Link>
-                        </Tooltip>
-                    </div>
+                    {extensionsController !== null && window.context.enableLegacyExtensions ? (
+                        <div className={styles.listItem}>
+                            <Tooltip content="Add extensions">
+                                <Link
+                                    to="/extensions"
+                                    className={classNames(styles.listItem, styles.auxIcon, actionItemClassName)}
+                                    aria-label="Add"
+                                >
+                                    <Icon aria-hidden={true} svgPath={mdiPlus} />
+                                </Link>
+                            </Tooltip>
+                        </div>
+                    ) : null}
                 </div>
             </ErrorBoundary>
         </div>
@@ -313,10 +363,16 @@ export const ActionItemsToggle: React.FunctionComponent<React.PropsWithChildren<
     extensionsController,
     className,
 }) => {
+    const panelName = extensionsController !== null && window.context.enableLegacyExtensions ? 'extensions' : 'actions'
+
     const { isOpen, toggle, toggleReference, barInPage } = useActionItemsToggle()
 
     const haveExtensionsLoaded = useObservable(
-        useMemo(() => haveInitialExtensionsLoaded(extensionsController.extHostAPI), [extensionsController])
+        useMemo(
+            () =>
+                extensionsController !== null ? haveInitialExtensionsLoaded(extensionsController.extHostAPI) : of(true),
+            [extensionsController]
+        )
     )
 
     return barInPage ? (
@@ -324,17 +380,17 @@ export const ActionItemsToggle: React.FunctionComponent<React.PropsWithChildren<
             <li className={styles.dividerVertical} />
             <li className={classNames('nav-item mr-2', className)}>
                 <div className={classNames(styles.toggleContainer, isOpen && styles.toggleContainerOpen)}>
-                    <Tooltip content={`${isOpen ? 'Close' : 'Open'} extensions panel`}>
+                    <Tooltip content={`${isOpen ? 'Close' : 'Open'} ${panelName} panel`}>
                         {/**
                          * This <ButtonLink> must be wrapped with an additional span, since the tooltip currently has an issue that will
-                         * break its onClick handler and it will no longer prevent the default page reload (with no href).
+                         * break its onClick handler, and it will no longer prevent the default page reload (with no href).
                          */}
                         <span>
                             <ButtonLink
                                 aria-label={
                                     isOpen
-                                        ? 'Close extensions panel. Press the down arrow key to enter the extensions panel.'
-                                        : 'Open extensions panel'
+                                        ? `Close ${panelName} panel. Press the down arrow key to enter the ${panelName} panel.`
+                                        : `Open ${panelName} panel`
                                 }
                                 className={classNames(actionItemClassName, styles.auxIcon, styles.actionToggle)}
                                 onSelect={toggle}
@@ -349,7 +405,14 @@ export const ActionItemsToggle: React.FunctionComponent<React.PropsWithChildren<
                                         svgPath={mdiChevronDoubleUp}
                                     />
                                 ) : (
-                                    <Icon aria-hidden={true} svgPath={mdiPuzzleOutline} />
+                                    <Icon
+                                        aria-hidden={true}
+                                        svgPath={
+                                            window.context.enableLegacyExtensions
+                                                ? mdiPuzzleOutline
+                                                : mdiChevronDoubleDown
+                                        }
+                                    />
                                 )}
                                 {haveExtensionsLoaded && <VisuallyHidden>Down arrow to enter</VisuallyHidden>}
                             </ButtonLink>

@@ -6,7 +6,7 @@ import { useMergeRefs } from 'use-callback-ref'
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 
 import { Label } from '../..'
-import { useAutoFocus } from '../../../hooks/useAutoFocus'
+import { useAutoFocus } from '../../../hooks'
 import { ForwardReferenceComponent } from '../../../types'
 
 import styles from './Input.module.scss'
@@ -41,7 +41,7 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 /**
  * Displays the input with description, error message, visual invalid and valid states.
  */
-export const Input = forwardRef((props, reference) => {
+export const Input = forwardRef(function Input(props, reference) {
     const {
         as: Component = 'input',
         type = 'text',

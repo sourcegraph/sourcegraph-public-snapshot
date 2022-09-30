@@ -98,6 +98,14 @@ func TestResultErrorGroup(t *testing.T) {
 		synchronizer := make(chan struct{})
 		g.Go(func() (int, error) {
 			<-synchronizer
+			// This test has an intrinsic race condition that can be reproduced
+			// by adding a `defer time.Sleep(time.Second)` before the `defer
+			// close(synchronizer)`. We cannot guarantee that the group processes
+			// the return value of the second goroutine before the first goroutine
+			// exits in response to synchronizer, so we add a sleep here to make
+			// this race condition vanishingly unlikely. Note that this is a race
+			// in the test, not in the library.
+			time.Sleep(100 * time.Millisecond)
 			return 0, err1
 		})
 		g.Go(func() (int, error) {

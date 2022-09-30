@@ -43,7 +43,7 @@ func TestGoPackagesSource_ListRepos(t *testing.T) {
 
 	svc := types.ExternalService{
 		Kind: extsvc.KindGoPackages,
-		Config: marshalJSON(t, &schema.GoModulesConnection{
+		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GoModulesConnection{
 			Urls: []string{
 				"https://proxy.golang.org",
 			},
@@ -53,13 +53,13 @@ func TestGoPackagesSource_ListRepos(t *testing.T) {
 				"github.com/google/zoekt@v0.0.0-20211108135652-f8e8ada171c7",
 				"github.com/gorilla/mux@v1.8.0",
 			},
-		}),
+		})),
 	}
 
 	cf, save := newClientFactory(t, t.Name())
 	t.Cleanup(func() { save(t) })
 
-	src, err := NewGoPackagesSource(&svc, cf)
+	src, err := NewGoPackagesSource(ctx, &svc, cf)
 	if err != nil {
 		t.Fatal(err)
 	}

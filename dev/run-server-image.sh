@@ -5,6 +5,7 @@ IMAGE=${IMAGE:-sourcegraph/server:${TAG:-insiders}}
 PORT=${PORT:-"7080"}
 URL="http://localhost:$PORT"
 DATA=${DATA:-"/tmp/sourcegraph-data"}
+SOURCEGRAPH_LICENSE_GENERATION_KEY=${SOURCEGRAPH_LICENSE_GENERATION_KEY:-""}
 
 echo "--- Checking for existing Sourcegraph instance at $URL"
 if curl --output /dev/null --silent --head --fail "$URL"; then
@@ -15,16 +16,16 @@ fi
 
 # shellcheck disable=SC2153
 case "$CLEAN" in
-  "true")
-    clean=y
-    ;;
-  "false")
-    clean=n
-    ;;
-  *)
-    echo -n "Do you want to delete $DATA and start clean? [Y/n] "
-    read -r clean
-    ;;
+"true")
+  clean=y
+  ;;
+"false")
+  clean=n
+  ;;
+*)
+  echo -n "Do you want to delete $DATA and start clean? [Y/n] "
+  read -r clean
+  ;;
 esac
 
 if [ "$clean" != "n" ] && [ "$clean" != "N" ]; then
@@ -37,6 +38,8 @@ docker run "$@" \
   --publish "$PORT":7080 \
   -e SRC_LOG_LEVEL=dbug \
   -e DEBUG=t \
+  -e ALLOW_SINGLE_DOCKER_CODE_INSIGHTS=t \
+  -e SOURCEGRAPH_LICENSE_GENERATION_KEY="$SOURCEGRAPH_LICENSE_GENERATION_KEY" \
   --volume "$DATA/config:/etc/sourcegraph" \
   --volume "$DATA/data:/var/opt/sourcegraph" \
   "$IMAGE"

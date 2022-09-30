@@ -31,6 +31,7 @@ var batchSpecColumns = []*sqlf.Query{
 	sqlf.Sprintf("batch_specs.allow_unsupported"),
 	sqlf.Sprintf("batch_specs.allow_ignored"),
 	sqlf.Sprintf("batch_specs.no_cache"),
+	sqlf.Sprintf("batch_specs.batch_change_id"),
 	sqlf.Sprintf("batch_specs.created_at"),
 	sqlf.Sprintf("batch_specs.updated_at"),
 }
@@ -48,11 +49,12 @@ var batchSpecInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("allow_unsupported"),
 	sqlf.Sprintf("allow_ignored"),
 	sqlf.Sprintf("no_cache"),
+	sqlf.Sprintf("batch_change_id"),
 	sqlf.Sprintf("created_at"),
 	sqlf.Sprintf("updated_at"),
 }
 
-const batchSpecInsertColsFmt = `(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)`
+const batchSpecInsertColsFmt = `(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)`
 
 // CreateBatchSpec creates the given BatchSpec.
 func (s *Store) CreateBatchSpec(ctx context.Context, c *btypes.BatchSpec) (err error) {
@@ -105,6 +107,7 @@ func (s *Store) createBatchSpecQuery(c *btypes.BatchSpec) (*sqlf.Query, error) {
 		c.AllowUnsupported,
 		c.AllowIgnored,
 		c.NoCache,
+		nullInt64Column(c.BatchChangeID),
 		c.CreatedAt,
 		c.UpdatedAt,
 		sqlf.Join(batchSpecColumns, ", "),
@@ -156,6 +159,7 @@ func (s *Store) updateBatchSpecQuery(c *btypes.BatchSpec) (*sqlf.Query, error) {
 		c.AllowUnsupported,
 		c.AllowIgnored,
 		c.NoCache,
+		nullInt64Column(c.BatchChangeID),
 		c.CreatedAt,
 		c.UpdatedAt,
 		c.ID,
@@ -618,26 +622,25 @@ AND NOT EXISTS (
 // GetBatchSpecDiffStat calculates the total diff stat for the batch spec based
 // on the changeset spec columns. It respects the actor in the context for repo
 // permissions.
-func (s *Store) GetBatchSpecDiffStat(ctx context.Context, id int64) (added, changed, deleted int64, err error) {
+func (s *Store) GetBatchSpecDiffStat(ctx context.Context, id int64) (added, deleted int64, err error) {
 	ctx, _, endObservation := s.operations.getBatchSpecDiffStat.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s))
 	if err != nil {
-		return 0, 0, 0, errors.Wrap(err, "GetBatchSpecDiffStat generating authz query conds")
+		return 0, 0, errors.Wrap(err, "GetBatchSpecDiffStat generating authz query conds")
 	}
 
 	q := sqlf.Sprintf(getTotalDiffStatQueryFmtstr, id, authzConds)
 	row := s.QueryRow(ctx, q)
-	err = row.Scan(&added, &deleted, &changed)
-	return added, deleted, changed, err
+	err = row.Scan(&added, &deleted)
+	return added, deleted, err
 }
 
 const getTotalDiffStatQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_specs.go:GetTotalDiffStat
 SELECT
 	COALESCE(SUM(diff_stat_added), 0) AS added,
-	COALESCE(SUM(diff_stat_changed), 0) AS changed,
 	COALESCE(SUM(diff_stat_deleted), 0) AS deleted
 FROM
 	changeset_specs
@@ -664,6 +667,7 @@ func scanBatchSpec(c *btypes.BatchSpec, s dbutil.Scanner) error {
 		&c.AllowUnsupported,
 		&c.AllowIgnored,
 		&c.NoCache,
+		&dbutil.NullInt64{N: &c.BatchChangeID},
 		&c.CreatedAt,
 		&c.UpdatedAt,
 	)

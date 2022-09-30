@@ -225,7 +225,6 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
                             highlightRanges={[]}
                             startLine={input.lineRange?.startLine ?? 0}
                             endLine={input.lineRange?.endLine ?? 1}
-                            isFirst={false}
                             fetchHighlightedFileRangeLines={() => of([])}
                             hoverifier={hoverifier}
                             viewerUpdates={viewerUpdates}

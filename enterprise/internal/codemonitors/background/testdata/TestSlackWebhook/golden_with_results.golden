@@ -18,7 +18,7 @@
     "type": "section",
     "text": {
      "type": "mrkdwn",
-     "text": "```file1.go file2.go\n@ -97,5 +97,5 @ func Test() {\n leading context\n+matched added\n-matched removed\n trailing context\n```"
+     "text": "```file1.go file2.go\n@@ -97,5 +97,5 @@ func Test() {\n leading context\n+matched added\n-matched removed\n trailing context\n```"
     }
    },
    {

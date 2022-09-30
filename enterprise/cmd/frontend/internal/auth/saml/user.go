@@ -3,6 +3,7 @@ package saml
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -92,8 +93,13 @@ func readAuthnResponse(p *provider, encodedResp string) (*authnResponseInfo, err
 // authenticated actor if successful; otherwise it returns an friendly error message (safeErrMsg)
 // that is safe to display to users, and a non-nil err with lower-level error details.
 func getOrCreateUser(ctx context.Context, db database.DB, allowSignup bool, info *authnResponseInfo) (_ *actor.Actor, safeErrMsg string, err error) {
-	var data extsvc.AccountData
-	data.SetAccountData(info.accountData)
+	serializedData, err := json.Marshal(info.accountData)
+	if err != nil {
+		return nil, "", err
+	}
+	data := extsvc.AccountData{
+		Data: extsvc.NewUnencryptedData(serializedData),
+	}
 
 	username, err := auth.NormalizeUsername(info.unnormalizedUsername)
 	if err != nil {

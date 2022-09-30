@@ -192,3 +192,8 @@ var siteConfigAllowEdits, _ = strconv.ParseBool(env.Get("SITE_CONFIG_ALLOW_EDITS
 func canUpdateSiteConfiguration() bool {
 	return os.Getenv("SITE_CONFIG_FILE") == "" || siteConfigAllowEdits
 }
+
+func (r *siteResolver) EnableLegacyExtensions(ctx context.Context) bool {
+	c := conf.Get()
+	return *c.ExperimentalFeatures.EnableLegacyExtensions
+}

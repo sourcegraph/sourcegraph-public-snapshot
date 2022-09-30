@@ -15,6 +15,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	autoindex "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql"
+	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
+	resolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/sharedresolvers"
+	uploads "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
@@ -146,6 +150,17 @@ func (r *RepositoryResolver) CloneInProgress(ctx context.Context) (bool, error) 
 	return r.MirrorInfo().CloneInProgress(ctx)
 }
 
+func (r *RepositoryResolver) DiskSizeBytes(ctx context.Context) (*BigInt, error) {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		if err == backend.ErrMustBeSiteAdmin || err == backend.ErrNotAuthenticated {
+			return nil, nil // not an error
+		}
+		return nil, err
+	}
+	repo, err := r.db.GitserverRepos().GetByID(ctx, r.IDInt32())
+	return &BigInt{Int: repo.RepoSizeBytes}, err
+}
+
 func (r *RepositoryResolver) BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
 	id := r.ID()
 	args.Repo = &id
@@ -200,7 +215,7 @@ func (r *RepositoryResolver) CommitFromID(ctx context.Context, args *RepositoryC
 
 func (r *RepositoryResolver) DefaultBranch(ctx context.Context) (*GitRefResolver, error) {
 	do := func() (*GitRefResolver, error) {
-		refName, _, err := gitserver.NewClient(r.db).GetDefaultBranch(ctx, r.RepoName())
+		refName, _, err := gitserver.NewClient(r.db).GetDefaultBranch(ctx, r.RepoName(), false)
 		if err != nil {
 			return nil, err
 		}
@@ -312,6 +327,19 @@ func (r *RepositoryResolver) Stars(ctx context.Context) (int32, error) {
 	return int32(repo.Stars), nil
 }
 
+func (r *RepositoryResolver) KeyValuePairs(ctx context.Context) ([]KeyValuePair, error) {
+	repo, err := r.repo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	kvps := make([]KeyValuePair, 0, len(repo.KeyValuePairs))
+	for k, v := range repo.KeyValuePairs {
+		kvps = append(kvps, KeyValuePair{key: k, value: v})
+	}
+	return kvps, nil
+}
+
 func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 	r.hydration.Do(func() {
 		// Repositories with an empty creation date were created using RepoName.ToRepo(),
@@ -332,33 +360,33 @@ func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 	return r.err
 }
 
-func (r *RepositoryResolver) LSIFUploads(ctx context.Context, args *LSIFUploadsQueryArgs) (LSIFUploadConnectionResolver, error) {
-	return EnterpriseResolvers.codeIntelResolver.LSIFUploadsByRepo(ctx, &LSIFRepositoryUploadsQueryArgs{
+func (r *RepositoryResolver) LSIFUploads(ctx context.Context, args *uploads.LSIFUploadsQueryArgs) (resolvers.LSIFUploadConnectionResolver, error) {
+	return EnterpriseResolvers.codeIntelResolver.LSIFUploadsByRepo(ctx, &uploads.LSIFRepositoryUploadsQueryArgs{
 		LSIFUploadsQueryArgs: args,
 		RepositoryID:         r.ID(),
 	})
 }
 
-func (r *RepositoryResolver) LSIFIndexes(ctx context.Context, args *LSIFIndexesQueryArgs) (LSIFIndexConnectionResolver, error) {
-	return EnterpriseResolvers.codeIntelResolver.LSIFIndexesByRepo(ctx, &LSIFRepositoryIndexesQueryArgs{
+func (r *RepositoryResolver) LSIFIndexes(ctx context.Context, args *autoindex.LSIFIndexesQueryArgs) (resolvers.LSIFIndexConnectionResolver, error) {
+	return EnterpriseResolvers.codeIntelResolver.LSIFIndexesByRepo(ctx, &autoindex.LSIFRepositoryIndexesQueryArgs{
 		LSIFIndexesQueryArgs: args,
 		RepositoryID:         r.ID(),
 	})
 }
 
-func (r *RepositoryResolver) IndexConfiguration(ctx context.Context) (IndexConfigurationResolver, error) {
+func (r *RepositoryResolver) IndexConfiguration(ctx context.Context) (autoindex.IndexConfigurationResolver, error) {
 	return EnterpriseResolvers.codeIntelResolver.IndexConfiguration(ctx, r.ID())
 }
 
-func (r *RepositoryResolver) CodeIntelligenceCommitGraph(ctx context.Context) (CodeIntelligenceCommitGraphResolver, error) {
+func (r *RepositoryResolver) CodeIntelligenceCommitGraph(ctx context.Context) (uploads.CodeIntelligenceCommitGraphResolver, error) {
 	return EnterpriseResolvers.codeIntelResolver.CommitGraph(ctx, r.ID())
 }
 
-func (r *RepositoryResolver) CodeIntelSummary(ctx context.Context) (CodeIntelRepositorySummaryResolver, error) {
+func (r *RepositoryResolver) CodeIntelSummary(ctx context.Context) (resolvers.CodeIntelRepositorySummaryResolver, error) {
 	return EnterpriseResolvers.codeIntelResolver.RepositorySummary(ctx, r.ID())
 }
 
-func (r *RepositoryResolver) PreviewGitObjectFilter(ctx context.Context, args *PreviewGitObjectFilterArgs) ([]GitObjectFilterPreviewResolver, error) {
+func (r *RepositoryResolver) PreviewGitObjectFilter(ctx context.Context, args *policies.PreviewGitObjectFilterArgs) ([]policies.GitObjectFilterPreviewResolver, error) {
 	return EnterpriseResolvers.codeIntelResolver.PreviewGitObjectFilter(ctx, r.ID(), args)
 }
 
@@ -391,7 +419,8 @@ func (r *schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {
 	// TODO(chris): Remove URI in favor of Name.
 	URI *string
 	URL string
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	if args.Name != nil {
 		args.URI = args.Name
 	}
@@ -412,7 +441,8 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 	AuthorEmail *string
 	Description *string
 	Date        *string
-}) (*GitCommitResolver, error) {
+},
+) (*GitCommitResolver, error) {
 	db := r.db
 	repo, err := db.Repos().GetByName(ctx, api.RepoName(args.RepoName))
 	if err != nil {
@@ -534,7 +564,7 @@ func makePhabClientForOrigin(ctx context.Context, logger log.Logger, db database
 		opt.AfterID = svcs[len(svcs)-1].ID // Advance the cursor
 
 		for _, svc := range svcs {
-			cfg, err := extsvc.ParseConfig(svc.Kind, svc.Config)
+			cfg, err := extsvc.ParseEncryptableConfig(ctx, svc.Kind, svc.Config)
 			if err != nil {
 				return nil, errors.Wrap(err, "parse config")
 			}
@@ -566,4 +596,71 @@ func makePhabClientForOrigin(ctx context.Context, logger log.Logger, db database
 	}
 
 	return nil, errors.Errorf("no phabricator was configured for: %s", origin)
+}
+
+type KeyValuePair struct {
+	key   string
+	value *string
+}
+
+func (k KeyValuePair) Key() string {
+	return k.key
+}
+
+func (k KeyValuePair) Value() *string {
+	return k.value
+}
+
+func (r *schemaResolver) AddRepoKeyValuePair(ctx context.Context, args struct {
+	Repo  graphql.ID
+	Key   string
+	Value *string
+},
+) (*EmptyResponse, error) {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return &EmptyResponse{}, err
+	}
+
+	repoID, err := UnmarshalRepositoryID(args.Repo)
+	if err != nil {
+		return &EmptyResponse{}, nil
+	}
+
+	return &EmptyResponse{}, r.db.RepoKVPs().Create(ctx, repoID, database.KeyValuePair{Key: args.Key, Value: args.Value})
+}
+
+func (r *schemaResolver) UpdateRepoKeyValuePair(ctx context.Context, args struct {
+	Repo  graphql.ID
+	Key   string
+	Value *string
+},
+) (*EmptyResponse, error) {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return &EmptyResponse{}, err
+	}
+
+	repoID, err := UnmarshalRepositoryID(args.Repo)
+	if err != nil {
+		return &EmptyResponse{}, nil
+	}
+
+	_, err = r.db.RepoKVPs().Update(ctx, repoID, database.KeyValuePair{Key: args.Key, Value: args.Value})
+	return &EmptyResponse{}, err
+}
+
+func (r *schemaResolver) DeleteRepoKeyValuePair(ctx context.Context, args struct {
+	Repo graphql.ID
+	Key  string
+},
+) (*EmptyResponse, error) {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return &EmptyResponse{}, err
+	}
+
+	repoID, err := UnmarshalRepositoryID(args.Repo)
+	if err != nil {
+		return &EmptyResponse{}, nil
+	}
+
+	return &EmptyResponse{}, r.db.RepoKVPs().Delete(ctx, repoID, args.Key)
 }

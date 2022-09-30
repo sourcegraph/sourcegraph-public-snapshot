@@ -55,7 +55,7 @@ func (h *GitHubWebhook) Register(router *webhooks.GitHubWebhook) {
 // it's registered to handle in GitHubWebhook.Register
 func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, extSvc *types.ExternalService, payload any) error {
 	var m error
-	externalServiceID, err := extractExternalServiceID(extSvc)
+	externalServiceID, err := extractExternalServiceID(ctx, extSvc)
 	if err != nil {
 		return err
 	}

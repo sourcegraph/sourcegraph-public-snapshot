@@ -14,32 +14,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-func servePhabricatorRepoCreate(db database.DB) func(w http.ResponseWriter, r *http.Request) error {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		var repo api.PhabricatorRepoCreateRequest
-		err := json.NewDecoder(r.Body).Decode(&repo)
-		if err != nil {
-			return err
-		}
-		phabRepo, err := db.Phabricator().CreateOrUpdate(r.Context(), repo.Callsign, repo.RepoName, repo.URL)
-		if err != nil {
-			return err
-		}
-		data, err := json.Marshal(phabRepo)
-		if err != nil {
-			return err
-		}
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write(data)
-		return nil
-	}
-}
 
 // serveExternalServiceConfigs serves a JSON response that is an array of all
 // external service configs that match the requested kind.
@@ -75,12 +53,16 @@ func serveExternalServiceConfigs(db database.DB) func(w http.ResponseWriter, r *
 			var config map[string]any
 			// Raw configs may have comments in them so we have to use a json parser
 			// that supports comments in json.
-			if err := jsonc.Unmarshal(service.Config, &config); err != nil {
+			rawConfig, err := service.Config.Decrypt(r.Context())
+			if err != nil {
+				return err
+			}
+			if jsonc.Unmarshal(rawConfig, &config); err != nil {
 				log15.Error(
 					"ignoring external service config that has invalid json",
 					"id", service.ID,
 					"displayName", service.DisplayName,
-					"config", service.Config,
+					"config", rawConfig,
 					"err", err,
 				)
 				continue
@@ -114,25 +96,6 @@ func serveSendEmail(_ http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	return txemail.Send(r.Context(), msg)
-}
-
-func serveGitResolveRevision(db database.DB) func(w http.ResponseWriter, r *http.Request) error {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		// used by zoekt-sourcegraph-mirror
-		vars := mux.Vars(r)
-		name := api.RepoName(vars["RepoName"])
-		spec := vars["Spec"]
-
-		// Do not to trigger a repo-updater lookup since this is a batch job.
-		commitID, err := gitserver.NewClient(db).ResolveRevision(r.Context(), name, spec, gitserver.ResolveRevisionOptions{})
-		if err != nil {
-			return err
-		}
-
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(commitID))
-		return nil
-	}
 }
 
 // gitServiceHandler are handlers which redirect git clone requests to the

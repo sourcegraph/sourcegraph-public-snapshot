@@ -1,3 +1,5 @@
+import { ButtonHTMLAttributes, ChangeEventHandler, FC, FocusEventHandler, PropsWithChildren } from 'react'
+
 import classNames from 'classnames'
 
 import { Button, ButtonGroup, Input } from '@sourcegraph/wildcard'
@@ -20,12 +22,12 @@ interface SortFilterSeriesPanelProps {
 // or else it gets too cluttered to view
 const maxLimit = MAX_NUMBER_OF_SERIES
 
-export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPanelProps> = ({ value, onChange }) => {
+export const SortFilterSeriesPanel: FC<SortFilterSeriesPanelProps> = ({ value, onChange }) => {
     const handleToggle = (sortOptions: SeriesSortOptionsInput): void => {
         onChange({ ...value, sortOptions })
     }
 
-    const handleChange: React.ChangeEventHandler<HTMLInputElement> = event => {
+    const handleChange: ChangeEventHandler<HTMLInputElement> = event => {
         const inputValue = event.target.value
         let limit = inputValue
 
@@ -36,7 +38,7 @@ export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPane
         onChange({ ...value, limit })
     }
 
-    const handleBlur: React.FocusEventHandler<HTMLInputElement> = event => {
+    const handleBlur: FocusEventHandler<HTMLInputElement> = event => {
         const limit = event.target.value
         if (limit === '') {
             onChange({ ...value, limit: `${maxLimit}` })
@@ -50,16 +52,18 @@ export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPane
                     <small className={styles.label}>Sort by result count</small>
                     <ButtonGroup className={styles.toggleGroup}>
                         <ToggleButton
+                            aria-label="Sort by result count with descending order"
                             selected={value.sortOptions}
                             value={{ mode: SeriesSortMode.RESULT_COUNT, direction: SeriesSortDirection.DESC }}
-                            onClick={handleToggle}
+                            onToggle={handleToggle}
                         >
                             Highest
                         </ToggleButton>
                         <ToggleButton
+                            aria-label="Sort by result count with ascending order"
                             selected={value.sortOptions}
                             value={{ mode: SeriesSortMode.RESULT_COUNT, direction: SeriesSortDirection.ASC }}
-                            onClick={handleToggle}
+                            onToggle={handleToggle}
                         >
                             Lowest
                         </ToggleButton>
@@ -69,16 +73,18 @@ export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPane
                     <small className={styles.label}>Sort by name</small>
                     <ButtonGroup className={styles.toggleGroup}>
                         <ToggleButton
+                            aria-label="Sort by name with ascending order"
                             selected={value.sortOptions}
                             value={{ mode: SeriesSortMode.LEXICOGRAPHICAL, direction: SeriesSortDirection.ASC }}
-                            onClick={handleToggle}
+                            onToggle={handleToggle}
                         >
                             A-Z
                         </ToggleButton>
                         <ToggleButton
+                            aria-label="Sort by name with descending order"
                             selected={value.sortOptions}
                             value={{ mode: SeriesSortMode.LEXICOGRAPHICAL, direction: SeriesSortDirection.DESC }}
-                            onClick={handleToggle}
+                            onToggle={handleToggle}
                         >
                             Z-A
                         </ToggleButton>
@@ -88,16 +94,18 @@ export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPane
                     <small className={styles.label}>Sort by date added</small>
                     <ButtonGroup className={styles.toggleGroup}>
                         <ToggleButton
+                            aria-label="Sort by date with descending order"
                             selected={value.sortOptions}
                             value={{ mode: SeriesSortMode.DATE_ADDED, direction: SeriesSortDirection.DESC }}
-                            onClick={handleToggle}
+                            onToggle={handleToggle}
                         >
                             Newest
                         </ToggleButton>
                         <ToggleButton
+                            aria-label="Sort by date with ascending order"
                             selected={value.sortOptions}
                             value={{ mode: SeriesSortMode.DATE_ADDED, direction: SeriesSortDirection.ASC }}
-                            onClick={handleToggle}
+                            onToggle={handleToggle}
                         >
                             Oldest
                         </ToggleButton>
@@ -117,32 +125,35 @@ export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPane
                     onChange={handleChange}
                     onBlur={handleBlur}
                     variant="small"
+                    aria-label="Number of data series"
                 />
             </footer>
         </section>
     )
 }
 
-interface ToggleButtonProps {
+interface ToggleButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'value'> {
     selected: SeriesSortOptionsInput
     value: SeriesSortOptionsInput
-    onClick: (value: SeriesSortOptionsInput) => void
+    onToggle: (value: SeriesSortOptionsInput) => void
 }
 
-const ToggleButton: React.FunctionComponent<React.PropsWithChildren<ToggleButtonProps>> = ({
+const ToggleButton: FC<PropsWithChildren<ToggleButtonProps>> = ({
     selected,
     value,
     children,
-    onClick,
+    onToggle,
+    ...attributes
 }) => {
     const isSelected = selected.mode === value.mode && selected.direction === value.direction
 
     return (
         <Button
+            {...attributes}
             variant="secondary"
             size="sm"
             className={classNames({ [styles.selected]: isSelected, [styles.unselected]: !isSelected })}
-            onClick={() => onClick(value)}
+            onClick={() => onToggle(value)}
         >
             {children}
         </Button>

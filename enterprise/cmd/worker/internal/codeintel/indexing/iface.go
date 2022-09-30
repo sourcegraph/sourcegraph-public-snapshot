@@ -9,10 +9,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	gprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -21,13 +21,10 @@ import (
 
 type DBStore interface {
 	With(other basestore.ShareableStore) DBStore
-	GetUploads(ctx context.Context, opts dbstore.GetUploadsOptions) ([]dbstore.Upload, int, error)
 	GetUploadByID(ctx context.Context, id int) (dbstore.Upload, bool, error)
 	ReferencesForUpload(ctx context.Context, uploadID int) (dbstore.PackageReferenceScanner, error)
 	InsertCloneableDependencyRepo(ctx context.Context, dependency precise.Package) (bool, error)
 	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (int, error)
-	GetConfigurationPolicies(ctx context.Context, opts dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error)
-	SelectRepositoriesForIndexScan(ctx context.Context, table, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int) ([]int, error)
 }
 
 type DBStoreShim struct {
@@ -35,7 +32,7 @@ type DBStoreShim struct {
 }
 
 type IndexingSettingStore interface {
-	GetLastestSchemaSettings(context.Context, api.SettingsSubject) (*schema.Settings, error)
+	GetLatestSchemaSettings(context.Context, api.SettingsSubject) (*schema.Settings, error)
 }
 
 type IndexingRepoStore interface {
@@ -51,9 +48,17 @@ type RepoUpdaterClient interface {
 	RepoLookup(ctx context.Context, name api.RepoName) (info *protocol.RepoInfo, err error)
 }
 
+type ReposStore interface {
+	ListMinimalRepos(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error)
+}
+
 type ExternalServiceStore interface {
 	List(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error)
 	Upsert(ctx context.Context, svcs ...*types.ExternalService) (err error)
+}
+
+type GitserverRepoStore interface {
+	GetByNames(ctx context.Context, names ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error)
 }
 
 type GitserverClient interface {
@@ -62,11 +67,10 @@ type GitserverClient interface {
 	FileExists(ctx context.Context, repositoryID int, commit, file string) (bool, error)
 	RawContents(ctx context.Context, repositoryID int, commit, file string) ([]byte, error)
 	ResolveRevision(ctx context.Context, repositoryID int, versionString string) (api.CommitID, error)
-	RepoInfo(ctx context.Context, repos ...api.RepoName) (map[api.RepoName]*gprotocol.RepoInfo, error)
 }
 
 type IndexEnqueuer interface {
-	QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force, bypassLimit bool) ([]dbstore.Index, error)
+	QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force, bypassLimit bool) ([]codeinteltypes.Index, error)
 	QueueIndexesForPackage(ctx context.Context, pkg precise.Package) error
 }
 

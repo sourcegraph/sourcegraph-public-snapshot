@@ -4,7 +4,7 @@ See "[Code search overview](../code_search/index.md)" for general information ab
 
 ## Indexed search
 
-Sourcegraph can index the code on the default branch of each repository. This speeds up searches that hit many repositories at once.
+Sourcegraph can index the code on the default branch of each repository. This speeds up searches that hit many repositories at once. Not all files in a repository branch are indexed, we skip files that are [larger than 1 MB](../code_search/explanations/search_details.md) and binary files. To view which files are skipped during indexing, visit the repository settings page and click on indexing.
 
 For large deployments we recommend horizontally scaling indexed search. You can do this by [adjusting the number of replicas](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/docs/configure.md#configure-indexed-search-replica-count). Sourcegraph shards repository indexes across replicas. When the replica count changes Sourcegraph will slowly rebalance indexes to ensure availability of existing indexes.
 

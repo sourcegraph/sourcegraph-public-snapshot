@@ -1,0 +1,20 @@
+.modal-container {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 1rem;
+    padding: 0 0.5rem;
+}
+
+.modal-footer {
+    display: flex;
+    border-top: 1px solid var(--border-color);
+    margin-top: 1rem;
+    margin-bottom: 0;
+    padding: 1rem 0.5rem 0;
+}

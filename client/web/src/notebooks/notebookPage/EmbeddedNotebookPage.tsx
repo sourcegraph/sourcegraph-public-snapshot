@@ -28,7 +28,7 @@ interface EmbeddedNotebookPageProps
             | 'authenticatedUser'
             | 'settingsCascade'
         >,
-        PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'>,
+        PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'>,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
     notebookId: string
 }
@@ -41,7 +41,7 @@ export const EmbeddedNotebookPage: React.FunctionComponent<React.PropsWithChildr
     extensionsController,
     ...props
 }) => {
-    useEffect(() => eventLogger.logViewEvent('EmbeddedNotebookPage'), [])
+    useEffect(() => eventLogger.logPageView('EmbeddedNotebookPage'), [])
 
     const notebookOrError = useObservable(
         useMemo(

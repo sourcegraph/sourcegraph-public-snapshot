@@ -14,7 +14,7 @@ import (
 )
 
 type RepositoryFetcher interface {
-	FetchRepositoryArchive(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) <-chan parseRequestOrError
+	FetchRepositoryArchive(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) <-chan ParseRequestOrError
 }
 
 type repositoryFetcher struct {
@@ -29,7 +29,7 @@ type ParseRequest struct {
 	Data []byte
 }
 
-type parseRequestOrError struct {
+type ParseRequestOrError struct {
 	ParseRequest ParseRequest
 	Err          error
 }
@@ -43,16 +43,16 @@ func NewRepositoryFetcher(gitserverClient gitserver.GitserverClient, maxTotalPat
 	}
 }
 
-func (f *repositoryFetcher) FetchRepositoryArchive(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) <-chan parseRequestOrError {
-	requestCh := make(chan parseRequestOrError)
+func (f *repositoryFetcher) FetchRepositoryArchive(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) <-chan ParseRequestOrError {
+	requestCh := make(chan ParseRequestOrError)
 
 	go func() {
 		defer close(requestCh)
 
 		if err := f.fetchRepositoryArchive(ctx, repo, commit, paths, func(request ParseRequest) {
-			requestCh <- parseRequestOrError{ParseRequest: request}
+			requestCh <- ParseRequestOrError{ParseRequest: request}
 		}); err != nil {
-			requestCh <- parseRequestOrError{Err: err}
+			requestCh <- ParseRequestOrError{Err: err}
 		}
 	}()
 

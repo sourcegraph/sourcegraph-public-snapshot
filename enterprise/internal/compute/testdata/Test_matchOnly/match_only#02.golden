@@ -1,26 +1,4 @@
 {
   "Input": "(lasvegans)|abcdefgh",
-  "Result": {
-    "matches": [
-      {
-        "value": "abcdefgh",
-        "range": {
-          "start": {
-            "offset": 0,
-            "line": -1,
-            "column": -1
-          },
-          "end": {
-            "offset": 8,
-            "line": -1,
-            "column": -1
-          }
-        },
-        "environment": {}
-      }
-    ],
-    "path": "bedge",
-    "repositoryID": 5,
-    "repository": "codehost.com/myorg/myrepo"
-  }
+  "Result": {}
 }

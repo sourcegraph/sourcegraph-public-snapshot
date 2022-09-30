@@ -1,5 +1,6 @@
 import { FC, useEffect, useMemo } from 'react'
 
+import { asError } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, PageHeader, useObservable } from '@sourcegraph/wildcard'
 
@@ -43,7 +44,11 @@ export const CaptureGroupCreationPage: FC<CaptureGroupCreationPageProps> = props
     const handleSubmit = async (values: CaptureGroupFormFields): Promise<SubmissionErrors | void> => {
         const insight = getSanitizedCaptureGroupInsight(values)
 
-        await onInsightCreateRequest({ insight })
+        try {
+            await onInsightCreateRequest({ insight })
+        } catch (error) {
+            return { [FORM_ERROR]: asError(error) }
+        }
 
         setInitialFormValues(undefined)
         telemetryService.log('CodeInsightsCaptureGroupCreationPageSubmitClick')

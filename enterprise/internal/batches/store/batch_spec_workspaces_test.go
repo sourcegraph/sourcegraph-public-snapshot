@@ -12,25 +12,25 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 )
 
-func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
+func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
 	logger := logtest.Scoped(t)
 	repoStore := database.ReposWith(logger, s)
 
-	user := ct.CreateTestUser(t, s.DatabaseDB(), false)
-	repos, _ := ct.CreateTestRepos(t, ctx, s.DatabaseDB(), 4)
+	user := bt.CreateTestUser(t, s.DatabaseDB(), false)
+	repos, _ := bt.CreateTestRepos(t, ctx, s.DatabaseDB(), 4)
 	deletedRepo := repos[3].With(typestest.Opt.RepoDeletedAt(clock.Now()))
 	if err := repoStore.Delete(ctx, deletedRepo.ID); err != nil {
 		t.Fatal(err)
 	}
 	// Allow all repos but repos[2]
-	ct.MockRepoPermissions(t, s.DatabaseDB(), user.ID, repos[0].ID, repos[1].ID, repos[3].ID)
+	bt.MockRepoPermissions(t, s.DatabaseDB(), user.ID, repos[0].ID, repos[1].ID, repos[3].ID)
 
 	workspaces := make([]*btypes.BatchSpecWorkspace, 0, 4)
 	for i := 0; i < cap(workspaces); i++ {

@@ -3,6 +3,8 @@
     <name>Sourcegraph</name>
     <vendor email="hi@sourcegraph.com" url="https://sourcegraph.com">Sourcegraph</vendor>
 
+    <depends>com.intellij.modules.platform</depends>
+
     <extensions defaultExtensionNs="com.intellij">
         <projectService serviceImplementation="com.sourcegraph.config.SourcegraphProjectService"/>
         <projectService serviceImplementation="com.sourcegraph.config.SettingsChangeListener"/>

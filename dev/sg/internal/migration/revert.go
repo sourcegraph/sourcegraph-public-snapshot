@@ -75,7 +75,7 @@ func Revert(databases []db.Database, commit string) error {
 		}
 		block.Close()
 
-		if err := add(database, fmt.Sprintf("revert %s", commit), strings.Join(downQueries, "\n\n"), "-- No-op\n"); err != nil {
+		if err := AddWithTemplate(database, fmt.Sprintf("revert %s", commit), strings.Join(downQueries, "\n\n"), "-- No-op\n"); err != nil {
 			return err
 		}
 	}

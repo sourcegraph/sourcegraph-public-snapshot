@@ -2,7 +2,9 @@ package template
 
 import (
 	"bytes"
+	"fmt"
 	"io"
+	"regexp"
 	"sort"
 	"strings"
 	"text/template"
@@ -39,6 +41,66 @@ var builtins = template.FuncMap{
 	},
 }
 
+// ValidateBatchSpecTemplate attempts to perform a dry run replacement of the whole batch
+// spec template for any templating variables which are not dependent on execution
+// context. It returns a tuple whose first element is whether or not the batch spec is
+// valid and whose second element is an error message if the spec is found to be invalid.
+func ValidateBatchSpecTemplate(spec string) (bool, error) {
+	// We use empty contexts to create "dummy" `template.FuncMap`s -- function mappings
+	// with all the right keys, but no actual values. We'll use these `FuncMap`s to do a
+	// dry run on the batch spec to determine if it's valid or not, before we actually
+	// execute it.
+	sc := &StepContext{}
+	sfm := sc.ToFuncMap()
+	cstc := &ChangesetTemplateContext{}
+	cstfm := cstc.ToFuncMap()
+
+	// Strip any use of `outputs` fields from the spec template. Without using real
+	// contexts for the `FuncMap`s, they'll fail to `template.Execute`, and it's difficult
+	// to statically validate them without deeper inspection of the YAML, so our
+	// validation is just a best-effort without them.
+	outputRe := regexp.MustCompile(`(?i)\$\{\{\s*[^}]*\s*outputs\.[^}]*\}\}`)
+	spec = outputRe.ReplaceAllString(spec, "")
+
+	// Also strip index references. We also can't validate whether or not an index is in
+	// range without real context.
+	indexRe := regexp.MustCompile(`(?i)\$\{\{\s*index\s*[^}]*\}\}`)
+	spec = indexRe.ReplaceAllString(spec, "")
+
+	// By default, text/template will continue even if it encounters a key that is not
+	// indexed in any of the provided `FuncMap`s. A missing key is an indication of an
+	// unknown or mistyped template variable which would invalidate the batch spec, so we
+	// want to fail immediately if we encounter one. We accomplish this by setting the
+	// option "missingkey=error". See https://pkg.go.dev/text/template#Template.Option for
+	// more.
+	t, err := New("validateBatchSpecTemplate", spec, "missingkey=error", sfm, cstfm)
+
+	if err != nil {
+		// Attempt to extract the specific template variable field that caused the error
+		// to provide a clearer message.
+		errorRe := regexp.MustCompile(`(?i)function "(?P<key>[^"]+)" not defined`)
+		if matches := errorRe.FindStringSubmatch(err.Error()); len(matches) > 0 {
+			return false, errors.New(fmt.Sprintf("validating batch spec template: unknown templating variable: '%s'", matches[1]))
+		}
+		// If we couldn't give a more specific error, fall back on the one from text/template.
+		return false, errors.Wrap(err, "validating batch spec template")
+	}
+
+	var out bytes.Buffer
+	if err = t.Execute(&out, &StepContext{}); err != nil {
+		// Attempt to extract the specific template variable fields that caused the error
+		// to provide a clearer message.
+		errorRe := regexp.MustCompile(`(?i)at <(?P<outer>[^>]+)>:.*for key "(?P<inner>[^"]+)"`)
+		if matches := errorRe.FindStringSubmatch(err.Error()); len(matches) > 0 {
+			return false, errors.New(fmt.Sprintf("validating batch spec template: unknown templating variable: '%s.%s'", matches[1], matches[2]))
+		}
+		// If we couldn't give a more specific error, fall back on the one from text/template.
+		return false, errors.Wrap(err, "validating batch spec template")
+	}
+
+	return true, nil
+}
+
 func isTrueOutput(output interface{ String() string }) bool {
 	return strings.TrimSpace(output.String()) == "true"
 }
@@ -57,7 +119,15 @@ func EvalStepCondition(condition string, stepCtx *StepContext) (bool, error) {
 }
 
 func RenderStepTemplate(name, tmpl string, out io.Writer, stepCtx *StepContext) error {
-	t, err := template.New(name).Delims(startDelim, endDelim).Funcs(builtins).Funcs(stepCtx.ToFuncMap()).Parse(tmpl)
+	// By default, text/template will continue even if it encounters a key that is not
+	// indexed in any of the provided `FuncMap`s, replacing the variable with "<no
+	// value>". This means that a mis-typed variable such as "${{
+	// repository.search_resalt_paths }}" would just be evaluated as "<no value>", which
+	// is not a particularly useful substitution and will only indirectly manifest to the
+	// user as an error during execution. Instead, we prefer to fail immediately if we
+	// encounter an unknown variable. We accomplish this by setting the option
+	// "missingkey=error". See https://pkg.go.dev/text/template#Template.Option for more.
+	t, err := New(name, tmpl, "missingkey=error", stepCtx.ToFuncMap())
 	if err != nil {
 		return errors.Wrap(err, "parsing step run")
 	}
@@ -243,7 +313,15 @@ func (tmplCtx *ChangesetTemplateContext) ToFuncMap() template.FuncMap {
 func RenderChangesetTemplateField(name, tmpl string, tmplCtx *ChangesetTemplateContext) (string, error) {
 	var out bytes.Buffer
 
-	t, err := template.New(name).Delims(startDelim, endDelim).Funcs(builtins).Funcs(tmplCtx.ToFuncMap()).Parse(tmpl)
+	// By default, text/template will continue even if it encounters a key that is not
+	// indexed in any of the provided `FuncMap`s, replacing the variable with "<no
+	// value>". This means that a mis-typed variable such as "${{
+	// repository.search_resalt_paths }}" would just be evaluated as "<no value>", which
+	// is not a particularly useful substitution and will only indirectly manifest to the
+	// user as an error during execution. Instead, we prefer to fail immediately if we
+	// encounter an unknown variable. We accomplish this by setting the option
+	// "missingkey=error". See https://pkg.go.dev/text/template#Template.Option for more.
+	t, err := New(name, tmpl, "missingkey=error", tmplCtx.ToFuncMap())
 	if err != nil {
 		return "", err
 	}

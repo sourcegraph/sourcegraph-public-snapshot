@@ -177,7 +177,7 @@ The following instructions are specific to backing up and restoring the sourcegr
 
 ### Back up Sourcegraph databases
 
-These instructions will back up the primary `sourcegraph` database and the [codeintel](../../../code_intelligence/index.md) database.
+These instructions will back up the primary `sourcegraph` database and the [codeintel](../../../code_navigation/index.md) database.
 
 A. Verify deployment running
 
@@ -224,7 +224,7 @@ Ensure the `sourcegraph_db.out` and `codeintel_db.out` files are moved to a safe
 
 #### Restoring Sourcegraph databases into a new environment
 
-The following instructions apply only if you are restoring your databases into a new deployment of Sourcegraph ie: a new virtual machine 
+The following instructions apply only if you are restoring your databases into a new deployment of Sourcegraph ie: a new virtual machine
 
 If you are restoring a previously running environment, see the instructions for [restoring a previously running deployment](#restoring-sourcegraph-databases-into-an-existing-environment)
 
@@ -282,7 +282,7 @@ kubectl delete deployment sourcegraph-frontend
 ```
 
 B. Remove any existing volumes for the databases in the existing deployment
- 
+
 ```bash
 kubectl delete pvc pgsql
 kubectl delete pvc codeintel-db

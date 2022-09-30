@@ -2,7 +2,6 @@ package dbstore
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
@@ -12,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
@@ -58,20 +56,6 @@ var dependencySyncingJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("lsif_dependency_syncing_jobs.num_resets"),
 	sqlf.Sprintf("lsif_dependency_syncing_jobs.num_failures"),
 	sqlf.Sprintf("lsif_dependency_syncing_jobs.upload_id"),
-}
-
-// scanDependencySyncingJobs scans a slice of dependency syncing jobs from the return value of
-// `*Store.query`.
-var scanDependencySyncingJobs = basestore.NewSliceScanner(scanDependencySyncingJob)
-
-// scanFirstDependencySyncingingJob scans a slice of dependency indexing jobs from the return
-// value of `*Store.query` and returns the first.
-var scanFirstDependencySyncingingJob = basestore.NewFirstScanner(scanDependencySyncingJob)
-
-// scanFirstDependencySyncingJobRecord scans a slice of dependency indexing jobs from the
-// return value of `*Store.query` and returns the first.
-func scanFirstDependencySyncingJobRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
-	return scanFirstDependencySyncingingJob(rows, err)
 }
 
 // DependencyIndexingJob is a subset of the lsif_dependency_indexing_jobs table and acts as the
@@ -123,39 +107,6 @@ var dependencyIndexingJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("lsif_dependency_indexing_jobs.external_service_kind"),
 	sqlf.Sprintf("lsif_dependency_indexing_jobs.external_service_sync"),
 }
-
-// scanDependencyIndexingJobs scans a slice of dependency indexing jobs from the return value of
-// `*Store.query`.
-var scanDependencyIndexingJobs = basestore.NewSliceScanner(scanDependencyIndexingJob)
-
-// scanFirstDependencyIndexingJob scans a slice of dependency indexing jobs from the return
-// value of `*Store.query` and returns the first.
-var scanFirstDependencyIndexingJob = basestore.NewFirstScanner(scanDependencyIndexingJob)
-
-// scanFirstDependencyIndexingJobRecord scans a slice of dependency indexing jobs from the
-// return value of `*Store.query` and returns the first.
-func scanFirstDependencyIndexingJobRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
-	return scanFirstDependencyIndexingJob(rows, err)
-}
-
-// InsertDependencySyncingJob inserts a new dependency syncing job and returns its identifier.
-func (s *Store) InsertDependencySyncingJob(ctx context.Context, uploadID int) (id int, err error) {
-	ctx, _, endObservation := s.operations.insertDependencySyncingJob.With(ctx, &err, observation.Args{})
-	defer func() {
-		endObservation(1, observation.Args{LogFields: []log.Field{
-			log.Int("id", id),
-		}})
-	}()
-
-	id, _, err = basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(insertDependencySyncingJobQuery, uploadID)))
-	return id, err
-}
-
-const insertDependencySyncingJobQuery = `
--- source: internal/codeintel/stores/dbstore/dependency_index.go:InsertDependencySyncingJob
-INSERT INTO lsif_dependency_syncing_jobs (upload_id) VALUES (%s)
-RETURNING id
-`
 
 func (s *Store) InsertCloneableDependencyRepo(ctx context.Context, dependency precise.Package) (new bool, err error) {
 	ctx, _, endObservation := s.operations.insertCloneableDependencyRepo.With(ctx, &err, observation.Args{})

@@ -120,7 +120,7 @@ func TestDBTransactions(t *testing.T) {
 
 			// Lifetime of tx2
 			{
-				tx2, err := db.Repos().Transact(ctx)
+				tx2, err := tx1.Transact(ctx)
 				require.NoError(t, err)
 
 				err = tx2.Create(ctx, &types.Repo{ID: 2, Name: "test2"})
@@ -135,26 +135,24 @@ func TestDBTransactions(t *testing.T) {
 				// outside the transaction
 				_, err = db.Repos().Get(ctx, 2)
 				require.Error(t, err)
-				_, err = tx1.Get(ctx, 2)
-				require.Error(t, err)
 
 				tx2.Done(nil)
 			}
 
 			// After committing the transaction, repo 2 should be visible
-			// outside the transaction
-			r, err = db.Repos().Get(ctx, 2)
-			require.NoError(t, err)
-			require.Equal(t, api.RepoName("test2"), r.Name)
+			// outside of tx2, in tx1, but not outside of that
 			r, err = tx1.Get(ctx, 2)
 			require.NoError(t, err)
 			require.Equal(t, api.RepoName("test2"), r.Name)
+
+			_, err = db.Repos().Get(ctx, 2)
+			require.Error(t, err)
 
 			tx1.Done(nil)
 		}
 
 		// After committing the transaction, repo 1 should be visible
-		// outisde the transaction
+		// outside of the transaction
 		r, err := db.Repos().Get(ctx, 1)
 		require.NoError(t, err)
 		require.Equal(t, api.RepoName("test1"), r.Name)
@@ -184,7 +182,7 @@ func TestDBTransactions(t *testing.T) {
 
 			// Lifetime of tx2
 			{
-				tx2, err := db.Repos().Transact(ctx)
+				tx2, err := tx1.Transact(ctx)
 				require.NoError(t, err)
 
 				err = tx2.Create(ctx, &types.Repo{ID: 2, Name: "test2"})
@@ -195,11 +193,12 @@ func TestDBTransactions(t *testing.T) {
 				require.NoError(t, err)
 				require.Equal(t, api.RepoName("test2"), r.Name)
 
-				// Before committing the transaction, repo 2 should not be visible
-				// outside the transaction
+				// Before committing the transaction, repo 2 should be visible inside tx1
+				r, err = tx1.Get(ctx, 2)
+				require.NoError(t, err)
+				require.Equal(t, api.RepoName("test2"), r.Name)
+				// but not outside the transaction
 				_, err = db.Repos().Get(ctx, 2)
-				require.Error(t, err)
-				_, err = tx1.Get(ctx, 2)
 				require.Error(t, err)
 
 				tx2.Done(errors.New("force rollback"))

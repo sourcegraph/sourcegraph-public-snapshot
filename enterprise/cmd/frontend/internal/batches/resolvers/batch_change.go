@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -35,6 +36,10 @@ type batchChangeResolver struct {
 	batchSpecOnce sync.Once
 	batchSpec     *btypes.BatchSpec
 	batchSpecErr  error
+
+	canAdministerOnce sync.Once
+	canAdminister     bool
+	canAdministerErr  error
 }
 
 const batchChangeIDKind = "BatchChange"
@@ -76,10 +81,6 @@ func (r *batchChangeResolver) State() string {
 	return state.ToGraphQL()
 }
 
-func (r *batchChangeResolver) InitialApplier(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	return r.Creator(ctx)
-}
-
 func (r *batchChangeResolver) Creator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
 	user, err := graphqlbackend.UserByIDInt32(ctx, r.store.DatabaseDB(), r.batchChange.CreatorID)
 	if errcode.IsNotFound(err) {
@@ -109,22 +110,12 @@ func (r *batchChangeResolver) LastAppliedAt() *graphqlbackend.DateTime {
 	return &graphqlbackend.DateTime{Time: r.batchChange.LastAppliedAt}
 }
 
-func (r *batchChangeResolver) SpecCreator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	spec, err := r.computeBatchSpec(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	user, err := graphqlbackend.UserByIDInt32(ctx, r.store.DatabaseDB(), spec.UserID)
-	if errcode.IsNotFound(err) {
-		return nil, nil
-	}
-
-	return user, err
-}
-
 func (r *batchChangeResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	return checkSiteAdminOrSameUser(ctx, r.store.DatabaseDB(), r.batchChange.CreatorID)
+	r.canAdministerOnce.Do(func() {
+		svc := service.New(r.store)
+		r.canAdminister, r.canAdministerErr = svc.CanAdministerInNamespace(ctx, r.batchChange.NamespaceUserID, r.batchChange.NamespaceOrgID)
+	})
+	return r.canAdminister, r.canAdministerErr
 }
 
 func (r *batchChangeResolver) URL(ctx context.Context) (string, error) {

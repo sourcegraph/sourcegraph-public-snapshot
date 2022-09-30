@@ -9,6 +9,9 @@ import (
 	"github.com/derision-test/glock"
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -141,12 +144,13 @@ func TestRunnerRemovesCompleted(t *testing.T) {
 
 func TestRunMigrator(t *testing.T) {
 	store := NewMockStoreIface()
+	logger := logtest.Scoped(t)
 	ticker := glock.NewMockTicker(time.Second)
 
 	migrator := NewMockMigrator()
 	migrator.ProgressFunc.SetDefaultReturn(0.5, nil)
 
-	runMigratorWrapped(store, migrator, ticker, func(migrations chan<- Migration) {
+	runMigratorWrapped(store, migrator, logger, ticker, func(migrations chan<- Migration) {
 		migrations <- Migration{ID: 1, Progress: 0.5}
 		tickN(ticker, 3)
 	})
@@ -161,13 +165,14 @@ func TestRunMigrator(t *testing.T) {
 
 func TestRunMigratorMigrationErrors(t *testing.T) {
 	store := NewMockStoreIface()
+	logger := logtest.Scoped(t)
 	ticker := glock.NewMockTicker(time.Second)
 
 	migrator := NewMockMigrator()
 	migrator.ProgressFunc.SetDefaultReturn(0.5, nil)
 	migrator.UpFunc.SetDefaultReturn(errors.New("uh-oh"))
 
-	runMigratorWrapped(store, migrator, ticker, func(migrations chan<- Migration) {
+	runMigratorWrapped(store, migrator, logger, ticker, func(migrations chan<- Migration) {
 		migrations <- Migration{ID: 1, Progress: 0.5}
 		tickN(ticker, 1)
 	})
@@ -186,6 +191,7 @@ func TestRunMigratorMigrationErrors(t *testing.T) {
 
 func TestRunMigratorMigrationFinishesUp(t *testing.T) {
 	store := NewMockStoreIface()
+	logger := logtest.Scoped(t)
 	ticker := glock.NewMockTicker(time.Second)
 
 	migrator := NewMockMigrator()
@@ -193,7 +199,7 @@ func TestRunMigratorMigrationFinishesUp(t *testing.T) {
 	migrator.ProgressFunc.PushReturn(0.9, nil)       // after up
 	migrator.ProgressFunc.SetDefaultReturn(1.0, nil) // after up
 
-	runMigratorWrapped(store, migrator, ticker, func(migrations chan<- Migration) {
+	runMigratorWrapped(store, migrator, logger, ticker, func(migrations chan<- Migration) {
 		migrations <- Migration{ID: 1, Progress: 0.8}
 		tickN(ticker, 5)
 	})
@@ -208,6 +214,7 @@ func TestRunMigratorMigrationFinishesUp(t *testing.T) {
 
 func TestRunMigratorMigrationFinishesDown(t *testing.T) {
 	store := NewMockStoreIface()
+	logger := logtest.Scoped(t)
 	ticker := glock.NewMockTicker(time.Second)
 
 	migrator := NewMockMigrator()
@@ -215,7 +222,7 @@ func TestRunMigratorMigrationFinishesDown(t *testing.T) {
 	migrator.ProgressFunc.PushReturn(0.1, nil)       // after down
 	migrator.ProgressFunc.SetDefaultReturn(0.0, nil) // after down
 
-	runMigratorWrapped(store, migrator, ticker, func(migrations chan<- Migration) {
+	runMigratorWrapped(store, migrator, logger, ticker, func(migrations chan<- Migration) {
 		migrations <- Migration{ID: 1, Progress: 0.2, ApplyReverse: true}
 		tickN(ticker, 5)
 	})
@@ -230,6 +237,7 @@ func TestRunMigratorMigrationFinishesDown(t *testing.T) {
 
 func TestRunMigratorMigrationChangesDirection(t *testing.T) {
 	store := NewMockStoreIface()
+	logger := logtest.Scoped(t)
 	ticker := glock.NewMockTicker(time.Second)
 
 	migrator := NewMockMigrator()
@@ -240,7 +248,7 @@ func TestRunMigratorMigrationChangesDirection(t *testing.T) {
 	migrator.ProgressFunc.PushReturn(0.1, nil) // after up
 	migrator.ProgressFunc.PushReturn(0.2, nil) // after up
 
-	runMigratorWrapped(store, migrator, ticker, func(migrations chan<- Migration) {
+	runMigratorWrapped(store, migrator, logger, ticker, func(migrations chan<- Migration) {
 		migrations <- Migration{ID: 1, Progress: 0.2, ApplyReverse: true}
 		tickN(ticker, 5)
 		migrations <- Migration{ID: 1, Progress: 0.0, ApplyReverse: false}
@@ -257,6 +265,7 @@ func TestRunMigratorMigrationChangesDirection(t *testing.T) {
 
 func TestRunMigratorMigrationDesyncedFromData(t *testing.T) {
 	store := NewMockStoreIface()
+	logger := logtest.Scoped(t)
 	ticker := glock.NewMockTicker(time.Second)
 
 	progressValues := []float64{
@@ -271,7 +280,7 @@ func TestRunMigratorMigrationDesyncedFromData(t *testing.T) {
 		migrator.ProgressFunc.PushReturn(val, nil)
 	}
 
-	runMigratorWrapped(store, migrator, ticker, func(migrations chan<- Migration) {
+	runMigratorWrapped(store, migrator, logger, ticker, func(migrations chan<- Migration) {
 		migrations <- Migration{ID: 1, Progress: 0.2, ApplyReverse: false}
 		tickN(ticker, 5)
 		migrations <- Migration{ID: 1, Progress: 1.0, ApplyReverse: false}
@@ -292,7 +301,7 @@ func TestRunMigratorMigrationDesyncedFromData(t *testing.T) {
 //
 // This method blocks until both functions return. The return of the interact function
 // cancels a context controlling the runMigrator main loop.
-func runMigratorWrapped(store storeIface, migrator Migrator, ticker glock.Ticker, interact func(migrations chan<- Migration)) {
+func runMigratorWrapped(store storeIface, migrator Migrator, logger log.Logger, ticker glock.Ticker, interact func(migrations chan<- Migration)) {
 	ctx, cancel := context.WithCancel(context.Background())
 	migrations := make(chan Migration)
 
@@ -308,6 +317,7 @@ func runMigratorWrapped(store storeIface, migrator Migrator, ticker glock.Ticker
 			migrator,
 			migrations,
 			migratorOptions{ticker: ticker},
+			logger,
 			newOperations(&observation.TestContext),
 		)
 	}()

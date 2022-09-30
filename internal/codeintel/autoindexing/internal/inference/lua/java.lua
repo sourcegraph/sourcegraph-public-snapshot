@@ -1,29 +1,29 @@
 local path = require "path"
-local patterns = require "sg.patterns"
-local recognizers = require "sg.recognizers"
+local recognizer = require "sg.autoindex.recognizer"
+local pattern = require "sg.autoindex.patterns"
 
 local indexer = "sourcegraph/scip-java"
 local outfile = "index.scip"
 
-local is_proejct_structure_supported = function(base)
+local is_project_structure_supported = function(base)
   return base == "pom.xml" or base == "build.gradle" or base == "build.gradle.kts"
 end
 
-return recognizers.path_recognizer {
+return recognizer.new_path_recognizer {
   patterns = {
-    patterns.path_extension "java",
-    patterns.path_extension "scala",
-    patterns.path_extension "kt",
-    patterns.path_basename "pom.xml",
-    patterns.path_basename "build.gradle",
-    patterns.path_basename "build.gradle.kts",
+    pattern.new_path_extension "java",
+    pattern.new_path_extension "scala",
+    pattern.new_path_extension "kt",
+    pattern.new_path_basename "pom.xml",
+    pattern.new_path_basename "build.gradle",
+    pattern.new_path_basename "build.gradle.kts",
   },
 
   -- Invoked when Java, Scala, Kotlin, or Gradle build files exist
   generate = function(api)
-    api:register(recognizers.path_recognizer {
+    api:register(recognizer.new_path_recognizer {
       patterns = {
-        patterns.path_literal "lsif-java.json",
+        pattern.new_path_literal "lsif-java.json",
       },
 
       -- Invoked when lsif-java.json exists in root of repository
@@ -32,7 +32,7 @@ return recognizers.path_recognizer {
           steps = {},
           root = "",
           indexer = indexer,
-          indexer_args = { "scip-java", "index", "--build-tool=lsif" },
+          indexer_args = { "scip-java", "index", "--build-tool=scip" },
           outfile = outfile,
         }
       end,
@@ -50,7 +50,7 @@ return recognizers.path_recognizer {
       local dir = path.dirname(paths[i])
       local base = path.basename(paths[i])
 
-      if visited[dir] == nil and is_proejct_structure_supported(base) then
+      if visited[dir] == nil and is_project_structure_supported(base) then
         table.insert(hints, {
           root = dir,
           indexer = indexer,
@@ -65,7 +65,7 @@ return recognizers.path_recognizer {
       local dir = path.dirname(paths[i])
       local base = path.basename(paths[i])
 
-      if visited[dir] == nil and not is_proejct_structure_supported(base) then
+      if visited[dir] == nil and not is_project_structure_supported(base) then
         table.insert(hints, {
           root = dir,
           indexer = indexer,

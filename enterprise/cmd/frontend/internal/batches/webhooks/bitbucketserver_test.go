@@ -21,10 +21,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -45,7 +46,7 @@ func testBitbucketServerWebhook(db database.DB, userID int32) func(*testing.T) {
 
 		rcache.SetupForTest(t)
 
-		ct.TruncateTables(t, db, "changeset_events", "changesets")
+		bt.TruncateTables(t, db, "changeset_events", "changesets")
 
 		cf, save := httptestutil.NewGitHubRecorderFactory(t, *update, "bitbucket-webhooks")
 		defer save()
@@ -60,22 +61,22 @@ func testBitbucketServerWebhook(db database.DB, userID int32) func(*testing.T) {
 		extSvc := &types.ExternalService{
 			Kind:        extsvc.KindBitbucketServer,
 			DisplayName: "Bitbucket",
-			Config: ct.MarshalJSON(t, &schema.BitbucketServerConnection{
+			Config: extsvc.NewUnencryptedConfig(bt.MarshalJSON(t, &schema.BitbucketServerConnection{
 				Url:   "https://bitbucket.sgdev.org",
-				Token: bitbucketServerToken,
 				Repos: []string{"SOUR/automation-testing"},
 				Webhooks: &schema.Webhooks{
 					Secret: secret,
 				},
-			}),
+				Token: "abc",
+			})),
 		}
 
 		err := esStore.Upsert(ctx, extSvc)
 		if err != nil {
-			t.Fatal(t)
+			t.Fatal(err)
 		}
 
-		bitbucketSource, err := repos.NewBitbucketServerSource(logtest.Scoped(t), extSvc, cf)
+		bitbucketSource, err := repos.NewBitbucketServerSource(ctx, logtest.Scoped(t), extSvc, cf)
 		if err != nil {
 			t.Fatal(t)
 		}
@@ -95,6 +96,18 @@ func testBitbucketServerWebhook(db database.DB, userID int32) func(*testing.T) {
 		}
 
 		s := store.NewWithClock(db, &observation.TestContext, nil, clock)
+
+		if err := s.CreateSiteCredential(ctx, &btypes.SiteCredential{
+			ExternalServiceType: bitbucketRepo.ExternalRepo.ServiceType,
+			ExternalServiceID:   bitbucketRepo.ExternalRepo.ServiceID,
+		},
+			&auth.OAuthBearerTokenWithSSH{
+				OAuthBearerToken: auth.OAuthBearerToken{Token: bitbucketServerToken},
+			},
+		); err != nil {
+			t.Fatal(err)
+		}
+
 		sourcer := sources.NewSourcer(cf)
 
 		spec := &btypes.BatchSpec{
@@ -138,7 +151,7 @@ func testBitbucketServerWebhook(db database.DB, userID int32) func(*testing.T) {
 		// Set up mocks to prevent the diffstat computation from trying to
 		// use a real gitserver, and so we can control what diff is used to
 		// create the diffstat.
-		state := ct.MockChangesetSyncState(&protocol.RepoInfo{
+		state := bt.MockChangesetSyncState(&protocol.RepoInfo{
 			Name: "repo",
 			VCS:  protocol.VCSInfo{URL: "https://example.com/repo/"},
 		})
@@ -148,7 +161,7 @@ func testBitbucketServerWebhook(db database.DB, userID int32) func(*testing.T) {
 			if err := s.CreateChangeset(ctx, ch); err != nil {
 				t.Fatal(err)
 			}
-			src, err := sourcer.ForRepo(ctx, s, bitbucketRepo)
+			src, err := sourcer.ForChangeset(ctx, s, ch)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -169,7 +182,7 @@ func testBitbucketServerWebhook(db database.DB, userID int32) func(*testing.T) {
 			_, name := path.Split(fixtureFile)
 			name = strings.TrimSuffix(name, ".json")
 			t.Run(name, func(t *testing.T) {
-				ct.TruncateTables(t, db, "changeset_events")
+				bt.TruncateTables(t, db, "changeset_events")
 
 				tc := loadWebhookTestCase(t, fixtureFile)
 

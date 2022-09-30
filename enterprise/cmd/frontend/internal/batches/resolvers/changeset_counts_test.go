@@ -11,18 +11,18 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -80,7 +80,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	cf, save := httptestutil.NewGitHubRecorderFactory(t, *update, "test-changeset-counts-over-time")
 	defer save()
 
-	userID := ct.CreateTestUser(t, db, false).ID
+	userID := bt.CreateTestUser(t, db, false).ID
 
 	repoStore := db.Repos()
 	esStore := db.ExternalServices()
@@ -92,11 +92,11 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	githubExtSvc := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub",
-		Config: ct.MarshalJSON(t, &schema.GitHubConnection{
+		Config: extsvc.NewUnencryptedConfig(bt.MarshalJSON(t, &schema.GitHubConnection{
 			Url:   "https://github.com",
-			Token: gitHubToken,
+			Token: "abc",
 			Repos: []string{"sourcegraph/sourcegraph"},
-		}),
+		})),
 	}
 
 	err := esStore.Upsert(ctx, githubExtSvc)
@@ -104,7 +104,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		t.Fatalf("Failed to Upsert external service: %s", err)
 	}
 
-	githubSrc, err := repos.NewGithubSource(logger, db.ExternalServices(), githubExtSvc, cf)
+	githubSrc, err := repos.NewGithubSource(ctx, logger, db.ExternalServices(), githubExtSvc, cf)
 	if err != nil {
 		t.Fatal(t)
 	}
@@ -119,20 +119,33 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mockState := ct.MockChangesetSyncState(&protocol.RepoInfo{
+	mockState := bt.MockChangesetSyncState(&protocol.RepoInfo{
 		Name: githubRepo.Name,
 		VCS:  protocol.VCSInfo{URL: githubRepo.URI},
 	})
 	defer mockState.Unmock()
 
-	cstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observation.TestContext, nil)
+
+	if err := bstore.CreateSiteCredential(ctx,
+		&btypes.SiteCredential{
+			ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
+			ExternalServiceID:   githubRepo.ExternalRepo.ServiceID,
+		},
+		&auth.OAuthBearerTokenWithSSH{
+			OAuthBearerToken: auth.OAuthBearerToken{Token: gitHubToken},
+		},
+	); err != nil {
+		t.Fatal(err)
+	}
+
 	sourcer := sources.NewSourcer(cf)
 
 	spec := &btypes.BatchSpec{
 		NamespaceUserID: userID,
 		UserID:          userID,
 	}
-	if err := cstore.CreateBatchSpec(ctx, spec); err != nil {
+	if err := bstore.CreateBatchSpec(ctx, spec); err != nil {
 		t.Fatal(err)
 	}
 
@@ -146,7 +159,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		BatchSpecID:     spec.ID,
 	}
 
-	err = cstore.CreateBatchChange(ctx, batchChange)
+	err = bstore.CreateBatchChange(ctx, batchChange)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -169,20 +182,20 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	}
 
 	for _, c := range changesets {
-		if err = cstore.CreateChangeset(ctx, c); err != nil {
+		if err = bstore.CreateChangeset(ctx, c); err != nil {
 			t.Fatal(err)
 		}
 
-		src, err := sourcer.ForRepo(ctx, cstore, githubRepo)
+		src, err := sourcer.ForChangeset(ctx, bstore, c)
 		if err != nil {
 			t.Fatalf("failed to build source for repo: %s", err)
 		}
-		if err := syncer.SyncChangeset(ctx, cstore, src, githubRepo, c); err != nil {
+		if err := syncer.SyncChangeset(ctx, bstore, src, githubRepo, c); err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	s, err := graphqlbackend.NewSchema(db, New(cstore), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(db, New(bstore))
 	if err != nil {
 		t.Fatal(err)
 	}

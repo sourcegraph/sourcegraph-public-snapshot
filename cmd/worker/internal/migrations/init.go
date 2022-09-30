@@ -4,8 +4,8 @@ import (
 	"context"
 	"os"
 
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/log"
 
@@ -22,12 +22,12 @@ import (
 
 // migrator configures an out of band migration runner process to execute in the background.
 type migrator struct {
-	registerMigrators func(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error
+	registerMigrators oobmigration.RegisterMigratorsFunc
 }
 
 var _ job.Job = &migrator{}
 
-func NewMigrator(registerMigrators func(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error) job.Job {
+func NewMigrator(registerMigrators oobmigration.RegisterMigratorsFunc) job.Job {
 	return &migrator{
 		registerMigrators: registerMigrators,
 	}
@@ -41,7 +41,7 @@ func (m *migrator) Config() []env.Config {
 	return nil
 }
 
-func (m *migrator) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
+func (m *migrator) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	sqlDB, err := workerdb.Init()
 	if err != nil {
 		return nil, err
@@ -50,23 +50,23 @@ func (m *migrator) Routines(ctx context.Context, logger log.Logger) ([]goroutine
 
 	observationContext := &observation.Context{
 		Logger:     logger.Scoped("routines", "migrator routines"),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 	outOfBandMigrationRunner := oobmigration.NewRunnerWithDB(db, oobmigration.RefreshInterval, observationContext)
 
-	if outOfBandMigrationRunner.SynchronizeMetadata(ctx); err != nil {
+	if outOfBandMigrationRunner.SynchronizeMetadata(startupCtx); err != nil {
 		return nil, errors.Wrap(err, "failed to synchronized out of band migration metadata")
 	}
 
-	if err := m.registerMigrators(db, outOfBandMigrationRunner); err != nil {
+	if err := m.registerMigrators(startupCtx, db, outOfBandMigrationRunner); err != nil {
 		return nil, err
 	}
 
 	if os.Getenv("SRC_DISABLE_OOBMIGRATION_VALIDATION") != "" {
 		logger.Warn("Skipping out-of-band migrations check")
 	} else {
-		if err := oobmigration.ValidateOutOfBandMigrationRunner(ctx, db, outOfBandMigrationRunner); err != nil {
+		if err := oobmigration.ValidateOutOfBandMigrationRunner(startupCtx, db, outOfBandMigrationRunner); err != nil {
 			return nil, err
 		}
 	}

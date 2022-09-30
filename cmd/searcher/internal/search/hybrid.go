@@ -8,10 +8,10 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/google/zoekt"
-	zoektquery "github.com/google/zoekt/query"
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/zoekt"
+	zoektquery "github.com/sourcegraph/zoekt/query"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -32,7 +32,7 @@ import (
 // code paths for the unindexed parts. IE unsearched is expected to be used to
 // fetch a zip via the store and then do a normal unindexed search.
 func (s *Service) hybrid(ctx context.Context, p *protocol.Request, sender matchSender) (unsearched []string, ok bool, err error) {
-	logger := logWithTrace(ctx, s.Log).Scoped("hybrid", "experimental hybrid search").With(
+	rootLogger := logWithTrace(ctx, s.Log).Scoped("hybrid", "experimental hybrid search").With(
 		log.String("repo", string(p.Repo)),
 		log.String("commit", string(p.Commit)),
 		log.Int("endpoints", len(p.IndexerEndpoints)))
@@ -44,6 +44,8 @@ func (s *Service) hybrid(ctx context.Context, p *protocol.Request, sender matchS
 	// which files we search need to change. As such we keep retrying until we
 	// know we have had a consistent list and search on zoekt.
 	for try := 0; try < 5; try++ {
+		logger := rootLogger.With(log.Int("try", try))
+
 		indexed, ok, err := zoektIndexedCommit(ctx, client, p.Repo)
 		if err != nil {
 			return nil, false, err
@@ -52,6 +54,7 @@ func (s *Service) hybrid(ctx context.Context, p *protocol.Request, sender matchS
 			logger.Warn("failed to find indexed commit")
 			return nil, false, nil
 		}
+		logger = logger.With(log.String("indexed", string(indexed)))
 
 		// TODO if our store was more flexible we could cache just based on
 		// indexed and p.Commit and avoid the need of running diff for each
@@ -64,30 +67,40 @@ func (s *Service) hybrid(ctx context.Context, p *protocol.Request, sender matchS
 		indexedIgnore, unindexedSearch, err := parseGitDiffNameStatus(out)
 		if err != nil {
 			logger.Debug("parseGitDiffNameStatus failed",
-				log.String("indexed", string(indexed)),
 				log.Binary("out", out),
 				log.Error(err))
 			return nil, false, err
 		}
 
-		logger.Info("starting zoekt search",
-			log.Int("try", try),
-			log.String("indexed", string(indexed)),
+		totalLenIndexedIgnore := totalStringsLen(indexedIgnore)
+		totalLenUnindexedSearch := totalStringsLen(unindexedSearch)
+
+		logger = logger.With(
 			log.Int("indexedIgnorePaths", len(indexedIgnore)),
-			log.Int("unindexedSearchPaths", len(unindexedSearch)))
+			log.Int("totalLenIndexedIgnorePaths", totalLenIndexedIgnore),
+			log.Int("unindexedSearchPaths", len(unindexedSearch)),
+			log.Int("totalLenUnindexedSearchPaths", totalLenUnindexedSearch))
+
+		if totalLenIndexedIgnore > s.MaxTotalPathsLength || totalLenUnindexedSearch > s.MaxTotalPathsLength {
+			logger.Info("not doing hybrid search due to changed file list exceeding MAX_TOTAL_PATHS_LENGTH",
+				log.Int("MAX_TOTAL_PATHS_LENGTH", s.MaxTotalPathsLength))
+			return nil, false, nil
+		}
+
+		logger.Info("starting zoekt search")
 
 		ok, err = zoektSearchIgnorePaths(ctx, client, p, sender, indexed, indexedIgnore)
 		if err != nil {
 			return nil, false, err
 		} else if !ok {
-			logger.Debug("retrying search since index changed while searching", log.String("indexed", string(indexed)))
+			logger.Debug("retrying search since index changed while searching")
 			continue
 		}
 
 		return unindexedSearch, true, nil
 	}
 
-	logger.Warn("reached maximum try count, falling back to default unindexed search")
+	rootLogger.Warn("reached maximum try count, falling back to default unindexed search")
 	return nil, false, nil
 }
 
@@ -336,11 +349,16 @@ func parseGitDiffNameStatus(out []byte) (changedA, changedB []string, err error)
 	return changedA, changedB, nil
 }
 
+func totalStringsLen(ss []string) int {
+	sum := 0
+	for _, s := range ss {
+		sum += len(s)
+	}
+	return sum
+}
+
 // logWithTrace is a helper which returns l.WithTrace if there is a
 // TraceContext associated with ctx.
 func logWithTrace(ctx context.Context, l log.Logger) log.Logger {
-	if tc := trace.Context(ctx); tc != nil {
-		return l.WithTrace(*tc)
-	}
-	return l
+	return l.WithTrace(trace.Context(ctx))
 }

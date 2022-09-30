@@ -11,14 +11,16 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/commitgraph"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestGetStaleSourcedCommits(t *testing.T) {
@@ -30,12 +32,12 @@ func TestGetStaleSourcedCommits(t *testing.T) {
 	now := time.Unix(1587396557, 0).UTC()
 
 	insertUploads(t, db,
-		shared.Upload{ID: 1, RepositoryID: 50, Commit: makeCommit(1)},
-		shared.Upload{ID: 2, RepositoryID: 50, Commit: makeCommit(1), Root: "sub/"},
-		shared.Upload{ID: 3, RepositoryID: 51, Commit: makeCommit(4)},
-		shared.Upload{ID: 4, RepositoryID: 51, Commit: makeCommit(5)},
-		shared.Upload{ID: 5, RepositoryID: 52, Commit: makeCommit(7)},
-		shared.Upload{ID: 6, RepositoryID: 52, Commit: makeCommit(8)},
+		types.Upload{ID: 1, RepositoryID: 50, Commit: makeCommit(1)},
+		types.Upload{ID: 2, RepositoryID: 50, Commit: makeCommit(1), Root: "sub/"},
+		types.Upload{ID: 3, RepositoryID: 51, Commit: makeCommit(4)},
+		types.Upload{ID: 4, RepositoryID: 51, Commit: makeCommit(5)},
+		types.Upload{ID: 5, RepositoryID: 52, Commit: makeCommit(7)},
+		types.Upload{ID: 6, RepositoryID: 52, Commit: makeCommit(8)},
 	)
 
 	sourcedCommits, err := store.GetStaleSourcedCommits(context.Background(), time.Minute, 5, now)
@@ -84,12 +86,12 @@ func TestUpdateSourcedCommits(t *testing.T) {
 	now := time.Unix(1587396557, 0).UTC()
 
 	insertUploads(t, db,
-		shared.Upload{ID: 1, RepositoryID: 50, Commit: makeCommit(1)},
-		shared.Upload{ID: 2, RepositoryID: 50, Commit: makeCommit(1), Root: "sub/"},
-		shared.Upload{ID: 3, RepositoryID: 51, Commit: makeCommit(4)},
-		shared.Upload{ID: 4, RepositoryID: 51, Commit: makeCommit(5)},
-		shared.Upload{ID: 5, RepositoryID: 52, Commit: makeCommit(7)},
-		shared.Upload{ID: 6, RepositoryID: 52, Commit: makeCommit(7), State: "uploading"},
+		types.Upload{ID: 1, RepositoryID: 50, Commit: makeCommit(1)},
+		types.Upload{ID: 2, RepositoryID: 50, Commit: makeCommit(1), Root: "sub/"},
+		types.Upload{ID: 3, RepositoryID: 51, Commit: makeCommit(4)},
+		types.Upload{ID: 4, RepositoryID: 51, Commit: makeCommit(5)},
+		types.Upload{ID: 5, RepositoryID: 52, Commit: makeCommit(7)},
+		types.Upload{ID: 6, RepositoryID: 52, Commit: makeCommit(7), State: "uploading"},
 	)
 
 	uploadsUpdated, err := store.UpdateSourcedCommits(context.Background(), 50, makeCommit(1), now)
@@ -126,13 +128,13 @@ func TestDeleteSourcedCommits(t *testing.T) {
 	now := time.Unix(1587396557, 0).UTC()
 
 	insertUploads(t, db,
-		shared.Upload{ID: 1, RepositoryID: 50, Commit: makeCommit(1)},
-		shared.Upload{ID: 2, RepositoryID: 50, Commit: makeCommit(1), Root: "sub/"},
-		shared.Upload{ID: 3, RepositoryID: 51, Commit: makeCommit(4)},
-		shared.Upload{ID: 4, RepositoryID: 51, Commit: makeCommit(5)},
-		shared.Upload{ID: 5, RepositoryID: 52, Commit: makeCommit(7)},
-		shared.Upload{ID: 6, RepositoryID: 52, Commit: makeCommit(7), State: "uploading", UploadedAt: now.Add(-time.Minute * 90)},
-		shared.Upload{ID: 7, RepositoryID: 52, Commit: makeCommit(7), State: "queued", UploadedAt: now.Add(-time.Minute * 30)},
+		types.Upload{ID: 1, RepositoryID: 50, Commit: makeCommit(1)},
+		types.Upload{ID: 2, RepositoryID: 50, Commit: makeCommit(1), Root: "sub/"},
+		types.Upload{ID: 3, RepositoryID: 51, Commit: makeCommit(4)},
+		types.Upload{ID: 4, RepositoryID: 51, Commit: makeCommit(5)},
+		types.Upload{ID: 5, RepositoryID: 52, Commit: makeCommit(7)},
+		types.Upload{ID: 6, RepositoryID: 52, Commit: makeCommit(7), State: "uploading", UploadedAt: now.Add(-time.Minute * 90)},
+		types.Upload{ID: 7, RepositoryID: 52, Commit: makeCommit(7), State: "queued", UploadedAt: now.Add(-time.Minute * 30)},
 	)
 
 	uploadsUpdated, uploadsDeleted, err := store.DeleteSourcedCommits(context.Background(), 52, makeCommit(7), time.Hour, now)
@@ -164,8 +166,126 @@ func TestDeleteSourcedCommits(t *testing.T) {
 	}
 }
 
+func TestGetOldestCommitDate(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	t1 := time.Unix(1587396557, 0).UTC()
+	t2 := t1.Add(time.Minute)
+	t3 := t1.Add(time.Minute * 4)
+	t4 := t1.Add(time.Minute * 6)
+
+	insertUploads(t, db,
+		types.Upload{ID: 1, State: "completed"},
+		types.Upload{ID: 2, State: "completed"},
+		types.Upload{ID: 3, State: "completed"},
+		types.Upload{ID: 4, State: "errored"},
+		types.Upload{ID: 5, State: "completed"},
+		types.Upload{ID: 6, State: "completed", RepositoryID: 51},
+		types.Upload{ID: 7, State: "completed", RepositoryID: 51},
+		types.Upload{ID: 8, State: "completed", RepositoryID: 51},
+	)
+
+	if _, err := db.ExecContext(context.Background(), "UPDATE lsif_uploads SET committed_at = '-infinity' WHERE id = 3"); err != nil {
+		t.Fatalf("unexpected error updating commit date %s", err)
+	}
+
+	// Repo 50
+	for commit, committedAtStr := range map[string]string{
+		makeCommit(1): t3.Format(time.RFC3339),
+		makeCommit(2): t4.Format(time.RFC3339),
+		makeCommit(3): "-infinity",
+		makeCommit(4): t1.Format(time.RFC3339),
+		// commit for upload 5 is initially missing
+	} {
+		if err := store.UpdateCommittedAt(context.Background(), 50, commit, committedAtStr); err != nil {
+			t.Fatalf("unexpected error updating commit date %s", err)
+		}
+	}
+
+	if _, _, err := store.GetOldestCommitDate(context.Background(), 50); err == nil {
+		t.Fatalf("expected error getting oldest commit date")
+	} else if !errors.Is(err, &backfillIncompleteError{50}) {
+		t.Fatalf("unexpected backfill error, got %q", err)
+	}
+
+	// Finish backfill
+	if err := store.UpdateCommittedAt(context.Background(), 50, makeCommit(5), "-infinity"); err != nil {
+		t.Fatalf("unexpected error updating commit date %s", err)
+	}
+
+	if commitDate, ok, err := store.GetOldestCommitDate(context.Background(), 50); err != nil {
+		t.Fatalf("unexpected error getting oldest commit date: %s", err)
+	} else if !ok {
+		t.Fatalf("expected commit date for repository")
+	} else if !commitDate.Equal(t3) {
+		t.Fatalf("unexpected commit date. want=%s have=%s", t3, commitDate)
+	}
+
+	// Repo 51
+	for commit, committedAtStr := range map[string]string{
+		makeCommit(6): t2.Format(time.RFC3339),
+		makeCommit(7): "-infinity",
+		makeCommit(8): "-infinity",
+	} {
+		if err := store.UpdateCommittedAt(context.Background(), 51, commit, committedAtStr); err != nil {
+			t.Fatalf("unexpected error updating commit date %s", err)
+		}
+	}
+
+	if commitDate, ok, err := store.GetOldestCommitDate(context.Background(), 51); err != nil {
+		t.Fatalf("unexpected error getting oldest commit date: %s", err)
+	} else if !ok {
+		t.Fatalf("expected commit date for repository")
+	} else if !commitDate.Equal(t2) {
+		t.Fatalf("unexpected commit date. want=%s have=%s", t2, commitDate)
+	}
+
+	// Missing repository
+	if _, ok, err := store.GetOldestCommitDate(context.Background(), 52); err != nil {
+		t.Fatalf("unexpected error getting oldest commit date: %s", err)
+	} else if ok {
+		t.Fatalf("unexpected commit date for repository")
+	}
+}
+
+func TestHasCommit(t *testing.T) {
+	logger := logtest.Scoped(t)
+	sqlDB := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, sqlDB)
+	store := New(db, &observation.TestContext)
+
+	testCases := []struct {
+		repositoryID int
+		commit       string
+		exists       bool
+	}{
+		{50, makeCommit(1), true},
+		{50, makeCommit(2), false},
+		{51, makeCommit(1), false},
+	}
+
+	insertNearestUploads(t, db, 50, map[string][]commitgraph.UploadMeta{makeCommit(1): {{UploadID: 42, Distance: 1}}})
+	insertNearestUploads(t, db, 51, map[string][]commitgraph.UploadMeta{makeCommit(2): {{UploadID: 43, Distance: 2}}})
+
+	for _, testCase := range testCases {
+		name := fmt.Sprintf("repositoryID=%d commit=%s", testCase.repositoryID, testCase.commit)
+
+		t.Run(name, func(t *testing.T) {
+			exists, err := store.HasCommit(context.Background(), testCase.repositoryID, testCase.commit)
+			if err != nil {
+				t.Fatalf("unexpected error checking if commit exists: %s", err)
+			}
+			if exists != testCase.exists {
+				t.Errorf("unexpected exists. want=%v have=%v", testCase.exists, exists)
+			}
+		})
+	}
+}
+
 // insertUploads populates the lsif_uploads table with the given upload models.
-func insertUploads(t testing.TB, db database.DB, uploads ...shared.Upload) {
+func insertUploads(t testing.TB, db database.DB, uploads ...types.Upload) {
 	for _, upload := range uploads {
 		if upload.Commit == "" {
 			upload.Commit = makeCommit(upload.ID)
@@ -237,7 +357,7 @@ func insertUploads(t testing.TB, db database.DB, uploads ...shared.Upload) {
 	}
 }
 
-func updateUploads(t testing.TB, db database.DB, uploads ...shared.Upload) {
+func updateUploads(t testing.TB, db database.DB, uploads ...types.Upload) {
 	for _, upload := range uploads {
 		query := sqlf.Sprintf(`
 			UPDATE lsif_uploads

@@ -348,10 +348,6 @@ func (r *UserResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
-func (r *UserResolver) URLForSiteAdminBilling(ctx context.Context) (*string, error) {
-	return EnterpriseResolvers.dotcomResolver.UserURLForSiteAdminBilling(ctx, r.user.ID)
-}
-
 func (r *UserResolver) NamespaceName() string { return r.user.Username }
 
 func (r *UserResolver) PermissionsInfo(ctx context.Context) (PermissionsInfoResolver, error) {
@@ -376,7 +372,7 @@ func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 	}
 
 	if conf.CanSendEmail() {
-		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, r.db, user.ID, "updated the password"); err != nil {
+		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, r.logger, r.db, user.ID, "updated the password"); err != nil {
 			log15.Warn("Failed to send email to inform user of password update", "error", err)
 		}
 	}
@@ -400,7 +396,7 @@ func (r *schemaResolver) CreatePassword(ctx context.Context, args *struct {
 	}
 
 	if conf.CanSendEmail() {
-		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, r.db, user.ID, "created a password"); err != nil {
+		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, r.logger, r.db, user.ID, "created a password"); err != nil {
 			log15.Warn("Failed to send email to inform user of password creation", "error", err)
 		}
 	}
@@ -471,69 +467,6 @@ func (r *UserResolver) BatchChanges(ctx context.Context, args *ListBatchChangesA
 	id := r.ID()
 	args.Namespace = &id
 	return EnterpriseResolvers.batchChangesResolver.BatchChanges(ctx, args)
-}
-
-type ListUserRepositoriesArgs struct {
-	First             *int32
-	Query             *string
-	After             *string
-	Cloned            bool
-	NotCloned         bool
-	Indexed           bool
-	NotIndexed        bool
-	ExternalServiceID *graphql.ID
-	OrderBy           *string
-	Descending        bool
-}
-
-func (r *UserResolver) Repositories(ctx context.Context, args *ListUserRepositoriesArgs) (RepositoryConnectionResolver, error) {
-	opt := database.ReposListOptions{}
-	if args.Query != nil {
-		opt.Query = *args.Query
-	}
-	if args.First != nil {
-		opt.LimitOffset = &database.LimitOffset{Limit: int(*args.First)}
-	}
-	if args.After != nil {
-		cursor, err := UnmarshalRepositoryCursor(args.After)
-		if err != nil {
-			return nil, err
-		}
-		opt.Cursors = append(opt.Cursors, cursor)
-	} else {
-		opt.Cursors = append(opt.Cursors, &types.Cursor{Direction: "next"})
-	}
-	if args.OrderBy == nil {
-		opt.OrderBy = database.RepoListOrderBy{{
-			Field:      "name",
-			Descending: false,
-		}}
-	} else {
-		opt.OrderBy = database.RepoListOrderBy{{
-			Field:      ToDBRepoListColumn(*args.OrderBy),
-			Descending: args.Descending,
-		}}
-	}
-
-	if args.ExternalServiceID == nil {
-		opt.UserID = r.user.ID
-		opt.IncludeUserPublicRepos = true
-	} else {
-		id, err := UnmarshalExternalServiceID(*args.ExternalServiceID)
-		if err != nil {
-			return nil, err
-		}
-		opt.ExternalServiceIDs = []int64{id}
-	}
-
-	return &repositoryConnectionResolver{
-		db:         r.db,
-		opt:        opt,
-		cloned:     args.Cloned,
-		notCloned:  args.NotCloned,
-		indexed:    args.Indexed,
-		notIndexed: args.NotIndexed,
-	}, nil
 }
 
 func (r *UserResolver) BatchChangesCodeHosts(ctx context.Context, args *ListBatchChangesCodeHostsArgs) (BatchChangesCodeHostConnectionResolver, error) {

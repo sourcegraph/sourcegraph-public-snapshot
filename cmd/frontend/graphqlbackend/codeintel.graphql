@@ -24,7 +24,6 @@ extend type Mutation {
         indexingEnabled: Boolean!
         indexCommitMaxAgeHours: Int
         indexIntermediateCommits: Boolean!
-        lockfileIndexingEnabled: Boolean!
     ): CodeIntelligenceConfigurationPolicy!
 
     """
@@ -42,7 +41,6 @@ extend type Mutation {
         indexingEnabled: Boolean!
         indexCommitMaxAgeHours: Int
         indexIntermediateCommits: Boolean!
-        lockfileIndexingEnabled: Boolean!
     ): EmptyResponse
 
     """
@@ -254,7 +252,7 @@ type RepositoryFilterPreview {
     """
     A list of repositories composing the current page.
     """
-    nodes: [Repository!]!
+    nodes: [CodeIntelRepository!]!
 
     """
     The total number of repositories in this result set.
@@ -317,7 +315,7 @@ type CodeIntelligenceConfigurationPolicy implements Node {
     """
     The repository to which this configuration policy applies.
     """
-    repository: Repository
+    repository: CodeIntelRepository
 
     """
     The set of name patterns matching repositories to which this configuration policy applies.
@@ -372,11 +370,6 @@ type CodeIntelligenceConfigurationPolicy implements Node {
     only consider the tip of the branch.
     """
     indexIntermediateCommits: Boolean!
-
-    """
-    Whether or not this configuration policy affects lockfile-indexing schedules.
-    """
-    lockfileIndexingEnabled: Boolean!
 }
 
 """
@@ -980,7 +973,7 @@ type LSIFUpload implements Node {
     """
     The project for which this upload provides code intelligence.
     """
-    projectRoot: GitTree
+    projectRoot: CodeIntelGitTree
 
     """
     The original 40-character commit commit supplied at upload time.
@@ -1251,7 +1244,7 @@ type LSIFIndex implements Node {
     """
     The project for which this upload provides code intelligence.
     """
-    projectRoot: GitTree
+    projectRoot: CodeIntelGitTree
 
     """
     The original 40-character commit commit supplied at index time.

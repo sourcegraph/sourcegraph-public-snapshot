@@ -3,5 +3,5 @@
  */
 window.buildInfo = {
     commitSHA: process.env.COMMIT_SHA,
-    version: process.env.RELEASE_CANDIDATE_VERSION,
+    version: process.env.VERSION,
 }

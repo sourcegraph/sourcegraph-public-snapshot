@@ -7,9 +7,6 @@ import (
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/opentracing/opentracing-go/log"
-
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 var tableNames = []string{
@@ -26,11 +23,11 @@ var tableNames = []string{
 }
 
 func (s *Store) Clear(ctx context.Context, bundleIDs ...int) (err error) {
-	ctx, trace, endObservation := s.operations.clear.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("numBundleIDs", len(bundleIDs)),
-		log.String("bundleIDs", intsToString(bundleIDs)),
-	}})
-	defer endObservation(1, observation.Args{})
+	// ctx, trace, endObservation := s.operations.clear.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	// 	log.Int("numBundleIDs", len(bundleIDs)),
+	// 	log.String("bundleIDs", intsToString(bundleIDs)),
+	// }})
+	// defer endObservation(1, observation.Args{})
 
 	if len(bundleIDs) == 0 {
 		return nil
@@ -55,7 +52,7 @@ func (s *Store) Clear(ctx context.Context, bundleIDs ...int) (err error) {
 	}()
 
 	for _, tableName := range tableNames {
-		trace.Log(log.String("tableName", tableName))
+		// trace.Log(log.String("tableName", tableName))
 
 		if err := tx.Exec(ctx, sqlf.Sprintf(clearQuery, sqlf.Sprintf(tableName), sqlf.Join(ids, ","))); err != nil {
 			return err

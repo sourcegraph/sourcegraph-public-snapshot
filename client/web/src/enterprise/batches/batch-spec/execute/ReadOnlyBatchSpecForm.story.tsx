@@ -1,4 +1,3 @@
-import { select } from '@storybook/addon-knobs'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
@@ -22,17 +21,13 @@ const config: Meta = {
 
 export default config
 
-export const Executing: Story = () => (
+export const Executing: Story = args => (
     <WebStory>
         {props => (
             <BatchSpecContextProvider
                 batchChange={mockBatchChange()}
                 batchSpec={mockFullBatchSpec({
-                    state: select(
-                        'batch spec state',
-                        [BatchSpecState.PROCESSING, BatchSpecState.QUEUED],
-                        BatchSpecState.PROCESSING
-                    ),
+                    state: args.state,
                 })}
             >
                 <ReadOnlyBatchSpecForm {...props} />
@@ -40,26 +35,23 @@ export const Executing: Story = () => (
         )}
     </WebStory>
 )
+Executing.argTypes = {
+    state: {
+        name: 'batch spec state',
+        control: { type: 'select', options: [BatchSpecState.PROCESSING, BatchSpecState.QUEUED] },
+        defaultValue: BatchSpecState.PROCESSING,
+    },
+}
 
 Executing.storyName = 'while executing'
 
-export const ExecutionFinished: Story = () => (
+export const ExecutionFinished: Story = args => (
     <WebStory>
         {props => (
             <BatchSpecContextProvider
                 batchChange={mockBatchChange()}
                 batchSpec={mockFullBatchSpec({
-                    state: select(
-                        'batch spec state',
-                        [
-                            BatchSpecState.CANCELED,
-                            BatchSpecState.CANCELING,
-                            BatchSpecState.COMPLETED,
-                            BatchSpecState.FAILED,
-                            BatchSpecState.PENDING,
-                        ],
-                        BatchSpecState.COMPLETED
-                    ),
+                    state: args.state,
                 })}
             >
                 <ReadOnlyBatchSpecForm {...props} />
@@ -67,6 +59,22 @@ export const ExecutionFinished: Story = () => (
         )}
     </WebStory>
 )
+ExecutionFinished.argTypes = {
+    state: {
+        name: 'batch spec state',
+        control: {
+            type: 'select',
+            options: [
+                BatchSpecState.CANCELED,
+                BatchSpecState.CANCELING,
+                BatchSpecState.COMPLETED,
+                BatchSpecState.FAILED,
+                BatchSpecState.PENDING,
+            ],
+        },
+        defaultValue: BatchSpecState.COMPLETED,
+    },
+}
 
 ExecutionFinished.storyName = 'after execution finishes'
 

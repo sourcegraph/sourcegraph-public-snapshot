@@ -11,6 +11,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -18,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestUnmarshal(t *testing.T) {
@@ -722,7 +723,7 @@ func TestRecentCommitters(t *testing.T) {
 
 	testutil.AssertGolden(t,
 		"testdata/golden/RecentCommitters",
-		update("SearchRepos-Enterprise"),
+		update("RecentCommitters"),
 		recentCommitters,
 	)
 }
@@ -1051,4 +1052,21 @@ repo8: repository(owner: "sourcegraph", name: "contains.dot") { ... on Repositor
 	if !strings.Contains(query, wantIncluded) {
 		t.Fatalf("query does not contain repository query. query=%q, want=%q", query, wantIncluded)
 	}
+}
+
+func TestClient_Releases(t *testing.T) {
+	cli, save := newV4Client(t, "Releases")
+	t.Cleanup(save)
+
+	releases, err := cli.Releases(context.Background(), &ReleasesParams{
+		Name:  "src-cli",
+		Owner: "sourcegraph",
+	})
+	assert.NoError(t, err)
+
+	testutil.AssertGolden(t,
+		"testdata/golden/Releases",
+		update("Releases"),
+		releases,
+	)
 }

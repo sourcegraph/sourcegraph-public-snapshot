@@ -10,6 +10,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/keegancsmith/sqlf"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -17,7 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -38,9 +40,9 @@ func TestBatchSpecResolver(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	cstore := store.New(db, &observation.TestContext, nil)
-	repoStore := database.ReposWith(logger, cstore)
-	esStore := database.ExternalServicesWith(logger, cstore)
+	bstore := store.New(db, &observation.TestContext, nil)
+	repoStore := database.ReposWith(logger, bstore)
+	esStore := database.ExternalServicesWith(logger, bstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/batch-spec-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
@@ -49,29 +51,29 @@ func TestBatchSpecResolver(t *testing.T) {
 	repoID := graphqlbackend.MarshalRepositoryID(repo.ID)
 
 	orgname := "test-org"
-	userID := ct.CreateTestUser(t, db, false).ID
-	adminID := ct.CreateTestUser(t, db, true).ID
-	orgID := ct.InsertTestOrg(t, db, orgname)
+	userID := bt.CreateTestUser(t, db, false).ID
+	adminID := bt.CreateTestUser(t, db, true).ID
+	orgID := bt.CreateTestOrg(t, db, orgname, userID).ID
 
-	spec, err := btypes.NewBatchSpecFromRaw(ct.TestRawBatchSpec)
+	spec, err := btypes.NewBatchSpecFromRaw(bt.TestRawBatchSpec)
 	if err != nil {
 		t.Fatal(err)
 	}
 	spec.UserID = userID
 	spec.NamespaceOrgID = orgID
-	if err := cstore.CreateBatchSpec(ctx, spec); err != nil {
+	if err := bstore.CreateBatchSpec(ctx, spec); err != nil {
 		t.Fatal(err)
 	}
 
-	changesetSpec, err := btypes.NewChangesetSpecFromRaw(ct.NewRawChangesetSpecGitBranch(repoID, "deadb33f"))
+	changesetSpec, err := btypes.NewChangesetSpecFromRaw(bt.NewRawChangesetSpecGitBranch(repoID, "deadb33f"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	changesetSpec.BatchSpecID = spec.ID
 	changesetSpec.UserID = userID
-	changesetSpec.RepoID = repo.ID
+	changesetSpec.BaseRepoID = repo.ID
 
-	if err := cstore.CreateChangesetSpec(ctx, changesetSpec); err != nil {
+	if err := bstore.CreateChangesetSpec(ctx, changesetSpec); err != nil {
 		t.Fatal(err)
 	}
 
@@ -83,11 +85,11 @@ func TestBatchSpecResolver(t *testing.T) {
 		LastAppliedAt:  time.Now(),
 		BatchSpecID:    spec.ID,
 	}
-	if err := cstore.CreateBatchChange(ctx, matchingBatchChange); err != nil {
+	if err := bstore.CreateBatchChange(ctx, matchingBatchChange); err != nil {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(db, &Resolver{store: bstore})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -136,7 +138,6 @@ func TestBatchSpecResolver(t *testing.T) {
 
 		DiffStat: apitest.DiffStat{
 			Added:   changesetSpec.DiffStatAdded,
-			Changed: changesetSpec.DiffStatChanged,
 			Deleted: changesetSpec.DiffStatDeleted,
 		},
 
@@ -168,13 +169,13 @@ func TestBatchSpecResolver(t *testing.T) {
 
 	// Now create an updated changeset spec and check that we get a superseding
 	// batch spec.
-	sup, err := btypes.NewBatchSpecFromRaw(ct.TestRawBatchSpec)
+	sup, err := btypes.NewBatchSpecFromRaw(bt.TestRawBatchSpec)
 	if err != nil {
 		t.Fatal(err)
 	}
 	sup.UserID = userID
 	sup.NamespaceOrgID = orgID
-	if err := cstore.CreateBatchSpec(ctx, sup); err != nil {
+	if err := bstore.CreateBatchSpec(ctx, sup); err != nil {
 		t.Fatal(err)
 	}
 
@@ -198,7 +199,7 @@ func TestBatchSpecResolver(t *testing.T) {
 	// If the superseding batch spec was created by a different user, then we
 	// shouldn't return it.
 	sup.UserID = adminID
-	if err := cstore.UpdateBatchSpec(ctx, sup); err != nil {
+	if err := bstore.UpdateBatchSpec(ctx, sup); err != nil {
 		t.Fatal(err)
 	}
 
@@ -219,7 +220,7 @@ func TestBatchSpecResolver(t *testing.T) {
 	}
 
 	// Now soft-delete the creator and check that the batch spec is still retrievable.
-	err = database.UsersWith(logger, cstore).Delete(ctx, userID)
+	err = database.UsersWith(logger, bstore).Delete(ctx, userID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -239,7 +240,7 @@ func TestBatchSpecResolver(t *testing.T) {
 	}
 
 	// Now hard-delete the creator and check that the batch spec is still retrievable.
-	err = database.UsersWith(logger, cstore).HardDelete(ctx, userID)
+	err = database.UsersWith(logger, bstore).HardDelete(ctx, userID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -268,16 +269,16 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	now := timeutil.Now().Truncate(time.Second)
 	minAgo := func(min int) time.Time { return now.Add(time.Duration(-min) * time.Minute) }
 
-	user := ct.CreateTestUser(t, db, false)
+	user := bt.CreateTestUser(t, db, false)
 	userCtx := actor.WithActor(ctx, actor.FromUser(user.ID))
 
-	rs, extSvc := ct.CreateTestRepos(t, ctx, db, 3)
+	rs, extSvc := bt.CreateTestRepos(t, ctx, db, 3)
 
 	bstore := store.New(db, &observation.TestContext, nil)
 
 	svc := service.New(bstore)
 	spec, err := svc.CreateBatchSpecFromRaw(userCtx, service.CreateBatchSpecFromRawOpts{
-		RawSpec:         ct.TestRawBatchSpecYAML,
+		RawSpec:         bt.TestRawBatchSpecYAML,
 		NamespaceUserID: user.ID,
 	})
 	if err != nil {
@@ -291,7 +292,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(db, &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(db, &Resolver{store: bstore})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -357,7 +358,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	var jobs []*btypes.BatchSpecWorkspaceExecutionJob
 	for _, ws := range workspaces {
 		job := &btypes.BatchSpecWorkspaceExecutionJob{BatchSpecWorkspaceID: ws.ID, UserID: user.ID}
-		if err := ct.CreateBatchSpecWorkspaceExecutionJob(ctx, bstore, store.ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
+		if err := bt.CreateBatchSpecWorkspaceExecutionJob(ctx, bstore, store.ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
 			t.Fatal(err)
 		}
 		jobs = append(jobs, job)
@@ -450,11 +451,11 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	setJobCompleted(t, ctx, bstore, jobs[2])
 
 	conflictingRef := "refs/heads/conflicting-head-ref"
-	for _, opts := range []ct.TestSpecOpts{
-		{HeadRef: conflictingRef, Repo: rs[0].ID, BatchSpec: spec.ID},
-		{HeadRef: conflictingRef, Repo: rs[0].ID, BatchSpec: spec.ID},
+	for _, opts := range []bt.TestSpecOpts{
+		{HeadRef: conflictingRef, Typ: btypes.ChangesetSpecTypeBranch, Repo: rs[0].ID, BatchSpec: spec.ID},
+		{HeadRef: conflictingRef, Typ: btypes.ChangesetSpecTypeBranch, Repo: rs[0].ID, BatchSpec: spec.ID},
 	} {
-		spec := ct.CreateChangesetSpec(t, ctx, bstore, opts)
+		spec := bt.CreateChangesetSpec(t, ctx, bstore, opts)
 
 		want.ChangesetSpecs.TotalCount += 1
 		want.ChangesetSpecs.Nodes = append(want.ChangesetSpecs.Nodes, apitest.ChangesetSpec{
@@ -472,9 +473,8 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	want.State = "FAILED"
 	want.FailureMessage = fmt.Sprintf("Validating changeset specs resulted in an error:\n* 2 changeset specs in %s use the same branch: %s\n", rs[0].Name, conflictingRef)
 	want.ApplyURL = nil
-	want.DiffStat.Added = 20
-	want.DiffStat.Deleted = 4
-	want.DiffStat.Changed = 10
+	want.DiffStat.Added = 30
+	want.DiffStat.Deleted = 14
 	want.ViewerCanRetry = true
 
 	codeHosts = apitest.BatchChangesCodeHostsConnection{
@@ -491,9 +491,33 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	// This should still work.
 	want.ViewerCanAdminister = false
 	want.ViewerCanRetry = false
-	otherUser := ct.CreateTestUser(t, db, false)
+	otherUser := bt.CreateTestUser(t, db, false)
 	otherUserCtx := actor.WithActor(ctx, actor.FromUser(otherUser.ID))
 	queryAndAssertBatchSpec(t, otherUserCtx, s, apiID, want)
+}
+
+func TestBatchSpecResolver_Files(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	bstore := store.New(db, &observation.TestContext, nil)
+
+	resolver := batchSpecResolver{
+		store:     bstore,
+		batchSpec: &btypes.BatchSpec{RandID: "123"},
+	}
+
+	after := "1"
+	connectionResolver, err := resolver.Files(ctx, &graphqlbackend.ListBatchSpecWorkspaceFilesArgs{
+		First: int32(10),
+		After: &after,
+	})
+	require.NoError(t, err)
+	assert.NotNil(t, connectionResolver)
 }
 
 func queryAndAssertBatchSpec(t *testing.T, ctx context.Context, s *graphql.Schema, id string, want apitest.BatchSpec) {
@@ -519,7 +543,7 @@ func setJobProcessing(t *testing.T, ctx context.Context, s *store.Store, job *bt
 	job.FinishedAt = time.Time{}
 	job.Cancel = false
 	job.FailureMessage = nil
-	ct.UpdateJobState(t, ctx, s, job)
+	bt.UpdateJobState(t, ctx, s, job)
 }
 
 func setJobCompleted(t *testing.T, ctx context.Context, s *store.Store, job *btypes.BatchSpecWorkspaceExecutionJob) {
@@ -533,7 +557,7 @@ func setJobCompleted(t *testing.T, ctx context.Context, s *store.Store, job *bty
 	}
 	job.Cancel = false
 	job.FailureMessage = nil
-	ct.UpdateJobState(t, ctx, s, job)
+	bt.UpdateJobState(t, ctx, s, job)
 }
 
 func setJobFailed(t *testing.T, ctx context.Context, s *store.Store, job *btypes.BatchSpecWorkspaceExecutionJob) {
@@ -550,7 +574,7 @@ func setJobFailed(t *testing.T, ctx context.Context, s *store.Store, job *btypes
 		failed := "job failed"
 		job.FailureMessage = &failed
 	}
-	ct.UpdateJobState(t, ctx, s, job)
+	bt.UpdateJobState(t, ctx, s, job)
 }
 
 func setJobCanceling(t *testing.T, ctx context.Context, s *store.Store, job *btypes.BatchSpecWorkspaceExecutionJob) {
@@ -562,7 +586,7 @@ func setJobCanceling(t *testing.T, ctx context.Context, s *store.Store, job *bty
 	job.FinishedAt = time.Time{}
 	job.Cancel = true
 	job.FailureMessage = nil
-	ct.UpdateJobState(t, ctx, s, job)
+	bt.UpdateJobState(t, ctx, s, job)
 }
 
 func setJobCanceled(t *testing.T, ctx context.Context, s *store.Store, job *btypes.BatchSpecWorkspaceExecutionJob) {
@@ -577,7 +601,7 @@ func setJobCanceled(t *testing.T, ctx context.Context, s *store.Store, job *btyp
 	job.Cancel = true
 	canceled := "canceled"
 	job.FailureMessage = &canceled
-	ct.UpdateJobState(t, ctx, s, job)
+	bt.UpdateJobState(t, ctx, s, job)
 }
 
 func setResolutionJobState(t *testing.T, ctx context.Context, s *store.Store, job *btypes.BatchSpecResolutionJob, state btypes.BatchSpecResolutionJobState) {
@@ -616,7 +640,7 @@ query($batchSpec: ID!) {
       createdAt
       expiresAt
 
-      diffStat { added, deleted, changed }
+      diffStat { added, deleted }
 
 	  appliesToBatchChange { id }
 	  supersedingBatchSpec { id }

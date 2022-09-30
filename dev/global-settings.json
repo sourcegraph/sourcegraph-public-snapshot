@@ -7,8 +7,13 @@
     "codeMonitoring": true,
     "codeInsights": true,
     "codeIntelRepositoryBadge": { "enabled": true },
-    "coolCodeIntel": true
+    "coolCodeIntel": true,
+    "enableLazyBlobSyntaxHighlighting": true,
+    "enableLazyFileResultSyntaxHighlighting": true,
+    "enableSearchFilePrefetch": true,
+    "enableSidebarFilePrefetch": true
   },
+  "codeIntel.referencesPanel": "tree-view",
   "insights": [
     {
       "title": "fmt usage",

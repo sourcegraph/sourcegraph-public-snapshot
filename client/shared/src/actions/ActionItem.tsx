@@ -20,7 +20,7 @@ import {
 
 import { ExecuteCommandParameters } from '../api/client/mainthread-api'
 import { urlForOpenPanel } from '../commands/commands'
-import { ExtensionsControllerProps } from '../extensions/controller'
+import { RequiredExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
 import { TelemetryProps } from '../telemetry/telemetryService'
 
@@ -53,8 +53,8 @@ export interface ActionItemStyleProps {
 }
 
 export interface ActionItemComponentProps
-    extends ExtensionsControllerProps<'executeCommand'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings'> {
+    extends RequiredExtensionsControllerProps<'executeCommand'>,
+        PlatformContextProps<'settings'> {
     location: H.Location
 
     iconClassName?: string
@@ -164,24 +164,6 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
                     error => console.error(error)
                 )
         )
-    }
-
-    public componentDidUpdate(previousProps: ActionItemProps, previousState: State): void {
-        // If the tooltip changes while it's visible, we need to force-update it to show the new value.
-        const previousTooltip = previousProps.action.actionItem?.description
-        const tooltip = this.props.action.actionItem?.description
-        const descriptionTooltipChanged = previousTooltip !== tooltip
-
-        const errorTooltipChanged =
-            this.props.showInlineError &&
-            (isErrorLike(previousState.actionOrError) !== isErrorLike(this.state.actionOrError) ||
-                (isErrorLike(previousState.actionOrError) &&
-                    isErrorLike(this.state.actionOrError) &&
-                    previousState.actionOrError.message !== this.state.actionOrError.message))
-
-        if (descriptionTooltipChanged || errorTooltipChanged) {
-            this.props.platformContext.forceUpdateTooltip()
-        }
     }
 
     public componentWillUnmount(): void {
@@ -322,43 +304,45 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
 
         return (
             <Tooltip content={tooltipOrErrorMessage}>
-                <ButtonLink
-                    data-content={this.props.dataContent}
-                    disabledClassName={this.props.inactiveClassName}
-                    aria-disabled={disabled}
-                    data-action-item-pressed={pressed}
-                    className={classNames(
-                        'test-action-item',
-                        this.props.className,
-                        showLoadingSpinner && styles.actionItemLoading,
-                        pressed && [this.props.pressedClassName],
-                        buttonLinkProps.variant === 'link' && styles.actionItemLink,
-                        disabled && this.props.inactiveClassName
-                    )}
-                    pressed={pressed}
-                    onSelect={this.runAction}
-                    // If the command is 'open' or 'openXyz' (builtin commands), render it as a link. Otherwise render
-                    // it as a button that executes the command.
-                    to={to}
-                    {...newTabProps}
-                    {...buttonLinkProps}
-                    {...sharedProps}
-                >
-                    {content}{' '}
-                    {!this.props.hideExternalLinkIcon && primaryTo && isExternalLink(primaryTo) && (
-                        <Icon
-                            className={this.props.iconClassName}
-                            svgPath={mdiOpenInNew}
-                            inline={false}
-                            aria-hidden={true}
-                        />
-                    )}
-                    {showLoadingSpinner && (
-                        <div className={styles.loader} data-testid="action-item-spinner">
-                            <LoadingSpinner inline={false} className={this.props.iconClassName} />
-                        </div>
-                    )}
-                </ButtonLink>
+                <span>
+                    <ButtonLink
+                        data-content={this.props.dataContent}
+                        disabledClassName={this.props.inactiveClassName}
+                        aria-disabled={disabled}
+                        data-action-item-pressed={pressed}
+                        className={classNames(
+                            'test-action-item',
+                            this.props.className,
+                            showLoadingSpinner && styles.actionItemLoading,
+                            pressed && [this.props.pressedClassName],
+                            buttonLinkProps.variant === 'link' && styles.actionItemLink,
+                            disabled && this.props.inactiveClassName
+                        )}
+                        pressed={pressed}
+                        onSelect={this.runAction}
+                        // If the command is 'open' or 'openXyz' (builtin commands), render it as a link. Otherwise render
+                        // it as a button that executes the command.
+                        to={to}
+                        {...newTabProps}
+                        {...buttonLinkProps}
+                        {...sharedProps}
+                    >
+                        {content}{' '}
+                        {!this.props.hideExternalLinkIcon && primaryTo && isExternalLink(primaryTo) && (
+                            <Icon
+                                className={this.props.iconClassName}
+                                svgPath={mdiOpenInNew}
+                                inline={false}
+                                aria-hidden={true}
+                            />
+                        )}
+                        {showLoadingSpinner && (
+                            <div className={styles.loader} data-testid="action-item-spinner">
+                                <LoadingSpinner inline={false} className={this.props.iconClassName} />
+                            </div>
+                        )}
+                    </ButtonLink>
+                </span>
             </Tooltip>
         )
     }

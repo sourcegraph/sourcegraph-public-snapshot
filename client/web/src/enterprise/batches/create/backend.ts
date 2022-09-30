@@ -84,8 +84,8 @@ export const CREATE_EMPTY_BATCH_CHANGE = gql`
 // This mutation is used to create a new batch spec when the existing batch spec attached
 // to a batch change has already been applied.
 export const CREATE_BATCH_SPEC_FROM_RAW = gql`
-    mutation CreateBatchSpecFromRaw($spec: String!, $noCache: Boolean!, $namespace: ID!) {
-        createBatchSpecFromRaw(batchSpec: $spec, noCache: $noCache, namespace: $namespace) {
+    mutation CreateBatchSpecFromRaw($spec: String!, $noCache: Boolean!, $namespace: ID!, $batchChange: ID!) {
+        createBatchSpecFromRaw(batchSpec: $spec, noCache: $noCache, namespace: $namespace, batchChange: $batchChange) {
             id
             createdAt
         }

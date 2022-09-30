@@ -11,7 +11,7 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -28,9 +28,9 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	user := ct.CreateTestUser(t, db, true)
+	user := bt.CreateTestUser(t, db, true)
 
-	repo, _ := ct.CreateTestRepo(t, ctx, db)
+	repo, _ := bt.CreateTestRepo(t, ctx, db)
 	s := New(db, &observation.TestContext, nil)
 	workStore := dbworkerstore.NewWithMetrics(s.Handle(), batchSpecWorkspaceExecutionWorkerStoreOptions, &observation.TestContext)
 
@@ -78,7 +78,7 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 		t.Helper()
 		job.State = btypes.BatchSpecWorkspaceExecutionJobStateProcessing
 		job.WorkerHostname = opts.WorkerHostname
-		ct.UpdateJobState(t, ctx, s, job)
+		bt.UpdateJobState(t, ctx, s, job)
 	}
 
 	assertJobState := func(t *testing.T, job *btypes.BatchSpecWorkspaceExecutionJob, want btypes.BatchSpecWorkspaceExecutionJobState) {
@@ -126,7 +126,7 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 		}
 
 		job := &btypes.BatchSpecWorkspaceExecutionJob{BatchSpecWorkspaceID: workspace.ID, UserID: 1}
-		if err := ct.CreateBatchSpecWorkspaceExecutionJob(ctx, s, ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
+		if err := bt.CreateBatchSpecWorkspaceExecutionJob(ctx, s, ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
 			t.Fatal(err)
 		}
 
@@ -222,9 +222,9 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_MarkFailed(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	user := ct.CreateTestUser(t, db, true)
+	user := bt.CreateTestUser(t, db, true)
 
-	repo, _ := ct.CreateTestRepo(t, ctx, db)
+	repo, _ := bt.CreateTestRepo(t, ctx, db)
 	s := New(db, &observation.TestContext, nil)
 	workStore := dbworkerstore.NewWithMetrics(s.Handle(), batchSpecWorkspaceExecutionWorkerStoreOptions, &observation.TestContext)
 
@@ -242,7 +242,7 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_MarkFailed(t *testing.T) {
 	}
 
 	job := &btypes.BatchSpecWorkspaceExecutionJob{BatchSpecWorkspaceID: workspace.ID, UserID: user.ID}
-	if err := ct.CreateBatchSpecWorkspaceExecutionJob(ctx, s, ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
+	if err := bt.CreateBatchSpecWorkspaceExecutionJob(ctx, s, ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
 		t.Fatal(err)
 	}
 
@@ -288,7 +288,7 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 		t.Helper()
 		job.State = btypes.BatchSpecWorkspaceExecutionJobStateProcessing
 		job.WorkerHostname = opts.WorkerHostname
-		ct.UpdateJobState(t, ctx, s, job)
+		bt.UpdateJobState(t, ctx, s, job)
 	}
 
 	assertJobState := func(t *testing.T, want btypes.BatchSpecWorkspaceExecutionJobState) {
@@ -377,9 +377,9 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete_EmptyDiff(t *testin
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	user := ct.CreateTestUser(t, db, true)
+	user := bt.CreateTestUser(t, db, true)
 
-	repo, _ := ct.CreateTestRepo(t, ctx, db)
+	repo, _ := bt.CreateTestRepo(t, ctx, db)
 
 	s := New(db, &observation.TestContext, nil)
 	workStore := dbworkerstore.NewWithMetrics(s.Handle(), batchSpecWorkspaceExecutionWorkerStoreOptions, &observation.TestContext)
@@ -398,7 +398,7 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete_EmptyDiff(t *testin
 	}
 
 	job := &btypes.BatchSpecWorkspaceExecutionJob{BatchSpecWorkspaceID: workspace.ID, UserID: user.ID}
-	if err := ct.CreateBatchSpecWorkspaceExecutionJob(ctx, s, ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
+	if err := bt.CreateBatchSpecWorkspaceExecutionJob(ctx, s, ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
 		t.Fatal(err)
 	}
 
@@ -429,7 +429,7 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 
 	job.State = btypes.BatchSpecWorkspaceExecutionJobStateProcessing
 	job.WorkerHostname = opts.WorkerHostname
-	ct.UpdateJobState(t, ctx, s, job)
+	bt.UpdateJobState(t, ctx, s, job)
 
 	ok, err := executionStore.MarkComplete(context.Background(), int(job.ID), opts)
 	if !ok || err != nil {
@@ -463,14 +463,14 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_Dequeue_RoundRobin(t *testing.T)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	repo, _ := ct.CreateTestRepo(t, ctx, db)
+	repo, _ := bt.CreateTestRepo(t, ctx, db)
 
 	s := New(db, &observation.TestContext, nil)
 	workerStore := dbworkerstore.NewWithMetrics(s.Handle(), batchSpecWorkspaceExecutionWorkerStoreOptions, &observation.TestContext)
 
-	user1 := ct.CreateTestUser(t, db, true)
-	user2 := ct.CreateTestUser(t, db, true)
-	user3 := ct.CreateTestUser(t, db, true)
+	user1 := bt.CreateTestUser(t, db, true)
+	user2 := bt.CreateTestUser(t, db, true)
+	user3 := bt.CreateTestUser(t, db, true)
 
 	user1BatchSpec := setupUserBatchSpec(t, ctx, s, user1)
 	user2BatchSpec := setupUserBatchSpec(t, ctx, s, user2)
@@ -512,14 +512,14 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_Dequeue_RoundRobin_NoDoubleDeque
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	repo, _ := ct.CreateTestRepo(t, ctx, db)
+	repo, _ := bt.CreateTestRepo(t, ctx, db)
 
 	s := New(db, &observation.TestContext, nil)
 	workerStore := dbworkerstore.NewWithMetrics(s.Handle(), batchSpecWorkspaceExecutionWorkerStoreOptions, &observation.TestContext)
 
-	user1 := ct.CreateTestUser(t, db, true)
-	user2 := ct.CreateTestUser(t, db, true)
-	user3 := ct.CreateTestUser(t, db, true)
+	user1 := bt.CreateTestUser(t, db, true)
+	user2 := bt.CreateTestUser(t, db, true)
+	user3 := bt.CreateTestUser(t, db, true)
 
 	user1BatchSpec := setupUserBatchSpec(t, ctx, s, user1)
 	user2BatchSpec := setupUserBatchSpec(t, ctx, s, user2)
@@ -606,7 +606,7 @@ func setupBatchSpecAssociation(ctx context.Context, s *Store, t *testing.T, batc
 	}
 
 	job := &btypes.BatchSpecWorkspaceExecutionJob{BatchSpecWorkspaceID: workspace.ID, UserID: batchSpec.UserID}
-	if err := ct.CreateBatchSpecWorkspaceExecutionJob(ctx, s, ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
+	if err := bt.CreateBatchSpecWorkspaceExecutionJob(ctx, s, ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
 		t.Fatal(err)
 	}
 

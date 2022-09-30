@@ -8,7 +8,7 @@ import { CodeIntelStateDescription } from './CodeIntelStateDescription'
 
 export interface CodeIntelStateBannerProps {
     typeName: string
-    pluralTypeName: string
+    pluralTypeName?: string
     state: LSIFUploadState | LSIFIndexState
     placeInQueue?: number | null
     failure?: string | null

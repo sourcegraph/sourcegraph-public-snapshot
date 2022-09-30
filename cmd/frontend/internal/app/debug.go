@@ -14,18 +14,23 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"go.uber.org/atomic"
 
 	sglog "github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/debugproxies"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/otlpadapter"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/otlpenv"
 	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var (
@@ -51,6 +56,7 @@ func addDebugHandlers(r *mux.Router, db database.DB) {
 	addGrafana(r, db)
 	addJaeger(r, db)
 	addSentry(r)
+	addOpenTelemetryProtocolAdapter(r)
 
 	var rph debugproxies.ReverseProxyHandler
 
@@ -264,6 +270,50 @@ func addJaeger(r *mux.Router, db database.DB) {
 	} else {
 		addNoJaegerHandler(r, db)
 	}
+}
+
+func clientOtelEnabled(s schema.SiteConfiguration) bool {
+	if s.ObservabilityClient == nil {
+		return false
+	}
+	if s.ObservabilityClient.OpenTelemetry == nil {
+		return false
+	}
+	return s.ObservabilityClient.OpenTelemetry.Endpoint != ""
+}
+
+// addOpenTelemetryProtocolAdapter registers handlers that forward OpenTelemetry protocol
+// (OTLP) requests in the http/json format to the configured backend.
+func addOpenTelemetryProtocolAdapter(r *mux.Router) {
+	var (
+		ctx      = context.Background()
+		endpoint = otlpenv.GetEndpoint()
+		protocol = otlpenv.GetProtocol()
+		logger   = sglog.Scoped("otlpAdapter", "OpenTelemetry protocol adapter and forwarder").
+				With(sglog.String("endpoint", endpoint), sglog.String("protocol", string(protocol)))
+	)
+
+	// Clients can take a while to receive new site configuration - since this debug
+	// tunnel should only be receiving OpenTelemetry from clients, if client OTEL is
+	// disabled this tunnel should no-op.
+	clientEnabled := atomic.NewBool(clientOtelEnabled(conf.SiteConfig()))
+	conf.Watch(func() {
+		clientEnabled.Store(clientOtelEnabled(conf.SiteConfig()))
+	})
+
+	// If no endpoint is configured, we export a no-op handler
+	if endpoint == "" {
+		logger.Info("no OTLP endpoint configured, data received at /-/debug/otlp will not be exported")
+
+		r.PathPrefix("/otlp").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprintf(w, `OpenTelemetry protocol tunnel: please configure an exporter endpoint with OTEL_EXPORTER_OTLP_ENDPOINT`)
+			w.WriteHeader(http.StatusNotFound)
+		})
+		return
+	}
+
+	// Register adapter endpoints
+	otlpadapter.Register(ctx, logger, protocol, endpoint, r, clientEnabled)
 }
 
 // adminOnly is a HTTP middleware which only allows requests by admins.

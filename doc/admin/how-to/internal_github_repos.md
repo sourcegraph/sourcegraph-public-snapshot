@@ -38,5 +38,4 @@ query{
 ```
 ## Further resources
 
-* [Sourcegraph - Adding your organization's repositories to Sourcegraph](https://docs.sourcegraph.com/cloud/organizations/adding_your_org_repos_to_cloud)
 * [Sourcegraph GraphQL API](https://docs.sourcegraph.com/api/graphql)

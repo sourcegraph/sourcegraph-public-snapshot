@@ -65,14 +65,6 @@ func (c *internalClient) Configuration(ctx context.Context) (conftypes.RawUnifie
 	return cfg, err
 }
 
-func (c *internalClient) PhabricatorRepoCreate(ctx context.Context, repo api.RepoName, callsign, url string) error {
-	return c.postInternal(ctx, "phabricator/repo-create", api.PhabricatorRepoCreateRequest{
-		RepoName: repo,
-		Callsign: callsign,
-		URL:      url,
-	}, nil)
-}
-
 var MockExternalServiceConfigs func(kind string, result any) error
 
 // ExternalServiceConfigs fetches external service configs of a single kind into the result parameter,

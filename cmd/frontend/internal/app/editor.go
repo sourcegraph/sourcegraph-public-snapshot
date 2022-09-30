@@ -15,8 +15,8 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -225,6 +225,7 @@ func parseEditorRequest(db database.DB, q url.Values) (*editorRequest, error) {
 		version:           q.Get("version"),
 		utmProductName:    q.Get("utm_product_name"),
 		utmProductVersion: q.Get("utm_product_name"),
+		logger:            log.Scoped("editor", "requests from editors."),
 	}
 	if v.editor == "" {
 		return nil, errors.New("expected URL parameter missing: editor=$EDITOR_NAME")

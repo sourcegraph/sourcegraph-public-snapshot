@@ -10,7 +10,7 @@ func TestFeatureFlags(t *testing.T) {
 	const featureFlagOverrideFragment = `fragment FeatureFlagOverrideData on FeatureFlagOverride {
 		id
 		namespace {
-			id 
+			id
 		}
 		targetFlag {
 			...on FeatureFlagBoolean {
@@ -107,7 +107,7 @@ func TestFeatureFlags(t *testing.T) {
 			deleteFeatureFlag(
 				name: $name,
 			) {
-				alwaysNil		
+				alwaysNil
 			}
 		}`
 		params := map[string]any{"name": name}
@@ -311,9 +311,7 @@ func TestFeatureFlags(t *testing.T) {
 
 		userID, err := client.CreateUser("testuseroverrides", "test@override.com")
 		require.NoError(t, err)
-		t.Cleanup(func() {
-			client.DeleteUser(userID, true)
-		})
+		removeTestUserAfterTest(t, userID)
 
 		boolTrue := true
 		flag, err := createFeatureFlag("test_override", &boolTrue, nil)

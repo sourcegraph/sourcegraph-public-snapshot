@@ -25,6 +25,11 @@
     }
 }
 
+.alert {
+    pointer-events: auto;
+    cursor: auto;
+}
+
 .horizontal-rule {
     border-top: 1px solid var(--border-color-2);
 }

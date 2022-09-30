@@ -31,7 +31,6 @@ import { LoadingSpinner, useObservable, Icon } from '@sourcegraph/wildcard'
 import { BlockProps, QueryBlock } from '../..'
 import { AuthenticatedUser } from '../../../auth'
 import { useExperimentalFeatures } from '../../../stores'
-import { SearchUserNeedsCodeHost } from '../../../user/settings/codeHosts/OrgUserNeedsCodeHost'
 import { blockKeymap, focusEditor as focusCodeMirrorInput } from '../../codemirror-utils'
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
@@ -46,7 +45,7 @@ interface NotebookQueryBlockProps
         ThemeProps,
         SettingsCascadeProps,
         TelemetryProps,
-        PlatformContextProps<'requestGraphQL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'>,
+        PlatformContextProps<'requestGraphQL' | 'urlToFile' | 'settings'>,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
     globbing: boolean
     isSourcegraphDotCom: boolean
@@ -88,6 +87,8 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
         const [editor, setEditor] = useState<EditorView>()
         const searchResults = useObservable(output ?? of(undefined))
         const [executedQuery, setExecutedQuery] = useState<string>(input.query)
+        const applySuggestionsOnEnter =
+            useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
         const onInputChange = useCallback(
             (query: string) => onBlockInputChange(id, { type: 'query', input: { query } }),
@@ -122,7 +123,7 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                     type: 'link',
                     label: 'Open in new tab',
                     icon: <Icon aria-hidden={true} svgPath={mdiOpenInNew} />,
-                    url: `/search?${buildSearchURLQuery(input.query, SearchPatternType.literal, false)}`,
+                    url: `/search?${buildSearchURLQuery(input.query, SearchPatternType.standard, false)}`,
                 },
             ],
             [input]
@@ -142,8 +143,9 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                     isSourcegraphDotCom,
                     globbing,
                     fetchSuggestions: fetchStreamSuggestions,
+                    applyOnEnter: applySuggestionsOnEnter,
                 }),
-            [isSourcegraphDotCom, globbing]
+            [isSourcegraphDotCom, globbing, applySuggestionsOnEnter]
         )
 
         // Focus editor on component creation if necessary
@@ -171,7 +173,7 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                     <div className={styles.queryInputWrapper}>
                         <CodeMirrorQueryInput
                             value={input.query}
-                            patternType={SearchPatternType.literal}
+                            patternType={SearchPatternType.standard}
                             interpretComments={true}
                             isLightTheme={isLightTheme}
                             onEditorCreated={setEditor}
@@ -205,10 +207,8 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                                 fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                 telemetryService={telemetryService}
                                 settingsCascade={settingsCascade}
-                                authenticatedUser={props.authenticatedUser}
                                 showSearchContext={showSearchContext}
                                 assetsRoot={window.context?.assetsRoot || ''}
-                                renderSearchUserNeedsCodeHost={user => <SearchUserNeedsCodeHost user={user} />}
                                 platformContext={props.platformContext}
                                 extensionsController={props.extensionsController}
                                 hoverifier={hoverifier}

@@ -25,7 +25,9 @@ import (
 // transaction if an error didn't occur.
 //
 // After opening this transaction, it executes the query
-//     SET CONSTRAINTS ALL DEFERRED
+//
+//	SET CONSTRAINTS ALL DEFERRED
+//
 // which aids in testing.
 func NewTx(t testing.TB, db *sql.DB) *sql.Tx {
 	tx, err := db.Begin()
@@ -193,7 +195,7 @@ func wdHash() string {
 
 func dbConn(logger log.Logger, t testing.TB, cfg *url.URL, schemas ...*schemas.Schema) *sql.DB {
 	t.Helper()
-	db, err := connections.NewTestDB(logger, cfg.String(), schemas...)
+	db, err := connections.NewTestDB(t, logger, cfg.String(), schemas...)
 	if err != nil {
 		t.Fatalf("failed to connect to database %q: %s", cfg, err)
 	}

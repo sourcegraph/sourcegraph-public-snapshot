@@ -83,7 +83,7 @@ export const DrillDownFiltersPopover: React.FunctionComponent<
                 variant="icon"
                 type="button"
                 aria-label={isFiltered ? 'Active filters' : 'Filters'}
-                className={classNames('btn-icon p-1', styles.filterButton, {
+                className={classNames('p-1', styles.filterButton, {
                     [styles.filterButtonWithOpenPanel]: isOpen,
                     [styles.filterButtonActive]: isFiltered,
                 })}

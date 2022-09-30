@@ -22,7 +22,12 @@ describe('SiteInitPage', () => {
                 isLightTheme={true}
                 needsSiteInit={false}
                 authenticatedUser={null}
-                context={{ authProviders: [], sourcegraphDotComMode: false, experimentalFeatures: {} }}
+                context={{
+                    authProviders: [],
+                    sourcegraphDotComMode: false,
+                    experimentalFeatures: {},
+                    authMinPasswordLength: 12,
+                }}
             />,
             { history }
         )
@@ -36,7 +41,12 @@ describe('SiteInitPage', () => {
                     isLightTheme={true}
                     needsSiteInit={true}
                     authenticatedUser={{ username: 'alice' }}
-                    context={{ authProviders: [], sourcegraphDotComMode: false, experimentalFeatures: {} }}
+                    context={{
+                        authProviders: [],
+                        sourcegraphDotComMode: false,
+                        experimentalFeatures: {},
+                        authMinPasswordLength: 12,
+                    }}
                 />
             ).asFragment()
         ).toMatchSnapshot())
@@ -48,7 +58,12 @@ describe('SiteInitPage', () => {
                     isLightTheme={true}
                     needsSiteInit={true}
                     authenticatedUser={null}
-                    context={{ authProviders: [], sourcegraphDotComMode: false, experimentalFeatures: {} }}
+                    context={{
+                        authProviders: [],
+                        sourcegraphDotComMode: false,
+                        experimentalFeatures: {},
+                        authMinPasswordLength: 12,
+                    }}
                 />
             ).asFragment()
         ).toMatchSnapshot())

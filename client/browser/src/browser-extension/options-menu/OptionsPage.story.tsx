@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 
 import { action } from '@storybook/addon-actions'
-import { boolean, text } from '@storybook/addon-knobs'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import GithubIcon from 'mdi-react/GithubIcon'
 import { Observable, of } from 'rxjs'
@@ -37,22 +36,21 @@ const OptionsPageWrapper: React.FunctionComponent<React.PropsWithChildren<Partia
             { key: 'experimentalLinkPreviews', label: 'Experimental link previews', value: false },
         ]}
         onChangeOptionFlag={action('onChangeOptionFlag')}
-        version={text('version', '0.0.0')}
-        sourcegraphUrl={text('sourcegraphUrl', 'https://sourcegraph.com')}
+        version=""
+        sourcegraphUrl=""
         validateSourcegraphUrl={validateSourcegraphUrl}
         onChangeSourcegraphUrl={action('onChangeSourcegraphUrl')}
-        showSourcegraphCloudAlert={boolean('showSourcegraphCloudAlert', false)}
         suggestedSourcegraphUrls={['https://k8s.sgdev.org', 'https://sourcegraph.com']}
         {...props}
     />
 )
 
-const Interactive: Story = () => {
+const Interactive: Story = args => {
     const [isActivated, setIsActivated] = useState(false)
-    return <OptionsPageWrapper isActivated={isActivated} onToggleActivated={setIsActivated} />
+    return <OptionsPageWrapper isActivated={isActivated} onToggleActivated={setIsActivated} {...args} />
 }
 
-const WithAdvancedSettings: Story = () => {
+const WithAdvancedSettings: Story = args => {
     const [optionFlagValues, setOptionFlagValues] = useState([
         { key: 'allowErrorReporting', label: 'Allow error reporting', value: false },
         { key: 'experimentalLinkPreviews', label: 'Experimental link previews', value: true },
@@ -66,29 +64,27 @@ const WithAdvancedSettings: Story = () => {
             initialShowAdvancedSettings={true}
             optionFlags={optionFlagValues}
             onChangeOptionFlag={setOptionFlag}
+            {...args}
         />
     )
 }
 
-export const AllOptionsPages: Story = () => (
+export const AllOptionsPages: Story = (args = {}) => (
     <div>
         <H1 className="text-center mb-3">All Options Pages</H1>
         <div>
             <div className="d-flex justify-content-center">
                 <div className="mx-4">
                     <H3 className="text-center">Interactive</H3>
-                    <Interactive />
+                    <Interactive {...args} />
                 </div>
                 <div className="mx-4">
                     <H3 className="text-center">URL validation error</H3>
-                    <OptionsPageWrapper
-                        validateSourcegraphUrl={invalidSourcegraphUrl}
-                        sourcegraphUrl={text('sourcegraphUrl', 'https://not-sourcegraph.com')}
-                    />
+                    <OptionsPageWrapper validateSourcegraphUrl={invalidSourcegraphUrl} {...args} />
                 </div>
                 <div className="mx-4">
                     <H3 className="text-center">With advanced settings</H3>
-                    <WithAdvancedSettings />
+                    <WithAdvancedSettings {...args} />
                 </div>
             </div>
 
@@ -98,6 +94,8 @@ export const AllOptionsPages: Story = () => (
                     <OptionsPageWrapper
                         requestPermissionsHandler={requestPermissionsHandler}
                         showSourcegraphCloudAlert={true}
+                        sourcegraphUrl={args.sourcegraphUrl}
+                        version={args.version}
                     />
                 </div>
                 <div className="mx-4">
@@ -105,6 +103,7 @@ export const AllOptionsPages: Story = () => (
                     <OptionsPageWrapper
                         permissionAlert={{ name: 'GitHub', icon: GithubIcon }}
                         requestPermissionsHandler={requestPermissionsHandler}
+                        {...args}
                     />
                 </div>
             </div>
@@ -118,30 +117,46 @@ export const AllOptionsPages: Story = () => (
                         currentUser={{ settingsURL: '/users/john-doe/settings', siteAdmin: false }}
                         hasRepoSyncError={true}
                         requestPermissionsHandler={requestPermissionsHandler}
+                        showSourcegraphCloudAlert={args.showSourcegraphCloudAlert}
+                        version={args.version}
                     />
                 </div>
                 <div className="mx-4">
                     <H3 className="text-center">Self-hosted</H3>
                     <OptionsPageWrapper
-                        sourcegraphUrl={text('sourcegraphUrl', 'https://k8s.sgdev.org')}
                         currentUser={{ settingsURL: '/users/john-doe/settings', siteAdmin: false }}
                         hasRepoSyncError={true}
                         requestPermissionsHandler={requestPermissionsHandler}
+                        {...args}
                     />
                 </div>
                 <div className="mx-4">
                     <H3 className="text-center">Self-hosted instance, user is admin</H3>
                     <OptionsPageWrapper
-                        sourcegraphUrl={text('sourcegraphUrl', 'https://k8s.sgdev.org')}
                         currentUser={{ settingsURL: '/users/john-doe/settings', siteAdmin: true }}
                         hasRepoSyncError={true}
                         requestPermissionsHandler={requestPermissionsHandler}
+                        {...args}
                     />
                 </div>
             </div>
         </div>
     </div>
 )
+AllOptionsPages.argTypes = {
+    sourcegraphUrl: {
+        control: { type: 'text' },
+        defaultValue: 'https://not-sourcegraph.com',
+    },
+    version: {
+        control: { type: 'text' },
+        defaultValue: '0.0.0',
+    },
+    showSourcegraphCloudAlert: {
+        control: { type: 'boolean' },
+        defaultValue: false,
+    },
+}
 
 AllOptionsPages.parameters = {
     chromatic: {

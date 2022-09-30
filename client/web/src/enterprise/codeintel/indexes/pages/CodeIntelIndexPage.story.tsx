@@ -175,7 +175,7 @@ const completedSteps: LsifIndexStepsFields = {
                 '--ssh',
                 '--name',
                 'executors-9a1b6d36-45a5-4986-a1d0-5cf17424788d',
-                'sourcegraph/ignite-ubuntu:insiders',
+                'sourcegraph/executor-vm',
             ],
             startTime: '2020-06-15T17:57:10Z',
             exitCode: 0,

@@ -1642,7 +1642,7 @@ func TestInsightStore_StampRecording(t *testing.T) {
 	})
 }
 
-func TestInsightStore_StampBackfill(t *testing.T) {
+func TestInsightStore_StampBackfillQueued(t *testing.T) {
 	logger := logtest.Scoped(t)
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	now := time.Now().Round(0).Truncate(time.Microsecond)
@@ -1676,7 +1676,65 @@ func TestInsightStore_StampBackfill(t *testing.T) {
 
 	t.Run("test only incomplete", func(t *testing.T) {
 		got, err := store.GetDataSeries(ctx, GetDataSeriesArgs{
-			BackfillIncomplete: true,
+			BackfillNotQueued: true,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		want := 0
+		if diff := cmp.Diff(want, len(got)); diff != "" {
+			t.Errorf("mismatched updated backfill_stamp count want/got: %v", diff)
+		}
+	})
+	t.Run("test get all", func(t *testing.T) {
+		got, err := store.GetDataSeries(ctx, GetDataSeriesArgs{})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		want := 1
+		if diff := cmp.Diff(want, len(got)); diff != "" {
+			t.Errorf("mismatched updated backfill_stamp count want/got: %v", diff)
+		}
+	})
+}
+
+func TestInsightStore_StampBackfillCompleted(t *testing.T) {
+	logger := logtest.Scoped(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	now := time.Now().Round(0).Truncate(time.Microsecond)
+	ctx := context.Background()
+
+	store := NewInsightStore(insightsDB)
+	store.Now = func() time.Time {
+		return now
+	}
+
+	series := types.InsightSeries{
+		SeriesID:           "unique-1",
+		Query:              "query-1",
+		OldestHistoricalAt: now.Add(-time.Hour * 24 * 365),
+		LastRecordedAt:     now.Add(-time.Hour * 24 * 365),
+		NextRecordingAfter: now,
+		LastSnapshotAt:     now,
+		NextSnapshotAfter:  now,
+		Enabled:            true,
+		SampleIntervalUnit: string(types.Month),
+		GenerationMethod:   types.Search,
+	}
+	_, err := store.CreateSeries(ctx, series)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = store.SetSeriesBackfillComplete(ctx, "unique-1", now)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("test only incomplete", func(t *testing.T) {
+		got, err := store.GetDataSeries(ctx, GetDataSeriesArgs{
+			BackfillNotComplete: true,
 		})
 		if err != nil {
 			t.Fatal(err)

@@ -54,6 +54,8 @@ func (s *Service) ApplyBatchChange(
 	ctx, _, endObservation := s.operations.applyBatchChange.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
+	// TODO move license check logic from resolver to here
+
 	batchSpec, err := s.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{
 		RandID: opts.BatchSpecRandID,
 	})

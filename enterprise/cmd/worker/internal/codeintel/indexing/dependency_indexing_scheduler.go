@@ -4,17 +4,21 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 	"time"
+	"unsafe"
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -31,10 +35,11 @@ var disableIndexScheduler, _ = strconv.ParseBool(os.Getenv("CODEINTEL_DEPENDENCY
 // records from lsif_dependency_indexing_jobs.
 func NewDependencyIndexingScheduler(
 	dbStore DBStore,
+	repoStore ReposStore,
 	workerStore dbworkerstore.Store,
 	externalServiceStore ExternalServiceStore,
+	gitserverRepoStore GitserverRepoStore,
 	repoUpdaterClient RepoUpdaterClient,
-	gitserverClient GitserverClient,
 	enqueuer *autoindexing.Service,
 	pollInterval time.Duration,
 	numProcessorRoutines int,
@@ -43,12 +48,13 @@ func NewDependencyIndexingScheduler(
 	rootContext := actor.WithInternalActor(context.Background())
 
 	handler := &dependencyIndexingSchedulerHandler{
-		dbStore:       dbStore,
-		extsvcStore:   externalServiceStore,
-		indexEnqueuer: enqueuer,
-		workerStore:   workerStore,
-		repoUpdater:   repoUpdaterClient,
-		gitserver:     gitserverClient,
+		dbStore:            dbStore,
+		repoStore:          repoStore,
+		extsvcStore:        externalServiceStore,
+		gitserverRepoStore: gitserverRepoStore,
+		indexEnqueuer:      enqueuer,
+		workerStore:        workerStore,
+		repoUpdater:        repoUpdaterClient,
 	}
 
 	return dbworker.NewWorker(rootContext, workerStore, handler, workerutil.WorkerOptions{
@@ -61,12 +67,13 @@ func NewDependencyIndexingScheduler(
 }
 
 type dependencyIndexingSchedulerHandler struct {
-	dbStore       DBStore
-	indexEnqueuer IndexEnqueuer
-	extsvcStore   ExternalServiceStore
-	workerStore   dbworkerstore.Store
-	repoUpdater   RepoUpdaterClient
-	gitserver     GitserverClient
+	dbStore            DBStore
+	repoStore          ReposStore
+	indexEnqueuer      IndexEnqueuer
+	extsvcStore        ExternalServiceStore
+	gitserverRepoStore GitserverRepoStore
+	workerStore        dbworkerstore.Store
+	repoUpdater        RepoUpdaterClient
 }
 
 var _ workerutil.Handler = &dependencyIndexingSchedulerHandler{}
@@ -151,24 +158,51 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, logger 
 	// if this job is not associated with an external service kind that was just synced, then we need to guarantee
 	// that the repos are visible to the Sourcegraph instance, else skip them
 	if job.ExternalServiceKind == "" {
-		for _, repo := range repoNames {
-			if _, err := h.repoUpdater.RepoLookup(ctx, repo); errcode.IsNotFound(err) {
+		// this is safe, and dont let anyone tell you otherwise
+		repoNameStrings := *(*[]string)(unsafe.Pointer(&repoNames))
+		sort.Strings(repoNameStrings)
+
+		listedRepos, err := h.repoStore.ListMinimalRepos(ctx, database.ReposListOptions{
+			Names:   repoNameStrings,
+			OrderBy: []database.RepoListSort{{Field: database.RepoListName}},
+		})
+		if err != nil {
+			logger.Error("error listing repositories, continuing", log.Error(err), log.Int("numRepos", len(repoNameStrings)))
+		}
+
+		listedRepoNames := make([]api.RepoName, 0, len(listedRepos))
+		for _, repo := range listedRepos {
+			listedRepoNames = append(listedRepoNames, repo.Name)
+		}
+
+		// for any repos that are not known to the instance, we need to sync them if on dot-com,
+		// otherwise skip them.
+		difference := setDifference(repoNames, listedRepoNames)
+
+		if envvar.SourcegraphDotComMode() {
+			for _, repo := range difference {
+				if _, err := h.repoUpdater.RepoLookup(ctx, repo); errcode.IsNotFound(err) {
+					delete(repoToPackages, repo)
+				} else if err != nil {
+					return errors.Wrapf(err, "repoUpdater.RepoLookup", "repo", repo)
+				}
+			}
+		} else {
+			for _, repo := range difference {
 				delete(repoToPackages, repo)
-			} else if err != nil {
-				return errors.Wrapf(err, "repoUpdater.RepoLookup", "repo", repo)
 			}
 		}
 	}
 
-	results, err := h.gitserver.RepoInfo(ctx, repoNames...)
+	results, err := h.gitserverRepoStore.GetByNames(ctx, repoNames...)
 	if err != nil {
 		return errors.Wrap(err, "gitserver.RepoInfo")
 	}
 
-	for repo, info := range results {
-		if !info.Cloned && !info.CloneInProgress { // if the repository doesnt exist
-			delete(repoToPackages, repo)
-		} else if info.CloneInProgress { // we can't enqueue if still cloning
+	for repoName, info := range results {
+		if info.CloneStatus != types.CloneStatusCloned && info.CloneStatus != types.CloneStatusCloning { // if the repository doesnt exist
+			delete(repoToPackages, repoName)
+		} else if info.CloneStatus == types.CloneStatusCloning { // we can't enqueue if still cloning
 			return h.workerStore.Requeue(ctx, job.ID, time.Now().Add(requeueBackoff))
 		}
 	}
@@ -190,4 +224,29 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, logger 
 	}
 
 	return errors.Append(nil, errs...)
+}
+
+// Returns the set of elements in superset that are not in subset
+// invariants:
+//   - superset is, of course, a superset of subset.
+//   - subset does not contain duplicates
+func setDifference[T comparable](superset, subset []T) (ret []T) {
+	j := 0
+	for i, val := range superset {
+		if i > 0 && val == superset[i-1] {
+			continue
+		}
+		if j > len(subset)-1 {
+			ret = append(ret, val)
+			continue
+		}
+
+		if val == subset[j] {
+			j++
+		} else if val != subset[j] {
+			ret = append(ret, val)
+		}
+	}
+
+	return
 }

@@ -8,16 +8,21 @@ import (
 )
 
 type operations struct {
-	// Not used yet.
-	list *observation.Operation
-
 	// Configurations
-	getConfigurationPolicies    *observation.Operation
-	updateReposMatchingPatterns *observation.Operation
+	getConfigurationPolicies      *observation.Operation
+	getConfigurationPolicyByID    *observation.Operation
+	createConfigurationPolicy     *observation.Operation
+	updateConfigurationPolicy     *observation.Operation
+	deleteConfigurationPolicyByID *observation.Operation
+
+	// Repositories
+	getRepoIDsByGlobPatterns                    *observation.Operation
+	updateReposMatchingPatterns                 *observation.Operation
+	selectPoliciesForRepositoryMembershipUpdate *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
-	metrics := metrics.NewREDMetrics(
+	m := metrics.NewREDMetrics(
 		observationContext.Registerer,
 		"codeintel_policies_store",
 		metrics.WithLabels("op"),
@@ -28,16 +33,21 @@ func newOperations(observationContext *observation.Context) *operations {
 		return observationContext.Operation(observation.Op{
 			Name:              fmt.Sprintf("codeintel.policies.store.%s", name),
 			MetricLabelValues: []string{name},
-			Metrics:           metrics,
+			Metrics:           m,
 		})
 	}
 
 	return &operations{
-		// Not used yet.
-		list: op("List"),
-
 		// Configurations
-		getConfigurationPolicies:    op("GetConfigurationPolicies"),
-		updateReposMatchingPatterns: op("UpdateReposMatchingPatterns"),
+		getConfigurationPolicies:      op("GetConfigurationPolicies"),
+		getConfigurationPolicyByID:    op("GetConfigurationPolicyByID"),
+		createConfigurationPolicy:     op("CreateConfigurationPolicy"),
+		updateConfigurationPolicy:     op("UpdateConfigurationPolicy"),
+		deleteConfigurationPolicyByID: op("DeleteConfigurationPolicyByID"),
+
+		// Repositories
+		updateReposMatchingPatterns:                 op("UpdateReposMatchingPatterns"),
+		getRepoIDsByGlobPatterns:                    op("GetRepoIDsByGlobPatterns"),
+		selectPoliciesForRepositoryMembershipUpdate: op("SelectPoliciesForRepositoryMembershipUpdate"),
 	}
 }

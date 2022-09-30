@@ -14,7 +14,7 @@ const config: Meta = {
 
 export default config
 
-const context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures'> = {
+const context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures' | 'authMinPasswordLength'> = {
     authProviders: [
         {
             serviceType: 'github',
@@ -30,6 +30,7 @@ const context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures'
         },
     ],
     experimentalFeatures: {},
+    authMinPasswordLength: 0,
 }
 
 export const Default: Story = () => (

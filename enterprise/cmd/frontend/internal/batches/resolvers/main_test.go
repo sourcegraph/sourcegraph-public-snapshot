@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -61,7 +62,7 @@ index 6f8b5d9..17400bc 100644
 var testDiffGraphQL = apitest.FileDiffs{
 	TotalCount: 2,
 	RawDiff:    testDiff,
-	DiffStat:   apitest.DiffStat{Changed: 2},
+	DiffStat:   apitest.DiffStat{Added: 2, Deleted: 2},
 	PageInfo:   apitest.PageInfo{},
 	Nodes: []apitest.FileDiff{
 		{
@@ -75,7 +76,7 @@ var testDiffGraphQL = apitest.FileDiffs{
 					NewRange: apitest.DiffRange{StartLine: 1, Lines: 2},
 				},
 			},
-			Stat: apitest.DiffStat{Changed: 1},
+			Stat: apitest.DiffStat{Added: 1, Deleted: 1},
 		},
 		{
 			OldPath: "urls.txt",
@@ -88,7 +89,7 @@ var testDiffGraphQL = apitest.FileDiffs{
 					NewRange: apitest.DiffRange{StartLine: 1, Lines: 3},
 				},
 			},
-			Stat: apitest.DiffStat{Changed: 1},
+			Stat: apitest.DiffStat{Added: 1, Deleted: 1},
 		},
 	},
 }
@@ -118,6 +119,10 @@ func parseJSONTime(t testing.TB, ts string) time.Time {
 	return timestamp
 }
 
+func newSchema(db database.DB, r graphqlbackend.BatchChangesResolver) (*graphql.Schema, error) {
+	return graphqlbackend.NewSchemaWithBatchChangesResolver(db, r)
+}
+
 func newGitHubExternalService(t *testing.T, store database.ExternalServiceStore) *types.ExternalService {
 	t.Helper()
 
@@ -128,7 +133,7 @@ func newGitHubExternalService(t *testing.T, store database.ExternalServiceStore)
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "Github - Test",
 		// The authorization field is needed to enforce permissions
-		Config:    `{"url": "https://github.com", "authorization": {}}`,
+		Config:    extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "authorization": {}, "token": "abc", "repos": ["owner/name"]}`),
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
@@ -240,14 +245,14 @@ func pruneUserCredentials(t *testing.T, db database.DB, key encryption.Key) {
 	}
 }
 
-func pruneSiteCredentials(t *testing.T, cstore *store.Store) {
+func pruneSiteCredentials(t *testing.T, bstore *store.Store) {
 	t.Helper()
-	creds, _, err := cstore.ListSiteCredentials(context.Background(), store.ListSiteCredentialsOpts{})
+	creds, _, err := bstore.ListSiteCredentials(context.Background(), store.ListSiteCredentialsOpts{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, c := range creds {
-		if err := cstore.DeleteSiteCredential(context.Background(), c.ID); err != nil {
+		if err := bstore.DeleteSiteCredential(context.Background(), c.ID); err != nil {
 			t.Fatal(err)
 		}
 	}

@@ -80,6 +80,7 @@ type RepoStore interface {
 	GetByHashedName(context.Context, api.RepoHashedName) (*types.Repo, error)
 	GetFirstRepoNameByCloneURL(context.Context, string) (api.RepoName, error)
 	GetReposSetByIDs(context.Context, ...api.RepoID) (map[api.RepoID]*types.Repo, error)
+	GetRepoDescriptionsByIDs(context.Context, ...api.RepoID) (map[api.RepoID]string, error)
 	List(context.Context, ReposListOptions) ([]*types.Repo, error)
 	ListIndexableRepos(context.Context, ListIndexableReposOptions) ([]types.MinimalRepo, error)
 	ListMinimalRepos(context.Context, ReposListOptions) ([]types.MinimalRepo, error)
@@ -288,6 +289,36 @@ func (s *repoStore) GetReposSetByIDs(ctx context.Context, ids ...api.RepoID) (ma
 	return repoMap, nil
 }
 
+func (s *repoStore) GetRepoDescriptionsByIDs(ctx context.Context, ids ...api.RepoID) (_ map[api.RepoID]string, err error) {
+	tr, ctx := trace.New(ctx, "repos.GetRepoDescriptionsByIDs", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	opts := ReposListOptions{
+		Select: []string{"repo.id", "repo.description"},
+		IDs:    ids,
+	}
+
+	res := make(map[api.RepoID]string, len(ids))
+	scanDescriptions := func(rows *sql.Rows) error {
+		var repoID api.RepoID
+		var repoDescription string
+		if err := rows.Scan(
+			&repoID,
+			&dbutil.NullString{S: &repoDescription},
+		); err != nil {
+			return err
+		}
+
+		res[repoID] = repoDescription
+		return nil
+	}
+
+	return res, errors.Wrap(s.list(ctx, tr, opts, scanDescriptions), "fetch repo descriptions")
+}
+
 func (s *repoStore) Count(ctx context.Context, opt ReposListOptions) (ct int, err error) {
 	tr, ctx := trace.New(ctx, "repos.Count", "")
 	defer func() {
@@ -329,6 +360,7 @@ func (s *repoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ []*types
 			"repo.private",
 			"repo.stars",
 			"gr.last_fetched",
+			"(SELECT json_object_agg(key, value) FROM repo_kvps WHERE repo_kvps.repo_id = repo.id)",
 		},
 		// Required so gr.last_fetched is select-able
 		joinGitserverRepos: true,
@@ -337,6 +369,7 @@ func (s *repoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ []*types
 	res := make([]*types.SearchedRepo, 0, len(ids))
 	scanMetadata := func(rows *sql.Rows) error {
 		var r types.SearchedRepo
+		var kvps repoKVPs
 		if err := rows.Scan(
 			&r.ID,
 			&r.Name,
@@ -346,15 +379,32 @@ func (s *repoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ []*types
 			&r.Private,
 			&dbutil.NullInt{N: &r.Stars},
 			&r.LastFetched,
+			&kvps,
 		); err != nil {
 			return err
 		}
 
+		r.KeyValuePairs = kvps.kvps
 		res = append(res, &r)
 		return nil
 	}
 
 	return res, errors.Wrap(s.list(ctx, tr, opts, scanMetadata), "fetch metadata")
+}
+
+type repoKVPs struct {
+	kvps map[string]*string
+}
+
+func (r *repoKVPs) Scan(value any) error {
+	switch b := value.(type) {
+	case []byte:
+		return json.Unmarshal(b, &r.kvps)
+	case nil:
+		return nil
+	default:
+		return errors.Newf("type assertion to []byte failed, got type %T", value)
+	}
 }
 
 const listReposQueryFmtstr = `
@@ -413,12 +463,14 @@ var repoColumns = []string{
 	"repo.deleted_at",
 	"repo.metadata",
 	"repo.blocked",
+	"(SELECT json_object_agg(key, value) FROM repo_kvps WHERE repo_kvps.repo_id = repo.id)",
 }
 
 func scanRepo(logger log.Logger, rows *sql.Rows, r *types.Repo) (err error) {
 	var sources dbutil.NullJSONRawMessage
 	var metadata json.RawMessage
 	var blocked dbutil.NullJSONRawMessage
+	var kvps repoKVPs
 
 	err = rows.Scan(
 		&r.ID,
@@ -437,6 +489,7 @@ func scanRepo(logger log.Logger, rows *sql.Rows, r *types.Repo) (err error) {
 		&dbutil.NullTime{Time: &r.DeletedAt},
 		&metadata,
 		&blocked,
+		&kvps,
 		&sources,
 	)
 	if err != nil {
@@ -449,6 +502,8 @@ func scanRepo(logger log.Logger, rows *sql.Rows, r *types.Repo) (err error) {
 			return err
 		}
 	}
+
+	r.KeyValuePairs = kvps.kvps
 
 	type sourceInfo struct {
 		ID       int64
@@ -544,6 +599,9 @@ type ReposListOptions struct {
 	// repositories returned in the list.
 	DescriptionPatterns []string
 
+	// A set of filters to select only repos with a given set of key-value pairs.
+	KVPFilters []RepoKVPFilter
+
 	// CaseSensitivePatterns determines if IncludePatterns and ExcludePattern are treated
 	// with case sensitivity or not.
 	CaseSensitivePatterns bool
@@ -610,6 +668,9 @@ type ReposListOptions struct {
 	// OnlyCloned excludes non-cloned repositories from the list.
 	OnlyCloned bool
 
+	// CloneStatus if set will only return repos of that clone status.
+	CloneStatus types.CloneStatus
+
 	// NoPrivate excludes private repositories from the list.
 	NoPrivate bool
 
@@ -670,6 +731,14 @@ type ReposListOptions struct {
 	ExcludeSources bool
 
 	*LimitOffset
+}
+
+type RepoKVPFilter struct {
+	Key   string
+	Value *string
+	// If negated is true, this filter will select only repos
+	// that do _not_ have the associated key and value
+	Negated bool
 }
 
 type RepoListOrderBy []RepoListSort
@@ -944,6 +1013,10 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 	if opt.OnlyCloned {
 		where = append(where, sqlf.Sprintf("gr.clone_status = 'cloned'"))
 	}
+	if opt.CloneStatus != types.CloneStatusUnknown {
+		where = append(where, sqlf.Sprintf("gr.clone_status = %s", opt.CloneStatus))
+	}
+
 	if opt.FailedFetch {
 		where = append(where, sqlf.Sprintf("gr.last_error IS NOT NULL"))
 	}
@@ -1023,8 +1096,28 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 		where = append(where, sqlf.Sprintf("external_service_repos.org_id = %d", opt.OrgID))
 	}
 
-	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch || !opt.MinLastChanged.IsZero() || opt.joinGitserverRepos {
+	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch || !opt.MinLastChanged.IsZero() || opt.joinGitserverRepos || opt.CloneStatus != types.CloneStatusUnknown {
 		joins = append(joins, sqlf.Sprintf("JOIN gitserver_repos gr ON gr.repo_id = repo.id"))
+	}
+
+	if len(opt.KVPFilters) > 0 {
+		var ands []*sqlf.Query
+		for _, filter := range opt.KVPFilters {
+			if filter.Value != nil {
+				q := "EXISTS (SELECT 1 FROM repo_kvps WHERE repo_id = repo.id AND key = %s AND value = %s)"
+				if filter.Negated {
+					q = "NOT " + q
+				}
+				ands = append(ands, sqlf.Sprintf(q, filter.Key, *filter.Value))
+			} else {
+				q := "EXISTS (SELECT 1 FROM repo_kvps WHERE repo_id = repo.id AND key = %s AND value IS NULL)"
+				if filter.Negated {
+					q = "NOT " + q
+				}
+				ands = append(ands, sqlf.Sprintf(q, filter.Key))
+			}
+		}
+		where = append(where, sqlf.Join(ands, "AND"))
 	}
 
 	baseConds := sqlf.Sprintf("TRUE")
@@ -1089,9 +1182,11 @@ SELECT repo_id as id FROM user_public_repos WHERE user_id = %d
 `
 
 type ListIndexableReposOptions struct {
-	// If true, will only include uncloned indexable repos
-	OnlyUncloned bool
-	// If true, we include user added private repos
+	// CloneStatus if set will only return indexable repos of that clone
+	// status.
+	CloneStatus types.CloneStatus
+
+	// IncludePrivate when true will include user added private repos.
 	IncludePrivate bool
 
 	*LimitOffset
@@ -1114,13 +1209,12 @@ func (s *repoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableRe
 
 	var where, joins []*sqlf.Query
 
-	if opts.OnlyUncloned {
+	if opts.CloneStatus != types.CloneStatusUnknown {
 		joins = append(joins, sqlf.Sprintf(
-			"LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id",
+			"JOIN gitserver_repos gr ON gr.repo_id = repo.id",
 		))
 		where = append(where, sqlf.Sprintf(
-			"(gr.clone_status IS NULL OR gr.clone_status = %s)",
-			types.CloneStatusNotCloned,
+			"gr.clone_status = %s", opts.CloneStatus,
 		))
 	}
 

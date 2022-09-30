@@ -1,8 +1,8 @@
 # Docker Single Container Deployment
 
-The Docker Single Container deployment type is a way to very quickly get an instance of Sourcegraph set up locally to experiment with many of its features. However, it is **not recommended** for a production instance, and **has limitations** depending on the OS you are deploying to, as well as the associated resources. See the [troubleshooting secton](#troubleshooting) for additional information.
+The Docker Single Container deployment type is a way to very quickly get an instance of Sourcegraph set up locally to experiment with many of its features. However, it is **not recommended** for a production instance, and **has limitations** depending on the OS you are deploying to, as well as the associated resources. See the [troubleshooting section](#troubleshooting) for additional information.
 
-[Code Insights](../../../code_insights/index.md) is not supported in Single Container deployments. To try Code Insights you must deploy using [Docker Compose](../docker-compose/index.md) or [Kubernetes](../kubernetes/index.md). 
+[Code Insights](../../../code_insights/index.md) is not supported in Single Container deployments. To try Code Insights you must deploy using [Docker Compose](../docker-compose/index.md) or [Kubernetes](../kubernetes/index.md). [Tracing](../../observability/tracing.md) is disabled by default, and if you intend to enable it, you will have to deploy and configure the [OpenTelemetry Collector](../../observability/opentelemetry.md). The Single Container deployment does not ship with this service included. It is strongly recommended to use one of the aforementioned deployment methods if tracing support is a requirement. 
 
 ## Installation
 
@@ -14,7 +14,7 @@ It takes less than a minute to run and install Sourcegraph using Docker:
   This uses line breaks that are rendered but not copy-pasted to the clipboard.
 -->
 
-<pre class="pre-wrap start-sourcegraph-command"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.42.0</code></pre>
+<pre class="pre-wrap start-sourcegraph-command"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:4.0.1</code></pre>
 
 Once the server is ready (logo is displayed in the terminal), navigate to the hostname or IP address on port `7080`.  Create the admin account, then you'll be guided through setting up Sourcegraph for code searching and navigation.
 
@@ -46,7 +46,7 @@ For example, to mount a `.gitconfig`, create a file `/mnt/sourcegraph/config/git
 Alternatively you can create a new Docker image which inherits from Sourcegraph and then mutates the environment:
 
 ```dockerfile
-FROM sourcegraph/server:3.42.0
+FROM sourcegraph/server:4.0.1
 
 COPY gitconfig /etc/gitconfig
 COPY ssh /root/.ssh
@@ -87,7 +87,7 @@ This is required to [collect debug data](../../pprof.md).
 The docker run command for single-container Sourcegraph needs an additional publish flag to expose the debug port:
 
 ```bash script
-docker run --publish 7080:7080 --publish 127.0.0.1:3370:3370 --publish 127.0.0.1:6060:6060 --rm --volume ~/.sourcegraph/config:/etc/sourcegraph --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.42.0
+docker run --publish 7080:7080 --publish 127.0.0.1:3370:3370 --publish 127.0.0.1:6060:6060 --rm --volume ~/.sourcegraph/config:/etc/sourcegraph --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:4.0.1
 ```
 
 If Sourcegraph is deployed to a remote server, then access via an SSH tunnel using a tool
@@ -105,7 +105,7 @@ Add the following to your docker run command:
 ```
 docker run [...]
 -e (YOUR CODE)
-sourcegraph/server:3.42.0
+sourcegraph/server:4.0.1
 ```
 
 ## Operation
@@ -136,15 +136,96 @@ SELECT * FROM users;
 
 ## Upgrade
 
-Before upgrading, refer to the [update notes for single-container Sourcegraph with Docker](../../updates/server.md).
+### Standard upgrades
 
-To update, just use the newer `sourcegraph/server:N.N.N` Docker image (where `N.N.N` is the version number) in place of the older one, using the same Docker volumes. Your server's data will be migrated automatically if needed.
+A [standard upgrade](../../updates/index.md#standard-upgrades) occurs between two minor versions of Sourcegraph. If you are looking to jump forward several versions, you must perform a [multi-version upgrade](#multi-version-upgrades) instead.
 
-You can always find the version number details of the latest release via the [changelog](https://docs.sourcegraph.com/CHANGELOG).
+**Before upgrading:**
 
-- As a precaution, before updating, we recommend backing up the contents of the Docker volumes used by Sourcegraph.
-- If you need a HA deployment, use the [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy-sourcegraph).
-- There is currently no automated way to downgrade to an older version after you have updated. [Contact support](https://about.sourcegraph.com/contact) for help.
+- Read our [update policy](../../updates/index.md#update-policy) to learn about Sourcegraph updates.
+- Find the relevant entry for your update in the [update notes for single-container Sourcegraph with Docker](../../updates/server.md).
+
+To update, just use the newer `sourcegraph/server:N.N.N` Docker image (where `N.N.N` is a patch or single minor release away your current version) in place of the older one, using the same Docker volumes. Your server's data will be migrated automatically if needed. You can always find the version number details of the latest release via the [changelog](https://docs.sourcegraph.com/CHANGELOG).
+
+### Multi-version upgrades
+
+A [multi-version upgrade](../../updates/index.md#multi-version-upgrades) is a downtime-incurring upgrade from version 3.20 or later to any future version. Multi-version upgrades will run both schema and data migrations to ensure the data available from the instance remains available post-upgrade.
+
+> NOTE: It is highly recommended to **take an up-to-date snapshot of your databases** prior to starting a multi-version upgrade. The upgrade process aggressively mutates the shape and contents of your database, and undiscovered errors in the migration process or unexpected environmental differences may cause an unusable instance or data loss.
+>
+> We recommend performing the entire upgrade procedure on an idle clone of the production instance and switch traffic over on success, if possible. This may be low-effort for installations with a canary environment or a blue/green deployment strategy.
+>
+> **If you do not feel confident running this process solo**, contact customer support team to help guide you thorough the process.
+
+**Before performing a multi-version upgrade**:
+
+- Read our [update policy](../../updates/index.md#update-policy) to learn about Sourcegraph updates.
+- Find the entries that apply to the version range you're passing through in the [update notes for Sourcegraph with Docker Single Container](../../updates/server.md#multi-version-upgrade-procedure).
+
+To perform a multi-version upgrade on a Sourcegraph instance running on Docker Single Container:
+
+1. Stop the running Sourcegraph container via `docker stop [CONTAINER]`.
+1. Start a temporary Postgres container on top of the Postgres data directory used by the old `sourcegraph/server` image. This Postgres instance will be used by the following upgrade migration. If using an [external database](../../external_services/postgres.md), the database is already accessible from the `migrator` so no action is needed. Otherwise, start the new Postgres container by following the steps [described below](#running-temporary-postgres-containers).
+1. Follow the instructions on [how to run the migrator job in Docker](../../how-to/manual_database_migrations.md#docker--docker-compose) to perform the upgrade migratiohn. For specific documentation on the `upgrade` command, see the [command documentation](../../how-to/manual_database_migrations.md#upgrade). The following specific steps are an easy way to run the upgrade command:
+
+<p />
+
+```bash
+docker run \
+  --rm \
+  --name migrator_${SG_VERSION} \
+  -e PGHOST='pgsql' \
+  -e PGPORT='5432' \
+  -e PGUSER='sg' \
+  -e PGPASSWORD='sg' \
+  -e PGDATABASE='sourcegraph' \
+  -e PGSSLMODE='disable' \
+  -e CODEINTEL_PGHOST='pgsql' \
+  -e CODEINTEL_PGPORT='5432' \
+  -e CODEINTEL_PGUSER='sg' \
+  -e CODEINTEL_PGPASSWORD='sg' \
+  -e CODEINTEL_PGDATABASE='sourcegraph-codeintel' \
+  -e CODEINTEL_PGSSLMODE='disable' \
+  -e CODEINSIGHTS_PGHOST='pgsql' \
+  -e CODEINSIGHTS_PGPORT='5432' \
+  -e CODEINSIGHTS_PGUSER='postgres' \
+  -e CODEINSIGHTS_PGPASSWORD='password' \
+  -e CODEINSIGHTS_PGDATABASE='postgres' \
+  -e CODEINSIGHTS_PGSSLMODE='disable' \
+  -e CODEINTEL_PG_ALLOW_SINGLE_DB=true \
+  sourcegraph/migrator:v${SG_VERSION} \
+  upgrade --from=${CURRENT_SG_VERSION} --to=${SG_VERSION}
+```
+
+It is recommended to also add the `--dry-run` flag on a trial invocation to detect if there are any issues with database connection, schema drift, or mismatched versions that need to be addressed.
+
+After this container exits successfully, the remaining infrastructure can now be updated. All temporary containers can be stopped, and the Docker invocation for your `sourcegraph/server` container can be updated to use the new target version.
+
+#### Running temporary Postgres containers
+
+Mounting a Postgres container on top of the data directory used by `sourcegraph/server` will allow us to access and migrate the data in-place without having running services interfere.
+
+Let `${PATH}` be the directory mounted into `/var/opt/sourcegraph` of your instance. This mount contains the Postgres data directory inside of the container.
+
+For example, `${PATH}` is `~/.sourcegraph/data` in `-v ~/.sourcegraph/data:/var/opt/sourcegraph`.
+
+```bash
+docker run --rm -it \
+  -v ${PATH}/postgresql:/data/pgdata-${PG_VERSION} \
+  -u 70 \
+  -p 5432:5432 \
+  --entrypoint bash \
+  sourcegraph/postgres-${PG_VERSION_TAG}:${SG_VERSION} \
+  -c 'echo "host all all 0.0.0.0/0 trust" >> /data/pgdata-${PG_VERSION}/pg_hba.conf && postgres -c l listen_addresses="*" -D /data/pgdata-${PG_VERSION}'
+```
+
+The version of this Postgres container is dependent on the version of the instance prior to upgrade.
+
+| `${SG_VERSION}`     | `${PG_VERSION}` | `${PG_VERSION_TAG}` |
+| ------------------- | --------------- | ------------------- |
+| `3.20.X` - `3.29.X` | `12`            | `12.6`              |
+| `3.30.X` - `3.37.X` | `12`            | `12.6-alpine`       |
+| `3.38.X` -          | `12`            | `12-alpine`         |
 
 ## Troubleshooting
 
@@ -173,11 +254,11 @@ Sourcegraph can be **tested** on Windows 10 using roughly the same steps provide
 1. [Install Docker for Windows](https://docs.docker.com/docker-for-windows/install/)
 2. Using a command prompt, follow the same [installation steps provided above](#install-sourcegraph-with-docker) but remove the `--volume` arguments. For example by pasting this:
 
-<pre class="pre-wrap"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> sourcegraph/server:3.42.0</code></pre>
+<pre class="pre-wrap"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> sourcegraph/server:4.0.1</code></pre>
 
 ### Low resource environments
 
-To test Sourcegraph in a low resource environment you may want to disable some of the observability tools (Prometheus, Grafana and Jaeger).
+To test Sourcegraph in a low resource environment you may want to disable some of the observability tools (Prometheus and Grafana).
 
 Add `-e DISABLE_OBSERVABILITY=true` to your docker run command.
 
@@ -198,7 +279,7 @@ If you run Docker on an OS such as RHEL, Fedora, or CentOS with SELinux enabled,
 
 To fix this, run:
 
-`mkdir -p ~/.sourcegraph/config ~/.sourcegraph/data && chown -R -t svirt_sandbox_file_t ~/.sourcegraph/config ~/.sourcegraph/data`
+`mkdir -p ~/.sourcegraph/config ~/.sourcegraph/data && chcon -R -t svirt_sandbox_file_t ~/.sourcegraph/config ~/.sourcegraph/data`
 
 ## Reference
 

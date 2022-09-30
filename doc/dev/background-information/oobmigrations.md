@@ -8,10 +8,11 @@ Out-of-band migrations allow for application-specific logic to exist in a migrat
 - re-hashing passwords
 - decoding and interpreting opaque payloads
 - fetching data from another remote API or data store based on existing data
-
-Additionally, the estimated _scale_ of data may be too large to migrate on application startup in an efficient manner - in which case an out of band migration is suitable.
+- transforming large scale data
 
 Remember - the longer we block application startup on migrations, the more vulnerable an instance will become to downtime as no _new_ frontend containers will be able to service requests. In these cases, you should define an _out of band_ migration, which is run in the background of the application over time instead of at startup.
+
+Some background tasks may seem initially well-suited for an out-of-band migration, but may actually be better installed as a permanent background job that runs periodically. Such jobs include data transformations that require external state to determine its progress. For example, database encryption jobs were originally written as out-of-band migrations. However, changing the external key in the site configuration can drop progress back to 0%, despite having already ran to completion.
 
 ## Overview
 
@@ -23,6 +24,7 @@ An out-of-band migration is defined with the following data:
 - the version when the migration was _introduced_ (e.g. `3.25.0`)
 - the version when the migration was _deprecated_ (if any)
 - a flag indicating whether or not the migration is _non-destructive_
+- a flag indicating whether or not the migration is enterprise-only
 
 Each out-of-band migration is associated with a _migrator_ instance, which periodically runs in the background of Sourcegraph instances between the version the migration was _introduced_ (inclusive) and the version the migration was marked as _deprecated_ (exclusive). Each migrator instance enables three behaviors:
 
@@ -36,7 +38,7 @@ For every registered migrator, the migration runner will periodically check for 
 
 Site-admins will be prevented from upgrading beyond the version where an incomplete migration has been deprecated. i.e., site-admin must wait for these migrations to finish before an upgrade. Otherwise, the instance will have data in a format that is no longer readable by the new version. In these cases, the instance will shut down with an error message similar to what happens when an in-band migration fails to apply.
 
-The `Site Admin > Maintenance > Migrations` page shows the current progress of each out-of-band migration, as well as disclaimers warning when an immediate upgrade would fail due to an incomplete migration.
+The **Site Admin > Maintenance > Migrations** page shows the current progress of each out-of-band migration, as well as disclaimers warning when an immediate upgrade would fail due to an incomplete migration.
 
 #### Downgrades
 
@@ -74,9 +76,10 @@ The first step is to declare metadata for a new migration. Add a new entry to th
   team: skunkworks                        -- Team owning migration
   component: db.skunk_payloads            -- Component being migrated
   description: Re-encode our skunky data  -- Human-readable description
+  non_destructive: true                   -- Can be read with previous version without down migration
+  is_enterprise: true                     -- Should not run in OSS versions or the migration code is only available in enterprise
   introduced_major_version: 3             -- The current major release
   introduced_minor_version: 34            -- The current minor release
-  non_destructive: true                   -- Can be read with previous version without down migration
 ```
 
 #### Step 2: Modify reads
@@ -123,6 +126,12 @@ func scanSkunkPayloads(rows *sql.Rows, queryErr error) ([]string, error) {
 Now that we can read both formats, it is safe to start writing all _new_ records using the new format.
 
 #### Step 4: Register migrator
+
+> WARNING: The code that runs the out of band migration must exist in-tree, even after the migration has been deprecated.
+>
+> This is because we need to support upgrading older instances using a newer migrator, which must also run these migrations. This code should be written in a way that isolates it from changing behaviors in other parts of the code base. Where possible, stick to directly defining SQL queries and importing only utility libraries.
+>
+> Inlining types into the migrator implementation post-deprecation is a good idea to "lock" the migration behavior in-place.
 
 Next, we need to move all of the existing data in the old format into the new format. We'll first define a migrator instance.
 
@@ -179,6 +188,10 @@ func (m *migrator) Up(ctx context.Context) (err error) {
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
+	// We don't have access to a connection pool and hence cannot write and read
+	// from a result set in parallel within in transaction. Therefore, we need to
+	// collect all results before executing update commands.
+	updates := make(map[int]string) // id -> payload
 	for rows.Next() {
 		var id int
 		var payload string
@@ -186,9 +199,13 @@ func (m *migrator) Up(ctx context.Context) (err error) {
 			return err
 		}
 
+		updates[id] = oldToNew(payload)
+	}
+
+	for id, payload := range updates {
 		if err := tx.Exec(ctx, sqlf.Sprintf(
 			"UPDATE skunk_payloads SET payload2 = %s WHERE id = %s",
-			oldToNew(payload),
+			payload,
 			id,
 		)); err != nil {
 			return err
@@ -229,6 +246,10 @@ func (m *migrator) Down(ctx context.Context) (err error) {
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
+	// We don't have access to a connection pool and hence cannot write and read
+	// from a result set in parallel within in transaction. Therefore, we need to
+	// collect all results before executing update commands.
+	updates := make(map[int]string) // id -> payload
 	for rows.Next() {
 		var id int
 		var payload string
@@ -236,11 +257,15 @@ func (m *migrator) Down(ctx context.Context) (err error) {
 			return err
 		}
 
+		updates[id] = newToOld(payload)
+	}
+
+	for id, payload := range updates {
 		if err := tx.Exec(ctx, sqlf.Sprintf(
 			"UPDATE skunk_payloads SET payload = %s WHERE id = %s",
-			newToOld(payload),
+			payload,
 			id,
-		)); err != nil{
+		)); err != nil {
 			return err
 		}
 	}
@@ -252,9 +277,10 @@ func (m *migrator) Down(ctx context.Context) (err error) {
 Lastly, in order for this migration to run, we need to [register it to the out of band migrator runner instance](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40main+file:.*.go+%28outOfBandMigration%29%3Frunner%5C.Register%5C%28&patternType=regexp) in the OSS or enterprise `worker` service.
 
 ```go
-migrator := database.NewMigrator(db)
-if err := outOfBandMigrationRunner.Register(migrator.ID(), migrator, oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
-	log.Fatalf("failed to run skunk payloads job: %v", err)
+// `db` is the database.DB
+migrator := NewMigrator(basestore.NewWithHandle(db.Handle()))
+if err := outOfBandMigrationRunner.Register(42, migrator, oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
+	return err
 }
 ```
 
@@ -271,12 +297,13 @@ New fields can be added to the existing migration metadata entry in the file `in
   team: skunkworks
   component: db.skunk_payloads
   description: Re-encode our skunky data
-  introduced_major_version: 3
-  introduced_minor_version: 34
   non_destructive: true
+  is_enterprise: true 
+  introduced_version_major: 3
+  introduced_version_minor: 34
   # NEW FIELDS:
-  deprecated_major_version: 3   -- The current major release
-  deprecated_minor_version: 39  -- The current minor release
+  deprecated_version_major: 3   -- The upcoming major release
+  deprecated_version_minor: 39  -- The upcoming minor release
 ```
 
 This date may be known at the time the migration is created, in which case it is fine to set both the introduced and the deprecated fields at the same time.
@@ -285,9 +312,7 @@ Note that it is not advised to set the deprecated version to the minor release o
 
 #### Step 6: Deprecation
 
-On or after the deprecation version of a migration, we can begin clean-up. This involves:
+On or after the deprecation version of a migration, we can begin clean-up of inactive code. This is not a critical step, but may be beneficial if the code supporting the old format gets in the way of feature implemetation or maintenance. Clean-up may include:
 
-- unregistering the migrator instance
-- removing the migrator code
-- cleaning up any backwards-compatible read routines to support only the new format
-- dropping columns that are no longer used by the new minimum supported format
+- removing the ability to read the old format of data
+- altering database constraint to more specifically describe the new format (e.g., column nullability, check constrants, etc)

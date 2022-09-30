@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 
 	"github.com/keegancsmith/sqlf"
@@ -208,29 +207,4 @@ func scanChangesetJob(c *btypes.ChangesetJob, s dbutil.Scanner) error {
 		return errors.Errorf("unknown job type %q", c.JobType)
 	}
 	return json.Unmarshal(raw, &c.Payload)
-}
-
-func scanFirstChangesetJob(rows *sql.Rows, err error) (*btypes.ChangesetJob, bool, error) {
-	jobs, err := scanChangesetJobs(rows, err)
-	if err != nil || len(jobs) == 0 {
-		return nil, false, err
-	}
-	return jobs[0], true, nil
-}
-
-func scanChangesetJobs(rows *sql.Rows, queryErr error) ([]*btypes.ChangesetJob, error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-
-	var jobs []*btypes.ChangesetJob
-
-	return jobs, scanAll(rows, func(sc dbutil.Scanner) (err error) {
-		var j btypes.ChangesetJob
-		if err = scanChangesetJob(&j, sc); err != nil {
-			return err
-		}
-		jobs = append(jobs, &j)
-		return nil
-	})
 }

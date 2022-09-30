@@ -3,7 +3,7 @@ import { ReactElement } from 'react'
 import { mdiChevronDown } from '@mdi/js'
 import { components, DropdownIndicatorProps } from 'react-select'
 
-import { Icon } from '@sourcegraph/wildcard'
+import { Icon } from '../../Icon'
 
 import { MultiSelectOption } from './types'
 

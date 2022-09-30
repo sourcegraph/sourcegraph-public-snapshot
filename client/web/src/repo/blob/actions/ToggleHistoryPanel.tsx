@@ -13,7 +13,7 @@ import {
     toViewStateHash,
 } from '@sourcegraph/common'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
-import { DeprecatedTooltipController, Icon, Tooltip } from '@sourcegraph/wildcard'
+import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
 import { RepoHeaderActionButtonLink, RepoHeaderActionMenuItem } from '../../components/RepoHeaderActions'
@@ -65,7 +65,6 @@ export class ToggleHistoryPanel extends React.PureComponent<
                 const visible = ToggleHistoryPanel.isVisible(this.props.location)
                 eventLogger.log(visible ? 'HideHistoryPanel' : 'ShowHistoryPanel')
                 this.props.history.push(ToggleHistoryPanel.locationWithVisibility(this.props.location, !visible))
-                DeprecatedTooltipController.forceUpdate()
             })
         )
 
@@ -104,7 +103,6 @@ export class ToggleHistoryPanel extends React.PureComponent<
                 <span>
                     <RepoHeaderActionButtonLink
                         aria-label={visible ? 'Hide' : 'Show'}
-                        className="btn-icon"
                         file={false}
                         onSelect={this.onClick}
                     >

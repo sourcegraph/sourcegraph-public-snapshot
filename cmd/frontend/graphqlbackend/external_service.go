@@ -80,8 +80,8 @@ func (r *externalServiceResolver) DisplayName() string {
 	return r.externalService.DisplayName
 }
 
-func (r *externalServiceResolver) Config() (JSONCString, error) {
-	redacted, err := r.externalService.RedactedConfig()
+func (r *externalServiceResolver) Config(ctx context.Context) (JSONCString, error) {
+	redacted, err := r.externalService.RedactedConfig(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -108,9 +108,9 @@ func (r *externalServiceResolver) Namespace(ctx context.Context) (*NamespaceReso
 	return &NamespaceResolver{n}, nil
 }
 
-func (r *externalServiceResolver) WebhookURL() (*string, error) {
+func (r *externalServiceResolver) WebhookURL(ctx context.Context) (*string, error) {
 	r.webhookURLOnce.Do(func() {
-		parsed, err := extsvc.ParseConfig(r.externalService.Kind, r.externalService.Config)
+		parsed, err := extsvc.ParseEncryptableConfig(ctx, r.externalService.Kind, r.externalService.Config)
 		if err != nil {
 			r.webhookErr = errors.Wrap(err, "parsing external service config")
 			return
@@ -324,11 +324,14 @@ func (r *externalServiceSyncJobResolver) ID() graphql.ID {
 }
 
 func (r *externalServiceSyncJobResolver) State() string {
+	if r.job.Cancel && r.job.State == "processing" {
+		return "CANCELING"
+	}
 	return strings.ToUpper(r.job.State)
 }
 
 func (r *externalServiceSyncJobResolver) FailureMessage() *string {
-	if r.job.FailureMessage == "" {
+	if r.job.FailureMessage == "" || r.job.Cancel {
 		return nil
 	}
 

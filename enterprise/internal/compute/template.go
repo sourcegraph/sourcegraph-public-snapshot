@@ -2,8 +2,11 @@ package compute
 
 import (
 	"encoding/json"
+	"fmt"
+	"strconv"
 	"strings"
 	"text/template"
+	"time"
 	"unicode/utf8"
 
 	"github.com/go-enry/go-enry/v2"
@@ -48,7 +51,7 @@ func (v Variable) String() string {
 }
 func (c Constant) String() string { return string(c) }
 
-const varAllowed = "abcdefghijklmnopqrstuvwxyzABCEDEFGHIJKLMNOPQRSTUVWXYZ1234567890_"
+const varAllowed = "abcdefghijklmnopqrstuvwxyzABCEDEFGHIJKLMNOPQRSTUVWXYZ1234567890_."
 
 // scanTemplate scans an input string to produce a Template. Recognized
 // metavariable syntax is `$(varAllowed+)`.
@@ -188,7 +191,7 @@ type MetaEnvironment struct {
 	Content string
 	Commit  string
 	Author  string
-	Date    string
+	Date    time.Time
 	Email   string
 	Lang    string
 }
@@ -196,17 +199,21 @@ type MetaEnvironment struct {
 var empty = struct{}{}
 
 var builtinVariables = map[string]struct{}{
-	"repo":    empty,
-	"path":    empty,
-	"content": empty,
-	"commit":  empty,
-	"author":  empty,
-	"date":    empty,
-	"email":   empty,
-	"lang":    empty,
+	"repo":            empty,
+	"path":            empty,
+	"content":         empty,
+	"commit":          empty,
+	"author":          empty,
+	"date":            empty,
+	"date.day":        empty,
+	"date.month":      empty,
+	"date.month.name": empty,
+	"date.year":       empty,
+	"email":           empty,
+	"lang":            empty,
 }
 
-func templatize(pattern string) string {
+func templatize(pattern string, env *MetaEnvironment) string {
 	t := scanTemplate([]byte(pattern))
 	var templatized []string
 	for _, atom := range *t {
@@ -215,8 +222,21 @@ func templatize(pattern string) string {
 			templatized = append(templatized, string(a))
 		case Variable:
 			if _, ok := builtinVariables[a.Name[1:]]; ok {
-				templateVar := strings.Title(a.Name[1:])
-				templatized = append(templatized, `{{.`+templateVar+`}}`)
+				switch a.Name[1:] {
+				case "date.year":
+					templatized = append(templatized, strconv.Itoa(env.Date.Year()))
+				case "date.month.name":
+					templatized = append(templatized, env.Date.Month().String())
+				case "date.month":
+					templatized = append(templatized, fmt.Sprintf("%02d", int(env.Date.Month())))
+				case "date.day":
+					templatized = append(templatized, strconv.Itoa(env.Date.Day()))
+				case "date":
+					templatized = append(templatized, env.Date.Format("2006-01-02"))
+				default:
+					templateVar := strings.Title(a.Name[1:])
+					templatized = append(templatized, `{{.`+templateVar+`}}`)
+				}
 				continue
 			}
 			// Leave alone other variables that don't correspond to
@@ -228,7 +248,7 @@ func templatize(pattern string) string {
 }
 
 func substituteMetaVariables(pattern string, env *MetaEnvironment) (string, error) {
-	templated := templatize(pattern)
+	templated := templatize(pattern, env)
 	t, err := template.New("").Parse(templated)
 	if err != nil {
 		return "", err
@@ -263,7 +283,7 @@ func NewMetaEnvironment(r result.Match, content string) *MetaEnvironment {
 			Repo:    string(m.Repo.Name),
 			Commit:  string(m.Commit.ID),
 			Author:  m.Commit.Author.Name,
-			Date:    m.Commit.Committer.Date.Format("2006-01-02"),
+			Date:    m.Commit.Committer.Date,
 			Email:   m.Commit.Author.Email,
 			Content: content,
 		}
@@ -274,7 +294,7 @@ func NewMetaEnvironment(r result.Match, content string) *MetaEnvironment {
 			Repo:    string(m.Repo.Name),
 			Commit:  string(m.Commit.ID),
 			Author:  m.Commit.Author.Name,
-			Date:    m.Commit.Committer.Date.Format("2006-01-02"),
+			Date:    m.Commit.Committer.Date,
 			Email:   m.Commit.Author.Email,
 			Path:    path,
 			Lang:    lang,

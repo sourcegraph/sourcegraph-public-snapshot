@@ -40,34 +40,64 @@ func goModGuards() *linter {
 				return nil
 			}
 
-			var errs error
+			failedLibs := map[string]error{}
 			for _, hunk := range diff["go.mod"] {
 				for _, l := range hunk.AddedLines {
 					parts := strings.Split(strings.TrimSpace(l), " ")
-					if len(parts) != 2 {
-						continue
-					}
-					var (
-						lib     = parts[0]
-						version = parts[1]
-					)
-					if !strings.HasPrefix(version, "v") {
-						continue
-					}
-					if maxVersion := maxVersions[lib]; maxVersion != nil {
-						v, err := semver.NewVersion(version)
-						if err != nil {
-							errs = errors.Append(errs, errors.Wrapf(err, "dependency %s has invalid version", lib))
+					switch len(parts) {
+					// Dependencies: 'lib v1.2.3'
+					case 2:
+						var (
+							lib     = parts[0]
+							version = parts[1]
+						)
+						if !strings.HasPrefix(version, "v") {
 							continue
 						}
-						if v.GreaterThan(maxVersion) {
-							errs = errors.Append(errs, errors.Newf("dependency %s must not exceed version %s",
-								lib, maxVersion))
+						if maxVersion := maxVersions[lib]; maxVersion != nil {
+							v, err := semver.NewVersion(version)
+							if err != nil {
+								failedLibs[lib] = errors.Wrapf(err, "invalid version", version)
+								continue
+							}
+							if v.GreaterThan(maxVersion) {
+								failedLibs[lib] = errors.Newf("must not exceed version %s", maxVersion)
+							}
+						}
+
+					// Overrides: 'lib => lib v1.2.3'
+					case 4:
+						var (
+							replaced = parts[0]
+							lib      = parts[2]
+							version  = parts[3]
+						)
+						if replaced != lib {
+							continue
+						}
+						if !strings.HasPrefix(version, "v") {
+							continue
+						}
+
+						if maxVersion := maxVersions[lib]; maxVersion != nil {
+							v, err := semver.NewVersion(version)
+							if err != nil {
+								failedLibs[lib] = errors.Wrapf(err, "invalid version", version)
+								continue
+							}
+							if !v.GreaterThan(maxVersion) {
+								// reset error if override enforces a safe verison
+								failedLibs[lib] = nil
+							}
 						}
 					}
 				}
 			}
 
+			var errs error
+			for lib, err := range failedLibs {
+				errs = errors.Append(errs, errors.Wrap(err, lib))
+			}
 			return errs
 		},
 	}

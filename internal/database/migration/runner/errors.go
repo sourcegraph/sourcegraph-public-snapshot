@@ -22,7 +22,7 @@ func (e *SchemaOutOfDateError) Error() string {
 		),
 		instructions: strings.Join([]string{
 			`This software expects a migrator instance to have run on this schema prior to the deployment of this process.`,
-			`If this error is occurring directly after an upgrade, roll back your instance to the previous versiona nd ensure the migrator instance runs successfully prior attempting to re-upgrade.`,
+			`If this error is occurring directly after an upgrade, roll back your instance to the previous version and ensure the migrator instance runs successfully prior attempting to re-upgrade.`,
 		}, " "),
 	}).Error()
 }

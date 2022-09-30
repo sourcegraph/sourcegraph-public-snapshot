@@ -36,13 +36,6 @@ interface FormSeriesInputProps {
      */
     queryFieldDescription?: ReactNode
 
-    /**
-     * This prop hides color picker from the series form. This field is needed for
-     * compute powered insight creation UI, see https://github.com/sourcegraph/sourcegraph/issues/38832
-     * for more details whe compute doesn't have series colors
-     */
-    showColorPicker: boolean
-
     /** Enable autofocus behavior of the first input element of series form. */
     autofocus?: boolean
 
@@ -72,7 +65,6 @@ export const FormSeriesInput: FC<FormSeriesInputProps> = props => {
         autofocus = true,
         repositories,
         queryFieldDescription,
-        showColorPicker,
         onCancel = noop,
         onSubmit = noop,
         onChange = noop,
@@ -156,15 +148,13 @@ export const FormSeriesInput: FC<FormSeriesInputProps> = props => {
                 {...getDefaultInputProps(queryField)}
             />
 
-            {showColorPicker && (
-                <FormColorInput
-                    name={`color group of ${index} series`}
-                    title="Color"
-                    className="mt-4"
-                    value={colorField.input.value}
-                    onChange={colorField.input.onChange}
-                />
-            )}
+            <FormColorInput
+                name={`color group of ${index} series`}
+                title="Color"
+                className="mt-4"
+                value={colorField.input.value}
+                onChange={colorField.input.onChange}
+            />
 
             <div className="mt-4">
                 <Button

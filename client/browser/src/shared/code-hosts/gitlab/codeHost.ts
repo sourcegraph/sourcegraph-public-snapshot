@@ -1,14 +1,16 @@
 import * as Sentry from '@sentry/browser'
 import classNames from 'classnames'
 import { fromEvent } from 'rxjs'
-import { filter, map } from 'rxjs/operators'
+import { filter, map, mapTo, tap } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
 import { LineOrPositionOrRange, subtypeOf } from '@sourcegraph/common'
+import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { toAbsoluteBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { background } from '../../../browser-extension/web-extension-api/runtime'
+import { ResolveRepoNameResult, ResolveRepoNameVariables } from '../../../graphql-operations'
 import { CodeHost } from '../shared/codeHost'
 import { CodeView } from '../shared/codeViews'
 import { createNotificationClassNameGetter } from '../shared/getNotificationClassName'
@@ -18,7 +20,13 @@ import { queryWithSelector, ViewResolver } from '../shared/views'
 import { diffDOMFunctions, singleFileDOMFunctions } from './domFunctions'
 import { getCommandPaletteMount } from './extensions'
 import { resolveCommitFileInfo, resolveDiffFileInfo, resolveFileInfo } from './fileInfo'
-import { getPageInfo, GitLabPageKind, getFilePathsFromCodeView } from './scrape'
+import {
+    getPageInfo,
+    GitLabPageKind,
+    getFilePathsFromCodeView,
+    repoNameOnSourcegraph,
+    getGitlabRepoURL,
+} from './scrape'
 
 import styles from './codeHost.module.scss'
 
@@ -266,4 +274,27 @@ export const gitlabCodeHost = subtypeOf<CodeHost>()({
         filter(event => (event.target as HTMLElement).matches('a[data-line-number]')),
         map(() => parseHash(window.location.hash))
     ),
+
+    prepareCodeHost: async requestGraphQL =>
+        requestGraphQL<ResolveRepoNameResult, ResolveRepoNameVariables>({
+            request: gql`
+                query ResolveRepoName($cloneURL: String!) {
+                    repository(cloneURL: $cloneURL) {
+                        name
+                    }
+                }
+            `,
+            variables: {
+                cloneURL: getGitlabRepoURL(),
+            },
+            mightContainPrivateInfo: true,
+        })
+            .pipe(
+                map(dataOrThrowErrors),
+                tap(({ repository }) => {
+                    repoNameOnSourcegraph.next(repository?.name ?? '')
+                }),
+                mapTo(true)
+            )
+            .toPromise(),
 })

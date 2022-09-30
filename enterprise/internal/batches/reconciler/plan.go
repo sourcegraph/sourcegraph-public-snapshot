@@ -1,6 +1,7 @@
 package reconciler
 
 import (
+	"bytes"
 	"fmt"
 	"sort"
 	"strings"
@@ -183,7 +184,7 @@ func DeterminePlan(previousSpec, currentSpec *btypes.ChangesetSpec, currentChang
 
 	switch wantedChangeset.PublicationState {
 	case btypes.ChangesetPublicationStateUnpublished:
-		calc := calculatePublicationState(currentSpec.Spec.Published, wantedChangeset.UiPublicationState)
+		calc := calculatePublicationState(currentSpec.Published, wantedChangeset.UiPublicationState)
 		if calc.IsPublished() {
 			pl.SetOp(btypes.ReconcilerOperationPublish)
 			pl.AddOp(btypes.ReconcilerOperationPush)
@@ -215,7 +216,7 @@ func DeterminePlan(previousSpec, currentSpec *btypes.ChangesetSpec, currentChang
 		if btypes.ExternalServiceSupports(wantedChangeset.ExternalServiceType, btypes.CodehostCapabilityDraftChangesets) {
 			if delta.Undraft {
 				pl.AddOp(btypes.ReconcilerOperationUndraft)
-			} else if calc := calculatePublicationState(currentSpec.Spec.Published, wantedChangeset.UiPublicationState); calc.IsPublished() && wantedChangeset.ExternalState == btypes.ChangesetExternalStateDraft {
+			} else if calc := calculatePublicationState(currentSpec.Published, wantedChangeset.UiPublicationState); calc.IsPublished() && wantedChangeset.ExternalState == btypes.ChangesetExternalStateDraft {
 				pl.AddOp(btypes.ReconcilerOperationUndraft)
 			}
 		}
@@ -283,72 +284,48 @@ func compareChangesetSpecs(previous, current *btypes.ChangesetSpec, uiPublicatio
 		return delta, nil
 	}
 
-	if previous.Spec.Title != current.Spec.Title {
+	if previous.Title != current.Title {
 		delta.TitleChanged = true
 	}
-	if previous.Spec.Body != current.Spec.Body {
+	if previous.Body != current.Body {
 		delta.BodyChanged = true
 	}
-	if previous.Spec.BaseRef != current.Spec.BaseRef {
+	if previous.BaseRef != current.BaseRef {
 		delta.BaseRefChanged = true
 	}
 
 	// If was set to "draft" and now "true", need to undraft the changeset.
 	// We currently ignore going from "true" to "draft".
-	previousCalc := calculatePublicationState(previous.Spec.Published, uiPublicationState)
-	currentCalc := calculatePublicationState(current.Spec.Published, uiPublicationState)
+	previousCalc := calculatePublicationState(previous.Published, uiPublicationState)
+	currentCalc := calculatePublicationState(current.Published, uiPublicationState)
 	if previousCalc.IsDraft() && currentCalc.IsPublished() {
 		delta.Undraft = true
 	}
 
 	// Diff
-	currentDiff, err := current.Spec.Diff()
-	if err != nil {
-		return nil, nil
-	}
-	previousDiff, err := previous.Spec.Diff()
-	if err != nil {
-		return nil, err
-	}
-	if previousDiff != currentDiff {
+	currentDiff := current.Diff
+	previousDiff := previous.Diff
+	if !bytes.Equal(previousDiff, currentDiff) {
 		delta.DiffChanged = true
 	}
 
 	// CommitMessage
-	currentCommitMessage, err := current.Spec.CommitMessage()
-	if err != nil {
-		return nil, nil
-	}
-	previousCommitMessage, err := previous.Spec.CommitMessage()
-	if err != nil {
-		return nil, err
-	}
+	currentCommitMessage := current.CommitMessage
+	previousCommitMessage := previous.CommitMessage
 	if previousCommitMessage != currentCommitMessage {
 		delta.CommitMessageChanged = true
 	}
 
 	// AuthorName
-	currentAuthorName, err := current.Spec.AuthorName()
-	if err != nil {
-		return nil, nil
-	}
-	previousAuthorName, err := previous.Spec.AuthorName()
-	if err != nil {
-		return nil, err
-	}
+	currentAuthorName := current.CommitAuthorName
+	previousAuthorName := previous.CommitAuthorName
 	if previousAuthorName != currentAuthorName {
 		delta.AuthorNameChanged = true
 	}
 
 	// AuthorEmail
-	currentAuthorEmail, err := current.Spec.AuthorEmail()
-	if err != nil {
-		return nil, nil
-	}
-	previousAuthorEmail, err := previous.Spec.AuthorEmail()
-	if err != nil {
-		return nil, err
-	}
+	currentAuthorEmail := current.CommitAuthorEmail
+	previousAuthorEmail := previous.CommitAuthorEmail
 	if previousAuthorEmail != currentAuthorEmail {
 		delta.AuthorEmailChanged = true
 	}

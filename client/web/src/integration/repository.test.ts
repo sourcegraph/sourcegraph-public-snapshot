@@ -17,13 +17,13 @@ import { DiffHunkLineType, RepositoryContributorsResult, WebGraphQlOperations } 
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import {
-    createRepositoryRedirectResult,
-    createResolveRevisionResult,
+    createResolveRepoRevisionResult,
     createFileExternalLinksResult,
     createTreeEntriesResult,
     createBlobContentResult,
     createRepoChangesetsStatsResult,
     createFileNamesResult,
+    createResolveCloningRepoRevisionResult,
 } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createEditorAPI, percySnapshotWithVariants } from './utils'
@@ -34,9 +34,8 @@ export const getCommonRepositoryGraphQlResults = (
     fileEntries: string[] = []
 ): Partial<WebGraphQlOperations & SharedGraphQlOperations> => ({
     ...commonWebGraphQlResults,
-    RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
     RepoChangesetsStats: () => createRepoChangesetsStatsResult(),
-    ResolveRev: () => createResolveRevisionResult(repositoryName),
+    ResolveRepoRev: () => createResolveRepoRevisionResult(repositoryName),
     FileNames: () => createFileNamesResult(),
     FileExternalLinks: ({ filePath }) => createFileExternalLinksResult(filePath),
     TreeEntries: () => createTreeEntriesResult(repositoryUrl, fileEntries),
@@ -489,12 +488,20 @@ describe('Repository', () => {
             )
             await driver.page.waitForSelector('.test-tree-file-link')
             assert.strictEqual(
-                await driver.page.evaluate(() => document.querySelector('.test-tree-file-link')?.textContent),
+                await driver.page.evaluate(
+                    () =>
+                        document.querySelector(
+                            '.test-tree-file-link[href="/github.com/ggilmore/q-test/-/blob/Geoffrey%27s%20random%20queries.32r242442bf/%25%20token.4288249258.sql"]'
+                        )?.textContent
+                ),
                 fileName
             )
 
             // page.click() fails for some reason with Error: Node is either not visible or not an HTMLElement
-            await driver.page.$eval('.test-tree-file-link', linkElement => (linkElement as HTMLElement).click())
+            await driver.page.$eval(
+                '.test-tree-file-link[href="/github.com/ggilmore/q-test/-/blob/Geoffrey%27s%20random%20queries.32r242442bf/%25%20token.4288249258.sql"]',
+                linkElement => (linkElement as HTMLElement).click()
+            )
             await driver.page.waitForSelector('[data-testid="repo-blob"]')
 
             await driver.page.waitForSelector('.test-breadcrumb')
@@ -561,6 +568,28 @@ describe('Repository', () => {
             assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', '/readme.md'])
         })
 
+        it('shows repo cloning in progress page', async () => {
+            const shortRepositoryName = 'sourcegraph/jsonrpc2'
+            const repositoryName = `github.com/${shortRepositoryName}`
+            const repositorySourcegraphUrl = `/${repositoryName}`
+
+            testContext.overrideGraphQL({
+                ...commonWebGraphQlResults,
+                ...getCommonRepositoryGraphQlResults(repositoryName, repositorySourcegraphUrl, ['readme.md']),
+                // Return cloning error instead of the successful GraphQL result here.
+                ResolveRepoRev: () => createResolveCloningRepoRevisionResult(repositoryName),
+            })
+
+            await driver.page.goto(driver.sourcegraphBaseUrl + repositorySourcegraphUrl)
+
+            // Wait for clone in progress message before Percy snapshot.
+            await driver.page.waitForSelector('[data-testid="hero-page-subtitle"]')
+            // Verify that we show the respective message in the UI.
+            await assertSelectorHasText('[data-testid="hero-page-subtitle"]', 'Cloning in progress')
+
+            await percySnapshotWithVariants(driver.page, 'Repository cloning in progress page')
+        })
+
         it('works with spaces in the repository name', async () => {
             const shortRepositoryName = 'my org/repo with spaces'
             const repositoryName = `github.com/${shortRepositoryName}`
@@ -595,7 +624,7 @@ describe('Repository', () => {
             const repositoryName = `github.com/${shortRepositoryName}`
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
-                ResolveRev: () => createResolveRevisionResult(repositoryName),
+                ResolveRepoRev: () => createResolveRepoRevisionResult(repositoryName),
                 RepositoryGitCommits: () => ({
                     __typename: 'Query',
                     node: {
@@ -783,7 +812,6 @@ describe('Repository', () => {
                         },
                     },
                 }),
-                RepositoryRedirect: () => createRepositoryRedirectResult(repositoryName),
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/github.com/sourcegraph/sourcegraph/-/commits')
             await driver.page.waitForSelector('[data-testid="commits-page"]', { visible: true })
@@ -1047,6 +1075,7 @@ describe('Repository', () => {
         }
 
         it('file decorations work on tree page and sidebar', async () => {
+            testContext.overrideJsContext({ enableLegacyExtensions: true })
             await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repoName}`)
 
             try {

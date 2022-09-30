@@ -48,6 +48,8 @@
     background-color: var(--vscode-editorWidget-background);
 
     &:hover {
+        --hover-box-shadow: none;
+
         .search-example-icon {
             color: var(--vscode-button-secondaryHoverBackground) !important;
             background-color: var(--vscode-button-foreground) !important;

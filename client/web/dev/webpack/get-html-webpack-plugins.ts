@@ -20,6 +20,8 @@ export interface WebpackManifest {
     'runtime.js'?: string
     /** React entry bundle, only used in production mode */
     'react.js'?: string
+    /** Opentelemetry entry bundle, only used in production mode */
+    'opentelemetry.js'?: string
     /** If script files should be treated as JS modules. Required for esbuild bundle. */
     isModule?: boolean
 }
@@ -36,6 +38,7 @@ export const getHTMLPage = ({
     'app.css': cssBundle,
     'runtime.js': runtimeBundle,
     'react.js': reactBundle,
+    'opentelemetry.js': oTelBundle,
     isModule,
 }: WebpackManifest): string => `
 <!DOCTYPE html>
@@ -67,6 +70,7 @@ export const getHTMLPage = ({
 
         ${runtimeBundle ? `<script src="${runtimeBundle}"></script>` : ''}
         ${reactBundle ? `<script src="${reactBundle}" ${isModule ? 'type="module"' : ''}></script>` : ''}
+        ${oTelBundle ? `<script src="${oTelBundle}" ${isModule ? 'type="module"' : ''}></script>` : ''}
         <script src="${appBundle}" ${isModule ? 'type="module"' : ''}></script>
     </body>
 </html>
@@ -98,6 +102,7 @@ export const getHTMLWebpackPlugins = (): WebpackPluginInstance[] => {
                 'app.css': getBundleFromPath(files.css, 'styles/app'),
                 'runtime.js': getBundleFromPath(files.js, 'scripts/runtime'),
                 'react.js': getBundleFromPath(files.js, 'scripts/react'),
+                'opentelemetry.js': getBundleFromPath(files.js, 'scripts/opentelemetry'),
             })
         }) as Options['templateContent'],
         filename: path.resolve(STATIC_ASSETS_PATH, 'index.html'),

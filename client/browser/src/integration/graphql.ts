@@ -13,9 +13,4 @@ export const commonBrowserGraphQlResults: Partial<BrowserGraphQlOperations & Sha
             alwaysNil: null,
         },
     }),
-    logUserEvent: () => ({
-        logUserEvent: {
-            alwaysNil: null,
-        },
-    }),
 }

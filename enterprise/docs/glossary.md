@@ -124,9 +124,9 @@ Microsoft's "Visual Studio Code", a fairly powerful and flexible programming edi
 
 A "bundler" which combines multiple source files (for instance, of javascript or CSS) into single unified files that can be more easily cached. Used in Sourcegraph to improve performance of some of the built-in web interface. Can also do translations, such as converting TypeScript to JavaScript.
 
-### [Zoekt](https://github.com/google/zoekt)
+### [Zoekt](https://github.com/sourcegraph/zoekt)
 
-Fast search program with indexing, used in Sourcegraph for some search functionality. We also maintain [a private fork](https://github.com/sourcegraph/zoekt).
+Fast search program with indexing, used in Sourcegraph for some search functionality.
 
 ### [Zoom](https://zoom.us/)
 

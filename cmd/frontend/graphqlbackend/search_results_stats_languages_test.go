@@ -42,9 +42,9 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 		return io.NopCloser(bytes.NewReader(data)), nil
 	}
 	const wantDefaultBranchRef = "refs/heads/foo"
-	gitserver.Mocks.ExecSafe = func(params []string) (stdout, stderr []byte, exitCode int, err error) {
+	gitserver.Mocks.GetDefaultBranch = func(repo api.RepoName) (refName string, commit api.CommitID, err error) {
 		// Mock default branch lookup in (*RepositoryResolver).DefaultBranch.
-		return []byte(wantDefaultBranchRef), nil, 0, nil
+		return wantDefaultBranchRef, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", nil
 	}
 	gitserver.Mocks.ResolveRevision = func(spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		if want := "HEAD"; spec != want {

@@ -10,8 +10,8 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/log"
 
@@ -24,12 +24,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/compute"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dependencies"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom"
 	executor "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue"
 	licensing "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/init"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/notebooks"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/orgrepos"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
@@ -58,10 +56,8 @@ var initFunctions = map[string]EnterpriseInitializer{
 	"codemonitors":   codemonitors.Init,
 	"dotcom":         dotcom.Init,
 	"searchcontexts": searchcontexts.Init,
-	"enterprise":     orgrepos.Init,
 	"notebooks":      notebooks.Init,
 	"compute":        compute.Init,
-	"dependencies":   dependencies.Init,
 }
 
 var codeIntelConfig = &codeintel.Config{}
@@ -77,14 +73,14 @@ func enterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterp
 		logger.Debug("enterprise edition")
 	}
 
-	auth.Init(db)
+	auth.Init(logger, db)
 
 	ctx := context.Background()
 	enterpriseServices := enterprise.DefaultServices()
 
 	observationContext := &observation.Context{
 		Logger:     logger,
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
@@ -97,13 +93,8 @@ func enterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterp
 		logger.Fatal(err.Error())
 	}
 
-	if err := codeintel.Init(ctx, db, codeIntelConfig, &enterpriseServices, observationContext, services); err != nil {
+	if err := codeintel.Init(ctx, db, codeIntelConfig, &enterpriseServices, services); err != nil {
 		logger.Fatal("failed to initialize codeintel", log.Error(err))
-	}
-
-	// Initialize executor-specific services with the code-intel services.
-	if err := executor.Init(ctx, db, conf, &enterpriseServices, observationContext, services.InternalUploadHandler); err != nil {
-		logger.Fatal("failed to initialize executor", log.Error(err))
 	}
 
 	if err := app.Init(db, conf, &enterpriseServices); err != nil {
@@ -116,6 +107,12 @@ func enterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterp
 		if err := fn(ctx, db, conf, &enterpriseServices, observationContext); err != nil {
 			initLogger.Fatal("failed to initialize", log.Error(err))
 		}
+	}
+
+	// Initialize executor-specific services with the necessary code-intel and Batch Changes services.
+	if err := executor.Init(ctx, db, conf, &enterpriseServices, observationContext, services.InternalUploadHandler,
+		enterpriseServices.BatchesChangesFileGetHandler, enterpriseServices.BatchesChangesFileGetHandler); err != nil {
+		logger.Fatal("failed to initialize executor", log.Error(err))
 	}
 
 	return enterpriseServices

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -842,5 +843,102 @@ func TestClient_ListRepositoriesForSearch_incomplete(t *testing.T) {
 
 	if have, want := err, ErrIncompleteResults; want != have {
 		t.Errorf("\nhave: %s\nwant: %s", have, want)
+	}
+}
+
+type testCase struct {
+	repoName    string
+	expectedUrl string
+}
+
+var testCases = map[string]testCase{
+	"github.com": {
+		repoName:    "github.com/sd9/sourcegraph",
+		expectedUrl: "https://api.github.com/repos/sd9/sourcegraph/hooks",
+	},
+	"enterprise": {
+		repoName:    "ghe.sgdev.org/milton/test",
+		expectedUrl: "https://ghe.sgdev.org/api/v3/repos/milton/test/hooks",
+	},
+}
+
+func TestSyncWebhook_CreateListFindDelete(t *testing.T) {
+	ctx := context.Background()
+
+	client, save := newV3TestClient(t, "CreateListFindDeleteWebhooks")
+	defer save()
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			token := os.Getenv(fmt.Sprintf("%s_ACCESS_TOKEN", name))
+			client = client.WithAuthenticator(&auth.OAuthBearerToken{Token: token})
+
+			id, err := client.CreateSyncWebhook(ctx, tc.repoName, "https://target-url.com", "secret")
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if _, err := client.FindSyncWebhook(ctx, tc.repoName); err != nil {
+				t.Error(`Could not find webhook with "/github-webhooks" endpoint`)
+			}
+
+			deleted, err := client.DeleteSyncWebhook(ctx, tc.repoName, id)
+			if err != nil {
+				t.Error(err)
+			}
+
+			if !deleted {
+				t.Fatal("Could not delete created repo")
+			}
+		})
+	}
+}
+
+func TestSyncWebhook_webhookURLBuilderPlain(t *testing.T) {
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			want := tc.expectedUrl
+			have, err := webhookURLBuilder(tc.repoName)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if have != want {
+				t.Fatalf("expected: %s, got: %s", want, have)
+			}
+		})
+	}
+}
+
+func TestSyncWebhook_webhookURLBuilderWithID(t *testing.T) {
+	type testCaseWithID struct {
+		repoName    string
+		id          int
+		expectedUrl string
+	}
+
+	testCases := map[string]testCaseWithID{
+		"github.com": {
+			repoName:    "github.com/sd9/sourcegraph",
+			id:          42,
+			expectedUrl: "https://api.github.com/repos/sd9/sourcegraph/hooks/42",
+		},
+		"enterprise": {
+			repoName:    "ghe.sgdev.org/milton/test",
+			id:          69,
+			expectedUrl: "https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/69",
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			want := tc.expectedUrl
+			have, err := webhookURLBuilderWithID(tc.repoName, tc.id)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if have != want {
+				t.Fatalf("expected: %s, got: %s", want, have)
+			}
+		})
 	}
 }
