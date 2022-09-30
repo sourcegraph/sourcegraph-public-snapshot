@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
@@ -20,11 +21,11 @@ func TestReferencesForUpload(t *testing.T) {
 	store := testStore(db)
 
 	insertUploads(t, db,
-		Upload{ID: 1, Commit: makeCommit(2), Root: "sub1/"},
-		Upload{ID: 2, Commit: makeCommit(3), Root: "sub2/"},
-		Upload{ID: 3, Commit: makeCommit(4), Root: "sub3/"},
-		Upload{ID: 4, Commit: makeCommit(3), Root: "sub4/"},
-		Upload{ID: 5, Commit: makeCommit(2), Root: "sub5/"},
+		types.Upload{ID: 1, Commit: makeCommit(2), Root: "sub1/"},
+		types.Upload{ID: 2, Commit: makeCommit(3), Root: "sub2/"},
+		types.Upload{ID: 3, Commit: makeCommit(4), Root: "sub3/"},
+		types.Upload{ID: 4, Commit: makeCommit(3), Root: "sub4/"},
+		types.Upload{ID: 5, Commit: makeCommit(2), Root: "sub5/"},
 	)
 
 	// insertPackageReferences(t, store, []shared.PackageReference{

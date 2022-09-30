@@ -17,11 +17,11 @@ import (
 	enterprise "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
 	dbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/shared"
-	types1 "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	types "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	protocol "github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	types "github.com/sourcegraph/sourcegraph/internal/types"
+	types1 "github.com/sourcegraph/sourcegraph/internal/types"
 	workerutil "github.com/sourcegraph/sourcegraph/internal/workerutil"
 	store "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	precise "github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -57,7 +57,7 @@ type MockDBStore struct {
 func NewMockDBStore() *MockDBStore {
 	return &MockDBStore{
 		GetUploadByIDFunc: &DBStoreGetUploadByIDFunc{
-			defaultHook: func(context.Context, int) (r0 dbstore.Upload, r1 bool, r2 error) {
+			defaultHook: func(context.Context, int) (r0 types.Upload, r1 bool, r2 error) {
 				return
 			},
 		},
@@ -89,7 +89,7 @@ func NewMockDBStore() *MockDBStore {
 func NewStrictMockDBStore() *MockDBStore {
 	return &MockDBStore{
 		GetUploadByIDFunc: &DBStoreGetUploadByIDFunc{
-			defaultHook: func(context.Context, int) (dbstore.Upload, bool, error) {
+			defaultHook: func(context.Context, int) (types.Upload, bool, error) {
 				panic("unexpected invocation of MockDBStore.GetUploadByID")
 			},
 		},
@@ -141,15 +141,15 @@ func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 // DBStoreGetUploadByIDFunc describes the behavior when the GetUploadByID
 // method of the parent MockDBStore instance is invoked.
 type DBStoreGetUploadByIDFunc struct {
-	defaultHook func(context.Context, int) (dbstore.Upload, bool, error)
-	hooks       []func(context.Context, int) (dbstore.Upload, bool, error)
+	defaultHook func(context.Context, int) (types.Upload, bool, error)
+	hooks       []func(context.Context, int) (types.Upload, bool, error)
 	history     []DBStoreGetUploadByIDFuncCall
 	mutex       sync.Mutex
 }
 
 // GetUploadByID delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockDBStore) GetUploadByID(v0 context.Context, v1 int) (dbstore.Upload, bool, error) {
+func (m *MockDBStore) GetUploadByID(v0 context.Context, v1 int) (types.Upload, bool, error) {
 	r0, r1, r2 := m.GetUploadByIDFunc.nextHook()(v0, v1)
 	m.GetUploadByIDFunc.appendCall(DBStoreGetUploadByIDFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
@@ -158,7 +158,7 @@ func (m *MockDBStore) GetUploadByID(v0 context.Context, v1 int) (dbstore.Upload,
 // SetDefaultHook sets function that is called when the GetUploadByID method
 // of the parent MockDBStore instance is invoked and the hook queue is
 // empty.
-func (f *DBStoreGetUploadByIDFunc) SetDefaultHook(hook func(context.Context, int) (dbstore.Upload, bool, error)) {
+func (f *DBStoreGetUploadByIDFunc) SetDefaultHook(hook func(context.Context, int) (types.Upload, bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -166,7 +166,7 @@ func (f *DBStoreGetUploadByIDFunc) SetDefaultHook(hook func(context.Context, int
 // GetUploadByID method of the parent MockDBStore instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *DBStoreGetUploadByIDFunc) PushHook(hook func(context.Context, int) (dbstore.Upload, bool, error)) {
+func (f *DBStoreGetUploadByIDFunc) PushHook(hook func(context.Context, int) (types.Upload, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -174,20 +174,20 @@ func (f *DBStoreGetUploadByIDFunc) PushHook(hook func(context.Context, int) (dbs
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *DBStoreGetUploadByIDFunc) SetDefaultReturn(r0 dbstore.Upload, r1 bool, r2 error) {
-	f.SetDefaultHook(func(context.Context, int) (dbstore.Upload, bool, error) {
+func (f *DBStoreGetUploadByIDFunc) SetDefaultReturn(r0 types.Upload, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, int) (types.Upload, bool, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *DBStoreGetUploadByIDFunc) PushReturn(r0 dbstore.Upload, r1 bool, r2 error) {
-	f.PushHook(func(context.Context, int) (dbstore.Upload, bool, error) {
+func (f *DBStoreGetUploadByIDFunc) PushReturn(r0 types.Upload, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, int) (types.Upload, bool, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *DBStoreGetUploadByIDFunc) nextHook() func(context.Context, int) (dbstore.Upload, bool, error) {
+func (f *DBStoreGetUploadByIDFunc) nextHook() func(context.Context, int) (types.Upload, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -228,7 +228,7 @@ type DBStoreGetUploadByIDFuncCall struct {
 	Arg1 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 dbstore.Upload
+	Result0 types.Upload
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 bool
@@ -706,12 +706,12 @@ type MockExternalServiceStore struct {
 func NewMockExternalServiceStore() *MockExternalServiceStore {
 	return &MockExternalServiceStore{
 		ListFunc: &ExternalServiceStoreListFunc{
-			defaultHook: func(context.Context, database.ExternalServicesListOptions) (r0 []*types.ExternalService, r1 error) {
+			defaultHook: func(context.Context, database.ExternalServicesListOptions) (r0 []*types1.ExternalService, r1 error) {
 				return
 			},
 		},
 		UpsertFunc: &ExternalServiceStoreUpsertFunc{
-			defaultHook: func(context.Context, ...*types.ExternalService) (r0 error) {
+			defaultHook: func(context.Context, ...*types1.ExternalService) (r0 error) {
 				return
 			},
 		},
@@ -724,12 +724,12 @@ func NewMockExternalServiceStore() *MockExternalServiceStore {
 func NewStrictMockExternalServiceStore() *MockExternalServiceStore {
 	return &MockExternalServiceStore{
 		ListFunc: &ExternalServiceStoreListFunc{
-			defaultHook: func(context.Context, database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+			defaultHook: func(context.Context, database.ExternalServicesListOptions) ([]*types1.ExternalService, error) {
 				panic("unexpected invocation of MockExternalServiceStore.List")
 			},
 		},
 		UpsertFunc: &ExternalServiceStoreUpsertFunc{
-			defaultHook: func(context.Context, ...*types.ExternalService) error {
+			defaultHook: func(context.Context, ...*types1.ExternalService) error {
 				panic("unexpected invocation of MockExternalServiceStore.Upsert")
 			},
 		},
@@ -753,15 +753,15 @@ func NewMockExternalServiceStoreFrom(i ExternalServiceStore) *MockExternalServic
 // ExternalServiceStoreListFunc describes the behavior when the List method
 // of the parent MockExternalServiceStore instance is invoked.
 type ExternalServiceStoreListFunc struct {
-	defaultHook func(context.Context, database.ExternalServicesListOptions) ([]*types.ExternalService, error)
-	hooks       []func(context.Context, database.ExternalServicesListOptions) ([]*types.ExternalService, error)
+	defaultHook func(context.Context, database.ExternalServicesListOptions) ([]*types1.ExternalService, error)
+	hooks       []func(context.Context, database.ExternalServicesListOptions) ([]*types1.ExternalService, error)
 	history     []ExternalServiceStoreListFuncCall
 	mutex       sync.Mutex
 }
 
 // List delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockExternalServiceStore) List(v0 context.Context, v1 database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+func (m *MockExternalServiceStore) List(v0 context.Context, v1 database.ExternalServicesListOptions) ([]*types1.ExternalService, error) {
 	r0, r1 := m.ListFunc.nextHook()(v0, v1)
 	m.ListFunc.appendCall(ExternalServiceStoreListFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -770,7 +770,7 @@ func (m *MockExternalServiceStore) List(v0 context.Context, v1 database.External
 // SetDefaultHook sets function that is called when the List method of the
 // parent MockExternalServiceStore instance is invoked and the hook queue is
 // empty.
-func (f *ExternalServiceStoreListFunc) SetDefaultHook(hook func(context.Context, database.ExternalServicesListOptions) ([]*types.ExternalService, error)) {
+func (f *ExternalServiceStoreListFunc) SetDefaultHook(hook func(context.Context, database.ExternalServicesListOptions) ([]*types1.ExternalService, error)) {
 	f.defaultHook = hook
 }
 
@@ -778,7 +778,7 @@ func (f *ExternalServiceStoreListFunc) SetDefaultHook(hook func(context.Context,
 // List method of the parent MockExternalServiceStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *ExternalServiceStoreListFunc) PushHook(hook func(context.Context, database.ExternalServicesListOptions) ([]*types.ExternalService, error)) {
+func (f *ExternalServiceStoreListFunc) PushHook(hook func(context.Context, database.ExternalServicesListOptions) ([]*types1.ExternalService, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -786,20 +786,20 @@ func (f *ExternalServiceStoreListFunc) PushHook(hook func(context.Context, datab
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *ExternalServiceStoreListFunc) SetDefaultReturn(r0 []*types.ExternalService, r1 error) {
-	f.SetDefaultHook(func(context.Context, database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+func (f *ExternalServiceStoreListFunc) SetDefaultReturn(r0 []*types1.ExternalService, r1 error) {
+	f.SetDefaultHook(func(context.Context, database.ExternalServicesListOptions) ([]*types1.ExternalService, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *ExternalServiceStoreListFunc) PushReturn(r0 []*types.ExternalService, r1 error) {
-	f.PushHook(func(context.Context, database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+func (f *ExternalServiceStoreListFunc) PushReturn(r0 []*types1.ExternalService, r1 error) {
+	f.PushHook(func(context.Context, database.ExternalServicesListOptions) ([]*types1.ExternalService, error) {
 		return r0, r1
 	})
 }
 
-func (f *ExternalServiceStoreListFunc) nextHook() func(context.Context, database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+func (f *ExternalServiceStoreListFunc) nextHook() func(context.Context, database.ExternalServicesListOptions) ([]*types1.ExternalService, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -840,7 +840,7 @@ type ExternalServiceStoreListFuncCall struct {
 	Arg1 database.ExternalServicesListOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []*types.ExternalService
+	Result0 []*types1.ExternalService
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -861,15 +861,15 @@ func (c ExternalServiceStoreListFuncCall) Results() []interface{} {
 // ExternalServiceStoreUpsertFunc describes the behavior when the Upsert
 // method of the parent MockExternalServiceStore instance is invoked.
 type ExternalServiceStoreUpsertFunc struct {
-	defaultHook func(context.Context, ...*types.ExternalService) error
-	hooks       []func(context.Context, ...*types.ExternalService) error
+	defaultHook func(context.Context, ...*types1.ExternalService) error
+	hooks       []func(context.Context, ...*types1.ExternalService) error
 	history     []ExternalServiceStoreUpsertFuncCall
 	mutex       sync.Mutex
 }
 
 // Upsert delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockExternalServiceStore) Upsert(v0 context.Context, v1 ...*types.ExternalService) error {
+func (m *MockExternalServiceStore) Upsert(v0 context.Context, v1 ...*types1.ExternalService) error {
 	r0 := m.UpsertFunc.nextHook()(v0, v1...)
 	m.UpsertFunc.appendCall(ExternalServiceStoreUpsertFuncCall{v0, v1, r0})
 	return r0
@@ -878,7 +878,7 @@ func (m *MockExternalServiceStore) Upsert(v0 context.Context, v1 ...*types.Exter
 // SetDefaultHook sets function that is called when the Upsert method of the
 // parent MockExternalServiceStore instance is invoked and the hook queue is
 // empty.
-func (f *ExternalServiceStoreUpsertFunc) SetDefaultHook(hook func(context.Context, ...*types.ExternalService) error) {
+func (f *ExternalServiceStoreUpsertFunc) SetDefaultHook(hook func(context.Context, ...*types1.ExternalService) error) {
 	f.defaultHook = hook
 }
 
@@ -886,7 +886,7 @@ func (f *ExternalServiceStoreUpsertFunc) SetDefaultHook(hook func(context.Contex
 // Upsert method of the parent MockExternalServiceStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *ExternalServiceStoreUpsertFunc) PushHook(hook func(context.Context, ...*types.ExternalService) error) {
+func (f *ExternalServiceStoreUpsertFunc) PushHook(hook func(context.Context, ...*types1.ExternalService) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -895,19 +895,19 @@ func (f *ExternalServiceStoreUpsertFunc) PushHook(hook func(context.Context, ...
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ExternalServiceStoreUpsertFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, ...*types.ExternalService) error {
+	f.SetDefaultHook(func(context.Context, ...*types1.ExternalService) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ExternalServiceStoreUpsertFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, ...*types.ExternalService) error {
+	f.PushHook(func(context.Context, ...*types1.ExternalService) error {
 		return r0
 	})
 }
 
-func (f *ExternalServiceStoreUpsertFunc) nextHook() func(context.Context, ...*types.ExternalService) error {
+func (f *ExternalServiceStoreUpsertFunc) nextHook() func(context.Context, ...*types1.ExternalService) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -945,7 +945,7 @@ type ExternalServiceStoreUpsertFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is a slice containing the values of the variadic arguments
 	// passed to this method invocation.
-	Arg1 []*types.ExternalService
+	Arg1 []*types1.ExternalService
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -1662,7 +1662,7 @@ type MockGitserverRepoStore struct {
 func NewMockGitserverRepoStore() *MockGitserverRepoStore {
 	return &MockGitserverRepoStore{
 		GetByNamesFunc: &GitserverRepoStoreGetByNamesFunc{
-			defaultHook: func(context.Context, ...api.RepoName) (r0 map[api.RepoName]*types.GitserverRepo, r1 error) {
+			defaultHook: func(context.Context, ...api.RepoName) (r0 map[api.RepoName]*types1.GitserverRepo, r1 error) {
 				return
 			},
 		},
@@ -1675,7 +1675,7 @@ func NewMockGitserverRepoStore() *MockGitserverRepoStore {
 func NewStrictMockGitserverRepoStore() *MockGitserverRepoStore {
 	return &MockGitserverRepoStore{
 		GetByNamesFunc: &GitserverRepoStoreGetByNamesFunc{
-			defaultHook: func(context.Context, ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error) {
+			defaultHook: func(context.Context, ...api.RepoName) (map[api.RepoName]*types1.GitserverRepo, error) {
 				panic("unexpected invocation of MockGitserverRepoStore.GetByNames")
 			},
 		},
@@ -1697,15 +1697,15 @@ func NewMockGitserverRepoStoreFrom(i GitserverRepoStore) *MockGitserverRepoStore
 // GetByNames method of the parent MockGitserverRepoStore instance is
 // invoked.
 type GitserverRepoStoreGetByNamesFunc struct {
-	defaultHook func(context.Context, ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error)
-	hooks       []func(context.Context, ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error)
+	defaultHook func(context.Context, ...api.RepoName) (map[api.RepoName]*types1.GitserverRepo, error)
+	hooks       []func(context.Context, ...api.RepoName) (map[api.RepoName]*types1.GitserverRepo, error)
 	history     []GitserverRepoStoreGetByNamesFuncCall
 	mutex       sync.Mutex
 }
 
 // GetByNames delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockGitserverRepoStore) GetByNames(v0 context.Context, v1 ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error) {
+func (m *MockGitserverRepoStore) GetByNames(v0 context.Context, v1 ...api.RepoName) (map[api.RepoName]*types1.GitserverRepo, error) {
 	r0, r1 := m.GetByNamesFunc.nextHook()(v0, v1...)
 	m.GetByNamesFunc.appendCall(GitserverRepoStoreGetByNamesFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -1714,7 +1714,7 @@ func (m *MockGitserverRepoStore) GetByNames(v0 context.Context, v1 ...api.RepoNa
 // SetDefaultHook sets function that is called when the GetByNames method of
 // the parent MockGitserverRepoStore instance is invoked and the hook queue
 // is empty.
-func (f *GitserverRepoStoreGetByNamesFunc) SetDefaultHook(hook func(context.Context, ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error)) {
+func (f *GitserverRepoStoreGetByNamesFunc) SetDefaultHook(hook func(context.Context, ...api.RepoName) (map[api.RepoName]*types1.GitserverRepo, error)) {
 	f.defaultHook = hook
 }
 
@@ -1722,7 +1722,7 @@ func (f *GitserverRepoStoreGetByNamesFunc) SetDefaultHook(hook func(context.Cont
 // GetByNames method of the parent MockGitserverRepoStore instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *GitserverRepoStoreGetByNamesFunc) PushHook(hook func(context.Context, ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error)) {
+func (f *GitserverRepoStoreGetByNamesFunc) PushHook(hook func(context.Context, ...api.RepoName) (map[api.RepoName]*types1.GitserverRepo, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1730,20 +1730,20 @@ func (f *GitserverRepoStoreGetByNamesFunc) PushHook(hook func(context.Context, .
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitserverRepoStoreGetByNamesFunc) SetDefaultReturn(r0 map[api.RepoName]*types.GitserverRepo, r1 error) {
-	f.SetDefaultHook(func(context.Context, ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error) {
+func (f *GitserverRepoStoreGetByNamesFunc) SetDefaultReturn(r0 map[api.RepoName]*types1.GitserverRepo, r1 error) {
+	f.SetDefaultHook(func(context.Context, ...api.RepoName) (map[api.RepoName]*types1.GitserverRepo, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverRepoStoreGetByNamesFunc) PushReturn(r0 map[api.RepoName]*types.GitserverRepo, r1 error) {
-	f.PushHook(func(context.Context, ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error) {
+func (f *GitserverRepoStoreGetByNamesFunc) PushReturn(r0 map[api.RepoName]*types1.GitserverRepo, r1 error) {
+	f.PushHook(func(context.Context, ...api.RepoName) (map[api.RepoName]*types1.GitserverRepo, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitserverRepoStoreGetByNamesFunc) nextHook() func(context.Context, ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error) {
+func (f *GitserverRepoStoreGetByNamesFunc) nextHook() func(context.Context, ...api.RepoName) (map[api.RepoName]*types1.GitserverRepo, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1784,7 +1784,7 @@ type GitserverRepoStoreGetByNamesFuncCall struct {
 	Arg1 []api.RepoName
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 map[api.RepoName]*types.GitserverRepo
+	Result0 map[api.RepoName]*types1.GitserverRepo
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -1827,7 +1827,7 @@ type MockIndexEnqueuer struct {
 func NewMockIndexEnqueuer() *MockIndexEnqueuer {
 	return &MockIndexEnqueuer{
 		QueueIndexesFunc: &IndexEnqueuerQueueIndexesFunc{
-			defaultHook: func(context.Context, int, string, string, bool, bool) (r0 []types1.Index, r1 error) {
+			defaultHook: func(context.Context, int, string, string, bool, bool) (r0 []types.Index, r1 error) {
 				return
 			},
 		},
@@ -1844,7 +1844,7 @@ func NewMockIndexEnqueuer() *MockIndexEnqueuer {
 func NewStrictMockIndexEnqueuer() *MockIndexEnqueuer {
 	return &MockIndexEnqueuer{
 		QueueIndexesFunc: &IndexEnqueuerQueueIndexesFunc{
-			defaultHook: func(context.Context, int, string, string, bool, bool) ([]types1.Index, error) {
+			defaultHook: func(context.Context, int, string, string, bool, bool) ([]types.Index, error) {
 				panic("unexpected invocation of MockIndexEnqueuer.QueueIndexes")
 			},
 		},
@@ -1873,15 +1873,15 @@ func NewMockIndexEnqueuerFrom(i IndexEnqueuer) *MockIndexEnqueuer {
 // IndexEnqueuerQueueIndexesFunc describes the behavior when the
 // QueueIndexes method of the parent MockIndexEnqueuer instance is invoked.
 type IndexEnqueuerQueueIndexesFunc struct {
-	defaultHook func(context.Context, int, string, string, bool, bool) ([]types1.Index, error)
-	hooks       []func(context.Context, int, string, string, bool, bool) ([]types1.Index, error)
+	defaultHook func(context.Context, int, string, string, bool, bool) ([]types.Index, error)
+	hooks       []func(context.Context, int, string, string, bool, bool) ([]types.Index, error)
 	history     []IndexEnqueuerQueueIndexesFuncCall
 	mutex       sync.Mutex
 }
 
 // QueueIndexes delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockIndexEnqueuer) QueueIndexes(v0 context.Context, v1 int, v2 string, v3 string, v4 bool, v5 bool) ([]types1.Index, error) {
+func (m *MockIndexEnqueuer) QueueIndexes(v0 context.Context, v1 int, v2 string, v3 string, v4 bool, v5 bool) ([]types.Index, error) {
 	r0, r1 := m.QueueIndexesFunc.nextHook()(v0, v1, v2, v3, v4, v5)
 	m.QueueIndexesFunc.appendCall(IndexEnqueuerQueueIndexesFuncCall{v0, v1, v2, v3, v4, v5, r0, r1})
 	return r0, r1
@@ -1890,7 +1890,7 @@ func (m *MockIndexEnqueuer) QueueIndexes(v0 context.Context, v1 int, v2 string, 
 // SetDefaultHook sets function that is called when the QueueIndexes method
 // of the parent MockIndexEnqueuer instance is invoked and the hook queue is
 // empty.
-func (f *IndexEnqueuerQueueIndexesFunc) SetDefaultHook(hook func(context.Context, int, string, string, bool, bool) ([]types1.Index, error)) {
+func (f *IndexEnqueuerQueueIndexesFunc) SetDefaultHook(hook func(context.Context, int, string, string, bool, bool) ([]types.Index, error)) {
 	f.defaultHook = hook
 }
 
@@ -1898,7 +1898,7 @@ func (f *IndexEnqueuerQueueIndexesFunc) SetDefaultHook(hook func(context.Context
 // QueueIndexes method of the parent MockIndexEnqueuer instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *IndexEnqueuerQueueIndexesFunc) PushHook(hook func(context.Context, int, string, string, bool, bool) ([]types1.Index, error)) {
+func (f *IndexEnqueuerQueueIndexesFunc) PushHook(hook func(context.Context, int, string, string, bool, bool) ([]types.Index, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1906,20 +1906,20 @@ func (f *IndexEnqueuerQueueIndexesFunc) PushHook(hook func(context.Context, int,
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *IndexEnqueuerQueueIndexesFunc) SetDefaultReturn(r0 []types1.Index, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, string, string, bool, bool) ([]types1.Index, error) {
+func (f *IndexEnqueuerQueueIndexesFunc) SetDefaultReturn(r0 []types.Index, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string, string, bool, bool) ([]types.Index, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *IndexEnqueuerQueueIndexesFunc) PushReturn(r0 []types1.Index, r1 error) {
-	f.PushHook(func(context.Context, int, string, string, bool, bool) ([]types1.Index, error) {
+func (f *IndexEnqueuerQueueIndexesFunc) PushReturn(r0 []types.Index, r1 error) {
+	f.PushHook(func(context.Context, int, string, string, bool, bool) ([]types.Index, error) {
 		return r0, r1
 	})
 }
 
-func (f *IndexEnqueuerQueueIndexesFunc) nextHook() func(context.Context, int, string, string, bool, bool) ([]types1.Index, error) {
+func (f *IndexEnqueuerQueueIndexesFunc) nextHook() func(context.Context, int, string, string, bool, bool) ([]types.Index, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1972,7 +1972,7 @@ type IndexEnqueuerQueueIndexesFuncCall struct {
 	Arg5 bool
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []types1.Index
+	Result0 []types.Index
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -2117,12 +2117,12 @@ type MockIndexingRepoStore struct {
 func NewMockIndexingRepoStore() *MockIndexingRepoStore {
 	return &MockIndexingRepoStore{
 		ListIndexableReposFunc: &IndexingRepoStoreListIndexableReposFunc{
-			defaultHook: func(context.Context, database.ListIndexableReposOptions) (r0 []types.MinimalRepo, r1 error) {
+			defaultHook: func(context.Context, database.ListIndexableReposOptions) (r0 []types1.MinimalRepo, r1 error) {
 				return
 			},
 		},
 		ListMinimalReposFunc: &IndexingRepoStoreListMinimalReposFunc{
-			defaultHook: func(context.Context, database.ReposListOptions) (r0 []types.MinimalRepo, r1 error) {
+			defaultHook: func(context.Context, database.ReposListOptions) (r0 []types1.MinimalRepo, r1 error) {
 				return
 			},
 		},
@@ -2135,12 +2135,12 @@ func NewMockIndexingRepoStore() *MockIndexingRepoStore {
 func NewStrictMockIndexingRepoStore() *MockIndexingRepoStore {
 	return &MockIndexingRepoStore{
 		ListIndexableReposFunc: &IndexingRepoStoreListIndexableReposFunc{
-			defaultHook: func(context.Context, database.ListIndexableReposOptions) ([]types.MinimalRepo, error) {
+			defaultHook: func(context.Context, database.ListIndexableReposOptions) ([]types1.MinimalRepo, error) {
 				panic("unexpected invocation of MockIndexingRepoStore.ListIndexableRepos")
 			},
 		},
 		ListMinimalReposFunc: &IndexingRepoStoreListMinimalReposFunc{
-			defaultHook: func(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error) {
+			defaultHook: func(context.Context, database.ReposListOptions) ([]types1.MinimalRepo, error) {
 				panic("unexpected invocation of MockIndexingRepoStore.ListMinimalRepos")
 			},
 		},
@@ -2165,15 +2165,15 @@ func NewMockIndexingRepoStoreFrom(i IndexingRepoStore) *MockIndexingRepoStore {
 // ListIndexableRepos method of the parent MockIndexingRepoStore instance is
 // invoked.
 type IndexingRepoStoreListIndexableReposFunc struct {
-	defaultHook func(context.Context, database.ListIndexableReposOptions) ([]types.MinimalRepo, error)
-	hooks       []func(context.Context, database.ListIndexableReposOptions) ([]types.MinimalRepo, error)
+	defaultHook func(context.Context, database.ListIndexableReposOptions) ([]types1.MinimalRepo, error)
+	hooks       []func(context.Context, database.ListIndexableReposOptions) ([]types1.MinimalRepo, error)
 	history     []IndexingRepoStoreListIndexableReposFuncCall
 	mutex       sync.Mutex
 }
 
 // ListIndexableRepos delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockIndexingRepoStore) ListIndexableRepos(v0 context.Context, v1 database.ListIndexableReposOptions) ([]types.MinimalRepo, error) {
+func (m *MockIndexingRepoStore) ListIndexableRepos(v0 context.Context, v1 database.ListIndexableReposOptions) ([]types1.MinimalRepo, error) {
 	r0, r1 := m.ListIndexableReposFunc.nextHook()(v0, v1)
 	m.ListIndexableReposFunc.appendCall(IndexingRepoStoreListIndexableReposFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -2182,7 +2182,7 @@ func (m *MockIndexingRepoStore) ListIndexableRepos(v0 context.Context, v1 databa
 // SetDefaultHook sets function that is called when the ListIndexableRepos
 // method of the parent MockIndexingRepoStore instance is invoked and the
 // hook queue is empty.
-func (f *IndexingRepoStoreListIndexableReposFunc) SetDefaultHook(hook func(context.Context, database.ListIndexableReposOptions) ([]types.MinimalRepo, error)) {
+func (f *IndexingRepoStoreListIndexableReposFunc) SetDefaultHook(hook func(context.Context, database.ListIndexableReposOptions) ([]types1.MinimalRepo, error)) {
 	f.defaultHook = hook
 }
 
@@ -2191,7 +2191,7 @@ func (f *IndexingRepoStoreListIndexableReposFunc) SetDefaultHook(hook func(conte
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *IndexingRepoStoreListIndexableReposFunc) PushHook(hook func(context.Context, database.ListIndexableReposOptions) ([]types.MinimalRepo, error)) {
+func (f *IndexingRepoStoreListIndexableReposFunc) PushHook(hook func(context.Context, database.ListIndexableReposOptions) ([]types1.MinimalRepo, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2199,20 +2199,20 @@ func (f *IndexingRepoStoreListIndexableReposFunc) PushHook(hook func(context.Con
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *IndexingRepoStoreListIndexableReposFunc) SetDefaultReturn(r0 []types.MinimalRepo, r1 error) {
-	f.SetDefaultHook(func(context.Context, database.ListIndexableReposOptions) ([]types.MinimalRepo, error) {
+func (f *IndexingRepoStoreListIndexableReposFunc) SetDefaultReturn(r0 []types1.MinimalRepo, r1 error) {
+	f.SetDefaultHook(func(context.Context, database.ListIndexableReposOptions) ([]types1.MinimalRepo, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *IndexingRepoStoreListIndexableReposFunc) PushReturn(r0 []types.MinimalRepo, r1 error) {
-	f.PushHook(func(context.Context, database.ListIndexableReposOptions) ([]types.MinimalRepo, error) {
+func (f *IndexingRepoStoreListIndexableReposFunc) PushReturn(r0 []types1.MinimalRepo, r1 error) {
+	f.PushHook(func(context.Context, database.ListIndexableReposOptions) ([]types1.MinimalRepo, error) {
 		return r0, r1
 	})
 }
 
-func (f *IndexingRepoStoreListIndexableReposFunc) nextHook() func(context.Context, database.ListIndexableReposOptions) ([]types.MinimalRepo, error) {
+func (f *IndexingRepoStoreListIndexableReposFunc) nextHook() func(context.Context, database.ListIndexableReposOptions) ([]types1.MinimalRepo, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2254,7 +2254,7 @@ type IndexingRepoStoreListIndexableReposFuncCall struct {
 	Arg1 database.ListIndexableReposOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []types.MinimalRepo
+	Result0 []types1.MinimalRepo
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -2276,15 +2276,15 @@ func (c IndexingRepoStoreListIndexableReposFuncCall) Results() []interface{} {
 // ListMinimalRepos method of the parent MockIndexingRepoStore instance is
 // invoked.
 type IndexingRepoStoreListMinimalReposFunc struct {
-	defaultHook func(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error)
-	hooks       []func(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error)
+	defaultHook func(context.Context, database.ReposListOptions) ([]types1.MinimalRepo, error)
+	hooks       []func(context.Context, database.ReposListOptions) ([]types1.MinimalRepo, error)
 	history     []IndexingRepoStoreListMinimalReposFuncCall
 	mutex       sync.Mutex
 }
 
 // ListMinimalRepos delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockIndexingRepoStore) ListMinimalRepos(v0 context.Context, v1 database.ReposListOptions) ([]types.MinimalRepo, error) {
+func (m *MockIndexingRepoStore) ListMinimalRepos(v0 context.Context, v1 database.ReposListOptions) ([]types1.MinimalRepo, error) {
 	r0, r1 := m.ListMinimalReposFunc.nextHook()(v0, v1)
 	m.ListMinimalReposFunc.appendCall(IndexingRepoStoreListMinimalReposFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -2293,7 +2293,7 @@ func (m *MockIndexingRepoStore) ListMinimalRepos(v0 context.Context, v1 database
 // SetDefaultHook sets function that is called when the ListMinimalRepos
 // method of the parent MockIndexingRepoStore instance is invoked and the
 // hook queue is empty.
-func (f *IndexingRepoStoreListMinimalReposFunc) SetDefaultHook(hook func(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error)) {
+func (f *IndexingRepoStoreListMinimalReposFunc) SetDefaultHook(hook func(context.Context, database.ReposListOptions) ([]types1.MinimalRepo, error)) {
 	f.defaultHook = hook
 }
 
@@ -2302,7 +2302,7 @@ func (f *IndexingRepoStoreListMinimalReposFunc) SetDefaultHook(hook func(context
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *IndexingRepoStoreListMinimalReposFunc) PushHook(hook func(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error)) {
+func (f *IndexingRepoStoreListMinimalReposFunc) PushHook(hook func(context.Context, database.ReposListOptions) ([]types1.MinimalRepo, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2310,20 +2310,20 @@ func (f *IndexingRepoStoreListMinimalReposFunc) PushHook(hook func(context.Conte
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *IndexingRepoStoreListMinimalReposFunc) SetDefaultReturn(r0 []types.MinimalRepo, r1 error) {
-	f.SetDefaultHook(func(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error) {
+func (f *IndexingRepoStoreListMinimalReposFunc) SetDefaultReturn(r0 []types1.MinimalRepo, r1 error) {
+	f.SetDefaultHook(func(context.Context, database.ReposListOptions) ([]types1.MinimalRepo, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *IndexingRepoStoreListMinimalReposFunc) PushReturn(r0 []types.MinimalRepo, r1 error) {
-	f.PushHook(func(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error) {
+func (f *IndexingRepoStoreListMinimalReposFunc) PushReturn(r0 []types1.MinimalRepo, r1 error) {
+	f.PushHook(func(context.Context, database.ReposListOptions) ([]types1.MinimalRepo, error) {
 		return r0, r1
 	})
 }
 
-func (f *IndexingRepoStoreListMinimalReposFunc) nextHook() func(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error) {
+func (f *IndexingRepoStoreListMinimalReposFunc) nextHook() func(context.Context, database.ReposListOptions) ([]types1.MinimalRepo, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2365,7 +2365,7 @@ type IndexingRepoStoreListMinimalReposFuncCall struct {
 	Arg1 database.ReposListOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []types.MinimalRepo
+	Result0 []types1.MinimalRepo
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -2557,7 +2557,7 @@ type MockPolicyMatcher struct {
 func NewMockPolicyMatcher() *MockPolicyMatcher {
 	return &MockPolicyMatcher{
 		CommitsDescribedByPolicyFunc: &PolicyMatcherCommitsDescribedByPolicyFunc{
-			defaultHook: func(context.Context, int, []types1.ConfigurationPolicy, time.Time, ...string) (r0 map[string][]enterprise.PolicyMatch, r1 error) {
+			defaultHook: func(context.Context, int, []types.ConfigurationPolicy, time.Time, ...string) (r0 map[string][]enterprise.PolicyMatch, r1 error) {
 				return
 			},
 		},
@@ -2569,7 +2569,7 @@ func NewMockPolicyMatcher() *MockPolicyMatcher {
 func NewStrictMockPolicyMatcher() *MockPolicyMatcher {
 	return &MockPolicyMatcher{
 		CommitsDescribedByPolicyFunc: &PolicyMatcherCommitsDescribedByPolicyFunc{
-			defaultHook: func(context.Context, int, []types1.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error) {
+			defaultHook: func(context.Context, int, []types.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error) {
 				panic("unexpected invocation of MockPolicyMatcher.CommitsDescribedByPolicy")
 			},
 		},
@@ -2591,15 +2591,15 @@ func NewMockPolicyMatcherFrom(i PolicyMatcher) *MockPolicyMatcher {
 // CommitsDescribedByPolicy method of the parent MockPolicyMatcher instance
 // is invoked.
 type PolicyMatcherCommitsDescribedByPolicyFunc struct {
-	defaultHook func(context.Context, int, []types1.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error)
-	hooks       []func(context.Context, int, []types1.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error)
+	defaultHook func(context.Context, int, []types.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error)
+	hooks       []func(context.Context, int, []types.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error)
 	history     []PolicyMatcherCommitsDescribedByPolicyFuncCall
 	mutex       sync.Mutex
 }
 
 // CommitsDescribedByPolicy delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockPolicyMatcher) CommitsDescribedByPolicy(v0 context.Context, v1 int, v2 []types1.ConfigurationPolicy, v3 time.Time, v4 ...string) (map[string][]enterprise.PolicyMatch, error) {
+func (m *MockPolicyMatcher) CommitsDescribedByPolicy(v0 context.Context, v1 int, v2 []types.ConfigurationPolicy, v3 time.Time, v4 ...string) (map[string][]enterprise.PolicyMatch, error) {
 	r0, r1 := m.CommitsDescribedByPolicyFunc.nextHook()(v0, v1, v2, v3, v4...)
 	m.CommitsDescribedByPolicyFunc.appendCall(PolicyMatcherCommitsDescribedByPolicyFuncCall{v0, v1, v2, v3, v4, r0, r1})
 	return r0, r1
@@ -2608,7 +2608,7 @@ func (m *MockPolicyMatcher) CommitsDescribedByPolicy(v0 context.Context, v1 int,
 // SetDefaultHook sets function that is called when the
 // CommitsDescribedByPolicy method of the parent MockPolicyMatcher instance
 // is invoked and the hook queue is empty.
-func (f *PolicyMatcherCommitsDescribedByPolicyFunc) SetDefaultHook(hook func(context.Context, int, []types1.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error)) {
+func (f *PolicyMatcherCommitsDescribedByPolicyFunc) SetDefaultHook(hook func(context.Context, int, []types.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error)) {
 	f.defaultHook = hook
 }
 
@@ -2617,7 +2617,7 @@ func (f *PolicyMatcherCommitsDescribedByPolicyFunc) SetDefaultHook(hook func(con
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *PolicyMatcherCommitsDescribedByPolicyFunc) PushHook(hook func(context.Context, int, []types1.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error)) {
+func (f *PolicyMatcherCommitsDescribedByPolicyFunc) PushHook(hook func(context.Context, int, []types.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2626,19 +2626,19 @@ func (f *PolicyMatcherCommitsDescribedByPolicyFunc) PushHook(hook func(context.C
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *PolicyMatcherCommitsDescribedByPolicyFunc) SetDefaultReturn(r0 map[string][]enterprise.PolicyMatch, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, []types1.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error) {
+	f.SetDefaultHook(func(context.Context, int, []types.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *PolicyMatcherCommitsDescribedByPolicyFunc) PushReturn(r0 map[string][]enterprise.PolicyMatch, r1 error) {
-	f.PushHook(func(context.Context, int, []types1.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error) {
+	f.PushHook(func(context.Context, int, []types.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error) {
 		return r0, r1
 	})
 }
 
-func (f *PolicyMatcherCommitsDescribedByPolicyFunc) nextHook() func(context.Context, int, []types1.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error) {
+func (f *PolicyMatcherCommitsDescribedByPolicyFunc) nextHook() func(context.Context, int, []types.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2681,7 +2681,7 @@ type PolicyMatcherCommitsDescribedByPolicyFuncCall struct {
 	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 []types1.ConfigurationPolicy
+	Arg2 []types.ConfigurationPolicy
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
 	Arg3 time.Time
@@ -2886,7 +2886,7 @@ type MockReposStore struct {
 func NewMockReposStore() *MockReposStore {
 	return &MockReposStore{
 		ListMinimalReposFunc: &ReposStoreListMinimalReposFunc{
-			defaultHook: func(context.Context, database.ReposListOptions) (r0 []types.MinimalRepo, r1 error) {
+			defaultHook: func(context.Context, database.ReposListOptions) (r0 []types1.MinimalRepo, r1 error) {
 				return
 			},
 		},
@@ -2898,7 +2898,7 @@ func NewMockReposStore() *MockReposStore {
 func NewStrictMockReposStore() *MockReposStore {
 	return &MockReposStore{
 		ListMinimalReposFunc: &ReposStoreListMinimalReposFunc{
-			defaultHook: func(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error) {
+			defaultHook: func(context.Context, database.ReposListOptions) ([]types1.MinimalRepo, error) {
 				panic("unexpected invocation of MockReposStore.ListMinimalRepos")
 			},
 		},
@@ -2918,15 +2918,15 @@ func NewMockReposStoreFrom(i ReposStore) *MockReposStore {
 // ReposStoreListMinimalReposFunc describes the behavior when the
 // ListMinimalRepos method of the parent MockReposStore instance is invoked.
 type ReposStoreListMinimalReposFunc struct {
-	defaultHook func(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error)
-	hooks       []func(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error)
+	defaultHook func(context.Context, database.ReposListOptions) ([]types1.MinimalRepo, error)
+	hooks       []func(context.Context, database.ReposListOptions) ([]types1.MinimalRepo, error)
 	history     []ReposStoreListMinimalReposFuncCall
 	mutex       sync.Mutex
 }
 
 // ListMinimalRepos delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockReposStore) ListMinimalRepos(v0 context.Context, v1 database.ReposListOptions) ([]types.MinimalRepo, error) {
+func (m *MockReposStore) ListMinimalRepos(v0 context.Context, v1 database.ReposListOptions) ([]types1.MinimalRepo, error) {
 	r0, r1 := m.ListMinimalReposFunc.nextHook()(v0, v1)
 	m.ListMinimalReposFunc.appendCall(ReposStoreListMinimalReposFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -2935,7 +2935,7 @@ func (m *MockReposStore) ListMinimalRepos(v0 context.Context, v1 database.ReposL
 // SetDefaultHook sets function that is called when the ListMinimalRepos
 // method of the parent MockReposStore instance is invoked and the hook
 // queue is empty.
-func (f *ReposStoreListMinimalReposFunc) SetDefaultHook(hook func(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error)) {
+func (f *ReposStoreListMinimalReposFunc) SetDefaultHook(hook func(context.Context, database.ReposListOptions) ([]types1.MinimalRepo, error)) {
 	f.defaultHook = hook
 }
 
@@ -2943,7 +2943,7 @@ func (f *ReposStoreListMinimalReposFunc) SetDefaultHook(hook func(context.Contex
 // ListMinimalRepos method of the parent MockReposStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *ReposStoreListMinimalReposFunc) PushHook(hook func(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error)) {
+func (f *ReposStoreListMinimalReposFunc) PushHook(hook func(context.Context, database.ReposListOptions) ([]types1.MinimalRepo, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2951,20 +2951,20 @@ func (f *ReposStoreListMinimalReposFunc) PushHook(hook func(context.Context, dat
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *ReposStoreListMinimalReposFunc) SetDefaultReturn(r0 []types.MinimalRepo, r1 error) {
-	f.SetDefaultHook(func(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error) {
+func (f *ReposStoreListMinimalReposFunc) SetDefaultReturn(r0 []types1.MinimalRepo, r1 error) {
+	f.SetDefaultHook(func(context.Context, database.ReposListOptions) ([]types1.MinimalRepo, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *ReposStoreListMinimalReposFunc) PushReturn(r0 []types.MinimalRepo, r1 error) {
-	f.PushHook(func(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error) {
+func (f *ReposStoreListMinimalReposFunc) PushReturn(r0 []types1.MinimalRepo, r1 error) {
+	f.PushHook(func(context.Context, database.ReposListOptions) ([]types1.MinimalRepo, error) {
 		return r0, r1
 	})
 }
 
-func (f *ReposStoreListMinimalReposFunc) nextHook() func(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error) {
+func (f *ReposStoreListMinimalReposFunc) nextHook() func(context.Context, database.ReposListOptions) ([]types1.MinimalRepo, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -3005,7 +3005,7 @@ type ReposStoreListMinimalReposFuncCall struct {
 	Arg1 database.ReposListOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []types.MinimalRepo
+	Result0 []types1.MinimalRepo
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error

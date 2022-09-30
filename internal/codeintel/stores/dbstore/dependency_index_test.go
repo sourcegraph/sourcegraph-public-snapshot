@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
@@ -18,7 +19,7 @@ func TestInsertDependencyIndexingJob(t *testing.T) {
 
 	insertRepo(t, db, 50, "")
 
-	insertUploads(t, db, Upload{
+	insertUploads(t, db, types.Upload{
 		ID:            42,
 		Commit:        makeCommit(1),
 		Root:          "sub/",

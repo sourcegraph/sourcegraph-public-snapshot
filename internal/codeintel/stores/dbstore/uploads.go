@@ -3,12 +3,12 @@ package dbstore
 import (
 	"context"
 	"database/sql"
-	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -16,7 +16,7 @@ import (
 )
 
 // GetUploadByID returns an upload by its identifier and boolean flag indicating its existence.
-func (s *Store) GetUploadByID(ctx context.Context, id int) (_ Upload, _ bool, err error) {
+func (s *Store) GetUploadByID(ctx context.Context, id int) (_ types.Upload, _ bool, err error) {
 	ctx, _, endObservation := s.operations.getUploadByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("id", id),
 	}})
@@ -24,7 +24,7 @@ func (s *Store) GetUploadByID(ctx context.Context, id int) (_ Upload, _ bool, er
 
 	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.Store))
 	if err != nil {
-		return Upload{}, false, err
+		return types.Upload{}, false, err
 	}
 
 	return scanFirstUpload(s.Store.Query(ctx, sqlf.Sprintf(getUploadByIDQuery, id, authzConds)))
@@ -72,38 +72,7 @@ FROM lsif_uploads_with_repository_name r
 WHERE r.state = 'queued'
 `
 
-// Upload is a subset of the lsif_uploads table and stores both processed and unprocessed
-// records.
-type Upload struct {
-	ID                int
-	Commit            string
-	Root              string
-	VisibleAtTip      bool
-	UploadedAt        time.Time
-	State             string
-	FailureMessage    *string
-	StartedAt         *time.Time
-	FinishedAt        *time.Time
-	ProcessAfter      *time.Time
-	NumResets         int
-	NumFailures       int
-	RepositoryID      int
-	RepositoryName    string
-	Indexer           string
-	IndexerVersion    string
-	NumParts          int
-	UploadedParts     []int
-	UploadSize        *int64
-	UncompressedSize  *int64
-	Rank              *int
-	AssociatedIndexID *int
-}
-
-func (u Upload) RecordID() int {
-	return u.ID
-}
-
-func scanUpload(s dbutil.Scanner) (upload Upload, _ error) {
+func scanUpload(s dbutil.Scanner) (upload types.Upload, _ error) {
 	var rawUploadedParts []sql.NullInt32
 	if err := s.Scan(
 		&upload.ID,
@@ -164,20 +133,6 @@ var uploadColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("u.uploaded_parts"),
 	sqlf.Sprintf("u.upload_size"),
 	sqlf.Sprintf("u.associated_index_id"),
-	sqlf.Sprintf("NULL"),
+	sqlf.Sprintf("NULL"), // rank
 	sqlf.Sprintf("u.uncompressed_size"),
-}
-
-type DependencyReferenceCountUpdateType int
-
-const (
-	DependencyReferenceCountUpdateTypeNone DependencyReferenceCountUpdateType = iota
-	DependencyReferenceCountUpdateTypeAdd
-	DependencyReferenceCountUpdateTypeRemove
-)
-
-var deltaMap = map[DependencyReferenceCountUpdateType]int{
-	DependencyReferenceCountUpdateTypeNone:   +0,
-	DependencyReferenceCountUpdateTypeAdd:    +1,
-	DependencyReferenceCountUpdateTypeRemove: -1,
 }
