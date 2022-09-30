@@ -6,6 +6,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
@@ -46,4 +47,18 @@ var dependencySyncingJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("lsif_dependency_syncing_jobs.num_resets"),
 	sqlf.Sprintf("lsif_dependency_syncing_jobs.num_failures"),
 	sqlf.Sprintf("lsif_dependency_syncing_jobs.upload_id"),
+}
+
+func scanDependencySyncingJob(s dbutil.Scanner) (job DependencySyncingJob, err error) {
+	return job, s.Scan(
+		&job.ID,
+		&job.State,
+		&job.FailureMessage,
+		&job.StartedAt,
+		&job.FinishedAt,
+		&job.ProcessAfter,
+		&job.NumResets,
+		&job.NumFailures,
+		&job.UploadID,
+	)
 }

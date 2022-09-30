@@ -1,11 +1,15 @@
 package dbstore
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
@@ -59,4 +63,41 @@ var uploadColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("u.associated_index_id"),
 	sqlf.Sprintf("NULL"), // rank
 	sqlf.Sprintf("u.uncompressed_size"),
+}
+
+func scanUpload(s dbutil.Scanner) (upload types.Upload, _ error) {
+	var rawUploadedParts []sql.NullInt32
+	if err := s.Scan(
+		&upload.ID,
+		&upload.Commit,
+		&upload.Root,
+		&upload.VisibleAtTip,
+		&upload.UploadedAt,
+		&upload.State,
+		&upload.FailureMessage,
+		&upload.StartedAt,
+		&upload.FinishedAt,
+		&upload.ProcessAfter,
+		&upload.NumResets,
+		&upload.NumFailures,
+		&upload.RepositoryID,
+		&upload.RepositoryName,
+		&upload.Indexer,
+		&dbutil.NullString{S: &upload.IndexerVersion},
+		&upload.NumParts,
+		pq.Array(&rawUploadedParts),
+		&upload.UploadSize,
+		&upload.AssociatedIndexID,
+		&upload.Rank,
+		&upload.UncompressedSize,
+	); err != nil {
+		return upload, err
+	}
+
+	upload.UploadedParts = make([]int, 0, len(rawUploadedParts))
+	for _, uploadedPart := range rawUploadedParts {
+		upload.UploadedParts = append(upload.UploadedParts, int(uploadedPart.Int32))
+	}
+
+	return upload, nil
 }

@@ -2,16 +2,13 @@ package dbstore
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -71,43 +68,6 @@ SELECT
 FROM lsif_uploads_with_repository_name r
 WHERE r.state = 'queued'
 `
-
-func scanUpload(s dbutil.Scanner) (upload types.Upload, _ error) {
-	var rawUploadedParts []sql.NullInt32
-	if err := s.Scan(
-		&upload.ID,
-		&upload.Commit,
-		&upload.Root,
-		&upload.VisibleAtTip,
-		&upload.UploadedAt,
-		&upload.State,
-		&upload.FailureMessage,
-		&upload.StartedAt,
-		&upload.FinishedAt,
-		&upload.ProcessAfter,
-		&upload.NumResets,
-		&upload.NumFailures,
-		&upload.RepositoryID,
-		&upload.RepositoryName,
-		&upload.Indexer,
-		&dbutil.NullString{S: &upload.IndexerVersion},
-		&upload.NumParts,
-		pq.Array(&rawUploadedParts),
-		&upload.UploadSize,
-		&upload.AssociatedIndexID,
-		&upload.Rank,
-		&upload.UncompressedSize,
-	); err != nil {
-		return upload, err
-	}
-
-	upload.UploadedParts = make([]int, 0, len(rawUploadedParts))
-	for _, uploadedPart := range rawUploadedParts {
-		upload.UploadedParts = append(upload.UploadedParts, int(uploadedPart.Int32))
-	}
-
-	return upload, nil
-}
 
 // scanFirstUpload scans a slice of uploads from the return value of `*Store.query` and returns the first.
 var scanFirstUpload = basestore.NewFirstScanner(scanUpload)

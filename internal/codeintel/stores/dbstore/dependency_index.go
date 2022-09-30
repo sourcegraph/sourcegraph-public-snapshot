@@ -9,7 +9,6 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
@@ -32,20 +31,6 @@ func (u DependencySyncingJob) RecordID() int {
 	return u.ID
 }
 
-func scanDependencySyncingJob(s dbutil.Scanner) (job DependencySyncingJob, err error) {
-	return job, s.Scan(
-		&job.ID,
-		&job.State,
-		&job.FailureMessage,
-		&job.StartedAt,
-		&job.FinishedAt,
-		&job.ProcessAfter,
-		&job.NumResets,
-		&job.NumFailures,
-		&job.UploadID,
-	)
-}
-
 // DependencyIndexingJob is a subset of the lsif_dependency_indexing_jobs table and acts as the
 // queue and execution record for indexing the dependencies of a particular completed upload.
 type DependencyIndexingJob struct {
@@ -64,22 +49,6 @@ type DependencyIndexingJob struct {
 
 func (u DependencyIndexingJob) RecordID() int {
 	return u.ID
-}
-
-func scanDependencyIndexingJob(s dbutil.Scanner) (job DependencyIndexingJob, err error) {
-	return job, s.Scan(
-		&job.ID,
-		&job.State,
-		&job.FailureMessage,
-		&job.StartedAt,
-		&job.FinishedAt,
-		&job.ProcessAfter,
-		&job.NumResets,
-		&job.NumFailures,
-		&job.UploadID,
-		&job.ExternalServiceKind,
-		&job.ExternalServiceSync,
-	)
 }
 
 func (s *Store) InsertCloneableDependencyRepo(ctx context.Context, dependency precise.Package) (new bool, err error) {
