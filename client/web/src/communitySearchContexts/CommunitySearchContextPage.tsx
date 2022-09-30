@@ -246,7 +246,7 @@ const RepoLink: React.FunctionComponent<React.PropsWithChildren<{ repo: string }
                 </Link>
             </>
         )}
-        {repo.startsWith('bitbucket.com') && (
+        {repo.startsWith('bitbucket.org') && (
             <>
                 <Link to={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
                     <Icon className={styles.repoListIcon} aria-hidden={true} svgPath={mdiBitbucket} />

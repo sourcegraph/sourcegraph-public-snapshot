@@ -7,12 +7,13 @@ This document describes the exact changes needed to update a single-node Sourceg
 
 1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
 1. Find the relevant entry for your update in the update notes on this page.
-1. After checking the relevant update notes, refer to the [upgrade procedure](../deploy/docker-single-container/index.md#standard-upgrades) to upgrade your instance.
+1. After checking the relevant update notes, refer to the [standard upgrade procedure](../deploy/docker-single-container/index.md#standard-upgrades) to upgrade your instance.
 
 ## Multi-version upgrade procedure
 
 1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
-1. Refer to the [upgrade procedure](../deploy/docker-single-container/index.md#multi-version-upgrades) to upgrade your instance.
+1. Find the relevant entry for your update in the update notes on this page. These notes may contain relevant information about the infrastructure update such as resource requirement changes or versions of depencies (Docker, externalized databases).
+1. After checking the relevant update notes, refer to the [multi-version upgrade procedure](../deploy/docker-single-container/index.md#multi-version-upgrades) to upgrade your instance.
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
@@ -21,7 +22,6 @@ This document describes the exact changes needed to update a single-node Sourceg
 <!-- Add changes changes to this section before release. -->
 
 Follow the [steps](#upgrade-procedure) outlined at the top of this page to upgrade.
-
 
 ## 3.43 -> 4.0.1
 
@@ -33,49 +33,33 @@ Follow the [steps](#upgrade-procedure) outlined at the top of this page to upgra
 
 Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
 
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.43).*
-
 ## 3.41 -> 3.42.2
 
 Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
-
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.42).*
 
 ## 3.40 -> 3.41
 
 Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
 
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.41).*
-
 ## 3.39 -> 3.40.2
 
 Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
-
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.40).*
 
 ## 3.39.0 -> 3.39.1
 
 Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
 
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.39.1).*
-
 ## 3.38 -> 3.39
 
 Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
-
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.39).*
 
 ## 3.38.0 -> 3.38.1
 
 Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
 
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.38.1).*
-
 ## 3.37 -> 3.38
 
 Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
-
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.37).*
 
 ## 3.36 -> 3.37
 

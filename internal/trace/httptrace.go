@@ -38,7 +38,7 @@ const (
 )
 
 var (
-	metricLabels    = []string{"route", "method", "code", "origin"}
+	metricLabels    = []string{"route", "method", "code"}
 	requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name:    "src_http_request_duration_seconds",
 		Help:    "The HTTP request latencies in seconds. Use src_graphql_field_seconds for GraphQL requests.",

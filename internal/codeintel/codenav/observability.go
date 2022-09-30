@@ -26,8 +26,6 @@ type operations struct {
 	getUploadIDsWithReferences           *observation.Operation
 	getDumpsByIDs                        *observation.Operation
 	getClosestDumpsForBlob               *observation.Operation
-	getLanguagesRequestedBy              *observation.Operation
-	setRequestLanguageSupport            *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -61,8 +59,6 @@ func newOperations(observationContext *observation.Context) *operations {
 		getUploadIDsWithReferences:           op("GetUploadIDsWithReferences"),
 		getDumpsByIDs:                        op("GetDumpsByIDs"),
 		getClosestDumpsForBlob:               op("GetClosestDumpsForBlob"),
-		getLanguagesRequestedBy:              op("GetLanguagesRequestedBy"),
-		setRequestLanguageSupport:            op("SetRequestLanguageSupport"),
 	}
 }
 

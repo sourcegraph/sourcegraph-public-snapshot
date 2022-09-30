@@ -53,8 +53,8 @@ export const UserProfileFormFields: React.FunctionComponent<React.PropsWithChild
                     aria-describedby="UserProfileFormFields__username-help"
                 />
                 <small id="UserProfileFormFields__username-help" className="form-text text-muted">
-                    A username consists of letters, numbers, hyphens (-), dots (.), underscore (_) and may not begin or end with a dot,
-                    nor begin with a hyphen.
+                    A username consists of letters, numbers, hyphens (-), dots (.), underscore (_) and may not begin or
+                    end with a dot, nor begin with a hyphen.
                 </small>
             </div>
             <Input

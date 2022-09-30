@@ -60,6 +60,7 @@ import { getSuggestionQuery } from '@sourcegraph/shared/src/search/query/provide
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Filter, Token } from '@sourcegraph/shared/src/search/query/token'
 import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
+import { createSVGIcon } from '@sourcegraph/shared/src/util/dom'
 
 import { queryTokens } from './parsedQuery'
 
@@ -97,19 +98,6 @@ const typeIconMap: Record<CompletionType, string> = {
     queryfilter: mdiFilterOutline,
     repository: mdiSourceBranch,
     searchhistory: mdiHistory,
-}
-
-function createIcon(pathSpec: string): Node {
-    const svgNS = 'http://www.w3.org/2000/svg'
-    const svg = document.createElementNS(svgNS, 'svg')
-    svg.setAttributeNS(null, 'viewBox', '0 0 24 24')
-    svg.setAttribute('aria-hidden', 'true')
-
-    const path = document.createElementNS(svgNS, 'path')
-    path.setAttribute('d', pathSpec)
-
-    svg.append(path)
-    return svg
 }
 
 interface SuggestionContext {
@@ -158,7 +146,7 @@ export function searchQueryAutocompletion(
         // This renders the completion icon
         {
             render(completion) {
-                return createIcon(
+                return createSVGIcon(
                     completion.type && completion.type in typeIconMap
                         ? typeIconMap[completion.type as CompletionType]
                         : typeIconMap[SymbolKind.UNKNOWN]

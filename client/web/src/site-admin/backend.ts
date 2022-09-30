@@ -686,23 +686,23 @@ export function deleteOrganization(organization: Scalars['ID'], hard?: boolean):
         .toPromise()
 }
 
-export function fetchSiteUpdateCheck(): Observable<SiteUpdateCheckResult['site']> {
-    return requestGraphQL<SiteUpdateCheckResult, SiteUpdateCheckVariables>(
-        gql`
-            query SiteUpdateCheck {
-                site {
-                    buildVersion
-                    productVersion
-                    updateCheck {
-                        pending
-                        checkedAt
-                        errorMessage
-                        updateVersionAvailable
-                    }
-                }
+export const SITE_UPDATE_CHECK = gql`
+    query SiteUpdateCheck {
+        site {
+            buildVersion
+            productVersion
+            updateCheck {
+                pending
+                checkedAt
+                errorMessage
+                updateVersionAvailable
             }
-        `
-    ).pipe(
+        }
+    }
+`
+
+export function fetchSiteUpdateCheck(): Observable<SiteUpdateCheckResult['site']> {
+    return requestGraphQL<SiteUpdateCheckResult, SiteUpdateCheckVariables>(SITE_UPDATE_CHECK).pipe(
         map(dataOrThrowErrors),
         map(data => data.site)
     )

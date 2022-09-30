@@ -569,8 +569,10 @@ export function buildSearchURLQuery(
     return searchParameters.toString().replace(/%2F/g, '/').replace(/%3A/g, ':')
 }
 
-export function buildGetStartedURL(source: string, returnTo?: string): string {
-    const url = new URL('https://about.sourcegraph.com/get-started/self-hosted')
+export function buildGetStartedURL(source: string, returnTo?: string, forDotcom?: boolean): string {
+    // Still support directing to dotcom signup links when needed
+    const path = forDotcom ? 'https://sourcegraph.com/sign-up' : 'https://signup.sourcegraph.com'
+    const url = new URL(path)
     url.searchParams.set('utm_medium', 'inproduct')
     url.searchParams.set('utm_source', source)
     url.searchParams.set('utm_campaign', 'inproduct-cta')

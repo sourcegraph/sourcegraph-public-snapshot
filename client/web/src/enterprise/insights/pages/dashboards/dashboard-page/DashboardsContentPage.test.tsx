@@ -11,7 +11,7 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
 
 import {
-    GetAccessibleInsightsListResult,
+    GetDashboardAccessibleInsightsResult,
     GetDashboardInsightsResult,
     GetInsightsResult,
     InsightsDashboardsResult,
@@ -19,13 +19,13 @@ import {
 } from '../../../../../graphql-operations'
 import { CodeInsightsBackendContext, CodeInsightsGqlBackend } from '../../../core'
 import {
-    GET_ACCESSIBLE_INSIGHTS_LIST,
     GET_DASHBOARD_INSIGHTS_GQL,
     GET_INSIGHTS_GQL,
     GET_INSIGHTS_DASHBOARDS_GQL,
     GET_INSIGHTS_DASHBOARD_OWNERS_GQL,
 } from '../../../core/backend/gql-backend'
 
+import { GET_ACCESSIBLE_INSIGHTS_LIST } from './components/add-insight-modal'
 import { DashboardsContentPage } from './DashboardsContentPage'
 
 type UserEvent = typeof userEvent
@@ -53,7 +53,6 @@ const mockDashboard: InsightsDashboardsResult['insightsDashboards']['nodes'][0] 
     __typename: 'InsightsDashboard',
     id: 'foo',
     title: 'Global Dashboard',
-    views: null,
     grants: {
         __typename: 'InsightsPermissionGrants',
         users: [],
@@ -66,7 +65,6 @@ const mockDashboard2: InsightsDashboardsResult['insightsDashboards']['nodes'][0]
     __typename: 'InsightsDashboard',
     id: 'bar',
     title: 'Global Dashboard 2',
-    views: null,
     grants: {
         __typename: 'InsightsPermissionGrants',
         users: [],
@@ -105,11 +103,15 @@ const mocks: MockedResponse[] = [
     {
         request: {
             query: GET_ACCESSIBLE_INSIGHTS_LIST,
+            variables: { id: 'foo' },
         },
         result: {
-            data: { insightViews: { nodes: [] } },
+            data: {
+                dashboardInsightsIds: { nodes: [{ views: { nodes: [] } }] },
+                accessibleInsights: { nodes: [] },
+            },
         },
-    } as MockedResponse<GetAccessibleInsightsListResult>,
+    } as MockedResponse<GetDashboardAccessibleInsightsResult>,
     {
         request: {
             query: GET_INSIGHTS_DASHBOARD_OWNERS_GQL,
@@ -165,13 +167,13 @@ const renderDashboardsContent = (
 
 const triggerDashboardMenuItem = async (
     screen: RenderWithBrandedContextResult & { user: UserEvent },
-    testId: string
+    buttonText: string
 ) => {
     const { user } = screen
-    const dashboardMenu = await waitFor(() => screen.getByTestId('dashboard-context-menu'))
+    const dashboardMenu = await waitFor(() => screen.getByRole('img', { name: 'dashboard options' }))
     user.click(dashboardMenu)
 
-    const dashboardMenuItem = screen.getByTestId(testId)
+    const dashboardMenuItem = screen.getByRole('menuitem', { name: buttonText })
 
     dashboardMenuItem.focus()
     user.click(dashboardMenuItem)
@@ -219,14 +221,14 @@ describe('DashboardsContent', () => {
 
         const { history } = screen
 
-        await triggerDashboardMenuItem(screen, 'configure-dashboard')
+        await triggerDashboardMenuItem(screen, 'Configure dashboard')
 
         expect(history.location.pathname).toEqual('/insights/dashboards/foo/edit')
     })
 
     it('opens add insight modal', async () => {
         const screen = renderDashboardsContent()
-        const addInsightsButton = await waitFor(() => screen.getByTestId('add-or-remove-insights'))
+        const addInsightsButton = await waitFor(() => screen.getByRole('button', { name: /Add or remove insights/ }))
 
         userEvent.click(addInsightsButton)
 
@@ -239,7 +241,7 @@ describe('DashboardsContent', () => {
     it('opens delete dashboard modal', async () => {
         const screen = renderDashboardsContent()
 
-        await triggerDashboardMenuItem(screen, 'delete')
+        await triggerDashboardMenuItem(screen, 'Delete')
 
         const addInsightHeader = await waitFor(() => screen.getByRole('heading', { name: /Delete/ }))
         expect(addInsightHeader).toBeInTheDocument()
@@ -249,7 +251,7 @@ describe('DashboardsContent', () => {
     it('copies dashboard url', async () => {
         const screen = renderDashboardsContent()
 
-        await triggerDashboardMenuItem(screen, 'copy-link')
+        await triggerDashboardMenuItem(screen, 'Copy link')
 
         sinon.assert.calledOnce(mockCopyURL)
     })

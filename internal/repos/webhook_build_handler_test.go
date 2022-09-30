@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -26,6 +27,11 @@ func TestWebhookBuildHandle(t *testing.T) {
 	ctx := context.Background()
 
 	token := os.Getenv("GITHUB_TOKEN")
+	if token == "" {
+		// We need this so that the config validation below passes even when we're
+		// running against VCR data
+		token = "faketoken"
+	}
 
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := NewStore(logger, db)
@@ -47,9 +53,9 @@ func TestWebhookBuildHandle(t *testing.T) {
 	}
 
 	ghConn := &schema.GitHubConnection{
-		Url:      extsvc.KindGitHub,
+		Url:      "https://github.com",
 		Token:    token,
-		Repos:    []string{string(repo.Name)},
+		Repos:    []string{"milton/test"},
 		Webhooks: []*schema.GitHubWebhook{{Org: "ghe.sgdev.org", Secret: "secret"}},
 	}
 
@@ -90,4 +96,28 @@ func TestWebhookBuildHandle(t *testing.T) {
 	if err := handler.Handle(ctx, logger, job); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func TestRandomHex(t *testing.T) {
+	t.Run("calling twice gives different result", func(t *testing.T) {
+		a, err := randomHex(10)
+		if err != nil {
+			t.Fatal(err)
+		}
+		b, err := randomHex(10)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.NotEqual(t, a, b)
+	})
+
+	t.Run("length works as expected", func(t *testing.T) {
+		for i := 0; i < 32; i++ {
+			s, err := randomHex(i)
+			if err != nil {
+				t.Fatalf("randomHex for length %d: %v", i, err)
+			}
+			assert.Equal(t, i, len(s))
+		}
+	})
 }

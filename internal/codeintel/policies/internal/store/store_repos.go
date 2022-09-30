@@ -7,7 +7,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -52,7 +52,7 @@ func (s *store) UpdateReposMatchingPatterns(ctx context.Context, patterns []stri
 }
 
 const updateReposMatchingPatternsQuery = `
--- source: internal/codeintel/policies/internal/store/store_configuration.go:UpdateReposMatchingPatterns
+-- source: internal/codeintel/policies/internal/store/store_repos.go:UpdateReposMatchingPatterns
 WITH
 matching_repositories AS (
 	SELECT id AS repo_id
@@ -150,7 +150,7 @@ func (s *store) GetRepoIDsByGlobPatterns(ctx context.Context, patterns []string,
 }
 
 const repoIDsByGlobPatternsCountQuery = `
--- source: internal/codeintel/stores/dbstore/repo.go:RepoIDsByGlobPatterns
+-- source: internal/codeintel/policies/internal/store/store_repos.go:RepoIDsByGlobPatterns
 SELECT COUNT(*)
 FROM repo
 WHERE
@@ -161,7 +161,7 @@ WHERE
 `
 
 const repoIDsByGlobPatternsQuery = `
--- source: internal/codeintel/stores/dbstore/repo.go:RepoIDsByGlobPatterns
+-- source: internal/codeintel/policies/internal/store/store_repos.go:RepoIDsByGlobPatterns
 SELECT id
 FROM repo
 WHERE
@@ -175,7 +175,7 @@ LIMIT %s OFFSET %s
 
 // SelectPoliciesForRepositoryMembershipUpdate returns a slice of configuration policies that should be considered
 // for repository membership updates. Configuration policies are returned in the order of least recently updated.
-func (s *store) SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context, batchSize int) (configurationPolicies []shared.ConfigurationPolicy, err error) {
+func (s *store) SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context, batchSize int) (configurationPolicies []types.ConfigurationPolicy, err error) {
 	ctx, trace, endObservation := s.operations.selectPoliciesForRepositoryMembershipUpdate.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -189,7 +189,7 @@ func (s *store) SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context,
 }
 
 const selectPoliciesForRepositoryMembershipUpdate = `
--- source: internal/codeintel/stores/dbstore/configuration_policies.go:SelectPoliciesForRepositoryMembershipUpdate
+-- source: internal/codeintel/policies/internal/store/store_repos.go:SelectPoliciesForRepositoryMembershipUpdate
 WITH
 candidate_policies AS (
 	SELECT p.id

@@ -210,7 +210,10 @@ func (o *Observer) Done() (*search.Alert, error) {
 
 type alertKind string
 
-const luckySearchQueries alertKind = "lucky-search-queries"
+const (
+	smartSearchAdditionalResults alertKind = "smart-search-additional-results"
+	smartSearchPureResults                 = "smart-search-pure-results"
+)
 
 func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, error) {
 	if err == nil {
@@ -262,14 +265,16 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 	if errors.As(err, &lErr) {
 		title := "Also showing additional results"
 		description := "We returned all the results for your query. We also added results for similar queries that might interest you."
+		kind := string(smartSearchAdditionalResults)
 		if lErr.Type == LuckyAlertPure {
 			title = "No results for original query. Showing related results instead"
 			description = "The original query returned no results. Below are results for similar queries that might interest you."
+			kind = string(smartSearchPureResults)
 		}
 		return &search.Alert{
-			PrometheusType:  "lucky_search_notice",
+			PrometheusType:  "smart_search_notice",
 			Title:           title,
-			Kind:            string(luckySearchQueries),
+			Kind:            kind,
 			Description:     description,
 			ProposedQueries: lErr.ProposedQueries,
 		}, nil

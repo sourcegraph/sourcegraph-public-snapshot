@@ -2,7 +2,7 @@ import { DecoratorFn, Story, Meta } from '@storybook/react'
 import { noop } from 'lodash'
 
 import { WebStory } from '../../../../../../../../../components/WebStory'
-import { InsightDashboard, InsightsDashboardOwnerType, InsightsDashboardType } from '../../../../../../../core/types'
+import { InsightDashboard, InsightsDashboardOwnerType, InsightsDashboardType } from '../../../../../../../core'
 
 import { EmptyInsightDashboard } from './EmptyInsightDashboard'
 
@@ -25,7 +25,6 @@ export const EmptyInsightDashboardStory: Story = () => {
         type: InsightsDashboardType.Custom,
         id: '101',
         title: 'Personal',
-        insightIds: [],
         owners: [{ type: InsightsDashboardOwnerType.Personal, id: '101', title: 'Personal ' }],
     }
 

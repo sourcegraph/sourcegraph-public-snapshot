@@ -43,8 +43,8 @@ func TestExternalService_RedactedConfig(t *testing.T) {
 		},
 		{
 			kind: extsvc.KindBitbucketCloud,
-			in:   schema.BitbucketCloudConnection{AppPassword: "foobar", Url: "https://bitbucket.com"},
-			out:  schema.BitbucketCloudConnection{AppPassword: RedactedSecret, Url: "https://bitbucket.com"},
+			in:   schema.BitbucketCloudConnection{AppPassword: "foobar", Url: "https://bitbucket.org"},
+			out:  schema.BitbucketCloudConnection{AppPassword: RedactedSecret, Url: "https://bitbucket.org"},
 		},
 		{
 			kind: extsvc.KindAWSCodeCommit,
@@ -203,7 +203,7 @@ func TestExternalService_UnredactConfig(t *testing.T) {
 		},
 		{
 			kind: extsvc.KindBitbucketCloud,
-			old:  schema.BitbucketCloudConnection{AppPassword: "foobar", Url: "https://bitbucket.com"},
+			old:  schema.BitbucketCloudConnection{AppPassword: "foobar", Url: "https://bitbucket.org"},
 			in:   schema.BitbucketCloudConnection{AppPassword: RedactedSecret, Url: "https://bitbucket.corp.com"},
 			out:  schema.BitbucketCloudConnection{AppPassword: "foobar", Url: "https://bitbucket.corp.com"},
 		},
