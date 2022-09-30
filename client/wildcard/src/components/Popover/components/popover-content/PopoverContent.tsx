@@ -56,7 +56,9 @@ export const PopoverContent = forwardRef(function PopoverContent(props, referenc
 
     // Close popover on escape
     useKeyboard({ detectKeys: ['Escape'] }, () => {
-        if (isOpen) {
+        // Only fire if we can be sure that the popover is open.
+        // Both for controlled and uncontrolled popovers.
+        if (isOpen || isOpenContext) {
             setOpen({ isOpen: false, reason: PopoverOpenEventReason.Esc })
         }
     })
