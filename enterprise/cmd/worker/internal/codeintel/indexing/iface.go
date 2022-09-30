@@ -20,7 +20,6 @@ import (
 )
 
 type DBStore interface {
-	With(other basestore.ShareableStore) DBStore
 	GetUploadByID(ctx context.Context, id int) (codeinteltypes.Upload, bool, error)
 	ReferencesForUpload(ctx context.Context, uploadID int) (dbstore.PackageReferenceScanner, error)
 	InsertCloneableDependencyRepo(ctx context.Context, dependency precise.Package) (bool, error)

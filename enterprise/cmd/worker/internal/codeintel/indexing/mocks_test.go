@@ -47,9 +47,6 @@ type MockDBStore struct {
 	// ReferencesForUploadFunc is an instance of a mock function object
 	// controlling the behavior of the method ReferencesForUpload.
 	ReferencesForUploadFunc *DBStoreReferencesForUploadFunc
-	// WithFunc is an instance of a mock function object controlling the
-	// behavior of the method With.
-	WithFunc *DBStoreWithFunc
 }
 
 // NewMockDBStore creates a new mock of the DBStore interface. All methods
@@ -73,11 +70,6 @@ func NewMockDBStore() *MockDBStore {
 		},
 		ReferencesForUploadFunc: &DBStoreReferencesForUploadFunc{
 			defaultHook: func(context.Context, int) (r0 dbstore.PackageReferenceScanner, r1 error) {
-				return
-			},
-		},
-		WithFunc: &DBStoreWithFunc{
-			defaultHook: func(basestore.ShareableStore) (r0 DBStore) {
 				return
 			},
 		},
@@ -108,11 +100,6 @@ func NewStrictMockDBStore() *MockDBStore {
 				panic("unexpected invocation of MockDBStore.ReferencesForUpload")
 			},
 		},
-		WithFunc: &DBStoreWithFunc{
-			defaultHook: func(basestore.ShareableStore) DBStore {
-				panic("unexpected invocation of MockDBStore.With")
-			},
-		},
 	}
 }
 
@@ -131,9 +118,6 @@ func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 		},
 		ReferencesForUploadFunc: &DBStoreReferencesForUploadFunc{
 			defaultHook: i.ReferencesForUpload,
-		},
-		WithFunc: &DBStoreWithFunc{
-			defaultHook: i.With,
 		},
 	}
 }
@@ -584,107 +568,6 @@ func (c DBStoreReferencesForUploadFuncCall) Args() []interface{} {
 // invocation.
 func (c DBStoreReferencesForUploadFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
-}
-
-// DBStoreWithFunc describes the behavior when the With method of the parent
-// MockDBStore instance is invoked.
-type DBStoreWithFunc struct {
-	defaultHook func(basestore.ShareableStore) DBStore
-	hooks       []func(basestore.ShareableStore) DBStore
-	history     []DBStoreWithFuncCall
-	mutex       sync.Mutex
-}
-
-// With delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockDBStore) With(v0 basestore.ShareableStore) DBStore {
-	r0 := m.WithFunc.nextHook()(v0)
-	m.WithFunc.appendCall(DBStoreWithFuncCall{v0, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the With method of the
-// parent MockDBStore instance is invoked and the hook queue is empty.
-func (f *DBStoreWithFunc) SetDefaultHook(hook func(basestore.ShareableStore) DBStore) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// With method of the parent MockDBStore instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *DBStoreWithFunc) PushHook(hook func(basestore.ShareableStore) DBStore) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *DBStoreWithFunc) SetDefaultReturn(r0 DBStore) {
-	f.SetDefaultHook(func(basestore.ShareableStore) DBStore {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *DBStoreWithFunc) PushReturn(r0 DBStore) {
-	f.PushHook(func(basestore.ShareableStore) DBStore {
-		return r0
-	})
-}
-
-func (f *DBStoreWithFunc) nextHook() func(basestore.ShareableStore) DBStore {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *DBStoreWithFunc) appendCall(r0 DBStoreWithFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of DBStoreWithFuncCall objects describing the
-// invocations of this function.
-func (f *DBStoreWithFunc) History() []DBStoreWithFuncCall {
-	f.mutex.Lock()
-	history := make([]DBStoreWithFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// DBStoreWithFuncCall is an object that describes an invocation of method
-// With on an instance of MockDBStore.
-type DBStoreWithFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 basestore.ShareableStore
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 DBStore
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c DBStoreWithFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c DBStoreWithFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
 }
 
 // MockExternalServiceStore is a mock implementation of the

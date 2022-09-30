@@ -34,7 +34,6 @@ func TestDependencyIndexingSchedulerHandler(t *testing.T) {
 		},
 	}, nil)
 
-	mockDBStore.WithFunc.SetDefaultReturn(mockDBStore)
 	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(codeinteltypes.Upload{ID: 42, RepositoryID: 50, Indexer: "lsif-go"}, true, nil)
 	mockDBStore.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
 
@@ -134,7 +133,6 @@ func TestDependencyIndexingSchedulerHandlerCustomer(t *testing.T) {
 	mockRepoUpdater := NewMockRepoUpdaterClient()
 	mockScanner := NewMockPackageReferenceScanner()
 	mockWorkerStore := NewMockWorkerStore()
-	mockDBStore.WithFunc.SetDefaultReturn(mockDBStore)
 	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(codeinteltypes.Upload{ID: 42, RepositoryID: 50, Indexer: "lsif-go"}, true, nil)
 	mockDBStore.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
 
@@ -239,7 +237,6 @@ func TestDependencyIndexingSchedulerHandlerRequeueNotCloned(t *testing.T) {
 	mockRepoUpdater := NewMockRepoUpdaterClient()
 	mockScanner := NewMockPackageReferenceScanner()
 	mockWorkerStore := NewMockWorkerStore()
-	mockDBStore.WithFunc.SetDefaultReturn(mockDBStore)
 	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(codeinteltypes.Upload{ID: 42, RepositoryID: 50, Indexer: "lsif-go"}, true, nil)
 	mockDBStore.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
 
@@ -302,7 +299,6 @@ func TestDependencyIndexingSchedulerHandlerSkipNonExistant(t *testing.T) {
 	mockWorkerStore := NewMockWorkerStore()
 	mockRepoStore := NewMockReposStore()
 
-	mockDBStore.WithFunc.SetDefaultReturn(mockDBStore)
 	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(codeinteltypes.Upload{ID: 42, RepositoryID: 50, Indexer: "lsif-go"}, true, nil)
 	mockDBStore.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
 
@@ -364,7 +360,6 @@ func TestDependencyIndexingSchedulerHandlerShouldSkipRepository(t *testing.T) {
 	mockScanner := NewMockPackageReferenceScanner()
 	mockRepoStore := NewMockReposStore()
 
-	mockDBStore.WithFunc.SetDefaultReturn(mockDBStore)
 	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(codeinteltypes.Upload{ID: 42, RepositoryID: 51, Indexer: "scip-typescript"}, true, nil)
 	mockDBStore.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
 
