@@ -1014,6 +1014,10 @@ type RepoChangesetsStats struct {
 	CommonChangesetsStats
 }
 
+type GlobalChangesetsStats struct {
+	CommonChangesetsStats
+}
+
 // ChangesetsStats holds additional stats information on a list of changesets.
 type ChangesetsStats struct {
 	CommonChangesetsStats

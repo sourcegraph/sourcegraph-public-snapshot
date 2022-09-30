@@ -131,21 +131,6 @@ func (s *BatchChanges) CacheAll(ctx context.Context) error {
 	return nil
 }
 
-var changesetsOpenedNodesQuery = `
-	SELECT
-		%s AS date,
-		COUNT(DISTINCT changesets.id) AS count,
-		COUNT(DISTINCT batch_changes.creator_id) AS unique_users,
-		COUNT(DISTINCT batch_changes.creator_id) AS registered_users
-	FROM
-		changeset_events
-		INNER JOIN changesets ON changesets.id = changeset_events.changeset_id
-		INNER JOIN batch_changes ON batch_changes.id = changesets.owned_by_batch_change_id
-	WHERE changeset_events.created_at %s AND changeset_events.kind IN (%s)
-	GROUP BY date
-
-`
-
 var changesetsOpenedSummaryQuery = `
 	SELECT
 		COUNT(DISTINCT changesets.id) AS total_count,

@@ -1231,27 +1231,6 @@ func (s *Store) GetChangesetsStats(ctx context.Context, batchChangeID int64) (st
 	return stats, nil
 }
 
-const getChangesetStatsFmtstr = `
--- source: enterprise/internal/batches/store_changesets.go:GetChangesetsStats
-SELECT
-	COUNT(*) AS total,
-	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'RETRYING') AS retrying,
-	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'FAILED') AS failed,
-	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'SCHEDULED') AS scheduled,
-	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'PROCESSING') AS processing,
-	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'UNPUBLISHED') AS unpublished,
-	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'CLOSED') AS closed,
-	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'DRAFT') AS draft,
-	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'MERGED') AS merged,
-	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'OPEN') AS open,
-	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'DELETED') AS deleted,
-	COUNT(*) FILTER (WHERE %s) AS archived
-FROM changesets
-INNER JOIN repo on repo.id = changesets.repo_id
-WHERE
-	%s
-`
-
 // GetRepoChangesetsStats returns statistics on all the changesets associated to the given repo.
 func (s *Store) GetRepoChangesetsStats(ctx context.Context, repoID api.RepoID) (stats *btypes.RepoChangesetsStats, err error) {
 	ctx, _, endObservation := s.operations.getRepoChangesetsStats.With(ctx, &err, observation.Args{LogFields: []log.Field{
@@ -1284,6 +1263,52 @@ func (s *Store) GetRepoChangesetsStats(ctx context.Context, repoID api.RepoID) (
 	}
 	return stats, nil
 }
+
+func (s *Store) GetGlobalChangesetsStats(ctx context.Context) (stats *btypes.GlobalChangesetsStats, err error) {
+	ctx, _, endObservation := s.operations.getGlobalChangesetsStats.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	q := sqlf.Sprintf(getGlobalChangesetsStatsFmtstr)
+	stats = &btypes.GlobalChangesetsStats{}
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
+		if err := sc.Scan(
+			&stats.Total,
+			&stats.Unpublished,
+			&stats.Draft,
+			&stats.Closed,
+			&stats.Merged,
+			&stats.Open,
+		); err != nil {
+			return err
+		}
+		return err
+	})
+	if err != nil {
+		return stats, err
+	}
+	return stats, nil
+}
+
+const getChangesetStatsFmtstr = `
+-- source: enterprise/internal/batches/store_changesets.go:GetChangesetsStats
+SELECT
+	COUNT(*) AS total,
+	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'RETRYING') AS retrying,
+	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'FAILED') AS failed,
+	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'SCHEDULED') AS scheduled,
+	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'PROCESSING') AS processing,
+	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'UNPUBLISHED') AS unpublished,
+	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'CLOSED') AS closed,
+	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'DRAFT') AS draft,
+	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'MERGED') AS merged,
+	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'OPEN') AS open,
+	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'DELETED') AS deleted,
+	COUNT(*) FILTER (WHERE %s) AS archived
+FROM changesets
+INNER JOIN repo on repo.id = changesets.repo_id
+WHERE
+	%s
+`
 
 func (s *Store) EnqueueNextScheduledChangeset(ctx context.Context) (ch *btypes.Changeset, err error) {
 	ctx, _, endObservation := s.operations.enqueueNextScheduledChangeset.With(ctx, &err, observation.Args{})
@@ -1398,6 +1423,18 @@ func getChangesetsStatsQuery(batchChangeID int64) *sqlf.Query {
 	)
 }
 
+func getGlobalChangesetsStatsQuery(repoID int64, authzConds *sqlf.Query) *sqlf.Query {
+		preds := []*sqlf.Query{
+		sqlf.Sprintf("repo.deleted_at IS NULL")}
+	return sqlf.Sprintf(
+		getRepoChangesetsStatsFmtstr,
+		strconv.Itoa(int(repoID)),
+		authzConds,
+				sqlf.Join(preds, " AND "),
+
+	)
+}
+
 func getRepoChangesetsStatsQuery(repoID int64, authzConds *sqlf.Query) *sqlf.Query {
 	return sqlf.Sprintf(
 		getRepoChangesetsStatsFmtstr,
@@ -1405,6 +1442,7 @@ func getRepoChangesetsStatsQuery(repoID int64, authzConds *sqlf.Query) *sqlf.Que
 		authzConds,
 	)
 }
+
 
 const getRepoChangesetsStatsFmtstr = `
 -- source: enterprise/internal/batches/store/changesets.go:GetRepoChangesetsStats
@@ -1430,6 +1468,28 @@ FROM (
 		AND %s
 ) AS fcs;
 `
+
+const getGlobalChangesetsStatsFmtstr = `
+-- source: enterprise/internal/batches/store/changesets.go:GetGlobalChangesetsStats
+SELECT
+	COUNT(*) AS total,
+	COUNT(*) FILTER (WHERE computed_state = 'UNPUBLISHED') AS unpublished,
+	COUNT(*) FILTER (WHERE computed_state = 'DRAFT') AS draft,
+	COUNT(*) FILTER (WHERE computed_state = 'CLOSED') AS closed,
+	COUNT(*) FILTER (WHERE computed_state = 'MERGED') AS merged,
+	COUNT(*) FILTER (WHERE computed_state = 'OPEN') AS open
+FROM (
+	SELECT
+		changesets.id,
+		changesets.computed_state
+	FROM
+		changesets
+	WHERE
+		-- where the changeset is not archived on at least one batch change
+		jsonb_path_exists (batch_change_ids, '$.* ? ((!exists(@.isArchived) || @.isArchived == false) && (!exists(@.archive) || @.archive == false))')
+) AS fcs;
+`
+
 
 func batchChangesColumn(c *btypes.Changeset) ([]byte, error) {
 	assocsAsMap := make(map[int64]btypes.BatchChangeAssoc, len(c.BatchChanges))

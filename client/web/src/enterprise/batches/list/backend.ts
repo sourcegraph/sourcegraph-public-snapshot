@@ -97,19 +97,15 @@ export const GET_LICENSE_AND_USAGE_INFO = gql`
     }
 `
 
-export const CHANGESET_STATISTICS = gql`
-    query ChangesetStatistics {
+export const GLOBAL_CHANGESETS_STATS = gql`
+    query GlobalChangesetsStats {
         batchChanges {
             totalCount
         }
-        opened: changesets(state: OPEN) {
-            totalCount
-        }
-        closed: changesets(state: CLOSED) {
-            totalCount
-        }
-        merged: changesets(state: MERGED) {
-            totalCount
+        globalChangesetsStats {
+            open
+            closed
+            merged
         }
     }
 `

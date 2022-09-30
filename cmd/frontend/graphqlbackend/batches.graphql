@@ -547,6 +547,36 @@ type RepoChangesetsStats {
 }
 
 """
+Stats on all the changesets across the instance.
+"""
+type GlobalChangesetsStats {
+    """
+    The count of unpublished changesets.
+    """
+    unpublished: Int!
+    """
+    The count of draft changesets.
+    """
+    draft: Int!
+    """
+    The count of open changesets.
+    """
+    open: Int!
+    """
+    The count of merged changesets.
+    """
+    merged: Int!
+    """
+    The count of closed changesets.
+    """
+    closed: Int!
+    """
+    The count of all changesets.
+    """
+    total: Int!
+}
+
+"""
 A list of changesets.
 """
 type ChangesetConnection {
@@ -1772,50 +1802,10 @@ extend type Query {
         """
         name: String!
     ): BatchChange
-
     """
-    A list of changesets.
+    Stats on all the changesets across the instance for Batch Changes.
     """
-    changesets(
-        first: Int = 50
-        """
-        Opaque pagination cursor.
-        """
-        after: String
-        """
-        Only include changesets with the given state.
-        """
-        state: ChangesetState
-        """
-        Query only changesets that are either open or draft. This is used on the close page to list changesets that remain open.
-        When set, passing state is not allowed.
-        """
-        onlyClosable: Boolean
-        """
-        Only include changesets with the given review state.
-        """
-        reviewState: ChangesetReviewState
-        """
-        Only include changesets with the given check state.
-        """
-        checkState: ChangesetCheckState
-        """
-        Only return changesets that have been published by this batch change. Imported changesets will be omitted.
-        """
-        onlyPublishedByThisBatchChange: Boolean
-        """
-        Search for changesets matching this query. Queries may include quoted substrings to match phrases, and words may be preceded by - to negate them.
-        """
-        search: String
-        """
-        Only return changesets that are archived in this batch change.
-        """
-        onlyArchived: Boolean = false
-        """
-        Only include changesets belonging to the given repository.
-        """
-        repo: ID
-    ): ChangesetConnection!
+    globalChangesetsStats: GlobalChangesetsStats!
 
     """
     All globally configured code hosts usable with Batch Changes.

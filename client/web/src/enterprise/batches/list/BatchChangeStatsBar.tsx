@@ -5,10 +5,10 @@ import { mdiInformationOutline } from '@mdi/js'
 import { useQuery } from '@sourcegraph/http-client'
 import { Icon, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
 
-import { ChangesetStatisticsResult, ChangesetStatisticsVariables } from '../../../graphql-operations'
+import { GlobalChangesetsStatsResult, GlobalChangesetsStatsVariables } from '../../../graphql-operations'
 import { ChangesetStatusClosed, ChangesetStatusOpen } from '../detail/changesets/ChangesetStatusCell'
 
-import { CHANGESET_STATISTICS } from './backend'
+import { GLOBAL_CHANGESETS_STATS } from './backend'
 
 import styles from './BatchChangeStatsBar.module.scss'
 
@@ -17,8 +17,8 @@ interface BatchChangeStatsBarProps {
 }
 
 export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildren<BatchChangeStatsBarProps>> = () => {
-    const { data, error, loading } = useQuery<ChangesetStatisticsResult, ChangesetStatisticsVariables>(
-        CHANGESET_STATISTICS,
+    const { data, error, loading } = useQuery<GlobalChangesetsStatsResult, GlobalChangesetsStatsVariables>(
+        GLOBAL_CHANGESETS_STATS,
         {}
     )
 
@@ -43,12 +43,14 @@ export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildre
                     <span>Batch changes</span>
                 </div>
                 <div className="pr-4">
-                    <span className="font-weight-bold">{data?.merged.totalCount}</span>
+                    <span className="font-weight-bold">{data?.globalChangesetsStats.merged}</span>
                     <br />
                     <span>Merged</span>
                 </div>
                 <div className="pr-4">
-                    <span className="font-weight-bold">{data ? (data?.merged.totalCount * 15) / 60 : '--'}</span>
+                    <span className="font-weight-bold">
+                        {data ? (data?.globalChangesetsStats.merged * 15) / 60 : '--'}
+                    </span>
                     <br />
                     <span>
                         Hours Saved
@@ -61,11 +63,11 @@ export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildre
             <div className={styles.rightSide}>
                 <div className="pr-4 text-center">
                     <ChangesetStatusOpen />
-                    <span className="font-weight-bold">{data?.opened.totalCount}</span> <span>Open</span>
+                    <span className="font-weight-bold">{data?.globalChangesetsStats.open}</span> <span>Open</span>
                 </div>
                 <div className="text-center">
                     <ChangesetStatusClosed />
-                    <span className="font-weight-bold">{data?.closed.totalCount}</span> <span>Closed</span>
+                    <span className="font-weight-bold">{data?.globalChangesetsStats.closed}</span> <span>Closed</span>
                 </div>
             </div>
         </div>
