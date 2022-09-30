@@ -48,8 +48,6 @@ function parseReport(commitFilename: string, mergeBaseFilename: string): Report 
 
     const statoscope = path.join(__dirname, '..', '..', '..', 'node_modules', '.bin', 'statoscope')
 
-    console.log({ queryFile, commitFile, mergeBaseFile, statoscope })
-
     const rawReport = shelljs.exec(`cat "${queryFile}" | ${statoscope} query -i "${commitFile}" -i "${mergeBaseFile}"`)
 
     return JSON.parse(rawReport) as Report
@@ -122,7 +120,7 @@ async function createOrUpdateComment(body: string): Promise<void> {
 
     if (!sizeLimitComment) {
         try {
-            await octokit.issues.createComment({
+            await octokit.rest.issues.createComment({
                 ...repo,
                 issue_number: pullRequest,
                 body,
@@ -135,7 +133,7 @@ async function createOrUpdateComment(body: string): Promise<void> {
         }
     } else {
         try {
-            await octokit.issues.updateComment({
+            await octokit.rest.issues.updateComment({
                 ...repo,
                 // eslint-disable-next-line camelcase
                 comment_id: sizeLimitComment.id,
