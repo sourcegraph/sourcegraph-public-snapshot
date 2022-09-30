@@ -10,7 +10,7 @@ export const CodeMonitorSignUpLink: React.FunctionComponent<
         className?: string
         text: string
         eventName: string
-        forDotcom: boolean
+        forDotcom?: boolean
     }>
 > = ({ className, text, eventName, forDotcom }) => {
     const onClick = (): void => {
