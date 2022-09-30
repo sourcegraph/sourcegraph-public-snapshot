@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/sourcegraph/log"
 
@@ -14,12 +15,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (r *schemaResolver) Users(args *struct {
+type usersArgs struct {
 	graphqlutil.ConnectionArgs
-	Query        *string
-	Tag          *string
-	ActivePeriod *string
-}) *userConnectionResolver {
+	Query         *string
+	Tag           *string
+	ActivePeriod  *string
+	InactiveSince *time.Time
+}
+
+func (r *schemaResolver) Users(args *usersArgs) *userConnectionResolver {
 	var opt database.UsersListOptions
 	if args.Query != nil {
 		opt.Query = *args.Query

@@ -1316,6 +1316,10 @@ type Query {
         Returns users who have been active in a given period of time.
         """
         activePeriod: UserActivePeriod
+        """
+        Returns users who have NOT been active since a given point in time.
+        """
+        inactiveSince: DateTime
     ): UserConnection!
     """
     Looks up an organization by name.
