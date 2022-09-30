@@ -7,8 +7,8 @@ import (
 
 	"github.com/gobwas/glob"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -107,7 +107,7 @@ func (m *Matcher) CommitsDescribedByPolicy(ctx context.Context, repositoryID int
 	return context.commitMap, nil
 }
 
-func (m *Matcher) CommitsDescribedByPolicyInternal(ctx context.Context, repositoryID int, policies []shared.ConfigurationPolicy, now time.Time, filterCommits ...string) (map[string][]PolicyMatch, error) {
+func (m *Matcher) CommitsDescribedByPolicyInternal(ctx context.Context, repositoryID int, policies []types.ConfigurationPolicy, now time.Time, filterCommits ...string) (map[string][]PolicyMatch, error) {
 	dbStorePolicies := make([]dbstore.ConfigurationPolicy, 0, len(policies))
 	for _, p := range policies {
 		dbStorePolicies = append(dbStorePolicies, dbstore.ConfigurationPolicy{

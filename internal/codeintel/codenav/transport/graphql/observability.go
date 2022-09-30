@@ -22,10 +22,7 @@ type operations struct {
 	stencil         *observation.Operation
 	ranges          *observation.Operation
 
-	getSupportedByCtags        *observation.Operation
-	getGitBlobLSIFDataResolver *observation.Operation
-	getLanguagesRequestedBy    *observation.Operation
-	setRequestLanguageSupport  *observation.Operation
+	gitBlobLsifData *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -53,10 +50,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		stencil:         op("Stencil"),
 		ranges:          op("Ranges"),
 
-		getSupportedByCtags:        op("GetSupportedByCtags"),
-		getGitBlobLSIFDataResolver: op("GetGitBlobLSIFDataResolver"),
-		getLanguagesRequestedBy:    op("GetLanguagesRequestedBy"),
-		setRequestLanguageSupport:  op("SetRequestLanguageSupport"),
+		gitBlobLsifData: op("GitBlobLsifData"),
 	}
 }
 

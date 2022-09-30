@@ -6,16 +6,20 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Button, Input, Link, Label, Checkbox } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../../components/LoaderButton'
-import { TruncatedText } from '../../../../../../../components'
-import { useCheckboxes } from '../../../../../../../components/form/hooks/useCheckboxes'
-import { useField } from '../../../../../../../components/form/hooks/useField'
-import { SubmissionErrors, useForm, FORM_ERROR } from '../../../../../../../components/form/hooks/useForm'
-import { AccessibleInsightInfo } from '../../../../../../../core'
+import { AccessibleInsight } from '../../../../../../../../../graphql-operations'
+import {
+    TruncatedText,
+    useCheckboxes,
+    useField,
+    SubmissionErrors,
+    useForm,
+    FORM_ERROR,
+} from '../../../../../../../components'
 
 import styles from './AddInsightModalContent.module.scss'
 
 interface AddInsightModalContentProps {
-    insights: AccessibleInsightInfo[]
+    insights: AccessibleInsight[]
     initialValues: AddInsightFormValues
     dashboardID: string
     onSubmit: (values: AddInsightFormValues) => SubmissionErrors | Promise<SubmissionErrors> | void
@@ -47,7 +51,7 @@ export const AddInsightModalContent: React.FunctionComponent<
     } = useCheckboxes('insightIds', formAPI)
 
     const filteredInsights = insights.filter(insight =>
-        insight.title.match(new RegExp(escapeRegExp(searchInput.input.value), 'gi'))
+        insight.presentation.title.match(new RegExp(escapeRegExp(searchInput.input.value), 'gi'))
     )
 
     return (
@@ -78,7 +82,7 @@ export const AddInsightModalContent: React.FunctionComponent<
                             className={styles.checkbox}
                             wrapperClassName={styles.checkboxWrapper}
                         />
-                        <TruncatedText id={insight.id}>{insight.title}</TruncatedText>
+                        <TruncatedText id={insight.id}>{insight.presentation.title}</TruncatedText>
                     </Label>
                 ))}
             </fieldset>

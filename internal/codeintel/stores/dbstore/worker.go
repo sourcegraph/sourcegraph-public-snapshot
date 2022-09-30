@@ -22,7 +22,7 @@ const StalledUploadMaxAge = time.Second * 25
 const UploadMaxNumResets = 3
 
 var uploadWorkerStoreOptions = dbworkerstore.Options{
-	Name:              "codeintel_upload",
+	Name:              "codeintel_upload_resetter",
 	TableName:         "lsif_uploads",
 	ViewName:          "lsif_uploads_with_repository_name u",
 	ColumnExpressions: uploadColumnsWithNullRank,

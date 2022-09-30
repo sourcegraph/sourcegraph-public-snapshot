@@ -1,17 +1,19 @@
 import React, { useMemo } from 'react'
 
-import { mdiCloudDownload } from '@mdi/js'
+import { mdiOpenInNew, mdiCheckCircle } from '@mdi/js'
+import classNames from 'classnames'
 import { parseISO } from 'date-fns'
 import formatDistance from 'date-fns/formatDistance'
+import { SiteUpdateCheckResult, SiteUpdateCheckVariables } from 'src/graphql-operations'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { isErrorLike } from '@sourcegraph/common'
+import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, useObservable, Link, Alert, Icon, Code, H2, Text } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Link, PageHeader, Alert, Icon, Code, Container, Text } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 
-import { fetchSiteUpdateCheck } from './backend'
+import { SITE_UPDATE_CHECK } from './backend'
 
 import styles from './SiteAdminUpdatesPage.module.scss'
 
@@ -25,80 +27,86 @@ export const SiteAdminUpdatesPage: React.FunctionComponent<React.PropsWithChildr
         telemetryService.logViewEvent('SiteAdminUpdates')
     }, [telemetryService])
 
-    const state = useObservable(useMemo(() => fetchSiteUpdateCheck(), []))
+    const { data, loading, error } = useQuery<SiteUpdateCheckResult, SiteUpdateCheckVariables>(SITE_UPDATE_CHECK, {})
     const autoUpdateCheckingEnabled = window.context.site['update.channel'] === 'release'
-
-    if (state === undefined) {
-        return <LoadingSpinner />
-    }
-
-    const updateCheck = state.updateCheck
 
     return (
         <div>
             <PageTitle title="Updates - Admin" />
-            <H2>Updates</H2>
-            {isErrorLike(state) && <ErrorAlert error={state} />}
-            {updateCheck && (updateCheck.pending || updateCheck.checkedAt) && (
-                <div>
-                    {updateCheck.pending && (
-                        <Alert className={styles.alert} variant="primary">
-                            <LoadingSpinner /> Checking for updates... (reload in a few seconds)
-                        </Alert>
-                    )}
-                    {!updateCheck.errorMessage &&
-                        (updateCheck.updateVersionAvailable ? (
-                            <Alert className={styles.alert} variant="success">
-                                <Icon aria-hidden={true} svgPath={mdiCloudDownload} /> Update available:{' '}
-                                <Link to="https://about.sourcegraph.com">{updateCheck.updateVersionAvailable}</Link>
-                            </Alert>
-                        ) : (
-                            <Alert className={styles.alert} variant="success">
-                                Up to date.
-                            </Alert>
-                        ))}
-                    {updateCheck.errorMessage && (
-                        <ErrorAlert
-                            className={styles.alert}
-                            prefix="Error checking for updates"
-                            error={updateCheck.errorMessage}
-                        />
-                    )}
-                </div>
-            )}
+            <PageHeader path={[{ text: 'Updates' }]} headingElement="h2" className="mb-3" />
 
-            {!autoUpdateCheckingEnabled && (
-                <Alert className={styles.alert} variant="warning">
-                    Automatic update checking is disabled.
-                </Alert>
-            )}
+            <Container>
+                {error && !loading && <ErrorAlert error={error} />}
+                {loading && !error && <LoadingSpinner />}
+                {data && (
+                    <>
+                        <Text className="mb-2">
+                            Version {data.site.productVersion}{' '}
+                            <small className="text-muted">
+                                (
+                                <Link to="https://about.sourcegraph.com/changelog" target="_blank" rel="noopener">
+                                    changelog
+                                </Link>
+                                )
+                            </small>
+                            <br />
+                        </Text>
 
-            <Text className="site-admin-updates_page__info">
-                <small>
-                    <strong>Current product version:</strong> {state.productVersion} ({state.buildVersion})
-                </small>
-                <br />
-                <small>
-                    <strong>Last update check:</strong>{' '}
-                    {updateCheck.checkedAt
-                        ? formatDistance(parseISO(updateCheck.checkedAt), new Date(), {
-                              addSuffix: true,
-                          })
-                        : 'never'}
-                    .
-                </small>
-                <br />
-                <small>
-                    <strong>Automatic update checking:</strong> {autoUpdateCheckingEnabled ? 'on' : 'off'}.{' '}
-                    <Link to="/site-admin/configuration">Configure</Link> <Code>update.channel</Code> to{' '}
-                    {autoUpdateCheckingEnabled ? 'disable' : 'enable'}.
-                </small>
-            </Text>
-            <Text>
-                <Link to="https://about.sourcegraph.com/changelog" target="_blank" rel="noopener">
-                    Sourcegraph changelog
-                </Link>
-            </Text>
+                        <div>
+                            {data.site.updateCheck.pending && (
+                                <Alert className={styles.alert} variant="primary">
+                                    <LoadingSpinner /> Checking for updates... (reload in a few seconds)
+                                </Alert>
+                            )}
+                            {data.site.updateCheck.errorMessage && (
+                                <ErrorAlert
+                                    className={styles.alert}
+                                    prefix="Error checking for updates"
+                                    error={data.site.updateCheck.errorMessage}
+                                />
+                            )}
+                            {!data.site.updateCheck.errorMessage && (
+                                <small>
+                                    {data.site.updateCheck.updateVersionAvailable ? (
+                                        <Link to="https://about.sourcegraph.com">
+                                            Update available to version {data.site.updateCheck.updateVersionAvailable}{' '}
+                                            <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
+                                        </Link>
+                                    ) : (
+                                        <span>
+                                            <Icon
+                                                aria-hidden={true}
+                                                className="text-success mr-1"
+                                                svgPath={mdiCheckCircle}
+                                            />
+                                            Up to date
+                                        </span>
+                                    )}
+                                    <span className={classNames('text-muted pl-2 ml-2', styles.lastChecked)}>
+                                        {data.site.updateCheck.checkedAt
+                                            ? `Last checked ${formatDistance(
+                                                  parseISO(data.site.updateCheck.checkedAt),
+                                                  new Date(),
+                                                  {
+                                                      addSuffix: true,
+                                                  }
+                                              )}`
+                                            : 'Never checked for updates'}
+                                    </span>
+                                </small>
+                            )}
+                        </div>
+                    </>
+                )}
+            </Container>
+
+            <small>
+                {autoUpdateCheckingEnabled
+                    ? 'Automatically checking for updates.'
+                    : 'Automatic checking for updates disabled.'}{' '}
+                Change <Code>update.channel</Code> in <Link to="/site-admin/configuration">site configuration</Link> to{' '}
+                {autoUpdateCheckingEnabled ? 'disable' : 'enable'} automatic checking.
+            </small>
         </div>
     )
 }

@@ -630,8 +630,8 @@ func (a *backfillAnalyzer) analyzeSeries(ctx context.Context, bctx *buildSeriesC
 	repoName := string(bctx.repoName)
 	if bctx.execution.RecordingTime.Before(bctx.firstHEADCommit.Author.Date) {
 		a.statistics[bctx.seriesID].Preempted += 1
-		return err, nil, bctx.execution.ToRecording(bctx.seriesID, repoName, bctx.id, 0.0)
-
+		// We don't save empty series points in this case.
+		return err, nil, []store.RecordSeriesPointArgs{}
 		// return // success - nothing else to do
 	}
 

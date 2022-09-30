@@ -484,28 +484,6 @@ export function registerHoverContributions({
             if (window.context?.enableLegacyExtensions === false) {
                 const promise = extensionHostAPI.registerContributions({
                     actions: [
-                        {
-                            actionItem: {
-                                description:
-                                    // eslint-disable-next-line no-template-curly-in-string
-                                    '${!!config.codeIntel.mixPreciseAndSearchBasedReferences && "Hide search-based results when precise results are available" || ""}',
-                                label:
-                                    // eslint-disable-next-line no-template-curly-in-string
-                                    '${!!config.codeIntel.mixPreciseAndSearchBasedReferences && "Hide search-based results" || "Mix precise and search-based results"}',
-                            },
-                            command: 'updateConfiguration',
-                            commandArguments: [
-                                ['codeIntel.mixPreciseAndSearchBasedReferences'],
-                                // eslint-disable-next-line no-template-curly-in-string
-                                '${!config.codeIntel.mixPreciseAndSearchBasedReferences}',
-                                null,
-                                'json',
-                            ],
-                            id: 'mixPreciseAndSearchBasedReferences.toggle',
-                            title:
-                                // eslint-disable-next-line no-template-curly-in-string
-                                '${!!config.codeIntel.mixPreciseAndSearchBasedReferences && "Hide search-based results when precise results are available" || "Mix precise and search-based results"}',
-                        },
                         ...languageSpecs.map(spec => ({
                             actionItem: { label: 'Find implementations' },
                             command: 'open',
@@ -529,12 +507,6 @@ export function registerHoverContributions({
                                 // eslint-disable-next-line no-template-curly-in-string
                                 "' && get(context, `implementations_${resource.language}`) && (goToDefinition.showLoading || goToDefinition.url || goToDefinition.error)",
                         })),
-                        'panel/toolbar': [
-                            {
-                                action: 'mixPreciseAndSearchBasedReferences.toggle',
-                                when: "panel.activeView.id == 'references' && !config.codeIntel.disableSearchBased",
-                            },
-                        ],
                     },
                 })
                 implementationsContributionPromise = promise

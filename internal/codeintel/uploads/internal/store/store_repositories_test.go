@@ -11,7 +11,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -334,8 +334,8 @@ func TestHasRepository(t *testing.T) {
 		{52, false},
 	}
 
-	insertUploads(t, db, shared.Upload{ID: 1, RepositoryID: 50})
-	insertUploads(t, db, shared.Upload{ID: 2, RepositoryID: 51, State: "deleted"})
+	insertUploads(t, db, types.Upload{ID: 1, RepositoryID: 50})
+	insertUploads(t, db, types.Upload{ID: 2, RepositoryID: 51, State: "deleted"})
 
 	for _, testCase := range testCases {
 		name := fmt.Sprintf("repositoryID=%d", testCase.repositoryID)
@@ -358,12 +358,12 @@ func TestSetRepositoriesForRetentionScan(t *testing.T) {
 	store := New(db, &observation.TestContext)
 
 	insertUploads(t, db,
-		shared.Upload{ID: 1, RepositoryID: 50, State: "completed"},
-		shared.Upload{ID: 2, RepositoryID: 51, State: "completed"},
-		shared.Upload{ID: 3, RepositoryID: 52, State: "completed"},
-		shared.Upload{ID: 4, RepositoryID: 53, State: "completed"},
-		shared.Upload{ID: 5, RepositoryID: 54, State: "errored"},
-		shared.Upload{ID: 6, RepositoryID: 54, State: "deleted"},
+		types.Upload{ID: 1, RepositoryID: 50, State: "completed"},
+		types.Upload{ID: 2, RepositoryID: 51, State: "completed"},
+		types.Upload{ID: 3, RepositoryID: 52, State: "completed"},
+		types.Upload{ID: 4, RepositoryID: 53, State: "completed"},
+		types.Upload{ID: 5, RepositoryID: 54, State: "errored"},
+		types.Upload{ID: 6, RepositoryID: 54, State: "deleted"},
 	)
 
 	now := timeutil.Now()

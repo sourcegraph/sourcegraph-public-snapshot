@@ -42,6 +42,8 @@ Once the instance has started, please allow ~5 minutes for Sourcegraph to initia
 
 To configure SSL, and lock down the instance from the public internet, see the [networking](#networking) section.
 
+> NOTE: If you cannot access the Sourcegraph homepage after 8 minutes, please try reboot your instance.
+
 ### Instance size chart
 
 Select an AMI according to the number of users and repositories you have using this table. If you fall between two sizes, choose the larger of the two.
@@ -52,7 +54,7 @@ Select an AMI according to the number of users and repositories you have using t
 | **Repositories** |                                                  5,000                                                   |                        10,000                        |                        50,000                        |                                                 100,000                                                 |                                                 250,000                                                  |
 | **Recommended**  |                                               m6a.2xlarge                                                |                     m6a.4xlarge                      |                     m6a.8xlarge                      |                                              m6a.12xlarge                                               |                                               m6a.24xlarge                                               |
 | **Minimum**      |                                               m6a.2xlarge                                                |                     m6a.2xlarge                      |                     m6a.4xlarge                      |                                               m6a.8xlarge                                               |                                               m6a.12xlarge                                               |
-| **AMI**          | [sourcegraph-XS (v4.0.0)](https://console.aws.amazon.com/ec2/v2/home?region=us-west-2#ImageDetails:imageId=ami-0ee5cdc5e89a4bee2) | <span class="badge badge-warning">Coming soon</span> | <span class="badge badge-warning">Coming soon</span> | [sourcegraph-L (v4.0.0)](https://console.aws.amazon.com/ec2/v2/home?region=us-west-2#ImageDetails:imageId=ami-021db30b6db9b0634) | [sourcegraph-XL (v4.0.0)](https://console.aws.amazon.com/ec2/v2/home?region=us-west-2#ImageDetails:imageId=ami-04b10e0fabedb6eac) |
+| **AMI (Latest Release)** | [sourcegraph-XS (v4.0.0)](https://console.aws.amazon.com/ec2/v2/home?region=us-west-2#ImageDetails:imageId=ami-0ee5cdc5e89a4bee2) | [sourcegraph-S (v4.0.0)](https://console.aws.amazon.com/ec2/v2/home?region=us-west-2#ImageDetails:imageId=ami-0d23989399a89b0dc) | [sourcegraph-M (v4.0.0)](https://console.aws.amazon.com/ec2/v2/home?region=us-west-2#ImageDetails:imageId=ami-0f23794abf480565e) | [sourcegraph-L (v4.0.0)](https://console.aws.amazon.com/ec2/v2/home?region=us-west-2#ImageDetails:imageId=ami-021db30b6db9b0634) | [sourcegraph-XL (v4.0.0)](https://console.aws.amazon.com/ec2/v2/home?region=us-west-2#ImageDetails:imageId=ami-04b10e0fabedb6eac) |
 
 <span class="badge badge-critical">IMPORTANT</span> AMIs are currently only available in the **us-west-2 (Oregon)** region. More regions are coming soon.
 

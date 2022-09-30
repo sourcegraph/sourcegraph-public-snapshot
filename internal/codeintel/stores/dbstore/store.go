@@ -3,8 +3,6 @@ package dbstore
 import (
 	"context"
 
-	"github.com/keegancsmith/sqlf"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -56,14 +54,4 @@ func (s *Store) transact(ctx context.Context) (*Store, error) {
 		Store:      txBase,
 		operations: s.operations,
 	}, nil
-}
-
-// intsToQueries converts a slice of ints into a slice of queries.
-func intsToQueries(values []int) []*sqlf.Query {
-	var queries []*sqlf.Query
-	for _, value := range values {
-		queries = append(queries, sqlf.Sprintf("%d", value))
-	}
-
-	return queries
 }
