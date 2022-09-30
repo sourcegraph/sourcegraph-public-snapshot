@@ -107,25 +107,7 @@ func (m *Matcher) CommitsDescribedByPolicy(ctx context.Context, repositoryID int
 }
 
 func (m *Matcher) CommitsDescribedByPolicyInternal(ctx context.Context, repositoryID int, policies []types.ConfigurationPolicy, now time.Time, filterCommits ...string) (map[string][]PolicyMatch, error) {
-	dbStorePolicies := make([]types.ConfigurationPolicy, 0, len(policies))
-	for _, p := range policies {
-		dbStorePolicies = append(dbStorePolicies, types.ConfigurationPolicy{
-			ID:                        p.ID,
-			RepositoryID:              p.RepositoryID,
-			RepositoryPatterns:        p.RepositoryPatterns,
-			Name:                      p.Name,
-			Type:                      types.GitObjectType(p.Type),
-			Pattern:                   p.Pattern,
-			Protected:                 p.Protected,
-			RetentionEnabled:          p.RetentionEnabled,
-			RetentionDuration:         p.RetentionDuration,
-			RetainIntermediateCommits: p.RetainIntermediateCommits,
-			IndexingEnabled:           p.IndexingEnabled,
-			IndexCommitMaxAge:         p.IndexCommitMaxAge,
-			IndexIntermediateCommits:  p.IndexIntermediateCommits,
-		})
-	}
-	return m.CommitsDescribedByPolicy(ctx, repositoryID, dbStorePolicies, now, filterCommits...)
+	return m.CommitsDescribedByPolicy(ctx, repositoryID, policies, now, filterCommits...)
 }
 
 type matcherContext struct {

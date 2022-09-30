@@ -3,6 +3,7 @@ package sharedresolvers
 import (
 	"strings"
 
+	autoindexingShared "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 )
 
@@ -13,11 +14,11 @@ type LSIFIndexesWithRepositoryNamespaceResolver interface {
 }
 
 type lsifIndexesWithRepositoryNamespaceResolver struct {
-	indexesSummary IndexesWithRepositoryNamespace
+	indexesSummary autoindexingShared.IndexesWithRepositoryNamespace
 	indexResolvers []LSIFIndexResolver
 }
 
-func NewLSIFIndexesWithRepositoryNamespaceResolver(indexesSummary IndexesWithRepositoryNamespace, indexResolvers []LSIFIndexResolver) LSIFIndexesWithRepositoryNamespaceResolver {
+func NewLSIFIndexesWithRepositoryNamespaceResolver(indexesSummary autoindexingShared.IndexesWithRepositoryNamespace, indexResolvers []LSIFIndexResolver) LSIFIndexesWithRepositoryNamespaceResolver {
 	return &lsifIndexesWithRepositoryNamespaceResolver{
 		indexesSummary: indexesSummary,
 		indexResolvers: indexResolvers,
