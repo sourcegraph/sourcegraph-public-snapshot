@@ -549,7 +549,7 @@ func (s *Syncer) SyncExternalService(
 			return errors.Wrap(err, "getting advisory lock")
 		}
 		if !locked {
-			return errors.Errorf("could not advisory lock for service %d", svc.ID)
+			return errors.Errorf("could not get advisory lock for service %d", svc.ID)
 		}
 		defer func() {
 			err = unlocker(err)
