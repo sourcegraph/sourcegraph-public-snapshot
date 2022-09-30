@@ -1,6 +1,7 @@
 package images
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -15,6 +16,7 @@ import (
 	"github.com/distribution/distribution/v3/reference"
 	"github.com/docker/docker-credential-helpers/credentials"
 	"github.com/opencontainers/go-digest"
+	"github.com/sourcegraph/run"
 	"sigs.k8s.io/kustomize/kyaml/kio"
 	"sigs.k8s.io/kustomize/kyaml/yaml"
 	k8syaml "sigs.k8s.io/yaml"
@@ -148,6 +150,51 @@ func UpdateHelm(path string, creds credentials.Credentials, pinTag string) error
 		return errors.Newf("WriteFile: %w", err)
 	}
 
+	return nil
+}
+
+func Deploy(ctx context.Context, helmDeployment *HelmDeployment, kind DeploymentType) error {
+	switch kind {
+	case DeploymentTypeHelm:
+		return DeployHelm(ctx, helmDeployment)
+	}
+	return errors.Newf("deployment kind %s is not supported", kind)
+}
+
+type HelmDeployment struct {
+	ChartName       string
+	ChartRepository string
+	ChartVersion    string
+	ValuesPath      string
+	Namespace       string
+}
+
+func DeployHelm(ctx context.Context, deployment *HelmDeployment) error {
+	std.Out.Write("Getting currently deployed helm chart version")
+	err := deployment.getCurrentlyDeployedHelmChartVersion(ctx)
+	if err != nil {
+		return err
+	}
+
+	std.Out.Writef("Upgrading helm chart '%s' in repository '%s/%s' at version '%s' in Namespace '%s'", deployment.ChartName, deployment.ChartRepository, deployment.ChartName, deployment.ChartVersion, deployment.Namespace)
+	helmCmdString := fmt.Sprintf("helm upgrade --install --values %s --version %s %s %s -n %s", deployment.ValuesPath, deployment.ChartVersion, deployment.ChartName, fmt.Sprintf("%s/%s", deployment.ChartRepository, deployment.ChartName), deployment.Namespace)
+	err = run.Cmd(ctx, helmCmdString).Run().Wait()
+	if err != nil {
+		return err
+	}
+
+	std.Out.WriteSuccessf("Images deployed successfully (or no changes to deploy)")
+	// Any failed helm command returns a non-zero exit code and yields an error, so upgrade must have terminated successfully here
+	return nil
+}
+
+func (deployment *HelmDeployment) getCurrentlyDeployedHelmChartVersion(ctx context.Context) error {
+	currentVersionCmd := run.Cmd(ctx, fmt.Sprintf("helm list --filter '%s' -o json", deployment.ChartName))
+	version, err := currentVersionCmd.Run().JQ(`.[].chart | sub("sourcegraph-";"")`)
+	if err != nil {
+		return err
+	}
+	deployment.ChartVersion = string(version)
 	return nil
 }
 

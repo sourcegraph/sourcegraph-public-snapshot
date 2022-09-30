@@ -205,14 +205,6 @@ func opsDeployImage(ctx *cli.Context) error {
 		return flag.ErrHelp
 	}
 
-	std.Out.Write("Getting currently deployed helm chart version")
-	currentVersionCmd := run.Cmd(ctx.Context, fmt.Sprintf("helm list --filter '%s' -o json", args[0]))
-	out, err := currentVersionCmd.Run().JQ(".[].chart")
-	if err != nil {
-		return err
-	}
-	version := strings.ReplaceAll(string(out), fmt.Sprintf("%s-", args[0]), "")
-
 	defaultBranch, err := run.Cmd(ctx.Context, "git rev-parse --abbrev-ref origin/HEAD").Run().String()
 	if err != nil {
 		return err
@@ -242,14 +234,13 @@ func opsDeployImage(ctx *cli.Context) error {
 		return errors.Newf("Branch '%s' is not in sync with the remote. Update your local branch or merge uncommitted changes first", currentBranch)
 	}
 
-	std.Out.Writef("Upgrading helm chart '%s' in repository '%s/%s' at version '%s' in namespace '%s'", args[0], args[1], args[0], version, opsDeployImagesNamespaceFlag)
-	helmCmdString := fmt.Sprintf("helm upgrade --install --values %s --version %s %s %s -n %s", args[2], version, args[0], fmt.Sprintf("%s/%s", args[1], args[0]), opsDeployImagesNamespaceFlag)
-	err = run.Cmd(ctx.Context, helmCmdString).Run().Wait()
-	if err != nil {
-		return err
-	}
-
-	std.Out.WriteSuccessf("Images deployed successfully (or no changes to deploy)")
-	// Any failed helm command returns a non-zero exit code and yields an error, so upgrade must have terminated successfully here
-	return nil
+	return images.Deploy(
+		ctx.Context,
+		&images.HelmDeployment{
+			ChartName:       args[0],
+			ChartRepository: args[1],
+			ValuesPath:      args[2],
+			Namespace:       opsDeployImagesNamespaceFlag,
+		},
+		images.DeploymentType(opsDeployImagesDeploymentKindFlag))
 }
