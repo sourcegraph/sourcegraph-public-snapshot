@@ -28,7 +28,7 @@ _Upgrade notes for the next version will appear here._
 
 ## v3.43 -> v4.0
 
-Patch releases:
+**Patch releases**:
 
 - `v4.0.1`
 
