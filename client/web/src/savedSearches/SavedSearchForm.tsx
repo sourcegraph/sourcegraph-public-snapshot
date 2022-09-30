@@ -121,7 +121,6 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
                 <Container className="mb-3">
                     <Input
                         name="description"
-                        placeholder="Description"
                         required={true}
                         value={description}
                         onChange={createInputChangeHandler('description')}
