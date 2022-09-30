@@ -53,7 +53,7 @@ func RunRun(cliCtx *cli.Context, logger log.Logger, cfg *config.Config) error {
 		}
 
 		// Validate git is of the right version.
-		if err := validateGitVersion(telemetryOptions); err != nil {
+		if err := validateGitVersion(cliCtx.Context); err != nil {
 			return err
 		}
 
