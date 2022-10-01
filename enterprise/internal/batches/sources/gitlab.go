@@ -2,7 +2,6 @@ package sources
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
@@ -174,8 +173,6 @@ func (s *GitLabSource) CreateDraftChangeset(ctx context.Context, c *Changeset) (
 	if !ok {
 		return false, errors.New("Changeset is not a GitLab merge request")
 	}
-
-	fmt.Println("create draft changeset ===>>>", mr.WorkInProgress, mr.Draft)
 
 	isDraftOrWIP := mr.WorkInProgress || mr.Draft
 
@@ -509,11 +506,12 @@ func (s *GitLabSource) UndraftChangeset(ctx context.Context, c *Changeset) error
 	c.Title = gitlab.UnsetWIPOrDraft(c.Title, v)
 	// And mark the mr as not WorkInProgress / Draft anymore, otherwise UpdateChangeset
 	// will prepend the WIP: prefix again.
-	if v.Major() > 14 {
-		mr.Draft = false
-	} else {
-		mr.WorkInProgress = false
-	}
+
+	// We have to set both Draft and WorkInProgress or else the changeset will retain it's
+	// draft status. Both fields mirror each other, so if either is true then Gitlab assumes
+	// the changeset is still a draft.
+	mr.Draft = false
+	mr.WorkInProgress = false
 
 	return s.UpdateChangeset(ctx, c)
 }
