@@ -359,7 +359,7 @@ describe('Extension Registry', () => {
                     },
                 }),
             })
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/extensions/registry/new')
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/extensions/registry/new?toast=integrations')
             await driver.page.waitForSelector('.test-registry-new-extension')
 
             await percySnapshotWithVariants(driver.page, 'Extension registry create page')
