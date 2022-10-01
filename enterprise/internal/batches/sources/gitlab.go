@@ -439,9 +439,9 @@ func (s *GitLabSource) determineVersion(ctx context.Context) (*semver.Version, e
 
 	}
 
+	// if we are unable to get the version from Redis, we default to making a request
+	// to the codehost to get the version.
 	if v == "" {
-		// if we couldn't get the version of this source from Redis, we default to making a request
-		// to the codehost to get the version.
 		v, err = s.client.GetVersion(ctx)
 		if err != nil {
 			return nil, err
