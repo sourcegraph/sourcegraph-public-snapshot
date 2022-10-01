@@ -16,8 +16,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
@@ -31,13 +33,37 @@ const requeueBackoff = time.Second * 30
 // default is false aka index scheduler is enabled
 var disableIndexScheduler, _ = strconv.ParseBool(os.Getenv("CODEINTEL_DEPENDENCY_INDEX_SCHEDULER_DISABLED"))
 
+type IndexingDBStore interface {
+	GetUploadByID(ctx context.Context, id int) (codeinteltypes.Upload, bool, error)
+	ReferencesForUpload(ctx context.Context, uploadID int) (dbstore.PackageReferenceScanner, error)
+}
+type IndexingExternalServiceStore interface {
+	List(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error)
+}
+
+type RepoUpdaterClient interface {
+	RepoLookup(ctx context.Context, name api.RepoName) (info *protocol.RepoInfo, err error)
+}
+
+type ReposStore interface {
+	ListMinimalRepos(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error)
+}
+
+type GitserverRepoStore interface {
+	GetByNames(ctx context.Context, names ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error)
+}
+
+type IndexEnqueuer interface {
+	QueueIndexesForPackage(ctx context.Context, pkg precise.Package) error
+}
+
 // NewDependencyIndexingScheduler returns a new worker instance that processes
 // records from lsif_dependency_indexing_jobs.
 func NewDependencyIndexingScheduler(
-	dbStore DBStore,
+	dbStore IndexingDBStore,
 	repoStore ReposStore,
 	workerStore dbworkerstore.Store,
-	externalServiceStore ExternalServiceStore,
+	externalServiceStore IndexingExternalServiceStore,
 	gitserverRepoStore GitserverRepoStore,
 	repoUpdaterClient RepoUpdaterClient,
 	enqueuer *autoindexing.Service,
@@ -67,10 +93,10 @@ func NewDependencyIndexingScheduler(
 }
 
 type dependencyIndexingSchedulerHandler struct {
-	dbStore            DBStore
+	dbStore            IndexingDBStore
 	repoStore          ReposStore
 	indexEnqueuer      IndexEnqueuer
-	extsvcStore        ExternalServiceStore
+	extsvcStore        IndexingExternalServiceStore
 	gitserverRepoStore GitserverRepoStore
 	workerStore        dbworkerstore.Store
 	repoUpdater        RepoUpdaterClient

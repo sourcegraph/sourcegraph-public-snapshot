@@ -12,10 +12,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/shared"
+	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -30,12 +32,24 @@ var schemeToExternalService = map[string]string{
 	dependencies.PythonPackagesScheme: extsvc.KindPythonPackages,
 }
 
+type SyncDBStore interface {
+	GetUploadByID(ctx context.Context, id int) (codeinteltypes.Upload, bool, error)
+	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (int, error)
+	InsertCloneableDependencyRepo(ctx context.Context, dependency precise.Package) (bool, error)
+	ReferencesForUpload(ctx context.Context, uploadID int) (dbstore.PackageReferenceScanner, error)
+}
+
+type SyncExternalServiceStore interface {
+	Upsert(ctx context.Context, svcs ...*types.ExternalService) (err error)
+	List(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error)
+}
+
 // NewDependencySyncScheduler returns a new worker instance that processes
 // records from lsif_dependency_syncing_jobs.
 func NewDependencySyncScheduler(
-	dbStore DBStore,
+	dbStore SyncDBStore,
 	workerStore dbworkerstore.Store,
-	externalServiceStore ExternalServiceStore,
+	externalServiceStore SyncExternalServiceStore,
 	metrics workerutil.WorkerMetrics,
 	observationContext *observation.Context,
 ) *workerutil.Worker {
@@ -61,9 +75,9 @@ func NewDependencySyncScheduler(
 }
 
 type dependencySyncSchedulerHandler struct {
-	dbStore     DBStore
+	dbStore     SyncDBStore
 	workerStore dbworkerstore.Store
-	extsvcStore ExternalServiceStore
+	extsvcStore SyncExternalServiceStore
 }
 
 func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
@@ -235,7 +249,7 @@ func (h *dependencySyncSchedulerHandler) insertDependencyRepo(ctx context.Contex
 // shouldIndexDependencies returns true if the given upload should undergo dependency
 // indexing. Currently, we're only enabling dependency indexing for a repositories that
 // were indexed via lsif-go, scip-java, lsif-tsc and scip-typescript.
-func (h *dependencySyncSchedulerHandler) shouldIndexDependencies(ctx context.Context, store DBStore, uploadID int) (bool, error) {
+func (h *dependencySyncSchedulerHandler) shouldIndexDependencies(ctx context.Context, store SyncDBStore, uploadID int) (bool, error) {
 	upload, _, err := store.GetUploadByID(ctx, uploadID)
 	if err != nil {
 		return false, errors.Wrap(err, "dbstore.GetUploadByID")

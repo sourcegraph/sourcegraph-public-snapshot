@@ -19,9 +19,9 @@ import (
 )
 
 func TestDependencyIndexingSchedulerHandler(t *testing.T) {
-	mockDBStore := NewMockDBStore()
+	mockDBStore := NewMockIndexingDBStore()
 	mockRepoStore := NewMockReposStore()
-	mockExtSvcStore := NewMockExternalServiceStore()
+	mockExtSvcStore := NewMockIndexingExternalServiceStore()
 	mockRepoUpdater := NewMockRepoUpdaterClient()
 	mockScanner := NewMockPackageReferenceScanner()
 	mockWorkerStore := NewMockWorkerStore()
@@ -127,9 +127,9 @@ func TestDependencyIndexingSchedulerHandler(t *testing.T) {
 }
 
 func TestDependencyIndexingSchedulerHandlerCustomer(t *testing.T) {
-	mockDBStore := NewMockDBStore()
+	mockDBStore := NewMockIndexingDBStore()
 	mockRepoStore := NewMockReposStore()
-	mockExtSvcStore := NewMockExternalServiceStore()
+	mockExtSvcStore := NewMockIndexingExternalServiceStore()
 	mockRepoUpdater := NewMockRepoUpdaterClient()
 	mockScanner := NewMockPackageReferenceScanner()
 	mockWorkerStore := NewMockWorkerStore()
@@ -231,9 +231,9 @@ func TestDependencyIndexingSchedulerHandlerCustomer(t *testing.T) {
 }
 
 func TestDependencyIndexingSchedulerHandlerRequeueNotCloned(t *testing.T) {
-	mockDBStore := NewMockDBStore()
+	mockDBStore := NewMockIndexingDBStore()
 	mockRepoStore := NewMockReposStore()
-	mockExtSvcStore := NewMockExternalServiceStore()
+	mockExtSvcStore := NewMockIndexingExternalServiceStore()
 	mockRepoUpdater := NewMockRepoUpdaterClient()
 	mockScanner := NewMockPackageReferenceScanner()
 	mockWorkerStore := NewMockWorkerStore()
@@ -292,8 +292,8 @@ func TestDependencyIndexingSchedulerHandlerRequeueNotCloned(t *testing.T) {
 }
 
 func TestDependencyIndexingSchedulerHandlerSkipNonExistant(t *testing.T) {
-	mockDBStore := NewMockDBStore()
-	mockExtSvcStore := NewMockExternalServiceStore()
+	mockDBStore := NewMockIndexingDBStore()
+	mockExtSvcStore := NewMockIndexingExternalServiceStore()
 	mockRepoUpdater := NewMockRepoUpdaterClient()
 	mockScanner := NewMockPackageReferenceScanner()
 	mockWorkerStore := NewMockWorkerStore()
@@ -354,8 +354,8 @@ func TestDependencyIndexingSchedulerHandlerSkipNonExistant(t *testing.T) {
 }
 
 func TestDependencyIndexingSchedulerHandlerShouldSkipRepository(t *testing.T) {
-	mockDBStore := NewMockDBStore()
-	mockExtSvcStore := NewMockExternalServiceStore()
+	mockDBStore := NewMockIndexingDBStore()
+	mockExtSvcStore := NewMockIndexingExternalServiceStore()
 	mockGitserverReposStore := NewMockGitserverRepoStore()
 	mockScanner := NewMockPackageReferenceScanner()
 	mockRepoStore := NewMockReposStore()

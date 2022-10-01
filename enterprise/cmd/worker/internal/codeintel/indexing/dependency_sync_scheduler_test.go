@@ -21,8 +21,8 @@ import (
 func TestDependencySyncSchedulerJVM(t *testing.T) {
 	newOperations(&observation.TestContext)
 	mockWorkerStore := NewMockWorkerStore()
-	mockDBStore := NewMockDBStore()
-	mockExtsvcStore := NewMockExternalServiceStore()
+	mockDBStore := NewMockSyncDBStore()
+	mockExtsvcStore := NewMockSyncExternalServiceStore()
 	mockScanner := NewMockPackageReferenceScanner()
 	mockDBStore.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
 	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(types.Upload{ID: 42, RepositoryID: 50, Indexer: "scip-java"}, true, nil)
@@ -68,8 +68,8 @@ func TestDependencySyncSchedulerJVM(t *testing.T) {
 func TestDependencySyncSchedulerGomod(t *testing.T) {
 	newOperations(&observation.TestContext)
 	mockWorkerStore := NewMockWorkerStore()
-	mockDBStore := NewMockDBStore()
-	mockExtsvcStore := NewMockExternalServiceStore()
+	mockDBStore := NewMockSyncDBStore()
+	mockExtsvcStore := NewMockSyncExternalServiceStore()
 	mockScanner := NewMockPackageReferenceScanner()
 	mockDBStore.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
 	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(types.Upload{ID: 42, RepositoryID: 50, Indexer: "lsif-go"}, true, nil)

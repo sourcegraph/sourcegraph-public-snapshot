@@ -57,9 +57,11 @@
   sources:
     - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing
       interfaces:
-        - DBStore
+        - IndexingDBStore
+        - SyncDBStore
         - ReposStore
-        - ExternalServiceStore
+        - IndexingExternalServiceStore
+        - SyncExternalServiceStore
         - GitserverRepoStore
         - IndexEnqueuer
         - RepoUpdaterClient
