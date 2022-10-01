@@ -5185,12 +5185,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@react-aria/live-announcer@npm:^3.1.0":
-  version: 3.1.0
-  resolution: "@react-aria/live-announcer@npm:3.1.0"
+"@react-aria/live-announcer@npm:^3.1.1":
+  version: 3.1.1
+  resolution: "@react-aria/live-announcer@npm:3.1.1"
   dependencies:
     "@babel/runtime": ^7.6.2
-  checksum: 7b1cdbf879baa8764d10c59abe75d6fd6175bea9ce7ce8969aafd333ca9c2991a2da3fcec1d54e3d3f543ac4477f6ab569857804f11105de9e95044a128554c9
+  checksum: feb02fe339ed1ce005b3fc6f07366ea100fbdfc3e42688f52d4e6704f6e09724b37f4e6b0c121578081940af11004421aab1b1a91f99c7193c4c2945ff43f92c
   languageName: node
   linkType: hard
 
@@ -28784,7 +28784,7 @@ pvutils@latest:
     "@reach/menu-button": ^0.16.2
     "@reach/tabs": ^0.16.4
     "@reach/visually-hidden": ^0.16.0
-    "@react-aria/live-announcer": ^3.1.0
+    "@react-aria/live-announcer": ^3.1.1
     "@sentry/browser": ^7.8.1
     "@sentry/cli": ^1.74.4
     "@sentry/webpack-plugin": ^1.18.9

@@ -382,7 +382,7 @@
     "@reach/menu-button": "^0.16.2",
     "@reach/tabs": "^0.16.4",
     "@reach/visually-hidden": "^0.16.0",
-    "@react-aria/live-announcer": "^3.1.0",
+    "@react-aria/live-announcer": "^3.1.1",
     "@sentry/browser": "^7.8.1",
     "@sourcegraph/extension-api-classes": "^1.1.0",
     "@storybook/addon-controls": "^6.5.9",
