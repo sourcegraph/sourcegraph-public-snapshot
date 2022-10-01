@@ -109,7 +109,7 @@ Continue with the following steps *after* you have created a public or private c
 
 3\. Create a new branch called `release` off the latest version of Sourcegraph
 
-  - This branch will be used to [upgrade Sourcegraph](#upgrade-and-migration) and install your Sourcegraph instance.
+  - This branch will be used to [upgrade Sourcegraph](upgrade.md) and install your Sourcegraph instance.
   - It also allows us to track all of the customizations made to your Sourcegraph instance. 
 
 ```bash
