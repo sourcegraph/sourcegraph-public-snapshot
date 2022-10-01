@@ -2,6 +2,7 @@ package sources
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
@@ -174,8 +175,12 @@ func (s *GitLabSource) CreateDraftChangeset(ctx context.Context, c *Changeset) (
 		return false, errors.New("Changeset is not a GitLab merge request")
 	}
 
+	fmt.Println("create draft changeset ===>>>", mr.WorkInProgress, mr.Draft)
+
+	isDraftOrWIP := mr.WorkInProgress || mr.Draft
+
 	// If it already exists, but is not a WIP, we need to update the title.
-	if exists && !mr.WorkInProgress {
+	if exists && !isDraftOrWIP {
 		if err := s.UpdateChangeset(ctx, c); err != nil {
 			return exists, err
 		}
@@ -462,7 +467,7 @@ func (s *GitLabSource) UpdateChangeset(ctx context.Context, c *Changeset) error 
 	// Avoid accidentally undrafting the changeset by checking its current
 	// status.
 	title := c.Title
-	if mr.WorkInProgress {
+	if mr.WorkInProgress || mr.Draft {
 		v, err := s.determineVersion(ctx)
 		if err != nil {
 			return err
@@ -495,11 +500,20 @@ func (s *GitLabSource) UndraftChangeset(ctx context.Context, c *Changeset) error
 		return errors.New("Changeset is not a GitLab merge request")
 	}
 
+	v, err := s.determineVersion(ctx)
+	if err != nil {
+		return err
+	}
+
 	// Remove WIP prefix from title.
-	c.Title = gitlab.UnsetWIPOrDraft(c.Title)
-	// And mark the mr as not WorkInProgress anymore, otherwise UpdateChangeset
+	c.Title = gitlab.UnsetWIPOrDraft(c.Title, v)
+	// And mark the mr as not WorkInProgress / Draft anymore, otherwise UpdateChangeset
 	// will prepend the WIP: prefix again.
-	mr.WorkInProgress = false
+	if v.Major() > 14 {
+		mr.Draft = false
+	} else {
+		mr.WorkInProgress = false
+	}
 
 	return s.UpdateChangeset(ctx, c)
 }

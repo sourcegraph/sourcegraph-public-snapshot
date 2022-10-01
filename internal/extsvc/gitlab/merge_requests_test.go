@@ -21,7 +21,6 @@ func TestWIPOrDraft(t *testing.T) {
 		tests := []struct{ title, want string }{
 			{title: "My perfect changeset", want: "WIP: My perfect changeset"},
 			{title: "WIP: My perfect changeset", want: "WIP: My perfect changeset"},
-			{title: "Draft: My perfect changeset", want: "WIP: My perfect changeset"},
 		}
 		for _, tc := range tests {
 			if have, want := setWIP(tc.title), tc.want; have != want {
@@ -32,7 +31,6 @@ func TestWIPOrDraft(t *testing.T) {
 	t.Run("setDraft", func(t *testing.T) {
 		tests := []struct{ title, want string }{
 			{title: "My perfect changeset", want: "Draft: My perfect changeset"},
-			{title: "WIP: My perfect changeset", want: "Draft: My perfect changeset"},
 			{title: "Draft: My perfect changeset", want: "Draft: My perfect changeset"},
 		}
 		for _, tc := range tests {
@@ -48,10 +46,8 @@ func TestWIPOrDraft(t *testing.T) {
 		}{
 			{title: "My perfect changeset", want: "WIP: My perfect changeset", gitlabVersion: preV14Version},
 			{title: "WIP: My perfect changeset", want: "WIP: My perfect changeset", gitlabVersion: preV14Version},
-			{title: "Draft: My perfect changeset", want: "WIP: My perfect changeset", gitlabVersion: preV14Version},
 
 			{title: "My perfect changeset", want: "Draft: My perfect changeset", gitlabVersion: postV14Version},
-			{title: "WIP: My perfect changeset", want: "Draft: My perfect changeset", gitlabVersion: postV14Version},
 			{title: "Draft: My perfect changeset", want: "Draft: My perfect changeset", gitlabVersion: postV14Version},
 		}
 		for _, tc := range tests {
@@ -61,13 +57,18 @@ func TestWIPOrDraft(t *testing.T) {
 		}
 	})
 	t.Run("UnsetWIPOrDraft", func(t *testing.T) {
-		tests := []struct{ title, want string }{
-			{title: "WIP: My perfect changeset", want: "My perfect changeset"},
-			{title: "Draft: My perfect changeset", want: "My perfect changeset"},
-			{title: "My perfect changeset", want: "My perfect changeset"},
+		tests := []struct {
+			gitlabVersion *semver.Version
+			title, want   string
+		}{
+			{title: "WIP: My perfect changeset", want: "My perfect changeset", gitlabVersion: preV14Version},
+			{title: "My perfect changeset", want: "My perfect changeset", gitlabVersion: preV14Version},
+
+			{title: "Draft: My perfect changeset", want: "My perfect changeset", gitlabVersion: postV14Version},
+			{title: "My perfect changeset", want: "My perfect changeset", gitlabVersion: postV14Version},
 		}
 		for _, tc := range tests {
-			if have, want := UnsetWIPOrDraft(tc.title), tc.want; have != want {
+			if have, want := UnsetWIPOrDraft(tc.title, tc.gitlabVersion), tc.want; have != want {
 				t.Errorf("incorrect title generated from UnsetWIPOrDraft: have=%q want=%q", have, want)
 			}
 		}

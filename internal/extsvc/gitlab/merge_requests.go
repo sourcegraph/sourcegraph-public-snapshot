@@ -45,6 +45,7 @@ type MergeRequest struct {
 	TargetBranch           string            `json:"target_branch"`
 	WebURL                 string            `json:"web_url"`
 	WorkInProgress         bool              `json:"work_in_progress"`
+	Draft                  bool              `json:"draft"`
 	Author                 User              `json:"author"`
 
 	DiffRefs DiffRefs `json:"diff_refs"`
@@ -74,20 +75,31 @@ func SetWIPOrDraft(t string, v *semver.Version) string {
 
 // SetWIP ensures a "WIP:" prefix on the given title. If a "Draft:" prefix is found, that one is retained instead.
 func setWIP(title string) string {
-	t := UnsetWIPOrDraft(title)
+	t := unsetWIP(title)
 	return "WIP: " + t
 }
 
 // SetDraft ensures a "Draft:" prefix on the given title. If a "WIP:" prefix is found, we strip it off.
 func setDraft(title string) string {
-	t := UnsetWIPOrDraft(title)
+	t := unsetDraft(title)
 	return "Draft: " + t
 }
 
 // UnsetWIP removes "WIP:" and "Draft:" prefixes from the given title.
 // Depending on the GitLab version, either of them are used so we need to strip them both.
-func UnsetWIPOrDraft(title string) string {
-	return strings.TrimPrefix(strings.TrimPrefix(title, "WIP: "), "Draft: ")
+func UnsetWIPOrDraft(title string, v *semver.Version) string {
+	if v.Major() > 14 {
+		return unsetDraft(title)
+	}
+	return unsetWIP(title)
+}
+
+func unsetDraft(title string) string {
+	return strings.TrimPrefix(title, "Draft: ")
+}
+
+func unsetWIP(title string) string {
+	return strings.TrimPrefix(title, "WIP: ")
 }
 
 type DiffRefs struct {
