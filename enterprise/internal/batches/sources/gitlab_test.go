@@ -769,6 +769,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			return out, nil
 		}
 
+		p.mockGetVersions(mockVersion.String(), false)
 		p.mockGetMergeRequestNotes(in.IID, nil, 20, nil)
 		p.mockGetMergeRequestResourceStateEvents(in.IID, nil, 20, nil)
 		p.mockGetMergeRequestPipelines(in.IID, nil, 20, nil)
