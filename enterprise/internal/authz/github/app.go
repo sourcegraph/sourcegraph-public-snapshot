@@ -71,6 +71,9 @@ func newAppProvider(
 			auther.Expiry = token.GetExpiresAt()
 
 			rawConfig, err = jsonc.Edit(rawConfig, *token.Token, "token")
+			if err != nil {
+				return err
+			}
 
 			externalServicesStore.Update(context.Background(),
 				conf.Get().AuthProviders,
@@ -85,6 +88,9 @@ func newAppProvider(
 		}
 
 		installationAuther, err = auth.NewGitHubAppInstallationAuthenticator(installationID, "", installationRefreshFunc)
+		if err != nil {
+			return nil, errors.Wrap(err, "new GitHub App installation auther")
+		}
 	}
 
 	return &Provider{
