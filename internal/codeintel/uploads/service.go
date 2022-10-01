@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/opentracing/opentracing-go/log"
-
 	logger "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -17,9 +16,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	gitserverOptions "github.com/sourcegraph/sourcegraph/internal/gitserver"
-
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -84,21 +84,28 @@ type service interface {
 
 type Service struct {
 	store           store.Store
+	repoStore       RepoStore
+	workerutilStore dbworkerstore.Store
 	lsifstore       lsifstore.LsifStore
-	gitserverClient shared.GitserverClient
+	gitserverClient GitserverClient
 	locker          Locker
 	logger          logger.Logger
 	operations      *operations
 }
 
-func newService(store store.Store, lsifstore lsifstore.LsifStore, gsc shared.GitserverClient, locker Locker, observationCtx *observation.Context) *Service {
+func newService(store store.Store, repoStore RepoStore, lsifstore lsifstore.LsifStore, gsc GitserverClient, locker Locker, observationContext *observation.Context) *Service {
+	workerutilStore := store.WorkerutilStore(observationContext)
+	dbworker.InitPrometheusMetric(observationContext, workerutilStore, "codeintel", "upload", nil)
+
 	return &Service{
 		store:           store,
+		repoStore:       repoStore,
+		workerutilStore: workerutilStore,
 		lsifstore:       lsifstore,
 		gitserverClient: gsc,
 		locker:          locker,
 		logger:          logger.Scoped("uploads.service", ""),
-		operations:      newOperations(observationCtx),
+		operations:      newOperations(observationContext),
 	}
 }
 
@@ -461,7 +468,6 @@ const numAncestors = 100
 // the graph. This will not always produce the full set of visible commits - some responses may not contain
 // all results while a subsequent request made after the lsif_nearest_uploads has been updated to include
 // this commit will.
-//
 func (s *Service) InferClosestUploads(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) (_ []types.Dump, err error) {
 	ctx, _, endObservation := s.operations.inferClosestUploads.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{log.Int("repositoryID", repositoryID), log.String("commit", commit), log.String("path", path), log.Bool("exactPath", exactPath), log.String("indexer", indexer)},

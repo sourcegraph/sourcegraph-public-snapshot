@@ -4,6 +4,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { openSearchPanel } from '@codemirror/search'
 import { Compartment, EditorState, Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { isEqual } from 'lodash'
@@ -15,6 +16,7 @@ import {
     toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
 import { createUpdateableField, editorHeight, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { parseQueryAndHash, UIPositionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { BlobInfo, BlobProps, updateBrowserHistoryIfChanged } from './Blob'
@@ -91,6 +93,8 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         disableStatusBar,
         disableDecorations,
         navigateToLineOnAnyClick,
+
+        overrideBrowserSearchKeybinding,
     } = props
 
     const [container, setContainer] = useState<HTMLDivElement | null>(null)
@@ -181,10 +185,12 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         [onSelection, blobInfo, extensionsController, disableStatusBar, disableDecorations]
     )
 
+    const editorRef = useRef<EditorView>()
     const editor = useCodeMirror(container, blobInfo.content, extensions, {
         updateValueOnChange: false,
         updateOnExtensionChange: false,
     })
+    editorRef.current = editor
 
     // Reconfigure editor when blobInfo or core extensions changed
     useEffect(() => {
@@ -255,14 +261,25 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [position, hasPin])
 
+    const openSearch = useCallback(() => {
+        if (editorRef.current) {
+            openSearchPanel(editorRef.current)
+        }
+    }, [])
+
     return (
-        <div
-            ref={setContainer}
-            aria-label={ariaLabel}
-            role={role}
-            data-testid="repo-blob"
-            className={`${className} overflow-hidden`}
-        />
+        <>
+            <div
+                ref={setContainer}
+                aria-label={ariaLabel}
+                role={role}
+                data-testid="repo-blob"
+                className={`${className} overflow-hidden`}
+            />
+            {overrideBrowserSearchKeybinding && (
+                <Shortcut ordered={['f']} held={['Mod']} onMatch={openSearch} ignoreInput={true} />
+            )}
+        </>
     )
 }
 

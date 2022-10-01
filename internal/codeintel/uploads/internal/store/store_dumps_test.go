@@ -742,6 +742,97 @@ func TestDefinitionDumps(t *testing.T) {
 	})
 }
 
+func TestDeleteOverlappingDumps(t *testing.T) {
+	logger := logtest.Scoped(t)
+	sqlDB := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, sqlDB)
+	store := New(db, &observation.TestContext)
+
+	insertUploads(t, db, types.Upload{
+		ID:      1,
+		Commit:  makeCommit(1),
+		Root:    "cmd/",
+		Indexer: "lsif-go",
+	})
+
+	err := store.DeleteOverlappingDumps(context.Background(), 50, makeCommit(1), "cmd/", "lsif-go")
+	if err != nil {
+		t.Fatalf("unexpected error deleting dump: %s", err)
+	}
+
+	// Ensure record was deleted
+	if states, err := getUploadStates(db, 1); err != nil {
+		t.Fatalf("unexpected error getting states: %s", err)
+	} else if diff := cmp.Diff(map[int]string{1: "deleting"}, states); diff != "" {
+		t.Errorf("unexpected dump (-want +got):\n%s", diff)
+	}
+}
+
+func TestDeleteOverlappingDumpsNoMatches(t *testing.T) {
+	logger := logtest.Scoped(t)
+	sqlDB := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, sqlDB)
+	store := New(db, &observation.TestContext)
+
+	insertUploads(t, db, types.Upload{
+		ID:      1,
+		Commit:  makeCommit(1),
+		Root:    "cmd/",
+		Indexer: "lsif-go",
+	})
+
+	testCases := []struct {
+		commit  string
+		root    string
+		indexer string
+	}{
+		{makeCommit(2), "cmd/", "lsif-go"},
+		{makeCommit(1), "cmds/", "lsif-go"},
+		{makeCommit(1), "cmd/", "scip-typescript"},
+	}
+
+	for _, testCase := range testCases {
+		err := store.DeleteOverlappingDumps(context.Background(), 50, testCase.commit, testCase.root, testCase.indexer)
+		if err != nil {
+			t.Fatalf("unexpected error deleting dump: %s", err)
+		}
+	}
+
+	// Original dump still exists
+	if dumps, err := store.GetDumpsByIDs(context.Background(), []int{1}); err != nil {
+		t.Fatalf("unexpected error getting dump: %s", err)
+	} else if len(dumps) != 1 {
+		t.Fatal("expected dump record to still exist")
+	}
+}
+
+func TestDeleteOverlappingDumpsIgnoresIncompleteUploads(t *testing.T) {
+	logger := logtest.Scoped(t)
+	sqlDB := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, sqlDB)
+	store := New(db, &observation.TestContext)
+
+	insertUploads(t, db, types.Upload{
+		ID:      1,
+		Commit:  makeCommit(1),
+		Root:    "cmd/",
+		Indexer: "lsif-go",
+		State:   "queued",
+	})
+
+	err := store.DeleteOverlappingDumps(context.Background(), 50, makeCommit(1), "cmd/", "lsif-go")
+	if err != nil {
+		t.Fatalf("unexpected error deleting dump: %s", err)
+	}
+
+	// Original upload still exists
+	if _, exists, err := store.GetUploadByID(context.Background(), 1); err != nil {
+		t.Fatalf("unexpected error getting dump: %s", err)
+	} else if !exists {
+		t.Fatal("expected dump record to still exist")
+	}
+}
+
 func dumpToUpload(expected types.Dump) types.Upload {
 	return types.Upload{
 		ID:                expected.ID,

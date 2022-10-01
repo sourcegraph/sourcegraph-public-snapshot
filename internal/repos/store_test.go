@@ -542,7 +542,7 @@ func mkExternalServices(now time.Time) types.ExternalServices {
 	bitbucketServerSvc := types.ExternalService{
 		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "Bitbucket Server - Test",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://bitbucket.com", "token": "abc", "username": "user", "repos": ["owner/name"]}`),
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://bitbucket.org", "token": "abc", "username": "user", "repos": ["owner/name"]}`),
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -550,7 +550,7 @@ func mkExternalServices(now time.Time) types.ExternalServices {
 	bitbucketCloudSvc := types.ExternalService{
 		Kind:        extsvc.KindBitbucketCloud,
 		DisplayName: "Bitbucket Cloud - Test",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://bitbucket.com", "username": "user", "appPassword": "password"}`),
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://bitbucket.org", "username": "user", "appPassword": "password"}`),
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}

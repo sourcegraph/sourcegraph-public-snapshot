@@ -1,3 +1,5 @@
+import { isMacPlatform } from '@sourcegraph/common'
+
 import { Key, ModifierKey } from './keys'
 
 const ON_MATCH_DELAY = 500
@@ -5,7 +7,7 @@ const ON_MATCH_DELAY = 500
 export interface Data {
     node: HTMLElement | null | undefined
     ordered: Key[]
-    held?: ModifierKey[]
+    held?: (ModifierKey | 'Mod')[]
     ignoreInput: boolean
     onMatch(matched: { ordered: Key[]; held?: ModifierKey[] }): void
     allowDefault: boolean
@@ -67,7 +69,7 @@ export class ShortcutManager {
                 return false
             }
 
-            if (held && !held.every(key => event.getModifierState(key))) {
+            if (held && !isModifierHeld(held, event)) {
                 return false
             }
 
@@ -95,15 +97,30 @@ export class ShortcutManager {
             event.preventDefault()
         }
 
+        const modKey = getModKey()
         longestMatchingShortcut.onMatch({
             ordered: longestMatchingShortcut.ordered,
-            held: longestMatchingShortcut.held,
+            held: longestMatchingShortcut.held?.map(key => (key === 'Mod' ? modKey : key)),
         })
 
         clearTimeout(this.timer)
 
         this.resetKeys()
     }
+}
+
+function isModifierHeld(held: Exclude<Data['held'], undefined>, event: KeyboardEvent): boolean {
+    // It would be better to only call this once when the module loads but
+    // calling it here makes the code easier to test
+    const modKey = getModKey()
+    return held.every(key => event.getModifierState(key === 'Mod' ? modKey : key))
+}
+
+/**
+ * Returns the physicial key for the virtual 'Mod' key for the current platform.
+ */
+export function getModKey(): 'Control' | 'Meta' {
+    return isMacPlatform() ? 'Meta' : 'Control'
 }
 
 function isFocusedInput(): boolean {

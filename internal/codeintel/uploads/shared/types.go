@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -62,7 +61,7 @@ type CursorAdjustedUpload struct {
 type AdjustedUpload struct {
 	Upload               types.Dump
 	AdjustedPath         string
-	AdjustedPosition     lsifstore.Position
+	AdjustedPosition     Position
 	AdjustedPathInBundle string
 }
 

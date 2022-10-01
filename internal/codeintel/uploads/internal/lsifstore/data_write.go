@@ -27,23 +27,23 @@ const CurrentReferencesSchemaVersion = 2
 const CurrentImplementationsSchemaVersion = 2
 
 // WriteMeta is called (transactionally) from the precise-code-intel-worker.
-func (s *Store) WriteMeta(ctx context.Context, bundleID int, meta precise.MetaData) (err error) {
+func (s *store) WriteMeta(ctx context.Context, bundleID int, meta precise.MetaData) (err error) {
 	ctx, _, endObservation := s.operations.writeMeta.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return s.Exec(ctx, sqlf.Sprintf("INSERT INTO lsif_data_metadata (dump_id, num_result_chunks) VALUES (%s, %s)", bundleID, meta.NumResultChunks))
+	return s.db.Exec(ctx, sqlf.Sprintf("INSERT INTO lsif_data_metadata (dump_id, num_result_chunks) VALUES (%s, %s)", bundleID, meta.NumResultChunks))
 }
 
 // WriteDocuments is called (transactionally) from the precise-code-intel-worker.
-func (s *Store) WriteDocuments(ctx context.Context, bundleID int, documents chan precise.KeyedDocumentData) (count uint32, err error) {
+func (s *store) WriteDocuments(ctx context.Context, bundleID int, documents chan precise.KeyedDocumentData) (count uint32, err error) {
 	ctx, trace, endObservation := s.operations.writeDocuments.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	tx, err := s.Transact(ctx)
+	tx, err := s.db.Transact(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -127,13 +127,13 @@ FROM t_lsif_data_documents source
 `
 
 // WriteResultChunks is called (transactionally) from the precise-code-intel-worker.
-func (s *Store) WriteResultChunks(ctx context.Context, bundleID int, resultChunks chan precise.IndexedResultChunkData) (count uint32, err error) {
+func (s *store) WriteResultChunks(ctx context.Context, bundleID int, resultChunks chan precise.IndexedResultChunkData) (count uint32, err error) {
 	ctx, trace, endObservation := s.operations.writeResultChunks.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	tx, err := s.Transact(ctx)
+	tx, err := s.db.Transact(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -194,7 +194,7 @@ FROM t_lsif_data_result_chunks source
 `
 
 // WriteDefinitions is called (transactionally) from the precise-code-intel-worker.
-func (s *Store) WriteDefinitions(ctx context.Context, bundleID int, monikerLocations chan precise.MonikerLocations) (count uint32, err error) {
+func (s *store) WriteDefinitions(ctx context.Context, bundleID int, monikerLocations chan precise.MonikerLocations) (count uint32, err error) {
 	ctx, trace, endObservation := s.operations.writeDefinitions.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 	}})
@@ -204,7 +204,7 @@ func (s *Store) WriteDefinitions(ctx context.Context, bundleID int, monikerLocat
 }
 
 // WriteReferences is called (transactionally) from the precise-code-intel-worker.
-func (s *Store) WriteReferences(ctx context.Context, bundleID int, monikerLocations chan precise.MonikerLocations) (count uint32, err error) {
+func (s *store) WriteReferences(ctx context.Context, bundleID int, monikerLocations chan precise.MonikerLocations) (count uint32, err error) {
 	ctx, trace, endObservation := s.operations.writeReferences.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 	}})
@@ -214,7 +214,7 @@ func (s *Store) WriteReferences(ctx context.Context, bundleID int, monikerLocati
 }
 
 // WriteImplementations is called (transactionally) from the precise-code-intel-worker.
-func (s *Store) WriteImplementations(ctx context.Context, bundleID int, monikerLocations chan precise.MonikerLocations) (count uint32, err error) {
+func (s *store) WriteImplementations(ctx context.Context, bundleID int, monikerLocations chan precise.MonikerLocations) (count uint32, err error) {
 	ctx, trace, endObservation := s.operations.writeImplementations.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 	}})
@@ -223,8 +223,8 @@ func (s *Store) WriteImplementations(ctx context.Context, bundleID int, monikerL
 	return s.writeMonikers(ctx, bundleID, "lsif_data_implementations", CurrentImplementationsSchemaVersion, monikerLocations, trace)
 }
 
-func (s *Store) writeMonikers(ctx context.Context, bundleID int, tableName string, version int, monikerLocations chan precise.MonikerLocations, trace observation.TraceLogger) (count uint32, err error) {
-	tx, err := s.Transact(ctx)
+func (s *store) writeMonikers(ctx context.Context, bundleID int, tableName string, version int, monikerLocations chan precise.MonikerLocations, trace observation.TraceLogger) (count uint32, err error) {
+	tx, err := s.db.Transact(ctx)
 	if err != nil {
 		return 0, err
 	}

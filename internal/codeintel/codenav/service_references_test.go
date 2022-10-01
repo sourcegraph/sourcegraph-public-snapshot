@@ -23,6 +23,7 @@ var (
 	testRange3 = types.Range{Start: types.Position{Line: 13, Character: 23}, End: types.Position{Line: 33, Character: 43}}
 	testRange4 = types.Range{Start: types.Position{Line: 14, Character: 24}, End: types.Position{Line: 34, Character: 44}}
 	testRange5 = types.Range{Start: types.Position{Line: 15, Character: 25}, End: types.Position{Line: 35, Character: 45}}
+	testRange6 = types.Range{Start: types.Position{Line: 16, Character: 26}, End: types.Position{Line: 36, Character: 46}}
 
 	mockPath   = "s1/main.go"
 	mockCommit = "deadbeef"
@@ -33,9 +34,8 @@ func TestReferences(t *testing.T) {
 	mockStore := NewMockStore()
 	mockLsifStore := NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
-	mockDBStore := NewMockDBStore()
 	mockGitserverClient := NewMockGitserverClient()
-	mockGitServer := codeintelgitserver.New(database.NewMockDB(), mockDBStore, &observation.TestContext)
+	mockGitServer := codeintelgitserver.New(database.NewMockDB(), &observation.TestContext)
 
 	// Init service
 	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, &observation.TestContext)
@@ -97,9 +97,8 @@ func TestReferencesWithSubRepoPermissions(t *testing.T) {
 	mockStore := NewMockStore()
 	mockLsifStore := NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
-	mockDBStore := NewMockDBStore()
 	mockGitserverClient := NewMockGitserverClient()
-	mockGitServer := codeintelgitserver.New(database.NewMockDB(), mockDBStore, &observation.TestContext)
+	mockGitServer := codeintelgitserver.New(database.NewMockDB(), &observation.TestContext)
 
 	// Init service
 	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, &observation.TestContext)
@@ -172,9 +171,8 @@ func TestReferencesRemote(t *testing.T) {
 	mockStore := NewMockStore()
 	mockLsifStore := NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
-	mockDBStore := NewMockDBStore()
 	mockGitserverClient := NewMockGitserverClient()
-	mockGitServer := codeintelgitserver.New(database.NewMockDB(), mockDBStore, &observation.TestContext)
+	mockGitServer := codeintelgitserver.New(database.NewMockDB(), &observation.TestContext)
 
 	// Init service
 	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, &observation.TestContext)
@@ -348,9 +346,8 @@ func TestReferencesRemoteWithSubRepoPermissions(t *testing.T) {
 	mockStore := NewMockStore()
 	mockLsifStore := NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
-	mockDBStore := NewMockDBStore()
 	mockGitserverClient := NewMockGitserverClient()
-	mockGitServer := codeintelgitserver.New(database.NewMockDB(), mockDBStore, &observation.TestContext)
+	mockGitServer := codeintelgitserver.New(database.NewMockDB(), &observation.TestContext)
 
 	// Init service
 	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, &observation.TestContext)

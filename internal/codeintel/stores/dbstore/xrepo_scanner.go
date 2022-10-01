@@ -54,28 +54,3 @@ func (s *rowScanner) Next() (reference shared.PackageReference, _ bool, _ error)
 func (s *rowScanner) Close() error {
 	return basestore.CloseRows(s.rows, nil)
 }
-
-type sliceScanner struct {
-	references []shared.PackageReference
-}
-
-// PackageReferenceScannerFromSlice creates a PackageReferenceScanner that feeds the given values.
-func PackageReferenceScannerFromSlice(references ...shared.PackageReference) PackageReferenceScanner {
-	return &sliceScanner{
-		references: references,
-	}
-}
-
-func (s *sliceScanner) Next() (shared.PackageReference, bool, error) {
-	if len(s.references) == 0 {
-		return shared.PackageReference{}, false, nil
-	}
-
-	next := s.references[0]
-	s.references = s.references[1:]
-	return next, true, nil
-}
-
-func (s *sliceScanner) Close() error {
-	return nil
-}
