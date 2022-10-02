@@ -37,7 +37,7 @@ import { Diagnostic, getDiagnostics } from '@sourcegraph/shared/src/search/query
 import { resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { toHover } from '@sourcegraph/shared/src/search/query/hover'
 import { Node } from '@sourcegraph/shared/src/search/query/parser'
-import { Filter, KeywordKind } from '@sourcegraph/shared/src/search/query/token'
+import {Filter, KeywordKind, Pattern} from '@sourcegraph/shared/src/search/query/token'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -72,7 +72,10 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
     onChange,
     onSubmit,
     autoFocus,
-    onFocus,
+    onFocus = () => {
+        console.log(queryState.query)
+        console.log(queryState.query)
+    },
     onBlur,
     isSourcegraphDotCom,
     globbing,
@@ -241,15 +244,39 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
             return
         }
 
-        editor.dispatch({
-            selection: queryState.selectionRange
-                ? // Select the specified range (most of the time this will be a
-                  // placeholder filter value).
-                  EditorSelection.range(queryState.selectionRange.start, queryState.selectionRange.end)
-                : // Place the cursor at the end of the query.
-                  EditorSelection.cursor(editor.state.doc.length),
-            scrollIntoView: true,
-        })
+        const query = editor.state.facet(queryTokens)
+        let patternFilterIdx = -1 //= query.tokens.lastIndexOf(a => a.type === 'pattern')
+
+        for (let i = 0; i < query.tokens.length; i++) {
+            // this is bad I know, this language makes me so sad
+            let c = query.tokens[i] as Pattern
+            if (c.type === 'pattern') {
+                patternFilterIdx = i
+            }
+        }
+        //           (token): token is Pattern =>
+        //                 // // Inclusive end so that the filter is highlighted when
+        //                 // // the cursor is positioned directly after the value
+        //                 token.type === 'pattern' // asdf
+        if (patternFilterIdx !== -1) {
+            console.log("found pattern")
+            editor.dispatch({
+                selection: EditorSelection.cursor(query.tokens[patternFilterIdx].range.end),
+                scrollIntoView: true
+            })
+        } else {
+            editor.dispatch({
+                selection: queryState.selectionRange
+                    ? // Select the specified range (most of the time this will be a
+                      // placeholder filter value).
+                    EditorSelection.range(queryState.selectionRange.start, queryState.selectionRange.end)
+                    : // Place the cursor at the end of the query.
+                    EditorSelection.cursor(editor.state.doc.length),
+                scrollIntoView: true,
+            })
+        }
+
+
 
         if (queryState.hint) {
             if ((queryState.hint & EditorHint.Focus) === EditorHint.Focus) {
@@ -329,6 +356,7 @@ export const CodeMirrorQueryInput: React.FunctionComponent<
                     Prec.low([
                         tokenInfo(),
                         highlightFocusedFilter,
+                        selectContentFilter,
                         // It baffels me but the syntax highlighting extension has
                         // to come after the highlight current filter extension,
                         // otherwise CodeMirror keeps steeling the focus.
@@ -571,6 +599,33 @@ const highlightFocusedFilter = ViewPlugin.define(
     }),
     {
         decorations: plugin => plugin.decorations,
+    }
+)
+
+const selectContentFilter = ViewPlugin.define(
+    () => ({
+        sel: EditorSelection,
+        update(update: ViewUpdate) {
+            if (update.focusChanged && update.view.hasFocus) {
+                // do a thing
+                const query = update.state.facet(queryTokens)
+                // const position = update.state.selection.main.head
+                const focusedFilter = query.tokens.find(
+                    (token): token is Pattern =>
+                        // // Inclusive end so that the filter is highlighted when
+                        // // the cursor is positioned directly after the value
+                        token.type === 'pattern' // asdf
+                )
+                if (!focusedFilter) {
+                    return
+                }
+                console.log("findme")
+                this.sel = EditorSelection.cursor(focusedFilter.range.end)
+                console.log(this.sel)
+            }
+        }
+    }), {
+        selection: plugin => plugin.sel,
     }
 )
 
