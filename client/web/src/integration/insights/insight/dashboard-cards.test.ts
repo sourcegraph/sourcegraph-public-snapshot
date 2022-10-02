@@ -128,6 +128,7 @@ describe('Code insights [Dashboard card]', () => {
                         subjects: [
                             {
                                 __typename: 'DefaultSettings',
+                                id: 'DefaultSettingsTestId',
                                 settingsURL: null,
                                 viewerCanAdminister: false,
                                 latestSettings: {
