@@ -72,10 +72,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
     onChange,
     onSubmit,
     autoFocus,
-    onFocus = () => {
-        console.log(queryState.query)
-        console.log(queryState.query)
-    },
+    onFocus,
     onBlur,
     isSourcegraphDotCom,
     globbing,
