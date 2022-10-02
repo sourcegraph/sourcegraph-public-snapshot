@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 // Store provides the interface for autoindexing storage.
@@ -49,6 +50,8 @@ type Store interface {
 	// GetUnsafeDB returns the underlying database handle. This is used by the
 	// resolvers that have the old convention of using the database handle directly.
 	GetUnsafeDB() database.DB
+
+	WorkerutilStore(observationContext *observation.Context) dbworkerstore.Store
 }
 
 // store manages the autoindexing store.

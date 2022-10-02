@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -54,6 +55,8 @@ type service interface {
 
 	// Utilities
 	GetUnsafeDB() database.DB
+	WorkerutilStore() dbworkerstore.Store
+
 	ListFiles(ctx context.Context, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error)
 
 	// Symbols client
@@ -66,6 +69,7 @@ type service interface {
 
 type Service struct {
 	store            store.Store
+	workerutilStore  dbworkerstore.Store
 	uploadSvc        shared.UploadService
 	gitserverClient  shared.GitserverClient
 	symbolsClient    *symbols.Client
@@ -84,8 +88,11 @@ func newService(
 	inferenceSvc shared.InferenceService,
 	observationContext *observation.Context,
 ) *Service {
+	workerutilStore := store.WorkerutilStore(observationContext)
+
 	return &Service{
 		store:            store,
+		workerutilStore:  workerutilStore,
 		uploadSvc:        uploadSvc,
 		gitserverClient:  gitserver,
 		symbolsClient:    symbolsClient,
@@ -94,6 +101,10 @@ func newService(
 		operations:       newOperations(observationContext),
 		logger:           observationContext.Logger,
 	}
+}
+
+func (s *Service) WorkerutilStore() dbworkerstore.Store {
+	return s.workerutilStore
 }
 
 func (s *Service) GetIndexes(ctx context.Context, opts types.GetIndexesOptions) (_ []types.Index, _ int, err error) {
@@ -461,10 +472,10 @@ type configurationFactoryFunc func(ctx context.Context, repositoryID int, commit
 // getIndexRecords determines the set of index records that should be enqueued for the given commit.
 // For each repository, we look for index configuration in the following order:
 //
-//  - supplied explicitly via parameter
-//  - in the database
-//  - committed to `sourcegraph.yaml` in the repository
-//  - inferred from the repository structure
+//   - supplied explicitly via parameter
+//   - in the database
+//   - committed to `sourcegraph.yaml` in the repository
+//   - inferred from the repository structure
 func (s *Service) getIndexRecords(ctx context.Context, repositoryID int, commit, configuration string, bypassLimit bool) ([]types.Index, error) {
 	fns := []configurationFactoryFunc{
 		makeExplicitConfigurationFactory(configuration),
