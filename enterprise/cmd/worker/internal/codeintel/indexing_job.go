@@ -46,14 +46,14 @@ func (j *indexingJob) Routines(startupCtx context.Context, logger log.Logger) ([
 	}
 
 	// Initialize stores
-	db, err := workerdb.Init()
+	rawDB, err := workerdb.Init()
 	if err != nil {
 		return nil, err
 	}
-	databaseDB := database.NewDB(logger, db)
-	repoStore := database.ReposWith(logger, databaseDB)
-	extSvcStore := databaseDB.ExternalServices()
-	gitserverRepoStore := databaseDB.GitserverRepos()
+	db := database.NewDB(logger, rawDB)
+	repoStore := database.ReposWith(logger, db)
+	extSvcStore := db.ExternalServices()
+	gitserverRepoStore := db.GitserverRepos()
 
 	dbStore, err := codeintel.InitDBStore()
 	if err != nil {
@@ -89,8 +89,8 @@ func (j *indexingJob) Routines(startupCtx context.Context, logger log.Logger) ([
 	}
 
 	// Get services
-	uploadSvc := uploads.GetService(databaseDB, codeIntelDB, gitserverClient)
-	autoindexingSvc := autoindexing.GetService(databaseDB, uploadSvc, gitserverClient, repoUpdaterClient)
+	uploadSvc := uploads.GetService(db, codeIntelDB, gitserverClient)
+	autoindexingSvc := autoindexing.GetService(db, uploadSvc, gitserverClient, repoUpdaterClient)
 
 	routines := []goroutine.BackgroundRoutine{
 		indexing.NewDependencySyncScheduler(uploadSvc, dbStore, dependencySyncStore, extSvcStore, syncMetrics, observationContext),

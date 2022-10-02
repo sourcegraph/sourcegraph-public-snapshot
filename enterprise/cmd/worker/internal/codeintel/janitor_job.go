@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executorqueue"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -47,13 +48,24 @@ func (j *janitorJob) Routines(startupCtx context.Context, logger log.Logger) ([]
 		return nil, err
 	}
 	db := database.NewDB(logger, rawDB)
+	rawCodeIntelDB, err := codeintel.InitCodeIntelDatabase()
+	if err != nil {
+		return nil, err
+	}
+	codeIntelDB := database.NewDB(logger, rawCodeIntelDB)
+
+	gitserverClient, err := codeintel.InitGitserverClient()
+	if err != nil {
+		return nil, err
+	}
+	uploadSvc := uploads.GetService(db, codeIntelDB, gitserverClient)
 
 	dependencyIndexingStore, err := codeintel.InitDependencySyncingStore()
 	if err != nil {
 		return nil, err
 	}
 
-	uploadWorkerStore := dbstore.WorkerutilUploadStore(db, observationContext)
+	uploadWorkerStore := uploadSvc.WorkerutilStore()
 	indexWorkerStore := dbstore.WorkerutilIndexStore(db, observationContext)
 	metrics := janitor.NewMetrics(observationContext)
 
