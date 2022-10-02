@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/shared"
-	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -32,9 +31,7 @@ var schemeToExternalService = map[string]string{
 	dependencies.PythonPackagesScheme: extsvc.KindPythonPackages,
 }
 
-type SyncDBStore interface {
-	GetUploadByID(ctx context.Context, id int) (codeinteltypes.Upload, bool, error)
-	ReferencesForUpload(ctx context.Context, uploadID int) (dbstore.PackageReferenceScanner, error)
+type SyncDBStoreLeftovers interface {
 	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (int, error)
 	InsertCloneableDependencyRepo(ctx context.Context, dependency precise.Package) (bool, error)
 }
@@ -47,7 +44,8 @@ type SyncExternalServiceStore interface {
 // NewDependencySyncScheduler returns a new worker instance that processes
 // records from lsif_dependency_syncing_jobs.
 func NewDependencySyncScheduler(
-	dbStore SyncDBStore,
+	uploadsSvc UploadsService,
+	dbStoreLeftovers SyncDBStoreLeftovers,
 	workerStore dbworkerstore.Store,
 	externalServiceStore SyncExternalServiceStore,
 	metrics workerutil.WorkerMetrics,
@@ -60,9 +58,10 @@ func NewDependencySyncScheduler(
 	rootContext := actor.WithInternalActor(context.Background())
 
 	handler := &dependencySyncSchedulerHandler{
-		dbStore:     dbStore,
-		workerStore: workerStore,
-		extsvcStore: externalServiceStore,
+		uploadsSvc:       uploadsSvc,
+		dbStoreLeftovers: dbStoreLeftovers,
+		workerStore:      workerStore,
+		extsvcStore:      externalServiceStore,
 	}
 
 	return dbworker.NewWorker(rootContext, workerStore, handler, workerutil.WorkerOptions{
@@ -75,9 +74,10 @@ func NewDependencySyncScheduler(
 }
 
 type dependencySyncSchedulerHandler struct {
-	dbStore     SyncDBStore
-	workerStore dbworkerstore.Store
-	extsvcStore SyncExternalServiceStore
+	uploadsSvc       UploadsService
+	dbStoreLeftovers SyncDBStoreLeftovers
+	workerStore      dbworkerstore.Store
+	extsvcStore      SyncExternalServiceStore
 }
 
 func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
@@ -87,7 +87,7 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.
 
 	job := record.(dbstore.DependencySyncingJob)
 
-	scanner, err := h.dbStore.ReferencesForUpload(ctx, job.UploadID)
+	scanner, err := h.uploadsSvc.ReferencesForUpload(ctx, job.UploadID)
 	if err != nil {
 		return errors.Wrap(err, "dbstore.ReferencesForUpload")
 	}
@@ -179,7 +179,7 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.
 		logger.Info("no package schema kinds to sync external services for", log.Int("upload", job.UploadID), log.Int("job", job.ID))
 	}
 
-	shouldIndex, err := h.shouldIndexDependencies(ctx, h.dbStore, job.UploadID)
+	shouldIndex, err := h.shouldIndexDependencies(ctx, h.uploadsSvc, job.UploadID)
 	if err != nil {
 		return err
 	}
@@ -187,7 +187,7 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.
 	if shouldIndex {
 		// If we saw a kind that's not in schemeToExternalService, then kinds contains an empty string key
 		for kind := range kinds {
-			if _, err := h.dbStore.InsertDependencyIndexingJob(ctx, job.UploadID, kind, nextSync); err != nil {
+			if _, err := h.dbStoreLeftovers.InsertDependencyIndexingJob(ctx, job.UploadID, kind, nextSync); err != nil {
 				errs = append(errs, errors.Wrap(err, "dbstore.InsertDependencyIndexingJob"))
 			}
 		}
@@ -239,7 +239,7 @@ func (h *dependencySyncSchedulerHandler) insertDependencyRepo(ctx context.Contex
 		endObservation(1, observation.Args{MetricLabelValues: []string{strconv.FormatBool(new)}})
 	}()
 
-	new, err = h.dbStore.InsertCloneableDependencyRepo(ctx, pkg)
+	new, err = h.dbStoreLeftovers.InsertCloneableDependencyRepo(ctx, pkg)
 	if err != nil {
 		return new, errors.Wrap(err, "dbstore.InsertCloneableDependencyRepos")
 	}
@@ -249,7 +249,7 @@ func (h *dependencySyncSchedulerHandler) insertDependencyRepo(ctx context.Contex
 // shouldIndexDependencies returns true if the given upload should undergo dependency
 // indexing. Currently, we're only enabling dependency indexing for a repositories that
 // were indexed via lsif-go, scip-java, lsif-tsc and scip-typescript.
-func (h *dependencySyncSchedulerHandler) shouldIndexDependencies(ctx context.Context, store SyncDBStore, uploadID int) (bool, error) {
+func (h *dependencySyncSchedulerHandler) shouldIndexDependencies(ctx context.Context, store UploadsService, uploadID int) (bool, error) {
 	upload, _, err := store.GetUploadByID(ctx, uploadID)
 	if err != nil {
 		return false, errors.Wrap(err, "dbstore.GetUploadByID")

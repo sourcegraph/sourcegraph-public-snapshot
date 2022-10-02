@@ -341,291 +341,6 @@ func (c IndexEnqueuerQueueIndexesForPackageFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// MockIndexingDBStore is a mock implementation of the IndexingDBStore
-// interface (from the package
-// github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing)
-// used for unit testing.
-type MockIndexingDBStore struct {
-	// GetUploadByIDFunc is an instance of a mock function object
-	// controlling the behavior of the method GetUploadByID.
-	GetUploadByIDFunc *IndexingDBStoreGetUploadByIDFunc
-	// ReferencesForUploadFunc is an instance of a mock function object
-	// controlling the behavior of the method ReferencesForUpload.
-	ReferencesForUploadFunc *IndexingDBStoreReferencesForUploadFunc
-}
-
-// NewMockIndexingDBStore creates a new mock of the IndexingDBStore
-// interface. All methods return zero values for all results, unless
-// overwritten.
-func NewMockIndexingDBStore() *MockIndexingDBStore {
-	return &MockIndexingDBStore{
-		GetUploadByIDFunc: &IndexingDBStoreGetUploadByIDFunc{
-			defaultHook: func(context.Context, int) (r0 types1.Upload, r1 bool, r2 error) {
-				return
-			},
-		},
-		ReferencesForUploadFunc: &IndexingDBStoreReferencesForUploadFunc{
-			defaultHook: func(context.Context, int) (r0 dbstore.PackageReferenceScanner, r1 error) {
-				return
-			},
-		},
-	}
-}
-
-// NewStrictMockIndexingDBStore creates a new mock of the IndexingDBStore
-// interface. All methods panic on invocation, unless overwritten.
-func NewStrictMockIndexingDBStore() *MockIndexingDBStore {
-	return &MockIndexingDBStore{
-		GetUploadByIDFunc: &IndexingDBStoreGetUploadByIDFunc{
-			defaultHook: func(context.Context, int) (types1.Upload, bool, error) {
-				panic("unexpected invocation of MockIndexingDBStore.GetUploadByID")
-			},
-		},
-		ReferencesForUploadFunc: &IndexingDBStoreReferencesForUploadFunc{
-			defaultHook: func(context.Context, int) (dbstore.PackageReferenceScanner, error) {
-				panic("unexpected invocation of MockIndexingDBStore.ReferencesForUpload")
-			},
-		},
-	}
-}
-
-// NewMockIndexingDBStoreFrom creates a new mock of the MockIndexingDBStore
-// interface. All methods delegate to the given implementation, unless
-// overwritten.
-func NewMockIndexingDBStoreFrom(i IndexingDBStore) *MockIndexingDBStore {
-	return &MockIndexingDBStore{
-		GetUploadByIDFunc: &IndexingDBStoreGetUploadByIDFunc{
-			defaultHook: i.GetUploadByID,
-		},
-		ReferencesForUploadFunc: &IndexingDBStoreReferencesForUploadFunc{
-			defaultHook: i.ReferencesForUpload,
-		},
-	}
-}
-
-// IndexingDBStoreGetUploadByIDFunc describes the behavior when the
-// GetUploadByID method of the parent MockIndexingDBStore instance is
-// invoked.
-type IndexingDBStoreGetUploadByIDFunc struct {
-	defaultHook func(context.Context, int) (types1.Upload, bool, error)
-	hooks       []func(context.Context, int) (types1.Upload, bool, error)
-	history     []IndexingDBStoreGetUploadByIDFuncCall
-	mutex       sync.Mutex
-}
-
-// GetUploadByID delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockIndexingDBStore) GetUploadByID(v0 context.Context, v1 int) (types1.Upload, bool, error) {
-	r0, r1, r2 := m.GetUploadByIDFunc.nextHook()(v0, v1)
-	m.GetUploadByIDFunc.appendCall(IndexingDBStoreGetUploadByIDFuncCall{v0, v1, r0, r1, r2})
-	return r0, r1, r2
-}
-
-// SetDefaultHook sets function that is called when the GetUploadByID method
-// of the parent MockIndexingDBStore instance is invoked and the hook queue
-// is empty.
-func (f *IndexingDBStoreGetUploadByIDFunc) SetDefaultHook(hook func(context.Context, int) (types1.Upload, bool, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetUploadByID method of the parent MockIndexingDBStore instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *IndexingDBStoreGetUploadByIDFunc) PushHook(hook func(context.Context, int) (types1.Upload, bool, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *IndexingDBStoreGetUploadByIDFunc) SetDefaultReturn(r0 types1.Upload, r1 bool, r2 error) {
-	f.SetDefaultHook(func(context.Context, int) (types1.Upload, bool, error) {
-		return r0, r1, r2
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *IndexingDBStoreGetUploadByIDFunc) PushReturn(r0 types1.Upload, r1 bool, r2 error) {
-	f.PushHook(func(context.Context, int) (types1.Upload, bool, error) {
-		return r0, r1, r2
-	})
-}
-
-func (f *IndexingDBStoreGetUploadByIDFunc) nextHook() func(context.Context, int) (types1.Upload, bool, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *IndexingDBStoreGetUploadByIDFunc) appendCall(r0 IndexingDBStoreGetUploadByIDFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of IndexingDBStoreGetUploadByIDFuncCall
-// objects describing the invocations of this function.
-func (f *IndexingDBStoreGetUploadByIDFunc) History() []IndexingDBStoreGetUploadByIDFuncCall {
-	f.mutex.Lock()
-	history := make([]IndexingDBStoreGetUploadByIDFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// IndexingDBStoreGetUploadByIDFuncCall is an object that describes an
-// invocation of method GetUploadByID on an instance of MockIndexingDBStore.
-type IndexingDBStoreGetUploadByIDFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 types1.Upload
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 bool
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c IndexingDBStoreGetUploadByIDFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c IndexingDBStoreGetUploadByIDFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
-// IndexingDBStoreReferencesForUploadFunc describes the behavior when the
-// ReferencesForUpload method of the parent MockIndexingDBStore instance is
-// invoked.
-type IndexingDBStoreReferencesForUploadFunc struct {
-	defaultHook func(context.Context, int) (dbstore.PackageReferenceScanner, error)
-	hooks       []func(context.Context, int) (dbstore.PackageReferenceScanner, error)
-	history     []IndexingDBStoreReferencesForUploadFuncCall
-	mutex       sync.Mutex
-}
-
-// ReferencesForUpload delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockIndexingDBStore) ReferencesForUpload(v0 context.Context, v1 int) (dbstore.PackageReferenceScanner, error) {
-	r0, r1 := m.ReferencesForUploadFunc.nextHook()(v0, v1)
-	m.ReferencesForUploadFunc.appendCall(IndexingDBStoreReferencesForUploadFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the ReferencesForUpload
-// method of the parent MockIndexingDBStore instance is invoked and the hook
-// queue is empty.
-func (f *IndexingDBStoreReferencesForUploadFunc) SetDefaultHook(hook func(context.Context, int) (dbstore.PackageReferenceScanner, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// ReferencesForUpload method of the parent MockIndexingDBStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *IndexingDBStoreReferencesForUploadFunc) PushHook(hook func(context.Context, int) (dbstore.PackageReferenceScanner, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *IndexingDBStoreReferencesForUploadFunc) SetDefaultReturn(r0 dbstore.PackageReferenceScanner, r1 error) {
-	f.SetDefaultHook(func(context.Context, int) (dbstore.PackageReferenceScanner, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *IndexingDBStoreReferencesForUploadFunc) PushReturn(r0 dbstore.PackageReferenceScanner, r1 error) {
-	f.PushHook(func(context.Context, int) (dbstore.PackageReferenceScanner, error) {
-		return r0, r1
-	})
-}
-
-func (f *IndexingDBStoreReferencesForUploadFunc) nextHook() func(context.Context, int) (dbstore.PackageReferenceScanner, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *IndexingDBStoreReferencesForUploadFunc) appendCall(r0 IndexingDBStoreReferencesForUploadFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of IndexingDBStoreReferencesForUploadFuncCall
-// objects describing the invocations of this function.
-func (f *IndexingDBStoreReferencesForUploadFunc) History() []IndexingDBStoreReferencesForUploadFuncCall {
-	f.mutex.Lock()
-	history := make([]IndexingDBStoreReferencesForUploadFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// IndexingDBStoreReferencesForUploadFuncCall is an object that describes an
-// invocation of method ReferencesForUpload on an instance of
-// MockIndexingDBStore.
-type IndexingDBStoreReferencesForUploadFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 dbstore.PackageReferenceScanner
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c IndexingDBStoreReferencesForUploadFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c IndexingDBStoreReferencesForUploadFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
 // MockIndexingExternalServiceStore is a mock implementation of the
 // IndexingExternalServiceStore interface (from the package
 // github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing)
@@ -1092,243 +807,102 @@ func (c ReposStoreListMinimalReposFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// MockSyncDBStore is a mock implementation of the SyncDBStore interface
-// (from the package
+// MockSyncDBStoreLeftovers is a mock implementation of the
+// SyncDBStoreLeftovers interface (from the package
 // github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing)
 // used for unit testing.
-type MockSyncDBStore struct {
-	// GetUploadByIDFunc is an instance of a mock function object
-	// controlling the behavior of the method GetUploadByID.
-	GetUploadByIDFunc *SyncDBStoreGetUploadByIDFunc
+type MockSyncDBStoreLeftovers struct {
 	// InsertCloneableDependencyRepoFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// InsertCloneableDependencyRepo.
-	InsertCloneableDependencyRepoFunc *SyncDBStoreInsertCloneableDependencyRepoFunc
+	InsertCloneableDependencyRepoFunc *SyncDBStoreLeftoversInsertCloneableDependencyRepoFunc
 	// InsertDependencyIndexingJobFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// InsertDependencyIndexingJob.
-	InsertDependencyIndexingJobFunc *SyncDBStoreInsertDependencyIndexingJobFunc
-	// ReferencesForUploadFunc is an instance of a mock function object
-	// controlling the behavior of the method ReferencesForUpload.
-	ReferencesForUploadFunc *SyncDBStoreReferencesForUploadFunc
+	InsertDependencyIndexingJobFunc *SyncDBStoreLeftoversInsertDependencyIndexingJobFunc
 }
 
-// NewMockSyncDBStore creates a new mock of the SyncDBStore interface. All
-// methods return zero values for all results, unless overwritten.
-func NewMockSyncDBStore() *MockSyncDBStore {
-	return &MockSyncDBStore{
-		GetUploadByIDFunc: &SyncDBStoreGetUploadByIDFunc{
-			defaultHook: func(context.Context, int) (r0 types1.Upload, r1 bool, r2 error) {
-				return
-			},
-		},
-		InsertCloneableDependencyRepoFunc: &SyncDBStoreInsertCloneableDependencyRepoFunc{
+// NewMockSyncDBStoreLeftovers creates a new mock of the
+// SyncDBStoreLeftovers interface. All methods return zero values for all
+// results, unless overwritten.
+func NewMockSyncDBStoreLeftovers() *MockSyncDBStoreLeftovers {
+	return &MockSyncDBStoreLeftovers{
+		InsertCloneableDependencyRepoFunc: &SyncDBStoreLeftoversInsertCloneableDependencyRepoFunc{
 			defaultHook: func(context.Context, precise.Package) (r0 bool, r1 error) {
 				return
 			},
 		},
-		InsertDependencyIndexingJobFunc: &SyncDBStoreInsertDependencyIndexingJobFunc{
+		InsertDependencyIndexingJobFunc: &SyncDBStoreLeftoversInsertDependencyIndexingJobFunc{
 			defaultHook: func(context.Context, int, string, time.Time) (r0 int, r1 error) {
 				return
 			},
 		},
-		ReferencesForUploadFunc: &SyncDBStoreReferencesForUploadFunc{
-			defaultHook: func(context.Context, int) (r0 dbstore.PackageReferenceScanner, r1 error) {
-				return
-			},
-		},
 	}
 }
 
-// NewStrictMockSyncDBStore creates a new mock of the SyncDBStore interface.
-// All methods panic on invocation, unless overwritten.
-func NewStrictMockSyncDBStore() *MockSyncDBStore {
-	return &MockSyncDBStore{
-		GetUploadByIDFunc: &SyncDBStoreGetUploadByIDFunc{
-			defaultHook: func(context.Context, int) (types1.Upload, bool, error) {
-				panic("unexpected invocation of MockSyncDBStore.GetUploadByID")
-			},
-		},
-		InsertCloneableDependencyRepoFunc: &SyncDBStoreInsertCloneableDependencyRepoFunc{
-			defaultHook: func(context.Context, precise.Package) (bool, error) {
-				panic("unexpected invocation of MockSyncDBStore.InsertCloneableDependencyRepo")
-			},
-		},
-		InsertDependencyIndexingJobFunc: &SyncDBStoreInsertDependencyIndexingJobFunc{
-			defaultHook: func(context.Context, int, string, time.Time) (int, error) {
-				panic("unexpected invocation of MockSyncDBStore.InsertDependencyIndexingJob")
-			},
-		},
-		ReferencesForUploadFunc: &SyncDBStoreReferencesForUploadFunc{
-			defaultHook: func(context.Context, int) (dbstore.PackageReferenceScanner, error) {
-				panic("unexpected invocation of MockSyncDBStore.ReferencesForUpload")
-			},
-		},
-	}
-}
-
-// NewMockSyncDBStoreFrom creates a new mock of the MockSyncDBStore
-// interface. All methods delegate to the given implementation, unless
+// NewStrictMockSyncDBStoreLeftovers creates a new mock of the
+// SyncDBStoreLeftovers interface. All methods panic on invocation, unless
 // overwritten.
-func NewMockSyncDBStoreFrom(i SyncDBStore) *MockSyncDBStore {
-	return &MockSyncDBStore{
-		GetUploadByIDFunc: &SyncDBStoreGetUploadByIDFunc{
-			defaultHook: i.GetUploadByID,
+func NewStrictMockSyncDBStoreLeftovers() *MockSyncDBStoreLeftovers {
+	return &MockSyncDBStoreLeftovers{
+		InsertCloneableDependencyRepoFunc: &SyncDBStoreLeftoversInsertCloneableDependencyRepoFunc{
+			defaultHook: func(context.Context, precise.Package) (bool, error) {
+				panic("unexpected invocation of MockSyncDBStoreLeftovers.InsertCloneableDependencyRepo")
+			},
 		},
-		InsertCloneableDependencyRepoFunc: &SyncDBStoreInsertCloneableDependencyRepoFunc{
+		InsertDependencyIndexingJobFunc: &SyncDBStoreLeftoversInsertDependencyIndexingJobFunc{
+			defaultHook: func(context.Context, int, string, time.Time) (int, error) {
+				panic("unexpected invocation of MockSyncDBStoreLeftovers.InsertDependencyIndexingJob")
+			},
+		},
+	}
+}
+
+// NewMockSyncDBStoreLeftoversFrom creates a new mock of the
+// MockSyncDBStoreLeftovers interface. All methods delegate to the given
+// implementation, unless overwritten.
+func NewMockSyncDBStoreLeftoversFrom(i SyncDBStoreLeftovers) *MockSyncDBStoreLeftovers {
+	return &MockSyncDBStoreLeftovers{
+		InsertCloneableDependencyRepoFunc: &SyncDBStoreLeftoversInsertCloneableDependencyRepoFunc{
 			defaultHook: i.InsertCloneableDependencyRepo,
 		},
-		InsertDependencyIndexingJobFunc: &SyncDBStoreInsertDependencyIndexingJobFunc{
+		InsertDependencyIndexingJobFunc: &SyncDBStoreLeftoversInsertDependencyIndexingJobFunc{
 			defaultHook: i.InsertDependencyIndexingJob,
 		},
-		ReferencesForUploadFunc: &SyncDBStoreReferencesForUploadFunc{
-			defaultHook: i.ReferencesForUpload,
-		},
 	}
 }
 
-// SyncDBStoreGetUploadByIDFunc describes the behavior when the
-// GetUploadByID method of the parent MockSyncDBStore instance is invoked.
-type SyncDBStoreGetUploadByIDFunc struct {
-	defaultHook func(context.Context, int) (types1.Upload, bool, error)
-	hooks       []func(context.Context, int) (types1.Upload, bool, error)
-	history     []SyncDBStoreGetUploadByIDFuncCall
-	mutex       sync.Mutex
-}
-
-// GetUploadByID delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockSyncDBStore) GetUploadByID(v0 context.Context, v1 int) (types1.Upload, bool, error) {
-	r0, r1, r2 := m.GetUploadByIDFunc.nextHook()(v0, v1)
-	m.GetUploadByIDFunc.appendCall(SyncDBStoreGetUploadByIDFuncCall{v0, v1, r0, r1, r2})
-	return r0, r1, r2
-}
-
-// SetDefaultHook sets function that is called when the GetUploadByID method
-// of the parent MockSyncDBStore instance is invoked and the hook queue is
-// empty.
-func (f *SyncDBStoreGetUploadByIDFunc) SetDefaultHook(hook func(context.Context, int) (types1.Upload, bool, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetUploadByID method of the parent MockSyncDBStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *SyncDBStoreGetUploadByIDFunc) PushHook(hook func(context.Context, int) (types1.Upload, bool, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *SyncDBStoreGetUploadByIDFunc) SetDefaultReturn(r0 types1.Upload, r1 bool, r2 error) {
-	f.SetDefaultHook(func(context.Context, int) (types1.Upload, bool, error) {
-		return r0, r1, r2
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *SyncDBStoreGetUploadByIDFunc) PushReturn(r0 types1.Upload, r1 bool, r2 error) {
-	f.PushHook(func(context.Context, int) (types1.Upload, bool, error) {
-		return r0, r1, r2
-	})
-}
-
-func (f *SyncDBStoreGetUploadByIDFunc) nextHook() func(context.Context, int) (types1.Upload, bool, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *SyncDBStoreGetUploadByIDFunc) appendCall(r0 SyncDBStoreGetUploadByIDFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of SyncDBStoreGetUploadByIDFuncCall objects
-// describing the invocations of this function.
-func (f *SyncDBStoreGetUploadByIDFunc) History() []SyncDBStoreGetUploadByIDFuncCall {
-	f.mutex.Lock()
-	history := make([]SyncDBStoreGetUploadByIDFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// SyncDBStoreGetUploadByIDFuncCall is an object that describes an
-// invocation of method GetUploadByID on an instance of MockSyncDBStore.
-type SyncDBStoreGetUploadByIDFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 types1.Upload
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 bool
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c SyncDBStoreGetUploadByIDFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c SyncDBStoreGetUploadByIDFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
-// SyncDBStoreInsertCloneableDependencyRepoFunc describes the behavior when
-// the InsertCloneableDependencyRepo method of the parent MockSyncDBStore
-// instance is invoked.
-type SyncDBStoreInsertCloneableDependencyRepoFunc struct {
+// SyncDBStoreLeftoversInsertCloneableDependencyRepoFunc describes the
+// behavior when the InsertCloneableDependencyRepo method of the parent
+// MockSyncDBStoreLeftovers instance is invoked.
+type SyncDBStoreLeftoversInsertCloneableDependencyRepoFunc struct {
 	defaultHook func(context.Context, precise.Package) (bool, error)
 	hooks       []func(context.Context, precise.Package) (bool, error)
-	history     []SyncDBStoreInsertCloneableDependencyRepoFuncCall
+	history     []SyncDBStoreLeftoversInsertCloneableDependencyRepoFuncCall
 	mutex       sync.Mutex
 }
 
 // InsertCloneableDependencyRepo delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockSyncDBStore) InsertCloneableDependencyRepo(v0 context.Context, v1 precise.Package) (bool, error) {
+func (m *MockSyncDBStoreLeftovers) InsertCloneableDependencyRepo(v0 context.Context, v1 precise.Package) (bool, error) {
 	r0, r1 := m.InsertCloneableDependencyRepoFunc.nextHook()(v0, v1)
-	m.InsertCloneableDependencyRepoFunc.appendCall(SyncDBStoreInsertCloneableDependencyRepoFuncCall{v0, v1, r0, r1})
+	m.InsertCloneableDependencyRepoFunc.appendCall(SyncDBStoreLeftoversInsertCloneableDependencyRepoFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the
-// InsertCloneableDependencyRepo method of the parent MockSyncDBStore
-// instance is invoked and the hook queue is empty.
-func (f *SyncDBStoreInsertCloneableDependencyRepoFunc) SetDefaultHook(hook func(context.Context, precise.Package) (bool, error)) {
+// InsertCloneableDependencyRepo method of the parent
+// MockSyncDBStoreLeftovers instance is invoked and the hook queue is empty.
+func (f *SyncDBStoreLeftoversInsertCloneableDependencyRepoFunc) SetDefaultHook(hook func(context.Context, precise.Package) (bool, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// InsertCloneableDependencyRepo method of the parent MockSyncDBStore
-// instance invokes the hook at the front of the queue and discards it.
-// After the queue is empty, the default hook function is invoked for any
-// future action.
-func (f *SyncDBStoreInsertCloneableDependencyRepoFunc) PushHook(hook func(context.Context, precise.Package) (bool, error)) {
+// InsertCloneableDependencyRepo method of the parent
+// MockSyncDBStoreLeftovers instance invokes the hook at the front of the
+// queue and discards it. After the queue is empty, the default hook
+// function is invoked for any future action.
+func (f *SyncDBStoreLeftoversInsertCloneableDependencyRepoFunc) PushHook(hook func(context.Context, precise.Package) (bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1336,20 +910,20 @@ func (f *SyncDBStoreInsertCloneableDependencyRepoFunc) PushHook(hook func(contex
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *SyncDBStoreInsertCloneableDependencyRepoFunc) SetDefaultReturn(r0 bool, r1 error) {
+func (f *SyncDBStoreLeftoversInsertCloneableDependencyRepoFunc) SetDefaultReturn(r0 bool, r1 error) {
 	f.SetDefaultHook(func(context.Context, precise.Package) (bool, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *SyncDBStoreInsertCloneableDependencyRepoFunc) PushReturn(r0 bool, r1 error) {
+func (f *SyncDBStoreLeftoversInsertCloneableDependencyRepoFunc) PushReturn(r0 bool, r1 error) {
 	f.PushHook(func(context.Context, precise.Package) (bool, error) {
 		return r0, r1
 	})
 }
 
-func (f *SyncDBStoreInsertCloneableDependencyRepoFunc) nextHook() func(context.Context, precise.Package) (bool, error) {
+func (f *SyncDBStoreLeftoversInsertCloneableDependencyRepoFunc) nextHook() func(context.Context, precise.Package) (bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1362,28 +936,28 @@ func (f *SyncDBStoreInsertCloneableDependencyRepoFunc) nextHook() func(context.C
 	return hook
 }
 
-func (f *SyncDBStoreInsertCloneableDependencyRepoFunc) appendCall(r0 SyncDBStoreInsertCloneableDependencyRepoFuncCall) {
+func (f *SyncDBStoreLeftoversInsertCloneableDependencyRepoFunc) appendCall(r0 SyncDBStoreLeftoversInsertCloneableDependencyRepoFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
 // History returns a sequence of
-// SyncDBStoreInsertCloneableDependencyRepoFuncCall objects describing the
-// invocations of this function.
-func (f *SyncDBStoreInsertCloneableDependencyRepoFunc) History() []SyncDBStoreInsertCloneableDependencyRepoFuncCall {
+// SyncDBStoreLeftoversInsertCloneableDependencyRepoFuncCall objects
+// describing the invocations of this function.
+func (f *SyncDBStoreLeftoversInsertCloneableDependencyRepoFunc) History() []SyncDBStoreLeftoversInsertCloneableDependencyRepoFuncCall {
 	f.mutex.Lock()
-	history := make([]SyncDBStoreInsertCloneableDependencyRepoFuncCall, len(f.history))
+	history := make([]SyncDBStoreLeftoversInsertCloneableDependencyRepoFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// SyncDBStoreInsertCloneableDependencyRepoFuncCall is an object that
-// describes an invocation of method InsertCloneableDependencyRepo on an
-// instance of MockSyncDBStore.
-type SyncDBStoreInsertCloneableDependencyRepoFuncCall struct {
+// SyncDBStoreLeftoversInsertCloneableDependencyRepoFuncCall is an object
+// that describes an invocation of method InsertCloneableDependencyRepo on
+// an instance of MockSyncDBStoreLeftovers.
+type SyncDBStoreLeftoversInsertCloneableDependencyRepoFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -1400,47 +974,47 @@ type SyncDBStoreInsertCloneableDependencyRepoFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c SyncDBStoreInsertCloneableDependencyRepoFuncCall) Args() []interface{} {
+func (c SyncDBStoreLeftoversInsertCloneableDependencyRepoFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c SyncDBStoreInsertCloneableDependencyRepoFuncCall) Results() []interface{} {
+func (c SyncDBStoreLeftoversInsertCloneableDependencyRepoFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// SyncDBStoreInsertDependencyIndexingJobFunc describes the behavior when
-// the InsertDependencyIndexingJob method of the parent MockSyncDBStore
-// instance is invoked.
-type SyncDBStoreInsertDependencyIndexingJobFunc struct {
+// SyncDBStoreLeftoversInsertDependencyIndexingJobFunc describes the
+// behavior when the InsertDependencyIndexingJob method of the parent
+// MockSyncDBStoreLeftovers instance is invoked.
+type SyncDBStoreLeftoversInsertDependencyIndexingJobFunc struct {
 	defaultHook func(context.Context, int, string, time.Time) (int, error)
 	hooks       []func(context.Context, int, string, time.Time) (int, error)
-	history     []SyncDBStoreInsertDependencyIndexingJobFuncCall
+	history     []SyncDBStoreLeftoversInsertDependencyIndexingJobFuncCall
 	mutex       sync.Mutex
 }
 
 // InsertDependencyIndexingJob delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockSyncDBStore) InsertDependencyIndexingJob(v0 context.Context, v1 int, v2 string, v3 time.Time) (int, error) {
+func (m *MockSyncDBStoreLeftovers) InsertDependencyIndexingJob(v0 context.Context, v1 int, v2 string, v3 time.Time) (int, error) {
 	r0, r1 := m.InsertDependencyIndexingJobFunc.nextHook()(v0, v1, v2, v3)
-	m.InsertDependencyIndexingJobFunc.appendCall(SyncDBStoreInsertDependencyIndexingJobFuncCall{v0, v1, v2, v3, r0, r1})
+	m.InsertDependencyIndexingJobFunc.appendCall(SyncDBStoreLeftoversInsertDependencyIndexingJobFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the
-// InsertDependencyIndexingJob method of the parent MockSyncDBStore instance
-// is invoked and the hook queue is empty.
-func (f *SyncDBStoreInsertDependencyIndexingJobFunc) SetDefaultHook(hook func(context.Context, int, string, time.Time) (int, error)) {
+// InsertDependencyIndexingJob method of the parent MockSyncDBStoreLeftovers
+// instance is invoked and the hook queue is empty.
+func (f *SyncDBStoreLeftoversInsertDependencyIndexingJobFunc) SetDefaultHook(hook func(context.Context, int, string, time.Time) (int, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// InsertDependencyIndexingJob method of the parent MockSyncDBStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *SyncDBStoreInsertDependencyIndexingJobFunc) PushHook(hook func(context.Context, int, string, time.Time) (int, error)) {
+// InsertDependencyIndexingJob method of the parent MockSyncDBStoreLeftovers
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *SyncDBStoreLeftoversInsertDependencyIndexingJobFunc) PushHook(hook func(context.Context, int, string, time.Time) (int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1448,20 +1022,20 @@ func (f *SyncDBStoreInsertDependencyIndexingJobFunc) PushHook(hook func(context.
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *SyncDBStoreInsertDependencyIndexingJobFunc) SetDefaultReturn(r0 int, r1 error) {
+func (f *SyncDBStoreLeftoversInsertDependencyIndexingJobFunc) SetDefaultReturn(r0 int, r1 error) {
 	f.SetDefaultHook(func(context.Context, int, string, time.Time) (int, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *SyncDBStoreInsertDependencyIndexingJobFunc) PushReturn(r0 int, r1 error) {
+func (f *SyncDBStoreLeftoversInsertDependencyIndexingJobFunc) PushReturn(r0 int, r1 error) {
 	f.PushHook(func(context.Context, int, string, time.Time) (int, error) {
 		return r0, r1
 	})
 }
 
-func (f *SyncDBStoreInsertDependencyIndexingJobFunc) nextHook() func(context.Context, int, string, time.Time) (int, error) {
+func (f *SyncDBStoreLeftoversInsertDependencyIndexingJobFunc) nextHook() func(context.Context, int, string, time.Time) (int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1474,28 +1048,28 @@ func (f *SyncDBStoreInsertDependencyIndexingJobFunc) nextHook() func(context.Con
 	return hook
 }
 
-func (f *SyncDBStoreInsertDependencyIndexingJobFunc) appendCall(r0 SyncDBStoreInsertDependencyIndexingJobFuncCall) {
+func (f *SyncDBStoreLeftoversInsertDependencyIndexingJobFunc) appendCall(r0 SyncDBStoreLeftoversInsertDependencyIndexingJobFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
 // History returns a sequence of
-// SyncDBStoreInsertDependencyIndexingJobFuncCall objects describing the
-// invocations of this function.
-func (f *SyncDBStoreInsertDependencyIndexingJobFunc) History() []SyncDBStoreInsertDependencyIndexingJobFuncCall {
+// SyncDBStoreLeftoversInsertDependencyIndexingJobFuncCall objects
+// describing the invocations of this function.
+func (f *SyncDBStoreLeftoversInsertDependencyIndexingJobFunc) History() []SyncDBStoreLeftoversInsertDependencyIndexingJobFuncCall {
 	f.mutex.Lock()
-	history := make([]SyncDBStoreInsertDependencyIndexingJobFuncCall, len(f.history))
+	history := make([]SyncDBStoreLeftoversInsertDependencyIndexingJobFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// SyncDBStoreInsertDependencyIndexingJobFuncCall is an object that
+// SyncDBStoreLeftoversInsertDependencyIndexingJobFuncCall is an object that
 // describes an invocation of method InsertDependencyIndexingJob on an
-// instance of MockSyncDBStore.
-type SyncDBStoreInsertDependencyIndexingJobFuncCall struct {
+// instance of MockSyncDBStoreLeftovers.
+type SyncDBStoreLeftoversInsertDependencyIndexingJobFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -1518,123 +1092,13 @@ type SyncDBStoreInsertDependencyIndexingJobFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c SyncDBStoreInsertDependencyIndexingJobFuncCall) Args() []interface{} {
+func (c SyncDBStoreLeftoversInsertDependencyIndexingJobFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c SyncDBStoreInsertDependencyIndexingJobFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// SyncDBStoreReferencesForUploadFunc describes the behavior when the
-// ReferencesForUpload method of the parent MockSyncDBStore instance is
-// invoked.
-type SyncDBStoreReferencesForUploadFunc struct {
-	defaultHook func(context.Context, int) (dbstore.PackageReferenceScanner, error)
-	hooks       []func(context.Context, int) (dbstore.PackageReferenceScanner, error)
-	history     []SyncDBStoreReferencesForUploadFuncCall
-	mutex       sync.Mutex
-}
-
-// ReferencesForUpload delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockSyncDBStore) ReferencesForUpload(v0 context.Context, v1 int) (dbstore.PackageReferenceScanner, error) {
-	r0, r1 := m.ReferencesForUploadFunc.nextHook()(v0, v1)
-	m.ReferencesForUploadFunc.appendCall(SyncDBStoreReferencesForUploadFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the ReferencesForUpload
-// method of the parent MockSyncDBStore instance is invoked and the hook
-// queue is empty.
-func (f *SyncDBStoreReferencesForUploadFunc) SetDefaultHook(hook func(context.Context, int) (dbstore.PackageReferenceScanner, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// ReferencesForUpload method of the parent MockSyncDBStore instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *SyncDBStoreReferencesForUploadFunc) PushHook(hook func(context.Context, int) (dbstore.PackageReferenceScanner, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *SyncDBStoreReferencesForUploadFunc) SetDefaultReturn(r0 dbstore.PackageReferenceScanner, r1 error) {
-	f.SetDefaultHook(func(context.Context, int) (dbstore.PackageReferenceScanner, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *SyncDBStoreReferencesForUploadFunc) PushReturn(r0 dbstore.PackageReferenceScanner, r1 error) {
-	f.PushHook(func(context.Context, int) (dbstore.PackageReferenceScanner, error) {
-		return r0, r1
-	})
-}
-
-func (f *SyncDBStoreReferencesForUploadFunc) nextHook() func(context.Context, int) (dbstore.PackageReferenceScanner, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *SyncDBStoreReferencesForUploadFunc) appendCall(r0 SyncDBStoreReferencesForUploadFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of SyncDBStoreReferencesForUploadFuncCall
-// objects describing the invocations of this function.
-func (f *SyncDBStoreReferencesForUploadFunc) History() []SyncDBStoreReferencesForUploadFuncCall {
-	f.mutex.Lock()
-	history := make([]SyncDBStoreReferencesForUploadFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// SyncDBStoreReferencesForUploadFuncCall is an object that describes an
-// invocation of method ReferencesForUpload on an instance of
-// MockSyncDBStore.
-type SyncDBStoreReferencesForUploadFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 dbstore.PackageReferenceScanner
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c SyncDBStoreReferencesForUploadFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c SyncDBStoreReferencesForUploadFuncCall) Results() []interface{} {
+func (c SyncDBStoreLeftoversInsertDependencyIndexingJobFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -1920,6 +1384,290 @@ func (c SyncExternalServiceStoreUpsertFuncCall) Args() []interface{} {
 // invocation.
 func (c SyncExternalServiceStoreUpsertFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// MockUploadsService is a mock implementation of the UploadsService
+// interface (from the package
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing)
+// used for unit testing.
+type MockUploadsService struct {
+	// GetUploadByIDFunc is an instance of a mock function object
+	// controlling the behavior of the method GetUploadByID.
+	GetUploadByIDFunc *UploadsServiceGetUploadByIDFunc
+	// ReferencesForUploadFunc is an instance of a mock function object
+	// controlling the behavior of the method ReferencesForUpload.
+	ReferencesForUploadFunc *UploadsServiceReferencesForUploadFunc
+}
+
+// NewMockUploadsService creates a new mock of the UploadsService interface.
+// All methods return zero values for all results, unless overwritten.
+func NewMockUploadsService() *MockUploadsService {
+	return &MockUploadsService{
+		GetUploadByIDFunc: &UploadsServiceGetUploadByIDFunc{
+			defaultHook: func(context.Context, int) (r0 types1.Upload, r1 bool, r2 error) {
+				return
+			},
+		},
+		ReferencesForUploadFunc: &UploadsServiceReferencesForUploadFunc{
+			defaultHook: func(context.Context, int) (r0 dbstore.PackageReferenceScanner, r1 error) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockUploadsService creates a new mock of the UploadsService
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockUploadsService() *MockUploadsService {
+	return &MockUploadsService{
+		GetUploadByIDFunc: &UploadsServiceGetUploadByIDFunc{
+			defaultHook: func(context.Context, int) (types1.Upload, bool, error) {
+				panic("unexpected invocation of MockUploadsService.GetUploadByID")
+			},
+		},
+		ReferencesForUploadFunc: &UploadsServiceReferencesForUploadFunc{
+			defaultHook: func(context.Context, int) (dbstore.PackageReferenceScanner, error) {
+				panic("unexpected invocation of MockUploadsService.ReferencesForUpload")
+			},
+		},
+	}
+}
+
+// NewMockUploadsServiceFrom creates a new mock of the MockUploadsService
+// interface. All methods delegate to the given implementation, unless
+// overwritten.
+func NewMockUploadsServiceFrom(i UploadsService) *MockUploadsService {
+	return &MockUploadsService{
+		GetUploadByIDFunc: &UploadsServiceGetUploadByIDFunc{
+			defaultHook: i.GetUploadByID,
+		},
+		ReferencesForUploadFunc: &UploadsServiceReferencesForUploadFunc{
+			defaultHook: i.ReferencesForUpload,
+		},
+	}
+}
+
+// UploadsServiceGetUploadByIDFunc describes the behavior when the
+// GetUploadByID method of the parent MockUploadsService instance is
+// invoked.
+type UploadsServiceGetUploadByIDFunc struct {
+	defaultHook func(context.Context, int) (types1.Upload, bool, error)
+	hooks       []func(context.Context, int) (types1.Upload, bool, error)
+	history     []UploadsServiceGetUploadByIDFuncCall
+	mutex       sync.Mutex
+}
+
+// GetUploadByID delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockUploadsService) GetUploadByID(v0 context.Context, v1 int) (types1.Upload, bool, error) {
+	r0, r1, r2 := m.GetUploadByIDFunc.nextHook()(v0, v1)
+	m.GetUploadByIDFunc.appendCall(UploadsServiceGetUploadByIDFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the GetUploadByID method
+// of the parent MockUploadsService instance is invoked and the hook queue
+// is empty.
+func (f *UploadsServiceGetUploadByIDFunc) SetDefaultHook(hook func(context.Context, int) (types1.Upload, bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetUploadByID method of the parent MockUploadsService instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *UploadsServiceGetUploadByIDFunc) PushHook(hook func(context.Context, int) (types1.Upload, bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadsServiceGetUploadByIDFunc) SetDefaultReturn(r0 types1.Upload, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, int) (types1.Upload, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadsServiceGetUploadByIDFunc) PushReturn(r0 types1.Upload, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, int) (types1.Upload, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *UploadsServiceGetUploadByIDFunc) nextHook() func(context.Context, int) (types1.Upload, bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadsServiceGetUploadByIDFunc) appendCall(r0 UploadsServiceGetUploadByIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UploadsServiceGetUploadByIDFuncCall objects
+// describing the invocations of this function.
+func (f *UploadsServiceGetUploadByIDFunc) History() []UploadsServiceGetUploadByIDFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadsServiceGetUploadByIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadsServiceGetUploadByIDFuncCall is an object that describes an
+// invocation of method GetUploadByID on an instance of MockUploadsService.
+type UploadsServiceGetUploadByIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 types1.Upload
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 bool
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadsServiceGetUploadByIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadsServiceGetUploadByIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// UploadsServiceReferencesForUploadFunc describes the behavior when the
+// ReferencesForUpload method of the parent MockUploadsService instance is
+// invoked.
+type UploadsServiceReferencesForUploadFunc struct {
+	defaultHook func(context.Context, int) (dbstore.PackageReferenceScanner, error)
+	hooks       []func(context.Context, int) (dbstore.PackageReferenceScanner, error)
+	history     []UploadsServiceReferencesForUploadFuncCall
+	mutex       sync.Mutex
+}
+
+// ReferencesForUpload delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockUploadsService) ReferencesForUpload(v0 context.Context, v1 int) (dbstore.PackageReferenceScanner, error) {
+	r0, r1 := m.ReferencesForUploadFunc.nextHook()(v0, v1)
+	m.ReferencesForUploadFunc.appendCall(UploadsServiceReferencesForUploadFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ReferencesForUpload
+// method of the parent MockUploadsService instance is invoked and the hook
+// queue is empty.
+func (f *UploadsServiceReferencesForUploadFunc) SetDefaultHook(hook func(context.Context, int) (dbstore.PackageReferenceScanner, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ReferencesForUpload method of the parent MockUploadsService instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *UploadsServiceReferencesForUploadFunc) PushHook(hook func(context.Context, int) (dbstore.PackageReferenceScanner, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadsServiceReferencesForUploadFunc) SetDefaultReturn(r0 dbstore.PackageReferenceScanner, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) (dbstore.PackageReferenceScanner, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadsServiceReferencesForUploadFunc) PushReturn(r0 dbstore.PackageReferenceScanner, r1 error) {
+	f.PushHook(func(context.Context, int) (dbstore.PackageReferenceScanner, error) {
+		return r0, r1
+	})
+}
+
+func (f *UploadsServiceReferencesForUploadFunc) nextHook() func(context.Context, int) (dbstore.PackageReferenceScanner, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadsServiceReferencesForUploadFunc) appendCall(r0 UploadsServiceReferencesForUploadFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UploadsServiceReferencesForUploadFuncCall
+// objects describing the invocations of this function.
+func (f *UploadsServiceReferencesForUploadFunc) History() []UploadsServiceReferencesForUploadFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadsServiceReferencesForUploadFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadsServiceReferencesForUploadFuncCall is an object that describes an
+// invocation of method ReferencesForUpload on an instance of
+// MockUploadsService.
+type UploadsServiceReferencesForUploadFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 dbstore.PackageReferenceScanner
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadsServiceReferencesForUploadFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadsServiceReferencesForUploadFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // MockPackageReferenceScanner is a mock implementation of the

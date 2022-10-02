@@ -33,7 +33,7 @@ const requeueBackoff = time.Second * 30
 // default is false aka index scheduler is enabled
 var disableIndexScheduler, _ = strconv.ParseBool(os.Getenv("CODEINTEL_DEPENDENCY_INDEX_SCHEDULER_DISABLED"))
 
-type IndexingDBStore interface {
+type UploadsService interface {
 	GetUploadByID(ctx context.Context, id int) (codeinteltypes.Upload, bool, error)
 	ReferencesForUpload(ctx context.Context, uploadID int) (dbstore.PackageReferenceScanner, error)
 }
@@ -61,7 +61,7 @@ type IndexEnqueuer interface {
 // NewDependencyIndexingScheduler returns a new worker instance that processes
 // records from lsif_dependency_indexing_jobs.
 func NewDependencyIndexingScheduler(
-	dbStore IndexingDBStore,
+	uploadsSvc UploadsService,
 	repoStore ReposStore,
 	workerStore dbworkerstore.Store,
 	externalServiceStore IndexingExternalServiceStore,
@@ -75,7 +75,7 @@ func NewDependencyIndexingScheduler(
 	rootContext := actor.WithInternalActor(context.Background())
 
 	handler := &dependencyIndexingSchedulerHandler{
-		dbStore:            dbStore,
+		uploadsSvc:         uploadsSvc,
 		repoStore:          repoStore,
 		extsvcStore:        externalServiceStore,
 		gitserverRepoStore: gitserverRepoStore,
@@ -94,7 +94,7 @@ func NewDependencyIndexingScheduler(
 }
 
 type dependencyIndexingSchedulerHandler struct {
-	dbStore            IndexingDBStore
+	uploadsSvc         UploadsService
 	repoStore          ReposStore
 	indexEnqueuer      IndexEnqueuer
 	extsvcStore        IndexingExternalServiceStore
@@ -147,7 +147,7 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, logger 
 	}
 
 	var errs []error
-	scanner, err := h.dbStore.ReferencesForUpload(ctx, job.UploadID)
+	scanner, err := h.uploadsSvc.ReferencesForUpload(ctx, job.UploadID)
 	if err != nil {
 		return errors.Wrap(err, "dbstore.ReferencesForUpload")
 	}
