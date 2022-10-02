@@ -60,7 +60,8 @@ describe('buildRepoBaseNameAndPath tests', () => {
     })
 
     it('builds the correct string for Perforce URLs', () => {
-        const url = 'https://cse-k8s.sgdev.org/perforce.beatrix.com/app/b200/patch/core/-/blob/test/1.js'
+        const url =
+            'https://cse-k8s.sgdev.org/perforce.beatrix.com/app/b200/patch/core/-/blob/test/1.js?toast=integrations'
         const { repoName, filePath } = parseBrowserRepoURL(url)
 
         const result = buildRepoBaseNameAndPath(repoName, ExternalServiceKind.PERFORCE, filePath)
