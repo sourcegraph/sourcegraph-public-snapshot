@@ -65,7 +65,7 @@
         - GitserverRepoStore
         - IndexEnqueuer
         - RepoUpdaterClient
-    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared
       interfaces:
         - PackageReferenceScanner
     - path: github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store

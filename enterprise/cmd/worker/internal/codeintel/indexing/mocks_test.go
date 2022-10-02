@@ -13,9 +13,8 @@ import (
 
 	sqlf "github.com/keegancsmith/sqlf"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
-	dbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
-	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/shared"
 	types1 "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	protocol "github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -1409,7 +1408,7 @@ func NewMockUploadsService() *MockUploadsService {
 			},
 		},
 		ReferencesForUploadFunc: &UploadsServiceReferencesForUploadFunc{
-			defaultHook: func(context.Context, int) (r0 dbstore.PackageReferenceScanner, r1 error) {
+			defaultHook: func(context.Context, int) (r0 shared.PackageReferenceScanner, r1 error) {
 				return
 			},
 		},
@@ -1426,7 +1425,7 @@ func NewStrictMockUploadsService() *MockUploadsService {
 			},
 		},
 		ReferencesForUploadFunc: &UploadsServiceReferencesForUploadFunc{
-			defaultHook: func(context.Context, int) (dbstore.PackageReferenceScanner, error) {
+			defaultHook: func(context.Context, int) (shared.PackageReferenceScanner, error) {
 				panic("unexpected invocation of MockUploadsService.ReferencesForUpload")
 			},
 		},
@@ -1563,15 +1562,15 @@ func (c UploadsServiceGetUploadByIDFuncCall) Results() []interface{} {
 // ReferencesForUpload method of the parent MockUploadsService instance is
 // invoked.
 type UploadsServiceReferencesForUploadFunc struct {
-	defaultHook func(context.Context, int) (dbstore.PackageReferenceScanner, error)
-	hooks       []func(context.Context, int) (dbstore.PackageReferenceScanner, error)
+	defaultHook func(context.Context, int) (shared.PackageReferenceScanner, error)
+	hooks       []func(context.Context, int) (shared.PackageReferenceScanner, error)
 	history     []UploadsServiceReferencesForUploadFuncCall
 	mutex       sync.Mutex
 }
 
 // ReferencesForUpload delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockUploadsService) ReferencesForUpload(v0 context.Context, v1 int) (dbstore.PackageReferenceScanner, error) {
+func (m *MockUploadsService) ReferencesForUpload(v0 context.Context, v1 int) (shared.PackageReferenceScanner, error) {
 	r0, r1 := m.ReferencesForUploadFunc.nextHook()(v0, v1)
 	m.ReferencesForUploadFunc.appendCall(UploadsServiceReferencesForUploadFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -1580,7 +1579,7 @@ func (m *MockUploadsService) ReferencesForUpload(v0 context.Context, v1 int) (db
 // SetDefaultHook sets function that is called when the ReferencesForUpload
 // method of the parent MockUploadsService instance is invoked and the hook
 // queue is empty.
-func (f *UploadsServiceReferencesForUploadFunc) SetDefaultHook(hook func(context.Context, int) (dbstore.PackageReferenceScanner, error)) {
+func (f *UploadsServiceReferencesForUploadFunc) SetDefaultHook(hook func(context.Context, int) (shared.PackageReferenceScanner, error)) {
 	f.defaultHook = hook
 }
 
@@ -1589,7 +1588,7 @@ func (f *UploadsServiceReferencesForUploadFunc) SetDefaultHook(hook func(context
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *UploadsServiceReferencesForUploadFunc) PushHook(hook func(context.Context, int) (dbstore.PackageReferenceScanner, error)) {
+func (f *UploadsServiceReferencesForUploadFunc) PushHook(hook func(context.Context, int) (shared.PackageReferenceScanner, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1597,20 +1596,20 @@ func (f *UploadsServiceReferencesForUploadFunc) PushHook(hook func(context.Conte
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *UploadsServiceReferencesForUploadFunc) SetDefaultReturn(r0 dbstore.PackageReferenceScanner, r1 error) {
-	f.SetDefaultHook(func(context.Context, int) (dbstore.PackageReferenceScanner, error) {
+func (f *UploadsServiceReferencesForUploadFunc) SetDefaultReturn(r0 shared.PackageReferenceScanner, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) (shared.PackageReferenceScanner, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *UploadsServiceReferencesForUploadFunc) PushReturn(r0 dbstore.PackageReferenceScanner, r1 error) {
-	f.PushHook(func(context.Context, int) (dbstore.PackageReferenceScanner, error) {
+func (f *UploadsServiceReferencesForUploadFunc) PushReturn(r0 shared.PackageReferenceScanner, r1 error) {
+	f.PushHook(func(context.Context, int) (shared.PackageReferenceScanner, error) {
 		return r0, r1
 	})
 }
 
-func (f *UploadsServiceReferencesForUploadFunc) nextHook() func(context.Context, int) (dbstore.PackageReferenceScanner, error) {
+func (f *UploadsServiceReferencesForUploadFunc) nextHook() func(context.Context, int) (shared.PackageReferenceScanner, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1652,7 +1651,7 @@ type UploadsServiceReferencesForUploadFuncCall struct {
 	Arg1 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 dbstore.PackageReferenceScanner
+	Result0 shared.PackageReferenceScanner
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -1672,7 +1671,7 @@ func (c UploadsServiceReferencesForUploadFuncCall) Results() []interface{} {
 
 // MockPackageReferenceScanner is a mock implementation of the
 // PackageReferenceScanner interface (from the package
-// github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore)
+// github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared)
 // used for unit testing.
 type MockPackageReferenceScanner struct {
 	// CloseFunc is an instance of a mock function object controlling the
@@ -1722,7 +1721,7 @@ func NewStrictMockPackageReferenceScanner() *MockPackageReferenceScanner {
 // NewMockPackageReferenceScannerFrom creates a new mock of the
 // MockPackageReferenceScanner interface. All methods delegate to the given
 // implementation, unless overwritten.
-func NewMockPackageReferenceScannerFrom(i dbstore.PackageReferenceScanner) *MockPackageReferenceScanner {
+func NewMockPackageReferenceScannerFrom(i shared.PackageReferenceScanner) *MockPackageReferenceScanner {
 	return &MockPackageReferenceScanner{
 		CloseFunc: &PackageReferenceScannerCloseFunc{
 			defaultHook: i.Close,

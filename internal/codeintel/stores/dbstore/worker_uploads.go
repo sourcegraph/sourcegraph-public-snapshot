@@ -65,6 +65,8 @@ var uploadColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("u.uncompressed_size"),
 }
 
+const visibleAtTipSubselectQuery = `SELECT 1 FROM lsif_uploads_visible_at_tip uvt WHERE uvt.repository_id = u.repository_id AND uvt.upload_id = u.id`
+
 func scanUpload(s dbutil.Scanner) (upload types.Upload, _ error) {
 	var rawUploadedParts []sql.NullInt32
 	if err := s.Scan(

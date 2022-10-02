@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -35,7 +36,7 @@ var disableIndexScheduler, _ = strconv.ParseBool(os.Getenv("CODEINTEL_DEPENDENCY
 
 type UploadsService interface {
 	GetUploadByID(ctx context.Context, id int) (codeinteltypes.Upload, bool, error)
-	ReferencesForUpload(ctx context.Context, uploadID int) (dbstore.PackageReferenceScanner, error)
+	ReferencesForUpload(ctx context.Context, uploadID int) (shared.PackageReferenceScanner, error)
 }
 
 type IndexingExternalServiceStore interface {

@@ -6,6 +6,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -79,3 +80,40 @@ func loadReferencesChannel(references []precise.PackageReference) <-chan []any {
 
 	return ch
 }
+
+// PackageReferenceScanner allows for on-demand scanning of PackageReference values.
+//
+// A scanner for this type was introduced as a memory optimization. Instead of reading a
+// large number of large byte arrays into memory at once, we allow the user to request
+// the next filter value when they are ready to process it. This allows us to hold only
+// a single bloom filter in memory at any give time during reference requests.
+type PackageReferenceScanner interface {
+	// Next reads the next package reference value from the database cursor.
+	Next() (shared.PackageReference, bool, error)
+
+	// Close the underlying row object.
+	Close() error
+}
+
+// ReferencesForUpload returns the set of import monikers attached to the given upload identifier.
+func (s *store) ReferencesForUpload(ctx context.Context, uploadID int) (_ shared.PackageReferenceScanner, err error) {
+	ctx, _, endObservation := s.operations.referencesForUpload.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("uploadID", uploadID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(referencesForUploadQuery, uploadID))
+	if err != nil {
+		return nil, err
+	}
+
+	return shared.PackageReferenceScannerFromRows(rows), nil
+}
+
+const referencesForUploadQuery = `
+-- source: internal/codeintel/stores/dbstore/xrepo.go:ReferencesForUpload
+SELECT r.dump_id, r.scheme, r.name, r.version
+FROM lsif_references r
+WHERE dump_id = %s
+ORDER BY r.scheme, r.name, r.version
+`

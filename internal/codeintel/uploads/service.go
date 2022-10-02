@@ -73,6 +73,7 @@ type service interface {
 
 	// References
 	UpdatePackageReferences(ctx context.Context, dumpID int, references []precise.PackageReference) (err error)
+	ReferencesForUpload(ctx context.Context, uploadID int) (_ shared.PackageReferenceScanner, err error)
 
 	// Audit Logs
 	GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []types.UploadLog, err error)
@@ -621,6 +622,15 @@ func (s *Service) UpdatePackageReferences(ctx context.Context, dumpID int, refer
 	defer endObservation(1, observation.Args{})
 
 	return s.store.UpdatePackageReferences(ctx, dumpID, references)
+}
+
+func (s *Service) ReferencesForUpload(ctx context.Context, uploadID int) (_ shared.PackageReferenceScanner, err error) {
+	ctx, _, endObservation := s.operations.referencesForUpload.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int("uploadID", uploadID)},
+	})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.ReferencesForUpload(ctx, uploadID)
 }
 
 func (s *Service) GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []types.UploadLog, err error) {

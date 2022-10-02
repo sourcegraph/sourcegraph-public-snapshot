@@ -68,6 +68,7 @@ type operations struct {
 
 	// References
 	updatePackageReferences *observation.Operation
+	referencesForUpload     *observation.Operation
 
 	// Audit Logs
 	getAuditLogsForUpload *observation.Operation
@@ -169,6 +170,7 @@ func newOperations(observationContext *observation.Context) *operations {
 
 		// References
 		updatePackageReferences: op("UpdatePackageReferences"),
+		referencesForUpload:     op("ReferencesForUpload"),
 
 		// Audit Logs
 		getAuditLogsForUpload: op("GetAuditLogsForUpload"),
