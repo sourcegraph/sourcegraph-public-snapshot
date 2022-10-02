@@ -546,19 +546,19 @@ func (s *sampleStore) ClearSnapshots(ctx context.Context, seriesId uint32) error
 }
 
 func (s *sampleStore) Sample(ctx context.Context, key TimeSeriesKey, repoName string, sample RawSample) (err error) {
-	// tx, err := s.transact(ctx)
-	// if err != nil {
-	// 	return err
-	// }
-	// defer func() { err = tx.Done(err) }()
+	tx, err := s.transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
 
-	if err = s.Append(ctx, key, []RawSample{sample}); err != nil {
+	if err = tx.Append(ctx, key, []RawSample{sample}); err != nil {
 		return errors.Wrap(err, "Sample.Append")
 	}
 
-	// if err = s.sampleRepoName(ctx, key.RepoId, repoName); err != nil {
-	// 	return errors.Wrap(err, "Sample.sampleRepoName")
-	// }
+	if err = tx.sampleRepoName(ctx, key.RepoId, repoName); err != nil {
+		return errors.Wrap(err, "Sample.sampleRepoName")
+	}
 
 	return err
 }
