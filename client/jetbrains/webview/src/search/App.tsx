@@ -57,30 +57,33 @@ function fetchStreamSuggestionsWithStaticUrl(query: string): Observable<SearchMa
     return fetchStreamSuggestions(query, getInstanceURL() + '.api')
 }
 
-function fallbackToLiteralSearchIfNeeded(patternType: SearchPatternType | undefined, backendVersion: string | null): SearchPatternType | undefined {
+function fallbackToLiteralSearchIfNeeded(
+    patternType: SearchPatternType | undefined,
+    backendVersion: string | null
+): SearchPatternType | undefined {
     if (backendVersion === null || patternType !== SearchPatternType.standard) {
         return patternType
     }
 
     const [major, minor] = backendVersion.split('.').map(Number)
     // SearchPatternType.standard is not supported by versions before 3.43.0
-    return (major < 3 || (major === 3 && minor < 43)) ? SearchPatternType.literal : SearchPatternType.standard
+    return major < 3 || (major === 3 && minor < 43) ? SearchPatternType.literal : SearchPatternType.standard
 }
 
 export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-                                                                                 isDarkTheme,
-                                                                                 instanceURL,
-                                                                                 isGlobbingEnabled,
-                                                                                 accessToken,
-                                                                                 onPreviewChange,
-                                                                                 onPreviewClear,
-                                                                                 onOpen,
-                                                                                 onSearchError,
-                                                                                 initialSearch,
-                                                                                 backendVersion,
-                                                                                 authenticatedUser,
-                                                                                 telemetryService,
-                                                                             }) => {
+    isDarkTheme,
+    instanceURL,
+    isGlobbingEnabled,
+    accessToken,
+    onPreviewChange,
+    onPreviewClear,
+    onOpen,
+    onSearchError,
+    initialSearch,
+    backendVersion,
+    authenticatedUser,
+    telemetryService,
+}) => {
     const authState = authenticatedUser !== null ? 'success' : 'failure'
 
     const requestGraphQL = useCallback<PlatformContext['requestGraphQL']>(
@@ -113,7 +116,9 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
         initialSearch ?? {
             query: '',
             caseSensitive: false,
-            patternType: fallbackToLiteralSearchIfNeeded(SearchPatternType.standard, backendVersion) || SearchPatternType.literal,
+            patternType:
+                fallbackToLiteralSearchIfNeeded(SearchPatternType.standard, backendVersion) ||
+                SearchPatternType.literal,
             selectedSearchContextSpec: 'global',
         }
     )
@@ -176,7 +181,9 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
             ).subscribe((searchResults: AggregateStreamingSearchResults) => {
                 if (searchResults.state === 'error') {
                     setProgressState('error')
-                    onSearchError(searchResults.error.message).then(() => {}).catch(() => {})
+                    onSearchError(searchResults.error.message)
+                        .then(() => {})
+                        .catch(() => {})
                     return
                 }
                 setMatches(searchResults.results)

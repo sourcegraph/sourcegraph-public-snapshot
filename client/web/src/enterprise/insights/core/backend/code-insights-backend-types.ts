@@ -118,11 +118,6 @@ export interface SeriesPreviewSettings {
     groupBy?: GroupByField
 }
 
-export interface AccessibleInsightInfo {
-    id: string
-    title: string
-}
-
 export interface BackendInsightDatum {
     dateTime: Date
     value: number

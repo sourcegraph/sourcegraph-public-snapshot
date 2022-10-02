@@ -5,13 +5,14 @@ import expect from 'expect'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { GetAccessibleInsightsListResult } from '../../../graphql-operations'
+import { GetDashboardAccessibleInsightsResult } from '../../../graphql-operations'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../../context'
 import { GET_DASHBOARD_INSIGHTS_EMPTY, INSIGHTS_DASHBOARDS } from '../fixtures/dashboards'
 import { overrideInsightsGraphQLApi } from '../utils/override-insights-graphql-api'
 
-const ALL_AVAILABLE_INSIGHTS_LIST: GetAccessibleInsightsListResult = {
-    insightViews: {
+const ALL_AVAILABLE_INSIGHTS_LIST: GetDashboardAccessibleInsightsResult = {
+    dashboardInsightsIds: { nodes: [{ views: { nodes: [] } }] },
+    accessibleInsights: {
         nodes: [
             {
                 __typename: 'InsightView',
@@ -66,7 +67,7 @@ describe('Code insights empty dashboard', () => {
             overrides: {
                 InsightsDashboards: () => INSIGHTS_DASHBOARDS,
                 GetDashboardInsights: () => GET_DASHBOARD_INSIGHTS_EMPTY,
-                GetAccessibleInsightsList: () => ALL_AVAILABLE_INSIGHTS_LIST,
+                GetDashboardAccessibleInsights: () => ALL_AVAILABLE_INSIGHTS_LIST,
                 AddInsightViewToDashboard: () => ({
                     addInsightViewToDashboard: {
                         dashboard: { id: 'EMPTY_DASHBOARD' },

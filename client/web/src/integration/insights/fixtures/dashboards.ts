@@ -13,10 +13,6 @@ export const EMPTY_DASHBOARD: InsightsDashboardNode = {
     __typename: 'InsightsDashboard',
     id: 'EMPTY_DASHBOARD',
     title: 'Empty Dashboard',
-    views: {
-        __typename: 'InsightViewConnection',
-        nodes: [],
-    },
     grants: {
         __typename: 'InsightsPermissionGrants',
         users: [testUserID],
@@ -388,27 +384,6 @@ export const INSIGHTS_DASHBOARDS: InsightsDashboardsResult = {
             {
                 id: 'EACH_TYPE_OF_INSIGHT',
                 title: 'Each Type of Insight',
-                views: {
-                    nodes: [
-                        {
-                            id: CAPTURE_GROUP_INSIGHT.id,
-                            __typename: 'InsightView',
-                        },
-                        {
-                            id: LANG_STATS_INSIGHT.id,
-                            __typename: 'InsightView',
-                        },
-                        {
-                            id: SEARCH_BASED_INSIGHT.id,
-                            __typename: 'InsightView',
-                        },
-                        {
-                            id: COMPUTE_INSIGHT.id,
-                            __typename: 'InsightView',
-                        },
-                    ],
-                    __typename: 'InsightViewConnection',
-                },
                 grants: {
                     users: [testUserID],
                     organizations: [],

@@ -138,14 +138,27 @@ func runMigration(
 	}
 	registerMigrators := registerMigratorsWithStore(basestoreExtractor{r})
 
+	// Note: Error is correctly checked here; we want to use the return value
+	// `patch` below but only if we can best-effort fetch it. We want to allow
+	// the user to skip erroring here if they are explicitly skipping this
+	// version check.
+	version, patch, ok, err := getServiceVersion(ctx, r)
 	if !skipVersionCheck {
-		if err := checkServiceVersion(ctx, r, plan); err != nil {
+		if err != nil {
+			return err
+		}
+		if !ok {
+			err := errors.Newf("version assertion failed: unknown version != %q", plan.from)
+			return errors.Newf("%s. Re-invoke with --skip-version-check to ignore this check", err)
+		}
+		if oobmigration.CompareVersions(version, plan.from) != oobmigration.VersionOrderEqual {
+			err := errors.Newf("version assertion failed: %q != %q", version, plan.from)
 			return errors.Newf("%s. Re-invoke with --skip-version-check to ignore this check", err)
 		}
 	}
 
 	if !skipDriftCheck {
-		if err := checkDrift(ctx, r, plan, out, expectedSchemaFactories); err != nil {
+		if err := checkDrift(ctx, r, plan.from.GitTagWithPatch(patch), out, expectedSchemaFactories); err != nil {
 			return err
 		}
 	}
@@ -257,29 +270,26 @@ func filterStitchedMigrationsForTags(tags []string) (map[string]shared.StitchedM
 	return filteredStitchedMigrationBySchemaName, nil
 }
 
-func checkServiceVersion(ctx context.Context, r Runner, plan migrationPlan) error {
+func getServiceVersion(ctx context.Context, r Runner) (_ oobmigration.Version, patch int, ok bool, _ error) {
 	db, err := extractDatabase(ctx, r)
 	if err != nil {
-		return err
+		return oobmigration.Version{}, 0, false, err
 	}
 
 	versionStr, ok, err := upgradestore.New(db).GetServiceVersion(ctx, "frontend")
 	if err != nil {
-		return err
+		return oobmigration.Version{}, 0, false, err
 	}
-	if ok {
-		version, ok := oobmigration.NewVersionFromString(versionStr)
-		if !ok {
-			return errors.Newf("cannot parse version: %q - expected [v]X.Y[.Z]", versionStr)
-		}
-		if oobmigration.CompareVersions(version, plan.from) == oobmigration.VersionOrderEqual {
-			return nil
-		}
-
-		return errors.Newf("version assertion failed: %q != %q", version, plan.from)
+	if !ok {
+		return oobmigration.Version{}, 0, false, nil
 	}
 
-	return errors.Newf("version assertion failed: unknown version != %q", plan.from)
+	version, patch, ok := oobmigration.NewVersionAndPatchFromString(versionStr)
+	if !ok {
+		return oobmigration.Version{}, 0, false, errors.Newf("cannot parse version: %q - expected [v]X.Y[.Z]", versionStr)
+	}
+
+	return version, patch, true, nil
 }
 
 func setServiceVersion(ctx context.Context, r Runner, version oobmigration.Version) error {
@@ -295,7 +305,7 @@ func setServiceVersion(ctx context.Context, r Runner, version oobmigration.Versi
 	)
 }
 
-func checkDrift(ctx context.Context, r Runner, plan migrationPlan, out *output.Output, expectedSchemaFactories []ExpectedSchemaFactory) error {
+func checkDrift(ctx context.Context, r Runner, version string, out *output.Output, expectedSchemaFactories []ExpectedSchemaFactory) error {
 	schemasWithDrift := make([]string, 0, len(schemas.SchemaNames))
 	for _, schemaName := range schemas.SchemaNames {
 		store, err := r.Store(ctx, schemaName)
@@ -311,7 +321,7 @@ func checkDrift(ctx context.Context, r Runner, plan migrationPlan, out *output.O
 		var buf bytes.Buffer
 		noopOutput := output.NewOutput(&buf, output.OutputOpts{})
 
-		if err := compareByFactories(schemaName, plan.from.GitTag(), schema, noopOutput, expectedSchemaFactories); err != nil {
+		if err := compareByFactories(schemaName, version, schema, noopOutput, expectedSchemaFactories); err != nil {
 			schemasWithDrift = append(schemasWithDrift, schemaName)
 		}
 	}
