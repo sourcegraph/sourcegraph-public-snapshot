@@ -37,6 +37,7 @@ type IndexingDBStore interface {
 	GetUploadByID(ctx context.Context, id int) (codeinteltypes.Upload, bool, error)
 	ReferencesForUpload(ctx context.Context, uploadID int) (dbstore.PackageReferenceScanner, error)
 }
+
 type IndexingExternalServiceStore interface {
 	List(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error)
 }

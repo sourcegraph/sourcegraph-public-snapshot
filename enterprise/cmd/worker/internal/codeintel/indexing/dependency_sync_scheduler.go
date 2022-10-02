@@ -34,9 +34,9 @@ var schemeToExternalService = map[string]string{
 
 type SyncDBStore interface {
 	GetUploadByID(ctx context.Context, id int) (codeinteltypes.Upload, bool, error)
+	ReferencesForUpload(ctx context.Context, uploadID int) (dbstore.PackageReferenceScanner, error)
 	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (int, error)
 	InsertCloneableDependencyRepo(ctx context.Context, dependency precise.Package) (bool, error)
-	ReferencesForUpload(ctx context.Context, uploadID int) (dbstore.PackageReferenceScanner, error)
 }
 
 type SyncExternalServiceStore interface {
