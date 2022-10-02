@@ -245,10 +245,10 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
         }
 
         const query = editor.state.facet(queryTokens)
-        let patternFilterIdx = -1 //= query.tokens.lastIndexOf(a => a.type === 'pattern')
+        let patternFilterIdx = -1
         for (let i = 0; i < query.tokens.length; i++) {
-            // this is bad I know, this language makes me so sad
             let c = query.tokens[i] as Pattern
+            // it seems Pattern doesn't detect content:asdf fields
             if (c.type === 'pattern') {
                 patternFilterIdx = i
             }
