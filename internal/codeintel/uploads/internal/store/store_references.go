@@ -81,20 +81,6 @@ func loadReferencesChannel(references []precise.PackageReference) <-chan []any {
 	return ch
 }
 
-// PackageReferenceScanner allows for on-demand scanning of PackageReference values.
-//
-// A scanner for this type was introduced as a memory optimization. Instead of reading a
-// large number of large byte arrays into memory at once, we allow the user to request
-// the next filter value when they are ready to process it. This allows us to hold only
-// a single bloom filter in memory at any give time during reference requests.
-type PackageReferenceScanner interface {
-	// Next reads the next package reference value from the database cursor.
-	Next() (shared.PackageReference, bool, error)
-
-	// Close the underlying row object.
-	Close() error
-}
-
 // ReferencesForUpload returns the set of import monikers attached to the given upload identifier.
 func (s *store) ReferencesForUpload(ctx context.Context, uploadID int) (_ shared.PackageReferenceScanner, err error) {
 	ctx, _, endObservation := s.operations.referencesForUpload.With(ctx, &err, observation.Args{LogFields: []log.Field{
