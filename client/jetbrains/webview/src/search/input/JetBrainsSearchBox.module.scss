@@ -55,7 +55,7 @@
 
         &:focus-within {
             border: 1px solid var(--input-focus-border-color);
-            box-shadow: 0 0 0 2px rgba(28, 126, 214, 0.25);
+            box-shadow: var(--search-box-focus-box-shadow);
         }
 
         @media (--xs-breakpoint-down) {
@@ -230,7 +230,7 @@
 
             &:focus {
                 border-color: var(--jb-focus-border-color);
-                box-shadow: 0 0 0 2px rgba(28, 126, 214, 0.25);
+                box-shadow: var(--search-box-focus-box-shadow);
             }
         }
     }
@@ -259,7 +259,7 @@
             &:focus-within,
             &:focus {
                 border: 1px solid var(--jb-focus-border-color);
-                box-shadow: 0 0 0 2px rgba(28, 126, 214, 0.25);
+                box-shadow: var(--search-box-focus-box-shadow);
             }
         }
     }
