@@ -18,7 +18,9 @@ import (
 	types "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
 	gitdomain "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	observation "github.com/sourcegraph/sourcegraph/internal/observation"
 	protocol "github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	store1 "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	config "github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
@@ -98,6 +100,9 @@ type MockStore struct {
 	// UpdateSourcedCommitsFunc is an instance of a mock function object
 	// controlling the behavior of the method UpdateSourcedCommits.
 	UpdateSourcedCommitsFunc *StoreUpdateSourcedCommitsFunc
+	// WorkerutilStoreFunc is an instance of a mock function object
+	// controlling the behavior of the method WorkerutilStore.
+	WorkerutilStoreFunc *StoreWorkerutilStoreFunc
 }
 
 // NewMockStore creates a new mock of the Store interface. All methods
@@ -211,6 +216,11 @@ func NewMockStore() *MockStore {
 		},
 		UpdateSourcedCommitsFunc: &StoreUpdateSourcedCommitsFunc{
 			defaultHook: func(context.Context, int, string, time.Time) (r0 int, r1 error) {
+				return
+			},
+		},
+		WorkerutilStoreFunc: &StoreWorkerutilStoreFunc{
+			defaultHook: func(*observation.Context) (r0 store1.Store) {
 				return
 			},
 		},
@@ -331,6 +341,11 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.UpdateSourcedCommits")
 			},
 		},
+		WorkerutilStoreFunc: &StoreWorkerutilStoreFunc{
+			defaultHook: func(*observation.Context) store1.Store {
+				panic("unexpected invocation of MockStore.WorkerutilStore")
+			},
+		},
 	}
 }
 
@@ -403,6 +418,9 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		},
 		UpdateSourcedCommitsFunc: &StoreUpdateSourcedCommitsFunc{
 			defaultHook: i.UpdateSourcedCommits,
+		},
+		WorkerutilStoreFunc: &StoreWorkerutilStoreFunc{
+			defaultHook: i.WorkerutilStore,
 		},
 	}
 }
@@ -2811,6 +2829,108 @@ func (c StoreUpdateSourcedCommitsFuncCall) Args() []interface{} {
 // invocation.
 func (c StoreUpdateSourcedCommitsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// StoreWorkerutilStoreFunc describes the behavior when the WorkerutilStore
+// method of the parent MockStore instance is invoked.
+type StoreWorkerutilStoreFunc struct {
+	defaultHook func(*observation.Context) store1.Store
+	hooks       []func(*observation.Context) store1.Store
+	history     []StoreWorkerutilStoreFuncCall
+	mutex       sync.Mutex
+}
+
+// WorkerutilStore delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockStore) WorkerutilStore(v0 *observation.Context) store1.Store {
+	r0 := m.WorkerutilStoreFunc.nextHook()(v0)
+	m.WorkerutilStoreFunc.appendCall(StoreWorkerutilStoreFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the WorkerutilStore
+// method of the parent MockStore instance is invoked and the hook queue is
+// empty.
+func (f *StoreWorkerutilStoreFunc) SetDefaultHook(hook func(*observation.Context) store1.Store) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// WorkerutilStore method of the parent MockStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *StoreWorkerutilStoreFunc) PushHook(hook func(*observation.Context) store1.Store) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreWorkerutilStoreFunc) SetDefaultReturn(r0 store1.Store) {
+	f.SetDefaultHook(func(*observation.Context) store1.Store {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreWorkerutilStoreFunc) PushReturn(r0 store1.Store) {
+	f.PushHook(func(*observation.Context) store1.Store {
+		return r0
+	})
+}
+
+func (f *StoreWorkerutilStoreFunc) nextHook() func(*observation.Context) store1.Store {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreWorkerutilStoreFunc) appendCall(r0 StoreWorkerutilStoreFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreWorkerutilStoreFuncCall objects
+// describing the invocations of this function.
+func (f *StoreWorkerutilStoreFunc) History() []StoreWorkerutilStoreFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreWorkerutilStoreFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreWorkerutilStoreFuncCall is an object that describes an invocation of
+// method WorkerutilStore on an instance of MockStore.
+type StoreWorkerutilStoreFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 *observation.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 store1.Store
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreWorkerutilStoreFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreWorkerutilStoreFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // MockGitserverClient is a mock implementation of the GitserverClient

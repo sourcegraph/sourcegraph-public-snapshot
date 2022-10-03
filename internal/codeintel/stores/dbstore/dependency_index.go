@@ -31,26 +31,6 @@ func (u DependencySyncingJob) RecordID() int {
 	return u.ID
 }
 
-// DependencyIndexingJob is a subset of the lsif_dependency_indexing_jobs table and acts as the
-// queue and execution record for indexing the dependencies of a particular completed upload.
-type DependencyIndexingJob struct {
-	ID                  int        `json:"id"`
-	State               string     `json:"state"`
-	FailureMessage      *string    `json:"failureMessage"`
-	StartedAt           *time.Time `json:"startedAt"`
-	FinishedAt          *time.Time `json:"finishedAt"`
-	ProcessAfter        *time.Time `json:"processAfter"`
-	NumResets           int        `json:"numResets"`
-	NumFailures         int        `json:"numFailures"`
-	UploadID            int        `json:"uploadId"`
-	ExternalServiceKind string     `json:"externalServiceKind"`
-	ExternalServiceSync time.Time  `json:"externalServiceSync"`
-}
-
-func (u DependencyIndexingJob) RecordID() int {
-	return u.ID
-}
-
 func (s *Store) InsertCloneableDependencyRepo(ctx context.Context, dependency precise.Package) (new bool, err error) {
 	ctx, _, endObservation := s.operations.insertCloneableDependencyRepo.With(ctx, &err, observation.Args{})
 	defer func() {
@@ -71,6 +51,30 @@ VALUES (%s, %s, %s)
 ON CONFLICT DO NOTHING
 RETURNING 1
 `
+
+//
+//
+//
+
+// DependencyIndexingJob is a subset of the lsif_dependency_indexing_jobs table and acts as the
+// queue and execution record for indexing the dependencies of a particular completed upload.
+type DependencyIndexingJob struct {
+	ID                  int        `json:"id"`
+	State               string     `json:"state"`
+	FailureMessage      *string    `json:"failureMessage"`
+	StartedAt           *time.Time `json:"startedAt"`
+	FinishedAt          *time.Time `json:"finishedAt"`
+	ProcessAfter        *time.Time `json:"processAfter"`
+	NumResets           int        `json:"numResets"`
+	NumFailures         int        `json:"numFailures"`
+	UploadID            int        `json:"uploadId"`
+	ExternalServiceKind string     `json:"externalServiceKind"`
+	ExternalServiceSync time.Time  `json:"externalServiceSync"`
+}
+
+func (u DependencyIndexingJob) RecordID() int {
+	return u.ID
+}
 
 func (s *Store) InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error) {
 	ctx, _, endObservation := s.operations.insertDependencyIndexingJob.With(ctx, &err, observation.Args{LogFields: []log.Field{
