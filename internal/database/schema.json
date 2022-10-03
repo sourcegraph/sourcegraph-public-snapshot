@@ -17320,6 +17320,19 @@
           "Comment": ""
         },
         {
+          "Name": "paths",
+          "Index": 7,
+          "TypeName": "text[]",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Paths that begin with a minus sign (-) are exclusion paths."
+        },
+        {
           "Name": "repo_id",
           "Index": 1,
           "TypeName": "integer",
