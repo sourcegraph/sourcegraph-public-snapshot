@@ -2,7 +2,7 @@ import assert from 'assert'
 
 import { Key } from 'ts-key-enum'
 
-import { hasFocus } from '@sourcegraph/shared/src/testing/dom-utils'
+import { hasFocus } from '@sourcegraph/shared/src/testing/dom-test-helpers'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
