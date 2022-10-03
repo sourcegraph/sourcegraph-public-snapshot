@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -110,7 +111,7 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*graphqlbac
 	}
 	resolvers := make([]*graphqlbackend.RepositoryResolver, len(repos))
 	for i := range repos {
-		resolvers[i] = graphqlbackend.NewRepositoryResolver(r.db, repos[i])
+		resolvers[i] = graphqlbackend.NewRepositoryResolver(r.db, gitserver.NewClient(r.db), repos[i])
 	}
 	return resolvers, nil
 }
