@@ -122,45 +122,6 @@ type backfiller struct {
 
 func (b *backfiller) Run(ctx context.Context, reportProgress func(BackfillProgress)) error {
 
-	//setup steps
-	getSearchPlan := makeSearchPlanFunc(b.logger, b.firstCommit, b.compressionPlan)
-	generateSearchJobs := makeGetSearchJobsFunc(b.logger, b.firstCommit, b.recentCommit)
-	runSearches := makeRunSearchFunc(b.logger, b.newSeachClient())
-	saveSearches := makeSaveResultsFunc(b.logger, b.insightStore)
-
-	// get the repos the series needs to run over
-	// this is a noop if already done
-	b.resolveRepos(ctx)
-	err := b.save(ctx, reportProgress)
-	if err != nil {
-		return err
-	}
-
-	// run the steps for every repo
-	for b.queryProgressIndex < len(b.repos) {
-		//Get the repo
-		repo, _ := b.repoStore.Get(ctx, b.repos[b.queryProgressIndex])
-		b.logger.Warn("backfilling for repo", log.String("repo", string(repo.Name)))
-
-		// Do the steps
-		plan, _ := getSearchPlan(ctx, b.series, repo)
-		searchJobChan, _ := generateSearchJobs(ctx, b.series, repo, plan)
-		searchResultsChan := runSearches(ctx, repo, searchJobChan)
-		_ = saveSearches(ctx, b.series, searchResultsChan)
-
-		// Save progress
-		b.queryProgressIndex++
-		err = b.save(ctx, reportProgress)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (b *backfiller) AltRun(ctx context.Context, reportProgress func(BackfillProgress)) error {
-
 	errChan := make(chan error)
 	results := make(chan iterationResult, len(b.repos))
 	reposChan := b.repoGenerator(ctx, errChan)
@@ -255,13 +216,6 @@ func (b *backfiller) saveProgress(ctx context.Context, reportProgress func(Backf
 	if result.err == nil {
 		// make result.repoID complete
 	}
-	b.logger.Warn("saving backfill progress")
-	reportProgress(BackfillProgress{SeriesID: b.series.SeriesID, RemaingCost: b.RemaingCost()})
-	return nil
-}
-
-func (b *backfiller) save(ctx context.Context, reportProgress func(BackfillProgress)) error {
-	// todo add some persistentce
 	b.logger.Warn("saving backfill progress")
 	reportProgress(BackfillProgress{SeriesID: b.series.SeriesID, RemaingCost: b.RemaingCost()})
 	return nil
