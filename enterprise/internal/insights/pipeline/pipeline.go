@@ -141,7 +141,7 @@ func (b *backfiller) Run(ctx context.Context, reportProgress func(BackfillProgre
 	for result := range results {
 		if result.err != nil {
 			rId := int32(*result.repoID)
-			b.logger.Warn("insights pipeline run failed", log.String("series", b.series.SeriesID), log.Int32("repo", rId))
+			b.logger.Debug("insights pipeline run failed", log.String("series", b.series.SeriesID), log.Int32("repo", rId))
 			continue
 		}
 		b.saveProgress(ctx, reportProgress, result)
@@ -171,12 +171,14 @@ func (b *backfiller) worker(ctx context.Context, series *types.InsightSeries, re
 }
 
 func (b *backfiller) repoGenerator(ctx context.Context, errChan chan<- error) <-chan *itypes.Repo {
-	reposChan := make(chan *itypes.Repo)
-	defer func() {
-		close(reposChan)
-	}()
+	//TODO: remove this when logic is added to get the repos
+	b.resolveRepos(ctx)
 
+	reposChan := make(chan *itypes.Repo)
 	go func(ctx context.Context) {
+		defer func() {
+			close(reposChan)
+		}()
 		for _, repoId := range b.repos {
 			r, err := b.repoStore.Get(ctx, repoId)
 			if err != nil {
@@ -185,13 +187,14 @@ func (b *backfiller) repoGenerator(ctx context.Context, errChan chan<- error) <-
 			}
 			reposChan <- r
 		}
+
 	}(ctx)
 
 	return reposChan
 }
 
 func (b *backfiller) resolveRepos(ctx context.Context) error {
-	b.logger.Warn("getting series repos")
+	b.logger.Debug("getting series repos")
 	if len(b.repos) != 0 {
 		return nil
 	}
@@ -215,8 +218,9 @@ func (b *backfiller) saveProgress(ctx context.Context, reportProgress func(Backf
 	// todo add some persistentce
 	if result.err == nil {
 		// make result.repoID complete
+		b.queryProgressIndex++
 	}
-	b.logger.Warn("saving backfill progress")
+	b.logger.Debug("saving backfill progress")
 	reportProgress(BackfillProgress{SeriesID: b.series.SeriesID, RemaingCost: b.RemaingCost()})
 	return nil
 }
@@ -304,7 +308,7 @@ func makeSearchPlanFunc(logger log.Logger, getFirstEverCommit FirstCommitFunc, c
 		// 	// }
 		// 	span.Finish()
 		// }()
-		logger.Warn("making search plan")
+		logger.Debug("making search plan")
 		// Find the first commit made to the repository on the default branch.
 		_, err = getFirstEverCommit(ctx, repo.Name)
 		if err != nil {
@@ -420,7 +424,7 @@ type FindRecentCommitFunc func(ctx context.Context, repoName api.RepoName, targe
 
 func makeSearchJobFunc(logger log.Logger, gitFindRecentCommit FindRecentCommitFunc) searchJobFunc {
 	return func(ctx context.Context, bctx *buildSeriesContext) (err error, job *queryrunner.Job, preempted []store.RecordSeriesPointArgs) {
-		logger.Warn("making search job")
+		logger.Debug("making search job")
 		query := bctx.series.Query
 		// TODO(slimsag): future: use the search query parser here to avoid any false-positives like a
 		// search query with `content:"repo:"`.
@@ -522,7 +526,7 @@ func makeRunSearchFunc(logger log.Logger, searchClient streaming.SearchClient) f
 				// run search
 				// some made up values
 				time.Sleep(time.Duration(rand.Intn(2000)) * time.Millisecond)
-				logger.Warn("running the search job")
+				logger.Debug("running the search job")
 				outputChannel <- runSearchResult{err: nil, result: searchResult{count: 10, capture: "", repo: repo, pointInTime: *r.job.RecordTime}}
 			}
 		}(ctx, out)
@@ -557,7 +561,7 @@ func makeSaveResultsFunc(logger log.Logger, insightStore store.Interface) func(c
 			)
 
 		}
-		logger.Warn("writing search results")
+		logger.Debug("writing search results")
 		return insightStore.RecordSeriesPoints(ctx, points)
 	}
 
