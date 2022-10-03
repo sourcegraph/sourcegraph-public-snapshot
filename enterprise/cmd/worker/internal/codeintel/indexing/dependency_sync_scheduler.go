@@ -31,9 +31,12 @@ var schemeToExternalService = map[string]string{
 	dependencies.PythonPackagesScheme: extsvc.KindPythonPackages,
 }
 
+type DependenciesService interface {
+	UpsertDependencyRepos(ctx context.Context, deps []dependencies.Repo) ([]dependencies.Repo, error)
+}
+
 type SyncDBStoreLeftovers interface {
 	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (int, error)
-	InsertCloneableDependencyRepo(ctx context.Context, dependency precise.Package) (bool, error)
 }
 
 type SyncExternalServiceStore interface {
@@ -45,6 +48,7 @@ type SyncExternalServiceStore interface {
 // records from lsif_dependency_syncing_jobs.
 func NewDependencySyncScheduler(
 	uploadsSvc UploadsService,
+	depsSvc DependenciesService,
 	dbStoreLeftovers SyncDBStoreLeftovers,
 	workerStore dbworkerstore.Store,
 	externalServiceStore SyncExternalServiceStore,
@@ -59,6 +63,7 @@ func NewDependencySyncScheduler(
 
 	handler := &dependencySyncSchedulerHandler{
 		uploadsSvc:       uploadsSvc,
+		depsSvc:          depsSvc,
 		dbStoreLeftovers: dbStoreLeftovers,
 		workerStore:      workerStore,
 		extsvcStore:      externalServiceStore,
@@ -75,6 +80,7 @@ func NewDependencySyncScheduler(
 
 type dependencySyncSchedulerHandler struct {
 	uploadsSvc       UploadsService
+	depsSvc          DependenciesService
 	dbStoreLeftovers SyncDBStoreLeftovers
 	workerStore      dbworkerstore.Store
 	extsvcStore      SyncExternalServiceStore
@@ -239,11 +245,17 @@ func (h *dependencySyncSchedulerHandler) insertDependencyRepo(ctx context.Contex
 		endObservation(1, observation.Args{MetricLabelValues: []string{strconv.FormatBool(new)}})
 	}()
 
-	new, err = h.dbStoreLeftovers.InsertCloneableDependencyRepo(ctx, pkg)
+	inserted, err := h.depsSvc.UpsertDependencyRepos(ctx, []dependencies.Repo{
+		{
+			Name:    reposource.PackageName(pkg.Name),
+			Scheme:  pkg.Scheme,
+			Version: pkg.Version,
+		},
+	})
 	if err != nil {
-		return new, errors.Wrap(err, "dbstore.InsertCloneableDependencyRepos")
+		return false, errors.Wrap(err, "dbstore.InsertCloneableDependencyRepos")
 	}
-	return new, nil
+	return len(inserted) != 0, nil
 }
 
 // shouldIndexDependencies returns true if the given upload should undergo dependency

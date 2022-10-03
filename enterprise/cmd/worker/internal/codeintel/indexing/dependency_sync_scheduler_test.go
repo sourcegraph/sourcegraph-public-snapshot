@@ -22,6 +22,7 @@ func TestDependencySyncSchedulerJVM(t *testing.T) {
 	newOperations(&observation.TestContext)
 	mockWorkerStore := NewMockWorkerStore()
 	mockUploadsSvc := NewMockUploadsService()
+	mockDepedenciesSvc := NewMockDependenciesService()
 	mockDBStoreLeftovers := NewMockSyncDBStoreLeftovers()
 	mockExtsvcStore := NewMockSyncExternalServiceStore()
 	mockScanner := NewMockPackageReferenceScanner()
@@ -31,6 +32,7 @@ func TestDependencySyncSchedulerJVM(t *testing.T) {
 
 	handler := dependencySyncSchedulerHandler{
 		uploadsSvc:       mockUploadsSvc,
+		depsSvc:          mockDepedenciesSvc,
 		dbStoreLeftovers: mockDBStoreLeftovers,
 		workerStore:      mockWorkerStore,
 		extsvcStore:      mockExtsvcStore,
@@ -62,8 +64,8 @@ func TestDependencySyncSchedulerJVM(t *testing.T) {
 		t.Errorf("unexpected number of calls to extsvc.List. want=%d have=%d", 1, len(mockExtsvcStore.ListFunc.History()))
 	}
 
-	if len(mockDBStoreLeftovers.InsertCloneableDependencyRepoFunc.History()) != 1 {
-		t.Errorf("unexpected number of calls to InsertCloneableDependencyRepo. want=%d have=%d", 1, len(mockDBStoreLeftovers.InsertCloneableDependencyRepoFunc.History()))
+	if len(mockDepedenciesSvc.UpsertDependencyReposFunc.History()) != 1 {
+		t.Errorf("unexpected number of calls to InsertCloneableDependencyRepo. want=%d have=%d", 1, len(mockDepedenciesSvc.UpsertDependencyReposFunc.History()))
 	}
 }
 
@@ -71,6 +73,7 @@ func TestDependencySyncSchedulerGomod(t *testing.T) {
 	newOperations(&observation.TestContext)
 	mockWorkerStore := NewMockWorkerStore()
 	mockUploadsSvc := NewMockUploadsService()
+	mockDepedenciesSvc := NewMockDependenciesService()
 	mockDBStoreLeftovers := NewMockSyncDBStoreLeftovers()
 	mockExtsvcStore := NewMockSyncExternalServiceStore()
 	mockScanner := NewMockPackageReferenceScanner()
@@ -80,6 +83,7 @@ func TestDependencySyncSchedulerGomod(t *testing.T) {
 
 	handler := dependencySyncSchedulerHandler{
 		uploadsSvc:       mockUploadsSvc,
+		depsSvc:          mockDepedenciesSvc,
 		dbStoreLeftovers: mockDBStoreLeftovers,
 		workerStore:      mockWorkerStore,
 		extsvcStore:      mockExtsvcStore,
@@ -112,8 +116,8 @@ func TestDependencySyncSchedulerGomod(t *testing.T) {
 		t.Errorf("unexpected number of calls to extsvc.List. want=%d have=%d", 0, len(mockExtsvcStore.ListFunc.History()))
 	}
 
-	if len(mockDBStoreLeftovers.InsertCloneableDependencyRepoFunc.History()) != 0 {
-		t.Errorf("unexpected number of calls to InsertCloneableDependencyRepo. want=%d have=%d", 0, len(mockDBStoreLeftovers.InsertCloneableDependencyRepoFunc.History()))
+	if len(mockDepedenciesSvc.UpsertDependencyReposFunc.History()) != 0 {
+		t.Errorf("unexpected number of calls to InsertCloneableDependencyRepo. want=%d have=%d", 0, len(mockDepedenciesSvc.UpsertDependencyReposFunc.History()))
 	}
 }
 

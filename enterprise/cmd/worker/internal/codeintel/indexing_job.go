@@ -13,6 +13,7 @@ import (
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -90,10 +91,11 @@ func (j *indexingJob) Routines(startupCtx context.Context, logger log.Logger) ([
 
 	// Get services
 	uploadSvc := uploads.GetService(db, codeIntelDB, gitserverClient)
+	depsSvc := dependencies.GetService(db)
 	autoindexingSvc := autoindexing.GetService(db, uploadSvc, gitserverClient, repoUpdaterClient)
 
 	routines := []goroutine.BackgroundRoutine{
-		indexing.NewDependencySyncScheduler(uploadSvc, dbStore, dependencySyncStore, extSvcStore, syncMetrics, observationContext),
+		indexing.NewDependencySyncScheduler(uploadSvc, depsSvc, dbStore, dependencySyncStore, extSvcStore, syncMetrics, observationContext),
 		indexing.NewDependencyIndexingScheduler(uploadSvc, repoStore, dependencyIndexingStore, extSvcStore, gitserverRepoStore, repoUpdaterClient, autoindexingSvc, indexingConfigInst.DependencyIndexerSchedulerPollInterval, indexingConfigInst.DependencyIndexerSchedulerConcurrency, queueingMetrics),
 	}
 

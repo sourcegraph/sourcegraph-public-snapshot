@@ -57,8 +57,9 @@
   sources:
     - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing
       interfaces:
-        - SyncDBStoreLeftovers
         - UploadsService
+        - DependenciesService
+        - SyncDBStoreLeftovers
         - ReposStore
         - IndexingExternalServiceStore
         - SyncExternalServiceStore

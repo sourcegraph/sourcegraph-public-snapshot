@@ -2,7 +2,6 @@ package dbstore
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -10,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 // DependencySyncingJob is a subset of the lsif_dependency_syncing_jobs table and acts as the
@@ -30,27 +28,6 @@ type DependencySyncingJob struct {
 func (u DependencySyncingJob) RecordID() int {
 	return u.ID
 }
-
-func (s *Store) InsertCloneableDependencyRepo(ctx context.Context, dependency precise.Package) (new bool, err error) {
-	ctx, _, endObservation := s.operations.insertCloneableDependencyRepo.With(ctx, &err, observation.Args{})
-	defer func() {
-		endObservation(1, observation.Args{LogFields: []log.Field{
-			log.Bool("new", new),
-			log.Object("dependency", fmt.Sprint(dependency)),
-		}})
-	}()
-
-	_, new, err = basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(insertCloneableDependencyRepoQuery, dependency.Scheme, dependency.Name, dependency.Version)))
-	return
-}
-
-const insertCloneableDependencyRepoQuery = `
--- source: internal/codeintel/stores/dbstore/dependency_index.go:InsertCloneableDependencyRepo
-INSERT INTO lsif_dependency_repos (scheme, name, version)
-VALUES (%s, %s, %s)
-ON CONFLICT DO NOTHING
-RETURNING 1
-`
 
 //
 //

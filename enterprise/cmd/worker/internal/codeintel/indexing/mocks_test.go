@@ -13,8 +13,9 @@ import (
 
 	sqlf "github.com/keegancsmith/sqlf"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
+	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	types1 "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
-	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	shared1 "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	protocol "github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -23,6 +24,165 @@ import (
 	store "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	precise "github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
+
+// MockDependenciesService is a mock implementation of the
+// DependenciesService interface (from the package
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing)
+// used for unit testing.
+type MockDependenciesService struct {
+	// UpsertDependencyReposFunc is an instance of a mock function object
+	// controlling the behavior of the method UpsertDependencyRepos.
+	UpsertDependencyReposFunc *DependenciesServiceUpsertDependencyReposFunc
+}
+
+// NewMockDependenciesService creates a new mock of the DependenciesService
+// interface. All methods return zero values for all results, unless
+// overwritten.
+func NewMockDependenciesService() *MockDependenciesService {
+	return &MockDependenciesService{
+		UpsertDependencyReposFunc: &DependenciesServiceUpsertDependencyReposFunc{
+			defaultHook: func(context.Context, []shared.Repo) (r0 []shared.Repo, r1 error) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockDependenciesService creates a new mock of the
+// DependenciesService interface. All methods panic on invocation, unless
+// overwritten.
+func NewStrictMockDependenciesService() *MockDependenciesService {
+	return &MockDependenciesService{
+		UpsertDependencyReposFunc: &DependenciesServiceUpsertDependencyReposFunc{
+			defaultHook: func(context.Context, []shared.Repo) ([]shared.Repo, error) {
+				panic("unexpected invocation of MockDependenciesService.UpsertDependencyRepos")
+			},
+		},
+	}
+}
+
+// NewMockDependenciesServiceFrom creates a new mock of the
+// MockDependenciesService interface. All methods delegate to the given
+// implementation, unless overwritten.
+func NewMockDependenciesServiceFrom(i DependenciesService) *MockDependenciesService {
+	return &MockDependenciesService{
+		UpsertDependencyReposFunc: &DependenciesServiceUpsertDependencyReposFunc{
+			defaultHook: i.UpsertDependencyRepos,
+		},
+	}
+}
+
+// DependenciesServiceUpsertDependencyReposFunc describes the behavior when
+// the UpsertDependencyRepos method of the parent MockDependenciesService
+// instance is invoked.
+type DependenciesServiceUpsertDependencyReposFunc struct {
+	defaultHook func(context.Context, []shared.Repo) ([]shared.Repo, error)
+	hooks       []func(context.Context, []shared.Repo) ([]shared.Repo, error)
+	history     []DependenciesServiceUpsertDependencyReposFuncCall
+	mutex       sync.Mutex
+}
+
+// UpsertDependencyRepos delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockDependenciesService) UpsertDependencyRepos(v0 context.Context, v1 []shared.Repo) ([]shared.Repo, error) {
+	r0, r1 := m.UpsertDependencyReposFunc.nextHook()(v0, v1)
+	m.UpsertDependencyReposFunc.appendCall(DependenciesServiceUpsertDependencyReposFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// UpsertDependencyRepos method of the parent MockDependenciesService
+// instance is invoked and the hook queue is empty.
+func (f *DependenciesServiceUpsertDependencyReposFunc) SetDefaultHook(hook func(context.Context, []shared.Repo) ([]shared.Repo, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpsertDependencyRepos method of the parent MockDependenciesService
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *DependenciesServiceUpsertDependencyReposFunc) PushHook(hook func(context.Context, []shared.Repo) ([]shared.Repo, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DependenciesServiceUpsertDependencyReposFunc) SetDefaultReturn(r0 []shared.Repo, r1 error) {
+	f.SetDefaultHook(func(context.Context, []shared.Repo) ([]shared.Repo, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DependenciesServiceUpsertDependencyReposFunc) PushReturn(r0 []shared.Repo, r1 error) {
+	f.PushHook(func(context.Context, []shared.Repo) ([]shared.Repo, error) {
+		return r0, r1
+	})
+}
+
+func (f *DependenciesServiceUpsertDependencyReposFunc) nextHook() func(context.Context, []shared.Repo) ([]shared.Repo, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DependenciesServiceUpsertDependencyReposFunc) appendCall(r0 DependenciesServiceUpsertDependencyReposFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// DependenciesServiceUpsertDependencyReposFuncCall objects describing the
+// invocations of this function.
+func (f *DependenciesServiceUpsertDependencyReposFunc) History() []DependenciesServiceUpsertDependencyReposFuncCall {
+	f.mutex.Lock()
+	history := make([]DependenciesServiceUpsertDependencyReposFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DependenciesServiceUpsertDependencyReposFuncCall is an object that
+// describes an invocation of method UpsertDependencyRepos on an instance of
+// MockDependenciesService.
+type DependenciesServiceUpsertDependencyReposFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 []shared.Repo
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared.Repo
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DependenciesServiceUpsertDependencyReposFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DependenciesServiceUpsertDependencyReposFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
 
 // MockGitserverRepoStore is a mock implementation of the GitserverRepoStore
 // interface (from the package
@@ -811,10 +971,6 @@ func (c ReposStoreListMinimalReposFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing)
 // used for unit testing.
 type MockSyncDBStoreLeftovers struct {
-	// InsertCloneableDependencyRepoFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// InsertCloneableDependencyRepo.
-	InsertCloneableDependencyRepoFunc *SyncDBStoreLeftoversInsertCloneableDependencyRepoFunc
 	// InsertDependencyIndexingJobFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// InsertDependencyIndexingJob.
@@ -826,11 +982,6 @@ type MockSyncDBStoreLeftovers struct {
 // results, unless overwritten.
 func NewMockSyncDBStoreLeftovers() *MockSyncDBStoreLeftovers {
 	return &MockSyncDBStoreLeftovers{
-		InsertCloneableDependencyRepoFunc: &SyncDBStoreLeftoversInsertCloneableDependencyRepoFunc{
-			defaultHook: func(context.Context, precise.Package) (r0 bool, r1 error) {
-				return
-			},
-		},
 		InsertDependencyIndexingJobFunc: &SyncDBStoreLeftoversInsertDependencyIndexingJobFunc{
 			defaultHook: func(context.Context, int, string, time.Time) (r0 int, r1 error) {
 				return
@@ -844,11 +995,6 @@ func NewMockSyncDBStoreLeftovers() *MockSyncDBStoreLeftovers {
 // overwritten.
 func NewStrictMockSyncDBStoreLeftovers() *MockSyncDBStoreLeftovers {
 	return &MockSyncDBStoreLeftovers{
-		InsertCloneableDependencyRepoFunc: &SyncDBStoreLeftoversInsertCloneableDependencyRepoFunc{
-			defaultHook: func(context.Context, precise.Package) (bool, error) {
-				panic("unexpected invocation of MockSyncDBStoreLeftovers.InsertCloneableDependencyRepo")
-			},
-		},
 		InsertDependencyIndexingJobFunc: &SyncDBStoreLeftoversInsertDependencyIndexingJobFunc{
 			defaultHook: func(context.Context, int, string, time.Time) (int, error) {
 				panic("unexpected invocation of MockSyncDBStoreLeftovers.InsertDependencyIndexingJob")
@@ -862,125 +1008,10 @@ func NewStrictMockSyncDBStoreLeftovers() *MockSyncDBStoreLeftovers {
 // implementation, unless overwritten.
 func NewMockSyncDBStoreLeftoversFrom(i SyncDBStoreLeftovers) *MockSyncDBStoreLeftovers {
 	return &MockSyncDBStoreLeftovers{
-		InsertCloneableDependencyRepoFunc: &SyncDBStoreLeftoversInsertCloneableDependencyRepoFunc{
-			defaultHook: i.InsertCloneableDependencyRepo,
-		},
 		InsertDependencyIndexingJobFunc: &SyncDBStoreLeftoversInsertDependencyIndexingJobFunc{
 			defaultHook: i.InsertDependencyIndexingJob,
 		},
 	}
-}
-
-// SyncDBStoreLeftoversInsertCloneableDependencyRepoFunc describes the
-// behavior when the InsertCloneableDependencyRepo method of the parent
-// MockSyncDBStoreLeftovers instance is invoked.
-type SyncDBStoreLeftoversInsertCloneableDependencyRepoFunc struct {
-	defaultHook func(context.Context, precise.Package) (bool, error)
-	hooks       []func(context.Context, precise.Package) (bool, error)
-	history     []SyncDBStoreLeftoversInsertCloneableDependencyRepoFuncCall
-	mutex       sync.Mutex
-}
-
-// InsertCloneableDependencyRepo delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockSyncDBStoreLeftovers) InsertCloneableDependencyRepo(v0 context.Context, v1 precise.Package) (bool, error) {
-	r0, r1 := m.InsertCloneableDependencyRepoFunc.nextHook()(v0, v1)
-	m.InsertCloneableDependencyRepoFunc.appendCall(SyncDBStoreLeftoversInsertCloneableDependencyRepoFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// InsertCloneableDependencyRepo method of the parent
-// MockSyncDBStoreLeftovers instance is invoked and the hook queue is empty.
-func (f *SyncDBStoreLeftoversInsertCloneableDependencyRepoFunc) SetDefaultHook(hook func(context.Context, precise.Package) (bool, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// InsertCloneableDependencyRepo method of the parent
-// MockSyncDBStoreLeftovers instance invokes the hook at the front of the
-// queue and discards it. After the queue is empty, the default hook
-// function is invoked for any future action.
-func (f *SyncDBStoreLeftoversInsertCloneableDependencyRepoFunc) PushHook(hook func(context.Context, precise.Package) (bool, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *SyncDBStoreLeftoversInsertCloneableDependencyRepoFunc) SetDefaultReturn(r0 bool, r1 error) {
-	f.SetDefaultHook(func(context.Context, precise.Package) (bool, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *SyncDBStoreLeftoversInsertCloneableDependencyRepoFunc) PushReturn(r0 bool, r1 error) {
-	f.PushHook(func(context.Context, precise.Package) (bool, error) {
-		return r0, r1
-	})
-}
-
-func (f *SyncDBStoreLeftoversInsertCloneableDependencyRepoFunc) nextHook() func(context.Context, precise.Package) (bool, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *SyncDBStoreLeftoversInsertCloneableDependencyRepoFunc) appendCall(r0 SyncDBStoreLeftoversInsertCloneableDependencyRepoFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// SyncDBStoreLeftoversInsertCloneableDependencyRepoFuncCall objects
-// describing the invocations of this function.
-func (f *SyncDBStoreLeftoversInsertCloneableDependencyRepoFunc) History() []SyncDBStoreLeftoversInsertCloneableDependencyRepoFuncCall {
-	f.mutex.Lock()
-	history := make([]SyncDBStoreLeftoversInsertCloneableDependencyRepoFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// SyncDBStoreLeftoversInsertCloneableDependencyRepoFuncCall is an object
-// that describes an invocation of method InsertCloneableDependencyRepo on
-// an instance of MockSyncDBStoreLeftovers.
-type SyncDBStoreLeftoversInsertCloneableDependencyRepoFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 precise.Package
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 bool
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c SyncDBStoreLeftoversInsertCloneableDependencyRepoFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c SyncDBStoreLeftoversInsertCloneableDependencyRepoFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // SyncDBStoreLeftoversInsertDependencyIndexingJobFunc describes the
@@ -1408,7 +1439,7 @@ func NewMockUploadsService() *MockUploadsService {
 			},
 		},
 		ReferencesForUploadFunc: &UploadsServiceReferencesForUploadFunc{
-			defaultHook: func(context.Context, int) (r0 shared.PackageReferenceScanner, r1 error) {
+			defaultHook: func(context.Context, int) (r0 shared1.PackageReferenceScanner, r1 error) {
 				return
 			},
 		},
@@ -1425,7 +1456,7 @@ func NewStrictMockUploadsService() *MockUploadsService {
 			},
 		},
 		ReferencesForUploadFunc: &UploadsServiceReferencesForUploadFunc{
-			defaultHook: func(context.Context, int) (shared.PackageReferenceScanner, error) {
+			defaultHook: func(context.Context, int) (shared1.PackageReferenceScanner, error) {
 				panic("unexpected invocation of MockUploadsService.ReferencesForUpload")
 			},
 		},
@@ -1562,15 +1593,15 @@ func (c UploadsServiceGetUploadByIDFuncCall) Results() []interface{} {
 // ReferencesForUpload method of the parent MockUploadsService instance is
 // invoked.
 type UploadsServiceReferencesForUploadFunc struct {
-	defaultHook func(context.Context, int) (shared.PackageReferenceScanner, error)
-	hooks       []func(context.Context, int) (shared.PackageReferenceScanner, error)
+	defaultHook func(context.Context, int) (shared1.PackageReferenceScanner, error)
+	hooks       []func(context.Context, int) (shared1.PackageReferenceScanner, error)
 	history     []UploadsServiceReferencesForUploadFuncCall
 	mutex       sync.Mutex
 }
 
 // ReferencesForUpload delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockUploadsService) ReferencesForUpload(v0 context.Context, v1 int) (shared.PackageReferenceScanner, error) {
+func (m *MockUploadsService) ReferencesForUpload(v0 context.Context, v1 int) (shared1.PackageReferenceScanner, error) {
 	r0, r1 := m.ReferencesForUploadFunc.nextHook()(v0, v1)
 	m.ReferencesForUploadFunc.appendCall(UploadsServiceReferencesForUploadFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -1579,7 +1610,7 @@ func (m *MockUploadsService) ReferencesForUpload(v0 context.Context, v1 int) (sh
 // SetDefaultHook sets function that is called when the ReferencesForUpload
 // method of the parent MockUploadsService instance is invoked and the hook
 // queue is empty.
-func (f *UploadsServiceReferencesForUploadFunc) SetDefaultHook(hook func(context.Context, int) (shared.PackageReferenceScanner, error)) {
+func (f *UploadsServiceReferencesForUploadFunc) SetDefaultHook(hook func(context.Context, int) (shared1.PackageReferenceScanner, error)) {
 	f.defaultHook = hook
 }
 
@@ -1588,7 +1619,7 @@ func (f *UploadsServiceReferencesForUploadFunc) SetDefaultHook(hook func(context
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *UploadsServiceReferencesForUploadFunc) PushHook(hook func(context.Context, int) (shared.PackageReferenceScanner, error)) {
+func (f *UploadsServiceReferencesForUploadFunc) PushHook(hook func(context.Context, int) (shared1.PackageReferenceScanner, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1596,20 +1627,20 @@ func (f *UploadsServiceReferencesForUploadFunc) PushHook(hook func(context.Conte
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *UploadsServiceReferencesForUploadFunc) SetDefaultReturn(r0 shared.PackageReferenceScanner, r1 error) {
-	f.SetDefaultHook(func(context.Context, int) (shared.PackageReferenceScanner, error) {
+func (f *UploadsServiceReferencesForUploadFunc) SetDefaultReturn(r0 shared1.PackageReferenceScanner, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) (shared1.PackageReferenceScanner, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *UploadsServiceReferencesForUploadFunc) PushReturn(r0 shared.PackageReferenceScanner, r1 error) {
-	f.PushHook(func(context.Context, int) (shared.PackageReferenceScanner, error) {
+func (f *UploadsServiceReferencesForUploadFunc) PushReturn(r0 shared1.PackageReferenceScanner, r1 error) {
+	f.PushHook(func(context.Context, int) (shared1.PackageReferenceScanner, error) {
 		return r0, r1
 	})
 }
 
-func (f *UploadsServiceReferencesForUploadFunc) nextHook() func(context.Context, int) (shared.PackageReferenceScanner, error) {
+func (f *UploadsServiceReferencesForUploadFunc) nextHook() func(context.Context, int) (shared1.PackageReferenceScanner, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1651,7 +1682,7 @@ type UploadsServiceReferencesForUploadFuncCall struct {
 	Arg1 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 shared.PackageReferenceScanner
+	Result0 shared1.PackageReferenceScanner
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -1693,7 +1724,7 @@ func NewMockPackageReferenceScanner() *MockPackageReferenceScanner {
 			},
 		},
 		NextFunc: &PackageReferenceScannerNextFunc{
-			defaultHook: func() (r0 shared.PackageReference, r1 bool, r2 error) {
+			defaultHook: func() (r0 shared1.PackageReference, r1 bool, r2 error) {
 				return
 			},
 		},
@@ -1711,7 +1742,7 @@ func NewStrictMockPackageReferenceScanner() *MockPackageReferenceScanner {
 			},
 		},
 		NextFunc: &PackageReferenceScannerNextFunc{
-			defaultHook: func() (shared.PackageReference, bool, error) {
+			defaultHook: func() (shared1.PackageReference, bool, error) {
 				panic("unexpected invocation of MockPackageReferenceScanner.Next")
 			},
 		},
@@ -1721,7 +1752,7 @@ func NewStrictMockPackageReferenceScanner() *MockPackageReferenceScanner {
 // NewMockPackageReferenceScannerFrom creates a new mock of the
 // MockPackageReferenceScanner interface. All methods delegate to the given
 // implementation, unless overwritten.
-func NewMockPackageReferenceScannerFrom(i shared.PackageReferenceScanner) *MockPackageReferenceScanner {
+func NewMockPackageReferenceScannerFrom(i shared1.PackageReferenceScanner) *MockPackageReferenceScanner {
 	return &MockPackageReferenceScanner{
 		CloseFunc: &PackageReferenceScannerCloseFunc{
 			defaultHook: i.Close,
@@ -1834,15 +1865,15 @@ func (c PackageReferenceScannerCloseFuncCall) Results() []interface{} {
 // PackageReferenceScannerNextFunc describes the behavior when the Next
 // method of the parent MockPackageReferenceScanner instance is invoked.
 type PackageReferenceScannerNextFunc struct {
-	defaultHook func() (shared.PackageReference, bool, error)
-	hooks       []func() (shared.PackageReference, bool, error)
+	defaultHook func() (shared1.PackageReference, bool, error)
+	hooks       []func() (shared1.PackageReference, bool, error)
 	history     []PackageReferenceScannerNextFuncCall
 	mutex       sync.Mutex
 }
 
 // Next delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockPackageReferenceScanner) Next() (shared.PackageReference, bool, error) {
+func (m *MockPackageReferenceScanner) Next() (shared1.PackageReference, bool, error) {
 	r0, r1, r2 := m.NextFunc.nextHook()()
 	m.NextFunc.appendCall(PackageReferenceScannerNextFuncCall{r0, r1, r2})
 	return r0, r1, r2
@@ -1851,7 +1882,7 @@ func (m *MockPackageReferenceScanner) Next() (shared.PackageReference, bool, err
 // SetDefaultHook sets function that is called when the Next method of the
 // parent MockPackageReferenceScanner instance is invoked and the hook queue
 // is empty.
-func (f *PackageReferenceScannerNextFunc) SetDefaultHook(hook func() (shared.PackageReference, bool, error)) {
+func (f *PackageReferenceScannerNextFunc) SetDefaultHook(hook func() (shared1.PackageReference, bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -1859,7 +1890,7 @@ func (f *PackageReferenceScannerNextFunc) SetDefaultHook(hook func() (shared.Pac
 // Next method of the parent MockPackageReferenceScanner instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *PackageReferenceScannerNextFunc) PushHook(hook func() (shared.PackageReference, bool, error)) {
+func (f *PackageReferenceScannerNextFunc) PushHook(hook func() (shared1.PackageReference, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1867,20 +1898,20 @@ func (f *PackageReferenceScannerNextFunc) PushHook(hook func() (shared.PackageRe
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *PackageReferenceScannerNextFunc) SetDefaultReturn(r0 shared.PackageReference, r1 bool, r2 error) {
-	f.SetDefaultHook(func() (shared.PackageReference, bool, error) {
+func (f *PackageReferenceScannerNextFunc) SetDefaultReturn(r0 shared1.PackageReference, r1 bool, r2 error) {
+	f.SetDefaultHook(func() (shared1.PackageReference, bool, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *PackageReferenceScannerNextFunc) PushReturn(r0 shared.PackageReference, r1 bool, r2 error) {
-	f.PushHook(func() (shared.PackageReference, bool, error) {
+func (f *PackageReferenceScannerNextFunc) PushReturn(r0 shared1.PackageReference, r1 bool, r2 error) {
+	f.PushHook(func() (shared1.PackageReference, bool, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *PackageReferenceScannerNextFunc) nextHook() func() (shared.PackageReference, bool, error) {
+func (f *PackageReferenceScannerNextFunc) nextHook() func() (shared1.PackageReference, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1915,7 +1946,7 @@ func (f *PackageReferenceScannerNextFunc) History() []PackageReferenceScannerNex
 type PackageReferenceScannerNextFuncCall struct {
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 shared.PackageReference
+	Result0 shared1.PackageReference
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 bool
