@@ -2697,6 +2697,7 @@ Foreign-key constraints:
  path_includes | text[]                   |           |          | 
  path_excludes | text[]                   |           |          | 
  updated_at    | timestamp with time zone |           | not null | now()
+ paths         | text[]                   |           |          | 
 Indexes:
     "sub_repo_permissions_repo_id_user_id_version_uindex" UNIQUE, btree (repo_id, user_id, version)
     "sub_repo_perms_user_id" btree (user_id)
@@ -2707,6 +2708,8 @@ Foreign-key constraints:
 ```
 
 Responsible for storing permissions at a finer granularity than repo
+
+**paths**: Paths that begin with a minus sign (-) are exclusion paths.
 
 # Table "public.survey_responses"
 ```

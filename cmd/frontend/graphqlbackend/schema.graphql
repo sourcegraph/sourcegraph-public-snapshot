@@ -6435,6 +6435,10 @@ type AnalyticsSearchResult {
     File open analytics
     """
     fileOpens: AnalyticsStatItem!
+    """
+    Code copied from search results analytics
+    """
+    codeCopied: AnalyticsStatItem!
 }
 
 """

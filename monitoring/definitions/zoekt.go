@@ -670,6 +670,45 @@ func Zoekt() *monitoring.Dashboard {
 				},
 			},
 			{
+				Title: "Virtual Memory Statistics",
+				Rows: []monitoring.Row{
+					{
+						{
+							Name:        "memory_map_areas_percentage_used",
+							Description: "process memory map areas percentage used (per instance)",
+							Query:       fmt.Sprintf("(proc_metrics_memory_map_current_count{%s} / proc_metrics_memory_map_max_limit{%s}) * 100", "instance=~`${instance:regex}`", "instance=~`${instance:regex}`"),
+							Panel: monitoring.Panel().LegendFormat("{{instance}}").
+								Unit(monitoring.Percentage).
+								With(monitoring.PanelOptions.LegendOnRight()),
+							Warning:  monitoring.Alert().GreaterOrEqual(70),
+							Critical: monitoring.Alert().GreaterOrEqual(90),
+							Owner:    monitoring.ObservableOwnerSearchCore,
+
+							Interpretation: `
+								Processes have a limited about of memory map areas that they can use. In Zoekt, memory map areas
+								are mainly used for loading shards into memory for queries (via mmap). However, memory map areas
+								are also used for loading shared libraries, etc.
+
+								_See https://en.wikipedia.org/wiki/Memory-mapped_file and the related articles for more information about memory maps._
+
+								Once the memory map limit is reached, the Linux kernel will prevent the process from creating any
+								additional memory map areas. This could cause the process to crash.
+							`,
+							NextSteps: `
+								If you are running out of memory map areas, you could resolve this by:
+
+								    - Creating additional Zoekt replicas: This spreads all the shards out amongst more replicas, which
+								means that each _individual_ replica will have fewer shards. This, in turn, decreases the
+								amount of memory map areas that a _single_ replica can create (in order to load the shards into memory).
+								    - Increase the virtual memory subsystem's 'max_map_count' parameter which defines the upper limit of memory areas
+								a process can use. The exact instructions for tuning this parameter can differ depending on your environment.
+								See https://kernel.org/doc/Documentation/sysctl/vm.txt for more information.
+							`,
+						},
+					},
+				},
+			},
+			{
 				Title:  "Compound shards (experimental)",
 				Hidden: true,
 				Rows: []monitoring.Row{

@@ -79,36 +79,54 @@ func getSpanContext(ctx context.Context) (shouldTrace bool, spanContext map[stri
 	return true, spanContext
 }
 
-func SearchOpts(ctx context.Context, k int, fileMatchLimit int32, selector filter.SelectPath) zoekt.SearchOptions {
+// Options represents the inputs from Sourcegraph that we use to compute
+// zoekt.SearchOptions.
+type Options struct {
+	Selector filter.SelectPath
+
+	// FileMatchLimit is how many results the user wants.
+	FileMatchLimit int32
+
+	// NumRepos is the number of repos we are searching over. This number is
+	// used as a heuristics to scale the amount of work we will do.
+	NumRepos int
+
+	// GlobalSearch is true if we are doing a search were we skip computing
+	// NumRepos and instead rely on zoekt.
+	GlobalSearch bool
+}
+
+func (o *Options) ToSearch(ctx context.Context) *zoekt.SearchOptions {
 	shouldTrace, spanContext := getSpanContext(ctx)
-	searchOpts := zoekt.SearchOptions{
+	searchOpts := &zoekt.SearchOptions{
 		Trace:        shouldTrace,
 		SpanContext:  spanContext,
 		MaxWallTime:  defaultTimeout,
 		ChunkMatches: true,
 	}
 
-	if userProbablyWantsToWaitLonger := fileMatchLimit > limits.DefaultMaxSearchResults; userProbablyWantsToWaitLonger {
-		searchOpts.MaxWallTime *= time.Duration(3 * float64(fileMatchLimit) / float64(limits.DefaultMaxSearchResults))
+	if userProbablyWantsToWaitLonger := o.FileMatchLimit > limits.DefaultMaxSearchResults; userProbablyWantsToWaitLonger {
+		searchOpts.MaxWallTime *= time.Duration(3 * float64(o.FileMatchLimit) / float64(limits.DefaultMaxSearchResults))
 	}
 
-	if selector.Root() == filter.Repository {
+	if o.Selector.Root() == filter.Repository {
 		searchOpts.ShardRepoMaxMatchCount = 1
 	} else {
+		k := o.resultCountFactor()
 		searchOpts.ShardMaxMatchCount = 100 * k
 		searchOpts.TotalMaxMatchCount = 100 * k
 		searchOpts.ShardMaxImportantMatch = 15 * k
 		searchOpts.TotalMaxImportantMatch = 25 * k
 		// Ask for 2000 more results so we have results to populate
 		// RepoStatusLimitHit.
-		searchOpts.MaxDocDisplayCount = int(fileMatchLimit) + 2000
+		searchOpts.MaxDocDisplayCount = int(o.FileMatchLimit) + 2000
 	}
 
 	return searchOpts
 }
 
-func ResultCountFactor(numRepos int, fileMatchLimit int32, globalSearch bool) (k int) {
-	if globalSearch {
+func (o *Options) resultCountFactor() (k int) {
+	if o.GlobalSearch {
 		// for globalSearch, numRepos = 0, but effectively we are searching over all
 		// indexed repos, hence k should be 1
 		k = 1
@@ -116,24 +134,24 @@ func ResultCountFactor(numRepos int, fileMatchLimit int32, globalSearch bool) (k
 		// If we're only searching a small number of repositories, return more
 		// comprehensive results. This is arbitrary.
 		switch {
-		case numRepos <= 5:
+		case o.NumRepos <= 5:
 			k = 100
-		case numRepos <= 10:
+		case o.NumRepos <= 10:
 			k = 10
-		case numRepos <= 25:
+		case o.NumRepos <= 25:
 			k = 8
-		case numRepos <= 50:
+		case o.NumRepos <= 50:
 			k = 5
-		case numRepos <= 100:
+		case o.NumRepos <= 100:
 			k = 3
-		case numRepos <= 500:
+		case o.NumRepos <= 500:
 			k = 2
 		default:
 			k = 1
 		}
 	}
-	if fileMatchLimit > limits.DefaultMaxSearchResults {
-		k = int(float64(k) * 3 * float64(fileMatchLimit) / float64(limits.DefaultMaxSearchResults))
+	if o.FileMatchLimit > limits.DefaultMaxSearchResults {
+		k = int(float64(k) * 3 * float64(o.FileMatchLimit) / float64(limits.DefaultMaxSearchResults))
 	}
 	return k
 }
