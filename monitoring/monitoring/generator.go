@@ -33,6 +33,8 @@ type GenerateOptions struct {
 	// GrafanaCredentials is the basic auth credentials for the Grafana instance at
 	// GrafanaURL, e.g. "admin:admin"
 	GrafanaCredentials string
+	//GrafanaHeaders are additional HTTP headers to add to all requests to the target Grafana instance
+	GrafanaHeaders map[string]string
 
 	// Output directory for generated Prometheus assets
 	PrometheusDir string
@@ -96,8 +98,19 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 
 			// Reload specific dashboard
 			if opts.Reload {
+
+				// DefaultHTTPClient is used unless additional headers are requested
+				httpClient := sdk.DefaultHTTPClient
+
+				if len(opts.GrafanaHeaders) > 0 {
+					glog.Debug("Adding additional headers to Grafana requests")
+					glog.Debug(fmt.Sprintf("%v", opts.GrafanaHeaders))
+					adt := NewAddHeaderTransport(nil, opts.GrafanaHeaders)
+					httpClient.Transport = adt
+				}
+
 				glog.Debug("Reloading Grafana instance")
-				client, err := sdk.NewClient(opts.GrafanaURL, opts.GrafanaCredentials, sdk.DefaultHTTPClient)
+				client, err := sdk.NewClient(opts.GrafanaURL, opts.GrafanaCredentials, httpClient)
 				if err != nil {
 					return errors.Wrapf(err, "Failed to initialize Grafana client for dashboard %q", dashboard.Title)
 				}
