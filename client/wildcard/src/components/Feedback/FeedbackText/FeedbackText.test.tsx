@@ -11,10 +11,6 @@ describe('FeedbackText', () => {
         const { asFragment } = render(<FeedbackText headerText="This is a header text" />)
         expect(asFragment()).toMatchSnapshot()
     })
-    it('render feedbackText with empty header', () => {
-        const { asFragment } = render(<FeedbackText headerText="" />)
-        expect(asFragment()).toMatchSnapshot()
-    })
     it('render feedbackText with footer', () => {
         const { asFragment } = render(<FeedbackText footerText="This is a footer text" />)
         expect(asFragment()).toMatchSnapshot()

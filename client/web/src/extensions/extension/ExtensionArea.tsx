@@ -7,7 +7,7 @@ import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxj
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
-import { createAggregateError, ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
+import { createAggregateError, ErrorLike, isErrorLike, asError, logger } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import {
     ConfiguredRegistryExtension,
@@ -176,7 +176,7 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
                 )
                 .subscribe(
                     stateUpdate => this.setState(stateUpdate),
-                    error => console.error(error)
+                    error => logger.error(error)
                 )
         )
 

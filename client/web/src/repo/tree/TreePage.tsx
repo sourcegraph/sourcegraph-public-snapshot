@@ -7,7 +7,7 @@ import { Redirect, Route, Switch, useRouteMatch } from 'react-router-dom'
 import { catchError } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { asError, encodeURIPathComponent, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, encodeURIPathComponent, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { SearchContextProps } from '@sourcegraph/search'
 import { fetchTreeEntries } from '@sourcegraph/shared/src/backend/repo'
@@ -176,7 +176,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                 })
             )
             .catch(error => {
-                console.error('Error adding viewer to extension host:', error)
+                logger.error('Error adding viewer to extension host:', error)
                 return null
             })
 
@@ -188,7 +188,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                     }
                     return
                 })
-                .catch(error => console.error('Error removing viewer from extension host:', error))
+                .catch(error => logger.error('Error removing viewer from extension host:', error))
         }
     }, [uri, showCodeInsights, extensionsController])
 

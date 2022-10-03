@@ -4,7 +4,7 @@ import { throwError } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
 
-import { asError } from '@sourcegraph/common'
+import { asError, logger } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import * as GQL from '@sourcegraph/shared/src/schema'
@@ -63,7 +63,7 @@ export async function ensureLoggedInOrCreateTestUser(
             await driver.ensureLoggedIn({ username, password: testUserPassword })
             return userDestructor
         } catch (error) {
-            console.log(
+            logger.error(
                 `Login failed (error: ${asError(error).message}), will attempt to create user ${JSON.stringify(
                     username
                 )}`

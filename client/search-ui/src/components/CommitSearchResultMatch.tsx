@@ -6,7 +6,7 @@ import { of } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 import sanitizeHtml from 'sanitize-html'
 
-import { highlightNode } from '@sourcegraph/common'
+import { highlightNode, logger } from '@sourcegraph/common'
 import { highlightCode } from '@sourcegraph/search'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -47,7 +47,7 @@ export const CommitSearchResultMatch: React.FunctionComponent<CommitSearchResult
             .pipe(
                 // Return the rendered markdown if highlighting fails.
                 catchError(error => {
-                    console.log(error)
+                    logger.log(error)
                     return of('<pre>' + sanitizeHtml(item.content) + '</pre>')
                 })
             )

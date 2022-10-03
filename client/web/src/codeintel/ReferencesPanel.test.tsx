@@ -2,6 +2,7 @@ import { render, RenderResult, within, fireEvent } from '@testing-library/react'
 import * as H from 'history'
 import { EMPTY, NEVER, noop, of, Subscription } from 'rxjs'
 
+import { logger } from '@sourcegraph/common'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { pretendProxySubscribable, pretendRemote } from '@sourcegraph/shared/src/api/util'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
@@ -59,7 +60,7 @@ const defaultProps: Omit<ReferencesPanelProps, 'externalHistory' | 'externalLoca
         if (args.filePath === 'diff/diff.go') {
             return of(highlightedLinesDiffGo)
         }
-        console.error('attempt to fetch highlighted lines for file without mocks', args.filePath)
+        logger.error('attempt to fetch highlighted lines for file without mocks', args.filePath)
         return of([])
     },
 }

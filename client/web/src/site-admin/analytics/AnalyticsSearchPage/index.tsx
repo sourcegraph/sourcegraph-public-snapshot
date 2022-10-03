@@ -37,7 +37,7 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
         if (!data) {
             return []
         }
-        const { searches, fileViews, fileOpens, resultClicks } = data.site.analytics.search
+        const { searches, fileViews, fileOpens, resultClicks, codeCopied } = data.site.analytics.search
         const stats: Series<StandardDatum>[] = [
             {
                 id: 'searches',
@@ -102,6 +102,16 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
                 description: aggregation.selected === 'count' ? 'File views' : 'Users viewed files',
                 color: 'var(--orange)',
                 tooltip: 'File views can be generated from a search result, or be linked to directly.',
+            },
+            {
+                value: codeCopied.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalRegisteredUsers'],
+                description: aggregation.selected === 'count' ? 'Copy/paste events' : 'Users copy/pasted code',
+                color: 'var(--body-color)',
+                position: 'right',
+                tooltip:
+                    aggregation.selected === 'count'
+                        ? 'The number of times code was copy/pasted from search results.'
+                        : 'The number users who copy/pasted code from search results.',
             },
             {
                 value: fileOpens.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalRegisteredUsers'],

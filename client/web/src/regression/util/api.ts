@@ -5,7 +5,7 @@
 import { zip, timer, concat, throwError, defer, Observable } from 'rxjs'
 import { map, tap, retryWhen, delayWhen, take, mergeMap } from 'rxjs/operators'
 
-import { isErrorLike, createAggregateError } from '@sourcegraph/common'
+import { isErrorLike, createAggregateError, logger } from '@sourcegraph/common'
 import {
     gql,
     dataOrThrowErrors,
@@ -109,7 +109,7 @@ export function waitForRepo(
                               if (isErrorLike(error) && error.message === 'Repo exists') {
                                   // Delay retry by 2s.
                                   if (logStatusMessages) {
-                                      console.log(
+                                      logger.log(
                                           `Waiting for ${repoName} to be removed (attempt ${
                                               retryCount + 1
                                           } of ${numberRetries})`
@@ -147,7 +147,7 @@ export function waitForRepo(
                               if (isCloneInProgressErrorLike(error)) {
                                   // Delay retry by 2s.
                                   if (logStatusMessages) {
-                                      console.log(
+                                      logger.log(
                                           `Waiting for ${repoName} to finish cloning (attempt ${
                                               retryCount + 1
                                           } of ${numberRetries})`
@@ -267,7 +267,7 @@ export async function updateExternalService(
             map(dataOrThrowErrors),
             tap(({ updateExternalService: { warning } }) => {
                 if (warning) {
-                    console.warn('updateExternalService warning:', warning)
+                    logger.warn('updateExternalService warning:', warning)
                 }
             })
         )

@@ -3285,10 +3285,13 @@ CREATE TABLE sub_repo_permissions (
     version integer DEFAULT 1 NOT NULL,
     path_includes text[],
     path_excludes text[],
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    paths text[]
 );
 
 COMMENT ON TABLE sub_repo_permissions IS 'Responsible for storing permissions at a finer granularity than repo';
+
+COMMENT ON COLUMN sub_repo_permissions.paths IS 'Paths that begin with a minus sign (-) are exclusion paths.';
 
 CREATE TABLE survey_responses (
     id bigint NOT NULL,
