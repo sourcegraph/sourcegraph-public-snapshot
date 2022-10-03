@@ -1,10 +1,8 @@
 package instrumentation
 
 import (
-	"context"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
