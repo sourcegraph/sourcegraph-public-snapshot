@@ -782,6 +782,30 @@ export function addExternalService(
     )
 }
 
+const GenericSearchResultInterfaceFragment = gql`
+    fragment GenericSearchResultFields on GenericSearchResultInterface {
+        label {
+            html
+        }
+        url
+        detail {
+            html
+        }
+        matches {
+            url
+            body {
+                text
+                html
+            }
+            highlights {
+                line
+                character
+                length
+            }
+        }
+    }
+`
+
 export function search(
     { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
     query: string,
@@ -819,25 +843,7 @@ export function search(
                             ... on Repository {
                                 id
                                 name
-                                label {
-                                    html
-                                }
-                                url
-                                detail {
-                                    html
-                                }
-                                matches {
-                                    url
-                                    body {
-                                        text
-                                        html
-                                    }
-                                    highlights {
-                                        line
-                                        character
-                                        length
-                                    }
-                                }
+                                ...GenericSearchResultFields
                             }
                             ... on FileMatch {
                                 file {
@@ -865,25 +871,7 @@ export function search(
                                 }
                             }
                             ... on CommitSearchResult {
-                                label {
-                                    html
-                                }
-                                url
-                                detail {
-                                    html
-                                }
-                                matches {
-                                    url
-                                    body {
-                                        text
-                                        html
-                                    }
-                                    highlights {
-                                        line
-                                        character
-                                        length
-                                    }
-                                }
+                                ...GenericSearchResultFields
                             }
                         }
                         alert {
@@ -898,6 +886,7 @@ export function search(
                     }
                 }
             }
+            ${GenericSearchResultInterfaceFragment}
         `,
         variables: { query, version, patternType },
         mightContainPrivateInfo: false,

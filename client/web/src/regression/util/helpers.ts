@@ -90,7 +90,7 @@ async function createTestUser(
 ): Promise<void> {
     // If there's an error, try to create the user
     const passwordResetURL = await gqlClient
-        .mutateGraphQL<CreateUserResult, Pick<CreateUserVariables, 'username'>>(
+        .mutateGraphQL<CreateUserResult, CreateUserVariables>(
             gql`
                 mutation CreateUser($username: String!, $email: String) {
                     createUser(username: $username, email: $email) {
@@ -98,7 +98,7 @@ async function createTestUser(
                     }
                 }
             `,
-            { username }
+            { username, email: null }
         )
         .pipe(
             map(dataOrThrowErrors),
