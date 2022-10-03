@@ -190,7 +190,7 @@ func doTokenRoundTrip(doer httpcli.Doer, req *http.Request) (*auth.OAuthBearerTo
 			}
 		}
 		token = &auth.OAuthBearerToken{
-			AccessToken:  vals.Get("access_token"),
+			Token:        vals.Get("access_token"),
 			TokenType:    vals.Get("token_type"),
 			RefreshToken: vals.Get("refresh_token"),
 		}
@@ -212,13 +212,13 @@ func doTokenRoundTrip(doer httpcli.Doer, req *http.Request) (*auth.OAuthBearerTo
 			}
 		}
 		token = &auth.OAuthBearerToken{
-			AccessToken:  tj.AccessToken,
+			Token:        tj.AccessToken,
 			TokenType:    tj.TokenType,
 			RefreshToken: tj.RefreshToken,
 			Expiry:       tj.expiry(),
 		}
 	}
-	if token.AccessToken == "" {
+	if token.Token == "" {
 		return nil, errors.New("oauth2: server response missing access_token")
 	}
 	return token, nil

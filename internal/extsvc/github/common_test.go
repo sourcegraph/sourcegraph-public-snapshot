@@ -99,8 +99,8 @@ func TestClient_doRequestWithV3Client(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	bearerToken := &auth.OAuthBearerToken{AccessToken: "bad token", RefreshToken: "refresh token", Expiry: time.Now().Add(6 * time.Minute), RefreshFunc: func(obt *auth.OAuthBearerToken) (*auth.OAuthBearerToken, error) {
-		obt.AccessToken = "refreshed-token"
+	bearerToken := &auth.OAuthBearerToken{Token: "bad token", RefreshToken: "refresh token", Expiry: time.Now().Add(6 * time.Minute), RefreshFunc: func(obt *auth.OAuthBearerToken) (*auth.OAuthBearerToken, error) {
+		obt.Token = "refreshed-token"
 		obt.RefreshToken = "refresh-now"
 		return obt, nil
 	}}
@@ -140,7 +140,7 @@ func TestClient_doRequestWithV4Client(t *testing.T) {
 
 	ctx := context.Background()
 	tokenRefresherFunc := func(ctx context.Context, doer httpcli.Doer, oauthCtxt oauthutil.OAuthContext) (*auth.OAuthBearerToken, error) {
-		return &auth.OAuthBearerToken{AccessToken: "refreshed-token"}, nil
+		return &auth.OAuthBearerToken{Token: "refreshed-token"}, nil
 	}
 
 	v4Client, save := newV4Client(t, "GetAuthenticatedUserV4", tokenRefresherFunc)
@@ -175,7 +175,7 @@ func TestClient_doRequestWithoutARefresher(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	bearerToken := &auth.OAuthBearerToken{AccessToken: "bad token"}
+	bearerToken := &auth.OAuthBearerToken{Token: "bad token"}
 
 	v3Client := NewV3Client(logtest.Scoped(t), "Test", uri, bearerToken, nil)
 	req, err := http.NewRequest(http.MethodGet, "url", nil)

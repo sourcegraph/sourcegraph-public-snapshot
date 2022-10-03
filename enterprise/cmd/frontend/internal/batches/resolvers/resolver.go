@@ -1172,7 +1172,7 @@ func (r *Resolver) generateAuthenticatorForCredential(ctx context.Context, exter
 		}
 	} else {
 		a = &auth.OAuthBearerTokenWithSSH{
-			OAuthBearerToken: auth.OAuthBearerToken{AccessToken: credential},
+			OAuthBearerToken: auth.OAuthBearerToken{Token: credential},
 			PrivateKey:       keypair.PrivateKey,
 			PublicKey:        keypair.PublicKey,
 			Passphrase:       keypair.Passphrase,

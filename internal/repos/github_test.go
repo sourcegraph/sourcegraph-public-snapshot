@@ -737,7 +737,7 @@ func TestRepositoryQuery_Do(t *testing.T) {
 			}
 
 			apiURL, _ := url.Parse("https://api.github.com")
-			token := &auth.OAuthBearerToken{AccessToken: os.Getenv("GITHUB_TOKEN")}
+			token := &auth.OAuthBearerToken{Token: os.Getenv("GITHUB_TOKEN")}
 
 			q := repositoryQuery{
 				Logger:   logtest.Scoped(t),
@@ -825,7 +825,7 @@ func TestGetOrRenewGitHubAppInstallationAccessToken(t *testing.T) {
 			}, nil
 		},
 	}
-	client := github.NewV3Client(logtest.Scoped(t), "Test", baseURL, &auth.OAuthBearerToken{AccessToken: "oauth-token"}, doer)
+	client := github.NewV3Client(logtest.Scoped(t), "Test", baseURL, &auth.OAuthBearerToken{Token: "oauth-token"}, doer)
 
 	tests := []struct {
 		name           string
