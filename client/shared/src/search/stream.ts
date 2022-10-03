@@ -52,6 +52,7 @@ export interface ContentMatch {
     branches?: string[]
     commit?: string
     lineMatches: LineMatch[]
+    chunkMatches?: ChunkMatch[]
     hunks?: DecoratedHunk[]
 }
 
@@ -83,6 +84,12 @@ interface LineMatch {
     lineNumber: number
     offsetAndLengths: number[][]
     aggregableBadges?: AggregableBadge[]
+}
+
+interface ChunkMatch {
+    content: string
+    contentStart: Location
+    ranges: Range[]
 }
 
 export interface SymbolMatch {
@@ -225,7 +232,7 @@ export interface Filter {
     kind: 'file' | 'repo' | 'lang' | 'utility'
 }
 
-export type AlertKind = 'lucky-search-queries'
+export type AlertKind = 'smart-search-additional-results' | 'smart-search-pure-results'
 
 interface Alert {
     title: string

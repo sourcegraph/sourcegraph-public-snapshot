@@ -10,6 +10,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/keegancsmith/sqlf"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -51,7 +53,7 @@ func TestBatchSpecResolver(t *testing.T) {
 	orgname := "test-org"
 	userID := bt.CreateTestUser(t, db, false).ID
 	adminID := bt.CreateTestUser(t, db, true).ID
-	orgID := bt.InsertTestOrg(t, db, orgname)
+	orgID := bt.CreateTestOrg(t, db, orgname, userID).ID
 
 	spec, err := btypes.NewBatchSpecFromRaw(bt.TestRawBatchSpec)
 	if err != nil {
@@ -492,6 +494,30 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	otherUser := bt.CreateTestUser(t, db, false)
 	otherUserCtx := actor.WithActor(ctx, actor.FromUser(otherUser.ID))
 	queryAndAssertBatchSpec(t, otherUserCtx, s, apiID, want)
+}
+
+func TestBatchSpecResolver_Files(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	bstore := store.New(db, &observation.TestContext, nil)
+
+	resolver := batchSpecResolver{
+		store:     bstore,
+		batchSpec: &btypes.BatchSpec{RandID: "123"},
+	}
+
+	after := "1"
+	connectionResolver, err := resolver.Files(ctx, &graphqlbackend.ListBatchSpecWorkspaceFilesArgs{
+		First: int32(10),
+		After: &after,
+	})
+	require.NoError(t, err)
+	assert.NotNil(t, connectionResolver)
 }
 
 func queryAndAssertBatchSpec(t *testing.T, ctx context.Context, s *graphql.Schema, id string, want apitest.BatchSpec) {

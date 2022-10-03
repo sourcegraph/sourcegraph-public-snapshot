@@ -252,7 +252,7 @@ type RepositoryFilterPreview {
     """
     A list of repositories composing the current page.
     """
-    nodes: [Repository!]!
+    nodes: [CodeIntelRepository!]!
 
     """
     The total number of repositories in this result set.
@@ -315,7 +315,7 @@ type CodeIntelligenceConfigurationPolicy implements Node {
     """
     The repository to which this configuration policy applies.
     """
-    repository: Repository
+    repository: CodeIntelRepository
 
     """
     The set of name patterns matching repositories to which this configuration policy applies.
@@ -973,7 +973,7 @@ type LSIFUpload implements Node {
     """
     The project for which this upload provides code intelligence.
     """
-    projectRoot: GitTree
+    projectRoot: CodeIntelGitTree
 
     """
     The original 40-character commit commit supplied at upload time.
@@ -1244,7 +1244,7 @@ type LSIFIndex implements Node {
     """
     The project for which this upload provides code intelligence.
     """
-    projectRoot: GitTree
+    projectRoot: CodeIntelGitTree
 
     """
     The original 40-character commit commit supplied at index time.

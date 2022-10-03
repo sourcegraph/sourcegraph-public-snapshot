@@ -9,7 +9,6 @@ import {
     getDynamicFilterLinks,
     getRepoFilterLinks,
     getSearchSnippetLinks,
-    getQuickLinks,
     getSearchReferenceFactory,
     getSearchTypeLinks,
     getFiltersOfKind,
@@ -20,7 +19,6 @@ import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
-import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Code, Tooltip, Icon } from '@sourcegraph/wildcard'
 
@@ -64,7 +62,6 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
     } = props
 
     // Settings
-    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
     const enableSearchAggregations = useExperimentalFeatures(features => features.searchResultsAggregations ?? true)
     const proactiveSearchAggregations = useExperimentalFeatures(
         features => features.proactiveSearchResultsAggregations ?? true
@@ -139,23 +136,9 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
                 })}
             </SearchSidebarSection>
 
-            {!coreWorkflowImprovementsEnabled && (
-                <SearchSidebarSection sectionId={SectionID.DYNAMIC_FILTERS} header="Dynamic Filters">
-                    {getDynamicFilterLinks(
-                        filters,
-                        ['lang', 'file', 'utility'],
-                        onDynamicFilterClicked,
-                        (label, value) => `Filter by ${value}`,
-                        (label, value) => value
-                    )}
-                </SearchSidebarSection>
-            )}
-
-            {coreWorkflowImprovementsEnabled && (
-                <SearchSidebarSection sectionId={SectionID.LANGUAGES} header="Languages">
-                    {getDynamicFilterLinks(filters, ['lang'], onDynamicFilterClicked, label => `Search ${label} files`)}
-                </SearchSidebarSection>
-            )}
+            <SearchSidebarSection sectionId={SectionID.LANGUAGES} header="Languages">
+                {getDynamicFilterLinks(filters, ['lang'], onDynamicFilterClicked, label => `Search ${label} files`)}
+            </SearchSidebarSection>
 
             <SearchSidebarSection
                 sectionId={SectionID.REPOSITORIES}
@@ -164,19 +147,15 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
                 minItems={1}
                 noResultText={getRepoFilterNoResultText}
             >
-                {getRepoFilterLinks(repoFilters, onDynamicFilterClicked, coreWorkflowImprovementsEnabled)}
+                {getRepoFilterLinks(repoFilters, onDynamicFilterClicked)}
             </SearchSidebarSection>
 
-            {coreWorkflowImprovementsEnabled && (
-                <>
-                    <SearchSidebarSection sectionId={SectionID.FILE_TYPES} header="File types">
-                        {getDynamicFilterLinks(filters, ['file'], onDynamicFilterClicked)}
-                    </SearchSidebarSection>
-                    <SearchSidebarSection sectionId={SectionID.OTHER} header="Other">
-                        {getDynamicFilterLinks(filters, ['utility'], onDynamicFilterClicked)}
-                    </SearchSidebarSection>
-                </>
-            )}
+            <SearchSidebarSection sectionId={SectionID.FILE_TYPES} header="File types">
+                {getDynamicFilterLinks(filters, ['file'], onDynamicFilterClicked)}
+            </SearchSidebarSection>
+            <SearchSidebarSection sectionId={SectionID.OTHER} header="Other">
+                {getDynamicFilterLinks(filters, ['utility'], onDynamicFilterClicked)}
+            </SearchSidebarSection>
 
             {repoName && (
                 <SearchSidebarSection
@@ -203,12 +182,6 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
             <SearchSidebarSection sectionId={SectionID.SEARCH_SNIPPETS} header="Search snippets">
                 {getSearchSnippetLinks(settingsCascade, onSnippetClicked)}
             </SearchSidebarSection>
-
-            {!coreWorkflowImprovementsEnabled && (
-                <SearchSidebarSection sectionId={SectionID.QUICK_LINKS} header="Quicklinks">
-                    {getQuickLinks(settingsCascade)}
-                </SearchSidebarSection>
-            )}
         </SearchSidebar>
     )
 })

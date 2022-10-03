@@ -70,7 +70,7 @@ interface ComparisonSpec {
  * 1-indexed position in a blob.
  * Positions in URLs are 1-indexed.
  */
-interface UIPosition {
+export interface UIPosition {
     /** 1-indexed line number */
     line: number
 
@@ -82,7 +82,7 @@ interface UIPosition {
  * 1-indexed range in a blob.
  * Ranges in URLs are 1-indexed.
  */
-interface UIRange {
+export interface UIRange {
     start: UIPosition
     end: UIPosition
 }
@@ -569,8 +569,10 @@ export function buildSearchURLQuery(
     return searchParameters.toString().replace(/%2F/g, '/').replace(/%3A/g, ':')
 }
 
-export function buildGetStartedURL(source: string, returnTo?: string): string {
-    const url = new URL('https://about.sourcegraph.com/get-started/self-hosted')
+export function buildGetStartedURL(source: string, returnTo?: string, forDotcom?: boolean): string {
+    // Still support directing to dotcom signup links when needed
+    const path = forDotcom ? 'https://sourcegraph.com/sign-up' : 'https://signup.sourcegraph.com'
+    const url = new URL(path)
     url.searchParams.set('utm_medium', 'inproduct')
     url.searchParams.set('utm_source', source)
     url.searchParams.set('utm_campaign', 'inproduct-cta')

@@ -10,7 +10,9 @@ import (
 	"strings"
 
 	"github.com/urfave/cli/v2"
+	"gopkg.in/yaml.v3"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/cliutil"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -52,9 +54,17 @@ sg start batches
 
 # Override the logger levels for specific services
 sg start --debug=gitserver --error=enterprise-worker,enterprise-frontend enterprise
-		`,
+
+# View configuration for a commandset
+sg start -describe oss
+`,
 		Category: CategoryDev,
 		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:  "describe",
+				Usage: "Print details about the selected commandset",
+			},
+
 			&cli.StringSliceFlag{
 				Name:        "debug",
 				Aliases:     []string{"d"},
@@ -86,7 +96,7 @@ sg start --debug=gitserver --error=enterprise-worker,enterprise-frontend enterpr
 				Destination: &critStartServices,
 			},
 		},
-		BashComplete: completeOptions(func() (options []string) {
+		BashComplete: cliutil.CompleteOptions(func() (options []string) {
 			config, _ := getConfig()
 			if config == nil {
 				return
@@ -153,10 +163,20 @@ func startExec(ctx *cli.Context) error {
 		}
 	}
 
-	set, ok := config.Commandsets[args[0]]
+	commandset := args[0]
+	set, ok := config.Commandsets[commandset]
 	if !ok {
-		std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: commandset %q not found :(", args[0]))
+		std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: commandset %q not found :(", commandset))
 		return flag.ErrHelp
+	}
+
+	if ctx.Bool("describe") {
+		out, err := yaml.Marshal(set)
+		if err != nil {
+			return err
+		}
+
+		return std.Out.WriteMarkdown(fmt.Sprintf("# %s\n\n```yaml\n%s\n```\n\n", commandset, string(out)))
 	}
 
 	// If the commandset requires the dev-private repository to be cloned, we
@@ -165,14 +185,14 @@ func startExec(ctx *cli.Context) error {
 		repoRoot, err := root.RepositoryRoot()
 		if err != nil {
 			std.Out.WriteLine(output.Styledf(output.StyleWarning, "Failed to determine repository root location: %s", err))
-			return NewEmptyExitErr(1)
+			return cliutil.NewEmptyExitErr(1)
 		}
 
 		devPrivatePath := filepath.Join(repoRoot, "..", "dev-private")
 		exists, err := pathExists(devPrivatePath)
 		if err != nil {
 			std.Out.WriteLine(output.Styledf(output.StyleWarning, "Failed to check whether dev-private repository exists: %s", err))
-			return NewEmptyExitErr(1)
+			return cliutil.NewEmptyExitErr(1)
 		}
 		if !exists {
 			std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: dev-private repository not found!"))
@@ -190,7 +210,7 @@ func startExec(ctx *cli.Context) error {
 `, set.Name))
 			std.Out.Write("")
 
-			return NewEmptyExitErr(1)
+			return cliutil.NewEmptyExitErr(1)
 		}
 	}
 

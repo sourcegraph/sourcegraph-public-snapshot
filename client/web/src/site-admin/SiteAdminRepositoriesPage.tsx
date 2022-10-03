@@ -204,6 +204,13 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 tooltip: 'The number of repositories that have been cloned.',
             },
             {
+                value: data.repositoryStats.indexed,
+                description: 'Indexed',
+                color: 'var(--body-color)',
+                position: 'right',
+                tooltip: 'The number of repositories that have been indexed for search.',
+            },
+            {
                 value: data.repositoryStats.failedFetch,
                 description: 'Failed',
                 color: data.repositoryStats.failedFetch > 0 ? 'var(--warning)' : 'var(--body-color)',

@@ -255,6 +255,7 @@ func scanProtects(logger log.Logger, rc io.Reader, s *protectsScanner) error {
 
 		// Do stuff to line
 		if err := s.processLine(parsedLine); err != nil {
+			logger.Error("processLine error", log.Error(err))
 			return err
 		}
 	}
@@ -366,6 +367,9 @@ func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermission
 
 	return &protectsScanner{
 		processLine: func(line p4ProtectLine) error {
+			lineLogger := logger.With(log.String("line.match", line.match), log.Bool("line.isExclusion", line.isExclusion))
+			lineLogger.Debug("Processing parsed line")
+
 			match, err := convertToGlobMatch(line.match)
 			if err != nil {
 				return err
@@ -375,11 +379,16 @@ func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermission
 			// Depots that this match pertains to
 			depots := relevantDepots(match)
 
+			if len(depots) == 0 {
+				lineLogger.Debug("Zero relevant depots, returning early")
+				return nil
+			}
+
 			depotStrings := make([]string, len(depots))
 			for i := range depots {
 				depotStrings[i] = string(depots[i])
 			}
-			logger.Debug("Relevant depots", log.Strings("depots", depotStrings))
+			lineLogger.Debug("Relevant depots", log.Strings("depots", depotStrings))
 
 			// Apply rules to specified paths
 			for _, depot := range depots {
@@ -388,9 +397,9 @@ func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermission
 				// Special case: match entire depot overrides all previous rules
 				if strings.TrimPrefix(match.original, string(depot)) == perforceWildcardMatchAll {
 					if line.isExclusion {
-						logger.Debug("Exclude entire depot, removing all previous rules")
+						lineLogger.Debug("Exclude entire depot, removing all previous rules")
 					} else {
-						logger.Debug("Include entire depot, removing all previous rules")
+						lineLogger.Debug("Include entire depot, removing all previous rules")
 					}
 					srp.Paths = nil
 				}
@@ -403,9 +412,9 @@ func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermission
 				}
 				srp.Paths = append(srp.Paths, newPaths...)
 				if line.isExclusion {
-					logger.Debug("Adding exclude rules", log.Strings("rules", newPaths))
+					lineLogger.Debug("Adding exclude rules", log.Strings("rules", newPaths))
 				} else {
-					logger.Debug("Adding include rules", log.Strings("rules", newPaths))
+					lineLogger.Debug("Adding include rules", log.Strings("rules", newPaths))
 				}
 			}
 

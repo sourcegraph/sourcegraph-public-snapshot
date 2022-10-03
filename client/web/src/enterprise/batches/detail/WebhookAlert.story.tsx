@@ -23,6 +23,10 @@ const currentSpec = {
     originalInput: '',
     supersedingBatchSpec: null,
     source: BatchSpecSource.REMOTE,
+    viewerBatchChangesCodeHosts: {
+        totalCount: 0,
+        nodes: [],
+    },
 }
 
 const batchChange = (totalCount: number, hasNextPage: boolean) => ({
@@ -41,7 +45,7 @@ const batchChange = (totalCount: number, hasNextPage: boolean) => ({
                 },
                 {
                     externalServiceKind: 'BITBUCKETSERVER' as ExternalServiceKind,
-                    externalServiceURL: 'https://bitbucket.com/',
+                    externalServiceURL: 'https://bitbucket.org/',
                 },
             ],
             pageInfo: { hasNextPage },

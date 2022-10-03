@@ -10,12 +10,12 @@ import (
 
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	webhookworker "github.com/sourcegraph/sourcegraph/internal/repos/webhookworker"
+	"github.com/sourcegraph/sourcegraph/internal/repos/webhookworker"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
@@ -39,7 +39,7 @@ func (w *webhookBuildJob) Config() []env.Config {
 	return []env.Config{}
 }
 
-func (w *webhookBuildJob) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
+func (w *webhookBuildJob) Routines(_ context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	observationContext := &observation.Context{
 		Logger:     logger.Scoped("background", "background webhook build job"),
 		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
@@ -59,16 +59,15 @@ func (w *webhookBuildJob) Routines(ctx context.Context, logger log.Logger) ([]go
 	workerStore := webhookworker.CreateWorkerStore(logger.Scoped("webhookworker.WorkerStore", ""), store.Handle())
 
 	cf := httpcli.NewExternalClientFactory(httpcli.NewLoggingMiddleware(logger))
-	opts := []httpcli.Opt{}
-	doer, err := cf.Doer(opts...)
+	doer, err := cf.Doer()
 	if err != nil {
 		return nil, errors.Wrap(err, "create client")
 	}
 
 	return []goroutine.BackgroundRoutine{
-		webhookworker.NewWorker(ctx, newWebhookBuildHandler(store, doer), workerStore, webhookBuildWorkerMetrics),
-		webhookworker.NewResetter(ctx, logger.Scoped("webhookworker.Resetter", ""), workerStore, webhookBuildResetterMetrics),
-		webhookworker.NewCleaner(ctx, baseStore, observationContext),
+		webhookworker.NewWorker(context.Background(), newWebhookBuildHandler(store, doer), workerStore, webhookBuildWorkerMetrics),
+		webhookworker.NewResetter(context.Background(), logger.Scoped("webhookworker.Resetter", ""), workerStore, webhookBuildResetterMetrics),
+		webhookworker.NewCleaner(context.Background(), baseStore, observationContext),
 	}, nil
 }
 

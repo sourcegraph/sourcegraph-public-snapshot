@@ -108,25 +108,6 @@ var dependencyIndexingJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("lsif_dependency_indexing_jobs.external_service_sync"),
 }
 
-// InsertDependencySyncingJob inserts a new dependency syncing job and returns its identifier.
-func (s *Store) InsertDependencySyncingJob(ctx context.Context, uploadID int) (id int, err error) {
-	ctx, _, endObservation := s.operations.insertDependencySyncingJob.With(ctx, &err, observation.Args{})
-	defer func() {
-		endObservation(1, observation.Args{LogFields: []log.Field{
-			log.Int("id", id),
-		}})
-	}()
-
-	id, _, err = basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(insertDependencySyncingJobQuery, uploadID)))
-	return id, err
-}
-
-const insertDependencySyncingJobQuery = `
--- source: internal/codeintel/stores/dbstore/dependency_index.go:InsertDependencySyncingJob
-INSERT INTO lsif_dependency_syncing_jobs (upload_id) VALUES (%s)
-RETURNING id
-`
-
 func (s *Store) InsertCloneableDependencyRepo(ctx context.Context, dependency precise.Package) (new bool, err error) {
 	ctx, _, endObservation := s.operations.insertCloneableDependencyRepo.With(ctx, &err, observation.Args{})
 	defer func() {

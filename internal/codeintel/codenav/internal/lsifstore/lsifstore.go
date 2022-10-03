@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -12,7 +13,7 @@ import (
 
 type LsifStore interface {
 	// Hover
-	GetHover(ctx context.Context, bundleID int, path string, line, character int) (string, shared.Range, bool, error)
+	GetHover(ctx context.Context, bundleID int, path string, line, character int) (string, types.Range, bool, error)
 
 	// References
 	GetReferenceLocations(ctx context.Context, uploadID int, path string, line, character, limit, offset int) (_ []shared.Location, _ int, err error)
@@ -34,7 +35,7 @@ type LsifStore interface {
 	GetDiagnostics(ctx context.Context, bundleID int, prefix string, limit, offset int) (_ []shared.Diagnostic, _ int, err error)
 
 	// Stencil
-	GetStencil(ctx context.Context, bundleID int, path string) (_ []shared.Range, err error)
+	GetStencil(ctx context.Context, bundleID int, path string) (_ []types.Range, err error)
 
 	// Ranges
 	GetRanges(ctx context.Context, bundleID int, path string, startLine, endLine int) (_ []shared.CodeIntelligenceRange, err error)

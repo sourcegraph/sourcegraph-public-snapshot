@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -29,11 +30,11 @@ func TestGetStaleSourcedCommits(t *testing.T) {
 	now := time.Unix(1587396557, 0).UTC()
 
 	insertIndexes(t, db,
-		shared.Index{ID: 1, RepositoryID: 50, Commit: makeCommit(1)},
-		shared.Index{ID: 2, RepositoryID: 50, Commit: makeCommit(2)},
-		shared.Index{ID: 3, RepositoryID: 50, Commit: makeCommit(3)},
-		shared.Index{ID: 4, RepositoryID: 51, Commit: makeCommit(6)},
-		shared.Index{ID: 5, RepositoryID: 52, Commit: makeCommit(7)},
+		types.Index{ID: 1, RepositoryID: 50, Commit: makeCommit(1)},
+		types.Index{ID: 2, RepositoryID: 50, Commit: makeCommit(2)},
+		types.Index{ID: 3, RepositoryID: 50, Commit: makeCommit(3)},
+		types.Index{ID: 4, RepositoryID: 51, Commit: makeCommit(6)},
+		types.Index{ID: 5, RepositoryID: 52, Commit: makeCommit(7)},
 	)
 
 	sourcedCommits, err := store.GetStaleSourcedCommits(context.Background(), time.Minute, 5, now)
@@ -82,11 +83,11 @@ func TestUpdateSourcedCommits(t *testing.T) {
 	now := time.Unix(1587396557, 0).UTC()
 
 	insertIndexes(t, db,
-		shared.Index{ID: 1, RepositoryID: 50, Commit: makeCommit(3)},
-		shared.Index{ID: 2, RepositoryID: 50, Commit: makeCommit(2)},
-		shared.Index{ID: 3, RepositoryID: 52, Commit: makeCommit(7)},
-		shared.Index{ID: 4, RepositoryID: 51, Commit: makeCommit(6)},
-		shared.Index{ID: 5, RepositoryID: 50, Commit: makeCommit(1)},
+		types.Index{ID: 1, RepositoryID: 50, Commit: makeCommit(3)},
+		types.Index{ID: 2, RepositoryID: 50, Commit: makeCommit(2)},
+		types.Index{ID: 3, RepositoryID: 52, Commit: makeCommit(7)},
+		types.Index{ID: 4, RepositoryID: 51, Commit: makeCommit(6)},
+		types.Index{ID: 5, RepositoryID: 50, Commit: makeCommit(1)},
 	)
 
 	indexesUpdated, err := store.UpdateSourcedCommits(context.Background(), 50, makeCommit(1), now)
@@ -120,11 +121,11 @@ func TestDeleteSourcedCommits(t *testing.T) {
 	store := New(db, &observation.TestContext)
 
 	insertIndexes(t, db,
-		shared.Index{ID: 1, RepositoryID: 50, Commit: makeCommit(3)},
-		shared.Index{ID: 2, RepositoryID: 50, Commit: makeCommit(2)},
-		shared.Index{ID: 3, RepositoryID: 52, Commit: makeCommit(7)},
-		shared.Index{ID: 4, RepositoryID: 51, Commit: makeCommit(6)},
-		shared.Index{ID: 5, RepositoryID: 50, Commit: makeCommit(1)},
+		types.Index{ID: 1, RepositoryID: 50, Commit: makeCommit(3)},
+		types.Index{ID: 2, RepositoryID: 50, Commit: makeCommit(2)},
+		types.Index{ID: 3, RepositoryID: 52, Commit: makeCommit(7)},
+		types.Index{ID: 4, RepositoryID: 51, Commit: makeCommit(6)},
+		types.Index{ID: 5, RepositoryID: 50, Commit: makeCommit(1)},
 	)
 
 	indexesDeleted, err := store.DeleteSourcedCommits(context.Background(), 52, makeCommit(7), time.Hour)
@@ -152,7 +153,7 @@ func TestDeleteSourcedCommits(t *testing.T) {
 }
 
 // insertIndexes populates the lsif_indexes table with the given index models.
-func insertIndexes(t testing.TB, db database.DB, indexes ...shared.Index) {
+func insertIndexes(t testing.TB, db database.DB, indexes ...types.Index) {
 	for _, index := range indexes {
 		if index.Commit == "" {
 			index.Commit = makeCommit(index.ID)
@@ -164,7 +165,7 @@ func insertIndexes(t testing.TB, db database.DB, indexes ...shared.Index) {
 			index.RepositoryID = 50
 		}
 		if index.DockerSteps == nil {
-			index.DockerSteps = []shared.DockerStep{}
+			index.DockerSteps = []types.DockerStep{}
 		}
 		if index.IndexerArgs == nil {
 			index.IndexerArgs = []string{}
