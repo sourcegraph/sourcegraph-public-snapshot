@@ -56,6 +56,9 @@ type service interface {
 	// Utilities
 	GetUnsafeDB() database.DB
 	WorkerutilStore() dbworkerstore.Store
+	DependencySyncStore() dbworkerstore.Store
+	DependencyIndexingStore() dbworkerstore.Store
+	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error)
 
 	ListFiles(ctx context.Context, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error)
 
@@ -68,15 +71,17 @@ type service interface {
 }
 
 type Service struct {
-	store            store.Store
-	workerutilStore  dbworkerstore.Store
-	uploadSvc        shared.UploadService
-	gitserverClient  shared.GitserverClient
-	symbolsClient    *symbols.Client
-	repoUpdater      shared.RepoUpdaterClient
-	inferenceService shared.InferenceService
-	operations       *operations
-	logger           log.Logger
+	store                   store.Store
+	workerutilStore         dbworkerstore.Store
+	dependencySyncStore     dbworkerstore.Store
+	dependencyIndexingStore dbworkerstore.Store
+	uploadSvc               shared.UploadService
+	gitserverClient         shared.GitserverClient
+	symbolsClient           *symbols.Client
+	repoUpdater             shared.RepoUpdaterClient
+	inferenceService        shared.InferenceService
+	operations              *operations
+	logger                  log.Logger
 }
 
 func newService(
@@ -89,22 +94,33 @@ func newService(
 	observationContext *observation.Context,
 ) *Service {
 	workerutilStore := store.WorkerutilStore(observationContext)
+	dependencySyncStore := store.WorkerutilDependencySyncStore(observationContext)
+	dependencyIndexingStore := store.WorkerutilDependencyIndexStore(observationContext)
 
 	return &Service{
-		store:            store,
-		workerutilStore:  workerutilStore,
-		uploadSvc:        uploadSvc,
-		gitserverClient:  gitserver,
-		symbolsClient:    symbolsClient,
-		repoUpdater:      repoUpdater,
-		inferenceService: inferenceSvc,
-		operations:       newOperations(observationContext),
-		logger:           observationContext.Logger,
+		store:                   store,
+		workerutilStore:         workerutilStore,
+		dependencySyncStore:     dependencySyncStore,
+		dependencyIndexingStore: dependencyIndexingStore,
+		uploadSvc:               uploadSvc,
+		gitserverClient:         gitserver,
+		symbolsClient:           symbolsClient,
+		repoUpdater:             repoUpdater,
+		inferenceService:        inferenceSvc,
+		operations:              newOperations(observationContext),
+		logger:                  observationContext.Logger,
 	}
 }
 
-func (s *Service) WorkerutilStore() dbworkerstore.Store {
-	return s.workerutilStore
+func (s *Service) WorkerutilStore() dbworkerstore.Store         { return s.workerutilStore }
+func (s *Service) DependencySyncStore() dbworkerstore.Store     { return s.dependencySyncStore }
+func (s *Service) DependencyIndexingStore() dbworkerstore.Store { return s.dependencyIndexingStore }
+
+func (s *Service) InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error) {
+	ctx, _, endObservation := s.operations.insertDependencyIndexingJob.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.InsertDependencyIndexingJob(ctx, uploadID, externalServiceKind, syncTime)
 }
 
 func (s *Service) GetIndexes(ctx context.Context, opts types.GetIndexesOptions) (_ []types.Index, _ int, err error) {

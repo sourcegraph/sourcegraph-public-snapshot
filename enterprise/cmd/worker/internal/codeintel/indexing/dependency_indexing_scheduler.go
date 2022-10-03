@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -115,7 +114,7 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, logger 
 		return nil
 	}
 
-	job := record.(dbstore.DependencyIndexingJob)
+	job := record.(codeinteltypes.DependencyIndexingJob)
 
 	if job.ExternalServiceKind != "" {
 		externalServices, err := h.extsvcStore.List(ctx, database.ExternalServicesListOptions{

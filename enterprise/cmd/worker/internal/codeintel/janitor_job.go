@@ -63,13 +63,9 @@ func (j *janitorJob) Routines(startupCtx context.Context, logger log.Logger) ([]
 	uploadSvc := uploads.GetService(db, codeIntelDB, gitserverClient)
 	autoindexingSvc := autoindexing.GetService(db, uploadSvc, gitserverClient, repoUpdater)
 
-	dependencyIndexingStore, err := codeintel.InitDependencySyncingStore()
-	if err != nil {
-		return nil, err
-	}
-
 	uploadWorkerStore := uploadSvc.WorkerutilStore()
 	indexWorkerStore := autoindexingSvc.WorkerutilStore()
+	dependencyIndexingStore := autoindexingSvc.DependencyIndexingStore()
 	metrics := janitor.NewMetrics(observationContext)
 
 	executorMetricsReporter, err := executorqueue.NewMetricReporter(observationContext, "codeintel", indexWorkerStore, janitorConfigInst.MetricsConfig)

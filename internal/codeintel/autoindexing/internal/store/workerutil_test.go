@@ -1,4 +1,4 @@
-package dbstore
+package store
 
 import (
 	"context"
@@ -7,19 +7,19 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestInsertDependencyIndexingJob(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := testStore(db)
+	store := New(db, &observation.TestContext)
 
 	insertRepo(t, db, 50, "")
 
-	insertUploads(t, db, types.Upload{
+	insertUploads(t, db, Upload{
 		ID:            42,
 		Commit:        makeCommit(1),
 		Root:          "sub/",

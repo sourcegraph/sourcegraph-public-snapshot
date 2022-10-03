@@ -10,8 +10,8 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	enterprisedbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -23,7 +23,7 @@ func TestDependencySyncSchedulerJVM(t *testing.T) {
 	mockWorkerStore := NewMockWorkerStore()
 	mockUploadsSvc := NewMockUploadsService()
 	mockDepedenciesSvc := NewMockDependenciesService()
-	mockDBStoreLeftovers := NewMockSyncDBStoreLeftovers()
+	mockAutoindexingSvc := NewMockAutoindexingService()
 	mockExtsvcStore := NewMockSyncExternalServiceStore()
 	mockScanner := NewMockPackageReferenceScanner()
 	mockUploadsSvc.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
@@ -31,26 +31,26 @@ func TestDependencySyncSchedulerJVM(t *testing.T) {
 	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: dependencies.JVMPackagesScheme, Name: "name1", Version: "v2.2.0"}}, true, nil)
 
 	handler := dependencySyncSchedulerHandler{
-		uploadsSvc:       mockUploadsSvc,
-		depsSvc:          mockDepedenciesSvc,
-		dbStoreLeftovers: mockDBStoreLeftovers,
-		workerStore:      mockWorkerStore,
-		extsvcStore:      mockExtsvcStore,
+		uploadsSvc:      mockUploadsSvc,
+		depsSvc:         mockDepedenciesSvc,
+		autoindexingSvc: mockAutoindexingSvc,
+		workerStore:     mockWorkerStore,
+		extsvcStore:     mockExtsvcStore,
 	}
 
 	logger := logtest.Scoped(t)
-	job := enterprisedbstore.DependencySyncingJob{
+	job := codeinteltypes.DependencySyncingJob{
 		UploadID: 42,
 	}
 	if err := handler.Handle(context.Background(), logger, job); err != nil {
 		t.Fatalf("unexpected error performing update: %s", err)
 	}
 
-	if len(mockDBStoreLeftovers.InsertDependencyIndexingJobFunc.History()) != 1 {
-		t.Errorf("unexpected number of calls to InsertDependencyIndexingJob. want=%d have=%d", 1, len(mockDBStoreLeftovers.InsertDependencyIndexingJobFunc.History()))
+	if len(mockAutoindexingSvc.InsertDependencyIndexingJobFunc.History()) != 1 {
+		t.Errorf("unexpected number of calls to InsertDependencyIndexingJob. want=%d have=%d", 1, len(mockAutoindexingSvc.InsertDependencyIndexingJobFunc.History()))
 	} else {
 		var kinds []string
-		for _, call := range mockDBStoreLeftovers.InsertDependencyIndexingJobFunc.History() {
+		for _, call := range mockAutoindexingSvc.InsertDependencyIndexingJobFunc.History() {
 			kinds = append(kinds, call.Arg2)
 		}
 
@@ -74,7 +74,7 @@ func TestDependencySyncSchedulerGomod(t *testing.T) {
 	mockWorkerStore := NewMockWorkerStore()
 	mockUploadsSvc := NewMockUploadsService()
 	mockDepedenciesSvc := NewMockDependenciesService()
-	mockDBStoreLeftovers := NewMockSyncDBStoreLeftovers()
+	mockAutoindexingSvc := NewMockAutoindexingService()
 	mockExtsvcStore := NewMockSyncExternalServiceStore()
 	mockScanner := NewMockPackageReferenceScanner()
 	mockUploadsSvc.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
@@ -82,26 +82,26 @@ func TestDependencySyncSchedulerGomod(t *testing.T) {
 	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: "gomod", Name: "name1", Version: "v2.2.0"}}, true, nil)
 
 	handler := dependencySyncSchedulerHandler{
-		uploadsSvc:       mockUploadsSvc,
-		depsSvc:          mockDepedenciesSvc,
-		dbStoreLeftovers: mockDBStoreLeftovers,
-		workerStore:      mockWorkerStore,
-		extsvcStore:      mockExtsvcStore,
+		uploadsSvc:      mockUploadsSvc,
+		depsSvc:         mockDepedenciesSvc,
+		autoindexingSvc: mockAutoindexingSvc,
+		workerStore:     mockWorkerStore,
+		extsvcStore:     mockExtsvcStore,
 	}
 
 	logger := logtest.Scoped(t)
-	job := enterprisedbstore.DependencySyncingJob{
+	job := codeinteltypes.DependencySyncingJob{
 		UploadID: 42,
 	}
 	if err := handler.Handle(context.Background(), logger, job); err != nil {
 		t.Fatalf("unexpected error performing update: %s", err)
 	}
 
-	if len(mockDBStoreLeftovers.InsertDependencyIndexingJobFunc.History()) != 1 {
-		t.Errorf("unexpected number of calls to InsertDependencyIndexingJob. want=%d have=%d", 1, len(mockDBStoreLeftovers.InsertDependencyIndexingJobFunc.History()))
+	if len(mockAutoindexingSvc.InsertDependencyIndexingJobFunc.History()) != 1 {
+		t.Errorf("unexpected number of calls to InsertDependencyIndexingJob. want=%d have=%d", 1, len(mockAutoindexingSvc.InsertDependencyIndexingJobFunc.History()))
 	} else {
 		var kinds []string
-		for _, call := range mockDBStoreLeftovers.InsertDependencyIndexingJobFunc.History() {
+		for _, call := range mockAutoindexingSvc.InsertDependencyIndexingJobFunc.History() {
 			kinds = append(kinds, call.Arg2)
 		}
 

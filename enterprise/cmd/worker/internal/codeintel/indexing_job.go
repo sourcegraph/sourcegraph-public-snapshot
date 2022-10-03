@@ -56,31 +56,11 @@ func (j *indexingJob) Routines(startupCtx context.Context, logger log.Logger) ([
 	extSvcStore := db.ExternalServices()
 	gitserverRepoStore := db.GitserverRepos()
 
-	dbStore, err := codeintel.InitDBStore()
-	if err != nil {
-		return nil, err
-	}
-
 	rawCodeIntelDB, err := codeintel.InitCodeIntelDatabase()
 	if err != nil {
 		return nil, err
 	}
 	codeIntelDB := database.NewDB(logger, rawCodeIntelDB)
-
-	dependencySyncStore, err := codeintel.InitDependencySyncingStore()
-	if err != nil {
-		return nil, err
-	}
-
-	dependencyIndexingStore, err := codeintel.InitDependencyIndexingStore()
-	if err != nil {
-		return nil, err
-	}
-
-	// Initialize metrics
-	dbworker.InitPrometheusMetric(observationContext, dependencySyncStore, "codeintel", "dependency_index", nil)
-	syncMetrics := workerutil.NewMetrics(observationContext, "codeintel_dependency_index_processor")
-	queueingMetrics := workerutil.NewMetrics(observationContext, "codeintel_dependency_index_queueing")
 
 	// Initialize clients
 	repoUpdaterClient := codeintel.InitRepoUpdaterClient()
@@ -93,9 +73,16 @@ func (j *indexingJob) Routines(startupCtx context.Context, logger log.Logger) ([
 	uploadSvc := uploads.GetService(db, codeIntelDB, gitserverClient)
 	depsSvc := dependencies.GetService(db)
 	autoindexingSvc := autoindexing.GetService(db, uploadSvc, gitserverClient, repoUpdaterClient)
+	dependencySyncStore := autoindexingSvc.DependencySyncStore()
+	dependencyIndexingStore := autoindexingSvc.DependencyIndexingStore()
+
+	// Initialize metrics
+	dbworker.InitPrometheusMetric(observationContext, dependencySyncStore, "codeintel", "dependency_index", nil)
+	syncMetrics := workerutil.NewMetrics(observationContext, "codeintel_dependency_index_processor")
+	queueingMetrics := workerutil.NewMetrics(observationContext, "codeintel_dependency_index_queueing")
 
 	routines := []goroutine.BackgroundRoutine{
-		indexing.NewDependencySyncScheduler(uploadSvc, depsSvc, dbStore, dependencySyncStore, extSvcStore, syncMetrics, observationContext),
+		indexing.NewDependencySyncScheduler(uploadSvc, depsSvc, autoindexingSvc, dependencySyncStore, extSvcStore, syncMetrics, observationContext),
 		indexing.NewDependencyIndexingScheduler(uploadSvc, repoStore, dependencyIndexingStore, extSvcStore, gitserverRepoStore, repoUpdaterClient, autoindexingSvc, indexingConfigInst.DependencyIndexerSchedulerPollInterval, indexingConfigInst.DependencyIndexerSchedulerConcurrency, queueingMetrics),
 	}
 

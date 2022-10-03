@@ -25,6 +25,172 @@ import (
 	precise "github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
+// MockAutoindexingService is a mock implementation of the
+// AutoindexingService interface (from the package
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing)
+// used for unit testing.
+type MockAutoindexingService struct {
+	// InsertDependencyIndexingJobFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// InsertDependencyIndexingJob.
+	InsertDependencyIndexingJobFunc *AutoindexingServiceInsertDependencyIndexingJobFunc
+}
+
+// NewMockAutoindexingService creates a new mock of the AutoindexingService
+// interface. All methods return zero values for all results, unless
+// overwritten.
+func NewMockAutoindexingService() *MockAutoindexingService {
+	return &MockAutoindexingService{
+		InsertDependencyIndexingJobFunc: &AutoindexingServiceInsertDependencyIndexingJobFunc{
+			defaultHook: func(context.Context, int, string, time.Time) (r0 int, r1 error) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockAutoindexingService creates a new mock of the
+// AutoindexingService interface. All methods panic on invocation, unless
+// overwritten.
+func NewStrictMockAutoindexingService() *MockAutoindexingService {
+	return &MockAutoindexingService{
+		InsertDependencyIndexingJobFunc: &AutoindexingServiceInsertDependencyIndexingJobFunc{
+			defaultHook: func(context.Context, int, string, time.Time) (int, error) {
+				panic("unexpected invocation of MockAutoindexingService.InsertDependencyIndexingJob")
+			},
+		},
+	}
+}
+
+// NewMockAutoindexingServiceFrom creates a new mock of the
+// MockAutoindexingService interface. All methods delegate to the given
+// implementation, unless overwritten.
+func NewMockAutoindexingServiceFrom(i AutoindexingService) *MockAutoindexingService {
+	return &MockAutoindexingService{
+		InsertDependencyIndexingJobFunc: &AutoindexingServiceInsertDependencyIndexingJobFunc{
+			defaultHook: i.InsertDependencyIndexingJob,
+		},
+	}
+}
+
+// AutoindexingServiceInsertDependencyIndexingJobFunc describes the behavior
+// when the InsertDependencyIndexingJob method of the parent
+// MockAutoindexingService instance is invoked.
+type AutoindexingServiceInsertDependencyIndexingJobFunc struct {
+	defaultHook func(context.Context, int, string, time.Time) (int, error)
+	hooks       []func(context.Context, int, string, time.Time) (int, error)
+	history     []AutoindexingServiceInsertDependencyIndexingJobFuncCall
+	mutex       sync.Mutex
+}
+
+// InsertDependencyIndexingJob delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockAutoindexingService) InsertDependencyIndexingJob(v0 context.Context, v1 int, v2 string, v3 time.Time) (int, error) {
+	r0, r1 := m.InsertDependencyIndexingJobFunc.nextHook()(v0, v1, v2, v3)
+	m.InsertDependencyIndexingJobFunc.appendCall(AutoindexingServiceInsertDependencyIndexingJobFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// InsertDependencyIndexingJob method of the parent MockAutoindexingService
+// instance is invoked and the hook queue is empty.
+func (f *AutoindexingServiceInsertDependencyIndexingJobFunc) SetDefaultHook(hook func(context.Context, int, string, time.Time) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// InsertDependencyIndexingJob method of the parent MockAutoindexingService
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *AutoindexingServiceInsertDependencyIndexingJobFunc) PushHook(hook func(context.Context, int, string, time.Time) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AutoindexingServiceInsertDependencyIndexingJobFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string, time.Time) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AutoindexingServiceInsertDependencyIndexingJobFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, int, string, time.Time) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *AutoindexingServiceInsertDependencyIndexingJobFunc) nextHook() func(context.Context, int, string, time.Time) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AutoindexingServiceInsertDependencyIndexingJobFunc) appendCall(r0 AutoindexingServiceInsertDependencyIndexingJobFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// AutoindexingServiceInsertDependencyIndexingJobFuncCall objects describing
+// the invocations of this function.
+func (f *AutoindexingServiceInsertDependencyIndexingJobFunc) History() []AutoindexingServiceInsertDependencyIndexingJobFuncCall {
+	f.mutex.Lock()
+	history := make([]AutoindexingServiceInsertDependencyIndexingJobFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AutoindexingServiceInsertDependencyIndexingJobFuncCall is an object that
+// describes an invocation of method InsertDependencyIndexingJob on an
+// instance of MockAutoindexingService.
+type AutoindexingServiceInsertDependencyIndexingJobFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 time.Time
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AutoindexingServiceInsertDependencyIndexingJobFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AutoindexingServiceInsertDependencyIndexingJobFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // MockDependenciesService is a mock implementation of the
 // DependenciesService interface (from the package
 // github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing)
@@ -963,172 +1129,6 @@ func (c ReposStoreListMinimalReposFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ReposStoreListMinimalReposFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// MockSyncDBStoreLeftovers is a mock implementation of the
-// SyncDBStoreLeftovers interface (from the package
-// github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing)
-// used for unit testing.
-type MockSyncDBStoreLeftovers struct {
-	// InsertDependencyIndexingJobFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// InsertDependencyIndexingJob.
-	InsertDependencyIndexingJobFunc *SyncDBStoreLeftoversInsertDependencyIndexingJobFunc
-}
-
-// NewMockSyncDBStoreLeftovers creates a new mock of the
-// SyncDBStoreLeftovers interface. All methods return zero values for all
-// results, unless overwritten.
-func NewMockSyncDBStoreLeftovers() *MockSyncDBStoreLeftovers {
-	return &MockSyncDBStoreLeftovers{
-		InsertDependencyIndexingJobFunc: &SyncDBStoreLeftoversInsertDependencyIndexingJobFunc{
-			defaultHook: func(context.Context, int, string, time.Time) (r0 int, r1 error) {
-				return
-			},
-		},
-	}
-}
-
-// NewStrictMockSyncDBStoreLeftovers creates a new mock of the
-// SyncDBStoreLeftovers interface. All methods panic on invocation, unless
-// overwritten.
-func NewStrictMockSyncDBStoreLeftovers() *MockSyncDBStoreLeftovers {
-	return &MockSyncDBStoreLeftovers{
-		InsertDependencyIndexingJobFunc: &SyncDBStoreLeftoversInsertDependencyIndexingJobFunc{
-			defaultHook: func(context.Context, int, string, time.Time) (int, error) {
-				panic("unexpected invocation of MockSyncDBStoreLeftovers.InsertDependencyIndexingJob")
-			},
-		},
-	}
-}
-
-// NewMockSyncDBStoreLeftoversFrom creates a new mock of the
-// MockSyncDBStoreLeftovers interface. All methods delegate to the given
-// implementation, unless overwritten.
-func NewMockSyncDBStoreLeftoversFrom(i SyncDBStoreLeftovers) *MockSyncDBStoreLeftovers {
-	return &MockSyncDBStoreLeftovers{
-		InsertDependencyIndexingJobFunc: &SyncDBStoreLeftoversInsertDependencyIndexingJobFunc{
-			defaultHook: i.InsertDependencyIndexingJob,
-		},
-	}
-}
-
-// SyncDBStoreLeftoversInsertDependencyIndexingJobFunc describes the
-// behavior when the InsertDependencyIndexingJob method of the parent
-// MockSyncDBStoreLeftovers instance is invoked.
-type SyncDBStoreLeftoversInsertDependencyIndexingJobFunc struct {
-	defaultHook func(context.Context, int, string, time.Time) (int, error)
-	hooks       []func(context.Context, int, string, time.Time) (int, error)
-	history     []SyncDBStoreLeftoversInsertDependencyIndexingJobFuncCall
-	mutex       sync.Mutex
-}
-
-// InsertDependencyIndexingJob delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockSyncDBStoreLeftovers) InsertDependencyIndexingJob(v0 context.Context, v1 int, v2 string, v3 time.Time) (int, error) {
-	r0, r1 := m.InsertDependencyIndexingJobFunc.nextHook()(v0, v1, v2, v3)
-	m.InsertDependencyIndexingJobFunc.appendCall(SyncDBStoreLeftoversInsertDependencyIndexingJobFuncCall{v0, v1, v2, v3, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// InsertDependencyIndexingJob method of the parent MockSyncDBStoreLeftovers
-// instance is invoked and the hook queue is empty.
-func (f *SyncDBStoreLeftoversInsertDependencyIndexingJobFunc) SetDefaultHook(hook func(context.Context, int, string, time.Time) (int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// InsertDependencyIndexingJob method of the parent MockSyncDBStoreLeftovers
-// instance invokes the hook at the front of the queue and discards it.
-// After the queue is empty, the default hook function is invoked for any
-// future action.
-func (f *SyncDBStoreLeftoversInsertDependencyIndexingJobFunc) PushHook(hook func(context.Context, int, string, time.Time) (int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *SyncDBStoreLeftoversInsertDependencyIndexingJobFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, string, time.Time) (int, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *SyncDBStoreLeftoversInsertDependencyIndexingJobFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, int, string, time.Time) (int, error) {
-		return r0, r1
-	})
-}
-
-func (f *SyncDBStoreLeftoversInsertDependencyIndexingJobFunc) nextHook() func(context.Context, int, string, time.Time) (int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *SyncDBStoreLeftoversInsertDependencyIndexingJobFunc) appendCall(r0 SyncDBStoreLeftoversInsertDependencyIndexingJobFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// SyncDBStoreLeftoversInsertDependencyIndexingJobFuncCall objects
-// describing the invocations of this function.
-func (f *SyncDBStoreLeftoversInsertDependencyIndexingJobFunc) History() []SyncDBStoreLeftoversInsertDependencyIndexingJobFuncCall {
-	f.mutex.Lock()
-	history := make([]SyncDBStoreLeftoversInsertDependencyIndexingJobFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// SyncDBStoreLeftoversInsertDependencyIndexingJobFuncCall is an object that
-// describes an invocation of method InsertDependencyIndexingJob on an
-// instance of MockSyncDBStoreLeftovers.
-type SyncDBStoreLeftoversInsertDependencyIndexingJobFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 time.Time
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 int
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c SyncDBStoreLeftoversInsertDependencyIndexingJobFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c SyncDBStoreLeftoversInsertDependencyIndexingJobFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

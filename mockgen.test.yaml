@@ -59,7 +59,7 @@
       interfaces:
         - UploadsService
         - DependenciesService
-        - SyncDBStoreLeftovers
+        - AutoindexingService
         - ReposStore
         - IndexingExternalServiceStore
         - SyncExternalServiceStore

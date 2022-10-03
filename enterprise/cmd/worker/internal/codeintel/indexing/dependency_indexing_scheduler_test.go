@@ -11,7 +11,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -74,7 +73,7 @@ func TestDependencyIndexingSchedulerHandler(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	job := dbstore.DependencyIndexingJob{
+	job := codeinteltypes.DependencyIndexingJob{
 		UploadID:            42,
 		ExternalServiceKind: "",
 		ExternalServiceSync: time.Time{},
@@ -175,7 +174,7 @@ func TestDependencyIndexingSchedulerHandlerCustomer(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	job := dbstore.DependencyIndexingJob{
+	job := codeinteltypes.DependencyIndexingJob{
 		UploadID:            42,
 		ExternalServiceKind: "",
 		ExternalServiceSync: time.Time{},
@@ -268,7 +267,7 @@ func TestDependencyIndexingSchedulerHandlerRequeueNotCloned(t *testing.T) {
 		repoUpdater:        mockRepoUpdater,
 	}
 
-	job := dbstore.DependencyIndexingJob{
+	job := codeinteltypes.DependencyIndexingJob{
 		UploadID:            42,
 		ExternalServiceKind: "",
 		ExternalServiceSync: time.Time{},
@@ -330,7 +329,7 @@ func TestDependencyIndexingSchedulerHandlerSkipNonExistant(t *testing.T) {
 		repoStore:          mockRepoStore,
 	}
 
-	job := dbstore.DependencyIndexingJob{
+	job := codeinteltypes.DependencyIndexingJob{
 		UploadID:            42,
 		ExternalServiceKind: "",
 		ExternalServiceSync: time.Time{},
@@ -375,7 +374,7 @@ func TestDependencyIndexingSchedulerHandlerShouldSkipRepository(t *testing.T) {
 		repoStore:          mockRepoStore,
 	}
 
-	job := dbstore.DependencyIndexingJob{
+	job := codeinteltypes.DependencyIndexingJob{
 		ExternalServiceKind: "",
 		ExternalServiceSync: time.Time{},
 		UploadID:            42,

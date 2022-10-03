@@ -10,7 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -35,7 +35,7 @@ type DependenciesService interface {
 	UpsertDependencyRepos(ctx context.Context, deps []dependencies.Repo) ([]dependencies.Repo, error)
 }
 
-type SyncDBStoreLeftovers interface {
+type AutoindexingService interface {
 	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (int, error)
 }
 
@@ -49,7 +49,7 @@ type SyncExternalServiceStore interface {
 func NewDependencySyncScheduler(
 	uploadsSvc UploadsService,
 	depsSvc DependenciesService,
-	dbStoreLeftovers SyncDBStoreLeftovers,
+	autoindexingSvc AutoindexingService,
 	workerStore dbworkerstore.Store,
 	externalServiceStore SyncExternalServiceStore,
 	metrics workerutil.WorkerMetrics,
@@ -62,11 +62,11 @@ func NewDependencySyncScheduler(
 	rootContext := actor.WithInternalActor(context.Background())
 
 	handler := &dependencySyncSchedulerHandler{
-		uploadsSvc:       uploadsSvc,
-		depsSvc:          depsSvc,
-		dbStoreLeftovers: dbStoreLeftovers,
-		workerStore:      workerStore,
-		extsvcStore:      externalServiceStore,
+		uploadsSvc:      uploadsSvc,
+		depsSvc:         depsSvc,
+		autoindexingSvc: autoindexingSvc,
+		workerStore:     workerStore,
+		extsvcStore:     externalServiceStore,
 	}
 
 	return dbworker.NewWorker(rootContext, workerStore, handler, workerutil.WorkerOptions{
@@ -79,11 +79,11 @@ func NewDependencySyncScheduler(
 }
 
 type dependencySyncSchedulerHandler struct {
-	uploadsSvc       UploadsService
-	depsSvc          DependenciesService
-	dbStoreLeftovers SyncDBStoreLeftovers
-	workerStore      dbworkerstore.Store
-	extsvcStore      SyncExternalServiceStore
+	uploadsSvc      UploadsService
+	depsSvc         DependenciesService
+	autoindexingSvc AutoindexingService
+	workerStore     dbworkerstore.Store
+	extsvcStore     SyncExternalServiceStore
 }
 
 func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
@@ -91,7 +91,7 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.
 		return nil
 	}
 
-	job := record.(dbstore.DependencySyncingJob)
+	job := record.(codeinteltypes.DependencySyncingJob)
 
 	scanner, err := h.uploadsSvc.ReferencesForUpload(ctx, job.UploadID)
 	if err != nil {
@@ -193,7 +193,7 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.
 	if shouldIndex {
 		// If we saw a kind that's not in schemeToExternalService, then kinds contains an empty string key
 		for kind := range kinds {
-			if _, err := h.dbStoreLeftovers.InsertDependencyIndexingJob(ctx, job.UploadID, kind, nextSync); err != nil {
+			if _, err := h.autoindexingSvc.InsertDependencyIndexingJob(ctx, job.UploadID, kind, nextSync); err != nil {
 				errs = append(errs, errors.Wrap(err, "dbstore.InsertDependencyIndexingJob"))
 			}
 		}
