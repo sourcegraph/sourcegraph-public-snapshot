@@ -7,7 +7,7 @@ import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, createAggregateError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { Button, ButtonLink, Link, Icon, H2, Text } from '@sourcegraph/wildcard'
@@ -66,7 +66,7 @@ class RegistryExtensionNodeSiteAdminRow extends React.PureComponent<
                 )
                 .subscribe(
                     stateUpdate => this.setState(stateUpdate),
-                    error => console.error(error)
+                    error => logger.error(error)
                 )
         )
     }

@@ -4,6 +4,7 @@ import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router-dom'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
+import { logger } from '@sourcegraph/common'
 import { gql, useMutation, useQuery } from '@sourcegraph/http-client'
 import { OrganizationInvitationResponseType } from '@sourcegraph/shared/src/graphql-operations'
 import { Alert, AnchorLink, Button, LoadingSpinner, Link, H2, H3 } from '@sourcegraph/wildcard'
@@ -100,7 +101,7 @@ export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<
         RespondToOrgInvitationVariables
     >(RESPOND_TO_ORG_INVITATION, {
         onError: apolloError => {
-            console.error('Error when responding to invitation', apolloError)
+            logger.error('Error when responding to invitation', apolloError)
         },
     })
 

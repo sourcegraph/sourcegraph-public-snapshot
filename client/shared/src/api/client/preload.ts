@@ -1,4 +1,4 @@
-import { isDefined } from '@sourcegraph/common'
+import { isDefined, logger } from '@sourcegraph/common'
 
 import { ConfiguredExtension, getScriptURLFromExtensionManifest } from '../../extensions/extension'
 import { ExecutableExtension, extensionsWithMatchedActivationEvent } from '../extension/activation'
@@ -54,6 +54,6 @@ export function preloadExtensions({
             loadedScriptURLs.add(activeExtension.scriptURL)
         }
     } catch (error) {
-        console.error('Error preloading Sourcegraph extensions:', error)
+        logger.error('Error preloading Sourcegraph extensions:', error)
     }
 }

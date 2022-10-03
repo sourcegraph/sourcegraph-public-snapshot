@@ -2,6 +2,7 @@ import React from 'react'
 
 import { Redirect } from 'react-router'
 
+import { logger } from '@sourcegraph/common'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { CardBody, Card, H2, Text } from '@sourcegraph/wildcard'
 
@@ -24,7 +25,7 @@ const initSite = async (args: SignUpArguments): Promise<void> => {
     })
         .then() // no op
         .catch((error): void => {
-            console.error(error)
+            logger.error(error)
         })
     const response = await fetch('/-/site-init', {
         credentials: 'same-origin',
