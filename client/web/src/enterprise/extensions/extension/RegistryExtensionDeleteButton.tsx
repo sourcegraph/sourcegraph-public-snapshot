@@ -8,11 +8,11 @@ import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operator
 import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { Button, ButtonGroup, Icon } from '@sourcegraph/wildcard'
 
-import { Scalars } from '../../../graphql-operations'
+import { RegistryExtensionFields } from '../../../graphql-operations'
 import { deleteRegistryExtensionWithConfirmation } from '../registry/backend'
 
 interface RegistryExtensionDeleteButtonProps {
-    extension: Scalars['ID']
+    extension: Pick<RegistryExtensionFields, 'id'>
 
     compact?: boolean
 
