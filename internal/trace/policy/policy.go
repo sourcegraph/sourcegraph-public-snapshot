@@ -82,16 +82,15 @@ func (r *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 // via our HTTP Header or our URL Query.
 func RequestWantsTracing(r *http.Request) bool {
 	// Prefer header over query param.
-	// if v := r.Header.Get(traceHeader); v != "" {
-	// 	b, _ := strconv.ParseBool(v)
-	// 	return b
-	// }
+	if v := r.Header.Get(traceHeader); v != "" {
+		b, _ := strconv.ParseBool(v)
+		return b
+	}
 	// PERF: Avoid parsing RawQuery if "trace=" is not present
 	if strings.Contains(r.URL.RawQuery, "trace=") {
 		v := r.URL.Query().Get(traceQuery)
-		b, _ := strconv.ParseInt(v, 10, 32)
-		println("🕯️", b > 0)
-		return b > 0
+		b, _ := strconv.ParseBool(v)
+		return b
 	}
 	return false
 }
