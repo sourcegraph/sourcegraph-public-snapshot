@@ -185,7 +185,7 @@ The following are complete examples of provisioning _multiple_ executor types us
 
 Let's walk through setting up a single executor VM on GCP using the [Google Cloud Terraform Module for Sourcegraph executors](https://github.com/sourcegraph/terraform-google-executors) and indexing a repository.
 
-1. Install Terraform (must match the version listed in [`.tool-versions`](https://github.com/sourcegraph/terraform-google-executors/blob/master/providers.tf)):
+1. Install Terraform (must match the [version listed in `.tool-versions`](https://github.com/sourcegraph/terraform-google-executors/blob/master/providers.tf)):
 
 ```
 brew install tfenv
