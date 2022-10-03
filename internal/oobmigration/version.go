@@ -20,19 +20,34 @@ func NewVersion(major, minor int) Version {
 	}
 }
 
-var versionPattern = lazyregexp.New(`^v?(\d+)\.(\d+)(?:\.\d+)?$`)
+var versionPattern = lazyregexp.New(`^v?(\d+)\.(\d+)(?:\.(\d+))?$`)
 
 // NewVersionFromString parses the major and minor version from the given string. If
 // the string does not look like a parseable version, a false-valued flag is returned.
 func NewVersionFromString(v string) (Version, bool) {
-	if matches := versionPattern.FindStringSubmatch(v); len(matches) >= 3 {
-		major, _ := strconv.Atoi(matches[1])
-		minor, _ := strconv.Atoi(matches[2])
+	version, _, ok := NewVersionAndPatchFromString(v)
+	return version, ok
+}
 
-		return NewVersion(major, minor), true
+// NewVersionFromString parses the major and minor version from the given string. If
+// the string does not look like a parseable version, a false-valued flag is returned.
+// If the input string also supplies a patch version, it is returned. If a patch is
+// not supplied this value is zero.
+func NewVersionAndPatchFromString(v string) (Version, int, bool) {
+	matches := versionPattern.FindStringSubmatch(v)
+	if len(matches) < 3 {
+		return Version{}, 0, false
 	}
 
-	return Version{}, false
+	major, _ := strconv.Atoi(matches[1])
+	minor, _ := strconv.Atoi(matches[2])
+
+	if len(matches) == 3 {
+		return NewVersion(major, minor), 0, true
+	}
+
+	patch, _ := strconv.Atoi(matches[3])
+	return NewVersion(major, minor), patch, true
 }
 
 func (v Version) String() string {
@@ -40,7 +55,11 @@ func (v Version) String() string {
 }
 
 func (v Version) GitTag() string {
-	return fmt.Sprintf("v%d.%d.0", v.Major, v.Minor)
+	return v.GitTagWithPatch(0)
+}
+
+func (v Version) GitTagWithPatch(patch int) string {
+	return fmt.Sprintf("v%d.%d.%d", v.Major, v.Minor, patch)
 }
 
 var lastMinorVersionInMajorRelease = map[int]int{

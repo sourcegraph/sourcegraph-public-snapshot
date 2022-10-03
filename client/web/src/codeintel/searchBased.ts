@@ -26,7 +26,7 @@ export function definitionQuery({
         `^${searchToken}$`,
         'type:symbol',
         'patternType:regexp',
-        'count:500',
+        'count:50',
         'case:yes',
         fileExtensionTerm(path, fileExts),
     ]

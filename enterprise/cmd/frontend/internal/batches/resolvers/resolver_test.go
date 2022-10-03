@@ -712,7 +712,7 @@ func TestCreateEmptyBatchChange(t *testing.T) {
 	}
 
 	// But third time should work because a different namespace + the same name is okay
-	orgID := bt.InsertTestOrg(t, db, "my-org")
+	orgID := bt.CreateTestOrg(t, db, "my-org").ID
 	namespaceID2 := relay.MarshalID("Org", orgID)
 
 	input2 := map[string]any{
@@ -1212,7 +1212,7 @@ func TestMoveBatchChange(t *testing.T) {
 	userID := user.ID
 
 	orgName := "move-batch-change-test"
-	orgID := bt.InsertTestOrg(t, db, orgName)
+	orgID := bt.CreateTestOrg(t, db, orgName).ID
 
 	bstore := store.New(db, &observation.TestContext, nil)
 

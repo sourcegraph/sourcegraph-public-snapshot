@@ -2,23 +2,15 @@ package dbstore
 
 import (
 	"context"
-	"database/sql"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/commitgraph"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 // makeCommit formats an integer as a 40-character git commit hash.
@@ -119,164 +111,5 @@ func insertRepo(t testing.TB, db database.DB, id int, name string) {
 	)
 	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 		t.Fatalf("unexpected error while upserting repository: %s", err)
-	}
-}
-
-// insertPackages populates the lsif_packages table with the given packages.
-func insertPackages(t testing.TB, store *Store, packages []shared.Package) {
-	for _, pkg := range packages {
-		if err := store.UpdatePackages(context.Background(), pkg.DumpID, []precise.Package{
-			{
-				Scheme:  pkg.Scheme,
-				Name:    pkg.Name,
-				Version: pkg.Version,
-			},
-		}); err != nil {
-			t.Fatalf("unexpected error updating packages: %s", err)
-		}
-	}
-}
-
-// insertPackageReferences populates the lsif_references table with the given package references.
-func insertPackageReferences(t testing.TB, store *Store, packageReferences []shared.PackageReference) {
-	for _, packageReference := range packageReferences {
-		if err := store.UpdatePackageReferences(context.Background(), packageReference.DumpID, []precise.PackageReference{
-			{
-				Package: precise.Package{
-					Scheme:  packageReference.Scheme,
-					Name:    packageReference.Name,
-					Version: packageReference.Version,
-				},
-			},
-		}); err != nil {
-			t.Fatalf("unexpected error updating package references: %s", err)
-		}
-	}
-}
-
-// insertVisibleAtTip populates rows of the lsif_uploads_visible_at_tip table for the given repository
-// with the given identifiers. Each upload is assumed to refer to the tip of the default branch. To mark
-// an upload as protected (visible to _some_ branch) butn ot visible from the default branch, use the
-// insertVisibleAtTipNonDefaultBranch method instead.
-func insertVisibleAtTip(t testing.TB, db database.DB, repositoryID int, uploadIDs ...int) {
-	insertVisibleAtTipInternal(t, db, repositoryID, true, uploadIDs...)
-}
-
-// insertVisibleAtTipNonDefaultBranch populates rows of the lsif_uploads_visible_at_tip table for the
-// given repository with the given identifiers. Each upload is assumed to refer to the tip of a branch
-// distinct from the default branch or a tag.
-func insertVisibleAtTipNonDefaultBranch(t testing.TB, db database.DB, repositoryID int, uploadIDs ...int) {
-	insertVisibleAtTipInternal(t, db, repositoryID, false, uploadIDs...)
-}
-
-func insertVisibleAtTipInternal(t testing.TB, db database.DB, repositoryID int, isDefaultBranch bool, uploadIDs ...int) {
-	var rows []*sqlf.Query
-	for _, uploadID := range uploadIDs {
-		rows = append(rows, sqlf.Sprintf("(%s, %s, %s)", repositoryID, uploadID, isDefaultBranch))
-	}
-
-	query := sqlf.Sprintf(
-		`INSERT INTO lsif_uploads_visible_at_tip (repository_id, upload_id, is_default_branch) VALUES %s`,
-		sqlf.Join(rows, ","),
-	)
-	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
-		t.Fatalf("unexpected error while updating uploads visible at tip: %s", err)
-	}
-}
-
-// insertNearestUploads populates the lsif_nearest_uploads table with the given upload metadata.
-func insertNearestUploads(t testing.TB, db database.DB, repositoryID int, uploads map[string][]commitgraph.UploadMeta) {
-	var rows []*sqlf.Query
-	for commit, uploadMetas := range uploads {
-		uploadsByLength := make(map[int]int, len(uploadMetas))
-		for _, uploadMeta := range uploadMetas {
-			uploadsByLength[uploadMeta.UploadID] = int(uploadMeta.Distance)
-		}
-
-		serializedUploadMetas, err := json.Marshal(uploadsByLength)
-		if err != nil {
-			t.Fatalf("unexpected error marshalling uploads: %s", err)
-		}
-
-		rows = append(rows, sqlf.Sprintf(
-			"(%s, %s, %s)",
-			repositoryID,
-			dbutil.CommitBytea(commit),
-			serializedUploadMetas,
-		))
-	}
-
-	query := sqlf.Sprintf(
-		`INSERT INTO lsif_nearest_uploads (repository_id, commit_bytea, uploads) VALUES %s`,
-		sqlf.Join(rows, ","),
-	)
-	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
-		t.Fatalf("unexpected error while updating commit graph: %s", err)
-	}
-}
-
-func getUploadStates(db database.DB, ids ...int) (map[int]string, error) {
-	if len(ids) == 0 {
-		return nil, nil
-	}
-
-	q := sqlf.Sprintf(
-		`SELECT id, state FROM lsif_uploads WHERE id IN (%s)`,
-		sqlf.Join(intsToQueries(ids), ", "),
-	)
-
-	return scanStates(db.QueryContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...))
-}
-
-// scanStates scans pairs of id/states from the return value of `*Store.query`.
-func scanStates(rows *sql.Rows, queryErr error) (_ map[int]string, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	states := map[int]string{}
-	for rows.Next() {
-		var id int
-		var state string
-		if err := rows.Scan(&id, &state); err != nil {
-			return nil, err
-		}
-
-		states[id] = strings.ToLower(state)
-	}
-
-	return states, nil
-}
-
-func dumpToUpload(expected Dump) Upload {
-	return Upload{
-		ID:                expected.ID,
-		Commit:            expected.Commit,
-		Root:              expected.Root,
-		UploadedAt:        expected.UploadedAt,
-		State:             expected.State,
-		FailureMessage:    expected.FailureMessage,
-		StartedAt:         expected.StartedAt,
-		FinishedAt:        expected.FinishedAt,
-		ProcessAfter:      expected.ProcessAfter,
-		NumResets:         expected.NumResets,
-		NumFailures:       expected.NumFailures,
-		RepositoryID:      expected.RepositoryID,
-		RepositoryName:    expected.RepositoryName,
-		Indexer:           expected.Indexer,
-		IndexerVersion:    expected.IndexerVersion,
-		AssociatedIndexID: expected.AssociatedIndexID,
-	}
-}
-
-func assertReferenceCounts(t *testing.T, store *Store, expectedReferenceCountsByID map[int]int) {
-	referenceCountsByID, err := scanIntPairs(store.Query(context.Background(), sqlf.Sprintf(`SELECT id, reference_count FROM lsif_uploads`)))
-	if err != nil {
-		t.Fatalf("unexpected error querying reference counts: %s", err)
-	}
-
-	if diff := cmp.Diff(expectedReferenceCountsByID, referenceCountsByID); diff != "" {
-		t.Errorf("unexpected reference count (-want +got):\n%s", diff)
 	}
 }

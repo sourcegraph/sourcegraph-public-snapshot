@@ -131,15 +131,17 @@ export const BatchChangeDetailsPage: React.FunctionComponent<
                     />
                 }
                 actions={
-                    <BatchChangeDetailsActionSection
-                        batchChangeID={batchChange.id}
-                        batchChangeClosed={!!batchChange.closedAt}
-                        deleteBatchChange={deleteBatchChange}
-                        batchChangeNamespaceURL={batchChange.namespace.url}
-                        batchChangeURL={batchChange.url}
-                        history={history}
-                        settingsCascade={props.settingsCascade}
-                    />
+                    batchChange.viewerCanAdminister ? (
+                        <BatchChangeDetailsActionSection
+                            batchChangeID={batchChange.id}
+                            batchChangeClosed={!!batchChange.closedAt}
+                            deleteBatchChange={deleteBatchChange}
+                            batchChangeNamespaceURL={batchChange.namespace.url}
+                            batchChangeURL={batchChange.url}
+                            history={history}
+                            settingsCascade={props.settingsCascade}
+                        />
+                    ) : null
                 }
                 className="test-batch-change-details-page mb-3"
             >
@@ -152,22 +154,28 @@ export const BatchChangeDetailsPage: React.FunctionComponent<
                 </PageHeader.Heading>
             </PageHeader>
             <BulkOperationsAlerts location={location} bulkOperations={batchChange.activeBulkOperations} />
-            <MissingCredentialsAlert
-                authenticatedUser={authenticatedUser}
-                viewerBatchChangesCodeHosts={batchChange.currentSpec.viewerBatchChangesCodeHosts}
-            />
-            <SupersedingBatchSpecAlert spec={batchChange.currentSpec.supersedingBatchSpec} />
+            {batchChange.viewerCanAdminister && (
+                <MissingCredentialsAlert
+                    authenticatedUser={authenticatedUser}
+                    viewerBatchChangesCodeHosts={batchChange.currentSpec.viewerBatchChangesCodeHosts}
+                />
+            )}
+            {batchChange.viewerCanAdminister && (
+                <SupersedingBatchSpecAlert spec={batchChange.currentSpec.supersedingBatchSpec} />
+            )}
             <ActiveExecutionNotice
                 batchSpecs={batchChange.batchSpecs.nodes}
                 batchChangeURL={batchChange.url}
                 className="mb-3"
             />
             <ClosedNotice closedAt={batchChange.closedAt} className="mb-3" />
-            <UnpublishedNotice
-                unpublished={batchChange.changesetsStats.unpublished}
-                total={batchChange.changesetsStats.total}
-                className="mb-3"
-            />
+            {batchChange.viewerCanAdminister && (
+                <UnpublishedNotice
+                    unpublished={batchChange.changesetsStats.unpublished}
+                    total={batchChange.changesetsStats.total}
+                    className="mb-3"
+                />
+            )}
             <ChangesetsArchivedNotice history={history} location={location} />
             <WebhookAlert batchChange={batchChange} />
             <BatchChangeStatsCard batchChange={batchChange} className="mb-3" />

@@ -518,7 +518,7 @@ cc @${config.captainGitHubUsername}
                                     const fullPath = path.join(updateDirectory, file)
                                     let updateContents = readFileSync(fullPath).toString()
                                     if (notPatchRelease) {
-                                        const releaseHeader = `## ${previousVersion} -> ${nextVersion}`
+                                        const releaseHeader = `## v${previousVersion} ➔ v${nextVersion}`
                                         const unreleasedHeader = '## Unreleased'
                                         updateContents = updateContents.replace(unreleasedHeader, releaseHeader)
                                         updateContents = updateContents.replace(update.divider, update.releaseTemplate)

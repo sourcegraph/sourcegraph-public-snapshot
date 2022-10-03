@@ -29,6 +29,16 @@ type operations struct {
 	getIndexConfigurationByRepositoryID    *observation.Operation
 	updateIndexConfigurationByRepositoryID *observation.Operation
 	inferIndexConfiguration                *observation.Operation
+
+	// Auth
+	checkCurrentUserIsSiteAdmin *observation.Operation
+
+	// Tags
+	getListTags *observation.Operation
+
+	// Language support
+	getLanguagesRequestedBy   *observation.Operation
+	setRequestLanguageSupport *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -69,5 +79,15 @@ func newOperations(observationContext *observation.Context) *operations {
 		getIndexConfigurationByRepositoryID:    op("GetIndexConfigurationByRepositoryID"),
 		updateIndexConfigurationByRepositoryID: op("UpdateIndexConfigurationByRepositoryID"),
 		inferIndexConfiguration:                op("InferIndexConfiguration"),
+
+		// Auth
+		checkCurrentUserIsSiteAdmin: op("CheckCurrentUserIsSiteAdmin"),
+
+		// Tags
+		getListTags: op("GetListTags"),
+
+		// Language support
+		getLanguagesRequestedBy:   op("GetLanguagesRequestedBy"),
+		setRequestLanguageSupport: op("SetRequestLanguageSupport"),
 	}
 }

@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { DecoratorFn, Story, Meta } from '@storybook/react'
 
 import { WebStory } from '../../../../../../../components/WebStory'
-import { InsightDashboard, InsightsDashboardOwnerType, InsightsDashboardType } from '../../../../../core/types'
+import { InsightDashboard, InsightsDashboardOwnerType, InsightsDashboardType } from '../../../../../core'
 
 import { DashboardSelect } from './DashboardSelect'
 
@@ -26,42 +26,36 @@ const DASHBOARDS: InsightDashboard[] = [
         type: InsightsDashboardType.Custom,
         id: '101',
         title: 'Personal',
-        insightIds: [],
         owners: [{ id: '101', title: 'Personal', type: InsightsDashboardOwnerType.Personal }],
     },
     {
         type: InsightsDashboardType.Custom,
         id: '102',
         title: 'Code Insights dashboard',
-        insightIds: [],
         owners: [{ id: '101', title: 'Personal', type: InsightsDashboardOwnerType.Personal }],
     },
     {
         type: InsightsDashboardType.Custom,
         id: '103',
         title: 'Experimental Insights dashboard',
-        insightIds: [],
         owners: [{ id: '101', title: 'Personal', type: InsightsDashboardOwnerType.Personal }],
     },
     {
         type: InsightsDashboardType.Custom,
         id: '104',
         title: 'Sourcegraph',
-        insightIds: [],
         owners: [{ id: '104', title: 'Sourcegraph', type: InsightsDashboardOwnerType.Personal }],
     },
     {
         type: InsightsDashboardType.Custom,
         id: '105',
         title: 'Loooong looo0000ong name of dashboard',
-        insightIds: [],
         owners: [{ id: '104', title: 'Sourcegraph', type: InsightsDashboardOwnerType.Personal }],
     },
     {
         type: InsightsDashboardType.Custom,
         id: '106',
         title: 'Loooong looo0000ong name of dashboard',
-        insightIds: [],
         owners: [{ id: '104', title: 'Sourcegraph', type: InsightsDashboardOwnerType.Personal }],
     },
 ]

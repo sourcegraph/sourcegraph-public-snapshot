@@ -11,17 +11,11 @@ import (
 
 type Store struct {
 	*basestore.Store
-	serializer *Serializer
-	operations *operations
-	config     conftypes.SiteConfigQuerier
 }
 
 func NewStore(db stores.CodeIntelDB, siteConfig conftypes.SiteConfigQuerier, observationContext *observation.Context) *Store {
 	return &Store{
-		Store:      basestore.NewWithHandle(db.Handle()),
-		serializer: NewSerializer(),
-		operations: newOperations(observationContext),
-		config:     siteConfig,
+		Store: basestore.NewWithHandle(db.Handle()),
 	}
 }
 
@@ -32,10 +26,7 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 	}
 
 	return &Store{
-		Store:      tx,
-		serializer: s.serializer,
-		operations: s.operations,
-		config:     s.config,
+		Store: tx,
 	}, nil
 }
 

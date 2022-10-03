@@ -90,6 +90,10 @@ interface Props
 
     /** The head of the comparison. */
     head: { repoName: string; repoID: Scalars['ID']; revision?: string | null }
+
+    /** An optional path of a specific file to compare */
+    path: string | null
+
     hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
 }
 
@@ -162,7 +166,9 @@ export class RepositoryCompareOverviewPage extends React.PureComponent<Props, St
                     <ErrorAlert className="mt-2" error={this.state.rangeOrError} />
                 ) : (
                     <>
-                        <RepositoryCompareCommitsPage {...this.props} />
+                        {/* The query to load the list of commits does not currently support filtering them for just a single file, so only render the commits
+                         * when all files will be shown (i.e. no `path` to a single file was provided) to avoid innacurate results. */}
+                        {this.props.path ? null : <RepositoryCompareCommitsPage {...this.props} />}
                         <div className="mb-3" />
                         <RepositoryCompareDiffPage
                             {...this.props}
