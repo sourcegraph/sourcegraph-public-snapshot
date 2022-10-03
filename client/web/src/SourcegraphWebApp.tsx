@@ -295,7 +295,7 @@ export class SourcegraphWebApp extends React.Component<
         }
 
         this.setWorkspaceSearchContext(this.state.selectedSearchContextSpec).catch(error => {
-            console.error('Error sending search context to extensions!', error)
+            console.error('Error sending search context to extensions! oh no', error)
         })
 
         // Update search query state whenever the URL changes

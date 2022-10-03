@@ -15,6 +15,8 @@ steps:
       - dev/ci/yarn-build.sh client/web
       - yarn lhci autorun
     label: ':lighthouse: Lighthouse'
+    agents:
+      queue: 'baremetal'
     retry:
       automatic:
         limit: 1
