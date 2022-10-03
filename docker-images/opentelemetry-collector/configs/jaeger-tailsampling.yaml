@@ -46,7 +46,7 @@ processors:
             # regardless of the probabilistic sampling.
             name: policy-retain,
             type: string_attribute,
-            string_attribute: {key: sampling_retain, values: ['true']},
+            string_attribute: {key: sampling.retain, values: ['true']},
           },
           {
             # Only keep 10% of the traces.

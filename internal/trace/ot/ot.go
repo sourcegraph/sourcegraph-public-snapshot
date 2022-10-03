@@ -13,7 +13,7 @@ import (
 )
 
 // samplingRetainKey is the attribute key used to mark as span as to be retained.
-var samplingRetainKey = "sampling_retain"
+var samplingRetainKey = "sampling.retain"
 
 // Deprecated: Use otel.Tracer(...) from go.opentelemetry.io/otel instead.
 //

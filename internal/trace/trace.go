@@ -15,7 +15,7 @@ import (
 )
 
 // samplingRetainKey is the attribute key used to mark as span as to be retained.
-var samplingRetainKey = "sampling_retain"
+var samplingRetainKey = "sampling.retain"
 
 // Trace is a combined version of golang.org/x/net/trace.Trace and
 // opentelemetry.Span, applying its various API functions to both
