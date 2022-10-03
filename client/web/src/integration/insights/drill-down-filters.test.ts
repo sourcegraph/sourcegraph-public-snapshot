@@ -178,17 +178,9 @@ describe('Backend insight drill down filters', () => {
                     },
                 }),
 
-                FirstStepCreateSearchBasedInsight: () => ({
+                CreateSearchBasedInsight: () => ({
                     __typename: 'Mutation',
                     createLineChartSearchInsight: {
-                        __typename: 'InsightViewPayload',
-                        view: createJITMigrationToGQLInsightMetadataFixture({ type: 'calculated' }),
-                    },
-                }),
-
-                UpdateLineChartSearchInsight: () => ({
-                    __typename: 'Mutation',
-                    updateLineChartSearchInsight: {
                         __typename: 'InsightViewPayload',
                         view: createJITMigrationToGQLInsightMetadataFixture({ type: 'calculated' }),
                     },
@@ -218,12 +210,11 @@ describe('Backend insight drill down filters', () => {
 
         const variables = await testContext.waitForGraphQLRequest(async () => {
             await driver.page.click('[role="dialog"][aria-label="Drill-down filters panel"] button[type="submit"]')
-        }, 'UpdateLineChartSearchInsight')
+        }, 'CreateSearchBasedInsight')
 
         assert.deepStrictEqual(variables.input, {
             dataSeries: [
                 {
-                    seriesId: '001',
                     query: 'patternType:regex case:yes \\*\\sas\\sGQL',
                     options: {
                         label: 'Imports of old GQL.* types',
@@ -240,7 +231,6 @@ describe('Backend insight drill down filters', () => {
                     },
                 },
                 {
-                    seriesId: '002',
                     query: "patternType:regexp case:yes /graphql-operations'",
                     options: {
                         label: 'Imports of new graphql-operations types',
@@ -257,12 +247,11 @@ describe('Backend insight drill down filters', () => {
                     },
                 },
             ],
-            presentationOptions: {
-                title: 'Migration to new GraphQL TS types',
+            options: {
+                title: 'Insight with filters',
             },
             viewControls: {
                 filters: {
-                    searchContexts: [],
                     includeRepoRegex: 'github.com/sourcegraph/sourcegraph',
                     excludeRepoRegex: 'github.com/sourcegraph/sourcegraph',
                 },
