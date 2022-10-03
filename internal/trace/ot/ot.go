@@ -53,6 +53,9 @@ func getTracer(ctx context.Context, tracer opentracing.Tracer) opentracing.Trace
 	return tracer
 }
 
+// Deprecated: Use otel.Tracer(...).SamplingRetain() from go.opentelemetry.io/otel or trace.New(...)
+// from github.com/sourcegraph/sourcegraph/internal/trace instead.
+//
 // SamplingRetainSpan marks a span as to be retained by the OTEL Collector by adding an
 // attribute which is to be used by the TailSamplingProcessor if enabled.
 func SamplingRetainSpan(span opentracing.Span) opentracing.Span {
