@@ -31,14 +31,14 @@ type operations struct {
 func newOperations(observationContext *observation.Context) *operations {
 	metrics := metrics.NewREDMetrics(
 		observationContext.Registerer,
-		"codeintel_symbols",
+		"codeintel_codenav",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of method invocations."),
 	)
 
 	op := func(name string) *observation.Operation {
 		return observationContext.Operation(observation.Op{
-			Name:              fmt.Sprintf("codeintel.symbols.%s", name),
+			Name:              fmt.Sprintf("codeintel.codenav.%s", name),
 			MetricLabelValues: []string{name},
 			Metrics:           metrics,
 		})
