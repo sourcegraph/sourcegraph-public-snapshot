@@ -239,28 +239,37 @@ func configureRemoteGitCommand(cmd *exec.Cmd, tlsConf *tlsConfig) {
 		extraArgs = append(extraArgs, "-c", "protocol.version=2")
 	}
 
-	// p4-fusion command doesn't support -c argument and passing this causes warning
-	// logs. This removes all -c arguments
 	if executable == "p4-fusion" {
-		idx := 0
-		foundC := false
-		for _, arg := range extraArgs {
-			// skipping arg after -c
-			if foundC {
-				foundC = false
-				continue
-			}
-			if arg != "-c" {
-				extraArgs[idx] = arg
-				idx++
-			} else {
-				foundC = true
-			}
-		}
-		extraArgs = extraArgs[:idx]
+		extraArgs = removeUnsupportedP4Args(extraArgs)
 	}
 
 	cmd.Args = append(cmd.Args[:1], append(extraArgs, cmd.Args[1:]...)...)
+}
+
+// removeUnsupportedP4Args removes all -c arguments as `p4-fusion` command doesn't
+// support -c argument and passing this causes warning logs.
+func removeUnsupportedP4Args(args []string) []string {
+	if len(args) == 0 {
+		return args
+	}
+
+	idx := 0
+	foundC := false
+	for _, arg := range args {
+		if arg == "-c" {
+			// removing any -c
+			foundC = true
+		} else if foundC {
+			// removing the argument following -c and resetting the flag
+			foundC = false
+		} else {
+			// keep the argument
+			args[idx] = arg
+			idx++
+		}
+	}
+	args = args[:idx]
+	return args
 }
 
 // writeTempFile writes data to the TempFile with pattern. Returns the path of

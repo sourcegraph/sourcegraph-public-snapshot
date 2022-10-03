@@ -158,6 +158,57 @@ func TestConfigureRemoteP4FusionCommandWithoutCArgs(t *testing.T) {
 	assert.Equal(t, expectedArgs, input.Args)
 }
 
+func TestRemoveUnsupportedP4Args(t *testing.T) {
+	tests := []struct {
+		name         string
+		input        []string
+		expectedArgs []string
+	}{
+		{
+			name:         "empty args",
+			input:        []string{},
+			expectedArgs: []string{},
+		},
+		{
+			name:         "single -c token without a follow-up, removed",
+			input:        []string{"-c"},
+			expectedArgs: []string{},
+		},
+		{
+			name:         "no -c args, nothing removed",
+			input:        []string{"normal", "args"},
+			expectedArgs: []string{"normal", "args"},
+		},
+		{
+			name:         "single -c arg removed",
+			input:        []string{"normal", "args", "-c", "oops", "normal_again"},
+			expectedArgs: []string{"normal", "args", "normal_again"},
+		},
+		{
+			name:         "multiple -c args removed",
+			input:        []string{"normal", "args", "-c", "oops", "normal_again", "-c", "oops2"},
+			expectedArgs: []string{"normal", "args", "normal_again"},
+		},
+		{
+			name:         "repeated -c token",
+			input:        []string{"-c", "-c", "-c", "not_good", "normal", "args"},
+			expectedArgs: []string{"normal", "args"},
+		},
+		{
+			name:         "only -c args, everything removed",
+			input:        []string{"-c", "oops", "-c", "-c", "not_good"},
+			expectedArgs: []string{},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			actualArgs := removeUnsupportedP4Args(test.input)
+			assert.Equal(t, test.expectedArgs, actualArgs)
+		})
+	}
+}
+
 func TestConfigureRemoteGitCommand_tls(t *testing.T) {
 	baseEnv := []string{
 		"GIT_ASKPASS=true",
