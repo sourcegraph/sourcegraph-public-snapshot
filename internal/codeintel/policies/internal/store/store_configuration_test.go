@@ -55,7 +55,7 @@ func TestGetConfigurationPolicies(t *testing.T) {
 
 	insertRepo(t, db, 41, "gitlab.com/test1")
 	insertRepo(t, db, 42, "github.com/test2")
-	insertRepo(t, db, 43, "bitbucket.com/test3")
+	insertRepo(t, db, 43, "bitbucket.org/test3")
 	insertRepo(t, db, 44, "localhost/secret-repo")
 
 	for policyID, patterns := range map[int][]string{

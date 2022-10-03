@@ -387,6 +387,7 @@ func getTestSiteWithSecrets(
   },
   "externalService.userMode": "all",
   "email.smtp": {
+    "username": "%s",
     "password": "%s"
   },
   "organizationInvitations": {
@@ -410,6 +411,7 @@ func getTestSiteWithSecrets(
 		email,
 		executorsAccessToken,
 		authOpenIDClientSecret, authGitHubClientSecret, authGitLabClientSecret,
+		emailSMTPPassword, // used again as username
 		emailSMTPPassword,
 		organizationInvitationsSigningKey,
 		githubClientSecret,

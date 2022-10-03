@@ -26,10 +26,6 @@ This job will eventually (and partially) replace `codeintel-janitor`
 
 This job will eventually replace `codeintel-commitgraph`.
 
-#### `codeintel-documents-indexer`
-
-This job periodically indexes file contents at a syntactic level to build an index of search-based code navigation.
-
 #### `codeintel-autoindexing-scheduler`
 
 This job will eventually replace `codeintel-auto-indexing`.
