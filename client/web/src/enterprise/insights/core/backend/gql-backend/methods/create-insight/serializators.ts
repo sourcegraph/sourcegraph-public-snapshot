@@ -57,6 +57,7 @@ export function getCaptureGroupInsightCreateInput(
             seriesDisplayOptions:
                 insight.seriesDisplayOptions || parseSeriesDisplayOptions(insight.appliedSeriesDisplayOptions),
             filters: {
+                searchContexts: [insight.filters.context],
                 excludeRepoRegex: insight.filters.excludeRepoRegexp,
                 includeRepoRegex: insight.filters.includeRepoRegexp,
             },
@@ -92,6 +93,7 @@ export function getSearchInsightCreateInput(
             seriesDisplayOptions:
                 insight.seriesDisplayOptions || parseSeriesDisplayOptions(insight.appliedSeriesDisplayOptions),
             filters: {
+                searchContexts: [insight.filters.context],
                 excludeRepoRegex: insight.filters.excludeRepoRegexp,
                 includeRepoRegex: insight.filters.includeRepoRegexp,
             },
@@ -149,6 +151,7 @@ export function getComputeInsightCreateInput(
             seriesDisplayOptions:
                 insight.seriesDisplayOptions || parseSeriesDisplayOptions(insight.appliedSeriesDisplayOptions),
             filters: {
+                searchContexts: [insight.filters.context],
                 excludeRepoRegex: insight.filters.excludeRepoRegexp,
                 includeRepoRegex: insight.filters.includeRepoRegexp,
             },
