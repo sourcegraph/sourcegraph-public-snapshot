@@ -126,8 +126,10 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 			if githubsvc.IsGitHubAppAccessToken(token.AccessToken) {
 				installations, err := ghClient.GetUserInstallations(ctx)
 				if err != nil {
-					// Only log a warning, since we still want to create the user account
+					// We log an error here but do not return it, since we still want to create the user account
 					// even if we fail to get installations.
+					// Also since this is logged as an error, if a Sentry sink is part of logging configuration
+					// we will get a report about this and possibly take action operationally.
 					s.logger.Error("Could not get GitHub App installations", log.Error(err))
 				}
 				for _, installation := range installations {
