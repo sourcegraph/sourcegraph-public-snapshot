@@ -226,7 +226,8 @@ func (p *SudoProvider) FetchUserPermsByToken(ctx context.Context, token string, 
 // whether to discard.
 func listProjects(ctx context.Context, client *gitlab.Client) (*authz.ExternalUserPermissions, error) {
 	q := make(url.Values)
-	q.Add("visibility", "private")  // This method is meant to return only private projects
+	q.Add("visibility", "private") // This method is meant to return only private or internal projects
+	q.Add("visibility", "internal")
 	q.Add("min_access_level", "20") // 20 => Reporter access (i.e. have access to project code)
 	q.Add("per_page", "100")        // 100 is the maximum page size
 

@@ -270,7 +270,7 @@ func TestSudoProvider_FetchUserPerms(t *testing.T) {
 		},
 		&mockDoer{
 			do: func(r *http.Request) (*http.Response, error) {
-				want := "https://gitlab.com/api/v4/projects?min_access_level=20&per_page=100&visibility=private"
+				want := "https://gitlab.com/api/v4/projects?min_access_level=20&per_page=100&visibility=private&visibility=internal"
 				if r.URL.String() != want {
 					return nil, errors.Errorf("URL: want %q but got %q", want, r.URL)
 				}
