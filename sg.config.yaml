@@ -722,7 +722,7 @@ commands:
       IMAGE: sourcegraph/opentelemetry-collector:dev
       # Overwrite the following in sg.config.overwrite.yaml, based on which collector
       # config you are using - see docker-images/opentelemetry-collector for more details.
-      CONFIGURATION_FILE: 'configs/jaeger-tailsampling.yaml'
+      CONFIGURATION_FILE: 'configs/jaeger.yaml'
       # HONEYCOMB_API_KEY: ''
       # HONEYCOMB_DATASET: ''
 
