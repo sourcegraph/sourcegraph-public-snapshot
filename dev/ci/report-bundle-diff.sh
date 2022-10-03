@@ -3,7 +3,6 @@
 set -e
 
 echo "--- Report bundle diff"
-pushd "../.." >/dev/null
 
 ls -la ./ui/assets/
 
@@ -23,5 +22,3 @@ if [[ -f $commitFile ]] && [[ -f $mergeBaseFile ]]; then
 else
   echo 'No stats file found, skipping.'
 fi
-
-popd >/dev/null || exit
