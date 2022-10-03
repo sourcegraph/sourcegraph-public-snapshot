@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
@@ -23,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	streamclient "github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -59,6 +59,33 @@ type Backfiller interface {
 }
 
 type NewSearchClientFunc func() streaming.SearchClient
+
+type PipelineContext struct {
+	Series *types.InsightSeries
+	Repo   *itypes.Repo
+}
+
+type SearchJobGeneratorInput struct {
+	PipelineContext
+}
+
+type SearchJobGeneratorOutput struct {
+	PipelineContext
+	Job queryrunner.Job
+}
+
+type iterationResult struct {
+	repoID   *api.RepoID
+	err      error
+	duration time.Duration
+}
+
+// This says what to iterate over
+type UnitOfWorkGenerator func(ctx context.Context, series *types.InsightSeries) (chan<- error, chan<- PipelineContext)
+
+type SearchJobGenerator func(ctx context.Context, in <-chan SearchJobGeneratorInput) (chan<- error, chan<- SearchJobGeneratorOutput)
+type SearchJobRunner func(ctx context.Context, in <-chan SearchJobGeneratorOutput) (chan<- error, chan<- SearchJobGeneratorOutput)
+type SearchResultsPersister func(ctx context.Context, in <-chan SearchJobGeneratorOutput) (chan<- error, chan<- SearchJobGeneratorOutput)
 
 func NewBackfillerFactory(firstCommit FirstCommitFunc, recentCommit FindRecentCommitFunc, newSearchClient NewSearchClientFunc, repoStore database.RepoStore, insightStore store.Interface, compressionPlan compression.DataFrameFilter) BackfillerFactory {
 	return func(series *types.InsightSeries) Backfiller {
@@ -132,6 +159,76 @@ func (b *backfiller) Run(ctx context.Context, reportProgress func(BackfillProgre
 	return nil
 }
 
+func (b *backfiller) AltRun(ctx context.Context, reportProgress func(BackfillProgress)) error {
+
+	errChan := make(chan error)
+	results := make(chan iterationResult, len(b.repos))
+	reposChan := b.repoGenerator(ctx, errChan)
+
+	var wg sync.WaitGroup
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+	// launching a single worker
+	wg.Add(1)
+	goroutine.Go(func() {
+		defer wg.Done()
+		b.worker(ctx, b.series, reposChan, results)
+	})
+
+	for result := range results {
+		if result.err != nil {
+			rId := int32(*result.repoID)
+			b.logger.Warn("insights pipeline run failed", log.String("series", b.series.SeriesID), log.Int32("repo", rId))
+			continue
+		}
+		b.saveProgress(ctx, reportProgress, result)
+	}
+
+	return nil
+}
+
+func (b *backfiller) worker(ctx context.Context, series *types.InsightSeries, reposIn <-chan *itypes.Repo, results chan<- iterationResult) {
+	for repo := range reposIn {
+		start := time.Now()
+		getSearchPlan := makeSearchPlanFunc(b.logger, b.firstCommit, b.compressionPlan)
+		generateSearchJobs := makeGetSearchJobsFunc(b.logger, b.firstCommit, b.recentCommit)
+		runSearches := makeRunSearchFunc(b.logger, b.newSeachClient())
+		saveSearches := makeSaveResultsFunc(b.logger, b.insightStore)
+
+		plan, _ := getSearchPlan(ctx, b.series, repo)
+		searchJobChan, _ := generateSearchJobs(ctx, b.series, repo, plan)
+		searchResultsChan := runSearches(ctx, repo, searchJobChan)
+		err := saveSearches(ctx, b.series, searchResultsChan)
+		results <- iterationResult{
+			repoID:   &repo.ID,
+			err:      err,
+			duration: time.Since(start),
+		}
+	}
+}
+
+func (b *backfiller) repoGenerator(ctx context.Context, errChan chan<- error) <-chan *itypes.Repo {
+	reposChan := make(chan *itypes.Repo)
+	defer func() {
+		close(reposChan)
+	}()
+
+	go func(ctx context.Context) {
+		for _, repoId := range b.repos {
+			r, err := b.repoStore.Get(ctx, repoId)
+			if err != nil {
+				errChan <- err
+				continue
+			}
+			reposChan <- r
+		}
+	}(ctx)
+
+	return reposChan
+}
+
 func (b *backfiller) resolveRepos(ctx context.Context) error {
 	b.logger.Warn("getting series repos")
 	if len(b.repos) != 0 {
@@ -150,6 +247,16 @@ func (b *backfiller) resolveRepos(ctx context.Context) error {
 		return err
 	}
 	b.repos = repos
+	return nil
+}
+
+func (b *backfiller) saveProgress(ctx context.Context, reportProgress func(BackfillProgress), result iterationResult) error {
+	// todo add some persistentce
+	if result.err == nil {
+		// make result.repoID complete
+	}
+	b.logger.Warn("saving backfill progress")
+	reportProgress(BackfillProgress{SeriesID: b.series.SeriesID, RemaingCost: b.RemaingCost()})
 	return nil
 }
 
@@ -262,7 +369,7 @@ func makeSearchPlanFunc(logger log.Logger, getFirstEverCommit FirstCommitFunc, c
 			return nil, err
 		}
 
-		frames := query.BuildFrames(12, timeseries.TimeInterval{
+		frames := timeseries.BuildFrames(12, timeseries.TimeInterval{
 			Unit:  types.IntervalUnit(series.SampleIntervalUnit),
 			Value: series.SampleIntervalValue,
 		}, series.CreatedAt.Truncate(time.Hour*24))
