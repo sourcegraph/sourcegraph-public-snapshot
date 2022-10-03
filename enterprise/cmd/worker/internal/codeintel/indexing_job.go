@@ -11,8 +11,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
+	bkgdependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/background/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -82,8 +82,8 @@ func (j *indexingJob) Routines(startupCtx context.Context, logger log.Logger) ([
 	queueingMetrics := workerutil.NewMetrics(observationContext, "codeintel_dependency_index_queueing")
 
 	routines := []goroutine.BackgroundRoutine{
-		indexing.NewDependencySyncScheduler(uploadSvc, depsSvc, autoindexingSvc, dependencySyncStore, extSvcStore, syncMetrics, observationContext),
-		indexing.NewDependencyIndexingScheduler(uploadSvc, repoStore, dependencyIndexingStore, extSvcStore, gitserverRepoStore, repoUpdaterClient, autoindexingSvc, indexingConfigInst.DependencyIndexerSchedulerPollInterval, indexingConfigInst.DependencyIndexerSchedulerConcurrency, queueingMetrics),
+		bkgdependencies.NewDependencySyncScheduler(uploadSvc, depsSvc, autoindexingSvc, dependencySyncStore, extSvcStore, syncMetrics, observationContext),
+		bkgdependencies.NewDependencyIndexingScheduler(uploadSvc, repoStore, dependencyIndexingStore, extSvcStore, gitserverRepoStore, repoUpdaterClient, autoindexingSvc, indexingConfigInst.DependencyIndexerSchedulerPollInterval, indexingConfigInst.DependencyIndexerSchedulerConcurrency, queueingMetrics),
 	}
 
 	return routines, nil

@@ -53,9 +53,9 @@
   path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/queues/batches
   interfaces:
     - BatchesStore
-- filename: enterprise/cmd/worker/internal/codeintel/indexing/mocks_test.go
+- filename: internal/codeintel/autoindexing/background/dependencies/mocks_test.go
   sources:
-    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/background/dependencies
       interfaces:
         - UploadsService
         - DependenciesService

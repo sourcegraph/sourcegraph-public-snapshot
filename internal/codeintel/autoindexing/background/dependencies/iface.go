@@ -1,4 +1,4 @@
-package indexing
+package dependencies
 
 import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"

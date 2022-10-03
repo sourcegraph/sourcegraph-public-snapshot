@@ -4,7 +4,7 @@
 // this repository. To add additional mocks to this or another package, add a new entry
 // to the mockgen.yaml file in the root of this repository.
 
-package indexing
+package dependencies
 
 import (
 	"context"
@@ -27,7 +27,7 @@ import (
 
 // MockAutoindexingService is a mock implementation of the
 // AutoindexingService interface (from the package
-// github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing)
+// github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/background/dependencies)
 // used for unit testing.
 type MockAutoindexingService struct {
 	// InsertDependencyIndexingJobFunc is an instance of a mock function
@@ -193,7 +193,7 @@ func (c AutoindexingServiceInsertDependencyIndexingJobFuncCall) Results() []inte
 
 // MockDependenciesService is a mock implementation of the
 // DependenciesService interface (from the package
-// github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing)
+// github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/background/dependencies)
 // used for unit testing.
 type MockDependenciesService struct {
 	// UpsertDependencyReposFunc is an instance of a mock function object
@@ -352,7 +352,7 @@ func (c DependenciesServiceUpsertDependencyReposFuncCall) Results() []interface{
 
 // MockGitserverRepoStore is a mock implementation of the GitserverRepoStore
 // interface (from the package
-// github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing)
+// github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/background/dependencies)
 // used for unit testing.
 type MockGitserverRepoStore struct {
 	// GetByNamesFunc is an instance of a mock function object controlling
@@ -515,7 +515,7 @@ func (c GitserverRepoStoreGetByNamesFuncCall) Results() []interface{} {
 
 // MockIndexEnqueuer is a mock implementation of the IndexEnqueuer interface
 // (from the package
-// github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing)
+// github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/background/dependencies)
 // used for unit testing.
 type MockIndexEnqueuer struct {
 	// QueueIndexesForPackageFunc is an instance of a mock function object
@@ -668,7 +668,7 @@ func (c IndexEnqueuerQueueIndexesForPackageFuncCall) Results() []interface{} {
 
 // MockIndexingExternalServiceStore is a mock implementation of the
 // IndexingExternalServiceStore interface (from the package
-// github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing)
+// github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/background/dependencies)
 // used for unit testing.
 type MockIndexingExternalServiceStore struct {
 	// ListFunc is an instance of a mock function object controlling the
@@ -826,7 +826,7 @@ func (c IndexingExternalServiceStoreListFuncCall) Results() []interface{} {
 
 // MockRepoUpdaterClient is a mock implementation of the RepoUpdaterClient
 // interface (from the package
-// github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing)
+// github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/background/dependencies)
 // used for unit testing.
 type MockRepoUpdaterClient struct {
 	// RepoLookupFunc is an instance of a mock function object controlling
@@ -982,7 +982,7 @@ func (c RepoUpdaterClientRepoLookupFuncCall) Results() []interface{} {
 
 // MockReposStore is a mock implementation of the ReposStore interface (from
 // the package
-// github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing)
+// github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/background/dependencies)
 // used for unit testing.
 type MockReposStore struct {
 	// ListMinimalReposFunc is an instance of a mock function object
@@ -1134,7 +1134,7 @@ func (c ReposStoreListMinimalReposFuncCall) Results() []interface{} {
 
 // MockSyncExternalServiceStore is a mock implementation of the
 // SyncExternalServiceStore interface (from the package
-// github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing)
+// github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/background/dependencies)
 // used for unit testing.
 type MockSyncExternalServiceStore struct {
 	// ListFunc is an instance of a mock function object controlling the
@@ -1418,7 +1418,7 @@ func (c SyncExternalServiceStoreUpsertFuncCall) Results() []interface{} {
 
 // MockUploadsService is a mock implementation of the UploadsService
 // interface (from the package
-// github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing)
+// github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/background/dependencies)
 // used for unit testing.
 type MockUploadsService struct {
 	// GetUploadByIDFunc is an instance of a mock function object
