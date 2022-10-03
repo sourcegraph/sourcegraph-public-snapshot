@@ -341,8 +341,7 @@ func TestProgressWriter(t *testing.T) {
 			for _, write := range testCase.writes {
 				_, _ = w.Write([]byte(write))
 			}
-			actual := w.String()
-			assert.Equal(t, testCase.text, actual)
+			assert.Equal(t, testCase.text, w.String())
 		})
 	}
 }
