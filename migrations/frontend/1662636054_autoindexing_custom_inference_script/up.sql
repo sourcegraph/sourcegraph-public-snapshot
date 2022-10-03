@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS codeintel_inference_scripts (
-    timestamp timestamptz NOT NULL default NOW(),
+    insert_timestamp timestamptz NOT NULL default NOW(),
     script text NOT NULL
 );
 

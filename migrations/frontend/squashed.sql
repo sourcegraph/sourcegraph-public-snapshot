@@ -1467,6 +1467,7 @@ CREATE SEQUENCE codeintel_autoindex_queue_id_seq
 ALTER SEQUENCE codeintel_autoindex_queue_id_seq OWNED BY codeintel_autoindex_queue.id;
 
 CREATE TABLE codeintel_inference_scripts (
+    insert_timestamp timestamp with time zone DEFAULT now() NOT NULL,
     script text NOT NULL
 );
 

@@ -6283,8 +6283,21 @@
       "Comment": "Contains auto-index job inference Lua scripts as an alternative to setting via environment variables.",
       "Columns": [
         {
-          "Name": "script",
+          "Name": "insert_timestamp",
           "Index": 1,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "script",
+          "Index": 2,
           "TypeName": "text",
           "IsNullable": false,
           "Default": "",

@@ -754,9 +754,10 @@ Indexes:
 
 # Table "public.codeintel_inference_scripts"
 ```
- Column | Type | Collation | Nullable | Default 
---------+------+-----------+----------+---------
- script | text |           | not null | 
+      Column      |           Type           | Collation | Nullable | Default 
+------------------+--------------------------+-----------+----------+---------
+ insert_timestamp | timestamp with time zone |           | not null | now()
+ script           | text                     |           | not null | 
 
 ```
 
