@@ -38,6 +38,7 @@ describe('SignInPage', () => {
                                     authProviders,
                                     resetPasswordEnabled: true,
                                     xhrHeaders: {},
+                                    experimentalFeatures: {},
                                 }}
                             />
                         }
@@ -63,6 +64,7 @@ describe('SignInPage', () => {
                                     authProviders,
                                     resetPasswordEnabled: true,
                                     xhrHeaders: {},
+                                    experimentalFeatures: {},
                                 }}
                             />
                         }
@@ -96,6 +98,7 @@ describe('SignInPage', () => {
                                     authProviders,
                                     xhrHeaders: {},
                                     resetPasswordEnabled: true,
+                                    experimentalFeatures: {},
                                 }}
                             />
                         }
