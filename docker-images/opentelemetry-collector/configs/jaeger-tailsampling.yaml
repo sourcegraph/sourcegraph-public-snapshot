@@ -1,4 +1,4 @@
-# Export traces to a Jaeger instance.
+# Export traces to a Jaeger instance, with tail sampling configured.
 #
 # Variables:
 #
@@ -39,6 +39,8 @@ processors:
     num_traces: 50000 # default value = 50000
     # Expected number of new traces (helps in allocating data structures)
     expected_new_traces_per_sec: 10 # default value = 0
+    # Recommended reading to understand how the policies are applied: 
+    # https://sourcegraph.com/github.com/open-telemetry/opentelemetry-collector-contrib@71dd19d2e59cd1f8aa9844461089d5c17efaa0ca/-/blob/processor/tailsamplingprocessor/processor.go?L214
     policies:
       [
           {
