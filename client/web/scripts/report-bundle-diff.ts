@@ -65,7 +65,7 @@ function reportToMarkdown(report: Report): string {
     const asyncSize = describeMetric(asyncSizeMetric, 10000) // 10kb
     const modules = describeMetric(modulesMetric, 0)
 
-    const url = `https://storage.cloud.google.com/sourcegraph_reports/statoscope-report-${process.env.BUILDKITE_COMMIT}#diff&diffWith=${diffWith}&hash=${hash}`
+    const url = `https://storage.cloud.google.com/sourcegraph_reports/statoscope-reports/${process.env.BRANCH}/#diff&diffWith=${diffWith}&hash=${hash}`
 
     return `${COMMENT_HEADING}
 

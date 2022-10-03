@@ -203,14 +203,33 @@ func addWebApp(pipeline *bk.Pipeline) {
 func addWebEnterpriseBuild(pipeline *bk.Pipeline) {
 	commit := os.Getenv("BUILDKITE_COMMIT")
 	branch := os.Getenv("BUILDKITE_BRANCH")
+
 	statsFilename := "stats-" + commit + ".json"
 
-	// When we are not on the main branch, we compute the merge base with main
-	// and download the associated stats.json.
-	//
-	// If this is present, we can compute a difference in bundle size caused by
-	// the changes in this branch and report that to the GitHub UI.
-	if branch != "main" {
+	cmds := []bk.StepOpt{
+		withYarnCache(),
+		bk.Cmd("dev/ci/yarn-build.sh client/web"),
+		bk.Env("NODE_ENV", "production"),
+		bk.Env("ENTERPRISE", "1"),
+		bk.Env("CHECK_BUNDLESIZE", "1"),
+		// To ensure the Bundlesize output can be diffed to the baseline on main
+		bk.Env("WEBPACK_USE_NAMED_CHUNKS", "true"),
+		// Emit a stats.json file for bundle size diffs
+		bk.Env("WEBPACK_EXPORT_STATS_FILENAME", statsFilename),
+	}
+
+	if branch == "main" {
+		// On main builds, we want to persist the generated stats file to the
+		// cache.
+		cmds = append(cmds, withBundleSizeCache(commit, statsFilename))
+	} else {
+		// On feature branch builds, we want to mount the persisted stats file
+		// from the commit that is last shared with main (aka the merge base).
+		//
+		// Note that the build will not overwrite the cached stats file, so the
+		// file will not be updated until the feature branch is merged into
+		// main.
+
 		var mergeBaseBytes []byte
 		mergeBaseBytes, err := exec.Command("git", "merge-base", "HEAD", "main").Output()
 		if err != nil {
@@ -222,37 +241,17 @@ func addWebEnterpriseBuild(pipeline *bk.Pipeline) {
 			// since we have no data for main yet.
 			mergeBase := "f12576386530d060ef4f2a620dcd5f95a2b2e9ac" // string(mergeBaseBytes)
 
-			pipeline.AddStep(":webpack::globe_with_meridians::moneybag: Enterprise build",
-				withYarnCache(),
-				// withBundleSizeCache(commit, statsFilename),
+			cmds = append(cmds,
 				withBundleSizeCache(mergeBase, "stats-"+mergeBase+".json"),
-				bk.Cmd("dev/ci/yarn-build.sh client/web"),
-				bk.Env("NODE_ENV", "production"),
-				bk.Env("ENTERPRISE", "1"),
-				bk.Env("CHECK_BUNDLESIZE", "1"),
 				bk.Env("BRANCH", branch),
 				bk.Env("COMMIT", commit),
 				bk.Env("MERGE_BASE", mergeBase),
-				// To ensure the Bundlesize output can be diffed to the baseline on main
-				bk.Env("WEBPACK_USE_NAMED_CHUNKS", "true"),
-				// Emit a stats.json file for bundle size diffs
-				bk.Env("WEBPACK_EXPORT_STATS_FILENAME", statsFilename))
-
-			return
+				bk.Cmd("dev/ci/report-bundle-diff.sh"),
+			)
 		}
 	}
 
-	pipeline.AddStep(":webpack::globe_with_meridians::moneybag: Enterprise build",
-		withYarnCache(),
-		withBundleSizeCache(commit, statsFilename),
-		bk.Cmd("dev/ci/yarn-build.sh client/web"),
-		bk.Env("NODE_ENV", "production"),
-		bk.Env("ENTERPRISE", "1"),
-		bk.Env("CHECK_BUNDLESIZE", "1"),
-		// To ensure the Bundlesize output can be diffed to the baseline on main
-		bk.Env("WEBPACK_USE_NAMED_CHUNKS", "true"),
-		// Emit a stats.json file for bundle size diffs
-		bk.Env("WEBPACK_EXPORT_STATS_FILENAME", statsFilename))
+	pipeline.AddStep(":webpack::globe_with_meridians::moneybag: Enterprise build", cmds...)
 }
 
 var browsers = []string{"chrome"}
