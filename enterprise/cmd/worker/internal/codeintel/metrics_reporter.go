@@ -11,9 +11,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executorqueue"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/background/cleanup"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -21,55 +22,78 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-type uploadJanitorJob struct{}
+type metricsReporterJob struct{}
 
-func NewUploadJanitorJob() job.Job {
-	return &uploadJanitorJob{}
+func NewMetricsReporterJob() job.Job {
+	return &metricsReporterJob{}
 }
 
-func (j *uploadJanitorJob) Description() string {
+func (j *metricsReporterJob) Description() string {
 	return ""
 }
 
-func (j *uploadJanitorJob) Config() []env.Config {
+func (j *metricsReporterJob) Config() []env.Config {
 	return []env.Config{
-		cleanup.ConfigInst,
+		configInst,
 	}
 }
 
-func (j *uploadJanitorJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
+func (j *metricsReporterJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	observationContext := &observation.Context{
-		Logger:     logger.Scoped("routines", "codeintel job routines"),
+		Logger:     logger.Scoped("routines", "metrics reporting routines"),
 		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
-	metrics := cleanup.NewMetrics(observationContext)
 
-	// Initialize stores
 	rawDB, err := workerdb.Init()
 	if err != nil {
 		return nil, err
 	}
 	db := database.NewDB(logger, rawDB)
-
 	rawCodeIntelDB, err := codeintel.InitCodeIntelDatabase()
 	if err != nil {
 		return nil, err
 	}
 	codeIntelDB := database.NewDB(logger, rawCodeIntelDB)
 
-	// Initialize clients
 	gitserverClient, err := codeintel.InitGitserverClient()
 	if err != nil {
 		return nil, err
 	}
-	repoUpdaterClient := codeintel.InitRepoUpdaterClient()
 
-	// Initialize services
+	repoUpdater := codeintel.InitRepoUpdaterClient()
 	uploadSvc := uploads.GetService(db, codeIntelDB, gitserverClient)
-	autoindexingSvc := autoindexing.GetService(db, uploadSvc, gitserverClient, repoUpdaterClient)
+	autoindexingSvc := autoindexing.GetService(db, uploadSvc, gitserverClient, repoUpdater)
 
-	return []goroutine.BackgroundRoutine{
-		cleanup.NewJanitor(db, uploadSvc, autoindexingSvc, observationContext.Logger, metrics),
-	}, nil
+	indexWorkerStore := autoindexingSvc.WorkerutilStore()
+
+	executorMetricsReporter, err := executorqueue.NewMetricReporter(observationContext, "codeintel", indexWorkerStore, configInst.MetricsConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	routines := []goroutine.BackgroundRoutine{
+		executorMetricsReporter,
+	}
+
+	return routines, nil
+}
+
+//
+//
+
+type janitorConfig struct {
+	MetricsConfig *executorqueue.Config
+}
+
+var configInst = &janitorConfig{}
+
+func (c *janitorConfig) Load() {
+	metricsConfig := executorqueue.InitMetricsConfig()
+	metricsConfig.Load()
+	c.MetricsConfig = metricsConfig
+}
+
+func (c *janitorConfig) Validate() error {
+	return c.MetricsConfig.Validate()
 }

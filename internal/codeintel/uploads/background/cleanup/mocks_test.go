@@ -13,6 +13,7 @@ import (
 
 	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	shared1 "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	store "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 // MockAutoIndexingService is a mock implementation of the
@@ -611,6 +612,9 @@ type MockUploadService struct {
 	// UpdateSourcedCommitsFunc is an instance of a mock function object
 	// controlling the behavior of the method UpdateSourcedCommits.
 	UpdateSourcedCommitsFunc *UploadServiceUpdateSourcedCommitsFunc
+	// WorkerutilStoreFunc is an instance of a mock function object
+	// controlling the behavior of the method WorkerutilStore.
+	WorkerutilStoreFunc *UploadServiceWorkerutilStoreFunc
 }
 
 // NewMockUploadService creates a new mock of the UploadService interface.
@@ -654,6 +658,11 @@ func NewMockUploadService() *MockUploadService {
 		},
 		UpdateSourcedCommitsFunc: &UploadServiceUpdateSourcedCommitsFunc{
 			defaultHook: func(context.Context, int, string, time.Time) (r0 int, r1 error) {
+				return
+			},
+		},
+		WorkerutilStoreFunc: &UploadServiceWorkerutilStoreFunc{
+			defaultHook: func() (r0 store.Store) {
 				return
 			},
 		},
@@ -704,6 +713,11 @@ func NewStrictMockUploadService() *MockUploadService {
 				panic("unexpected invocation of MockUploadService.UpdateSourcedCommits")
 			},
 		},
+		WorkerutilStoreFunc: &UploadServiceWorkerutilStoreFunc{
+			defaultHook: func() store.Store {
+				panic("unexpected invocation of MockUploadService.WorkerutilStore")
+			},
+		},
 	}
 }
 
@@ -735,6 +749,9 @@ func NewMockUploadServiceFrom(i UploadService) *MockUploadService {
 		},
 		UpdateSourcedCommitsFunc: &UploadServiceUpdateSourcedCommitsFunc{
 			defaultHook: i.UpdateSourcedCommits,
+		},
+		WorkerutilStoreFunc: &UploadServiceWorkerutilStoreFunc{
+			defaultHook: i.WorkerutilStore,
 		},
 	}
 }
@@ -1650,4 +1667,104 @@ func (c UploadServiceUpdateSourcedCommitsFuncCall) Args() []interface{} {
 // invocation.
 func (c UploadServiceUpdateSourcedCommitsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// UploadServiceWorkerutilStoreFunc describes the behavior when the
+// WorkerutilStore method of the parent MockUploadService instance is
+// invoked.
+type UploadServiceWorkerutilStoreFunc struct {
+	defaultHook func() store.Store
+	hooks       []func() store.Store
+	history     []UploadServiceWorkerutilStoreFuncCall
+	mutex       sync.Mutex
+}
+
+// WorkerutilStore delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockUploadService) WorkerutilStore() store.Store {
+	r0 := m.WorkerutilStoreFunc.nextHook()()
+	m.WorkerutilStoreFunc.appendCall(UploadServiceWorkerutilStoreFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the WorkerutilStore
+// method of the parent MockUploadService instance is invoked and the hook
+// queue is empty.
+func (f *UploadServiceWorkerutilStoreFunc) SetDefaultHook(hook func() store.Store) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// WorkerutilStore method of the parent MockUploadService instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *UploadServiceWorkerutilStoreFunc) PushHook(hook func() store.Store) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadServiceWorkerutilStoreFunc) SetDefaultReturn(r0 store.Store) {
+	f.SetDefaultHook(func() store.Store {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadServiceWorkerutilStoreFunc) PushReturn(r0 store.Store) {
+	f.PushHook(func() store.Store {
+		return r0
+	})
+}
+
+func (f *UploadServiceWorkerutilStoreFunc) nextHook() func() store.Store {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadServiceWorkerutilStoreFunc) appendCall(r0 UploadServiceWorkerutilStoreFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UploadServiceWorkerutilStoreFuncCall
+// objects describing the invocations of this function.
+func (f *UploadServiceWorkerutilStoreFunc) History() []UploadServiceWorkerutilStoreFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadServiceWorkerutilStoreFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadServiceWorkerutilStoreFuncCall is an object that describes an
+// invocation of method WorkerutilStore on an instance of MockUploadService.
+type UploadServiceWorkerutilStoreFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 store.Store
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadServiceWorkerutilStoreFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadServiceWorkerutilStoreFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }

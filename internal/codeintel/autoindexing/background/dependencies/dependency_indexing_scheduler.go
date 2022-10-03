@@ -68,11 +68,13 @@ func NewDependencyIndexingScheduler(
 	gitserverRepoStore GitserverRepoStore,
 	repoUpdaterClient RepoUpdaterClient,
 	enqueuer *autoindexing.Service,
-	pollInterval time.Duration,
-	numProcessorRoutines int,
+	// pollInterval time.Duration,
+	// numProcessorRoutines int,
 	workerMetrics workerutil.WorkerMetrics,
 ) *workerutil.Worker {
 	rootContext := actor.WithInternalActor(context.Background())
+	pollInterval := ConfigInst.DependencyIndexerSchedulerPollInterval
+	numProcessorRoutines := ConfigInst.DependencyIndexerSchedulerConcurrency
 
 	handler := &dependencyIndexingSchedulerHandler{
 		uploadsSvc:         uploadsSvc,

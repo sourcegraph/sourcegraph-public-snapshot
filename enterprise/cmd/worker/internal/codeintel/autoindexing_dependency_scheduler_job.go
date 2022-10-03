@@ -4,9 +4,8 @@ import (
 	"context"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"go.opentelemetry.io/otel"
-
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
@@ -24,24 +23,25 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 )
 
-type indexingJob struct{}
+type autoindexingDependencyScheduler struct{}
 
-func NewIndexingJob() job.Job {
-	return &indexingJob{}
+func NewAutoindexingDependencySchedulerJob() job.Job {
+	return &autoindexingDependencyScheduler{}
 }
 
-func (j *indexingJob) Description() string {
+func (j *autoindexingDependencyScheduler) Description() string {
 	return ""
 }
 
-func (j *indexingJob) Config() []env.Config {
-	return []env.Config{indexingConfigInst}
+func (j *autoindexingDependencyScheduler) Config() []env.Config {
+	return []env.Config{
+		bkgdependencies.ConfigInst,
+	}
 }
 
-func (j *indexingJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	logger = logger.Scoped("routines", "indexing job routines")
+func (j *autoindexingDependencyScheduler) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	observationContext := &observation.Context{
-		Logger:     logger.Scoped("routines", "indexing job routines"),
+		Logger:     logger.Scoped("routines", "codeintel autoindexing dependency scheduling routines"),
 		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
@@ -52,6 +52,7 @@ func (j *indexingJob) Routines(startupCtx context.Context, logger log.Logger) ([
 		return nil, err
 	}
 	db := database.NewDB(logger, rawDB)
+
 	repoStore := database.ReposWith(logger, db)
 	extSvcStore := db.ExternalServices()
 	gitserverRepoStore := db.GitserverRepos()
@@ -60,31 +61,31 @@ func (j *indexingJob) Routines(startupCtx context.Context, logger log.Logger) ([
 	if err != nil {
 		return nil, err
 	}
-	codeIntelDB := database.NewDB(logger, rawCodeIntelDB)
+	codeintelDB := database.NewDB(logger, rawCodeIntelDB)
 
-	// Initialize clients
-	repoUpdaterClient := codeintel.InitRepoUpdaterClient()
+	// Initialize necessary clients
 	gitserverClient, err := codeintel.InitGitserverClient()
 	if err != nil {
 		return nil, err
 	}
+	repoUpdater := codeintel.InitRepoUpdaterClient()
 
-	// Get services
-	uploadSvc := uploads.GetService(db, codeIntelDB, gitserverClient)
+	// Initialize services
+	uploadSvc := uploads.GetService(db, codeintelDB, gitserverClient)
+	autoindexingSvc := autoindexing.GetService(db, uploadSvc, gitserverClient, repoUpdater)
 	depsSvc := dependencies.GetService(db)
-	autoindexingSvc := autoindexing.GetService(db, uploadSvc, gitserverClient, repoUpdaterClient)
 	dependencySyncStore := autoindexingSvc.DependencySyncStore()
 	dependencyIndexingStore := autoindexingSvc.DependencyIndexingStore()
 
-	// Initialize metrics
-	dbworker.InitPrometheusMetric(observationContext, dependencySyncStore, "codeintel", "dependency_index", nil)
 	syncMetrics := workerutil.NewMetrics(observationContext, "codeintel_dependency_index_processor")
 	queueingMetrics := workerutil.NewMetrics(observationContext, "codeintel_dependency_index_queueing")
 
-	routines := []goroutine.BackgroundRoutine{
-		bkgdependencies.NewDependencySyncScheduler(uploadSvc, depsSvc, autoindexingSvc, dependencySyncStore, extSvcStore, syncMetrics, observationContext),
-		bkgdependencies.NewDependencyIndexingScheduler(uploadSvc, repoStore, dependencyIndexingStore, extSvcStore, gitserverRepoStore, repoUpdaterClient, autoindexingSvc, indexingConfigInst.DependencyIndexerSchedulerPollInterval, indexingConfigInst.DependencyIndexerSchedulerConcurrency, queueingMetrics),
-	}
+	// Initialize metrics
+	dbworker.InitPrometheusMetric(observationContext, dependencySyncStore, "codeintel", "dependency_index", nil)
 
-	return routines, nil
+	// Initialize services
+	return []goroutine.BackgroundRoutine{
+		bkgdependencies.NewDependencySyncScheduler(uploadSvc, depsSvc, autoindexingSvc, dependencySyncStore, extSvcStore, syncMetrics, observationContext),
+		bkgdependencies.NewDependencyIndexingScheduler(uploadSvc, repoStore, dependencyIndexingStore, extSvcStore, gitserverRepoStore, repoUpdater, autoindexingSvc, queueingMetrics),
+	}, nil
 }

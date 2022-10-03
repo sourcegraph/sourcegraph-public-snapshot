@@ -1,4 +1,4 @@
-package janitor
+package cleanup
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
@@ -7,20 +7,13 @@ import (
 )
 
 type metrics struct {
-	numUploadResets        prometheus.Counter
-	numUploadResetFailures prometheus.Counter
-	numUploadResetErrors   prometheus.Counter
-
-	numIndexResets        prometheus.Counter
-	numIndexResetFailures prometheus.Counter
-	numIndexResetErrors   prometheus.Counter
-
+	numIndexResets                  prometheus.Counter
+	numIndexResetFailures           prometheus.Counter
+	numIndexResetErrors             prometheus.Counter
 	numDependencyIndexResets        prometheus.Counter
 	numDependencyIndexResetFailures prometheus.Counter
 	numDependencyIndexResetErrors   prometheus.Counter
 }
-
-var NewMetrics = newMetrics
 
 func newMetrics(observationContext *observation.Context) *metrics {
 	counter := func(name, help string) prometheus.Counter {
@@ -32,19 +25,6 @@ func newMetrics(observationContext *observation.Context) *metrics {
 		observationContext.Registerer.MustRegister(counter)
 		return counter
 	}
-
-	numUploadResets := counter(
-		"src_codeintel_background_upload_record_resets_total",
-		"The number of upload record resets.",
-	)
-	numUploadResetFailures := counter(
-		"src_codeintel_background_upload_record_reset_failures_total",
-		"The number of upload reset failures.",
-	)
-	numUploadResetErrors := counter(
-		"src_codeintel_background_upload_record_reset_errors_total",
-		"The number of errors that occur during upload record resets.",
-	)
 
 	numIndexResets := counter(
 		"src_codeintel_background_index_record_resets_total",
@@ -73,14 +53,9 @@ func newMetrics(observationContext *observation.Context) *metrics {
 	)
 
 	return &metrics{
-		numUploadResets:        numUploadResets,
-		numUploadResetFailures: numUploadResetFailures,
-		numUploadResetErrors:   numUploadResetErrors,
-
-		numIndexResets:        numIndexResets,
-		numIndexResetFailures: numIndexResetFailures,
-		numIndexResetErrors:   numIndexResetErrors,
-
+		numIndexResets:                  numIndexResets,
+		numIndexResetFailures:           numIndexResetFailures,
+		numIndexResetErrors:             numIndexResetErrors,
 		numDependencyIndexResets:        numDependencyIndexResets,
 		numDependencyIndexResetFailures: numDependencyIndexResetFailures,
 		numDependencyIndexResetErrors:   numDependencyIndexResetErrors,

@@ -6,6 +6,7 @@ import (
 
 	sharedIndexes "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	sharedUploads "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 type UploadService interface {
@@ -19,6 +20,9 @@ type UploadService interface {
 	HardDeleteExpiredUploads(ctx context.Context) (int, error)
 
 	DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (int, error)
+
+	// Workerutil
+	WorkerutilStore() dbworkerstore.Store
 }
 
 type AutoIndexingService interface {
