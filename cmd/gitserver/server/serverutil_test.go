@@ -12,6 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetTlsExternal(t *testing.T) {
@@ -139,6 +140,71 @@ func TestConfigureRemoteGitCommand(t *testing.T) {
 			if !reflect.DeepEqual(test.input.Args, test.expectedArgs) {
 				t.Errorf("\ngot:  %s\nwant: %s\n", test.input.Args, test.expectedArgs)
 			}
+		})
+	}
+}
+
+func TestConfigureRemoteP4FusionCommandWithoutCArgs(t *testing.T) {
+	expectedEnv := []string{
+		"GIT_ASKPASS=true",
+		"GIT_SSH_COMMAND=ssh -o BatchMode=yes -o ConnectTimeout=30",
+		"GIT_HTTP_USER_AGENT=git/Sourcegraph-Bot",
+	}
+	input := exec.Command("p4-fusion", "--path", "some_path", "--client", "some_client", "--user", "some_user")
+	expectedArgs := []string{"p4-fusion", "--path", "some_path", "--client", "some_client", "--user", "some_user"}
+
+	configureRemoteGitCommand(input, &tlsConfig{})
+	assert.Equal(t, expectedEnv, input.Env)
+	assert.Equal(t, expectedArgs, input.Args)
+}
+
+func TestRemoveUnsupportedP4Args(t *testing.T) {
+	tests := []struct {
+		name         string
+		input        []string
+		expectedArgs []string
+	}{
+		{
+			name:         "empty args",
+			input:        []string{},
+			expectedArgs: []string{},
+		},
+		{
+			name:         "single -c token without a follow-up, removed",
+			input:        []string{"-c"},
+			expectedArgs: []string{},
+		},
+		{
+			name:         "no -c args, nothing removed",
+			input:        []string{"normal", "args"},
+			expectedArgs: []string{"normal", "args"},
+		},
+		{
+			name:         "single -c arg removed",
+			input:        []string{"normal", "args", "-c", "oops", "normal_again"},
+			expectedArgs: []string{"normal", "args", "normal_again"},
+		},
+		{
+			name:         "multiple -c args removed",
+			input:        []string{"normal", "args", "-c", "oops", "normal_again", "-c", "oops2"},
+			expectedArgs: []string{"normal", "args", "normal_again"},
+		},
+		{
+			name:         "repeated -c token",
+			input:        []string{"-c", "-c", "-c", "not_good", "normal", "args"},
+			expectedArgs: []string{"normal", "args"},
+		},
+		{
+			name:         "only -c args, everything removed",
+			input:        []string{"-c", "oops", "-c", "-c", "not_good"},
+			expectedArgs: []string{},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			actualArgs := removeUnsupportedP4Args(test.input)
+			assert.Equal(t, test.expectedArgs, actualArgs)
 		})
 	}
 }
