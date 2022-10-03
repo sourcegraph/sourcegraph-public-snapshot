@@ -218,7 +218,7 @@ func addWebEnterpriseBuild(pipeline *bk.Pipeline) {
 		bk.Env("WEBPACK_EXPORT_STATS_FILENAME", statsFilename),
 	}
 
-	if branch == "ps/report-bundle-size-diffs" {
+	if branch == "main" {
 		// On main builds, we want to persist the generated stats file to the
 		// cache.
 		cmds = append(cmds, withBundleSizeCache(commit, statsFilename))
@@ -239,7 +239,7 @@ func addWebEnterpriseBuild(pipeline *bk.Pipeline) {
 		if mergeBaseBytes != nil {
 			// For testing purposes we assume that this is the latest main build
 			// since we have no data for main yet.
-			mergeBase := "f12576386530d060ef4f2a620dcd5f95a2b2e9ac" // string(mergeBaseBytes)
+			mergeBase := "fcf21d15d4369f731504820dfd4526b5df7549b4" // string(mergeBaseBytes)
 
 			cmds = append(cmds,
 				withBundleSizeCache(mergeBase, "stats-"+mergeBase+".json"),
