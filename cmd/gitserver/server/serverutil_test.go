@@ -4,7 +4,6 @@ import (
 	"net/http/httptest"
 	"os"
 	"os/exec"
-	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -129,17 +128,13 @@ func TestConfigureRemoteGitCommand(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(strings.Join(test.input.Args, " "), func(t *testing.T) {
-			conf := test.tlsConfig
-			if conf == nil {
-				conf = &tlsConfig{}
+			config := test.tlsConfig
+			if config == nil {
+				config = &tlsConfig{}
 			}
-			configureRemoteGitCommand(test.input, conf)
-			if !reflect.DeepEqual(test.input.Env, test.expectedEnv) {
-				t.Errorf("\ngot:  %s\nwant: %s\n", test.input.Env, test.expectedEnv)
-			}
-			if !reflect.DeepEqual(test.input.Args, test.expectedArgs) {
-				t.Errorf("\ngot:  %s\nwant: %s\n", test.input.Args, test.expectedArgs)
-			}
+			configureRemoteGitCommand(test.input, config)
+			assert.Equal(t, test.expectedEnv, test.input.Env)
+			assert.Equal(t, test.expectedArgs, test.input.Args)
 		})
 	}
 }
@@ -234,9 +229,7 @@ func TestConfigureRemoteGitCommand_tls(t *testing.T) {
 		cmd := exec.Command("git", "clone")
 		configureRemoteGitCommand(cmd, tc.conf)
 		want := append(baseEnv, tc.want...)
-		if !reflect.DeepEqual(cmd.Env, want) {
-			t.Errorf("mismatch for %#+v (-want +got):\n%s", tc.conf, cmp.Diff(want, cmd.Env))
-		}
+		assert.Equal(t, want, cmd.Env)
 	}
 }
 
@@ -348,9 +341,7 @@ func TestProgressWriter(t *testing.T) {
 			for _, write := range testCase.writes {
 				_, _ = w.Write([]byte(write))
 			}
-			if actual := w.String(); testCase.text != actual {
-				t.Fatalf("\ngot:\n%s\nwant:\n%s\n", actual, testCase.text)
-			}
+			assert.Equal(t, testCase.text, w.String())
 		})
 	}
 }
