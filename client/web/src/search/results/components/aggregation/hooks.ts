@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useLayoutEffect, useMemo, useState } from 'react'
 
 import { gql, useQuery } from '@apollo/client'
 import { useHistory, useLocation } from 'react-router'
@@ -287,6 +287,8 @@ export const useSearchAggregationData = (input: SearchAggregationDataInput): Sea
                 // skip: true resets data field in the useQuery hook, in order to use previously
                 // saved data we use useState to store data outside useQuery hook
                 setState({ data, calculatedMode: calculatedAggregationMode })
+
+                sendAggregationPing({ data, aggregationMode, extendedTimeout, proactive, telemetryService })
             },
         }
     )
@@ -297,27 +299,12 @@ export const useSearchAggregationData = (input: SearchAggregationDataInput): Sea
         setState(state => ({ ...state, calculatedMode: null }))
     }, [aggregationQuery, patternType, extendedTimeout])
 
-    // We only want to send pings when data changes
-    // so we store the previous data object for comparison
-
-    // Example scenario that would result in duplicate ProactiveLimitHit pings:
-    // 1. Aggregation times out
-    // 2. User clicks "Run aggregation" which updates extendedTimeout to true
-    // 3. This causes hook to run again. We still have aggregationUnavailable
-    //    because data hasn't updated yet (the request is still in flight)
-    const previousData = useRef<GetSearchAggregationResult | undefined>(state.data)
-
     if (loading) {
         return { data: undefined, error: undefined, loading: true }
     }
 
     if (error) {
         return { data: state.data, error, loading: false }
-    }
-
-    if (state.data !== previousData.current) {
-        previousData.current = state.data
-        sendAggregationPing({ data: state.data, aggregationMode, extendedTimeout, proactive, telemetryService })
     }
 
     return {
