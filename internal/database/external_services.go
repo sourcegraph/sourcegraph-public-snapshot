@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -982,6 +983,17 @@ func (e *externalServiceStore) Delete(ctx context.Context, id int64) (err error)
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
+
+	// We take an advisory lock here and also when syncing an external service to
+	// ensure that they can't happen at the same time.
+	lock := locker.NewWith(tx, "external_service")
+	locked, err := lock.LockInTransaction(ctx, locker.StringKey(fmt.Sprintf("%d", id)), false)
+	if err != nil {
+		return errors.Wrap(err, "getting advisory lock")
+	}
+	if !locked {
+		return errors.Errorf("could not get advisory lock for service %d", id)
+	}
 
 	// Create a temporary table where we'll store repos affected by the deletion of
 	// the external service
