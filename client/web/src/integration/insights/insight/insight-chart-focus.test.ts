@@ -2,6 +2,7 @@ import assert from 'assert'
 
 import { Key } from 'ts-key-enum'
 
+import { hasFocus } from '@sourcegraph/shared/src/testing/dom-utils'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
@@ -128,12 +129,3 @@ describe('Code insights [Insight Card] should has a proper focus management ', (
         }
     })
 })
-
-async function hasFocus(driver: Driver, selector: string): Promise<boolean> {
-    return driver.page.evaluate(selector => {
-        const element = document.querySelector(selector)
-        const focusedElement = document.activeElement
-
-        return element === focusedElement
-    }, selector)
-}
