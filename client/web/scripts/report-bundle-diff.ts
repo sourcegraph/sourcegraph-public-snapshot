@@ -82,10 +82,6 @@ function reportToMarkdown(report: Report): string {
 - \`Total size\` is the size of the initial bundle + all the async loaded chunks
 - \`Async size\` is the size of all the async loaded chunks
 - \`Modules\` is the number of modules in the initial bundle
-
-\`\`\`
-${JSON.stringify(report, null, 2)}
-\`\`\`
 </details>`
 }
 
