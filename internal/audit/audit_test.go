@@ -139,7 +139,7 @@ func TestLog(t *testing.T) {
 				t.Fatal("expected to capture one log exactly")
 			}
 
-			assert.Equal(t, "test audit action", logs[0].Message)
+			assert.Contains(t, logs[0].Message, "test audit action")
 			assert.Equal(t, tc.expectedEntry, logs[0].Fields)
 		})
 	}

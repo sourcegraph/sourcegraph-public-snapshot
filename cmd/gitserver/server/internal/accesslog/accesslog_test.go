@@ -79,7 +79,7 @@ func TestHTTPMiddleware(t *testing.T) {
 		logs := exportLogs()
 		require.Len(t, logs, 2)
 		assert.Equal(t, accessLoggingEnabledMessage, logs[0].Message)
-		assert.Equal(t, accessEventMessage, logs[1].Message)
+		assert.Contains(t, logs[1].Message, accessEventMessage)
 		assert.Equal(t, "github.com/foo/bar", logs[1].Fields["params"].(map[string]any)["repo"])
 
 		auditLogFields := map[string]interface{}{
@@ -142,7 +142,7 @@ func TestHTTPMiddleware(t *testing.T) {
 		logs = exportLogs()
 		require.Len(t, logs, 2)
 		assert.Equal(t, accessLoggingEnabledMessage, logs[0].Message)
-		assert.Equal(t, accessEventMessage, logs[1].Message)
+		assert.Contains(t, logs[1].Message, accessEventMessage)
 	})
 }
 
