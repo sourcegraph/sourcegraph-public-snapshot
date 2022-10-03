@@ -143,6 +143,24 @@ func TestConfigureRemoteGitCommand(t *testing.T) {
 	}
 }
 
+func TestConfigureRemoteP4FusionCommandWithoutCArgs(t *testing.T) {
+	expectedEnv := []string{
+		"GIT_ASKPASS=true",
+		"GIT_SSH_COMMAND=ssh -o BatchMode=yes -o ConnectTimeout=30",
+		"GIT_HTTP_USER_AGENT=git/Sourcegraph-Bot",
+	}
+	input := exec.Command("p4-fusion", "--path", "some_path", "--client", "some_client", "--user", "some_user")
+	expectedArgs := []string{"p4-fusion", "credential.helper=", "protocol.version=2", "--path", "some_path", "--client", "some_client", "--user", "some_user"}
+
+	configureRemoteGitCommand(input, &tlsConfig{})
+	if !reflect.DeepEqual(input.Env, expectedEnv) {
+		t.Errorf("\ngot:  %s\nwant: %s\n", input.Env, expectedEnv)
+	}
+	if !reflect.DeepEqual(input.Args, expectedArgs) {
+		t.Errorf("\ngot:  %s\nwant: %s\n", input.Args, expectedArgs)
+	}
+}
+
 func TestConfigureRemoteGitCommand_tls(t *testing.T) {
 	baseEnv := []string{
 		"GIT_ASKPASS=true",

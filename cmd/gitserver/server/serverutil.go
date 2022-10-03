@@ -239,6 +239,19 @@ func configureRemoteGitCommand(cmd *exec.Cmd, tlsConf *tlsConfig) {
 		extraArgs = append(extraArgs, "-c", "protocol.version=2")
 	}
 
+	// p4-fusion command doesn't support -c argument and passing this causes warning
+	// logs. This removes all -c arguments
+	if executable == "p4-fusion" {
+		idx := 0
+		for _, arg := range extraArgs {
+			if arg != "-c" {
+				extraArgs[idx] = arg
+				idx++
+			}
+		}
+		extraArgs = extraArgs[:idx]
+	}
+
 	cmd.Args = append(cmd.Args[:1], append(extraArgs, cmd.Args[1:]...)...)
 }
 
