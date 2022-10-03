@@ -6,6 +6,7 @@ import (
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
@@ -21,7 +22,7 @@ var scanPolicies = basestore.NewSliceScanner(scanPolicy)
 // scanConfigurationPolicies scans a slice of configuration policies from the return value of `*Store.query`.
 var scanConfigurationPolicies = basestore.NewSliceScanner(scanConfigurationPolicy)
 
-func scanConfigurationPolicy(s dbutil.Scanner) (configurationPolicy shared.ConfigurationPolicy, err error) {
+func scanConfigurationPolicy(s dbutil.Scanner) (configurationPolicy types.ConfigurationPolicy, err error) {
 	var repositoryPatterns []string
 	var retentionDurationHours, indexCommitMaxAgeHours *int
 

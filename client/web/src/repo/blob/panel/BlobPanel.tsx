@@ -14,6 +14,7 @@ import { ReferenceParameters, TextDocumentPositionParameters } from '@sourcegrap
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { isErrorLike } from '@sourcegraph/common'
 import * as clientType from '@sourcegraph/extension-api-types'
+import { FetchFileParameters } from '@sourcegraph/search-ui'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { Activation, ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -42,6 +43,8 @@ interface Props
     repoID: Scalars['ID']
     repoName: string
     commitID: string
+
+    fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
 
 export type BlobPanelTabID = 'info' | 'def' | 'references' | 'impl' | 'typedef' | 'history'
@@ -78,6 +81,7 @@ function useBlobPanelViews({
     isLightTheme,
     platformContext,
     telemetryService,
+    fetchHighlightedFileLineRanges,
 }: Props): void {
     const subscriptions = useMemo(() => new Subscription(), [])
 
@@ -264,6 +268,7 @@ function useBlobPanelViews({
                                     key="references"
                                     externalHistory={history}
                                     externalLocation={location}
+                                    fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                 />
                             ) : (
                                 <></>
@@ -284,6 +289,7 @@ function useBlobPanelViews({
             telemetryService,
             platformContext,
             extensionsController,
+            fetchHighlightedFileLineRanges,
         ])
     )
 

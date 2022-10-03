@@ -10,7 +10,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // GitTreeTranslator translates a position within a git tree at a source commit into the
@@ -26,14 +27,14 @@ type GitTreeTranslator interface {
 	// target commit. The target commit's path and position are returned, along with a boolean flag
 	// indicating that the translation was successful. If revese is true, then the source and
 	// target commits are swapped.
-	GetTargetCommitPositionFromSourcePosition(ctx context.Context, commit string, px shared.Position, reverse bool) (string, shared.Position, bool, error)
+	GetTargetCommitPositionFromSourcePosition(ctx context.Context, commit string, px types.Position, reverse bool) (string, types.Position, bool, error)
 	// AdjustPosition
 
 	// GetTargetCommitRangeFromSourceRange translates the given range from the source commit into the given target
 	// commit. The target commit's path and range are returned, along with a boolean flag indicating
 	// that the translation was successful. If revese is true, then the source and target commits
 	// are swapped.
-	GetTargetCommitRangeFromSourceRange(ctx context.Context, commit, path string, rx shared.Range, reverse bool) (string, shared.Range, bool, error)
+	GetTargetCommitRangeFromSourceRange(ctx context.Context, commit, path string, rx types.Range, reverse bool) (string, types.Range, bool, error)
 }
 
 type gitTreeTranslator struct {
@@ -43,7 +44,7 @@ type gitTreeTranslator struct {
 }
 
 type requestArgs struct {
-	repo   *types.Repo
+	repo   *sgtypes.Repo
 	commit string
 	path   string
 }
@@ -92,10 +93,10 @@ func (g *gitTreeTranslator) GetTargetCommitPathFromSourcePath(ctx context.Contex
 // indicating that the translation was successful. If revese is true, then the source and
 // target commits are swapped.
 // TODO: No todo just letting me know that I updated path just on this one. Need to do it like that.
-func (g *gitTreeTranslator) GetTargetCommitPositionFromSourcePosition(ctx context.Context, commit string, px shared.Position, reverse bool) (string, shared.Position, bool, error) {
+func (g *gitTreeTranslator) GetTargetCommitPositionFromSourcePosition(ctx context.Context, commit string, px types.Position, reverse bool) (string, types.Position, bool, error) {
 	hunks, err := g.readCachedHunks(ctx, g.localRequestArgs.repo, g.localRequestArgs.commit, commit, g.localRequestArgs.path, reverse)
 	if err != nil {
-		return "", shared.Position{}, false, err
+		return "", types.Position{}, false, err
 	}
 
 	commitPosition, ok := translatePosition(hunks, px)
@@ -106,10 +107,10 @@ func (g *gitTreeTranslator) GetTargetCommitPositionFromSourcePosition(ctx contex
 // commit. The target commit path and range are returned, along with a boolean flag indicating
 // that the translation was successful. If revese is true, then the source and target commits
 // are swapped.
-func (g *gitTreeTranslator) GetTargetCommitRangeFromSourceRange(ctx context.Context, commit, path string, rx shared.Range, reverse bool) (string, shared.Range, bool, error) {
+func (g *gitTreeTranslator) GetTargetCommitRangeFromSourceRange(ctx context.Context, commit, path string, rx types.Range, reverse bool) (string, types.Range, bool, error) {
 	hunks, err := g.readCachedHunks(ctx, g.localRequestArgs.repo, g.localRequestArgs.commit, commit, path, reverse)
 	if err != nil {
-		return "", shared.Range{}, false, err
+		return "", types.Range{}, false, err
 	}
 
 	commitRange, ok := translateRange(hunks, rx)
@@ -121,7 +122,7 @@ func (g *gitTreeTranslator) GetTargetCommitRangeFromSourceRange(ctx context.Cont
 // source and target commits are swapped. If the git tree translator has a hunk cache, it
 // will read from it before attempting to contact a remote server, and populate the cache
 // with new results
-func (g *gitTreeTranslator) readCachedHunks(ctx context.Context, repo *types.Repo, sourceCommit, targetCommit, path string, reverse bool) ([]*diff.Hunk, error) {
+func (g *gitTreeTranslator) readCachedHunks(ctx context.Context, repo *sgtypes.Repo, sourceCommit, targetCommit, path string, reverse bool) ([]*diff.Hunk, error) {
 	if sourceCommit == targetCommit {
 		return nil, nil
 	}
@@ -154,7 +155,7 @@ func (g *gitTreeTranslator) readCachedHunks(ctx context.Context, repo *types.Rep
 
 // readHunks returns a position-ordered slice of changes (additions or deletions) of
 // the given path between the given source and target commits.
-func (g *gitTreeTranslator) readHunks(ctx context.Context, repo *types.Repo, sourceCommit, targetCommit, path string) ([]*diff.Hunk, error) {
+func (g *gitTreeTranslator) readHunks(ctx context.Context, repo *sgtypes.Repo, sourceCommit, targetCommit, path string) ([]*diff.Hunk, error) {
 	return g.client.DiffPath(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, sourceCommit, targetCommit, path)
 }
 
@@ -174,31 +175,31 @@ func findHunk(hunks []*diff.Hunk, line int) *diff.Hunk {
 // translateRange translates the given range by calling translatePosition on both of the range's
 // endpoints. This function returns a boolean flag indicating that the translation was
 // successful (which occurs when both endpoints of the range can be translated).
-func translateRange(hunks []*diff.Hunk, r shared.Range) (shared.Range, bool) {
+func translateRange(hunks []*diff.Hunk, r types.Range) (types.Range, bool) {
 	start, ok := translatePosition(hunks, r.Start)
 	if !ok {
-		return shared.Range{}, false
+		return types.Range{}, false
 	}
 
 	end, ok := translatePosition(hunks, r.End)
 	if !ok {
-		return shared.Range{}, false
+		return types.Range{}, false
 	}
 
-	return shared.Range{Start: start, End: end}, true
+	return types.Range{Start: start, End: end}, true
 }
 
 // translatePosition translates the given position by setting the line number based on the
 // number of additions and deletions that occur before that line. This function returns a
 // boolean flag indicating that the translation is successful. A translation fails when the
 // line indicated by the position has been edited.
-func translatePosition(hunks []*diff.Hunk, pos shared.Position) (shared.Position, bool) {
+func translatePosition(hunks []*diff.Hunk, pos types.Position) (types.Position, bool) {
 	line, ok := translateLineNumbers(hunks, pos.Line)
 	if !ok {
-		return shared.Position{}, false
+		return types.Position{}, false
 	}
 
-	return shared.Position{Line: line, Character: pos.Character}, true
+	return types.Position{Line: line, Character: pos.Character}, true
 }
 
 // translateLineNumbers translates the given line number based on the number of additions and deletions

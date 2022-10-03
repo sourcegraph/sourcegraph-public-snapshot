@@ -29,14 +29,22 @@ export function queryRepositoryComparisonFileDiffs(args: {
     head: string | null
     first?: number
     after?: string | null
+    paths?: string[]
 }): Observable<GQL.IFileDiffConnection> {
     return queryGraphQL(
         gql`
-            query RepositoryComparisonDiff($repo: ID!, $base: String, $head: String, $first: Int, $after: String) {
+            query RepositoryComparisonDiff(
+                $repo: ID!
+                $base: String
+                $head: String
+                $first: Int
+                $after: String
+                $paths: [String!]
+            ) {
                 node(id: $repo) {
                     ... on Repository {
                         comparison(base: $base, head: $head) {
-                            fileDiffs(first: $first, after: $after) {
+                            fileDiffs(first: $first, after: $after, paths: $paths) {
                                 nodes {
                                     ...FileDiffFields
                                 }
@@ -84,6 +92,10 @@ interface RepositoryCompareDiffPageProps
 
     /** The head of the comparison. */
     head: { repoName: string; repoID: Scalars['ID']; revision: string | null; commitID: string }
+
+    /** An optional path of a specific file to compare */
+    path: string | null
+
     hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
 }
 
@@ -130,5 +142,8 @@ export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCom
             repo: this.props.repo.id,
             base: this.props.base.commitID,
             head: this.props.head.commitID,
+            // All of our user journeys are designed for just a single file path, so the component APIs are set up to
+            // enforce that, even though the GraphQL query is able to support any number of paths
+            paths: this.props.path ? [this.props.path] : [],
         })
 }

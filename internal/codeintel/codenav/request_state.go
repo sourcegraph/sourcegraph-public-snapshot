@@ -5,7 +5,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	sgTypes "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type RequestState struct {
@@ -25,9 +26,9 @@ type RequestState struct {
 }
 
 func NewRequestState(
-	uploads []shared.Dump,
+	uploads []types.Dump,
 	authChecker authz.SubRepoPermissionChecker,
-	gitclient shared.GitserverClient, repo *types.Repo, commit, path string,
+	gitclient shared.GitserverClient, repo *sgTypes.Repo, commit, path string,
 	maxIndexes int,
 	hunkCacheSize int,
 ) RequestState {
@@ -41,13 +42,13 @@ func NewRequestState(
 	return *r
 }
 
-func (r RequestState) GetCacheUploads() []shared.Dump {
+func (r RequestState) GetCacheUploads() []types.Dump {
 	return r.dataLoader.uploads
 }
 
-func (r RequestState) GetCacheUploadsAtIndex(index int) shared.Dump {
+func (r RequestState) GetCacheUploadsAtIndex(index int) types.Dump {
 	if index < 0 || index >= len(r.dataLoader.uploads) {
-		return shared.Dump{}
+		return types.Dump{}
 	}
 
 	return r.dataLoader.uploads[index]
@@ -57,14 +58,14 @@ func (r *RequestState) SetAuthChecker(authChecker authz.SubRepoPermissionChecker
 	r.authChecker = authChecker
 }
 
-func (r *RequestState) SetUploadsDataLoader(uploads []shared.Dump) {
+func (r *RequestState) SetUploadsDataLoader(uploads []types.Dump) {
 	r.dataLoader = NewUploadsDataLoader()
 	for _, upload := range uploads {
 		r.dataLoader.AddUpload(upload)
 	}
 }
 
-func (r *RequestState) SetLocalGitTreeTranslator(client shared.GitserverClient, repo *types.Repo, commit, path string, hunkCacheSize int) error {
+func (r *RequestState) SetLocalGitTreeTranslator(client shared.GitserverClient, repo *sgTypes.Repo, commit, path string, hunkCacheSize int) error {
 	hunkCache, err := NewHunkCache(hunkCacheSize)
 	if err != nil {
 		return err
@@ -90,18 +91,18 @@ func (r *RequestState) SetMaximumIndexesPerMonikerSearch(maxNumber int) {
 }
 
 type UploadsDataLoader struct {
-	uploads     []shared.Dump
-	uploadsByID map[int]shared.Dump
+	uploads     []types.Dump
+	uploadsByID map[int]types.Dump
 	cacheMutex  sync.RWMutex
 }
 
 func NewUploadsDataLoader() *UploadsDataLoader {
 	return &UploadsDataLoader{
-		uploadsByID: make(map[int]shared.Dump),
+		uploadsByID: make(map[int]types.Dump),
 	}
 }
 
-func (l *UploadsDataLoader) GetUploadFromCacheMap(id int) (shared.Dump, bool) {
+func (l *UploadsDataLoader) GetUploadFromCacheMap(id int) (types.Dump, bool) {
 	l.cacheMutex.RLock()
 	defer l.cacheMutex.RUnlock()
 
@@ -109,7 +110,7 @@ func (l *UploadsDataLoader) GetUploadFromCacheMap(id int) (shared.Dump, bool) {
 	return upload, ok
 }
 
-func (l *UploadsDataLoader) SetUploadInCacheMap(uploads []shared.Dump) {
+func (l *UploadsDataLoader) SetUploadInCacheMap(uploads []types.Dump) {
 	l.cacheMutex.Lock()
 	defer l.cacheMutex.Unlock()
 
@@ -118,7 +119,7 @@ func (l *UploadsDataLoader) SetUploadInCacheMap(uploads []shared.Dump) {
 	}
 }
 
-func (l *UploadsDataLoader) AddUpload(dump shared.Dump) {
+func (l *UploadsDataLoader) AddUpload(dump types.Dump) {
 	l.cacheMutex.Lock()
 	defer l.cacheMutex.Unlock()
 

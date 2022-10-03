@@ -931,20 +931,8 @@ A [multi-version upgrade](../../updates/index.md#multi-version-upgrades) is a do
 
 To perform a multi-version upgrade on a Sourcegraph instance running on Kubernetes with Helm:
 
-1. Spin down any pods that access the database. This must be done for the following deployments and stateful sets listed below. This can be performed directly via a series of `kubectl` commands (given below), or by setting `replicas: 0` in each deployment/stateful set's configuration and re-applying.
-  - Deployments (e.g., `kubectl scale deployment <name> --replicas=0`)
-      - precise-code-intel-worker
-      - repo-updater
-      - searcher
-      - sourcegraph-frontend
-      - sourcegraph-frontend-internal
-      - symbols
-      - worker
-  - Stateful sets (e.g., `kubectl scale sts <name> --replicas=0`):
-      - gitserver
-      - indexed-search
-1. Run the `migrator upgrade` command targetting the same databases as your instance. See the [command documentation](./../../how-to/manual_database_migrations.md#upgrade) for additional details. In short, the migrator is invoked as a [Kubernetes job](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/migrator/migrator.Job.yaml) (a short-lived container) using the same Kubernetes cluster and using environment variables indicating the instance's databases.
-1. Now that the data has been prepared to run against a new version of Sourcegraph, the infrastructure can be updated. The remaining steps follow the [standard upgrade for Kubernetes with Helm](#standard-upgrades).
+1. Follow the steps to perform a [multi-version upgrade for Kubernetes](update.md#multi-version-upgrades).
+1. Follow the [standard upgrade for Kubernetes with Helm](#standard-upgrades) to upgrade the remaining infrastructure (e.g., `helm upgrade ...`).
 
 ### Rollback
 

@@ -305,6 +305,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 		externalService  *types.ExternalService
 		wantUnrestricted bool
 		wantHasWebhooks  bool
+		wantError        bool
 	}{
 		{
 			name: "with webhooks",
@@ -355,7 +356,6 @@ func TestExternalServicesStore_Create(t *testing.T) {
 			},
 			wantUnrestricted: false,
 		},
-
 		{
 			name: "Cloud: auto-add authorization to code host connections for GitHub",
 			externalService: &types.ExternalService{
@@ -400,10 +400,28 @@ func TestExternalServicesStore_Create(t *testing.T) {
 			wantUnrestricted: false,
 			wantHasWebhooks:  false,
 		},
+		{
+			name: "Empty config not allowed",
+			externalService: &types.ExternalService{
+				Kind:        extsvc.KindGitLab,
+				DisplayName: "GITLAB #1",
+				Config:      extsvc.NewUnencryptedConfig(``),
+			},
+			wantUnrestricted: false,
+			wantHasWebhooks:  false,
+			wantError:        true,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			err := db.ExternalServices().Create(ctx, confGet, test.externalService)
+			if test.wantError {
+				if err == nil {
+					t.Fatal("wanted an error")
+				}
+				// We can bail out early here
+				return
+			}
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -501,6 +519,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		wantCloudDefault   bool
 		wantHasWebhooks    bool
 		wantTokenExpiresAt bool
+		wantError          bool
 	}{
 		{
 			name: "update with authorization",
@@ -566,10 +585,30 @@ func TestExternalServicesStore_Update(t *testing.T) {
 			wantCloudDefault:   true,
 			wantTokenExpiresAt: true,
 		},
+		{
+			name: "update with empty config",
+			update: &ExternalServiceUpdate{
+				Config: strptr(``),
+			},
+			wantError: true,
+		},
+		{
+			name: "update with comment config",
+			update: &ExternalServiceUpdate{
+				Config: strptr(`// {}`),
+			},
+			wantError: true,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			err = db.ExternalServices().Update(ctx, nil, es.ID, test.update)
+			if test.wantError {
+				if err == nil {
+					t.Fatal("Wanted an error")
+				}
+				return
+			}
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1920,18 +1959,11 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 			t.Fatalf("List:\n%s", diff)
 		}
 
-		// We'll update the external services, but being careful to keep the
-		// config valid as we go.
+		// We'll update the external services.
 		now := clock.Now()
 		suffix := "-updated"
 		for _, r := range want {
-			cfg, err := r.Config.Decrypt(ctx)
-			if err != nil {
-				t.Fatal(err)
-			}
-
 			r.DisplayName += suffix
-			r.Config.Set(`{"wanted":true,` + cfg[1:])
 			r.UpdatedAt = now
 			r.CreatedAt = now
 		}
@@ -1966,6 +1998,60 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 
 		if diff := cmp.Diff(have, []*types.ExternalService(nil), cmpopts.EquateEmpty(), et.CompareEncryptable); diff != "" {
 			t.Errorf("List:\n%s", diff)
+		}
+	})
+
+	t.Run("config can't be empty", func(t *testing.T) {
+		tx, err := db.ExternalServices().WithEncryptionKey(et.TestKey{}).Transact(ctx)
+		if err != nil {
+			t.Fatalf("Transact error: %s", err)
+		}
+		defer func() {
+			err = tx.Done(err)
+			if err != nil {
+				t.Fatalf("Done error: %s", err)
+			}
+		}()
+
+		want := typestest.GenerateExternalServices(1, svcs...)
+		oldValue, err := want[0].Config.Decrypt(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() {
+			want[0].Config.Set(oldValue)
+		})
+		want[0].Config.Set("")
+
+		if err := tx.Upsert(ctx, want...); err == nil {
+			t.Fatalf("Wanted an error")
+		}
+	})
+
+	t.Run("config can't be only comments", func(t *testing.T) {
+		tx, err := db.ExternalServices().WithEncryptionKey(et.TestKey{}).Transact(ctx)
+		if err != nil {
+			t.Fatalf("Transact error: %s", err)
+		}
+		defer func() {
+			err = tx.Done(err)
+			if err != nil {
+				t.Fatalf("Done error: %s", err)
+			}
+		}()
+
+		want := typestest.GenerateExternalServices(1, svcs...)
+		oldValue, err := want[0].Config.Decrypt(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() {
+			want[0].Config.Set(oldValue)
+		})
+		want[0].Config.Set(`// {}`)
+
+		if err := tx.Upsert(ctx, want...); err == nil {
+			t.Fatalf("Wanted an error")
 		}
 	})
 
@@ -2020,24 +2106,17 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 			t.Fatalf("List:\n%s", diff)
 		}
 
-		// We'll update the external services, but being careful to keep the
-		// config valid as we go.
+		// We'll update the external services.
 		now := clock.Now()
 		suffix := "-updated"
 		for _, r := range want {
-			cfg, err := r.Config.Decrypt(ctx)
-			if err != nil {
-				t.Fatal(err)
-			}
-
 			r.DisplayName += suffix
-			r.Config.Set(`{"wanted":true,` + cfg[1:])
 			r.UpdatedAt = now
 			r.CreatedAt = now
 		}
 
 		if err = tx.Upsert(ctx, want...); err != nil {
-			t.Errorf("Upsert error: %s", err)
+			t.Fatalf("Upsert error: %s", err)
 		}
 		have, err = tx.List(ctx, ExternalServicesListOptions{})
 		if err != nil {

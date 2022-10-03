@@ -89,7 +89,7 @@ const DEFAULT_FILTERS = {
     maxEventsCount: '',
     lastActiveAt: '',
     createdAt: '',
-    deletedAt: '',
+    deletedAt: '{"isNegated":true}',
 }
 
 const dateRangeQueryParameterToVariable = (
