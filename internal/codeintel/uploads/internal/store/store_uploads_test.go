@@ -731,7 +731,7 @@ func TestBackfillReferenceCountBatch(t *testing.T) {
 	if err := store.BackfillReferenceCountBatch(context.Background(), n/2); err != nil {
 		t.Fatalf("unexpected error performing up migration: %s", err)
 	}
-	referenceCountQuery := sqlf.Sprintf("SELECT u.reference_count FROM lsif_uploads u WHERE u.reference_count IS NOT NULL ORDER BY u.id")
+	referenceCountQuery := sqlf.Sprintf("SELECT urc.reference_count FROM lsif_uploads_reference_counts urc ORDER BY urc.upload_id")
 	if referenceCounts, err := basestore.ScanInts(db.QueryContext(context.Background(), referenceCountQuery.Query(sqlf.PostgresBindVar), referenceCountQuery.Args()...)); err != nil {
 		t.Fatalf("unexpected error querying uploads: %s", err)
 	} else if diff := cmp.Diff(expectedReferenceCounts[:n/2], referenceCounts); diff != "" {
@@ -2010,7 +2010,7 @@ func getProtectedUploads(t testing.TB, db database.DB, repositoryID int) []int {
 func assertReferenceCounts(t *testing.T, store database.DB, expectedReferenceCountsByID map[int]int) {
 	db := basestore.NewWithHandle(store.Handle())
 
-	referenceCountsByID, err := scanIntPairs(db.Query(context.Background(), sqlf.Sprintf(`SELECT id, reference_count FROM lsif_uploads`)))
+	referenceCountsByID, err := scanIntPairs(db.Query(context.Background(), sqlf.Sprintf(`SELECT upload_id, reference_count FROM lsif_uploads_reference_counts ORDER BY upload_id`)))
 	if err != nil {
 		t.Fatalf("unexpected error querying reference counts: %s", err)
 	}
