@@ -482,7 +482,11 @@ func TestZoektResultCountFactor(t *testing.T) {
 	}
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
-			got := ResultCountFactor(tt.numRepos, tt.pattern.FileMatchLimit, tt.globalSearch)
+			got := (&Options{
+				NumRepos:       tt.numRepos,
+				FileMatchLimit: tt.pattern.FileMatchLimit,
+				GlobalSearch:   tt.globalSearch,
+			}).resultCountFactor()
 			if tt.want != got {
 				t.Fatalf("Want scaling factor %d but got %d", tt.want, got)
 			}
