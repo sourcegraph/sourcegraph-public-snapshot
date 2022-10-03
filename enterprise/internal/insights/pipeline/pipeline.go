@@ -504,7 +504,6 @@ type runSearchResult struct {
 
 func makeRunSearchFunc(logger log.Logger, searchClient streaming.SearchClient) func(context.Context, *itypes.Repo, <-chan generateJobResult) <-chan runSearchResult {
 	return func(ctx context.Context, repo *itypes.Repo, in <-chan generateJobResult) <-chan runSearchResult {
-		var wg sync.WaitGroup
 
 		out := make(chan runSearchResult)
 		go func(ctx context.Context, outputChannel chan runSearchResult) {
@@ -516,27 +515,16 @@ func makeRunSearchFunc(logger log.Logger, searchClient streaming.SearchClient) f
 				}
 			}()
 			for r := range in {
-				wg.Add(1)
-				go func(ctx context.Context, result generateJobResult, outputChannel chan runSearchResult) {
-					defer func() {
-						wg.Done()
-						if err := recover(); err != nil {
-							stack := debug.Stack()
-							golog.Printf("goroutine panic: %v\n%s", err, stack)
-						}
-					}()
-					if result.err != nil {
-						//TODO: what to do
-						return
-					}
-					// run search
-					// some made up values
-					time.Sleep(time.Duration(rand.Intn(2000)) * time.Millisecond)
-					logger.Warn("running the search job")
-					outputChannel <- runSearchResult{err: nil, result: searchResult{count: 10, capture: "", repo: repo, pointInTime: *result.job.RecordTime}}
-				}(ctx, r, outputChannel)
+				if r.err != nil {
+					//TODO: what to do
+					return
+				}
+				// run search
+				// some made up values
+				time.Sleep(time.Duration(rand.Intn(2000)) * time.Millisecond)
+				logger.Warn("running the search job")
+				outputChannel <- runSearchResult{err: nil, result: searchResult{count: 10, capture: "", repo: repo, pointInTime: *r.job.RecordTime}}
 			}
-			wg.Wait()
 		}(ctx, out)
 		return out
 	}
