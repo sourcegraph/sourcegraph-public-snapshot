@@ -148,15 +148,6 @@ Interact with Sourcegraph's Buildkite continuous integration pipelines.
 
 Note that Sourcegraph's CI pipelines are under our enterprise license: https://github.com/sourcegraph/sourcegraph/blob/main/LICENSE.enterprise
 
-A summary video about some useful <code>sg ci *</code> commands, to learn how move fast when interacting with the CI:
-
-<div style="position: relative; padding-bottom: 82%; height: 0;">
-  <iframe src="https://www.loom.com/embed/f451d05978b34d97bdc06d411aacc69d" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe>
-</div>
-
-And a more comprehensive list:
-
-
 ```sh
 # Preview what a CI run for your current changes will look like
 $ sg ci preview
