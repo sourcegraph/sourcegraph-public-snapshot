@@ -107,6 +107,10 @@ extend type Mutation {
     """
     requestLanguageSupport(language: String!): EmptyResponse
 
+    """
+    Updates the previously set/overrides the default global auto-indexing job inference Lua script
+    with a new override.
+    """
     updateCodeIntelligenceInferenceScript(script: String!): EmptyResponse
 }
 
@@ -272,6 +276,11 @@ extend type Query {
     """
     requestedLanguageSupport: [String!]!
 
+    """
+    Return the currently set auto-indexing job inference script. Does not return
+    the value stored in the environment variable or the default shipped scripts,
+    only the value set via UI/GraphQL.
+    """
     codeIntelligenceInferenceScript: String!
 }
 

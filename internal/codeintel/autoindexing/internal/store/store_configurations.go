@@ -71,6 +71,6 @@ func (s *store) GetInferenceScript(ctx context.Context) (script string, err erro
 const getInferenceScriptQuery = `
 -- source: internal/codeintel/stores/dbstore/configuration.go:GetInferenceScript
 SELECT script FROM codeintel_inference_scripts
-ORDER BY timestamp DESC
+ORDER BY insert_timestamp DESC
 LIMIT 1
 `

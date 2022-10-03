@@ -5,13 +5,16 @@ import * as H from 'history'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { LoadingSpinner, screenReaderAnnounce } from '@sourcegraph/wildcard'
+import { LoadingSpinner, PageHeader, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
+import { PageTitle } from '../../../../components/PageTitle'
 import { SaveToolbar, SaveToolbarProps, SaveToolbarPropsGenerator } from '../../../../components/SaveToolbar'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../../../settings/DynamicallyImportedMonacoSettingsEditor'
 import { INFERENCE_SCRIPT, useInferenceScript } from '../hooks/useInferenceScript'
 import { useUpdateInferenceScript } from '../hooks/useUpdateInferenceScript'
+
+import styles from './CodeIntelConfigurationPageHeader.module.scss'
 
 export interface InferenceScriptEditorProps extends ThemeProps, TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
@@ -62,12 +65,37 @@ export const InferenceScriptEditor: FunctionComponent<React.PropsWithChildren<In
         [dirty, isUpdating]
     )
 
+    const title = (
+        <>
+            <PageTitle title="Code graph inference script" />
+            <div className={styles.grid}>
+                <PageHeader
+                    headingElement="h2"
+                    path={[
+                        {
+                            text: <>Code graph inference script</>,
+                        },
+                    ]}
+                    description={`Lua script that emits complete and/or partial auto-indexing
+                job specifications. `}
+                    className="mb-3"
+                />
+            </div>
+        </>
+    )
+
     if (fetchError) {
-        return <ErrorAlert prefix="Error fetching inference script" error={fetchError} />
+        return (
+            <>
+                {title}
+                <ErrorAlert prefix="Error fetching inference script" error={fetchError} />
+            </>
+        )
     }
 
     return (
         <>
+            {title}
             {updatingError && <ErrorAlert prefix="Error saving index configuration" error={updatingError} />}
 
             {loadingScript ? (
