@@ -1,3 +1,4 @@
+import { within } from '@testing-library/dom'
 import { Route, Routes } from 'react-router-dom-v5-compat'
 
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
@@ -47,6 +48,102 @@ describe('SignInPage', () => {
                 { route: '/sign-in' }
             ).asFragment()
         ).toMatchSnapshot()
+    })
+
+    describe('with Sourcegraph auth provider', () => {
+        const withSourcegraphOperator: SourcegraphContext['authProviders'] = [
+            ...authProviders,
+            {
+                displayName: 'Sourcegraph Employee',
+                isBuiltin: false,
+                serviceType: 'openidconnect',
+                authenticationURL: '',
+            },
+        ]
+
+        it('renders page with 3 providers (experimentalFeature disabled)', () => {
+            const rendered = renderWithBrandedContext(
+                <Routes>
+                    <Route
+                        path="/sign-in"
+                        element={
+                            <SignInPage
+                                authenticatedUser={null}
+                                context={{
+                                    allowSignup: true,
+                                    sourcegraphDotComMode: false,
+                                    authProviders: withSourcegraphOperator,
+                                    resetPasswordEnabled: true,
+                                    xhrHeaders: {},
+                                    experimentalFeatures: {},
+                                }}
+                            />
+                        }
+                    />
+                </Routes>,
+                { route: '/sign-in' }
+            )
+            expect(
+                within(rendered.baseElement).queryByText(txt => txt.includes('Sourcegraph Employee'))
+            ).toBeInTheDocument()
+            expect(rendered.asFragment()).toMatchSnapshot()
+        })
+
+        it('renders page with 2 providers (experimentalFeature enabled)', () => {
+            const rendered = renderWithBrandedContext(
+                <Routes>
+                    <Route
+                        path="/sign-in"
+                        element={
+                            <SignInPage
+                                authenticatedUser={null}
+                                context={{
+                                    allowSignup: true,
+                                    sourcegraphDotComMode: false,
+                                    authProviders: withSourcegraphOperator,
+                                    resetPasswordEnabled: true,
+                                    xhrHeaders: {},
+                                    experimentalFeatures: { hideSourcegraphOperatorLogin: true },
+                                }}
+                            />
+                        }
+                    />
+                </Routes>,
+                { route: '/sign-in' }
+            )
+            expect(
+                within(rendered.baseElement).queryByText(txt => txt.includes('Sourcegraph Employee'))
+            ).not.toBeInTheDocument()
+            expect(rendered.asFragment()).toMatchSnapshot()
+        })
+
+        it('renders page with 3 providers (experimentalFeature enabled & url-param present)', () => {
+            const rendered = renderWithBrandedContext(
+                <Routes>
+                    <Route
+                        path="/sign-in"
+                        element={
+                            <SignInPage
+                                authenticatedUser={null}
+                                context={{
+                                    allowSignup: true,
+                                    sourcegraphDotComMode: false,
+                                    authProviders: withSourcegraphOperator,
+                                    resetPasswordEnabled: true,
+                                    xhrHeaders: {},
+                                    experimentalFeatures: { hideSourcegraphOperatorLogin: true },
+                                }}
+                            />
+                        }
+                    />
+                </Routes>,
+                { route: '/sign-in?sourcegraph-operator' }
+            )
+            expect(
+                within(rendered.baseElement).queryByText(txt => txt.includes('Sourcegraph Employee'))
+            ).toBeInTheDocument()
+            expect(rendered.asFragment()).toMatchSnapshot()
+        })
     })
 
     it('renders sign in page (cloud)', () => {
