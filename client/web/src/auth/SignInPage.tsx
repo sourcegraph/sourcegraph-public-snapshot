@@ -25,7 +25,12 @@ interface SignInPageProps {
     authenticatedUser: AuthenticatedUser | null
     context: Pick<
         SourcegraphContext,
-        'allowSignup' | 'authProviders' | 'sourcegraphDotComMode' | 'xhrHeaders' | 'resetPasswordEnabled'
+        | 'allowSignup'
+        | 'authProviders'
+        | 'sourcegraphDotComMode'
+        | 'xhrHeaders'
+        | 'resetPasswordEnabled'
+        | 'experimentalFeatures'
     >
 }
 
@@ -34,7 +39,11 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
 
     const location = useLocation()
     const [error, setError] = useState<Error | null>(null)
-    const showSourcegraphOperatorLogin = new URLSearchParams(location.search).has('sourcegraph-operator')
+
+    const isOperatorHidingEnabled = props.context.experimentalFeatures.hideSourcegraphOperatorLogin ?? false
+
+    const showSourcegraphOperatorLogin =
+        !isOperatorHidingEnabled || new URLSearchParams(location.search).has('sourcegraph-operator')
 
     const isSourcegraphOperatorProvider = (provider: AuthProvider): boolean =>
         provider.serviceType === 'openidconnect' && provider.displayName === 'Sourcegraph Employee'
