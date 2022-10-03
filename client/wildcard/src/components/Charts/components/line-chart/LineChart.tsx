@@ -204,7 +204,7 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
                 tickFormat={formatDateTick}
             />
 
-            <Group top={content.top} left={content.left} role="list">
+            <Group top={content.top} left={content.left} aria-label="Chart series" role="list">
                 {stacked && <StackedArea dataSeries={activeSeries} xScale={xScale} yScale={yScale} />}
 
                 {activeSeries.map(line => (
