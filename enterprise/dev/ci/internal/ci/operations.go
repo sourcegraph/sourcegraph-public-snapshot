@@ -218,7 +218,7 @@ func addWebEnterpriseBuild(pipeline *bk.Pipeline) {
 		bk.Env("WEBPACK_EXPORT_STATS_FILENAME", statsFilename),
 	}
 
-	if branch == "main" {
+	if branch == "ps/report-bundle-size-diffs" {
 		// On main builds, we want to persist the generated stats file to the
 		// cache.
 		cmds = append(cmds, withBundleSizeCache(commit, statsFilename))
