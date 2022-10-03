@@ -2,18 +2,18 @@ package shared
 
 import "github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 
-// src_codeintel_policies_total
-// src_codeintel_policies_duration_seconds_bucket
-// src_codeintel_policies_errors_total
-func (codeIntelligence) NewPoliciesServiceGroup(containerName string) monitoring.Group {
+// src_codeintel_codenav_total
+// src_codeintel_codenav_duration_seconds_bucket
+// src_codeintel_codenav_errors_total
+func (codeIntelligence) NewCodeNavServiceGroup(containerName string) monitoring.Group {
 	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "codeintel",
-			DescriptionRoot: "Policies > Service",
+			DescriptionRoot: "CodeNav > Service",
 			Hidden:          false,
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "codeintel_policies",
+				MetricNameRoot:        "codeintel_codenav",
 				MetricDescriptionRoot: "service",
 				By:                    []string{"op"},
 			},
@@ -34,18 +34,18 @@ func (codeIntelligence) NewPoliciesServiceGroup(containerName string) monitoring
 	})
 }
 
-// src_codeintel_policies_store_total
-// src_codeintel_policies_store_duration_seconds_bucket
-// src_codeintel_policies_store_errors_total
-func (codeIntelligence) NewPoliciesStoreGroup(containerName string) monitoring.Group {
+// src_codeintel_codenav_store_total
+// src_codeintel_codenav_store_duration_seconds_bucket
+// src_codeintel_codenav_store_errors_total
+func (codeIntelligence) NewCodeNavStoreGroup(containerName string) monitoring.Group {
 	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "codeintel",
-			DescriptionRoot: "Policies > Store",
-			Hidden:          false,
+			DescriptionRoot: "CodeNav > Store",
+			Hidden:          true,
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "codeintel_policies_store",
+				MetricNameRoot:        "codeintel_codenav_store",
 				MetricDescriptionRoot: "store",
 				By:                    []string{"op"},
 			},
@@ -66,19 +66,19 @@ func (codeIntelligence) NewPoliciesStoreGroup(containerName string) monitoring.G
 	})
 }
 
-// src_codeintel_policies_transport_graphql_total
-// src_codeintel_policies_transport_graphql_duration_seconds_bucket
-// src_codeintel_policies_transport_graphql_errors_total
-func (codeIntelligence) NewPoliciesGraphQLTransportGroup(containerName string) monitoring.Group {
+// src_codeintel_codenav_store_total
+// src_codeintel_codenav_store_duration_seconds_bucket
+// src_codeintel_codenav_store_errors_total
+func (codeIntelligence) NewCodeNavLsifStoreGroup(containerName string) monitoring.Group {
 	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "codeintel",
-			DescriptionRoot: "Policies > GQL Transport",
+			DescriptionRoot: "CodeNav > LSIF store",
 			Hidden:          false,
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "codeintel_policies_transport_graphql",
-				MetricDescriptionRoot: "resolver",
+				MetricNameRoot:        "codeintel_codenav_lsifstore",
+				MetricDescriptionRoot: "store",
 				By:                    []string{"op"},
 			},
 		},
@@ -98,20 +98,34 @@ func (codeIntelligence) NewPoliciesGraphQLTransportGroup(containerName string) m
 	})
 }
 
-// src_codeintel_background_policies_updated_total
-func (codeIntelligence) NewRepoMatcherTaskGroup(containerName string) monitoring.Group {
-	return monitoring.Group{
-		Title:  "Codeintel: Policies > Repository Pattern Matcher task",
-		Hidden: false,
-		Rows: []monitoring.Row{
-			{
-				Standard.Count("repositories pattern matcher")(ObservableConstructorOptions{
-					MetricNameRoot:        "codeintel_background_policies_updated_total",
-					MetricDescriptionRoot: "lsif repository pattern matcher",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
-					Number of configuration policies whose repository membership list was updated
-				`).Observable(),
+// src_codeintel_codenav_transport_graphql_total
+// src_codeintel_codenav_transport_graphql_duration_seconds_bucket
+// src_codeintel_codenav_transport_graphql_errors_total
+func (codeIntelligence) NewCodeNavGraphQLTransportGroup(containerName string) monitoring.Group {
+	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+		GroupConstructorOptions: GroupConstructorOptions{
+			Namespace:       "codeintel",
+			DescriptionRoot: "CodeNav > GQL Transport",
+			Hidden:          false,
+
+			ObservableConstructorOptions: ObservableConstructorOptions{
+				MetricNameRoot:        "codeintel_codenav_transport_graphql",
+				MetricDescriptionRoot: "resolver",
+				By:                    []string{"op"},
 			},
 		},
-	}
+
+		SharedObservationGroupOptions: SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+		Aggregate: &SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+	})
 }
