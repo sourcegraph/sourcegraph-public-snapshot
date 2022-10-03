@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"net/url"
 	"reflect"
 	"sort"
@@ -18,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -797,13 +797,13 @@ func TestV4Client_WithAuthenticator(t *testing.T) {
 	}
 
 	newToken := &auth.OAuthBearerToken{AccessToken: "new_token"}
-	new := old.WithAuthenticator(newToken, nil)
+	new := old.WithAuthenticator(newToken)
 	if old == new {
 		t.Fatal("both clients have the same address")
 	}
 
 	if new.auth != newToken {
-		t.Fatalf("token: want %q but got %q", newToken, new.auth)
+		t.Fatalf("token: want %p but got %p", newToken, new.auth)
 	}
 }
 
@@ -821,7 +821,7 @@ func newV4Client(t testing.TB, name string, tokenRefresher oauthutil.TokenRefres
 		t.Fatal(err)
 	}
 
-	return NewV4Client("Test", uri, vcrToken, doer, tokenRefresher), save
+	return NewV4Client("Test", uri, vcrToken, doer), save
 }
 
 func newEnterpriseV4Client(t testing.TB, name string) (*V4Client, func()) {
@@ -839,7 +839,7 @@ func newEnterpriseV4Client(t testing.TB, name string) (*V4Client, func()) {
 		t.Fatal(err)
 	}
 
-	return NewV4Client("Test", uri, gheToken, doer, nil), save
+	return NewV4Client("Test", uri, gheToken, doer), save
 }
 
 func TestClient_GetReposByNameWithOwner(t *testing.T) {
@@ -993,7 +993,7 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			mock := mockHTTPResponseBody{responseBody: tc.mockResponseBody}
 			apiURL := &url.URL{Scheme: "https", Host: "example.com", Path: "/"}
-			c := NewV4Client("Test", apiURL, nil, &mock, nil)
+			c := NewV4Client("Test", apiURL, nil, &mock)
 
 			repos, err := c.GetReposByNameWithOwner(context.Background(), namesWithOwners...)
 			if have, want := fmt.Sprint(err), fmt.Sprint(tc.err); tc.err != "" && have != want {
@@ -1044,7 +1044,7 @@ repo8: repository(owner: "sourcegraph", name: "contains.dot") { ... on Repositor
 
 	mock := mockHTTPResponseBody{responseBody: ""}
 	apiURL := &url.URL{Scheme: "https", Host: "example.com", Path: "/"}
-	c := NewV4Client("Test", apiURL, nil, &mock, nil)
+	c := NewV4Client("Test", apiURL, nil, &mock)
 	query, err := c.buildGetReposBatchQuery(context.Background(), repos)
 	if err != nil {
 		t.Fatal(err)

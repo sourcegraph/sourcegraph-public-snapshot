@@ -63,7 +63,7 @@ func Init(
 	}
 	appID = gitHubAppConfig.AppID
 
-	auther, err := auth.NewOAuthBearerTokenWithGitHubApp(appID, privateKey)
+	auther, err := auth.NewGitHubAppAuthenticator(appID, privateKey)
 	if err != nil {
 		return errors.Wrap(err, "new authenticator with GitHub App")
 	}
@@ -72,7 +72,7 @@ func Init(
 	if err != nil {
 		return errors.Wrap(err, "parse github.com")
 	}
-	client := github.NewV3Client(log.Scoped("app.github.v3", "github v3 client for frontend app"), extsvc.URNGitHubApp, apiURL, auther, nil, nil)
+	client := github.NewV3Client(log.Scoped("app.github.v3", "github v3 client for frontend app"), extsvc.URNGitHubApp, apiURL, auther, nil)
 
 	enterpriseServices.NewGitHubAppSetupHandler = func() http.Handler {
 		return newGitHubAppSetupHandler(db, apiURL, client)

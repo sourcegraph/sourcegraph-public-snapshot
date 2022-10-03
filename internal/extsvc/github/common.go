@@ -1506,12 +1506,20 @@ func newHttpResponseState(statusCode int, headers http.Header) *httpResponseStat
 	}
 }
 
-func doRequest(ctx context.Context, oauthContext *oauthutil.OAuthContext, logger log.Logger, apiURL *url.URL, auth auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, httpClient httpcli.Doer, bearerToken *auth.OAuthBearerToken, tokenRefresher oauthutil.TokenRefresher, req *http.Request, result any) (responseState *httpResponseState, err error) {
+func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auther auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, httpClient httpcli.Doer, req *http.Request, result any) (responseState *httpResponseState, err error) {
 	req.URL.Path = path.Join(apiURL.Path, req.URL.Path)
 	req.URL = apiURL.ResolveReference(req.URL)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	if auth != nil {
-		if err := auth.Authenticate(req); err != nil {
+
+	var autherWithRefresh auth.AuthenticatorWithRefresh
+	if auther != nil {
+		var ok bool
+		autherWithRefresh, ok = auther.(auth.AuthenticatorWithRefresh)
+		// Check if we should pre-emptively refresh
+		if ok && autherWithRefresh.ShouldRefresh() {
+			autherWithRefresh.Refresh()
+		}
+		if err := auther.Authenticate(req); err != nil {
 			return nil, errors.Wrap(err, "authenticating request")
 		}
 	}
@@ -1530,63 +1538,53 @@ func doRequest(ctx context.Context, oauthContext *oauthutil.OAuthContext, logger
 		span.Finish()
 	}()
 
-	var code int
-	var status string
-	var header http.Header
-	var body []byte
-
-	if bearerToken != nil && oauthContext != nil {
-		code, header, body, err = oauthutil.DoRequest(ctx, httpClient, req, bearerToken, tokenRefresher, *oauthContext)
+	if autherWithRefresh != nil {
+		resp, err = oauthutil.DoRequest(ctx, httpClient, req, autherWithRefresh)
 		if err != nil {
-			return newHttpResponseState(code, header), errors.Wrap(err, "do request with retry and refresh")
+			return nil, errors.Wrap(err, "do request with retry and refresh")
 		}
 	} else {
 		resp, err = httpClient.Do(req.WithContext(ctx))
 		if err != nil {
 			return nil, err
 		}
-		defer func() { _ = resp.Body.Close() }()
-
-		code = resp.StatusCode
-		header = resp.Header
-		status = resp.Status
-		body, _ = io.ReadAll(resp.Body)
 	}
 
+	defer resp.Body.Close()
+
 	logger.Debug("doRequest",
-		log.String("status", status),
-		log.String("x-ratelimit-remaining", header.Get("x-ratelimit-remaining")))
+		log.String("status", resp.Status),
+		log.String("x-ratelimit-remaining", resp.Header.Get("x-ratelimit-remaining")))
 
 	// For 401 responses we receive a remaining limit of 0. This will cause the next
 	// call to block for up to an hour because it believes we have run out of tokens.
 	// Instead, we should fail fast.
-	if code != 401 {
-		rateLimitMonitor.Update(header)
+	if resp.StatusCode != 401 {
+		rateLimitMonitor.Update(resp.Header)
 	}
 
-	var readErr error
-	if code < 200 || code >= 400 {
+	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		var err APIError
-		if body, readErr = io.ReadAll(io.LimitReader(resp.Body, 1<<13)); readErr != nil { // 8kb
+		if body, readErr := io.ReadAll(io.LimitReader(resp.Body, 1<<13)); readErr != nil { // 8kb
 			err.Message = fmt.Sprintf("failed to read error response from GitHub API: %v: %q", readErr, string(body))
 		} else if decErr := json.Unmarshal(body, &err); decErr != nil {
 			err.Message = fmt.Sprintf("failed to decode error response from GitHub API: %v: %q", decErr, string(body))
 		}
 		err.URL = req.URL.String()
-		err.Code = code
-		return newHttpResponseState(code, header), &err
+		err.Code = resp.StatusCode
+		return newHttpResponseState(resp.StatusCode, resp.Header), &err
 	}
 
 	// If the resource is not modified, the body is empty. Return early. This is expected for
 	// resources that support conditional requests.
 	//
 	// See: https://docs.github.com/en/rest/overview/resources-in-the-rest-api#conditional-requests
-	if code == 304 {
-		return newHttpResponseState(code, header), nil
+	if resp.StatusCode == 304 {
+		return newHttpResponseState(resp.StatusCode, resp.Header), nil
 	}
 
-	err = json.Unmarshal(body, result)
-	return newHttpResponseState(code, header), err
+	err = json.NewDecoder(resp.Body).Decode(result)
+	return newHttpResponseState(resp.StatusCode, resp.Header), err
 }
 
 func canonicalizedURL(apiURL *url.URL) *url.URL {

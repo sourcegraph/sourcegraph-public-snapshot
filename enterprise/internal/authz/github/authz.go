@@ -144,7 +144,7 @@ func newAuthzProvider(
 		GitHubURL:      baseURL,
 		BaseToken:      c.Token,
 		GroupsCacheTTL: ttl,
-	}, nil), nil
+	}, db), nil
 }
 
 // ValidateAuthz validates the authorization fields of the given GitHub external

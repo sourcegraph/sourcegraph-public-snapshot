@@ -219,18 +219,22 @@ func newGithubSource(
 	if err != nil {
 		return nil, err
 	}
-	token := &auth.OAuthBearerToken{AccessToken: c.Token}
-	urn := svc.URN()
 
-	tokenRefresher := database.ExternalServiceTokenRefresher(db, svc.ID, c.TokenOauthRefresh)
+	token := &auth.OAuthBearerToken{
+		AccessToken:  c.Token,
+		RefreshToken: c.TokenOauthRefresh,
+		Expiry:       time.Unix(int64(c.TokenOauthExpiry), 0),
+		RefreshFunc:  database.GetServiceRefreshAndStoreOAuthTokenFunc(db, svc.ID, github.GetOAuthContext(apiURL.String())),
+	}
+	urn := svc.URN()
 
 	var (
 		v3ClientLogger = log.Scoped("source", "github client for github source")
-		v3Client       = github.NewV3Client(v3ClientLogger, urn, apiURL, token, cli, tokenRefresher)
-		v4Client       = github.NewV4Client(urn, apiURL, token, cli, tokenRefresher)
+		v3Client       = github.NewV3Client(v3ClientLogger, urn, apiURL, token, cli)
+		v4Client       = github.NewV4Client(urn, apiURL, token, cli)
 
 		searchClientLogger = log.Scoped("search", "github client for search")
-		searchClient       = github.NewV3SearchClient(searchClientLogger, urn, apiURL, token, cli, tokenRefresher)
+		searchClient       = github.NewV3SearchClient(searchClientLogger, urn, apiURL, token, cli)
 	)
 
 	externalServicesStore := db.ExternalServices()
@@ -247,13 +251,13 @@ func newGithubSource(
 		}
 		appID = gitHubAppConfig.AppID
 
-		auther, err := auth.NewOAuthBearerTokenWithGitHubApp(appID, privateKey)
+		auther, err := auth.NewGitHubAppAuthenticator(appID, privateKey)
 		if err != nil {
 			return nil, errors.Wrap(err, "new authenticator with GitHub App")
 		}
 
 		client := github.NewV3Client(log.Scoped("app", "github client for Sourcegraph GitHub app"),
-			urn, apiURL, auther, nil, tokenRefresher)
+			urn, apiURL, auther, nil)
 
 		installationID, err := strconv.ParseInt(c.GithubAppInstallationID, 10, 64)
 		if err != nil {
@@ -266,8 +270,8 @@ func newGithubSource(
 		}
 
 		auther = &auth.OAuthBearerToken{AccessToken: token}
-		v3Client = github.NewV3Client(v3ClientLogger, urn, apiURL, auther, cli, tokenRefresher)
-		v4Client = github.NewV4Client(urn, apiURL, auther, cli, tokenRefresher)
+		v3Client = github.NewV3Client(v3ClientLogger, urn, apiURL, auther, cli)
+		v4Client = github.NewV4Client(urn, apiURL, auther, cli)
 
 		useGitHubApp = true
 	}
@@ -328,13 +332,11 @@ func (s *GitHubSource) WithAuthenticator(a auth.Authenticator) (Source, error) {
 		return nil, newUnsupportedAuthenticatorError("GitHubSource", a)
 	}
 
-	tokenRefresher := database.ExternalServiceTokenRefresher(s.db, s.svc.ID, s.config.TokenOauthRefresh)
-
 	sc := *s
 
-	sc.v3Client = sc.v3Client.WithAuthenticator(a, tokenRefresher)
-	sc.v4Client = sc.v4Client.WithAuthenticator(a, tokenRefresher)
-	sc.searchClient = sc.searchClient.WithAuthenticator(a, tokenRefresher)
+	sc.v3Client = sc.v3Client.WithAuthenticator(a)
+	sc.v4Client = sc.v4Client.WithAuthenticator(a)
+	sc.searchClient = sc.searchClient.WithAuthenticator(a)
 
 	return &sc, nil
 }

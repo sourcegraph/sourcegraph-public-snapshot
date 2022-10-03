@@ -1,6 +1,7 @@
 package oauthutil
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -9,7 +10,6 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -108,12 +108,27 @@ func newTokenRequest(oauthCtx OAuthContext, refreshToken string, authStyle AuthS
 		v.Set("refresh_token", refreshToken)
 	}
 
-	req, err := http.NewRequest("POST", oauthCtx.Endpoint.TokenURL, strings.NewReader(v.Encode()))
+	requestBody := struct {
+		RefreshToken string `json:"refresh_token"`
+		GrantType    string `json:"grant_type"`
+		ClientID     string `json:"client_id"`
+		ClientSecret string `json:"client_secret"`
+	}{
+		refreshToken,
+		"refresh_token",
+		oauthCtx.ClientID,
+		oauthCtx.ClientSecret,
+	}
+
+	payload := new(bytes.Buffer)
+	json.NewEncoder(payload).Encode(requestBody)
+
+	req, err := http.NewRequest("POST", oauthCtx.Endpoint.TokenURL, payload)
 
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Content-Type", "application/json")
 	if authStyle == AuthStyleInHeader {
 		req.SetBasicAuth(url.QueryEscape(oauthCtx.ClientID), url.QueryEscape(oauthCtx.ClientSecret))
 	}
@@ -144,9 +159,10 @@ func doTokenRoundTrip(doer httpcli.Doer, req *http.Request) (*auth.OAuthBearerTo
 	if err != nil {
 		return nil, errors.Wrap(err, "do request")
 	}
+
 	defer func() { _ = r.Body.Close() }()
 
-	body, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "read body")
 	}

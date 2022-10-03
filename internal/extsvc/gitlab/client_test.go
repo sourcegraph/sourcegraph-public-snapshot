@@ -111,11 +111,16 @@ func TestClient_doWithBaseURL(t *testing.T) {
 		Scopes: []string{"read_user"},
 	}
 
-	provider := NewClientProvider("Test", baseURL, doer, func(ctx context.Context, doer httpcli.Doer, oauthCtxt oauthutil.OAuthContext) (string, error) {
-		return "refreshed-token", nil
+	provider := NewClientProvider("Test", baseURL, doer, func(ctx context.Context, doer httpcli.Doer, oauthCtxt oauthutil.OAuthContext) (*auth.OAuthBearerToken, error) {
+		return &auth.OAuthBearerToken{AccessToken: "refreshed-token"}, nil
 	})
 
-	client := provider.getClient(&auth.OAuthBearerToken{AccessToken: "bad token"})
+	client := provider.getClient(&auth.OAuthBearerToken{AccessToken: "bad token", RefreshToken: "refresh token", RefreshFunc: func(obt *auth.OAuthBearerToken) (*auth.OAuthBearerToken, error) {
+		obt.AccessToken = "refreshed-token"
+		obt.RefreshToken = "refresh-now"
+
+		return obt, nil
+	}})
 
 	req, err := http.NewRequest(http.MethodGet, "url", nil)
 	require.NoError(t, err)

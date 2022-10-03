@@ -3,8 +3,6 @@ package github
 import (
 	"context"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -14,6 +12,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -53,11 +52,11 @@ type ProviderOptions struct {
 	IsApp          bool
 }
 
-func NewProvider(urn string, opts ProviderOptions, tokenRefresher oauthutil.TokenRefresher) *Provider {
+func NewProvider(urn string, opts ProviderOptions, db database.DB) *Provider {
 	if opts.GitHubClient == nil {
 		apiURL, _ := github.APIRoot(opts.GitHubURL)
 		opts.GitHubClient = github.NewV3Client(log.Scoped("provider.github.v3", "provider github client"),
-			urn, apiURL, &auth.OAuthBearerToken{AccessToken: opts.BaseToken}, nil, tokenRefresher)
+			urn, apiURL, &auth.OAuthBearerToken{AccessToken: opts.BaseToken}, nil)
 	}
 
 	codeHost := extsvc.NewCodeHost(opts.GitHubURL, extsvc.TypeGitHub)
@@ -78,6 +77,7 @@ func NewProvider(urn string, opts ProviderOptions, tokenRefresher oauthutil.Toke
 		client: func() (client, error) {
 			return &ClientAdapter{V3Client: opts.GitHubClient}, nil
 		},
+		db: db,
 	}
 }
 
@@ -170,14 +170,14 @@ func (p *Provider) requiredAuthScopes() []requiredAuthScope {
 // fetchUserPermsByToken fetches all the private repo ids that the token can access.
 //
 // This may return a partial result if an error is encountered, e.g. via rate limits.
-func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.AccountID, token string, tokenRefresher oauthutil.TokenRefresher, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.AccountID, token *auth.OAuthBearerToken, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	// 🚨 SECURITY: Use user token is required to only list repositories the user has access to.
 	client, err := p.client()
 	if err != nil {
 		return nil, errors.Wrap(err, "get client")
 	}
 
-	client = client.WithToken(token, tokenRefresher)
+	client = client.WithToken(token)
 
 	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
 	// when appending the first 100 results to the slice.
@@ -351,14 +351,19 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 		return nil, errors.New("no token found in the external account data")
 	}
 
-	tokenRefresher := database.ExternalAccountTokenRefresher(p.db, account.ID, tok.RefreshToken)
-	return p.fetchUserPermsByToken(ctx, extsvc.AccountID(account.AccountID), tok.AccessToken, tokenRefresher, opts)
+	oauthToken := &auth.OAuthBearerToken{
+		AccessToken:  tok.AccessToken,
+		RefreshToken: tok.RefreshToken,
+		Expiry:       tok.Expiry,
+		RefreshFunc:  database.GetAccountRefreshAndStoreOAuthTokenFunc(p.db, account.ID, github.GetOAuthContext(p.codeHost.BaseURL.String())),
+	}
+	return p.fetchUserPermsByToken(ctx, extsvc.AccountID(account.AccountID), oauthToken, opts)
 }
 
 // FetchUserPermsByToken is the same as FetchUserPerms, but it only requires a
 // token.
 func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
-	return p.fetchUserPermsByToken(ctx, "", token, nil, opts)
+	return p.fetchUserPermsByToken(ctx, "", &auth.OAuthBearerToken{AccessToken: token}, opts)
 }
 
 // FetchRepoPerms returns a list of user IDs (on code host) who have read access to

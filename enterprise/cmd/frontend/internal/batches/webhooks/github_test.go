@@ -75,7 +75,6 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 			t.Fatal(t)
 		}
 
-		db := database.NewMockDB()
 		githubSrc, err := repos.NewGithubSource(ctx, logtest.Scoped(t), db, extSvc, cf)
 		if err != nil {
 			t.Fatal(t)

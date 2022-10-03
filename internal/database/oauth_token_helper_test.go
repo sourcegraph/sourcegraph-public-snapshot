@@ -88,7 +88,7 @@ func TestExternalServiceTokenRefresher(t *testing.T) {
 
 	newToken, err := ExternalServiceTokenRefresher(db, 2, "refresh_token")(ctx, doer, oauthutil.OAuthContext{})
 	require.NoError(t, err)
-	assert.Equal(t, expectedNewToken, newToken)
+	assert.Equal(t, expectedNewToken, newToken.AccessToken)
 }
 
 func TestExternalAccountTokenRefresher(t *testing.T) {
@@ -142,5 +142,5 @@ func TestExternalAccountTokenRefresher(t *testing.T) {
 	expectedNewToken := "new-token"
 	newToken, err := ExternalAccountTokenRefresher(db, 1, "refresh_token")(ctx, doer, oauthutil.OAuthContext{})
 	require.NoError(t, err)
-	assert.Equal(t, expectedNewToken, newToken)
+	assert.Equal(t, expectedNewToken, newToken.AccessToken)
 }

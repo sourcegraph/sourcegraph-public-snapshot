@@ -274,15 +274,20 @@ func (s *PermsSyncer) getUserGitHubAppInstallations(ctx context.Context, acct *e
 		return nil, nil
 	}
 
+	oauthToken := &auth.OAuthBearerToken{
+		AccessToken:  tok.AccessToken,
+		RefreshToken: tok.RefreshToken,
+		Expiry:       tok.Expiry,
+	}
+
 	apiURL, err := url.Parse(acct.ServiceID)
 	if err != nil {
 		return nil, err
 	}
 	apiURL, _ = github.APIRoot(apiURL)
 
-	tokenRefresher := database.ExternalAccountTokenRefresher(s.db, acct.ID, tok.RefreshToken)
 	ghClient := github.NewV3Client(log.Scoped("perms_syncer.github.v3", "github v3 client for perms syncer"),
-		extsvc.URNGitHubOAuth, apiURL, &auth.OAuthBearerToken{AccessToken: tok.AccessToken}, nil, tokenRefresher)
+		extsvc.URNGitHubOAuth, apiURL, oauthToken, nil)
 
 	installations, err := ghClient.GetUserInstallations(ctx)
 	if err != nil {

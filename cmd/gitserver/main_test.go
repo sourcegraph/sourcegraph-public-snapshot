@@ -137,6 +137,8 @@ func TestGetRemoteURLFunc_GitHubApp(t *testing.T) {
 	defer conf.Mock(nil)
 
 	db := database.NewMockDB()
+	db.ReposFunc.SetDefaultReturn(repoStore)
+	db.ExternalServicesFunc.SetDefaultReturn(externalServiceStore)
 	got, err := getRemoteURLFunc(context.Background(), doer, "test-repo-1", db)
 	require.NoError(t, err)
 
