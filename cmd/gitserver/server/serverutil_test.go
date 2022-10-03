@@ -12,6 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetTlsExternal(t *testing.T) {
@@ -150,15 +151,11 @@ func TestConfigureRemoteP4FusionCommandWithoutCArgs(t *testing.T) {
 		"GIT_HTTP_USER_AGENT=git/Sourcegraph-Bot",
 	}
 	input := exec.Command("p4-fusion", "--path", "some_path", "--client", "some_client", "--user", "some_user")
-	expectedArgs := []string{"p4-fusion", "credential.helper=", "protocol.version=2", "--path", "some_path", "--client", "some_client", "--user", "some_user"}
+	expectedArgs := []string{"p4-fusion", "--path", "some_path", "--client", "some_client", "--user", "some_user"}
 
 	configureRemoteGitCommand(input, &tlsConfig{})
-	if !reflect.DeepEqual(input.Env, expectedEnv) {
-		t.Errorf("\ngot:  %s\nwant: %s\n", input.Env, expectedEnv)
-	}
-	if !reflect.DeepEqual(input.Args, expectedArgs) {
-		t.Errorf("\ngot:  %s\nwant: %s\n", input.Args, expectedArgs)
-	}
+	assert.Equal(t, expectedEnv, input.Env)
+	assert.Equal(t, expectedArgs, input.Args)
 }
 
 func TestConfigureRemoteGitCommand_tls(t *testing.T) {

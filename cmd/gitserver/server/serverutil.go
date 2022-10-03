@@ -243,10 +243,18 @@ func configureRemoteGitCommand(cmd *exec.Cmd, tlsConf *tlsConfig) {
 	// logs. This removes all -c arguments
 	if executable == "p4-fusion" {
 		idx := 0
+		foundC := false
 		for _, arg := range extraArgs {
+			// skipping arg after -c
+			if foundC {
+				foundC = false
+				continue
+			}
 			if arg != "-c" {
 				extraArgs[idx] = arg
 				idx++
+			} else {
+				foundC = true
 			}
 		}
 		extraArgs = extraArgs[:idx]
