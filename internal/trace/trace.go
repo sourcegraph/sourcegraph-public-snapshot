@@ -48,7 +48,7 @@ func (t *Trace) AddEvent(name string, attributes ...attribute.KeyValue) {
 	t.nettraceTrace.LazyLog(attributesStringer(attributes), false)
 }
 
-// SamplingRetain marks this span as to be retained by the OTEL Collector by adding an
+// SamplingRetain marks a span as to be retained by the OTEL Collector by adding an
 // attribute which is to be used by the TailSamplingProcessor if enabled.
 func (t *Trace) SamplingRetain() {
 	t.SetAttributes(attribute.String(samplingRetainKey, "true"))

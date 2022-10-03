@@ -53,7 +53,7 @@ func getTracer(ctx context.Context, tracer opentracing.Tracer) opentracing.Trace
 	return tracer
 }
 
-// SamplingRetainSpan marks this span as to be retained by the OTEL Collector by adding an
+// SamplingRetainSpan marks a span as to be retained by the OTEL Collector by adding an
 // attribute which is to be used by the TailSamplingProcessor if enabled.
 func SamplingRetainSpan(span opentracing.Span) opentracing.Span {
 	return span.SetTag(samplingRetainKey, "true")
