@@ -41,12 +41,6 @@ func HTTPMiddleware(operation string, h http.Handler, opts ...otelhttp.Option) h
 		switch policy.GetTracePolicy() {
 		case policy.TraceSelective:
 			trace = policy.RequestWantsTracing(r)
-			if strings.Contains(r.URL.RawQuery, "trace=2") {
-				ctx := context.WithValue(r.Context(), "sampling-camel", true)
-				println("🫕")
-				r = r.WithContext(ctx)
-			}
-
 		case policy.TraceAll:
 			trace = true
 		default:

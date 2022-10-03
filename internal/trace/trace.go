@@ -14,6 +14,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// samplingRetainKey is the attribute key used to mark as span as to be retained.
+var samplingRetainKey = "sampling_retain"
+
 // Trace is a combined version of golang.org/x/net/trace.Trace and
 // opentelemetry.Span, applying its various API functions to both
 // underlying trace types. Use New to construct one.
@@ -43,6 +46,12 @@ func (t *Trace) SetAttributes(attributes ...attribute.KeyValue) {
 func (t *Trace) AddEvent(name string, attributes ...attribute.KeyValue) {
 	t.oteltraceSpan.AddEvent(name, oteltrace.WithAttributes(attributes...))
 	t.nettraceTrace.LazyLog(attributesStringer(attributes), false)
+}
+
+// SamplingRetain marks this span as to be retained by the OTEL Collector by adding an
+// attribute which is to be used by the TailSamplingProcessor if enabled.
+func (t *Trace) SamplingRetain() {
+	t.SetAttributes(attribute.String(samplingRetainKey, "true"))
 }
 
 // LazyPrintf evaluates its arguments with fmt.Sprintf each time the
