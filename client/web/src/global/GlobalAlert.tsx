@@ -8,14 +8,14 @@ import { AlertType } from '@sourcegraph/shared/src/graphql-operations'
 import { Alert } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert, DismissibleAlertProps } from '../components/DismissibleAlert'
-import { AlertFields } from '../graphql-operations'
+import { SiteFlagAlertFields } from '../graphql-operations'
 
 /**
  * A global alert that is shown at the top of the viewport.
  */
 export const GlobalAlert: React.FunctionComponent<
     React.PropsWithChildren<{
-        alert: AlertFields
+        alert: SiteFlagAlertFields
         className?: string
     }>
 > = ({ alert, className: commonClassName }) => {
