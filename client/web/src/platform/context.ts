@@ -6,9 +6,8 @@ import { fromObservableQueryPromise, getDocumentNode } from '@sourcegraph/http-c
 import { viewerSettingsQuery } from '@sourcegraph/shared/src/backend/settings'
 import { ViewerSettingsResult, ViewerSettingsVariables } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { mutateSettings, updateSettings } from '@sourcegraph/shared/src/settings/edit'
-import { gqlToCascade } from '@sourcegraph/shared/src/settings/settings'
+import { gqlToCascade, SettingsSubject, SubjectSettingsContents } from '@sourcegraph/shared/src/settings/settings'
 import {
     toPrettyBlobURL,
     RepoFile,
@@ -95,12 +94,17 @@ function toPrettyWebBlobURL(
     return appendSubtreeQueryParameter(toPrettyBlobURL(context))
 }
 
-function mapViewerSettingsResult({ data, errors }: ApolloQueryResult<ViewerSettingsResult>): GQL.ISettingsCascade {
+function mapViewerSettingsResult({
+    data,
+    errors,
+}: ApolloQueryResult<ViewerSettingsResult>): {
+    subjects: (SettingsSubject & SubjectSettingsContents)[]
+} {
     if (!data?.viewerSettings) {
         throw createAggregateError(errors)
     }
 
-    return data.viewerSettings as GQL.ISettingsCascade
+    return data.viewerSettings as { subjects: (SettingsSubject & SubjectSettingsContents)[] }
 }
 
 /**
