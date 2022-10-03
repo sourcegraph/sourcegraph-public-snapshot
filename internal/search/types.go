@@ -24,6 +24,7 @@ type Inputs struct {
 	Plan                query.Plan // the comprehensive query plan
 	Query               query.Q    // the current basic query being evaluated, one part of query.Plan
 	OriginalQuery       string     // the raw string of the original search query
+	SearchMode          SearchMode
 	PatternType         query.SearchType
 	UserSettings        *schema.Settings
 	OnSourcegraphDotCom bool
@@ -43,6 +44,13 @@ func (inputs Inputs) DefaultLimit() int {
 	}
 	return limits.DefaultMaxSearchResultsStreaming
 }
+
+type SearchMode int
+
+const (
+	Precise SearchMode = iota
+	SmartSearch
+)
 
 type Protocol int
 
