@@ -14,8 +14,10 @@ if [[ -f $commitFile ]] && [[ -f $mergeBaseFile ]]; then
     -r "${mergeBaseFile}" \
     -t ./ui/assets/compare-report.html
 
+  echo "gs://sourcegraph_reports/statoscope-reports/${BRANCH}"
   gsutil cp ./ui/assets/compare-report.html "gs://sourcegraph_reports/statoscope-reports/${BRANCH}"
 
+  echo "${commitFile}" "${mergeBaseFile}"
   yarn workspace @sourcegraph/web run report-bundle-diff \
     "${commitFile}" \
     "${mergeBaseFile}"

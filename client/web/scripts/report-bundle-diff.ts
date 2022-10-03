@@ -90,7 +90,7 @@ function describeMetric(metric: Metric, treshold: number): string {
         return `${metric.valueTextP} (+${metric.valueText}) 🔺`
     }
     if (metric.value < -treshold) {
-        return `${metric.valueTextP} (+${metric.valueText}) 🔽`
+        return `${metric.valueTextP} (${metric.valueText}) 🔽`
     }
     return `${metric.valueTextP} (${metric.value > 0 ? '+' : ''}${metric.valueText})`
 }
