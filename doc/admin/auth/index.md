@@ -445,8 +445,8 @@ In most cases, the link between a Sourcegraph account and an authentication prov
 Consequently, you can only sign in via an auth provider if your email on Sourcegraph matches the one configured in the auth provider.
 Let's say the email field in your Sourcegraph account was kept blank when a site admin created the account for you, but the username matches your username on GitHub or GitLab. Will this work? If you try to sign in to SG with GitHub or GitLab, it won't work, and you will see an error informing you that a verified email is missing.
 
-Exceptions to this rule are [HTTP Proxies](#http-authentication-proxies) - there's an option to make this link via username only - and [Bitbucket Server and Bitbucket Data Center](../config/authorization_and_authentication.md#bitbucket-server-bitbucket-data-center-authorization).
-We don't support OAuth for Bitbucket, but the match between the chosen auth provider and a user's Bitbucket account happens via username.
+Exceptions to this rule are [HTTP Proxies](#http-authentication-proxies) - there's an option to make the match via username only - and [Bitbucket Server and Bitbucket Data Center](../config/authorization_and_authentication.md###bitbucket-server-bitbucket-data-center-authorization).
+We don't support OAuth for Bitbucket, but the link between the chosen auth provider and a user's Bitbucket account happens via username.
 
 ## Linking accounts from multiple auth providers
 Sourcegraph will automatically link accounts from multiple external auth providers, resulting in a single user account on Sourcegraph. That way a user can login with multiple auth methods and end up being logged in with the same Sourcegraph account. In general, to link accounts, the following condition needs to be met:
