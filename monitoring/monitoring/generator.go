@@ -17,6 +17,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring/internal/grafana"
+	"github.com/sourcegraph/sourcegraph/monitoring/monitoring/internal/headertransport"
 )
 
 // GenerateOptions declares options for the monitoring generator.
@@ -105,7 +106,7 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 				if len(opts.GrafanaHeaders) > 0 {
 					glog.Debug("Adding additional headers to Grafana requests")
 					glog.Debug(fmt.Sprintf("%v", opts.GrafanaHeaders))
-					adt := NewAddHeaderTransport(httpClient.Transport, opts.GrafanaHeaders)
+					adt := headertransport.NewAddHeaderTransport(httpClient.Transport, opts.GrafanaHeaders)
 					httpClient.Transport = adt
 				}
 
