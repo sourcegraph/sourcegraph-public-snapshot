@@ -90,6 +90,11 @@ extend type Mutation {
         When specified, only deletes uploads that are latest for the given repository.
         """
         isLatestForRepo: Boolean
+
+        """
+        The repository.
+        """
+        repository: ID
     ): EmptyResponse
 
     """

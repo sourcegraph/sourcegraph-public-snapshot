@@ -15,8 +15,8 @@ interface UseDeleteLsifUploadsResult {
 }
 
 const DELETE_LSIF_UPLOAD = gql`
-    mutation DeleteLsifUploads($query: String, $state: LSIFUploadState, $isLatestForRepo: Boolean) {
-        deleteLSIFUploads(query: $query, state: $state, isLatestForRepo: $isLatestForRepo) {
+    mutation DeleteLsifUploads($query: String, $state: LSIFUploadState, $isLatestForRepo: Boolean, $repository: ID) {
+        deleteLSIFUploads(query: $query, state: $state, isLatestForRepo: $isLatestForRepo, repository: $repository) {
             alwaysNil
         }
     }

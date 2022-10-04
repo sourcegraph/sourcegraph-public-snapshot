@@ -2070,6 +2070,9 @@ func buildGetConditionsAndCte(opts types.GetUploadsOptions) (*sqlf.Query, []*sql
 
 func buildDeleteConditions(opts types.DeleteUploadsOptions) []*sqlf.Query {
 	conds := []*sqlf.Query{}
+	if opts.RepositoryID != 0 {
+		conds = append(conds, sqlf.Sprintf("u.repository_id = %s", opts.RepositoryID))
+	}
 	conds = append(conds, sqlf.Sprintf("repo.deleted_at IS NULL"))
 	conds = append(conds, sqlf.Sprintf("u.state != 'deleted'"))
 	if opts.Term != "" {

@@ -101,6 +101,7 @@ type DeleteLSIFUploadsArgs struct {
 	Query           *string
 	State           *string
 	IsLatestForRepo *bool
+	Repository      *graphql.ID
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for GetUploads
@@ -162,7 +163,11 @@ func (r *rootResolver) DeleteLSIFUploads(ctx context.Context, args *DeleteLSIFUp
 		return nil, err
 	}
 
-	if err := r.uploadSvc.DeleteUploads(ctx, makeDeleteUploadsOptions(args)); err != nil {
+	opts, err := makeDeleteUploadsOptions(args)
+	if err != nil {
+		return nil, err
+	}
+	if err := r.uploadSvc.DeleteUploads(ctx, opts); err != nil {
 		return nil, err
 	}
 

@@ -124,6 +124,7 @@ type DeleteUploadsOptions struct {
 	State        string
 	Term         string
 	VisibleAtTip bool
+	RepositoryID int
 }
 
 type GetConfigurationPoliciesOptions struct {

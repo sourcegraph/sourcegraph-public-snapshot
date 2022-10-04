@@ -262,6 +262,7 @@ export const CodeIntelUploadsPage: FunctionComponent<React.PropsWithChildren<Cod
                                 state: (args as any).state ?? null,
                                 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
                                 isLatestForRepo: (args as any).isLatestForRepo ?? null,
+                                repository: repo?.id ?? null,
                             })
                             setSelection(new Set())
                             return queryLsifUploads(args)
