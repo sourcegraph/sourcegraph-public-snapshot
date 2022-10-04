@@ -131,14 +131,14 @@ func writeFiles(ctx context.Context, store store.FilesStore, workspaceFileConten
 			return err
 		}
 
-		handle.Write([]byte(fmt.Sprintf("Wrote %s in %s\n", path, time.Since(start))))
-
 		// Set modified time for caching (if provided)
 		if !wf.modifiedAt.IsZero() {
 			if err = os.Chtimes(path, wf.modifiedAt, wf.modifiedAt); err != nil {
 				return err
 			}
 		}
+
+		handle.Write([]byte(fmt.Sprintf("Wrote %s in %s\n", path, time.Since(start))))
 	}
 
 	return nil
