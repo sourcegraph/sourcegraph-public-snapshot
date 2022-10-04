@@ -10,6 +10,7 @@ import (
 )
 
 func TestIntegration(t *testing.T) {
+	// audit logs are logged under INFO severity
 	t.Setenv("SRC_LOG_LEVEL", "info")
 
 	// start sampling after 5 messages
