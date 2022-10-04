@@ -116,7 +116,7 @@ export interface LegacyResultContainerProps {
 /**
  * The container component for a result in the SearchResults component.
  *
- * @deprecated
+ * @deprecated Deprecated in favor of the simplified ResultContainer component.
  */
 export const LegacyResultContainer: React.FunctionComponent<React.PropsWithChildren<LegacyResultContainerProps>> = ({
     defaultExpanded,
