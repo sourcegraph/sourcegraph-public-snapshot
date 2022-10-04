@@ -1051,18 +1051,25 @@ calculated_reference_counts AS (
 	SELECT
 		u.id,
 
-		-- If ru.id IS NOT NULL, then we have recalculated the reference count for this
-		-- row in the CTE canonical_package_reference_counts. Use this value. Otherwise,
-		-- this row is a dependency of the target upload list and we only be incrementally
-		-- modifying the row's reference count.
-		--
-		CASE WHEN ru.id IS NOT NULL THEN COALESCE(pkg_refcount.count, 0) ELSE urc.reference_count END +
+		(
+			-- If ru.id IS NOT NULL, then we have recalculated the reference count for this
+			-- row in the CTE canonical_package_reference_counts. Use this value. Otherwise,
+			-- this row is a dependency of the target upload list and we only be incrementally
+			-- modifying the row's reference count.
+			--
+			CASE
+				WHEN ru.id IS NOT NULL THEN
+					COALESCE(pkg_refcount.count, 0)
+				ELSE
+					COALESCE(urc.reference_count, 0)
+			END +
 
-		-- If ru.id IN canonical_dependency_reference_counts, then we incrementally modify
-		-- the row's reference count proportional the number of additional dependent edges
-		-- counted in the CTE. The placeholder here is an integer in the range [-1, 1] used
-		-- to specify if we are adding or removing a set of upload records.
-		COALESCE(dep_refcount.count, 0) * %s AS reference_count
+			-- If ru.id IN canonical_dependency_reference_counts, then we incrementally modify
+			-- the row's reference count proportional the number of additional dependent edges
+			-- counted in the CTE. The placeholder here is an integer in the range [-1, 1] used
+			-- to specify if we are adding or removing a set of upload records.
+			COALESCE(dep_refcount.count, 0) * %s
+		) AS reference_count
 	FROM lsif_uploads u
 	LEFT JOIN lsif_uploads_reference_counts urc ON urc.upload_id = u.id
 	LEFT JOIN ranked_uploads_providing_packages ru ON ru.id = u.id
