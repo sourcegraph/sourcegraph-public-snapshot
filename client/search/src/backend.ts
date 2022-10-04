@@ -219,13 +219,7 @@ export const fetchSearchContext = (
         })
         .pipe(
             map(dataOrThrowErrors),
-            map(data => {
-                if (data.node?.__typename !== 'SearchContext') {
-                    throw new Error(`node is a ${data.node?.__typename}, not SearchContext`)
-                }
-
-                return data.node
-            })
+            map(data => data.node as SearchContextFields)
         )
 }
 
@@ -252,13 +246,7 @@ export const fetchSearchContextBySpec = (
         })
         .pipe(
             map(dataOrThrowErrors),
-            map(data => {
-                if (data.searchContextBySpec?.__typename !== 'SearchContext') {
-                    throw new Error(`node is a ${data.searchContextBySpec?.__typename}, not SearchContext`)
-                }
-
-                return data.searchContextBySpec
-            })
+            map(data => data.searchContextBySpec as SearchContextFields)
         )
 }
 
@@ -284,13 +272,7 @@ export function createSearchContext(
         })
         .pipe(
             map(dataOrThrowErrors),
-            map(data => {
-                if (data.createSearchContext?.__typename !== 'SearchContext') {
-                    throw new Error(`node is a ${data.createSearchContext?.__typename}, not SearchContext`)
-                }
-
-                return data.createSearchContext
-            })
+            map(data => data.createSearchContext as SearchContextFields)
         )
 }
 
@@ -317,13 +299,7 @@ export function updateSearchContext(
         })
         .pipe(
             map(dataOrThrowErrors),
-            map(data => {
-                if (data.updateSearchContext?.__typename !== 'SearchContext') {
-                    throw new Error(`node is a ${data.updateSearchContext?.__typename}, not SearchContext`)
-                }
-
-                return data.updateSearchContext
-            })
+            map(data => data.updateSearchContext as SearchContextFields)
         )
 }
 
