@@ -35,12 +35,6 @@ func (j *autoindexingDependencyScheduler) Config() []env.Config {
 }
 
 func (j *autoindexingDependencyScheduler) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	// observationContext := &observation.Context{
-	// 	Logger:     logger.Scoped("routines", "codeintel autoindexing dependency scheduling routines"),
-	// 	Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-	// 	Registerer: prometheus.DefaultRegisterer,
-	// }
-
 	// Initialize stores
 	rawDB, err := workerdb.Init()
 	if err != nil {
@@ -68,9 +62,6 @@ func (j *autoindexingDependencyScheduler) Routines(startupCtx context.Context, l
 	autoIndexingSvc := autoindexing.GetService(db, uploadSvc, depsSvc, policySvc, gitserverClient, repoUpdater)
 	// dependencySyncStore := autoIndexingSvc.DependencySyncStore()
 	// dependencyIndexingStore := autoindexingSvc.DependencyIndexingStore()
-
-	// syncMetrics := workerutil.NewMetrics(observationContext, "codeintel_dependency_index_processor")
-	// queueingMetrics := workerutil.NewMetrics(observationContext, "codeintel_dependency_index_queueing")
 
 	// TODO - move these to metrics reporter job
 	// Initialize metrics

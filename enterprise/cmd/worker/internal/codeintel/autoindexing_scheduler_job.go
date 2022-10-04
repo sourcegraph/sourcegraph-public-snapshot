@@ -35,12 +35,6 @@ func (j *autoindexingScheduler) Config() []env.Config {
 }
 
 func (j *autoindexingScheduler) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	// observationContext := &observation.Context{
-	// 	Logger:     logger.Scoped("routines", "codeintel autoindexing scheduling routines"),
-	// 	Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-	// 	Registerer: prometheus.DefaultRegisterer,
-	// }
-
 	// Initialize stores
 	rawDB, err := workerdb.Init()
 	if err != nil {
@@ -60,16 +54,12 @@ func (j *autoindexingScheduler) Routines(startupCtx context.Context, logger log.
 		return nil, err
 	}
 	repoUpdater := codeintel.InitRepoUpdaterClient()
-	// TODO
-	// policyMatcher := policiesEnterprise.NewMatcher(gitserverClient, policiesEnterprise.IndexingExtractor, false, true)
 
 	// Initialize services
 	uploadSvc := uploads.GetService(db, codeintelDB, gitserverClient)
 	depsSvc := dependencies.GetService(db)
 	policySvc := policies.GetService(db, uploadSvc, gitserverClient)
 	autoIndexingSvc := autoindexing.GetService(db, uploadSvc, depsSvc, policySvc, gitserverClient, repoUpdater)
-	// TODO
-	// policySvc := policies.GetService(db, uploadSvc, gitserverClient)
 
 	return scheduler.NewSchedulers(autoIndexingSvc), nil
 }
