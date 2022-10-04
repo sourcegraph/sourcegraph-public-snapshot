@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
-	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -70,7 +69,7 @@ func TestUnmarshal(t *testing.T) {
 }
 
 func TestGetAuthenticatedUserV4(t *testing.T) {
-	cli, save := newV4Client(t, "GetAuthenticatedUserV4", nil)
+	cli, save := newV4Client(t, "GetAuthenticatedUserV4")
 	defer save()
 
 	ctx := context.Background()
@@ -88,7 +87,7 @@ func TestGetAuthenticatedUserV4(t *testing.T) {
 }
 
 func TestV4Client_SearchRepos(t *testing.T) {
-	cli, save := newV4Client(t, "SearchRepos", nil)
+	cli, save := newV4Client(t, "SearchRepos")
 	t.Cleanup(save)
 
 	for _, tc := range []struct {
@@ -141,7 +140,7 @@ func TestV4Client_SearchRepos(t *testing.T) {
 }
 
 func TestLoadPullRequest(t *testing.T) {
-	cli, save := newV4Client(t, "LoadPullRequest", nil)
+	cli, save := newV4Client(t, "LoadPullRequest")
 	defer save()
 
 	for i, tc := range []struct {
@@ -198,7 +197,7 @@ func TestLoadPullRequest(t *testing.T) {
 }
 
 func TestCreatePullRequest(t *testing.T) {
-	cli, save := newV4Client(t, "CreatePullRequest", nil)
+	cli, save := newV4Client(t, "CreatePullRequest")
 	defer save()
 
 	// Repository used: sourcegraph/automation-testing
@@ -289,7 +288,7 @@ func TestCreatePullRequest(t *testing.T) {
 func TestCreatePullRequest_Archived(t *testing.T) {
 	ctx := context.Background()
 
-	cli, save := newV4Client(t, "CreatePullRequest_Archived", nil)
+	cli, save := newV4Client(t, "CreatePullRequest_Archived")
 	defer save()
 
 	// Repository used: sourcegraph-testing/archived
@@ -319,7 +318,7 @@ func TestCreatePullRequest_Archived(t *testing.T) {
 }
 
 func TestClosePullRequest(t *testing.T) {
-	cli, save := newV4Client(t, "ClosePullRequest", nil)
+	cli, save := newV4Client(t, "ClosePullRequest")
 	defer save()
 
 	// Repository used: sourcegraph/automation-testing
@@ -379,7 +378,7 @@ func TestClosePullRequest(t *testing.T) {
 }
 
 func TestReopenPullRequest(t *testing.T) {
-	cli, save := newV4Client(t, "ReopenPullRequest", nil)
+	cli, save := newV4Client(t, "ReopenPullRequest")
 	defer save()
 
 	// Repository used: sourcegraph/automation-testing
@@ -430,7 +429,7 @@ func TestReopenPullRequest(t *testing.T) {
 }
 
 func TestMarkPullRequestReadyForReview(t *testing.T) {
-	cli, save := newV4Client(t, "MarkPullRequestReadyForReview", nil)
+	cli, save := newV4Client(t, "MarkPullRequestReadyForReview")
 	defer save()
 
 	// Repository used: sourcegraph/automation-testing
@@ -481,7 +480,7 @@ func TestMarkPullRequestReadyForReview(t *testing.T) {
 }
 
 func TestCreatePullRequestComment(t *testing.T) {
-	cli, save := newV4Client(t, "CreatePullRequestComment", nil)
+	cli, save := newV4Client(t, "CreatePullRequestComment")
 	defer save()
 
 	pr := &PullRequest{
@@ -496,7 +495,7 @@ func TestCreatePullRequestComment(t *testing.T) {
 }
 
 func TestMergePullRequest(t *testing.T) {
-	cli, save := newV4Client(t, "TestMergePullRequest", nil)
+	cli, save := newV4Client(t, "TestMergePullRequest")
 	defer save()
 
 	t.Run("success", func(t *testing.T) {
@@ -539,7 +538,7 @@ func TestMergePullRequest(t *testing.T) {
 func TestUpdatePullRequest_Archived(t *testing.T) {
 	ctx := context.Background()
 
-	cli, save := newV4Client(t, "UpdatePullRequest_Archived", nil)
+	cli, save := newV4Client(t, "UpdatePullRequest_Archived")
 	defer save()
 
 	// Repository used: sourcegraph-testing/archived
@@ -711,7 +710,7 @@ query{
 }
 
 func TestRecentCommitters(t *testing.T) {
-	cli, save := newV4Client(t, "RecentCommitters", nil)
+	cli, save := newV4Client(t, "RecentCommitters")
 	t.Cleanup(save)
 
 	recentCommitters, err := cli.RecentCommitters(context.Background(), &RecentCommittersParams{
@@ -807,7 +806,7 @@ func TestV4Client_WithAuthenticator(t *testing.T) {
 	}
 }
 
-func newV4Client(t testing.TB, name string, tokenRefresher oauthutil.TokenRefresher) (*V4Client, func()) {
+func newV4Client(t testing.TB, name string) (*V4Client, func()) {
 	t.Helper()
 
 	cf, save := httptestutil.NewGitHubRecorderFactory(t, update(name), name)
@@ -1056,7 +1055,7 @@ repo8: repository(owner: "sourcegraph", name: "contains.dot") { ... on Repositor
 }
 
 func TestClient_Releases(t *testing.T) {
-	cli, save := newV4Client(t, "Releases", nil)
+	cli, save := newV4Client(t, "Releases")
 	t.Cleanup(save)
 
 	releases, err := cli.Releases(context.Background(), &ReleasesParams{
@@ -1073,7 +1072,7 @@ func TestClient_Releases(t *testing.T) {
 }
 
 func TestClient_WithTokenRefresher(t *testing.T) {
-	cli, save := newV4Client(t, "Releases", nil)
+	cli, save := newV4Client(t, "Releases")
 	t.Cleanup(save)
 
 	releases, err := cli.Releases(context.Background(), &ReleasesParams{

@@ -14,8 +14,6 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -139,11 +137,8 @@ func TestClient_doRequestWithV4Client(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	tokenRefresherFunc := func(ctx context.Context, doer httpcli.Doer, oauthCtxt oauthutil.OAuthContext) (*auth.OAuthBearerToken, error) {
-		return &auth.OAuthBearerToken{Token: "refreshed-token"}, nil
-	}
 
-	v4Client, save := newV4Client(t, "GetAuthenticatedUserV4", tokenRefresherFunc)
+	v4Client, save := newV4Client(t, "GetAuthenticatedUserV4")
 	defer save()
 
 	req, err := http.NewRequest(http.MethodGet, "url", nil)
