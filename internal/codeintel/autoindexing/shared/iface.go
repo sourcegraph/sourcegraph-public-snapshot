@@ -27,6 +27,10 @@ type GitserverClient interface {
 	RawContents(ctx context.Context, repositoryID int, commit, file string) ([]byte, error)
 	ResolveRevision(ctx context.Context, repositoryID int, versionString string) (api.CommitID, error)
 	ListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) (_ []*gitdomain.Tag, err error)
+
+	CommitDate(ctx context.Context, repositoryID int, commit string) (string, time.Time, bool, error)
+	RefDescriptions(ctx context.Context, repositoryID int, gitOjbs ...string) (map[string][]gitdomain.RefDescription, error)
+	CommitsUniqueToBranch(ctx context.Context, repositoryID int, branchName string, isDefaultBranch bool, maxAge *time.Time) (map[string]time.Time, error)
 }
 
 type InferenceService interface {

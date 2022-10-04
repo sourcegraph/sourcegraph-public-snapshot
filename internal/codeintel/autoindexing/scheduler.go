@@ -22,10 +22,10 @@ func (s *Service) NewScheduler(
 	policyBatchSize int,
 ) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), interval, &scheduler{
-		autoindexingSvc: s,
-		// policySvc:     s. policySvc,
-		uploadSvc: s.uploadSvc,
-		// policyMatcher: s. policyMatcher,
+		autoindexingSvc:        s,
+		policySvc:              s.policiesSvc,
+		uploadSvc:              s.uploadSvc,
+		policyMatcher:          s.policyMatcher,
 		logger:                 log.Scoped("autoindexing-scheduler", ""),
 		repositoryProcessDelay: repositoryProcessDelay,
 		repositoryBatchSize:    repositoryBatchSize,
@@ -35,7 +35,7 @@ func (s *Service) NewScheduler(
 
 type scheduler struct {
 	autoindexingSvc        *Service
-	policySvc              PolicyService
+	policySvc              PoliciesService
 	uploadSvc              shared.UploadService
 	policyMatcher          PolicyMatcher
 	logger                 log.Logger

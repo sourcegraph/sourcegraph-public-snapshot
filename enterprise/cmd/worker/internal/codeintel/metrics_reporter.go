@@ -14,6 +14,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executorqueue"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -63,7 +65,9 @@ func (j *metricsReporterJob) Routines(startupCtx context.Context, logger log.Log
 
 	repoUpdater := codeintel.InitRepoUpdaterClient()
 	uploadSvc := uploads.GetService(db, codeIntelDB, gitserverClient)
-	autoindexingSvc := autoindexing.GetService(db, uploadSvc, gitserverClient, repoUpdater)
+	depsSvc := dependencies.GetService(db)
+	policySvc := policies.GetService(db, uploadSvc, gitserverClient)
+	autoindexingSvc := autoindexing.GetService(db, uploadSvc, depsSvc, policySvc, gitserverClient, repoUpdater)
 
 	indexWorkerStore := autoindexingSvc.WorkerutilStore()
 

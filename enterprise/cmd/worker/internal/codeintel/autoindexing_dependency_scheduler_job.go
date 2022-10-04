@@ -9,8 +9,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/background/dependencies"
 	bkgdependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/background/dependencies"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -62,7 +63,9 @@ func (j *autoindexingDependencyScheduler) Routines(startupCtx context.Context, l
 
 	// Initialize services
 	uploadSvc := uploads.GetService(db, codeintelDB, gitserverClient)
-	autoIndexingSvc := autoindexing.GetService(db, uploadSvc, gitserverClient, repoUpdater)
+	depsSvc := dependencies.GetService(db)
+	policySvc := policies.GetService(db, uploadSvc, gitserverClient)
+	autoIndexingSvc := autoindexing.GetService(db, uploadSvc, depsSvc, policySvc, gitserverClient, repoUpdater)
 	// dependencySyncStore := autoIndexingSvc.DependencySyncStore()
 	// dependencyIndexingStore := autoindexingSvc.DependencyIndexingStore()
 
@@ -73,5 +76,5 @@ func (j *autoindexingDependencyScheduler) Routines(startupCtx context.Context, l
 	// Initialize metrics
 	// dbworker.InitPrometheusMetric(observationContext, dependencySyncStore, "codeintel", "dependency_index", nil)
 
-	return dependencies.NewSchedulers(autoIndexingSvc), nil
+	return bkgdependencies.NewSchedulers(autoIndexingSvc), nil
 }

@@ -79,10 +79,12 @@ type Service struct {
 	dependencyIndexingStore dbworkerstore.Store
 	uploadSvc               shared.UploadService
 	depsSvc                 DependenciesService
+	policiesSvc             PoliciesService
 	repoStore               ReposStore
 	gitserverRepoStore      GitserverRepoStore
 	externalServiceStore    ExternalServiceStore
 	enqueuer                IndexEnqueuer
+	policyMatcher           PolicyMatcher
 	gitserverClient         shared.GitserverClient
 	symbolsClient           *symbols.Client
 	repoUpdater             shared.RepoUpdaterClient
@@ -97,6 +99,13 @@ type Service struct {
 func newService(
 	store store.Store,
 	uploadSvc shared.UploadService,
+	dependenciesSvc DependenciesService,
+	policiesSvc PoliciesService,
+	repoStore ReposStore,
+	gitserverRepoStore GitserverRepoStore,
+	externalServiceStore ExternalServiceStore,
+	enqueuer IndexEnqueuer,
+	policyMatcher PolicyMatcher,
 	gitserver shared.GitserverClient,
 	symbolsClient *symbols.Client,
 	repoUpdater shared.RepoUpdaterClient,
@@ -109,11 +118,13 @@ func newService(
 		dependencySyncStore:     store.WorkerutilDependencySyncStore(observationContext),
 		dependencyIndexingStore: store.WorkerutilDependencyIndexStore(observationContext),
 		uploadSvc:               uploadSvc,
-		depsSvc:                 nil, // TODO
-		externalServiceStore:    nil, // TODO
-		repoStore:               nil, // TODO
-		gitserverRepoStore:      nil, // TODO
-		enqueuer:                nil, // TODO
+		depsSvc:                 dependenciesSvc,
+		policiesSvc:             policiesSvc,
+		repoStore:               repoStore,
+		gitserverRepoStore:      gitserverRepoStore,
+		externalServiceStore:    externalServiceStore,
+		enqueuer:                enqueuer,
+		policyMatcher:           policyMatcher,
 		gitserverClient:         gitserver,
 		symbolsClient:           symbolsClient,
 		repoUpdater:             repoUpdater,

@@ -17,6 +17,10 @@ type DependenciesService interface {
 	UpsertDependencyRepos(ctx context.Context, deps []dependencies.Repo) ([]dependencies.Repo, error)
 }
 
+type PoliciesService interface {
+	GetConfigurationPolicies(ctx context.Context, opts codeinteltypes.GetConfigurationPoliciesOptions) ([]codeinteltypes.ConfigurationPolicy, int, error)
+}
+
 type ReposStore interface {
 	ListMinimalRepos(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error)
 }
@@ -38,14 +42,6 @@ type AutoIndexingServiceForDepScheduling interface {
 	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error)
 }
 
-//
-//
-//
-
 type PolicyMatcher interface {
 	CommitsDescribedByPolicyInternal(ctx context.Context, repositoryID int, policies []codeinteltypes.ConfigurationPolicy, now time.Time, filterCommits ...string) (map[string][]policies.PolicyMatch, error)
-}
-
-type PolicyService interface {
-	GetConfigurationPolicies(ctx context.Context, opts codeinteltypes.GetConfigurationPoliciesOptions) ([]codeinteltypes.ConfigurationPolicy, int, error)
 }
