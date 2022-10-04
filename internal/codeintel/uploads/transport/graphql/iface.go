@@ -18,6 +18,7 @@ type UploadService interface {
 	GetUploads(ctx context.Context, opts types.GetUploadsOptions) (uploads []types.Upload, totalCount int, err error)
 	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []types.Upload, err error)
 	DeleteUploadByID(ctx context.Context, id int) (_ bool, err error)
+	DeleteUploads(ctx context.Context, opts types.DeleteUploadsOptions) (err error)
 }
 
 type AutoIndexingService interface {

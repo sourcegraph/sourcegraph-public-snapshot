@@ -48,6 +48,9 @@ type MockStore struct {
 	// DeleteUploadByIDFunc is an instance of a mock function object
 	// controlling the behavior of the method DeleteUploadByID.
 	DeleteUploadByIDFunc *StoreDeleteUploadByIDFunc
+	// DeleteUploadsFunc is an instance of a mock function object
+	// controlling the behavior of the method DeleteUploads.
+	DeleteUploadsFunc *StoreDeleteUploadsFunc
 	// DeleteUploadsStuckUploadingFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// DeleteUploadsStuckUploading.
@@ -235,6 +238,11 @@ func NewMockStore() *MockStore {
 		},
 		DeleteUploadByIDFunc: &StoreDeleteUploadByIDFunc{
 			defaultHook: func(context.Context, int) (r0 bool, r1 error) {
+				return
+			},
+		},
+		DeleteUploadsFunc: &StoreDeleteUploadsFunc{
+			defaultHook: func(context.Context, types.DeleteUploadsOptions) (r0 error) {
 				return
 			},
 		},
@@ -505,6 +513,11 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.DeleteUploadByID")
 			},
 		},
+		DeleteUploadsFunc: &StoreDeleteUploadsFunc{
+			defaultHook: func(context.Context, types.DeleteUploadsOptions) error {
+				panic("unexpected invocation of MockStore.DeleteUploads")
+			},
+		},
 		DeleteUploadsStuckUploadingFunc: &StoreDeleteUploadsStuckUploadingFunc{
 			defaultHook: func(context.Context, time.Time) (int, error) {
 				panic("unexpected invocation of MockStore.DeleteUploadsStuckUploading")
@@ -759,6 +772,9 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		},
 		DeleteUploadByIDFunc: &StoreDeleteUploadByIDFunc{
 			defaultHook: i.DeleteUploadByID,
+		},
+		DeleteUploadsFunc: &StoreDeleteUploadsFunc{
+			defaultHook: i.DeleteUploads,
 		},
 		DeleteUploadsStuckUploadingFunc: &StoreDeleteUploadsStuckUploadingFunc{
 			defaultHook: i.DeleteUploadsStuckUploading,
@@ -1568,6 +1584,110 @@ func (c StoreDeleteUploadByIDFuncCall) Args() []interface{} {
 // invocation.
 func (c StoreDeleteUploadByIDFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// StoreDeleteUploadsFunc describes the behavior when the DeleteUploads
+// method of the parent MockStore instance is invoked.
+type StoreDeleteUploadsFunc struct {
+	defaultHook func(context.Context, types.DeleteUploadsOptions) error
+	hooks       []func(context.Context, types.DeleteUploadsOptions) error
+	history     []StoreDeleteUploadsFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteUploads delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockStore) DeleteUploads(v0 context.Context, v1 types.DeleteUploadsOptions) error {
+	r0 := m.DeleteUploadsFunc.nextHook()(v0, v1)
+	m.DeleteUploadsFunc.appendCall(StoreDeleteUploadsFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the DeleteUploads method
+// of the parent MockStore instance is invoked and the hook queue is empty.
+func (f *StoreDeleteUploadsFunc) SetDefaultHook(hook func(context.Context, types.DeleteUploadsOptions) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteUploads method of the parent MockStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *StoreDeleteUploadsFunc) PushHook(hook func(context.Context, types.DeleteUploadsOptions) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreDeleteUploadsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, types.DeleteUploadsOptions) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreDeleteUploadsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, types.DeleteUploadsOptions) error {
+		return r0
+	})
+}
+
+func (f *StoreDeleteUploadsFunc) nextHook() func(context.Context, types.DeleteUploadsOptions) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreDeleteUploadsFunc) appendCall(r0 StoreDeleteUploadsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreDeleteUploadsFuncCall objects
+// describing the invocations of this function.
+func (f *StoreDeleteUploadsFunc) History() []StoreDeleteUploadsFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreDeleteUploadsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreDeleteUploadsFuncCall is an object that describes an invocation of
+// method DeleteUploads on an instance of MockStore.
+type StoreDeleteUploadsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 types.DeleteUploadsOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreDeleteUploadsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreDeleteUploadsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // StoreDeleteUploadsStuckUploadingFunc describes the behavior when the

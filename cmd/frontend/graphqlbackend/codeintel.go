@@ -50,6 +50,7 @@ type UploadsServiceResolver interface {
 	LSIFUploads(ctx context.Context, args *uploadsgraphql.LSIFUploadsQueryArgs) (resolvers.LSIFUploadConnectionResolver, error)
 	LSIFUploadsByRepo(ctx context.Context, args *uploadsgraphql.LSIFRepositoryUploadsQueryArgs) (resolvers.LSIFUploadConnectionResolver, error)
 	DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (*resolvers.EmptyResponse, error)
+	DeleteLSIFUploads(ctx context.Context, args *uploadsgraphql.DeleteLSIFUploadsArgs) (*resolvers.EmptyResponse, error)
 }
 type PoliciesServiceResolver interface {
 	CodeIntelligenceConfigurationPolicies(ctx context.Context, args *policiesgraphql.CodeIntelligenceConfigurationPoliciesArgs) (policiesgraphql.CodeIntelligenceConfigurationPolicyConnectionResolver, error)
