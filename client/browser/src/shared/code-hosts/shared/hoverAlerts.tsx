@@ -49,19 +49,19 @@ export async function onHoverAlertDismissed(alertType: string): Promise<void> {
 }
 
 /**
- * Returns the alert to show when the user is on private code (that has not
- * been added to Cloud) and has sourcegraph.com as the URL.
- * The alert informs the user to setup a private Sourcegraph instance.
+ * Returns the alert to show when the user is on an unindexed repo and does not
+ * have sourcegraph.com as the URL. The alert informs the user to setup add a
+ * repo.
  */
-export const createPrivateCodeHoverAlert = (codeHost: Pick<CodeHost, 'hoverOverlayClassProps'>): HoverAlert => ({
+export const createRepoNotFoundHoverAlert = (codeHost: Pick<CodeHost, 'hoverOverlayClassProps'>): HoverAlert => ({
     type: 'private-code',
     summary: {
         kind: MarkupKind.Markdown,
         value:
-            '#### Sourcegraph for private code\n\n' +
-            'To get Sourcegraph hovers on your private repositories, you need to set up a private Sourcegraph instance and connect it to the browser extension.' +
+            '#### Repository not added\n\n' +
+            'This repository is indexed by your Sourcegraph instance. Add the repository to get Code Intelligence overlays.' +
             '\n\n' +
-            `<a href="https://docs.sourcegraph.com/" class="${
+            `<a href="https://docs.sourcegraph.com/admin/repo/add" class="${
                 codeHost.hoverOverlayClassProps?.actionItemClassName ?? ''
             }" target="_blank" rel="noopener norefferer">Show more info</a>`,
     },
