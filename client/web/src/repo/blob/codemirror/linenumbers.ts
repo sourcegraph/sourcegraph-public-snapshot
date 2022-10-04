@@ -157,7 +157,7 @@ const scrollIntoView = ViewPlugin.fromClass(
  * - Shift click to select text when there is already other selected text
  * - Shift click to select line range if there is no selected text
  */
-function selectOnClick(): Extension {
+function selectOnClick({ onSelection }: SelectableLineNumbersConfig): Extension {
     // Maybe it would be better to use state fields for this (I don't know). It
     // works though.
     let maybeSelectLine = false
@@ -234,10 +234,17 @@ function selectOnClick(): Extension {
                             ? setEndLine.of(selectedLine)
                             : setSelectedLines.of({ line: selectedLine }),
                     })
+                    onSelection(normalizeLineRange(view.state.field(selectedLines)))
                 }
             },
         }),
     ]
+}
+
+interface SelectableLineNumbersConfig {
+    onSelection: (range: SelectedLineRange) => void
+    initialSelection: SelectedLineRange | null
+    navigateToLineOnAnyClick: boolean
 }
 
 /**
@@ -251,11 +258,7 @@ function selectOnClick(): Extension {
  * NOTE: Dragging to select on the gutter won't automatically scroll the
  * document.
  */
-export function selectableLineNumbers(config: {
-    onSelection: (range: SelectedLineRange) => void
-    initialSelection: SelectedLineRange | null
-    navigateToLineOnAnyClick: boolean
-}): Extension {
+export function selectableLineNumbers(config: SelectableLineNumbersConfig): Extension {
     let dragging = false
 
     return [
@@ -289,22 +292,7 @@ export function selectableLineNumbers(config: {
                         dragging = false
                         window.removeEventListener('mouseup', onmouseup)
                         window.removeEventListener('mousemove', onmousemove)
-
-                        let range = view.state.field(selectedLines)
-                        if (range) {
-                            // Order line and endLine
-                            if (range.endLine && range.line > range.endLine) {
-                                range = {
-                                    line: range.endLine,
-                                    endLine: range.line,
-                                }
-                            } else if (range.line === range.endLine) {
-                                range = { line: range.line }
-                            } else {
-                                range = { ...range }
-                            }
-                        }
-                        config.onSelection(range)
+                        config.onSelection(normalizeLineRange(view.state.field(selectedLines)))
                     }
 
                     function onmousemove(event: MouseEvent): void {
@@ -326,7 +314,7 @@ export function selectableLineNumbers(config: {
                 },
             },
         }),
-        selectOnClick(),
+        selectOnClick(config),
         EditorView.theme({
             '.cm-lineNumbers': {
                 cursor: 'pointer',
@@ -346,6 +334,23 @@ export function selectLines(view: EditorView, newRange: SelectedLineRange): void
     view.dispatch({
         effects: setSelectedLines.of(newRange && isValidLineRange(newRange, view.state.doc) ? newRange : null),
     })
+}
+
+function normalizeLineRange(range: SelectedLineRange): SelectedLineRange {
+    if (range) {
+        // Order line and endLine
+        if (range.endLine && range.line > range.endLine) {
+            range = {
+                line: range.endLine,
+                endLine: range.line,
+            }
+        } else if (range.line === range.endLine) {
+            range = { line: range.line }
+        } else {
+            range = { ...range }
+        }
+    }
+    return range
 }
 
 /**
