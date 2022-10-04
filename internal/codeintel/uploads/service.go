@@ -94,8 +94,17 @@ type Service struct {
 	operations      *operations
 }
 
-func newService(store store.Store, repoStore RepoStore, lsifstore lsifstore.LsifStore, gsc GitserverClient, locker Locker, observationContext *observation.Context) *Service {
+func newService(
+	store store.Store,
+	repoStore RepoStore,
+	lsifstore lsifstore.LsifStore,
+	gsc GitserverClient,
+	locker Locker,
+	observationContext *observation.Context,
+) *Service {
 	workerutilStore := store.WorkerutilStore(observationContext)
+
+	// TODO - move this to metric reporter?
 	dbworker.InitPrometheusMetric(observationContext, workerutilStore, "codeintel", "upload", nil)
 
 	return &Service{
@@ -105,7 +114,7 @@ func newService(store store.Store, repoStore RepoStore, lsifstore lsifstore.Lsif
 		lsifstore:       lsifstore,
 		gitserverClient: gsc,
 		locker:          locker,
-		logger:          logger.Scoped("uploads.service", ""),
+		logger:          observationContext.Logger,
 		operations:      newOperations(observationContext),
 	}
 }

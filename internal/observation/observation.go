@@ -5,14 +5,15 @@ package observation
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
-	"go.opentelemetry.io/otel/attribute"
-
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
@@ -39,6 +40,23 @@ type Context struct {
 
 // TestContext is a behaviorless Context usable for unit tests.
 var TestContext = Context{Logger: log.NoOp(), Registerer: metrics.TestRegisterer}
+
+// ContextWithLogger creates a live Context with the given logger instance.
+func ContextWithLogger(logger log.Logger) *Context {
+	return &Context{
+		Logger:     logger,
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
+		Registerer: prometheus.DefaultRegisterer,
+	}
+}
+
+// ScopedContext creates a live Context with a logger configured with the given values.
+func ScopedContext(team, domain, component string) *Context {
+	return ContextWithLogger(log.Scoped(
+		fmt.Sprintf("%s.%s.%s", team, domain, component),
+		fmt.Sprintf("%s %s %s", team, domain, component),
+	))
+}
 
 type ErrorFilterBehaviour uint8
 

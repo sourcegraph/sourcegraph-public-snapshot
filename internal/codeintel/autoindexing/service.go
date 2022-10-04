@@ -80,8 +80,8 @@ type Service struct {
 	symbolsClient           *symbols.Client
 	repoUpdater             shared.RepoUpdaterClient
 	inferenceService        shared.InferenceService
-	operations              *operations
 	logger                  log.Logger
+	operations              *operations
 }
 
 func newService(
@@ -93,22 +93,18 @@ func newService(
 	inferenceSvc shared.InferenceService,
 	observationContext *observation.Context,
 ) *Service {
-	workerutilStore := store.WorkerutilStore(observationContext)
-	dependencySyncStore := store.WorkerutilDependencySyncStore(observationContext)
-	dependencyIndexingStore := store.WorkerutilDependencyIndexStore(observationContext)
-
 	return &Service{
 		store:                   store,
-		workerutilStore:         workerutilStore,
-		dependencySyncStore:     dependencySyncStore,
-		dependencyIndexingStore: dependencyIndexingStore,
+		workerutilStore:         store.WorkerutilStore(observationContext),
+		dependencySyncStore:     store.WorkerutilDependencySyncStore(observationContext),
+		dependencyIndexingStore: store.WorkerutilDependencyIndexStore(observationContext),
 		uploadSvc:               uploadSvc,
 		gitserverClient:         gitserver,
 		symbolsClient:           symbolsClient,
 		repoUpdater:             repoUpdater,
 		inferenceService:        inferenceSvc,
-		operations:              newOperations(observationContext),
 		logger:                  observationContext.Logger,
+		operations:              newOperations(observationContext),
 	}
 }
 
