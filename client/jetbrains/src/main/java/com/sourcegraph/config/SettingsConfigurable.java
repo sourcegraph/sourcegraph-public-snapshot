@@ -61,7 +61,8 @@ public class SettingsConfigurable implements Configurable {
         String oldAccessToken = ConfigUtil.getAccessToken(project);
         String newUrl = mySettingsComponent.getEnterpriseUrl();
         String newAccessToken = mySettingsComponent.getAccessToken();
-        PluginSettingChangeContext context = new PluginSettingChangeContext(oldUrl, oldAccessToken, newUrl, newAccessToken);
+        String newRequestHeaders = mySettingsComponent.getRequestHeaders();
+        PluginSettingChangeContext context = new PluginSettingChangeContext(oldUrl, oldAccessToken, newUrl, newAccessToken, newRequestHeaders);
 
         publisher.beforeAction(context);
 

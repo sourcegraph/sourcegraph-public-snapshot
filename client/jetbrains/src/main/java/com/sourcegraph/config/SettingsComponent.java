@@ -139,6 +139,7 @@ public class SettingsComponent {
             .addComponent(enterprisePanelContent, 1)
             .getPanel();
 
+        // Create the "Request headers" text box
         JBLabel requestHeadersLabel = new JBLabel("Request headers:");
         requestHeadersTextField = new JBTextField();
         requestHeadersTextField.getEmptyText().setText("Client-ID, client-one, X-Extra, some metadata");
