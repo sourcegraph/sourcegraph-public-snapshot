@@ -34,8 +34,10 @@ type GenerateOptions struct {
 	// GrafanaCredentials is the basic auth credentials for the Grafana instance at
 	// GrafanaURL, e.g. "admin:admin"
 	GrafanaCredentials string
-	//GrafanaHeaders are additional HTTP headers to add to all requests to the target Grafana instance
+	// GrafanaHeaders are additional HTTP headers to add to all requests to the target Grafana instance
 	GrafanaHeaders map[string]string
+	// GrafanaFolder is the folder on the destination Grafana instance to upload the dashboards to
+	GrafanaFolder string
 
 	// Output directory for generated Prometheus assets
 	PrometheusDir string
@@ -115,7 +117,43 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 				if err != nil {
 					return errors.Wrapf(err, "Failed to initialize Grafana client for dashboard %q", dashboard.Title)
 				}
-				_, err = client.SetDashboard(context.Background(), *board, sdk.SetDashboardParams{Overwrite: true})
+
+				var folderId int
+
+				if opts.GrafanaFolder != "" {
+					glog.Debug(fmt.Sprintf("Attempting to create dashboards in folder %s", opts.GrafanaFolder))
+					ctx := context.Background()
+
+					// Get all the folders and look up the customer by the customer name (title)
+					folders, err := client.GetAllFolders(ctx)
+					if err != nil {
+						return errors.Wrap(err, "Unable to get all folders from Grafana API")
+					}
+					for _, folder := range folders {
+						if folder.Title == opts.GrafanaFolder {
+							glog.Debug("Existing folder found. Using it.")
+							folderId = folder.ID
+						}
+					}
+
+					// folderId is not found, create it
+					if folderId == 0 {
+						glog.Debug("No existing folder found. Trying to create one.")
+						f := sdk.Folder{
+							Title: opts.GrafanaFolder,
+						}
+
+						folder, err := client.CreateFolder(ctx, f)
+						if err != nil {
+							return errors.Wrapf(err, "Error creating new folder %s", opts.GrafanaFolder)
+						}
+
+						glog.Debug(fmt.Sprintf("Folder created with title %s and id %v", folder.Title, folder.ID))
+						folderId = folder.ID
+					}
+				}
+
+				_, err = client.SetDashboard(context.Background(), *board, sdk.SetDashboardParams{Overwrite: true, FolderID: folderId})
 				if err != nil {
 					return errors.Wrapf(err, "Could not reload Grafana instance for dashboard %q", dashboard.Title)
 				} else {

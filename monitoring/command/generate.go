@@ -73,6 +73,10 @@ func Generate(cmdRoot string, sgRoot string) *cli.Command {
 				EnvVars: []string{"GRAFANA_HEADERS"},
 				Usage:   "Additional headers for HTTP requests to the Grafana instance",
 			},
+			&cli.StringFlag{
+				Name:  "grafana.folder",
+				Usage: "Folder on Grafana instance to put generated dashboards in",
+			},
 
 			&cli.StringFlag{
 				Name:    "prometheus.dir",
@@ -127,6 +131,7 @@ func Generate(cmdRoot string, sgRoot string) *cli.Command {
 				GrafanaDir:         os.Expand(c.String("grafana.dir"), expandWithSgRoot),
 				GrafanaURL:         c.String("grafana.url"),
 				GrafanaCredentials: c.String("grafana.creds"),
+				GrafanaFolder:      c.String("grafana.folder"),
 				GrafanaHeaders: func() map[string]string {
 					h := make(map[string]string)
 					for _, entry := range c.StringSlice("grafana.headers") {
