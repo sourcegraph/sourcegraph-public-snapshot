@@ -114,7 +114,7 @@ func TestSearch(t *testing.T) {
 			db.ExternalServicesFunc.SetDefaultReturn(ext)
 			db.PhabricatorFunc.SetDefaultReturn(phabricator)
 
-			sr := newSchemaResolver(db, nil)
+			sr := newSchemaResolver(db, logtest.Scoped(t))
 			schema, err := graphql.ParseSchema(mainSchema, sr, graphql.Tracer(&prometheusTracer{logger: log.NoOp()}))
 			if err != nil {
 				t.Fatal(err)

@@ -8,6 +8,7 @@ import (
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -115,7 +116,7 @@ func TestAddUserEmail(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := newSchemaResolver(db, nil).AddUserEmail(
+				_, err := newSchemaResolver(db, logtest.Scoped(t)).AddUserEmail(
 					test.ctx,
 					&addUserEmailArgs{
 						User: MarshalUserID(1),
@@ -174,7 +175,7 @@ func TestRemoveUserEmail(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := newSchemaResolver(db, nil).RemoveUserEmail(
+				_, err := newSchemaResolver(db, logtest.Scoped(t)).RemoveUserEmail(
 					test.ctx,
 					&removeUserEmailArgs{
 						User: MarshalUserID(1),
@@ -233,7 +234,7 @@ func TestSetUserEmailPrimary(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := newSchemaResolver(db, nil).SetUserEmailPrimary(
+				_, err := newSchemaResolver(db, logtest.Scoped(t)).SetUserEmailPrimary(
 					test.ctx,
 					&setUserEmailPrimaryArgs{
 						User: MarshalUserID(1),

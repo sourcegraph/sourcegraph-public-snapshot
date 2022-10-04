@@ -27,7 +27,7 @@ func TestExternalAccounts_DeleteExternalAccount(t *testing.T) {
 		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 		act := actor.Actor{UID: 1}
 		ctx := actor.WithActor(context.Background(), &act)
-		sr := newSchemaResolver(db, nil)
+		sr := newSchemaResolver(db, logtest.Scoped(t))
 
 		spec := extsvc.AccountSpec{
 			ServiceType: extsvc.TypeGitHub,
@@ -60,7 +60,7 @@ func TestExternalAccounts_DeleteExternalAccount(t *testing.T) {
 		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 		act := actor.Actor{UID: 1}
 		ctx := actor.WithActor(context.Background(), &act)
-		sr := newSchemaResolver(db, nil)
+		sr := newSchemaResolver(db, logtest.Scoped(t))
 
 		spec := extsvc.AccountSpec{
 			ServiceType: extsvc.TypeGitHub,
