@@ -254,6 +254,7 @@ describe('Backend insight drill down filters', () => {
                 filters: {
                     includeRepoRegex: 'github.com/sourcegraph/sourcegraph',
                     excludeRepoRegex: 'github.com/sourcegraph/sourcegraph',
+                    searchContexts: [''],
                 },
                 seriesDisplayOptions: {
                     limit: 20,
