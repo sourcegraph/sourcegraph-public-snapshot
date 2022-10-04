@@ -3118,6 +3118,10 @@ type MirrorRepositoryInfo {
     The byte size of the repo.
     """
     byteSize: BigInt!
+    """
+    The gitserver shard on which the repository is or will be cloned.
+    """
+    shard: String
 }
 
 """

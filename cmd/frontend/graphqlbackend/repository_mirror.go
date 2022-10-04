@@ -167,6 +167,15 @@ func (r *repositoryMirrorInfoResolver) ByteSize(ctx context.Context) (BigInt, er
 	return BigInt{Int: info.RepoSizeBytes}, err
 }
 
+func (r *repositoryMirrorInfoResolver) Shard(ctx context.Context) (*string, error) {
+	info, err := r.computeGitserverRepo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &info.ShardID, err
+}
+
 func (r *repositoryMirrorInfoResolver) UpdateSchedule(ctx context.Context) (*updateScheduleResolver, error) {
 	info, err := r.repoUpdateSchedulerInfo(ctx)
 	if err != nil {
