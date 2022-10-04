@@ -104,8 +104,7 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 				httpClient := sdk.DefaultHTTPClient
 
 				if len(opts.GrafanaHeaders) > 0 {
-					glog.Debug("Adding additional headers to Grafana requests")
-					glog.Debug(fmt.Sprintf("%v", opts.GrafanaHeaders))
+					glog.Debug("Adding additional headers to Grafana requests", log.String("headers", fmt.Sprintf("%v", opts.GrafanaHeaders))
 					adt := headertransport.NewAddHeaderTransport(httpClient.Transport, opts.GrafanaHeaders)
 					httpClient.Transport = adt
 				}
