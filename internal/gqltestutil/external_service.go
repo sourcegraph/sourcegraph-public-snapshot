@@ -121,3 +121,49 @@ mutation DeleteExternalService($externalService: ID!, $async: Boolean!) {
 	}
 	return nil
 }
+
+func (c *Client) ExternalService(displayName string) (map[string]string, error) {
+	const query = `
+query {
+	externalServices() {
+    nodes {
+      id
+      displayName
+      config
+    }
+  }
+}
+`
+
+	type externalServicesResp struct {
+		Data struct {
+			ExternalServices struct {
+				Nodes []struct {
+					ID          string `json:"id"`
+					DisplayName string `json:"displayName"`
+					Config      string `json:"config"`
+				} `json:"nodes"`
+			} `json:"externalServices"`
+		} `json:"data"`
+	}
+
+	q := query
+	var resp externalServicesResp
+	err := c.GraphQL("", q, nil, &resp)
+	if err != nil {
+		return nil, errors.Wrap(err, "request GraphQL")
+	}
+
+	for _, node := range resp.Data.ExternalServices.Nodes {
+		println(node.DisplayName)
+		if node.DisplayName == displayName {
+			return map[string]string{
+				"id":          node.ID,
+				"displayName": node.DisplayName,
+				"config":      node.Config,
+			}, nil
+		}
+	}
+
+	return nil, nil
+}
