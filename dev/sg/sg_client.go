@@ -22,7 +22,7 @@ var clientCommand = &cli.Command{
 			Subcommands: []*cli.Command{
 				{
 					Name:      "add-github",
-					ArgsUsage: " org1 org2",
+					ArgsUsage: " org1 [org2 ...]",
 					Usage:     "Add a GitHub codehost on a given Sourcegraph instance",
 					Flags: []cli.Flag{
 						&cli.StringFlag{
