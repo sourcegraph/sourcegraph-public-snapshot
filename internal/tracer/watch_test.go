@@ -48,8 +48,7 @@ func TestConfigWatcher(t *testing.T) {
 		// should all be no-op
 		assert.Equal(t,
 			oteltrace.NewNoopTracerProvider().Tracer(""),
-			// should be a wrapped tracer
-			switchableOTel.Tracer("").(*shouldTraceTracer).tracer)
+			switchableOTel.concreteTracer("").tracer)
 		assert.Equal(t, opentracing.NoopTracer{}, switchableOT.tracer)
 	})
 
@@ -64,13 +63,13 @@ func TestConfigWatcher(t *testing.T) {
 		update()
 
 		// should not be no-op
-		assert.NotEqual(t, oteltrace.NewNoopTracerProvider().Tracer(""),
-			// should be a wrapped tracer
-			switchableOTel.Tracer("").(*shouldTraceTracer).tracer)
+		assert.NotEqual(t,
+			oteltrace.NewNoopTracerProvider().Tracer(""),
+			switchableOTel.concreteTracer("").tracer)
 		assert.NotEqual(t, opentracing.NoopTracer{}, switchableOT.tracer)
 
 		// should have debug set to false
-		assert.False(t, switchableOTel.current.Load().(*otelTracerProviderCarrier).debug)
+		assert.False(t, switchableOTel.loadCarrier().debug)
 		assert.False(t, switchableOT.debug)
 	})
 
@@ -87,13 +86,13 @@ func TestConfigWatcher(t *testing.T) {
 		update()
 
 		// should not be no-op
-		assert.NotEqual(t, oteltrace.NewNoopTracerProvider().Tracer(""),
-			// should be a wrapped tracer
-			switchableOTel.Tracer("").(*shouldTraceTracer).tracer)
+		assert.NotEqual(t,
+			oteltrace.NewNoopTracerProvider().Tracer(""),
+			switchableOTel.concreteTracer("").tracer)
 		assert.NotEqual(t, opentracing.NoopTracer{}, switchableOT.tracer)
 
 		// should have debug set
-		assert.True(t, switchableOTel.current.Load().(*otelTracerProviderCarrier).debug)
+		assert.True(t, switchableOTel.loadCarrier().debug)
 		assert.True(t, switchableOT.debug)
 	})
 
@@ -110,9 +109,13 @@ func TestConfigWatcher(t *testing.T) {
 		update()
 
 		// should be no-op
-		assert.Equal(t, oteltrace.NewNoopTracerProvider().Tracer(""),
-			// should be a wrapped tracer
-			switchableOTel.Tracer("").(*shouldTraceTracer).tracer)
+		assert.Equal(t,
+			oteltrace.NewNoopTracerProvider().Tracer(""),
+			switchableOTel.concreteTracer("").tracer)
 		assert.Equal(t, opentracing.NoopTracer{}, switchableOT.tracer)
+
+		// should have debug unset
+		assert.False(t, switchableOTel.loadCarrier().debug)
+		assert.False(t, switchableOT.debug)
 	})
 }
