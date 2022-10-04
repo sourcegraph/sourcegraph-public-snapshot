@@ -48,8 +48,8 @@ func (inputs Inputs) DefaultLimit() int {
 type SearchMode int
 
 const (
-	Precise SearchMode = iota
-	SmartSearch
+	Precise     SearchMode = 0
+	SmartSearch            = 1 << iota
 )
 
 type Protocol int
