@@ -450,7 +450,7 @@ Exceptions to this rule are [HTTP Proxies](#http-authentication-proxies), where 
 For [Bitbucket](../config/authorization_and_authentication.md#bitbucket-server-bitbucket-data-center-authorization), we don't support OAuth. Still, the match between the chosen auth provider used with Bitbucket and a user's Bitbucket account happens via username.
 
 **Using only a username to match a Sourcegraph account to an auth provider account is not recommended**.
-Usernames in Sourcegraph are mutable, so a malicious user could change a username, elevating their privileges.**
+Usernames in Sourcegraph are mutable, so a malicious user could change a username, elevating their privileges.
 
 ## Linking accounts from multiple auth providers
 Sourcegraph will automatically link accounts from multiple external auth providers, resulting in a single user account on Sourcegraph. That way a user can login with multiple auth methods and end up being logged in with the same Sourcegraph account. In general, to link accounts, the following condition needs to be met:
