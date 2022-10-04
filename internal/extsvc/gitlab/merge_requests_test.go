@@ -58,17 +58,16 @@ func TestWIPOrDraft(t *testing.T) {
 	})
 	t.Run("UnsetWIPOrDraft", func(t *testing.T) {
 		tests := []struct {
-			gitlabVersion *semver.Version
-			title, want   string
+			title, want string
 		}{
-			{title: "WIP: My perfect changeset", want: "My perfect changeset", gitlabVersion: preV14Version},
-			{title: "My perfect changeset", want: "My perfect changeset", gitlabVersion: preV14Version},
+			{title: "WIP: My perfect changeset", want: "My perfect changeset"},
+			{title: "My perfect changeset", want: "My perfect changeset"},
 
-			{title: "Draft: My perfect changeset", want: "My perfect changeset", gitlabVersion: postV14Version},
-			{title: "My perfect changeset", want: "My perfect changeset", gitlabVersion: postV14Version},
+			{title: "Draft: My perfect changeset", want: "My perfect changeset"},
+			{title: "My perfect changeset", want: "My perfect changeset"},
 		}
 		for _, tc := range tests {
-			if have, want := UnsetWIPOrDraft(tc.title, tc.gitlabVersion), tc.want; have != want {
+			if have, want := UnsetWIPOrDraft(tc.title), tc.want; have != want {
 				t.Errorf("incorrect title generated from UnsetWIPOrDraft: have=%q want=%q", have, want)
 			}
 		}

@@ -75,31 +75,20 @@ func SetWIPOrDraft(t string, v *semver.Version) string {
 
 // SetWIP ensures a "WIP:" prefix on the given title. If a "Draft:" prefix is found, that one is retained instead.
 func setWIP(title string) string {
-	t := unsetWIP(title)
+	t := UnsetWIPOrDraft(title)
 	return "WIP: " + t
 }
 
 // SetDraft ensures a "Draft:" prefix on the given title. If a "WIP:" prefix is found, we strip it off.
 func setDraft(title string) string {
-	t := unsetDraft(title)
+	t := UnsetWIPOrDraft(title)
 	return "Draft: " + t
 }
 
 // UnsetWIP removes "WIP:" and "Draft:" prefixes from the given title.
 // Depending on the GitLab version, either of them are used so we need to strip them both.
-func UnsetWIPOrDraft(title string, v *semver.Version) string {
-	if v.Major() > 14 {
-		return unsetDraft(title)
-	}
-	return unsetWIP(title)
-}
-
-func unsetDraft(title string) string {
-	return strings.TrimPrefix(title, "Draft: ")
-}
-
-func unsetWIP(title string) string {
-	return strings.TrimPrefix(title, "WIP: ")
+func UnsetWIPOrDraft(title string) string {
+	return strings.TrimPrefix(strings.TrimPrefix(title, "Draft: "), "WIP: ")
 }
 
 type DiffRefs struct {

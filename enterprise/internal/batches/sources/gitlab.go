@@ -430,13 +430,10 @@ func (s *GitLabSource) determineVersion(ctx context.Context) (*semver.Version, e
 	}
 
 	for _, chv := range chvs {
-		if chv.ExternalServiceKind != extsvc.KindGitLab && chv.Key != s.client.Urn() {
-			continue
+		if chv.ExternalServiceKind == extsvc.KindGitLab && chv.Key == s.client.Urn() {
+			v = chv.Version
+			break
 		}
-
-		v = chv.Version
-		break
-
 	}
 
 	// if we are unable to get the version from Redis, we default to making a request
@@ -497,13 +494,8 @@ func (s *GitLabSource) UndraftChangeset(ctx context.Context, c *Changeset) error
 		return errors.New("Changeset is not a GitLab merge request")
 	}
 
-	v, err := s.determineVersion(ctx)
-	if err != nil {
-		return err
-	}
-
 	// Remove WIP prefix from title.
-	c.Title = gitlab.UnsetWIPOrDraft(c.Title, v)
+	c.Title = gitlab.UnsetWIPOrDraft(c.Title)
 	// And mark the mr as not WorkInProgress / Draft anymore, otherwise UpdateChangeset
 	// will prepend the WIP: prefix again.
 

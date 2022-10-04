@@ -1138,6 +1138,21 @@ func (p *gitLabChangesetSourceTestProvider) mockGetVersions(expected string, isE
 				Version:             expected,
 				Key:                 p.source.client.Urn(),
 			},
+			{
+				ExternalServiceKind: extsvc.KindGitHub,
+				Version:             "2.38.0",
+				Key:                 "random-key-<1>",
+			},
+			{
+				ExternalServiceKind: extsvc.KindGitLab,
+				Version:             "1.3.5",
+				Key:                 "random-key-<2>",
+			},
+			{
+				ExternalServiceKind: extsvc.KindBitbucketCloud,
+				Version:             "1.2.5",
+				Key:                 "random-key-<3>",
+			},
 		}, nil
 	}
 }
