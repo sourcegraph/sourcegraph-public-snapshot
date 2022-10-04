@@ -113,9 +113,7 @@ func writeFiles(ctx context.Context, store store.FilesStore, workspaceFileConten
 
 		// Log how long it takes to write the files
 		start := time.Now()
-		if len(wf.content) > 0 {
-			src = io.NopCloser(bytes.NewReader(wf.content))
-		} else if wf.bucket != "" && wf.key != "" {
+		if wf.bucket != "" && wf.key != "" {
 			src, err = store.Get(ctx, wf.bucket, wf.key)
 			if err != nil {
 				return err
