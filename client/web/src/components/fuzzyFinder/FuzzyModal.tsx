@@ -6,7 +6,7 @@ import classNames from 'classnames'
 
 import { pluralize } from '@sourcegraph/common'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
-import { useLocalStorage, Button, Modal, Icon, H3, Text, Input } from '@sourcegraph/wildcard'
+import { Button, Modal, Icon, H3, Text, Input, useSessionStorage } from '@sourcegraph/wildcard'
 
 import { CaseInsensitiveFuzzySearch } from '../../fuzzyFinder/CaseInsensitiveFuzzySearch'
 import { FuzzySearch, FuzzySearchResult, SearchIndexing, SearchValue } from '../../fuzzyFinder/FuzzySearch'
@@ -46,21 +46,38 @@ export interface FuzzyModalProps {
     setFsm: (fsm: FuzzyFSM) => void
 }
 
+function cleanupOldLocalStorage(): void {
+    for (let index = 0; index < localStorage.length; index++) {
+        const key = localStorage.key(index)
+        if (key?.startsWith('fuzzy-modal.')) {
+            localStorage.removeItem(key)
+        }
+    }
+}
+
 /**
  * Component that interactively displays filenames in the open repository when given fuzzy queries.
  *
  * Similar to "Go to file" in VS Code or the "t" keyboard shortcut on github.com
  */
 export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyModalProps>> = props => {
-    // NOTE: the query is cached in local storage to mimic the file pickers in
+    // NOTE: the query is cached in session storage to mimic the file pickers in
     // IntelliJ (by default) and VS Code (when "Workbench > Quick Open >
     // Preserve Input" is enabled).
-    const [query, setQuery] = useLocalStorage(`fuzzy-modal.query.${props.repoName}`, props.initialQuery)
+    const [query, setQuery] = useSessionStorage(`fuzzy-modal.query.${props.repoName}`, props.initialQuery)
 
     // The "focus index" is the index of the file result that the user has
     // select with up/down arrow keys. The focused item is highlighted and the
     // window.location is moved to that URL when the user presses the enter key.
-    const [focusIndex, setFocusIndex] = useState(0)
+    const [focusIndex, setFocusIndex] = useSessionStorage(
+        `fuzzy-modal.focus-index.${props.repoName}.${props.commitID}`,
+        0
+    )
+
+    // Old versions of the fuzzy finder used local storage for the query and
+    // focus index.  This logic attempts to remove old keys from localStorage
+    // since we only use session storage now.
+    useEffect(() => cleanupOldLocalStorage(), [])
 
     // The maximum number of results to display in the fuzzy finder. For large
     // repositories, a generic query like "src" may return thousands of results
@@ -220,7 +237,6 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                 if (focusIndex < resultsCount) {
                     const fileAnchor = document.querySelector<HTMLAnchorElement>(`#fuzzy-modal-result-${focusIndex} a`)
                     fileAnchor?.click()
-                    setQuery('')
                     props.onClose()
                 }
                 break
@@ -258,7 +274,6 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                     value={query}
                     onChange={({ target: { value } }) => {
                         setQuery(value)
-                        setFocusIndex(0)
                     }}
                     onKeyDown={onInputKeyDown}
                 />

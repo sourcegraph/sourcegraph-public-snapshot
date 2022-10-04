@@ -3,12 +3,14 @@ import { useCallback, useLayoutEffect, useMemo, useState } from 'react'
 import { gql, useQuery } from '@apollo/client'
 import { useHistory, useLocation } from 'react-router'
 
-import { SearchAggregationMode } from '@sourcegraph/shared/src/graphql-operations'
+import { NotAvailableReasonType, SearchAggregationMode } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
+import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { GetSearchAggregationResult, GetSearchAggregationVariables } from '../../../../graphql-operations'
 
 import { AGGREGATION_MODE_URL_KEY, AGGREGATION_UI_MODE_URL_KEY } from './constants'
+import { GroupResultsPing } from './pings'
 import { AggregationUIMode } from './types'
 
 interface URLStateOptions<State, SerializedState> {
@@ -210,6 +212,7 @@ interface SearchAggregationDataInput {
     caseSensitive: boolean
     extendedTimeout: boolean
     proactive?: boolean
+    telemetryService: TelemetryService
 }
 
 interface AggregationState {
@@ -225,7 +228,15 @@ type SearchAggregationResults =
     | { data: GetSearchAggregationResult; loading: false; error: undefined }
 
 export const useSearchAggregationData = (input: SearchAggregationDataInput): SearchAggregationResults => {
-    const { query, patternType, aggregationMode, proactive, caseSensitive, extendedTimeout } = input
+    const {
+        query,
+        patternType,
+        aggregationMode,
+        proactive = false,
+        caseSensitive,
+        extendedTimeout,
+        telemetryService,
+    } = input
 
     const [, setAggregationMode] = useAggregationSearchMode()
     const [state, setState] = useState<AggregationState>(INITIAL_STATE)
@@ -276,6 +287,8 @@ export const useSearchAggregationData = (input: SearchAggregationDataInput): Sea
                 // skip: true resets data field in the useQuery hook, in order to use previously
                 // saved data we use useState to store data outside useQuery hook
                 setState({ data, calculatedMode: calculatedAggregationMode })
+
+                sendAggregationPing({ data, aggregationMode, extendedTimeout, proactive, telemetryService })
             },
         }
     )
@@ -317,4 +330,60 @@ export const isNonExhaustiveAggregationResults = (response?: GetSearchAggregatio
     }
 
     return response.searchQueryAggregate?.aggregations?.__typename === 'NonExhaustiveSearchAggregationResult'
+}
+
+interface UseAggregationPingsArgs {
+    data: GetSearchAggregationResult | undefined
+    proactive: boolean
+    extendedTimeout: boolean
+    telemetryService: TelemetryService
+    aggregationMode: SearchAggregationMode | null
+}
+
+function sendAggregationPing({
+    data,
+    proactive,
+    extendedTimeout,
+    telemetryService,
+    aggregationMode,
+}: UseAggregationPingsArgs): void {
+    if (!data?.searchQueryAggregate.aggregations) {
+        return
+    }
+
+    const aggregation = data.searchQueryAggregate.aggregations
+    const aggregationType = aggregation.__typename
+    const aggregationAvailable =
+        aggregationType === 'ExhaustiveSearchAggregationResult' ||
+        aggregationType === 'NonExhaustiveSearchAggregationResult'
+    const aggregationUnavailable = aggregationType === 'SearchAggregationNotAvailable'
+
+    let pingType
+
+    if (aggregationUnavailable) {
+        const extensionAvailable = aggregation.reasonType === NotAvailableReasonType.TIMEOUT_EXTENSION_AVAILABLE
+        const noExtensionAvailable = aggregation.reasonType === NotAvailableReasonType.TIMEOUT_NO_EXTENSION_AVAILABLE
+
+        if (proactive && extensionAvailable) {
+            pingType = GroupResultsPing.ProactiveLimitHit
+        }
+
+        if (noExtensionAvailable) {
+            pingType = GroupResultsPing.ExplicitLimitHit
+        }
+    }
+
+    if (aggregationAvailable) {
+        if (proactive) {
+            pingType = GroupResultsPing.ProactiveLimitSuccess
+        }
+
+        if (extendedTimeout) {
+            pingType = GroupResultsPing.ExplicitLimitSuccess
+        }
+    }
+
+    if (pingType) {
+        telemetryService.log(pingType, { aggregationMode }, { aggregationMode })
+    }
 }

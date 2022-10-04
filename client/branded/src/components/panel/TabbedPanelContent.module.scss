@@ -41,3 +41,12 @@
 .action-item-unconstrained {
     max-width: none;
 }
+
+.action-item {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: inherit;
+    letter-spacing: inherit;
+}

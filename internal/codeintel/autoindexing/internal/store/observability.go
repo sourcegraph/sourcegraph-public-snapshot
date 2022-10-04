@@ -33,6 +33,12 @@ type operations struct {
 	// Index Configuration
 	getIndexConfigurationByRepositoryID    *observation.Operation
 	updateIndexConfigurationByRepositoryID *observation.Operation
+
+	// Language Support
+	getLanguagesRequestedBy   *observation.Operation
+	setRequestLanguageSupport *observation.Operation
+
+	insertDependencyIndexingJob *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -81,5 +87,11 @@ func newOperations(observationContext *observation.Context) *operations {
 		// Index Configuration
 		getIndexConfigurationByRepositoryID:    op("GetIndexConfigurationByRepositoryID"),
 		updateIndexConfigurationByRepositoryID: op("UpdateIndexConfigurationByRepositoryID"),
+
+		// Language Support
+		getLanguagesRequestedBy:   op("GetLanguagesRequestedBy"),
+		setRequestLanguageSupport: op("SetRequestLanguageSupport"),
+
+		insertDependencyIndexingJob: op("InsertDependencyIndexingJob"),
 	}
 }

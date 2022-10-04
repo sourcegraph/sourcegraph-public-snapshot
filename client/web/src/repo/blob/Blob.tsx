@@ -53,6 +53,7 @@ import {
     toPositionOrRangeQueryParameter,
     addLineRangeQueryParameter,
     formatSearchParameters,
+    logger,
 } from '@sourcegraph/common'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
@@ -99,13 +100,20 @@ import styles from './Blob.module.scss'
  */
 const toPortalID = (line: number): string => `line-decoration-attachment-${line}`
 
+// Logical grouping of props that are only used by the CodeMirror blob view
+// implementation.
+interface CodeMirrorBlobProps {
+    overrideBrowserSearchKeybinding?: boolean
+}
+
 export interface BlobProps
     extends SettingsCascadeProps,
         PlatformContextProps<'urlToFile' | 'requestGraphQL' | 'settings'>,
         TelemetryProps,
         HoverThresholdProps,
         ExtensionsControllerProps,
-        ThemeProps {
+        ThemeProps,
+        CodeMirrorBlobProps {
     location: H.Location
     history: H.History
     className: string
@@ -543,7 +551,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                               subscriptions.add(() => {
                                   extensionHostAPI
                                       .removeViewer(viewerId)
-                                      .catch(error => console.error('Error removing viewer from extension host', error))
+                                      .catch(error => logger.error('Error removing viewer from extension host', error))
                               })
 
                               viewerUpdates.next({ viewerId, blobInfo, extensionHostAPI, subscriptions })
@@ -619,7 +627,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                                 viewerData.extensionHostAPI
                                     .setEditorSelections(viewerData.viewerId, lprToSelectionsZeroIndexed(position))
                                     .catch(error =>
-                                        console.error('Error updating editor selections on extension host', error)
+                                        logger.error('Error updating editor selections on extension host', error)
                                     )
                             })
                         )

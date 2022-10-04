@@ -56,6 +56,15 @@ export function initializeCodeSharingCommands(
     }
 }
 
+/**
+ * Generates a link to a blob on a Sourcegraph instance.
+ *
+ * @param uri - The VSCode URI of the blob.
+ * @param startLine - The zero-based line value.
+ * @param startChar - The zero-based character value.
+ * @param endLine - The zero-based line value.
+ * @param endChar - The zero-based character value.
+ */
 export function generateSourcegraphBlobLink(
     uri: vscode.Uri,
     startLine: number,
@@ -69,8 +78,9 @@ export function generateSourcegraphBlobLink(
     // Using SourcegraphUri.parse to properly decode repo revision
     const decodedUri = SourcegraphUri.parse(uri.toString())
     const finalUri = new URL(decodedUri.uri)
-    finalUri.search = `L${encodeURIComponent(String(startLine))}:${encodeURIComponent(
-        String(startChar)
-    )}-${encodeURIComponent(String(endLine))}:${encodeURIComponent(String(endChar))}`
+    // Sourcegraph expects 1-based line and character values
+    finalUri.search = `L${encodeURIComponent(String(startLine + 1))}:${encodeURIComponent(
+        String(startChar + 1)
+    )}-${encodeURIComponent(String(endLine + 1))}:${encodeURIComponent(String(endChar + 1))}`
     return finalUri.href.replace(finalUri.protocol, instanceUrl.protocol)
 }

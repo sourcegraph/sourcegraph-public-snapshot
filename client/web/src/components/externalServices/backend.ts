@@ -25,6 +25,8 @@ import {
     ExternalServiceSyncJobsVariables,
     ExternalServiceSyncJobConnectionFields,
     ExternalServiceSyncJobsResult,
+    CancelExternalServiceSyncVariables,
+    CancelExternalServiceSyncResult,
 } from '../../graphql-operations'
 
 export const externalServiceFragment = gql`
@@ -260,6 +262,23 @@ export const SYNC_EXTERNAL_SERVICE = gql`
 
 export function useSyncExternalService(): MutationTuple<SyncExternalServiceResult, SyncExternalServiceVariables> {
     return useMutation<SyncExternalServiceResult, SyncExternalServiceVariables>(SYNC_EXTERNAL_SERVICE)
+}
+
+export const CANCEL_EXTERNAL_SERVICE_SYNC = gql`
+    mutation CancelExternalServiceSync($id: ID!) {
+        cancelExternalServiceSync(id: $id) {
+            alwaysNil
+        }
+    }
+`
+
+export function useCancelExternalServiceSync(): MutationTuple<
+    CancelExternalServiceSyncResult,
+    CancelExternalServiceSyncVariables
+> {
+    return useMutation<CancelExternalServiceSyncResult, CancelExternalServiceSyncVariables>(
+        CANCEL_EXTERNAL_SERVICE_SYNC
+    )
 }
 
 export const EXTERNAL_SERVICE_SYNC_JOBS = gql`

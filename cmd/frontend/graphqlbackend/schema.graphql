@@ -555,6 +555,10 @@ type Mutation {
     """
     submitSurvey(input: SurveySubmissionInput!): EmptyResponse
     """
+    Submits happiness feedback.
+    """
+    submitHappinessFeedback(input: HappinessFeedbackSubmissionInput!): EmptyResponse
+    """
     Submits a request for a Sourcegraph Enterprise trial license.
     """
     requestTrial(email: String!): EmptyResponse
@@ -764,6 +768,13 @@ type Mutation {
     Site-admin or owner of the external service only.
     """
     syncExternalService(id: ID!): EmptyResponse!
+
+    """
+    Cancels an external service sync job. Must be in queued or processing state.
+
+    Site-admin or owner of the external service only.
+    """
+    cancelExternalServiceSync(id: ID!): EmptyResponse!
 
     """
     Associate a new key-value pair with a repo.
@@ -1131,6 +1142,24 @@ input SurveySubmissionInput {
 }
 
 """
+Input for a happiness feedback submission.
+"""
+input HappinessFeedbackSubmissionInput {
+    """
+    User's happiness rating, from 1-4.
+    """
+    score: Int!
+    """
+    The answer to "What's going well? What could be better?".
+    """
+    feedback: String
+    """
+    The path that the happiness feedback will be submitted from.
+    """
+    currentPath: String
+}
+
+"""
 A query.
 """
 type Query {
@@ -1309,6 +1338,10 @@ type Query {
         Returns users who have been active in a given period of time.
         """
         activePeriod: UserActivePeriod
+        """
+        Returns users who have NOT been active since a given point in time.
+        """
+        inactiveSince: DateTime
     ): UserConnection!
     """
     Looks up an organization by name.
@@ -2651,6 +2684,16 @@ enum ExternalServiceSyncJobState {
     Sync finished successfully.
     """
     COMPLETED
+
+    """
+    Sync job is being canceled.
+    """
+    CANCELING
+
+    """
+    Sync job has been canceled.
+    """
+    CANCELED
 }
 
 """
@@ -3632,13 +3675,92 @@ type Symbol {
 }
 
 """
+A gitblob resolver specific to code intel.
+"""
+type CodeIntelGitBlob {
+    """
+    The full path (relative to the root) of this tree.
+    """
+    path: String!
+    """
+    The base name (i.e., last path component only) of this tree.
+    """
+    name: String!
+    """
+    The Git commit containing this tree.
+    """
+    commit: CodeIntelCommit!
+    """
+    The URL to this tree (using the input revision specifier, which may not be immutable).
+    """
+    url: String!
+    """
+    The repository containing this tree.
+    """
+    repository: CodeIntelRepository!
+    """
+    The content of this blob.
+    """
+    content: String!
+}
+
+"""
+A codeintel repository is a Git source control repository that is mirrored from some origin code host and it is specific to code intel.
+"""
+type CodeIntelRepository {
+    """
+    The globally addressable ID for this commit.
+    """
+    id: ID!
+    """
+    The repository's name, as a path with one or more components. It conventionally consists of
+    the repository's hostname and path (joined by "/"), minus any suffixes (such as ".git").
+    Examples:
+    - github.com/foo/bar
+    - my-code-host.example.com/myrepo
+    - myrepo
+    """
+    name: String!
+    """
+    The URL to this repository.
+    """
+    url: String!
+}
+
+"""
+A Code Intel Commit.
+"""
+type CodeIntelCommit {
+    """
+    The globally addressable ID for this commit.
+    """
+    id: ID!
+    """
+    This commit's Git object ID (OID), a 40-character SHA-1 hash.
+    """
+    oid: GitObjectID!
+    """
+    The abbreviated form of this commit's OID.
+    """
+    abbreviatedOID: String!
+    """
+    The URL to this commit (using the input revision specifier, which may not be immutable).
+    """
+    url: String!
+    """
+    The repository that contains this commit.
+    """
+    repository: CodeIntelRepository!
+}
+
+"""
 A location inside a resource (in a repository at a specific commit).
 """
 type Location {
     """
     The file that this location refers to.
     """
-    resource: GitBlob!
+    resource: CodeIntelGitBlob!
     """
     The range inside the file that this location refers to.
     """
@@ -4340,6 +4462,36 @@ interface TreeEntry {
         """
         recursiveSingleChild: Boolean = false
     ): Boolean!
+}
+
+"""
+A Code Intel Git Tree.
+"""
+type CodeIntelGitTree {
+    """
+    The full path (relative to the root) of this tree.
+    """
+    path: String!
+    """
+    The base name (i.e., last path component only) of this tree.
+    """
+    name: String!
+    """
+    The Git commit containing this tree.
+    """
+    commit: CodeIntelCommit!
+    """
+    The URL to this tree (using the input revision specifier, which may not be immutable).
+    """
+    url: String!
+    """
+    The repository containing this tree.
+    """
+    repository: CodeIntelRepository!
+    """
+    The content of this blob.
+    """
+    content: String!
 }
 
 """
@@ -6283,6 +6435,10 @@ type AnalyticsSearchResult {
     File open analytics
     """
     fileOpens: AnalyticsStatItem!
+    """
+    Code copied from search results analytics
+    """
+    codeCopied: AnalyticsStatItem!
 }
 
 """
@@ -7383,6 +7539,10 @@ type RepositoryStats {
     The number of repositories where initial cloning or subsequent fetching resulted in an error.
     """
     failedFetch: Int!
+    """
+    The number of indexed repositories
+    """
+    indexed: Int!
 }
 
 """

@@ -10,27 +10,32 @@ title: Get Started
     margin-bottom: 1em;
   }
   .app-btn {
+    font-size: 0.85rem;
     cursor: pointer;
     text-decoration: none;
-    height: 15em;
+    padding-top: 1.5rem !important;
     width: 100%;
     border-radius: 1em;
-    border: 1px solid;
-    background-color: white;
+    border: 2px solid var(--input-focus-border);
+    color: var(--text-color);
+    background-color: var(--sidebar-bg);
     text-align: center;
-    font-weight: 400;
+    font-weight: 500;
     -moz-osx-font-smoothing: grayscale;
     -webkit-font-smoothing: antialiased;
   }
   .app-btn:hover {
-    box-shadow: 0 0 10px #00cbec;
+    box-shadow: 0 0 10px var(--link-hover-color);
   }
   .app-btn > img {
     height: 4em;
   }
+  .app-btn > p {
+    margin-bottom: 0 !important;
+  }
   .app-btn > h3 {
     font-size: 1.5em;
-    font-weight: 500;
+    font-weight: 400;
     margin-top: .2em;
     margin-bottom: 1em;
   }
@@ -42,104 +47,107 @@ title: Get Started
 
 Sourcegraph is runnable in a variety of environments, from cloud to self-hosted to your local machine.
 
-* For most customers, we recommend Sourcegraph Cloud, a single-tenant, auto-managed, and auto-upgrading option.
-* For customers that desire to self-host, we recommend one of the single-node deployment options.
-* For enterprise customers that require a multi-node, self-hosted deployment, we offer a Kubernetes option. We strongly encourage you to get in touch via Discord or email if you pursue this option.
+- For most customers, we recommend Sourcegraph Cloud. A Sourcegraph Cloud instance is a single-tenant instance that is managed entirely by Sourcegraph.
+- For customers that want to self-host, we recommend one of the single-node [deployment options](admin/deploy/index.md).
+- For enterprise customers that require a multi-node, self-hosted deployment, we offer a Kubernetes option. We strongly encourage you to get in touch by email (sales@sourcegraph.com) if you pursue this option.
 
 ### Recommended
 
-<form class="grid">
+<div class="grid">
   <!-- Sourcegraph Cloud -->
-  <button class="app-btn btn" formaction="cloud">
+  <a class="app-btn btn" href="/cloud">
 			<img alt="sourcegraph-logo" src="https://handbook.sourcegraph.com/departments/engineering/design/brand_guidelines/logo/versions/Sourcegraph_Logomark_Color.svg"/>
 			<h3>Sourcegraph Cloud</h3>
 		  <p>Create a single-tenant instance managed by Sourcegraph</p>
-  </button>
-</form>
+  </a>
+</div>
 
 ### Self-hosted
 
-<form class="grid">
-  <!-- AWS -->
-  <button class="app-btn btn" formaction="/admin/deploy/docker-compose/aws">
-    <img alt="aws-logo" src="https://user-images.githubusercontent.com/1646931/187976316-727d2b75-ff90-43ee-acfb-b63dc4b615f2.png"/>
+<div class="grid">
+  <!-- AWS AMI-->
+  <a class="app-btn btn" href="/admin/deploy/aws-ami">
+    <img alt="aws-logo" src="/assets/other-logos/aws-light.svg" class="theme-light-only" />
+    <img alt="aws-logo" src="/assets/other-logos/aws-dark.svg" class="theme-dark-only" />
     <h3>AWS</h3>
-    <p>Deploy onto AWS EC2</p>
-  </button>
+    <p>Launch a pre-configured Sourcegraph instance from an AWS AMI</p>
+  </a>
+</div>
+
+<div class="grid">
+  <!-- Azure -->
+  <a class="app-btn btn" href="/admin/deploy/docker-compose/azure">
+    <img alt="azure-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/azure.png"/>
+    <h3>Azure</h3>
+    <p>Deploy onto Microsoft Azure</p>
+  </a>
   <!-- AWS One Click-->
-  <button class="app-btn btn" formaction="/admin/deploy/docker-compose/aws-oneclick">
-    <img alt="aws-logo" src="https://user-images.githubusercontent.com/1646931/187976316-727d2b75-ff90-43ee-acfb-b63dc4b615f2.png"/>
+  <a class="app-btn btn" href="/admin/deploy/docker-compose/aws-oneclick">
+    <img alt="aws-logo" src="/assets/other-logos/aws-light.svg" class="theme-light-only" />
+    <img alt="aws-logo" src="/assets/other-logos/aws-dark.svg" class="theme-dark-only" />
     <h3>AWS One-Click</h3>
     <span class="badge badge-warning">Coming soon</span> 
     <!-- <p>Deploy onto AWS in one click</p> -->
-  </button>
-  <!-- Azure -->
-  <button class="app-btn btn" formaction="/admin/deploy/docker-compose/azure">
-    <img alt="azure-logo" src="https://user-images.githubusercontent.com/1646931/187978161-771cfb91-6cb3-4f00-befd-657502b95ed4.png"/>
-    <h3>Azure</h3>
-    <p>Deploy onto Microsoft Azure</p>
-  </button>
-  <!-- digital ocean -->
-  <button class="app-btn btn" formaction="/admin/deploy/docker-compose/digitalocean">
-    <img alt="digital-ocean-logo" src="https://res.cloudinary.com/crunchbase-production/image/upload/c_lpad,h_170,w_170,f_auto,b_white,q_auto:eco,dpr_1/v1478792253/gnlwek2zwhq369yryrzv.jpg"/>
+  </a>
+  <!-- Digital Ocean -->
+  <a class="app-btn btn" href="/admin/deploy/docker-compose/digitalocean">
+    <img alt="digital-ocean-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/DigitalOcean.png"/>
     <h3>DigitalOcean</h3>
-    <p>Deploy onto Digital Ocean</p>
-  </button>
+    <p>Deploy onto DigitalOcean</p>
+  </a>
   <!-- Docker Compose -->
-  <button class="app-btn btn" formaction="/admin/install/docker-compose">
-    <img alt="docker-compose-logo" src="https://user-images.githubusercontent.com/1646931/187978472-1219f3a0-8c89-433c-8a72-223228952814.png"/>
+  <a class="app-btn btn" href="/admin/deploy/docker-compose">
+    <img alt="docker-compose-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/Docker.png"/>
     <h3>Docker Compose</h3>
     <p>Deploy with Docker Compose</p>
-  </button>
+  </a>
   <!-- GCP -->
-  <button class="app-btn btn" formaction="/admin/deploy/docker-compose/google_cloud">
-    <img alt="gcp-logo" src="https://user-images.githubusercontent.com/1646931/187977350-3618e506-6fab-47c5-9a7c-286484cbd5a8.png"/>
+  <a class="app-btn btn" href="/admin/deploy/docker-compose/google_cloud">
+    <img alt="gcp-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/googlecloud.png"/>
     <h3>Google Cloud</h3>
     <p>Deploy onto Google Cloud (GCP)</p>
-  </button>
+  </a>
   <!-- Others -->
-  <button class="app-btn btn" formaction="/admin/deploy">
-    <img alt="private-cloud-logo" src="https://user-images.githubusercontent.com/1646931/187978634-6c4b2d06-2808-497d-8069-7adbee5bc703.png"/>
+  <a class="app-btn btn" href="/admin/deploy">
+    <img alt="private-cloud-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/cloud.png"/>
     <h3>Private cloud</h3>
     <p>Deploy into a generic cloud environment</p>
-  </button>
+  </a>
   <!-- Kubernetes -->
-  <button class="app-btn btn" formaction="/admin/deploy/kubernetes">
-    <img alt="kubernetes-logo" src="https://user-images.githubusercontent.com/1646931/187978853-ee9efe0b-a18c-45a1-8375-c6c29647342a.png"/>
+  <a class="app-btn btn" href="/admin/deploy/kubernetes">
+    <img alt="kubernetes-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/kubernetes.png"/>
     <h3>Kubernetes</h3>
+	  <p>Deploy a multi-node cluster</p>
     <p><strong>Enterprise-only</strong></p>
-	<p>Deploy a multi-node cluster</p>
-  </button>
-</form>
+  </a>
+</div>
 
 ### Local machine
 
-<form class="grid">
-  <button class="app-btn btn" formaction="/admin/deploy/docker-single-container">
-    <img alt="docker-logo" src="https://user-images.githubusercontent.com/1646931/187978472-1219f3a0-8c89-433c-8a72-223228952814.png"/>
+<div class="grid">
+  <a class="app-btn btn" href="/admin/deploy/docker-single-container">
+    <img alt="docker-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/Docker.png"/>
     <h3>Docker Container</h3>
     <p>Spin up a local Sourcegraph instance</p>
-  </button>
+  </a>
   <div></div><div></div>
-</form>
+</div>
 
 ---
 
 ## Quickstart
 
-- [Learn Sourcegraph](getting-started/index.md) 
+- [Learn Sourcegraph](getting-started/index.md)
   - Sourcegraph 101: how to use Sourcegraph
 - [Tour Sourcegraph](getting-started/tour.md)
   - Take a tour of Sourcegraph’s features using real-world examples and use cases
-- [Trial Sourcegraph](adopt/trial/index.md) 
+- [Trial Sourcegraph](adopt/trial/index.md)
   - Start a Sourcegraph trail at your company
-- [Sourcegraph AWS launch stack](admin/deploy/docker-compose/aws-oneclick.md) 
-  - Launch a Sourcegraph instance in one-click
 
 ## Community
 
 - [Blog](https://about.sourcegraph.com/blog/)
-- [Discord](https://discord.gg/s2qDtYGnAE) 
+- [Discord](https://discord.gg/s2qDtYGnAE)
 - [Twitter](https://twitter.com/sourcegraph)
 - [Handbook](https://handbook.sourcegraph.com/)
 

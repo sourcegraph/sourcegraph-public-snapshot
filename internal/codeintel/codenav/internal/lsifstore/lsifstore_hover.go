@@ -6,13 +6,13 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 // GetHover returns the hover text of the symbol at the given position.
-func (s *store) GetHover(ctx context.Context, bundleID int, path string, line, character int) (_ string, _ shared.Range, _ bool, err error) {
+func (s *store) GetHover(ctx context.Context, bundleID int, path string, line, character int) (_ string, _ types.Range, _ bool, err error) {
 	ctx, trace, endObservation := s.operations.getHover.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("path", path),
@@ -23,7 +23,7 @@ func (s *store) GetHover(ctx context.Context, bundleID int, path string, line, c
 
 	documentData, exists, err := s.scanFirstDocumentData(s.db.Query(ctx, sqlf.Sprintf(hoverDocumentQuery, bundleID, path)))
 	if err != nil || !exists {
-		return "", shared.Range{}, false, err
+		return "", types.Range{}, false, err
 	}
 
 	trace.Log(log.Int("numRanges", len(documentData.Document.Ranges)))
@@ -36,7 +36,7 @@ func (s *store) GetHover(ctx context.Context, bundleID int, path string, line, c
 		}
 	}
 
-	return "", shared.Range{}, false, nil
+	return "", types.Range{}, false, nil
 }
 
 const hoverDocumentQuery = `

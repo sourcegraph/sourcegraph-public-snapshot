@@ -3,6 +3,7 @@ import expect from 'expect'
 import { describe, before, beforeEach, after, afterEach, test } from 'mocha'
 import { map } from 'rxjs/operators'
 
+import { logger } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 // import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
@@ -67,7 +68,7 @@ describe('Core functionality regression test suite', () => {
             await driver.close()
         }
         if (screenshots.screenshots.length > 0) {
-            console.log(screenshots.verificationInstructions())
+            logger.log(screenshots.verificationInstructions())
         }
     })
 

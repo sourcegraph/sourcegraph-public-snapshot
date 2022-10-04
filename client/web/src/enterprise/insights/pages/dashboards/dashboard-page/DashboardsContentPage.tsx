@@ -1,4 +1,4 @@
-import React, { useContext, useMemo } from 'react'
+import { FC, useContext, useMemo } from 'react'
 
 import { useRouteMatch } from 'react-router'
 import { Redirect } from 'react-router-dom'
@@ -21,14 +21,17 @@ export interface DashboardsContentPageProps extends TelemetryProps {
     dashboardID?: string
 }
 
-export const DashboardsContentPage: React.FunctionComponent<
-    React.PropsWithChildren<DashboardsContentPageProps>
-> = props => {
+export const DashboardsContentPage: FC<DashboardsContentPageProps> = props => {
     const { dashboardID, telemetryService } = props
     const { url } = useRouteMatch()
 
     const { getDashboards } = useContext(CodeInsightsBackendContext)
     const dashboards = useObservable(useMemo(() => getDashboards(), [getDashboards]))
+
+    const currentDashboard = useMemo(() => dashboards?.find(dashboard => dashboard.id === dashboardID), [
+        dashboardID,
+        dashboards,
+    ])
 
     if (!dashboardID) {
         // In case if url doesn't have a dashboard id we should fall back on
@@ -44,12 +47,14 @@ export const DashboardsContentPage: React.FunctionComponent<
         )
     }
 
-    const currentDashboard = dashboards.find(dashboard => dashboard.id === dashboardID)
-
     return (
         <>
             <PageTitle title={`${currentDashboard?.title || ''} - Code Insights`} />
-            <DashboardsContent telemetryService={telemetryService} dashboardID={dashboardID} dashboards={dashboards} />
+            <DashboardsContent
+                currentDashboard={currentDashboard}
+                dashboards={dashboards}
+                telemetryService={telemetryService}
+            />
         </>
     )
 }

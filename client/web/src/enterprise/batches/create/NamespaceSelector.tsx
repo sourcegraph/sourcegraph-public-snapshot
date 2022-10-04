@@ -1,9 +1,7 @@
 import React, { useCallback } from 'react'
 
-import { mdiInformationOutline } from '@mdi/js'
-
 import { SettingsOrgSubject, SettingsUserSubject } from '@sourcegraph/shared/src/settings/settings'
-import { Icon, Select, Tooltip } from '@sourcegraph/wildcard'
+import { Select } from '@sourcegraph/wildcard'
 
 type PartialNamespace =
     | Pick<SettingsUserSubject, '__typename' | 'id' | 'username' | 'displayName'>
@@ -20,10 +18,12 @@ const getNamespaceDisplayName = (namespace: PartialNamespace): string => {
 
 const NAMESPACE_SELECTOR_ID = 'batch-spec-execution-namespace-selector'
 
-type NamespaceSelectorProps = {
+interface NamespaceSelectorProps {
     namespaces: PartialNamespace[]
     selectedNamespace: string
-} & ({ disabled: true; onSelect?: undefined } | { disabled?: false; onSelect: (namespace: PartialNamespace) => void }) // Either the selector is disabled and there's on onSelect, or the selector is enabled and there is one.
+    disabled?: boolean
+    onSelect: (namespace: PartialNamespace) => void
+}
 
 export const NamespaceSelector: React.FunctionComponent<React.PropsWithChildren<NamespaceSelectorProps>> = ({
     namespaces,
@@ -48,14 +48,7 @@ export const NamespaceSelector: React.FunctionComponent<React.PropsWithChildren<
 
     return (
         <Select
-            label={
-                <>
-                    <strong className="text-nowrap mb-2">Namespace</strong>
-                    <Tooltip content="Coming soon">
-                        <Icon aria-label="Coming soon" className="ml-1" svgPath={mdiInformationOutline} />
-                    </Tooltip>
-                </>
-            }
+            label={<strong className="text-nowrap mb-2">Namespace</strong>}
             isCustomStyle={true}
             id={NAMESPACE_SELECTOR_ID}
             value={selectedNamespace}

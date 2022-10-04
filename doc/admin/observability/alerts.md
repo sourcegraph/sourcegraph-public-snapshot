@@ -1426,9 +1426,9 @@ Generated query for critical alert: `min(((src_gitserver_disk_space_available / 
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by(instance, cmd) (src_gitserver_exec_running{instance=~"${shard:regex}"})) >= 50)`
+Generated query for warning alert: `max((sum by(instance, cmd) (src_gitserver_exec_running)) >= 50)`
 
-Generated query for critical alert: `max((sum by(instance, cmd) (src_gitserver_exec_running{instance=~"${shard:regex}"})) >= 100)`
+Generated query for critical alert: `max((sum by(instance, cmd) (src_gitserver_exec_running)) >= 100)`
 
 </details>
 
@@ -6589,6 +6589,48 @@ Generated query for warning alert: `max((sum by(code) (increase(src_zoekt_reques
 
 <br />
 
+## zoekt: memory_map_areas_percentage_used
+
+<p class="subtitle">process memory map areas percentage used (per instance)</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> zoekt: 70%+ process memory map areas percentage used (per instance)
+- <span class="badge badge-critical">critical</span> zoekt: 90%+ process memory map areas percentage used (per instance)
+
+**Next steps**
+
+- If you are running out of memory map areas, you could resolve this by:
+
+    - Creating additional Zoekt replicas: This spreads all the shards out amongst more replicas, which
+means that each _individual_ replica will have fewer shards. This, in turn, decreases the
+amount of memory map areas that a _single_ replica can create (in order to load the shards into memory).
+    - Increase the virtual memory subsystem`s `max_map_count` parameter which defines the upper limit of memory areas
+a process can use. The exact instructions for tuning this parameter can differ depending on your environment.
+See https://kernel.org/doc/Documentation/sysctl/vm.txt for more information.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#zoekt-memory-map-areas-percentage-used).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_zoekt_memory_map_areas_percentage_used",
+  "critical_zoekt_memory_map_areas_percentage_used"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max(((proc_metrics_memory_map_current_count / proc_metrics_memory_map_max_limit) * 100) >= 70)`
+
+Generated query for critical alert: `max(((proc_metrics_memory_map_current_count / proc_metrics_memory_map_max_limit) * 100) >= 90)`
+
+</details>
+
+<br />
+
 ## zoekt: container_cpu_usage
 
 <p class="subtitle">container cpu usage total (1m average) across all cores by instance</p>
@@ -7639,7 +7681,7 @@ Generated query for critical alert: `min((sum by(app) (up{app=~".*prometheus"}) 
 <details>
 <summary>Technical details</summary>
 
-Custom query for critical alert: `min(((sum(src_executor_processor_handlers{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}) or vector(0)) == 0 and (sum by(queue) (src_executor_total{job=~"^sourcegraph-executors.*"})) > 0) <= 0)`
+Custom query for critical alert: `min(((sum(src_executor_processor_handlers{sg_job=~"^sourcegraph-executors.*"}) or vector(0)) == 0 and (sum by(queue) (src_executor_total{job=~"^sourcegraph-executors.*"})) > 0) <= 0)`
 
 </details>
 
@@ -7673,7 +7715,7 @@ problem is not know to be resolved until jobs start succeeding again.
 <details>
 <summary>Technical details</summary>
 
-Custom query for critical alert: `max((last_over_time(sum(increase(src_executor_processor_errors_total{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}[5m]))[5h:]) / (last_over_time(sum(increase(src_executor_processor_total{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}[5m]))[5h:]) + last_over_time(sum(increase(src_executor_processor_errors_total{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}[5m]))[5h:])) * 100) >= 100)`
+Custom query for critical alert: `max((last_over_time(sum(increase(src_executor_processor_errors_total{sg_job=~"^sourcegraph-executors.*"}[5m]))[5h:]) / (last_over_time(sum(increase(src_executor_processor_total{sg_job=~"^sourcegraph-executors.*"}[5m]))[5h:]) + last_over_time(sum(increase(src_executor_processor_errors_total{sg_job=~"^sourcegraph-executors.*"}[5m]))[5h:])) * 100) >= 100)`
 
 </details>
 

@@ -4,6 +4,8 @@ import { Remote } from 'comlink'
 import { from, Observable, of, TimeoutError } from 'rxjs'
 import { catchError, filter, first, switchMap, timeout } from 'rxjs/operators'
 
+import { logger } from '@sourcegraph/common'
+
 import { FlatExtensionHostAPI } from '../contract'
 import { SharedEventLogger } from '../sharedEventLogger'
 
@@ -57,7 +59,7 @@ export function transformSearchQuery({
         timeout(TRANSFORM_QUERY_TIMEOUT),
         catchError(error => {
             if (error instanceof TimeoutError) {
-                console.error(`Extension query transformers took more than ${TRANSFORM_QUERY_TIMEOUT}ms`)
+                logger.error(`Extension query transformers took more than ${TRANSFORM_QUERY_TIMEOUT}ms`)
             }
             return of(query)
         })

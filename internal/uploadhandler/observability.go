@@ -15,17 +15,17 @@ type Operations struct {
 	handleEnqueueMultipartFinalize *observation.Operation
 }
 
-func NewOperations(observationContext *observation.Context) *Operations {
+func NewOperations(prefix string, observationContext *observation.Context) *Operations {
 	metrics := metrics.NewREDMetrics(
 		observationContext.Registerer,
-		"uploadhandler",
+		fmt.Sprintf("%s_uploadhandler", prefix),
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of method invocations."),
 	)
 
 	op := func(name string) *observation.Operation {
 		return observationContext.Operation(observation.Op{
-			Name:              fmt.Sprintf("uploadhandler.%s", name),
+			Name:              fmt.Sprintf("%s.uploadhandler.%s", prefix, name),
 			MetricLabelValues: []string{name},
 			Metrics:           metrics,
 		})

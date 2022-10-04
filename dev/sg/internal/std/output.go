@@ -33,9 +33,7 @@ func NewOutput(dst io.Writer, verbose bool) *Output {
 
 	return &Output{
 		Output: output.NewOutput(dst, output.OutputOpts{
-			ForceColor: true,
-			ForceTTY:   true,
-			Verbose:    verbose,
+			Verbose: verbose,
 		}),
 		buildkite: inBuildkite,
 	}

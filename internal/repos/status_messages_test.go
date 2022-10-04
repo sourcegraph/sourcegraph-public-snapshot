@@ -36,7 +36,7 @@ func TestStatusMessages(t *testing.T) {
 
 	extSvc := &types.ExternalService{
 		ID:          1,
-		Config:      extsvc.NewEmptyConfig(),
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "token": "beef", "repos": ["owner/name"]}`),
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "github.com - site",
 	}

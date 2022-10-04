@@ -900,6 +900,7 @@ func (s *schedule) reset() {
 // i.e. heap.Fix, heap.Remove, heap.Push, heap.Pop.
 
 func (s *schedule) Len() int { return len(s.heap) }
+
 func (s *schedule) Less(i, j int) bool {
 	return s.heap[i].Due.Before(s.heap[j].Due)
 }

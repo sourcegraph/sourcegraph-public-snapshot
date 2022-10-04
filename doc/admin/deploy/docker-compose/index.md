@@ -5,6 +5,8 @@ Setting up Docker applications with [multiple containers](https://www.docker.com
 This guide will take you through how to install Sourcegraph with Docker Compose on a server, which could be the local machine, a server on a local network, or cloud-hosted server. You can also follow one of the available *cloud-specific guides* listed below to prepare and install Sourcegraph on a supported cloud environment:
 
 - [Deploy Sourcegraph with Docker Compose on Amazon Web Services](../../deploy/docker-compose/aws.md)
+  - [Launch a Sourcegraph AMI Instance](../../deploy/aws-ami.md)
+  - [Launch a Sourcegraph Instance with AWS One-Click](../../deploy/docker-compose/aws-oneclick.md)
 - [Deploy Sourcegraph with Docker Compose on Azure](../../deploy/docker-compose/azure.md)
 - [Deploy Sourcegraph with Docker Compose on DigitalOcean](../../deploy/docker-compose/digitalocean.md)
 - [Deploy Sourcegraph with Docker Compose on Google Cloud](../../deploy/docker-compose/google_cloud.md)
@@ -51,6 +53,8 @@ Use the GitHub GUI to [create a public fork](https://docs.github.com/en/get-star
 <details>
   <summary>**Or click here** for detailed instruction on creating a *private copy*</summary>
 
+##### Using a private copy of the deployment repository
+
 1\. Create an [empty private repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-new-repository), for example `<you/private-repository>` in GitHub.
 
 2\. Bare clone the deployment repository. 
@@ -72,6 +76,17 @@ Use the GitHub GUI to [create a public fork](https://docs.github.com/en/get-star
   cd ..
   rm -rf deploy-sourcegraph-docker.git
 ```
+
+5\. Private repository clone URL
+
+If you are deploying using our start up scripts, please check with your code host on how to generate a URL for cloning private repository
+For example, GitHub users can include their personal access token to clone repositories they have access to using the following URL:
+
+```bash
+# Please make sure to discard the token after the deployment for security purpose
+https://<PERSONAL-ACCESS-TOKEN>@github.com/<USERNAME>/<REPO>.git
+```
+
 </details>
 
 #### Configure your deployment repository
@@ -94,12 +109,12 @@ Continue with the following steps *after* you have created a public or private c
 
 3\. Create a new branch called `release` off the latest version of Sourcegraph
 
-  - This branch will be used to [upgrade Sourcegraph](#upgrade-and-migration) and install your Sourcegraph instance.
+  - This branch will be used to [upgrade Sourcegraph](upgrade.md) and install your Sourcegraph instance.
   - It also allows us to track all of the customizations made to your Sourcegraph instance. 
 
 ```bash
   # Specify the version you want to install
-  export SOURCEGRAPH_VERSION="v4.0.0"
+  export SOURCEGRAPH_VERSION="v4.0.1"
   # Check out the selected version for use, in a new branch called "release"
   git checkout $SOURCEGRAPH_VERSION -b release
 ```
@@ -164,3 +179,5 @@ Once the server is ready, navigate to the `sourcegraph-frontend-0` hostname or I
 
 - [Upgrade](upgrade.md)
 - [Management Operations](operations.md)
+- [HTTP and HTTPS/SSL configuration](../../../admin/http_https_configuration.md#sourcegraph-via-docker-compose-caddy-2)
+- [Site Administration Quickstart](../../../admin/how-to/site-admin-quickstart.md)

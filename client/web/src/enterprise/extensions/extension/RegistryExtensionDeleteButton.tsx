@@ -5,7 +5,7 @@ import { upperFirst } from 'lodash'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { Button, ButtonGroup, Icon } from '@sourcegraph/wildcard'
 
@@ -62,7 +62,7 @@ export class RegistryExtensionDeleteButton extends React.PureComponent<
                 )
                 .subscribe(
                     stateUpdate => this.setState(stateUpdate),
-                    error => console.error(error)
+                    error => logger.error(error)
                 )
         )
     }
