@@ -11,9 +11,9 @@ const COMMENT_HEADING = '## Bundle size report 📦'
 
 async function main(): Promise<void> {
     try {
-        const [commitFilename, mergeBaseFilename] = process.argv.slice(-2)
+        const [commitFilename, compareFilename] = process.argv.slice(-2)
 
-        const report = parseReport(commitFilename, mergeBaseFilename)
+        const report = parseReport(commitFilename, compareFilename)
         const body = reportToMarkdown(report)
         await createOrUpdateComment(body)
 
@@ -40,16 +40,15 @@ interface Metric {
 }
 type Report = [Header, Metric, Metric, Metric, Metric, Metric, Metric, Metric, Metric, Metric, Metric, Metric, Metric]
 
-function parseReport(commitFilename: string, mergeBaseFilename: string): Report {
+function parseReport(commitFilename: string, compareFilename: string): Report {
     const queryFile = path.join(__dirname, 'report-bundle-jora-query')
 
     const commitFile = path.join('..', '..', commitFilename)
-    const mergeBaseFile = path.join('..', '..', mergeBaseFilename)
+    const compareFile = path.join('..', '..', compareFilename)
 
     const statoscope = path.join(__dirname, '..', '..', '..', 'node_modules', '.bin', 'statoscope')
 
-    console.log(`cat "${queryFile}" | ${statoscope} query -i "${commitFile}" -i "${mergeBaseFile}"`)
-    const rawReport = shelljs.exec(`cat "${queryFile}" | ${statoscope} query -i "${commitFile}" -i "${mergeBaseFile}"`)
+    const rawReport = shelljs.exec(`cat "${queryFile}" | ${statoscope} query -i "${compareFile}" -i "${commitFile}"`)
 
     return JSON.parse(rawReport) as Report
 }

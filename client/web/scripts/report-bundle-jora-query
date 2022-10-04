@@ -2,7 +2,7 @@
 // https://sourcegraph.com/github.com/statoscope/statoscope/-/blob/packages/webpack-ui/src/pages/diff/queries/dashboard.ts
 //
 // Usage:
-//   cat query > statoscope query -i stats.json -i stats-base.json
+//   cat query > statoscope query -i stats-compare.json -i stats.json
 
 $useCompressedSize: true;
 
