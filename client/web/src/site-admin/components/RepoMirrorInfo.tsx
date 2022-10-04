@@ -34,6 +34,16 @@ export const RepoMirrorInfo: React.FunctionComponent<
                     <>
                         Last synced <Timestamp date={mirrorInfo.updatedAt} />. Size:{' '}
                         {prettyBytesBigint(BigInt(mirrorInfo.byteSize))}.
+                        {mirrorInfo.shard !== null && <> Shard: {mirrorInfo.shard}</>}
+                        {mirrorInfo.shard === null && (
+                            <>
+                                {' '}
+                                Shard:{' '}
+                                <Tooltip content="The repo has not yet been picked up by a gitserver instance.">
+                                    <span>not assigned</span>
+                                </Tooltip>
+                            </>
+                        )}
                     </>
                 )}
             </small>

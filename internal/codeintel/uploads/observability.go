@@ -3,20 +3,14 @@ package uploads
 import (
 	"fmt"
 
+	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type operations struct {
-	// Not used yet.
-	list     *observation.Operation
-	get      *observation.Operation
-	getBatch *observation.Operation
-	enqueue  *observation.Operation
-	delete   *observation.Operation
-
-	uploadsVisibleTo *observation.Operation
-
 	// Commits
 	getOldestCommitDate       *observation.Operation
 	getCommitsVisibleToUpload *observation.Operation
@@ -65,10 +59,18 @@ type operations struct {
 
 	// References
 	updatePackageReferences *observation.Operation
+	referencesForUpload     *observation.Operation
 
 	// Audit Logs
 	getAuditLogsForUpload *observation.Operation
 	deleteOldAuditLogs    *observation.Operation
+
+	// Tags
+	getListTags *observation.Operation
+
+	// Worker metrics
+	uploadProcessor *observation.Operation
+	uploadSizeGuage prometheus.Gauge
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -87,15 +89,22 @@ func newOperations(observationContext *observation.Context) *operations {
 		})
 	}
 
-	return &operations{
-		// Not used yet.
-		list:             op("List"),
-		get:              op("Get"),
-		getBatch:         op("GetBatch"),
-		enqueue:          op("Enqueue"),
-		delete:           op("Delete"),
-		uploadsVisibleTo: op("UploadsVisibleTo"),
+	honeyObservationContext := *observationContext
+	honeyObservationContext.HoneyDataset = &honey.Dataset{Name: "codeintel-worker"}
+	uploadProcessor := honeyObservationContext.Operation(observation.Op{
+		Name: "codeintel.uploadHandler",
+		ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
+			return observation.EmitForTraces | observation.EmitForHoney
+		},
+	})
 
+	uploadSizeGuage := prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "src_codeintel_upload_processor_upload_size",
+		Help: "The combined size of uploads being processed at this instant by this worker.",
+	})
+	observationContext.Registerer.MustRegister(uploadSizeGuage)
+
+	return &operations{
 		// Commits
 		getOldestCommitDate:       op("GetOldestCommitDate"),
 		getCommitsVisibleToUpload: op("GetCommitsVisibleToUpload"),
@@ -144,9 +153,17 @@ func newOperations(observationContext *observation.Context) *operations {
 
 		// References
 		updatePackageReferences: op("UpdatePackageReferences"),
+		referencesForUpload:     op("ReferencesForUpload"),
 
 		// Audit Logs
 		getAuditLogsForUpload: op("GetAuditLogsForUpload"),
 		deleteOldAuditLogs:    op("DeleteOldAuditLogs"),
+
+		// Tags
+		getListTags: op("GetListTags"),
+
+		// Worker metrics
+		uploadProcessor: uploadProcessor,
+		uploadSizeGuage: uploadSizeGuage,
 	}
 }

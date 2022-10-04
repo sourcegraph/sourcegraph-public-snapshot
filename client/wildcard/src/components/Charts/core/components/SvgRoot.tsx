@@ -122,7 +122,10 @@ export const SvgAxisLeft: FC<SvgAxisLeftProps> = props => {
     const { content, yScale, setPadding } = useContext(SVGRootContext)
 
     const handleResize = ({ width = 0 }): void => {
-        setPadding(padding => ({ ...padding, left: width }))
+        // Why + 8, because visx adds internally negative margin to each
+        // tick (tickLength * tickSign) which is "-8" in our case see
+        // https://github.com/airbnb/visx/blob/a3b79fd3bae63b100b1a8781f844631a2f3aa2ea/packages/visx-axis/src/axis/Axis.tsx#L60
+        setPadding(padding => ({ ...padding, left: width + 8 }))
     }
 
     const { ref } = useResizeObserver({ onResize: handleResize })

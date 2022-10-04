@@ -31,7 +31,7 @@ type usageLinterOptions struct {
 
 // newUsageLinter is a helper that creates a linter that guards against *additions* that
 // introduce usages banned strings.
-func newUsageLinter(opts usageLinterOptions) *linter {
+func newUsageLinter(name string, opts usageLinterOptions) *linter {
 	// checkHunk returns an error if a banned library is used
 	checkHunk := func(file string, hunk repo.DiffHunk) error {
 		for _, allowed := range opts.AllowedFiles {
@@ -50,7 +50,7 @@ func newUsageLinter(opts usageLinterOptions) *linter {
 		return nil
 	}
 
-	return runCheck("Logging library linter", func(ctx context.Context, out *std.Output, state *repo.State) error {
+	return runCheck(name, func(ctx context.Context, out *std.Output, state *repo.State) error {
 		diffs, err := state.GetDiff(opts.Target)
 		if err != nil {
 			return err

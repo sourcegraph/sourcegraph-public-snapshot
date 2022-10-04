@@ -242,8 +242,8 @@ func scanProtects(logger log.Logger, rc io.Reader, s *protectsScanner) error {
 			match:      fields[4],
 		}
 		if strings.HasPrefix(parsedLine.match, "-") {
-			parsedLine.isExclusion = true           // is an exclusion
-			parsedLine.match = parsedLine.match[1:] // trim leading -
+			parsedLine.isExclusion = true                                // is an exclusion
+			parsedLine.match = strings.TrimPrefix(parsedLine.match, "-") // trim leading -
 		}
 
 		// We only care about read access. If the permission doesn't change read access,
@@ -390,66 +390,31 @@ func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermission
 			}
 			lineLogger.Debug("Relevant depots", log.Strings("depots", depotStrings))
 
-			// Handle inclusions
-			if !line.isExclusion {
-				// Grant access to specified paths
-				for _, depot := range depots {
-					srp := getSubRepoPerms(depot)
-					newIncludes := convertRulesForWildcardDepotMatch(match, depot, patternsToGlob)
-					srp.PathIncludes = append(srp.PathIncludes, newIncludes...)
-					lineLogger.Debug("Adding include rules", log.Strings("rules", newIncludes))
-
-					var i int
-					for _, exclude := range srp.PathExcludes {
-						// Perforce ACLs can have conflicting rules and the later one wins, so
-						// if we get a match here we drop the existing rule.
-						originalExclude, exists := patternsToGlob[exclude]
-						if !exists {
-							i++
-							continue
-						}
-						checkWithDepotAdded := !strings.HasPrefix(originalExclude.pattern, "//") && match.Match(string(depot)+originalExclude.pattern)
-						if originalExclude.Match(match.original) || checkWithDepotAdded {
-							lineLogger.Debug("Removing conflicting exclude rule", log.String("rule", originalExclude.pattern))
-							srp.PathExcludes = append(srp.PathExcludes[:i], srp.PathExcludes[i+1:]...)
-						} else {
-							i++
-						}
-					}
-				}
-
-				return nil
-			}
-
+			// Apply rules to specified paths
 			for _, depot := range depots {
 				srp := getSubRepoPerms(depot)
 
-				// Special case: exclude entire depot
+				// Special case: match entire depot overrides all previous rules
 				if strings.TrimPrefix(match.original, string(depot)) == perforceWildcardMatchAll {
-					lineLogger.Debug("Exclude entire depot, removing all include rules")
-					srp.PathIncludes = nil
+					if line.isExclusion {
+						lineLogger.Debug("Exclude entire depot, removing all previous rules")
+					} else {
+						lineLogger.Debug("Include entire depot, removing all previous rules")
+					}
+					srp.Paths = nil
 				}
 
-				newExcludes := convertRulesForWildcardDepotMatch(match, depot, patternsToGlob)
-				srp.PathExcludes = append(srp.PathExcludes, newExcludes...)
-				lineLogger.Debug("Adding exclude rules", log.Strings("rules", newExcludes))
-
-				var i int
-				for _, include := range srp.PathIncludes {
-					// Perforce ACLs can have conflicting rules and the later one wins, so
-					// if we get a match here we drop the existing rule.
-					originalInclude, exists := patternsToGlob[include]
-					if !exists {
-						i++
-						continue
+				newPaths := convertRulesForWildcardDepotMatch(match, depot, patternsToGlob)
+				if line.isExclusion {
+					for i, path := range newPaths {
+						newPaths[i] = "-" + path
 					}
-					checkWithDepotAdded := !strings.HasPrefix(originalInclude.pattern, "//") && match.Match(string(depot)+originalInclude.pattern)
-					if match.Match(originalInclude.original) || checkWithDepotAdded {
-						lineLogger.Debug("Removing conflicting include rule", log.String("rule", originalInclude.pattern))
-						srp.PathIncludes = append(srp.PathIncludes[:i], srp.PathIncludes[i+1:]...)
-					} else {
-						i++
-					}
+				}
+				srp.Paths = append(srp.Paths, newPaths...)
+				if line.isExclusion {
+					lineLogger.Debug("Adding exclude rules", log.Strings("rules", newPaths))
+				} else {
+					lineLogger.Debug("Adding include rules", log.Strings("rules", newPaths))
 				}
 			}
 
@@ -461,7 +426,17 @@ func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermission
 				srp, exists := perms.SubRepoPermissions[depot]
 				if !exists {
 					continue
-				} else if len(srp.PathIncludes) == 0 {
+				}
+
+				onlyExclusions := true
+				for _, path := range srp.Paths {
+					if !strings.HasPrefix(path, "-") {
+						onlyExclusions = false
+						break
+					}
+				}
+
+				if onlyExclusions {
 					// Depots with no inclusions can just be dropped
 					delete(perms.SubRepoPermissions, depot)
 					continue
@@ -472,13 +447,19 @@ func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermission
 				// repositoryPathPattern has been used. We also need to remove any `//` prefixes
 				// which are included in all Helix server rules.
 				depotString := string(depot)
-				for i := range srp.PathIncludes {
-					srp.PathIncludes[i] = strings.TrimPrefix(srp.PathIncludes[i], depotString)
-					srp.PathIncludes[i] = strings.TrimPrefix(srp.PathIncludes[i], "//")
-				}
-				for i := range srp.PathExcludes {
-					srp.PathExcludes[i] = strings.TrimPrefix(srp.PathExcludes[i], depotString)
-					srp.PathExcludes[i] = strings.TrimPrefix(srp.PathExcludes[i], "//")
+				for i := range srp.Paths {
+					path := srp.Paths[i]
+
+					// Covering exclusion paths
+					if strings.HasPrefix(path, "-") {
+						path = strings.TrimPrefix(path, "-")
+						path = trimDepotNameAndSlashes(path, depotString)
+						path = "-" + path
+					} else {
+						path = trimDepotNameAndSlashes(path, depotString)
+					}
+
+					srp.Paths[i] = path
 				}
 
 				// Add to repos users can access
@@ -487,6 +468,16 @@ func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermission
 			return nil
 		},
 	}
+}
+
+func trimDepotNameAndSlashes(s, depotName string) string {
+	depotName = strings.TrimSuffix(depotName, "/") // we want to keep the leading slash
+	s = strings.TrimPrefix(s, depotName)
+	s = strings.TrimPrefix(s, "//")
+	if !strings.HasPrefix(s, "/") {
+		s = "/" + s // make sure path starts with a '/'
+	}
+	return s
 }
 
 func convertRulesForWildcardDepotMatch(match globMatch, depot extsvc.RepoID, patternsToGlob map[string]globMatch) []string {

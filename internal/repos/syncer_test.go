@@ -153,7 +153,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		svcdup := types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "Github2 - Test",
-			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com"}`),
+			Config:      extsvc.NewUnencryptedConfig(basicGitHubConfig),
 			CreatedAt:   clock.Now(),
 			UpdatedAt:   clock.Now(),
 		}
@@ -975,9 +975,15 @@ func testSyncRun(store repos.Store) func(t *testing.T) {
 			mk("new"),
 		}
 
+		fakeSource := repos.NewFakeSource(svc, nil, sourced...)
+
+		// Lock our source here so that we block when trying to list repos, this allows
+		// us to test lower down that we can't delete a syncing service.
+		lockChan := fakeSource.InitLockChan()
+
 		syncer := &repos.Syncer{
 			Logger:  logtest.Scoped(t),
-			Sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svc, nil, sourced...)),
+			Sourcer: repos.NewFakeSourcer(nil, fakeSource),
 			Store:   store,
 			Synced:  make(chan repos.Diff),
 			Now:     time.Now,
@@ -1001,11 +1007,23 @@ func testSyncRun(store repos.Store) func(t *testing.T) {
 		// Ignore fields store adds
 		ignore := cmpopts.IgnoreFields(types.Repo{}, "ID", "CreatedAt", "UpdatedAt", "Sources")
 
-		// The first thing sent down Synced is the list of repos in store.
+		// The first thing sent down Synced is the list of repos in store during
+		// initialisation
 		diff := <-syncer.Synced
 		if d := cmp.Diff(repos.Diff{Unmodified: stored}, diff, ignore); d != "" {
 			t.Fatalf("Synced mismatch (-want +got):\n%s", d)
 		}
+
+		// Once we receive on lockChan we know our syncer is running
+		<-lockChan
+
+		// Our sync is in progress, we should not be allowed to delete the service
+		if err := store.ExternalServiceStore().Delete(ctx, svc.ID); err == nil {
+			t.Fatal("Expected an error")
+		}
+
+		// We can now send on lockChan again to unblock the sync job
+		lockChan <- struct{}{}
 
 		// Next up it should find the existing repo and send it down Synced
 		diff = <-syncer.Synced
@@ -1022,6 +1040,10 @@ func testSyncRun(store repos.Store) func(t *testing.T) {
 		if d := cmp.Diff(repos.Diff{Added: sourced[1:]}, diff, ignore); d != "" {
 			t.Fatalf("Synced mismatch (-want +got):\n%s", d)
 		}
+
+		// Allow second round
+		<-lockChan
+		lockChan <- struct{}{}
 
 		// We check synced again to test us going around the Run loop 2 times in
 		// total.
@@ -1226,14 +1248,14 @@ func testOrphanedRepo(store repos.Store) func(*testing.T) {
 		svc1 := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "Github - Test1",
-			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com"}`),
+			Config:      extsvc.NewUnencryptedConfig(basicGitHubConfig),
 			CreatedAt:   now,
 			UpdatedAt:   now,
 		}
 		svc2 := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "Github - Test2",
-			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com"}`),
+			Config:      extsvc.NewUnencryptedConfig(basicGitHubConfig),
 			CreatedAt:   now,
 			UpdatedAt:   now,
 		}
@@ -1336,7 +1358,7 @@ func testCloudDefaultExternalServicesDontSync(store repos.Store) func(*testing.T
 		svc1 := &types.ExternalService{
 			Kind:         extsvc.KindGitHub,
 			DisplayName:  "Github - Test1",
-			Config:       extsvc.NewUnencryptedConfig(`{"url": "https://github.com"}`),
+			Config:       extsvc.NewUnencryptedConfig(basicGitHubConfig),
 			CloudDefault: true,
 			CreatedAt:    now,
 			UpdatedAt:    now,
@@ -1370,11 +1392,13 @@ func testCloudDefaultExternalServicesDontSync(store repos.Store) func(*testing.T
 		have := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second)
 		want := repos.ErrCloudDefaultSync
 
-		if have != want {
+		if !errors.Is(have, want) {
 			t.Fatalf("have err: %v, want %v", have, want)
 		}
 	}
 }
+
+var basicGitHubConfig = `{"url": "https://github.com", "token": "beef", "repos": ["owner/name"]}`
 
 func testConflictingSyncers(store repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
@@ -1386,14 +1410,14 @@ func testConflictingSyncers(store repos.Store) func(*testing.T) {
 		svc1 := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "Github - Test1",
-			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com"}`),
+			Config:      extsvc.NewUnencryptedConfig(basicGitHubConfig),
 			CreatedAt:   now,
 			UpdatedAt:   now,
 		}
 		svc2 := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "Github - Test2",
-			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com"}`),
+			Config:      extsvc.NewUnencryptedConfig(basicGitHubConfig),
 			CreatedAt:   now,
 			UpdatedAt:   now,
 		}
@@ -1544,14 +1568,14 @@ func testSyncRepoMaintainsOtherSources(store repos.Store) func(*testing.T) {
 		svc1 := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "Github - Test1",
-			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com"}`),
+			Config:      extsvc.NewUnencryptedConfig(basicGitHubConfig),
 			CreatedAt:   now,
 			UpdatedAt:   now,
 		}
 		svc2 := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "Github - Test2",
-			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com"}`),
+			Config:      extsvc.NewUnencryptedConfig(basicGitHubConfig),
 			CreatedAt:   now,
 			UpdatedAt:   now,
 		}
@@ -1640,7 +1664,7 @@ func testUserAddedRepos(store repos.Store) func(*testing.T) {
 		userService := &types.ExternalService{
 			Kind:            extsvc.KindGitHub,
 			DisplayName:     "Github - User",
-			Config:          extsvc.NewUnencryptedConfig(`{"url": "https://github.com"}`),
+			Config:          extsvc.NewUnencryptedConfig(basicGitHubConfig),
 			CreatedAt:       now,
 			UpdatedAt:       now,
 			NamespaceUserID: userID,
@@ -1649,7 +1673,7 @@ func testUserAddedRepos(store repos.Store) func(*testing.T) {
 		adminService := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "Github - Private",
-			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com"}`),
+			Config:      extsvc.NewUnencryptedConfig(basicGitHubConfig),
 			CreatedAt:   now,
 			UpdatedAt:   now,
 		}
@@ -1842,14 +1866,14 @@ func testNameOnConflictOnRename(store repos.Store) func(*testing.T) {
 		svc1 := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "Github - Test1",
-			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com"}`),
+			Config:      extsvc.NewUnencryptedConfig(basicGitHubConfig),
 			CreatedAt:   now,
 			UpdatedAt:   now,
 		}
 		svc2 := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "Github - Test2",
-			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com"}`),
+			Config:      extsvc.NewUnencryptedConfig(basicGitHubConfig),
 			CreatedAt:   now,
 			UpdatedAt:   now,
 		}
@@ -1959,14 +1983,14 @@ func testDeleteExternalService(store repos.Store) func(*testing.T) {
 		svc1 := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "Github - Test1",
-			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com"}`),
+			Config:      extsvc.NewUnencryptedConfig(basicGitHubConfig),
 			CreatedAt:   now,
 			UpdatedAt:   now,
 		}
 		svc2 := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "Github - Test2",
-			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com"}`),
+			Config:      extsvc.NewUnencryptedConfig(basicGitHubConfig),
 			CreatedAt:   now,
 			UpdatedAt:   now,
 		}
@@ -2074,7 +2098,7 @@ func testAbortSyncWhenThereIsRepoLimitError(store repos.Store) func(*testing.T) 
 			{
 				Kind:            extsvc.KindGitHub,
 				DisplayName:     "Github - Test1",
-				Config:          extsvc.NewUnencryptedConfig(`{"url": "https://github.com"}`),
+				Config:          extsvc.NewUnencryptedConfig(basicGitHubConfig),
 				CreatedAt:       now,
 				UpdatedAt:       now,
 				NamespaceUserID: user.ID,
@@ -2082,7 +2106,7 @@ func testAbortSyncWhenThereIsRepoLimitError(store repos.Store) func(*testing.T) 
 			{
 				Kind:           extsvc.KindGitHub,
 				DisplayName:    "Github - Test2",
-				Config:         extsvc.NewUnencryptedConfig(`{"url": "https://github.com"}`),
+				Config:         extsvc.NewUnencryptedConfig(basicGitHubConfig),
 				CreatedAt:      now,
 				UpdatedAt:      now,
 				NamespaceOrgID: org.ID,
@@ -2191,7 +2215,7 @@ func testUserAndOrgReposAreCountedCorrectly(store repos.Store) func(*testing.T) 
 			{
 				Kind:            extsvc.KindGitHub,
 				DisplayName:     "Github - Test1",
-				Config:          extsvc.NewUnencryptedConfig(`{"url": "https://github.com"}`),
+				Config:          extsvc.NewUnencryptedConfig(basicGitHubConfig),
 				CreatedAt:       now,
 				UpdatedAt:       now,
 				NamespaceUserID: user.ID,
@@ -2199,7 +2223,7 @@ func testUserAndOrgReposAreCountedCorrectly(store repos.Store) func(*testing.T) 
 			{
 				Kind:           extsvc.KindGitHub,
 				DisplayName:    "Github - Test2",
-				Config:         extsvc.NewUnencryptedConfig(`{"url": "https://github.com"}`),
+				Config:         extsvc.NewUnencryptedConfig(basicGitHubConfig),
 				CreatedAt:      now,
 				UpdatedAt:      now,
 				NamespaceOrgID: org.ID,
@@ -2477,14 +2501,14 @@ func testEnqueueWebhookBuildJob(s repos.Store) func(*testing.T) {
 
 		repo := &types.Repo{
 			ID:   1,
-			Name: api.RepoName("ghe.sgdev.org/milton/test"),
+			Name: api.RepoName("milton/test"),
 		}
 		if err := repoStore.Create(ctx, repo); err != nil {
 			t.Fatal(err)
 		}
 
 		ghConn := &schema.GitHubConnection{
-			Url:      extsvc.KindGitHub,
+			Url:      "https://github.com",
 			Token:    token,
 			Repos:    []string{string(repo.Name)},
 			Webhooks: []*schema.GitHubWebhook{{Org: "ghe.sgdev.org", Secret: "secret"}},

@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 
+import { logger } from '@sourcegraph/common'
+
 /**
  * Add `document.fonts` to Typescript type definitions based on the issue:
  * https://github.com/Microsoft/TypeScript/issues/30984#issuecomment-631991019
@@ -56,7 +58,7 @@ export function useDynamicWebFonts(fonts: DynamicWebFont[]): boolean {
         // If fonts are available, skip redundant network request and proceed to UI rendering.
         if (!areFontsLoaded) {
             loadFonts().catch(error => {
-                console.error(error)
+                logger.error(error)
                 setHasNetworkError(true)
             })
         }

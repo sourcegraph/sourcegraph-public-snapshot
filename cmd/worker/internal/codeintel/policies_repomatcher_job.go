@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
+	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/background/repomatcher"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
@@ -44,22 +45,24 @@ func (j *policiesRepositoryMatcherJob) Routines(startupCtx context.Context, logg
 	}
 	metrics := repomatcher.NewMetrics(observationCtx)
 
-	dbStore, err := codeintel.InitDBStore()
+	rawDB, err := workerdb.Init()
 	if err != nil {
 		return nil, err
 	}
+	db := database.NewDB(logger, rawDB)
 
-	lsifStore, err := codeintel.InitLSIFStore()
+	rawCodeIntelDB, err := codeintel.InitCodeIntelDatabase()
 	if err != nil {
 		return nil, err
 	}
+	codeIntelDB := database.NewDB(logger, rawCodeIntelDB)
 
 	gitserverClient, err := codeintel.InitGitserverClient()
 	if err != nil {
 		return nil, err
 	}
-	db := database.NewDBWith(logger, dbStore)
-	uploadSvc := uploads.GetService(db, database.NewDBWith(logger, lsifStore), gitserverClient)
+
+	uploadSvc := uploads.GetService(db, codeIntelDB, gitserverClient)
 	policySvc := policies.GetService(db, uploadSvc, gitserverClient)
 
 	return []goroutine.BackgroundRoutine{

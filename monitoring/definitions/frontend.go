@@ -333,6 +333,7 @@ func Frontend() *monitoring.Dashboard {
 			shared.Batches.NewDBStoreGroup(containerName),
 			shared.Batches.NewServiceGroup(containerName),
 			shared.Batches.NewWorkspaceExecutionDBWorkerStoreGroup(containerName),
+			shared.Batches.NewBatchesHTTPAPIGroup(containerName),
 
 			// src_oobmigration_total
 			// src_oobmigration_duration_seconds_bucket

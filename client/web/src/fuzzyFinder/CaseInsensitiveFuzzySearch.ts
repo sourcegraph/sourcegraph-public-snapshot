@@ -15,6 +15,10 @@ class CacheCandidate {
     }
 }
 
+// The 0.2 value was chosen by manually observing the behavior and confirming
+// that it seems to give relevant results without too much noise.
+const FZY_MINIMUM_SCORE_THRESHOLD = 0.2
+
 /**
  * FuzzySearch implementation that uses the original fzy filtering algorithm from https://github.com/jhawthorn/fzy.js
  */
@@ -42,18 +46,27 @@ export class CaseInsensitiveFuzzySearch extends FuzzySearch {
         const isEmptyQuery = parameters.query.length === 0
         const candidates: ScoredSearchValue[] = []
         const queryParts = parameters.query.split(this.spaceSeparator).filter(part => part.length > 0)
-        for (const value of searchValues) {
-            let score = 0
-            for (const queryPart of queryParts) {
-                const partScore = fzy.score(queryPart, value.text)
-                score += partScore
-            }
-            const isAcceptableScore = !isNaN(score) && score > 0.2
-            if (isEmptyQuery || isAcceptableScore) {
-                candidates.push({
-                    score,
-                    text: value.text,
-                })
+        if (queryParts.length === 0) {
+            // Empty query, match all values
+            candidates.push(...searchValues.map(value => ({ score: 0, text: value.text })))
+        } else {
+            for (const value of searchValues) {
+                let score = 0
+                if (queryParts.length === 1 && queryParts[0] === value.text) {
+                    score = 1 // exact match, special-cased because fzy.score returns `Infinity`
+                } else {
+                    for (const queryPart of queryParts) {
+                        const partScore = fzy.score(queryPart, value.text)
+                        score += partScore
+                    }
+                }
+                const isAcceptableScore = !isNaN(score) && isFinite(score) && score > FZY_MINIMUM_SCORE_THRESHOLD
+                if (isEmptyQuery || isAcceptableScore) {
+                    candidates.push({
+                        score,
+                        text: value.text,
+                    })
+                }
             }
         }
 

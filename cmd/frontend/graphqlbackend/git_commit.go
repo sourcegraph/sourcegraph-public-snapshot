@@ -40,9 +40,10 @@ func (r *schemaResolver) gitCommitByID(ctx context.Context, id graphql.ID) (*Git
 //
 // Prefer using NewGitCommitResolver to create an instance of the commit resolver.
 type GitCommitResolver struct {
-	logger       log.Logger
-	db           database.DB
-	repoResolver *RepositoryResolver
+	logger          log.Logger
+	db              database.DB
+	gitserverClient gitserver.Client
+	repoResolver    *RepositoryResolver
 
 	// inputRev is the Git revspec that the user originally requested that resolved to this Git commit. It is used
 	// to avoid redirecting a user browsing a revision "mybranch" to the absolute commit ID as they follow links in the UI.
@@ -66,9 +67,10 @@ type GitCommitResolver struct {
 // NewGitCommitResolver returns a new CommitResolver. When commit is set to nil,
 // commit will be loaded lazily as needed by the resolver. Pass in a commit when
 // you have batch-loaded a bunch of them and already have them at hand.
-func NewGitCommitResolver(db database.DB, repo *RepositoryResolver, id api.CommitID, commit *gitdomain.Commit) *GitCommitResolver {
+func NewGitCommitResolver(db database.DB, gsClient gitserver.Client, repo *RepositoryResolver, id api.CommitID, commit *gitdomain.Commit) *GitCommitResolver {
 	return &GitCommitResolver{
 		db:              db,
+		gitserverClient: gsClient,
 		repoResolver:    repo,
 		includeUserInfo: true,
 		gitRepo:         repo.RepoName(),
@@ -84,7 +86,7 @@ func (r *GitCommitResolver) resolveCommit(ctx context.Context) (*gitdomain.Commi
 		}
 
 		opts := gitserver.ResolveRevisionOptions{}
-		r.commit, r.commitErr = gitserver.NewClient(r.db).GetCommit(ctx, r.gitRepo, api.CommitID(r.oid), opts, authz.DefaultSubRepoPermsChecker)
+		r.commit, r.commitErr = r.gitserverClient.GetCommit(ctx, r.gitRepo, api.CommitID(r.oid), opts, authz.DefaultSubRepoPermsChecker)
 	})
 	return r.commit, r.commitErr
 }
@@ -257,7 +259,7 @@ func (r *GitCommitResolver) path(ctx context.Context, path string, validate func
 	defer span.Finish()
 	span.SetTag("path", path)
 
-	stat, err := gitserver.NewClient(r.db).Stat(ctx, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid), path)
+	stat, err := r.gitserverClient.Stat(ctx, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid), path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -272,7 +274,7 @@ func (r *GitCommitResolver) path(ctx context.Context, path string, validate func
 }
 
 func (r *GitCommitResolver) FileNames(ctx context.Context) ([]string, error) {
-	return gitserver.NewClient(r.db).LsFiles(ctx, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid))
+	return r.gitserverClient.LsFiles(ctx, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid))
 }
 
 func (r *GitCommitResolver) Languages(ctx context.Context) ([]string, error) {
@@ -319,13 +321,14 @@ func (r *GitCommitResolver) Ancestors(ctx context.Context, args *struct {
 	After *string
 }) (*gitCommitConnectionResolver, error) {
 	return &gitCommitConnectionResolver{
-		db:            r.db,
-		revisionRange: string(r.oid),
-		first:         args.ConnectionArgs.First,
-		query:         args.Query,
-		path:          args.Path,
-		after:         args.After,
-		repo:          r.repoResolver,
+		db:              r.db,
+		gitserverClient: r.gitserverClient,
+		revisionRange:   string(r.oid),
+		first:           args.ConnectionArgs.First,
+		query:           args.Query,
+		path:            args.Path,
+		after:           args.After,
+		repo:            r.repoResolver,
 	}, nil
 }
 
@@ -337,7 +340,8 @@ func (r *GitCommitResolver) Diff(ctx context.Context, args *struct {
 	if args.Base != nil {
 		base = *args.Base
 	}
-	return NewRepositoryComparison(ctx, r.db, r.repoResolver, &RepositoryComparisonInput{
+	client := gitserver.NewClient(r.db)
+	return NewRepositoryComparison(ctx, r.db, client, r.repoResolver, &RepositoryComparisonInput{
 		Base:         &base,
 		Head:         &oidString,
 		FetchMissing: false,
@@ -347,7 +351,7 @@ func (r *GitCommitResolver) Diff(ctx context.Context, args *struct {
 func (r *GitCommitResolver) BehindAhead(ctx context.Context, args *struct {
 	Revspec string
 }) (*behindAheadCountsResolver, error) {
-	counts, err := gitserver.NewClient(r.db).GetBehindAhead(ctx, r.gitRepo, args.Revspec, string(r.oid))
+	counts, err := r.gitserverClient.GetBehindAhead(ctx, r.gitRepo, args.Revspec, string(r.oid))
 	if err != nil {
 		return nil, err
 	}

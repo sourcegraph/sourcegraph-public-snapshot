@@ -1,7 +1,6 @@
 import { uniq } from 'lodash'
 
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import {
     EXTENSION_CATEGORIES,
     ExtensionCategory,
@@ -9,6 +8,7 @@ import {
 } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
+import { ViewerRegistryPublishersResult } from '../../graphql-operations'
 import { quoteIfNeeded } from '../../search'
 import { ExtensionCategoryOrAll } from '../ExtensionRegistry'
 
@@ -19,10 +19,10 @@ export const EXTENSION_NAME_VALID_PATTERN = '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[_.-](?=
 export const EXTENSION_NAME_MAX_LENGTH = 128
 
 /** A useful minimal type for a registry extension's publisher. */
-export type RegistryPublisher = (
-    | Pick<GQL.IUser, '__typename' | 'id' | 'username'>
-    | Pick<GQL.IOrg, '__typename' | 'id' | 'name'>
-) & {
+export type RegistryPublisher = ViewerRegistryPublishersResult['extensionRegistry']['viewerPublishers'][number] & {
+    /** The prefix for extension IDs published by this publisher (with the registry's host), if any. */
+    extensionIDPrefix?: string
+} & {
     /** The prefix for extension IDs published by this publisher (with the registry's host), if any. */
     extensionIDPrefix?: string
 }

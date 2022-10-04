@@ -17,6 +17,7 @@ import {
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/schema'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Alert, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
@@ -26,8 +27,9 @@ import { eventLogger } from '../tracking/eventLogger'
 
 import { SavedQueryFields, SavedSearchForm } from './SavedSearchForm'
 
-interface Props extends RouteComponentProps<{ id: Scalars['ID'] }>, NamespaceProps {
+interface Props extends RouteComponentProps<{ id: Scalars['ID'] }>, NamespaceProps, ThemeProps {
     authenticatedUser: AuthenticatedUser | null
+    isSourcegraphDotCom: boolean
 }
 
 const LOADING = 'loading' as const

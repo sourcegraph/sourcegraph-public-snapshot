@@ -106,8 +106,6 @@ type JSContext struct {
 	CodeIntelAutoIndexingEnabled             bool `json:"codeIntelAutoIndexingEnabled"`
 	CodeIntelAutoIndexingAllowGlobalPolicies bool `json:"codeIntelAutoIndexingAllowGlobalPolicies"`
 
-	CodeInsightsGQLApiEnabled bool `json:"codeInsightsGqlApiEnabled"`
-
 	RedirectUnsupportedBrowser bool `json:"RedirectUnsupportedBrowser"`
 
 	ProductResearchPageEnabled bool `json:"productResearchPageEnabled"`
@@ -242,8 +240,6 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		ExecutorsEnabled:                         conf.ExecutorsEnabled(),
 		CodeIntelAutoIndexingEnabled:             conf.CodeIntelAutoIndexingEnabled(),
 		CodeIntelAutoIndexingAllowGlobalPolicies: conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
-
-		CodeInsightsGQLApiEnabled: conf.CodeInsightsGQLApiEnabled(),
 
 		ProductResearchPageEnabled: conf.ProductResearchPageEnabled(),
 

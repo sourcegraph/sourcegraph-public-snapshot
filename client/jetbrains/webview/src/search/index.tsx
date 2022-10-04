@@ -4,7 +4,7 @@ import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import polyfillEventSource from '@sourcegraph/shared/src/polyfills/vendor/eventSource'
 import { AnchorLink, setLinkComponent } from '@sourcegraph/wildcard'
 
-import { getAuthenticatedUser } from '../sourcegraph-api-access/api-gateway'
+import { getSiteVersionAndAuthenticatedUser } from '../sourcegraph-api-access/api-gateway'
 import { EventLogger } from '../telemetry/EventLogger'
 
 import { App } from './App'
@@ -17,6 +17,7 @@ import {
     onOpen,
     onPreviewChange,
     onPreviewClear,
+    onSearchError,
 } from './js-to-java-bridge'
 import type { PluginConfig, Search, Theme } from './types'
 
@@ -30,36 +31,33 @@ let anonymousUserId: string
 let pluginVersion: string
 let initialSearch: Search | null = null
 let authenticatedUser: AuthenticatedUser | null = null
+let backendVersion: string | null = null
 let telemetryService: EventLogger
+let errorRetryIndex = 0
+let isServerAccessSuccessful: boolean | null = null
 
 window.initializeSourcegraph = async () => {
-    const [theme, config, lastSearch]: [Theme, PluginConfig, Search | null] = await Promise.all([
-        getThemeAlwaysFulfill(),
-        getConfigAlwaysFulfill(),
-        loadLastSearchAlwaysFulfill(),
-    ])
-
-    applyConfig(config)
-    applyTheme(theme)
-    applyLastSearch(lastSearch)
-
-    let isServerAccessSuccessful = false
     try {
-        authenticatedUser = await getAuthenticatedUser(instanceURL, accessToken)
-        isServerAccessSuccessful = true
+        const [theme, config, lastSearch]: [Theme, PluginConfig, Search | null] = await Promise.all([
+            getThemeAlwaysFulfill(),
+            getConfigAlwaysFulfill(),
+            loadLastSearchAlwaysFulfill(),
+        ])
+
+        applyConfig(config)
+        applyTheme(theme)
+        applyLastSearch(lastSearch)
+        await updateVersionAndAuthDataFromServer()
+
+        telemetryService = new EventLogger(anonymousUserId, { editor: 'jetbrains', version: pluginVersion })
+
+        renderReactApp()
+
+        await indicateFinishedLoading(isServerAccessSuccessful || false, !!authenticatedUser)
     } catch (error) {
-        console.info('Could not authenticate with current URL and token settings', instanceURL, accessToken, error)
+        console.error('Error initializing Sourcegraph', error)
+        await indicateFinishedLoading(false, !!authenticatedUser)
     }
-
-    if (accessToken && !authenticatedUser) {
-        console.warn(`No initial authenticated user with access token “${accessToken}”`)
-    }
-
-    telemetryService = new EventLogger(anonymousUserId, { editor: 'jetbrains', version: pluginVersion })
-
-    renderReactApp()
-
-    await indicateFinishedLoading(isServerAccessSuccessful, !!authenticatedUser)
 }
 
 window.callJS = handleRequest
@@ -70,7 +68,7 @@ export function renderReactApp(): void {
         <App
             // Make sure we recreate the React app when the instance URL or access token changes to
             // avoid showing stale data.
-            key={`${instanceURL}-${accessToken}`}
+            key={`${instanceURL}-${accessToken}-${errorRetryIndex}`}
             isDarkTheme={isDarkTheme}
             instanceURL={instanceURL}
             isGlobbingEnabled={isGlobbingEnabled}
@@ -79,6 +77,8 @@ export function renderReactApp(): void {
             onOpen={onOpen}
             onPreviewChange={onPreviewChange}
             onPreviewClear={onPreviewClear}
+            onSearchError={onSearchError}
+            backendVersion={backendVersion}
             authenticatedUser={authenticatedUser}
             telemetryService={telemetryService}
         />,
@@ -138,6 +138,26 @@ export function applyTheme(theme: Theme, rootElement: Element = document.documen
     root.style.setProperty('--body-bg', intelliJTheme['List.background'])
 }
 
+export async function updateVersionAndAuthDataFromServer(): Promise<void> {
+    try {
+        const { site, currentUser } = await getSiteVersionAndAuthenticatedUser(instanceURL, accessToken)
+        authenticatedUser = currentUser
+        backendVersion = site?.productVersion || null
+        isServerAccessSuccessful = true
+    } catch (error) {
+        console.info('Could not authenticate with current URL and token settings', instanceURL, accessToken, error)
+        isServerAccessSuccessful = false
+    }
+
+    if (accessToken && !authenticatedUser) {
+        console.warn(`No initial authenticated user with access token “${accessToken}”`)
+    }
+}
+
+export function retrySearch(): void {
+    errorRetryIndex++
+}
+
 function applyLastSearch(lastSearch: Search | null): void {
     initialSearch = lastSearch
 }
@@ -148,4 +168,12 @@ export function getAccessToken(): string | null {
 
 export function getInstanceURL(): string {
     return instanceURL
+}
+
+export function wasServerAccessSuccessful(): boolean | null {
+    return isServerAccessSuccessful
+}
+
+export function getAuthenticatedUser(): AuthenticatedUser | null {
+    return authenticatedUser
 }

@@ -803,6 +803,10 @@ type UsersListOptions struct {
 
 	Tag string // only include users with this tag
 
+	// InactiveSince filters out users that have had an eventlog entry with a
+	// `timestamp` greater-than-or-equal to the given timestamp.
+	InactiveSince time.Time
+
 	*LimitOffset
 }
 
@@ -854,6 +858,15 @@ SELECT id, created_at, deleted_at
 FROM users
 ORDER BY id ASC
 `
+const listUsersInactiveCond = `
+(NOT EXISTS (
+	SELECT 1 FROM event_logs
+	WHERE
+		event_logs.user_id = u.id
+	AND
+		timestamp >= %s
+))
+`
 
 func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 	conds = []*sqlf.Query{sqlf.Sprintf("TRUE")}
@@ -877,6 +890,11 @@ func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 	if opt.Tag != "" {
 		conds = append(conds, sqlf.Sprintf("%s::text = ANY(u.tags)", opt.Tag))
 	}
+
+	if !opt.InactiveSince.IsZero() {
+		conds = append(conds, sqlf.Sprintf(listUsersInactiveCond, opt.InactiveSince))
+	}
+
 	return conds
 }
 

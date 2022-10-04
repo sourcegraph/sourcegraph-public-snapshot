@@ -139,8 +139,21 @@ func TestLog(t *testing.T) {
 				t.Fatal("expected to capture one log exactly")
 			}
 
-			assert.Equal(t, "test audit action", logs[0].Message)
-			assert.Equal(t, tc.expectedEntry, logs[0].Fields)
+			assert.Contains(t, logs[0].Message, "test audit action (sampling immunity token")
+
+			// non-audit fields are preserved
+			assert.Equal(t, tc.expectedEntry["additional"], logs[0].Fields["additional"])
+
+			expectedAudit := tc.expectedEntry["audit"].(map[string]interface{})
+			actualAudit := logs[0].Fields["audit"].(map[string]interface{})
+			assert.Equal(t, expectedAudit["entity"], actualAudit["entity"])
+			assert.NotEmpty(t, actualAudit["auditId"])
+
+			expectedActor := expectedAudit["actor"].(map[string]interface{})
+			actualActor := actualAudit["actor"].(map[string]interface{})
+			assert.Equal(t, expectedActor["actorUID"], actualActor["actorUID"])
+			assert.Equal(t, expectedActor["ip"], actualActor["ip"])
+			assert.Equal(t, expectedActor["X-Forwarded-For"], actualActor["X-Forwarded-For"])
 		})
 	}
 }

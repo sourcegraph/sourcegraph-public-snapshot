@@ -1498,10 +1498,7 @@ func (c *clientImplementor) GetCommit(ctx context.Context, repo api.RepoName, id
 
 // Commits returns all commits matching the options.
 func (c *clientImplementor) Commits(ctx context.Context, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error) {
-	if Mocks.Commits != nil {
-		return Mocks.Commits(repo, opt)
-	}
-
+	opt = addNameOnly(opt, checker)
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: Commits")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
@@ -1509,7 +1506,6 @@ func (c *clientImplementor) Commits(ctx context.Context, repo api.RepoName, opt 
 	if err := checkSpecArgSafety(opt.Range); err != nil {
 		return nil, err
 	}
-	opt = addNameOnly(opt, checker)
 	return c.commitLog(ctx, repo, opt, checker)
 }
 
