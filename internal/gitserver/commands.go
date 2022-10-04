@@ -1285,9 +1285,6 @@ func (c *clientImplementor) ReadFile(ctx context.Context, repo api.RepoName, com
 // NewFileReader returns an io.ReadCloser reading from the named file at commit.
 // The caller should always close the reader after use
 func (c *clientImplementor) NewFileReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string, checker authz.SubRepoPermissionChecker) (io.ReadCloser, error) {
-	if Mocks.NewFileReader != nil {
-		return Mocks.NewFileReader(commit, name)
-	}
 	a := actor.FromContext(ctx)
 	if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, name); err != nil {
 		return nil, err

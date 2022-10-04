@@ -48,7 +48,7 @@ func TestGitCommitResolver(t *testing.T) {
 			commitResolver.inputRev = &inputRev
 			require.Equal(t, "/xyz/-/commit/master%5E1", commitResolver.URL())
 
-			treeResolver := NewGitTreeEntryResolver(db, commitResolver, CreateFileInfo("a/b", false))
+			treeResolver := NewGitTreeEntryResolver(db, client, commitResolver, CreateFileInfo("a/b", false))
 			url, err := treeResolver.URL(ctx)
 			require.Nil(t, err)
 			require.Equal(t, "/xyz@master%5E1/-/blob/a/b", url)
