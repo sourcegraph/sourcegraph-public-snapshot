@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
@@ -14,6 +15,7 @@ import (
 
 type RepoUpdaterClient interface {
 	EnqueueRepoUpdate(ctx context.Context, repo api.RepoName) (*protocol.RepoUpdateResponse, error)
+	RepoLookup(ctx context.Context, name api.RepoName) (info *protocol.RepoInfo, err error)
 }
 
 type GitserverClient interface {
@@ -35,4 +37,6 @@ type UploadService interface {
 	GetRepoName(ctx context.Context, repositoryID int) (_ string, err error)       // upload service
 	GetDirtyRepositories(ctx context.Context) (_ map[int]int, err error)           // upload service
 	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []types.Upload, err error) // upload service
+	GetUploadByID(ctx context.Context, id int) (types.Upload, bool, error)
+	ReferencesForUpload(ctx context.Context, uploadID int) (shared.PackageReferenceScanner, error)
 }

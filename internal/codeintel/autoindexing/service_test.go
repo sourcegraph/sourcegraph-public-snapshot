@@ -19,6 +19,7 @@ import (
 )
 
 func init() {
+	autoIndexingEnabled = func() bool { return true }
 	maximumIndexJobsPerInferredConfiguration = 50
 }
 

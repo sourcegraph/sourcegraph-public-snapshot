@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
@@ -56,6 +57,7 @@ type service interface {
 
 	// Utilities
 	GetUnsafeDB() database.DB
+	WorkerutilStore() dbworkerstore.Store
 	NewIndexResetter(interval time.Duration) *dbworker.Resetter
 	NewDependencyIndexResetter(interval time.Duration) *dbworker.Resetter
 	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error)
@@ -76,6 +78,11 @@ type Service struct {
 	dependencySyncStore     dbworkerstore.Store
 	dependencyIndexingStore dbworkerstore.Store
 	uploadSvc               shared.UploadService
+	depsSvc                 DependenciesService
+	repoStore               ReposStore
+	gitserverRepoStore      GitserverRepoStore
+	externalServiceStore    ExternalServiceStore
+	enqueuer                IndexEnqueuer
 	gitserverClient         shared.GitserverClient
 	symbolsClient           *symbols.Client
 	repoUpdater             shared.RepoUpdaterClient
@@ -83,6 +90,8 @@ type Service struct {
 	logger                  log.Logger
 	operations              *operations
 	metrics                 *resetterMetrics
+	depencencySyncMetrics   workerutil.WorkerMetrics
+	depencencyIndexMetrics  workerutil.WorkerMetrics
 }
 
 func newService(
@@ -100,6 +109,11 @@ func newService(
 		dependencySyncStore:     store.WorkerutilDependencySyncStore(observationContext),
 		dependencyIndexingStore: store.WorkerutilDependencyIndexStore(observationContext),
 		uploadSvc:               uploadSvc,
+		depsSvc:                 nil, // TODO
+		externalServiceStore:    nil, // TODO
+		repoStore:               nil, // TODO
+		gitserverRepoStore:      nil, // TODO
+		enqueuer:                nil, // TODO
 		gitserverClient:         gitserver,
 		symbolsClient:           symbolsClient,
 		repoUpdater:             repoUpdater,
@@ -107,7 +121,13 @@ func newService(
 		logger:                  observationContext.Logger,
 		operations:              newOperations(observationContext),
 		metrics:                 newMetrics(observationContext),
+		depencencySyncMetrics:   workerutil.NewMetrics(observationContext, "codeintel_dependency_index_processor"),
+		depencencyIndexMetrics:  workerutil.NewMetrics(observationContext, "codeintel_dependency_index_queueing"),
 	}
+}
+
+func (s *Service) WorkerutilStore() dbworkerstore.Store {
+	return s.workerutilStore
 }
 
 // NewIndexResetter returns a background routine that periodically resets index
