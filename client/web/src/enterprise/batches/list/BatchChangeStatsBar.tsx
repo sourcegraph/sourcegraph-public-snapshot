@@ -6,6 +6,7 @@ import { useQuery } from '@sourcegraph/http-client'
 import { Icon, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
 
 import { GlobalChangesetsStatsResult, GlobalChangesetsStatsVariables } from '../../../graphql-operations'
+import { DEFAULT_MINS_SAVED_PER_CHANGESET } from '../../../site-admin/analytics/AnalyticsBatchChangesPage'
 import { ChangesetStatusClosed, ChangesetStatusOpen } from '../detail/changesets/ChangesetStatusCell'
 
 import { GLOBAL_CHANGESETS_STATS } from './backend'
@@ -34,6 +35,9 @@ export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildre
         throw new Error(error.message)
     }
 
+    const numMinPerItemSaved =
+        parseInt(localStorage.getItem('minPerItemSaved') || '0', 10) || DEFAULT_MINS_SAVED_PER_CHANGESET
+
     return (
         <div className={styles.statsBar}>
             <div className={styles.leftSide}>
@@ -49,7 +53,7 @@ export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildre
                 </div>
                 <div className="pr-4">
                     <span className="font-weight-bold">
-                        {data ? (data?.globalChangesetsStats.merged * 15) / 60 : '--'}
+                        {data ? (data?.globalChangesetsStats.merged * numMinPerItemSaved) / 60 : '--'}
                     </span>
                     <br />
                     <span>

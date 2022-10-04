@@ -18,6 +18,8 @@ import { StandardDatum } from '../utils'
 
 import { BATCHCHANGES_STATISTICS } from './queries'
 
+export const DEFAULT_MINS_SAVED_PER_CHANGESET = 15
+
 export const AnalyticsBatchChangesPage: React.FunctionComponent<RouteComponentProps<{}>> = () => {
     const { dateRange, grouping } = useChartFilters({ name: 'BatchChanges' })
     const { data, error, loading } = useQuery<BatchChangesStatisticsResult, BatchChangesStatisticsVariables>(
@@ -89,7 +91,7 @@ export const AnalyticsBatchChangesPage: React.FunctionComponent<RouteComponentPr
             label: 'Changesets merged',
             color: 'var(--cyan)',
             value: changesetsMerged.summary.totalCount,
-            minPerItem: 15,
+            minPerItem: DEFAULT_MINS_SAVED_PER_CHANGESET,
             description:
                 'Batch Changes automates opening changesets across many repositories and codehosts. It also significantly reduces the time required to manage cross-repository changes via tracking and management functions that are superior to custom solutions, spreadsheets and manually reaching out to developers.',
         }

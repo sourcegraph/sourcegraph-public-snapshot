@@ -293,6 +293,9 @@ export const TimeSavedCalculator: React.FunctionComponent<TimeSavedCalculator> =
         return hoursSaved
     }, [hoursSaved, dateRange])
 
+    const stringMinPerItemSaved = minPerItemSaved.toLocaleString()
+    localStorage.setItem('minPerItemSaved', stringMinPerItemSaved)
+
     return (
         <Card className="mb-3 p-4">
             <div className="d-flex flex-row">

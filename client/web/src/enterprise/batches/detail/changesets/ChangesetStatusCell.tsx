@@ -64,52 +64,52 @@ interface ChangesetStatusIconProps extends React.HTMLAttributes<HTMLDivElement> 
 }
 
 export const ChangesetStatusUnpublished: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
-    label = <span>Unpublished</span>,
+    label,
     className,
     ...props
 }) => (
     <div className={classNames(iconClassNames, className)} {...props}>
-        <Icon svgPath={mdiSourceBranch} inline={false} aria-hidden={true} />
+        <Icon svgPath={mdiSourceBranch} inline={false} aria-hidden={true} label="Unpublished" />
         {label}
     </div>
 )
 export const ChangesetStatusClosed: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
-    label = <span>Closed</span>,
+    label,
     className,
     ...props
 }) => (
     <div className={classNames(iconClassNames, className)} {...props}>
-        <Icon className="text-danger" svgPath={mdiSourcePull} inline={false} aria-hidden={true} />
+        <Icon className="text-danger" svgPath={mdiSourcePull} inline={false} aria-hidden={true} label="Closed" />
         {label}
     </div>
 )
 export const ChangesetStatusMerged: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
-    label = <span>Merged</span>,
+    label,
     className,
     ...props
 }) => (
     <div className={classNames(iconClassNames, className)} {...props}>
-        <Icon className="text-merged" svgPath={mdiSourceMerge} inline={false} aria-hidden={true} />
+        <Icon className="text-merged" svgPath={mdiSourceMerge} inline={false} aria-hidden={true} label="Merged" />
         {label}
     </div>
 )
 export const ChangesetStatusOpen: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
-    label = <span>Open</span>,
+    label,
     className,
     ...props
 }) => (
     <div className={classNames(iconClassNames, className)} {...props}>
-        <Icon className="text-success" svgPath={mdiSourcePull} inline={false} aria-hidden={true} />
+        <Icon className="text-success" svgPath={mdiSourcePull} inline={false} aria-hidden={true} label="Opened" />
         {label}
     </div>
 )
 export const ChangesetStatusDraft: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
-    label = <span>Draft</span>,
+    label,
     className,
     ...props
 }) => (
     <div className={classNames(iconClassNames, className)} {...props}>
-        <Icon svgPath={mdiSourcePull} inline={false} aria-hidden={true} />
+        <Icon svgPath={mdiSourcePull} inline={false} aria-hidden={true} label="Draft" />
         {label}
     </div>
 )
@@ -134,46 +134,46 @@ export const ChangesetStatusError: React.FunctionComponent<React.PropsWithChildr
     </div>
 )
 export const ChangesetStatusRetrying: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
-    label = <span>Retrying</span>,
+    label,
     className,
     ...props
 }) => (
     <div className={classNames(iconClassNames, className)} {...props}>
-        <Icon svgPath={mdiAutorenew} inline={false} aria-hidden={true} />
+        <Icon svgPath={mdiAutorenew} inline={false} aria-hidden={true} label="Retrying" />
         {label}
     </div>
 )
 
 export const ChangesetStatusProcessing: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
-    label = <span>Processing</span>,
+    label,
     className,
     ...props
 }) => (
     <div className={classNames(iconClassNames, className)} {...props}>
-        <Icon svgPath={mdiTimerSand} inline={false} aria-hidden={true} />
+        <Icon svgPath={mdiTimerSand} inline={false} aria-hidden={true} label="Processing" />
         {label}
     </div>
 )
 
 export const ChangesetStatusArchived: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
-    label = <span>Archived</span>,
+    label,
     className,
     ...props
 }) => (
     <div className={classNames(iconClassNames, className)} {...props}>
-        <Icon svgPath={mdiArchive} inline={false} aria-hidden={true} />
+        <Icon svgPath={mdiArchive} inline={false} aria-hidden={true} label="Archived" />
         {label}
     </div>
 )
 
 export const ChangesetStatusReadOnly: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
-    label = <span>Read-only</span>,
+    label,
     className,
     ...props
 }) => (
     <Tooltip content="This changeset is read-only, and cannot be modified. This is usually caused by the repository being archived.">
         <div className={classNames(iconClassNames, className)} {...props}>
-            <Icon svgPath={mdiLock} inline={false} aria-hidden={true} />
+            <Icon svgPath={mdiLock} inline={false} aria-hidden={true} label="Read-only" />
             {label}
         </div>
     </Tooltip>
