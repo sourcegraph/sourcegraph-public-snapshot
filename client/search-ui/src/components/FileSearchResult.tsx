@@ -14,13 +14,7 @@ import { MatchGroup, MatchItem } from '@sourcegraph/shared/src/components/rankin
 import { ZoektRanking } from '@sourcegraph/shared/src/components/ranking/ZoektRanking'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
-import {
-    ContentMatch,
-    SymbolMatch,
-    getFileMatchUrl,
-    getRepositoryUrl,
-    getRevision,
-} from '@sourcegraph/shared/src/search/stream'
+import { ContentMatch, getFileMatchUrl, getRepositoryUrl, getRevision } from '@sourcegraph/shared/src/search/stream'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Badge } from '@sourcegraph/wildcard'
@@ -37,7 +31,7 @@ interface Props extends SettingsCascadeProps, TelemetryProps {
     /**
      * The file match search result.
      */
-    result: ContentMatch | SymbolMatch
+    result: ContentMatch
 
     /**
      * Formatted repository name to be displayed in repository link. If not
@@ -176,7 +170,7 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
         collapsedMatchGroups,
     ])
 
-    const matchCount = highlightRangesCount || (result.type === 'symbol' ? result.symbols?.length : 0)
+    const matchCount = highlightRangesCount
     const matchCountLabel = matchCount ? `${matchCount} ${pluralize('match', matchCount, 'matches')}` : ''
 
     const expandedChildren = <FileMatchChildren {...props} result={result} {...expandedMatchGroups} />
@@ -206,7 +200,6 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
         repoLastFetched: result.repoLastFetched,
         onResultClicked: props.onSelect,
         className: props.containerClassName,
-        resultsClassName: props.result.type === 'symbol' ? styles.symbols : undefined,
         resultType: result.type,
     }
 

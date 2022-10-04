@@ -15,6 +15,7 @@ import {
     RepoSearchResult,
     FileSearchResult,
     FilePathSearchResult,
+    SymbolSearchResult,
     FetchFileParameters,
 } from '@sourcegraph/search-ui'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
@@ -152,7 +153,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
         (result: SearchMatch, index: number): JSX.Element => {
             switch (result.type) {
                 case 'content':
-                case 'symbol':
                     return (
                         <PrefetchableFile
                             isPrefetchEnabled={prefetchFileEnabled}
@@ -181,6 +181,30 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 settingsCascade={settingsCascade}
                                 extensionsController={extensionsController}
                                 hoverifier={hoverifier}
+                                openInNewTab={openMatchesInNewTab}
+                                containerClassName={resultClassName}
+                            />
+                        </PrefetchableFile>
+                    )
+                case 'symbol':
+                    return (
+                        <PrefetchableFile
+                            isPrefetchEnabled={prefetchFileEnabled}
+                            prefetch={prefetchFile}
+                            filePath={result.path}
+                            revision={getRevision(result.branches, result.commit)}
+                            repoName={result.repository}
+                            className={resultContainerStyles.resultContainer}
+                            as="li"
+                        >
+                            <SymbolSearchResult
+                                index={index}
+                                telemetryService={telemetryService}
+                                result={result}
+                                onSelect={() => logSearchResultClicked(index, 'fileMatch')}
+                                fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                                repoDisplayName={displayRepoName(result.repository)}
+                                settingsCascade={settingsCascade}
                                 openInNewTab={openMatchesInNewTab}
                                 containerClassName={resultClassName}
                             />
