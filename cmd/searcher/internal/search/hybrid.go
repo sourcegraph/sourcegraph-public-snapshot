@@ -120,13 +120,15 @@ func zoektSearchIgnorePaths(ctx context.Context, client zoekt.Streamer, p *proto
 		zoektIgnorePaths(ignoredPaths),
 	))
 
-	k := zoektutil.ResultCountFactor(1, int32(p.Limit), false)
-	opts := zoektutil.SearchOpts(ctx, k, int32(p.Limit), nil)
+	opts := (&zoektutil.Options{
+		NumRepos:       1,
+		FileMatchLimit: int32(p.Limit),
+	}).ToSearch(ctx)
 	if deadline, ok := ctx.Deadline(); ok {
 		opts.MaxWallTime = time.Until(deadline) - 100*time.Millisecond
 	}
 
-	res, err := client.Search(ctx, q, &opts)
+	res, err := client.Search(ctx, q, opts)
 	if err != nil {
 		return false, err
 	}

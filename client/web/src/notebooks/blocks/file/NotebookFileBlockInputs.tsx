@@ -6,13 +6,13 @@ import { debounce } from 'lodash'
 
 import { isMacPlatform as isMacPlatformFunc } from '@sourcegraph/common'
 import { createDefaultSuggestions } from '@sourcegraph/search-ui'
-import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'
 import { PathMatch } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Icon, Button, Input, InputStatus } from '@sourcegraph/wildcard'
 
 import { BlockProps, FileBlockInput } from '../..'
+import { HighlightLineRange } from '../../../graphql-operations'
 import { useExperimentalFeatures } from '../../../stores'
 import { parseLineRange, serializeLineRange } from '../../serialize'
 import { SearchTypeSuggestionsInput } from '../suggestions/SearchTypeSuggestionsInput'
@@ -23,10 +23,10 @@ import styles from './NotebookFileBlockInputs.module.scss'
 interface NotebookFileBlockInputsProps extends Pick<BlockProps, 'onRunBlock'>, ThemeProps {
     id: string
     queryInput: string
-    lineRange: IHighlightLineRange | null
+    lineRange: HighlightLineRange | null
     onEditorCreated: (editor: EditorView) => void
     setQueryInput: (value: string) => void
-    onLineRangeChange: (lineRange: IHighlightLineRange | null) => void
+    onLineRangeChange: (lineRange: HighlightLineRange | null) => void
     onFileSelected: (file: FileBlockInput) => void
     isSourcegraphDotCom: boolean
     globbing: boolean

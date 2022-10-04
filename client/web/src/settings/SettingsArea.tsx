@@ -8,7 +8,7 @@ import { combineLatest, from, Observable, of, Subject, Subscription } from 'rxjs
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
-import { asError, createAggregateError, ErrorLike, isErrorLike, isDefined } from '@sourcegraph/common'
+import { asError, createAggregateError, ErrorLike, isErrorLike, isDefined, logger } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { getConfiguredSideloadedExtension } from '@sourcegraph/shared/src/api/client/enabledExtensions'
 import { extensionIDsFromSettings } from '@sourcegraph/shared/src/extensions/extension'
@@ -108,7 +108,7 @@ export class SettingsArea extends React.Component<Props, State> {
                 )
                 .subscribe(
                     stateUpdate => this.setState(stateUpdate),
-                    error => console.error(error)
+                    error => logger.error(error)
                 )
         )
 
@@ -193,14 +193,14 @@ export class SettingsArea extends React.Component<Props, State> {
                 extensionIDsFromSettings(gqlToCascade(cascade))
             ).pipe(
                 catchError(error => {
-                    console.warn('Unable to get extension settings JSON Schemas for settings editor.', { error })
+                    logger.warn('Unable to get extension settings JSON Schemas for settings editor.', { error })
                     return of([])
                 })
             ),
             from(this.props.platformContext.sideloadedExtensionURL).pipe(
                 switchMap(url => (url ? getConfiguredSideloadedExtension(url) : of(null))),
                 catchError(error => {
-                    console.error('Error sideloading extension', error)
+                    logger.error('Error sideloading extension', error)
                     return of(null)
                 })
             ),

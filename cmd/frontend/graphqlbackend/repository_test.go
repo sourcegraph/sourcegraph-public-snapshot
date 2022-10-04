@@ -105,7 +105,7 @@ func TestRepositoryHydration(t *testing.T) {
 		db := database.NewMockDB()
 		db.ReposFunc.SetDefaultReturn(rs)
 
-		repoResolver := NewRepositoryResolver(db, minimalRepo)
+		repoResolver := NewRepositoryResolver(db, gitserver.NewClient(db), minimalRepo)
 		assertRepoResolverHydrated(ctx, t, repoResolver, hydratedRepo)
 		mockrequire.CalledOnce(t, rs.GetFunc)
 	})
@@ -120,7 +120,7 @@ func TestRepositoryHydration(t *testing.T) {
 		db := database.NewMockDB()
 		db.ReposFunc.SetDefaultReturn(rs)
 
-		repoResolver := NewRepositoryResolver(db, minimalRepo)
+		repoResolver := NewRepositoryResolver(db, gitserver.NewClient(db), minimalRepo)
 		_, err := repoResolver.Description(ctx)
 		require.ErrorIs(t, err, dbErr)
 
@@ -207,7 +207,8 @@ func TestRepository_DefaultBranch(t *testing.T) {
 				gitserver.Mocks.ResolveRevision = nil
 			})
 
-			res := &RepositoryResolver{RepoMatch: result.RepoMatch{Name: "repo"}, logger: logtest.Scoped(t)}
+			gsClient := gitserver.NewClient(database.NewMockDB())
+			res := &RepositoryResolver{RepoMatch: result.RepoMatch{Name: "repo"}, logger: logtest.Scoped(t), gitserverClient: gsClient}
 			branch, err := res.DefaultBranch(ctx)
 			if tt.wantErr != nil && err != nil {
 				if tt.wantErr.Error() != err.Error() {

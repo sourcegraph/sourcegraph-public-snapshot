@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	policiesEnterprise "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -251,7 +250,7 @@ func testUploadExpirerMockPolicyMatcher() *MockPolicyMatcher {
 		},
 	}
 
-	commitsDescribedByPolicy := func(ctx context.Context, repositoryID int, policies []dbstore.ConfigurationPolicy, now time.Time, _ ...string) (map[string][]policiesEnterprise.PolicyMatch, error) {
+	commitsDescribedByPolicy := func(ctx context.Context, repositoryID int, policies []types.ConfigurationPolicy, now time.Time, _ ...string) (map[string][]policiesEnterprise.PolicyMatch, error) {
 		return policyMatches[repositoryID], nil
 	}
 

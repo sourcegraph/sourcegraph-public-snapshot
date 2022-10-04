@@ -7,7 +7,7 @@ import { from, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, mergeMap, startWith, tap } from 'rxjs/operators'
 
 import { ActionContribution, Evaluated } from '@sourcegraph/client-api'
-import { asError, ErrorLike, isErrorLike, isExternalLink } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, isExternalLink, logger } from '@sourcegraph/common'
 import {
     LoadingSpinner,
     Button,
@@ -161,7 +161,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
                 )
                 .subscribe(
                     stateUpdate => this.setState(stateUpdate),
-                    error => console.error(error)
+                    error => logger.error(error)
                 )
         )
     }

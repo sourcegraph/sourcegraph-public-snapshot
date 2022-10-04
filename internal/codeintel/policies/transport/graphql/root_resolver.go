@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/sharedresolvers"
+	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )

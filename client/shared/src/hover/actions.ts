@@ -18,7 +18,7 @@ import {
 
 import { ContributableMenu, TextDocumentPositionParameters } from '@sourcegraph/client-api'
 import { HoveredToken, LOADER_DELAY, MaybeLoadingResult, emitLoading } from '@sourcegraph/codeintellify'
-import { asError, ErrorLike, isErrorLike, isExternalLink } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, isExternalLink, logger } from '@sourcegraph/common'
 import { Location } from '@sourcegraph/extension-api-types'
 import { Context } from '@sourcegraph/template-parser'
 
@@ -534,7 +534,7 @@ export function registerHoverContributions({
         // Don't expose remote subscriptions, only sync subscriptions bag
         .then(() => undefined)
         .catch(() => {
-            console.error('Failed to register "Go to Definition" and "Find references" actions with extension host')
+            logger.error('Failed to register "Go to Definition" and "Find references" actions with extension host')
         })
 
     // Return promise to provide a way for callers to know when contributions have been successfully registered

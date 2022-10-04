@@ -101,9 +101,10 @@ func zoektSearch(ctx context.Context, args *search.TextPatternInfo, branchRepos 
 		numRepos += int(br.Repos.GetCardinality())
 	}
 
-	// Choose sensible values for k when we generalize this.
-	k := zoektutil.ResultCountFactor(numRepos, args.FileMatchLimit, false)
-	searchOpts := zoektutil.SearchOpts(ctx, k, args.FileMatchLimit, nil)
+	searchOpts := (&zoektutil.Options{
+		NumRepos:       numRepos,
+		FileMatchLimit: args.FileMatchLimit,
+	}).ToSearch(ctx)
 	searchOpts.Whole = true
 
 	filePathPatterns, err := handleFilePathPatterns(args)
@@ -137,7 +138,7 @@ func zoektSearch(ctx context.Context, args *search.TextPatternInfo, branchRepos 
 	}()
 
 	client := getZoektClient(endpoints)
-	err = client.StreamSearch(ctx, q, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
+	err = client.StreamSearch(ctx, q, searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
 		for _, file := range event.Files {
 			hdr := tar.Header{
 				Name: file.FileName,

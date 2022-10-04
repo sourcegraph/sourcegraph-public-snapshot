@@ -7,16 +7,17 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type janitor struct {
-	logger    log.Logger
-	dbStore   DBStore
+	gsc       gitserver.Client
 	uploadSvc UploadService
 	indexSvc  AutoIndexingService
 	metrics   *metrics
+	logger    log.Logger
 	clock     glock.Clock
 }
 

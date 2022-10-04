@@ -100,7 +100,7 @@ index 9bd8209..d2acfa9 100644
 
 	repo := &types.Repo{ID: api.RepoID(1), Name: "github.com/sourcegraph/sourcegraph", CreatedAt: time.Now()}
 
-	previewComparisonResolver, err := NewPreviewRepositoryComparisonResolver(ctx, db, NewRepositoryResolver(db, repo), string(wantHeadRevision), testDiff)
+	previewComparisonResolver, err := NewPreviewRepositoryComparisonResolver(ctx, db, NewRepositoryResolver(db, gitserver.NewClient(db), repo), string(wantHeadRevision), testDiff)
 	if err != nil {
 		t.Fatal(err)
 	}

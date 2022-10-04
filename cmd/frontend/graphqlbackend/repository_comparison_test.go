@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -51,11 +52,12 @@ func TestRepositoryComparisonNoMergeBase(t *testing.T) {
 		return "", errors.Errorf("merge base doesn't exist!")
 	}
 
+	gsClient := gitserver.NewClient(db)
 	input := &RepositoryComparisonInput{Base: &wantBaseRevision, Head: &wantHeadRevision}
-	repoResolver := NewRepositoryResolver(db, repo)
+	repoResolver := NewRepositoryResolver(db, gsClient, repo)
 
 	// There shouldn't be any error even when there is no merge base.
-	comp, err := NewRepositoryComparison(ctx, db, repoResolver, input)
+	comp, err := NewRepositoryComparison(ctx, db, gsClient, repoResolver, input)
 	require.Nil(t, err)
 	require.Equal(t, wantBaseRevision, comp.baseRevspec)
 	require.Equal(t, wantHeadRevision, comp.headRevspec)
@@ -105,9 +107,10 @@ func TestRepositoryComparison(t *testing.T) {
 	t.Cleanup(func() { gitserver.Mocks.MergeBase = nil })
 
 	input := &RepositoryComparisonInput{Base: &wantBaseRevision, Head: &wantHeadRevision}
-	repoResolver := NewRepositoryResolver(db, repo)
+	gsClient := gitserver.NewClient(db)
+	repoResolver := NewRepositoryResolver(db, gsClient, repo)
 
-	comp, err := NewRepositoryComparison(ctx, db, repoResolver, input)
+	comp, err := NewRepositoryComparison(ctx, db, gsClient, repoResolver, input)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -139,7 +142,8 @@ func TestRepositoryComparison(t *testing.T) {
 			{ID: api.CommitID(wantHeadRevision)},
 		}
 
-		gitserver.Mocks.Commits = func(repo api.RepoName, opts gitserver.CommitsOptions) ([]*gitdomain.Commit, error) {
+		mockGSClient := gitserver.NewMockClient()
+		mockGSClient.CommitsFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, opts gitserver.CommitsOptions, _ authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error) {
 			wantRange := fmt.Sprintf("%s..%s", wantBaseRevision, wantHeadRevision)
 
 			if have, want := opts.Range, wantRange; have != want {
@@ -147,10 +151,14 @@ func TestRepositoryComparison(t *testing.T) {
 			}
 
 			return commits, nil
+		})
+
+		newComp, err := NewRepositoryComparison(ctx, db, mockGSClient, repoResolver, input)
+		if err != nil {
+			t.Fatal(err)
 		}
 
-		defer func() { gitserver.Mocks.Commits = nil }()
-		commitConnection := comp.Commits(&graphqlutil.ConnectionArgs{})
+		commitConnection := newComp.Commits(&graphqlutil.ConnectionArgs{})
 
 		nodes, err := commitConnection.Nodes(ctx)
 		if err != nil {

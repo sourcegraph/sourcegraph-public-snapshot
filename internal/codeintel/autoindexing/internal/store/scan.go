@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 // scanIndexes scans a slice of indexes from the return value of `*Store.query`.
@@ -21,7 +22,7 @@ var scanIndexes = basestore.NewSliceScanner(scanIndex)
 var scanFirstIndex = basestore.NewFirstScanner(scanIndex)
 
 func scanIndex(s dbutil.Scanner) (index types.Index, err error) {
-	var executionLogs []types.ExecutionLogEntry
+	var executionLogs []workerutil.ExecutionLogEntry
 	if err := s.Scan(
 		&index.ID,
 		&index.Commit,
@@ -78,7 +79,7 @@ var scanIndexesWithCount = basestore.NewSliceWithCountScanner(scanIndexWithCount
 
 // scanIndexes scans a slice of indexes from the return value of `*Store.query`.
 func scanIndexWithCount(s dbutil.Scanner) (index types.Index, count int, err error) {
-	var executionLogs []types.ExecutionLogEntry
+	var executionLogs []workerutil.ExecutionLogEntry
 
 	if err := s.Scan(
 		&index.ID,

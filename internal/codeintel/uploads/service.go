@@ -73,6 +73,7 @@ type service interface {
 
 	// References
 	UpdatePackageReferences(ctx context.Context, dumpID int, references []precise.PackageReference) (err error)
+	ReferencesForUpload(ctx context.Context, uploadID int) (_ shared.PackageReferenceScanner, err error)
 
 	// Audit Logs
 	GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []types.UploadLog, err error)
@@ -93,8 +94,17 @@ type Service struct {
 	operations      *operations
 }
 
-func newService(store store.Store, repoStore RepoStore, lsifstore lsifstore.LsifStore, gsc GitserverClient, locker Locker, observationContext *observation.Context) *Service {
+func newService(
+	store store.Store,
+	repoStore RepoStore,
+	lsifstore lsifstore.LsifStore,
+	gsc GitserverClient,
+	locker Locker,
+	observationContext *observation.Context,
+) *Service {
 	workerutilStore := store.WorkerutilStore(observationContext)
+
+	// TODO - move this to metric reporter?
 	dbworker.InitPrometheusMetric(observationContext, workerutilStore, "codeintel", "upload", nil)
 
 	return &Service{
@@ -104,7 +114,7 @@ func newService(store store.Store, repoStore RepoStore, lsifstore lsifstore.Lsif
 		lsifstore:       lsifstore,
 		gitserverClient: gsc,
 		locker:          locker,
-		logger:          logger.Scoped("uploads.service", ""),
+		logger:          observationContext.Logger,
 		operations:      newOperations(observationContext),
 	}
 }
@@ -449,6 +459,13 @@ func (s *Service) DeleteUploadByID(ctx context.Context, id int) (_ bool, err err
 	return s.store.DeleteUploadByID(ctx, id)
 }
 
+func (s *Service) DeleteUploads(ctx context.Context, opts types.DeleteUploadsOptions) (err error) {
+	ctx, _, endObservation := s.operations.deleteUploadByID.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.DeleteUploads(ctx, opts)
+}
+
 // numAncestors is the number of ancestors to query from gitserver when trying to find the closest
 // ancestor we have data for. Setting this value too low (relative to a repository's commit rate)
 // will cause requests for an unknown commit return too few results; setting this value too high
@@ -621,6 +638,15 @@ func (s *Service) UpdatePackageReferences(ctx context.Context, dumpID int, refer
 	defer endObservation(1, observation.Args{})
 
 	return s.store.UpdatePackageReferences(ctx, dumpID, references)
+}
+
+func (s *Service) ReferencesForUpload(ctx context.Context, uploadID int) (_ shared.PackageReferenceScanner, err error) {
+	ctx, _, endObservation := s.operations.referencesForUpload.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int("uploadID", uploadID)},
+	})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.ReferencesForUpload(ctx, uploadID)
 }
 
 func (s *Service) GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []types.UploadLog, err error) {

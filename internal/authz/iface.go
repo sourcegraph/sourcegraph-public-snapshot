@@ -46,8 +46,7 @@ import (
 //
 // Paths are relative to the root of the repo.
 type SubRepoPermissions struct {
-	PathIncludes []string
-	PathExcludes []string
+	Paths []string
 }
 
 // ExternalUserPermissions is a collection of accessible repository/project IDs

@@ -878,6 +878,9 @@ type MockUploadService struct {
 	// DeleteUploadByIDFunc is an instance of a mock function object
 	// controlling the behavior of the method DeleteUploadByID.
 	DeleteUploadByIDFunc *UploadServiceDeleteUploadByIDFunc
+	// DeleteUploadsFunc is an instance of a mock function object
+	// controlling the behavior of the method DeleteUploads.
+	DeleteUploadsFunc *UploadServiceDeleteUploadsFunc
 	// GetAuditLogsForUploadFunc is an instance of a mock function object
 	// controlling the behavior of the method GetAuditLogsForUpload.
 	GetAuditLogsForUploadFunc *UploadServiceGetAuditLogsForUploadFunc
@@ -905,6 +908,11 @@ func NewMockUploadService() *MockUploadService {
 	return &MockUploadService{
 		DeleteUploadByIDFunc: &UploadServiceDeleteUploadByIDFunc{
 			defaultHook: func(context.Context, int) (r0 bool, r1 error) {
+				return
+			},
+		},
+		DeleteUploadsFunc: &UploadServiceDeleteUploadsFunc{
+			defaultHook: func(context.Context, types.DeleteUploadsOptions) (r0 error) {
 				return
 			},
 		},
@@ -950,6 +958,11 @@ func NewStrictMockUploadService() *MockUploadService {
 				panic("unexpected invocation of MockUploadService.DeleteUploadByID")
 			},
 		},
+		DeleteUploadsFunc: &UploadServiceDeleteUploadsFunc{
+			defaultHook: func(context.Context, types.DeleteUploadsOptions) error {
+				panic("unexpected invocation of MockUploadService.DeleteUploads")
+			},
+		},
 		GetAuditLogsForUploadFunc: &UploadServiceGetAuditLogsForUploadFunc{
 			defaultHook: func(context.Context, int) ([]types.UploadLog, error) {
 				panic("unexpected invocation of MockUploadService.GetAuditLogsForUpload")
@@ -990,6 +1003,9 @@ func NewMockUploadServiceFrom(i UploadService) *MockUploadService {
 	return &MockUploadService{
 		DeleteUploadByIDFunc: &UploadServiceDeleteUploadByIDFunc{
 			defaultHook: i.DeleteUploadByID,
+		},
+		DeleteUploadsFunc: &UploadServiceDeleteUploadsFunc{
+			defaultHook: i.DeleteUploads,
 		},
 		GetAuditLogsForUploadFunc: &UploadServiceGetAuditLogsForUploadFunc{
 			defaultHook: i.GetAuditLogsForUpload,
@@ -1120,6 +1136,111 @@ func (c UploadServiceDeleteUploadByIDFuncCall) Args() []interface{} {
 // invocation.
 func (c UploadServiceDeleteUploadByIDFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// UploadServiceDeleteUploadsFunc describes the behavior when the
+// DeleteUploads method of the parent MockUploadService instance is invoked.
+type UploadServiceDeleteUploadsFunc struct {
+	defaultHook func(context.Context, types.DeleteUploadsOptions) error
+	hooks       []func(context.Context, types.DeleteUploadsOptions) error
+	history     []UploadServiceDeleteUploadsFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteUploads delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockUploadService) DeleteUploads(v0 context.Context, v1 types.DeleteUploadsOptions) error {
+	r0 := m.DeleteUploadsFunc.nextHook()(v0, v1)
+	m.DeleteUploadsFunc.appendCall(UploadServiceDeleteUploadsFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the DeleteUploads method
+// of the parent MockUploadService instance is invoked and the hook queue is
+// empty.
+func (f *UploadServiceDeleteUploadsFunc) SetDefaultHook(hook func(context.Context, types.DeleteUploadsOptions) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteUploads method of the parent MockUploadService instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *UploadServiceDeleteUploadsFunc) PushHook(hook func(context.Context, types.DeleteUploadsOptions) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadServiceDeleteUploadsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, types.DeleteUploadsOptions) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadServiceDeleteUploadsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, types.DeleteUploadsOptions) error {
+		return r0
+	})
+}
+
+func (f *UploadServiceDeleteUploadsFunc) nextHook() func(context.Context, types.DeleteUploadsOptions) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadServiceDeleteUploadsFunc) appendCall(r0 UploadServiceDeleteUploadsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UploadServiceDeleteUploadsFuncCall objects
+// describing the invocations of this function.
+func (f *UploadServiceDeleteUploadsFunc) History() []UploadServiceDeleteUploadsFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadServiceDeleteUploadsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadServiceDeleteUploadsFuncCall is an object that describes an
+// invocation of method DeleteUploads on an instance of MockUploadService.
+type UploadServiceDeleteUploadsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 types.DeleteUploadsOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadServiceDeleteUploadsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadServiceDeleteUploadsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // UploadServiceGetAuditLogsForUploadFunc describes the behavior when the
