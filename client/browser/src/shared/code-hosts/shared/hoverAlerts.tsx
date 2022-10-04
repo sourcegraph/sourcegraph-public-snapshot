@@ -59,7 +59,7 @@ export const createRepoNotFoundHoverAlert = (codeHost: Pick<CodeHost, 'hoverOver
         kind: MarkupKind.Markdown,
         value:
             '#### Repository not added\n\n' +
-            'This repository is indexed by your Sourcegraph instance. Add the repository to get Code Intelligence overlays.' +
+            'This repository is not indexed by your Sourcegraph instance. Add the repository to get Code Intelligence overlays.' +
             '\n\n' +
             `<a href="https://docs.sourcegraph.com/admin/repo/add" class="${
                 codeHost.hoverOverlayClassProps?.actionItemClassName ?? ''
