@@ -31,8 +31,8 @@ func Init(ctx context.Context, db database.DB, conf conftypes.UnifiedWatchable, 
 
 	// Enforce non-site admin roles in Free tier.
 	database.AfterCreateUser = enforcement.NewAfterCreateUserHook()
-	// TODO(miveronese) - Uncomment this when the licensing for this feature should be enforced.
-	// See PR https://github.com/sourcegraph/sourcegraph/pull/41679 for more details.
+	// Uncomment this when the licensing for this feature should be enforced.
+	// See https://github.com/sourcegraph/sourcegraph/issues/42527 for more context.
 	//database.BeforeSetUserIsSiteAdmin = enforcement.NewBeforeSetUserIsSiteAdmin()
 
 	// Enforce the license's max external service count by preventing the creation of new external
@@ -81,8 +81,8 @@ func Init(ctx context.Context, db database.DB, conf conftypes.UnifiedWatchable, 
 
 	// Enforce the license's feature check for monitoring. If the license does not support the monitoring
 	// feature, then alternative debug handlers will be invoked.
-	// TODO(miveronese): Uncomment this when licensing for FeatureMonitoring should be enforced.
-	// See PR https://github.com/sourcegraph/sourcegraph/pull/41679 for more details.
+	// Uncomment this when licensing for FeatureMonitoring should be enforced.
+	// See PR https://github.com/sourcegraph/sourcegraph/issues/42527 for more context.
 	// app.SetPreMountGrafanaHook(enforcement.NewPreMountGrafanaHook())
 
 	// Make the Site.productSubscription.productNameWithBrand GraphQL field (and other places) use the
