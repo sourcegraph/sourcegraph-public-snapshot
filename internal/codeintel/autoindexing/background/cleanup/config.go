@@ -9,12 +9,7 @@ import (
 type config struct {
 	env.BaseConfig
 
-	Interval                       time.Duration
-	MinimumTimeSinceLastCheck      time.Duration
-	CommitResolverBatchSize        int
-	AuditLogMaxAge                 time.Duration
-	CommitResolverMaximumCommitLag time.Duration
-	UploadTimeout                  time.Duration
+	Interval time.Duration
 }
 
 var ConfigInst = &config{}

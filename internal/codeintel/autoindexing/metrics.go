@@ -1,4 +1,4 @@
-package cleanup
+package autoindexing
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
@@ -6,7 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type metrics struct {
+type resetterMetrics struct {
 	numIndexResets                  prometheus.Counter
 	numIndexResetFailures           prometheus.Counter
 	numIndexResetErrors             prometheus.Counter
@@ -15,7 +15,7 @@ type metrics struct {
 	numDependencyIndexResetErrors   prometheus.Counter
 }
 
-func newMetrics(observationContext *observation.Context) *metrics {
+func newMetrics(observationContext *observation.Context) *resetterMetrics {
 	counter := func(name, help string) prometheus.Counter {
 		counter := prometheus.NewCounter(prometheus.CounterOpts{
 			Name: name,
@@ -52,7 +52,7 @@ func newMetrics(observationContext *observation.Context) *metrics {
 		"The number of errors that occur during dependency index records reset.",
 	)
 
-	return &metrics{
+	return &resetterMetrics{
 		numIndexResets:                  numIndexResets,
 		numIndexResetFailures:           numIndexResetFailures,
 		numIndexResetErrors:             numIndexResetErrors,
