@@ -283,13 +283,14 @@ func Test_serveRawWithContentTypePlain(t *testing.T) {
 			return &fileutil.FileInfo{Mode_: os.ModeDir}, nil
 		}
 
-		gitserver.Mocks.ReadDir = func(commit api.CommitID, name string, recurse bool) ([]fs.FileInfo, error) {
+		gsClient := gitserver.NewMockClient()
+		gsClient.ReadDirFunc.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error) {
 			return []fs.FileInfo{
 				&fileutil.FileInfo{Name_: "test/a", Mode_: os.ModeDir},
 				&fileutil.FileInfo{Name_: "test/b", Mode_: os.ModeDir},
 				&fileutil.FileInfo{Name_: "c.go", Mode_: 0},
 			}, nil
-		}
+		})
 
 		defer gitserver.ResetMocks()
 
@@ -297,7 +298,7 @@ func Test_serveRawWithContentTypePlain(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		db := database.NewMockDB()
-		err := serveRaw(db, gitserver.NewClient(db))(w, req)
+		err := serveRaw(db, gsClient)(w, req)
 		if err != nil {
 			t.Fatalf("Failed to invoke serveRaw: %v", err)
 		}

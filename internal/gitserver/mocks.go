@@ -18,7 +18,6 @@ import (
 // package instead.
 var Mocks, emptyMocks struct {
 	ExecReader       func(args []string) (reader io.ReadCloser, err error)
-	ReadDir          func(commit api.CommitID, name string, recurse bool) ([]fs.FileInfo, error)
 	ResolveRevision  func(spec string, opt ResolveRevisionOptions) (api.CommitID, error)
 	LsFiles          func(repo api.RepoName, commit api.CommitID) ([]string, error)
 	MergeBase        func(repo api.RepoName, a, b api.CommitID) (api.CommitID, error)

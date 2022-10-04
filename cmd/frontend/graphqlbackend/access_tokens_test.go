@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -79,7 +80,8 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 
 	t.Run("authenticated as user, using invalid scopes", func(t *testing.T) {
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := newSchemaResolver(database.NewMockDB()).CreateAccessToken(ctx, &createAccessTokenInput{User: uid1GQLID /* no scopes */, Note: "n"})
+		db := database.NewMockDB()
+		result, err := newSchemaResolver(db, gitserver.NewClient(db)).CreateAccessToken(ctx, &createAccessTokenInput{User: uid1GQLID /* no scopes */, Note: "n"})
 		if err == nil {
 			t.Error("err == nil")
 		}
@@ -96,7 +98,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := newSchemaResolver(db).CreateAccessToken(ctx, &createAccessTokenInput{
+		result, err := newSchemaResolver(db, gitserver.NewClient(db)).CreateAccessToken(ctx, &createAccessTokenInput{
 			User:   uid1GQLID,
 			Scopes: []string{authz.ScopeUserAll, authz.ScopeSiteAdminSudo},
 			Note:   "n",
@@ -224,7 +226,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), nil)
-		result, err := newSchemaResolver(db).CreateAccessToken(ctx, &createAccessTokenInput{User: uid1GQLID, Note: "n"})
+		result, err := newSchemaResolver(db, gitserver.NewClient(db)).CreateAccessToken(ctx, &createAccessTokenInput{User: uid1GQLID, Note: "n"})
 		if err == nil {
 			t.Error("Expected error, but there was none")
 		}
@@ -243,7 +245,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: differentNonSiteAdminUID})
-		result, err := newSchemaResolver(db).CreateAccessToken(ctx, &createAccessTokenInput{User: uid1GQLID, Note: "n"})
+		result, err := newSchemaResolver(db, gitserver.NewClient(db)).CreateAccessToken(ctx, &createAccessTokenInput{User: uid1GQLID, Note: "n"})
 		if err == nil {
 			t.Error("Expected error, but there was none")
 		}
@@ -264,7 +266,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		defer envvar.MockSourcegraphDotComMode(orig)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		_, err := newSchemaResolver(db).CreateAccessToken(ctx,
+		_, err := newSchemaResolver(db, gitserver.NewClient(db)).CreateAccessToken(ctx,
 			&createAccessTokenInput{
 				User:   MarshalUserID(1),
 				Scopes: []string{authz.ScopeUserAll, authz.ScopeSiteAdminSudo},
@@ -286,7 +288,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		defer envvar.MockSourcegraphDotComMode(orig)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		_, err := newSchemaResolver(db).CreateAccessToken(ctx,
+		_, err := newSchemaResolver(db, gitserver.NewClient(db)).CreateAccessToken(ctx,
 			&createAccessTokenInput{
 				User:   MarshalUserID(1),
 				Scopes: []string{authz.ScopeUserAll},
@@ -388,7 +390,7 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 		db.AccessTokensFunc.SetDefaultReturn(newMockAccessTokens(t))
 
 		ctx := actor.WithActor(context.Background(), nil)
-		result, err := newSchemaResolver(db).DeleteAccessToken(ctx, &deleteAccessTokenInput{ByID: &token1GQLID})
+		result, err := newSchemaResolver(db, gitserver.NewClient(db)).DeleteAccessToken(ctx, &deleteAccessTokenInput{ByID: &token1GQLID})
 		if err == nil {
 			t.Error("Expected error, but there was none")
 		}
@@ -408,7 +410,7 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 		db.AccessTokensFunc.SetDefaultReturn(newMockAccessTokens(t))
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: differentNonSiteAdminUID})
-		result, err := newSchemaResolver(db).DeleteAccessToken(ctx, &deleteAccessTokenInput{ByID: &token1GQLID})
+		result, err := newSchemaResolver(db, gitserver.NewClient(db)).DeleteAccessToken(ctx, &deleteAccessTokenInput{ByID: &token1GQLID})
 		if err == nil {
 			t.Error("Expected error, but there was none")
 		}
