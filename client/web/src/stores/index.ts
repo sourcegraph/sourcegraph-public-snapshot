@@ -25,6 +25,7 @@ export {
     setExperimentalFeaturesFromSettings,
 } from './experimentalFeatures'
 export { useNotepadState, useNotepad } from './notepad'
+export { useCodeInsights } from './codeInsights'
 
 /**
  * observeStore converts a zustand store to an observable. The observable emits
