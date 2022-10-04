@@ -1,16 +1,23 @@
-package scheduler
+package autoindexing
 
 import (
 	"context"
+	"time"
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
+func (s *Service) NewOnDemandScheduler(interval time.Duration, batchSize int) goroutine.BackgroundRoutine {
+	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &onDemandScheduler{
+		autoindexingSvc: s,
+		batchSize:       batchSize,
+	})
+}
+
 type onDemandScheduler struct {
-	autoindexingSvc *autoindexing.Service
+	autoindexingSvc *Service
 	batchSize       int
 	logger          log.Logger
 }

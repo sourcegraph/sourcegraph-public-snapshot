@@ -96,6 +96,7 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 		otlog.String("query", args.Query),
 		otlog.String("version", args.Version),
 		otlog.String("pattern_type", args.PatternType),
+		otlog.Int("search_mode", args.SearchMode),
 	)
 
 	settings, err := graphqlbackend.DecodedViewerFinalSettings(ctx, h.db)
@@ -103,7 +104,16 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 		return err
 	}
 
-	inputs, err := h.searchClient.Plan(ctx, args.Version, strPtr(args.PatternType), args.Query, search.Streaming, settings, envvar.SourcegraphDotComMode())
+	inputs, err := h.searchClient.Plan(
+		ctx,
+		args.Version,
+		strPtr(args.PatternType),
+		args.Query,
+		search.Mode(args.SearchMode),
+		search.Streaming,
+		settings,
+		envvar.SourcegraphDotComMode(),
+	)
 	if err != nil {
 		var queryErr *client.QueryError
 		if errors.As(err, &queryErr) {
@@ -205,6 +215,7 @@ type args struct {
 	PatternType        string
 	Display            int
 	EnableChunkMatches bool
+	SearchMode         int
 
 	// Optional decoration parameters for server-side rendering a result set
 	// or subset. Decorations may specify, e.g., highlighting results with
@@ -243,6 +254,11 @@ func parseURLQuery(q url.Values) (*args, error) {
 	chunkMatches := get("cm", "f")
 	if a.EnableChunkMatches, err = strconv.ParseBool(chunkMatches); err != nil {
 		return nil, errors.Errorf("chunk matches must be parseable as a boolean, got %q: %w", chunkMatches, err)
+	}
+
+	searchMode := get("sm", "0")
+	if a.SearchMode, err = strconv.Atoi(searchMode); err != nil {
+		return nil, errors.Errorf("search mode must be integer, got %q: %w", searchMode, err)
 	}
 
 	decorationLimit := get("dl", "0")

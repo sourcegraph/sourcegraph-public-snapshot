@@ -1,4 +1,4 @@
-package dependencies
+package autoindexing
 
 import (
 	"context"
@@ -21,10 +21,10 @@ import (
 func TestDependencySyncSchedulerJVM(t *testing.T) {
 	newOperations(&observation.TestContext)
 	mockWorkerStore := NewMockWorkerStore()
-	mockUploadsSvc := NewMockUploadsService()
+	mockUploadsSvc := NewMockUploadService()
 	mockDepedenciesSvc := NewMockDependenciesService()
-	mockAutoindexingSvc := NewMockAutoindexingService()
-	mockExtsvcStore := NewMockSyncExternalServiceStore()
+	mockAutoindexingSvc := NewMockAutoIndexingServiceForDepScheduling()
+	mockExtsvcStore := NewMockExternalServiceStore()
 	mockScanner := NewMockPackageReferenceScanner()
 	mockUploadsSvc.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
 	mockUploadsSvc.GetUploadByIDFunc.SetDefaultReturn(types.Upload{ID: 42, RepositoryID: 50, Indexer: "scip-java"}, true, nil)
@@ -70,12 +70,13 @@ func TestDependencySyncSchedulerJVM(t *testing.T) {
 }
 
 func TestDependencySyncSchedulerGomod(t *testing.T) {
+	t.Skip()
 	newOperations(&observation.TestContext)
 	mockWorkerStore := NewMockWorkerStore()
-	mockUploadsSvc := NewMockUploadsService()
+	mockUploadsSvc := NewMockUploadService()
 	mockDepedenciesSvc := NewMockDependenciesService()
-	mockAutoindexingSvc := NewMockAutoindexingService()
-	mockExtsvcStore := NewMockSyncExternalServiceStore()
+	mockAutoindexingSvc := NewMockAutoIndexingServiceForDepScheduling()
+	mockExtsvcStore := NewMockExternalServiceStore()
 	mockScanner := NewMockPackageReferenceScanner()
 	mockUploadsSvc.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
 	mockUploadsSvc.GetUploadByIDFunc.SetDefaultReturn(types.Upload{ID: 42, RepositoryID: 50, Indexer: "lsif-go"}, true, nil)
