@@ -216,14 +216,6 @@ func newPackage(pkg uploadsshared.Package) (*precise.Package, error) {
 }
 
 func (h *dependencySyncSchedulerHandler) insertDependencyRepo(ctx context.Context, pkg precise.Package) (new bool, err error) {
-	// TODO
-	// ctx, _, endObservation := dependencyReposOps.InsertCloneableDependencyRepo.With(ctx, &err, observation.Args{
-	// 	MetricLabelValues: []string{pkg.Scheme},
-	// })
-	// defer func() {
-	// 	endObservation(1, observation.Args{MetricLabelValues: []string{strconv.FormatBool(new)}})
-	// }()
-
 	inserted, err := h.depsSvc.UpsertDependencyRepos(ctx, []dependencies.Repo{
 		{
 			Name:    reposource.PackageName(pkg.Name),
