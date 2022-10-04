@@ -40,7 +40,7 @@ export const RepoMirrorInfo: React.FunctionComponent<
                                 {' '}
                                 Shard:{' '}
                                 <Tooltip content="The repo has not yet been picked up by a gitserver instance.">
-                                    <span>Not assigned</span>
+                                    <span>not assigned</span>
                                 </Tooltip>
                             </>
                         )}
