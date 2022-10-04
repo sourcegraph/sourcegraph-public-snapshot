@@ -1380,7 +1380,7 @@ Interact with codehosts on a given Sourcegraph instance.
 
 Add a GitHub codehost on a given Sourcegraph instance.
 
-Arguments: ` org1 org2`
+Arguments: ` org1 [org2 ...]`
 
 Flags:
 
