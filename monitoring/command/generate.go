@@ -73,6 +73,7 @@ func Generate(cmdRoot string, sgRoot string) *cli.Command {
 				EnvVars: []string{"GRAFANA_HEADERS"},
 				Usage:   "Additional headers for HTTP requests to the Grafana instance",
 			},
+
 			&cli.StringFlag{
 				Name:    "prometheus.dir",
 				EnvVars: []string{"PROMETHEUS_DIR"},
