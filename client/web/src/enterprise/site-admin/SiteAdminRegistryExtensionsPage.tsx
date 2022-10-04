@@ -17,12 +17,13 @@ import { FilteredConnection, FilteredConnectionFilter } from '../../components/F
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import { registryExtensionFragment } from '../../extensions/extension/ExtensionArea'
+import { RegistryExtensionFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { deleteRegistryExtensionWithConfirmation } from '../extensions/registry/backend'
 import { RegistryExtensionSourceBadge } from '../extensions/registry/RegistryExtensionSourceBadge'
 
 interface RegistryExtensionNodeSiteAdminProps {
-    node: GQL.IRegistryExtension
+    node: RegistryExtensionFields
     onDidUpdate: () => void
     history: H.History
 }
@@ -202,7 +203,7 @@ export class SiteAdminRegistryExtensionsPage extends React.PureComponent<Props> 
                     Extensions add features to Sourcegraph and other connected tools (such as editors, code hosts, and
                     code review tools).
                 </Text>
-                <FilteredConnection<GQL.IRegistryExtension, Omit<RegistryExtensionNodeSiteAdminProps, 'node'>>
+                <FilteredConnection<RegistryExtensionFields, Omit<RegistryExtensionNodeSiteAdminProps, 'node'>>
                     className="list-group list-group-flush registry-extensions-list"
                     listComponent="ul"
                     noun="extension"
