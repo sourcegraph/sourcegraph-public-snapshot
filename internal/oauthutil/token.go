@@ -6,10 +6,7 @@ import (
 	"fmt"
 	"io"
 	"math"
-	"mime"
 	"net/http"
-	"net/url"
-	"strconv"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -96,18 +93,7 @@ const (
 
 // newTokenRequest returns a new *http.Request to retrieve a new token from
 // tokenURL using the provided clientID, clientSecret, and POST body parameters.
-//
-// If AuthStyleInParams is true, the provided values will be encoded in the POST
-// body.
-func newTokenRequest(oauthCtx OAuthContext, refreshToken string, authStyle AuthStyle) (*http.Request, error) {
-	v := url.Values{}
-	if authStyle == AuthStyleInParams {
-		v.Set("client_id", oauthCtx.ClientID)
-		v.Set("client_secret", oauthCtx.ClientSecret)
-		v.Set("grant_type", "refresh_token")
-		v.Set("refresh_token", refreshToken)
-	}
-
+func newTokenRequest(oauthCtx OAuthContext, refreshToken string) (*http.Request, error) {
 	requestBody := struct {
 		RefreshToken string `json:"refresh_token"`
 		GrantType    string `json:"grant_type"`
@@ -129,16 +115,13 @@ func newTokenRequest(oauthCtx OAuthContext, refreshToken string, authStyle AuthS
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	if authStyle == AuthStyleInHeader {
-		req.SetBasicAuth(url.QueryEscape(oauthCtx.ClientID), url.QueryEscape(oauthCtx.ClientSecret))
-	}
 	return req, nil
 }
 
 // RetrieveToken tries to retrieve a new access token in the given authentication
 // style.
-func RetrieveToken(doer httpcli.Doer, oauthCtx OAuthContext, refreshToken string, authStyle AuthStyle) (*auth.OAuthBearerToken, error) {
-	req, err := newTokenRequest(oauthCtx, refreshToken, authStyle)
+func RetrieveToken(doer httpcli.Doer, oauthCtx OAuthContext, refreshToken string) (*auth.OAuthBearerToken, error) {
+	req, err := newTokenRequest(oauthCtx, refreshToken)
 	if err != nil {
 		return nil, err
 	}
@@ -175,52 +158,28 @@ func doTokenRoundTrip(doer httpcli.Doer, req *http.Request) (*auth.OAuthBearerTo
 	}
 
 	var token *auth.OAuthBearerToken
-	content, _, _ := mime.ParseMediaType(r.Header.Get("Content-Type"))
-	switch content {
-	case "application/x-www-form-urlencoded", "text/plain":
-		vals, err := url.ParseQuery(string(body))
-		if err != nil {
-			return nil, err
-		}
-		if tokenError := vals.Get("error"); tokenError != "" {
-			return nil, &TokenError{
-				Err:              tokenError,
-				ErrorDescription: vals.Get("error_description"),
-				ErrorURI:         vals.Get("error_uri"),
-			}
-		}
-		token = &auth.OAuthBearerToken{
-			Token:        vals.Get("access_token"),
-			TokenType:    vals.Get("token_type"),
-			RefreshToken: vals.Get("refresh_token"),
-		}
-		e := vals.Get("expires_in")
-		expires, _ := strconv.Atoi(e)
-		if expires > 0 {
-			token.Expiry = time.Now().Add(time.Duration(expires) * time.Second)
-		}
-	default:
-		var tj tokenJSON
-		if err = json.Unmarshal(body, &tj); err != nil {
-			return nil, err
-		}
-		if tj.Error != "" {
-			return nil, &TokenError{
-				Err:              tj.Error,
-				ErrorDescription: tj.ErrorDescription,
-				ErrorURI:         tj.ErrorURI,
-			}
-		}
-		token = &auth.OAuthBearerToken{
-			Token:        tj.AccessToken,
-			TokenType:    tj.TokenType,
-			RefreshToken: tj.RefreshToken,
-			Expiry:       tj.expiry(),
+	var tj tokenJSON
+	if err = json.Unmarshal(body, &tj); err != nil {
+		return nil, err
+	}
+	if tj.Error != "" {
+		return nil, &TokenError{
+			Err:              tj.Error,
+			ErrorDescription: tj.ErrorDescription,
+			ErrorURI:         tj.ErrorURI,
 		}
 	}
+	token = &auth.OAuthBearerToken{
+		Token:        tj.AccessToken,
+		TokenType:    tj.TokenType,
+		RefreshToken: tj.RefreshToken,
+		Expiry:       tj.expiry(),
+	}
+
 	if token.Token == "" {
 		return nil, errors.New("oauth2: server response missing access_token")
 	}
+
 	return token, nil
 }
 

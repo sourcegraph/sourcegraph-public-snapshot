@@ -23,7 +23,7 @@ func ExternalAccountTokenRefresher(db DB, externalAccountID int32, refreshToken 
 			gitlab.TokenRefreshCounter.WithLabelValues("external_account", strconv.FormatBool(success)).Inc()
 		}()
 
-		refreshedToken, err := oauthutil.RetrieveToken(doer, oauthCtx, refreshToken, oauthutil.AuthStyleInParams)
+		refreshedToken, err := oauthutil.RetrieveToken(doer, oauthCtx, refreshToken)
 		if err != nil {
 			return nil, errors.Wrap(err, "refresh token")
 		}
@@ -54,7 +54,7 @@ func ExternalServiceTokenRefresher(db DB, externalServiceID int64, refreshToken 
 			gitlab.TokenRefreshCounter.WithLabelValues("codehost", strconv.FormatBool(success)).Inc()
 		}()
 
-		refreshedToken, err := oauthutil.RetrieveToken(doer, oauthCtx, refreshToken, oauthutil.AuthStyleInParams)
+		refreshedToken, err := oauthutil.RetrieveToken(doer, oauthCtx, refreshToken)
 		if err != nil {
 			return nil, errors.Wrap(err, "refresh token")
 		}
