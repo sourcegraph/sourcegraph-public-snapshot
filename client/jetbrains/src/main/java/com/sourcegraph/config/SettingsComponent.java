@@ -154,7 +154,7 @@ public class SettingsComponent {
 
             for (int i = 0; i < pairs.length; i += 2) {
                 String headerName = pairs[i].trim();
-                if (!headerName.matches("[a-zA-Z0-9_-]+")) {
+                if (!headerName.matches("[\\w-]+")) {
                     return new ValidationInfo("Invalid HTTP header name: " + headerName, requestHeadersTextField);
                 }
             }

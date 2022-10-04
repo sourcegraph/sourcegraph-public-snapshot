@@ -20,6 +20,7 @@ public class ConfigUtil {
         JsonObject configAsJson = new JsonObject();
         configAsJson.addProperty("instanceURL", ConfigUtil.getSourcegraphUrl(project));
         configAsJson.addProperty("accessToken", ConfigUtil.getInstanceType(project) == SettingsComponent.InstanceType.ENTERPRISE ? ConfigUtil.getAccessToken(project) : null);
+        configAsJson.addProperty("requestHeadersAsString", ConfigUtil.getRequestHeaders(project));
         configAsJson.addProperty("isGlobbingEnabled", ConfigUtil.isGlobbingEnabled(project));
         configAsJson.addProperty("pluginVersion", ConfigUtil.getPluginVersion());
         configAsJson.addProperty("anonymousUserId", ConfigUtil.getAnonymousUserId());

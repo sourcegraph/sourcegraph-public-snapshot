@@ -27,6 +27,7 @@ let isDarkTheme = false
 let instanceURL = 'https://sourcegraph.com/'
 let isGlobbingEnabled = false
 let accessToken: string | null = null
+let requestHeaders: Record<string, string> | null = {}
 let anonymousUserId: string
 let pluginVersion: string
 let initialSearch: Search | null = null
@@ -90,9 +91,30 @@ export function applyConfig(config: PluginConfig): void {
     instanceURL = config.instanceURL
     isGlobbingEnabled = config.isGlobbingEnabled || false
     accessToken = config.accessToken || null
+    requestHeaders = parseRequestHeadersString(config.requestHeadersAsString)
     anonymousUserId = config.anonymousUserId || 'no-user-id'
     pluginVersion = config.pluginVersion
     polyfillEventSource(accessToken ? { Authorization: `token ${accessToken}` } : {})
+}
+
+function parseRequestHeadersString(requestHeadersString: string | null): Record<string, string> | null {
+    const requestHeaders: Record<string, string> = {}
+    if (!requestHeadersString) {
+        return null
+    }
+    const requestHeadersArray = requestHeadersString.split(',')
+    if (requestHeadersArray.length % 2 !== 0) {
+        return null
+    }
+    for (let index = 0; index < requestHeadersArray.length; index += 2) {
+        const headerName = requestHeaders[requestHeadersArray[index]]
+        const value = requestHeadersArray[index + 1]
+        // Skip invalid keys
+        if (headerName.match(/^[\w-]+$/)) {
+            requestHeaders[headerName] = value
+        }
+    }
+    return requestHeaders
 }
 
 export function applyTheme(theme: Theme, rootElement: Element = document.documentElement): void {
