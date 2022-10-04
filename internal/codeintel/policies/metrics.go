@@ -1,4 +1,4 @@
-package repomatcher
+package policies
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
@@ -6,11 +6,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type metrics struct {
+type matcherMetrics struct {
 	numPoliciesUpdated prometheus.Counter
 }
 
-func NewMetrics(observationContext *observation.Context) *metrics {
+func newMetrics(observationContext *observation.Context) *matcherMetrics {
 	counter := func(name, help string) prometheus.Counter {
 		counter := prometheus.NewCounter(prometheus.CounterOpts{
 			Name: name,
@@ -26,7 +26,7 @@ func NewMetrics(observationContext *observation.Context) *metrics {
 		"The number of configuration policies whose repository membership list was updated.",
 	)
 
-	return &metrics{
+	return &matcherMetrics{
 		numPoliciesUpdated: numPoliciesUpdated,
 	}
 }
