@@ -5,7 +5,7 @@ import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
 import styles from './FileSearchResult.module.scss'
 
 interface Props {
-    line: ContentMatch['lineMatches'][0]
+    line: NonNullable<ContentMatch['lineMatches']>[0]
 }
 
 export const TrimmedCodeLineWithHighlights: React.FunctionComponent<Props> = React.memo<Props>(
@@ -48,10 +48,10 @@ export const TrimmedCodeLineWithHighlights: React.FunctionComponent<Props> = Rea
                 // only a section of the joined sequence, e.g.: "<span>👨‍👩‍👧</span>&zwj;‍👧".
                 segments.push(
                     <span key={`highlight-${index}`} className={styles.codeHighlight}>
-                        {contentArray.slice(offset, offset + length).join('')}
+                        {contentArray.slice(offset, Number(offset) + Number(length)).join('')}
                     </span>
                 )
-                index = offset + length
+                index = Number(offset) + Number(length)
             }
         }
 
