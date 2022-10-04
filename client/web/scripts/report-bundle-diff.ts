@@ -178,6 +178,6 @@ async function fetchPreviousComment(
     return !sizeLimitComment ? null : sizeLimitComment
 }
 
-function shortRev(rev: ?string): string {
+function shortRev(rev: string | null | undefined): string {
     return rev ? rev.slice(0, 7) : 'unknown'
 }
