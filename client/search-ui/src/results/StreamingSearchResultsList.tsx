@@ -10,7 +10,13 @@ import { Observable } from 'rxjs'
 import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { SearchContextProps } from '@sourcegraph/search'
-import { CommitSearchResult, RepoSearchResult, FileSearchResult, FetchFileParameters } from '@sourcegraph/search-ui'
+import {
+    CommitSearchResult,
+    RepoSearchResult,
+    FileSearchResult,
+    FilePathSearchResult,
+    FetchFileParameters,
+} from '@sourcegraph/search-ui'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { FilePrefetcher, PrefetchableFile } from '@sourcegraph/shared/src/components/PrefetchableFile'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
@@ -146,7 +152,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
         (result: SearchMatch, index: number): JSX.Element => {
             switch (result.type) {
                 case 'content':
-                case 'path':
                 case 'symbol':
                     return (
                         <PrefetchableFile
@@ -177,6 +182,26 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 extensionsController={extensionsController}
                                 hoverifier={hoverifier}
                                 openInNewTab={openMatchesInNewTab}
+                                containerClassName={resultClassName}
+                            />
+                        </PrefetchableFile>
+                    )
+                case 'path':
+                    return (
+                        <PrefetchableFile
+                            isPrefetchEnabled={prefetchFileEnabled}
+                            prefetch={prefetchFile}
+                            filePath={result.path}
+                            revision={getRevision(result.branches, result.commit)}
+                            repoName={result.repository}
+                            className={resultContainerStyles.resultContainer}
+                            as="li"
+                        >
+                            <FilePathSearchResult
+                                index={index}
+                                result={result}
+                                onSelect={() => logSearchResultClicked(index, 'fileMatch')}
+                                repoDisplayName={displayRepoName(result.repository)}
                                 containerClassName={resultClassName}
                             />
                         </PrefetchableFile>

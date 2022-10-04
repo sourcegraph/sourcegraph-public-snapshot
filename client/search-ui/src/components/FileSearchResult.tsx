@@ -17,7 +17,6 @@ import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
 import {
     ContentMatch,
     SymbolMatch,
-    PathMatch,
     getFileMatchUrl,
     getRepositoryUrl,
     getRevision,
@@ -38,7 +37,7 @@ interface Props extends SettingsCascadeProps, TelemetryProps {
     /**
      * The file match search result.
      */
-    result: ContentMatch | SymbolMatch | PathMatch
+    result: ContentMatch | SymbolMatch
 
     /**
      * Formatted repository name to be displayed in repository link. If not

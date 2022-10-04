@@ -19,7 +19,7 @@ import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
-import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl } from '@sourcegraph/shared/src/search/stream'
+import { ContentMatch, SymbolMatch, getFileMatchUrl } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolTag } from '@sourcegraph/shared/src/symbols/SymbolTag'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -33,7 +33,7 @@ import styles from './FileMatchChildren.module.scss'
 
 interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
     location?: H.Location
-    result: ContentMatch | SymbolMatch | PathMatch
+    result: ContentMatch | SymbolMatch
     grouped: MatchGroup[]
     /* Clicking on a match opens the link in a new tab */
     openInNewTab?: boolean
@@ -274,12 +274,6 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
             data-testid="file-match-children"
         >
             {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
-            {/* Path */}
-            {result.type === 'path' && (
-                <div className={styles.item} data-testid="file-match-children-item">
-                    <small>{result.pathMatches ? 'Path match' : 'File contains matching content'}</small>
-                </div>
-            )}
 
             {/* Symbols */}
             {((result.type === 'symbol' && result.symbols) || []).map(symbol => (
