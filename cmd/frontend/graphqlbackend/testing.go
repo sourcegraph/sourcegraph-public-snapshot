@@ -13,13 +13,14 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	sglog "github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 func mustParseGraphQLSchema(t *testing.T, db database.DB) *graphql.Schema {
-	logger := sglog.Scoped("schemaResolver", "GraphQL schema resolver")
+	logger := logtest.Scoped(t)
 	return mustParseGraphQLSchemaWithLogger(t, db, logger)
 }
 
