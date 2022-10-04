@@ -131,6 +131,11 @@ func writeFiles(ctx context.Context, store store.FilesStore, workspaceFileConten
 			return err
 		}
 
+		// Ensure the file has permissions to be run
+		if err = os.Chmod(path, os.ModePerm); err != nil {
+			return err
+		}
+
 		// Set modified time for caching (if provided)
 		if !wf.modifiedAt.IsZero() {
 			if err = os.Chtimes(path, wf.modifiedAt, wf.modifiedAt); err != nil {
