@@ -38,7 +38,9 @@ func TestConfigWatcher(t *testing.T) {
 
 	t.Run("tracing disabled", func(t *testing.T) {
 		confQuerier.get = func() schema.SiteConfiguration {
-			return schema.SiteConfiguration{}
+			return schema.SiteConfiguration{
+				ObservabilityTracing: nil,
+			}
 		}
 
 		update()
@@ -62,7 +64,9 @@ func TestConfigWatcher(t *testing.T) {
 		update()
 
 		// should not be no-op
-		assert.NotEqual(t, oteltrace.NewNoopTracerProvider().Tracer(""), switchableOTel.Tracer(""))
+		assert.NotEqual(t, oteltrace.NewNoopTracerProvider().Tracer(""),
+			// should be a wrapped tracer
+			switchableOTel.Tracer("").(*shouldTraceTracer).tracer)
 		assert.NotEqual(t, opentracing.NoopTracer{}, switchableOT.tracer)
 
 		// should have debug set to false
@@ -83,11 +87,32 @@ func TestConfigWatcher(t *testing.T) {
 		update()
 
 		// should not be no-op
-		assert.NotEqual(t, oteltrace.NewNoopTracerProvider().Tracer(""), switchableOTel.Tracer(""))
+		assert.NotEqual(t, oteltrace.NewNoopTracerProvider().Tracer(""),
+			// should be a wrapped tracer
+			switchableOTel.Tracer("").(*shouldTraceTracer).tracer)
 		assert.NotEqual(t, opentracing.NoopTracer{}, switchableOT.tracer)
 
 		// should have debug set
 		assert.True(t, switchableOTel.current.Load().(*otelTracerProviderCarrier).debug)
 		assert.True(t, switchableOT.debug)
+	})
+
+	t.Run("disable tracing", func(t *testing.T) {
+		confQuerier.get = func() schema.SiteConfiguration {
+			return schema.SiteConfiguration{
+				ObservabilityTracing: &schema.ObservabilityTracing{
+					Sampling: "none",
+				},
+			}
+		}
+
+		// fetch updated conf
+		update()
+
+		// should be no-op
+		assert.Equal(t, oteltrace.NewNoopTracerProvider().Tracer(""),
+			// should be a wrapped tracer
+			switchableOTel.Tracer("").(*shouldTraceTracer).tracer)
+		assert.Equal(t, opentracing.NoopTracer{}, switchableOT.tracer)
 	})
 }
