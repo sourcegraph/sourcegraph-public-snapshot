@@ -945,7 +945,7 @@ func TestDeleteExternalService(t *testing.T) {
 			db.OrgMembersFunc.SetDefaultReturn(orgMembers)
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			_, err := newSchemaResolver(db, logtest.Scoped(t)).DeleteExternalService(ctx, &deleteExternalServiceArgs{
+			_, err := newSchemaResolver(db, nil).DeleteExternalService(ctx, &deleteExternalServiceArgs{
 				ExternalService: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 			})
 			if err != nil {

@@ -293,7 +293,7 @@ func TestSetUserEmailVerified(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := newSchemaResolver(database.NewMockDB(), nil).SetUserEmailVerified(
+				_, err := newSchemaResolver(database.NewMockDB(), logtest.Scoped(t)).SetUserEmailVerified(
 					test.ctx,
 					&setUserEmailVerifiedArgs{
 						User: MarshalUserID(1),
@@ -430,7 +430,7 @@ func TestResendUserEmailVerification(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := newSchemaResolver(database.NewMockDB(), nil).ResendVerificationEmail(
+				_, err := newSchemaResolver(database.NewMockDB(), logtest.Scoped(t)).ResendVerificationEmail(
 					test.ctx,
 					&resendVerificationEmailArgs{
 						User: MarshalUserID(1),
