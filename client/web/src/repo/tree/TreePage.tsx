@@ -7,7 +7,7 @@ import { Redirect, Route, Switch, useRouteMatch } from 'react-router-dom'
 import { catchError } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { asError, encodeURIPathComponent, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, encodeURIPathComponent, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { SearchContextProps } from '@sourcegraph/search'
 import { fetchTreeEntries } from '@sourcegraph/shared/src/backend/repo'
@@ -176,7 +176,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                 })
             )
             .catch(error => {
-                console.error('Error adding viewer to extension host:', error)
+                logger.error('Error adding viewer to extension host:', error)
                 return null
             })
 
@@ -188,7 +188,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                     }
                     return
                 })
-                .catch(error => console.error('Error removing viewer from extension host:', error))
+                .catch(error => logger.error('Error removing viewer from extension host:', error))
         }
     }, [uri, showCodeInsights, extensionsController])
 
@@ -256,10 +256,13 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
         <>
             <div className="d-flex justify-content-between align-items-center">
                 <div>
-                    <PageHeader
-                        path={[{ icon: mdiSourceRepository, text: displayRepoName(repoName) }]}
-                        className="mb-3 test-tree-page-title"
-                    />
+                    <PageHeader className="mb-3 test-tree-page-title">
+                        <PageHeader.Heading as="h2" styleAs="h1">
+                            <PageHeader.Breadcrumb icon={mdiSourceRepository}>
+                                {displayRepoName(repo!.name)}
+                            </PageHeader.Breadcrumb>
+                        </PageHeader.Heading>
+                    </PageHeader>
                     {repo?.description && <Text>{repo.description}</Text>}
                 </div>
                 {isNewRepoPageEnabled && (
@@ -328,10 +331,11 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                             {treeOrError.isRoot ? (
                                 <RootHeaderSection tree={treeOrError} />
                             ) : (
-                                <PageHeader
-                                    path={[{ icon: mdiFolder, text: filePath }]}
-                                    className="mb-3 mr-2 test-tree-page-title"
-                                />
+                                <PageHeader className="mb-3 mr-2 test-tree-page-title">
+                                    <PageHeader.Heading as="h2" styleAs="h1">
+                                        <PageHeader.Breadcrumb icon={mdiFolder}>{filePath}</PageHeader.Breadcrumb>
+                                    </PageHeader.Heading>
+                                </PageHeader>
                             )}
                         </header>
 

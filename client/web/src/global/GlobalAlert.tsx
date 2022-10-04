@@ -5,17 +5,17 @@ import classNames from 'classnames'
 import { renderMarkdown } from '@sourcegraph/common'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { AlertType } from '@sourcegraph/shared/src/graphql-operations'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { Alert } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert, DismissibleAlertProps } from '../components/DismissibleAlert'
+import { SiteFlagAlertFields } from '../graphql-operations'
 
 /**
  * A global alert that is shown at the top of the viewport.
  */
 export const GlobalAlert: React.FunctionComponent<
     React.PropsWithChildren<{
-        alert: Pick<GQL.IAlert, 'message' | 'isDismissibleWithKey' | 'type'>
+        alert: SiteFlagAlertFields
         className?: string
     }>
 > = ({ alert, className: commonClassName }) => {

@@ -20,7 +20,7 @@ const codeIntelFragments = gql`
         }
     }
 
-    fragment GitBlobFields on GitBlob {
+    fragment GitBlobFields on CodeIntelGitBlob {
         path
         content
         repository {

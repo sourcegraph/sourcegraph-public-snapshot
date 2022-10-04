@@ -110,7 +110,7 @@ func (codeIntelligence) NewUploadProcessorGroup(containerName string) monitoring
 		Name:           "codeintel_upload_processor_upload_size",
 		Description:    "sum of upload sizes in bytes being processed by each precise code-intel worker instance",
 		Owner:          monitoring.ObservableOwnerCodeIntel,
-		Query:          "sum by(instance) (src_codeintel_upload_processor_upload_size)",
+		Query:          `sum by(instance) (src_codeintel_upload_processor_upload_size{job="precise-code-intel-worker"})`,
 		NoAlert:        true,
 		Interpretation: "none",
 		Panel:          monitoring.Panel().Unit(monitoring.Bytes).LegendFormat("{{instance}}"),
@@ -494,7 +494,7 @@ func (codeIntelligence) NewDBStoreGroup(containerName string) monitoring.Group {
 			Hidden:          true,
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "codeintel_dbstore",
+				MetricNameRoot:        "codeintel_uploads_store",
 				MetricDescriptionRoot: "store",
 				By:                    []string{"op"},
 			},
@@ -601,7 +601,7 @@ func (codeIntelligence) NewLSIFStoreGroup(containerName string) monitoring.Group
 			Hidden:          true,
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "codeintel_lsifstore",
+				MetricNameRoot:        "codeintel_uploads_lsifstore",
 				MetricDescriptionRoot: "store",
 				By:                    []string{"op"},
 			},

@@ -31,6 +31,12 @@ export const SEARCH_STATISTICS = gql`
                     fileOpens {
                         ...AnalyticsStatItemFragment
                     }
+                    codeCopied {
+                        summary {
+                            totalCount
+                            totalRegisteredUsers
+                        }
+                    }
                 }
             }
         }

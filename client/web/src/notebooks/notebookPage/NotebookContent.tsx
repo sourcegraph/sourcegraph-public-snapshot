@@ -7,7 +7,6 @@ import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { NotebookBlock } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
@@ -30,7 +29,7 @@ export interface NotebookContentProps
     authenticatedUser: AuthenticatedUser | null
     globbing: boolean
     viewerCanManage: boolean
-    blocks: NotebookBlock[]
+    blocks: NotebookFields['blocks']
     exportedFileName: string
     isEmbedded?: boolean
     outlineContainerElement?: HTMLElement | null

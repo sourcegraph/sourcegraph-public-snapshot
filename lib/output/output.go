@@ -131,11 +131,13 @@ func NewOutput(w io.Writer, opts OutputOpts) *Output {
 func (o *Output) Lock() {
 	o.lock.Lock()
 
-	// Hide the cursor while we update: this reduces the jitteriness of the
-	// whole thing, and some terminals are smart enough to make the update we're
-	// about to render atomic if the cursor is hidden for a short length of
-	// time.
-	o.w.Write([]byte("\033[?25l"))
+	if o.caps.Isatty {
+		// Hide the cursor while we update: this reduces the jitteriness of the
+		// whole thing, and some terminals are smart enough to make the update we're
+		// about to render atomic if the cursor is hidden for a short length of
+		// time.
+		o.w.Write([]byte("\033[?25l"))
+	}
 }
 
 func (o *Output) SetVerbose() {
@@ -151,8 +153,10 @@ func (o *Output) UnsetVerbose() {
 }
 
 func (o *Output) Unlock() {
-	// Show the cursor once more.
-	o.w.Write([]byte("\033[?25h"))
+	if o.caps.Isatty {
+		// Show the cursor once more.
+		o.w.Write([]byte("\033[?25h"))
+	}
 
 	o.lock.Unlock()
 }

@@ -106,15 +106,11 @@ func testUnknownCommitsJanitor(t *testing.T, resolveRevisionFunc func(commit str
 	}
 	defer gitserver.ResetMocks()
 
-	dbStore := NewMockDBStore()
-	dbStore.TransactFunc.SetDefaultReturn(dbStore, nil)
-	dbStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
-
 	uploadSvc := NewMockUploadService()
 	uploadSvc.GetStaleSourcedCommitsFunc.SetDefaultReturn(testSourcedCommits, nil)
 	autoIndexingSvc := NewMockAutoIndexingService()
 	janitor := newJanitor(
-		dbStore,
+		nil,
 		uploadSvc,
 		autoIndexingSvc,
 		logtest.Scoped(t),

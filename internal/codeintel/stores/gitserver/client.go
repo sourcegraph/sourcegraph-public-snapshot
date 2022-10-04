@@ -22,14 +22,14 @@ import (
 
 type Client struct {
 	db         database.DB
-	dbStore    DBStore
+	dbStore    *store
 	operations *operations
 }
 
-func New(db database.DB, dbStore DBStore, observationContext *observation.Context) *Client {
+func New(db database.DB, observationContext *observation.Context) *Client {
 	return &Client{
 		db:         db,
-		dbStore:    dbStore,
+		dbStore:    newWithDB(db),
 		operations: newOperations(observationContext),
 	}
 }
