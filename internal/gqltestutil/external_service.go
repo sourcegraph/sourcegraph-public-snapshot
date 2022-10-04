@@ -170,7 +170,7 @@ query {
 	var resp externalServicesResp
 	err := c.GraphQL("", q, nil, &resp)
 	if err != nil {
-		return nil, errors.Wrap(err, "request GraphQL")
+		return nil, errors.Wrap(err, "GraphQL request")
 	}
 	return resp.Data.ExternalServices.Nodes, nil
 }

@@ -7,12 +7,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-var GitHubHundredThousandsRepos = []string{
-	"pld-linux",        // 20k
-	"londonappbrewery", // 30k
-	"wp-plugins",       // 50k
-}
-
 func AddGitHubCodeHost(client *gqltestutil.Client, displayName string, conn *schema.GitHubConnection) error {
 	b, err := json.Marshal(conn)
 	if err != nil {

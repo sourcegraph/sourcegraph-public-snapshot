@@ -1388,5 +1388,5 @@ Flags:
 * `--display-name="<value>"`: Display name to give to the new code host
 * `--email="<value>"`: Email or username used to sign-in
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--github.token="<value>"`: GitHub token to associate with the new code host
 * `--password="<value>"`: Password used to sign-in
-* `--token="<value>"`: GitHub token to associate with the new code host

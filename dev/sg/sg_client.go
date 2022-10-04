@@ -84,7 +84,7 @@ var clientCommand = &cli.Command{
 							}
 						}
 						std.Out.WriteFailuref("A code host named '%s' already exists with the following definition", displayName)
-						return errors.Wrap(err, "Could find newly added code host")
+						return errors.Wrap(err, "Could not find newly added code host")
 					},
 				},
 			},
