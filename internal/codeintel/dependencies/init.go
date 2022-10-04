@@ -19,8 +19,10 @@ func GetService(
 	db database.DB,
 ) *Service {
 	svcOnce.Do(func() {
+		store := store.New(db, scopedContext("store"))
+
 		svc = newService(
-			store.New(db, scopedContext("store")),
+			store,
 			scopedContext("service"),
 		)
 	})

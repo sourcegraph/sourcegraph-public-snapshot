@@ -23,12 +23,17 @@ func GetService(
 	gsc GitserverClient,
 ) *Service {
 	svcOnce.Do(func() {
+		store := store.New(db, scopedContext("store"))
+		repoStore := backend.NewRepos(scopedContext("repos").Logger, db)
+		lsifStore := lsifstore.New(codeIntelDB, scopedContext("lsifstore"))
+		locker := locker.NewWith(db, "codeintel")
+
 		svc = newService(
-			store.New(db, scopedContext("store")),
-			backend.NewRepos(scopedContext("repos").Logger, db),
-			lsifstore.New(codeIntelDB, scopedContext("lsifstore")),
+			store,
+			repoStore,
+			lsifStore,
 			gsc,
-			locker.NewWith(db, "codeintel"),
+			locker,
 			scopedContext("service"),
 		)
 	})

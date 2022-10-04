@@ -23,9 +23,12 @@ func GetService(
 	gitserver GitserverClient,
 ) *Service {
 	svcOnce.Do(func() {
+		store := store.New(db, scopedContext("store"))
+		lsifStore := lsifstore.New(codeIntelDB, scopedContext("lsifstore"))
+
 		svc = newService(
-			store.New(db, scopedContext("store")),
-			lsifstore.New(codeIntelDB, scopedContext("lsifstore")),
+			store,
+			lsifStore,
 			uploadSvc,
 			gitserver,
 			scopedContext("service"),

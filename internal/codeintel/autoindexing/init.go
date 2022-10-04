@@ -28,13 +28,17 @@ func GetService(
 	repoUpdater shared.RepoUpdaterClient,
 ) *Service {
 	svcOnce.Do(func() {
+		store := store.New(db, scopedContext("store"))
+		symbolsClient := symbols.DefaultClient
+		inferenceSvc := inference.GetService(db)
+
 		svc = newService(
-			store.New(db, scopedContext("store")),
+			store,
 			uploadSvc,
 			gitserver,
-			symbols.DefaultClient,
+			symbolsClient,
 			repoUpdater,
-			inference.GetService(db),
+			inferenceSvc,
 			scopedContext("service"),
 		)
 	})
