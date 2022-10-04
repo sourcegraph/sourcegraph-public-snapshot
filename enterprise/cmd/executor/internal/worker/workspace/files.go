@@ -92,7 +92,7 @@ func writeFiles(ctx context.Context, store store.FilesStore, workspaceFileConten
 		return nil
 	}
 
-	handle := logger.Log("setup.fs", nil)
+	handle := logger.Log("setup.fs.extras", nil)
 	defer func() {
 		if err == nil {
 			handle.Finalize(0)
