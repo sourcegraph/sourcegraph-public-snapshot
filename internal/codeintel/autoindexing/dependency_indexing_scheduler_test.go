@@ -1,4 +1,4 @@
-package dependencies
+package autoindexing
 
 import (
 	"context"
@@ -18,9 +18,9 @@ import (
 )
 
 func TestDependencyIndexingSchedulerHandler(t *testing.T) {
-	mockUploadsSvc := NewMockUploadsService()
+	mockUploadsSvc := NewMockUploadService()
 	mockRepoStore := NewMockReposStore()
-	mockExtSvcStore := NewMockIndexingExternalServiceStore()
+	mockExtSvcStore := NewMockExternalServiceStore()
 	mockRepoUpdater := NewMockRepoUpdaterClient()
 	mockScanner := NewMockPackageReferenceScanner()
 	mockWorkerStore := NewMockWorkerStore()
@@ -58,7 +58,7 @@ func TestDependencyIndexingSchedulerHandler(t *testing.T) {
 		},
 	}, nil)
 
-	indexEnqueuer := NewMockIndexEnqueuer()
+	indexEnqueuer := NewMockAutoIndexingServiceForDepScheduling()
 
 	envvar.MockSourcegraphDotComMode(true)
 
@@ -126,9 +126,9 @@ func TestDependencyIndexingSchedulerHandler(t *testing.T) {
 }
 
 func TestDependencyIndexingSchedulerHandlerCustomer(t *testing.T) {
-	mockUploadsSvc := NewMockUploadsService()
+	mockUploadsSvc := NewMockUploadService()
 	mockRepoStore := NewMockReposStore()
-	mockExtSvcStore := NewMockIndexingExternalServiceStore()
+	mockExtSvcStore := NewMockExternalServiceStore()
 	mockRepoUpdater := NewMockRepoUpdaterClient()
 	mockScanner := NewMockPackageReferenceScanner()
 	mockWorkerStore := NewMockWorkerStore()
@@ -159,7 +159,7 @@ func TestDependencyIndexingSchedulerHandlerCustomer(t *testing.T) {
 		},
 	}, nil)
 
-	indexEnqueuer := NewMockIndexEnqueuer()
+	indexEnqueuer := NewMockAutoIndexingServiceForDepScheduling()
 
 	envvar.MockSourcegraphDotComMode(false)
 
@@ -230,9 +230,9 @@ func TestDependencyIndexingSchedulerHandlerCustomer(t *testing.T) {
 }
 
 func TestDependencyIndexingSchedulerHandlerRequeueNotCloned(t *testing.T) {
-	mockUploadsSvc := NewMockUploadsService()
+	mockUploadsSvc := NewMockUploadService()
 	mockRepoStore := NewMockReposStore()
-	mockExtSvcStore := NewMockIndexingExternalServiceStore()
+	mockExtSvcStore := NewMockExternalServiceStore()
 	mockRepoUpdater := NewMockRepoUpdaterClient()
 	mockScanner := NewMockPackageReferenceScanner()
 	mockWorkerStore := NewMockWorkerStore()
@@ -253,7 +253,7 @@ func TestDependencyIndexingSchedulerHandlerRequeueNotCloned(t *testing.T) {
 		},
 	}, nil)
 
-	indexEnqueuer := NewMockIndexEnqueuer()
+	indexEnqueuer := NewMockAutoIndexingServiceForDepScheduling()
 
 	envvar.MockSourcegraphDotComMode(true)
 
@@ -291,8 +291,8 @@ func TestDependencyIndexingSchedulerHandlerRequeueNotCloned(t *testing.T) {
 }
 
 func TestDependencyIndexingSchedulerHandlerSkipNonExistant(t *testing.T) {
-	mockUploadsSvc := NewMockUploadsService()
-	mockExtSvcStore := NewMockIndexingExternalServiceStore()
+	mockUploadsSvc := NewMockUploadService()
+	mockExtSvcStore := NewMockExternalServiceStore()
 	mockRepoUpdater := NewMockRepoUpdaterClient()
 	mockScanner := NewMockPackageReferenceScanner()
 	mockWorkerStore := NewMockWorkerStore()
@@ -315,7 +315,7 @@ func TestDependencyIndexingSchedulerHandlerSkipNonExistant(t *testing.T) {
 		},
 	}, nil)
 
-	indexEnqueuer := NewMockIndexEnqueuer()
+	indexEnqueuer := NewMockAutoIndexingServiceForDepScheduling()
 
 	envvar.MockSourcegraphDotComMode(true)
 
@@ -353,8 +353,8 @@ func TestDependencyIndexingSchedulerHandlerSkipNonExistant(t *testing.T) {
 }
 
 func TestDependencyIndexingSchedulerHandlerShouldSkipRepository(t *testing.T) {
-	mockUploadsSvc := NewMockUploadsService()
-	mockExtSvcStore := NewMockIndexingExternalServiceStore()
+	mockUploadsSvc := NewMockUploadService()
+	mockExtSvcStore := NewMockExternalServiceStore()
 	mockGitserverReposStore := NewMockGitserverRepoStore()
 	mockScanner := NewMockPackageReferenceScanner()
 	mockRepoStore := NewMockReposStore()
@@ -362,7 +362,7 @@ func TestDependencyIndexingSchedulerHandlerShouldSkipRepository(t *testing.T) {
 	mockUploadsSvc.GetUploadByIDFunc.SetDefaultReturn(codeinteltypes.Upload{ID: 42, RepositoryID: 51, Indexer: "scip-typescript"}, true, nil)
 	mockUploadsSvc.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
 
-	indexEnqueuer := NewMockIndexEnqueuer()
+	indexEnqueuer := NewMockAutoIndexingServiceForDepScheduling()
 
 	envvar.MockSourcegraphDotComMode(true)
 

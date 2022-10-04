@@ -1,15 +1,17 @@
-package repomatcher
+package policies
 
 import (
 	"context"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
 type matcher struct {
-	policySvc PolicyService
-	metrics   *metrics
+	policySvc                              *Service
+	configurationPolicyMembershipBatchSize int
+	metrics                                *matcherMetrics
 }
 
 var (
@@ -17,8 +19,16 @@ var (
 	_ goroutine.ErrorHandler = &matcher{}
 )
 
+func (s *Service) NewRepoMatcher(interval time.Duration, configurationPolicyMembershipBatchSize int) goroutine.BackgroundRoutine {
+	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &matcher{
+		policySvc:                              s,
+		configurationPolicyMembershipBatchSize: configurationPolicyMembershipBatchSize,
+		metrics:                                s.matcherMetrics,
+	})
+}
+
 func (m *matcher) Handle(ctx context.Context) error {
-	policies, err := m.policySvc.SelectPoliciesForRepositoryMembershipUpdate(ctx, ConfigInst.ConfigurationPolicyMembershipBatchSize)
+	policies, err := m.policySvc.SelectPoliciesForRepositoryMembershipUpdate(ctx, m.configurationPolicyMembershipBatchSize)
 	if err != nil {
 		return err
 	}

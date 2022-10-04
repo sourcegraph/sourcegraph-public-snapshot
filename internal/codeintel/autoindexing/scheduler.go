@@ -1,4 +1,4 @@
-package scheduler
+package autoindexing
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -15,21 +15,39 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+func (s *Service) NewScheduler(
+	interval time.Duration,
+	repositoryProcessDelay time.Duration,
+	repositoryBatchSize int,
+	policyBatchSize int,
+) goroutine.BackgroundRoutine {
+	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), interval, &scheduler{
+		autoindexingSvc:        s,
+		policySvc:              s.policiesSvc,
+		uploadSvc:              s.uploadSvc,
+		policyMatcher:          s.policyMatcher,
+		logger:                 log.Scoped("autoindexing-scheduler", ""),
+		repositoryProcessDelay: repositoryProcessDelay,
+		repositoryBatchSize:    repositoryBatchSize,
+		policyBatchSize:        policyBatchSize,
+	}, s.operations.handleIndexScheduler)
+}
+
 type scheduler struct {
-	autoindexingSvc *autoindexing.Service
-	policySvc       PolicyService
-	uploadSvc       UploadService
-	policyMatcher   PolicyMatcher
-	logger          log.Logger
+	autoindexingSvc        *Service
+	policySvc              PoliciesService
+	uploadSvc              shared.UploadService
+	policyMatcher          PolicyMatcher
+	logger                 log.Logger
+	repositoryProcessDelay time.Duration
+	repositoryBatchSize    int
+	policyBatchSize        int
 }
 
 var (
 	_ goroutine.Handler      = &scheduler{}
 	_ goroutine.ErrorHandler = &scheduler{}
 )
-
-// For mocking in tests
-var autoIndexingEnabled = conf.CodeIntelAutoIndexingEnabled
 
 func (s *scheduler) Handle(ctx context.Context) error {
 	if !autoIndexingEnabled() {
@@ -49,10 +67,10 @@ func (s *scheduler) Handle(ctx context.Context) error {
 		ctx,
 		"lsif_last_index_scan",
 		"last_index_scan_at",
-		ConfigInst.RepositoryProcessDelay,
+		s.repositoryProcessDelay,
 		conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
 		repositoryMatchLimit,
-		ConfigInst.RepositoryBatchSize,
+		s.repositoryBatchSize,
 		time.Now(),
 	)
 	if err != nil {
@@ -86,7 +104,7 @@ func (s *scheduler) handleRepository(ctx context.Context, repositoryID int, now 
 		policies, totalCount, err := s.policySvc.GetConfigurationPolicies(ctx, types.GetConfigurationPoliciesOptions{
 			RepositoryID: repositoryID,
 			ForIndexing:  true,
-			Limit:        ConfigInst.PolicyBatchSize,
+			Limit:        s.policyBatchSize,
 			Offset:       offset,
 		})
 		if err != nil {

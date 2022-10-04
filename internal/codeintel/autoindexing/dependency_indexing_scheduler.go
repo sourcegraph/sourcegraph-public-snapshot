@@ -1,4 +1,4 @@
-package dependencies
+package autoindexing
 
 import (
 	"context"
@@ -14,12 +14,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
@@ -33,76 +31,38 @@ const requeueBackoff = time.Second * 30
 // default is false aka index scheduler is enabled
 var disableIndexScheduler, _ = strconv.ParseBool(os.Getenv("CODEINTEL_DEPENDENCY_INDEX_SCHEDULER_DISABLED"))
 
-type UploadsService interface {
-	GetUploadByID(ctx context.Context, id int) (codeinteltypes.Upload, bool, error)
-	ReferencesForUpload(ctx context.Context, uploadID int) (shared.PackageReferenceScanner, error)
-}
-
-type IndexingExternalServiceStore interface {
-	List(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error)
-}
-
-type RepoUpdaterClient interface {
-	RepoLookup(ctx context.Context, name api.RepoName) (info *protocol.RepoInfo, err error)
-}
-
-type ReposStore interface {
-	ListMinimalRepos(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error)
-}
-
-type GitserverRepoStore interface {
-	GetByNames(ctx context.Context, names ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error)
-}
-
-type IndexEnqueuer interface {
-	QueueIndexesForPackage(ctx context.Context, pkg precise.Package) error
-}
-
 // NewDependencyIndexingScheduler returns a new worker instance that processes
 // records from lsif_dependency_indexing_jobs.
-func NewDependencyIndexingScheduler(
-	uploadsSvc UploadsService,
-	repoStore ReposStore,
-	workerStore dbworkerstore.Store,
-	externalServiceStore IndexingExternalServiceStore,
-	gitserverRepoStore GitserverRepoStore,
-	repoUpdaterClient RepoUpdaterClient,
-	enqueuer *autoindexing.Service,
-	// pollInterval time.Duration,
-	// numProcessorRoutines int,
-	workerMetrics workerutil.WorkerMetrics,
-) *workerutil.Worker {
+func (s *Service) NewDependencyIndexingScheduler(pollInterval time.Duration, numHandlers int) *workerutil.Worker {
 	rootContext := actor.WithInternalActor(context.Background())
-	pollInterval := ConfigInst.DependencyIndexerSchedulerPollInterval
-	numProcessorRoutines := ConfigInst.DependencyIndexerSchedulerConcurrency
 
 	handler := &dependencyIndexingSchedulerHandler{
-		uploadsSvc:         uploadsSvc,
-		repoStore:          repoStore,
-		extsvcStore:        externalServiceStore,
-		gitserverRepoStore: gitserverRepoStore,
-		indexEnqueuer:      enqueuer,
-		workerStore:        workerStore,
-		repoUpdater:        repoUpdaterClient,
+		uploadsSvc:         s.uploadSvc,
+		repoStore:          s.repoStore,
+		extsvcStore:        s.externalServiceStore,
+		gitserverRepoStore: s.gitserverRepoStore,
+		indexEnqueuer:      s,
+		workerStore:        s.dependencyIndexingStore,
+		repoUpdater:        s.repoUpdater,
 	}
 
-	return dbworker.NewWorker(rootContext, workerStore, handler, workerutil.WorkerOptions{
+	return dbworker.NewWorker(rootContext, s.dependencyIndexingStore, handler, workerutil.WorkerOptions{
 		Name:              "precise_code_intel_dependency_indexing_scheduler_worker",
-		NumHandlers:       numProcessorRoutines,
+		NumHandlers:       numHandlers,
 		Interval:          pollInterval,
-		Metrics:           workerMetrics,
+		Metrics:           s.depencencyIndexMetrics,
 		HeartbeatInterval: 1 * time.Second,
 	})
 }
 
 type dependencyIndexingSchedulerHandler struct {
-	uploadsSvc         UploadsService
+	uploadsSvc         shared.UploadService
 	repoStore          ReposStore
-	indexEnqueuer      IndexEnqueuer
-	extsvcStore        IndexingExternalServiceStore
+	indexEnqueuer      AutoIndexingServiceForDepScheduling
+	extsvcStore        ExternalServiceStore
 	gitserverRepoStore GitserverRepoStore
 	workerStore        dbworkerstore.Store
-	repoUpdater        RepoUpdaterClient
+	repoUpdater        shared.RepoUpdaterClient
 }
 
 var _ workerutil.Handler = &dependencyIndexingSchedulerHandler{}
@@ -176,7 +136,7 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, logger 
 			Version: packageReference.Package.Version,
 		}
 
-		repoName, _, ok := autoindexing.InferRepositoryAndRevision(pkg)
+		repoName, _, ok := InferRepositoryAndRevision(pkg)
 		if !ok {
 			continue
 		}

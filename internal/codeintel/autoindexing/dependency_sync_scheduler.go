@@ -1,28 +1,30 @@
-package dependencies
+package autoindexing
 
 import (
 	"context"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+// For mocking in tests
+var autoIndexingEnabled = conf.CodeIntelAutoIndexingEnabled
 
 var schemeToExternalService = map[string]string{
 	dependencies.JVMPackagesScheme:    extsvc.KindJVMPackages,
@@ -31,59 +33,35 @@ var schemeToExternalService = map[string]string{
 	dependencies.PythonPackagesScheme: extsvc.KindPythonPackages,
 }
 
-type DependenciesService interface {
-	UpsertDependencyRepos(ctx context.Context, deps []dependencies.Repo) ([]dependencies.Repo, error)
-}
-
-type AutoindexingService interface {
-	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (int, error)
-}
-
-type SyncExternalServiceStore interface {
-	Upsert(ctx context.Context, svcs ...*types.ExternalService) (err error)
-	List(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error)
-}
-
 // NewDependencySyncScheduler returns a new worker instance that processes
 // records from lsif_dependency_syncing_jobs.
-func NewDependencySyncScheduler(
-	uploadsSvc UploadsService,
-	depsSvc DependenciesService,
-	autoindexingSvc AutoindexingService,
-	workerStore dbworkerstore.Store,
-	externalServiceStore SyncExternalServiceStore,
-	metrics workerutil.WorkerMetrics,
-	observationContext *observation.Context,
-) *workerutil.Worker {
-	// Init metrics here now after we've moved the autoindexing scheduler
-	// into the autoindexing service
-	newOperations(observationContext)
-
+func (s *Service) NewDependencySyncScheduler(pollInterval time.Duration) *workerutil.Worker {
 	rootContext := actor.WithInternalActor(context.Background())
+	workerStore := s.dependencySyncStore
 
 	handler := &dependencySyncSchedulerHandler{
-		uploadsSvc:      uploadsSvc,
-		depsSvc:         depsSvc,
-		autoindexingSvc: autoindexingSvc,
+		uploadsSvc:      s.uploadSvc,
+		depsSvc:         s.depsSvc,
+		autoindexingSvc: s,
 		workerStore:     workerStore,
-		extsvcStore:     externalServiceStore,
+		extsvcStore:     s.externalServiceStore,
 	}
 
 	return dbworker.NewWorker(rootContext, workerStore, handler, workerutil.WorkerOptions{
 		Name:              "precise_code_intel_dependency_sync_scheduler_worker",
 		NumHandlers:       1,
-		Interval:          time.Second * 5,
+		Interval:          pollInterval,
 		HeartbeatInterval: 1 * time.Second,
-		Metrics:           metrics,
+		Metrics:           s.depencencySyncMetrics,
 	})
 }
 
 type dependencySyncSchedulerHandler struct {
-	uploadsSvc      UploadsService
+	uploadsSvc      shared.UploadService
 	depsSvc         DependenciesService
-	autoindexingSvc AutoindexingService
+	autoindexingSvc AutoIndexingServiceForDepScheduling
 	workerStore     dbworkerstore.Store
-	extsvcStore     SyncExternalServiceStore
+	extsvcStore     ExternalServiceStore
 }
 
 func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
@@ -213,7 +191,7 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.
 // newPackage constructs a precise.Package from the given shared.Package,
 // applying any normalization or necessary transformations that lsif uploads
 // require for internal consistency.
-func newPackage(pkg shared.Package) (*precise.Package, error) {
+func newPackage(pkg uploadsshared.Package) (*precise.Package, error) {
 	p := precise.Package{
 		Scheme:  pkg.Scheme,
 		Name:    pkg.Name,
@@ -238,12 +216,13 @@ func newPackage(pkg shared.Package) (*precise.Package, error) {
 }
 
 func (h *dependencySyncSchedulerHandler) insertDependencyRepo(ctx context.Context, pkg precise.Package) (new bool, err error) {
-	ctx, _, endObservation := dependencyReposOps.InsertCloneableDependencyRepo.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{pkg.Scheme},
-	})
-	defer func() {
-		endObservation(1, observation.Args{MetricLabelValues: []string{strconv.FormatBool(new)}})
-	}()
+	// TODO
+	// ctx, _, endObservation := dependencyReposOps.InsertCloneableDependencyRepo.With(ctx, &err, observation.Args{
+	// 	MetricLabelValues: []string{pkg.Scheme},
+	// })
+	// defer func() {
+	// 	endObservation(1, observation.Args{MetricLabelValues: []string{strconv.FormatBool(new)}})
+	// }()
 
 	inserted, err := h.depsSvc.UpsertDependencyRepos(ctx, []dependencies.Repo{
 		{
@@ -261,7 +240,7 @@ func (h *dependencySyncSchedulerHandler) insertDependencyRepo(ctx context.Contex
 // shouldIndexDependencies returns true if the given upload should undergo dependency
 // indexing. Currently, we're only enabling dependency indexing for a repositories that
 // were indexed via lsif-go, scip-java, lsif-tsc and scip-typescript.
-func (h *dependencySyncSchedulerHandler) shouldIndexDependencies(ctx context.Context, store UploadsService, uploadID int) (bool, error) {
+func (h *dependencySyncSchedulerHandler) shouldIndexDependencies(ctx context.Context, store shared.UploadService, uploadID int) (bool, error) {
 	upload, _, err := store.GetUploadByID(ctx, uploadID)
 	if err != nil {
 		return false, errors.Wrap(err, "dbstore.GetUploadByID")
