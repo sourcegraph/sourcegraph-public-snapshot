@@ -16,6 +16,7 @@ import (
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/store"
 	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	shared2 "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
+	enterprise "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
 	types "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	shared1 "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
@@ -4842,6 +4843,10 @@ type MockUploadService struct {
 	// GetRepoNameFunc is an instance of a mock function object controlling
 	// the behavior of the method GetRepoName.
 	GetRepoNameFunc *UploadServiceGetRepoNameFunc
+	// GetRepositoriesForIndexScanFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// GetRepositoriesForIndexScan.
+	GetRepositoriesForIndexScanFunc *UploadServiceGetRepositoriesForIndexScanFunc
 	// GetUploadByIDFunc is an instance of a mock function object
 	// controlling the behavior of the method GetUploadByID.
 	GetUploadByIDFunc *UploadServiceGetUploadByIDFunc
@@ -4864,6 +4869,11 @@ func NewMockUploadService() *MockUploadService {
 		},
 		GetRepoNameFunc: &UploadServiceGetRepoNameFunc{
 			defaultHook: func(context.Context, int) (r0 string, r1 error) {
+				return
+			},
+		},
+		GetRepositoriesForIndexScanFunc: &UploadServiceGetRepositoriesForIndexScanFunc{
+			defaultHook: func(context.Context, string, string, time.Duration, bool, *int, int, time.Time) (r0 []int, r1 error) {
 				return
 			},
 		},
@@ -4899,6 +4909,11 @@ func NewStrictMockUploadService() *MockUploadService {
 				panic("unexpected invocation of MockUploadService.GetRepoName")
 			},
 		},
+		GetRepositoriesForIndexScanFunc: &UploadServiceGetRepositoriesForIndexScanFunc{
+			defaultHook: func(context.Context, string, string, time.Duration, bool, *int, int, time.Time) ([]int, error) {
+				panic("unexpected invocation of MockUploadService.GetRepositoriesForIndexScan")
+			},
+		},
 		GetUploadByIDFunc: &UploadServiceGetUploadByIDFunc{
 			defaultHook: func(context.Context, int) (types.Upload, bool, error) {
 				panic("unexpected invocation of MockUploadService.GetUploadByID")
@@ -4927,6 +4942,9 @@ func NewMockUploadServiceFrom(i shared.UploadService) *MockUploadService {
 		},
 		GetRepoNameFunc: &UploadServiceGetRepoNameFunc{
 			defaultHook: i.GetRepoName,
+		},
+		GetRepositoriesForIndexScanFunc: &UploadServiceGetRepositoriesForIndexScanFunc{
+			defaultHook: i.GetRepositoriesForIndexScan,
 		},
 		GetUploadByIDFunc: &UploadServiceGetUploadByIDFunc{
 			defaultHook: i.GetUploadByID,
@@ -5153,6 +5171,136 @@ func (c UploadServiceGetRepoNameFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c UploadServiceGetRepoNameFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// UploadServiceGetRepositoriesForIndexScanFunc describes the behavior when
+// the GetRepositoriesForIndexScan method of the parent MockUploadService
+// instance is invoked.
+type UploadServiceGetRepositoriesForIndexScanFunc struct {
+	defaultHook func(context.Context, string, string, time.Duration, bool, *int, int, time.Time) ([]int, error)
+	hooks       []func(context.Context, string, string, time.Duration, bool, *int, int, time.Time) ([]int, error)
+	history     []UploadServiceGetRepositoriesForIndexScanFuncCall
+	mutex       sync.Mutex
+}
+
+// GetRepositoriesForIndexScan delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockUploadService) GetRepositoriesForIndexScan(v0 context.Context, v1 string, v2 string, v3 time.Duration, v4 bool, v5 *int, v6 int, v7 time.Time) ([]int, error) {
+	r0, r1 := m.GetRepositoriesForIndexScanFunc.nextHook()(v0, v1, v2, v3, v4, v5, v6, v7)
+	m.GetRepositoriesForIndexScanFunc.appendCall(UploadServiceGetRepositoriesForIndexScanFuncCall{v0, v1, v2, v3, v4, v5, v6, v7, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetRepositoriesForIndexScan method of the parent MockUploadService
+// instance is invoked and the hook queue is empty.
+func (f *UploadServiceGetRepositoriesForIndexScanFunc) SetDefaultHook(hook func(context.Context, string, string, time.Duration, bool, *int, int, time.Time) ([]int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetRepositoriesForIndexScan method of the parent MockUploadService
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *UploadServiceGetRepositoriesForIndexScanFunc) PushHook(hook func(context.Context, string, string, time.Duration, bool, *int, int, time.Time) ([]int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadServiceGetRepositoriesForIndexScanFunc) SetDefaultReturn(r0 []int, r1 error) {
+	f.SetDefaultHook(func(context.Context, string, string, time.Duration, bool, *int, int, time.Time) ([]int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadServiceGetRepositoriesForIndexScanFunc) PushReturn(r0 []int, r1 error) {
+	f.PushHook(func(context.Context, string, string, time.Duration, bool, *int, int, time.Time) ([]int, error) {
+		return r0, r1
+	})
+}
+
+func (f *UploadServiceGetRepositoriesForIndexScanFunc) nextHook() func(context.Context, string, string, time.Duration, bool, *int, int, time.Time) ([]int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadServiceGetRepositoriesForIndexScanFunc) appendCall(r0 UploadServiceGetRepositoriesForIndexScanFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// UploadServiceGetRepositoriesForIndexScanFuncCall objects describing the
+// invocations of this function.
+func (f *UploadServiceGetRepositoriesForIndexScanFunc) History() []UploadServiceGetRepositoriesForIndexScanFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadServiceGetRepositoriesForIndexScanFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadServiceGetRepositoriesForIndexScanFuncCall is an object that
+// describes an invocation of method GetRepositoriesForIndexScan on an
+// instance of MockUploadService.
+type UploadServiceGetRepositoriesForIndexScanFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 time.Duration
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 bool
+	// Arg5 is the value of the 6th argument passed to this method
+	// invocation.
+	Arg5 *int
+	// Arg6 is the value of the 7th argument passed to this method
+	// invocation.
+	Arg6 int
+	// Arg7 is the value of the 8th argument passed to this method
+	// invocation.
+	Arg7 time.Time
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadServiceGetRepositoriesForIndexScanFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5, c.Arg6, c.Arg7}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadServiceGetRepositoriesForIndexScanFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -6418,6 +6566,180 @@ func (c IndexEnqueuerQueueIndexesForPackageFuncCall) Args() []interface{} {
 // invocation.
 func (c IndexEnqueuerQueueIndexesForPackageFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// MockPolicyMatcher is a mock implementation of the PolicyMatcher interface
+// (from the package
+// github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing) used
+// for unit testing.
+type MockPolicyMatcher struct {
+	// CommitsDescribedByPolicyInternalFunc is an instance of a mock
+	// function object controlling the behavior of the method
+	// CommitsDescribedByPolicyInternal.
+	CommitsDescribedByPolicyInternalFunc *PolicyMatcherCommitsDescribedByPolicyInternalFunc
+}
+
+// NewMockPolicyMatcher creates a new mock of the PolicyMatcher interface.
+// All methods return zero values for all results, unless overwritten.
+func NewMockPolicyMatcher() *MockPolicyMatcher {
+	return &MockPolicyMatcher{
+		CommitsDescribedByPolicyInternalFunc: &PolicyMatcherCommitsDescribedByPolicyInternalFunc{
+			defaultHook: func(context.Context, int, []types.ConfigurationPolicy, time.Time, ...string) (r0 map[string][]enterprise.PolicyMatch, r1 error) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockPolicyMatcher creates a new mock of the PolicyMatcher
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockPolicyMatcher() *MockPolicyMatcher {
+	return &MockPolicyMatcher{
+		CommitsDescribedByPolicyInternalFunc: &PolicyMatcherCommitsDescribedByPolicyInternalFunc{
+			defaultHook: func(context.Context, int, []types.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error) {
+				panic("unexpected invocation of MockPolicyMatcher.CommitsDescribedByPolicyInternal")
+			},
+		},
+	}
+}
+
+// NewMockPolicyMatcherFrom creates a new mock of the MockPolicyMatcher
+// interface. All methods delegate to the given implementation, unless
+// overwritten.
+func NewMockPolicyMatcherFrom(i PolicyMatcher) *MockPolicyMatcher {
+	return &MockPolicyMatcher{
+		CommitsDescribedByPolicyInternalFunc: &PolicyMatcherCommitsDescribedByPolicyInternalFunc{
+			defaultHook: i.CommitsDescribedByPolicyInternal,
+		},
+	}
+}
+
+// PolicyMatcherCommitsDescribedByPolicyInternalFunc describes the behavior
+// when the CommitsDescribedByPolicyInternal method of the parent
+// MockPolicyMatcher instance is invoked.
+type PolicyMatcherCommitsDescribedByPolicyInternalFunc struct {
+	defaultHook func(context.Context, int, []types.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error)
+	hooks       []func(context.Context, int, []types.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error)
+	history     []PolicyMatcherCommitsDescribedByPolicyInternalFuncCall
+	mutex       sync.Mutex
+}
+
+// CommitsDescribedByPolicyInternal delegates to the next hook function in
+// the queue and stores the parameter and result values of this invocation.
+func (m *MockPolicyMatcher) CommitsDescribedByPolicyInternal(v0 context.Context, v1 int, v2 []types.ConfigurationPolicy, v3 time.Time, v4 ...string) (map[string][]enterprise.PolicyMatch, error) {
+	r0, r1 := m.CommitsDescribedByPolicyInternalFunc.nextHook()(v0, v1, v2, v3, v4...)
+	m.CommitsDescribedByPolicyInternalFunc.appendCall(PolicyMatcherCommitsDescribedByPolicyInternalFuncCall{v0, v1, v2, v3, v4, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// CommitsDescribedByPolicyInternal method of the parent MockPolicyMatcher
+// instance is invoked and the hook queue is empty.
+func (f *PolicyMatcherCommitsDescribedByPolicyInternalFunc) SetDefaultHook(hook func(context.Context, int, []types.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CommitsDescribedByPolicyInternal method of the parent MockPolicyMatcher
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *PolicyMatcherCommitsDescribedByPolicyInternalFunc) PushHook(hook func(context.Context, int, []types.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PolicyMatcherCommitsDescribedByPolicyInternalFunc) SetDefaultReturn(r0 map[string][]enterprise.PolicyMatch, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, []types.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PolicyMatcherCommitsDescribedByPolicyInternalFunc) PushReturn(r0 map[string][]enterprise.PolicyMatch, r1 error) {
+	f.PushHook(func(context.Context, int, []types.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error) {
+		return r0, r1
+	})
+}
+
+func (f *PolicyMatcherCommitsDescribedByPolicyInternalFunc) nextHook() func(context.Context, int, []types.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PolicyMatcherCommitsDescribedByPolicyInternalFunc) appendCall(r0 PolicyMatcherCommitsDescribedByPolicyInternalFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// PolicyMatcherCommitsDescribedByPolicyInternalFuncCall objects describing
+// the invocations of this function.
+func (f *PolicyMatcherCommitsDescribedByPolicyInternalFunc) History() []PolicyMatcherCommitsDescribedByPolicyInternalFuncCall {
+	f.mutex.Lock()
+	history := make([]PolicyMatcherCommitsDescribedByPolicyInternalFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PolicyMatcherCommitsDescribedByPolicyInternalFuncCall is an object that
+// describes an invocation of method CommitsDescribedByPolicyInternal on an
+// instance of MockPolicyMatcher.
+type PolicyMatcherCommitsDescribedByPolicyInternalFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 []types.ConfigurationPolicy
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 time.Time
+	// Arg4 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg4 []string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 map[string][]enterprise.PolicyMatch
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c PolicyMatcherCommitsDescribedByPolicyInternalFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg4 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PolicyMatcherCommitsDescribedByPolicyInternalFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // MockReposStore is a mock implementation of the ReposStore interface (from

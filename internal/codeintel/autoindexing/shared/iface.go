@@ -2,6 +2,7 @@ package shared
 
 import (
 	"context"
+	"time"
 
 	"github.com/grafana/regexp"
 
@@ -39,4 +40,5 @@ type UploadService interface {
 	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []types.Upload, err error) // upload service
 	GetUploadByID(ctx context.Context, id int) (types.Upload, bool, error)
 	ReferencesForUpload(ctx context.Context, uploadID int) (shared.PackageReferenceScanner, error)
+	GetRepositoriesForIndexScan(ctx context.Context, table, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int, now time.Time) (_ []int, err error)
 }

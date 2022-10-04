@@ -87,6 +87,7 @@
         - GitserverRepoStore
         - IndexEnqueuer
         - AutoIndexingServiceForDepScheduling
+        - PolicyMatcher
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared
       interfaces:
         - PackageReferenceScanner
@@ -98,10 +99,6 @@
       interfaces:
         - Store
       prefix: Worker
-- filename: internal/codeintel/autoindexing/background/scheduler/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/background/scheduler
-  interfaces:
-    - PolicyMatcher
 - filename: internal/codeintel/autoindexing/internal/inference/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference
   interfaces:
