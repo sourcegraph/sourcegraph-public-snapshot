@@ -17,7 +17,7 @@ for REVISION in "${REVISIONS[@]}"; do
   tar -xvf "ui/assets/bundle_size_cache-${REVISION}.tar.gz" ui/assets || true
   if [[ -f "ui/assets/stats-${REVISION}.json" ]]; then
     echo "Found stats.json for $REVISION"
-    COMPARE_REV=$REVISION
+    export COMPARE_REV=$REVISION
     break
   fi
 done

@@ -9,6 +9,16 @@ const shelljs = require('shelljs')
 
 const COMMENT_HEADING = '## Bundle size report 📦'
 
+const {
+    BRANCH,
+    BUILDKITE_PULL_REQUEST_REPO,
+    BUILDKITE_PULL_REQUEST,
+    COMMIT,
+    COMPARE_REV,
+    GITHUB_TOKEN,
+    MERGE_BASE,
+} = process.env
+
 async function main(): Promise<void> {
     try {
         const [commitFilename, compareFilename] = process.argv.slice(-2)
@@ -65,7 +75,14 @@ function reportToMarkdown(report: Report): string {
     const asyncSize = describeMetric(asyncSizeMetric, 10000) // 10kb
     const modules = describeMetric(modulesMetric, 0)
 
-    const url = `https://storage.cloud.google.com/sourcegraph_reports/statoscope-reports/${process.env.BRANCH}/#diff&diffWith=${diffWith}&hash=${hash}`
+    const url = `https://storage.cloud.google.com/sourcegraph_reports/statoscope-reports/${BRANCH}/compare-report.html/#diff&diffWith=${diffWith}&hash=${hash}`
+
+    let noExactDataWarning = ''
+    if (MERGE_BASE !== COMPARE_REV) {
+        noExactDataWarning = `
+**Note:** We do not have exact data for ${shortRev(MERGE_BASE)}. So we have used data from: ${shortRev(COMPARE_REV)}.
+The intended commit has no frontend pipeline, so we chose the last commit with one before it.`
+    }
 
     return `${COMMENT_HEADING}
 
@@ -73,10 +90,13 @@ function reportToMarkdown(report: Report): string {
 | --- | --- | --- | --- |
 | ${initialSize} | ${totalSize} | ${asyncSize} | ${modules} |
 
-[View change in Statoscope report](${url})
+Look at the [Statoscope report](${url}) for a full comparison between the commits ${shortRev(COMMIT)} and ${shortRev(
+        COMPARE_REV
+    )}.
+${noExactDataWarning}
 
 <details>
-<summary>See raw data and explaination</summary>
+<summary>Open explanation</summary>
 
 - \`Initial size\` is the size of the initial bundle (the one that is loaded when you open the page)
 - \`Total size\` is the size of the initial bundle + all the async loaded chunks
@@ -96,11 +116,11 @@ function describeMetric(metric: Metric, treshold: number): string {
 }
 
 async function createOrUpdateComment(body: string): Promise<void> {
-    const pullRequest = parseInt(process.env.BUILDKITE_PULL_REQUEST ?? '', 10)
+    const pullRequest = parseInt(BUILDKITE_PULL_REQUEST ?? '', 10)
     const [owner, _repo] =
-        process.env.BUILDKITE_PULL_REQUEST_REPO?.replace('https://github.com/', '').replace('.git', '').split('/') ?? []
+        BUILDKITE_PULL_REQUEST_REPO?.replace('https://github.com/', '').replace('.git', '').split('/') ?? []
     const repo = { owner, repo: _repo }
-    const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN })
+    const octokit = new Octokit({ auth: GITHUB_TOKEN })
     console.log({ pullRequest, owner, _repo })
     if (!pullRequest || !owner || !_repo) {
         console.log({ pullRequest, owner, _repo })
@@ -156,4 +176,8 @@ async function fetchPreviousComment(
 
     const sizeLimitComment = commentList.find((comment: any) => comment.body.startsWith(COMMENT_HEADING))
     return !sizeLimitComment ? null : sizeLimitComment
+}
+
+function shortRev(rev: ?string): string {
+    return rev ? rev.slice(0, 7) : 'unknown'
 }
