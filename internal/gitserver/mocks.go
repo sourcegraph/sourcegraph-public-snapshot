@@ -28,7 +28,6 @@ var Mocks, emptyMocks struct {
 	NewFileReader    func(commit api.CommitID, name string) (io.ReadCloser, error)
 	Stat             func(commit api.CommitID, name string) (fs.FileInfo, error)
 	GetCommit        func(api.CommitID) (*gitdomain.Commit, error)
-	Commits          func(repo api.RepoName, opt CommitsOptions) ([]*gitdomain.Commit, error)
 }
 
 // ResetMocks clears the mock functions set on Mocks (so that subsequent tests don't inadvertently

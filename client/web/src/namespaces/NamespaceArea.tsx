@@ -13,6 +13,7 @@ export interface NamespaceAreaContext extends ExtensionsControllerProps, ThemePr
     namespace: Pick<UserAreaUserFields | OrgAreaOrganizationFields, '__typename' | 'id' | 'url'>
 
     authenticatedUser: AuthenticatedUser | null
+    isSourcegraphDotCom: boolean
 }
 
 export interface NamespaceAreaRoute extends RouteDescriptor<NamespaceAreaContext> {}

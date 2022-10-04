@@ -5,7 +5,6 @@ import classNames from 'classnames'
 import * as H from 'history'
 
 import { renderMarkdown, pluralize } from '@sourcegraph/common'
-import { IMarkdownBlock, NotebookBlock } from '@sourcegraph/shared/src/schema'
 import { Link, Badge, Icon } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'
@@ -22,9 +21,10 @@ export interface NotebookNodeProps {
 
 // Find the first Markdown block in the notebook, and use the first line in the block
 // as the notebook description.
-function getNotebookDescription(blocks: NotebookBlock[]): string {
-    const firstMarkdownBlock = blocks.find<IMarkdownBlock>(
-        (block): block is IMarkdownBlock => block.__typename === 'MarkdownBlock'
+function getNotebookDescription(blocks: NotebookFields['blocks']): string {
+    const firstMarkdownBlock = blocks.find(
+        (block): block is Extract<NotebookFields['blocks'][number], { __typename: 'MarkdownBlock' }> =>
+            block.__typename === 'MarkdownBlock'
     )
     if (!firstMarkdownBlock) {
         return ''

@@ -64,7 +64,7 @@ func (c *commitCache) ExistsBatch(ctx context.Context, commits []gitserver.Repos
 	if len(e) != len(rcs) {
 		panic(strings.Join([]string{
 			fmt.Sprintf("Expected slice returned from CommitsExist to have len %d, but has len %d.", len(rcs), len(e)),
-			"If this panic occurred dcuring a test, your test is missing a mock definition for CommitsExist.",
+			"If this panic occurred during a test, your test is missing a mock definition for CommitsExist.",
 			"If this is occurred during runtime, please file a bug.",
 		}, " "))
 	}
@@ -112,7 +112,7 @@ func (c *commitCache) AreCommitsResolvable(ctx context.Context, commits []gitser
 	if len(e) != len(rcs) {
 		panic(strings.Join([]string{
 			fmt.Sprintf("Expected slice returned from CommitsExist to have len %d, but has len %d.", len(rcs), len(e)),
-			"If this panic occurred dcuring a test, your test is missing a mock definition for CommitsExist.",
+			"If this panic occurred during a test, your test is missing a mock definition for CommitsExist.",
 			"If this is occurred during runtime, please file a bug.",
 		}, " "))
 	}

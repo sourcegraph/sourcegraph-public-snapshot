@@ -18,7 +18,9 @@ import (
 	types "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
 	gitdomain "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	observation "github.com/sourcegraph/sourcegraph/internal/observation"
 	protocol "github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	store1 "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	config "github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
@@ -72,6 +74,10 @@ type MockStore struct {
 	// GetUnsafeDBFunc is an instance of a mock function object controlling
 	// the behavior of the method GetUnsafeDB.
 	GetUnsafeDBFunc *StoreGetUnsafeDBFunc
+	// InsertDependencyIndexingJobFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// InsertDependencyIndexingJob.
+	InsertDependencyIndexingJobFunc *StoreInsertDependencyIndexingJobFunc
 	// InsertIndexesFunc is an instance of a mock function object
 	// controlling the behavior of the method InsertIndexes.
 	InsertIndexesFunc *StoreInsertIndexesFunc
@@ -98,6 +104,17 @@ type MockStore struct {
 	// UpdateSourcedCommitsFunc is an instance of a mock function object
 	// controlling the behavior of the method UpdateSourcedCommits.
 	UpdateSourcedCommitsFunc *StoreUpdateSourcedCommitsFunc
+	// WorkerutilDependencyIndexStoreFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// WorkerutilDependencyIndexStore.
+	WorkerutilDependencyIndexStoreFunc *StoreWorkerutilDependencyIndexStoreFunc
+	// WorkerutilDependencySyncStoreFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// WorkerutilDependencySyncStore.
+	WorkerutilDependencySyncStoreFunc *StoreWorkerutilDependencySyncStoreFunc
+	// WorkerutilStoreFunc is an instance of a mock function object
+	// controlling the behavior of the method WorkerutilStore.
+	WorkerutilStoreFunc *StoreWorkerutilStoreFunc
 }
 
 // NewMockStore creates a new mock of the Store interface. All methods
@@ -174,6 +191,11 @@ func NewMockStore() *MockStore {
 				return
 			},
 		},
+		InsertDependencyIndexingJobFunc: &StoreInsertDependencyIndexingJobFunc{
+			defaultHook: func(context.Context, int, string, time.Time) (r0 int, r1 error) {
+				return
+			},
+		},
 		InsertIndexesFunc: &StoreInsertIndexesFunc{
 			defaultHook: func(context.Context, []types.Index) (r0 []types.Index, r1 error) {
 				return
@@ -211,6 +233,21 @@ func NewMockStore() *MockStore {
 		},
 		UpdateSourcedCommitsFunc: &StoreUpdateSourcedCommitsFunc{
 			defaultHook: func(context.Context, int, string, time.Time) (r0 int, r1 error) {
+				return
+			},
+		},
+		WorkerutilDependencyIndexStoreFunc: &StoreWorkerutilDependencyIndexStoreFunc{
+			defaultHook: func(*observation.Context) (r0 store1.Store) {
+				return
+			},
+		},
+		WorkerutilDependencySyncStoreFunc: &StoreWorkerutilDependencySyncStoreFunc{
+			defaultHook: func(*observation.Context) (r0 store1.Store) {
+				return
+			},
+		},
+		WorkerutilStoreFunc: &StoreWorkerutilStoreFunc{
+			defaultHook: func(*observation.Context) (r0 store1.Store) {
 				return
 			},
 		},
@@ -291,6 +328,11 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.GetUnsafeDB")
 			},
 		},
+		InsertDependencyIndexingJobFunc: &StoreInsertDependencyIndexingJobFunc{
+			defaultHook: func(context.Context, int, string, time.Time) (int, error) {
+				panic("unexpected invocation of MockStore.InsertDependencyIndexingJob")
+			},
+		},
 		InsertIndexesFunc: &StoreInsertIndexesFunc{
 			defaultHook: func(context.Context, []types.Index) ([]types.Index, error) {
 				panic("unexpected invocation of MockStore.InsertIndexes")
@@ -329,6 +371,21 @@ func NewStrictMockStore() *MockStore {
 		UpdateSourcedCommitsFunc: &StoreUpdateSourcedCommitsFunc{
 			defaultHook: func(context.Context, int, string, time.Time) (int, error) {
 				panic("unexpected invocation of MockStore.UpdateSourcedCommits")
+			},
+		},
+		WorkerutilDependencyIndexStoreFunc: &StoreWorkerutilDependencyIndexStoreFunc{
+			defaultHook: func(*observation.Context) store1.Store {
+				panic("unexpected invocation of MockStore.WorkerutilDependencyIndexStore")
+			},
+		},
+		WorkerutilDependencySyncStoreFunc: &StoreWorkerutilDependencySyncStoreFunc{
+			defaultHook: func(*observation.Context) store1.Store {
+				panic("unexpected invocation of MockStore.WorkerutilDependencySyncStore")
+			},
+		},
+		WorkerutilStoreFunc: &StoreWorkerutilStoreFunc{
+			defaultHook: func(*observation.Context) store1.Store {
+				panic("unexpected invocation of MockStore.WorkerutilStore")
 			},
 		},
 	}
@@ -380,6 +437,9 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		GetUnsafeDBFunc: &StoreGetUnsafeDBFunc{
 			defaultHook: i.GetUnsafeDB,
 		},
+		InsertDependencyIndexingJobFunc: &StoreInsertDependencyIndexingJobFunc{
+			defaultHook: i.InsertDependencyIndexingJob,
+		},
 		InsertIndexesFunc: &StoreInsertIndexesFunc{
 			defaultHook: i.InsertIndexes,
 		},
@@ -403,6 +463,15 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		},
 		UpdateSourcedCommitsFunc: &StoreUpdateSourcedCommitsFunc{
 			defaultHook: i.UpdateSourcedCommits,
+		},
+		WorkerutilDependencyIndexStoreFunc: &StoreWorkerutilDependencyIndexStoreFunc{
+			defaultHook: i.WorkerutilDependencyIndexStore,
+		},
+		WorkerutilDependencySyncStoreFunc: &StoreWorkerutilDependencySyncStoreFunc{
+			defaultHook: i.WorkerutilDependencySyncStore,
+		},
+		WorkerutilStoreFunc: &StoreWorkerutilStoreFunc{
+			defaultHook: i.WorkerutilStore,
 		},
 	}
 }
@@ -1942,6 +2011,123 @@ func (c StoreGetUnsafeDBFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
+// StoreInsertDependencyIndexingJobFunc describes the behavior when the
+// InsertDependencyIndexingJob method of the parent MockStore instance is
+// invoked.
+type StoreInsertDependencyIndexingJobFunc struct {
+	defaultHook func(context.Context, int, string, time.Time) (int, error)
+	hooks       []func(context.Context, int, string, time.Time) (int, error)
+	history     []StoreInsertDependencyIndexingJobFuncCall
+	mutex       sync.Mutex
+}
+
+// InsertDependencyIndexingJob delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockStore) InsertDependencyIndexingJob(v0 context.Context, v1 int, v2 string, v3 time.Time) (int, error) {
+	r0, r1 := m.InsertDependencyIndexingJobFunc.nextHook()(v0, v1, v2, v3)
+	m.InsertDependencyIndexingJobFunc.appendCall(StoreInsertDependencyIndexingJobFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// InsertDependencyIndexingJob method of the parent MockStore instance is
+// invoked and the hook queue is empty.
+func (f *StoreInsertDependencyIndexingJobFunc) SetDefaultHook(hook func(context.Context, int, string, time.Time) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// InsertDependencyIndexingJob method of the parent MockStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *StoreInsertDependencyIndexingJobFunc) PushHook(hook func(context.Context, int, string, time.Time) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreInsertDependencyIndexingJobFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string, time.Time) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreInsertDependencyIndexingJobFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, int, string, time.Time) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *StoreInsertDependencyIndexingJobFunc) nextHook() func(context.Context, int, string, time.Time) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreInsertDependencyIndexingJobFunc) appendCall(r0 StoreInsertDependencyIndexingJobFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreInsertDependencyIndexingJobFuncCall
+// objects describing the invocations of this function.
+func (f *StoreInsertDependencyIndexingJobFunc) History() []StoreInsertDependencyIndexingJobFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreInsertDependencyIndexingJobFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreInsertDependencyIndexingJobFuncCall is an object that describes an
+// invocation of method InsertDependencyIndexingJob on an instance of
+// MockStore.
+type StoreInsertDependencyIndexingJobFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 time.Time
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreInsertDependencyIndexingJobFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreInsertDependencyIndexingJobFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // StoreInsertIndexesFunc describes the behavior when the InsertIndexes
 // method of the parent MockStore instance is invoked.
 type StoreInsertIndexesFunc struct {
@@ -2811,6 +2997,318 @@ func (c StoreUpdateSourcedCommitsFuncCall) Args() []interface{} {
 // invocation.
 func (c StoreUpdateSourcedCommitsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// StoreWorkerutilDependencyIndexStoreFunc describes the behavior when the
+// WorkerutilDependencyIndexStore method of the parent MockStore instance is
+// invoked.
+type StoreWorkerutilDependencyIndexStoreFunc struct {
+	defaultHook func(*observation.Context) store1.Store
+	hooks       []func(*observation.Context) store1.Store
+	history     []StoreWorkerutilDependencyIndexStoreFuncCall
+	mutex       sync.Mutex
+}
+
+// WorkerutilDependencyIndexStore delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockStore) WorkerutilDependencyIndexStore(v0 *observation.Context) store1.Store {
+	r0 := m.WorkerutilDependencyIndexStoreFunc.nextHook()(v0)
+	m.WorkerutilDependencyIndexStoreFunc.appendCall(StoreWorkerutilDependencyIndexStoreFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// WorkerutilDependencyIndexStore method of the parent MockStore instance is
+// invoked and the hook queue is empty.
+func (f *StoreWorkerutilDependencyIndexStoreFunc) SetDefaultHook(hook func(*observation.Context) store1.Store) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// WorkerutilDependencyIndexStore method of the parent MockStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *StoreWorkerutilDependencyIndexStoreFunc) PushHook(hook func(*observation.Context) store1.Store) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreWorkerutilDependencyIndexStoreFunc) SetDefaultReturn(r0 store1.Store) {
+	f.SetDefaultHook(func(*observation.Context) store1.Store {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreWorkerutilDependencyIndexStoreFunc) PushReturn(r0 store1.Store) {
+	f.PushHook(func(*observation.Context) store1.Store {
+		return r0
+	})
+}
+
+func (f *StoreWorkerutilDependencyIndexStoreFunc) nextHook() func(*observation.Context) store1.Store {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreWorkerutilDependencyIndexStoreFunc) appendCall(r0 StoreWorkerutilDependencyIndexStoreFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreWorkerutilDependencyIndexStoreFuncCall
+// objects describing the invocations of this function.
+func (f *StoreWorkerutilDependencyIndexStoreFunc) History() []StoreWorkerutilDependencyIndexStoreFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreWorkerutilDependencyIndexStoreFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreWorkerutilDependencyIndexStoreFuncCall is an object that describes
+// an invocation of method WorkerutilDependencyIndexStore on an instance of
+// MockStore.
+type StoreWorkerutilDependencyIndexStoreFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 *observation.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 store1.Store
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreWorkerutilDependencyIndexStoreFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreWorkerutilDependencyIndexStoreFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// StoreWorkerutilDependencySyncStoreFunc describes the behavior when the
+// WorkerutilDependencySyncStore method of the parent MockStore instance is
+// invoked.
+type StoreWorkerutilDependencySyncStoreFunc struct {
+	defaultHook func(*observation.Context) store1.Store
+	hooks       []func(*observation.Context) store1.Store
+	history     []StoreWorkerutilDependencySyncStoreFuncCall
+	mutex       sync.Mutex
+}
+
+// WorkerutilDependencySyncStore delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockStore) WorkerutilDependencySyncStore(v0 *observation.Context) store1.Store {
+	r0 := m.WorkerutilDependencySyncStoreFunc.nextHook()(v0)
+	m.WorkerutilDependencySyncStoreFunc.appendCall(StoreWorkerutilDependencySyncStoreFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// WorkerutilDependencySyncStore method of the parent MockStore instance is
+// invoked and the hook queue is empty.
+func (f *StoreWorkerutilDependencySyncStoreFunc) SetDefaultHook(hook func(*observation.Context) store1.Store) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// WorkerutilDependencySyncStore method of the parent MockStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *StoreWorkerutilDependencySyncStoreFunc) PushHook(hook func(*observation.Context) store1.Store) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreWorkerutilDependencySyncStoreFunc) SetDefaultReturn(r0 store1.Store) {
+	f.SetDefaultHook(func(*observation.Context) store1.Store {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreWorkerutilDependencySyncStoreFunc) PushReturn(r0 store1.Store) {
+	f.PushHook(func(*observation.Context) store1.Store {
+		return r0
+	})
+}
+
+func (f *StoreWorkerutilDependencySyncStoreFunc) nextHook() func(*observation.Context) store1.Store {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreWorkerutilDependencySyncStoreFunc) appendCall(r0 StoreWorkerutilDependencySyncStoreFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreWorkerutilDependencySyncStoreFuncCall
+// objects describing the invocations of this function.
+func (f *StoreWorkerutilDependencySyncStoreFunc) History() []StoreWorkerutilDependencySyncStoreFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreWorkerutilDependencySyncStoreFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreWorkerutilDependencySyncStoreFuncCall is an object that describes an
+// invocation of method WorkerutilDependencySyncStore on an instance of
+// MockStore.
+type StoreWorkerutilDependencySyncStoreFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 *observation.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 store1.Store
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreWorkerutilDependencySyncStoreFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreWorkerutilDependencySyncStoreFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// StoreWorkerutilStoreFunc describes the behavior when the WorkerutilStore
+// method of the parent MockStore instance is invoked.
+type StoreWorkerutilStoreFunc struct {
+	defaultHook func(*observation.Context) store1.Store
+	hooks       []func(*observation.Context) store1.Store
+	history     []StoreWorkerutilStoreFuncCall
+	mutex       sync.Mutex
+}
+
+// WorkerutilStore delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockStore) WorkerutilStore(v0 *observation.Context) store1.Store {
+	r0 := m.WorkerutilStoreFunc.nextHook()(v0)
+	m.WorkerutilStoreFunc.appendCall(StoreWorkerutilStoreFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the WorkerutilStore
+// method of the parent MockStore instance is invoked and the hook queue is
+// empty.
+func (f *StoreWorkerutilStoreFunc) SetDefaultHook(hook func(*observation.Context) store1.Store) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// WorkerutilStore method of the parent MockStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *StoreWorkerutilStoreFunc) PushHook(hook func(*observation.Context) store1.Store) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreWorkerutilStoreFunc) SetDefaultReturn(r0 store1.Store) {
+	f.SetDefaultHook(func(*observation.Context) store1.Store {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreWorkerutilStoreFunc) PushReturn(r0 store1.Store) {
+	f.PushHook(func(*observation.Context) store1.Store {
+		return r0
+	})
+}
+
+func (f *StoreWorkerutilStoreFunc) nextHook() func(*observation.Context) store1.Store {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreWorkerutilStoreFunc) appendCall(r0 StoreWorkerutilStoreFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreWorkerutilStoreFuncCall objects
+// describing the invocations of this function.
+func (f *StoreWorkerutilStoreFunc) History() []StoreWorkerutilStoreFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreWorkerutilStoreFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreWorkerutilStoreFuncCall is an object that describes an invocation of
+// method WorkerutilStore on an instance of MockStore.
+type StoreWorkerutilStoreFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 *observation.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 store1.Store
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreWorkerutilStoreFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreWorkerutilStoreFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // MockGitserverClient is a mock implementation of the GitserverClient

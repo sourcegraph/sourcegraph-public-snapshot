@@ -39,6 +39,8 @@ type operations struct {
 	// Language support
 	getLanguagesRequestedBy   *observation.Operation
 	setRequestLanguageSupport *observation.Operation
+
+	insertDependencyIndexingJob *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -89,5 +91,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		// Language support
 		getLanguagesRequestedBy:   op("GetLanguagesRequestedBy"),
 		setRequestLanguageSupport: op("SetRequestLanguageSupport"),
+
+		insertDependencyIndexingJob: op("InsertDependencyIndexingJob"),
 	}
 }

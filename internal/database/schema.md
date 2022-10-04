@@ -1911,6 +1911,7 @@ Indexes:
 Check constraints:
     "lsif_uploads_commit_valid_chars" CHECK (commit ~ '^[a-z0-9]{40}$'::text)
 Referenced by:
+    TABLE "lsif_uploads_reference_counts" CONSTRAINT "lsif_data_docs_search_private_repo_name_id_fk" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_dependency_syncing_jobs" CONSTRAINT "lsif_dependency_indexing_jobs_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_dependency_indexing_jobs" CONSTRAINT "lsif_dependency_indexing_jobs_upload_id_fkey1" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_packages" CONSTRAINT "lsif_packages_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
@@ -1980,6 +1981,25 @@ Indexes:
 **record_deleted_at**: Set once the upload this entry is associated with is deleted. Once NOW() - record_deleted_at is above a certain threshold, this log entry will be deleted.
 
 **transition_columns**: Array of changes that occurred to the upload for this entry, in the form of {&#34;column&#34;=&gt;&#34;&lt;column name&gt;&#34;, &#34;old&#34;=&gt;&#34;&lt;previous value&gt;&#34;, &#34;new&#34;=&gt;&#34;&lt;new value&gt;&#34;}.
+
+# Table "public.lsif_uploads_reference_counts"
+```
+     Column      |  Type   | Collation | Nullable | Default 
+-----------------+---------+-----------+----------+---------
+ upload_id       | integer |           | not null | 
+ reference_count | integer |           | not null | 
+Indexes:
+    "lsif_uploads_reference_counts_upload_id_key" UNIQUE CONSTRAINT, btree (upload_id)
+Foreign-key constraints:
+    "lsif_data_docs_search_private_repo_name_id_fk" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
+
+```
+
+A less hot-path reference count for upload records.
+
+**reference_count**: The number of references to the associated upload from other records (via lsif_references).
+
+**upload_id**: The identifier of the referenced upload.
 
 # Table "public.lsif_uploads_visible_at_tip"
 ```

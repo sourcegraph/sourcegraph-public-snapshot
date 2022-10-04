@@ -6,13 +6,13 @@ import { Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { Button, ButtonGroup, Icon } from '@sourcegraph/wildcard'
 
+import { RegistryExtensionFields } from '../../../graphql-operations'
 import { deleteRegistryExtensionWithConfirmation } from '../registry/backend'
 
 interface RegistryExtensionDeleteButtonProps {
-    extension: Pick<GQL.IRegistryExtension, 'id'>
+    extension: Pick<RegistryExtensionFields, 'id'>
 
     compact?: boolean
 

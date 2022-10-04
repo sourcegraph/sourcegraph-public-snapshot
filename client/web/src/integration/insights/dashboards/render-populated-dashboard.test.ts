@@ -49,6 +49,7 @@ describe('Code insights populated dashboard', () => {
                     subjects: [
                         {
                             __typename: 'DefaultSettings',
+                            id: 'TestDefaultSettingsID',
                             settingsURL: null,
                             viewerCanAdminister: false,
                             latestSettings: {

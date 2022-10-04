@@ -53,32 +53,26 @@
   path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/queues/batches
   interfaces:
     - BatchesStore
-- filename: enterprise/cmd/worker/internal/codeintel/indexing/mocks_test.go
+- filename: internal/codeintel/autoindexing/background/dependencies/mocks_test.go
   sources:
-    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/background/dependencies
       interfaces:
-        - DBStore
+        - UploadsService
+        - DependenciesService
+        - AutoindexingService
         - ReposStore
-        - ExternalServiceStore
+        - IndexingExternalServiceStore
+        - SyncExternalServiceStore
         - GitserverRepoStore
-        - GitserverClient
         - IndexEnqueuer
-        - IndexingRepoStore
-        - IndexingSettingStore
-        - PolicyMatcher
         - RepoUpdaterClient
-    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared
       interfaces:
         - PackageReferenceScanner
     - path: github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store
       interfaces:
         - Store
       prefix: Worker
-- filename: enterprise/cmd/worker/internal/codeintel/janitor/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/janitor
-  interfaces:
-    - DBStore
-    - LSIFStore
 - filename: enterprise/internal/batches/sources/mocks_test.go
   sources:
     - path: github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources
@@ -171,7 +165,6 @@
 - filename: internal/codeintel/uploads/background/cleanup/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/background/cleanup
   interfaces:
-    - DBStore
     - UploadService
     - AutoIndexingService
 - filename: internal/codeintel/uploads/background/expiration/mocks_test.go

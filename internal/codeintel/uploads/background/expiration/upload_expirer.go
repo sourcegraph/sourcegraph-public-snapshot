@@ -7,7 +7,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	policiesEnterprise "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -137,10 +136,8 @@ func (e *expirer) buildCommitMap(ctx context.Context, repositoryID int, now time
 		}
 	}
 
-	cp := convertConfigPolicies(policies)
-
 	// Get the set of commits within this repository that match a data retention policy
-	return e.policyMatcher.CommitsDescribedByPolicy(ctx, repositoryID, cp, now)
+	return e.policyMatcher.CommitsDescribedByPolicy(ctx, repositoryID, policies, now)
 }
 
 func (e *expirer) handleUploads(
@@ -238,27 +235,4 @@ func (e *expirer) isUploadProtectedByPolicy(
 	}
 
 	return false, nil
-}
-
-func convertConfigPolicies(configs []types.ConfigurationPolicy) []dbstore.ConfigurationPolicy {
-	configPolicy := make([]dbstore.ConfigurationPolicy, 0, len(configs))
-	for _, c := range configs {
-		configPolicy = append(configPolicy, dbstore.ConfigurationPolicy{
-			ID:                        c.ID,
-			RepositoryID:              c.RepositoryID,
-			RepositoryPatterns:        c.RepositoryPatterns,
-			Name:                      c.Name,
-			Type:                      dbstore.GitObjectType(c.Type),
-			Pattern:                   c.Pattern,
-			Protected:                 c.Protected,
-			RetentionEnabled:          c.RetentionEnabled,
-			RetentionDuration:         c.RetentionDuration,
-			RetainIntermediateCommits: c.RetainIntermediateCommits,
-			IndexingEnabled:           c.IndexingEnabled,
-			IndexCommitMaxAge:         c.IndexCommitMaxAge,
-			IndexIntermediateCommits:  c.IndexIntermediateCommits,
-		})
-	}
-
-	return configPolicy
 }

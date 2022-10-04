@@ -54,8 +54,7 @@ func (r *repositorySummaryResolver) RecentIndexes() []LSIFIndexesWithRepositoryN
 		for _, idx := range index.Indexes {
 			indexResolvers = append(indexResolvers, NewIndexResolver(r.autoindexingSvc, r.uploadsSvc, r.policySvc, idx, r.prefetcher, r.errTracer))
 		}
-		dbstoreIndex := convertSharedIndexesWithRepositoryNamespaceToDBStoreIndexesWithRepositoryNamespace(index)
-		resolvers = append(resolvers, NewLSIFIndexesWithRepositoryNamespaceResolver(dbstoreIndex, indexResolvers))
+		resolvers = append(resolvers, NewLSIFIndexesWithRepositoryNamespaceResolver(index, indexResolvers))
 	}
 
 	return resolvers
