@@ -394,6 +394,44 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock bt.C
 			}
 		})
 
+		t.Run("State", func(t *testing.T) {
+			countOpen, err := s.CountChangesets(ctx, CountChangesetsOpts{States: []btypes.ChangesetState{btypes.ChangesetStateOpen}})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := countOpen, 1; have != want {
+				t.Fatalf("have countOpen: %d, want: %d", have, want)
+			}
+
+			countClosed, err := s.CountChangesets(ctx, CountChangesetsOpts{States: []btypes.ChangesetState{btypes.ChangesetStateClosed}})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := countClosed, 0; have != want {
+				t.Fatalf("have countClosed: %d, want: %d", have, want)
+			}
+
+			countUnpublished, err := s.CountChangesets(ctx, CountChangesetsOpts{States: []btypes.ChangesetState{btypes.ChangesetStateUnpublished}})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := countUnpublished, 2; have != want {
+				t.Fatalf("have countUnpublished: %d, want: %d", have, want)
+			}
+
+			countOpenAndUnpublished, err := s.CountChangesets(ctx, CountChangesetsOpts{States: []btypes.ChangesetState{btypes.ChangesetStateOpen, btypes.ChangesetStateUnpublished}})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := countOpenAndUnpublished, 3; have != want {
+				t.Fatalf("have countOpenAndUnpublished: %d, want: %d", have, want)
+			}
+		})
+
 		t.Run("TextSearch", func(t *testing.T) {
 			countMatchingString, err := s.CountChangesets(ctx, CountChangesetsOpts{TextSearch: []search.TextSearchTerm{{Term: "Fix a bunch"}}})
 			if err != nil {
