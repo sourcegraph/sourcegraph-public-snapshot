@@ -28,6 +28,7 @@ const viewerSettings: Partial<WebGraphQlOperations & SharedGraphQlOperations> = 
             subjects: [
                 {
                     __typename: 'DefaultSettings',
+                    id: 'TestDefaultSettingsID',
                     settingsURL: null,
                     viewerCanAdminister: false,
                     latestSettings: {

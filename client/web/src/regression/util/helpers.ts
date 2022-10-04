@@ -7,7 +7,6 @@ import { Key } from 'ts-key-enum'
 import { asError, logger } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import {
     GitHubAuthProvider,
     GitLabAuthProvider,
@@ -19,6 +18,14 @@ import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
 import { Config } from '@sourcegraph/shared/src/testing/config'
 import { Driver } from '@sourcegraph/shared/src/testing/driver'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
+
+import {
+    CreateOrganizationResult,
+    CreateOrganizationVariables,
+    CreateUserResult,
+    CreateUserVariables,
+    Scalars,
+} from '../../graphql-operations'
 
 import {
     deleteUser,
@@ -83,7 +90,7 @@ async function createTestUser(
 ): Promise<void> {
     // If there's an error, try to create the user
     const passwordResetURL = await gqlClient
-        .mutateGraphQL(
+        .mutateGraphQL<CreateUserResult, CreateUserVariables>(
             gql`
                 mutation CreateUser($username: String!, $email: String) {
                     createUser(username: $username, email: $email) {
@@ -91,7 +98,7 @@ async function createTestUser(
                     }
                 }
             `,
-            { username }
+            { username, email: null }
         )
         .pipe(
             map(dataOrThrowErrors),
@@ -155,7 +162,7 @@ export async function createAuthProvider(
 export async function ensureNewUser(
     { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
     username: string,
-    email: string | undefined
+    email: string | null
 ): Promise<ResourceDestructor> {
     try {
         const user = await getUser({ requestGraphQL }, username)
@@ -176,13 +183,8 @@ export async function ensureNewUser(
  */
 export async function ensureNewOrganization(
     { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
-    variables: {
-        /** The name of the organization. */
-        name: string
-        /** The new organization's display name (e.g. full name) in the organization profile. */
-        displayName?: string
-    }
-): Promise<{ destroy: ResourceDestructor; result: GQL.IOrg }> {
+    variables: CreateOrganizationVariables
+): Promise<{ destroy: ResourceDestructor; result: CreateOrganizationResult['createOrganization'] }> {
     const matchingOrgs = (await fetchAllOrganizations({ requestGraphQL }, { first: 1000 }).toPromise()).nodes.filter(
         org => org.name === variables.name
     )
@@ -201,7 +203,7 @@ export async function ensureNewOrganization(
 
 export async function getGlobalSettings(
     gqlClient: GraphQLClient
-): Promise<{ subjectID: GQL.ID; settingsID: number | null; contents: string }> {
+): Promise<{ subjectID: Scalars['ID']; settingsID: number | null; contents: string }> {
     const settings = await getViewerSettings(gqlClient)
     const globalSettingsSubject = first(settings.subjects.filter(subject => subject.__typename === 'Site'))
     if (!globalSettingsSubject) {
