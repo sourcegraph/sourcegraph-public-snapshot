@@ -12,7 +12,7 @@ import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 import { Link, Code } from '@sourcegraph/wildcard'
 
 import { CommitSearchResultMatch } from './CommitSearchResultMatch'
-import { ResultContainer } from './ResultContainer'
+import { LegacyResultContainer } from './LegacyResultContainer'
 
 import styles from './SearchResult.module.scss'
 
@@ -76,7 +76,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
     )
 
     return (
-        <ResultContainer
+        <LegacyResultContainer
             index={index}
             icon={SourceCommitIcon}
             collapsible={false}

@@ -6,7 +6,7 @@ export * from './FileSearchResult'
 export * from './LastSyncedIcon'
 export * from './RepoFileLink'
 export * from './RepoSearchResult'
-export * from './ResultContainer'
+export * from './LegacyResultContainer'
 export * from './SearchResultStar'
 export * from './SyntaxHighlightedSearchQuery'
 

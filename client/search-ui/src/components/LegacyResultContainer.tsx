@@ -11,9 +11,9 @@ import { formatRepositoryStarCount } from '../util/stars'
 import { CodeHostIcon } from './CodeHostIcon'
 import { SearchResultStar } from './SearchResultStar'
 
-import styles from './ResultContainer.module.scss'
+import styles from './LegacyResultContainer.module.scss'
 
-export interface ResultContainerProps {
+export interface LegacyResultContainerProps {
     /**
      * Whether the result container's children are visible by default.
      * The header is always visible even when the component is not expanded.
@@ -115,8 +115,10 @@ export interface ResultContainerProps {
 
 /**
  * The container component for a result in the SearchResults component.
+ *
+ * @deprecated
  */
-export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<ResultContainerProps>> = ({
+export const LegacyResultContainer: React.FunctionComponent<React.PropsWithChildren<LegacyResultContainerProps>> = ({
     defaultExpanded,
     allExpanded,
     collapsible,

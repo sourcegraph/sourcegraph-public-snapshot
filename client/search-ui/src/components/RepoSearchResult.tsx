@@ -10,7 +10,7 @@ import { getRepoMatchLabel, getRepoMatchUrl, RepositoryMatch } from '@sourcegrap
 import { Icon, Link } from '@sourcegraph/wildcard'
 
 import { LastSyncedIcon } from './LastSyncedIcon'
-import { ResultContainer } from './ResultContainer'
+import { LegacyResultContainer } from './LegacyResultContainer'
 
 import styles from './SearchResult.module.scss'
 
@@ -146,7 +146,7 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
     ])
 
     return (
-        <ResultContainer
+        <LegacyResultContainer
             index={index}
             icon={SourceRepositoryIcon}
             collapsible={false}

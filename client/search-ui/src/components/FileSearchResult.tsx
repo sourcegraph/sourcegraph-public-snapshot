@@ -28,8 +28,8 @@ import { Badge } from '@sourcegraph/wildcard'
 
 import { FetchFileParameters } from './CodeExcerpt'
 import { FileMatchChildren } from './FileMatchChildren'
+import { LegacyResultContainerProps, LegacyResultContainer } from './LegacyResultContainer'
 import { RepoFileLink } from './RepoFileLink'
-import { ResultContainerProps, ResultContainer } from './ResultContainer'
 
 import styles from './SearchResult.module.scss'
 
@@ -94,7 +94,7 @@ const BY_LINE_RANKING = 'by-line-number'
 const DEFAULT_CONTEXT = 1
 
 type CommonResultContainerProps = Omit<
-    ResultContainerProps,
+    LegacyResultContainerProps,
     | 'description'
     | 'collapsedChildren'
     | 'expandedChildren'
@@ -211,7 +211,7 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
         resultType: result.type,
     }
 
-    let containerProps: ResultContainerProps
+    let containerProps: LegacyResultContainerProps
 
     if (result.type === 'content' && result.hunks) {
         // We should only get here if the new streamed highlight format is sent
@@ -303,7 +303,7 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
         }
     }
 
-    return <ResultContainer {...containerProps} titleClassName="test-search-result-label" />
+    return <LegacyResultContainer {...containerProps} titleClassName="test-search-result-label" />
 }
 
 function aggregateBadges(items: MatchItem[]): AggregableBadge[] {

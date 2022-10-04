@@ -37,7 +37,7 @@ import { NoResultsPage } from './NoResultsPage'
 import { StreamingSearchResultFooter } from './StreamingSearchResultsFooter'
 import { useItemsToShow } from './use-items-to-show'
 
-import resultContainerStyles from '../components/ResultContainer.module.scss'
+import resultContainerStyles from '../components/LegacyResultContainer.module.scss'
 import styles from './StreamingSearchResultsList.module.scss'
 
 export interface StreamingSearchResultsListProps
