@@ -73,7 +73,7 @@ func (j *autoindexingDependencyScheduler) Routines(startupCtx context.Context, l
 	// Initialize services
 	uploadSvc := uploads.GetService(db, codeintelDB, gitserverClient)
 	autoindexingSvc := autoindexing.GetService(db, uploadSvc, gitserverClient, repoUpdater)
-	depsSvc := dependencies.GetService(db)
+	depsSvc := dependencies.GetService(db, gitserverClient)
 	dependencySyncStore := autoindexingSvc.DependencySyncStore()
 	dependencyIndexingStore := autoindexingSvc.DependencyIndexingStore()
 

@@ -33,7 +33,11 @@ type syncer struct {
 
 var _ goroutine.Handler = &syncer{}
 
-func (s *Service) NewCratesSyncer() goroutine.BackgroundRoutine {
+func (s *Service) NewCrateSyncer() goroutine.BackgroundRoutine {
+	if s.gitClient == nil {
+		panic("illegal service construction - NewCrateSyncer called without a registered gitClient")
+	}
+
 	// By default, sync crates every 12h, but the user can customize this interval
 	// through site-admin configuration of the RUSTPACKAGES code host.
 	interval := time.Hour * 12
