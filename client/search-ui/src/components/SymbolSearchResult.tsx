@@ -143,6 +143,7 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
                         className={styles.symbol}
                         data-href={symbol.url}
                         role="link"
+                        data-testid="symbol-search-result"
                         tabIndex={0}
                         onClick={navigateToFile}
                         onMouseUp={navigateToFileOnMiddleMouseButtonClick}

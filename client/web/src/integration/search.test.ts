@@ -482,7 +482,7 @@ describe('Search', () => {
             testContext.overrideSearchStreamEvents(symbolSearchStreamEvents)
 
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
-            await driver.page.waitForSelector('.test-file-match-children-item', {
+            await driver.page.waitForSelector('[data-testid="symbol-search-result"]', {
                 visible: true,
             })
 
