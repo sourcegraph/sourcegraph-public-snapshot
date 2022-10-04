@@ -134,12 +134,13 @@ func searchResultsStatsLanguages(ctx context.Context, logger log.Logger, db data
 				defer run.Release()
 
 				repoName := repoMatch.RepoName()
-				_, oid, err := gitserver.NewClient(db).GetDefaultBranch(ctx, repoName.Name, false)
+				gsClient := gitserver.NewClient(db)
+				_, oid, err := gsClient.GetDefaultBranch(ctx, repoName.Name, false)
 				if err != nil {
 					run.Error(err)
 					return
 				}
-				inv, err := backend.NewRepos(logger, db).GetInventory(ctx, repoName.ToRepo(), oid, true)
+				inv, err := backend.NewRepos(logger, db, gsClient).GetInventory(ctx, repoName.ToRepo(), oid, true)
 				if err != nil {
 					run.Error(err)
 					return

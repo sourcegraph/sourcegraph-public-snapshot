@@ -47,22 +47,24 @@ func (e ErrRepoSeeOther) Error() string {
 // NOTE: The underlying cache is reused from Repos global variable to actually
 // make cache be useful. This is mostly a workaround for now until we come up a
 // more idiomatic solution.
-func NewRepos(logger log.Logger, db database.DB) *repos {
+func NewRepos(logger log.Logger, db database.DB, client gitserver.Client) *repos {
 	repoStore := db.Repos()
 	logger = logger.Scoped("repos", "provides a repos store for the backend")
 	return &repos{
-		logger: logger,
-		db:     db,
-		store:  repoStore,
-		cache:  dbcache.NewIndexableReposLister(logger, repoStore),
+		logger:          logger,
+		db:              db,
+		gitserverClient: client,
+		store:           repoStore,
+		cache:           dbcache.NewIndexableReposLister(logger, repoStore),
 	}
 }
 
 type repos struct {
-	logger log.Logger
-	db     database.DB
-	store  database.RepoStore
-	cache  *dbcache.IndexableReposLister
+	logger          log.Logger
+	db              database.DB
+	gitserverClient gitserver.Client
+	store           database.RepoStore
+	cache           *dbcache.IndexableReposLister
 }
 
 func (s *repos) Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err error) {

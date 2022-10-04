@@ -5,7 +5,6 @@ import (
 	"io/fs"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 // Mocks is used to mock behavior in tests. Tests must call ResetMocks() when finished to ensure its
@@ -27,7 +26,6 @@ var Mocks, emptyMocks struct {
 	ReadFile         func(commit api.CommitID, name string) ([]byte, error)
 	NewFileReader    func(commit api.CommitID, name string) (io.ReadCloser, error)
 	Stat             func(commit api.CommitID, name string) (fs.FileInfo, error)
-	GetCommit        func(api.CommitID) (*gitdomain.Commit, error)
 }
 
 // ResetMocks clears the mock functions set on Mocks (so that subsequent tests don't inadvertently

@@ -1432,10 +1432,6 @@ var recordGetCommitQueries = os.Getenv("RECORD_GET_COMMIT_QUERIES") == "1"
 
 // getCommit returns the commit with the given id.
 func (c *clientImplementor) getCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions, checker authz.SubRepoPermissionChecker) (_ *gitdomain.Commit, err error) {
-	if Mocks.GetCommit != nil {
-		return Mocks.GetCommit(id)
-	}
-
 	if honey.Enabled() && recordGetCommitQueries {
 		defer func() {
 			ev := honey.NewEvent("getCommit")
