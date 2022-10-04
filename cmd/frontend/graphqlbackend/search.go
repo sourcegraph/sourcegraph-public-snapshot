@@ -39,7 +39,7 @@ func NewBatchSearchImplementer(ctx context.Context, logger log.Logger, db databa
 		args.Version,
 		args.PatternType,
 		args.Query,
-		int(search.Precise),
+		search.Precise,
 		search.Batch,
 		settings,
 		envvar.SourcegraphDotComMode(),

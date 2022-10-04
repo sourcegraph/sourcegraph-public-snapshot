@@ -78,7 +78,7 @@ func NewComputeStream(ctx context.Context, logger log.Logger, db database.DB, se
 		"",
 		&patternType,
 		searchQuery,
-		int(search.Precise),
+		search.Precise,
 		search.Streaming,
 		settings,
 		envvar.SourcegraphDotComMode(),

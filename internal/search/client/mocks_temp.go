@@ -47,7 +47,7 @@ func NewMockSearchClient() *MockSearchClient {
 			},
 		},
 		PlanFunc: &SearchClientPlanFunc{
-			defaultHook: func(context.Context, string, *string, string, int, search.Protocol, *schema.Settings, bool) (r0 *search.Inputs, r1 error) {
+			defaultHook: func(context.Context, string, *string, string, search.Mode, search.Protocol, *schema.Settings, bool) (r0 *search.Inputs, r1 error) {
 				return
 			},
 		},
@@ -69,7 +69,7 @@ func NewStrictMockSearchClient() *MockSearchClient {
 			},
 		},
 		PlanFunc: &SearchClientPlanFunc{
-			defaultHook: func(context.Context, string, *string, string, int, search.Protocol, *schema.Settings, bool) (*search.Inputs, error) {
+			defaultHook: func(context.Context, string, *string, string, search.Mode, search.Protocol, *schema.Settings, bool) (*search.Inputs, error) {
 				panic("unexpected invocation of MockSearchClient.Plan")
 			},
 		},
@@ -306,15 +306,15 @@ func (c SearchClientJobClientsFuncCall) Results() []interface{} {
 // SearchClientPlanFunc describes the behavior when the Plan method of the
 // parent MockSearchClient instance is invoked.
 type SearchClientPlanFunc struct {
-	defaultHook func(context.Context, string, *string, string, int, search.Protocol, *schema.Settings, bool) (*search.Inputs, error)
-	hooks       []func(context.Context, string, *string, string, int, search.Protocol, *schema.Settings, bool) (*search.Inputs, error)
+	defaultHook func(context.Context, string, *string, string, search.Mode, search.Protocol, *schema.Settings, bool) (*search.Inputs, error)
+	hooks       []func(context.Context, string, *string, string, search.Mode, search.Protocol, *schema.Settings, bool) (*search.Inputs, error)
 	history     []SearchClientPlanFuncCall
 	mutex       sync.Mutex
 }
 
 // Plan delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockSearchClient) Plan(v0 context.Context, v1 string, v2 *string, v3 string, v4 int, v5 search.Protocol, v6 *schema.Settings, v7 bool) (*search.Inputs, error) {
+func (m *MockSearchClient) Plan(v0 context.Context, v1 string, v2 *string, v3 string, v4 search.Mode, v5 search.Protocol, v6 *schema.Settings, v7 bool) (*search.Inputs, error) {
 	r0, r1 := m.PlanFunc.nextHook()(v0, v1, v2, v3, v4, v5, v6, v7)
 	m.PlanFunc.appendCall(SearchClientPlanFuncCall{v0, v1, v2, v3, v4, v5, v6, v7, r0, r1})
 	return r0, r1
@@ -322,7 +322,7 @@ func (m *MockSearchClient) Plan(v0 context.Context, v1 string, v2 *string, v3 st
 
 // SetDefaultHook sets function that is called when the Plan method of the
 // parent MockSearchClient instance is invoked and the hook queue is empty.
-func (f *SearchClientPlanFunc) SetDefaultHook(hook func(context.Context, string, *string, string, int, search.Protocol, *schema.Settings, bool) (*search.Inputs, error)) {
+func (f *SearchClientPlanFunc) SetDefaultHook(hook func(context.Context, string, *string, string, search.Mode, search.Protocol, *schema.Settings, bool) (*search.Inputs, error)) {
 	f.defaultHook = hook
 }
 
@@ -330,7 +330,7 @@ func (f *SearchClientPlanFunc) SetDefaultHook(hook func(context.Context, string,
 // Plan method of the parent MockSearchClient instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *SearchClientPlanFunc) PushHook(hook func(context.Context, string, *string, string, int, search.Protocol, *schema.Settings, bool) (*search.Inputs, error)) {
+func (f *SearchClientPlanFunc) PushHook(hook func(context.Context, string, *string, string, search.Mode, search.Protocol, *schema.Settings, bool) (*search.Inputs, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -339,19 +339,19 @@ func (f *SearchClientPlanFunc) PushHook(hook func(context.Context, string, *stri
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *SearchClientPlanFunc) SetDefaultReturn(r0 *search.Inputs, r1 error) {
-	f.SetDefaultHook(func(context.Context, string, *string, string, int, search.Protocol, *schema.Settings, bool) (*search.Inputs, error) {
+	f.SetDefaultHook(func(context.Context, string, *string, string, search.Mode, search.Protocol, *schema.Settings, bool) (*search.Inputs, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *SearchClientPlanFunc) PushReturn(r0 *search.Inputs, r1 error) {
-	f.PushHook(func(context.Context, string, *string, string, int, search.Protocol, *schema.Settings, bool) (*search.Inputs, error) {
+	f.PushHook(func(context.Context, string, *string, string, search.Mode, search.Protocol, *schema.Settings, bool) (*search.Inputs, error) {
 		return r0, r1
 	})
 }
 
-func (f *SearchClientPlanFunc) nextHook() func(context.Context, string, *string, string, int, search.Protocol, *schema.Settings, bool) (*search.Inputs, error) {
+func (f *SearchClientPlanFunc) nextHook() func(context.Context, string, *string, string, search.Mode, search.Protocol, *schema.Settings, bool) (*search.Inputs, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -398,7 +398,7 @@ type SearchClientPlanFuncCall struct {
 	Arg3 string
 	// Arg4 is the value of the 5th argument passed to this method
 	// invocation.
-	Arg4 int
+	Arg4 search.Mode
 	// Arg5 is the value of the 6th argument passed to this method
 	// invocation.
 	Arg5 search.Protocol

@@ -109,7 +109,7 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 		args.Version,
 		strPtr(args.PatternType),
 		args.Query,
-		args.SearchMode,
+		search.Mode(args.SearchMode),
 		search.Streaming,
 		settings,
 		envvar.SourcegraphDotComMode(),

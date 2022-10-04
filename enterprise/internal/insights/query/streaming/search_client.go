@@ -43,7 +43,7 @@ func (r *insightsSearchClient) Search(ctx context.Context, query string, pattern
 		"",
 		patternType,
 		query,
-		int(search.Precise),
+		search.Precise,
 		search.Streaming,
 		settings,
 		envvar.SourcegraphDotComMode(),
