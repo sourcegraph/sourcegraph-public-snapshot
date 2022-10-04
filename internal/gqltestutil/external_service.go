@@ -1,6 +1,8 @@
 package gqltestutil
 
 import (
+	"time"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -122,7 +124,23 @@ mutation DeleteExternalService($externalService: ID!, $async: Boolean!) {
 	return nil
 }
 
-func (c *Client) ExternalService(displayName string) (map[string]string, error) {
+type ExternalServiceDefinition struct {
+	ID            string    `json:"id"`
+	DisplayName   string    `json:"displayName"`
+	Config        string    `json:"config"`
+	RepoCount     int       `json:"repoCount"`
+	Kind          string    `json:"kind"`
+	Warning       string    `json:"warning"`
+	WebhookURL    string    `json:"webhookURL"`
+	LastSyncError string    `json:"lastSyncError"`
+	LastSyncAt    time.Time `json:"lastSyncAt"`
+	NextSyncAt    time.Time `json:"nextSyncAt"`
+}
+
+// ExternalServices fetches all external service definitions.
+//
+// This method requires the authenticated user to be a site admin.
+func (c *Client) ExternalServices() ([]ExternalServiceDefinition, error) {
 	const query = `
 query {
 	externalServices() {
@@ -130,19 +148,20 @@ query {
       id
       displayName
       config
+      repoCount
+      kind
+      warning
+      lastSyncError
+      lastSyncAt
+      nextSyncAt
     }
   }
 }
 `
-
 	type externalServicesResp struct {
 		Data struct {
 			ExternalServices struct {
-				Nodes []struct {
-					ID          string `json:"id"`
-					DisplayName string `json:"displayName"`
-					Config      string `json:"config"`
-				} `json:"nodes"`
+				Nodes []ExternalServiceDefinition `json:"nodes"`
 			} `json:"externalServices"`
 		} `json:"data"`
 	}
@@ -153,17 +172,5 @@ query {
 	if err != nil {
 		return nil, errors.Wrap(err, "request GraphQL")
 	}
-
-	for _, node := range resp.Data.ExternalServices.Nodes {
-		println(node.DisplayName)
-		if node.DisplayName == displayName {
-			return map[string]string{
-				"id":          node.ID,
-				"displayName": node.DisplayName,
-				"config":      node.Config,
-			}, nil
-		}
-	}
-
-	return nil, nil
+	return resp.Data.ExternalServices.Nodes, nil
 }

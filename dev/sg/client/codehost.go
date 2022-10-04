@@ -1,4 +1,4 @@
-package scaletesting
+package client
 
 import (
 	"encoding/json"
