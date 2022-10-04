@@ -20,7 +20,6 @@ import (
 )
 
 func init() {
-	// maximumRepositoriesInspectedPerSecond = rate.Inf
 	maximumIndexJobsPerInferredConfiguration = 50
 }
 
