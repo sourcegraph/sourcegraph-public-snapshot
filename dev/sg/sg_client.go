@@ -41,7 +41,7 @@ var clientCommand = &cli.Command{
 							DefaultText: "sourcegraphsourcegraph",
 						},
 						&cli.StringFlag{
-							Name:  "token",
+							Name:  "github.token",
 							Usage: "GitHub token to associate with the new code host",
 						},
 						&cli.StringFlag{
@@ -68,7 +68,7 @@ var clientCommand = &cli.Command{
 							}
 						}
 						std.Out.WriteNoticef("Creating new code host named '%s'", displayName)
-						err = cl.AddCodeHostsByGitHubOrgs(client, cmd.String("token"), displayName, cmd.Args().Slice())
+						err = cl.AddCodeHostsByGitHubOrgs(client, cmd.String("github.token"), displayName, cmd.Args().Slice())
 						if err != nil {
 							return errors.Wrap(err, "Could not add code host")
 						}
