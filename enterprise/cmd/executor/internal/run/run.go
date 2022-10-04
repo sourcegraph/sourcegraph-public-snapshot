@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 	"github.com/urfave/cli/v2"
@@ -97,7 +96,7 @@ func RunRun(cliCtx *cli.Context, logger log.Logger, cfg *config.Config) error {
 			janitor.NewMetrics(observationContext),
 		))
 
-		mustRegisterVMCountMetric(observationContext, cfg.VMPrefix)
+		mustRegisterVMCountMetric(logger, observationContext, cfg.VMPrefix)
 	}
 
 	go func() {
@@ -117,14 +116,14 @@ func RunRun(cliCtx *cli.Context, logger log.Logger, cfg *config.Config) error {
 	return nil
 }
 
-func mustRegisterVMCountMetric(observationContext *observation.Context, prefix string) {
+func mustRegisterVMCountMetric(logger log.Logger, observationContext *observation.Context, prefix string) {
 	observationContext.Registerer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Name: "src_executor_vms_total",
 		Help: "Total number of running VMs.",
 	}, func() float64 {
 		runningVMsByName, err := ignite.ActiveVMsByName(context.Background(), prefix, false)
 		if err != nil {
-			log15.Error("Failed to determine number of running VMs", "error", err)
+			logger.Error("Failed to determine number of running VMs", log.Error(err))
 		}
 
 		return float64(len(runningVMsByName))
