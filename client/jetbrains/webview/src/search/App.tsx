@@ -43,6 +43,7 @@ interface Props {
     instanceURL: string
     isGlobbingEnabled: boolean
     accessToken: string | null
+    requestHeaders: Record<string, string> | null
     onPreviewChange: (match: SearchMatch, lineOrSymbolMatchIndex?: number) => Promise<void>
     onPreviewClear: () => Promise<void>
     onOpen: (match: SearchMatch, lineOrSymbolMatchIndex?: number) => Promise<void>
@@ -75,6 +76,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     instanceURL,
     isGlobbingEnabled,
     accessToken,
+    requestHeaders,
     onPreviewChange,
     onPreviewClear,
     onOpen,
@@ -96,9 +98,10 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                     'Content-Type': 'application/json',
                     'X-Sourcegraph-Should-Trace': new URLSearchParams(window.location.search).get('trace') || 'false',
                     ...(accessToken && { Authorization: `token ${accessToken}` }),
+                    ...requestHeaders,
                 },
             }),
-        [instanceURL, accessToken]
+        [instanceURL, accessToken, requestHeaders]
     )
 
     const settingsCascade: SettingsCascadeOrError =

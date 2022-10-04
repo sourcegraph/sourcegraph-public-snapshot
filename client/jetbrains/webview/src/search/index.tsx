@@ -74,6 +74,7 @@ export function renderReactApp(): void {
             instanceURL={instanceURL}
             isGlobbingEnabled={isGlobbingEnabled}
             accessToken={accessToken}
+            requestHeaders={requestHeaders}
             initialSearch={initialSearch}
             onOpen={onOpen}
             onPreviewChange={onPreviewChange}
@@ -107,11 +108,11 @@ function parseRequestHeadersString(requestHeadersString: string | null): Record<
         return null
     }
     for (let index = 0; index < requestHeadersArray.length; index += 2) {
-        const headerName = requestHeaders[requestHeadersArray[index]]
-        const value = requestHeadersArray[index + 1]
+        const name = requestHeaders[requestHeadersArray[index]].trim()
+        const value = requestHeadersArray[index + 1].trim()
         // Skip invalid keys
-        if (headerName.match(/^[\w-]+$/)) {
-            requestHeaders[headerName] = value
+        if (name.match(/^[\w-]+$/)) {
+            requestHeaders[name] = value
         }
     }
     return requestHeaders
@@ -162,7 +163,7 @@ export function applyTheme(theme: Theme, rootElement: Element = document.documen
 
 export async function updateVersionAndAuthDataFromServer(): Promise<void> {
     try {
-        const { site, currentUser } = await getSiteVersionAndAuthenticatedUser(instanceURL, accessToken)
+        const { site, currentUser } = await getSiteVersionAndAuthenticatedUser(instanceURL, accessToken, requestHeaders)
         authenticatedUser = currentUser
         backendVersion = site?.productVersion || null
         isServerAccessSuccessful = true
