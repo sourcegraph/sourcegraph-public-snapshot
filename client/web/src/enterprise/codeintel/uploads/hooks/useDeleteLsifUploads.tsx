@@ -4,6 +4,7 @@ import { gql, getDocumentNode } from '@sourcegraph/http-client'
 
 import { DeleteLsifUploadsResult, DeleteLsifUploadsVariables } from '../../../../graphql-operations'
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type DeleteLsifUploadsResults = Promise<FetchResult<DeleteLsifUploadsResult, Record<string, any>, Record<string, any>>>
 
 interface UseDeleteLsifUploadsResult {
