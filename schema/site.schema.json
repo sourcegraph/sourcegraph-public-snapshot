@@ -1572,7 +1572,7 @@
         "properties": {
           "type": {
             "type": "string",
-            "enum": ["builtin", "saml", "openidconnect", "http-header", "github", "gitlab"]
+            "enum": ["builtin", "saml", "openidconnect", "http-header", "github", "gitlab", "bitbucket"]
           }
         },
         "oneOf": [
@@ -1581,7 +1581,8 @@
           { "$ref": "#/definitions/OpenIDConnectAuthProvider" },
           { "$ref": "#/definitions/HTTPHeaderAuthProvider" },
           { "$ref": "#/definitions/GitHubAuthProvider" },
-          { "$ref": "#/definitions/GitLabAuthProvider" }
+          { "$ref": "#/definitions/GitLabAuthProvider" },
+          { "$ref": "#/definitions/BitbucketAuthProvider" }
         ],
         "!go": {
           "taggedUnionType": true
@@ -2065,6 +2066,59 @@
           "type": "string",
           "description": "URL of the GitLab instance, such as https://gitlab.com or https://gitlab.example.com.",
           "default": "https://gitlab.com/"
+        },
+        "clientID": {
+          "type": "string",
+          "description": "The Client ID of the GitLab OAuth app, accessible from https://gitlab.com/oauth/applications (or the same path on your private GitLab instance)."
+        },
+        "clientSecret": {
+          "type": "string",
+          "description": "The Client Secret of the GitLab OAuth app, accessible from https://gitlab.com/oauth/applications (or the same path on your private GitLab instance)."
+        },
+        "displayName": { "$ref": "#/definitions/AuthProviderCommon/properties/displayName" },
+        "apiScope": {
+          "type": "string",
+          "description": "The OAuth API scope that should be used",
+          "default": "api",
+          "enum": ["api", "read_api"]
+        },
+        "allowSignup": {
+          "description": "Allows new visitors to sign up for accounts via GitLab authentication. If false, users signing in via GitLab must have an existing Sourcegraph account, which will be linked to their GitLab identity after sign-in.",
+          "default": true,
+          "type": "boolean",
+          "!go": { "pointer": true }
+        },
+        "allowGroups": {
+          "description": "Restricts new logins and signups (if allowSignup is true) to members of these GitLab groups. Existing sessions won't be invalidated. Make sure to inform the full path for groups or subgroups instead of their names. Leave empty or unset for no group restrictions.",
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "examples": [["group", "group/subgroup", "group/subgroup/subgroup"]]
+        },
+        "tokenRefreshWindowMinutes": {
+          "description": "Time in minutes before token expiry when we should attempt to refresh it",
+          "default": 10,
+          "type": "integer"
+        }
+      }
+    },
+    "BitbucketAuthProvider": {
+      "description": "Configures the Bitbucket OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create an OAuth App on your Bitbucket instance: https://docs.gitlab.com/ee/integration/oauth_provider.html. The application should have `api` and `read_user` scopes and the callback URL set to the concatenation of your Sourcegraph instance URL and \"/.auth/bitbucket/callback\".",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "clientID", "clientSecret"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "bitbucket"
+        },
+        "url": {
+          "type": "string",
+          "description": "URL of the GitLab instance, such as https://gitlab.com or https://gitlab.example.com.",
+          "default": "https://bitbucket.org/"
         },
         "clientID": {
           "type": "string",

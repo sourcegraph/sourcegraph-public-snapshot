@@ -71,6 +71,25 @@ func NewClient(urn string, config *schema.BitbucketCloudConnection, httpClient h
 	return newClient(urn, config, httpClient)
 }
 
+func NewClientProvider(urn string, baseURL *url.URL, cli httpcli.Doer) *client {
+    if cli == nil {
+        cli = httpcli.ExternalDoer
+    }
+    cli = requestCounter.Doer(cli, func(u *url.URL) string {
+        var category string
+        if parts := strings.SplitN(u.Path, "/", 3); len(parts) >= 4 {
+            category = parts[3]
+        }
+        return category
+    })
+
+    return &client{
+        httpClient: cli,
+        URL: baseURL.ResolveReference(&url.URL{Path: baseURL.Path + "/"}),
+        rateLimit: ratelimit.DefaultRegistry.Get(urn),
+    }
+}
+
 func newClient(urn string, config *schema.BitbucketCloudConnection, httpClient httpcli.Doer) (*client, error) {
 	if httpClient == nil {
 		httpClient = httpcli.ExternalDoer
@@ -101,6 +120,13 @@ func newClient(urn string, config *schema.BitbucketCloudConnection, httpClient h
 		// Default limits are defined in extsvc.GetLimitFromConfig
 		rateLimit: ratelimit.DefaultRegistry.Get(urn),
 	}, nil
+}
+
+func (p *client) GetOAuthClient(oauthToken string) *client {
+    if oauthToken == "" {
+        return p.getClient(nil)
+    }
+    return p.getClient(&auth.OAuthBearerToken{Token: oauthToken})
 }
 
 func (c *client) Authenticator() auth.Authenticator {

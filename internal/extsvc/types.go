@@ -642,6 +642,7 @@ const (
 	URNGitHubApp   = "GitHubApp"
 	URNGitHubOAuth = "GitHubOAuth"
 	URNGitLabOAuth = "GitLabOAuth"
+    URNBitbucketOAuth = "BitbucketOAuth"
 	URNCodeIntel   = "CodeIntel"
 )
 
