@@ -1,4 +1,4 @@
-package expiration
+package uploads
 
 import (
 	"context"
@@ -24,7 +24,7 @@ func (e *expirer) HandleUploadExpirer(ctx context.Context) (err error) {
 	// the backlog. Note that this set of repositories require a fresh commit graph, so we're not trying to
 	// process records that have been uploaded but the commits from which they are visible have yet to be
 	// determined (and appearing as if they are visible to no commit).
-	repositories, err := e.uploadSvc.SetRepositoriesForRetentionScan(ctx, ConfigInst.RepositoryProcessDelay, ConfigInst.RepositoryBatchSize)
+	repositories, err := e.uploadSvc.SetRepositoriesForRetentionScan(ctx, e.repositoryProcessDelay, e.repositoryBatchSize)
 	if err != nil {
 		return errors.Wrap(err, "uploadSvc.SelectRepositoriesForRetentionScan")
 	}
@@ -73,7 +73,7 @@ func (e *expirer) handleRepository(ctx context.Context, repositoryID int, now ti
 	// upload process delay is shorter than the time it takes to process one batch of uploads. This
 	// is obviously a mis-configuration, but one we can make a bit less catastrophic by not updating
 	// this value in the loop.
-	lastRetentionScanBefore := now.Add(-ConfigInst.UploadProcessDelay)
+	lastRetentionScanBefore := now.Add(-e.uploadProcessDelay)
 
 	for {
 		// Each record pulled back by this query will either have its expired flag or its last
@@ -91,7 +91,7 @@ func (e *expirer) handleRepository(ctx context.Context, repositoryID int, now ti
 			RepositoryID:            repositoryID,
 			AllowExpired:            false,
 			OldestFirst:             true,
-			Limit:                   ConfigInst.UploadBatchSize,
+			Limit:                   e.uploadBatchSize,
 			LastRetentionScanBefore: &lastRetentionScanBefore,
 			InCommitGraph:           true,
 		})
@@ -121,7 +121,7 @@ func (e *expirer) buildCommitMap(ctx context.Context, repositoryID int, now time
 		policyBatch, totalCount, err := e.policySvc.GetConfigurationPolicies(ctx, types.GetConfigurationPoliciesOptions{
 			RepositoryID:     repositoryID,
 			ForDataRetention: true,
-			Limit:            ConfigInst.PolicyBatchSize,
+			Limit:            e.policyBatchSize,
 			Offset:           offset,
 		})
 		if err != nil {
@@ -215,7 +215,7 @@ func (e *expirer) isUploadProtectedByPolicy(
 		//
 		// We check the set of commits visible to an upload in batches as in some cases it can be very large; for
 		// example, a single historic commit providing code intelligence for all descendants.
-		commits, nextToken, err := e.uploadSvc.GetCommitsVisibleToUpload(ctx, upload.ID, ConfigInst.CommitBatchSize, token)
+		commits, nextToken, err := e.uploadSvc.GetCommitsVisibleToUpload(ctx, upload.ID, e.commitBatchSize, token)
 		if err != nil {
 			return false, errors.Wrap(err, "uploadSvc.CommitsVisibleToUpload")
 		}

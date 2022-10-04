@@ -5,7 +5,9 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
 	codeintelgitserver "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
+	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -29,9 +31,32 @@ type GitserverClient interface {
 	CommitDate(ctx context.Context, repositoryID int, commit string) (string, time.Time, bool, error)
 	ResolveRevision(ctx context.Context, repositoryID int, versionString string) (api.CommitID, error)
 	DefaultBranchContains(ctx context.Context, repositoryID int, commit string) (bool, error)
+
+	CommitsUniqueToBranch(ctx context.Context, repositoryID int, branchName string, isDefaultBranch bool, maxAge *time.Time) (map[string]time.Time, error)
 }
 
 type RepoStore interface {
 	Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err error)
 	ResolveRev(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error)
+}
+
+type UploadServiceForExpiration interface {
+	// Uploads
+	GetUploads(ctx context.Context, opts codeinteltypes.GetUploadsOptions) (uploads []codeinteltypes.Upload, totalCount int, err error)
+	UpdateUploadRetention(ctx context.Context, protectedIDs, expiredIDs []int) (err error)
+	BackfillReferenceCountBatch(ctx context.Context, batchSize int) error
+
+	// Commits
+	GetCommitsVisibleToUpload(ctx context.Context, uploadID, limit int, token *string) (_ []string, nextToken *string, err error)
+
+	// Repositories
+	SetRepositoriesForRetentionScan(ctx context.Context, processDelay time.Duration, limit int) (_ []int, err error)
+}
+
+type PolicyService interface {
+	GetConfigurationPolicies(ctx context.Context, opts codeinteltypes.GetConfigurationPoliciesOptions) ([]codeinteltypes.ConfigurationPolicy, int, error)
+}
+
+type PolicyMatcher interface {
+	CommitsDescribedByPolicy(ctx context.Context, repositoryID int, policies []codeinteltypes.ConfigurationPolicy, now time.Time, filterCommits ...string) (map[string][]policies.PolicyMatch, error)
 }

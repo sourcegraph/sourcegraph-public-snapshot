@@ -72,6 +72,8 @@ func (j *metricsReporterJob) Routines(startupCtx context.Context, logger log.Log
 		return nil, err
 	}
 
+	uploadSvc.MetricReporters(observationContext)
+
 	routines := []goroutine.BackgroundRoutine{
 		executorMetricsReporter,
 	}

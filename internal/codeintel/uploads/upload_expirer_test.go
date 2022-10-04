@@ -1,4 +1,4 @@
-package expiration
+package uploads
 
 import (
 	"context"
@@ -16,15 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
-func init() {
-	ConfigInst.RepositoryProcessDelay = 24 * time.Hour
-	ConfigInst.RepositoryBatchSize = 100
-	ConfigInst.UploadProcessDelay = 24 * time.Hour
-	ConfigInst.UploadBatchSize = 100
-	ConfigInst.CommitBatchSize = 100
-	ConfigInst.BranchesCacheMaxKeys = 10000
-}
-
 func TestUploadExpirer(t *testing.T) {
 	now := timeutil.Now()
 	uploadSvc := setupMockUploadService(now)
@@ -37,6 +28,12 @@ func TestUploadExpirer(t *testing.T) {
 		policyMatcher: policyMatcher,
 		metrics:       newMetrics(&observation.TestContext),
 		logger:        logtest.Scoped(t),
+
+		repositoryProcessDelay: 24 * time.Hour,
+		repositoryBatchSize:    100,
+		uploadProcessDelay:     24 * time.Hour,
+		uploadBatchSize:        100,
+		commitBatchSize:        100,
 	}
 
 	if err := uploadExpirer.Handle(context.Background()); err != nil {
@@ -113,7 +110,7 @@ func setupMockPolicyService() *MockPolicyService {
 	return policySvc
 }
 
-func setupMockUploadService(now time.Time) *MockUploadService {
+func setupMockUploadService(now time.Time) *MockUploadServiceForExpiration {
 	uploads := []types.Upload{
 		{ID: 11, State: "completed", RepositoryID: 50, Commit: "deadbeef01", UploadedAt: daysAgo(now, 1)}, // repo 50
 		{ID: 12, State: "completed", RepositoryID: 50, Commit: "deadbeef02", UploadedAt: daysAgo(now, 2)},
@@ -208,7 +205,7 @@ func setupMockUploadService(now time.Time) *MockUploadService {
 		return nil, nil, nil
 	}
 
-	uploadSvc := NewMockUploadService()
+	uploadSvc := NewMockUploadServiceForExpiration()
 	uploadSvc.SetRepositoriesForRetentionScanFunc.SetDefaultHook(setRepositoriesForRetentionScanFunc)
 	uploadSvc.GetUploadsFunc.SetDefaultHook(getUploads)
 	uploadSvc.UpdateUploadRetentionFunc.SetDefaultHook(updateUploadRetention)
