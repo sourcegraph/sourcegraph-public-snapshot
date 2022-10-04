@@ -174,6 +174,7 @@ describe('Search aggregation', () => {
                         subjects: [
                             {
                                 __typename: 'DefaultSettings',
+                                id: 'TestDefaultSettingsID',
                                 settingsURL: null,
                                 viewerCanAdminister: false,
                                 latestSettings: {

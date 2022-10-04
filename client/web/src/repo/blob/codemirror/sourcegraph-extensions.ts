@@ -15,7 +15,7 @@ import { combineLatest, EMPTY, from, Observable, of, Subject, Subscription } fro
 import { filter, map, catchError, switchMap, distinctUntilChanged, startWith, shareReplay } from 'rxjs/operators'
 
 import { DocumentHighlight, LOADER_DELAY, MaybeLoadingResult, emitLoading } from '@sourcegraph/codeintellify'
-import { asError, ErrorLike, LineOrPositionOrRange, lprToSelectionsZeroIndexed } from '@sourcegraph/common'
+import { asError, ErrorLike, LineOrPositionOrRange, lprToSelectionsZeroIndexed, logger } from '@sourcegraph/common'
 import { Position, TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
@@ -103,14 +103,14 @@ export function sourcegraphExtensions({
         })
     ).pipe(
         catchError(() => {
-            console.error('Unable to initialize extensions context')
+            logger.error('Unable to initialize extensions context')
             return EMPTY
         }),
         map(([viewerId, extensionHostAPI]) => {
             subscriptions.add(() => {
                 extensionHostAPI
                     .removeViewer(viewerId)
-                    .catch(error => console.error('Error removing viewer from extension host', error))
+                    .catch(error => logger.error('Error removing viewer from extension host', error))
             })
 
             return {
@@ -232,7 +232,7 @@ class SelectionManager implements PluginValue {
         this.subscription = combineLatest([context, this.nextSelection]).subscribe(([context, selection]) => {
             context.extensionHostAPI
                 .setEditorSelections(context.viewerId, lprToSelectionsZeroIndexed(selection ?? {}))
-                .catch(error => console.error('Error updating editor selections on extension host', error))
+                .catch(error => logger.error('Error updating editor selections on extension host', error))
         })
     }
 

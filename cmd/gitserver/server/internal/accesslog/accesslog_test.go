@@ -79,18 +79,17 @@ func TestHTTPMiddleware(t *testing.T) {
 		logs := exportLogs()
 		require.Len(t, logs, 2)
 		assert.Equal(t, accessLoggingEnabledMessage, logs[0].Message)
-		assert.Equal(t, accessEventMessage, logs[1].Message)
+		assert.Contains(t, logs[1].Message, accessEventMessage)
 		assert.Equal(t, "github.com/foo/bar", logs[1].Fields["params"].(map[string]any)["repo"])
 
-		auditLogFields := map[string]interface{}{
-			"entity": "gitserver",
-			"actor": map[string]interface{}{
-				"actorUID":        "unknown",
-				"ip":              "192.168.1.1",
-				"X-Forwarded-For": "",
-			},
-		}
-		assert.Equal(t, auditLogFields, logs[1].Fields["audit"])
+		auditFields := logs[1].Fields["audit"].(map[string]interface{})
+		assert.Equal(t, "gitserver", auditFields["entity"])
+		assert.NotEmpty(t, auditFields["auditId"])
+
+		actorFields := auditFields["actor"].(map[string]interface{})
+		assert.Equal(t, "unknown", actorFields["actorUID"])
+		assert.Equal(t, "192.168.1.1", actorFields["ip"])
+		assert.Equal(t, "", actorFields["X-Forwarded-For"])
 	})
 
 	t.Run("handle, no recording", func(t *testing.T) {
@@ -142,7 +141,7 @@ func TestHTTPMiddleware(t *testing.T) {
 		logs = exportLogs()
 		require.Len(t, logs, 2)
 		assert.Equal(t, accessLoggingEnabledMessage, logs[0].Message)
-		assert.Equal(t, accessEventMessage, logs[1].Message)
+		assert.Contains(t, logs[1].Message, accessEventMessage)
 	})
 }
 

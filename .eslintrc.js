@@ -35,6 +35,7 @@ const config = {
   rules: {
     // Rules that are specific to this repo
     // All other rules should go into https://github.com/sourcegraph/eslint-config
+    'no-console': 'error',
     'monorepo/no-relative-import': 'error',
     '@sourcegraph/sourcegraph/check-help-links': 'error',
     '@typescript-eslint/consistent-type-exports': 'warn',
@@ -219,6 +220,12 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
       rules: {
         'react/forbid-dom-props': 'off',
         'import/no-default-export': 'off',
+      },
+    },
+    {
+      files: ['**/gulpfile.js', '**/story/**.tsx', '**/story/**.ts', '*.story.tsx'],
+      rules: {
+        'no-console': 'off',
       },
     },
   ],

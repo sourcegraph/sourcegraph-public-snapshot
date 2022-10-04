@@ -10,29 +10,23 @@ import (
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
-	"github.com/prometheus/client_golang/prometheus"
-	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	dbtypes "github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type syncer struct {
-	db                    database.DB
-	dbStore               *dbstore.Store
+	depsSvc               *dependencies.Service
 	externalServicesStore database.ExternalServiceStore
 	gitClient             gitserver.Client
 	interval              time.Duration
@@ -41,7 +35,6 @@ type syncer struct {
 var _ goroutine.Handler = &syncer{}
 
 func (s *syncer) Handle(ctx context.Context) error {
-
 	exists, externalService, err := singleRustExternalService(ctx, s.externalServicesStore)
 	if !exists || err != nil {
 		// err can be nil when there is no RUSTPACKAGES code host.
@@ -122,14 +115,11 @@ func (s *syncer) Handle(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		for _, pkg := range pkgs {
-			// TODO: batch insert packages instead of one name+version combination at a time https://github.com/sourcegraph/sourcegraph/issues/37691
-			isNew, err := s.dbStore.InsertCloneableDependencyRepo(ctx, pkg)
-			if err != nil {
-				return errors.Wrapf(err, "Failed to insert Rust crate %v", pkg)
-			}
-			didInsertNewCrates = didInsertNewCrates || isNew
+		new, err := s.depsSvc.UpsertDependencyRepos(ctx, pkgs)
+		if err != nil {
+			return errors.Wrapf(err, "failed to insert Rust crate")
 		}
+		didInsertNewCrates = didInsertNewCrates || len(new) != 0
 	}
 
 	if didInsertNewCrates {
@@ -144,10 +134,6 @@ func (s *syncer) Handle(ctx context.Context) error {
 }
 
 func NewCratesSyncer(db database.DB) goroutine.BackgroundRoutine {
-	observationContext := &observation.Context{
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.NewRegistry(),
-	}
 	extSvcStore := db.ExternalServices()
 
 	// By default, sync crates every 12h, but the user can customize this interval
@@ -165,8 +151,7 @@ func NewCratesSyncer(db database.DB) goroutine.BackgroundRoutine {
 	}
 
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &syncer{
-		db:                    db,
-		dbStore:               dbstore.NewWithDB(db, observationContext),
+		depsSvc:               dependencies.GetService(db),
 		externalServicesStore: extSvcStore,
 		gitClient:             gitserver.NewClient(db),
 		interval:              interval,
@@ -222,8 +207,8 @@ func singleRustExternalService(ctx context.Context, store database.ExternalServi
 
 // parseCrateInformation parses the newline-delimited JSON file for a crate,
 // assuming the pattern that's used in the github.com/rust-lang/crates.io-index
-func parseCrateInformation(contents string) ([]precise.Package, error) {
-	var result []precise.Package
+func parseCrateInformation(contents string) ([]dependencies.Repo, error) {
+	var result []dependencies.Repo
 	for _, line := range strings.Split(contents, "\n") {
 		if line == "" {
 			continue
@@ -239,9 +224,9 @@ func parseCrateInformation(contents string) ([]precise.Package, error) {
 			return nil, err
 		}
 
-		pkg := precise.Package{
+		pkg := dependencies.Repo{
 			Scheme:  dependencies.RustPackagesScheme,
-			Name:    info.Name,
+			Name:    reposource.PackageName(info.Name),
 			Version: info.Version,
 		}
 		result = append(result, pkg)

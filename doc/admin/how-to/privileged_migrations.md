@@ -36,7 +36,9 @@ COMMENT ON EXTENSION citext IS 'second privileged migration';
 COMMIT;
 ```
 
-Manually apply the provided SQL with superuser access in the target schema. Then re-invoke the migrator with the suggested flag (e.g., `-privileged-hash=vp6EzmVmJfHgfchaShhJPUCq5v4=`). This value is unique to the set of privileged migration definitions and ensures that you have followed the instructions specific to this installation or upgrade. The migrator may print multiple such error messages for different schemas that contain privileged migrations. In this case, multiple `-privileged-hash` flags are expected on the same re-invocation of the migrator.
+Manually apply the provided SQL with superuser access in the target schema. Then re-invoke the migrator with the suggested flag (e.g., `-privileged-hash=vp6EzmVmJfHgfchaShhJPUCq5v4=`). This value is unique to the set of privileged migration definitions and ensures that you have followed the instructions specific to this installation or upgrade.
+
+The migrator may print multiple such error messages for different schemas that contain privileged migrations. In this case, multiple `-privileged-hash` flags are expected on the same re-invocation of the migrator.
 
 Re-running the migrator should then succeed, skipping each of the migrations which were just manually applied.
 

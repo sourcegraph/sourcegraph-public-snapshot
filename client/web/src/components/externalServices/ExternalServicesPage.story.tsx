@@ -39,6 +39,7 @@ const queryExternalServices: typeof _queryExternalServices = () =>
                 updatedAt: '2021-03-15T19:39:11Z',
                 createdAt: '2021-03-15T19:39:11Z',
                 namespace: null,
+                webhookURL: null,
                 grantedScopes: [],
             },
             {
@@ -58,6 +59,7 @@ const queryExternalServices: typeof _queryExternalServices = () =>
                     namespaceName: 'johndoe',
                     url: '/users/johndoe',
                 },
+                webhookURL: null,
                 grantedScopes: [],
             },
         ],

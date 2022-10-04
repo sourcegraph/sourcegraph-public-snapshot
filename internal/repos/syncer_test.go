@@ -975,9 +975,15 @@ func testSyncRun(store repos.Store) func(t *testing.T) {
 			mk("new"),
 		}
 
+		fakeSource := repos.NewFakeSource(svc, nil, sourced...)
+
+		// Lock our source here so that we block when trying to list repos, this allows
+		// us to test lower down that we can't delete a syncing service.
+		lockChan := fakeSource.InitLockChan()
+
 		syncer := &repos.Syncer{
 			Logger:  logtest.Scoped(t),
-			Sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svc, nil, sourced...)),
+			Sourcer: repos.NewFakeSourcer(nil, fakeSource),
 			Store:   store,
 			Synced:  make(chan repos.Diff),
 			Now:     time.Now,
@@ -1001,11 +1007,23 @@ func testSyncRun(store repos.Store) func(t *testing.T) {
 		// Ignore fields store adds
 		ignore := cmpopts.IgnoreFields(types.Repo{}, "ID", "CreatedAt", "UpdatedAt", "Sources")
 
-		// The first thing sent down Synced is the list of repos in store.
+		// The first thing sent down Synced is the list of repos in store during
+		// initialisation
 		diff := <-syncer.Synced
 		if d := cmp.Diff(repos.Diff{Unmodified: stored}, diff, ignore); d != "" {
 			t.Fatalf("Synced mismatch (-want +got):\n%s", d)
 		}
+
+		// Once we receive on lockChan we know our syncer is running
+		<-lockChan
+
+		// Our sync is in progress, we should not be allowed to delete the service
+		if err := store.ExternalServiceStore().Delete(ctx, svc.ID); err == nil {
+			t.Fatal("Expected an error")
+		}
+
+		// We can now send on lockChan again to unblock the sync job
+		lockChan <- struct{}{}
 
 		// Next up it should find the existing repo and send it down Synced
 		diff = <-syncer.Synced
@@ -1022,6 +1040,10 @@ func testSyncRun(store repos.Store) func(t *testing.T) {
 		if d := cmp.Diff(repos.Diff{Added: sourced[1:]}, diff, ignore); d != "" {
 			t.Fatalf("Synced mismatch (-want +got):\n%s", d)
 		}
+
+		// Allow second round
+		<-lockChan
+		lockChan <- struct{}{}
 
 		// We check synced again to test us going around the Run loop 2 times in
 		// total.
@@ -1370,7 +1392,7 @@ func testCloudDefaultExternalServicesDontSync(store repos.Store) func(*testing.T
 		have := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second)
 		want := repos.ErrCloudDefaultSync
 
-		if have != want {
+		if !errors.Is(have, want) {
 			t.Fatalf("have err: %v, want %v", have, want)
 		}
 	}

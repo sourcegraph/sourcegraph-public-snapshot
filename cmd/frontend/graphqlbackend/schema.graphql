@@ -555,6 +555,10 @@ type Mutation {
     """
     submitSurvey(input: SurveySubmissionInput!): EmptyResponse
     """
+    Submits happiness feedback.
+    """
+    submitHappinessFeedback(input: HappinessFeedbackSubmissionInput!): EmptyResponse
+    """
     Submits a request for a Sourcegraph Enterprise trial license.
     """
     requestTrial(email: String!): EmptyResponse
@@ -1138,6 +1142,24 @@ input SurveySubmissionInput {
 }
 
 """
+Input for a happiness feedback submission.
+"""
+input HappinessFeedbackSubmissionInput {
+    """
+    User's happiness rating, from 1-4.
+    """
+    score: Int!
+    """
+    The answer to "What's going well? What could be better?".
+    """
+    feedback: String
+    """
+    The path that the happiness feedback will be submitted from.
+    """
+    currentPath: String
+}
+
+"""
 A query.
 """
 type Query {
@@ -1316,6 +1338,10 @@ type Query {
         Returns users who have been active in a given period of time.
         """
         activePeriod: UserActivePeriod
+        """
+        Returns users who have NOT been active since a given point in time.
+        """
+        inactiveSince: DateTime
     ): UserConnection!
     """
     Looks up an organization by name.
@@ -6409,6 +6435,10 @@ type AnalyticsSearchResult {
     File open analytics
     """
     fileOpens: AnalyticsStatItem!
+    """
+    Code copied from search results analytics
+    """
+    codeCopied: AnalyticsStatItem!
 }
 
 """

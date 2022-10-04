@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -54,6 +55,11 @@ type service interface {
 
 	// Utilities
 	GetUnsafeDB() database.DB
+	WorkerutilStore() dbworkerstore.Store
+	DependencySyncStore() dbworkerstore.Store
+	DependencyIndexingStore() dbworkerstore.Store
+	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error)
+
 	ListFiles(ctx context.Context, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error)
 
 	// Symbols client
@@ -65,14 +71,17 @@ type service interface {
 }
 
 type Service struct {
-	store            store.Store
-	uploadSvc        shared.UploadService
-	gitserverClient  shared.GitserverClient
-	symbolsClient    *symbols.Client
-	repoUpdater      shared.RepoUpdaterClient
-	inferenceService shared.InferenceService
-	operations       *operations
-	logger           log.Logger
+	store                   store.Store
+	workerutilStore         dbworkerstore.Store
+	dependencySyncStore     dbworkerstore.Store
+	dependencyIndexingStore dbworkerstore.Store
+	uploadSvc               shared.UploadService
+	gitserverClient         shared.GitserverClient
+	symbolsClient           *symbols.Client
+	repoUpdater             shared.RepoUpdaterClient
+	inferenceService        shared.InferenceService
+	operations              *operations
+	logger                  log.Logger
 }
 
 func newService(
@@ -84,16 +93,34 @@ func newService(
 	inferenceSvc shared.InferenceService,
 	observationContext *observation.Context,
 ) *Service {
+	workerutilStore := store.WorkerutilStore(observationContext)
+	dependencySyncStore := store.WorkerutilDependencySyncStore(observationContext)
+	dependencyIndexingStore := store.WorkerutilDependencyIndexStore(observationContext)
+
 	return &Service{
-		store:            store,
-		uploadSvc:        uploadSvc,
-		gitserverClient:  gitserver,
-		symbolsClient:    symbolsClient,
-		repoUpdater:      repoUpdater,
-		inferenceService: inferenceSvc,
-		operations:       newOperations(observationContext),
-		logger:           observationContext.Logger,
+		store:                   store,
+		workerutilStore:         workerutilStore,
+		dependencySyncStore:     dependencySyncStore,
+		dependencyIndexingStore: dependencyIndexingStore,
+		uploadSvc:               uploadSvc,
+		gitserverClient:         gitserver,
+		symbolsClient:           symbolsClient,
+		repoUpdater:             repoUpdater,
+		inferenceService:        inferenceSvc,
+		operations:              newOperations(observationContext),
+		logger:                  observationContext.Logger,
 	}
+}
+
+func (s *Service) WorkerutilStore() dbworkerstore.Store         { return s.workerutilStore }
+func (s *Service) DependencySyncStore() dbworkerstore.Store     { return s.dependencySyncStore }
+func (s *Service) DependencyIndexingStore() dbworkerstore.Store { return s.dependencyIndexingStore }
+
+func (s *Service) InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error) {
+	ctx, _, endObservation := s.operations.insertDependencyIndexingJob.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.InsertDependencyIndexingJob(ctx, uploadID, externalServiceKind, syncTime)
 }
 
 func (s *Service) GetIndexes(ctx context.Context, opts types.GetIndexesOptions) (_ []types.Index, _ int, err error) {
@@ -461,10 +488,10 @@ type configurationFactoryFunc func(ctx context.Context, repositoryID int, commit
 // getIndexRecords determines the set of index records that should be enqueued for the given commit.
 // For each repository, we look for index configuration in the following order:
 //
-//  - supplied explicitly via parameter
-//  - in the database
-//  - committed to `sourcegraph.yaml` in the repository
-//  - inferred from the repository structure
+//   - supplied explicitly via parameter
+//   - in the database
+//   - committed to `sourcegraph.yaml` in the repository
+//   - inferred from the repository structure
 func (s *Service) getIndexRecords(ctx context.Context, repositoryID int, commit, configuration string, bypassLimit bool) ([]types.Index, error) {
 	fns := []configurationFactoryFunc{
 		makeExplicitConfigurationFactory(configuration),

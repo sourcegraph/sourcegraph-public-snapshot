@@ -32,7 +32,7 @@ export { NavMenu } from './NavMenu'
 export { Text, Code, Heading, Label, H1, H2, H3, H4, H5, H6 } from './Typography'
 export { AnchorLink, RouterLink, setLinkComponent, Link, createLinkUrl } from './Link'
 export { Modal } from './Modal'
-export { FeedbackBadge, FeedbackText } from './Feedback'
+export { FeedbackBadge, FeedbackText, FeedbackPrompt } from './Feedback'
 export {
     Popover,
     PopoverTrigger,
@@ -59,6 +59,7 @@ export {
  * Type Exports
  * `export type` is required to avoid Webpack warnings.
  */
+export type { FeedbackPromptSubmitEventHandler } from './Feedback'
 export type { AlertProps, AlertLinkProps } from './Alert'
 export type { MultiSelectProps, MultiSelectOption, MultiSelectState, SelectProps, InputProps } from './Form'
 export type { ButtonProps } from './Button'

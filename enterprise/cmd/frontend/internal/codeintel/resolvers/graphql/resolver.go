@@ -70,6 +70,11 @@ func (r *Resolver) DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphq
 	return r.resolver.UploadRootResolver().DeleteLSIFUpload(ctx, args)
 }
 
+// 🚨 SECURITY: Only site admins may modify code intelligence upload data
+func (r *Resolver) DeleteLSIFUploads(ctx context.Context, args *uploadsgraphql.DeleteLSIFUploadsArgs) (_ *sharedresolvers.EmptyResponse, err error) {
+	return r.resolver.UploadRootResolver().DeleteLSIFUploads(ctx, args)
+}
+
 // 🚨 SECURITY: dbstore layer handles authz for GetIndexByID
 func (r *Resolver) LSIFIndexByID(ctx context.Context, id graphql.ID) (_ sharedresolvers.LSIFIndexResolver, err error) {
 	return r.resolver.AutoIndexingRootResolver().LSIFIndexByID(ctx, id)

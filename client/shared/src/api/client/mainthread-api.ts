@@ -3,7 +3,7 @@ import { Subscription, from, Observable, Subject, of } from 'rxjs'
 import { publishReplay, refCount, switchMap } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 
-import { asError } from '@sourcegraph/common'
+import { asError, logger } from '@sourcegraph/common'
 
 import { registerBuiltinClientCommands } from '../../commands/commands'
 import { PlatformContext } from '../../platform/context'
@@ -177,7 +177,7 @@ export const initMainThreadAPI = (
             return proxySubscribable(getEnabledExtensions(platformContext))
         },
         logEvent: (eventName, eventProperties) => platformContext.telemetryService?.log(eventName, eventProperties),
-        logExtensionMessage: (...data) => console.log(...data),
+        logExtensionMessage: (...data) => logger.log(...data),
     }
 
     return { api, exposedToClient, subscription }

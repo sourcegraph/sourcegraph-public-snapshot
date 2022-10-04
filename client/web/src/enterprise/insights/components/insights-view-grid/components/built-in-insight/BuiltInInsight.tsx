@@ -71,6 +71,7 @@ export function BuiltInInsight(props: BuiltInInsightProps): React.ReactElement {
             {...otherProps}
             ref={mergedInsightCardReference}
             data-testid={`insight-card.${insight.id}`}
+            aria-label="Insight card"
             onMouseEnter={trackMouseEnter}
             onMouseLeave={trackMouseLeave}
         >
@@ -80,6 +81,7 @@ export function BuiltInInsight(props: BuiltInInsightProps): React.ReactElement {
                         to={`${window.location.origin}/insights/insight/${insight.id}`}
                         target="_blank"
                         rel="noopener noreferrer"
+                        aria-label="Go to the insight page"
                     >
                         {insight.title}
                     </Link>

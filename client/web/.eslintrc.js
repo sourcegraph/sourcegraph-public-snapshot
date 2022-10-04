@@ -11,5 +11,11 @@ module.exports = {
       files: ['src/stores/**.ts', 'src/__mocks__/zustand.ts'],
       rules: { 'no-restricted-imports': 'off' },
     },
+    {
+      files: 'dev/**/*.ts',
+      rules: {
+        'no-console': 'off',
+      },
+    },
   ],
 }

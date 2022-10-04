@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -48,7 +49,7 @@ func TestInsertIndexes(t *testing.T) {
 			Indexer:     "sourcegraph/scip-typescript:latest",
 			IndexerArgs: []string{"index", "--yarn-workspaces"},
 			Outfile:     "dump.lsif",
-			ExecutionLogs: []types.ExecutionLogEntry{
+			ExecutionLogs: []workerutil.ExecutionLogEntry{
 				{Command: []string{"op", "1"}, Out: "Indexing\nUploading\nDone with 1.\n"},
 				{Command: []string{"op", "2"}, Out: "Indexing\nUploading\nDone with 2.\n"},
 			},
@@ -68,7 +69,7 @@ func TestInsertIndexes(t *testing.T) {
 			Indexer:     "sourcegraph/lsif-rust:15",
 			IndexerArgs: []string{"-v"},
 			Outfile:     "dump.lsif",
-			ExecutionLogs: []types.ExecutionLogEntry{
+			ExecutionLogs: []workerutil.ExecutionLogEntry{
 				{Command: []string{"op", "1"}, Out: "Done with 1.\n"},
 				{Command: []string{"op", "2"}, Out: "Done with 2.\n"},
 			},
@@ -105,7 +106,7 @@ func TestInsertIndexes(t *testing.T) {
 			Indexer:     "sourcegraph/scip-typescript:latest",
 			IndexerArgs: []string{"index", "--yarn-workspaces"},
 			Outfile:     "dump.lsif",
-			ExecutionLogs: []types.ExecutionLogEntry{
+			ExecutionLogs: []workerutil.ExecutionLogEntry{
 				{Command: []string{"op", "1"}, Out: "Indexing\nUploading\nDone with 1.\n"},
 				{Command: []string{"op", "2"}, Out: "Indexing\nUploading\nDone with 2.\n"},
 			},
@@ -132,7 +133,7 @@ func TestInsertIndexes(t *testing.T) {
 			Indexer:     "sourcegraph/lsif-rust:15",
 			IndexerArgs: []string{"-v"},
 			Outfile:     "dump.lsif",
-			ExecutionLogs: []types.ExecutionLogEntry{
+			ExecutionLogs: []workerutil.ExecutionLogEntry{
 				{Command: []string{"op", "1"}, Out: "Done with 1.\n"},
 				{Command: []string{"op", "2"}, Out: "Done with 2.\n"},
 			},
@@ -307,7 +308,7 @@ func TestGetIndexByID(t *testing.T) {
 		Indexer:     "sourcegraph/scip-typescript:latest",
 		IndexerArgs: []string{"index", "--yarn-workspaces"},
 		Outfile:     "dump.lsif",
-		ExecutionLogs: []types.ExecutionLogEntry{
+		ExecutionLogs: []workerutil.ExecutionLogEntry{
 			{Command: []string{"op", "1"}, Out: "Indexing\nUploading\nDone with 1.\n"},
 			{Command: []string{"op", "2"}, Out: "Indexing\nUploading\nDone with 2.\n"},
 		},

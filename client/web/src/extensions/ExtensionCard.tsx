@@ -4,15 +4,18 @@ import { mdiAlert } from '@mdi/js'
 import classNames from 'classnames'
 
 import { isErrorLike, isEncodedImage } from '@sourcegraph/common'
-import { ConfiguredRegistryExtension, splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
+import { splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import {
     ExtensionHeaderColor,
     ExtensionManifest,
     EXTENSION_HEADER_COLORS,
 } from '@sourcegraph/shared/src/schema/extensionSchema'
-import { SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
+import {
+    SettingsCascadeProps,
+    SettingsSubject,
+    SettingsSubjectCommonFields,
+} from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useTimeoutManager, Link, CardBody, Card, Alert, Icon, H3 } from '@sourcegraph/wildcard'
 
@@ -21,6 +24,7 @@ import { AuthenticatedUser } from '../auth'
 import { isExtensionAdded } from './extension/extension'
 import { ExtensionConfigurationState } from './extension/ExtensionConfigurationState'
 import { ExtensionStatusBadge } from './extension/ExtensionStatusBadge'
+import { MinimalConfiguredRegistryExtension } from './extensions'
 import { ExtensionToggle, OptimisticUpdateFailure } from './ExtensionToggle'
 import { DefaultExtensionIcon, DefaultSourcegraphExtensionIcon, SourcegraphExtensionIcon } from './icons'
 
@@ -28,16 +32,8 @@ import styles from './ExtensionCard.module.scss'
 import headerColorStyles from './ExtensionHeader.module.scss'
 
 interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettings'>, ThemeProps {
-    node: Pick<
-        ConfiguredRegistryExtension<
-            Pick<
-                GQL.IRegistryExtension,
-                'id' | 'extensionIDWithoutRegistry' | 'isWorkInProgress' | 'viewerCanAdminister' | 'url'
-            >
-        >,
-        'id' | 'manifest' | 'registryExtension'
-    >
-    subject: Pick<GQL.SettingsSubject, 'id' | 'viewerCanAdminister'>
+    node: MinimalConfiguredRegistryExtension
+    subject: SettingsSubjectCommonFields
     viewerSubject: SettingsSubject | undefined
     siteSubject: SettingsSubject | undefined
     enabled: boolean
