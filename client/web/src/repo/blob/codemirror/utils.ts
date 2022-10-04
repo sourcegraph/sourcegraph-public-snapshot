@@ -6,6 +6,23 @@ import { scan, distinctUntilChanged } from 'rxjs/operators'
 import { Position } from '@sourcegraph/extension-api-types'
 import { UIPositionSpec, UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 
+export function zeroToOneBasedPosition(position: Position): { line: number; character: number } {
+    return {
+        line: position.line + 1,
+        character: position.character + 1,
+    }
+}
+
+export function zeroToOneBasedRange(range: {
+    start: Position
+    end: Position
+}): { start: { line: number; character: number }; end: { line: number; character: number } } {
+    return {
+        start: zeroToOneBasedPosition(range.start),
+        end: zeroToOneBasedPosition(range.end),
+    }
+}
+
 /**
  * Returns true of any of the document offset ranges contains the provided
  * point.

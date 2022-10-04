@@ -19,10 +19,6 @@ describe('[Code Insight] Dashboard', () => {
             driver,
             currentTest: this.currentTest!,
             directory: __dirname,
-            customContext: {
-                // Enforce using a new gql API for code insights pages
-                codeInsightsGqlApiEnabled: true,
-            },
         })
     })
 
@@ -63,8 +59,8 @@ describe('[Code Insight] Dashboard', () => {
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
 
-        await driver.page.waitForSelector('[aria-label="add dashboard"]')
-        await driver.page.click('[aria-label="add dashboard"]')
+        await driver.page.waitForSelector('[aria-label="Add dashboard"]')
+        await driver.page.click('[aria-label="Add dashboard"]')
 
         await driver.page.waitForSelector('form')
 

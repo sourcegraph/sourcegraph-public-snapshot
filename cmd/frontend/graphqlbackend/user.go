@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -525,7 +526,8 @@ func (r *UserResolver) PublicRepositories(ctx context.Context) ([]*RepositoryRes
 				ID:   repo.RepoID,
 				Name: api.RepoName(repo.RepoURI),
 			},
-			db: r.db,
+			db:              r.db,
+			gitserverClient: gitserver.NewClient(r.db),
 			innerRepo: &types.Repo{
 				ID: repo.RepoID,
 			},

@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -228,7 +228,7 @@ func TestSelectPoliciesForRepositoryMembershipUpdate(t *testing.T) {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
 	}
 
-	ids := func(policies []shared.ConfigurationPolicy) (ids []int) {
+	ids := func(policies []types.ConfigurationPolicy) (ids []int) {
 		for _, policy := range policies {
 			ids = append(ids, policy.ID)
 		}

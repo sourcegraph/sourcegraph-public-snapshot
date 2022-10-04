@@ -63,7 +63,7 @@ type FileDiff interface {
 	InternalID() string
 }
 
-func NewRepositoryComparison(ctx context.Context, db database.DB, r *RepositoryResolver, args *RepositoryComparisonInput) (*RepositoryComparisonResolver, error) {
+func NewRepositoryComparison(ctx context.Context, db database.DB, client gitserver.Client, r *RepositoryResolver, args *RepositoryComparisonInput) (*RepositoryComparisonResolver, error) {
 	var baseRevspec, headRevspec string
 	if args.Base == nil {
 		baseRevspec = "HEAD"
@@ -76,7 +76,6 @@ func NewRepositoryComparison(ctx context.Context, db database.DB, r *RepositoryR
 		headRevspec = *args.Head
 	}
 
-	client := gitserver.NewClient(db)
 	getCommit := func(ctx context.Context, repo api.RepoName, revspec string) (*GitCommitResolver, error) {
 		if revspec == gitserver.DevNullSHA {
 			return nil, nil
@@ -93,7 +92,7 @@ func NewRepositoryComparison(ctx context.Context, db database.DB, r *RepositoryR
 			return nil, err
 		}
 
-		return NewGitCommitResolver(db, r, commitID, nil), nil
+		return NewGitCommitResolver(db, client, r, commitID, nil), nil
 	}
 
 	head, err := getCommit(ctx, r.RepoName(), headRevspec)
@@ -121,22 +120,24 @@ func NewRepositoryComparison(ctx context.Context, db database.DB, r *RepositoryR
 	}
 
 	return &RepositoryComparisonResolver{
-		db:          db,
-		baseRevspec: baseRevspec,
-		headRevspec: headRevspec,
-		base:        base,
-		head:        head,
-		repo:        r,
-		rangeType:   rangeType,
+		db:              db,
+		gitserverClient: client,
+		baseRevspec:     baseRevspec,
+		headRevspec:     headRevspec,
+		base:            base,
+		head:            head,
+		repo:            r,
+		rangeType:       rangeType,
 	}, nil
 }
 
 func (r *RepositoryResolver) Comparison(ctx context.Context, args *RepositoryComparisonInput) (*RepositoryComparisonResolver, error) {
-	return NewRepositoryComparison(ctx, r.db, r, args)
+	return NewRepositoryComparison(ctx, r.db, r.gitserverClient, r, args)
 }
 
 type RepositoryComparisonResolver struct {
 	db                       database.DB
+	gitserverClient          gitserver.Client
 	baseRevspec, headRevspec string
 	base, head               *GitCommitResolver
 	rangeType                string
@@ -171,10 +172,11 @@ func (r *RepositoryComparisonResolver) Commits(
 	args *graphqlutil.ConnectionArgs,
 ) *gitCommitConnectionResolver {
 	return &gitCommitConnectionResolver{
-		db:            r.db,
-		revisionRange: r.baseRevspec + ".." + r.headRevspec,
-		first:         args.First,
-		repo:          r.repo,
+		db:              r.db,
+		gitserverClient: r.gitserverClient,
+		revisionRange:   r.baseRevspec + ".." + r.headRevspec,
+		first:           args.First,
+		repo:            r.repo,
 	}
 }
 
@@ -233,7 +235,7 @@ func computeRepositoryComparisonDiff(cmp *RepositoryComparisonResolver) ComputeD
 			}
 
 			var iter *gitserver.DiffFileIterator
-			iter, err = gitserver.NewClient(cmp.db).Diff(ctx, gitserver.DiffOptions{
+			iter, err = cmp.gitserverClient.Diff(ctx, gitserver.DiffOptions{
 				Repo:      cmp.repo.RepoName(),
 				Base:      base,
 				Head:      string(cmp.head.OID()),

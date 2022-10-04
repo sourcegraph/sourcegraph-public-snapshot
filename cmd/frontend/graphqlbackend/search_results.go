@@ -89,7 +89,7 @@ func (c *SearchResultsResolver) repositoryResolvers(ctx context.Context, ids []a
 	err := c.db.Repos().StreamMinimalRepos(ctx, database.ReposListOptions{
 		IDs: ids,
 	}, func(repo *types.MinimalRepo) {
-		resolvers = append(resolvers, NewRepositoryResolver(c.db, repo.ToRepo()))
+		resolvers = append(resolvers, NewRepositoryResolver(c.db, gitserver.NewClient(c.db), repo.ToRepo()))
 	})
 	if err != nil {
 		return nil, err
@@ -143,7 +143,7 @@ func matchesToResolvers(db database.DB, matches []result.Match) []SearchResultRe
 		if existing, ok := repoResolvers[repoKey{repoName, rev}]; ok {
 			return existing
 		}
-		resolver := NewRepositoryResolver(db, repoName.ToRepo())
+		resolver := NewRepositoryResolver(db, gitserver.NewClient(db), repoName.ToRepo())
 		resolver.RepoMatch.Rev = rev
 		repoResolvers[repoKey{repoName, rev}] = resolver
 		return resolver

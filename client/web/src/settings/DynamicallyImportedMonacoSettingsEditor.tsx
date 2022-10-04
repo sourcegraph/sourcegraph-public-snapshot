@@ -4,6 +4,7 @@ import * as H from 'history'
 import * as _monaco from 'monaco-editor' // type only
 import { Subscription } from 'rxjs'
 
+import { logger } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
@@ -225,7 +226,7 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
             const action = this.configEditor.getAction(id)
             action.run().then(
                 () => undefined,
-                error => console.error(error)
+                error => logger.error(error)
             )
         } else {
             alert('Wait for editor to load before running action.')

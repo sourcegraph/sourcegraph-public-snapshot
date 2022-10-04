@@ -9,7 +9,7 @@ import { matchPath, Route, RouteComponentProps, Switch } from 'react-router'
 import { NEVER, of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike, encodeURIPathComponent, repeatUntil } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, encodeURIPathComponent, repeatUntil, logger } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
 import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
 import { isCloneInProgressErrorLike, isRepoSeeOtherErrorLike } from '@sourcegraph/shared/src/backend/errors'
@@ -247,7 +247,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                     })
                 )
                 .catch(error => {
-                    console.error('Error adding workspace root', error)
+                    logger.error('Error adding workspace root', error)
                 })
         }
 
@@ -257,7 +257,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                 extensionsController.extHostAPI
                     .then(extensionHostAPI => extensionHostAPI.removeWorkspaceRoot(workspaceRootUri))
                     .catch(error => {
-                        console.error('Error removing workspace root', error)
+                        logger.error('Error removing workspace root', error)
                     })
             }
         }

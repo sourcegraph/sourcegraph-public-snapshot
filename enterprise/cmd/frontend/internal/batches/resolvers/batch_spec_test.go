@@ -53,7 +53,7 @@ func TestBatchSpecResolver(t *testing.T) {
 	orgname := "test-org"
 	userID := bt.CreateTestUser(t, db, false).ID
 	adminID := bt.CreateTestUser(t, db, true).ID
-	orgID := bt.InsertTestOrg(t, db, orgname)
+	orgID := bt.CreateTestOrg(t, db, orgname, userID).ID
 
 	spec, err := btypes.NewBatchSpecFromRaw(bt.TestRawBatchSpec)
 	if err != nil {

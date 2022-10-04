@@ -206,6 +206,7 @@ var siteConfigSecrets = []struct {
 	editPaths []string
 }{
 	{readPath: `executors\.accessToken`, editPaths: []string{"executors.accessToken"}},
+	{readPath: `email\.smtp.username`, editPaths: []string{"email.smtp", "username"}},
 	{readPath: `email\.smtp.password`, editPaths: []string{"email.smtp", "password"}},
 	{readPath: `organizationInvitations.signingKey`, editPaths: []string{"organizationInvitations", "signingKey"}},
 	{readPath: `githubClientSecret`, editPaths: []string{"githubClientSecret"}},

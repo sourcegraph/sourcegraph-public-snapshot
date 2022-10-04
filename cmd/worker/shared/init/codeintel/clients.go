@@ -2,11 +2,11 @@ package codeintel
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/memo"
+	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -27,12 +27,12 @@ var initGitserverClient = memo.NewMemoizedConstructor(func() (*gitserver.Client,
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	dbStore, err := InitDBStore()
+	db, err := workerdb.Init()
 	if err != nil {
 		return nil, err
 	}
 
-	return gitserver.New(database.NewDBWith(logger, dbStore), dbStore, observationContext), nil
+	return gitserver.New(database.NewDB(logger, db), observationContext), nil
 })
 
 func InitRepoUpdaterClient() *repoupdater.Client {

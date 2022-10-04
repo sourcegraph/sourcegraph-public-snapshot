@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -647,10 +648,22 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 		return nil
 	}
 
+	authProviders := conf.Get().AuthProviders
 	for _, s := range svcs {
 		rawConfig, err := s.Config.Decrypt(ctx)
 		if err != nil {
 			return err
+		}
+
+		normalized, err := ValidateExternalServiceConfig(ctx, e, ValidateExternalServiceConfigOptions{
+			Kind:            s.Kind,
+			Config:          rawConfig,
+			AuthProviders:   authProviders,
+			NamespaceUserID: s.NamespaceUserID,
+			NamespaceOrgID:  s.NamespaceOrgID,
+		})
+		if err != nil {
+			return errors.Wrapf(err, "validating service of kind %q", s.Kind)
 		}
 
 		// 🚨 SECURITY: For all GitHub and GitLab code host connections on Sourcegraph
@@ -665,7 +678,7 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			s.Config.Set(rawConfig)
 		}
 
-		if err := e.recalculateFields(s, rawConfig); err != nil {
+		if err := e.recalculateFields(s, string(normalized)); err != nil {
 			return err
 		}
 	}
@@ -970,6 +983,17 @@ func (e *externalServiceStore) Delete(ctx context.Context, id int64) (err error)
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
+
+	// We take an advisory lock here and also when syncing an external service to
+	// ensure that they can't happen at the same time.
+	lock := locker.NewWith(tx, "external_service")
+	locked, err := lock.LockInTransaction(ctx, locker.StringKey(fmt.Sprintf("%d", id)), false)
+	if err != nil {
+		return errors.Wrap(err, "getting advisory lock")
+	}
+	if !locked {
+		return errors.Errorf("could not get advisory lock for service %d", id)
+	}
 
 	// Create a temporary table where we'll store repos affected by the deletion of
 	// the external service

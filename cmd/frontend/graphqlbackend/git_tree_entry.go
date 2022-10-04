@@ -12,31 +12,22 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/cloneurls"
+	autoindexinggraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql"
+	codenavgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-)
-
-var (
-	metricLabels      = []string{"origin"}
-	codeIntelRequests = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "src_lsif_requests",
-		Help: "Counts LSIF requests.",
-	}, metricLabels)
 )
 
 // GitTreeEntryResolver resolves an entry in a Git tree in a repository. The entry can be any Git
@@ -233,9 +224,7 @@ func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 	return len(entries) == 1, nil
 }
 
-func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName *string }) (GitBlobLSIFDataResolver, error) {
-	codeIntelRequests.WithLabelValues(trace.RequestOrigin(ctx)).Inc()
-
+func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName *string }) (codenavgraphql.GitBlobLSIFDataResolver, error) {
 	var toolName string
 	if args.ToolName != nil {
 		toolName = *args.ToolName
@@ -246,7 +235,7 @@ func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName 
 		return nil, err
 	}
 
-	return EnterpriseResolvers.codeIntelResolver.GitBlobLSIFData(ctx, &GitBlobLSIFDataArgs{
+	return EnterpriseResolvers.codeIntelResolver.GitBlobLSIFData(ctx, &codenavgraphql.GitBlobLSIFDataArgs{
 		Repo:      repo,
 		Commit:    api.CommitID(r.Commit().OID()),
 		Path:      r.Path(),
@@ -255,25 +244,25 @@ func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName 
 	})
 }
 
-func (r *GitTreeEntryResolver) CodeIntelSupport(ctx context.Context) (GitBlobCodeIntelSupportResolver, error) {
+func (r *GitTreeEntryResolver) CodeIntelSupport(ctx context.Context) (autoindexinggraphql.GitBlobCodeIntelSupportResolver, error) {
 	repo, err := r.commit.repoResolver.repo(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return EnterpriseResolvers.codeIntelResolver.GitBlobCodeIntelInfo(ctx, &GitTreeEntryCodeIntelInfoArgs{
+	return EnterpriseResolvers.codeIntelResolver.GitBlobCodeIntelInfo(ctx, &autoindexinggraphql.GitTreeEntryCodeIntelInfoArgs{
 		Repo: repo,
 		Path: r.Path(),
 	})
 }
 
-func (r *GitTreeEntryResolver) CodeIntelInfo(ctx context.Context) (GitTreeCodeIntelSupportResolver, error) {
+func (r *GitTreeEntryResolver) CodeIntelInfo(ctx context.Context) (autoindexinggraphql.GitTreeCodeIntelSupportResolver, error) {
 	repo, err := r.commit.repoResolver.repo(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return EnterpriseResolvers.codeIntelResolver.GitTreeCodeIntelInfo(ctx, &GitTreeEntryCodeIntelInfoArgs{
+	return EnterpriseResolvers.codeIntelResolver.GitTreeCodeIntelInfo(ctx, &autoindexinggraphql.GitTreeEntryCodeIntelInfoArgs{
 		Repo:   repo,
 		Commit: string(r.Commit().OID()),
 		Path:   r.Path(),

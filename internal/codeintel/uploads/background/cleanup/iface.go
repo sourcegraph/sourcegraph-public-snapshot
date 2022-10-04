@@ -5,17 +5,9 @@ import (
 	"time"
 
 	sharedIndexes "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	sharedUploads "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
-
-type DBStore interface {
-	basestore.ShareableStore
-
-	Transact(ctx context.Context) (DBStore, error)
-	Done(err error) error
-}
 
 type UploadService interface {
 	GetStaleSourcedCommits(ctx context.Context, threshold time.Duration, limit int, now time.Time) ([]sharedUploads.SourcedCommits, error)
@@ -28,6 +20,9 @@ type UploadService interface {
 	HardDeleteExpiredUploads(ctx context.Context) (int, error)
 
 	DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (int, error)
+
+	// Workerutil
+	WorkerutilStore() dbworkerstore.Store
 }
 
 type AutoIndexingService interface {
@@ -37,7 +32,3 @@ type AutoIndexingService interface {
 
 	DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error)
 }
-
-type DBStoreShim struct{ *dbstore.Store }
-
-func (s DBStoreShim) Transact(ctx context.Context) (DBStore, error) { return s, nil }

@@ -26,10 +26,6 @@ describe('Code insight create insight page', () => {
             driver,
             currentTest: this.currentTest!,
             directory: __dirname,
-            customContext: {
-                // Enforce using a new gql API for code insights pages
-                codeInsightsGqlApiEnabled: true,
-            },
         })
     })
 
@@ -152,7 +148,7 @@ describe('Code insight create insight page', () => {
                     repositories: { nodes: [] },
                 }),
 
-                FirstStepCreateSearchBasedInsight: () => ({
+                CreateSearchBasedInsight: () => ({
                     __typename: 'Mutation',
                     createLineChartSearchInsight: {
                         view: {
@@ -291,7 +287,7 @@ describe('Code insight create insight page', () => {
 
         const addToUserConfigRequest = await testContext.waitForGraphQLRequest(async () => {
             await driver.page.click('[data-testid="insight-save-button"]')
-        }, 'FirstStepCreateSearchBasedInsight')
+        }, 'CreateSearchBasedInsight')
 
         // Check that new org settings config has edited insight
         assert.deepStrictEqual(addToUserConfigRequest.input, {

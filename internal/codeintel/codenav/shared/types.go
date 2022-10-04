@@ -1,8 +1,7 @@
 package shared
 
 import (
-	"time"
-
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
@@ -14,19 +13,7 @@ type Symbol struct {
 type Location struct {
 	DumpID int
 	Path   string
-	Range  Range
-}
-
-// Range is an inclusive bounds within a file.
-type Range struct {
-	Start Position
-	End   Position
-}
-
-// Position is a unique position within a file.
-type Position struct {
-	Line      int
-	Character int
+	Range  types.Range
 }
 
 type RequestArgs struct {
@@ -39,22 +26,13 @@ type RequestArgs struct {
 	RawCursor    string
 }
 
-// UploadLocation is a path and range pair from within a particular upload. The target commit
-// denotes the target commit for which the location was set (the originally requested commit).
-type UploadLocation struct {
-	Dump         Dump
-	Path         string
-	TargetCommit string
-	TargetRange  Range
-}
-
 // DiagnosticAtUpload is a diagnostic from within a particular upload. The adjusted commit denotes
 // the target commit for which the location was adjusted (the originally requested commit).
 type DiagnosticAtUpload struct {
 	Diagnostic
-	Dump           Dump
+	Dump           types.Dump
 	AdjustedCommit string
-	AdjustedRange  Range
+	AdjustedRange  types.Range
 }
 
 // Diagnostic describes diagnostic information attached to a location within a
@@ -65,42 +43,20 @@ type Diagnostic struct {
 	precise.DiagnosticData
 }
 
-// Dump is a subset of the lsif_uploads table (queried via the lsif_dumps_with_repository_name view)
-// and stores only processed records.
-type Dump struct {
-	ID                int        `json:"id"`
-	Commit            string     `json:"commit"`
-	Root              string     `json:"root"`
-	VisibleAtTip      bool       `json:"visibleAtTip"`
-	UploadedAt        time.Time  `json:"uploadedAt"`
-	State             string     `json:"state"`
-	FailureMessage    *string    `json:"failureMessage"`
-	StartedAt         *time.Time `json:"startedAt"`
-	FinishedAt        *time.Time `json:"finishedAt"`
-	ProcessAfter      *time.Time `json:"processAfter"`
-	NumResets         int        `json:"numResets"`
-	NumFailures       int        `json:"numFailures"`
-	RepositoryID      int        `json:"repositoryId"`
-	RepositoryName    string     `json:"repositoryName"`
-	Indexer           string     `json:"indexer"`
-	IndexerVersion    string     `json:"indexerVersion"`
-	AssociatedIndexID *int       `json:"associatedIndex"`
-}
-
 // AdjustedCodeIntelligenceRange stores definition, reference, and hover information for all ranges
 // within a block of lines. The definition and reference locations have been adjusted to fit the
 // target (originally requested) commit.
 type AdjustedCodeIntelligenceRange struct {
-	Range           Range
-	Definitions     []UploadLocation
-	References      []UploadLocation
-	Implementations []UploadLocation
+	Range           types.Range
+	Definitions     []types.UploadLocation
+	References      []types.UploadLocation
+	Implementations []types.UploadLocation
 	HoverText       string
 }
 
 // CodeIntelligenceRange pairs a range with its definitions, references, implementations, and hover text.
 type CodeIntelligenceRange struct {
-	Range           Range
+	Range           types.Range
 	Definitions     []Location
 	References      []Location
 	Implementations []Location
@@ -130,10 +86,10 @@ type ImplementationsCursor struct {
 
 // cursorAdjustedUpload
 type CursorToVisibleUpload struct {
-	DumpID                int      `json:"dumpID"`
-	TargetPath            string   `json:"adjustedPath"`
-	TargetPosition        Position `json:"adjustedPosition"`
-	TargetPathWithoutRoot string   `json:"adjustedPathInBundle"`
+	DumpID                int            `json:"dumpID"`
+	TargetPath            string         `json:"adjustedPath"`
+	TargetPosition        types.Position `json:"adjustedPosition"`
+	TargetPathWithoutRoot string         `json:"adjustedPathInBundle"`
 }
 
 // localCursor is an upload offset and a location offset within that upload.

@@ -29,7 +29,7 @@ interface CustomInsightsOperations {
     BulkSearch: () => Record<string, BulkSearchFields>
 }
 
-interface OverrideGraphQLExtensionsProps {
+export interface OverrideGraphQLExtensionsProps {
     testContext: WebIntegrationTestContext
     overrides?: Partial<WebGraphQlOperations & SharedGraphQlOperations & CustomInsightsOperations>
 }

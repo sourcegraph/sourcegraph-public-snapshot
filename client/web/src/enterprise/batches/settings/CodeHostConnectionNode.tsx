@@ -3,6 +3,7 @@ import React, { useCallback, useRef, useState } from 'react'
 import { mdiCheckCircleOutline, mdiCheckboxBlankCircleOutline } from '@mdi/js'
 import classNames from 'classnames'
 
+import { logger } from '@sourcegraph/common'
 import { useLazyQuery } from '@sourcegraph/http-client'
 import { Badge, Button, Icon, H3, Tooltip } from '@sourcegraph/wildcard'
 
@@ -81,7 +82,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
 
     // At the moment, log the error since it is not being displayed on the page.
     if (checkCredError) {
-        console.log(checkCredError.message)
+        logger.error(checkCredError.message)
     }
 
     return (
