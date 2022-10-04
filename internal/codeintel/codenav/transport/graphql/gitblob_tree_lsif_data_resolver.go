@@ -3,7 +3,7 @@ package graphql
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/sharedresolvers"
+	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
 )
 
 type GitTreeLSIFDataResolver interface {

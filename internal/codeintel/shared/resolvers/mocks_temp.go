@@ -18,7 +18,7 @@ import (
 
 // MockAutoIndexingService is a mock implementation of the
 // AutoIndexingService interface (from the package
-// github.com/sourcegraph/sourcegraph/internal/codeintel/sharedresolvers)
+// github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers)
 // used for unit testing.
 type MockAutoIndexingService struct {
 	// GetIndexByIDFunc is an instance of a mock function object controlling
@@ -695,7 +695,7 @@ func (c AutoIndexingServiceGetUnsafeDBFuncCall) Results() []interface{} {
 
 // MockUploadsService is a mock implementation of the UploadsService
 // interface (from the package
-// github.com/sourcegraph/sourcegraph/internal/codeintel/sharedresolvers)
+// github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers)
 // used for unit testing.
 type MockUploadsService struct {
 	// GetAuditLogsForUploadFunc is an instance of a mock function object

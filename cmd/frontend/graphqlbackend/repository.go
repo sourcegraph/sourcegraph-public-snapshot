@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	autoindex "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql"
 	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
-	resolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/sharedresolvers"
+	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
 	uploads "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -362,14 +362,14 @@ func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 	return r.err
 }
 
-func (r *RepositoryResolver) LSIFUploads(ctx context.Context, args *uploads.LSIFUploadsQueryArgs) (resolvers.LSIFUploadConnectionResolver, error) {
+func (r *RepositoryResolver) LSIFUploads(ctx context.Context, args *uploads.LSIFUploadsQueryArgs) (sharedresolvers.LSIFUploadConnectionResolver, error) {
 	return EnterpriseResolvers.codeIntelResolver.LSIFUploadsByRepo(ctx, &uploads.LSIFRepositoryUploadsQueryArgs{
 		LSIFUploadsQueryArgs: args,
 		RepositoryID:         r.ID(),
 	})
 }
 
-func (r *RepositoryResolver) LSIFIndexes(ctx context.Context, args *autoindex.LSIFIndexesQueryArgs) (resolvers.LSIFIndexConnectionResolver, error) {
+func (r *RepositoryResolver) LSIFIndexes(ctx context.Context, args *autoindex.LSIFIndexesQueryArgs) (sharedresolvers.LSIFIndexConnectionResolver, error) {
 	return EnterpriseResolvers.codeIntelResolver.LSIFIndexesByRepo(ctx, &autoindex.LSIFRepositoryIndexesQueryArgs{
 		LSIFIndexesQueryArgs: args,
 		RepositoryID:         r.ID(),
@@ -384,7 +384,7 @@ func (r *RepositoryResolver) CodeIntelligenceCommitGraph(ctx context.Context) (u
 	return EnterpriseResolvers.codeIntelResolver.CommitGraph(ctx, r.ID())
 }
 
-func (r *RepositoryResolver) CodeIntelSummary(ctx context.Context) (resolvers.CodeIntelRepositorySummaryResolver, error) {
+func (r *RepositoryResolver) CodeIntelSummary(ctx context.Context) (sharedresolvers.CodeIntelRepositorySummaryResolver, error) {
 	return EnterpriseResolvers.codeIntelResolver.RepositorySummary(ctx, r.ID())
 }
 
