@@ -11,7 +11,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/regexp"
-	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -21,7 +20,7 @@ import (
 )
 
 func init() {
-	maximumRepositoriesInspectedPerSecond = rate.Inf
+	// maximumRepositoriesInspectedPerSecond = rate.Inf
 	maximumIndexJobsPerInferredConfiguration = 50
 }
 
