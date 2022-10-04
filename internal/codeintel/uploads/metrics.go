@@ -19,9 +19,7 @@ type expirationMetrics struct {
 	numCommitsScanned      prometheus.Counter
 }
 
-var NewMetrics = newMetrics
-
-func newMetrics(observationContext *observation.Context) *expirationMetrics {
+func newExpirationMetrics(observationContext *observation.Context) *expirationMetrics {
 	counter := func(name, help string) prometheus.Counter {
 		counter := prometheus.NewCounter(prometheus.CounterOpts{
 			Name: name,

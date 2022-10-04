@@ -1,4 +1,4 @@
-package cleanup
+package uploads
 
 import (
 	"context"

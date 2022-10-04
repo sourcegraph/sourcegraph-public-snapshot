@@ -4,14 +4,19 @@ import (
 	"context"
 	"time"
 
+	"github.com/grafana/regexp"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	sharedIndexes "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
 	codeintelgitserver "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	sharedUploads "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 type Locker interface {
@@ -33,6 +38,11 @@ type GitserverClient interface {
 	DefaultBranchContains(ctx context.Context, repositoryID int, commit string) (bool, error)
 
 	CommitsUniqueToBranch(ctx context.Context, repositoryID int, branchName string, isDefaultBranch bool, maxAge *time.Time) (map[string]time.Time, error)
+	Head(ctx context.Context, repositoryID int) (string, bool, error)
+	CommitExists(ctx context.Context, repositoryID int, commit string) (bool, error)
+	ListFiles(ctx context.Context, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error)
+	FileExists(ctx context.Context, repositoryID int, commit, file string) (bool, error)
+	RawContents(ctx context.Context, repositoryID int, commit, file string) ([]byte, error)
 }
 
 type RepoStore interface {
@@ -59,4 +69,28 @@ type PolicyService interface {
 
 type PolicyMatcher interface {
 	CommitsDescribedByPolicy(ctx context.Context, repositoryID int, policies []codeinteltypes.ConfigurationPolicy, now time.Time, filterCommits ...string) (map[string][]policies.PolicyMatch, error)
+}
+
+type UploadServiceForCleanup interface {
+	GetStaleSourcedCommits(ctx context.Context, threshold time.Duration, limit int, now time.Time) ([]sharedUploads.SourcedCommits, error)
+	DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (int, int, error)
+	UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (int, error)
+
+	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error)
+	DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (int, error)
+	SoftDeleteExpiredUploads(ctx context.Context) (int, error)
+	HardDeleteExpiredUploads(ctx context.Context) (int, error)
+
+	DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (int, error)
+
+	// Workerutil
+	WorkerutilStore() dbworkerstore.Store
+}
+
+type AutoIndexingService interface {
+	GetStaleSourcedCommits(ctx context.Context, threshold time.Duration, limit int, now time.Time) ([]sharedIndexes.SourcedCommits, error)
+	DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (int, error)
+	UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (int, error)
+
+	DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error)
 }

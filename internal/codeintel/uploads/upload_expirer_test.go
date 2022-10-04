@@ -26,7 +26,7 @@ func TestUploadExpirer(t *testing.T) {
 		uploadSvc:     uploadSvc,
 		policySvc:     policySvc,
 		policyMatcher: policyMatcher,
-		metrics:       newMetrics(&observation.TestContext),
+		metrics:       newExpirationMetrics(&observation.TestContext),
 		logger:        logtest.Scoped(t),
 
 		repositoryProcessDelay: 24 * time.Hour,

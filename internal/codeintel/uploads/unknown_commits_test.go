@@ -1,4 +1,4 @@
-package cleanup
+package uploads
 
 import (
 	"context"
@@ -7,24 +7,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/derision-test/glock"
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
-
-func init() {
-	ConfigInst.MinimumTimeSinceLastCheck = 1 * time.Hour
-	ConfigInst.CommitResolverBatchSize = 10
-	ConfigInst.AuditLogMaxAge = 1 * time.Hour
-	ConfigInst.CommitResolverMaximumCommitLag = 1 * time.Hour
-	ConfigInst.UploadTimeout = 1 * time.Hour
-}
 
 func TestUnknownCommitsJanitor(t *testing.T) {
 	resolveRevisionFunc := func(commit string) error {
@@ -101,21 +93,28 @@ var testSourcedCommits = []shared.SourcedCommits{
 }
 
 func testUnknownCommitsJanitor(t *testing.T, resolveRevisionFunc func(commit string) error, expectedCalls []updateInvocation) {
-	gitserver.Mocks.ResolveRevision = func(spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+	gitserverClient := NewMockGitserverClient()
+	gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, i int, spec string) (api.CommitID, error) {
 		return api.CommitID(spec), resolveRevisionFunc(spec)
-	}
-	defer gitserver.ResetMocks()
+	})
 
-	uploadSvc := NewMockUploadService()
+	uploadSvc := NewMockUploadServiceForCleanup()
 	uploadSvc.GetStaleSourcedCommitsFunc.SetDefaultReturn(testSourcedCommits, nil)
 	autoIndexingSvc := NewMockAutoIndexingService()
-	janitor := newJanitor(
-		nil,
-		uploadSvc,
-		autoIndexingSvc,
-		logtest.Scoped(t),
-		newMetrics(&observation.TestContext),
-	)
+	janitor := &janitor{
+		gsc:       gitserverClient,
+		uploadSvc: uploadSvc,
+		indexSvc:  autoIndexingSvc,
+		clock:     glock.NewRealClock(),
+		logger:    logtest.Scoped(t),
+		metrics:   newJanitorMetrics(&observation.TestContext),
+
+		minimumTimeSinceLastCheck:      1 * time.Hour,
+		commitResolverBatchSize:        10,
+		auditLogMaxAge:                 1 * time.Hour,
+		commitResolverMaximumCommitLag: 1 * time.Hour,
+		uploadTimeout:                  1 * time.Hour,
+	}
 
 	if err := janitor.Handle(context.Background()); err != nil {
 		t.Fatalf("unexpected error running janitor: %s", err)

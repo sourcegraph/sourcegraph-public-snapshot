@@ -1,4 +1,4 @@
-package cleanup
+package uploads
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
@@ -6,13 +6,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type metrics2 struct {
+type resetterMetrics struct {
 	numUploadResets        prometheus.Counter
 	numUploadResetFailures prometheus.Counter
 	numUploadResetErrors   prometheus.Counter
 }
 
-func newMetrics2(observationContext *observation.Context) *metrics2 {
+func newResetterMetrics(observationContext *observation.Context) *resetterMetrics {
 	counter := func(name, help string) prometheus.Counter {
 		counter := prometheus.NewCounter(prometheus.CounterOpts{
 			Name: name,
@@ -36,7 +36,7 @@ func newMetrics2(observationContext *observation.Context) *metrics2 {
 		"The number of errors that occur during upload record resets.",
 	)
 
-	return &metrics2{
+	return &resetterMetrics{
 		numUploadResets:        numUploadResets,
 		numUploadResetFailures: numUploadResetFailures,
 		numUploadResetErrors:   numUploadResetErrors,
