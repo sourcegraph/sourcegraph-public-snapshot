@@ -48,6 +48,7 @@ function parseReport(commitFilename: string, mergeBaseFilename: string): Report 
 
     const statoscope = path.join(__dirname, '..', '..', '..', 'node_modules', '.bin', 'statoscope')
 
+    console.log(`cat "${queryFile}" | ${statoscope} query -i "${commitFile}" -i "${mergeBaseFile}"`)
     const rawReport = shelljs.exec(`cat "${queryFile}" | ${statoscope} query -i "${commitFile}" -i "${mergeBaseFile}"`)
 
     return JSON.parse(rawReport) as Report

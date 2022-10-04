@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -204,8 +203,6 @@ func addWebEnterpriseBuild(pipeline *bk.Pipeline) {
 	commit := os.Getenv("BUILDKITE_COMMIT")
 	branch := os.Getenv("BUILDKITE_BRANCH")
 
-	statsFilename := "stats-" + commit + ".json"
-
 	cmds := []bk.StepOpt{
 		withYarnCache(),
 		bk.Cmd("dev/ci/yarn-build.sh client/web"),
@@ -215,40 +212,21 @@ func addWebEnterpriseBuild(pipeline *bk.Pipeline) {
 		// To ensure the Bundlesize output can be diffed to the baseline on main
 		bk.Env("WEBPACK_USE_NAMED_CHUNKS", "true"),
 		// Emit a stats.json file for bundle size diffs
-		bk.Env("WEBPACK_EXPORT_STATS_FILENAME", statsFilename),
+		bk.Env("WEBPACK_EXPORT_STATS_FILENAME", "stats-"+commit+".json"),
 	}
 
 	if branch == "main" {
 		// On main builds, we want to persist the generated stats file to the
 		// cache.
-		cmds = append(cmds, withBundleSizeCache(commit, statsFilename))
+		cmds = append(cmds, withBundleSizeCache())
 	} else {
-		// On feature branch builds, we want to mount the persisted stats file
-		// from the commit that is last shared with main (aka the merge base).
-		//
-		// Note that the build will not overwrite the cached stats file, so the
-		// file will not be updated until the feature branch is merged into
-		// main.
-
-		var mergeBaseBytes []byte
-		mergeBaseBytes, err := exec.Command("git", "merge-base", "HEAD", "main").Output()
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		if mergeBaseBytes != nil {
-			// For testing purposes we assume that this is the latest main build
-			// since we have no data for main yet.
-			mergeBase := "fcf21d15d4369f731504820dfd4526b5df7549b4" // string(mergeBaseBytes)
-
-			cmds = append(cmds,
-				withBundleSizeCache(mergeBase, "stats-"+mergeBase+".json"),
-				bk.Env("BRANCH", branch),
-				bk.Env("COMMIT", commit),
-				bk.Env("MERGE_BASE", mergeBase),
-				bk.Cmd("dev/ci/report-bundle-diff.sh"),
-			)
-		}
+		// On feature builds, we want to run report-bundle-diff.sh to compare
+		// the branch against the merge base.
+		cmds = append(cmds,
+			bk.Env("BRANCH", branch),
+			bk.Env("COMMIT", commit),
+			bk.Cmd("dev/ci/report-bundle-diff.sh"),
+		)
 	}
 
 	pipeline.AddStep(":webpack::globe_with_meridians::moneybag: Enterprise build", cmds...)

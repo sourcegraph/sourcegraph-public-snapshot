@@ -27,7 +27,7 @@ $assetsAsyncSizeA: $chunksAsyncA.$getChunksAssetsSize(compilations[0].hash).redu
 $assetsAsyncSizeB: $chunksAsyncB.$getChunksAssetsSize(compilations[1].hash).reduce(=> size + $$, 0);
 
 [
-  // These hashes are neede to generate a the diff link in the Statoscope report
+  // These hashes are needed to generate a the diff link in the Statoscope report
   // e.g. #diff&diffWith=fd291e3f6ddc5daf0412&hash=adb653b96df5a0f24aec
   {
     hash: compilations[0].hash,
