@@ -1,4 +1,4 @@
-package cleanup
+package uploads
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
@@ -6,7 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type metrics struct {
+type janitorMetrics struct {
 	// Data retention metrics
 	numAuditLogRecordsExpired prometheus.Counter
 	numErrors                 prometheus.Counter
@@ -15,9 +15,7 @@ type metrics struct {
 	numUploadsPurged          prometheus.Counter
 }
 
-var NewMetrics = newMetrics
-
-func newMetrics(observationContext *observation.Context) *metrics {
+func newJanitorMetrics(observationContext *observation.Context) *janitorMetrics {
 	counter := func(name, help string) prometheus.Counter {
 		counter := prometheus.NewCounter(prometheus.CounterOpts{
 			Name: name,
@@ -51,7 +49,7 @@ func newMetrics(observationContext *observation.Context) *metrics {
 		"The number of uploads for which records in the codeintel database were removed.",
 	)
 
-	return &metrics{
+	return &janitorMetrics{
 		numAuditLogRecordsExpired: numAuditLogRecordsExpired,
 		numErrors:                 numErrors,
 		numIndexRecordsRemoved:    numIndexRecordsRemoved,

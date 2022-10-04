@@ -52,7 +52,5 @@ func (j *uploadBackfillerJob) Routines(startupCtx context.Context, logger log.Lo
 
 	uploadSvc := uploads.GetService(db, codeIntelDB, gitserverClient)
 
-	return []goroutine.BackgroundRoutine{
-		backfill.NewCommittedAtBackfiller(uploadSvc),
-	}, nil
+	return backfill.NewCommittedAtBackfiller(uploadSvc), nil
 }

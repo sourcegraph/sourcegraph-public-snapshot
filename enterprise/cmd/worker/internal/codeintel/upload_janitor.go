@@ -3,9 +3,6 @@ package codeintel
 import (
 	"context"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"go.opentelemetry.io/otel"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
@@ -19,8 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 type uploadJanitorJob struct{}
@@ -40,13 +35,6 @@ func (j *uploadJanitorJob) Config() []env.Config {
 }
 
 func (j *uploadJanitorJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	observationContext := &observation.Context{
-		Logger:     logger.Scoped("routines", "codeintel job routines"),
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
-	metrics := cleanup.NewMetrics(observationContext)
-
 	// Initialize stores
 	rawDB, err := workerdb.Init()
 	if err != nil {
@@ -65,7 +53,6 @@ func (j *uploadJanitorJob) Routines(startupCtx context.Context, logger log.Logge
 	if err != nil {
 		return nil, err
 	}
-	repoUpdaterClient := codeintel.InitRepoUpdaterClient()
 
 	// Initialize services
 	uploadSvc := uploads.GetService(db, codeIntelDB, gitserverClient)

@@ -84,14 +84,20 @@ type service interface {
 }
 
 type Service struct {
-	store           store.Store
-	repoStore       RepoStore
-	workerutilStore dbworkerstore.Store
-	lsifstore       lsifstore.LsifStore
-	gitserverClient GitserverClient
-	locker          Locker
-	logger          logger.Logger
-	operations      *operations
+	store             store.Store
+	repoStore         RepoStore
+	workerutilStore   dbworkerstore.Store
+	lsifstore         lsifstore.LsifStore
+	gitserverClient   GitserverClient
+	policySvc         PolicyService
+	autoIndexingSvc   AutoIndexingService
+	expirationMetrics *expirationMetrics
+	resetterMetrics   *resetterMetrics
+	janitorMetrics    *janitorMetrics
+	policyMatcher     PolicyMatcher
+	locker            Locker
+	logger            logger.Logger
+	operations        *operations
 }
 
 func newService(
@@ -99,6 +105,9 @@ func newService(
 	repoStore RepoStore,
 	lsifstore lsifstore.LsifStore,
 	gsc GitserverClient,
+	policySvc PolicyService,
+	autoindexingSvc AutoIndexingService,
+	policyMatcher PolicyMatcher,
 	locker Locker,
 	observationContext *observation.Context,
 ) *Service {
@@ -108,14 +117,20 @@ func newService(
 	dbworker.InitPrometheusMetric(observationContext, workerutilStore, "codeintel", "upload", nil)
 
 	return &Service{
-		store:           store,
-		repoStore:       repoStore,
-		workerutilStore: workerutilStore,
-		lsifstore:       lsifstore,
-		gitserverClient: gsc,
-		locker:          locker,
-		logger:          observationContext.Logger,
-		operations:      newOperations(observationContext),
+		store:             store,
+		repoStore:         repoStore,
+		workerutilStore:   workerutilStore,
+		lsifstore:         lsifstore,
+		gitserverClient:   gsc,
+		policySvc:         policySvc,
+		autoIndexingSvc:   autoindexingSvc,
+		expirationMetrics: newExpirationMetrics(observationContext),
+		resetterMetrics:   newResetterMetrics(observationContext),
+		janitorMetrics:    newJanitorMetrics(observationContext),
+		policyMatcher:     policyMatcher,
+		locker:            locker,
+		logger:            observationContext.Logger,
+		operations:        newOperations(observationContext),
 	}
 }
 

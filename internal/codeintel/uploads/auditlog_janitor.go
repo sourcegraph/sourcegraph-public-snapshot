@@ -1,4 +1,4 @@
-package cleanup
+package uploads
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 )
 
 func (j *janitor) HandleAuditLog(ctx context.Context) (err error) {
-	count, err := j.uploadSvc.DeleteOldAuditLogs(ctx, ConfigInst.AuditLogMaxAge, time.Now())
+	count, err := j.uploadSvc.DeleteOldAuditLogs(ctx, j.auditLogMaxAge, time.Now())
 	if err != nil {
 		return errors.Wrap(err, "dbstore.DeleteOldAuditLogs")
 	}

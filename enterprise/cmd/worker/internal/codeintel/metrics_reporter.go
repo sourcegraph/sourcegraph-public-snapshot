@@ -80,6 +80,7 @@ func (j *metricsReporterJob) Routines(startupCtx context.Context, logger log.Log
 	}
 
 	// Initialize metrics
+  uploadSvc.MetricReporters(observationContext)
 	dbworker.InitPrometheusMetric(observationContext, dependencySyncStore, "codeintel", "dependency_sync", nil)
 	dbworker.InitPrometheusMetric(observationContext, dependencyIndexingStore, "codeintel", "dependency_index", nil)
 

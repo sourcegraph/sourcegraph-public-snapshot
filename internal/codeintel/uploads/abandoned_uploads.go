@@ -1,4 +1,4 @@
-package cleanup
+package uploads
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 
 // HandleAbandonedUpload removes upload records which have not left the uploading state within the given TTL.
 func (j *janitor) HandleAbandonedUpload(ctx context.Context) error {
-	count, err := j.uploadSvc.DeleteUploadsStuckUploading(ctx, time.Now().UTC().Add(-ConfigInst.UploadTimeout))
+	count, err := j.uploadSvc.DeleteUploadsStuckUploading(ctx, time.Now().UTC().Add(-j.uploadTimeout))
 	if err != nil {
 		return errors.Wrap(err, "dbstore.DeleteUploadsStuckUploading")
 	}

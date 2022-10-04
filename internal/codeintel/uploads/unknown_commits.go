@@ -1,23 +1,21 @@
-package cleanup
+package uploads
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	autoindexing "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	uploads "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func (j *janitor) HandleUnknownCommit(ctx context.Context) (err error) {
-	staleUploads, err := j.uploadSvc.GetStaleSourcedCommits(ctx, ConfigInst.MinimumTimeSinceLastCheck, ConfigInst.CommitResolverBatchSize, j.clock.Now())
+	staleUploads, err := j.uploadSvc.GetStaleSourcedCommits(ctx, j.minimumTimeSinceLastCheck, j.commitResolverBatchSize, j.clock.Now())
 	if err != nil {
 		return errors.Wrap(err, "uploadSvc.StaleSourcedCommits")
 	}
 
-	staleIndexes, err := j.indexSvc.GetStaleSourcedCommits(ctx, ConfigInst.MinimumTimeSinceLastCheck, ConfigInst.CommitResolverBatchSize, j.clock.Now())
+	staleIndexes, err := j.indexSvc.GetStaleSourcedCommits(ctx, j.minimumTimeSinceLastCheck, j.commitResolverBatchSize, j.clock.Now())
 	if err != nil {
 		return errors.Wrap(err, "indexSvc.StaleSourcedCommits")
 	}
@@ -76,7 +74,7 @@ func (j *janitor) handleSourcedCommits(ctx context.Context, sc SourcedCommits) e
 
 func (j *janitor) handleCommit(ctx context.Context, repositoryID int, repositoryName, commit string) error {
 	var shouldDelete bool
-	_, err := j.gsc.ResolveRevision(ctx, api.RepoName(repositoryName), commit, gitserver.ResolveRevisionOptions{})
+	_, err := j.gsc.ResolveRevision(ctx, repositoryID, commit)
 	if err == nil {
 		// If we have no error then the commit is resolvable and we shouldn't touch it.
 		shouldDelete = false
@@ -96,7 +94,7 @@ func (j *janitor) handleCommit(ctx context.Context, repositoryID int, repository
 	}
 
 	if shouldDelete {
-		_, uploadsDeleted, err := j.uploadSvc.DeleteSourcedCommits(ctx, repositoryID, commit, ConfigInst.CommitResolverMaximumCommitLag, j.clock.Now())
+		_, uploadsDeleted, err := j.uploadSvc.DeleteSourcedCommits(ctx, repositoryID, commit, j.commitResolverMaximumCommitLag, j.clock.Now())
 		if err != nil {
 			return errors.Wrap(err, "uploadSvc.DeleteSourcedCommits")
 		}
@@ -105,7 +103,7 @@ func (j *janitor) handleCommit(ctx context.Context, repositoryID int, repository
 			j.metrics.numUploadRecordsRemoved.Add(float64(uploadsDeleted))
 		}
 
-		indexesDeleted, err := j.indexSvc.DeleteSourcedCommits(ctx, repositoryID, commit, ConfigInst.CommitResolverMaximumCommitLag, j.clock.Now())
+		indexesDeleted, err := j.indexSvc.DeleteSourcedCommits(ctx, repositoryID, commit, j.commitResolverMaximumCommitLag, j.clock.Now())
 		if err != nil {
 			return errors.Wrap(err, "indexSvc.DeleteSourcedCommits")
 		}
