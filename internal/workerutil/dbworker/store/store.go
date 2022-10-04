@@ -238,6 +238,8 @@ type Options struct {
 	// Scan is the function used to scan a resultset into a slice of the expected type.
 	Scan ResultsetScanFn
 
+	Enqueue EnqueueFn
+
 	// OrderByExpression is the SQL expression used to order candidate records when selecting the next
 	// batch of work to perform. This expression may use the alias provided in `ViewName`, if one was
 	// supplied.
@@ -287,6 +289,8 @@ type Options struct {
 // See the `CloseRows` function in the store/base package for suggested
 // implementation details.
 type ResultsetScanFn func(rows *sql.Rows, err error) ([]workerutil.Record, error)
+
+type EnqueueFn func(ctx context.Context, handle *basestore.Store, records []workerutil.Record) error
 
 // New creates a new store with the given database handle and options.
 func New(logger log.Logger, handle basestore.TransactableHandle, options Options) Store {
@@ -919,6 +923,21 @@ SET {state} = 'completed', {finished_at} = clock_timestamp()
 WHERE %s
 RETURNING {id}
 `
+
+func (s *store) CompleteAndYield(ctx context.Context, id int, yield []workerutil.Record) (_ bool, err error) {
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return false, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	err = s.options.Enqueue(ctx, tx, yield)
+	if err != nil {
+		return false, errors.Wrap(err, "Enqueue")
+	}
+
+	return s.With(tx).MarkComplete(ctx, id, MarkFinalOptions{})
+}
 
 // MarkErrored attempts to update the state of the record to errored. This method will only have an effect
 // if the current state of the record is processing. A requeued record or a record already marked with an

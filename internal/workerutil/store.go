@@ -51,6 +51,10 @@ type Store interface {
 	MarkFailed(ctx context.Context, id int, failureMessage string) (bool, error)
 }
 
+type WithYield interface {
+	CompleteAndYield(ctx context.Context, id int, yield []Record) (bool, error)
+}
+
 // ExecutionLogEntry represents a command run by the executor.
 type ExecutionLogEntry struct {
 	Key        string    `json:"key"`

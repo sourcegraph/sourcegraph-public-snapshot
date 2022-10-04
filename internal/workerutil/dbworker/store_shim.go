@@ -69,6 +69,14 @@ func (s *storeShim) CanceledJobs(ctx context.Context, knownIDs []int) ([]int, er
 	return s.Store.CanceledJobs(ctx, knownIDs, store.CanceledJobsOptions{})
 }
 
+func (s *storeShim) CompleteAndYield(ctx context.Context, id int, yield []workerutil.Record) (bool, error) {
+	if v, ok := s.Store.(workerutil.WithYield); ok {
+		return v.CompleteAndYield(ctx, id, yield)
+	} else {
+		return false, errors.New("store does not support CompleteAndYield")
+	}
+}
+
 // ErrNotConditions occurs when a PreDequeue handler returns non-sql query extra arguments.
 var ErrNotConditions = errors.New("expected slice of *sqlf.Query values")
 

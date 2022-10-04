@@ -20,6 +20,10 @@ func (f HandlerFunc) Handle(ctx context.Context, logger log.Logger, record Recor
 	return f(ctx, logger, record)
 }
 
+type YieldingHandler interface {
+	HandleAndYield(ctx context.Context, logger log.Logger, record Record) ([]Record, error)
+}
+
 // WithPreDequeue is an extension of the Handler interface.
 type WithPreDequeue interface {
 	// PreDequeue is called, if implemented, directly before a call to the store's Dequeue method.

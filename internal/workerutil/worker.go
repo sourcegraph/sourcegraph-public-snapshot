@@ -389,8 +389,14 @@ func (w *Worker) handle(ctx, workerContext context.Context, record Record) (err 
 		defer cancel()
 	}
 
-	// Open namespace for logger to avoid key collisions on fields
-	handleErr = w.handler.Handle(ctx, handleLog.With(log.Namespace("handle")), record)
+	var yielded []Record
+	if _, ok := w.handler.(YieldingHandler); ok {
+		// Open namespace for logger to avoid key collisions on fields
+		yielded, handleErr = w.handler.(YieldingHandler).HandleAndYield(ctx, handleLog.With(log.Namespace("handle")), record)
+	} else {
+		// Open namespace for logger to avoid key collisions on fields
+		handleErr = w.handler.Handle(ctx, handleLog.With(log.Namespace("handle")), record)
+	}
 
 	if w.options.MaximumRuntimePerJob > 0 && errors.Is(handleErr, context.DeadlineExceeded) {
 		handleErr = errors.Wrap(handleErr, fmt.Sprintf("job exceeded maximum execution time of %s", w.options.MaximumRuntimePerJob))
@@ -409,7 +415,19 @@ func (w *Worker) handle(ctx, workerContext context.Context, record Record) (err 
 			handleLog.Warn("Marked record as errored", log.Error(handleErr))
 		}
 	} else {
-		if marked, markErr := w.store.MarkComplete(workerContext, record.RecordID()); markErr != nil {
+		var marked bool
+		var markErr error
+
+		_, ok := w.store.(WithYield)
+		if len(yielded) > 0 && ok {
+			marked, markErr = w.store.(WithYield).CompleteAndYield(ctx, record.RecordID(), yielded)
+		} else if len(yielded) > 0 && !ok {
+			// error
+		} else {
+			marked, markErr = w.store.MarkComplete(workerContext, record.RecordID())
+		}
+
+		if markErr != nil {
 			return errors.Wrap(markErr, "store.MarkComplete")
 		} else if marked {
 			handleLog.Debug("Marked record as complete")
