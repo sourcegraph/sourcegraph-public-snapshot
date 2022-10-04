@@ -34,11 +34,8 @@ type ExternalServiceStore interface {
 	List(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error)
 }
 
-type IndexEnqueuer interface {
-	QueueIndexesForPackage(ctx context.Context, pkg precise.Package) error
-}
-
 type AutoIndexingServiceForDepScheduling interface {
+	QueueIndexesForPackage(ctx context.Context, pkg precise.Package) error
 	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error)
 }
 

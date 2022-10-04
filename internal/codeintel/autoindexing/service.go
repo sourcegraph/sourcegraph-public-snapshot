@@ -83,7 +83,6 @@ type Service struct {
 	repoStore               ReposStore
 	gitserverRepoStore      GitserverRepoStore
 	externalServiceStore    ExternalServiceStore
-	enqueuer                IndexEnqueuer
 	policyMatcher           PolicyMatcher
 	gitserverClient         shared.GitserverClient
 	symbolsClient           *symbols.Client
@@ -104,7 +103,6 @@ func newService(
 	repoStore ReposStore,
 	gitserverRepoStore GitserverRepoStore,
 	externalServiceStore ExternalServiceStore,
-	enqueuer IndexEnqueuer,
 	policyMatcher PolicyMatcher,
 	gitserver shared.GitserverClient,
 	symbolsClient *symbols.Client,
@@ -123,7 +121,6 @@ func newService(
 		repoStore:               repoStore,
 		gitserverRepoStore:      gitserverRepoStore,
 		externalServiceStore:    externalServiceStore,
-		enqueuer:                enqueuer,
 		policyMatcher:           policyMatcher,
 		gitserverClient:         gitserver,
 		symbolsClient:           symbolsClient,

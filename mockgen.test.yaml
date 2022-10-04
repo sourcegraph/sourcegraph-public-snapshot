@@ -85,7 +85,6 @@
         - ReposStore
         - ExternalServiceStore
         - GitserverRepoStore
-        - IndexEnqueuer
         - AutoIndexingServiceForDepScheduling
         - PolicyMatcher
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared

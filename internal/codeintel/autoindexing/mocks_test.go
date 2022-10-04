@@ -6057,6 +6057,9 @@ type MockAutoIndexingServiceForDepScheduling struct {
 	// object controlling the behavior of the method
 	// InsertDependencyIndexingJob.
 	InsertDependencyIndexingJobFunc *AutoIndexingServiceForDepSchedulingInsertDependencyIndexingJobFunc
+	// QueueIndexesForPackageFunc is an instance of a mock function object
+	// controlling the behavior of the method QueueIndexesForPackage.
+	QueueIndexesForPackageFunc *AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFunc
 }
 
 // NewMockAutoIndexingServiceForDepScheduling creates a new mock of the
@@ -6066,6 +6069,11 @@ func NewMockAutoIndexingServiceForDepScheduling() *MockAutoIndexingServiceForDep
 	return &MockAutoIndexingServiceForDepScheduling{
 		InsertDependencyIndexingJobFunc: &AutoIndexingServiceForDepSchedulingInsertDependencyIndexingJobFunc{
 			defaultHook: func(context.Context, int, string, time.Time) (r0 int, r1 error) {
+				return
+			},
+		},
+		QueueIndexesForPackageFunc: &AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFunc{
+			defaultHook: func(context.Context, precise.Package) (r0 error) {
 				return
 			},
 		},
@@ -6082,6 +6090,11 @@ func NewStrictMockAutoIndexingServiceForDepScheduling() *MockAutoIndexingService
 				panic("unexpected invocation of MockAutoIndexingServiceForDepScheduling.InsertDependencyIndexingJob")
 			},
 		},
+		QueueIndexesForPackageFunc: &AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFunc{
+			defaultHook: func(context.Context, precise.Package) error {
+				panic("unexpected invocation of MockAutoIndexingServiceForDepScheduling.QueueIndexesForPackage")
+			},
+		},
 	}
 }
 
@@ -6092,6 +6105,9 @@ func NewMockAutoIndexingServiceForDepSchedulingFrom(i AutoIndexingServiceForDepS
 	return &MockAutoIndexingServiceForDepScheduling{
 		InsertDependencyIndexingJobFunc: &AutoIndexingServiceForDepSchedulingInsertDependencyIndexingJobFunc{
 			defaultHook: i.InsertDependencyIndexingJob,
+		},
+		QueueIndexesForPackageFunc: &AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFunc{
+			defaultHook: i.QueueIndexesForPackage,
 		},
 	}
 }
@@ -6214,6 +6230,116 @@ func (c AutoIndexingServiceForDepSchedulingInsertDependencyIndexingJobFuncCall) 
 // invocation.
 func (c AutoIndexingServiceForDepSchedulingInsertDependencyIndexingJobFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFunc describes
+// the behavior when the QueueIndexesForPackage method of the parent
+// MockAutoIndexingServiceForDepScheduling instance is invoked.
+type AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFunc struct {
+	defaultHook func(context.Context, precise.Package) error
+	hooks       []func(context.Context, precise.Package) error
+	history     []AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFuncCall
+	mutex       sync.Mutex
+}
+
+// QueueIndexesForPackage delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockAutoIndexingServiceForDepScheduling) QueueIndexesForPackage(v0 context.Context, v1 precise.Package) error {
+	r0 := m.QueueIndexesForPackageFunc.nextHook()(v0, v1)
+	m.QueueIndexesForPackageFunc.appendCall(AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// QueueIndexesForPackage method of the parent
+// MockAutoIndexingServiceForDepScheduling instance is invoked and the hook
+// queue is empty.
+func (f *AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFunc) SetDefaultHook(hook func(context.Context, precise.Package) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// QueueIndexesForPackage method of the parent
+// MockAutoIndexingServiceForDepScheduling instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFunc) PushHook(hook func(context.Context, precise.Package) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, precise.Package) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, precise.Package) error {
+		return r0
+	})
+}
+
+func (f *AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFunc) nextHook() func(context.Context, precise.Package) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFunc) appendCall(r0 AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFuncCall objects
+// describing the invocations of this function.
+func (f *AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFunc) History() []AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFuncCall {
+	f.mutex.Lock()
+	history := make([]AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFuncCall is an
+// object that describes an invocation of method QueueIndexesForPackage on
+// an instance of MockAutoIndexingServiceForDepScheduling.
+type AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 precise.Package
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // MockDependenciesService is a mock implementation of the
@@ -6819,159 +6945,6 @@ func (c GitserverRepoStoreGetByNamesFuncCall) Args() []interface{} {
 // invocation.
 func (c GitserverRepoStoreGetByNamesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
-}
-
-// MockIndexEnqueuer is a mock implementation of the IndexEnqueuer interface
-// (from the package
-// github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing) used
-// for unit testing.
-type MockIndexEnqueuer struct {
-	// QueueIndexesForPackageFunc is an instance of a mock function object
-	// controlling the behavior of the method QueueIndexesForPackage.
-	QueueIndexesForPackageFunc *IndexEnqueuerQueueIndexesForPackageFunc
-}
-
-// NewMockIndexEnqueuer creates a new mock of the IndexEnqueuer interface.
-// All methods return zero values for all results, unless overwritten.
-func NewMockIndexEnqueuer() *MockIndexEnqueuer {
-	return &MockIndexEnqueuer{
-		QueueIndexesForPackageFunc: &IndexEnqueuerQueueIndexesForPackageFunc{
-			defaultHook: func(context.Context, precise.Package) (r0 error) {
-				return
-			},
-		},
-	}
-}
-
-// NewStrictMockIndexEnqueuer creates a new mock of the IndexEnqueuer
-// interface. All methods panic on invocation, unless overwritten.
-func NewStrictMockIndexEnqueuer() *MockIndexEnqueuer {
-	return &MockIndexEnqueuer{
-		QueueIndexesForPackageFunc: &IndexEnqueuerQueueIndexesForPackageFunc{
-			defaultHook: func(context.Context, precise.Package) error {
-				panic("unexpected invocation of MockIndexEnqueuer.QueueIndexesForPackage")
-			},
-		},
-	}
-}
-
-// NewMockIndexEnqueuerFrom creates a new mock of the MockIndexEnqueuer
-// interface. All methods delegate to the given implementation, unless
-// overwritten.
-func NewMockIndexEnqueuerFrom(i IndexEnqueuer) *MockIndexEnqueuer {
-	return &MockIndexEnqueuer{
-		QueueIndexesForPackageFunc: &IndexEnqueuerQueueIndexesForPackageFunc{
-			defaultHook: i.QueueIndexesForPackage,
-		},
-	}
-}
-
-// IndexEnqueuerQueueIndexesForPackageFunc describes the behavior when the
-// QueueIndexesForPackage method of the parent MockIndexEnqueuer instance is
-// invoked.
-type IndexEnqueuerQueueIndexesForPackageFunc struct {
-	defaultHook func(context.Context, precise.Package) error
-	hooks       []func(context.Context, precise.Package) error
-	history     []IndexEnqueuerQueueIndexesForPackageFuncCall
-	mutex       sync.Mutex
-}
-
-// QueueIndexesForPackage delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
-func (m *MockIndexEnqueuer) QueueIndexesForPackage(v0 context.Context, v1 precise.Package) error {
-	r0 := m.QueueIndexesForPackageFunc.nextHook()(v0, v1)
-	m.QueueIndexesForPackageFunc.appendCall(IndexEnqueuerQueueIndexesForPackageFuncCall{v0, v1, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the
-// QueueIndexesForPackage method of the parent MockIndexEnqueuer instance is
-// invoked and the hook queue is empty.
-func (f *IndexEnqueuerQueueIndexesForPackageFunc) SetDefaultHook(hook func(context.Context, precise.Package) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// QueueIndexesForPackage method of the parent MockIndexEnqueuer instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *IndexEnqueuerQueueIndexesForPackageFunc) PushHook(hook func(context.Context, precise.Package) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *IndexEnqueuerQueueIndexesForPackageFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, precise.Package) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *IndexEnqueuerQueueIndexesForPackageFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, precise.Package) error {
-		return r0
-	})
-}
-
-func (f *IndexEnqueuerQueueIndexesForPackageFunc) nextHook() func(context.Context, precise.Package) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *IndexEnqueuerQueueIndexesForPackageFunc) appendCall(r0 IndexEnqueuerQueueIndexesForPackageFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of IndexEnqueuerQueueIndexesForPackageFuncCall
-// objects describing the invocations of this function.
-func (f *IndexEnqueuerQueueIndexesForPackageFunc) History() []IndexEnqueuerQueueIndexesForPackageFuncCall {
-	f.mutex.Lock()
-	history := make([]IndexEnqueuerQueueIndexesForPackageFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// IndexEnqueuerQueueIndexesForPackageFuncCall is an object that describes
-// an invocation of method QueueIndexesForPackage on an instance of
-// MockIndexEnqueuer.
-type IndexEnqueuerQueueIndexesForPackageFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 precise.Package
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c IndexEnqueuerQueueIndexesForPackageFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c IndexEnqueuerQueueIndexesForPackageFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
 }
 
 // MockPolicyMatcher is a mock implementation of the PolicyMatcher interface

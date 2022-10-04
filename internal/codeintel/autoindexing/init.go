@@ -36,7 +36,6 @@ func GetService(
 		repoStore := db.Repos()
 		gitserverRepoStore := db.GitserverRepos()
 		externalServiceStore := db.ExternalServices()
-		var enqueuer IndexEnqueuer = nil // TODO
 		policyMatcher := policiesEnterprise.NewMatcher(gitserver, policiesEnterprise.IndexingExtractor, false, true)
 		symbolsClient := symbols.DefaultClient
 		inferenceSvc := inference.GetService(db)
@@ -49,7 +48,6 @@ func GetService(
 			repoStore,
 			gitserverRepoStore,
 			externalServiceStore,
-			enqueuer,
 			policyMatcher,
 			gitserver,
 			symbolsClient,
