@@ -50,9 +50,6 @@ func (j *uploadExpirerJob) Routines(startupCtx context.Context, logger log.Logge
 		return nil, err
 	}
 
-	// TODO - ensure bools are correct in all of these
-	// policyMatcher := policiesEnterprise.NewMatcher(gitserverClient, policiesEnterprise.RetentionExtractor, true, false)
-
 	uploadSvc := uploads.GetService(db, codeIntelDB, gitserverClient)
 
 	return expiration.NewExpirationTasks(uploadSvc), nil
