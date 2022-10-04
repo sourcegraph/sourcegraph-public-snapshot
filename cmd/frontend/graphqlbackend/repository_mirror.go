@@ -167,6 +167,21 @@ func (r *repositoryMirrorInfoResolver) ByteSize(ctx context.Context) (BigInt, er
 	return BigInt{Int: info.RepoSizeBytes}, err
 }
 
+func (r *repositoryMirrorInfoResolver) Shard(ctx context.Context) (*string, error) {
+	// 🚨 SECURITY: This is a query that reveals internal details of the
+	// instance that only the admin should be able to see.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	info, err := r.computeGitserverRepo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &info.ShardID, err
+}
+
 func (r *repositoryMirrorInfoResolver) UpdateSchedule(ctx context.Context) (*updateScheduleResolver, error) {
 	info, err := r.repoUpdateSchedulerInfo(ctx)
 	if err != nil {

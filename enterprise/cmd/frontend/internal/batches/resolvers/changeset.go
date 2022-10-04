@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types/scheduler/config"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -57,7 +58,7 @@ func NewChangesetResolver(store *store.Store, changeset *btypes.Changeset, repo 
 	return &changesetResolver{
 		store:        store,
 		repo:         repo,
-		repoResolver: graphqlbackend.NewRepositoryResolver(store.DatabaseDB(), repo),
+		repoResolver: graphqlbackend.NewRepositoryResolver(store.DatabaseDB(), gitserver.NewClient(store.DatabaseDB()), repo),
 		changeset:    changeset,
 	}
 }
@@ -481,7 +482,8 @@ func (r *changesetResolver) Diff(ctx context.Context) (graphqlbackend.Repository
 		}
 	}
 
-	return graphqlbackend.NewRepositoryComparison(ctx, r.store.DatabaseDB(), r.repoResolver, &graphqlbackend.RepositoryComparisonInput{
+	db := r.store.DatabaseDB()
+	return graphqlbackend.NewRepositoryComparison(ctx, db, gitserver.NewClient(db), r.repoResolver, &graphqlbackend.RepositoryComparisonInput{
 		Base:         &base,
 		Head:         &head,
 		FetchMissing: true,

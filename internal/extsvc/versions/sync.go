@@ -113,6 +113,7 @@ func loadVersions(ctx context.Context, logger log.Logger, store database.Externa
 		versions = append(versions, &Version{
 			ExternalServiceKind: svc.Kind,
 			Version:             v,
+			Key:                 svc.URN(),
 		})
 	}
 
