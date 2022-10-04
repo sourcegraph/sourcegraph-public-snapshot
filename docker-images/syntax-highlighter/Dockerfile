@@ -9,7 +9,11 @@ WORKDIR /repo
 RUN cargo test --release --workspace
 RUN cargo rustc --release
 RUN ls ./target
+# TODO: the syntect_server binary is kept around for backwards compatibility
+# reasons and will be removed in the future. The `syntax-highlighter` binary
+# should be used instead.
 RUN cp ./target/release/syntect_server /syntect_server
+RUN cp ./target/release/syntect_server /syntax-highlighter
 
 ################################
 # Build http-server-stabilizer #
