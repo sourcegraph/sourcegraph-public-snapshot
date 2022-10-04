@@ -689,7 +689,7 @@ Query: `sum by (op)(increase(src_codeintel_autoindex_enqueuer_errors_total{job=~
 
 ### Frontend: Codeintel: dbstore stats
 
-#### frontend: codeintel_dbstore_total
+#### frontend: codeintel_uploads_store_total
 
 <p class="subtitle">Aggregate store operations every 5m</p>
 
@@ -702,13 +702,13 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100500`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_dbstore_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_store_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
 <br />
 
-#### frontend: codeintel_dbstore_99th_percentile_duration
+#### frontend: codeintel_uploads_store_99th_percentile_duration
 
 <p class="subtitle">Aggregate successful store operation duration distribution over 5m</p>
 
@@ -721,13 +721,13 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100501`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_dbstore_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_uploads_store_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
 <br />
 
-#### frontend: codeintel_dbstore_errors_total
+#### frontend: codeintel_uploads_store_errors_total
 
 <p class="subtitle">Aggregate store operation errors every 5m</p>
 
@@ -740,13 +740,13 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100502`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_dbstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_store_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
 <br />
 
-#### frontend: codeintel_dbstore_error_rate
+#### frontend: codeintel_uploads_store_error_rate
 
 <p class="subtitle">Aggregate store operation error rate over 5m</p>
 
@@ -759,13 +759,13 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100503`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_dbstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum(increase(src_codeintel_dbstore_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum(increase(src_codeintel_dbstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_uploads_store_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum(increase(src_codeintel_uploads_store_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum(increase(src_codeintel_uploads_store_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
 
 </details>
 
 <br />
 
-#### frontend: codeintel_dbstore_total
+#### frontend: codeintel_uploads_store_total
 
 <p class="subtitle">Store operations every 5m</p>
 
@@ -778,13 +778,13 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100510`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_dbstore_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_uploads_store_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
 <br />
 
-#### frontend: codeintel_dbstore_99th_percentile_duration
+#### frontend: codeintel_uploads_store_99th_percentile_duration
 
 <p class="subtitle">99th percentile successful store operation duration over 5m</p>
 
@@ -797,13 +797,13 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100511`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_dbstore_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_store_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
 
 </details>
 
 <br />
 
-#### frontend: codeintel_dbstore_errors_total
+#### frontend: codeintel_uploads_store_errors_total
 
 <p class="subtitle">Store operation errors every 5m</p>
 
@@ -816,13 +816,13 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100512`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_dbstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_uploads_store_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
 <br />
 
-#### frontend: codeintel_dbstore_error_rate
+#### frontend: codeintel_uploads_store_error_rate
 
 <p class="subtitle">Store operation error rate over 5m</p>
 
@@ -835,7 +835,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100513`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_dbstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum by (op)(increase(src_codeintel_dbstore_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum by (op)(increase(src_codeintel_dbstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_uploads_store_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_store_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_store_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
 
 </details>
 
@@ -921,7 +921,7 @@ Query: `sum(increase(src_workerutil_dbworker_store_codeintel_index_errors_total{
 
 ### Frontend: Codeintel: lsifstore stats
 
-#### frontend: codeintel_lsifstore_total
+#### frontend: codeintel_uploads_lsifstore_total
 
 <p class="subtitle">Aggregate store operations every 5m</p>
 
@@ -934,13 +934,13 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100700`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_lsifstore_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_lsifstore_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
 <br />
 
-#### frontend: codeintel_lsifstore_99th_percentile_duration
+#### frontend: codeintel_uploads_lsifstore_99th_percentile_duration
 
 <p class="subtitle">Aggregate successful store operation duration distribution over 5m</p>
 
@@ -953,13 +953,13 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100701`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_lsifstore_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_uploads_lsifstore_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
 <br />
 
-#### frontend: codeintel_lsifstore_errors_total
+#### frontend: codeintel_uploads_lsifstore_errors_total
 
 <p class="subtitle">Aggregate store operation errors every 5m</p>
 
@@ -972,13 +972,13 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100702`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_lsifstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_lsifstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
 <br />
 
-#### frontend: codeintel_lsifstore_error_rate
+#### frontend: codeintel_uploads_lsifstore_error_rate
 
 <p class="subtitle">Aggregate store operation error rate over 5m</p>
 
@@ -991,13 +991,13 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100703`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_lsifstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum(increase(src_codeintel_lsifstore_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum(increase(src_codeintel_lsifstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_uploads_lsifstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum(increase(src_codeintel_uploads_lsifstore_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum(increase(src_codeintel_uploads_lsifstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
 
 </details>
 
 <br />
 
-#### frontend: codeintel_lsifstore_total
+#### frontend: codeintel_uploads_lsifstore_total
 
 <p class="subtitle">Store operations every 5m</p>
 
@@ -1010,13 +1010,13 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100710`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_lsifstore_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_uploads_lsifstore_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
 <br />
 
-#### frontend: codeintel_lsifstore_99th_percentile_duration
+#### frontend: codeintel_uploads_lsifstore_99th_percentile_duration
 
 <p class="subtitle">99th percentile successful store operation duration over 5m</p>
 
@@ -1029,13 +1029,13 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100711`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_lsifstore_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_lsifstore_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
 
 </details>
 
 <br />
 
-#### frontend: codeintel_lsifstore_errors_total
+#### frontend: codeintel_uploads_lsifstore_errors_total
 
 <p class="subtitle">Store operation errors every 5m</p>
 
@@ -1048,13 +1048,13 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100712`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_lsifstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_uploads_lsifstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
 <br />
 
-#### frontend: codeintel_lsifstore_error_rate
+#### frontend: codeintel_uploads_lsifstore_error_rate
 
 <p class="subtitle">Store operation error rate over 5m</p>
 
@@ -1067,7 +1067,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100713`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_lsifstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum by (op)(increase(src_codeintel_lsifstore_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum by (op)(increase(src_codeintel_lsifstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_uploads_lsifstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_lsifstore_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_lsifstore_errors_total{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))) * 100`
 
 </details>
 
@@ -6783,7 +6783,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by(instance) (src_codeintel_upload_processor_upload_size)`
+Query: `sum by(instance) (src_codeintel_upload_processor_upload_size{job="precise-code-intel-worker"})`
 
 </details>
 
@@ -6867,7 +6867,7 @@ Query: `sum(increase(src_codeintel_upload_processor_errors_total{job=~"^precise-
 
 ### Precise Code Intel Worker: Codeintel: dbstore stats
 
-#### precise-code-intel-worker: codeintel_dbstore_total
+#### precise-code-intel-worker: codeintel_uploads_store_total
 
 <p class="subtitle">Aggregate store operations every 5m</p>
 
@@ -6880,13 +6880,13 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_dbstore_total{job=~"^precise-code-intel-worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_store_total{job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### precise-code-intel-worker: codeintel_dbstore_99th_percentile_duration
+#### precise-code-intel-worker: codeintel_uploads_store_99th_percentile_duration
 
 <p class="subtitle">Aggregate successful store operation duration distribution over 5m</p>
 
@@ -6899,13 +6899,13 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_dbstore_duration_seconds_bucket{job=~"^precise-code-intel-worker.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_uploads_store_duration_seconds_bucket{job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### precise-code-intel-worker: codeintel_dbstore_errors_total
+#### precise-code-intel-worker: codeintel_uploads_store_errors_total
 
 <p class="subtitle">Aggregate store operation errors every 5m</p>
 
@@ -6918,13 +6918,13 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_dbstore_errors_total{job=~"^precise-code-intel-worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_store_errors_total{job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### precise-code-intel-worker: codeintel_dbstore_error_rate
+#### precise-code-intel-worker: codeintel_uploads_store_error_rate
 
 <p class="subtitle">Aggregate store operation error rate over 5m</p>
 
@@ -6937,13 +6937,13 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_dbstore_errors_total{job=~"^precise-code-intel-worker.*"}[5m])) / (sum(increase(src_codeintel_dbstore_total{job=~"^precise-code-intel-worker.*"}[5m])) + sum(increase(src_codeintel_dbstore_errors_total{job=~"^precise-code-intel-worker.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_uploads_store_errors_total{job=~"^precise-code-intel-worker.*"}[5m])) / (sum(increase(src_codeintel_uploads_store_total{job=~"^precise-code-intel-worker.*"}[5m])) + sum(increase(src_codeintel_uploads_store_errors_total{job=~"^precise-code-intel-worker.*"}[5m]))) * 100`
 
 </details>
 
 <br />
 
-#### precise-code-intel-worker: codeintel_dbstore_total
+#### precise-code-intel-worker: codeintel_uploads_store_total
 
 <p class="subtitle">Store operations every 5m</p>
 
@@ -6956,13 +6956,13 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_dbstore_total{job=~"^precise-code-intel-worker.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_uploads_store_total{job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### precise-code-intel-worker: codeintel_dbstore_99th_percentile_duration
+#### precise-code-intel-worker: codeintel_uploads_store_99th_percentile_duration
 
 <p class="subtitle">99th percentile successful store operation duration over 5m</p>
 
@@ -6975,13 +6975,13 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_dbstore_duration_seconds_bucket{job=~"^precise-code-intel-worker.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_store_duration_seconds_bucket{job=~"^precise-code-intel-worker.*"}[5m])))`
 
 </details>
 
 <br />
 
-#### precise-code-intel-worker: codeintel_dbstore_errors_total
+#### precise-code-intel-worker: codeintel_uploads_store_errors_total
 
 <p class="subtitle">Store operation errors every 5m</p>
 
@@ -6994,13 +6994,13 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_dbstore_errors_total{job=~"^precise-code-intel-worker.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_uploads_store_errors_total{job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### precise-code-intel-worker: codeintel_dbstore_error_rate
+#### precise-code-intel-worker: codeintel_uploads_store_error_rate
 
 <p class="subtitle">Store operation error rate over 5m</p>
 
@@ -7013,7 +7013,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_dbstore_errors_total{job=~"^precise-code-intel-worker.*"}[5m])) / (sum by (op)(increase(src_codeintel_dbstore_total{job=~"^precise-code-intel-worker.*"}[5m])) + sum by (op)(increase(src_codeintel_dbstore_errors_total{job=~"^precise-code-intel-worker.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_uploads_store_errors_total{job=~"^precise-code-intel-worker.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_store_total{job=~"^precise-code-intel-worker.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_store_errors_total{job=~"^precise-code-intel-worker.*"}[5m]))) * 100`
 
 </details>
 
@@ -7021,7 +7021,7 @@ Query: `sum by (op)(increase(src_codeintel_dbstore_errors_total{job=~"^precise-c
 
 ### Precise Code Intel Worker: Codeintel: lsifstore stats
 
-#### precise-code-intel-worker: codeintel_lsifstore_total
+#### precise-code-intel-worker: codeintel_uploads_lsifstore_total
 
 <p class="subtitle">Aggregate store operations every 5m</p>
 
@@ -7034,13 +7034,13 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_lsifstore_total{job=~"^precise-code-intel-worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_lsifstore_total{job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### precise-code-intel-worker: codeintel_lsifstore_99th_percentile_duration
+#### precise-code-intel-worker: codeintel_uploads_lsifstore_99th_percentile_duration
 
 <p class="subtitle">Aggregate successful store operation duration distribution over 5m</p>
 
@@ -7053,13 +7053,13 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_lsifstore_duration_seconds_bucket{job=~"^precise-code-intel-worker.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_uploads_lsifstore_duration_seconds_bucket{job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### precise-code-intel-worker: codeintel_lsifstore_errors_total
+#### precise-code-intel-worker: codeintel_uploads_lsifstore_errors_total
 
 <p class="subtitle">Aggregate store operation errors every 5m</p>
 
@@ -7072,13 +7072,13 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_lsifstore_errors_total{job=~"^precise-code-intel-worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_lsifstore_errors_total{job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### precise-code-intel-worker: codeintel_lsifstore_error_rate
+#### precise-code-intel-worker: codeintel_uploads_lsifstore_error_rate
 
 <p class="subtitle">Aggregate store operation error rate over 5m</p>
 
@@ -7091,13 +7091,13 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_lsifstore_errors_total{job=~"^precise-code-intel-worker.*"}[5m])) / (sum(increase(src_codeintel_lsifstore_total{job=~"^precise-code-intel-worker.*"}[5m])) + sum(increase(src_codeintel_lsifstore_errors_total{job=~"^precise-code-intel-worker.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_uploads_lsifstore_errors_total{job=~"^precise-code-intel-worker.*"}[5m])) / (sum(increase(src_codeintel_uploads_lsifstore_total{job=~"^precise-code-intel-worker.*"}[5m])) + sum(increase(src_codeintel_uploads_lsifstore_errors_total{job=~"^precise-code-intel-worker.*"}[5m]))) * 100`
 
 </details>
 
 <br />
 
-#### precise-code-intel-worker: codeintel_lsifstore_total
+#### precise-code-intel-worker: codeintel_uploads_lsifstore_total
 
 <p class="subtitle">Store operations every 5m</p>
 
@@ -7110,13 +7110,13 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_lsifstore_total{job=~"^precise-code-intel-worker.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_uploads_lsifstore_total{job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### precise-code-intel-worker: codeintel_lsifstore_99th_percentile_duration
+#### precise-code-intel-worker: codeintel_uploads_lsifstore_99th_percentile_duration
 
 <p class="subtitle">99th percentile successful store operation duration over 5m</p>
 
@@ -7129,13 +7129,13 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_lsifstore_duration_seconds_bucket{job=~"^precise-code-intel-worker.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_lsifstore_duration_seconds_bucket{job=~"^precise-code-intel-worker.*"}[5m])))`
 
 </details>
 
 <br />
 
-#### precise-code-intel-worker: codeintel_lsifstore_errors_total
+#### precise-code-intel-worker: codeintel_uploads_lsifstore_errors_total
 
 <p class="subtitle">Store operation errors every 5m</p>
 
@@ -7148,13 +7148,13 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_lsifstore_errors_total{job=~"^precise-code-intel-worker.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_uploads_lsifstore_errors_total{job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### precise-code-intel-worker: codeintel_lsifstore_error_rate
+#### precise-code-intel-worker: codeintel_uploads_lsifstore_error_rate
 
 <p class="subtitle">Store operation error rate over 5m</p>
 
@@ -7167,7 +7167,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_lsifstore_errors_total{job=~"^precise-code-intel-worker.*"}[5m])) / (sum by (op)(increase(src_codeintel_lsifstore_total{job=~"^precise-code-intel-worker.*"}[5m])) + sum by (op)(increase(src_codeintel_lsifstore_errors_total{job=~"^precise-code-intel-worker.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_uploads_lsifstore_errors_total{job=~"^precise-code-intel-worker.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_lsifstore_total{job=~"^precise-code-intel-worker.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_lsifstore_errors_total{job=~"^precise-code-intel-worker.*"}[5m]))) * 100`
 
 </details>
 
@@ -9051,7 +9051,7 @@ Query: `sum(increase(src_codeintel_index_scheduler_errors_total{job=~"^worker.*"
 
 ### Worker: Codeintel: dbstore stats
 
-#### worker: codeintel_dbstore_total
+#### worker: codeintel_uploads_store_total
 
 <p class="subtitle">Aggregate store operations every 5m</p>
 
@@ -9064,13 +9064,13 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100800` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_dbstore_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_store_total{job=~"^worker.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### worker: codeintel_dbstore_99th_percentile_duration
+#### worker: codeintel_uploads_store_99th_percentile_duration
 
 <p class="subtitle">Aggregate successful store operation duration distribution over 5m</p>
 
@@ -9083,13 +9083,13 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100801` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_dbstore_duration_seconds_bucket{job=~"^worker.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_uploads_store_duration_seconds_bucket{job=~"^worker.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### worker: codeintel_dbstore_errors_total
+#### worker: codeintel_uploads_store_errors_total
 
 <p class="subtitle">Aggregate store operation errors every 5m</p>
 
@@ -9102,13 +9102,13 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100802` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_dbstore_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_store_errors_total{job=~"^worker.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### worker: codeintel_dbstore_error_rate
+#### worker: codeintel_uploads_store_error_rate
 
 <p class="subtitle">Aggregate store operation error rate over 5m</p>
 
@@ -9121,13 +9121,13 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100803` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_dbstore_errors_total{job=~"^worker.*"}[5m])) / (sum(increase(src_codeintel_dbstore_total{job=~"^worker.*"}[5m])) + sum(increase(src_codeintel_dbstore_errors_total{job=~"^worker.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_uploads_store_errors_total{job=~"^worker.*"}[5m])) / (sum(increase(src_codeintel_uploads_store_total{job=~"^worker.*"}[5m])) + sum(increase(src_codeintel_uploads_store_errors_total{job=~"^worker.*"}[5m]))) * 100`
 
 </details>
 
 <br />
 
-#### worker: codeintel_dbstore_total
+#### worker: codeintel_uploads_store_total
 
 <p class="subtitle">Store operations every 5m</p>
 
@@ -9140,13 +9140,13 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100810` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_dbstore_total{job=~"^worker.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_uploads_store_total{job=~"^worker.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### worker: codeintel_dbstore_99th_percentile_duration
+#### worker: codeintel_uploads_store_99th_percentile_duration
 
 <p class="subtitle">99th percentile successful store operation duration over 5m</p>
 
@@ -9159,13 +9159,13 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100811` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_dbstore_duration_seconds_bucket{job=~"^worker.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_store_duration_seconds_bucket{job=~"^worker.*"}[5m])))`
 
 </details>
 
 <br />
 
-#### worker: codeintel_dbstore_errors_total
+#### worker: codeintel_uploads_store_errors_total
 
 <p class="subtitle">Store operation errors every 5m</p>
 
@@ -9178,13 +9178,13 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100812` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_dbstore_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_uploads_store_errors_total{job=~"^worker.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### worker: codeintel_dbstore_error_rate
+#### worker: codeintel_uploads_store_error_rate
 
 <p class="subtitle">Store operation error rate over 5m</p>
 
@@ -9197,7 +9197,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100813` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_dbstore_errors_total{job=~"^worker.*"}[5m])) / (sum by (op)(increase(src_codeintel_dbstore_total{job=~"^worker.*"}[5m])) + sum by (op)(increase(src_codeintel_dbstore_errors_total{job=~"^worker.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_uploads_store_errors_total{job=~"^worker.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_store_total{job=~"^worker.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_store_errors_total{job=~"^worker.*"}[5m]))) * 100`
 
 </details>
 
@@ -9205,7 +9205,7 @@ Query: `sum by (op)(increase(src_codeintel_dbstore_errors_total{job=~"^worker.*"
 
 ### Worker: Codeintel: lsifstore stats
 
-#### worker: codeintel_lsifstore_total
+#### worker: codeintel_uploads_lsifstore_total
 
 <p class="subtitle">Aggregate store operations every 5m</p>
 
@@ -9218,13 +9218,13 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100900` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_lsifstore_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_lsifstore_total{job=~"^worker.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### worker: codeintel_lsifstore_99th_percentile_duration
+#### worker: codeintel_uploads_lsifstore_99th_percentile_duration
 
 <p class="subtitle">Aggregate successful store operation duration distribution over 5m</p>
 
@@ -9237,13 +9237,13 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100901` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_lsifstore_duration_seconds_bucket{job=~"^worker.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_uploads_lsifstore_duration_seconds_bucket{job=~"^worker.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### worker: codeintel_lsifstore_errors_total
+#### worker: codeintel_uploads_lsifstore_errors_total
 
 <p class="subtitle">Aggregate store operation errors every 5m</p>
 
@@ -9256,13 +9256,13 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100902` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_lsifstore_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_lsifstore_errors_total{job=~"^worker.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### worker: codeintel_lsifstore_error_rate
+#### worker: codeintel_uploads_lsifstore_error_rate
 
 <p class="subtitle">Aggregate store operation error rate over 5m</p>
 
@@ -9275,13 +9275,13 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100903` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_lsifstore_errors_total{job=~"^worker.*"}[5m])) / (sum(increase(src_codeintel_lsifstore_total{job=~"^worker.*"}[5m])) + sum(increase(src_codeintel_lsifstore_errors_total{job=~"^worker.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_uploads_lsifstore_errors_total{job=~"^worker.*"}[5m])) / (sum(increase(src_codeintel_uploads_lsifstore_total{job=~"^worker.*"}[5m])) + sum(increase(src_codeintel_uploads_lsifstore_errors_total{job=~"^worker.*"}[5m]))) * 100`
 
 </details>
 
 <br />
 
-#### worker: codeintel_lsifstore_total
+#### worker: codeintel_uploads_lsifstore_total
 
 <p class="subtitle">Store operations every 5m</p>
 
@@ -9294,13 +9294,13 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100910` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_lsifstore_total{job=~"^worker.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_uploads_lsifstore_total{job=~"^worker.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### worker: codeintel_lsifstore_99th_percentile_duration
+#### worker: codeintel_uploads_lsifstore_99th_percentile_duration
 
 <p class="subtitle">99th percentile successful store operation duration over 5m</p>
 
@@ -9313,13 +9313,13 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100911` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_lsifstore_duration_seconds_bucket{job=~"^worker.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_lsifstore_duration_seconds_bucket{job=~"^worker.*"}[5m])))`
 
 </details>
 
 <br />
 
-#### worker: codeintel_lsifstore_errors_total
+#### worker: codeintel_uploads_lsifstore_errors_total
 
 <p class="subtitle">Store operation errors every 5m</p>
 
@@ -9332,13 +9332,13 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100912` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_lsifstore_errors_total{job=~"^worker.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_uploads_lsifstore_errors_total{job=~"^worker.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### worker: codeintel_lsifstore_error_rate
+#### worker: codeintel_uploads_lsifstore_error_rate
 
 <p class="subtitle">Store operation error rate over 5m</p>
 
@@ -9351,7 +9351,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100913` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_lsifstore_errors_total{job=~"^worker.*"}[5m])) / (sum by (op)(increase(src_codeintel_lsifstore_total{job=~"^worker.*"}[5m])) + sum by (op)(increase(src_codeintel_lsifstore_errors_total{job=~"^worker.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_uploads_lsifstore_errors_total{job=~"^worker.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_lsifstore_total{job=~"^worker.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_lsifstore_errors_total{job=~"^worker.*"}[5m]))) * 100`
 
 </details>
 
