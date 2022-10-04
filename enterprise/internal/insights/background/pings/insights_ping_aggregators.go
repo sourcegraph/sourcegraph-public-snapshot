@@ -288,7 +288,7 @@ SELECT COUNT(*) FROM insight_view WHERE is_frozen = false
 
 const backfillTimeQuery = `
 SELECT
-	repositories = '{}' as allRepos,
+	COALESCE(CARDINALITY(repositories),0) = 0 AS allRepos,
 	COUNT(*),
 	ROUND(EXTRACT(EPOCH FROM COALESCE(PERCENTILE_CONT(0.99) WITHIN GROUP( ORDER BY backfill_completed_at - backfill_queued_at), '0'))) AS p99_seconds,
 	ROUND(EXTRACT(EPOCH FROM COALESCE(PERCENTILE_CONT(0.90) WITHIN GROUP (ORDER BY backfill_completed_at - backfill_queued_at), '0'))) AS p90_seconds,
