@@ -46,7 +46,12 @@ type Service struct {
 	operations *operations
 }
 
-func newService(policiesStore store.Store, uploadSvc UploadService, gitserver GitserverClient, observationContext *observation.Context) *Service {
+func newService(
+	policiesStore store.Store,
+	uploadSvc UploadService,
+	gitserver GitserverClient,
+	observationContext *observation.Context,
+) *Service {
 	return &Service{
 		store:      policiesStore,
 		uploadSvc:  uploadSvc,

@@ -18,7 +18,6 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-
 	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -28,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
@@ -668,7 +668,7 @@ func (r *schemaResolver) repositoryByID(ctx context.Context, id graphql.ID) (*Re
 	if err != nil {
 		return nil, err
 	}
-	return NewRepositoryResolver(r.db, repo), nil
+	return NewRepositoryResolver(r.db, gitserver.NewClient(r.db), repo), nil
 }
 
 type RedirectResolver struct {
@@ -705,7 +705,7 @@ func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *repositor
 		if err != nil {
 			return nil, err
 		}
-		return &repositoryRedirect{repo: NewRepositoryResolver(r.db, repo)}, nil
+		return &repositoryRedirect{repo: NewRepositoryResolver(r.db, gitserver.NewClient(r.db), repo)}, nil
 	}
 	var name api.RepoName
 	if args.Name != nil {
@@ -737,7 +737,7 @@ func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *repositor
 		}
 		return nil, err
 	}
-	return &repositoryRedirect{repo: NewRepositoryResolver(r.db, repo)}, nil
+	return &repositoryRedirect{repo: NewRepositoryResolver(r.db, gitserver.NewClient(r.db), repo)}, nil
 }
 
 func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {

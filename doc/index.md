@@ -10,9 +10,10 @@ title: Get Started
     margin-bottom: 1em;
   }
   .app-btn {
+    font-size: 0.85rem;
     cursor: pointer;
     text-decoration: none;
-    height: 15em;
+    padding-top: 1.5rem !important;
     width: 100%;
     border-radius: 1em;
     border: 2px solid var(--input-focus-border);
@@ -28,6 +29,9 @@ title: Get Started
   }
   .app-btn > img {
     height: 4em;
+  }
+  .app-btn > p {
+    margin-bottom: 0 !important;
   }
   .app-btn > h3 {
     font-size: 1.5em;
@@ -49,83 +53,85 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
 
 ### Recommended
 
-<form class="grid">
+<div class="grid">
   <!-- Sourcegraph Cloud -->
-  <button class="app-btn btn" formaction="cloud">
+  <a class="app-btn btn" href="/cloud">
 			<img alt="sourcegraph-logo" src="https://handbook.sourcegraph.com/departments/engineering/design/brand_guidelines/logo/versions/Sourcegraph_Logomark_Color.svg"/>
 			<h3>Sourcegraph Cloud</h3>
 		  <p>Create a single-tenant instance managed by Sourcegraph</p>
-  </button>
-</form>
+  </a>
+</div>
 
 ### Self-hosted
 
-<form class="grid">
+<div class="grid">
   <!-- AWS AMI-->
-  <button class="app-btn btn" formaction="/admin/deploy/aws-ami">
-    <img alt="aws-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/1280px-Amazon_Web_Services_Logo.svg.png"/>
+  <a class="app-btn btn" href="/admin/deploy/aws-ami">
+    <img alt="aws-logo" src="/assets/other-logos/aws-light.svg" class="theme-light-only" />
+    <img alt="aws-logo" src="/assets/other-logos/aws-dark.svg" class="theme-dark-only" />
     <h3>AWS</h3>
     <p>Launch a pre-configured Sourcegraph instance from an AWS AMI</p>
-  </button>
-</form>
+  </a>
+</div>
 
-<form class="grid">
+<div class="grid">
   <!-- Azure -->
-  <button class="app-btn btn" formaction="/admin/deploy/docker-compose/azure">
+  <a class="app-btn btn" href="/admin/deploy/docker-compose/azure">
     <img alt="azure-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/azure.png"/>
     <h3>Azure</h3>
     <p>Deploy onto Microsoft Azure</p>
-  </button>
+  </a>
   <!-- AWS One Click-->
-  <button class="app-btn btn" formaction="/admin/deploy/docker-compose/aws-oneclick">
-    <img alt="aws-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/1280px-Amazon_Web_Services_Logo.svg.png"/>
+  <a class="app-btn btn" href="/admin/deploy/docker-compose/aws-oneclick">
+    <img alt="aws-logo" src="/assets/other-logos/aws-light.svg" class="theme-light-only" />
+    <img alt="aws-logo" src="/assets/other-logos/aws-dark.svg" class="theme-dark-only" />
     <h3>AWS One-Click</h3>
     <span class="badge badge-warning">Coming soon</span> 
     <!-- <p>Deploy onto AWS in one click</p> -->
-  </button>
+  </a>
   <!-- Digital Ocean -->
-  <button class="app-btn btn" formaction="/admin/deploy/docker-compose/digitalocean">
+  <a class="app-btn btn" href="/admin/deploy/docker-compose/digitalocean">
     <img alt="digital-ocean-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/DigitalOcean.png"/>
     <h3>DigitalOcean</h3>
     <p>Deploy onto DigitalOcean</p>
-  </button>
+  </a>
   <!-- Docker Compose -->
-  <button class="app-btn btn" formaction="/admin/install/docker-compose">
+  <a class="app-btn btn" href="/admin/deploy/docker-compose">
     <img alt="docker-compose-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/Docker.png"/>
     <h3>Docker Compose</h3>
     <p>Deploy with Docker Compose</p>
-  </button>
+  </a>
   <!-- GCP -->
-  <button class="app-btn btn" formaction="/admin/deploy/docker-compose/google_cloud">
+  <a class="app-btn btn" href="/admin/deploy/docker-compose/google_cloud">
     <img alt="gcp-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/googlecloud.png"/>
     <h3>Google Cloud</h3>
     <p>Deploy onto Google Cloud (GCP)</p>
-  </button>
+  </a>
   <!-- Others -->
-  <button class="app-btn btn" formaction="/admin/deploy">
+  <a class="app-btn btn" href="/admin/deploy">
     <img alt="private-cloud-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/cloud.png"/>
     <h3>Private cloud</h3>
     <p>Deploy into a generic cloud environment</p>
-  </button>
+  </a>
   <!-- Kubernetes -->
-  <button class="app-btn btn" formaction="/admin/deploy/kubernetes">
+  <a class="app-btn btn" href="/admin/deploy/kubernetes">
     <img alt="kubernetes-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/kubernetes.png"/>
     <h3>Kubernetes</h3>
+	  <p>Deploy a multi-node cluster</p>
     <p><strong>Enterprise-only</strong></p>
-	<p>Deploy a multi-node cluster</p>
-  </button>
-</form>
+  </a>
+</div>
 
 ### Local machine
 
-<form class="grid">
-  <button class="app-btn btn" formaction="/admin/deploy/docker-single-container">
+<div class="grid">
+  <a class="app-btn btn" href="/admin/deploy/docker-single-container">
     <img alt="docker-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/Docker.png"/>
     <h3>Docker Container</h3>
     <p>Spin up a local Sourcegraph instance</p>
-  </button>
+  </a>
   <div></div><div></div>
-</form>
+</div>
 
 ---
 

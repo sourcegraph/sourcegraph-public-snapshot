@@ -13,6 +13,7 @@ import {
     addLineRangeQueryParameter,
     ErrorLike,
     formatSearchParameters,
+    logger,
     lprToRange,
     pluralize,
     toPositionOrRangeQueryParameter,
@@ -642,7 +643,7 @@ function parseSideBlobProps(
             : undefined
         return { activeURL, repository: url.repoName, commitID: url.commitID || '', file: url.filePath, position }
     } catch (error) {
-        console.error(`failed to parse activeURL ${activeURL}`, error)
+        logger.error(`failed to parse activeURL ${activeURL}`, error)
         return undefined
     }
 }

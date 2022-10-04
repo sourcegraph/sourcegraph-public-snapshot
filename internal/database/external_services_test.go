@@ -2227,20 +2227,12 @@ func TestExternalServiceStore_CountSyncJobs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if have != 1 {
-		t.Fatalf("Expected 1 job, got %d", have)
-	}
-
 	require.Exactly(t, int64(1), have, "total count is incorrect")
 
 	have, err = db.ExternalServices().CountSyncJobs(ctx, ExternalServicesGetSyncJobsOptions{ExternalServiceID: es.ID + 1})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if have != 0 {
-		t.Fatalf("Expected 0 jobs, got %d", have)
-	}
-
 	require.Exactly(t, int64(0), have, "total count is incorrect")
 }
 

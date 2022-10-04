@@ -15,7 +15,7 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -183,7 +183,7 @@ func TestJVMCloneCommand(t *testing.T) {
 
 	coursier.CoursierBinary = coursierScript(t, dir)
 
-	depsSvc := livedependencies.TestService(database.NewDB(logger, dbtest.NewDB(logger, t)))
+	depsSvc := dependencies.TestService(database.NewDB(logger, dbtest.NewDB(logger, t)))
 	s := NewJVMPackagesSyncer(&schema.JVMPackagesConnection{Maven: &schema.Maven{Dependencies: []string{}}}, depsSvc).(*vcsPackagesSyncer)
 	bareGitDirectory := path.Join(dir, "git")
 

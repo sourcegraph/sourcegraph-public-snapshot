@@ -21,12 +21,13 @@ func (j *cratesSyncerJob) Description() string  { return "" }
 func (j *cratesSyncerJob) Config() []env.Config { return nil }
 
 func (j *cratesSyncerJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	db, err := workerdb.Init()
+	rawDB, err := workerdb.Init()
 	if err != nil {
 		return nil, err
 	}
+	db := database.NewDB(logger, rawDB)
 
 	return []goroutine.BackgroundRoutine{
-		cratesyncer.NewCratesSyncer(database.NewDB(logger, db)),
+		cratesyncer.NewCratesSyncer(db),
 	}, nil
 }

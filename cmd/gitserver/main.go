@@ -30,7 +30,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -122,7 +121,7 @@ func main() {
 	db := database.NewDB(logger, sqlDB)
 
 	repoStore := db.Repos()
-	depsSvc := livedependencies.GetService(db)
+	depsSvc := dependencies.GetService(db)
 	externalServiceStore := db.ExternalServices()
 
 	err = keyring.Init(ctx)

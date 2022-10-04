@@ -7,7 +7,6 @@ import (
 
 	"github.com/gobwas/glob"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -56,7 +55,7 @@ func NewMatcher(
 // commit date.
 //
 // A subset of all commits can be returned by passing in any number of commit revhash strings.
-func (m *Matcher) CommitsDescribedByPolicy(ctx context.Context, repositoryID int, policies []dbstore.ConfigurationPolicy, now time.Time, filterCommits ...string) (map[string][]PolicyMatch, error) {
+func (m *Matcher) CommitsDescribedByPolicy(ctx context.Context, repositoryID int, policies []types.ConfigurationPolicy, now time.Time, filterCommits ...string) (map[string][]PolicyMatch, error) {
 	if len(policies) == 0 && !m.includeTipOfDefaultBranch {
 		return nil, nil
 	}
@@ -108,25 +107,7 @@ func (m *Matcher) CommitsDescribedByPolicy(ctx context.Context, repositoryID int
 }
 
 func (m *Matcher) CommitsDescribedByPolicyInternal(ctx context.Context, repositoryID int, policies []types.ConfigurationPolicy, now time.Time, filterCommits ...string) (map[string][]PolicyMatch, error) {
-	dbStorePolicies := make([]dbstore.ConfigurationPolicy, 0, len(policies))
-	for _, p := range policies {
-		dbStorePolicies = append(dbStorePolicies, dbstore.ConfigurationPolicy{
-			ID:                        p.ID,
-			RepositoryID:              p.RepositoryID,
-			RepositoryPatterns:        p.RepositoryPatterns,
-			Name:                      p.Name,
-			Type:                      dbstore.GitObjectType(p.Type),
-			Pattern:                   p.Pattern,
-			Protected:                 p.Protected,
-			RetentionEnabled:          p.RetentionEnabled,
-			RetentionDuration:         p.RetentionDuration,
-			RetainIntermediateCommits: p.RetainIntermediateCommits,
-			IndexingEnabled:           p.IndexingEnabled,
-			IndexCommitMaxAge:         p.IndexCommitMaxAge,
-			IndexIntermediateCommits:  p.IndexIntermediateCommits,
-		})
-	}
-	return m.CommitsDescribedByPolicy(ctx, repositoryID, dbStorePolicies, now, filterCommits...)
+	return m.CommitsDescribedByPolicy(ctx, repositoryID, policies, now, filterCommits...)
 }
 
 type matcherContext struct {
@@ -134,7 +115,7 @@ type matcherContext struct {
 	repositoryID int
 
 	// policies is the full set (global and repository-specific) policies that apply to the given repository.
-	policies []dbstore.ConfigurationPolicy
+	policies []types.ConfigurationPolicy
 
 	// patterns holds a compiled glob of the pattern from each non-commit type policy.
 	patterns map[string]glob.Glob
@@ -159,7 +140,7 @@ type branchRequestMeta struct {
 // matchTaggedCommits determines if the given commit (described by the tag-type ref given description) matches any tag-type
 // policies. For each match, a commit/policy pair will be added to the given context.
 func (m *Matcher) matchTaggedCommits(context matcherContext, commit string, refDescription gitdomain.RefDescription, now time.Time) {
-	visitor := func(policy dbstore.ConfigurationPolicy) {
+	visitor := func(policy types.ConfigurationPolicy) {
 		policyDuration, _ := m.extractor(policy)
 
 		context.commitMap[commit] = append(context.commitMap[commit], PolicyMatch{
@@ -169,7 +150,7 @@ func (m *Matcher) matchTaggedCommits(context matcherContext, commit string, refD
 		})
 	}
 
-	m.forEachMatchingPolicy(context, refDescription, dbstore.GitObjectTypeTag, visitor, now)
+	m.forEachMatchingPolicy(context, refDescription, types.GitObjectTypeTag, visitor, now)
 }
 
 // matchBranchHeads determines if the given commit (described by the branch-type ref given description) matches any branch-type
@@ -186,7 +167,7 @@ func (m *Matcher) matchBranchHeads(context matcherContext, commit string, refDes
 		})
 	}
 
-	visitor := func(policy dbstore.ConfigurationPolicy) {
+	visitor := func(policy types.ConfigurationPolicy) {
 		policyDuration, _ := m.extractor(policy)
 
 		context.commitMap[commit] = append(context.commitMap[commit], PolicyMatch{
@@ -209,7 +190,7 @@ func (m *Matcher) matchBranchHeads(context matcherContext, commit string, refDes
 		}
 	}
 
-	m.forEachMatchingPolicy(context, refDescription, dbstore.GitObjectTypeTree, visitor, now)
+	m.forEachMatchingPolicy(context, refDescription, types.GitObjectTypeTree, visitor, now)
 }
 
 // matchCommitsOnBranch makes a request for commits belonging to any branch matching a branch-type
@@ -264,7 +245,7 @@ func (m *Matcher) matchCommitsOnBranch(ctx context.Context, context matcherConte
 // repository in gitserver. For each match, a commit/policy pair will be added to the given context.
 func (m *Matcher) matchCommitPolicies(ctx context.Context, context matcherContext, now time.Time) error {
 	for _, policy := range context.policies {
-		if policy.Type == dbstore.GitObjectTypeCommit {
+		if policy.Type == types.GitObjectTypeCommit {
 			commit, commitDate, revisionExists, err := m.gitserverClient.CommitDate(ctx, context.repositoryID, policy.Pattern)
 			if err != nil {
 				return errors.Wrap(err, "gitserver.CommitDate")
@@ -291,7 +272,7 @@ func (m *Matcher) matchCommitPolicies(ctx context.Context, context matcherContex
 	return nil
 }
 
-func (m *Matcher) forEachMatchingPolicy(context matcherContext, refDescription gitdomain.RefDescription, targetObjectType dbstore.GitObjectType, f func(policy dbstore.ConfigurationPolicy), now time.Time) {
+func (m *Matcher) forEachMatchingPolicy(context matcherContext, refDescription gitdomain.RefDescription, targetObjectType types.GitObjectType, f func(policy types.ConfigurationPolicy), now time.Time) {
 	for _, policy := range context.policies {
 		if policy.Type == targetObjectType && m.policyMatchesRefDescription(context, policy, refDescription, now) {
 			f(policy)
@@ -299,7 +280,7 @@ func (m *Matcher) forEachMatchingPolicy(context matcherContext, refDescription g
 	}
 }
 
-func (m *Matcher) policyMatchesRefDescription(context matcherContext, policy dbstore.ConfigurationPolicy, refDescription gitdomain.RefDescription, now time.Time) bool {
+func (m *Matcher) policyMatchesRefDescription(context matcherContext, policy types.ConfigurationPolicy, refDescription gitdomain.RefDescription, now time.Time) bool {
 	if !context.patterns[policy.Pattern].Match(refDescription.Name) {
 		// Name doesn't match policy's pattern
 		return false
@@ -316,10 +297,10 @@ func (m *Matcher) policyMatchesRefDescription(context matcherContext, policy dbs
 // compilePatterns constructs a map from patterns in each given policy to a compiled glob object used
 // to match to commits, branch names, and tag names. If there are multiple policies with the same pattern,
 // the pattern is compiled only once.
-func compilePatterns(policies []dbstore.ConfigurationPolicy) (map[string]glob.Glob, error) {
+func compilePatterns(policies []types.ConfigurationPolicy) (map[string]glob.Glob, error) {
 	patterns := make(map[string]glob.Glob, len(policies))
 	for _, policy := range policies {
-		if _, ok := patterns[policy.Pattern]; ok || policy.Type == dbstore.GitObjectTypeCommit {
+		if _, ok := patterns[policy.Pattern]; ok || policy.Type == types.GitObjectTypeCommit {
 			continue
 		}
 

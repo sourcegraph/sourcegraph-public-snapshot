@@ -1,6 +1,7 @@
 import { Facet, RangeSetBuilder } from '@codemirror/state'
 import { Decoration, DecorationSet, EditorView, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view'
 
+import { logger } from '@sourcegraph/common'
 import { Occurrence, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
 
 import { BlobInfo } from '../Blob'
@@ -51,7 +52,7 @@ function createHighlightTable(info: BlobInfo): HighlightIndex {
 
         return { occurrences, lineIndex }
     } catch (error) {
-        console.error(`Unable to process SCIP highlight data: ${info.lsif}`, error)
+        logger.error(`Unable to process SCIP highlight data: ${info.lsif}`, error)
         return { occurrences: [], lineIndex }
     }
 }
@@ -136,7 +137,7 @@ class SyntaxHighlightManager implements PluginValue {
                 }
             }
         } catch (error) {
-            console.error('Failed to compute decorations from SCIP occurrences', error)
+            logger.error('Failed to compute decorations from SCIP occurrences', error)
         }
         return builder.finish()
     }

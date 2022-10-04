@@ -40,6 +40,12 @@ type GetUploadsOptions struct {
 	InCommitGraph bool
 }
 
+type DeleteUploadsOptions struct {
+	State        string
+	Term         string
+	VisibleAtTip bool
+}
+
 type DependencyReferenceCountUpdateType int
 
 const (

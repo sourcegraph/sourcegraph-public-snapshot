@@ -10,11 +10,12 @@
   path: github.com/prometheus/client_golang/api/prometheus/v1
   interfaces:
     - API
-- filename: internal/codeintel/sharedresolvers/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/internal/codeintel/sharedresolvers
+- filename: internal/codeintel/shared/resolvers/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers
   interfaces:
     - UploadsService
     - AutoIndexingService
+  package: sharedresolvers
 - filename: internal/codeintel/uploads/transport/graphql/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql
   interfaces:

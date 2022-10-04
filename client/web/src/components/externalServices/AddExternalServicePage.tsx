@@ -2,7 +2,7 @@ import React, { useEffect, useCallback, useState } from 'react'
 
 import * as H from 'history'
 
-import { asError, isErrorLike, renderMarkdown } from '@sourcegraph/common'
+import { asError, isErrorLike, logger, renderMarkdown } from '@sourcegraph/common'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -92,7 +92,7 @@ export const AddExternalServicePage: React.FunctionComponent<React.PropsWithChil
             // Refresh site flags so that global site alerts
             // reflect the latest configuration.
             // eslint-disable-next-line rxjs/no-ignored-subscription
-            refreshSiteFlags().subscribe({ error: error => console.error(error) })
+            refreshSiteFlags().subscribe({ error: error => logger.error(error) })
             history.push(afterCreateRoute)
         }
     }, [afterCreateRoute, createdExternalService, history])

@@ -8,7 +8,7 @@ import {
     renderReactApp,
     retrySearch,
     updateVersionAndAuthDataFromServer,
-    wasServerAccessSuccessful
+    wasServerAccessSuccessful,
 } from './index'
 
 export type ActionName = 'themeChanged' | 'pluginSettingsChanged'

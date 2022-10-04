@@ -13,7 +13,7 @@ import (
 
 	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	shared1 "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	store "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 // MockAutoIndexingService is a mock implementation of the
@@ -581,385 +581,6 @@ func (c AutoIndexingServiceUpdateSourcedCommitsFuncCall) Results() []interface{}
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// MockDBStore is a mock implementation of the DBStore interface (from the
-// package
-// github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/background/cleanup)
-// used for unit testing.
-type MockDBStore struct {
-	// DoneFunc is an instance of a mock function object controlling the
-	// behavior of the method Done.
-	DoneFunc *DBStoreDoneFunc
-	// HandleFunc is an instance of a mock function object controlling the
-	// behavior of the method Handle.
-	HandleFunc *DBStoreHandleFunc
-	// TransactFunc is an instance of a mock function object controlling the
-	// behavior of the method Transact.
-	TransactFunc *DBStoreTransactFunc
-}
-
-// NewMockDBStore creates a new mock of the DBStore interface. All methods
-// return zero values for all results, unless overwritten.
-func NewMockDBStore() *MockDBStore {
-	return &MockDBStore{
-		DoneFunc: &DBStoreDoneFunc{
-			defaultHook: func(error) (r0 error) {
-				return
-			},
-		},
-		HandleFunc: &DBStoreHandleFunc{
-			defaultHook: func() (r0 basestore.TransactableHandle) {
-				return
-			},
-		},
-		TransactFunc: &DBStoreTransactFunc{
-			defaultHook: func(context.Context) (r0 DBStore, r1 error) {
-				return
-			},
-		},
-	}
-}
-
-// NewStrictMockDBStore creates a new mock of the DBStore interface. All
-// methods panic on invocation, unless overwritten.
-func NewStrictMockDBStore() *MockDBStore {
-	return &MockDBStore{
-		DoneFunc: &DBStoreDoneFunc{
-			defaultHook: func(error) error {
-				panic("unexpected invocation of MockDBStore.Done")
-			},
-		},
-		HandleFunc: &DBStoreHandleFunc{
-			defaultHook: func() basestore.TransactableHandle {
-				panic("unexpected invocation of MockDBStore.Handle")
-			},
-		},
-		TransactFunc: &DBStoreTransactFunc{
-			defaultHook: func(context.Context) (DBStore, error) {
-				panic("unexpected invocation of MockDBStore.Transact")
-			},
-		},
-	}
-}
-
-// NewMockDBStoreFrom creates a new mock of the MockDBStore interface. All
-// methods delegate to the given implementation, unless overwritten.
-func NewMockDBStoreFrom(i DBStore) *MockDBStore {
-	return &MockDBStore{
-		DoneFunc: &DBStoreDoneFunc{
-			defaultHook: i.Done,
-		},
-		HandleFunc: &DBStoreHandleFunc{
-			defaultHook: i.Handle,
-		},
-		TransactFunc: &DBStoreTransactFunc{
-			defaultHook: i.Transact,
-		},
-	}
-}
-
-// DBStoreDoneFunc describes the behavior when the Done method of the parent
-// MockDBStore instance is invoked.
-type DBStoreDoneFunc struct {
-	defaultHook func(error) error
-	hooks       []func(error) error
-	history     []DBStoreDoneFuncCall
-	mutex       sync.Mutex
-}
-
-// Done delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockDBStore) Done(v0 error) error {
-	r0 := m.DoneFunc.nextHook()(v0)
-	m.DoneFunc.appendCall(DBStoreDoneFuncCall{v0, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the Done method of the
-// parent MockDBStore instance is invoked and the hook queue is empty.
-func (f *DBStoreDoneFunc) SetDefaultHook(hook func(error) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Done method of the parent MockDBStore instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *DBStoreDoneFunc) PushHook(hook func(error) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *DBStoreDoneFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(error) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *DBStoreDoneFunc) PushReturn(r0 error) {
-	f.PushHook(func(error) error {
-		return r0
-	})
-}
-
-func (f *DBStoreDoneFunc) nextHook() func(error) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *DBStoreDoneFunc) appendCall(r0 DBStoreDoneFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of DBStoreDoneFuncCall objects describing the
-// invocations of this function.
-func (f *DBStoreDoneFunc) History() []DBStoreDoneFuncCall {
-	f.mutex.Lock()
-	history := make([]DBStoreDoneFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// DBStoreDoneFuncCall is an object that describes an invocation of method
-// Done on an instance of MockDBStore.
-type DBStoreDoneFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 error
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c DBStoreDoneFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c DBStoreDoneFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// DBStoreHandleFunc describes the behavior when the Handle method of the
-// parent MockDBStore instance is invoked.
-type DBStoreHandleFunc struct {
-	defaultHook func() basestore.TransactableHandle
-	hooks       []func() basestore.TransactableHandle
-	history     []DBStoreHandleFuncCall
-	mutex       sync.Mutex
-}
-
-// Handle delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockDBStore) Handle() basestore.TransactableHandle {
-	r0 := m.HandleFunc.nextHook()()
-	m.HandleFunc.appendCall(DBStoreHandleFuncCall{r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the Handle method of the
-// parent MockDBStore instance is invoked and the hook queue is empty.
-func (f *DBStoreHandleFunc) SetDefaultHook(hook func() basestore.TransactableHandle) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Handle method of the parent MockDBStore instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *DBStoreHandleFunc) PushHook(hook func() basestore.TransactableHandle) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *DBStoreHandleFunc) SetDefaultReturn(r0 basestore.TransactableHandle) {
-	f.SetDefaultHook(func() basestore.TransactableHandle {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *DBStoreHandleFunc) PushReturn(r0 basestore.TransactableHandle) {
-	f.PushHook(func() basestore.TransactableHandle {
-		return r0
-	})
-}
-
-func (f *DBStoreHandleFunc) nextHook() func() basestore.TransactableHandle {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *DBStoreHandleFunc) appendCall(r0 DBStoreHandleFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of DBStoreHandleFuncCall objects describing
-// the invocations of this function.
-func (f *DBStoreHandleFunc) History() []DBStoreHandleFuncCall {
-	f.mutex.Lock()
-	history := make([]DBStoreHandleFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// DBStoreHandleFuncCall is an object that describes an invocation of method
-// Handle on an instance of MockDBStore.
-type DBStoreHandleFuncCall struct {
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 basestore.TransactableHandle
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c DBStoreHandleFuncCall) Args() []interface{} {
-	return []interface{}{}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c DBStoreHandleFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// DBStoreTransactFunc describes the behavior when the Transact method of
-// the parent MockDBStore instance is invoked.
-type DBStoreTransactFunc struct {
-	defaultHook func(context.Context) (DBStore, error)
-	hooks       []func(context.Context) (DBStore, error)
-	history     []DBStoreTransactFuncCall
-	mutex       sync.Mutex
-}
-
-// Transact delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockDBStore) Transact(v0 context.Context) (DBStore, error) {
-	r0, r1 := m.TransactFunc.nextHook()(v0)
-	m.TransactFunc.appendCall(DBStoreTransactFuncCall{v0, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the Transact method of
-// the parent MockDBStore instance is invoked and the hook queue is empty.
-func (f *DBStoreTransactFunc) SetDefaultHook(hook func(context.Context) (DBStore, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Transact method of the parent MockDBStore instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *DBStoreTransactFunc) PushHook(hook func(context.Context) (DBStore, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *DBStoreTransactFunc) SetDefaultReturn(r0 DBStore, r1 error) {
-	f.SetDefaultHook(func(context.Context) (DBStore, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *DBStoreTransactFunc) PushReturn(r0 DBStore, r1 error) {
-	f.PushHook(func(context.Context) (DBStore, error) {
-		return r0, r1
-	})
-}
-
-func (f *DBStoreTransactFunc) nextHook() func(context.Context) (DBStore, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *DBStoreTransactFunc) appendCall(r0 DBStoreTransactFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of DBStoreTransactFuncCall objects describing
-// the invocations of this function.
-func (f *DBStoreTransactFunc) History() []DBStoreTransactFuncCall {
-	f.mutex.Lock()
-	history := make([]DBStoreTransactFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// DBStoreTransactFuncCall is an object that describes an invocation of
-// method Transact on an instance of MockDBStore.
-type DBStoreTransactFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 DBStore
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c DBStoreTransactFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c DBStoreTransactFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
 // MockUploadService is a mock implementation of the UploadService interface
 // (from the package
 // github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/background/cleanup)
@@ -991,6 +612,9 @@ type MockUploadService struct {
 	// UpdateSourcedCommitsFunc is an instance of a mock function object
 	// controlling the behavior of the method UpdateSourcedCommits.
 	UpdateSourcedCommitsFunc *UploadServiceUpdateSourcedCommitsFunc
+	// WorkerutilStoreFunc is an instance of a mock function object
+	// controlling the behavior of the method WorkerutilStore.
+	WorkerutilStoreFunc *UploadServiceWorkerutilStoreFunc
 }
 
 // NewMockUploadService creates a new mock of the UploadService interface.
@@ -1034,6 +658,11 @@ func NewMockUploadService() *MockUploadService {
 		},
 		UpdateSourcedCommitsFunc: &UploadServiceUpdateSourcedCommitsFunc{
 			defaultHook: func(context.Context, int, string, time.Time) (r0 int, r1 error) {
+				return
+			},
+		},
+		WorkerutilStoreFunc: &UploadServiceWorkerutilStoreFunc{
+			defaultHook: func() (r0 store.Store) {
 				return
 			},
 		},
@@ -1084,6 +713,11 @@ func NewStrictMockUploadService() *MockUploadService {
 				panic("unexpected invocation of MockUploadService.UpdateSourcedCommits")
 			},
 		},
+		WorkerutilStoreFunc: &UploadServiceWorkerutilStoreFunc{
+			defaultHook: func() store.Store {
+				panic("unexpected invocation of MockUploadService.WorkerutilStore")
+			},
+		},
 	}
 }
 
@@ -1115,6 +749,9 @@ func NewMockUploadServiceFrom(i UploadService) *MockUploadService {
 		},
 		UpdateSourcedCommitsFunc: &UploadServiceUpdateSourcedCommitsFunc{
 			defaultHook: i.UpdateSourcedCommits,
+		},
+		WorkerutilStoreFunc: &UploadServiceWorkerutilStoreFunc{
+			defaultHook: i.WorkerutilStore,
 		},
 	}
 }
@@ -2030,4 +1667,104 @@ func (c UploadServiceUpdateSourcedCommitsFuncCall) Args() []interface{} {
 // invocation.
 func (c UploadServiceUpdateSourcedCommitsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// UploadServiceWorkerutilStoreFunc describes the behavior when the
+// WorkerutilStore method of the parent MockUploadService instance is
+// invoked.
+type UploadServiceWorkerutilStoreFunc struct {
+	defaultHook func() store.Store
+	hooks       []func() store.Store
+	history     []UploadServiceWorkerutilStoreFuncCall
+	mutex       sync.Mutex
+}
+
+// WorkerutilStore delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockUploadService) WorkerutilStore() store.Store {
+	r0 := m.WorkerutilStoreFunc.nextHook()()
+	m.WorkerutilStoreFunc.appendCall(UploadServiceWorkerutilStoreFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the WorkerutilStore
+// method of the parent MockUploadService instance is invoked and the hook
+// queue is empty.
+func (f *UploadServiceWorkerutilStoreFunc) SetDefaultHook(hook func() store.Store) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// WorkerutilStore method of the parent MockUploadService instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *UploadServiceWorkerutilStoreFunc) PushHook(hook func() store.Store) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadServiceWorkerutilStoreFunc) SetDefaultReturn(r0 store.Store) {
+	f.SetDefaultHook(func() store.Store {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadServiceWorkerutilStoreFunc) PushReturn(r0 store.Store) {
+	f.PushHook(func() store.Store {
+		return r0
+	})
+}
+
+func (f *UploadServiceWorkerutilStoreFunc) nextHook() func() store.Store {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadServiceWorkerutilStoreFunc) appendCall(r0 UploadServiceWorkerutilStoreFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UploadServiceWorkerutilStoreFuncCall
+// objects describing the invocations of this function.
+func (f *UploadServiceWorkerutilStoreFunc) History() []UploadServiceWorkerutilStoreFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadServiceWorkerutilStoreFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadServiceWorkerutilStoreFuncCall is an object that describes an
+// invocation of method WorkerutilStore on an instance of MockUploadService.
+type UploadServiceWorkerutilStoreFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 store.Store
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadServiceWorkerutilStoreFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadServiceWorkerutilStoreFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }

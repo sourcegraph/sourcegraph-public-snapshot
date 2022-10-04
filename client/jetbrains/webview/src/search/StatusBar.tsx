@@ -13,9 +13,16 @@ interface Props {
 
 export const StatusBar: React.FunctionComponent<Props> = props => (
     <div className={styles.statusBar}>
-        {props.progressState !== null && (props.progressState === 'error' ? ''
-            : <StreamingProgressCount progress={props.progress} state={props.progressState}
-                                      className={styles.progressCount} />)}
+        {props.progressState !== null &&
+            (props.progressState === 'error' ? (
+                ''
+            ) : (
+                <StreamingProgressCount
+                    progress={props.progress}
+                    state={props.progressState}
+                    className={styles.progressCount}
+                />
+            ))}
         <div className={styles.spacer} />
     </div>
 )

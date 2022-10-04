@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -21,6 +22,7 @@ func Init(
 	conf conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
 	observationContext *observation.Context,
+	autoIndexingSvc *autoindexing.Service,
 	codeintelUploadHandler http.Handler,
 	batchesWorkspaceFileGetHandler http.Handler,
 	batchesWorkspaceFileExistsHandler http.Handler,
@@ -33,7 +35,7 @@ func Init(
 	//
 	// Note: In order register a new queue type please change the validate() check code in enterprise/cmd/executor/config.go
 	queueOptions := []handler.QueueOptions{
-		codeintelqueue.QueueOptions(db, accessToken, observationContext),
+		codeintelqueue.QueueOptions(autoIndexingSvc, accessToken, observationContext),
 		batches.QueueOptions(db, accessToken, observationContext),
 	}
 

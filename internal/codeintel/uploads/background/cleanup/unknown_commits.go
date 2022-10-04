@@ -6,7 +6,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	autoindexing "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	uploads "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -58,6 +57,7 @@ func mergeSourceCommits(usc []uploads.SourcedCommits, isc []autoindexing.Sourced
 //		j.metrics.numErrors.Inc()
 //		log.Error("Failed to delete codeintel records with an unknown commit", "error", err)
 //	}
+
 type SourcedCommits struct {
 	RepositoryID   int
 	RepositoryName string
@@ -76,7 +76,7 @@ func (j *janitor) handleSourcedCommits(ctx context.Context, sc SourcedCommits) e
 
 func (j *janitor) handleCommit(ctx context.Context, repositoryID int, repositoryName, commit string) error {
 	var shouldDelete bool
-	_, err := gitserver.NewClient(database.NewDBWith(j.logger, j.dbStore)).ResolveRevision(ctx, api.RepoName(repositoryName), commit, gitserver.ResolveRevisionOptions{})
+	_, err := j.gsc.ResolveRevision(ctx, api.RepoName(repositoryName), commit, gitserver.ResolveRevisionOptions{})
 	if err == nil {
 		// If we have no error then the commit is resolvable and we shouldn't touch it.
 		shouldDelete = false

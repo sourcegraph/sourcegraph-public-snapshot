@@ -92,7 +92,7 @@ func writeFiles(ctx context.Context, store store.FilesStore, workspaceFileConten
 		return nil
 	}
 
-	handle := logger.Log("setup.fs", nil)
+	handle := logger.Log("setup.fs.extras", nil)
 	defer func() {
 		if err == nil {
 			handle.Finalize(0)
@@ -113,9 +113,7 @@ func writeFiles(ctx context.Context, store store.FilesStore, workspaceFileConten
 
 		// Log how long it takes to write the files
 		start := time.Now()
-		if len(wf.content) > 0 {
-			src = io.NopCloser(bytes.NewReader(wf.content))
-		} else if wf.bucket != "" && wf.key != "" {
+		if wf.bucket != "" && wf.key != "" {
 			src, err = store.Get(ctx, wf.bucket, wf.key)
 			if err != nil {
 				return err
@@ -133,14 +131,14 @@ func writeFiles(ctx context.Context, store store.FilesStore, workspaceFileConten
 			return err
 		}
 
-		handle.Write([]byte(fmt.Sprintf("Wrote %s in %s\n", path, time.Since(start))))
-
 		// Set modified time for caching (if provided)
 		if !wf.modifiedAt.IsZero() {
 			if err = os.Chtimes(path, wf.modifiedAt, wf.modifiedAt); err != nil {
 				return err
 			}
 		}
+
+		handle.Write([]byte(fmt.Sprintf("Wrote %s in %s\n", path, time.Since(start))))
 	}
 
 	return nil

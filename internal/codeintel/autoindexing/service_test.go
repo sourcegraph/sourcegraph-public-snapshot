@@ -6,14 +6,12 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
-	types "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
-
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/regexp"
-	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
+	types "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
@@ -21,7 +19,6 @@ import (
 )
 
 func init() {
-	maximumRepositoriesInspectedPerSecond = rate.Inf
 	maximumIndexJobsPerInferredConfiguration = 50
 }
 
