@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 // indexStepsResolver resolves the steps of an index record.
@@ -69,14 +70,14 @@ func (r *indexStepsResolver) Teardown() []ExecutionLogEntryResolver {
 	return r.executionLogEntryResolversWithPrefix("teardown.")
 }
 
-func (r *indexStepsResolver) findExecutionLogEntry(key string) (types.ExecutionLogEntry, bool) {
+func (r *indexStepsResolver) findExecutionLogEntry(key string) (workerutil.ExecutionLogEntry, bool) {
 	for _, entry := range r.index.ExecutionLogs {
 		if entry.Key == key {
 			return entry, true
 		}
 	}
 
-	return types.ExecutionLogEntry{}, false
+	return workerutil.ExecutionLogEntry{}, false
 }
 
 func (r *indexStepsResolver) executionLogEntryResolversWithPrefix(prefix string) []ExecutionLogEntryResolver {

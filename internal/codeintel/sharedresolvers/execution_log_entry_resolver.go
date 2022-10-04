@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 type ExecutionLogEntryResolver interface {
@@ -18,10 +18,10 @@ type ExecutionLogEntryResolver interface {
 
 type executionLogEntryResolver struct {
 	svc   AutoIndexingService
-	entry types.ExecutionLogEntry
+	entry workerutil.ExecutionLogEntry
 }
 
-func NewExecutionLogEntryResolver(svc AutoIndexingService, entry types.ExecutionLogEntry) ExecutionLogEntryResolver {
+func NewExecutionLogEntryResolver(svc AutoIndexingService, entry workerutil.ExecutionLogEntry) ExecutionLogEntryResolver {
 	return &executionLogEntryResolver{
 		svc:   svc,
 		entry: entry,

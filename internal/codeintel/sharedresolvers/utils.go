@@ -12,11 +12,6 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	autoindexingShared "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
-	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -161,55 +156,6 @@ func (f fileInfo) Mode() os.FileMode {
 }
 func (f fileInfo) ModTime() time.Time { return time.Now() }
 func (f fileInfo) Sys() any           { return any(nil) }
-
-func convertSharedIndexesWithRepositoryNamespaceToDBStoreIndexesWithRepositoryNamespace(shared autoindexingShared.IndexesWithRepositoryNamespace) dbstore.IndexesWithRepositoryNamespace {
-	indexes := make([]dbstore.Index, 0, len(shared.Indexes))
-	for _, index := range shared.Indexes {
-		indexes = append(indexes, convertSharedIndexToDBStoreIndex(index))
-	}
-
-	return dbstore.IndexesWithRepositoryNamespace{
-		Root:    shared.Root,
-		Indexer: shared.Indexer,
-		Indexes: indexes,
-	}
-}
-
-func convertSharedIndexToDBStoreIndex(index types.Index) store.Index {
-	dockerSteps := make([]store.DockerStep, 0, len(index.DockerSteps))
-	for _, step := range index.DockerSteps {
-		dockerSteps = append(dockerSteps, store.DockerStep(step))
-	}
-
-	executionLogs := make([]workerutil.ExecutionLogEntry, 0, len(index.ExecutionLogs))
-	for _, log := range index.ExecutionLogs {
-		executionLogs = append(executionLogs, workerutil.ExecutionLogEntry(log))
-	}
-
-	return store.Index{
-		ID:                 index.ID,
-		Commit:             index.Commit,
-		QueuedAt:           index.QueuedAt,
-		State:              index.State,
-		FailureMessage:     index.FailureMessage,
-		StartedAt:          index.StartedAt,
-		FinishedAt:         index.FinishedAt,
-		ProcessAfter:       index.ProcessAfter,
-		NumResets:          index.NumResets,
-		NumFailures:        index.NumFailures,
-		RepositoryID:       index.RepositoryID,
-		LocalSteps:         index.LocalSteps,
-		RepositoryName:     index.RepositoryName,
-		DockerSteps:        dockerSteps,
-		Root:               index.Root,
-		Indexer:            index.Indexer,
-		IndexerArgs:        index.IndexerArgs,
-		Outfile:            index.Outfile,
-		ExecutionLogs:      executionLogs,
-		Rank:               index.Rank,
-		AssociatedUploadID: index.AssociatedUploadID,
-	}
-}
 
 func UnmarshalRepositoryID(id graphql.ID) (repo api.RepoID, err error) {
 	err = relay.UnmarshalSpec(id, &repo)
