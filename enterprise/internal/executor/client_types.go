@@ -61,7 +61,7 @@ type Job struct {
 // A file must either contain Content or a Bucket/Key. If neither are provided, an empty file is written.
 type VirtualMachineFile struct {
 	// Content is the raw content of the file. If not provided, the file is retrieved from the file store based on the
-	// configured Bucket and Key.
+	// configured Bucket and Key. If Content, Bucket, and Key are not provided, an empty file will be written.
 	Content string `json:"content,omitempty"`
 
 	// Bucket is the bucket in the files store the file belongs to. A Key must also be configured.
