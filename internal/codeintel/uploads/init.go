@@ -33,7 +33,6 @@ func GetService(
 	db database.DB,
 	codeIntelDB database.DB,
 	gsc GitserverClient,
-	// repoUpdater RepoUpdaterClient,
 ) *Service {
 	svcOnce.Do(func() {
 		store := store.New(db, scopedContext("store"))
