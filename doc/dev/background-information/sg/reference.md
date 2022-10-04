@@ -1365,3 +1365,28 @@ Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--raw`: view raw data
+
+## sg client
+
+Perform common tasks on a Sourcegraph instance.
+
+
+### sg client codehost
+
+Interact with codehosts on a given Sourcegraph instance.
+
+
+#### sg client codehost add-github
+
+Add a GitHub codehost on a given Sourcegraph instance.
+
+Arguments: ` org1 org2`
+
+Flags:
+
+* `--baseurl="<value>"`: Base URL to reach the Sourcegraph instance
+* `--display-name="<value>"`: Display name to give to the new code host
+* `--email="<value>"`: Email or username used to sign-in
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--password="<value>"`: Password used to sign-in
+* `--token="<value>"`: GitHub token to associate with the new code host
