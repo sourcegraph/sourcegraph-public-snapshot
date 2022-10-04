@@ -5,7 +5,7 @@ set -e
 echo "--- Find a commit to compare the bundle size against"
 # For testing purposes we assume that this is the latest main build
 # since we have no data for main yet.
-MERGE_BASE="b28944fe64213216fcb1efcd0cdfdea6a37dfa07" #$(git merge-base HEAD origin/main)
+export MERGE_BASE="b28944fe64213216fcb1efcd0cdfdea6a37dfa07" #$(git merge-base HEAD origin/main)
 
 # We may not have a stats.json file for the merge base commit as these are only
 # created for commits that touch frontend files. Instead, we scan for 20 commits

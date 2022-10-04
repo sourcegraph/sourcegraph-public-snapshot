@@ -75,7 +75,7 @@ function reportToMarkdown(report: Report): string {
     const asyncSize = describeMetric(asyncSizeMetric, 10000) // 10kb
     const modules = describeMetric(modulesMetric, 0)
 
-    const url = `https://storage.cloud.google.com/sourcegraph_reports/statoscope-reports/${BRANCH}/compare-report.html/#diff&diffWith=${diffWith}&hash=${hash}`
+    const url = `https://storage.cloud.google.com/sourcegraph_reports/statoscope-reports/${BRANCH}/compare-report.html#diff&diffWith=${diffWith}&hash=${hash}`
 
     let noExactDataWarning = ''
     if (MERGE_BASE !== COMPARE_REV) {
