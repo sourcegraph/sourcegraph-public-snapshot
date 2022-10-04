@@ -66,7 +66,7 @@ func (j *metricsReporterJob) Routines(startupCtx context.Context, logger log.Log
 
 	repoUpdater := codeintel.InitRepoUpdaterClient()
 	uploadSvc := uploads.GetService(db, codeIntelDB, gitserverClient)
-	depsSvc := dependencies.GetService(db)
+	depsSvc := dependencies.GetService(db, gitserverClient)
 	policySvc := policies.GetService(db, uploadSvc, gitserverClient)
 	autoindexingSvc := autoindexing.GetService(db, uploadSvc, depsSvc, policySvc, gitserverClient, repoUpdater)
 
@@ -80,7 +80,7 @@ func (j *metricsReporterJob) Routines(startupCtx context.Context, logger log.Log
 	}
 
 	// Initialize metrics
-  uploadSvc.MetricReporters(observationContext)
+	uploadSvc.MetricReporters(observationContext)
 	dbworker.InitPrometheusMetric(observationContext, dependencySyncStore, "codeintel", "dependency_sync", nil)
 	dbworker.InitPrometheusMetric(observationContext, dependencyIndexingStore, "codeintel", "dependency_index", nil)
 

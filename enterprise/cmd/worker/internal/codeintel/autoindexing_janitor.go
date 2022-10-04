@@ -57,7 +57,7 @@ func (j *autoindexingJanitorJob) Routines(startupCtx context.Context, logger log
 
 	// Initialize services
 	uploadSvc := uploads.GetService(db, codeIntelDB, gitserverClient)
-	depsSvc := dependencies.GetService(db)
+	depsSvc := dependencies.GetService(db, gitserverClient)
 	policySvc := policies.GetService(db, uploadSvc, gitserverClient)
 	autoindexingSvc := autoindexing.GetService(db, uploadSvc, depsSvc, policySvc, gitserverClient, repoUpdaterClient)
 	return cleanup.NewResetters(autoindexingSvc), nil

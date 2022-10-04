@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
 	policiesEnterprise "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/repoupdater"
@@ -54,7 +55,7 @@ func GetService(
 			scopedContext("service"),
 		)
 		svc.policySvc = policies.GetService(db, svc, gsc)
-		svc.autoIndexingSvc = autoindexing.GetService(db, svc, gsc, repoUpdater)
+		svc.autoIndexingSvc = autoindexing.GetService(db, svc, dependencies.GetService(db, gsc), svc.policySvc, gsc, repoUpdater)
 	})
 
 	return svc
