@@ -42,6 +42,7 @@ public class SettingsConfigurable implements Configurable {
         return !mySettingsComponent.getInstanceType().equals(ConfigUtil.getInstanceType(project))
             || !mySettingsComponent.getEnterpriseUrl().equals(ConfigUtil.getEnterpriseUrl(project))
             || !(mySettingsComponent.getAccessToken().equals(ConfigUtil.getAccessToken(project)) || mySettingsComponent.getAccessToken().isEmpty() && ConfigUtil.getAccessToken(project) == null)
+            || !mySettingsComponent.getRequestHeaders().equals(ConfigUtil.getRequestHeaders(project))
             || !mySettingsComponent.getDefaultBranchName().equals(ConfigUtil.getDefaultBranchName(project))
             || !mySettingsComponent.getRemoteUrlReplacements().equals(ConfigUtil.getRemoteUrlReplacements(project))
             || mySettingsComponent.isGlobbingEnabled() != ConfigUtil.isGlobbingEnabled(project)
@@ -79,6 +80,11 @@ public class SettingsConfigurable implements Configurable {
         } else {
             aSettings.accessToken = newAccessToken;
         }
+        if (pSettings.requestHeaders != null) {
+            pSettings.requestHeaders = mySettingsComponent.getRequestHeaders();
+        } else {
+            aSettings.requestHeaders = mySettingsComponent.getRequestHeaders();
+        }
         if (pSettings.defaultBranch != null) {
             pSettings.defaultBranch = mySettingsComponent.getDefaultBranchName();
         } else {
@@ -106,6 +112,7 @@ public class SettingsConfigurable implements Configurable {
         mySettingsComponent.setEnterpriseUrl(ConfigUtil.getEnterpriseUrl(project));
         String accessToken = ConfigUtil.getAccessToken(project);
         mySettingsComponent.setAccessToken(accessToken != null ? accessToken : "");
+        mySettingsComponent.setRequestHeaders(ConfigUtil.getRequestHeaders(project));
         String defaultBranchName = ConfigUtil.getDefaultBranchName(project);
         mySettingsComponent.setDefaultBranchName(defaultBranchName);
         String remoteUrlReplacements = ConfigUtil.getRemoteUrlReplacements(project);

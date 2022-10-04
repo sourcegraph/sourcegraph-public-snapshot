@@ -35,6 +35,7 @@ public class SettingsComponent {
     private JBTextField accessTokenTextField;
     private JBLabel userDocsLinkComment;
     private JBLabel accessTokenLinkComment;
+    private JBTextField requestHeadersTextField;
     private JBTextField defaultBranchNameTextField;
     private JBTextField remoteUrlReplacementsTextField;
     private JBCheckBox globbingCheckBox;
@@ -138,12 +139,40 @@ public class SettingsComponent {
             .addComponent(enterprisePanelContent, 1)
             .getPanel();
 
+        JBLabel requestHeadersLabel = new JBLabel("Request headers:");
+        requestHeadersTextField = new JBTextField();
+        requestHeadersTextField.getEmptyText().setText("Client-ID, client-one, X-Extra, some metadata");
+        requestHeadersTextField.setToolTipText("You can even overwrite \"Authorization\" that Access token sets above.");
+        addValidation(requestHeadersTextField, () -> {
+            if (requestHeadersTextField.getText().length() == 0) {
+                return null;
+            }
+            String[] pairs = requestHeadersTextField.getText().split(",");
+            if (pairs.length % 2 != 0) {
+                return new ValidationInfo("Must be a comma-separated list of pairs", requestHeadersTextField);
+            }
+
+            for (int i = 0; i < pairs.length; i += 2) {
+                String headerName = pairs[i].trim();
+                if (!headerName.matches("[a-zA-Z0-9_-]+")) {
+                    return new ValidationInfo("Invalid HTTP header name: " + headerName, requestHeadersTextField);
+                }
+            }
+            return null;
+        });
+
         // Assemble the main panel
         JPanel userAuthenticationPanel = FormBuilder.createFormBuilder()
             .addComponent(dotComPanel)
             .addComponent(enterprisePanel, 5)
+            .addLabeledComponent(requestHeadersLabel, requestHeadersTextField)
+            .addTooltip("Any custom headers to send with every request to Sourcegraph.")
+            .addTooltip("Use any number of pairs: \"header1, value1, header2, value2, ...\".")
+            .addTooltip("Whitespace around commas doesn't matter.")
             .getPanel();
         userAuthenticationPanel.setBorder(IdeBorderFactory.createTitledBorder("User Authentication", true, JBUI.insetsTop(8)));
+
+        // Value can be: [a-zA-Z0-9_ :;.,\/"'?!(){}[\]@<>=+*#$&`|~^%-]+
 
         return userAuthenticationPanel;
     }
@@ -164,6 +193,15 @@ public class SettingsComponent {
 
     public void setAccessToken(@NotNull String value) {
         accessTokenTextField.setText(value);
+    }
+
+    @NotNull
+    public String getRequestHeaders() {
+        return requestHeadersTextField.getText();
+    }
+
+    public void setRequestHeaders(@NotNull String requestHeaders) {
+        this.requestHeadersTextField.setText(requestHeaders);
     }
 
     @NotNull
@@ -257,6 +295,7 @@ public class SettingsComponent {
         //noinspection DialogTitleCapitalization
         defaultBranchNameTextField.getEmptyText().setText("main");
         defaultBranchNameTextField.setToolTipText("Usually \"main\" or \"master\", but can be any name");
+        String defaultBranchNameTooltip = "The branch to use if the current branch is not yet pushed";
 
         JBLabel remoteUrlReplacementsLabel = new JBLabel("Remote URL replacements:");
         remoteUrlReplacementsTextField = new JBTextField();
@@ -272,7 +311,7 @@ public class SettingsComponent {
 
         JPanel navigationSettingsPanel = FormBuilder.createFormBuilder()
             .addLabeledComponent(defaultBranchNameLabel, defaultBranchNameTextField)
-            .addTooltip("The branch to use if the current branch is not yet pushed")
+            .addTooltip(defaultBranchNameTooltip)
             .addLabeledComponent(remoteUrlReplacementsLabel, remoteUrlReplacementsTextField)
             .addTooltip("You can replace specified strings in your repo's remote URL.")
             .addTooltip("Use any number of pairs: \"search1, replacement1, search2, replacement2, ...\".")

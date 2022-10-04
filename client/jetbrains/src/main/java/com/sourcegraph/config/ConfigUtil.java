@@ -86,6 +86,24 @@ public class ConfigUtil {
     }
 
     @NotNull
+    public static String getRequestHeaders(@NotNull Project project) {
+        // Project level
+        String projectLevelRequestHeaders = getProjectLevelConfig(project).getRequestHeaders();
+        if (projectLevelRequestHeaders != null && projectLevelRequestHeaders.length() > 0) {
+            return projectLevelRequestHeaders;
+        }
+
+        // Application level
+        String applicationLevelRequestHeaders = getApplicationLevelConfig().getRequestHeaders();
+        if (applicationLevelRequestHeaders != null && applicationLevelRequestHeaders.length() > 0) {
+            return applicationLevelRequestHeaders;
+        }
+
+        // Default
+        return "";
+    }
+
+    @NotNull
     public static String getDefaultBranchName(@NotNull Project project) {
         // Project level
         String projectLevelDefaultBranchName = getProjectLevelConfig(project).getDefaultBranchName();
