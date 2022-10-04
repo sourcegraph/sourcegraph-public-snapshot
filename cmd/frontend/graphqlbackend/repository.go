@@ -43,7 +43,8 @@ type RepositoryResolver struct {
 	// because it may cause a race during hydration.
 	result.RepoMatch
 
-	db database.DB
+	db              database.DB
+	gitserverClient gitserver.Client
 
 	// innerRepo may only contain ID and Name information.
 	// To access any other repo information, use repo() instead.
@@ -54,7 +55,7 @@ type RepositoryResolver struct {
 	defaultBranchErr  error
 }
 
-func NewRepositoryResolver(db database.DB, repo *types.Repo) *RepositoryResolver {
+func NewRepositoryResolver(db database.DB, client gitserver.Client, repo *types.Repo) *RepositoryResolver {
 	// Protect against a nil repo
 	var name api.RepoName
 	var id api.RepoID
@@ -64,8 +65,9 @@ func NewRepositoryResolver(db database.DB, repo *types.Repo) *RepositoryResolver
 	}
 
 	return &RepositoryResolver{
-		db:        db,
-		innerRepo: repo,
+		db:              db,
+		innerRepo:       repo,
+		gitserverClient: client,
 		RepoMatch: result.RepoMatch{
 			Name: name,
 			ID:   id,
@@ -204,7 +206,7 @@ func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitA
 }
 
 func (r *RepositoryResolver) CommitFromID(ctx context.Context, args *RepositoryCommitArgs, commitID api.CommitID) (*GitCommitResolver, error) {
-	resolver := NewGitCommitResolver(r.db, r, commitID, nil)
+	resolver := NewGitCommitResolver(r.db, r.gitserverClient, r, commitID, nil)
 	if args.InputRevspec != nil {
 		resolver.inputRev = args.InputRevspec
 	} else {
@@ -215,7 +217,7 @@ func (r *RepositoryResolver) CommitFromID(ctx context.Context, args *RepositoryC
 
 func (r *RepositoryResolver) DefaultBranch(ctx context.Context) (*GitRefResolver, error) {
 	do := func() (*GitRefResolver, error) {
-		refName, _, err := gitserver.NewClient(r.db).GetDefaultBranch(ctx, r.RepoName(), false)
+		refName, _, err := r.gitserverClient.GetDefaultBranch(ctx, r.RepoName(), false)
 		if err != nil {
 			return nil, err
 		}
@@ -461,7 +463,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 		if err != nil {
 			return nil, err
 		}
-		r := NewRepositoryResolver(db, repo)
+		r := NewRepositoryResolver(db, gitserver.NewClient(db), repo)
 		return r.Commit(ctx, &RepositoryCommitArgs{Rev: targetRef})
 	}
 
