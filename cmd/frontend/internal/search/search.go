@@ -96,7 +96,7 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 		otlog.String("query", args.Query),
 		otlog.String("version", args.Version),
 		otlog.String("pattern_type", args.PatternType),
-		otlog.Int("search_mode", int(args.SearchMode)),
+		otlog.Int("search_mode", args.SearchMode),
 	)
 
 	settings, err := graphqlbackend.DecodedViewerFinalSettings(ctx, h.db)
