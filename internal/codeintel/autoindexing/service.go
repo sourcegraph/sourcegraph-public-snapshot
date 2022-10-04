@@ -58,6 +58,8 @@ type service interface {
 	// Utilities
 	GetUnsafeDB() database.DB
 	WorkerutilStore() dbworkerstore.Store
+	DependencySyncStore() dbworkerstore.Store
+	DependencyIndexingStore() dbworkerstore.Store
 	NewIndexResetter(interval time.Duration) *dbworker.Resetter
 	NewDependencyIndexResetter(interval time.Duration) *dbworker.Resetter
 	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error)
@@ -134,9 +136,9 @@ func newService(
 	}
 }
 
-func (s *Service) WorkerutilStore() dbworkerstore.Store {
-	return s.workerutilStore
-}
+func (s *Service) WorkerutilStore() dbworkerstore.Store         { return s.workerutilStore }
+func (s *Service) DependencySyncStore() dbworkerstore.Store     { return s.dependencySyncStore }
+func (s *Service) DependencyIndexingStore() dbworkerstore.Store { return s.dependencyIndexingStore }
 
 // NewIndexResetter returns a background routine that periodically resets index
 // records that are marked as being processed but are no longer being processed

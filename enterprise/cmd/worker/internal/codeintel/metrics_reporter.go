@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 )
 
 type metricsReporterJob struct{}
@@ -70,11 +71,17 @@ func (j *metricsReporterJob) Routines(startupCtx context.Context, logger log.Log
 	autoindexingSvc := autoindexing.GetService(db, uploadSvc, depsSvc, policySvc, gitserverClient, repoUpdater)
 
 	indexWorkerStore := autoindexingSvc.WorkerutilStore()
+	dependencySyncStore := autoindexingSvc.DependencySyncStore()
+	dependencyIndexingStore := autoindexingSvc.DependencyIndexingStore()
 
 	executorMetricsReporter, err := executorqueue.NewMetricReporter(observationContext, "codeintel", indexWorkerStore, configInst.MetricsConfig)
 	if err != nil {
 		return nil, err
 	}
+
+	// Initialize metrics
+	dbworker.InitPrometheusMetric(observationContext, dependencySyncStore, "codeintel", "dependency_sync", nil)
+	dbworker.InitPrometheusMetric(observationContext, dependencyIndexingStore, "codeintel", "dependency_index", nil)
 
 	routines := []goroutine.BackgroundRoutine{
 		executorMetricsReporter,

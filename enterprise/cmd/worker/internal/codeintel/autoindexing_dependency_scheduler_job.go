@@ -60,12 +60,6 @@ func (j *autoindexingDependencyScheduler) Routines(startupCtx context.Context, l
 	depsSvc := dependencies.GetService(db)
 	policySvc := policies.GetService(db, uploadSvc, gitserverClient)
 	autoIndexingSvc := autoindexing.GetService(db, uploadSvc, depsSvc, policySvc, gitserverClient, repoUpdater)
-	// dependencySyncStore := autoIndexingSvc.DependencySyncStore()
-	// dependencyIndexingStore := autoindexingSvc.DependencyIndexingStore()
-
-	// TODO - move these to metrics reporter job
-	// Initialize metrics
-	// dbworker.InitPrometheusMetric(observationContext, dependencySyncStore, "codeintel", "dependency_index", nil)
 
 	return bkgdependencies.NewSchedulers(autoIndexingSvc), nil
 }
