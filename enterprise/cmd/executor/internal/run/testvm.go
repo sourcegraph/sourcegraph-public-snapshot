@@ -18,6 +18,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// RunTestVM is the CLI action handler for the test-vm command. It spawns a firecracker
+// VM for testing purposes.
+//
+// TODO: Add a command to get rid of VM without calling ignite, this way we can inline or replace ignite later
+// more easily.
+// TODO: Add a command to attach to the VM without calling ignite, this way we can inline or replace ignite later
+// more easily.
 func RunTestVM(cliCtx *cli.Context, logger log.Logger, config *config.Config) error {
 	repoName := cliCtx.String("repo")
 	revision := cliCtx.String("revision")
