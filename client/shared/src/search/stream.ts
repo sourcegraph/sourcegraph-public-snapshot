@@ -51,7 +51,7 @@ export interface ContentMatch {
     repoLastFetched?: string
     branches?: string[]
     commit?: string
-    chunkMatches?: ChunkMatch[]
+    chunkMatches: ChunkMatch[]
     hunks?: DecoratedHunk[]
 }
 

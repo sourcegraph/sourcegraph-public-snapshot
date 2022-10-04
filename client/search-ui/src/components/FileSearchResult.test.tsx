@@ -48,24 +48,24 @@ describe('FileSearchResult', () => {
                 {
                     content: '  - go test -v golang.org/x/oauth2/...',
                     contentStart: {
-                        line: 4,
-                        offset: 4,
-                        column: 0,
+                        offset: 223,
+                        line: 12,
+                        column: 0
                     },
                     ranges: [
                         {
                             start: {
-                                line: 4,
-                                offset: 7,
-                                column: 7,
+                                offset: 230,
+                                line: 12,
+                                column: 7
                             },
                             end: {
-                                line: 4,
-                                offset: 11,
-                                column: 11,
-                            },
-                        },
-                    ],
+                                offset: 234,
+                                line: 12,
+                                column: 11
+                            }
+                        }
+                    ]
                 },
             ],
         }
@@ -91,7 +91,7 @@ describe('FileSearchResult', () => {
             <FileSearchResult {...defaultProps} result={result} settingsCascade={settingsCascade} />
         )
         const tableRows = container.querySelectorAll('[data-testid="code-excerpt"] tr')
-        expect(tableRows.length).toBe(7)
+        expect(tableRows.length).toBe(4)
     })
 })
 

@@ -218,12 +218,12 @@ function referencesToContentMatch(uri: string, references: Badged<Location>[]): 
                 {
                    start: {
                        line: reference.range.start.line,
-                       offset: reference.range.start.character,
+                       offset: 0,
                        column: reference.range.start.character,
                    },
                    end: {
                        line: reference.range.end.line,
-                       offset: reference.range.end.character,
+                       offset: 0,
                        column: reference.range.end.character,
                    },
                 },
