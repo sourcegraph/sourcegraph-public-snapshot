@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -55,9 +56,8 @@ type service interface {
 
 	// Utilities
 	GetUnsafeDB() database.DB
-	WorkerutilStore() dbworkerstore.Store
-	DependencySyncStore() dbworkerstore.Store
-	DependencyIndexingStore() dbworkerstore.Store
+	NewIndexResetter(interval time.Duration) *dbworker.Resetter
+	NewDependencyIndexResetter(interval time.Duration) *dbworker.Resetter
 	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error)
 
 	ListFiles(ctx context.Context, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error)
@@ -82,6 +82,7 @@ type Service struct {
 	inferenceService        shared.InferenceService
 	logger                  log.Logger
 	operations              *operations
+	metrics                 *resetterMetrics
 }
 
 func newService(
@@ -105,12 +106,39 @@ func newService(
 		inferenceService:        inferenceSvc,
 		logger:                  observationContext.Logger,
 		operations:              newOperations(observationContext),
+		metrics:                 newMetrics(observationContext),
 	}
 }
 
-func (s *Service) WorkerutilStore() dbworkerstore.Store         { return s.workerutilStore }
-func (s *Service) DependencySyncStore() dbworkerstore.Store     { return s.dependencySyncStore }
-func (s *Service) DependencyIndexingStore() dbworkerstore.Store { return s.dependencyIndexingStore }
+// NewIndexResetter returns a background routine that periodically resets index
+// records that are marked as being processed but are no longer being processed
+// by a worker.
+func (s *Service) NewIndexResetter(interval time.Duration) *dbworker.Resetter {
+	return dbworker.NewResetter(s.logger, s.workerutilStore, dbworker.ResetterOptions{
+		Name:     "precise_code_intel_index_worker_resetter",
+		Interval: interval,
+		Metrics: dbworker.ResetterMetrics{
+			RecordResets:        s.metrics.numIndexResets,
+			RecordResetFailures: s.metrics.numIndexResetFailures,
+			Errors:              s.metrics.numIndexResetErrors,
+		},
+	})
+}
+
+// NewDependencyIndexResetter returns a background routine that periodically resets
+// dependency index records that are marked as being processed but are no longer being
+// processed by a worker.
+func (s *Service) NewDependencyIndexResetter(interval time.Duration) *dbworker.Resetter {
+	return dbworker.NewResetter(s.logger, s.dependencyIndexingStore, dbworker.ResetterOptions{
+		Name:     "precise_code_intel_dependency_index_worker_resetter",
+		Interval: interval,
+		Metrics: dbworker.ResetterMetrics{
+			RecordResets:        s.metrics.numDependencyIndexResets,
+			RecordResetFailures: s.metrics.numDependencyIndexResetFailures,
+			Errors:              s.metrics.numDependencyIndexResetErrors,
+		},
+	})
+}
 
 func (s *Service) InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error) {
 	ctx, _, endObservation := s.operations.insertDependencyIndexingJob.With(ctx, &err, observation.Args{})
