@@ -33,7 +33,7 @@ function renderResultElementsForContentMatch(
             openResult={openResult}
         >
             {isActive => (
-                <SearchResultLayout infoColumn={Number(line.lineNumber) + 1} className={styles.code} isActive={isActive}>
+                <SearchResultLayout infoColumn={line.lineNumber + 1} className={styles.code} isActive={isActive}>
                     <TrimmedCodeLineWithHighlights line={line} />
                 </SearchResultLayout>
             )}

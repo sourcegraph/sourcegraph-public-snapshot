@@ -278,4 +278,5 @@ const testData6ConsecutiveMatches: MatchItem[] = range(0, 6).map(index => ({
     highlightRanges: [{ startLine: index, startCharacter: 0, endLine: index, endCharacter: 5 }],
     content: 'error',
     startLine: index,
+    endLine: index,
 }))

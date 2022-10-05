@@ -48,10 +48,10 @@ export const TrimmedCodeLineWithHighlights: React.FunctionComponent<Props> = Rea
                 // only a section of the joined sequence, e.g.: "<span>👨‍👩‍👧</span>&zwj;‍👧".
                 segments.push(
                     <span key={`highlight-${index}`} className={styles.codeHighlight}>
-                        {contentArray.slice(offset, Number(offset) + Number(length)).join('')}
+                        {contentArray.slice(offset, offset + length).join('')}
                     </span>
                 )
-                index = Number(offset) + Number(length)
+                index = offset + length
             }
         }
 

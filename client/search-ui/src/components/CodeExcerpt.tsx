@@ -259,7 +259,7 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
     // Highlight the search matches
     useLayoutEffect(() => {
         if (tableContainerElement) {
-            const visibleRows = tableContainerElement.querySelectorAll('table tr')
+            const visibleRows = tableContainerElement.querySelectorAll<HTMLTableRowElement>('table tr')
             for (const highlight of highlightRanges) {
                 // Select the HTML rows in the excerpt that correspond to the first and last line to be highlighted.
                 // highlight.startLine is the 0-indexed line number in the code file, and startLine is the 0-indexed
@@ -273,9 +273,9 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
                 const endRow = visibleRows[endRowIndex]
                 if (startRow && endRow) {
                     highlightNodeMultiline(
-                        visibleRows as NodeListOf<HTMLElement>,
-                        startRow as HTMLElement,
-                        endRow as HTMLElement,
+                        visibleRows,
+                        startRow,
+                        endRow,
                         startRowIndex,
                         endRowIndex,
                         highlight.startCharacter,
