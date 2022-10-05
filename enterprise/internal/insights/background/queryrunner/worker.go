@@ -16,7 +16,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -87,30 +86,8 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 		limiter:         limiter,
 		metadadataStore: store.NewInsightStoreWith(insightsStore),
 		seriesCache:     sharedCache,
-		searchStream: func(ctx context.Context, query string) (*streaming.TabulationResult, error) {
-			decoder, streamResults := streaming.TabulationDecoder()
-			err := streaming.Search(ctx, query, nil, decoder)
-			if err != nil {
-				return nil, errors.Wrap(err, "streaming.Search")
-			}
-			return streamResults, nil
-		},
-		computeSearchStream: func(ctx context.Context, query string) (*streaming.ComputeTabulationResult, error) {
-			decoder, streamResults := streaming.MatchContextComputeDecoder()
-			err := streaming.ComputeMatchContextStream(ctx, query, decoder)
-			if err != nil {
-				return nil, errors.Wrap(err, "streaming.Compute")
-			}
-			return streamResults, nil
-		},
-		computeTextExtraSearch: func(ctx context.Context, query string) (*streaming.ComputeTabulationResult, error) {
-			decoder, streamResults := streaming.ComputeTextDecoder()
-			err := streaming.ComputeTextExtraStream(ctx, query, decoder)
-			if err != nil {
-				return nil, errors.Wrap(err, "streaming.ComputeText")
-			}
-			return streamResults, nil
-		},
+		searchHandlers:  GetSearchHandlers(),
+		logger:          log.Scoped("insights.queryRunner.Handler", ""),
 	}, options)
 }
 
