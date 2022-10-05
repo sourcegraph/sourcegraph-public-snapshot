@@ -591,9 +591,9 @@ Now the deployment is complete, more information on configuring the Sourcegraph 
    - [AWS EBS CSI driver](https://docs.aws.amazon.com/eks/latest/userguide/managing-ebs-csi.html)
    - [AWS Cluster Autoscaler](https://docs.aws.amazon.com/eks/latest/userguide/autoscaling.html)
 > You may consider deploying your own Ingress Controller instead of the ALB Ingress Controller, [learn more](https://kubernetes.github.io/ingress-nginx/)
-1. Your account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
-1. Connect to your cluster (via either the console or the command line using `eksctl`) and ensure the cluster is up and running using: `kubectl get nodes` (several `ready` nodes should be listed)
-1. Have the [Helm CLI](https://helm.sh/docs/intro/install/) installed and run the following command to link to the Sourcegraph helm repository (on the machine used to interact with your cluster):
+2. Your account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
+3. Connect to your cluster (via either the console or the command line using `eksctl`) and ensure the cluster is up and running using: `kubectl get nodes` (several `ready` nodes should be listed)
+4. Have the [Helm CLI](https://helm.sh/docs/intro/install/) installed and run the following command to link to the Sourcegraph helm repository (on the machine used to interact with your cluster):
 
 ```sh
 helm repo add sourcegraph https://helm.sourcegraph.com/release
@@ -677,9 +677,9 @@ Now the deployment is complete, more information on configuring the Sourcegraph 
    - [Azure Disk CSI driver](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers)
    - [Azure Cluster Autoscaler](https://learn.microsoft.com/en-us/azure/aks/cluster-autoscaler)
 > You may consider using your custom Ingress Controller instead of Application Gateway, [learn more](https://docs.microsoft.com/en-us/azure/aks/ingress-basic)
-1. Your account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
-1. Connect to your cluster (via either the console or the command line using the Azure CLI) and ensure the cluster is up and running using: `kubectl get nodes` (several `ready` nodes should be listed)
-1. Have the [Helm CLI](https://helm.sh/docs/intro/install/) installed and run the following command to link to the Sourcegraph helm repository (on the machine used to interact with your cluster):
+2. Your account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
+3. Connect to your cluster (via either the console or the command line using the Azure CLI) and ensure the cluster is up and running using: `kubectl get nodes` (several `ready` nodes should be listed)
+4. Have the [Helm CLI](https://helm.sh/docs/intro/install/) installed and run the following command to link to the Sourcegraph helm repository (on the machine used to interact with your cluster):
 
 ```sh
 helm repo add sourcegraph https://helm.sourcegraph.com/release
