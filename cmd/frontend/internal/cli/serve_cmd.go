@@ -221,7 +221,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 			log.Printf("Version: %s", version.Version())
 			log.Print()
 
-			env.PrintHelp()
+			log.Print(env.HelpString())
 
 			log.Print()
 			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)

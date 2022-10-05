@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strings"
 
+	sgrun "github.com/sourcegraph/run"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
 
@@ -211,6 +212,19 @@ func startExec(ctx *cli.Context) error {
 			std.Out.Write("")
 
 			return cliutil.NewEmptyExitErr(1)
+		}
+
+		// dev-private exists, try to update the configuration
+		update := std.Out.Pending(output.Styled(output.StylePending, "Updating dev-private..."))
+		if err := sgrun.Bash(ctx.Context, "git pull origin main").
+			Dir(devPrivatePath).
+			Run().Wait(); err != nil {
+
+			update.Close()
+			std.Out.WriteWarningf("WARNING: failed to update dev-private:")
+			std.Out.Write("")
+			std.Out.Write(err.Error())
+			std.Out.Write("")
 		}
 	}
 
