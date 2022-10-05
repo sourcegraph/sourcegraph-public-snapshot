@@ -52,10 +52,9 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 	}
 
 	// Connect to the separate LSIF database
-	codeIntelDBConnection := mustInitializeCodeIntelDB(logger)
+	codeIntelLsifStore := mustInitializeCodeIntelDB(logger)
 
-	// Initialize lsif stores (TODO: these should be integrated, they are basically pointing to the same thing)
-	codeIntelLsifStore := database.NewDBWith(observationContext.Logger, codeIntelDBConnection)
+	// Initialize blob stores
 	uploadStore, err := lsifuploadstore.New(context.Background(), config.LSIFUploadStoreConfig, observationContext)
 	if err != nil {
 		return nil, err
