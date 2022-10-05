@@ -60,6 +60,7 @@ class SearchPanel implements Panel {
             name: 'search',
             placeholder: 'Find...',
             className: 'form-control form-control-sm mr-2',
+            autocomplete: 'off',
             onchange: this.commit,
             onkeyup: this.commit,
         })
