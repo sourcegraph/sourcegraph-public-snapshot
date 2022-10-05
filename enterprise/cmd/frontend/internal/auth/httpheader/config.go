@@ -44,7 +44,6 @@ func Init() {
 				providers.Update(pkgName, nil)
 				return
 			}
-
 			providers.Update(pkgName, []providers.Provider{&provider{c: newPC}})
 		})
 	}()
