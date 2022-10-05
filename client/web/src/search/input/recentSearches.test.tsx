@@ -9,6 +9,7 @@ import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentS
 import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
+import { MockedFeatureFlagsProvider } from '../../featureFlags/FeatureFlagsProvider'
 import { SearchHistoryEventLogsQueryResult } from '../../graphql-operations'
 
 import { SEARCH_HISTORY_EVENT_LOGS_QUERY, useRecentSearches } from './recentSearches'
@@ -26,7 +27,7 @@ function buildMockEventLogs(items: number): SearchHistoryEventLogsQueryResult {
             __typename: 'User',
             recentSearchLogs: {
                 nodes: Array.from({ length: items }, (_item, index) => ({
-                    argument: `test${index}`,
+                    argument: `{"code_search": { "query_data": { "combined": "test${index}"}}}`,
                     timestamp: '2021-01-01T00:00:00Z',
                 })),
             },
@@ -56,6 +57,14 @@ const Wrapper: React.JSXElementConstructor<{
 }
 
 describe('recentSearches', () => {
+    beforeEach(() => {
+        jest.useFakeTimers()
+    })
+
+    afterEach(() => {
+        jest.useRealTimers()
+    })
+
     describe('useRecentSearches().recentSearches', () => {
         test('recent searches is empty array if no data in temp settings or event logs', async () => {
             const { result } = renderHook(() => useRecentSearches(), {
@@ -87,6 +96,8 @@ describe('recentSearches', () => {
                     </Wrapper>
                 ),
             })
+            // Initial
+            expect(result.current.recentSearches).toEqual([])
             await waitFor(() =>
                 expect(result.current.recentSearches).toEqual([
                     { query: 'test0', timestamp: '2021-01-01T00:00:00Z' },
