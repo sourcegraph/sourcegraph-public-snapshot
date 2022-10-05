@@ -1,3 +1,4 @@
+/* eslint-disable react/display-name */
 import React from 'react'
 
 import { MockedResponse } from '@apollo/client/testing'
@@ -8,7 +9,6 @@ import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentS
 import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
-import { MockedFeatureFlagsProvider } from '../../featureFlags/FeatureFlagsProvider'
 import { SearchHistoryEventLogsQueryResult } from '../../graphql-operations'
 
 import { SEARCH_HISTORY_EVENT_LOGS_QUERY, useRecentSearches } from './recentSearches'
@@ -34,46 +34,37 @@ function buildMockEventLogs(items: number): SearchHistoryEventLogsQueryResult {
     }
 }
 
-const createWrapper = (
-    featureFlagEnabled: boolean,
-    tempSettings: RecentSearch[],
-    eventLogs?: SearchHistoryEventLogsQueryResult
-) => {
-    const mockedEventLogs: MockedResponse[] = eventLogs
-        ? [
-              {
-                  request: { query: getDocumentNode(SEARCH_HISTORY_EVENT_LOGS_QUERY) },
-                  result: { data: eventLogs },
-              },
-          ]
-        : []
+const Wrapper: React.JSXElementConstructor<{
+    children: React.ReactElement
+    tempSettings: RecentSearch[]
+    eventLogs: SearchHistoryEventLogsQueryResult
+}> = ({ children, tempSettings, eventLogs }) => {
+    const mockedEventLogs: MockedResponse[] = [
+        {
+            request: { query: getDocumentNode(SEARCH_HISTORY_EVENT_LOGS_QUERY), variables: { first: 20 } },
+            result: { data: eventLogs },
+        },
+    ]
 
-    const wrapper = ({ children }: { children: React.ReactNode }) => (
+    return (
         <MockedTestProvider mocks={mockedEventLogs}>
-            <MockedFeatureFlagsProvider
-                overrides={{ 'search-input-show-history': featureFlagEnabled }}
-                refetchInterval={1}
-            >
-                <MockTemporarySettings settings={{ 'search.input.recentSearches': tempSettings }}>
-                    {children}
-                </MockTemporarySettings>
-            </MockedFeatureFlagsProvider>
+            <MockTemporarySettings settings={{ 'search.input.recentSearches': tempSettings }}>
+                {children}
+            </MockTemporarySettings>
         </MockedTestProvider>
     )
-    return wrapper
 }
 
 describe('recentSearches', () => {
     describe('useRecentSearches().recentSearches', () => {
-        test('recent searches is empty array if feature flag is off', async () => {
-            const wrapper = createWrapper(false, buildMockTempSettings(5), buildMockEventLogs(5))
-            const { result } = renderHook(() => useRecentSearches(), { wrapper })
-            await waitFor(() => expect(result.current.recentSearches).toEqual([]))
-        })
-
         test('recent searches is empty array if no data in temp settings or event logs', async () => {
-            const wrapper = createWrapper(true, buildMockTempSettings(0), buildMockEventLogs(0))
-            const { result } = renderHook(() => useRecentSearches(), { wrapper })
+            const { result } = renderHook(() => useRecentSearches(), {
+                wrapper: ({ children }) => (
+                    <Wrapper tempSettings={buildMockTempSettings(0)} eventLogs={buildMockEventLogs(0)}>
+                        {children}
+                    </Wrapper>
+                ),
+            })
             await waitFor(() => expect(result.current.recentSearches).toEqual([]))
         })
 
@@ -89,8 +80,13 @@ describe('recentSearches', () => {
                 },
             }
 
-            const wrapper = createWrapper(true, buildMockTempSettings(0), mockedEventLogsWithDuplicates)
-            const { result } = renderHook(() => useRecentSearches(), { wrapper })
+            const { result } = renderHook(() => useRecentSearches(), {
+                wrapper: ({ children }) => (
+                    <Wrapper tempSettings={buildMockTempSettings(0)} eventLogs={mockedEventLogsWithDuplicates}>
+                        {children}
+                    </Wrapper>
+                ),
+            })
             await waitFor(() =>
                 expect(result.current.recentSearches).toEqual([
                     { query: 'test0', timestamp: '2021-01-01T00:00:00Z' },
@@ -113,8 +109,6 @@ describe('recentSearches', () => {
     })
 
     describe('searchHistorySource', () => {
-        test('returns null if feature flag is off', () => {})
-
         test('returns null if no recent searches', () => {})
 
         test('returns recent searches in the correct format', () => {})

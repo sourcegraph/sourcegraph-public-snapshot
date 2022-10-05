@@ -38,6 +38,7 @@
     "local": "github.com/sourcegraph/sourcegraph",
   },
   "jest.jestCommandLine": "yarn test",
+  "jest.showCoverageOnLoad": false,
   "gulp.autoDetect": "off",
   "npm.packageManager": "yarn",
   "npm.runSilent": true,

@@ -1,24 +1,33 @@
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useEffect } from 'react'
 
 import { Completion, insertCompletionText } from '@codemirror/autocomplete'
 import { EditorView } from '@codemirror/view'
-import { from, Observable, of } from 'rxjs'
-import { catchError, map } from 'rxjs/operators'
 
 import { logger } from '@sourcegraph/common'
-import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { gql, useLazyQuery } from '@sourcegraph/http-client'
 import { StandardSuggestionSource } from '@sourcegraph/search-ui'
 import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { useObservable } from '@sourcegraph/wildcard'
 
-import { requestGraphQL } from '../../backend/graphql'
-import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { SearchHistoryEventLogsQueryResult, SearchHistoryEventLogsQueryVariables } from '../../graphql-operations'
 
 const MAX_RECENT_SEARCHES = 20
+
+export const SEARCH_HISTORY_EVENT_LOGS_QUERY = gql`
+    query SearchHistoryEventLogsQuery($first: Int!) {
+        currentUser {
+            __typename
+            recentSearchLogs: eventLogs(first: $first, eventName: "SearchResultsQueried") {
+                nodes {
+                    argument
+                    timestamp
+                }
+            }
+        }
+    }
+`
 
 export function searchHistorySource({
     searches,
@@ -108,28 +117,31 @@ export function useRecentSearches(): {
     recentSearches: RecentSearch[] | undefined
     addRecentSearch: (query: string) => void
 } {
-    const [showSearchHistory] = useFeatureFlag('search-input-show-history')
     const [recentSearches, setRecentSearches] = useTemporarySetting('search.input.recentSearches', [])
 
     // If recentSearches from temporary settings is empty, fetch recent searches from the event log
     // and populate temporary settings with that instead.
-    const recentSearchesFromEventLog = useObservable(
-        useMemo(
-            () =>
-                showSearchHistory && recentSearches && recentSearches.length === 0
-                    ? getRecentSearchesFromEventLog()
-                    : of(null),
-            [recentSearches, showSearchHistory]
-        )
+    const [loadFromEventLog] = useLazyQuery<SearchHistoryEventLogsQueryResult, SearchHistoryEventLogsQueryVariables>(
+        SEARCH_HISTORY_EVENT_LOGS_QUERY,
+        {
+            variables: { first: MAX_RECENT_SEARCHES },
+        }
     )
 
     useEffect(() => {
-        if (recentSearchesFromEventLog && recentSearches && recentSearches.length === 0) {
-            console.log('Setting recent searches from event log')
-            console.log(recentSearchesFromEventLog)
-            setRecentSearches(recentSearchesFromEventLog)
+        if (recentSearches && recentSearches.length === 0) {
+            loadFromEventLog()
+                .then(result => {
+                    if (result.data) {
+                        const processedLogs = processEventLogs(result.data)
+                        setRecentSearches(processedLogs)
+                    }
+                })
+                .catch(() => {
+                    logger.error('Error fetching recent searches from event log')
+                })
         }
-    }, [recentSearches, recentSearchesFromEventLog, setRecentSearches])
+    }, [recentSearches, loadFromEventLog, setRecentSearches])
 
     // Adds a new search to the top of the recent searches list.
     // If the search is already in the recent searches list, it moves it to the top.
@@ -144,59 +156,28 @@ export function useRecentSearches(): {
         [setRecentSearches]
     )
 
-    return { recentSearches: showSearchHistory ? recentSearches : [], addRecentSearch }
+    return { recentSearches, addRecentSearch }
 }
 
-export const SEARCH_HISTORY_EVENT_LOGS_QUERY = gql`
-    query SearchHistoryEventLogsQuery($first: Int!) {
-        currentUser {
-            __typename
-            recentSearchLogs: eventLogs(first: $first, eventName: "SearchResultsQueried") {
-                nodes {
-                    argument
-                    timestamp
-                }
-            }
-        }
+function processEventLogs(data: SearchHistoryEventLogsQueryResult): RecentSearch[] {
+    if (data.currentUser?.__typename !== 'User') {
+        return []
     }
-`
-
-function getRecentSearchesFromEventLog(): Observable<RecentSearch[] | null> {
-    console.log('Fetching recent searches from event log')
-    return from(
-        requestGraphQL<SearchHistoryEventLogsQueryResult, SearchHistoryEventLogsQueryVariables>(
-            SEARCH_HISTORY_EVENT_LOGS_QUERY,
-            {
-                first: MAX_RECENT_SEARCHES,
-            }
+    const searches = data.currentUser.recentSearchLogs.nodes
+        .filter(node => node.argument && node.timestamp)
+        .map(node => ({
+            // This JSON.parse is safe, silence any TS linting warnings.
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-non-null-assertion
+            query: JSON.parse(node.argument!)?.code_search?.query_data?.combined,
+            timestamp: node.timestamp,
+        }))
+        .filter(search => search.query)
+        .filter(
+            // Remove duplicates
+            // Items are sorted by timestamp, so the first item is the most recent.
+            // If a search appears earlier in the list, it is a duplicate.
+            (search, index, self) => index === self.findIndex(item => item.query === search.query)
         )
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(({ currentUser }) => {
-            if (currentUser?.__typename !== 'User') {
-                return []
-            }
-            const searches = currentUser.recentSearchLogs.nodes
-                .filter(node => node.argument && node.timestamp)
-                .map(node => ({
-                    // This JSON.parse is safe, silence any TS linting warnings.
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-non-null-assertion
-                    query: JSON.parse(node.argument!)?.code_search?.query_data?.combined,
-                    timestamp: node.timestamp,
-                }))
-                .filter(search => search.query)
-                .filter(
-                    // Remove duplicates
-                    // Items are sorted by timestamp, so the first item is the most recent.
-                    // If a search appears earlier in the list, it is a duplicate.
-                    (search, index, self) => index === self.findIndex(item => item.query === search.query)
-                )
 
-            return searches
-        }),
-        catchError(error => {
-            logger.error(error)
-            return []
-        })
-    )
+    return searches
 }
