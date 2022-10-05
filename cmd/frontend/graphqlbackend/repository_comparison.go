@@ -168,14 +168,14 @@ func (r *RepositoryComparisonResolver) Range() *gitRevisionRange {
 	}
 }
 
-// ConnectionArgs is the common set of arguments to GraphQL fields that return connections (lists).
-type CommitsArgs struct {
+// RepositoryComparisonCommitsArgs is a set of arguments for listing commits on the RepositoryComparisonResolver
+type RepositoryComparisonCommitsArgs struct {
 	graphqlutil.ConnectionArgs
 	Path *string
 }
 
 func (r *RepositoryComparisonResolver) Commits(
-	args *CommitsArgs,
+	args *RepositoryComparisonCommitsArgs,
 ) *gitCommitConnectionResolver {
 	return &gitCommitConnectionResolver{
 		db:              r.db,

@@ -157,7 +157,7 @@ func TestRepositoryComparison(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		commitConnection := newComp.Commits(&CommitsArgs{})
+		commitConnection := newComp.Commits(&RepositoryComparisonCommitsArgs{})
 
 		nodes, err := commitConnection.Nodes(ctx)
 		if err != nil {
@@ -205,7 +205,7 @@ func TestRepositoryComparison(t *testing.T) {
 		}
 
 		testPath := "testpath"
-		commitConnection := newComp.Commits(&CommitsArgs{Path: &testPath})
+		commitConnection := newComp.Commits(&RepositoryComparisonCommitsArgs{Path: &testPath})
 
 		nodes, err := commitConnection.Nodes(ctx)
 		if err != nil {
