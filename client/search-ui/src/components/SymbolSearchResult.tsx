@@ -135,7 +135,7 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
             resultClassName={styles.symbolsOverride}
             as={as}
         >
-            <div className={classNames(searchResultStyles.searchResultMatch, styles.symbols)}>
+            <div className={styles.symbols}>
                 {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
                 {result.symbols.map(symbol => (
                     <div

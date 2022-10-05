@@ -4,9 +4,11 @@
 }
 
 .symbols {
+    position: relative;
     display: flex;
     flex-direction: column;
     background-color: var(--body-bg) !important;
+    padding: 0.25rem 0;
 }
 
 .symbol {

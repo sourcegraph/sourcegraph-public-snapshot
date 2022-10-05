@@ -44,7 +44,7 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
 
     return (
         <Component
-            className={classNames('test-search-result', className, styles.resultContainer)}
+            className={classNames('test-search-result', styles.resultContainer, className)}
             data-testid="result-container"
             data-result-type={resultType}
             onClick={trackReferencePanelClick}
