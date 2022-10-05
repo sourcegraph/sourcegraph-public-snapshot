@@ -5,7 +5,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -24,12 +23,6 @@ func Init(logger log.Logger, db database.DB) {
 		conf.Watch(func() {
 			newProviders, _ := parseConfig(logger, conf.Get(), db)
 			if len(newProviders) == 0 {
-				providers.Update(pkgName, nil)
-				return
-			}
-
-			if err := licensing.Check(licensing.FeatureSSO); err != nil {
-				logger.Error("Check license for SSO (GitHub OAuth)", log.Error(err))
 				providers.Update(pkgName, nil)
 				return
 			}

@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -76,12 +75,6 @@ func Init() {
 
 			ps := getProviders()
 			if len(ps) == 0 {
-				providers.Update(pkgName, nil)
-				return
-			}
-
-			if err := licensing.Check(licensing.FeatureSSO); err != nil {
-				logger.Error("Check license for SSO (SAML)", log.Error(err))
 				providers.Update(pkgName, nil)
 				return
 			}

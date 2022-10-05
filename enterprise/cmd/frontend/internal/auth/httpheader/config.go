@@ -1,10 +1,7 @@
 package httpheader
 
 import (
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -30,7 +27,6 @@ const pkgName = "httpheader"
 func Init() {
 	conf.ContributeValidator(validateConfig)
 
-	logger := log.Scoped(pkgName, "HTTP header authentication config watch")
 	go func() {
 		conf.Watch(func() {
 			newPC, _ := getProviderConfig()
@@ -39,11 +35,6 @@ func Init() {
 				return
 			}
 
-			if err := licensing.Check(licensing.FeatureSSO); err != nil {
-				logger.Error("Check license for SSO (HTTP header)", log.Error(err))
-				providers.Update(pkgName, nil)
-				return
-			}
 			providers.Update(pkgName, []providers.Provider{&provider{c: newPC}})
 		})
 	}()
