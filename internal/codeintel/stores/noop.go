@@ -10,15 +10,21 @@ import (
 
 type noopDB struct{}
 
+type noopHandle struct {
+	noopDB
+}
+
 var (
-	NoopDB  = noopDB{}
-	ErrNoop = errors.New("this service is initialized without a connection to CodeIntelDB")
+	NoopDB     = noopDB{}
+	NoopHandle = noopHandle{}
+	ErrNoop    = errors.New("this service is initialized without a connection to CodeIntelDB")
 )
 
-func (n noopDB) Handle() basestore.TransactableHandle                           { return n }
-func (n noopDB) InTransaction() bool                                            { return false }
-func (n noopDB) Transact(context.Context) (basestore.TransactableHandle, error) { return n, nil }
-func (n noopDB) Done(err error) error                                           { return err }
+func (n noopDB) Handle() basestore.TransactableHandle                               { return NoopHandle }
+func (n noopHandle) Transact(context.Context) (basestore.TransactableHandle, error) { return n, nil }
+func (n noopDB) InTransaction() bool                                                { return false }
+func (n noopDB) Transact(context.Context) (CodeIntelDB, error)                      { return n, nil }
+func (n noopDB) Done(err error) error                                               { return err }
 
 func (n noopDB) QueryContext(ctx context.Context, q string, args ...any) (*sql.Rows, error) {
 	return nil, ErrNoop
