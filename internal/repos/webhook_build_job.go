@@ -9,7 +9,6 @@ import (
 	"go.opentelemetry.io/otel"
 
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -48,12 +47,11 @@ func (w *webhookBuildJob) Routines(_ context.Context, logger log.Logger) ([]goro
 
 	webhookBuildWorkerMetrics, webhookBuildResetterMetrics := newWebhookBuildWorkerMetrics(observationContext, "webhook_build_worker")
 
-	mainAppDB, err := workerdb.Init()
+	db, err := workerdb.InitDBWithLogger(logger)
 	if err != nil {
 		return nil, err
 	}
 
-	db := database.NewDB(logger, mainAppDB)
 	store := NewStore(logger, db)
 	baseStore := basestore.NewWithHandle(store.Handle())
 	workerStore := webhookworker.CreateWorkerStore(logger.Scoped("webhookworker.WorkerStore", ""), store.Handle())
