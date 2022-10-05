@@ -216,7 +216,6 @@ func (r *externalServiceResolver) SyncJobs(ctx context.Context, args *externalSe
 }
 
 type externalServiceSyncJobConnectionResolver struct {
-	logger            log.Logger
 	args              *externalServiceSyncJobsArgs
 	externalServiceID int64
 	db                database.DB
