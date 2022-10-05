@@ -14,10 +14,11 @@ import {
 } from '@codemirror/search'
 import { Extension } from '@codemirror/state'
 import { EditorView, keymap, Panel, runScopeHandlers, ViewUpdate } from '@codemirror/view'
-import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
+import { mdiChevronDown, mdiChevronUp, mdiClipboardTextSearch } from '@mdi/js'
 
 import { createSVGIcon } from '@sourcegraph/shared/src/util/dom'
 import { getButtonClassName, getLabelClassName } from '@sourcegraph/wildcard'
+import React from 'react'
 
 import { createElement } from '../../../util/dom'
 
@@ -32,7 +33,7 @@ class SearchPanel implements Panel {
     private caseSensitive: HTMLInputElement
     private regexp: HTMLInputElement
 
-    constructor(private view: EditorView) {
+    constructor(private view: EditorView, private allowDefaultBrowserFind: React.MutableRefObject<boolean>) {
         const previous = createElement(
             'button',
             {
@@ -42,6 +43,24 @@ class SearchPanel implements Panel {
             },
             createSVGIcon(mdiChevronUp),
             'Previous'
+        )
+        const browserSearch = createElement(
+            'button',
+            {
+                type: 'button',
+                className: [buttonClassName, 'mr-2'].join(' '),
+                onclick: () => {
+                    allowDefaultBrowserFind.current = true
+                    // How to construct Cmd+F/Ctrl+F event?
+                    const event = new KeyboardEvent('keydown', { metaKey: true, key: 'f', code: 'KeyF' })
+                    console.log({ meta: event.getModifierState('Meta') })
+                    const x = document.dispatchEvent(event)
+                    allowDefaultBrowserFind.current = false
+                    console.log(x)
+                },
+            },
+            createSVGIcon(mdiClipboardTextSearch),
+            'Search with browser'
         )
         previous.setAttribute('data-testid', 'blob-view-search-next')
         const next = createElement(
@@ -75,6 +94,7 @@ class SearchPanel implements Panel {
             { className: 'search-container', onkeydown: this.onkeydown },
             this.input,
             previous,
+            browserSearch,
             next,
             createElement(
                 'label',
@@ -175,40 +195,42 @@ class SearchPanel implements Panel {
     }
 }
 
-export const search: Extension = [
-    EditorView.theme({
-        '.search-container': {
-            backgroundColor: 'var(--code-bg)',
-            display: 'flex',
-            alignItems: 'center',
-            padding: '0.375rem 1rem',
-        },
-        '.search-container > input.form-control': {
-            width: '15rem',
-        },
-        '.search-container input[type="checkbox"]': {
-            verticalAlign: 'text-bottom',
-        },
-        '.search-container svg': {
-            width: 'var(--icon-inline-size)',
-            height: 'var(--icon-inline-size)',
-            boxSizing: 'border-box',
-            textAlign: 'center',
-            marginRight: '0.25rem',
-            // The icons contain whitespace themselves, this makes the button
-            // look more centered
-            marginLeft: '-0.125rem',
-            verticalAlign: 'text-bottom',
-        },
-        '.cm-searchMatch': {
-            backgroundColor: 'var(--mark-bg)',
-        },
-        '.cm-searchMatch-selected': {
-            backgroundColor: 'var(--oc-orange-3)',
-        },
-    }),
-    keymap.of(searchKeymap),
-    codemirrorSearch({
-        createPanel: view => new SearchPanel(view),
-    }),
-]
+export function search(allowDefaultBrowserFind: React.MutableRefObject<boolean>): Extension {
+    return [
+        EditorView.theme({
+            '.search-container': {
+                backgroundColor: 'var(--code-bg)',
+                display: 'flex',
+                alignItems: 'center',
+                padding: '0.375rem 1rem',
+            },
+            '.search-container > input.form-control': {
+                width: '15rem',
+            },
+            '.search-container input[type="checkbox"]': {
+                verticalAlign: 'text-bottom',
+            },
+            '.search-container svg': {
+                width: 'var(--icon-inline-size)',
+                height: 'var(--icon-inline-size)',
+                boxSizing: 'border-box',
+                textAlign: 'center',
+                marginRight: '0.25rem',
+                // The icons contain whitespace themselves, this makes the button
+                // look more centered
+                marginLeft: '-0.125rem',
+                verticalAlign: 'text-bottom',
+            },
+            '.cm-searchMatch': {
+                backgroundColor: 'var(--mark-bg)',
+            },
+            '.cm-searchMatch-selected': {
+                backgroundColor: 'var(--oc-orange-3)',
+            },
+        }),
+        keymap.of(searchKeymap),
+        codemirrorSearch({
+            createPanel: view => new SearchPanel(view, allowDefaultBrowserFind),
+        }),
+    ]
+}

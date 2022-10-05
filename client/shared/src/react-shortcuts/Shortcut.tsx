@@ -32,6 +32,8 @@ export interface Props {
      * to `true` to allow the default action.
      */
     allowDefault?: boolean
+
+    allowDefaultRef?: React.MutableRefObject<boolean>
 }
 
 export interface Subscription {
@@ -52,7 +54,7 @@ class ShortcutConsumer extends React.Component<Props & Context, never> {
         held: this.props.held,
         ignoreInput: this.props.ignoreInput || false,
         onMatch: this.props.onMatch,
-        allowDefault: this.props.allowDefault || false,
+        allowDefault: this.props.allowDefaultRef || { current: this.props.allowDefault || false },
     }
     public subscription: Subscription | null = null
 

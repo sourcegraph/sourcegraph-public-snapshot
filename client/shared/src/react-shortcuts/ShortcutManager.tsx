@@ -10,7 +10,7 @@ export interface Data {
     held?: (ModifierKey | 'Mod')[]
     ignoreInput: boolean
     onMatch(matched: { ordered: Key[]; held?: ModifierKey[] }): void
-    allowDefault: boolean
+    allowDefault: React.MutableRefObject<boolean>
 }
 
 export class ShortcutManager {
@@ -93,7 +93,8 @@ export class ShortcutManager {
             return
         }
 
-        if (!longestMatchingShortcut.allowDefault) {
+        console.log({ allowDefault: longestMatchingShortcut.allowDefault.current })
+        if (!longestMatchingShortcut.allowDefault.current) {
             event.preventDefault()
         }
 

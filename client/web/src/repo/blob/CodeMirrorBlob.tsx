@@ -29,43 +29,45 @@ import { search } from './codemirror/search'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
 import { isValidLineRange, offsetToUIPosition, uiPositionToOffset } from './codemirror/utils'
 
-const staticExtensions: Extension = [
-    EditorState.readOnly.of(true),
-    EditorView.editable.of(false),
-    EditorView.contentAttributes.of({
-        // This is required to make the blob view focusable and to make
-        // triggering the in-document search (see below) work when Mod-f is
-        // pressed
-        tabindex: '0',
-    }),
-    editorHeight({ height: '100%' }),
-    EditorView.theme({
-        '&': {
-            backgroundColor: 'var(--code-bg)',
-        },
-        '.cm-scroller': {
-            fontFamily: 'var(--code-font-family)',
-            fontSize: 'var(--code-font-size)',
-            lineHeight: '1rem',
-        },
-        '.cm-gutters': {
-            backgroundColor: 'var(--code-bg)',
-            borderRight: 'initial',
-        },
-        '.cm-line': {
-            paddingLeft: '1rem',
-        },
-        '.selected-line': {
-            backgroundColor: 'var(--code-selection-bg)',
-        },
-        '.highlighted-line': {
-            backgroundColor: 'var(--code-selection-bg)',
-        },
-    }),
-    // Note that these only work out-of-the-box because the editor is
-    // *focusable* by setting `tab-index: 0`.
-    search,
-]
+function staticExtensions(allowDefaultBrowserFind: React.MutableRefObject<boolean>): Extension {
+    return [
+        EditorState.readOnly.of(true),
+        EditorView.editable.of(false),
+        EditorView.contentAttributes.of({
+            // This is required to make the blob view focusable and to make
+            // triggering the in-document search (see below) work when Mod-f is
+            // pressed
+            tabindex: '0',
+        }),
+        editorHeight({ height: '100%' }),
+        EditorView.theme({
+            '&': {
+                backgroundColor: 'var(--code-bg)',
+            },
+            '.cm-scroller': {
+                fontFamily: 'var(--code-font-family)',
+                fontSize: 'var(--code-font-size)',
+                lineHeight: '1rem',
+            },
+            '.cm-gutters': {
+                backgroundColor: 'var(--code-bg)',
+                borderRight: 'initial',
+            },
+            '.cm-line': {
+                paddingLeft: '1rem',
+            },
+            '.selected-line': {
+                backgroundColor: 'var(--code-selection-bg)',
+            },
+            '.highlighted-line': {
+                backgroundColor: 'var(--code-selection-bg)',
+            },
+        }),
+        // Note that these only work out-of-the-box because the editor is
+        // *focusable* by setting `tab-index: 0`.
+        search(allowDefaultBrowserFind),
+    ]
+}
 
 // Compartments are used to reconfigure some parts of the editor without
 // affecting others.
@@ -122,6 +124,11 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     const locationRef = useRef(location)
     locationRef.current = location
 
+    const allowDefaultBrowserFind = useRef(false)
+    document.addEventListener('keydown', event => {
+        console.log({ event })
+    })
+
     const customHistoryAction = props.nav
     const onSelection = useCallback(
         (range: SelectedLineRange) => {
@@ -156,7 +163,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
 
     const extensions = useMemo(
         () => [
-            staticExtensions,
+            staticExtensions(allowDefaultBrowserFind),
             selectableLineNumbers({
                 onSelection,
                 initialSelection: position.line !== undefined ? position : null,
@@ -262,7 +269,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     }, [position, hasPin])
 
     const openSearch = useCallback(() => {
-        if (editorRef.current) {
+        if (editorRef.current && !allowDefaultBrowserFind.current) {
             openSearchPanel(editorRef.current)
         }
     }, [])
@@ -277,7 +284,13 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 className={`${className} overflow-hidden`}
             />
             {overrideBrowserSearchKeybinding && (
-                <Shortcut ordered={['f']} held={['Mod']} onMatch={openSearch} ignoreInput={true} />
+                <Shortcut
+                    ordered={['f']}
+                    held={['Mod']}
+                    onMatch={openSearch}
+                    allowDefaultRef={allowDefaultBrowserFind}
+                    ignoreInput={true}
+                />
             )}
         </>
     )
