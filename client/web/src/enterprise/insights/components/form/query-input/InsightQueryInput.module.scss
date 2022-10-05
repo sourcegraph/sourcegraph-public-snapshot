@@ -12,6 +12,17 @@
     padding-bottom: 0.5rem;
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
+
+    // Fix line height for the code insight creation UI purpose
+    & :global(.cm-lineWrapping) {
+        line-height: 1.3125rem; // 21 px
+    }
+
+    // Fix loading spinner layout position (since line height has non default value
+    // loading layout requires layout change)
+    & :global(.cm-sg-loading-spinner-container) {
+        align-self: center;
+    }
 }
 
 .regex-button {
