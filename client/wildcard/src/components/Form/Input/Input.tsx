@@ -10,6 +10,7 @@ import { useAutoFocus } from '../../../hooks'
 import { ForwardReferenceComponent } from '../../../types'
 
 import styles from './Input.module.scss'
+import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 
 export enum InputStatus {
     initial = 'initial',
@@ -31,7 +32,8 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
     inputSymbol?: ReactNode
     /** Exclusive status */
     status?: InputStatus | `${InputStatus}`
-    error?: ReactNode
+    /** Optional error (validation) message. Rendered as Markdown. */
+    error?: string
     /** Disable input behavior */
     disabled?: boolean
     /** Determines the size of the input */
@@ -94,7 +96,7 @@ export const Input = forwardRef(function Input(props, reference) {
 
             {error && (
                 <small role="alert" className={classNames('text-danger', messageClassName)}>
-                    {error}
+                    <ErrorMessage error={error} />
                 </small>
             )}
             {!error && message && <small className={classNames('text-muted', messageClassName)}>{message}</small>}

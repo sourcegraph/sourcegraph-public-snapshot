@@ -3,6 +3,7 @@ import React, { PropsWithChildren, ReactNode, RefObject } from 'react'
 import classNames from 'classnames'
 
 import styles from './FormGroup.module.scss'
+import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 
 interface FormGroupProps {
     /** Name attr value for root fieldset element. */
@@ -50,7 +51,7 @@ export const FormGroup: React.FunctionComponent<React.PropsWithChildren<PropsWit
                 {subtitle && <span className={classNames('d-block text-muted', styles.description)}>{subtitle}</span>}
                 {error && (
                     <small role="alert" className="d-block text-danger">
-                        {error}
+                        <ErrorMessage error={error} />
                     </small>
                 )}
             </legend>

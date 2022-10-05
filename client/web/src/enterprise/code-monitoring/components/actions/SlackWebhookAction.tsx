@@ -153,7 +153,7 @@ export const SlackWebhookAction: React.FunctionComponent<React.PropsWithChildren
                     autoFocus={true}
                     spellCheck={false}
                     status={urlIsValid ? 'valid' : url ? 'error' : undefined /* Don't show error state when empty */}
-                    error={!urlIsValid && url && 'Enter a valid Slack webhook URL.'}
+                    error={!urlIsValid && url ? 'Enter a valid Slack webhook URL.' : undefined}
                 />
             </div>
         </ActionEditor>
