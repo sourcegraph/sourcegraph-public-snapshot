@@ -447,16 +447,17 @@ This section is aimed at providing high-level guidance on deploying Sourcegraph 
 - A working Kubernetes cluster, v1.19 or higher
 - The ability to provision persistent volumes, e.g. have Block Storage [CSI storage driver](https://kubernetes-csi.github.io/docs/drivers.html) installed
 - An Ingress Controller installed, e.g. platform native ingress controller, [NGINX Ingress Controller].
+- A cluster autoscaler configured for your cluster, e.g. platform native autoscaler, [Cluster Autoscaler](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler) (recommended).
 - The ability to create DNS records for Sourcegraph, e.g. `sourcegraph.company.com`
 
 ### Configure Sourcegraph on Google Kubernetes Engine (GKE)
 
 #### Prerequisites {#gke-prerequisites}
 
-1. You need to have a GKE cluster (>=1.19) with the `HTTP Load Balancing` addon enabled. Alternatively, you can use your own choice of Ingress Controller and disable the `HTTP Load Balancing` add-on, [learn more](https://cloud.google.com/kubernetes-engine/docs/how-to/custom-ingress-controller).
-1. Your account should have sufficient access rights, equivalent to the `cluster-admin` ClusterRole.
-1. Connect to your cluster (via either the console or the command line using `gcloud`) and ensure the cluster is up and running by running: `kubectl get nodes` (several `ready` nodes should be listed)
-1. Have the [Helm CLI](https://helm.sh/docs/intro/install/) installed and run the following command to link to the Sourcegraph helm repository (on the machine used to interact with your cluster):
+1. You need to have a GKE cluster (>=1.19) with the `HTTP Load Balancing` addon enabled. Alternatively, you can use your own choice of Ingress Controller and disable the `HTTP Load Balancing` add-on, [learn more](https://cloud.google.com/kubernetes-engine/docs/how-to/custom-ingress-controller). It is recommended you also enable cluster autoscaling. Alternatively, you will need to manually manage the number of nodes to meet your deployments resourcing need, [learn more](https://cloud.google.com/kubernetes-engine/docs/concepts/cluster-autoscaler).
+3. Your account should have sufficient access rights, equivalent to the `cluster-admin` ClusterRole.
+4. Connect to your cluster (via either the console or the command line using `gcloud`) and ensure the cluster is up and running by running: `kubectl get nodes` (several `ready` nodes should be listed)
+5. Have the [Helm CLI](https://helm.sh/docs/intro/install/) installed and run the following command to link to the Sourcegraph helm repository (on the machine used to interact with your cluster):
 
 ```sh
 helm repo add sourcegraph https://helm.sourcegraph.com/release
@@ -587,6 +588,7 @@ Now the deployment is complete, more information on configuring the Sourcegraph 
 1. You need to have a EKS cluster (>=1.19) with the following addons enabled:
    - [AWS Load Balancer Controller](https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html)
    - [AWS EBS CSI driver](https://docs.aws.amazon.com/eks/latest/userguide/managing-ebs-csi.html)
+   - [AWS Cluster Autoscaler](https://docs.aws.amazon.com/eks/latest/userguide/autoscaling.html)
 > You may consider deploying your own Ingress Controller instead of the ALB Ingress Controller, [learn more](https://kubernetes.github.io/ingress-nginx/)
 1. Your account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
 1. Connect to your cluster (via either the console or the command line using `eksctl`) and ensure the cluster is up and running using: `kubectl get nodes` (several `ready` nodes should be listed)
@@ -672,6 +674,7 @@ Now the deployment is complete, more information on configuring the Sourcegraph 
 1. You need to have a AKS cluster (>=1.19) with the following addons enabled:
    - [Azure Application Gateway Ingress Controller](https://docs.microsoft.com/en-us/azure/application-gateway/ingress-controller-install-new)
    - [Azure Disk CSI driver](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers)
+   - [Azure Cluster Autoscaler](https://learn.microsoft.com/en-us/azure/aks/cluster-autoscaler)
 > You may consider using your custom Ingress Controller instead of Application Gateway, [learn more](https://docs.microsoft.com/en-us/azure/aks/ingress-basic)
 1. Your account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
 1. Connect to your cluster (via either the console or the command line using the Azure CLI) and ensure the cluster is up and running using: `kubectl get nodes` (several `ready` nodes should be listed)
