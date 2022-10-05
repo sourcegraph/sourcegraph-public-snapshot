@@ -89,7 +89,7 @@ The intended commit has no frontend pipeline, so we chose the last commit with o
 
 Look at the [Statoscope report](${url}) for a full comparison between the commits ${shortRev(COMMIT)} and ${shortRev(
         COMPARE_REV
-    )}.
+    )} or [learn more](https://docs.sourcegraph.com/dev/how-to/testing#bundlesize).
 ${noExactDataWarning}
 
 <details>
