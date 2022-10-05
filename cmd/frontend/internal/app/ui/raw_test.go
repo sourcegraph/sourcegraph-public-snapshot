@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -86,7 +87,7 @@ func Test_serveRawWithHTTPRequestMethodHEAD(t *testing.T) {
 		db.ReposFunc.SetDefaultReturn(rstore)
 		rstore.GetByNameFunc.SetDefaultReturn(&types.Repo{ID: 123}, nil)
 
-		err := serveRaw(db)(w, req)
+		err := serveRaw(db, gitserver.NewClient(db))(w, req)
 		if err != nil {
 			t.Fatalf("Failed to invoke serveRaw: %v", err)
 		}
@@ -109,7 +110,7 @@ func Test_serveRawWithHTTPRequestMethodHEAD(t *testing.T) {
 		db.ReposFunc.SetDefaultReturn(rstore)
 		rstore.GetByNameFunc.SetDefaultReturn(nil, &database.RepoNotFoundErr{ID: 123})
 
-		err := serveRaw(db)(w, req)
+		err := serveRaw(db, gitserver.NewClient(db))(w, req)
 		if err == nil {
 			t.Fatal("Want error but got nil")
 		}
@@ -143,7 +144,8 @@ func Test_serveRawWithContentArchive(t *testing.T) {
 		req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw?format=zip", nil)
 		w := httptest.NewRecorder()
 
-		err := serveRaw(database.NewMockDB())(w, req)
+		db := database.NewMockDB()
+		err := serveRaw(db, gitserver.NewClient(db))(w, req)
 		if err != nil {
 			t.Fatalf("Failed to invoke serveRaw: %v", err)
 		}
@@ -182,7 +184,8 @@ func Test_serveRawWithContentArchive(t *testing.T) {
 		req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw?format=tar", nil)
 		w := httptest.NewRecorder()
 
-		err := serveRaw(database.NewMockDB())(w, req)
+		db := database.NewMockDB()
+		err := serveRaw(db, gitserver.NewClient(db))(w, req)
 		if err != nil {
 			t.Fatalf("Failed to invoke serveRaw: %v", err)
 		}
@@ -259,7 +262,8 @@ func Test_serveRawWithContentTypePlain(t *testing.T) {
 		req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw", nil)
 		w := httptest.NewRecorder()
 
-		err := serveRaw(database.NewMockDB())(w, req)
+		db := database.NewMockDB()
+		err := serveRaw(db, gitserver.NewClient(db))(w, req)
 		if err != nil {
 			t.Fatalf("Failed to invoke serveRaw: %v", err)
 		}
@@ -292,7 +296,8 @@ func Test_serveRawWithContentTypePlain(t *testing.T) {
 		req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw", nil)
 		w := httptest.NewRecorder()
 
-		err := serveRaw(database.NewMockDB())(w, req)
+		db := database.NewMockDB()
+		err := serveRaw(db, gitserver.NewClient(db))(w, req)
 		if err != nil {
 			t.Fatalf("Failed to invoke serveRaw: %v", err)
 		}
@@ -320,16 +325,17 @@ c.go`
 			return &fileutil.FileInfo{Mode_: 0}, nil
 		}
 
-		gitserver.Mocks.NewFileReader = func(commit api.CommitID, name string) (io.ReadCloser, error) {
+		gitserverClient := gitserver.NewMockClient()
+		gitserverClient.NewFileReaderFunc.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, string, authz.SubRepoPermissionChecker) (io.ReadCloser, error) {
 			return io.NopCloser(strings.NewReader("this is a test file")), nil
-		}
+		})
 
 		defer gitserver.ResetMocks()
 
 		req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw", nil)
 		w := httptest.NewRecorder()
 
-		err := serveRaw(database.NewMockDB())(w, req)
+		err := serveRaw(database.NewMockDB(), gitserverClient)(w, req)
 		if err != nil {
 			t.Fatalf("Failed to invoke serveRaw: %v", err)
 		}
@@ -357,16 +363,17 @@ c.go`
 			return &fileutil.FileInfo{Mode_: 0}, nil
 		}
 
-		gitserver.Mocks.NewFileReader = func(commit api.CommitID, name string) (io.ReadCloser, error) {
+		gitserverClient := gitserver.NewMockClient()
+		gitserverClient.NewFileReaderFunc.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, string, authz.SubRepoPermissionChecker) (io.ReadCloser, error) {
 			return io.NopCloser(strings.NewReader("this is a test file")), nil
-		}
+		})
 
 		defer gitserver.ResetMocks()
 
 		req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw?format=exe", nil)
 		w := httptest.NewRecorder()
 
-		err := serveRaw(database.NewMockDB())(w, req)
+		err := serveRaw(database.NewMockDB(), gitserverClient)(w, req)
 		if err != nil {
 			t.Fatalf("Failed to invoke serveRaw: %v", err)
 		}

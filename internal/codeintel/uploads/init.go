@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 )
@@ -37,7 +38,7 @@ func GetService(
 ) *Service {
 	svcOnce.Do(func() {
 		store := store.New(db, scopedContext("store"))
-		repoStore := backend.NewRepos(scopedContext("repos").Logger, db)
+		repoStore := backend.NewRepos(scopedContext("repos").Logger, db, gitserver.NewClient(db))
 		lsifStore := lsifstore.New(codeIntelDB, scopedContext("lsifstore"))
 		policyMatcher := policiesEnterprise.NewMatcher(gsc, policiesEnterprise.RetentionExtractor, true, false)
 		locker := locker.NewWith(db, "codeintel")
