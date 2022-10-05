@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
 	policiesEnterprise "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
@@ -33,7 +34,7 @@ type RepoUpdaterClient interface {
 // If the service is not yet initialized, it will use the provided dependencies.
 func GetService(
 	db database.DB,
-	codeIntelDB database.DB,
+	codeIntelDB stores.CodeIntelDB,
 	gsc GitserverClient,
 ) *Service {
 	svcOnce.Do(func() {
