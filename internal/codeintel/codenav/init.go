@@ -5,6 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/store"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -17,8 +18,8 @@ var (
 // GetService creates or returns an already-initialized symbols service.
 // If the service is not yet initialized, it will use the provided dependencies.
 func GetService(
-	db,
-	codeIntelDB database.DB,
+	db database.DB,
+	codeIntelDB stores.CodeIntelDB,
 	uploadSvc UploadService,
 	gitserver GitserverClient,
 ) *Service {
