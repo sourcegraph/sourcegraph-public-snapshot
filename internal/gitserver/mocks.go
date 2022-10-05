@@ -24,7 +24,6 @@ var Mocks, emptyMocks struct {
 	MergeBase        func(repo api.RepoName, a, b api.CommitID) (api.CommitID, error)
 	GetDefaultBranch func(repo api.RepoName) (refName string, commit api.CommitID, err error)
 	ReadFile         func(commit api.CommitID, name string) ([]byte, error)
-	NewFileReader    func(commit api.CommitID, name string) (io.ReadCloser, error)
 	Stat             func(commit api.CommitID, name string) (fs.FileInfo, error)
 }
 
