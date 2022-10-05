@@ -463,7 +463,7 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/executor github.com/sourcegraph/sourcegraph/enterprise/cmd/executor &&
+      go build -gcflags="$GCFLAGS" -o .bin/executor github.com/sourcegraph/sourcegraph/enterprise/cmd/executor
     checkBinary: .bin/executor
     env:
       EXECUTOR_QUEUE_NAME: TEMPLATE
