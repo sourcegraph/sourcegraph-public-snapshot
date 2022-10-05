@@ -132,6 +132,11 @@ extend type Query {
     usersWithPendingPermissions: [String!]!
 
     """
+    Returns a list of the types of authz providers that have been configured and will be used for syncing permissions.
+    """
+    authzProviders: [String!]!
+
+    """
     Returns a list of Bitbucket Project permissions sync jobs for a given set of parameters.
     """
     bitbucketProjectPermissionJobs(

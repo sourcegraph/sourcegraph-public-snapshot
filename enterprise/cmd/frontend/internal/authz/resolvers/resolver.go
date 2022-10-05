@@ -457,6 +457,15 @@ func (r *Resolver) AuthorizedUsers(ctx context.Context, args *graphqlbackend.Rep
 	}, nil
 }
 
+func (r *Resolver) AuthzProviders() []string {
+	_, providers := authz.GetProviders()
+	providerTypes := make([]string, 0, len(providers))
+	for _, p := range providers {
+		providerTypes = append(providerTypes, p.ServiceType())
+	}
+	return providerTypes
+}
+
 var jobStatuses = map[string]bool{
 	"queued":     true,
 	"processing": true,

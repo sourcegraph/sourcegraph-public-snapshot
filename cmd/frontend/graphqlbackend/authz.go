@@ -23,6 +23,7 @@ type AuthzResolver interface {
 	UsersWithPendingPermissions(ctx context.Context) ([]string, error)
 	AuthorizedUsers(ctx context.Context, args *RepoAuthorizedUserArgs) (UserConnectionResolver, error)
 	BitbucketProjectPermissionJobs(ctx context.Context, args *BitbucketProjectPermissionJobsArgs) (BitbucketProjectsPermissionJobsResolver, error)
+	AuthzProviders() []string
 
 	// Helpers
 	RepositoryPermissionsInfo(ctx context.Context, repoID graphql.ID) (PermissionsInfoResolver, error)
