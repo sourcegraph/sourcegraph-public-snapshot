@@ -14,12 +14,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executorqueue"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 )
 
 type metricsReporterJob struct{}
@@ -63,14 +66,23 @@ func (j *metricsReporterJob) Routines(startupCtx context.Context, logger log.Log
 
 	repoUpdater := codeintel.InitRepoUpdaterClient()
 	uploadSvc := uploads.GetService(db, codeIntelDB, gitserverClient)
-	autoindexingSvc := autoindexing.GetService(db, uploadSvc, gitserverClient, repoUpdater)
+	depsSvc := dependencies.GetService(db, gitserverClient)
+	policySvc := policies.GetService(db, uploadSvc, gitserverClient)
+	autoindexingSvc := autoindexing.GetService(db, uploadSvc, depsSvc, policySvc, gitserverClient, repoUpdater)
 
 	indexWorkerStore := autoindexingSvc.WorkerutilStore()
+	dependencySyncStore := autoindexingSvc.DependencySyncStore()
+	dependencyIndexingStore := autoindexingSvc.DependencyIndexingStore()
 
 	executorMetricsReporter, err := executorqueue.NewMetricReporter(observationContext, "codeintel", indexWorkerStore, configInst.MetricsConfig)
 	if err != nil {
 		return nil, err
 	}
+
+	// Initialize metrics
+	uploadSvc.MetricReporters(observationContext)
+	dbworker.InitPrometheusMetric(observationContext, dependencySyncStore, "codeintel", "dependency_sync", nil)
+	dbworker.InitPrometheusMetric(observationContext, dependencyIndexingStore, "codeintel", "dependency_index", nil)
 
 	routines := []goroutine.BackgroundRoutine{
 		executorMetricsReporter,

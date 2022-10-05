@@ -3,9 +3,6 @@ package codeintel
 import (
 	"context"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"go.opentelemetry.io/otel"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
@@ -16,8 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 type commitGraphUpdaterJob struct{}
@@ -56,13 +51,5 @@ func (j *commitGraphUpdaterJob) Routines(startupCtx context.Context, logger log.
 
 	uploadSvc := uploads.GetService(db, codeIntelDB, gitserver)
 
-	commitgraph.NewOperations(uploadSvc, &observation.Context{
-		Logger:     logger,
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-	})
-
-	return []goroutine.BackgroundRoutine{
-		commitgraph.NewUpdater(uploadSvc),
-	}, nil
+	return commitgraph.NewUpdater(uploadSvc), nil
 }

@@ -141,7 +141,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		m := repos.NewSourceMetrics()
 		m.MustRegister(prometheus.DefaultRegisterer)
 
-		depsSvc := dependencies.GetService(db)
+		depsSvc := dependencies.GetService(db, nil)
 		src = repos.NewSourcer(sourcerLogger, db, cf, repos.WithDependenciesService(depsSvc), repos.ObservedSource(sourcerLogger, m))
 	}
 

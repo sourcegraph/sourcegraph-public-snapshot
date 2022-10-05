@@ -9,6 +9,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+
+	policiesEnterprise "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
 )
 
@@ -24,17 +26,29 @@ var maximumIndexJobsPerInferredConfiguration = env.MustGetInt("PRECISE_CODE_INTE
 func GetService(
 	db database.DB,
 	uploadSvc shared.UploadService,
+	depsSvc DependenciesService,
+	policiesSvc PoliciesService,
 	gitserver shared.GitserverClient,
 	repoUpdater shared.RepoUpdaterClient,
 ) *Service {
 	svcOnce.Do(func() {
 		store := store.New(db, scopedContext("store"))
+		repoStore := db.Repos()
+		gitserverRepoStore := db.GitserverRepos()
+		externalServiceStore := db.ExternalServices()
+		policyMatcher := policiesEnterprise.NewMatcher(gitserver, policiesEnterprise.IndexingExtractor, false, true)
 		symbolsClient := symbols.DefaultClient
 		inferenceSvc := inference.GetService(db)
 
 		svc = newService(
 			store,
 			uploadSvc,
+			depsSvc,
+			policiesSvc,
+			repoStore,
+			gitserverRepoStore,
+			externalServiceStore,
+			policyMatcher,
 			gitserver,
 			symbolsClient,
 			repoUpdater,

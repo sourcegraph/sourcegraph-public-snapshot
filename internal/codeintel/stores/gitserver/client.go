@@ -2,6 +2,7 @@ package gitserver
 
 import (
 	"context"
+	"io"
 	"os"
 	"strings"
 	"time"
@@ -16,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -32,6 +34,14 @@ func New(db database.DB, observationContext *observation.Context) *Client {
 		dbStore:    newWithDB(db),
 		operations: newOperations(observationContext),
 	}
+}
+
+func (c *Client) ArchiveReader(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, options gitserver.ArchiveOptions) (io.ReadCloser, error) {
+	return gitserver.NewClient(c.db).ArchiveReader(ctx, checker, repo, options)
+}
+
+func (c *Client) RequestRepoUpdate(ctx context.Context, name api.RepoName, t time.Duration) (*protocol.RepoUpdateResponse, error) {
+	return gitserver.NewClient(c.db).RequestRepoUpdate(ctx, name, t)
 }
 
 func (c *Client) DiffPath(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, sourceCommit, targetCommit, path string) ([]*diff.Hunk, error) {
