@@ -100,3 +100,7 @@ type AutoIndexingService interface {
 
 	DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error)
 }
+
+type RepoUpdaterClient interface {
+	EnqueueRepoUpdate(ctx context.Context, repo api.RepoName) (*protocol.RepoUpdateResponse, error)
+}
