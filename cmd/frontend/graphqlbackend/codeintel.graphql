@@ -103,6 +103,27 @@ extend type Mutation {
     deleteLSIFIndex(id: ID!): EmptyResponse
 
     """
+    Deletes LSIF indexes by filter criteria.
+    """
+    deleteLSIFIndexes(
+        """
+        An (optional) search query that filters the state, repository name,
+        commit, root, and indexer properties.
+        """
+        query: String
+
+        """
+        The upload state.
+        """
+        state: LSIFIndexState
+
+        """
+        The repository.
+        """
+        repository: ID
+    ): EmptyResponse
+
+    """
     Request support for a particular language.
     """
     requestLanguageSupport(language: String!): EmptyResponse

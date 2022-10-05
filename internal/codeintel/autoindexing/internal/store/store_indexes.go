@@ -167,6 +167,57 @@ JOIN repo ON repo.id = u.repository_id
 WHERE repo.deleted_at IS NULL AND %s ORDER BY queued_at DESC, u.id LIMIT %d OFFSET %d
 `
 
+// DeleteIndexes deletes indexes matching the given filter criteria.
+func (s *store) DeleteIndexes(ctx context.Context, opts types.DeleteIndexesOptions) (err error) {
+	ctx, _, endObservation := s.operations.deleteIndexes.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", opts.RepositoryID),
+		log.String("state", opts.State),
+		log.String("term", opts.Term),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	var conds []*sqlf.Query
+
+	if opts.RepositoryID != 0 {
+		conds = append(conds, sqlf.Sprintf("u.repository_id = %s", opts.RepositoryID))
+	}
+	if opts.Term != "" {
+		conds = append(conds, makeIndexSearchCondition(opts.Term))
+	}
+	if opts.State != "" {
+		conds = append(conds, makeStateCondition(opts.State))
+	}
+
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
+	if err != nil {
+		return err
+	}
+	conds = append(conds, authzConds)
+
+	tx, err := s.transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.db.Done(err) }()
+
+	unset, _ := tx.db.SetLocal(ctx, "codeintel.lsif_indexes_audit.reason", "direct delete by filter criteria request")
+	defer unset(ctx)
+
+	err = tx.db.Exec(ctx, sqlf.Sprintf(deleteIndexesQuery, sqlf.Join(conds, " AND ")))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+const deleteIndexesQuery = `
+-- source: internal/codeintel/stores/dbstore/indexes.go:DeleteIndexes
+DELETE FROM lsif_indexes u
+USING repo
+WHERE u.repository_id = repo.id AND %s
+`
+
 // makeIndexSearchCondition returns a disjunction of LIKE clauses against all searchable columns of an index.
 func makeIndexSearchCondition(term string) *sqlf.Query {
 	searchableColumns := []string{

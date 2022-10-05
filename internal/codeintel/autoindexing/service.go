@@ -133,6 +133,13 @@ func (s *Service) DeleteIndexByID(ctx context.Context, id int) (_ bool, err erro
 	return s.store.DeleteIndexByID(ctx, id)
 }
 
+func (s *Service) DeleteIndexes(ctx context.Context, opts types.DeleteIndexesOptions) (err error) {
+	ctx, _, endObservation := s.operations.deleteIndexes.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.DeleteIndexes(ctx, opts)
+}
+
 //
 // Used by upload janitor, we need our own version of that janitor
 
