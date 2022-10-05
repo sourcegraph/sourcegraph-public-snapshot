@@ -34,6 +34,7 @@ import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
 import { WebHoverOverlay } from '../../components/shared'
 import { RepositoryFields, Scalars } from '../../graphql-operations'
+import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 
 import { RepositoryCompareHeader } from './RepositoryCompareHeader'
@@ -134,7 +135,30 @@ export function RepositoryCompareArea(props: RepositoryCompareAreaProps): JSX.El
     const searchParams = new URLSearchParams(props.location.search)
     const path = searchParams.get('filePath')
 
-    props.useBreadcrumb(useMemo(() => ({ key: 'compare', element: <>Compare</> }), []))
+    props
+        .useBreadcrumb(
+            useMemo(() => {
+                if (props.repo && spec?.head && path) {
+                    return {
+                        key: 'filePath',
+                        className: 'flex-shrink-past-contents',
+                        element: (
+                            <FilePathBreadcrumbs
+                                key="path"
+                                repoName={props.repo?.name}
+                                revision={spec?.head}
+                                filePath={path}
+                                isDir={false}
+                                telemetryService={props.telemetryService}
+                            />
+                        ),
+                    }
+                }
+
+                return null
+            }, [props, spec, path])
+        )
+        .useBreadcrumb(useMemo(() => ({ key: 'compare', element: <>Compare</> }), []))
 
     // TODO(lrhacker): How to replicate this error checking in functional component?
     // if (this.state.error) {
