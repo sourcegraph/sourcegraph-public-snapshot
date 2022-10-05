@@ -69,7 +69,6 @@ func PidExistsWithArgs(args []string) (int, bool, error) {
 			if !alive {
 				// Trash the pidfile and return that it's not running.
 				_ = os.Remove(match)
-				return 0, false, nil
 			}
 			return content.Pid, true, nil
 		}
