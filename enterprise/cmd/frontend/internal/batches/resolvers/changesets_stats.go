@@ -73,7 +73,6 @@ func (r *repoChangesetsStatsResolver) Total() int32 {
 	return r.stats.Total
 }
 
-
 type globalChangesetsStatsResolver struct {
 	stats btypes.GlobalChangesetsStats
 }

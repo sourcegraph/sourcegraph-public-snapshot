@@ -1424,14 +1424,13 @@ func getChangesetsStatsQuery(batchChangeID int64) *sqlf.Query {
 }
 
 func getGlobalChangesetsStatsQuery(repoID int64, authzConds *sqlf.Query) *sqlf.Query {
-		preds := []*sqlf.Query{
+	preds := []*sqlf.Query{
 		sqlf.Sprintf("repo.deleted_at IS NULL")}
 	return sqlf.Sprintf(
 		getRepoChangesetsStatsFmtstr,
 		strconv.Itoa(int(repoID)),
 		authzConds,
-				sqlf.Join(preds, " AND "),
-
+		sqlf.Join(preds, " AND "),
 	)
 }
 
@@ -1442,7 +1441,6 @@ func getRepoChangesetsStatsQuery(repoID int64, authzConds *sqlf.Query) *sqlf.Que
 		authzConds,
 	)
 }
-
 
 const getRepoChangesetsStatsFmtstr = `
 -- source: enterprise/internal/batches/store/changesets.go:GetRepoChangesetsStats
@@ -1489,7 +1487,6 @@ FROM (
 		jsonb_path_exists (batch_change_ids, '$.* ? ((!exists(@.isArchived) || @.isArchived == false) && (!exists(@.archive) || @.archive == false))')
 ) AS fcs;
 `
-
 
 func batchChangesColumn(c *btypes.Changeset) ([]byte, error) {
 	assocsAsMap := make(map[int64]btypes.BatchChangeAssoc, len(c.BatchChanges))
