@@ -5,7 +5,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
@@ -28,6 +27,7 @@ type workHandler struct {
 	repoStore       discovery.RepoStore
 	metadadataStore *store.InsightStore
 	limiter         *ratelimit.InstrumentedLimiter
+	logger          log.Logger
 
 	mu          sync.RWMutex
 	seriesCache map[string]*types.InsightSeries
@@ -76,7 +76,7 @@ func (r *workHandler) Handle(ctx context.Context, logger log.Logger, record work
 	ctx = actor.WithInternalActor(ctx)
 	defer func() {
 		if err != nil {
-			log15.Error("insights.queryrunner.workHandler", "error", err)
+			r.logger.Error("insights.queryrunner.workHandler", log.Error(err))
 		}
 	}()
 	err = r.limiter.Wait(ctx)

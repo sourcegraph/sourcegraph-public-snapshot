@@ -2,11 +2,9 @@ package queryrunner
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
@@ -74,13 +72,10 @@ func checkSubRepoPermissions(ctx context.Context, checker authz.SubRepoPermissio
 		var idErr error
 		repoID, idErr = graphqlbackend.UnmarshalRepositoryID(graphql.ID(untypedRepoID))
 		if idErr != nil {
-			log15.Error("Error during sub-repo permissions check", "repoID", untypedRepoID, "error", "unmarshalling repoID")
 			err = errors.Append(err, errors.Wrap(idErr, "Checking sub-repo permissions: UnmarshalRepositoryID"))
 			return true, err
 		}
 	default:
-		log15.Error("Error during sub-repo permissions check: Unsupported untypedRepoID type",
-			"repoID", untypedRepoID, "type", fmt.Sprintf("%T", untypedRepoID))
 		return true, errors.Append(err, errors.Newf("Checking sub-repo permissions for repoID=%v: Unsupported untypedRepoID type=%T",
 			untypedRepoID, untypedRepoID))
 	}
@@ -88,7 +83,6 @@ func checkSubRepoPermissions(ctx context.Context, checker authz.SubRepoPermissio
 	// performing the check itself
 	enabled, checkErr := authz.SubRepoEnabledForRepoID(ctx, checker, repoID)
 	if checkErr != nil {
-		log15.Error("Error during sub-repo permissions check", "error", checkErr)
 		err = errors.Append(err, errors.Wrap(checkErr, "Checking sub-repo permissions"))
 		return true, err
 	}
@@ -164,10 +158,6 @@ func generateSearchRecordingsStream(ctx context.Context, job *Job, recordTime ti
 
 	tr := *tabulationResult
 
-	log15.Info("Search Counts", "streaming", tr.TotalCount)
-	if len(tr.SkippedReasons) > 0 {
-		log15.Error("insights query issue", "reasons", tr.SkippedReasons, "query", job.SearchQuery)
-	}
 	if len(tr.Errors) > 0 {
 		return nil, classifiedError(tr.Errors, types.Search)
 	}

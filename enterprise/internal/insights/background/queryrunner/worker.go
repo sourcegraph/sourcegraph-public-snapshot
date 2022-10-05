@@ -87,6 +87,7 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 		metadadataStore: store.NewInsightStoreWith(insightsStore),
 		seriesCache:     sharedCache,
 		searchHandlers:  GetSearchHandlers(),
+		logger:          log.Scoped("insights.queryRunner.Handler", ""),
 	}, options)
 }
 
