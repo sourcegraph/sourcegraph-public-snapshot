@@ -132,8 +132,6 @@ type cmdRunner struct {
 
 	repositoryRoot string
 	parentEnv      map[string]string
-
-	processes map[string]int
 }
 
 func (c *cmdRunner) runAndWatch(ctx context.Context, cmd Command, reload <-chan struct{}) error {
