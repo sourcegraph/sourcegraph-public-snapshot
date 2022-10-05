@@ -14,14 +14,14 @@ export MERGE_BASE
 REVISIONS=()
 while IFS='' read -r line; do REVISIONS+=("$line"); done < <(git --no-pager log "${MERGE_BASE}" --pretty=format:"%H" -n 20)
 for REVISION in "${REVISIONS[@]}"; do
-  gsutil -q cp -r "gs://sourcegraph_buildkite_cache/sourcegraph/sourcegraph/bundle_size_cache-$REVISION.tar.gz" "./ui/assets/bundle_size_cache-$REVISION.tar.gz" || true
-  tar -xvf "ui/assets/bundle_size_cache-${REVISION}.tar.gz" ui/assets || true
-  if [[ -f "ui/assets/stats-${REVISION}.json" ]]; then
-    echo "Found stats.json for $REVISION"
+  gsutil -q cp -r "gs://sourcegraph_buildkite_cache/sourcegraph/sourcegraph/bundle_size_cache-$REVISION.tar.gz" "./ui/assets/bundle_size_cache-$REVISION.tar.gz" || echo "Cached archive for $REVISION not found, skipping."
+  if [[ -f "./ui/assets/bundle_size_cache-$REVISION.tar.gz" ]]; then
+    echo "Found cached archive for $REVISION"
     export COMPARE_REV=$REVISION
     break
   fi
 done
+tar -xf "ui/assets/bundle_size_cache-${COMPARE_REV}.tar.gz" ui/assets || echo "Could not extract archive for $COMPARE_REV"
 
 echo "--- Report bundle diff"
 
