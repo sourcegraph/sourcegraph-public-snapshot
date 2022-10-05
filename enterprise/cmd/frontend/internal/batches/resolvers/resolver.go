@@ -1972,19 +1972,6 @@ func parseBatchChangeState(s *string) (btypes.BatchChangeState, error) {
 	}
 }
 
-func checkSiteAdminOrSameUser(ctx context.Context, db database.DB, userID int32) (bool, error) {
-	// 🚨 SECURITY: Only site admins or the authors of a batch change have batch change
-	// admin rights.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, db, userID); err != nil {
-		if errors.HasType(err, &backend.InsufficientAuthorizationError{}) {
-			return false, nil
-		}
-
-		return false, err
-	}
-	return true, nil
-}
-
 func validateFirstParam(first int32, max int) error {
 	if first < 0 || first > int32(max) {
 		return ErrInvalidFirstParameter{Min: 0, Max: max, First: int(first)}

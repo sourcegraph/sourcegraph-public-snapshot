@@ -20,9 +20,8 @@ import (
 
 // productSubscription implements the GraphQL type ProductSubscription.
 type productSubscription struct {
-	logger log.Logger
-	db     database.DB
-	v      *dbSubscription
+	db database.DB
+	v  *dbSubscription
 }
 
 // ProductSubscriptionByID looks up and returns the ProductSubscription with the given GraphQL

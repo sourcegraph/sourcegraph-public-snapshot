@@ -7,12 +7,12 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/opentracing/opentracing-go/log"
-
 	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -69,7 +69,7 @@ func (r *configurationPolicyResolver) Repository(ctx context.Context) (_ *Reposi
 	)
 
 	db := r.svc.GetUnsafeDB()
-	repo, err := backend.NewRepos(r.logger, db).Get(ctx, api.RepoID(*r.configurationPolicy.RepositoryID))
+	repo, err := backend.NewRepos(r.logger, db, gitserver.NewClient(db)).Get(ctx, api.RepoID(*r.configurationPolicy.RepositoryID))
 	if err != nil {
 		return nil, err
 	}

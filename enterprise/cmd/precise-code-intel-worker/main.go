@@ -112,7 +112,7 @@ func main() {
 		logger.Fatal("Failed to create sub-repo client", log.Error(err))
 	}
 
-	uploadsSvc := uploads.GetService(db, database.NewDBWith(logger, codeIntelDB), gitserverClient)
+	uploadsSvc := uploads.GetService(db, codeIntelDB, gitserverClient)
 
 	// Initialize worker
 	rootContext := actor.WithInternalActor(context.Background())

@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -232,6 +233,18 @@ func (c *Client) Heartbeat(ctx context.Context, queueName string, jobIDs []int) 
 	}
 
 	return knownIDs, nil
+}
+
+const SchemeExecutorToken = "token-executor"
+
+func (c *Client) makeRequest(method, path string, payload any) (*http.Request, error) {
+	r, err := c.client.MakeRequest(method, c.options.EndpointOptions.URL, filepath.Join(c.options.PathPrefix, path), payload)
+	if err != nil {
+		return nil, err
+	}
+
+	r.Header.Add("Authorization", fmt.Sprintf("%s %s", SchemeExecutorToken, c.options.EndpointOptions.Token))
+	return r, nil
 }
 
 func intsToString(ints []int) string {

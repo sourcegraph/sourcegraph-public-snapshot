@@ -12,15 +12,21 @@ import (
 // Service encapsulates the resolution and persistence of dependencies at the repository and package levels.
 type Service struct {
 	dependenciesStore store.Store
+	gitClient         GitserverClient
+	extSvcStore       ExternalServiceStore
 	operations        *operations
 }
 
 func newService(
 	dependenciesStore store.Store,
+	gitClient GitserverClient,
+	extSvcStore ExternalServiceStore,
 	observationContext *observation.Context,
 ) *Service {
 	return &Service{
 		dependenciesStore: dependenciesStore,
+		gitClient:         gitClient,
+		extSvcStore:       extSvcStore,
 		operations:        newOperations(observationContext),
 	}
 }

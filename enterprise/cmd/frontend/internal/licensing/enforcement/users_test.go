@@ -18,11 +18,6 @@ import (
 )
 
 func TestEnforcement_PreCreateUser(t *testing.T) {
-	if !licensing.EnforceTiers {
-		licensing.EnforceTiers = true
-		defer func() { licensing.EnforceTiers = false }()
-	}
-
 	expiresAt := time.Now().Add(time.Hour)
 	tests := []struct {
 		license         *license.Info
@@ -109,10 +104,6 @@ func TestEnforcement_PreCreateUser(t *testing.T) {
 
 func TestEnforcement_AfterCreateUser(t *testing.T) {
 	logger := logtest.Scoped(t)
-	if !licensing.EnforceTiers {
-		licensing.EnforceTiers = true
-		defer func() { licensing.EnforceTiers = false }()
-	}
 
 	tests := []struct {
 		name                  string
@@ -193,11 +184,6 @@ func (db *fakeDB) ExecContext(ctx context.Context, query string, args ...any) (s
 }
 
 func TestEnforcement_PreSetUserIsSiteAdmin(t *testing.T) {
-	if !licensing.EnforceTiers {
-		licensing.EnforceTiers = true
-		defer func() { licensing.EnforceTiers = false }()
-	}
-
 	tests := []struct {
 		name        string
 		license     *license.Info

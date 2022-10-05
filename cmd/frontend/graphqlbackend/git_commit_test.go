@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -47,7 +48,7 @@ func TestGitCommitResolver(t *testing.T) {
 			commitResolver.inputRev = &inputRev
 			require.Equal(t, "/xyz/-/commit/master%5E1", commitResolver.URL())
 
-			treeResolver := NewGitTreeEntryResolver(db, commitResolver, CreateFileInfo("a/b", false))
+			treeResolver := NewGitTreeEntryResolver(db, client, commitResolver, CreateFileInfo("a/b", false))
 			url, err := treeResolver.URL(ctx)
 			require.Nil(t, err)
 			require.Equal(t, "/xyz@master%5E1/-/blob/a/b", url)
@@ -60,11 +61,9 @@ func TestGitCommitResolver(t *testing.T) {
 	})
 
 	t.Run("Lazy loading", func(t *testing.T) {
-		gitserver.Mocks.GetCommit = func(api.CommitID) (*gitdomain.Commit, error) {
+		client := gitserver.NewMockClient()
+		client.GetCommitFunc.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, gitserver.ResolveRevisionOptions, authz.SubRepoPermissionChecker) (*gitdomain.Commit, error) {
 			return commit, nil
-		}
-		t.Cleanup(func() {
-			gitserver.Mocks.GetCommit = nil
 		})
 
 		for _, tc := range []struct {

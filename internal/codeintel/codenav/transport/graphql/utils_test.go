@@ -7,7 +7,6 @@ import (
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
@@ -67,7 +66,6 @@ func TestResolveLocations(t *testing.T) {
 
 	t.Cleanup(func() {
 		gitserver.Mocks.ResolveRevision = nil
-		backend.Mocks.Repos.GetCommit = nil
 	})
 
 	gitserver.Mocks.ResolveRevision = func(spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
@@ -75,10 +73,6 @@ func TestResolveLocations(t *testing.T) {
 			return "", &gitdomain.RevisionNotFoundError{}
 		}
 		return api.CommitID(spec), nil
-	}
-
-	backend.Mocks.Repos.GetCommit = func(v0 context.Context, repo *sgtypes.Repo, commitID api.CommitID) (*gitdomain.Commit, error) {
-		return &gitdomain.Commit{ID: commitID}, nil
 	}
 
 	r1 := types.Range{Start: types.Position{Line: 11, Character: 12}, End: types.Position{Line: 13, Character: 14}}

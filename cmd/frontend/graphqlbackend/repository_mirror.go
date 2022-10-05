@@ -254,6 +254,7 @@ func (r *schemaResolver) CheckMirrorRepositoryConnection(ctx context.Context, ar
 		return nil, errors.New("exactly one of the repository and name arguments must be set")
 	}
 
+	gsClient := gitserver.NewClient(r.db)
 	var repo *types.Repo
 	switch {
 	case args.Repository != nil:
@@ -261,7 +262,7 @@ func (r *schemaResolver) CheckMirrorRepositoryConnection(ctx context.Context, ar
 		if err != nil {
 			return nil, err
 		}
-		repo, err = backend.NewRepos(r.logger, r.db).Get(ctx, repoID)
+		repo, err = backend.NewRepos(r.logger, r.db, gsClient).Get(ctx, repoID)
 		if err != nil {
 			return nil, err
 		}
@@ -271,7 +272,7 @@ func (r *schemaResolver) CheckMirrorRepositoryConnection(ctx context.Context, ar
 	}
 
 	var result checkMirrorRepositoryConnectionResult
-	if err := gitserver.NewClient(r.db).IsRepoCloneable(ctx, repo.Name); err != nil {
+	if err := gsClient.IsRepoCloneable(ctx, repo.Name); err != nil {
 		result.errorMessage = err.Error()
 	}
 	return &result, nil

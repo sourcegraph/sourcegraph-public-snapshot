@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
@@ -51,10 +52,9 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 	}
 
 	// Connect to the separate LSIF database
-	codeIntelDBConnection := mustInitializeCodeIntelDB(logger)
+	codeIntelLsifStore := mustInitializeCodeIntelDB(logger)
 
-	// Initialize lsif stores (TODO: these should be integrated, they are basically pointing to the same thing)
-	codeIntelLsifStore := database.NewDBWith(observationContext.Logger, codeIntelDBConnection)
+	// Initialize blob stores
 	uploadStore, err := lsifuploadstore.New(context.Background(), config.LSIFUploadStoreConfig, observationContext)
 	if err != nil {
 		return nil, err
@@ -68,7 +68,8 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 	uploadSvc := uploads.GetService(db, codeIntelLsifStore, gitserverClient)
 	codenavSvc := codenav.GetService(db, codeIntelLsifStore, uploadSvc, gitserverClient)
 	policySvc := policies.GetService(db, uploadSvc, gitserverClient)
-	autoindexingSvc := autoindexing.GetService(db, uploadSvc, gitserverClient, repoUpdaterClient)
+	depsSvc := dependencies.GetService(db, gitserverClient)
+	autoindexingSvc := autoindexing.GetService(db, uploadSvc, depsSvc, policySvc, gitserverClient, repoUpdaterClient)
 
 	// Initialize http endpoints
 	newUploadHandler := func(withCodeHostAuth bool) http.Handler {

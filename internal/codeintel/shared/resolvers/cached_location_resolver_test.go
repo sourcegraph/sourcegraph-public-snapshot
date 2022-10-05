@@ -10,7 +10,6 @@ import (
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -37,7 +36,6 @@ func TestCachedLocationResolver(t *testing.T) {
 
 	t.Cleanup(func() {
 		gitserver.Mocks.ResolveRevision = nil
-		backend.Mocks.Repos.GetCommit = nil
 	})
 
 	gitserver.Mocks.ResolveRevision = func(spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
@@ -45,11 +43,6 @@ func TestCachedLocationResolver(t *testing.T) {
 	}
 
 	var commitCalls uint32
-	gitserver.Mocks.GetCommit = func(commitID api.CommitID) (*gitdomain.Commit, error) {
-		atomic.AddUint32(&commitCalls, 1)
-		return &gitdomain.Commit{ID: commitID}, nil
-	}
-
 	cachedResolver := NewCachedLocationResolver(db)
 
 	var repositoryIDs []api.RepoID

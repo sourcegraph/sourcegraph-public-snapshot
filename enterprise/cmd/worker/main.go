@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
@@ -83,7 +82,7 @@ func init() {
 // the jobs configured in this service. This also enables repository update operations to fetch
 // permissions from code hosts.
 func setAuthzProviders(logger log.Logger) {
-	sqlDB, err := workerdb.Init()
+	db, err := workerdb.InitDBWithLogger(logger)
 	if err != nil {
 		return
 	}
@@ -92,7 +91,6 @@ func setAuthzProviders(logger log.Logger) {
 	globals.WatchPermissionsUserMapping()
 
 	ctx := context.Background()
-	db := database.NewDB(logger, sqlDB)
 
 	for range time.NewTicker(eiauthz.RefreshInterval()).C {
 		allowAccessByDefault, authzProviders, _, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices(), db)

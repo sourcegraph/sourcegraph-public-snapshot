@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -178,14 +177,6 @@ func mockBackendCommits(t *testing.T, revs ...api.CommitID) {
 		return api.CommitID(rev), nil
 	}
 	t.Cleanup(func() { backend.Mocks.Repos.ResolveRev = nil })
-
-	backend.Mocks.Repos.GetCommit = func(_ context.Context, _ *types.Repo, id api.CommitID) (*gitdomain.Commit, error) {
-		if _, ok := byRev[id]; !ok {
-			t.Fatalf("GetCommit received unexpected ID: %s", id)
-		}
-		return &gitdomain.Commit{ID: id}, nil
-	}
-	t.Cleanup(func() { backend.Mocks.Repos.GetCommit = nil })
 }
 
 func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
@@ -199,7 +190,6 @@ func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
 		}
 		return api.CommitID(spec), nil
 	}
-	t.Cleanup(func() { gitserver.Mocks.GetCommit = nil })
 
 	gitserver.Mocks.ExecReader = func(args []string) (io.ReadCloser, error) {
 		if len(args) < 1 && args[0] != "diff" {

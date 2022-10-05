@@ -1,8 +1,6 @@
 package batches
 
 import (
-	"database/sql"
-
 	"github.com/prometheus/client_golang/prometheus"
 	"go.opentelemetry.io/otel"
 
@@ -11,8 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/memo"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -32,12 +28,12 @@ var initStore = memo.NewMemoizedConstructor(func() (*store.Store, error) {
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	db, err := workerdb.Init()
+	db, err := workerdb.InitDBWithLogger(logger)
 	if err != nil {
 		return nil, err
 	}
 
-	return store.New(database.NewDB(logger, db), observationContext, keyring.Default().BatchChangesCredentialKey), nil
+	return store.New(db, observationContext, keyring.Default().BatchChangesCredentialKey), nil
 })
 
 // InitReconcilerWorkerStore initializes and returns a dbworker.Store instance for the reconciler worker.
@@ -52,12 +48,12 @@ var initReconcilerWorkerStore = memo.NewMemoizedConstructor(func() (dbworkerstor
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	db, err := workerdb.Init()
+	db, err := workerdb.InitDBWithLogger(observationContext.Logger)
 	if err != nil {
 		return nil, err
 	}
 
-	return store.NewReconcilerWorkerStore(basestore.NewHandleWithDB(db, sql.TxOptions{}), observationContext), nil
+	return store.NewReconcilerWorkerStore(db.Handle(), observationContext), nil
 })
 
 // InitBulkOperationWorkerStore initializes and returns a dbworker.Store instance for the bulk operation processor worker.
@@ -72,12 +68,12 @@ var initBulkOperationWorkerStore = memo.NewMemoizedConstructor(func() (dbworkers
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	db, err := workerdb.Init()
+	db, err := workerdb.InitDBWithLogger(observationContext.Logger)
 	if err != nil {
 		return nil, err
 	}
 
-	return store.NewBulkOperationWorkerStore(basestore.NewHandleWithDB(db, sql.TxOptions{}), observationContext), nil
+	return store.NewBulkOperationWorkerStore(db.Handle(), observationContext), nil
 })
 
 // InitBatchSpecWorkspaceExecutionWorkerStore initializes and returns a dbworkerstore.Store instance for the batch spec workspace execution worker.
@@ -92,12 +88,12 @@ var initBatchSpecWorkspaceExecutionWorkerStore = memo.NewMemoizedConstructor(fun
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	db, err := workerdb.Init()
+	db, err := workerdb.InitDBWithLogger(observationContext.Logger)
 	if err != nil {
 		return nil, err
 	}
 
-	return store.NewBatchSpecWorkspaceExecutionWorkerStore(basestore.NewHandleWithDB(db, sql.TxOptions{}), observationContext), nil
+	return store.NewBatchSpecWorkspaceExecutionWorkerStore(db.Handle(), observationContext), nil
 })
 
 // InitBatchSpecResolutionWorkerStore initializes and returns a dbworker.Store instance for the batch spec workspace resolution worker.
@@ -112,10 +108,10 @@ var initBatchSpecResolutionWorkerStore = memo.NewMemoizedConstructor(func() (dbw
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	db, err := workerdb.Init()
+	db, err := workerdb.InitDBWithLogger(observationContext.Logger)
 	if err != nil {
 		return nil, err
 	}
 
-	return store.NewBatchSpecResolutionWorkerStore(basestore.NewHandleWithDB(db, sql.TxOptions{}), observationContext), nil
+	return store.NewBatchSpecResolutionWorkerStore(db.Handle(), observationContext), nil
 })

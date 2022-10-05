@@ -145,6 +145,28 @@ func (c *BaseClient) DoAndDrop(ctx context.Context, req *http.Request) error {
 	return err
 }
 
+func (c *BaseClient) MakeRequest(method string, baseURL, path string, payload any) (*http.Request, error) {
+	u, err := makeRelativeURL(
+		baseURL,
+		path,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return MakeJSONRequest(method, u, payload)
+}
+
+func makeRelativeURL(base string, path ...string) (*url.URL, error) {
+	baseURL, err := url.Parse(base)
+	if err != nil {
+		return nil, err
+	}
+
+	return baseURL.ResolveReference(&url.URL{Path: filepath.Join(path...)}), nil
+}
+
+// MakeJSONRequest creates an HTTP request with the given payload serialized as JSON. This
 // NewRequest creates a new http.Request where only the Authorization HTTP header is set.
 func (c *BaseClient) NewRequest(method, path string, payload io.Reader) (*http.Request, error) {
 	u := c.newRelativeURL(path)
