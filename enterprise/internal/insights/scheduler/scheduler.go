@@ -2,16 +2,20 @@ package scheduler
 
 import (
 	"context"
+	"fmt"
 	"time"
+
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 
 	"github.com/lib/pq"
-	logger "github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-
+	log "github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 
@@ -34,9 +38,6 @@ type BaseJob struct {
 	ExecutionLogs   []workerutil.ExecutionLogEntry
 	WorkerHostname  string
 	Cancel          bool
-
-	RepositoryID   int
-	RepositoryName string
 }
 
 func (b *BaseJob) RecordID() int {
@@ -44,21 +45,19 @@ func (b *BaseJob) RecordID() int {
 }
 
 var baseJobColumns = []*sqlf.Query{
-	sqlf.Sprintf("insights_jobs.id"),
-	sqlf.Sprintf("insights_jobs.state"),
-	sqlf.Sprintf("insights_jobs.failure_message"),
-	sqlf.Sprintf("insights_jobs.queued_at"),
-	sqlf.Sprintf("insights_jobs.started_at"),
-	sqlf.Sprintf("insights_jobs.finished_at"),
-	sqlf.Sprintf("insights_jobs.process_after"),
-	sqlf.Sprintf("insights_jobs.num_resets"),
-	sqlf.Sprintf("insights_jobs.num_failures"),
-	sqlf.Sprintf("insights_jobs.last_heartbeat_at"),
-	sqlf.Sprintf("insights_jobs.execution_logs"),
-	sqlf.Sprintf("insights_jobs.worker_hostname"),
-	sqlf.Sprintf("insights_jobs.cancel"),
-	sqlf.Sprintf("insights_jobs.repository_id"),
-	sqlf.Sprintf("insights_jobs.repository_name"),
+	sqlf.Sprintf("insights_background_jobs.id"),
+	sqlf.Sprintf("insights_background_jobs.state"),
+	sqlf.Sprintf("insights_background_jobs.failure_message"),
+	sqlf.Sprintf("insights_background_jobs.queued_at"),
+	sqlf.Sprintf("insights_background_jobs.started_at"),
+	sqlf.Sprintf("insights_background_jobs.finished_at"),
+	sqlf.Sprintf("insights_background_jobs.process_after"),
+	sqlf.Sprintf("insights_background_jobs.num_resets"),
+	sqlf.Sprintf("insights_background_jobs.num_failures"),
+	sqlf.Sprintf("insights_background_jobs.last_heartbeat_at"),
+	sqlf.Sprintf("insights_background_jobs.execution_logs"),
+	sqlf.Sprintf("insights_background_jobs.worker_hostname"),
+	sqlf.Sprintf("insights_background_jobs.cancel"),
 }
 
 func scanBaseJob(s dbutil.Scanner) (*BaseJob, error) {
@@ -79,8 +78,6 @@ func scanBaseJob(s dbutil.Scanner) (*BaseJob, error) {
 		pq.Array(&executionLogs),
 		&job.WorkerHostname,
 		&job.Cancel,
-		&job.RepositoryID,
-		&job.RepositoryName,
 	); err != nil {
 		return nil, err
 	}
@@ -92,43 +89,62 @@ func scanBaseJob(s dbutil.Scanner) (*BaseJob, error) {
 	return &job, nil
 }
 
-func NewScheduler(ctx context.Context, db database.DB, obsContext *observation.Context) {
-
-	workerStore := makeStore(db, obsContext)
-	worker := makeWorker(ctx, workerStore, obsContext)
-	resetter := makeResetter(workerStore, obsContext)
+type scheduler struct {
+	workerStore dbworkerstore.Store
+	worker      *workerutil.Worker
+	resetter    *dbworker.Resetter
 }
 
-func makeStore(db database.DB, obsContext *observation.Context) dbworkerstore.Store {
-	return dbworkerstore.NewWithMetrics(db.Handle(), dbworkerstore.Options{
-		Name:              "example_job_worker_store",
-		TableName:         "example_jobs",
-		ViewName:          "example_jobs_with_repository_name example_jobs",
+func NewScheduler(ctx context.Context, db edb.InsightsDB, obsContext *observation.Context) *scheduler {
+	workerStore := makeStore(db.Handle(), obsContext)
+	worker := makeWorker(ctx, workerStore, obsContext)
+	resetter := makeResetter(workerStore, obsContext)
+
+	return &scheduler{
+		workerStore: workerStore,
+		worker:      worker,
+		resetter:    resetter,
+	}
+}
+
+func (s *scheduler) Routines() []goroutine.BackgroundRoutine {
+	return []goroutine.BackgroundRoutine{
+		s.worker,
+		s.resetter,
+	}
+}
+
+func makeStore(db basestore.TransactableHandle, obsContext *observation.Context) dbworkerstore.Store {
+	return dbworkerstore.NewWithMetrics(db, dbworkerstore.Options{
+		Name:              "insights_background_job_worker_store",
+		TableName:         "insights_background_jobs",
 		ColumnExpressions: baseJobColumns,
 		Scan:              dbworkerstore.BuildWorkerScan(scanBaseJob),
-		OrderByExpression: sqlf.Sprintf("example_jobs.repository_id, example_jobs.id"),
+		OrderByExpression: sqlf.Sprintf("insights_background_jobs.id"),
 		MaxNumResets:      100,
 		StalledMaxAge:     time.Second * 30,
 	}, obsContext)
 }
 
-const jobName = "insights_job_scheduler"
+const jobName = "insights_background_job_scheduler"
 
 func makeWorker(ctx context.Context, store dbworkerstore.Store, obsContext *observation.Context) *workerutil.Worker {
 	task := &handler{}
+	name := fmt.Sprintf("%s_worker", jobName)
 	return dbworker.NewWorker(ctx, store, task, workerutil.WorkerOptions{
-		Name:        "example_job_worker",
-		NumHandlers: 1,           // Process only one job at a time (per instance)
-		Interval:    time.Second, // Poll for a job once per second
-		Metrics:     workerutil.NewMetrics(obsContext, jobName),
+		Name:        name,
+		NumHandlers: 1,
+		Interval:    5 * time.Second,
+		Metrics:     workerutil.NewMetrics(obsContext, name),
 	})
 }
 
 func makeResetter(store dbworkerstore.Store, obsContext *observation.Context) *dbworker.Resetter {
-	return dbworker.NewResetter(logger.Scoped("", ""), store, dbworker.ResetterOptions{
-		Name:     "",
-		Interval: 0,
-		Metrics:  *dbworker.NewMetrics(obsContext, jobName),
+	name := fmt.Sprintf("%s_resetter", jobName)
+	return dbworker.NewResetter(log.Scoped("", ""), store, dbworker.ResetterOptions{
+		Name:     name,
+		Interval: time.Second * 20,
+		Metrics:  *dbworker.NewMetrics(obsContext, name),
 	})
 }
 
@@ -138,7 +154,7 @@ type handler struct {
 
 var _ workerutil.Handler = &handler{}
 
-func (h *handler) Handle(ctx context.Context, logger logger.Logger, record workerutil.Record) error {
-	// TODO implement me
-	panic("implement me")
+func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
+	logger.Info("handler called", log.String("job", jobName), log.Int("recordId", record.RecordID()))
+	return nil
 }
