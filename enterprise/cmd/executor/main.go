@@ -11,11 +11,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/run"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/ignite"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker"
-	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/logging"

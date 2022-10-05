@@ -8,10 +8,6 @@ import (
 	"github.com/c2h5oh/datasize"
 	"github.com/google/uuid"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
-	apiworker "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -107,85 +103,4 @@ func (c *Config) Validate() error {
 	}
 
 	return c.BaseConfig.Validate()
-}
-
-// APIWorkerOptions builds the options for the worker.
-func (c *Config) APIWorkerOptions(telemetryOptions queue.TelemetryOptions) apiworker.Options {
-	return apiworker.Options{
-		VMPrefix:           c.VMPrefix,
-		KeepWorkspaces:     c.KeepWorkspaces,
-		QueueName:          c.QueueName,
-		WorkerOptions:      c.workerOptions(),
-		FirecrackerOptions: c.firecrackerOptions(),
-		ResourceOptions:    c.resourceOptions(),
-		GitServicePath:     "/.executors/git",
-		QueueOptions:       c.queueOptions(telemetryOptions),
-		FilesOptions:       c.filesOptions(),
-		RedactedValues: map[string]string{
-			// 🚨 SECURITY: Catch uses of the shared frontend token used to clone
-			// git repositories that make it into commands or stdout/stderr streams.
-			c.FrontendAuthorizationToken: "SECRET_REMOVED",
-		},
-
-		NodeExporterEndpoint:               c.NodeExporterURL,
-		DockerRegistryNodeExporterEndpoint: c.DockerRegistryNodeExporterURL,
-	}
-}
-
-func (c *Config) workerOptions() workerutil.WorkerOptions {
-	return workerutil.WorkerOptions{
-		Name:                 fmt.Sprintf("executor_%s_worker", c.QueueName),
-		NumHandlers:          c.MaximumNumJobs,
-		Interval:             c.QueuePollInterval,
-		HeartbeatInterval:    5 * time.Second,
-		CancelInterval:       c.QueuePollInterval,
-		Metrics:              makeWorkerMetrics(c.QueueName),
-		NumTotalJobs:         c.NumTotalJobs,
-		MaxActiveTime:        c.MaxActiveTime,
-		WorkerHostname:       c.WorkerHostname,
-		MaximumRuntimePerJob: c.MaximumRuntimePerJob,
-	}
-}
-
-func (c *Config) firecrackerOptions() command.FirecrackerOptions {
-	return command.FirecrackerOptions{
-		Enabled:                 c.UseFirecracker,
-		Image:                   c.FirecrackerImage,
-		KernelImage:             c.FirecrackerKernelImage,
-		VMStartupScriptPath:     c.VMStartupScriptPath,
-		DockerRegistryMirrorURL: c.DockerRegistryMirrorURL,
-	}
-}
-
-func (c *Config) resourceOptions() command.ResourceOptions {
-	return command.ResourceOptions{
-		NumCPUs:             c.JobNumCPUs,
-		Memory:              c.JobMemory,
-		DiskSpace:           c.FirecrackerDiskSpace,
-		DockerHostMountPath: c.DockerHostMountPath,
-	}
-}
-
-func (c *Config) queueOptions(telemetryOptions queue.TelemetryOptions) queue.Options {
-	return queue.Options{
-		ExecutorName: c.WorkerHostname,
-		BaseClientOptions: apiclient.BaseClientOptions{
-			EndpointOptions: apiclient.EndpointOptions{
-				URL:        c.FrontendURL,
-				PathPrefix: "/.executors/queue",
-				Token:      c.FrontendAuthorizationToken,
-			},
-		},
-		TelemetryOptions: telemetryOptions,
-	}
-}
-
-func (c *Config) filesOptions() apiclient.BaseClientOptions {
-	return apiclient.BaseClientOptions{
-		EndpointOptions: apiclient.EndpointOptions{
-			URL:        c.FrontendURL,
-			PathPrefix: "/.executors/files",
-			Token:      c.FrontendAuthorizationToken,
-		},
-	}
 }
