@@ -27,10 +27,10 @@ type Databases struct {
 	CodeIntelDB stores.CodeIntelDB
 }
 
-// InitServices creates or returns an already-initialized codeintel service collection.
+// GetServices creates or returns an already-initialized codeintel service collection.
 // If the service collection is not yet initialized, a new one will be constructed using
 // the given database handles.
-func InitServices(dbs Databases) (*Services, error) {
+func GetServices(dbs Databases) (*Services, error) {
 	return initServicesMemo.Init(dbs)
 }
 

@@ -14,7 +14,7 @@ func InitServices() (*codeintel.Services, error) {
 		return nil, err
 	}
 
-	return codeintel.InitServices(databases)
+	return codeintel.GetServices(databases)
 }
 
 func databases(logger log.Logger) (codeintel.Databases, error) {
