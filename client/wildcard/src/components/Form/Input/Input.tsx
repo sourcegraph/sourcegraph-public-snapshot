@@ -76,7 +76,6 @@ export const Input = forwardRef(function Input(props, reference) {
                     disabled={disabled}
                     ref={mergedReference}
                     autoFocus={autoFocus}
-                    aria-invalid={!!error || status === InputStatus.error}
                     className={classNames(
                         inputClassName,
                         status === InputStatus.loading && styles.inputLoading,
