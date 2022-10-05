@@ -269,7 +269,6 @@ func (c *Client) doWithBaseURL(ctx context.Context, oauthContext *oauthutil.OAut
 
 	oauthAuther, ok := c.Auth.(auth.AuthenticatorWithRefresh)
 	if ok {
-		fmt.Println("HERE")
 		resp, err := oauthutil.DoRequest(ctx, c.httpClient, req, oauthAuther)
 		if err != nil {
 			trace("GitLab API error", "method", req.Method, "url", req.URL.String(), "err", err)
