@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -285,7 +286,8 @@ func (r *rootResolver) PreviewRepositoryFilter(ctx context.Context, args *Previe
 	resv := make([]*sharedresolvers.RepositoryResolver, 0, len(ids))
 	logger := sglog.Scoped("PreviewRepositoryFilter", "policies resolver")
 	for _, id := range ids {
-		repo, err := backend.NewRepos(logger, r.policySvc.GetUnsafeDB()).Get(ctx, api.RepoID(id))
+		db := r.policySvc.GetUnsafeDB()
+		repo, err := backend.NewRepos(logger, db, gitserver.NewClient(db)).Get(ctx, api.RepoID(id))
 		if err != nil {
 			return nil, err
 		}

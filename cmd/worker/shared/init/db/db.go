@@ -20,8 +20,16 @@ func Init() (*sql.DB, error) {
 	return initDatabaseMemo.Init()
 }
 
+func InitDBWithLogger(logger log.Logger) (database.DB, error) {
+	rawDB, err := Init()
+	if err != nil {
+		return nil, err
+	}
+
+	return database.NewDB(logger, rawDB), nil
+}
+
 var initDatabaseMemo = memo.NewMemoizedConstructor(func() (*sql.DB, error) {
-	logger := log.Scoped("initDatabaseMemo", "")
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
@@ -30,7 +38,7 @@ var initDatabaseMemo = memo.NewMemoizedConstructor(func() (*sql.DB, error) {
 		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
 	}
 
-	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(database.NewDB(logger, db).SubRepoPerms())
+	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(database.NewDB(log.Scoped("initDatabaseMemo", ""), db).SubRepoPerms())
 	if err != nil {
 		return nil, errors.Errorf("Failed to create sub-repo client: %v", err)
 	}

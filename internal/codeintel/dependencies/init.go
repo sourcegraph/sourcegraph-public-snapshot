@@ -17,12 +17,16 @@ var (
 // If the service is not yet initialized, it will use the provided dependencies.
 func GetService(
 	db database.DB,
+	gitserver GitserverClient,
 ) *Service {
 	svcOnce.Do(func() {
 		store := store.New(db, scopedContext("store"))
+		externalServiceStore := db.ExternalServices()
 
 		svc = newService(
 			store,
+			gitserver,
+			externalServiceStore,
 			scopedContext("service"),
 		)
 	})
@@ -33,9 +37,15 @@ func GetService(
 // TestService creates a new dependencies service with noop observation contexts.
 func TestService(
 	db database.DB,
+	gitserver GitserverClient,
 ) *Service {
+	store := store.New(db, &observation.TestContext)
+	externalServiceStore := db.ExternalServices()
+
 	return newService(
-		store.New(db, &observation.TestContext),
+		store,
+		gitserver,
+		externalServiceStore,
 		&observation.TestContext,
 	)
 }

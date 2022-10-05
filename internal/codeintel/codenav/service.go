@@ -1144,7 +1144,8 @@ func (s *Service) GetStencil(ctx context.Context, args shared.RequestArgs, reque
 	}
 	trace.Log(traceLog.Int("numRanges", len(adjustedRanges)))
 
-	return sortRanges(adjustedRanges), nil
+	sortedRanges := sortRanges(adjustedRanges)
+	return dedupeRanges(sortedRanges), nil
 }
 
 func (s *Service) GetMonikersByPosition(ctx context.Context, bundleID int, path string, line, character int) (_ [][]precise.MonikerData, err error) {

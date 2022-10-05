@@ -35,8 +35,9 @@ import (
 //
 // Prefer using the constructor, NewGitTreeEntryResolver.
 type GitTreeEntryResolver struct {
-	db     database.DB
-	commit *GitCommitResolver
+	db              database.DB
+	gitserverClient gitserver.Client
+	commit          *GitCommitResolver
 
 	contentOnce sync.Once
 	content     []byte
@@ -50,8 +51,8 @@ type GitTreeEntryResolver struct {
 	isSingleChild *bool // whether this is the single entry in its parent. Only set by the (&GitTreeEntryResolver) entries.
 }
 
-func NewGitTreeEntryResolver(db database.DB, commit *GitCommitResolver, stat fs.FileInfo) *GitTreeEntryResolver {
-	return &GitTreeEntryResolver{db: db, commit: commit, stat: stat}
+func NewGitTreeEntryResolver(db database.DB, gitserverClient gitserver.Client, commit *GitCommitResolver, stat fs.FileInfo) *GitTreeEntryResolver {
+	return &GitTreeEntryResolver{db: db, commit: commit, stat: stat, gitserverClient: gitserverClient}
 }
 
 func (r *GitTreeEntryResolver) Path() string { return r.stat.Name() }
@@ -78,7 +79,7 @@ func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		defer cancel()
 
-		r.content, r.contentErr = gitserver.NewClient(r.db).ReadFile(
+		r.content, r.contentErr = r.gitserverClient.ReadFile(
 			ctx,
 			r.commit.repoResolver.RepoName(),
 			api.CommitID(r.commit.OID()),
@@ -217,7 +218,7 @@ func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 	if r.isSingleChild != nil {
 		return *r.isSingleChild, nil
 	}
-	entries, err := gitserver.NewClient(r.db).ReadDir(ctx, authz.DefaultSubRepoPermsChecker, r.commit.repoResolver.RepoName(), api.CommitID(r.commit.OID()), path.Dir(r.Path()), false)
+	entries, err := r.gitserverClient.ReadDir(ctx, authz.DefaultSubRepoPermsChecker, r.commit.repoResolver.RepoName(), api.CommitID(r.commit.OID()), path.Dir(r.Path()), false)
 	if err != nil {
 		return false, err
 	}

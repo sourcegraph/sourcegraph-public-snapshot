@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -33,12 +32,12 @@ func (s *insightsJob) Routines(startupCtx context.Context, logger log.Logger) ([
 	}
 	logger.Info("Code Insights Enabled. Enabling background jobs.")
 
-	mainAppDb, err := workerdb.Init()
+	db, err := workerdb.InitDBWithLogger(logger)
 	if err != nil {
 		return nil, err
 	}
 
-	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(database.NewDB(logger, mainAppDb).SubRepoPerms())
+	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(db.SubRepoPerms())
 	if err != nil {
 		return nil, errors.Errorf("Failed to create sub-repo client: %v", err)
 	}
@@ -48,7 +47,7 @@ func (s *insightsJob) Routines(startupCtx context.Context, logger log.Logger) ([
 		return nil, err
 	}
 
-	return background.GetBackgroundJobs(context.Background(), logger, database.NewDB(logger, mainAppDb), insightsDB), nil
+	return background.GetBackgroundJobs(context.Background(), logger, db, insightsDB), nil
 }
 
 func NewInsightsJob() job.Job {
