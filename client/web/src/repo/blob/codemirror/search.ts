@@ -129,6 +129,42 @@ class SearchPanel implements Panel {
 
         if (!query.eq(this.query)) {
             this.view.dispatch({ effects: setSearchQuery.of(query) })
+
+            // The following code scrolls next match into view if there is no
+            // match in the visible viewport. This is done by searching for the
+            // text from the currently top visible line and determining whether
+            // the next match is in the current viewport
+
+            const { scrollTop } = this.view.scrollDOM
+
+            // Get top visible line. More than half of the line must be visible.
+            // We don't use `view.viewportLineBlocks` because that also includes
+            // lines that are rendered but not actually visible.
+            let topLineBlock = this.view.lineBlockAtHeight(scrollTop)
+            if (Math.abs(topLineBlock.bottom - scrollTop) <= topLineBlock.height / 2) {
+                topLineBlock = this.view.lineBlockAtHeight(scrollTop + topLineBlock.height)
+            }
+
+            let result = getSearchQuery(this.view.state).getCursor(this.view.state.doc, topLineBlock.from).next()
+            if (result.done) {
+                // No match in the remainder of the document, wrap around
+                result = getSearchQuery(this.view.state).getCursor(this.view.state.doc).next()
+                if (result.done) {
+                    // Search term is not in the document, nothing to do
+                    return
+                }
+            }
+
+            const matchLineBlock = this.view.lineBlockAt(result.value.from)
+            const matchLineCenter = matchLineBlock.top + matchLineBlock.height / 2
+
+            if (matchLineCenter < scrollTop || matchLineCenter > scrollTop + this.view.scrollDOM.clientHeight) {
+                this.view.dispatch({
+                    effects: EditorView.scrollIntoView(result.value.from, {
+                        y: 'center',
+                    }),
+                })
+            }
         }
     }
 
