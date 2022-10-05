@@ -140,10 +140,7 @@ export const calculateMatchGroupsSorted = (
                     : maxMatches - 1
                 : sortedMatches.length - 1
             : 0
-    const highestLineNumberWithinSubsetMatches =
-        sortedMatches[highestSortedMatchIndex].highlightRanges[
-            sortedMatches[highestSortedMatchIndex].highlightRanges.length - 1
-        ].endLine
+    const highestLineNumberWithinSubsetMatches = sortedMatches[highestSortedMatchIndex].endLine
 
     // Determine which line matches we will show. This includes matches that are in the context
     // area (if any.)
@@ -151,8 +148,7 @@ export const calculateMatchGroupsSorted = (
         (match, index) =>
             maxMatches === 0 ||
             index < maxMatches ||
-            match.highlightRanges[match.highlightRanges.length - 1].endLine <=
-                highestLineNumberWithinSubsetMatches + context
+            match.endLine <= highestLineNumberWithinSubsetMatches + context
     )
 
     const grouped = mergeContext(

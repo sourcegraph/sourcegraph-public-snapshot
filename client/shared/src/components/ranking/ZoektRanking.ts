@@ -28,7 +28,7 @@ function newHunk(): Hunk {
 function addHunkItem(hunk: Hunk, item: MatchItem): void {
     hunk.matches.push(item)
     hunk.startLine = Math.min(item.startLine, hunk.startLine)
-    hunk.endLine = Math.max(item.highlightRanges[item.highlightRanges.length - 1].endLine, hunk.endLine)
+    hunk.endLine = Math.max(item.endLine, hunk.endLine)
 }
 
 function sortHunkMatches(hunk: Hunk): void {
@@ -51,7 +51,7 @@ function sortHunkMatches(hunk: Hunk): void {
 function isMatchWithinGroup(group: Hunk, item: MatchItem, context: number): boolean {
     return (
         item.startLine + context + 1 >= group.startLine - context &&
-        item.highlightRanges[item.highlightRanges.length - 1].endLine - context - 1 <= group.endLine + context
+        item.endLine - context - 1 <= group.endLine + context
     )
 }
 

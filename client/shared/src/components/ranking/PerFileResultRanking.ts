@@ -36,6 +36,10 @@ export interface MatchItem extends ExtensionBadgeType {
      * The 0-based line number where the matched content begins.
      */
     startLine: number
+    /**
+     * The 0-based line number where the matched content ends.
+     */
+    endLine: number
     aggregableBadges?: AggregableBadge[]
 }
 
