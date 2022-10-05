@@ -1,11 +1,7 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
-/* eslint-disable @typescript-eslint/no-require-imports */
+import path from 'path'
 
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-const path = require('path')
-
-const { Octokit } = require('octokit')
-const shelljs = require('shelljs')
+import { Octokit } from 'octokit'
+import shelljs from 'shelljs'
 
 const COMMENT_HEADING = '## Bundle size report 📦'
 
