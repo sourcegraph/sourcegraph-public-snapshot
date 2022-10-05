@@ -69,7 +69,7 @@ func ExternalServiceTokenRefresher(db DB, externalServiceID int64, refreshToken 
 			return nil, errors.Wrap(err, "decrypt config")
 		}
 
-		config, err = jsonc.Edit(config, refreshedToken.Token, "token")
+		config, err = jsonc.Edit(config, refreshedToken.AccessToken, "token")
 		if err != nil {
 			return nil, errors.Wrap(err, "update OAuth token")
 		}

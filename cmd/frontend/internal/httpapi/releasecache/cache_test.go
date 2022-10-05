@@ -140,7 +140,7 @@ func newTestClient(t *testing.T) *github.V4Client {
 	u, err := url.Parse("https://api.github.com")
 	require.NoError(t, err)
 
-	a := auth.OAuthBearerToken{Token: os.Getenv("GITHUB_TOKEN")}
+	a := auth.OAuthBearerToken{AccessToken: os.Getenv("GITHUB_TOKEN")}
 
 	return github.NewV4Client("https://github.com", u, &a, doer)
 }

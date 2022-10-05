@@ -112,11 +112,11 @@ func TestClient_doWithBaseURL(t *testing.T) {
 	}
 
 	provider := NewClientProvider("Test", baseURL, doer, func(ctx context.Context, doer httpcli.Doer, oauthCtxt oauthutil.OAuthContext) (*auth.OAuthBearerToken, error) {
-		return &auth.OAuthBearerToken{Token: "refreshed-token"}, nil
+		return &auth.OAuthBearerToken{AccessToken: "refreshed-token"}, nil
 	})
 
-	client := provider.getClient(&auth.OAuthBearerToken{Token: "bad token", RefreshToken: "refresh token", RefreshFunc: func(obt *auth.OAuthBearerToken) (*auth.OAuthBearerToken, error) {
-		obt.Token = "refreshed-token"
+	client := provider.getClient(&auth.OAuthBearerToken{AccessToken: "bad token", RefreshToken: "refresh token", RefreshFunc: func(obt *auth.OAuthBearerToken) (*auth.OAuthBearerToken, error) {
+		obt.AccessToken = "refreshed-token"
 		obt.RefreshToken = "refresh-now"
 
 		return obt, nil
@@ -197,7 +197,7 @@ func TestGetOAuthContext(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got := getOAuthContext(test.baseURL)
+			got := GetOAuthContext(test.baseURL)
 			assert.Equal(t, test.want, got)
 		})
 	}

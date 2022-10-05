@@ -132,7 +132,7 @@ func (p *ClientProvider) GetOAuthClient(oauthToken string) *Client {
 	if oauthToken == "" {
 		return p.getClient(nil)
 	}
-	return p.getClient(&auth.OAuthBearerToken{Token: oauthToken})
+	return p.getClient(&auth.OAuthBearerToken{AccessToken: oauthToken})
 }
 
 // GetClient returns an unauthenticated client.
@@ -191,10 +191,10 @@ type Client struct {
 //
 // See the docstring of Client for the meaning of the parameters.
 func (p *ClientProvider) newClient(a auth.Authenticator) *Client {
-	return p.NewClientWithTokenRefresher(a, p.tokenRefresher)
+	return p.NewClient(a)
 }
 
-func (p *ClientProvider) NewClientWithTokenRefresher(a auth.Authenticator, refresher oauthutil.TokenRefresher) *Client {
+func (p *ClientProvider) NewClient(a auth.Authenticator) *Client {
 	// Cache for GitLab project metadata.
 	var cacheTTL time.Duration
 	if isGitLabDotComURL(p.baseURL) && a == nil {
@@ -221,7 +221,6 @@ func (p *ClientProvider) NewClientWithTokenRefresher(a auth.Authenticator, refre
 		Auth:             a,
 		rateLimiter:      rl,
 		rateLimitMonitor: rlm,
-		tokenRefresher:   refresher,
 	}
 }
 
@@ -234,7 +233,7 @@ func isGitLabDotComURL(baseURL *url.URL) bool {
 // base path.
 func (c *Client) do(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
 	req.URL = c.baseURL.ResolveReference(req.URL)
-	return c.doWithBaseURL(ctx, getOAuthContext(c.baseURL.String()), req, result)
+	return c.doWithBaseURL(ctx, GetOAuthContext(c.baseURL.String()), req, result)
 }
 
 // doWithBaseURL doesn't amend the request URL. When an OAuth Bearer token is
@@ -270,6 +269,7 @@ func (c *Client) doWithBaseURL(ctx context.Context, oauthContext *oauthutil.OAut
 
 	oauthAuther, ok := c.Auth.(auth.AuthenticatorWithRefresh)
 	if ok {
+		fmt.Println("HERE")
 		resp, err := oauthutil.DoRequest(ctx, c.httpClient, req, oauthAuther)
 		if err != nil {
 			trace("GitLab API error", "method", req.Method, "url", req.URL.String(), "err", err)
@@ -350,7 +350,7 @@ func (c *Client) GetAuthenticatedUserOAuthScopes(ctx context.Context) ([]string,
 		Scopes []string `json:"scopes,omitempty"`
 	}{}
 
-	_, _, err = c.doWithBaseURL(ctx, getOAuthContext(c.baseURL.String()), req, &v)
+	_, _, err = c.doWithBaseURL(ctx, GetOAuthContext(c.baseURL.String()), req, &v)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting oauth scopes")
 	}
@@ -439,9 +439,9 @@ func (e ProjectNotFoundError) NotFound() bool { return true }
 
 var MockGetOAuthContext func() *oauthutil.OAuthContext
 
-// getOAuthContext matches the corresponding auth provider using the given
+// GetOAuthContext matches the corresponding auth provider using the given
 // baseURL and returns the oauthutil.OAuthContext of it.
-func getOAuthContext(baseURL string) *oauthutil.OAuthContext {
+func GetOAuthContext(baseURL string) *oauthutil.OAuthContext {
 	if MockGetOAuthContext != nil {
 		return MockGetOAuthContext()
 	}
