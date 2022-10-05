@@ -95,7 +95,7 @@ func checkSubRepoPermissions(ctx context.Context, checker authz.SubRepoPermissio
 	return enabled, err
 }
 
-func ToRecording(record *Job, value float64, recordTime time.Time, repoName string, repoID api.RepoID, capture *string) []store.RecordSeriesPointArgs {
+func toRecording(record *Job, value float64, recordTime time.Time, repoName string, repoID api.RepoID, capture *string) []store.RecordSeriesPointArgs {
 	args := make([]store.RecordSeriesPointArgs, 0, len(record.DependentFrames)+1)
 	base := store.RecordSeriesPointArgs{
 		SeriesID: record.SeriesID,
@@ -150,7 +150,7 @@ func generateComputeRecordingsStream(ctx context.Context, job *Job, recordTime t
 				// to fix this, we will automatically pick up any new results without changes here.
 				continue
 			}
-			recordings = append(recordings, ToRecording(job, float64(count), recordTime, match.RepositoryName, api.RepoID(match.RepositoryID), &capture)...)
+			recordings = append(recordings, toRecording(job, float64(count), recordTime, match.RepositoryName, api.RepoID(match.RepositoryID), &capture)...)
 		}
 	}
 	return recordings, nil
@@ -186,7 +186,7 @@ func generateSearchRecordingsStream(ctx context.Context, job *Job, recordTime ti
 		if subRepoEnabled {
 			continue
 		}
-		recordings = append(recordings, ToRecording(job, float64(match.MatchCount), recordTime, match.RepositoryName, repoID, nil)...)
+		recordings = append(recordings, toRecording(job, float64(match.MatchCount), recordTime, match.RepositoryName, repoID, nil)...)
 	}
 	return recordings, nil
 }
