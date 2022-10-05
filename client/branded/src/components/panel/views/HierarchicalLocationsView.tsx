@@ -3,7 +3,7 @@ import * as React from 'react'
 import classNames from 'classnames'
 import * as H from 'history'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
-import { Observable, of, Subject, Subscription } from 'rxjs'
+import { BehaviorSubject, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, endWith, map, startWith, switchMap, tap } from 'rxjs/operators'
 
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
@@ -24,6 +24,8 @@ import styles from './HierarchicalLocationsView.module.scss'
 
 /** The maximum number of results we'll receive from a provider before we truncate and display a banner. */
 const MAXIMUM_LOCATION_RESULTS = 500
+
+export const hierarchicalLocationViewHasResultContext = new BehaviorSubject<undefined | boolean>(undefined)
 
 export interface HierarchicalLocationsViewProps
     extends SettingsCascadeProps,
@@ -139,6 +141,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                                             // noop
                                         })
                                 }
+                                hierarchicalLocationViewHasResultContext.next(hasResults)
                             }),
                             endWith({ isLoading: false })
                         )
