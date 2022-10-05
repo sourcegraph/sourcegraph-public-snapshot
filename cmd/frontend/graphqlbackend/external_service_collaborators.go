@@ -208,7 +208,7 @@ func filterInvitableCollaborators(
 	// invite are people who recently committed to code, which means they're more active and more
 	// likely the person you want to invite (compared to e.g. if we hit a very old repo and the
 	// committer is say no longer working at that organization.)
-	sort.Slice(recentCommitters, func(i, j int) bool {
+	sort.SliceStable(recentCommitters, func(i, j int) bool {
 		a := recentCommitters[i].date
 		b := recentCommitters[j].date
 		return a.After(b)
@@ -276,7 +276,7 @@ func filterInvitableCollaborators(
 		current := invitablePerDomain[domain(person.email)]
 		invitablePerDomain[domain(person.email)] = current + 1
 	}
-	sort.Slice(invitable, func(i, j int) bool {
+	sort.SliceStable(invitable, func(i, j int) bool {
 		// First, sort popular personal email domains lower.
 		iDomain := domain(invitable[i].email)
 		jDomain := domain(invitable[j].email)
