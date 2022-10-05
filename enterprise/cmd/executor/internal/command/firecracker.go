@@ -14,6 +14,7 @@ import (
 
 	shellquote "github.com/kballard/go-shellquote"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -53,6 +54,66 @@ func formatFirecrackerCommand(spec CommandSpec, name string, options Options) co
 	}
 }
 
+// defaultCNIConfig is the CNI config used for our firecracker VMs.
+// TODO: Can we remove the portmap completely?
+const defaultCNIConfig = `
+{
+  "cniVersion": "0.4.0",
+  "name": "ignite-cni-bridge",
+  "plugins": [
+    {
+  	  "type": "bridge",
+  	  "bridge": "ignite0",
+  	  "isGateway": true,
+  	  "isDefaultGateway": true,
+  	  "promiscMode": false,
+  	  "ipMasq": true,
+  	  "ipam": {
+  	    "type": "host-local",
+  	    "subnet": %q
+  	  }
+    },
+    {
+  	  "type": "portmap",
+  	  "capabilities": {
+  	    "portMappings": true
+  	  }
+    },
+    {
+  	  "type": "firewall"
+    },
+    {
+  	  "type": "isolation"
+    },
+    {
+  	  "name": "slowdown",
+  	  "type": "bandwidth",
+  	  "ingressRate": %d,
+  	  "ingressBurst": %d,
+  	  "egressRate": %d,
+  	  "egressBurst": %d
+    }
+  ]
+}
+`
+
+// cniConfig generates a config file that configures the CNI explicitly and adds
+// the isolation plugin to the chain.
+// This is used to prevent cross-network communication (which currently doesn't
+// happen as we only have 1 bridge).
+// We also set the maximum bandwidth usable per VM to the configured value to avoid
+// abuse and to make sure multiple VMs on the same host won't starve others.
+func cniConfig(maxIngressBandwidth, maxEgressBandwidth int) string {
+	return fmt.Sprintf(
+		defaultCNIConfig,
+		config.CNISubnetCIDR,
+		maxIngressBandwidth,
+		2*maxIngressBandwidth,
+		maxEgressBandwidth,
+		2*maxEgressBandwidth,
+	)
+}
+
 // dockerDaemonConfig is a struct that marshals into a valid docker daemon config.
 type dockerDaemonConfig struct {
 	RegistryMirrors []string `json:"registry-mirrors"`
@@ -75,9 +136,7 @@ func newDockerDaemonConfig(tmpDir, mirrorAddress string) (_ string, err error) {
 
 // setupFirecracker invokes a set of commands to provision and prepare a Firecracker virtual
 // machine instance. If a startup script path (an executable file on the host) is supplied,
-// it will be mounted into the new virtual machine instance and executed. Optionally,
-// a docker daemon config is created for FirecrackerOptions.DockerRegistryMirrorAddress
-// and mounted into the VM.
+// it will be mounted into the new virtual machine instance and executed.
 func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, name, workspaceDevice, tmpDir string, options Options, operations *Operations) error {
 	var daemonConfigFile string
 	if options.FirecrackerOptions.DockerRegistryMirrorURL != "" {
@@ -88,9 +147,25 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, 
 		}
 	}
 
+	// Make subdirectory called "cni" to store CNI config in. All files from a directory
+	// will be considered so this has to be it's own directory with just our config file.
+	cniConfigDir := path.Join(tmpDir, "cni")
+	err := os.Mkdir(cniConfigDir, os.ModePerm)
+	if err != nil {
+		return err
+	}
+	cniConfigFile := path.Join(tmpDir, "10-sourcegraph-executors.conflist")
+	err = os.WriteFile(cniConfigFile, []byte(cniConfig(options.ResourceOptions.MaxIngressBandwidth, options.ResourceOptions.MaxEgressBandwidth)), os.ModePerm)
+	if err != nil {
+		return err
+	}
+
 	// Start the VM and wait for the SSH server to become available.
 	startCommand := command{
 		Key: "setup.firecracker.start",
+		// Tell ignite to use our temporary config file for maximum isolation of
+		// envs.
+		Env: []string{fmt.Sprintf("CNI_CONF_DIR=%s", cniConfigDir)},
 		Command: flatten(
 			"ignite", "run",
 			"--runtime", "docker",
@@ -101,6 +176,8 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, 
 			"--ssh",
 			"--name", name,
 			"--kernel-image", sanitizeImage(options.FirecrackerOptions.KernelImage),
+			"--kernel-args", config.FirecrackerKernelArgs,
+			"--sandbox-image", sanitizeImage(options.FirecrackerOptions.SandboxImage),
 			sanitizeImage(options.FirecrackerOptions.Image),
 		),
 		Operation: operations.SetupFirecrackerStart,
