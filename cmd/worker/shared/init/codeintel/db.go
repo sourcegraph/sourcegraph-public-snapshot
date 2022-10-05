@@ -25,7 +25,6 @@ func InitDBWithLogger(logger log.Logger) (database.DB, error) {
 		return nil, err
 	}
 
-	// TODO - make different type here
 	return database.NewDB(logger, rawDB), nil
 }
 
