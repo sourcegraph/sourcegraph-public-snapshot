@@ -2,7 +2,6 @@ package queryrunner
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"sort"
 	"strings"
@@ -15,7 +14,6 @@ import (
 	"github.com/hexops/autogold"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
@@ -1032,50 +1030,6 @@ func stringify(recordings []store.RecordSeriesPointArgs) []string {
 	// sort for test determinism
 	sort.Strings(stringified)
 	return stringified
-}
-
-type computeValue struct {
-	value   string
-	count   int
-	path    string
-	revhash string
-}
-
-type computeSearch struct {
-	repoName string
-	repoId   int
-	values   []computeValue
-}
-
-func mockComputeSearch(results []computeSearch) func(context.Context, string) ([]query.ComputeResult, error) {
-	var mock []query.ComputeResult
-	for _, result := range results {
-		for _, value := range result.values {
-			for i := 0; i < value.count; i++ {
-				mock = append(mock, query.ComputeMatchContext{
-					Commit: value.revhash,
-					Repository: struct {
-						Name string
-						Id   string
-					}{
-						Name: result.repoName,
-						Id:   base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("repo:%d", result.repoId))),
-					},
-					Path: value.path,
-					Matches: []query.ComputeMatch{{
-						Value: "",
-						Environment: []query.ComputeEnvironmentEntry{{
-							Variable: "1",
-							Value:    value.value,
-						}},
-					}},
-				})
-			}
-		}
-	}
-	return func(ctx context.Context, s string) ([]query.ComputeResult, error) {
-		return mock, nil
-	}
 }
 
 func TestGetSeries(t *testing.T) {
