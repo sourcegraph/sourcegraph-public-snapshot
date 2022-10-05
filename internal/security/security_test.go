@@ -139,7 +139,11 @@ func TestAddrValidation(t *testing.T) {
 		{"-oFooBaz", false},
 		{"sourcegraph com", false},
 		{"127.0.0.1", true},
+		{"127.0.0.1:80", true},
+		{"127.0.0.1:foo", false},
 		{"sourcegraph.com", true},
+		{"sourcegraph.com:443", true},
+		{"sourcegraph.com:-baz", false},
 	}
 
 	t.Run("correctly validates addresses", func(t *testing.T) {

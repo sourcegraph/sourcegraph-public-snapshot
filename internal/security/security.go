@@ -5,6 +5,7 @@ package security
 import (
 	"fmt"
 	"net"
+	"strconv"
 	"unicode"
 	"unicode/utf8"
 
@@ -16,19 +17,29 @@ import (
 // ValidateRemoteAddr validates if the input is a valid IP or a valid hostname.
 // It validates the hostname by attempting to resolve it.
 func ValidateRemoteAddr(raddr string) bool {
+	host, port, err := net.SplitHostPort(raddr)
+
+	if err == nil {
+		raddr = host
+		_, err := strconv.Atoi(port)
+
+		// return false if port is not an int
+		if err != nil {
+			return false
+		}
+	}
 
 	validIP := net.ParseIP(raddr) != nil
 	validHost := true
 
-	_, err := net.LookupHost(raddr)
+	_, err = net.LookupHost(raddr)
 
 	if err != nil {
 		// we cannot resolve the addr
 		validHost = false
 	}
 
-	return validIP == true || validHost == true
-
+	return validIP || validHost
 }
 
 // maxPasswordRunes is the maximum number of UTF-8 runes that a password can contain.
