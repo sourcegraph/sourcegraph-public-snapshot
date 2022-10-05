@@ -1,15 +1,14 @@
-/* eslint-disable react/display-name */
+/* eslint-disable react/no-array-index-key */
 import React from 'react'
 
 import { MockedResponse } from '@apollo/client/testing'
-import { renderHook, waitFor } from '@testing-library/react'
+import { render, waitFor } from '@testing-library/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
 import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
-import { MockedFeatureFlagsProvider } from '../../featureFlags/FeatureFlagsProvider'
 import { SearchHistoryEventLogsQueryResult } from '../../graphql-operations'
 
 import { SEARCH_HISTORY_EVENT_LOGS_QUERY, useRecentSearches } from './recentSearches'
@@ -35,11 +34,10 @@ function buildMockEventLogs(items: number): SearchHistoryEventLogsQueryResult {
     }
 }
 
-const Wrapper: React.JSXElementConstructor<{
-    children: React.ReactElement
+const Wrapper: React.FunctionComponent<{
     tempSettings: RecentSearch[]
     eventLogs: SearchHistoryEventLogsQueryResult
-}> = ({ children, tempSettings, eventLogs }) => {
+}> = ({ tempSettings, eventLogs }) => {
     const mockedEventLogs: MockedResponse[] = [
         {
             request: { query: getDocumentNode(SEARCH_HISTORY_EVENT_LOGS_QUERY), variables: { first: 20 } },
@@ -50,31 +48,37 @@ const Wrapper: React.JSXElementConstructor<{
     return (
         <MockedTestProvider mocks={mockedEventLogs}>
             <MockTemporarySettings settings={{ 'search.input.recentSearches': tempSettings }}>
-                {children}
+                <InnerWrapper />
             </MockTemporarySettings>
         </MockedTestProvider>
     )
 }
 
+const InnerWrapper: React.FunctionComponent<{}> = () => {
+    const { recentSearches, state } = useRecentSearches()
+    return (
+        <>
+            <ul>
+                {recentSearches?.map((recentSearch, index) => (
+                    <li key={index}>{recentSearch.query}</li>
+                ))}
+            </ul>
+            <div data-testid="state">{state}</div>
+        </>
+    )
+}
+
 describe('recentSearches', () => {
-    beforeEach(() => {
-        jest.useFakeTimers()
-    })
-
-    afterEach(() => {
-        jest.useRealTimers()
-    })
-
     describe('useRecentSearches().recentSearches', () => {
         test('recent searches is empty array if no data in temp settings or event logs', async () => {
-            const { result } = renderHook(() => useRecentSearches(), {
-                wrapper: ({ children }) => (
-                    <Wrapper tempSettings={buildMockTempSettings(0)} eventLogs={buildMockEventLogs(0)}>
-                        {children}
-                    </Wrapper>
-                ),
-            })
-            await waitFor(() => expect(result.current.recentSearches).toEqual([]))
+            const { queryAllByRole, getByTestId } = render(
+                <Wrapper tempSettings={buildMockTempSettings(0)} eventLogs={buildMockEventLogs(0)} />
+            )
+
+            await waitFor(() => expect(getByTestId('state')).toHaveTextContent('success'))
+
+            const items = queryAllByRole('listitem').map(element => element.textContent)
+            expect(items).toMatchInlineSnapshot('Array []')
         })
 
         test('recent searches is populated from event logs if no data in temp settings, with deduplication', async () => {
@@ -89,20 +93,20 @@ describe('recentSearches', () => {
                 },
             }
 
-            const { result } = renderHook(() => useRecentSearches(), {
-                wrapper: ({ children }) => (
-                    <Wrapper tempSettings={buildMockTempSettings(0)} eventLogs={mockedEventLogsWithDuplicates}>
-                        {children}
-                    </Wrapper>
-                ),
-            })
-            // Initial
-            expect(result.current.recentSearches).toEqual([])
-            await waitFor(() =>
-                expect(result.current.recentSearches).toEqual([
-                    { query: 'test0', timestamp: '2021-01-01T00:00:00Z' },
-                    { query: 'test1', timestamp: '2021-01-01T00:00:00Z' },
-                ])
+            const { queryAllByRole, getByTestId } = render(
+                <Wrapper tempSettings={buildMockTempSettings(0)} eventLogs={mockedEventLogsWithDuplicates} />
+            )
+
+            await waitFor(() => expect(getByTestId('state')).toHaveTextContent('success'))
+
+            const items = queryAllByRole('listitem').map(element => element.textContent)
+            expect(items).toMatchInlineSnapshot(
+                `
+                Array [
+                  "test0",
+                  "test1",
+                ]
+            `
             )
         })
 

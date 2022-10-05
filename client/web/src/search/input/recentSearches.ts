@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import { Completion, insertCompletionText } from '@codemirror/autocomplete'
 import { EditorView } from '@codemirror/view'
@@ -116,8 +116,10 @@ export function searchHistorySource({
 export function useRecentSearches(): {
     recentSearches: RecentSearch[] | undefined
     addRecentSearch: (query: string) => void
+    state: 'loading' | 'error' | 'success'
 } {
     const [recentSearches, setRecentSearches] = useTemporarySetting('search.input.recentSearches', [])
+    const [state, setState] = useState<'loading' | 'error' | 'success'>('loading')
 
     // If recentSearches from temporary settings is empty, fetch recent searches from the event log
     // and populate temporary settings with that instead.
@@ -136,12 +138,20 @@ export function useRecentSearches(): {
                         const processedLogs = processEventLogs(result.data)
                         setRecentSearches(processedLogs)
                     }
+                    setState('success')
                 })
                 .catch(() => {
                     logger.error('Error fetching recent searches from event log')
+                    setState('error')
                 })
         }
     }, [recentSearches, loadFromEventLog, setRecentSearches])
+
+    useEffect(() => {
+        if (recentSearches && recentSearches.length > 0) {
+            setState('success')
+        }
+    }, [recentSearches])
 
     // Adds a new search to the top of the recent searches list.
     // If the search is already in the recent searches list, it moves it to the top.
@@ -156,7 +166,7 @@ export function useRecentSearches(): {
         [setRecentSearches]
     )
 
-    return { recentSearches, addRecentSearch }
+    return { recentSearches, addRecentSearch, state }
 }
 
 function processEventLogs(data: SearchHistoryEventLogsQueryResult): RecentSearch[] {
