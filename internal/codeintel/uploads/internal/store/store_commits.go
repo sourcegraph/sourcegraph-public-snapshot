@@ -254,11 +254,11 @@ ORDER BY c.commit_bytea
 LIMIT %s
 `
 
-type backfillIncompleteError struct {
+type BackfillIncompleteError struct {
 	repositoryID int
 }
 
-func (e backfillIncompleteError) Error() string {
+func (e BackfillIncompleteError) Error() string {
 	return fmt.Sprintf("repository %d has not yet completed its backfill of column committed_at", e.repositoryID)
 }
 
@@ -277,7 +277,7 @@ func (s *store) GetOldestCommitDate(ctx context.Context, repositoryID int) (_ ti
 		return time.Time{}, false, err
 	}
 	if t == nil {
-		return time.Time{}, false, &backfillIncompleteError{repositoryID}
+		return time.Time{}, false, BackfillIncompleteError{repositoryID}
 	}
 
 	return *t, true, nil

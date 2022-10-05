@@ -206,7 +206,7 @@ func TestGetOldestCommitDate(t *testing.T) {
 
 	if _, _, err := store.GetOldestCommitDate(context.Background(), 50); err == nil {
 		t.Fatalf("expected error getting oldest commit date")
-	} else if !errors.Is(err, &backfillIncompleteError{50}) {
+	} else if !errors.Is(err, BackfillIncompleteError{50}) {
 		t.Fatalf("unexpected backfill error, got %q", err)
 	}
 

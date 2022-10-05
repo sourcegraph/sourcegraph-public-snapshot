@@ -27,7 +27,7 @@ func NewCommitGraphUpdaterJob() job.Job {
 }
 
 func (j *commitGraphUpdaterJob) Description() string {
-	return ""
+	return "commitgraphUpdater"
 }
 
 func (j *commitGraphUpdaterJob) Config() []env.Config {
@@ -59,6 +59,6 @@ func (j *commitGraphUpdaterJob) Routines(startupCtx context.Context, logger log.
 	})
 
 	return []goroutine.BackgroundRoutine{
-		commitgraph.NewUpdater(uploadSvc),
+		commitgraph.NewUpdater(uploadSvc, logger),
 	}, nil
 }
