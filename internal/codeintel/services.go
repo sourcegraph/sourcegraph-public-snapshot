@@ -22,14 +22,14 @@ type Services struct {
 	UploadsService      *uploads.Service
 }
 
-// InitServices initializes and returns code intelligence services.
-func InitServices(dbs Databases) (*Services, error) {
-	return initServicesMemo.Init(dbs)
-}
-
 type Databases struct {
 	DB          database.DB
 	CodeIntelDB stores.CodeIntelDB
+}
+
+// InitServices initializes and returns code intelligence services.
+func InitServices(dbs Databases) (*Services, error) {
+	return initServicesMemo.Init(dbs)
 }
 
 var initServicesMemo = memo.NewMemoizedConstructorWithArg(func(dbs Databases) (*Services, error) {
