@@ -22,9 +22,6 @@ func Check(feature Feature) error {
 	}
 
 	info, err := GetConfiguredProductLicenseInfo()
-	if info == nil {
-		return nil
-	}
 	if err != nil {
 		return errors.WithMessage(err, fmt.Sprintf("checking feature %q activation", feature))
 	}
