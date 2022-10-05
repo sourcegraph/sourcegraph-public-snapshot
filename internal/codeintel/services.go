@@ -27,7 +27,9 @@ type Databases struct {
 	CodeIntelDB stores.CodeIntelDB
 }
 
-// InitServices initializes and returns code intelligence services.
+// InitServices creates or returns an already-initialized codeintel service collection.
+// If the service collection is not yet initialized, a new one will be constructed using
+// the given database handles.
 func InitServices(dbs Databases) (*Services, error) {
 	return initServicesMemo.Init(dbs)
 }
