@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -26,7 +27,8 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 	wantCommitID := api.CommitID(strings.Repeat("a", 40))
 	rcache.SetupForTest(t)
 
-	gitserver.Mocks.NewFileReader = func(commit api.CommitID, name string) (io.ReadCloser, error) {
+	gsClient := gitserver.NewMockClient()
+	gsClient.NewFileReaderFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, commit api.CommitID, name string, _ authz.SubRepoPermissionChecker) (io.ReadCloser, error) {
 		if commit != wantCommitID {
 			t.Errorf("got commit %q, want %q", commit, wantCommitID)
 		}
@@ -40,19 +42,18 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 			panic("unhandled mock NewFileReader " + name)
 		}
 		return io.NopCloser(bytes.NewReader(data)), nil
-	}
+	})
 	const wantDefaultBranchRef = "refs/heads/foo"
-	gitserver.Mocks.GetDefaultBranch = func(repo api.RepoName) (refName string, commit api.CommitID, err error) {
+	gsClient.GetDefaultBranchFunc.SetDefaultHook(func(context.Context, api.RepoName, bool) (string, api.CommitID, error) {
 		// Mock default branch lookup in (*RepositoryResolver).DefaultBranch.
 		return wantDefaultBranchRef, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", nil
-	}
-	gitserver.Mocks.ResolveRevision = func(spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+	})
+	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		if want := "HEAD"; spec != want {
 			t.Errorf("got spec %q, want %q", spec, want)
 		}
 		return wantCommitID, nil
-	}
-	defer gitserver.ResetMocks()
+	})
 
 	gitserver.ClientMocks.GetObject = func(repo api.RepoName, objectName string) (*gitdomain.GitObject, error) {
 		oid := gitdomain.OID{} // empty is OK for this test
@@ -114,11 +115,11 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			gitserver.Mocks.ReadDir = func(commit api.CommitID, name string, recurse bool) ([]fs.FileInfo, error) {
+			gsClient.ReadDirFunc.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error) {
 				return test.getFiles, nil
-			}
+			})
 
-			langs, err := searchResultsStatsLanguages(context.Background(), logger, database.NewMockDB(), test.results)
+			langs, err := searchResultsStatsLanguages(context.Background(), logger, database.NewMockDB(), gsClient, test.results)
 			if err != nil {
 				t.Fatal(err)
 			}

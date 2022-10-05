@@ -61,7 +61,7 @@ import (
 // - This route would ideally be using strict slashes, in order for us to support symlinks via HTTP redirects.
 //
 
-func serveRaw(db database.DB) handlerFunc {
+func serveRaw(db database.DB, gitserverClient gitserver.Client) handlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) (err error) {
 		var common *Common
 		for {
@@ -149,8 +149,6 @@ func serveRaw(db database.DB) handlerFunc {
 			}
 			metricRawDuration.WithLabelValues(contentType, requestType, errorS).Observe(duration.Seconds())
 		}()
-
-		gitserverClient := gitserver.NewClient(db)
 
 		switch contentType {
 		case applicationZip, applicationXTar:
@@ -241,7 +239,7 @@ func serveRaw(db database.DB) handlerFunc {
 			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 			w.Header().Set("X-Content-Type-Options", "nosniff")
 
-			fi, err := gitserverClient.Stat(r.Context(), authz.DefaultSubRepoPermsChecker, common.Repo.Name, common.CommitID, requestedPath)
+			fi, err := gitserver.NewClient(db).Stat(r.Context(), authz.DefaultSubRepoPermsChecker, common.Repo.Name, common.CommitID, requestedPath)
 			if err != nil {
 				if os.IsNotExist(err) {
 					requestType = "404"

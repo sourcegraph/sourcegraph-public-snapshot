@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -28,7 +29,7 @@ func editorRev(ctx context.Context, logger log.Logger, db database.DB, repoName 
 	if rev == "HEAD" {
 		return ""
 	}
-	repos := backend.NewRepos(logger, db)
+	repos := backend.NewRepos(logger, db, gitserver.NewClient(db))
 	repo, err := repos.GetByName(ctx, repoName)
 	if err != nil {
 		// We weren't able to fetch the repo. This means it either doesn't

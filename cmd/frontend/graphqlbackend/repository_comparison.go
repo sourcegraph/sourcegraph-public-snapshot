@@ -168,8 +168,14 @@ func (r *RepositoryComparisonResolver) Range() *gitRevisionRange {
 	}
 }
 
+// RepositoryComparisonCommitsArgs is a set of arguments for listing commits on the RepositoryComparisonResolver
+type RepositoryComparisonCommitsArgs struct {
+	graphqlutil.ConnectionArgs
+	Path *string
+}
+
 func (r *RepositoryComparisonResolver) Commits(
-	args *graphqlutil.ConnectionArgs,
+	args *RepositoryComparisonCommitsArgs,
 ) *gitCommitConnectionResolver {
 	return &gitCommitConnectionResolver{
 		db:              r.db,
@@ -177,6 +183,7 @@ func (r *RepositoryComparisonResolver) Commits(
 		revisionRange:   r.baseRevspec + ".." + r.headRevspec,
 		first:           args.First,
 		repo:            r.repo,
+		path:            args.Path,
 	}
 }
 
@@ -194,7 +201,7 @@ func (r *RepositoryComparisonResolver) FileDiffs(ctx context.Context, args *File
 // repositoryComparisonNewFile is the default NewFileFunc used by
 // RepositoryComparisonResolver to produce the new file in a FileDiffResolver.
 func repositoryComparisonNewFile(db database.DB, r *FileDiffResolver) FileResolver {
-	return NewGitTreeEntryResolver(db, r.Head, CreateFileInfo(r.FileDiff.NewName, false))
+	return NewGitTreeEntryResolver(db, gitserver.NewClient(db), r.Head, CreateFileInfo(r.FileDiff.NewName, false))
 }
 
 // computeRepositoryComparisonDiff returns a ComputeDiffFunc for the given
@@ -424,7 +431,7 @@ func (r *FileDiffResolver) OldFile() FileResolver {
 	if diffPathOrNull(r.FileDiff.OrigName) == nil {
 		return nil
 	}
-	return NewGitTreeEntryResolver(r.db, r.Base, CreateFileInfo(r.FileDiff.OrigName, false))
+	return NewGitTreeEntryResolver(r.db, gitserver.NewClient(r.db), r.Base, CreateFileInfo(r.FileDiff.OrigName, false))
 }
 
 func (r *FileDiffResolver) NewFile() FileResolver {

@@ -175,9 +175,9 @@ func (codeIntelligence) NewCommitGraphProcessorGroup(containerName string) monit
 	})
 }
 
-// src_codeintel_index_scheduler_total
-// src_codeintel_index_scheduler_duration_seconds_bucket
-// src_codeintel_index_scheduler_errors_total
+// src_codeintel_autoindexing_total{op='HandleIndexSchedule'}
+// src_codeintel_autoindexing_duration_seconds_bucket{op='HandleIndexSchedule'}
+// src_codeintel_autoindexing_errors_total{op='HandleIndexSchedule'}
 func (codeIntelligence) NewIndexSchedulerGroup(containerName string) monitoring.Group {
 	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
@@ -186,7 +186,8 @@ func (codeIntelligence) NewIndexSchedulerGroup(containerName string) monitoring.
 			Hidden:          true,
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "codeintel_index_scheduler",
+				MetricNameRoot:        "codeintel_autoindexing",
+				Filters:               []string{"op='HandleIndexSchedule'"},
 				MetricDescriptionRoot: "auto-indexing job scheduler",
 				RangeWindow:           model.Duration(time.Minute) * 10,
 			},

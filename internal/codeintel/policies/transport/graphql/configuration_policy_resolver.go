@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -69,7 +70,8 @@ func (r *configurationPolicyResolver) Repository(ctx context.Context) (_ *shared
 		log.Int("repoID", *r.configurationPolicy.RepositoryID),
 	)
 
-	repo, err := backend.NewRepos(r.logger, r.policySvc.GetUnsafeDB()).Get(ctx, api.RepoID(*r.configurationPolicy.RepositoryID))
+	db := r.policySvc.GetUnsafeDB()
+	repo, err := backend.NewRepos(r.logger, db, gitserver.NewClient(db)).Get(ctx, api.RepoID(*r.configurationPolicy.RepositoryID))
 	if err != nil {
 		return nil, err
 	}

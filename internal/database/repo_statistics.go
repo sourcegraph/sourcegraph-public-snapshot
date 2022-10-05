@@ -138,12 +138,3 @@ func scanGitserverReposStatistic(s dbutil.Scanner) (GitserverReposStatistic, err
 	}
 	return gs, nil
 }
-
-func scanRepoStatistics(s dbutil.Scanner) (RepoStatistics, error) {
-	var rs RepoStatistics
-	err := s.Scan(&rs.Total, &rs.SoftDeleted, &rs.NotCloned, &rs.Cloning, &rs.Cloned, &rs.FailedFetch)
-	if err != nil {
-		return rs, err
-	}
-	return rs, nil
-}

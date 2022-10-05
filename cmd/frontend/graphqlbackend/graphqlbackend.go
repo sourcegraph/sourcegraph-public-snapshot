@@ -622,7 +622,7 @@ func (r *schemaResolver) RecloneRepository(ctx context.Context, args *struct {
 		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("could not delete repository with ID %d", repoID))
 	}
 
-	if err := backend.NewRepos(r.logger, r.db).RequestRepositoryClone(ctx, repoID); err != nil {
+	if err := backend.NewRepos(r.logger, r.db, gitserver.NewClient(r.db)).RequestRepositoryClone(ctx, repoID); err != nil {
 		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while requesting clone for repository with ID %d", repoID))
 	}
 
@@ -652,7 +652,7 @@ func (r *schemaResolver) DeleteRepositoryFromDisk(ctx context.Context, args *str
 		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("cannot delete repository %d: busy cloning", repo.RepoID))
 	}
 
-	if err := backend.NewRepos(r.logger, r.db).DeleteRepositoryFromDisk(ctx, repoID); err != nil {
+	if err := backend.NewRepos(r.logger, r.db, gitserver.NewClient(r.db)).DeleteRepositoryFromDisk(ctx, repoID); err != nil {
 		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while deleting repository with ID %d", repoID))
 	}
 
@@ -726,7 +726,8 @@ func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *repositor
 		return nil, errors.New("neither name nor cloneURL given")
 	}
 
-	repo, err := backend.NewRepos(r.logger, r.db).GetByName(ctx, name)
+	gsClient := gitserver.NewClient(r.db)
+	repo, err := backend.NewRepos(r.logger, r.db, gsClient).GetByName(ctx, name)
 	if err != nil {
 		var e backend.ErrRepoSeeOther
 		if errors.As(err, &e) {
@@ -737,7 +738,7 @@ func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *repositor
 		}
 		return nil, err
 	}
-	return &repositoryRedirect{repo: NewRepositoryResolver(r.db, gitserver.NewClient(r.db), repo)}, nil
+	return &repositoryRedirect{repo: NewRepositoryResolver(r.db, gsClient, repo)}, nil
 }
 
 func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {
