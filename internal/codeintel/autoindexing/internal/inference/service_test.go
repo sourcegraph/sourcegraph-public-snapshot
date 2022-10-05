@@ -19,7 +19,7 @@ import (
 
 func testService(t *testing.T, repositoryContents map[string]string) *Service {
 	// Real deal
-	sandboxService := luasandbox.NewService(&observation.TestContext)
+	sandboxService := luasandbox.GetService()
 
 	// Fake deal
 	gitService := NewMockGitService()
