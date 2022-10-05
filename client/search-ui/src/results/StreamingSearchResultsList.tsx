@@ -15,6 +15,7 @@ import {
     RepoSearchResult,
     FileSearchResult,
     FilePathSearchResult,
+    SymbolSearchResult,
     FetchFileParameters,
 } from '@sourcegraph/search-ui'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
@@ -153,6 +154,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             switch (result.type) {
                 case 'content':
                 case 'symbol':
+                case 'path':
                     return (
                         <PrefetchableFile
                             isPrefetchEnabled={prefetchFileEnabled}
@@ -166,44 +168,48 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                             className={resultContainerStyles.resultContainer}
                             as="li"
                         >
-                            <FileSearchResult
-                                index={index}
-                                location={location}
-                                telemetryService={telemetryService}
-                                icon={getFileMatchIcon(result)}
-                                result={result}
-                                onSelect={() => logSearchResultClicked(index, 'fileMatch')}
-                                expanded={false}
-                                showAllMatches={false}
-                                allExpanded={allExpanded}
-                                fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                                repoDisplayName={displayRepoName(result.repository)}
-                                settingsCascade={settingsCascade}
-                                extensionsController={extensionsController}
-                                hoverifier={hoverifier}
-                                openInNewTab={openMatchesInNewTab}
-                                containerClassName={resultClassName}
-                            />
-                        </PrefetchableFile>
-                    )
-                case 'path':
-                    return (
-                        <PrefetchableFile
-                            isPrefetchEnabled={prefetchFileEnabled}
-                            prefetch={prefetchFile}
-                            filePath={result.path}
-                            revision={getRevision(result.branches, result.commit)}
-                            repoName={result.repository}
-                            className={resultContainerStyles.resultContainer}
-                            as="li"
-                        >
-                            <FilePathSearchResult
-                                index={index}
-                                result={result}
-                                onSelect={() => logSearchResultClicked(index, 'fileMatch')}
-                                repoDisplayName={displayRepoName(result.repository)}
-                                containerClassName={resultClassName}
-                            />
+                            {result.type === 'content' && (
+                                <FileSearchResult
+                                    index={index}
+                                    location={location}
+                                    telemetryService={telemetryService}
+                                    icon={getFileMatchIcon(result)}
+                                    result={result}
+                                    onSelect={() => logSearchResultClicked(index, 'fileMatch')}
+                                    expanded={false}
+                                    showAllMatches={false}
+                                    allExpanded={allExpanded}
+                                    fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                                    repoDisplayName={displayRepoName(result.repository)}
+                                    settingsCascade={settingsCascade}
+                                    extensionsController={extensionsController}
+                                    hoverifier={hoverifier}
+                                    openInNewTab={openMatchesInNewTab}
+                                    containerClassName={resultClassName}
+                                />
+                            )}
+                            {result.type === 'symbol' && (
+                                <SymbolSearchResult
+                                    index={index}
+                                    telemetryService={telemetryService}
+                                    result={result}
+                                    onSelect={() => logSearchResultClicked(index, 'symbolMatch')}
+                                    fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                                    repoDisplayName={displayRepoName(result.repository)}
+                                    settingsCascade={settingsCascade}
+                                    openInNewTab={openMatchesInNewTab}
+                                    containerClassName={resultClassName}
+                                />
+                            )}
+                            {result.type === 'path' && (
+                                <FilePathSearchResult
+                                    index={index}
+                                    result={result}
+                                    onSelect={() => logSearchResultClicked(index, 'filePathMatch')}
+                                    repoDisplayName={displayRepoName(result.repository)}
+                                    containerClassName={resultClassName}
+                                />
+                            )}
                         </PrefetchableFile>
                     )
                 case 'commit':

@@ -13,6 +13,7 @@ export interface ResultContainerProps {
     index: number
     title: React.ReactNode
     titleClassName?: string
+    resultClassName?: string
     repoStars?: number
     resultType?: string
     repoName: string
@@ -28,6 +29,7 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
     children,
     title,
     titleClassName,
+    resultClassName,
     index,
     repoStars,
     resultType,
@@ -63,7 +65,7 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
                         </span>
                     )}
                 </div>
-                <div className={classNames(styles.result)}>{children}</div>
+                <div className={classNames(styles.result, resultClassName)}>{children}</div>
             </article>
         </Component>
     )
