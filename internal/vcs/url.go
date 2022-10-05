@@ -154,6 +154,16 @@ const (
 	formatLocal
 )
 
+// JoinPath returns a new URL with the provided path elements joined to
+// any existing path and the resulting path cleaned of any ./ or ../ elements.
+// Any sequences of multiple / characters will be reduced to a single /.
+func (u *URL) JoinPath(elem ...string) *URL {
+	return &URL{
+		URL:    *u.URL.JoinPath(elem...),
+		format: u.format,
+	}
+}
+
 // String will return standard url.URL.String() if the url has a .Scheme set, but if
 // not it will produce an rsync format URL, eg `git@foo.com:foo/bar.git`
 func (u *URL) String() string {
