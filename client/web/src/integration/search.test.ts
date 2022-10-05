@@ -335,7 +335,7 @@ describe('Search', () => {
         test('Clicking search button executes search', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
             const editor = await createEditorAPI(driver, queryInputSelector)
-            editor.focus()
+            await editor.focus()
             await driver.page.keyboard.type(' hello')
 
             await driver.page.waitForSelector('.test-search-button', { visible: true })
