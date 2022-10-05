@@ -177,7 +177,7 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 			With(log.String("instance", opts.GrafanaURL))
 
 		glog.Debug("Rendering Grafana assets")
-		board, err := dashboard.renderDashboard(opts.InjectLabelMatchers)
+		board, err := dashboard.renderDashboard(opts.InjectLabelMatchers, opts.GrafanaFolder != "")
 		if err != nil {
 			return errors.Wrapf(err, "Failed to render dashboard %q", dashboard.Name)
 		}

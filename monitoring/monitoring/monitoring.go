@@ -92,10 +92,15 @@ func (c *Dashboard) noAlertsDefined() bool {
 }
 
 // renderDashboard generates the Grafana renderDashboard for this container.
-func (c *Dashboard) renderDashboard(injectLabelMatchers []*labels.Matcher) (*sdk.Board, error) {
+func (c *Dashboard) renderDashboard(injectLabelMatchers []*labels.Matcher, generateUID bool) (*sdk.Board, error) {
+	uid := c.Name
+	// Passing a null to the UID field causes Grafana to randomly generate a UID
+	if generateUID {
+		uid = ""
+	}
 	board := sdk.NewBoard(c.Title)
 	board.Version = uint(rand.Uint32())
-	board.UID = c.Name
+	board.UID = uid
 	board.ID = 0
 	board.Timezone = "utc"
 	board.Timepicker.RefreshIntervals = []string{"5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h", "2h", "1d"}
