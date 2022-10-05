@@ -254,16 +254,14 @@ func Test_serveRawWithContentTypePlain(t *testing.T) {
 		// httptest server will return a 200 OK, so gitserver.Client.RepoInfo will not return an error.
 		initHTTPTestGitServer(t, http.StatusOK, "{}")
 
-		gitserver.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
-			return &fileutil.FileInfo{}, os.ErrNotExist
-		}
-		defer gitserver.ResetMocks()
+		gsClient := gitserver.NewMockClient()
+		gsClient.StatFunc.SetDefaultReturn(&fileutil.FileInfo{}, os.ErrNotExist)
 
 		req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw", nil)
 		w := httptest.NewRecorder()
 
 		db := database.NewMockDB()
-		err := serveRaw(db, gitserver.NewClient(db))(w, req)
+		err := serveRaw(db, gsClient)(w, req)
 		if err != nil {
 			t.Fatalf("Failed to invoke serveRaw: %v", err)
 		}
@@ -279,11 +277,8 @@ func Test_serveRawWithContentTypePlain(t *testing.T) {
 		// httptest server will return a 200 OK, so gitserver.Client.RepoInfo will not return an error.
 		initHTTPTestGitServer(t, http.StatusOK, "{}")
 
-		gitserver.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
-			return &fileutil.FileInfo{Mode_: os.ModeDir}, nil
-		}
-
 		gsClient := gitserver.NewMockClient()
+		gsClient.StatFunc.SetDefaultReturn(&fileutil.FileInfo{Mode_: os.ModeDir}, nil)
 		gsClient.ReadDirFunc.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error) {
 			return []fs.FileInfo{
 				&fileutil.FileInfo{Name_: "test/a", Mode_: os.ModeDir},
@@ -291,8 +286,6 @@ func Test_serveRawWithContentTypePlain(t *testing.T) {
 				&fileutil.FileInfo{Name_: "c.go", Mode_: 0},
 			}, nil
 		})
-
-		defer gitserver.ResetMocks()
 
 		req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw", nil)
 		w := httptest.NewRecorder()
@@ -322,16 +315,11 @@ c.go`
 		// httptest server will return a 200 OK, so gitserver.Client.RepoInfo will not return an error.
 		initHTTPTestGitServer(t, http.StatusOK, "{}")
 
-		gitserver.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
-			return &fileutil.FileInfo{Mode_: 0}, nil
-		}
-
 		gitserverClient := gitserver.NewMockClient()
+		gitserverClient.StatFunc.SetDefaultReturn(&fileutil.FileInfo{Mode_: 0}, nil)
 		gitserverClient.NewFileReaderFunc.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, string, authz.SubRepoPermissionChecker) (io.ReadCloser, error) {
 			return io.NopCloser(strings.NewReader("this is a test file")), nil
 		})
-
-		defer gitserver.ResetMocks()
 
 		req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw", nil)
 		w := httptest.NewRecorder()
@@ -360,16 +348,11 @@ c.go`
 		// httptest server will return a 200 OK, so gitserver.Client.RepoInfo will not return an error.
 		initHTTPTestGitServer(t, http.StatusOK, "{}")
 
-		gitserver.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
-			return &fileutil.FileInfo{Mode_: 0}, nil
-		}
-
 		gitserverClient := gitserver.NewMockClient()
+		gitserverClient.StatFunc.SetDefaultReturn(&fileutil.FileInfo{Mode_: 0}, nil)
 		gitserverClient.NewFileReaderFunc.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, string, authz.SubRepoPermissionChecker) (io.ReadCloser, error) {
 			return io.NopCloser(strings.NewReader("this is a test file")), nil
 		})
-
-		defer gitserver.ResetMocks()
 
 		req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw?format=exe", nil)
 		w := httptest.NewRecorder()

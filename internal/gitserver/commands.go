@@ -1370,10 +1370,6 @@ func (br *blobReader) convertError(err error) error {
 
 // Stat returns a FileInfo describing the named file at commit.
 func (c *clientImplementor) Stat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
-	if Mocks.Stat != nil {
-		return Mocks.Stat(commit, path)
-	}
-
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: Stat")
 	span.SetTag("Commit", commit)
 	span.SetTag("Path", path)
