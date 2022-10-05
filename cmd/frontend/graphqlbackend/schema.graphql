@@ -3373,7 +3373,8 @@ type RepositoryComparison {
         first: Int
 
         """
-        Return only commits that modify Path.
+        Filter to only the commits that modify files that match path.
+        Path can be either a file or a containing directory.
         """
         path: String
     ): GitCommitConnection!
