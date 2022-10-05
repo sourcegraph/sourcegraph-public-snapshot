@@ -125,6 +125,8 @@ export function useRecentSearches(): {
 
     useEffect(() => {
         if (recentSearchesFromEventLog && recentSearches && recentSearches.length === 0) {
+            console.log('Setting recent searches from event log')
+            console.log(recentSearchesFromEventLog)
             setRecentSearches(recentSearchesFromEventLog)
         }
     }, [recentSearches, recentSearchesFromEventLog, setRecentSearches])
@@ -160,6 +162,7 @@ export const SEARCH_HISTORY_EVENT_LOGS_QUERY = gql`
 `
 
 function getRecentSearchesFromEventLog(): Observable<RecentSearch[] | null> {
+    console.log('Fetching recent searches from event log')
     return from(
         requestGraphQL<SearchHistoryEventLogsQueryResult, SearchHistoryEventLogsQueryVariables>(
             SEARCH_HISTORY_EVENT_LOGS_QUERY,
