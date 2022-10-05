@@ -8,28 +8,21 @@ import (
 )
 
 // InitServices initializes and returns code intelligence services.
-func InitServices() (*codeintel.Services, error) {
-	databases, err := databases(log.Scoped("codeintel worker", ""))
-	if err != nil {
-		return nil, err
-	}
+func InitServices() (codeintel.Services, error) {
+	logger := log.Scoped("codeintel", "codeintel services")
 
-	return codeintel.GetServices(databases)
-}
-
-func databases(logger log.Logger) (codeintel.Databases, error) {
 	db, err := workerdb.InitDBWithLogger(logger)
 	if err != nil {
-		return codeintel.Databases{}, err
+		return codeintel.Services{}, err
 	}
 
 	codeIntelDB, err := InitDBWithLogger(logger)
 	if err != nil {
-		return codeintel.Databases{}, err
+		return codeintel.Services{}, err
 	}
 
-	return codeintel.Databases{
+	return codeintel.GetServices(codeintel.Databases{
 		DB:          db,
 		CodeIntelDB: codeIntelDB,
-	}, nil
+	})
 }

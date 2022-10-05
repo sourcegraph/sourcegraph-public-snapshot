@@ -30,11 +30,11 @@ type Databases struct {
 // GetServices creates or returns an already-initialized codeintel service collection.
 // If the service collection is not yet initialized, a new one will be constructed using
 // the given database handles.
-func GetServices(dbs Databases) (*Services, error) {
+func GetServices(dbs Databases) (Services, error) {
 	return initServicesMemo.Init(dbs)
 }
 
-var initServicesMemo = memo.NewMemoizedConstructorWithArg(func(dbs Databases) (*Services, error) {
+var initServicesMemo = memo.NewMemoizedConstructorWithArg(func(dbs Databases) (Services, error) {
 	db, codeIntelDB := dbs.DB, dbs.CodeIntelDB
 	gitserverClient := gitserver.New(db, scopedContext("gitserver"))
 	repoUpdaterClient := repoupdater.New(scopedContext("repo-updater"))
@@ -45,7 +45,7 @@ var initServicesMemo = memo.NewMemoizedConstructorWithArg(func(dbs Databases) (*
 	policiesSvc := policies.GetService(db, uploadsSvc, gitserverClient)
 	autoIndexingSvc := autoindexing.GetService(db, uploadsSvc, dependenciesSvc, policiesSvc, gitserverClient, repoUpdaterClient)
 
-	return &Services{
+	return Services{
 		AutoIndexingService: autoIndexingSvc,
 		CodenavService:      codenavSvc,
 		DependenciesService: dependenciesSvc,
