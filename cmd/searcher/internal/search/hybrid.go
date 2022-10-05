@@ -120,7 +120,7 @@ func zoektSearchIgnorePaths(ctx context.Context, client zoekt.Streamer, p *proto
 		zoektIgnorePaths(ignoredPaths),
 	))
 
-	k := zoektutil.ResultCountFactor(1, int32(p.Limit), false)
+	k := zoektutil.ResultCountFactor(1, false)
 	opts := zoektutil.SearchOpts(ctx, k, int32(p.Limit), nil)
 	if deadline, ok := ctx.Deadline(); ok {
 		opts.MaxWallTime = time.Until(deadline) - 100*time.Millisecond

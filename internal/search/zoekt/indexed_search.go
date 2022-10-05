@@ -241,7 +241,7 @@ func PartitionRepos(
 }
 
 func DoZoektSearchGlobal(ctx context.Context, client zoekt.Streamer, args *search.ZoektParameters, pathRegexps []*regexp.Regexp, c streaming.Sender) error {
-	k := ResultCountFactor(0, args.FileMatchLimit, true)
+	k := ResultCountFactor(0, true)
 	searchOpts := SearchOpts(ctx, k, args.FileMatchLimit, args.Select)
 
 	if deadline, ok := ctx.Deadline(); ok {
@@ -285,7 +285,7 @@ func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, pa
 
 	finalQuery := zoektquery.NewAnd(&zoektquery.BranchesRepos{List: brs}, q)
 
-	k := ResultCountFactor(len(repos.RepoRevs), fileMatchLimit, false)
+	k := ResultCountFactor(len(repos.RepoRevs), false)
 	searchOpts := SearchOpts(ctx, k, fileMatchLimit, selector)
 
 	// Start event stream.

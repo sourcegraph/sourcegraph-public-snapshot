@@ -14,6 +14,7 @@ import (
 	zoektquery "github.com/sourcegraph/zoekt/query"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -102,7 +103,7 @@ func zoektSearch(ctx context.Context, args *search.TextPatternInfo, branchRepos 
 	}
 
 	// Choose sensible values for k when we generalize this.
-	k := zoektutil.ResultCountFactor(numRepos, args.FileMatchLimit, false)
+	k := zoektutil.ResultCountFactor(numRepos, false)
 	searchOpts := zoektutil.SearchOpts(ctx, k, args.FileMatchLimit, nil)
 	searchOpts.Whole = true
 

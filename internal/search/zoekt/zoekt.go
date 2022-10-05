@@ -88,8 +88,10 @@ func SearchOpts(ctx context.Context, k int, fileMatchLimit int32, selector filte
 		ChunkMatches: true,
 	}
 
-	if userProbablyWantsToWaitLonger := fileMatchLimit > limits.DefaultMaxSearchResults; userProbablyWantsToWaitLonger {
-		searchOpts.MaxWallTime *= time.Duration(3 * float64(fileMatchLimit) / float64(limits.DefaultMaxSearchResults))
+	if userProbablyWantsToWaitLonger := fileMatchLimit > limits.DefaultMaxSearchResultsStreaming; userProbablyWantsToWaitLonger {
+		factor := float64(fileMatchLimit) / float64(limits.DefaultMaxSearchResultsStreaming)
+		searchOpts.MaxWallTime *= time.Duration(factor)
+		k *= int(factor)
 	}
 
 	if selector.Root() == filter.Repository {
@@ -99,15 +101,20 @@ func SearchOpts(ctx context.Context, k int, fileMatchLimit int32, selector filte
 		searchOpts.TotalMaxMatchCount = 100 * k
 		searchOpts.ShardMaxImportantMatch = 15 * k
 		searchOpts.TotalMaxImportantMatch = 25 * k
-		// Ask for 2000 more results so we have results to populate
-		// RepoStatusLimitHit.
-		searchOpts.MaxDocDisplayCount = int(fileMatchLimit) + 2000
+
+		// Ask for more results so that we have enough results to determine if the limit
+		// was hit.
+		more := fileMatchLimit
+		if more > 2000 {
+			more = 2000
+		}
+		searchOpts.MaxDocDisplayCount = int(fileMatchLimit + more)
 	}
 
 	return searchOpts
 }
 
-func ResultCountFactor(numRepos int, fileMatchLimit int32, globalSearch bool) (k int) {
+func ResultCountFactor(numRepos int, globalSearch bool) (k int) {
 	if globalSearch {
 		// for globalSearch, numRepos = 0, but effectively we are searching over all
 		// indexed repos, hence k should be 1
@@ -132,9 +139,7 @@ func ResultCountFactor(numRepos int, fileMatchLimit int32, globalSearch bool) (k
 			k = 1
 		}
 	}
-	if fileMatchLimit > limits.DefaultMaxSearchResults {
-		k = int(float64(k) * 3 * float64(fileMatchLimit) / float64(limits.DefaultMaxSearchResults))
-	}
+
 	return k
 }
 

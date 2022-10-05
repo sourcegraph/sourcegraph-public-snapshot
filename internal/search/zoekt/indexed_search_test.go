@@ -18,11 +18,13 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/RoaringBitmap/roaring"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -438,53 +440,83 @@ func TestZoektResultCountFactor(t *testing.T) {
 		name         string
 		numRepos     int
 		globalSearch bool
-		pattern      *search.TextPatternInfo
 		want         int
 	}{
 		{
 			name:     "One repo implies max scaling factor",
 			numRepos: 1,
-			pattern:  &search.TextPatternInfo{},
 			want:     100,
 		},
 		{
 			name:     "Eleven repos implies a scaling factor between min and max",
 			numRepos: 11,
-			pattern:  &search.TextPatternInfo{},
 			want:     8,
 		},
 		{
 			name:     "More than 500 repos implies a min scaling factor",
 			numRepos: 501,
-			pattern:  &search.TextPatternInfo{},
 			want:     1,
-		},
-		{
-			name:     "Setting a count greater than defautl max results (30) adapts scaling factor",
-			numRepos: 501,
-			pattern:  &search.TextPatternInfo{FileMatchLimit: 100},
-			want:     10,
 		},
 		{
 			name:         "for global searches, k should be 1",
 			numRepos:     0,
 			globalSearch: true,
-			pattern:      &search.TextPatternInfo{},
 			want:         1,
-		},
-		{
-			name:         "for global searches, k should be 1, adjusted by the FileMatchLimit",
-			numRepos:     0,
-			globalSearch: true,
-			pattern:      &search.TextPatternInfo{FileMatchLimit: 100},
-			want:         10,
 		},
 	}
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
-			got := ResultCountFactor(tt.numRepos, tt.pattern.FileMatchLimit, tt.globalSearch)
+			got := ResultCountFactor(tt.numRepos, tt.globalSearch)
 			if tt.want != got {
 				t.Fatalf("Want scaling factor %d but got %d", tt.want, got)
+			}
+		})
+	}
+}
+
+func TestSearchOpts(t *testing.T) {
+	factor := 5
+
+	cases := []struct {
+		name           string
+		k              int
+		fileMatchLimit int32
+		want           zoekt.SearchOptions
+	}{
+		{
+			name:           "Default fileMatchLimit implies no scaling",
+			k:              1,
+			fileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
+			want: zoekt.SearchOptions{
+				ShardMaxMatchCount:     100,
+				TotalMaxMatchCount:     100,
+				ShardMaxImportantMatch: 15,
+				TotalMaxImportantMatch: 25,
+				MaxWallTime:            defaultTimeout,
+				MaxDocDisplayCount:     1000,
+				ChunkMatches:           true,
+			},
+		},
+		{
+			name:           "Limits are adjusted if fileMatchLimit exceeds default",
+			k:              1,
+			fileMatchLimit: int32(factor * limits.DefaultMaxSearchResultsStreaming),
+			want: zoekt.SearchOptions{
+				ShardMaxMatchCount:     factor * 100,
+				TotalMaxMatchCount:     factor * 100,
+				ShardMaxImportantMatch: factor * 15,
+				TotalMaxImportantMatch: factor * 25,
+				MaxWallTime:            time.Duration(factor) * defaultTimeout,
+				MaxDocDisplayCount:     factor*limits.DefaultMaxSearchResultsStreaming + 2000,
+				ChunkMatches:           true,
+			},
+		},
+	}
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			got := SearchOpts(context.Background(), tt.k, tt.fileMatchLimit, nil)
+			if d := cmp.Diff(tt.want, got); d != "" {
+				t.Fatalf("-want, +got: %s\n", d)
 			}
 		})
 	}
