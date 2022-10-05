@@ -183,7 +183,17 @@ func (r *Resolver) batchChangeByID(ctx context.Context, id graphql.ID) (graphqlb
 		return nil, err
 	}
 
-	return &batchChangeResolver{store: r.store, batchChange: batchChange}, nil
+	specResolver := &batchChangeResolver{store: r.store, batchChange: batchChange}
+	canAdminister, err := specResolver.ViewerCanAdminister(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if !canAdminister {
+		return nil, errors.New("User does not have permissions to view this batch spec")
+	}
+
+	return specResolver, nil	
 }
 
 func (r *Resolver) BatchChange(ctx context.Context, args *graphqlbackend.BatchChangeArgs) (graphqlbackend.BatchChangeResolver, error) {
