@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"path"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"golang.org/x/mod/module"
@@ -76,11 +75,6 @@ func (c *Client) GetZip(ctx context.Context, mod reposource.PackageName, version
 
 	return zipBytes, nil
 }
-
-// rateLimitingWaitThreshold is maximum rate limiting wait duration after which
-// a warning log is produced to help site admins debug why syncing may be taking
-// longer than expected.
-const rateLimitingWaitThreshold = 200 * time.Millisecond
 
 func (c *Client) get(ctx context.Context, mod reposource.PackageName, paths ...string) (respBody []byte, err error) {
 	escapedMod, err := module.EscapePath(string(mod))
