@@ -3371,6 +3371,11 @@ type RepositoryComparison {
         Return the first n commits from the list.
         """
         first: Int
+
+        """
+        Return only commits that modify Path.
+        """
+        path: String
     ): GitCommitConnection!
     """
     The file diffs for each changed file.
