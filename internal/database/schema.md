@@ -3044,6 +3044,27 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.webhooks"
+```
+     Column     |           Type           | Collation | Nullable | Default 
+----------------+--------------------------+-----------+----------+---------
+ id             | uuid                     |           | not null | 
+ code_host_kind | text                     |           | not null | 
+ code_host_urn  | text                     |           |          | 
+ secret         | text                     |           |          | 
+ created_at     | timestamp with time zone |           | not null | now()
+ updated_at     | timestamp with time zone |           | not null | now()
+
+```
+
+Webhooks registered in Sourcegraph instance.
+
+**code_host_kind**: Kind of an external service which webhooks are registered.
+
+**code_host_urn**: URN of a code host. This column maps to external_service_id column of repo table.
+
+**secret**: Secret used to decrypt webhook payload (if supported by the code host).
+
 # View "public.batch_spec_workspace_execution_jobs_with_rank"
 
 ## View query:
