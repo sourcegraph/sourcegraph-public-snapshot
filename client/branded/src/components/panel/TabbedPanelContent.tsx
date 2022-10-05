@@ -30,7 +30,6 @@ import { LegacyGroupByFileToggle } from './LegacyGroupByFileToggle'
 import { MixPreciseAndSearchBasedReferencesToggle } from './MixPreciseAndSearchBasedReferencesToggle'
 import { EmptyPanelView } from './views/EmptyPanelView'
 import { ExtensionsLoadingPanelView } from './views/ExtensionsLoadingView'
-import { hierarchicalLocationViewHasResultContext } from './views/HierarchicalLocationsView'
 import { PanelView } from './views/PanelView'
 
 import styles from './TabbedPanelContent.module.scss'
@@ -104,6 +103,8 @@ export type BuiltinTabbedPanelView = Omit<PanelViewWithComponent, 'component' | 
 const builtinTabbedPanelViewProviders = new BehaviorSubject<
     Map<string, { id: string; provider: Observable<BuiltinTabbedPanelView | null> }>
 >(new Map())
+
+export const hierarchicalLocationViewHasResultContext = new BehaviorSubject<undefined | boolean>(undefined)
 
 /**
  * BuiltinTabbedPanelView defines which BuiltinTabbedPanelViews will be available.

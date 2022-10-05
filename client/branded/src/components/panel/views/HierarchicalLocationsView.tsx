@@ -3,7 +3,7 @@ import * as React from 'react'
 import classNames from 'classnames'
 import * as H from 'history'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
-import { BehaviorSubject, Observable, of, Subject, Subscription } from 'rxjs'
+import { Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, endWith, map, startWith, switchMap, tap } from 'rxjs/operators'
 
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
@@ -16,6 +16,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { parseRepoURI } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner, Alert, Panel } from '@sourcegraph/wildcard'
 
+import { hierarchicalLocationViewHasResultContext } from '../TabbedPanelContent'
 import { FileLocations, FileLocationsError, FileLocationsNotFound } from './FileLocations'
 import { HierarchicalLocationsViewButton } from './HierarchicalLocationsViewButton'
 import { groupLocations } from './locations'
@@ -24,8 +25,6 @@ import styles from './HierarchicalLocationsView.module.scss'
 
 /** The maximum number of results we'll receive from a provider before we truncate and display a banner. */
 const MAXIMUM_LOCATION_RESULTS = 500
-
-export const hierarchicalLocationViewHasResultContext = new BehaviorSubject<undefined | boolean>(undefined)
 
 export interface HierarchicalLocationsViewProps
     extends SettingsCascadeProps,
