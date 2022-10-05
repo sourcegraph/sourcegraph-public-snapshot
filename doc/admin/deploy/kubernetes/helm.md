@@ -454,7 +454,8 @@ This section is aimed at providing high-level guidance on deploying Sourcegraph 
 
 #### Prerequisites {#gke-prerequisites}
 
-1. You need to have a GKE cluster (>=1.19) with the `HTTP Load Balancing` addon enabled. Alternatively, you can use your own choice of Ingress Controller and disable the `HTTP Load Balancing` add-on, [learn more](https://cloud.google.com/kubernetes-engine/docs/how-to/custom-ingress-controller). It is recommended you also enable cluster autoscaling. Alternatively, you will need to manually manage the number of nodes to meet your deployments resourcing need, [learn more](https://cloud.google.com/kubernetes-engine/docs/concepts/cluster-autoscaler).
+1. You need to have a GKE cluster (>=1.19) with the `HTTP Load Balancing` addon enabled. Alternatively, you can use your own choice of Ingress Controller and disable the `HTTP Load Balancing` add-on, [learn more](https://cloud.google.com/kubernetes-engine/docs/how-to/custom-ingress-controller).
+2. It is recommended you also enable cluster autoscaling. Alternatively, you will need to manually manage the number of nodes to meet your deployments resourcing need, [learn more](https://cloud.google.com/kubernetes-engine/docs/concepts/cluster-autoscaler).
 3. Your account should have sufficient access rights, equivalent to the `cluster-admin` ClusterRole.
 4. Connect to your cluster (via either the console or the command line using `gcloud`) and ensure the cluster is up and running by running: `kubectl get nodes` (several `ready` nodes should be listed)
 5. Have the [Helm CLI](https://helm.sh/docs/intro/install/) installed and run the following command to link to the Sourcegraph helm repository (on the machine used to interact with your cluster):
