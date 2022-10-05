@@ -117,3 +117,13 @@ func sortRanges(ranges []types.Range) []types.Range {
 
 	return ranges
 }
+
+func dedupeRanges(ranges []types.Range) []types.Range {
+	dedup := ranges[:1]
+	for _, s := range ranges[1:] {
+		if s != dedup[len(dedup)-1] {
+			dedup = append(dedup, s)
+		}
+	}
+	return dedup
+}
