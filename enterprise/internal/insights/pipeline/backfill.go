@@ -3,7 +3,6 @@ package pipeline
 import (
 	"context"
 	golog "log"
-	"math/rand"
 	"runtime/debug"
 	"strings"
 	"sync"
@@ -16,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/priority"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
@@ -49,7 +47,7 @@ type SearchJobGeneratorOutput struct {
 type SearchResultOutput struct {
 	*BackfillRequest
 	err    error
-	result searchResult
+	points []store.RecordSeriesPointArgs
 }
 
 type SearchJobGenerator func(ctx context.Context, req BackfillRequest) <-chan SearchJobGeneratorOutput
@@ -231,14 +229,7 @@ func makeHistoricalSearchJobFunc(logger log.Logger, commitClient gitCommitClient
 	}
 }
 
-type searchResult struct {
-	count       int
-	capture     string
-	repo        *itypes.MinimalRepo
-	pointInTime time.Time
-}
-
-func makeRunSearchFunc(logger log.Logger, searchClient streaming.SearchClient) func(context.Context, <-chan SearchJobGeneratorOutput) <-chan SearchResultOutput {
+func makeRunSearchFunc(logger log.Logger, searchHandlers map[types.GenerationMethod]queryrunner.InsightsHandler) func(context.Context, <-chan SearchJobGeneratorOutput) <-chan SearchResultOutput {
 	return func(ctx context.Context, in <-chan SearchJobGeneratorOutput) <-chan SearchResultOutput {
 
 		out := make(chan SearchResultOutput)
@@ -251,15 +242,12 @@ func makeRunSearchFunc(logger log.Logger, searchClient streaming.SearchClient) f
 				close(out)
 			}()
 			for r := range in {
-
-				// run search
-				// some made up values
-				time.Sleep(time.Duration(rand.Intn(2000)) * time.Millisecond)
-				logger.Debug("running the search job")
+				h := searchHandlers[r.Series.GenerationMethod]
+				points, err := h(ctx, r.Job, r.Series, *r.Job.RecordTime)
 				outputChannel <- SearchResultOutput{
 					BackfillRequest: r.BackfillRequest,
-					result:          searchResult{count: 10, capture: "", repo: r.BackfillRequest.Repo, pointInTime: *r.Job.RecordTime},
-					err:             nil}
+					points:          points,
+					err:             err}
 			}
 		}(ctx, out)
 		return out
@@ -274,23 +262,8 @@ func makeSaveResultsFunc(logger log.Logger, insightStore store.Interface) func(c
 				//TODO: what to do
 				continue
 			}
-			repoName := string(search.result.repo.Name)
-			repoID := search.result.repo.ID
-			capture := search.result.capture
-			points = append(points,
-				store.RecordSeriesPointArgs{
-					SeriesID: search.BackfillRequest.Series.SeriesID,
-					Point: store.SeriesPoint{
-						SeriesID: search.BackfillRequest.Series.SeriesID,
-						Time:     search.result.pointInTime,
-						Value:    float64(search.result.count),
-						Capture:  &capture,
-					},
-					RepoName:    &repoName,
-					RepoID:      &repoID,
-					PersistMode: store.RecordMode,
-				},
-			)
+
+			points = append(points, search.points...)
 
 		}
 		logger.Debug("writing search results")
