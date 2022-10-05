@@ -13,11 +13,11 @@ import (
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/download"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/internal/download"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -70,7 +70,7 @@ func updateToPrebuiltSG(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return download.Executable(ctx, downloadURL, currentExecPath)
+	return download.Executable(ctx, downloadURL, currentExecPath, false)
 }
 
 func checkSgVersionAndUpdate(ctx context.Context, out *std.Output, skipUpdate bool) error {

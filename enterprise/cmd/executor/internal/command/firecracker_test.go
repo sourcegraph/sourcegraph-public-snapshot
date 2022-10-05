@@ -3,6 +3,7 @@ package command
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 
@@ -114,8 +115,10 @@ func TestSetupFirecracker(t *testing.T) {
 	runner := NewMockCommandRunner()
 	options := Options{
 		FirecrackerOptions: FirecrackerOptions{
+			Enabled:             true,
 			Image:               "sourcegraph/executor-vm:3.43.1",
 			KernelImage:         "ignite-kernel:5.10.135",
+			SandboxImage:        "sourcegraph/ignite:v0.10.5",
 			VMStartupScriptPath: "/vm-startup.sh",
 		},
 		ResourceOptions: ResourceOptions{
@@ -126,9 +129,13 @@ func TestSetupFirecracker(t *testing.T) {
 	}
 	operations := NewOperations(&observation.TestContext)
 
+	tmpDir, err := os.MkdirTemp("", "test-setup-firecracker")
+	if err != nil {
+		t.Fatal(err)
+	}
 	logger := NewMockLogger()
-	if err := setupFirecracker(context.Background(), runner, logger, "deadbeef", "/dev/loopX", "/tmp/firecracker123", options, operations); err != nil {
-		t.Fatalf("unexpected error tearing down virtual machine: %s", err)
+	if err := setupFirecracker(context.Background(), runner, logger, "deadbeef", "/dev/loopX", tmpDir, options, operations); err != nil {
+		t.Fatalf("unexpected error setting up virtual machine: %s", err)
 	}
 
 	var actual []string
@@ -145,6 +152,8 @@ func TestSetupFirecracker(t *testing.T) {
 			"--volumes /dev/loopX:/work",
 			"--ssh --name deadbeef",
 			"--kernel-image", "ignite-kernel:5.10.135",
+			"--kernel-args", "console=ttyS0 reboot=k panic=1 pci=off ip=dhcp random.trust_cpu=on i8042.noaux i8042.nomux i8042.nopnp i8042.dumbkbd",
+			"--sandbox-image", "sourcegraph/ignite:v0.10.5",
 			"sourcegraph/executor-vm:3.43.1",
 		}, " "),
 		"ignite exec deadbeef -- /vm-startup.sh",
