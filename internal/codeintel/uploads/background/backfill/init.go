@@ -6,6 +6,9 @@ import (
 
 func NewCommittedAtBackfiller(uploadSvc UploadService) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
-		uploadSvc.NewCommittedAtBackfiller(ConfigInst.Interval, ConfigInst.BatchSize),
+		uploadSvc.NewCommittedAtBackfiller(
+			ConfigInst.Interval,
+			ConfigInst.BatchSize,
+		),
 	}
 }
