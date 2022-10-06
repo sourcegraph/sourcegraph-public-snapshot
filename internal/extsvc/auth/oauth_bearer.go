@@ -15,7 +15,7 @@ import (
 // OAuthBearerToken implements OAuth Bearer Token authentication for extsvc
 // clients.
 type OAuthBearerToken struct {
-	AccessToken  string                                             `json:"access_token"`
+	Token        string                                             `json:"token"`
 	TokenType    string                                             `json:"token_type,omitempty"`
 	RefreshToken string                                             `json:"refresh_token,omitempty"`
 	Expiry       time.Time                                          `json:"expiry,omitempty"`
@@ -25,19 +25,19 @@ type OAuthBearerToken struct {
 var _ Authenticator = &OAuthBearerToken{}
 
 func (token *OAuthBearerToken) Authenticate(req *http.Request) error {
-	req.Header.Set("Authorization", "Bearer "+token.AccessToken)
+	req.Header.Set("Authorization", "Bearer "+token.Token)
 	return nil
 }
 
 func (token *OAuthBearerToken) Hash() string {
-	key := sha256.Sum256([]byte(token.AccessToken))
+	key := sha256.Sum256([]byte(token.Token))
 	return hex.EncodeToString(key[:])
 }
 
 // WithToken returns an Oauth Bearer Token authenticator with a new token
 func (token *OAuthBearerToken) WithToken(newToken string) *OAuthBearerToken {
 	return &OAuthBearerToken{
-		AccessToken: newToken,
+		Token: newToken,
 	}
 }
 
@@ -55,7 +55,7 @@ func (token *OAuthBearerToken) Refresh() error {
 		return err
 	}
 
-	token.AccessToken = newToken.AccessToken
+	token.Token = newToken.Token
 	token.Expiry = newToken.Expiry
 	token.RefreshToken = newToken.RefreshToken
 
@@ -89,7 +89,7 @@ func (token *OAuthBearerTokenWithSSH) SSHPublicKey() string {
 }
 
 func (token *OAuthBearerTokenWithSSH) Hash() string {
-	shaSum := sha256.Sum256([]byte(token.AccessToken + token.PrivateKey + token.Passphrase + token.PublicKey))
+	shaSum := sha256.Sum256([]byte(token.Token + token.PrivateKey + token.Passphrase + token.PublicKey))
 	return hex.EncodeToString(shaSum[:])
 }
 

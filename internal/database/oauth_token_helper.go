@@ -41,7 +41,11 @@ func ExternalAccountTokenRefresher(db DB, externalAccountID int32, refreshToken 
 		if err != nil {
 			return nil, errors.Wrap(err, "save refreshed token")
 		}
-		return refreshedToken, nil
+		return &auth.OAuthBearerToken{
+			Token:        refreshedToken.AccessToken,
+			RefreshToken: refreshedToken.RefreshToken,
+			Expiry:       time.Now().Add(time.Duration(refreshedToken.ExpiresIn) * time.Second),
+		}, nil
 	}
 }
 
@@ -59,6 +63,12 @@ func ExternalServiceTokenRefresher(db DB, externalServiceID int64, refreshToken 
 			return nil, errors.Wrap(err, "refresh token")
 		}
 
+		oauthBearerToken := &auth.OAuthBearerToken{
+			Token:        refreshedToken.AccessToken,
+			RefreshToken: refreshedToken.RefreshToken,
+			Expiry:       time.Now().Add(time.Duration(refreshedToken.ExpiresIn) * time.Second),
+		}
+
 		extsvc, err := db.ExternalServices().GetByID(ctx, externalServiceID)
 		if err != nil {
 			return nil, errors.Wrap(err, "get external service")
@@ -69,7 +79,7 @@ func ExternalServiceTokenRefresher(db DB, externalServiceID int64, refreshToken 
 			return nil, errors.Wrap(err, "decrypt config")
 		}
 
-		config, err = jsonc.Edit(config, refreshedToken.AccessToken, "token")
+		config, err = jsonc.Edit(config, oauthBearerToken.Token, "token")
 		if err != nil {
 			return nil, errors.Wrap(err, "update OAuth token")
 		}
@@ -77,7 +87,7 @@ func ExternalServiceTokenRefresher(db DB, externalServiceID int64, refreshToken 
 		if err != nil {
 			return nil, errors.Wrap(err, "update OAuth refresh token")
 		}
-		config, err = jsonc.Edit(config, refreshedToken.Expiry.Unix(), "token.oauth.expiry")
+		config, err = jsonc.Edit(config, oauthBearerToken.Expiry.Unix(), "token.oauth.expiry")
 		if err != nil {
 			return nil, errors.Wrap(err, "update OAuth token expiry")
 		}
@@ -87,7 +97,7 @@ func ExternalServiceTokenRefresher(db DB, externalServiceID int64, refreshToken 
 		if err := db.ExternalServices().Upsert(ctx, extsvc); err != nil {
 			return nil, errors.Wrap(err, "upsert external service")
 		}
-		return refreshedToken, nil
+		return oauthBearerToken, nil
 	}
 }
 

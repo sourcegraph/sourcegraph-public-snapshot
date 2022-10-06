@@ -792,10 +792,10 @@ func TestV4Client_WithAuthenticator(t *testing.T) {
 
 	old := &V4Client{
 		apiURL: uri,
-		auth:   &auth.OAuthBearerToken{AccessToken: "old_token"},
+		auth:   &auth.OAuthBearerToken{Token: "old_token"},
 	}
 
-	newToken := &auth.OAuthBearerToken{AccessToken: "new_token"}
+	newToken := &auth.OAuthBearerToken{Token: "new_token"}
 	new := old.WithAuthenticator(newToken)
 	if old == new {
 		t.Fatal("both clients have the same address")

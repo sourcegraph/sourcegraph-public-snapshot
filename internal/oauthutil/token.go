@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -120,7 +119,7 @@ func newTokenRequest(oauthCtx OAuthContext, refreshToken string) (*http.Request,
 
 // RetrieveToken tries to retrieve a new access token in the given authentication
 // style.
-func RetrieveToken(doer httpcli.Doer, oauthCtx OAuthContext, refreshToken string) (*auth.OAuthBearerToken, error) {
+func RetrieveToken(doer httpcli.Doer, oauthCtx OAuthContext, refreshToken string) (*tokenJSON, error) {
 	req, err := newTokenRequest(oauthCtx, refreshToken)
 	if err != nil {
 		return nil, err
@@ -137,7 +136,7 @@ func RetrieveToken(doer httpcli.Doer, oauthCtx OAuthContext, refreshToken string
 	return token, err
 }
 
-func doTokenRoundTrip(doer httpcli.Doer, req *http.Request) (*auth.OAuthBearerToken, error) {
+func doTokenRoundTrip(doer httpcli.Doer, req *http.Request) (*tokenJSON, error) {
 	r, err := doer.Do(req)
 	if err != nil {
 		return nil, errors.Wrap(err, "do request")
@@ -157,7 +156,6 @@ func doTokenRoundTrip(doer httpcli.Doer, req *http.Request) (*auth.OAuthBearerTo
 		}
 	}
 
-	var token *auth.OAuthBearerToken
 	var tj tokenJSON
 	if err = json.Unmarshal(body, &tj); err != nil {
 		return nil, err
@@ -169,18 +167,11 @@ func doTokenRoundTrip(doer httpcli.Doer, req *http.Request) (*auth.OAuthBearerTo
 			ErrorURI:         tj.ErrorURI,
 		}
 	}
-	token = &auth.OAuthBearerToken{
-		AccessToken:  tj.AccessToken,
-		TokenType:    tj.TokenType,
-		RefreshToken: tj.RefreshToken,
-		Expiry:       tj.expiry(),
-	}
-
-	if token.AccessToken == "" {
+	if tj.AccessToken == "" {
 		return nil, errors.New("oauth2: server response missing access_token")
 	}
 
-	return token, nil
+	return &tj, nil
 }
 
 type RetrieveError struct {
