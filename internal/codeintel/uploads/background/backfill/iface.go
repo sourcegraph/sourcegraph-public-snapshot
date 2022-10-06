@@ -1,7 +1,11 @@
 package backfill
 
-import "context"
+import (
+	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+)
 
 type UploadService interface {
-	BackfillCommittedAtBatch(ctx context.Context, batchSize int) error
+	NewCommittedAtBackfiller(interval time.Duration, batchSize int) goroutine.BackgroundRoutine
 }

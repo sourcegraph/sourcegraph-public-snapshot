@@ -4,7 +4,6 @@ import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 
-import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { Button, Collapse, CollapseHeader, CollapsePanel, Icon, H2, H5, Input } from '@sourcegraph/wildcard'
 
 import { FilterLink, FilterLinkProps } from './FilterLink'
@@ -68,7 +67,6 @@ export const SearchFilterSection: FC<SearchFilterSectionProps> = memo(props => {
         clearSearchOnChange = children,
     } = props
 
-    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
     const [filter, setFilter] = useState('')
 
     // Clears the filter whenever clearSearchOnChange changes (defaults to the
@@ -159,20 +157,11 @@ export const SearchFilterSection: FC<SearchFilterSectionProps> = memo(props => {
                     >
                         {header}
                     </H5>
-                    <Icon
-                        aria-hidden={true}
-                        className={classNames(!coreWorkflowImprovementsEnabled && 'mr-1')}
-                        as={isOpened ? ChevronDownIcon : ChevronLeftIcon}
-                    />
+                    <Icon aria-hidden={true} as={isOpened ? ChevronDownIcon : ChevronLeftIcon} />
                 </CollapseHeader>
 
                 <CollapsePanel forcedRender={forcedRender}>
-                    <div
-                        className={classNames(
-                            'pb-4',
-                            !searchVisible && !coreWorkflowImprovementsEnabled && 'border-top'
-                        )}
-                    >
+                    <div className="pb-4">
                         {searchVisible && (
                             <Input
                                 type="search"

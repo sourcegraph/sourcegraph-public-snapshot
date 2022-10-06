@@ -8,14 +8,14 @@ import (
 )
 
 type operations struct {
-	getLanguagesRequestedBy   *observation.Operation
-	setRequestLanguageSupport *observation.Operation
+	// noop is a no-op operation to keep the newOperation scaffolding.
+	noop *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
 	metrics := metrics.NewREDMetrics(
 		observationContext.Registerer,
-		"codeintel_symbols_store",
+		"codeintel_codenav_store",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of method invocations."),
 	)
@@ -29,7 +29,6 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
-		getLanguagesRequestedBy:   op("GetLanguagesRequestedBy"),
-		setRequestLanguageSupport: op("SetRequestLanguageSupport"),
+		noop: op("noop"),
 	}
 }

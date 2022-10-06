@@ -760,7 +760,7 @@ func (r *Resolver) BatchChanges(ctx context.Context, args *graphqlbackend.ListBa
 	if !isSiteAdmin {
 		actor := actor.FromContext(ctx)
 		if args.ViewerCanAdminister != nil && *args.ViewerCanAdminister {
-			opts.CreatorID = actor.UID
+			opts.OnlyAdministeredByUserID = actor.UID
 		}
 
 		// 🚨 SECURITY: If the user is not an admin, we don't want to include
@@ -1970,19 +1970,6 @@ func parseBatchChangeState(s *string) (btypes.BatchChangeState, error) {
 	default:
 		return "", errors.Errorf("unknown state %q", *s)
 	}
-}
-
-func checkSiteAdminOrSameUser(ctx context.Context, db database.DB, userID int32) (bool, error) {
-	// 🚨 SECURITY: Only site admins or the authors of a batch change have batch change
-	// admin rights.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, db, userID); err != nil {
-		if errors.HasType(err, &backend.InsufficientAuthorizationError{}) {
-			return false, nil
-		}
-
-		return false, err
-	}
-	return true, nil
 }
 
 func validateFirstParam(first int32, max int) error {

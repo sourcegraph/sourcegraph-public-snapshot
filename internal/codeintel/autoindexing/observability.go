@@ -3,8 +3,10 @@ package autoindexing
 import (
 	"fmt"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type operations struct {
@@ -29,6 +31,19 @@ type operations struct {
 	getIndexConfigurationByRepositoryID    *observation.Operation
 	updateIndexConfigurationByRepositoryID *observation.Operation
 	inferIndexConfiguration                *observation.Operation
+
+	// Auth
+	checkCurrentUserIsSiteAdmin *observation.Operation
+
+	// Tags
+	getListTags *observation.Operation
+
+	// Language support
+	getLanguagesRequestedBy   *observation.Operation
+	setRequestLanguageSupport *observation.Operation
+
+	insertDependencyIndexingJob *observation.Operation
+	handleIndexScheduler        *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -46,6 +61,18 @@ func newOperations(observationContext *observation.Context) *operations {
 			Metrics:           m,
 		})
 	}
+
+	handleIndexScheduler := observationContext.Operation(observation.Op{
+		Name:              "codeintel.indexing.HandleIndexSchedule",
+		MetricLabelValues: []string{"HandleIndexSchedule"},
+		Metrics:           m,
+		ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
+			if errors.As(err, &inference.LimitError{}) {
+				return observation.EmitForDefault.Without(observation.EmitForMetrics)
+			}
+			return observation.EmitForDefault
+		},
+	})
 
 	return &operations{
 		// Commits
@@ -69,5 +96,18 @@ func newOperations(observationContext *observation.Context) *operations {
 		getIndexConfigurationByRepositoryID:    op("GetIndexConfigurationByRepositoryID"),
 		updateIndexConfigurationByRepositoryID: op("UpdateIndexConfigurationByRepositoryID"),
 		inferIndexConfiguration:                op("InferIndexConfiguration"),
+
+		// Auth
+		checkCurrentUserIsSiteAdmin: op("CheckCurrentUserIsSiteAdmin"),
+
+		// Tags
+		getListTags: op("GetListTags"),
+
+		// Language support
+		getLanguagesRequestedBy:   op("GetLanguagesRequestedBy"),
+		setRequestLanguageSupport: op("SetRequestLanguageSupport"),
+
+		insertDependencyIndexingJob: op("InsertDependencyIndexingJob"),
+		handleIndexScheduler:        handleIndexScheduler,
 	}
 }

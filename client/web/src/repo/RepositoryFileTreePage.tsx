@@ -111,6 +111,7 @@ export const RepositoryFileTreePage: React.FunctionComponent<
                                     repoHeaderContributionsLifecycleProps={
                                         context.repoHeaderContributionsLifecycleProps
                                     }
+                                    fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
                                 />
                             </TraceSpanProvider>
                         ) : resolvedRevision ? (

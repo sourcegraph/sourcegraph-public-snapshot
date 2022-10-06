@@ -15,6 +15,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	autoindex "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql"
+	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
+	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
+	uploads "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
@@ -39,7 +43,8 @@ type RepositoryResolver struct {
 	// because it may cause a race during hydration.
 	result.RepoMatch
 
-	db database.DB
+	db              database.DB
+	gitserverClient gitserver.Client
 
 	// innerRepo may only contain ID and Name information.
 	// To access any other repo information, use repo() instead.
@@ -50,7 +55,7 @@ type RepositoryResolver struct {
 	defaultBranchErr  error
 }
 
-func NewRepositoryResolver(db database.DB, repo *types.Repo) *RepositoryResolver {
+func NewRepositoryResolver(db database.DB, client gitserver.Client, repo *types.Repo) *RepositoryResolver {
 	// Protect against a nil repo
 	var name api.RepoName
 	var id api.RepoID
@@ -60,8 +65,9 @@ func NewRepositoryResolver(db database.DB, repo *types.Repo) *RepositoryResolver
 	}
 
 	return &RepositoryResolver{
-		db:        db,
-		innerRepo: repo,
+		db:              db,
+		innerRepo:       repo,
+		gitserverClient: client,
 		RepoMatch: result.RepoMatch{
 			Name: name,
 			ID:   id,
@@ -188,7 +194,7 @@ func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitA
 		return nil, err
 	}
 
-	commitID, err := backend.NewRepos(r.logger, r.db).ResolveRev(ctx, repo, args.Rev)
+	commitID, err := backend.NewRepos(r.logger, r.db, gitserver.NewClient(r.db)).ResolveRev(ctx, repo, args.Rev)
 	if err != nil {
 		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			return nil, nil
@@ -200,7 +206,7 @@ func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitA
 }
 
 func (r *RepositoryResolver) CommitFromID(ctx context.Context, args *RepositoryCommitArgs, commitID api.CommitID) (*GitCommitResolver, error) {
-	resolver := NewGitCommitResolver(r.db, r, commitID, nil)
+	resolver := NewGitCommitResolver(r.db, r.gitserverClient, r, commitID, nil)
 	if args.InputRevspec != nil {
 		resolver.inputRev = args.InputRevspec
 	} else {
@@ -211,7 +217,7 @@ func (r *RepositoryResolver) CommitFromID(ctx context.Context, args *RepositoryC
 
 func (r *RepositoryResolver) DefaultBranch(ctx context.Context) (*GitRefResolver, error) {
 	do := func() (*GitRefResolver, error) {
-		refName, _, err := gitserver.NewClient(r.db).GetDefaultBranch(ctx, r.RepoName(), false)
+		refName, _, err := r.gitserverClient.GetDefaultBranch(ctx, r.RepoName(), false)
 		if err != nil {
 			return nil, err
 		}
@@ -236,13 +242,14 @@ func (r *RepositoryResolver) Language(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	commitID, err := backend.NewRepos(r.logger, r.db).ResolveRev(ctx, repo, "")
+	gsClient := gitserver.NewClient(r.db)
+	commitID, err := backend.NewRepos(r.logger, r.db, gsClient).ResolveRev(ctx, repo, "")
 	if err != nil {
 		// Comment: Should we return a nil error?
 		return "", err
 	}
 
-	inventory, err := backend.NewRepos(r.logger, r.db).GetInventory(ctx, repo, commitID, false)
+	inventory, err := backend.NewRepos(r.logger, r.db, gsClient).GetInventory(ctx, repo, commitID, false)
 	if err != nil {
 		return "", err
 	}
@@ -356,33 +363,33 @@ func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 	return r.err
 }
 
-func (r *RepositoryResolver) LSIFUploads(ctx context.Context, args *LSIFUploadsQueryArgs) (LSIFUploadConnectionResolver, error) {
-	return EnterpriseResolvers.codeIntelResolver.LSIFUploadsByRepo(ctx, &LSIFRepositoryUploadsQueryArgs{
+func (r *RepositoryResolver) LSIFUploads(ctx context.Context, args *uploads.LSIFUploadsQueryArgs) (sharedresolvers.LSIFUploadConnectionResolver, error) {
+	return EnterpriseResolvers.codeIntelResolver.LSIFUploadsByRepo(ctx, &uploads.LSIFRepositoryUploadsQueryArgs{
 		LSIFUploadsQueryArgs: args,
 		RepositoryID:         r.ID(),
 	})
 }
 
-func (r *RepositoryResolver) LSIFIndexes(ctx context.Context, args *LSIFIndexesQueryArgs) (LSIFIndexConnectionResolver, error) {
-	return EnterpriseResolvers.codeIntelResolver.LSIFIndexesByRepo(ctx, &LSIFRepositoryIndexesQueryArgs{
+func (r *RepositoryResolver) LSIFIndexes(ctx context.Context, args *autoindex.LSIFIndexesQueryArgs) (sharedresolvers.LSIFIndexConnectionResolver, error) {
+	return EnterpriseResolvers.codeIntelResolver.LSIFIndexesByRepo(ctx, &autoindex.LSIFRepositoryIndexesQueryArgs{
 		LSIFIndexesQueryArgs: args,
 		RepositoryID:         r.ID(),
 	})
 }
 
-func (r *RepositoryResolver) IndexConfiguration(ctx context.Context) (IndexConfigurationResolver, error) {
+func (r *RepositoryResolver) IndexConfiguration(ctx context.Context) (autoindex.IndexConfigurationResolver, error) {
 	return EnterpriseResolvers.codeIntelResolver.IndexConfiguration(ctx, r.ID())
 }
 
-func (r *RepositoryResolver) CodeIntelligenceCommitGraph(ctx context.Context) (CodeIntelligenceCommitGraphResolver, error) {
+func (r *RepositoryResolver) CodeIntelligenceCommitGraph(ctx context.Context) (uploads.CodeIntelligenceCommitGraphResolver, error) {
 	return EnterpriseResolvers.codeIntelResolver.CommitGraph(ctx, r.ID())
 }
 
-func (r *RepositoryResolver) CodeIntelSummary(ctx context.Context) (CodeIntelRepositorySummaryResolver, error) {
+func (r *RepositoryResolver) CodeIntelSummary(ctx context.Context) (sharedresolvers.CodeIntelRepositorySummaryResolver, error) {
 	return EnterpriseResolvers.codeIntelResolver.RepositorySummary(ctx, r.ID())
 }
 
-func (r *RepositoryResolver) PreviewGitObjectFilter(ctx context.Context, args *PreviewGitObjectFilterArgs) ([]GitObjectFilterPreviewResolver, error) {
+func (r *RepositoryResolver) PreviewGitObjectFilter(ctx context.Context, args *policies.PreviewGitObjectFilterArgs) ([]policies.GitObjectFilterPreviewResolver, error) {
 	return EnterpriseResolvers.codeIntelResolver.PreviewGitObjectFilter(ctx, r.ID(), args)
 }
 
@@ -415,7 +422,8 @@ func (r *schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {
 	// TODO(chris): Remove URI in favor of Name.
 	URI *string
 	URL string
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	if args.Name != nil {
 		args.URI = args.Name
 	}
@@ -436,7 +444,8 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 	AuthorEmail *string
 	Description *string
 	Date        *string
-}) (*GitCommitResolver, error) {
+},
+) (*GitCommitResolver, error) {
 	db := r.db
 	repo, err := db.Repos().GetByName(ctx, api.RepoName(args.RepoName))
 	if err != nil {
@@ -455,7 +464,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 		if err != nil {
 			return nil, err
 		}
-		r := NewRepositoryResolver(db, repo)
+		r := NewRepositoryResolver(db, gitserver.NewClient(db), repo)
 		return r.Commit(ctx, &RepositoryCommitArgs{Rev: targetRef})
 	}
 
@@ -609,7 +618,8 @@ func (r *schemaResolver) AddRepoKeyValuePair(ctx context.Context, args struct {
 	Repo  graphql.ID
 	Key   string
 	Value *string
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return &EmptyResponse{}, err
 	}
@@ -626,7 +636,8 @@ func (r *schemaResolver) UpdateRepoKeyValuePair(ctx context.Context, args struct
 	Repo  graphql.ID
 	Key   string
 	Value *string
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return &EmptyResponse{}, err
 	}
@@ -643,7 +654,8 @@ func (r *schemaResolver) UpdateRepoKeyValuePair(ctx context.Context, args struct
 func (r *schemaResolver) DeleteRepoKeyValuePair(ctx context.Context, args struct {
 	Repo graphql.ID
 	Key  string
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return &EmptyResponse{}, err
 	}

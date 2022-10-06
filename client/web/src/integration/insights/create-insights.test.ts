@@ -10,10 +10,7 @@ import { TimeIntervalStepUnit } from '../../graphql-operations'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../context'
 import { createEditorAPI, percySnapshotWithVariants } from '../utils'
 
-import {
-    SEARCH_INSIGHT_LIVE_PREVIEW_FIXTURE,
-    SOURCEGRAPH_LANG_STATS_INSIGHT_DATA_FIXTURE,
-} from './fixtures/runtime-insights'
+import { SEARCH_INSIGHT_LIVE_PREVIEW_FIXTURE, LANG_STATS_INSIGHT_DATA_FIXTURE } from './fixtures/runtime-insights'
 import { overrideInsightsGraphQLApi } from './utils/override-insights-graphql-api'
 
 describe('Code insight create insight page', () => {
@@ -29,10 +26,6 @@ describe('Code insight create insight page', () => {
             driver,
             currentTest: this.currentTest!,
             directory: __dirname,
-            customContext: {
-                // Enforce using a new gql API for code insights pages
-                codeInsightsGqlApiEnabled: true,
-            },
         })
     })
 
@@ -75,7 +68,7 @@ describe('Code insight create insight page', () => {
                     repoSearch0: { name: 'github.com/sourcegraph/sourcegraph' },
                 }),
 
-                LangStatsInsightContent: () => SOURCEGRAPH_LANG_STATS_INSIGHT_DATA_FIXTURE,
+                LangStatsInsightContent: () => LANG_STATS_INSIGHT_DATA_FIXTURE,
 
                 /** Mock for repository suggest component. */
                 RepositorySearchSuggestions: () => ({
@@ -155,7 +148,7 @@ describe('Code insight create insight page', () => {
                     repositories: { nodes: [] },
                 }),
 
-                FirstStepCreateSearchBasedInsight: () => ({
+                CreateSearchBasedInsight: () => ({
                     __typename: 'Mutation',
                     createLineChartSearchInsight: {
                         view: {
@@ -294,7 +287,7 @@ describe('Code insight create insight page', () => {
 
         const addToUserConfigRequest = await testContext.waitForGraphQLRequest(async () => {
             await driver.page.click('[data-testid="insight-save-button"]')
-        }, 'FirstStepCreateSearchBasedInsight')
+        }, 'CreateSearchBasedInsight')
 
         // Check that new org settings config has edited insight
         assert.deepStrictEqual(addToUserConfigRequest.input, {

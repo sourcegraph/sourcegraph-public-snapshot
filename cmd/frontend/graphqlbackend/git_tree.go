@@ -62,7 +62,7 @@ func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 	for _, entry := range entries {
 		// Apply any additional filtering
 		if filter == nil || filter(entry) {
-			l = append(l, NewGitTreeEntryResolver(r.db, r.commit, entry))
+			l = append(l, NewGitTreeEntryResolver(r.db, r.gitserverClient, r.commit, entry))
 		}
 	}
 

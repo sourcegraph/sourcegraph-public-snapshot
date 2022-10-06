@@ -22,10 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// canceledJobsPollInterval denotes the time in between calls to the API to get a
-// list of canceled jobs.
-const canceledJobsPollInterval = 1 * time.Second
-
 type Options struct {
 	// VMPrefix is a unique string used to namespace virtual machines controlled by
 	// this executor instance. Different values for executors running on the same host

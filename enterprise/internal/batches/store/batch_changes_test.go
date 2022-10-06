@@ -27,64 +27,74 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 
 	logger := logtest.Scoped(t)
 
+	// Set up users and organisations for later tests.
+	var (
+		adminUser  = bt.CreateTestUser(t, s.DatabaseDB(), true)
+		orgUser    = bt.CreateTestUser(t, s.DatabaseDB(), false)
+		nonOrgUser = bt.CreateTestUser(t, s.DatabaseDB(), false)
+		org        = bt.CreateTestOrg(t, s.DatabaseDB(), "org", orgUser.ID)
+	)
+
 	t.Run("Create", func(t *testing.T) {
-		for i := 0; i < cap(cs); i++ {
+		// We're going to create five batch changes, both to unit test the
+		// Create method here and for use in sub-tests further down.
+		//
+		// 0: draft, owned by org
+		// 1: open, owned by orgUser
+		// 2: open, owned by org
+		// 3: open, owned by adminUser
+		// 4: closed, owned by org
+		for i, tc := range []struct {
+			draft           bool
+			closed          bool
+			nonNilTimes     bool
+			creatorID       int32
+			namespaceUserID int32
+			namespaceOrgID  int32
+		}{
+			{namespaceOrgID: org.ID, creatorID: orgUser.ID, draft: true, nonNilTimes: true},
+			{namespaceUserID: orgUser.ID, creatorID: orgUser.ID},
+			{namespaceOrgID: org.ID, creatorID: orgUser.ID},
+			{namespaceUserID: adminUser.ID, creatorID: adminUser.ID},
+			{namespaceOrgID: org.ID, creatorID: orgUser.ID, closed: true},
+		} {
 			c := &btypes.BatchChange{
 				Name:        fmt.Sprintf("test-batch-change-%d", i),
 				Description: "All the Javascripts are belong to us",
 
-				BatchSpecID: 1742 + int64(i),
-				ClosedAt:    clock.Now(),
+				BatchSpecID:     1742 + int64(i),
+				NamespaceUserID: tc.namespaceUserID,
+				NamespaceOrgID:  tc.namespaceOrgID,
 			}
 
-			if i <= 1 {
-				// Check for nullability of fields by not setting them
+			// Check for nullability of fields by setting them to a non-nil,
+			// zero value.
+			if tc.nonNilTimes {
 				c.ClosedAt = time.Time{}
 				c.LastAppliedAt = time.Time{}
 			}
 
-			if i != 0 {
-				// The very first batch change is a draft, the rest are not.
-				c.CreatorID = int32(i) + 50
+			if !tc.draft {
+				c.CreatorID = tc.creatorID
 				c.LastAppliedAt = clock.Now()
-				c.LastApplierID = int32(i) + 99
+				c.LastApplierID = tc.creatorID
 			}
 
-			// the fifth batch change is a closed batch change that wasn't applied.
-			// it shouldn't show up in the draft batch change list, it should instead
-			// show up in the closed batch change list.
-			if i == 5 {
+			if tc.closed {
 				c.ClosedAt = clock.Now()
-				c.LastAppliedAt = time.Time{}
-				c.LastApplierID = 0
-				c.CreatorID = 0
-			}
-
-			if i%2 == 0 {
-				c.NamespaceOrgID = int32(i) + 23
-			} else {
-				c.NamespaceUserID = c.CreatorID
 			}
 
 			want := c.Clone()
 			have := c
 
 			err := s.CreateBatchChange(ctx, have)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if have.ID == 0 {
-				t.Fatal("ID should not be zero")
-			}
+			assert.NoError(t, err)
+			assert.NotZero(t, have.ID)
 
 			want.ID = have.ID
 			want.CreatedAt = clock.Now()
 			want.UpdatedAt = clock.Now()
-
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
-			}
+			assert.Equal(t, want, have)
 
 			cs = append(cs, c)
 		}
@@ -191,17 +201,28 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 			}
 		})
 
-		t.Run("OnlyForAuthor set", func(t *testing.T) {
-			for _, c := range cs {
-				if c.CreatorID != 0 {
-					count, err = s.CountBatchChanges(ctx, CountBatchChangesOpts{CreatorID: c.CreatorID})
-					if err != nil {
-						t.Fatal(err)
-					}
-					if have, want := count, 1; have != want {
-						t.Fatalf("Incorrect number of batch changes counted, want=%d have=%d", want, have)
-					}
-				}
+		t.Run("OnlyAdministeredByUserID set", func(t *testing.T) {
+			for name, tc := range map[string]struct {
+				userID int32
+				want   int
+			}{
+				// No adminUser test case because the store layer doesn't
+				// actually know that site admins have access to everything.
+
+				// orgUser has access to batch changes 0, 1, 2, and 4.
+				"orgUser": {userID: orgUser.ID, want: 4},
+
+				// nonOrgUser has access to no batch changes.
+				"nonOrgUser": {userID: nonOrgUser.ID, want: 0},
+			} {
+				t.Run(name, func(t *testing.T) {
+					count, err := s.CountBatchChanges(
+						ctx,
+						CountBatchChangesOpts{OnlyAdministeredByUserID: tc.userID},
+					)
+					assert.NoError(t, err)
+					assert.EqualValues(t, tc.want, count)
+				})
 			}
 		})
 
@@ -430,17 +451,17 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 			{
 				name:  "Closed",
 				state: btypes.BatchChangeStateClosed,
-				want:  reversedBatchChanges[:len(reversedBatchChanges)-2],
+				want:  []*btypes.BatchChange{cs[4]},
 			},
 			{
 				name:  "Open",
 				state: btypes.BatchChangeStateOpen,
-				want:  cs[1:2],
+				want:  []*btypes.BatchChange{cs[3], cs[2], cs[1]},
 			},
 			{
 				name:  "Draft",
 				state: btypes.BatchChangeStateDraft,
-				want:  cs[0:1],
+				want:  []*btypes.BatchChange{cs[0]},
 			},
 		}
 
@@ -455,10 +476,6 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 				}
 			})
 		}
-
-		draftAndClosed := []*btypes.BatchChange{}
-		draftAndClosed = append(draftAndClosed, reversedBatchChanges[:3]...)
-		draftAndClosed = append(draftAndClosed, reversedBatchChanges[len(reversedBatchChanges)-1:]...)
 
 		multiFilterTests := []struct {
 			name   string
@@ -478,23 +495,23 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 			{
 				name:   "Open + Draft",
 				states: []btypes.BatchChangeState{btypes.BatchChangeStateOpen, btypes.BatchChangeStateDraft},
-				want:   reversedBatchChanges[len(reversedBatchChanges)-2:],
+				want:   []*btypes.BatchChange{cs[3], cs[2], cs[1], cs[0]},
 			},
 			{
 				name:   "Open + Closed",
 				states: []btypes.BatchChangeState{btypes.BatchChangeStateOpen, btypes.BatchChangeStateClosed},
-				want:   reversedBatchChanges[:len(reversedBatchChanges)-1],
+				want:   []*btypes.BatchChange{cs[4], cs[3], cs[2], cs[1]},
 			},
 			{
 				name:   "Draft + Closed",
 				states: []btypes.BatchChangeState{btypes.BatchChangeStateDraft, btypes.BatchChangeStateClosed},
-				want:   draftAndClosed,
+				want:   []*btypes.BatchChange{cs[4], cs[0]},
 			},
 			// Multiple of the same state should behave as if it were only one
 			{
 				name:   "Draft, multiple times",
 				states: []btypes.BatchChangeState{btypes.BatchChangeStateDraft, btypes.BatchChangeStateDraft, btypes.BatchChangeStateDraft},
-				want:   cs[:1],
+				want:   []*btypes.BatchChange{cs[0]},
 			},
 		}
 
@@ -511,23 +528,34 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 			})
 		}
 
-		t.Run("ListBatchChanges OnlyForAuthor set", func(t *testing.T) {
-			for _, c := range cs {
-				if c.CreatorID != 0 {
-					have, next, err := s.ListBatchChanges(ctx, ListBatchChangesOpts{CreatorID: c.CreatorID})
-					if err != nil {
-						t.Fatal(err)
-					}
-					if next != 0 {
-						t.Fatal("Next value was true, but false expected")
-					}
-					if have, want := len(have), 1; have != want {
-						t.Fatalf("Incorrect number of batch changes returned, want=%d have=%d", want, have)
-					}
-					if diff := cmp.Diff(have[0], c); diff != "" {
-						t.Fatal(diff)
-					}
-				}
+		t.Run("ListBatchChanges OnlyAdministeredByUserID set", func(t *testing.T) {
+			for name, tc := range map[string]struct {
+				userID int32
+				want   []*btypes.BatchChange
+			}{
+				// No adminUser test case because the store layer doesn't
+				// actually know that site admins have access to everything.
+
+				// orgUser has access to batch changes 0, 1, 2, and 4.
+				"orgUser": {
+					userID: orgUser.ID,
+					want:   []*btypes.BatchChange{cs[4], cs[2], cs[1], cs[0]},
+				},
+
+				// nonOrgUser has access to no batch changes.
+				"nonOrgUser": {
+					userID: nonOrgUser.ID,
+					want:   []*btypes.BatchChange{},
+				},
+			} {
+				t.Run(name, func(t *testing.T) {
+					have, _, err := s.ListBatchChanges(
+						ctx,
+						ListBatchChangesOpts{OnlyAdministeredByUserID: tc.userID},
+					)
+					assert.NoError(t, err)
+					assert.Equal(t, tc.want, have)
+				})
 			}
 		})
 
@@ -551,22 +579,12 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 		})
 
 		t.Run("ListBatchChanges by NamespaceOrgID", func(t *testing.T) {
-			for _, c := range cs {
-				if c.NamespaceOrgID == 0 {
-					continue
-				}
-				opts := ListBatchChangesOpts{NamespaceOrgID: c.NamespaceOrgID}
-				have, _, err := s.ListBatchChanges(ctx, opts)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				for _, haveBatchChange := range have {
-					if have, want := haveBatchChange.NamespaceOrgID, opts.NamespaceOrgID; have != want {
-						t.Fatalf("batch change has wrong NamespaceOrgID. want=%d, have=%d", want, have)
-					}
-				}
-			}
+			want := []*btypes.BatchChange{cs[4], cs[2], cs[0]}
+			have, _, err := s.ListBatchChanges(ctx, ListBatchChangesOpts{
+				NamespaceOrgID: org.ID,
+			})
+			assert.NoError(t, err)
+			assert.Equal(t, want, have)
 		})
 	})
 
@@ -664,23 +682,12 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 		})
 
 		t.Run("ByNamespaceOrgID", func(t *testing.T) {
-			for _, c := range cs {
-				if c.NamespaceOrgID == 0 {
-					continue
-				}
-
-				want := c
-				opts := GetBatchChangeOpts{NamespaceOrgID: c.NamespaceOrgID}
-
-				have, err := s.GetBatchChange(ctx, opts)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatal(diff)
-				}
-			}
+			have, err := s.GetBatchChange(ctx, GetBatchChangeOpts{
+				// The organisation ID was changed by the Update test above.
+				NamespaceOrgID: org.ID + 1,
+			})
+			assert.NoError(t, err)
+			assert.Equal(t, cs[4], have)
 		})
 
 		t.Run("NoResults", func(t *testing.T) {
@@ -873,7 +880,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 }
 
 func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
-	orgID := bt.InsertTestOrg(t, s.DatabaseDB(), "user-delete-cascades")
+	orgID := bt.CreateTestOrg(t, s.DatabaseDB(), "user-delete-cascades").ID
 	user := bt.CreateTestUser(t, s.DatabaseDB(), false)
 
 	logger := logtest.Scoped(t)
@@ -1011,7 +1018,7 @@ func testBatchChangesDeletedNamespace(t *testing.T, ctx context.Context, s *Stor
 	})
 
 	t.Run("Org Deleted", func(t *testing.T) {
-		orgID := bt.InsertTestOrg(t, s.DatabaseDB(), "my-org")
+		orgID := bt.CreateTestOrg(t, s.DatabaseDB(), "my-org").ID
 
 		bc := &btypes.BatchChange{
 			Name:           "my-batch-change",

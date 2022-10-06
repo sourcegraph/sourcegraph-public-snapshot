@@ -94,6 +94,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		DisplayName: "GitHub",
 		Config: extsvc.NewUnencryptedConfig(bt.MarshalJSON(t, &schema.GitHubConnection{
 			Url:   "https://github.com",
+			Token: "abc",
 			Repos: []string{"sourcegraph/sourcegraph"},
 		})),
 	}

@@ -9,7 +9,9 @@ import (
 	"sort"
 	"strings"
 
+	sgrun "github.com/sourcegraph/run"
 	"github.com/urfave/cli/v2"
+	"gopkg.in/yaml.v3"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/cliutil"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
@@ -53,9 +55,17 @@ sg start batches
 
 # Override the logger levels for specific services
 sg start --debug=gitserver --error=enterprise-worker,enterprise-frontend enterprise
-		`,
+
+# View configuration for a commandset
+sg start -describe oss
+`,
 		Category: CategoryDev,
 		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:  "describe",
+				Usage: "Print details about the selected commandset",
+			},
+
 			&cli.StringSliceFlag{
 				Name:        "debug",
 				Aliases:     []string{"d"},
@@ -154,10 +164,20 @@ func startExec(ctx *cli.Context) error {
 		}
 	}
 
-	set, ok := config.Commandsets[args[0]]
+	commandset := args[0]
+	set, ok := config.Commandsets[commandset]
 	if !ok {
-		std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: commandset %q not found :(", args[0]))
+		std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: commandset %q not found :(", commandset))
 		return flag.ErrHelp
+	}
+
+	if ctx.Bool("describe") {
+		out, err := yaml.Marshal(set)
+		if err != nil {
+			return err
+		}
+
+		return std.Out.WriteMarkdown(fmt.Sprintf("# %s\n\n```yaml\n%s\n```\n\n", commandset, string(out)))
 	}
 
 	// If the commandset requires the dev-private repository to be cloned, we
@@ -192,6 +212,21 @@ func startExec(ctx *cli.Context) error {
 			std.Out.Write("")
 
 			return cliutil.NewEmptyExitErr(1)
+		}
+
+		// dev-private exists, try to update the configuration
+		update := std.Out.Pending(output.Styled(output.StylePending, "Updating dev-private..."))
+		if err := sgrun.Bash(ctx.Context, "git pull origin master").
+			Dir(devPrivatePath).
+			Run().Wait(); err != nil {
+
+			update.Close()
+			std.Out.WriteWarningf("WARNING: failed to update dev-private:")
+			std.Out.Write("")
+			std.Out.Write(err.Error())
+			std.Out.Write("")
+		} else {
+			update.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Done updating dev-private"))
 		}
 	}
 

@@ -145,8 +145,9 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 	svc := types.ExternalService{
 		Kind: extsvc.KindGitHub,
 		Config: extsvc.NewUnencryptedConfig(`{
-"URL": "https://github.com",
-"Token": "secret-token"
+"url": "https://github.com",
+"token": "secret-token",
+"repos": ["owner/name"]
 }`),
 	}
 
@@ -246,21 +247,44 @@ func TestServer_RepoLookup(t *testing.T) {
 	githubSource := types.ExternalService{
 		Kind:         extsvc.KindGitHub,
 		CloudDefault: true,
-		Config:       extsvc.NewEmptyConfig(),
+		Config: extsvc.NewUnencryptedConfig(`{
+"url": "https://github.com",
+"token": "secret-token",
+"repos": ["owner/name"]
+}`),
 	}
 	awsSource := types.ExternalService{
-		Kind:   extsvc.KindAWSCodeCommit,
-		Config: extsvc.NewEmptyConfig(),
+		Kind: extsvc.KindAWSCodeCommit,
+		Config: extsvc.NewUnencryptedConfig(`
+{
+  "region": "us-east-1",
+  "accessKeyID": "abc",
+  "secretAccessKey": "abc",
+  "gitCredentials": {
+    "username": "user",
+    "password": "pass"
+  }
+}
+`),
 	}
 	gitlabSource := types.ExternalService{
 		Kind:         extsvc.KindGitLab,
 		CloudDefault: true,
-		Config:       extsvc.NewEmptyConfig(),
+		Config: extsvc.NewUnencryptedConfig(`
+{
+  "url": "https://gitlab.com",
+  "token": "abc",
+  "projectQuery": ["none"]
+}
+`),
 	}
-
 	npmSource := types.ExternalService{
-		Kind:   extsvc.KindNpmPackages,
-		Config: extsvc.NewEmptyConfig(),
+		Kind: extsvc.KindNpmPackages,
+		Config: extsvc.NewUnencryptedConfig(`
+{
+  "registry": "npm.org"
+}
+`),
 	}
 
 	if err := store.ExternalServiceStore().Upsert(ctx, &githubSource, &awsSource, &gitlabSource, &npmSource); err != nil {

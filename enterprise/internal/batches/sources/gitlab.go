@@ -6,9 +6,12 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Masterminds/semver"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -154,7 +157,12 @@ func (s *GitLabSource) CreateChangeset(ctx context.Context, c *Changeset) (bool,
 // CreateDraftChangeset creates a GitLab merge request. If it already exists,
 // *Changeset will be populated and the return value will be true.
 func (s *GitLabSource) CreateDraftChangeset(ctx context.Context, c *Changeset) (bool, error) {
-	c.Title = gitlab.SetWIP(c.Title)
+	v, err := s.determineVersion(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	c.Title = gitlab.SetWIPOrDraft(c.Title, v)
 
 	exists, err := s.CreateChangeset(ctx, c)
 	if err != nil {
@@ -166,8 +174,10 @@ func (s *GitLabSource) CreateDraftChangeset(ctx context.Context, c *Changeset) (
 		return false, errors.New("Changeset is not a GitLab merge request")
 	}
 
+	isDraftOrWIP := mr.WorkInProgress || mr.Draft
+
 	// If it already exists, but is not a WIP, we need to update the title.
-	if exists && !mr.WorkInProgress {
+	if exists && !isDraftOrWIP {
 		if err := s.UpdateChangeset(ctx, c); err != nil {
 			return exists, err
 		}
@@ -412,6 +422,33 @@ func readPipelines(it func() ([]*gitlab.Pipeline, error)) ([]*gitlab.Pipeline, e
 	}
 }
 
+func (s *GitLabSource) determineVersion(ctx context.Context) (*semver.Version, error) {
+	var v string
+	chvs, err := versions.GetVersions()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, chv := range chvs {
+		if chv.ExternalServiceKind == extsvc.KindGitLab && chv.Key == s.client.Urn() {
+			v = chv.Version
+			break
+		}
+	}
+
+	// if we are unable to get the version from Redis, we default to making a request
+	// to the codehost to get the version.
+	if v == "" {
+		v, err = s.client.GetVersion(ctx)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	version, err := semver.NewVersion(v)
+	return version, err
+}
+
 // UpdateChangeset updates the merge request on GitLab to reflect the local
 // state of the Changeset.
 func (s *GitLabSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
@@ -424,8 +461,13 @@ func (s *GitLabSource) UpdateChangeset(ctx context.Context, c *Changeset) error 
 	// Avoid accidentally undrafting the changeset by checking its current
 	// status.
 	title := c.Title
-	if mr.WorkInProgress {
-		title = gitlab.SetWIP(c.Title)
+	if mr.WorkInProgress || mr.Draft {
+		v, err := s.determineVersion(ctx)
+		if err != nil {
+			return err
+		}
+
+		title = gitlab.SetWIPOrDraft(c.Title, v)
 	}
 
 	updated, err := s.client.UpdateMergeRequest(ctx, project, mr, gitlab.UpdateMergeRequestOpts{
@@ -453,9 +495,14 @@ func (s *GitLabSource) UndraftChangeset(ctx context.Context, c *Changeset) error
 	}
 
 	// Remove WIP prefix from title.
-	c.Title = gitlab.UnsetWIP(c.Title)
-	// And mark the mr as not WorkInProgress anymore, otherwise UpdateChangeset
+	c.Title = gitlab.UnsetWIPOrDraft(c.Title)
+	// And mark the mr as not WorkInProgress / Draft anymore, otherwise UpdateChangeset
 	// will prepend the WIP: prefix again.
+
+	// We have to set both Draft and WorkInProgress or else the changeset will retain it's
+	// draft status. Both fields mirror each other, so if either is true then Gitlab assumes
+	// the changeset is still a draft.
+	mr.Draft = false
 	mr.WorkInProgress = false
 
 	return s.UpdateChangeset(ctx, c)

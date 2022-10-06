@@ -204,7 +204,6 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	d, _ := time.ParseDuration(traceThreshold)
 	logging.Init(logging.Filter(loghandlers.Trace(strings.Fields(traceFields), d)))
 	tracer.Init(sglog.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
-	trace.Init()
 	profiler.Init()
 
 	// Run enterprise setup hook
@@ -222,7 +221,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 			log.Printf("Version: %s", version.Version())
 			log.Print()
 
-			env.PrintHelp()
+			log.Print(env.HelpString())
 
 			log.Print()
 			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
@@ -338,12 +337,15 @@ func makeExternalAPI(db database.DB, schema *graphql.Schema, enterprise enterpri
 		schema,
 		rateLimiter,
 		&httpapi.Handlers{
-			GitHubWebhook:             enterprise.GitHubWebhook,
-			GitLabWebhook:             enterprise.GitLabWebhook,
-			BitbucketServerWebhook:    enterprise.BitbucketServerWebhook,
-			BitbucketCloudWebhook:     enterprise.BitbucketCloudWebhook,
-			NewCodeIntelUploadHandler: enterprise.NewCodeIntelUploadHandler,
-			NewComputeStreamHandler:   enterprise.NewComputeStreamHandler,
+			GitHubWebhook:                   enterprise.GitHubWebhook,
+			GitLabWebhook:                   enterprise.GitLabWebhook,
+			BitbucketServerWebhook:          enterprise.BitbucketServerWebhook,
+			BitbucketCloudWebhook:           enterprise.BitbucketCloudWebhook,
+			BatchesChangesFileGetHandler:    enterprise.BatchesChangesFileGetHandler,
+			BatchesChangesFileExistsHandler: enterprise.BatchesChangesFileExistsHandler,
+			BatchesChangesFileUploadHandler: enterprise.BatchesChangesFileUploadHandler,
+			NewCodeIntelUploadHandler:       enterprise.NewCodeIntelUploadHandler,
+			NewComputeStreamHandler:         enterprise.NewComputeStreamHandler,
 		},
 		enterprise.NewExecutorProxyHandler,
 		enterprise.NewGitHubAppSetupHandler,

@@ -181,6 +181,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
             {...otherProps}
             ref={mergedInsightCardReference}
             data-testid={`insight-card.${insight.id}`}
+            aria-label="Insight card"
             className={classNames(otherProps.className, { [styles.cardWithFilters]: isFiltersOpen })}
             onMouseEnter={trackMouseEnter}
             onMouseLeave={trackMouseLeave}
@@ -191,6 +192,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
                         to={`${window.location.origin}/insights/insight/${insight.id}`}
                         target="_blank"
                         rel="noopener noreferrer"
+                        aria-label="Go to the insight page"
                     >
                         {insight.title}
                     </Link>

@@ -289,6 +289,32 @@ COMMENT ON COLUMN insight_view_series.label IS 'Label text for this data series.
 
 COMMENT ON COLUMN insight_view_series.stroke IS 'Stroke color metadata for this data series. This may render in a chart depending on the view type.';
 
+CREATE TABLE insights_background_jobs (
+    id integer NOT NULL,
+    state text DEFAULT 'queued'::text,
+    failure_message text,
+    queued_at timestamp with time zone DEFAULT now(),
+    started_at timestamp with time zone,
+    finished_at timestamp with time zone,
+    process_after timestamp with time zone,
+    num_resets integer DEFAULT 0 NOT NULL,
+    num_failures integer DEFAULT 0 NOT NULL,
+    last_heartbeat_at timestamp with time zone,
+    execution_logs json[],
+    worker_hostname text DEFAULT ''::text NOT NULL,
+    cancel boolean DEFAULT false NOT NULL
+);
+
+CREATE SEQUENCE insights_background_jobs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE insights_background_jobs_id_seq OWNED BY insights_background_jobs.id;
+
 CREATE TABLE metadata (
     id bigint NOT NULL,
     metadata jsonb NOT NULL
@@ -386,6 +412,8 @@ ALTER TABLE ONLY insight_view ALTER COLUMN id SET DEFAULT nextval('insight_view_
 
 ALTER TABLE ONLY insight_view_grants ALTER COLUMN id SET DEFAULT nextval('insight_view_grants_id_seq'::regclass);
 
+ALTER TABLE ONLY insights_background_jobs ALTER COLUMN id SET DEFAULT nextval('insights_background_jobs_id_seq'::regclass);
+
 ALTER TABLE ONLY metadata ALTER COLUMN id SET DEFAULT nextval('metadata_id_seq'::regclass);
 
 ALTER TABLE ONLY repo_names ALTER COLUMN id SET DEFAULT nextval('repo_names_id_seq'::regclass);
@@ -419,6 +447,9 @@ ALTER TABLE ONLY insight_view
 
 ALTER TABLE ONLY insight_view_series
     ADD CONSTRAINT insight_view_series_pkey PRIMARY KEY (insight_view_id, insight_series_id);
+
+ALTER TABLE ONLY insights_background_jobs
+    ADD CONSTRAINT insights_background_jobs_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY metadata
     ADD CONSTRAINT metadata_pkey PRIMARY KEY (id);
@@ -460,6 +491,8 @@ CREATE INDEX insight_view_grants_org_id_idx ON insight_view_grants USING btree (
 CREATE INDEX insight_view_grants_user_id_idx ON insight_view_grants USING btree (user_id);
 
 CREATE UNIQUE INDEX insight_view_unique_id_unique_idx ON insight_view USING btree (unique_id);
+
+CREATE INDEX insights_jobs_state_idx ON insights_background_jobs USING btree (state);
 
 CREATE INDEX metadata_metadata_gin ON metadata USING gin (metadata);
 

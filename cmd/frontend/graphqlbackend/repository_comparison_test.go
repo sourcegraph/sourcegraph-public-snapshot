@@ -16,9 +16,9 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -51,11 +51,12 @@ func TestRepositoryComparisonNoMergeBase(t *testing.T) {
 		return "", errors.Errorf("merge base doesn't exist!")
 	}
 
+	gsClient := gitserver.NewClient(db)
 	input := &RepositoryComparisonInput{Base: &wantBaseRevision, Head: &wantHeadRevision}
-	repoResolver := NewRepositoryResolver(db, repo)
+	repoResolver := NewRepositoryResolver(db, gsClient, repo)
 
 	// There shouldn't be any error even when there is no merge base.
-	comp, err := NewRepositoryComparison(ctx, db, repoResolver, input)
+	comp, err := NewRepositoryComparison(ctx, db, gsClient, repoResolver, input)
 	require.Nil(t, err)
 	require.Equal(t, wantBaseRevision, comp.baseRevspec)
 	require.Equal(t, wantHeadRevision, comp.headRevspec)
@@ -105,9 +106,10 @@ func TestRepositoryComparison(t *testing.T) {
 	t.Cleanup(func() { gitserver.Mocks.MergeBase = nil })
 
 	input := &RepositoryComparisonInput{Base: &wantBaseRevision, Head: &wantHeadRevision}
-	repoResolver := NewRepositoryResolver(db, repo)
+	gsClient := gitserver.NewClient(db)
+	repoResolver := NewRepositoryResolver(db, gsClient, repo)
 
-	comp, err := NewRepositoryComparison(ctx, db, repoResolver, input)
+	comp, err := NewRepositoryComparison(ctx, db, gsClient, repoResolver, input)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -139,7 +141,8 @@ func TestRepositoryComparison(t *testing.T) {
 			{ID: api.CommitID(wantHeadRevision)},
 		}
 
-		gitserver.Mocks.Commits = func(repo api.RepoName, opts gitserver.CommitsOptions) ([]*gitdomain.Commit, error) {
+		mockGSClient := gitserver.NewMockClient()
+		mockGSClient.CommitsFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, opts gitserver.CommitsOptions, _ authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error) {
 			wantRange := fmt.Sprintf("%s..%s", wantBaseRevision, wantHeadRevision)
 
 			if have, want := opts.Range, wantRange; have != want {
@@ -147,10 +150,14 @@ func TestRepositoryComparison(t *testing.T) {
 			}
 
 			return commits, nil
+		})
+
+		newComp, err := NewRepositoryComparison(ctx, db, mockGSClient, repoResolver, input)
+		if err != nil {
+			t.Fatal(err)
 		}
 
-		defer func() { gitserver.Mocks.Commits = nil }()
-		commitConnection := comp.Commits(&graphqlutil.ConnectionArgs{})
+		commitConnection := newComp.Commits(&RepositoryComparisonCommitsArgs{})
 
 		nodes, err := commitConnection.Nodes(ctx)
 		if err != nil {
@@ -179,6 +186,36 @@ func TestRepositoryComparison(t *testing.T) {
 		}
 	})
 
+	t.Run("Commits with Path", func(t *testing.T) {
+		commits := []*gitdomain.Commit{
+			{ID: api.CommitID(wantBaseRevision)},
+		}
+
+		mockGSClient := gitserver.NewMockClient()
+		mockGSClient.CommitsFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, opts gitserver.CommitsOptions, _ authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error) {
+			if opts.Path == "" {
+				t.Fatalf("expected a path as part of commits args")
+			}
+			return commits, nil
+		})
+
+		newComp, err := NewRepositoryComparison(ctx, db, mockGSClient, repoResolver, input)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		testPath := "testpath"
+		commitConnection := newComp.Commits(&RepositoryComparisonCommitsArgs{Path: &testPath})
+
+		nodes, err := commitConnection.Nodes(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(nodes) != len(commits) {
+			t.Fatalf("wrong length of nodes: %d", len(nodes))
+		}
+	})
 	t.Run("FileDiffs", func(t *testing.T) {
 		t.Run("RawDiff", func(t *testing.T) {
 			diffConnection, err := comp.FileDiffs(ctx, &FileDiffsConnectionArgs{})
@@ -994,7 +1031,7 @@ func (d *dummyFileResolver) ExternalURLs(ctx context.Context) ([]*externallink.R
 	return []*externallink.Resolver{}, nil
 }
 
-func (d *dummyFileResolver) Highlight(ctx context.Context, args *HighlightArgs) (*highlightedFileResolver, error) {
+func (d *dummyFileResolver) Highlight(ctx context.Context, args *HighlightArgs) (*HighlightedFileResolver, error) {
 	return nil, errors.New("not implemented")
 }
 
@@ -1002,7 +1039,11 @@ func (d *dummyFileResolver) ToGitBlob() (*GitTreeEntryResolver, bool) {
 	return nil, false
 }
 
-func (d *dummyFileResolver) ToVirtualFile() (*virtualFileResolver, bool) {
+func (d *dummyFileResolver) ToVirtualFile() (*VirtualFileResolver, bool) {
+	return nil, false
+}
+
+func (d *dummyFileResolver) ToBatchSpecWorkspaceFile() (BatchWorkspaceFileResolver, bool) {
 	return nil, false
 }
 

@@ -17,7 +17,7 @@ jobs:
                   team/integrations=@muratsu @jjinnii @ryankscott
                   team/growth=@muratsu @a-bergevin
                   team/cloud=@sourcegraph/cloud
-                  team/search-product=@benvenker @lguychard
+                  team/search-product=@lguychard
                   team/search-core=@sourcegraph/search-core
                   team/code-insights=@joelkw @felixfbecker @vovakulikov
                   team/delivery=@sourcegraph/delivery

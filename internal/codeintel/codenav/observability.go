@@ -26,21 +26,19 @@ type operations struct {
 	getUploadIDsWithReferences           *observation.Operation
 	getDumpsByIDs                        *observation.Operation
 	getClosestDumpsForBlob               *observation.Operation
-	getLanguagesRequestedBy              *observation.Operation
-	setRequestLanguageSupport            *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
 	metrics := metrics.NewREDMetrics(
 		observationContext.Registerer,
-		"codeintel_symbols",
+		"codeintel_codenav",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of method invocations."),
 	)
 
 	op := func(name string) *observation.Operation {
 		return observationContext.Operation(observation.Op{
-			Name:              fmt.Sprintf("codeintel.symbols.%s", name),
+			Name:              fmt.Sprintf("codeintel.codenav.%s", name),
 			MetricLabelValues: []string{name},
 			Metrics:           metrics,
 		})
@@ -61,8 +59,6 @@ func newOperations(observationContext *observation.Context) *operations {
 		getUploadIDsWithReferences:           op("GetUploadIDsWithReferences"),
 		getDumpsByIDs:                        op("GetDumpsByIDs"),
 		getClosestDumpsForBlob:               op("GetClosestDumpsForBlob"),
-		getLanguagesRequestedBy:              op("GetLanguagesRequestedBy"),
-		setRequestLanguageSupport:            op("SetRequestLanguageSupport"),
 	}
 }
 

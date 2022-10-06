@@ -62,12 +62,16 @@ $ sg start batches
 
 # Override the logger levels for specific services
 $ sg start --debug=gitserver --error=enterprise-worker,enterprise-frontend enterprise
+
+# View configuration for a commandset
+$ sg start -describe oss
 ```
 
 Flags:
 
 * `--crit, -c="<value>"`: Services to set at info crit level.
 * `--debug, -d="<value>"`: Services to set at debug log level.
+* `--describe`: Print details about the selected commandset
 * `--error, -e="<value>"`: Services to set at info error level.
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--info, -i="<value>"`: Services to set at info log level.
@@ -127,19 +131,23 @@ Available commands in `sg.config.yaml`:
 * zoekt-web-template
 
 ```sh
-# Run specific commands:
+# Run specific commands
 $ sg run gitserver
 $ sg run frontend
 
-# List available commands (defined under 'commands:' in 'sg.config.yaml'):
+# List available commands (defined under 'commands:' in 'sg.config.yaml')
 $ sg run -help
 
-# Run multiple commands:
+# Run multiple commands
 $ sg run gitserver frontend repo-updater
+
+# View configuration for a command
+$ sg run -describe jaeger
 ```
 
 Flags:
 
+* `--describe`: Print details about selected run target
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 
 ## sg ci
@@ -229,11 +237,20 @@ Supported run types when providing an argument for 'sg ci build [runtype]':
 * backend-integration
 
 For run types that require branch arguments, you will be prompted for an argument, or you
-can provide it directly (for example, 'sg ci build [runtype] [argument]').
+can provide it directly (for example, 'sg ci build [runtype] <argument>').
 
 Learn more about pipeline run types in https://docs.sourcegraph.com/dev/background-information/ci/reference.
 
-Arguments: `[runtype]`
+```sh
+# Start a main-dry-run build
+$ sg ci build main-dry-run
+
+# Publish a custom image build
+$ sg ci build docker-images-patch
+
+# Publish a custom Prometheus image build without running tests
+$ sg ci build docker-images-patch-notest prometheus
+```
 
 Flags:
 

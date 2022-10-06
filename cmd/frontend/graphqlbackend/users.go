@@ -8,24 +8,31 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (r *schemaResolver) Users(args *struct {
+type usersArgs struct {
 	graphqlutil.ConnectionArgs
-	Query        *string
-	Tag          *string
-	ActivePeriod *string
-}) *userConnectionResolver {
+	Query         *string
+	Tag           *string
+	ActivePeriod  *string
+	InactiveSince *graphql.DateTime
+}
+
+func (r *schemaResolver) Users(args *usersArgs) *userConnectionResolver {
 	var opt database.UsersListOptions
 	if args.Query != nil {
 		opt.Query = *args.Query
 	}
 	if args.Tag != nil {
 		opt.Tag = *args.Tag
+	}
+	if args.InactiveSince != nil {
+		opt.InactiveSince = args.InactiveSince.Time
 	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
 	return &userConnectionResolver{db: r.db, opt: opt, activePeriod: args.ActivePeriod}
