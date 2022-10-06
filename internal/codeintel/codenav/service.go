@@ -20,6 +20,31 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+var _ service = (*Service)(nil)
+
+type service interface {
+	GetDefinitions(ctx context.Context, args shared.RequestArgs, requestState RequestState) (_ []types.UploadLocation, err error)
+	GetDiagnostics(ctx context.Context, args shared.RequestArgs, requestState RequestState) (diagnosticsAtUploads []shared.DiagnosticAtUpload, _ int, err error)
+	GetHover(ctx context.Context, args shared.RequestArgs, requestState RequestState) (_ string, _ types.Range, _ bool, err error)
+	GetImplementations(ctx context.Context, args shared.RequestArgs, requestState RequestState, cursor shared.ImplementationsCursor) (_ []types.UploadLocation, nextCursor shared.ImplementationsCursor, err error)
+	GetRanges(ctx context.Context, args shared.RequestArgs, requestState RequestState, startLine, endLine int) (adjustedRanges []shared.AdjustedCodeIntelligenceRange, err error)
+	GetReferences(ctx context.Context, args shared.RequestArgs, requestState RequestState, cursor shared.ReferencesCursor) (_ []types.UploadLocation, nextCursor shared.ReferencesCursor, err error)
+	GetStencil(ctx context.Context, args shared.RequestArgs, requestState RequestState) (adjustedRanges []types.Range, err error)
+
+	GetMonikersByPosition(ctx context.Context, bundleID int, path string, line, character int) (_ [][]precise.MonikerData, err error)
+	GetBulkMonikerLocations(ctx context.Context, tableName string, uploadIDs []int, monikers []precise.MonikerData, limit, offset int) (_ []shared.Location, _ int, err error)
+	GetPackageInformation(ctx context.Context, bundleID int, path, packageInformationID string) (_ precise.PackageInformationData, _ bool, err error)
+	GetClosestDumpsForBlob(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) (_ []types.Dump, err error)
+
+	// Uploads Service
+	GetDumpsByIDs(ctx context.Context, ids []int) (_ []types.Dump, err error)
+	GetUploadsWithDefinitionsForMonikers(ctx context.Context, monikers []precise.QualifiedMonikerData) (_ []types.Dump, err error)
+	GetUploadIDsWithReferences(ctx context.Context, orderedMonikers []precise.QualifiedMonikerData, ignoreIDs []int, repositoryID int, commit string, limit int, offset int) (ids []int, recordsScanned int, totalCount int, err error)
+
+	// Utilities
+	GetUnsafeDB() database.DB
+}
+
 type Service struct {
 	store      store.Store
 	lsifstore  lsifstore.LsifStore
@@ -293,7 +318,7 @@ func (s *Service) GetReferences(ctx context.Context, args shared.RequestArgs, re
 // getUploadsWithDefinitionsForMonikers returns the set of uploads that provide any of the given monikers.
 // This method will not return uploads for commits which are unknown to gitserver.
 func (s *Service) getUploadsWithDefinitionsForMonikers(ctx context.Context, orderedMonikers []precise.QualifiedMonikerData, requestState RequestState) ([]types.Dump, error) {
-	uploads, err := s.uploadSvc.GetDumpsWithDefinitionsForMonikers(ctx, orderedMonikers)
+	uploads, err := s.GetUploadsWithDefinitionsForMonikers(ctx, orderedMonikers)
 	if err != nil {
 		return nil, errors.Wrap(err, "dbstore.DefinitionDumps")
 	}
@@ -315,7 +340,7 @@ func (r *Service) getOrderedMonikers(ctx context.Context, visibleUploads []visib
 	monikerSet := newQualifiedMonikerSet()
 
 	for i := range visibleUploads {
-		rangeMonikers, err := r.lsifstore.GetMonikersByPosition(
+		rangeMonikers, err := r.GetMonikersByPosition(
 			ctx,
 			visibleUploads[i].Upload.ID,
 			visibleUploads[i].TargetPathWithoutRoot,
@@ -332,7 +357,7 @@ func (r *Service) getOrderedMonikers(ctx context.Context, visibleUploads []visib
 					continue
 				}
 
-				packageInformationData, _, err := r.lsifstore.GetPackageInformation(
+				packageInformationData, _, err := r.GetPackageInformation(
 					ctx,
 					visibleUploads[i].Upload.ID,
 					visibleUploads[i].TargetPathWithoutRoot,
@@ -430,7 +455,7 @@ func (s *Service) getPageRemoteLocations(
 		}
 
 		// Find the next batch of indexes to perform a moniker search over
-		referenceUploadIDs, recordsScanned, totalRecords, err := s.uploadSvc.GetUploadIDsWithReferences(
+		referenceUploadIDs, recordsScanned, totalRecords, err := s.GetUploadIDsWithReferences(
 			ctx,
 			orderedMonikers,
 			ignoreIDs,
@@ -638,7 +663,7 @@ func (s *Service) getBulkMonikerLocations(ctx context.Context, uploads []types.D
 		args = append(args, moniker.MonikerData)
 	}
 
-	locations, totalCount, err := s.lsifstore.GetBulkMonikerLocations(ctx, tableName, ids, args, limit, offset)
+	locations, totalCount, err := s.GetBulkMonikerLocations(ctx, tableName, ids, args, limit, offset)
 	if err != nil {
 		return nil, 0, errors.Wrap(err, "lsifStore.GetBulkMonikerLocations")
 	}
@@ -1123,11 +1148,66 @@ func (s *Service) GetStencil(ctx context.Context, args shared.RequestArgs, reque
 	return dedupeRanges(sortedRanges), nil
 }
 
+func (s *Service) GetMonikersByPosition(ctx context.Context, bundleID int, path string, line, character int) (_ [][]precise.MonikerData, err error) {
+	ctx, _, endObservation := s.operations.getMonikersByPosition.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.lsifstore.GetMonikersByPosition(ctx, bundleID, path, line, character)
+}
+
+func (s *Service) GetBulkMonikerLocations(ctx context.Context, tableName string, uploadIDs []int, monikers []precise.MonikerData, limit, offset int) (_ []shared.Location, _ int, err error) {
+	ctx, _, endObservation := s.operations.getBulkMonikerLocations.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.lsifstore.GetBulkMonikerLocations(ctx, tableName, uploadIDs, monikers, limit, offset)
+}
+
+func (s *Service) GetUploadsWithDefinitionsForMonikers(ctx context.Context, monikers []precise.QualifiedMonikerData) (_ []types.Dump, err error) {
+	ctx, _, endObservation := s.operations.getUploadsWithDefinitionsForMonikers.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	uploadDumps, err := s.uploadSvc.GetDumpsWithDefinitionsForMonikers(ctx, monikers)
+	if err != nil {
+		return nil, err
+	}
+	dumps := updateSvcDumpToSharedDump(uploadDumps)
+
+	return dumps, nil
+}
+
 func (s *Service) GetDumpsByIDs(ctx context.Context, ids []int) (_ []types.Dump, err error) {
 	ctx, _, endObservation := s.operations.getDumpsByIDs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return s.uploadSvc.GetDumpsByIDs(ctx, ids)
+	uploadDumps, err := s.uploadSvc.GetDumpsByIDs(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	dumps := updateSvcDumpToSharedDump(uploadDumps)
+
+	return dumps, nil
+}
+
+func (s *Service) GetUploadIDsWithReferences(
+	ctx context.Context,
+	orderedMonikers []precise.QualifiedMonikerData,
+	ignoreIDs []int,
+	repositoryID int,
+	commit string,
+	limit int,
+	offset int,
+) (ids []int, recordsScanned int, totalCount int, err error) {
+	ctx, _, endObservation := s.operations.getUploadIDsWithReferences.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.uploadSvc.GetUploadIDsWithReferences(ctx, orderedMonikers, ignoreIDs, repositoryID, commit, limit, offset)
+}
+
+func (s *Service) GetPackageInformation(ctx context.Context, bundleID int, path, packageInformationID string) (_ precise.PackageInformationData, _ bool, err error) {
+	ctx, _, endObservation := s.operations.getPackageInformation.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.lsifstore.GetPackageInformation(ctx, bundleID, path, packageInformationID)
 }
 
 func (s *Service) GetClosestDumpsForBlob(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) (_ []types.Dump, err error) {
@@ -1146,15 +1226,17 @@ func (s *Service) GetClosestDumpsForBlob(ctx context.Context, repositoryID int, 
 	if err != nil {
 		return nil, err
 	}
+
+	uploadCandidates := updateSvcDumpToSharedDump(candidates)
 	trace.Log(
 		traceLog.Int("numCandidates", len(candidates)),
-		traceLog.String("candidates", uploadIDsToString(candidates)),
+		traceLog.String("candidates", uploadIDsToString(uploadCandidates)),
 	)
 
 	commitChecker := NewCommitCache(s.gitserver)
 	commitChecker.SetResolvableCommit(repositoryID, commit)
 
-	candidatesWithCommits, err := filterUploadsWithCommits(ctx, commitChecker, candidates)
+	candidatesWithCommits, err := filterUploadsWithCommits(ctx, commitChecker, uploadCandidates)
 	if err != nil {
 		return nil, err
 	}
@@ -1180,7 +1262,7 @@ func (s *Service) GetClosestDumpsForBlob(ctx context.Context, repositoryID int, 
 			// TODO(efritz) - ensure there's a valid document path for this condition as well
 		}
 
-		filtered = append(filtered, candidates[i])
+		filtered = append(filtered, uploadCandidates[i])
 	}
 	trace.Log(
 		traceLog.Int("numFiltered", len(filtered)),
