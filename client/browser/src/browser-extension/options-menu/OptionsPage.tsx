@@ -254,7 +254,7 @@ const RepoSyncErrorAlert: React.FunctionComponent<
                         to use this extension.
                     </>
                 ) : (
-                    <>Contact your admin to add this repository to Sourcegraph.</>
+                    <>Contact your site administrator to add this repository to Sourcegraph.</>
                 )}
             </Text>
         </section>
