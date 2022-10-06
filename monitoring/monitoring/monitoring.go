@@ -92,12 +92,13 @@ func (c *Dashboard) noAlertsDefined() bool {
 }
 
 // renderDashboard generates the Grafana renderDashboard for this container.
-func (c *Dashboard) renderDashboard(injectLabelMatchers []*labels.Matcher, generateUID bool) (*sdk.Board, error) {
+func (c *Dashboard) renderDashboard(injectLabelMatchers []*labels.Matcher, folder string) (*sdk.Board, error) {
+
 	uid := c.Name
-	// Passing a null to the UID field causes Grafana to randomly generate a UID
-	if generateUID {
-		uid = ""
+	if folder != "" {
+		uid = fmt.Sprintf("%s-%s", folder, uid)
 	}
+
 	board := sdk.NewBoard(c.Title)
 	board.Version = uint(rand.Uint32())
 	board.UID = uid
