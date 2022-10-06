@@ -249,4 +249,15 @@ YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
 			dependencyGcloud(),
 		},
 	},
+	{
+		Name:      "Internal tooling",
+		DependsOn: []string{depsHomebrew},
+		Checks: []*dependency{
+			{
+				Name:  "src",
+				Check: checkAction(check.InPath("src")),
+				Fix:   cmdFix(`brew install sourcegraph/src-cli/src-cli`),
+			},
+		},
+	},
 }
