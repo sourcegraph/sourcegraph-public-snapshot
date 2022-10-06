@@ -63,7 +63,7 @@ Examples:
 		// may as well validate it at the same time so we don't even have to go to
 		// the backend if it's invalid.
 		ui.ParsingBatchSpec()
-		spec, raw, err := parseBatchSpec(ctx, file, svc, true)
+		spec, batchSpecDir, raw, err := parseBatchSpec(ctx, file, svc)
 		if err != nil {
 			ui.ParsingBatchSpecFailure(err)
 			return err
@@ -99,6 +99,21 @@ Examples:
 			return err
 		}
 		ui.SendingBatchSpecSuccess()
+
+		hasWorkspaceFiles := false
+		for _, step := range spec.Steps {
+			if len(step.Mount) > 0 {
+				hasWorkspaceFiles = true
+				break
+			}
+		}
+		if hasWorkspaceFiles {
+			ui.UploadingWorkspaceFiles()
+			if err = svc.UploadBatchSpecWorkspaceFiles(ctx, batchSpecDir, batchSpecID, spec.Steps); err != nil {
+				return err
+			}
+			ui.UploadingWorkspaceFilesSuccess()
+		}
 
 		// Wait for the workspaces to be resolved.
 		ui.ResolvingWorkspaces()

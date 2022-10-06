@@ -73,7 +73,7 @@ Examples:
 			return err
 		}
 
-		if _, _, err := parseBatchSpec(ctx, file, svc, false); err != nil {
+		if _, _, _, err := parseBatchSpec(ctx, file, svc); err != nil {
 			ui.ParsingBatchSpecFailure(err)
 			return err
 		}

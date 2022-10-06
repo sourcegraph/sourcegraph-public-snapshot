@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -38,6 +39,8 @@ type RunStepsOpts struct {
 	Task *Task
 	// TempDir points to where temporary files of the execution should live at.
 	TempDir string
+	// WorkingDirectory points to where the workspace files should live at.
+	WorkingDirectory string
 	// Timeout sets the deadline for the execution context. When exceeded,
 	// execution will stop and an error is returned.
 	Timeout time.Duration
@@ -45,9 +48,6 @@ type RunStepsOpts struct {
 	RepoArchive repozip.Archive
 	Logger      log.TaskLogger
 	UI          StepsExecutionUI
-	// IsRemote toggles server-side execution mode. This disables file mounts using
-	// step.mounts.
-	IsRemote bool
 	// GlobalEnv is the os.Environ() for the execution. We don't read from os.Environ()
 	// directly to allow injecting variables and hiding others.
 	GlobalEnv []string
@@ -321,12 +321,13 @@ func executeSingleStep(
 		args = append(args, "--mount", fmt.Sprintf("type=bind,source=%s,target=%s,ro", source.Name(), target))
 	}
 
-	// Temporarily add a guard to prevent a path to mount path for server-side processing.
-	if !opts.IsRemote {
-		// Mount any paths on the local system to the docker container. The paths have already been validated during parsing.
-		for _, mount := range step.Mount {
-			args = append(args, "--mount", fmt.Sprintf("type=bind,source=%s,target=%s,ro", mount.Path, mount.Mountpoint))
+	// Mount any paths on the local system to the docker container. The paths have already been validated during parsing.
+	for _, mount := range step.Mount {
+		workspaceFilePath, err := getAbsoluteMountPath(opts.WorkingDirectory, mount.Path)
+		if err != nil {
+			return bytes.Buffer{}, bytes.Buffer{}, err
 		}
+		args = append(args, "--mount", fmt.Sprintf("type=bind,source=%s,target=%s,ro", workspaceFilePath, mount.Mountpoint))
 	}
 
 	for k, v := range env {
@@ -589,6 +590,29 @@ func createCidFile(ctx context.Context, tempDir string, repoSlug string) (string
 	}
 
 	return cidFile.Name(), cleanup, nil
+}
+
+func getAbsoluteMountPath(batchSpecDir string, mountPath string) (string, error) {
+	p := mountPath
+	if !filepath.IsAbs(p) {
+		// Try to build the absolute path since Docker will only mount absolute paths
+		p = filepath.Join(batchSpecDir, p)
+	}
+	pathInfo, err := os.Stat(p)
+	if os.IsNotExist(err) {
+		return "", errors.Newf("mount path %s does not exist", p)
+	} else if err != nil {
+		return "", errors.Wrap(err, "mount path validation")
+	}
+	if !strings.HasPrefix(p, batchSpecDir) {
+		return "", errors.Newf("mount path %s is not in the same directory or subdirectory as the batch spec", mountPath)
+	}
+	// Mounting a directory on Docker must end with the separator. So, append the file separator to make
+	// users' lives easier.
+	if pathInfo.IsDir() && !strings.HasSuffix(p, string(filepath.Separator)) {
+		p += string(filepath.Separator)
+	}
+	return p, nil
 }
 
 type stepFailedErr struct {

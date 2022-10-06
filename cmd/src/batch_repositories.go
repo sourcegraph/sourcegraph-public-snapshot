@@ -74,7 +74,7 @@ Examples:
 		}
 
 		out := output.NewOutput(flagSet.Output(), output.OutputOpts{Verbose: *verbose})
-		spec, _, err := parseBatchSpec(ctx, file, svc, false)
+		spec, _, _, err := parseBatchSpec(ctx, file, svc)
 		if err != nil {
 			ui := &ui.TUI{Out: out}
 			ui.ParsingBatchSpecFailure(err)

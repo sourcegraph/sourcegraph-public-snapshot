@@ -10,16 +10,17 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-
 	"github.com/sourcegraph/src-cli/internal/batches/docker"
-	"github.com/sourcegraph/src-cli/internal/batches/executor"
-	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 	"github.com/sourcegraph/src-cli/internal/batches/log"
 	"github.com/sourcegraph/src-cli/internal/batches/repozip"
+	"github.com/sourcegraph/src-cli/internal/batches/workspace"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+
+	"github.com/sourcegraph/src-cli/internal/batches/executor"
+	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 	"github.com/sourcegraph/src-cli/internal/batches/service"
 	"github.com/sourcegraph/src-cli/internal/batches/ui"
-	"github.com/sourcegraph/src-cli/internal/batches/workspace"
 	"github.com/sourcegraph/src-cli/internal/cmderrors"
 
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
@@ -30,10 +31,11 @@ const (
 )
 
 type executorModeFlags struct {
-	timeout time.Duration
-	file    string
-	tempDir string
-	repoDir string
+	timeout           time.Duration
+	file              string
+	tempDir           string
+	repoDir           string
+	workspaceFilesDir string
 }
 
 func newExecutorModeFlags(flagSet *flag.FlagSet) (f *executorModeFlags) {
@@ -42,6 +44,7 @@ func newExecutorModeFlags(flagSet *flag.FlagSet) (f *executorModeFlags) {
 	flagSet.StringVar(&f.file, "f", "", "The workspace execution input file to read.")
 	flagSet.StringVar(&f.tempDir, "tmp", "", "Directory for storing temporary data.")
 	flagSet.StringVar(&f.repoDir, "repo", "", "Path of the checked out repo on disk.")
+	flagSet.StringVar(&f.workspaceFilesDir, "workspaceFiles", "", "Path of workspace files on disk.")
 
 	return f
 }
@@ -69,7 +72,7 @@ github.com/sourcegraph/sourcegraph/lib/batches.
 
 Usage:
 
-    src batch exec -f FILE -repo DIR [command options]
+    src batch exec -f FILE -repo DIR -workspaceFiles DIR [command options]
 
 Examples:
 
@@ -140,6 +143,12 @@ func executeBatchSpecInWorkspaces(ctx context.Context, flags *executorModeFlags)
 		}
 	}
 
+	// Grab the absolute path to the workspace files contents.
+	workspaceFilesDir, err := filepath.Abs(flags.workspaceFilesDir)
+	if err != nil {
+		return errors.Wrap(err, "getting absolute path for workspace files dir")
+	}
+
 	// Test if git is available.
 	if err := checkExecutable("git", "version"); err != nil {
 		return err
@@ -177,8 +186,7 @@ func executeBatchSpecInWorkspaces(ctx context.Context, flags *executorModeFlags)
 	ui.PreparingContainerImagesSuccess()
 
 	// Empty for now until we support secrets or env var settings in SSBC.
-	globalEnv := []string{}
-	isRemote := true
+	var globalEnv []string
 
 	// Set up the execution UI.
 	taskExecUI := ui.ExecutingTasks(false, 1)
@@ -191,19 +199,18 @@ func executeBatchSpecInWorkspaces(ctx context.Context, flags *executorModeFlags)
 		EnsureImage: imageCache.Ensure,
 		Task:        task,
 		// TODO: Should be slightly less than the executor timeout. Can we somehow read that?
-		Timeout:   flags.timeout,
-		TempDir:   tempDir,
-		GlobalEnv: globalEnv,
-		// Temporarily prevent the ability to sending a batch spec with a mount for server-side processing.
-		IsRemote:    isRemote,
-		RepoArchive: &repozip.NoopArchive{},
-		UI:          taskExecUI.StepsExecutionUI(task),
+		Timeout:          flags.timeout,
+		TempDir:          tempDir,
+		WorkingDirectory: workspaceFilesDir,
+		GlobalEnv:        globalEnv,
+		RepoArchive:      &repozip.NoopArchive{},
+		UI:               taskExecUI.StepsExecutionUI(task),
 	}
 	results, err := executor.RunSteps(ctx, opts)
 
 	// Write all step cache results for all results.
 	for _, stepRes := range results {
-		cacheKey := task.CacheKey(globalEnv, isRemote, stepRes.StepIndex)
+		cacheKey := task.CacheKey(globalEnv, workspaceFilesDir, stepRes.StepIndex)
 		k, err := cacheKey.Key()
 		if err != nil {
 			return errors.Wrap(err, "calculating step cache key")

@@ -304,7 +304,7 @@ func executeBatchSpec(ctx context.Context, ui ui.ExecUI, opts executeBatchSpecOp
 
 	// Parse flags and build up our service and executor options.
 	ui.ParsingBatchSpec()
-	batchSpec, rawSpec, err := parseBatchSpec(ctx, opts.file, svc, false)
+	batchSpec, batchSpecDir, rawSpec, err := parseBatchSpec(ctx, opts.file, svc)
 	if err != nil {
 		var multiErr errors.MultiError
 		if errors.As(err, &multiErr) {
@@ -378,15 +378,14 @@ func executeBatchSpec(ctx context.Context, ui ui.ExecUI, opts executeBatchSpecOp
 				Creator:             workspaceCreator,
 				EnsureImage:         imageCache.Ensure,
 				Parallelism:         parallelism,
+				WorkingDirectory:    batchSpecDir,
 				Timeout:             opts.flags.timeout,
 				TempDir:             opts.flags.tempDir,
 				GlobalEnv:           os.Environ(),
-				IsRemote:            false,
 			},
 			Logger:    logManager,
 			Cache:     executor.NewDiskCache(opts.flags.cacheDir),
 			GlobalEnv: os.Environ(),
-			IsRemote:  false,
 		},
 	)
 
@@ -508,13 +507,10 @@ func setReadDeadlineOnCancel(ctx context.Context, f *os.File) {
 
 // parseBatchSpec parses and validates the given batch spec. If the spec has
 // validation errors, they are returned.
-//
-// isRemote argument is a temporary argument used to determine if the batch spec is being parsed for remote
-// (server-side) processing. Remote processing does not support mounts yet.
-func parseBatchSpec(ctx context.Context, file string, svc *service.Service, isRemote bool) (*batcheslib.BatchSpec, string, error) {
+func parseBatchSpec(ctx context.Context, file string, svc *service.Service) (*batcheslib.BatchSpec, string, string, error) {
 	f, err := batchOpenFileFlag(file)
 	if err != nil {
-		return nil, "", err
+		return nil, "", "", err
 	}
 	defer f.Close()
 
@@ -526,26 +522,35 @@ func parseBatchSpec(ctx context.Context, file string, svc *service.Service, isRe
 
 	data, err := io.ReadAll(f)
 	if err != nil {
-		return nil, "", errors.Wrap(err, "reading batch spec")
+		return nil, "", "", errors.Wrap(err, "reading batch spec")
 	}
 
+	dir, err := getBatchSpecDirectory(file)
+	if err != nil {
+		return nil, "", "", errors.Wrap(err, "batch spec path")
+	}
+
+	spec, err := svc.ParseBatchSpec(dir, data)
+	return spec, dir, string(data), err
+}
+
+func getBatchSpecDirectory(file string) (string, error) {
 	var workingDirectory string
+	var err error
 	// if the batch spec is being provided via standard input, set the working directory to the current directory
 	if file == "" || file == "-" {
 		workingDirectory, err = os.Getwd()
 		if err != nil {
-			return nil, "", errors.Wrap(err, "batch spec path")
+			return "", errors.Wrap(err, "batch spec path")
 		}
 	} else {
 		p, err := filepath.Abs(file)
 		if err != nil {
-			return nil, "", errors.Wrap(err, "batch spec path")
+			return "", errors.Wrap(err, "batch spec path")
 		}
 		workingDirectory = filepath.Dir(p)
 	}
-
-	spec, err := svc.ParseBatchSpec(workingDirectory, data, isRemote)
-	return spec, string(data), err
+	return workingDirectory, nil
 }
 
 func checkExecutable(cmd string, args ...string) error {

@@ -62,11 +62,12 @@ type NewExecutorOpts struct {
 	Logger              log.LogManager
 
 	// Config
-	Parallelism int
-	Timeout     time.Duration
-	TempDir     string
-	IsRemote    bool
-	GlobalEnv   []string
+	Parallelism      int
+	Timeout          time.Duration
+	WorkingDirectory string
+	TempDir          string
+	IsRemote         bool
+	GlobalEnv        []string
 }
 
 type executor struct {
@@ -168,15 +169,15 @@ func (x *executor) do(ctx context.Context, task *Task, ui TaskExecutionUI) (err 
 
 	// Actually execute the steps.
 	opts := &RunStepsOpts{
-		Task:        task,
-		Logger:      l,
-		WC:          x.opts.Creator,
-		EnsureImage: x.opts.EnsureImage,
-		TempDir:     x.opts.TempDir,
-		IsRemote:    x.opts.IsRemote,
-		GlobalEnv:   x.opts.GlobalEnv,
-		Timeout:     x.opts.Timeout,
-		RepoArchive: repoArchive,
+		Task:             task,
+		Logger:           l,
+		WC:               x.opts.Creator,
+		EnsureImage:      x.opts.EnsureImage,
+		TempDir:          x.opts.TempDir,
+		GlobalEnv:        x.opts.GlobalEnv,
+		Timeout:          x.opts.Timeout,
+		RepoArchive:      repoArchive,
+		WorkingDirectory: x.opts.WorkingDirectory,
 
 		UI: ui.StepsExecutionUI(task),
 	}

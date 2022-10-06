@@ -6,6 +6,7 @@ import (
 	"os/exec"
 
 	"github.com/neelance/parallel"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 
@@ -229,6 +230,14 @@ func (ui *TUI) SendingBatchSpec() {
 
 func (ui *TUI) SendingBatchSpecSuccess() {
 	batchCompletePending(ui.pending, "Sending batch spec")
+}
+
+func (ui *TUI) UploadingWorkspaceFiles() {
+	ui.pending = batchCreatePending(ui.Out, "Uploading workspace files")
+}
+
+func (ui *TUI) UploadingWorkspaceFilesSuccess() {
+	batchCompletePending(ui.pending, "Uploading workspace files")
 }
 
 func (ui *TUI) ResolvingWorkspaces() {

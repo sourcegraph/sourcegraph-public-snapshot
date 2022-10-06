@@ -39,7 +39,9 @@ func TestFileMetadataRetriever_Get(t *testing.T) {
 	err = os.Chtimes(anotherScriptPath, modDate, modDate)
 	require.NoError(t, err)
 
-	retriever := fileMetadataRetriever{}
+	retriever := fileMetadataRetriever{
+		workingDirectory: tempDir,
+	}
 
 	tests := []struct {
 		name             string
@@ -53,13 +55,13 @@ func TestFileMetadataRetriever_Get(t *testing.T) {
 				{
 					Run: "foo",
 					Mount: []batches.Mount{{
-						Path:       sampleScriptPath,
+						Path:       "./sample.sh",
 						Mountpoint: "/tmp/foo.sh",
 					}},
 				},
 			},
 			expectedMetadata: []cache.MountMetadata{
-				{Path: sampleScriptPath, Size: 0, Modified: modDate},
+				{Path: "sample.sh", Size: 0, Modified: modDate},
 			},
 		},
 		{
@@ -69,19 +71,19 @@ func TestFileMetadataRetriever_Get(t *testing.T) {
 					Run: "foo",
 					Mount: []batches.Mount{
 						{
-							Path:       sampleScriptPath,
+							Path:       "./sample.sh",
 							Mountpoint: "/tmp/foo.sh",
 						},
 						{
-							Path:       anotherScriptPath,
+							Path:       "./another.sh",
 							Mountpoint: "/tmp/bar.sh",
 						},
 					},
 				},
 			},
 			expectedMetadata: []cache.MountMetadata{
-				{Path: sampleScriptPath, Size: 0, Modified: modDate},
-				{Path: anotherScriptPath, Size: 0, Modified: modDate},
+				{Path: "sample.sh", Size: 0, Modified: modDate},
+				{Path: "another.sh", Size: 0, Modified: modDate},
 			},
 		},
 		{
@@ -90,14 +92,14 @@ func TestFileMetadataRetriever_Get(t *testing.T) {
 				{
 					Run: "foo",
 					Mount: []batches.Mount{{
-						Path:       tempDir,
+						Path:       "./",
 						Mountpoint: "/tmp/scripts",
 					}},
 				},
 			},
 			expectedMetadata: []cache.MountMetadata{
-				{Path: anotherScriptPath, Size: 0, Modified: modDate},
-				{Path: sampleScriptPath, Size: 0, Modified: modDate},
+				{Path: "another.sh", Size: 0, Modified: modDate},
+				{Path: "sample.sh", Size: 0, Modified: modDate},
 			},
 		},
 		{
@@ -119,21 +121,21 @@ func TestFileMetadataRetriever_Get(t *testing.T) {
 				{
 					Run: "foo",
 					Mount: []batches.Mount{{
-						Path:       sampleScriptPath,
+						Path:       "./sample.sh",
 						Mountpoint: "/tmp/foo.sh",
 					}},
 				},
 				{
 					Run: "foo",
 					Mount: []batches.Mount{{
-						Path:       sampleScriptPath,
+						Path:       "./sample.sh",
 						Mountpoint: "/tmp/foo.sh",
 					}},
 				},
 			},
 			expectedMetadata: []cache.MountMetadata{
-				{Path: sampleScriptPath, Size: 0, Modified: modDate},
-				{Path: sampleScriptPath, Size: 0, Modified: modDate},
+				{Path: "sample.sh", Size: 0, Modified: modDate},
+				{Path: "sample.sh", Size: 0, Modified: modDate},
 			},
 		},
 	}

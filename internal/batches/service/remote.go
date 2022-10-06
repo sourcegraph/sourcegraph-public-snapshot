@@ -2,11 +2,17 @@ package service
 
 import (
 	"context"
+	"fmt"
+	"io"
+	"mime/multipart"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
 
+	"github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-var ErrServerSideBatchChangesUnsupported = errors.New("server side batch changes are not available on this Sourcegraph instance")
 
 const upsertEmptyBatchChangeQuery = `
 mutation UpsertEmptyBatchChange(
@@ -94,6 +100,143 @@ func (svc *Service) CreateBatchSpecFromRaw(
 	}
 
 	return resp.CreateBatchSpecFromRaw.ID, nil
+}
+
+// UploadBatchSpecWorkspaceFiles uploads workspace files to the server.
+func (svc *Service) UploadBatchSpecWorkspaceFiles(ctx context.Context, workingDir string, batchSpecID string, steps []batches.Step) error {
+	filePaths := make(map[string]bool)
+	for _, step := range steps {
+		for _, mount := range step.Mount {
+			paths, err := getFilePaths(workingDir, mount.Path)
+			if err != nil {
+				return err
+			}
+			// Dedupe any files.
+			for _, path := range paths {
+				if !filePaths[path] {
+					filePaths[path] = true
+				}
+			}
+		}
+	}
+
+	for filePath := range filePaths {
+		if err := svc.uploadFile(ctx, workingDir, filePath, batchSpecID); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func getFilePaths(workingDir, filePath string) ([]string, error) {
+	var filePaths []string
+	actualFilePath := filepath.Join(workingDir, filePath)
+	info, err := os.Stat(actualFilePath)
+	if err != nil {
+		return nil, err
+	}
+
+	if info.IsDir() {
+		dir, err := os.ReadDir(actualFilePath)
+		if err != nil {
+			return nil, err
+		}
+		for _, dirEntry := range dir {
+			paths, err := getFilePaths(workingDir, filepath.Join(filePath, dirEntry.Name()))
+			if err != nil {
+				return nil, err
+			}
+			filePaths = append(filePaths, paths...)
+		}
+	} else {
+		relPath, err := filepath.Rel(workingDir, actualFilePath)
+		if err != nil {
+			return nil, err
+		}
+		filePaths = append(filePaths, relPath)
+	}
+	return filePaths, nil
+}
+
+func (svc *Service) uploadFile(ctx context.Context, workingDir, filePath, batchSpecID string) error {
+	// Create a pipe so the requests can be chunked to the server
+	pipeReader, pipeWriter := io.Pipe()
+	multipartWriter := multipart.NewWriter(pipeWriter)
+
+	// Write in a separate goroutine to properly chunk the file content. Writing to the pipe lets us not have
+	// to put the whole file in memory.
+	go func() {
+		defer pipeWriter.Close()
+		defer multipartWriter.Close()
+
+		if err := createFormFile(multipartWriter, workingDir, filePath); err != nil {
+			pipeWriter.CloseWithError(err)
+		}
+	}()
+
+	request, err := svc.client.NewHTTPRequest(ctx, http.MethodPost, fmt.Sprintf(".api/files/batch-changes/%s", batchSpecID), pipeReader)
+	if err != nil {
+		return err
+	}
+	request.Header.Set("Content-Type", multipartWriter.FormDataContentType())
+
+	resp, err := svc.client.Do(request)
+	if err != nil {
+		// Errors passed to pipeWriter.CloseWithError come through here.
+		return err
+	}
+	// 2xx and 3xx are ok
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusBadRequest {
+		p, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		return errors.New(string(p))
+	}
+	return nil
+}
+
+const maxFileSize = 10 << 20 // 10MB
+
+func createFormFile(w *multipart.Writer, workingDir string, mountPath string) error {
+	f, err := os.Open(filepath.Join(workingDir, mountPath))
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	// Limit the size of file to 10MB
+	fileStat, err := f.Stat()
+	if err != nil {
+		return err
+	}
+	if fileStat.Size() > maxFileSize {
+		return errors.New("file exceeds limit of 10MB")
+	}
+
+	filePath, fileName := filepath.Split(mountPath)
+	filePath = strings.Trim(strings.TrimSuffix(filePath, string(filepath.Separator)), ".")
+	// Ensure Windows separators are changed to Unix.
+	filePath = strings.ReplaceAll(filePath, "\\", "/")
+	if err = w.WriteField("filepath", filePath); err != nil {
+		return err
+	}
+	fileInfo, err := f.Stat()
+	if err != nil {
+		return err
+	}
+	if err = w.WriteField("filemod", fileInfo.ModTime().UTC().String()); err != nil {
+		return err
+	}
+
+	part, err := w.CreateFormFile("file", fileName)
+	if err != nil {
+		return err
+	}
+	if _, err = io.Copy(part, f); err != nil {
+		return err
+	}
+	return nil
 }
 
 const executeBatchSpecQuery = `
