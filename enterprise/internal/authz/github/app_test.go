@@ -50,6 +50,14 @@ func TestNewAppProvider(t *testing.T) {
 				}, nil
 			}
 
+            if r.Header.Get("Authorization") != "Bearer app-token" {
+                return &http.Response{
+                    Status: http.StatusText(http.StatusUnauthorized),
+                    StatusCode: http.StatusUnauthorized,
+                    Body: io.NopCloser(bytes.NewReader([]byte(`invalid access token`))),
+                }, nil
+            }
+
 			srvHit = true
 			assert.Equal(t, "Bearer app-token", r.Header.Get("Authorization"))
 			return &http.Response{

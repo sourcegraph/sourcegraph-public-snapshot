@@ -243,27 +243,60 @@ func newGithubSource(
 		}
 		appID = gitHubAppConfig.AppID
 
-		auther, err := auth.NewOAuthBearerTokenWithGitHubApp(appID, privateKey)
-		if err != nil {
-			return nil, errors.Wrap(err, "new authenticator with GitHub App")
-		}
-
-		client := github.NewV3Client(log.Scoped("app", "github client for Sourcegraph GitHub app"),
-			urn, apiURL, auther, nil)
-
 		installationID, err := strconv.ParseInt(c.GithubAppInstallationID, 10, 64)
 		if err != nil {
 			return nil, errors.Wrap(err, "parse installation ID")
 		}
 
-		token, err := GetOrRenewGitHubAppInstallationAccessToken(context.Background(), logger, externalServicesStore, svc, client, installationID)
+		appAuther, err := github.NewGitHubAppAuthenticator(appID, privateKey)
 		if err != nil {
-			return nil, errors.Wrap(err, "get or renew GitHub App installation access token")
+			return nil, errors.Wrap(err, "new authenticator with GitHub App")
 		}
 
-		auther = &auth.OAuthBearerToken{Token: token}
-		v3Client = github.NewV3Client(v3ClientLogger, urn, apiURL, auther, cli)
-		v4Client = github.NewV4Client(urn, apiURL, auther, cli)
+		apiURL, _ := github.APIRoot(baseURL)
+		appClient := github.NewV3Client(
+			log.Scoped("app", "github client for github app").
+				With(log.String("appID", appID)),
+			urn, apiURL, appAuther, cli)
+
+		rawConfig, err := svc.Config.Decrypt(context.Background())
+		if err != nil {
+			return nil, errors.Wrap(err, "decrypting service config")
+		}
+
+		installationRefreshFunc := func(auther *github.GitHubAppInstallationAuthenticator) error {
+			token, err := appClient.CreateAppInstallationAccessToken(context.Background(), installationID)
+			if err != nil {
+				return err
+			}
+
+			auther.InstallationAccessToken = token.GetToken()
+			auther.Expiry = token.ExpiresAt
+
+			rawConfig, err = jsonc.Edit(rawConfig, *token.Token, "token")
+			if err != nil {
+				return err
+			}
+
+			externalServicesStore.Update(context.Background(),
+				conf.Get().AuthProviders,
+				svc.ID,
+				&database.ExternalServiceUpdate{
+					Config:         &rawConfig,
+					TokenExpiresAt: token.ExpiresAt,
+				},
+			)
+
+			return nil
+		}
+
+		installationAuther, err := github.NewGitHubAppInstallationAuthenticator(installationID, c.Token, svc.TokenExpiresAt, installationRefreshFunc)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating GitHub App installation authenticator")
+		}
+
+		v3Client = github.NewV3Client(v3ClientLogger, urn, apiURL, installationAuther, cli)
+		v4Client = github.NewV4Client(urn, apiURL, installationAuther, cli)
 
 		useGitHubApp = true
 	}
