@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"net/url"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 
@@ -59,33 +58,7 @@ func newAppProvider(
 				With(log.String("appID", appID)),
 			urn, apiURL, appAuther, cli)
 
-		installationRefreshFunc := func(auther *github.GitHubAppInstallationAuthenticator) error {
-			token, err := appClient.CreateAppInstallationAccessToken(context.Background(), installationID)
-			if err != nil {
-				return err
-			}
-
-			auther.InstallationAccessToken = token.GetToken()
-			auther.Expiry = token.ExpiresAt
-
-			rawConfig, err = jsonc.Edit(rawConfig, token.GetToken(), "token")
-			if err != nil {
-				return err
-			}
-
-			db.ExternalServices().Update(context.Background(),
-				conf.Get().AuthProviders,
-				svc.ID,
-				&database.ExternalServiceUpdate{
-					Config:         &rawConfig,
-					TokenExpiresAt: token.ExpiresAt,
-				},
-			)
-
-			return nil
-		}
-
-		installationAuther, err = github.NewGitHubAppInstallationAuthenticator(installationID, c.Token, svc.TokenExpiresAt, installationRefreshFunc)
+		installationAuther, err = github.NewGitHubAppInstallationAuthenticator(installationID, c.Token, svc.TokenExpiresAt, database.GetAppInstallationRefreshFunc(db.ExternalServices(), installationID, svc, appClient))
 		if err != nil {
 			return nil, errors.Wrap(err, "new GitHub App installation auther")
 		}

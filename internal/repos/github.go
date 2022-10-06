@@ -259,38 +259,7 @@ func newGithubSource(
 				With(log.String("appID", appID)),
 			urn, apiURL, appAuther, cli)
 
-		rawConfig, err := svc.Config.Decrypt(context.Background())
-		if err != nil {
-			return nil, errors.Wrap(err, "decrypting service config")
-		}
-
-		installationRefreshFunc := func(auther *github.GitHubAppInstallationAuthenticator) error {
-			token, err := appClient.CreateAppInstallationAccessToken(context.Background(), installationID)
-			if err != nil {
-				return err
-			}
-
-			auther.InstallationAccessToken = token.GetToken()
-			auther.Expiry = token.ExpiresAt
-
-			rawConfig, err = jsonc.Edit(rawConfig, *token.Token, "token")
-			if err != nil {
-				return err
-			}
-
-			externalServicesStore.Update(context.Background(),
-				conf.Get().AuthProviders,
-				svc.ID,
-				&database.ExternalServiceUpdate{
-					Config:         &rawConfig,
-					TokenExpiresAt: token.ExpiresAt,
-				},
-			)
-
-			return nil
-		}
-
-		installationAuther, err := github.NewGitHubAppInstallationAuthenticator(installationID, c.Token, svc.TokenExpiresAt, installationRefreshFunc)
+		installationAuther, err := github.NewGitHubAppInstallationAuthenticator(installationID, c.Token, svc.TokenExpiresAt, database.GetAppInstallationRefreshFunc(externalServicesStore, installationID, svc, appClient))
 		if err != nil {
 			return nil, errors.Wrap(err, "creating GitHub App installation authenticator")
 		}
