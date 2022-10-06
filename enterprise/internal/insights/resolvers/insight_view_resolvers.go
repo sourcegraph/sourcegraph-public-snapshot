@@ -1118,15 +1118,6 @@ func seriesFound(existingSeries types.InsightViewSeries, inputSeries []graphqlba
 	return false
 }
 
-func getExistingSeriesRepositories(seriesId string, existingSeries []types.InsightViewSeries) []string {
-	for i := range existingSeries {
-		if existingSeries[i].SeriesID == seriesId {
-			return existingSeries[i].Repositories
-		}
-	}
-	return nil
-}
-
 func (r *Resolver) DeleteInsightView(ctx context.Context, args *graphqlbackend.DeleteInsightViewArgs) (*graphqlbackend.EmptyResponse, error) {
 	var viewId string
 	err := relay.UnmarshalSpec(args.Id, &viewId)

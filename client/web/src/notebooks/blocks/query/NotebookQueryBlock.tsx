@@ -20,7 +20,6 @@ import { editorHeight } from '@sourcegraph/shared/src/components/CodeMirrorEdito
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -30,6 +29,7 @@ import { LoadingSpinner, useObservable, Icon } from '@sourcegraph/wildcard'
 
 import { BlockProps, QueryBlock } from '../..'
 import { AuthenticatedUser } from '../../../auth'
+import { SearchPatternType } from '../../../graphql-operations'
 import { useExperimentalFeatures } from '../../../stores'
 import { blockKeymap, focusEditor as focusCodeMirrorInput } from '../../codemirror-utils'
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
@@ -87,6 +87,8 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
         const [editor, setEditor] = useState<EditorView>()
         const searchResults = useObservable(output ?? of(undefined))
         const [executedQuery, setExecutedQuery] = useState<string>(input.query)
+        const applySuggestionsOnEnter =
+            useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
         const onInputChange = useCallback(
             (query: string) => onBlockInputChange(id, { type: 'query', input: { query } }),
@@ -141,8 +143,9 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                     isSourcegraphDotCom,
                     globbing,
                     fetchSuggestions: fetchStreamSuggestions,
+                    applyOnEnter: applySuggestionsOnEnter,
                 }),
-            [isSourcegraphDotCom, globbing]
+            [isSourcegraphDotCom, globbing, applySuggestionsOnEnter]
         )
 
         // Focus editor on component creation if necessary

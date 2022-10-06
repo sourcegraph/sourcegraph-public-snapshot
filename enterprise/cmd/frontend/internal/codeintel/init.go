@@ -16,13 +16,12 @@ import (
 	policiesgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
 	uploadgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	executorgraphql "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-func Init(ctx context.Context, db database.DB, config *Config, enterpriseServices *enterprise.Services, services *Services) error {
+func Init(ctx context.Context, db database.DB, config *Config, enterpriseServices *enterprise.Services, services *FrontendServices) error {
 	oc := func(name string) *observation.Context {
 		return &observation.Context{
 			Logger:     logger.Scoped(name+".transport.graphql", "codeintel "+name+" graphql transport"),
@@ -32,22 +31,21 @@ func Init(ctx context.Context, db database.DB, config *Config, enterpriseService
 	}
 
 	executorResolver := executorgraphql.New(db)
-	codenavResolver := codenavgraphql.New(services.CodeNavSvc, services.gitserverClient, config.MaximumIndexesPerMonikerSearch, config.HunkCacheSize, oc("codenav"))
-	policyResolver := policiesgraphql.New(services.PoliciesSvc, oc("policies"))
-	autoindexingResolver := autoindexinggraphql.New(services.AutoIndexingSvc, oc("autoindexing"))
-	uploadResolver := uploadgraphql.New(services.UploadSvc, oc("upload"))
 
-	innerResolver := codeintelresolvers.NewResolver(codenavResolver, executorResolver, policyResolver, autoindexingResolver, uploadResolver)
+	codenavRootResolver := codenavgraphql.NewRootResolver(services.CodenavService, services.AutoIndexingService, services.UploadsService, services.PoliciesService, services.gitserverClient, config.MaximumIndexesPerMonikerSearch, config.HunkCacheSize, oc("codenav"))
+	policyRootResolver := policiesgraphql.NewRootResolver(services.PoliciesService, oc("policies"))
+	autoindexingRootResolver := autoindexinggraphql.NewRootResolver(services.AutoIndexingService, services.UploadsService, services.PoliciesService, oc("autoindexing"))
+	uploadRootResolver := uploadgraphql.NewRootResolver(services.UploadsService, services.AutoIndexingService, services.PoliciesService, oc("upload"))
 
-	observationCtx := &observation.Context{Logger: nil, Tracer: &trace.Tracer{}, Registerer: nil, HoneyDataset: &honey.Dataset{}}
+	resolvers := codeintelresolvers.NewResolver(codenavRootResolver, executorResolver, policyRootResolver, autoindexingRootResolver, uploadRootResolver)
 
-	enterpriseServices.CodeIntelResolver = codeintelgqlresolvers.NewResolver(db, services.gitserverClient, innerResolver, observationCtx)
+	enterpriseServices.CodeIntelResolver = codeintelgqlresolvers.NewResolver(resolvers)
 	enterpriseServices.NewCodeIntelUploadHandler = newUploadHandler(services)
 
 	return nil
 }
 
-func newUploadHandler(services *Services) func(internal bool) http.Handler {
+func newUploadHandler(services *FrontendServices) func(internal bool) http.Handler {
 	uploadHandler := func(internal bool) http.Handler {
 		if internal {
 			return services.InternalUploadHandler

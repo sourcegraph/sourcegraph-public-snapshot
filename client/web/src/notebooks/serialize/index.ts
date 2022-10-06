@@ -2,11 +2,16 @@ import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { isErrorLike } from '@sourcegraph/common'
-import { IHighlightLineRange, NotebookBlock, SymbolKind } from '@sourcegraph/shared/src/schema'
 import { toAbsoluteBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { Block, BlockInit, BlockInput, FileBlockInput, SerializableBlock, SymbolBlockInput } from '..'
-import { CreateNotebookBlockInput, NotebookBlockType } from '../../graphql-operations'
+import {
+    CreateNotebookBlockInput,
+    NotebookBlockType,
+    SymbolKind,
+    HighlightLineRange,
+    NotebookFields,
+} from '../../graphql-operations'
 import { parseBrowserRepoURL } from '../../util/url'
 
 export function serializeBlockToMarkdown(block: SerializableBlock, sourcegraphURL: string): Observable<string> {
@@ -135,11 +140,11 @@ export function deserializeBlockInput(type: Block['type'], input: string): Block
     }
 }
 
-export function isSingleLineRange(lineRange: IHighlightLineRange | null): boolean {
+export function isSingleLineRange(lineRange: HighlightLineRange | null): boolean {
     return lineRange ? lineRange.startLine + 1 === lineRange.endLine : false
 }
 
-export function serializeLineRange(lineRange: IHighlightLineRange | null): string {
+export function serializeLineRange(lineRange: HighlightLineRange | null): string {
     if (!lineRange) {
         return ''
     }
@@ -151,7 +156,7 @@ export function serializeLineRange(lineRange: IHighlightLineRange | null): strin
 
 const LINE_RANGE_REGEX = /^(\d+)(-\d+)?$/
 
-export function parseLineRange(value: string): IHighlightLineRange | null {
+export function parseLineRange(value: string): HighlightLineRange | null {
     const matches = value.match(LINE_RANGE_REGEX)
     if (matches === null) {
         return null
@@ -176,7 +181,7 @@ export function blockToGQLInput(block: BlockInit): CreateNotebookBlockInput {
     }
 }
 
-export function GQLBlockToGQLInput(block: NotebookBlock): CreateNotebookBlockInput {
+export function GQLBlockToGQLInput(block: NotebookFields['blocks'][number]): CreateNotebookBlockInput {
     switch (block.__typename) {
         case 'MarkdownBlock':
             return { id: block.id, type: NotebookBlockType.MARKDOWN, markdownInput: block.markdownInput }

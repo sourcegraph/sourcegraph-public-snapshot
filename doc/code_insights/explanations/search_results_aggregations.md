@@ -2,6 +2,8 @@
 
 In version 4.0 and later, Code Insights provides aggregations shown on the search screen.
 
+This lets you track version and license spread, library adoption, common commit messages, lengths of specific files, usage frequencies, and the [many common use case examples here](../references/search_aggregations_use_cases.md).
+
 ## Available aggregations: 
 
 You can aggregate any search by: 
@@ -19,9 +21,11 @@ We may continue adding new aggregation categories, like date and code host, base
 
 ## Feature visibility
 
-You can turn the aggregations on with the experimental feature setting: `enableSearchResultsAggregations`
+You can turn the aggregations on with the experimental feature setting: `searchResultsAggregations` in your user, org, or site settings. 
 
-You can turn off just the proactive aggregations with the setting: `disableProactiveSearchAggregations`
+You can turn off just the proactive aggregations by setting `proactiveSearchResultsAggregations` to `false`. 
+This prevents aggregations from running on every search and requires users to explicitly click to run them. 
+(The main reason to consider disabling proactive aggregations is if you're seeing a heavy or unexpected load on your instance, but as noted below in [Limitations](#limitations) there are limits that keep the overall resource needs low to begin with.) 
 
 ## Drilldowns 
 
@@ -39,7 +43,8 @@ At the moment all aggregations search queries are run with a 2-second timeout, e
 
 ### Count limits
 
-At the moment all aggregations search queries are run with `count:all`, even if your search specified a count. 
+Aggregation search queries that run proactively are run with `count:50000`. This default can be changed using the site setting `insights.aggregations.proactiveResultLimit`. 
+If the number of results exceeds this limit, the user can choose to explicitly run the aggregation, and these explicitly-run aggregations use `count:all`.
 
 ### Best effort aggregation
 
@@ -57,17 +62,21 @@ The side panel will display a maximum of 10 bars. If expanded, a maximum of 30 b
 
 Aggregations by capture group will match on the first capture group in the search query only. For example, for a query:
 
-```regexp
+```sgquery
 hello-(\w+)-(\w+)
 ```
 
 and a match like `hello-beautiful-world` only `beautiful` will be shown as a result.
 
+### Files with the same paths in distinct repositories
+
+The "file" aggregation groups only by path, not by repository, meaning files with the same path but from different repos will be grouped together. Attach a `repo:` filter to your search to focus on a specific repo. 
+
 ### Saving aggregations to a code insights dashboard
 
 Saving aggregations to a dashboard of code insights is not yet available. 
 
-### Slow diff and commit queries
+### Slower diff and commit queries
 
 Running aggregations by author is only allowed for `type:diff` and `type:commit` queries, which are likely not to complete within a 2-second timeout.
 You can trigger an explicit search with an extended 1-minute timeout, or you can limit your query using a single-repo filter (like `repo:^github\.com/sourcegraph/sourcegraph$`) combined with a `before` or `after` filter.
@@ -79,6 +88,6 @@ Aggregations for structural searches are unlikely to complete within a 2-second 
 ### Standard searches with embedded regexp
 
 Standard searches with embedded regexp such as below do not support aggregation by capture group. This is because they are functionally similar to a query with an `or` operator.
-```regexp
+```sgquery
 database /(\w+)/
 ```

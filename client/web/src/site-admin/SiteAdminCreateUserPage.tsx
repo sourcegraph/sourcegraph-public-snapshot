@@ -7,7 +7,7 @@ import { catchError, mergeMap, tap } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { asError } from '@sourcegraph/common'
+import { asError, logger } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { Button, Link, Alert, Label, H2, Text } from '@sourcegraph/wildcard'
 
@@ -63,7 +63,7 @@ export class SiteAdminCreateUserPage extends React.Component<RouteComponentProps
                     mergeMap(({ username, email }) =>
                         createUser(username, email).pipe(
                             catchError(error => {
-                                console.error(error)
+                                logger.error(error)
                                 this.setState({
                                     createUserResult: undefined,
                                     loading: false,
@@ -81,7 +81,7 @@ export class SiteAdminCreateUserPage extends React.Component<RouteComponentProps
                             errorDescription: undefined,
                             createUserResult,
                         }),
-                    error => console.error(error)
+                    error => logger.error(error)
                 )
         )
     }

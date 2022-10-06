@@ -36,8 +36,6 @@ import {
     InvalidateSessionsByIDVariables,
     DeleteUserResult,
     DeleteUserVariables,
-    UpdateMirrorRepositoryResult,
-    UpdateMirrorRepositoryVariables,
     ScheduleRepositoryPermissionsSyncResult,
     ScheduleRepositoryPermissionsSyncVariables,
     OutOfBandMigrationFields,
@@ -145,6 +143,8 @@ const mirrorRepositoryInfoFieldsFragment = gql`
         cloneInProgress
         updatedAt
         lastError
+        byteSize
+        shard
     }
 `
 
@@ -241,22 +241,21 @@ export function fetchAllRepositoriesAndPollIfEmptyOrAnyCloning(
     )
 }
 
-export function updateMirrorRepository(args: { repository: Scalars['ID'] }): Observable<void> {
-    return requestGraphQL<UpdateMirrorRepositoryResult, UpdateMirrorRepositoryVariables>(
-        gql`
-            mutation UpdateMirrorRepository($repository: ID!) {
-                updateMirrorRepository(repository: $repository) {
-                    alwaysNil
-                }
-            }
-        `,
-        args
-    ).pipe(
-        map(dataOrThrowErrors),
-        tap(() => resetAllMemoizationCaches()),
-        map(() => undefined)
-    )
-}
+export const UPDATE_MIRROR_REPOSITORY = gql`
+    mutation UpdateMirrorRepository($repository: ID!) {
+        updateMirrorRepository(repository: $repository) {
+            alwaysNil
+        }
+    }
+`
+
+export const CHECK_MIRROR_REPOSITORY_CONNECTION = gql`
+    mutation CheckMirrorRepositoryConnection($repository: ID, $name: String) {
+        checkMirrorRepositoryConnection(repository: $repository, name: $name) {
+            error
+        }
+    }
+`
 
 export function checkMirrorRepositoryConnection(
     args:
@@ -267,16 +266,7 @@ export function checkMirrorRepositoryConnection(
               name: string
           }
 ): Observable<GQL.ICheckMirrorRepositoryConnectionResult> {
-    return mutateGraphQL(
-        gql`
-            mutation CheckMirrorRepositoryConnection($repository: ID, $name: String) {
-                checkMirrorRepositoryConnection(repository: $repository, name: $name) {
-                    error
-                }
-            }
-        `,
-        args
-    ).pipe(
+    return mutateGraphQL(CHECK_MIRROR_REPOSITORY_CONNECTION, args).pipe(
         map(dataOrThrowErrors),
         tap(() => resetAllMemoizationCaches()),
         map(data => data.checkMirrorRepositoryConnection)
@@ -299,6 +289,14 @@ export function scheduleRepositoryPermissionsSync(args: { repository: Scalars['I
         mapTo(undefined)
     )
 }
+
+export const RECLONE_REPOSITORY_MUTATION = gql`
+    mutation RecloneRepository($repo: ID!) {
+        recloneRepository(repo: $repo) {
+            alwaysNil
+        }
+    }
+`
 
 /**
  * Fetches usage statistics for all users.
@@ -677,23 +675,23 @@ export function deleteOrganization(organization: Scalars['ID'], hard?: boolean):
         .toPromise()
 }
 
-export function fetchSiteUpdateCheck(): Observable<SiteUpdateCheckResult['site']> {
-    return requestGraphQL<SiteUpdateCheckResult, SiteUpdateCheckVariables>(
-        gql`
-            query SiteUpdateCheck {
-                site {
-                    buildVersion
-                    productVersion
-                    updateCheck {
-                        pending
-                        checkedAt
-                        errorMessage
-                        updateVersionAvailable
-                    }
-                }
+export const SITE_UPDATE_CHECK = gql`
+    query SiteUpdateCheck {
+        site {
+            buildVersion
+            productVersion
+            updateCheck {
+                pending
+                checkedAt
+                errorMessage
+                updateVersionAvailable
             }
-        `
-    ).pipe(
+        }
+    }
+`
+
+export function fetchSiteUpdateCheck(): Observable<SiteUpdateCheckResult['site']> {
+    return requestGraphQL<SiteUpdateCheckResult, SiteUpdateCheckVariables>(SITE_UPDATE_CHECK).pipe(
         map(dataOrThrowErrors),
         map(data => data.site)
     )
@@ -830,6 +828,7 @@ export const REPOSITORY_STATS = gql`
             cloned
             cloning
             failedFetch
+            indexed
         }
     }
 `

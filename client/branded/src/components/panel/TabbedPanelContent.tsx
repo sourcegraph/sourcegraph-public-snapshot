@@ -9,7 +9,7 @@ import { map, switchMap } from 'rxjs/operators'
 
 import { ContributableMenu, Contributions, Evaluated } from '@sourcegraph/client-api'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
-import { isDefined, combineLatestOrDefault } from '@sourcegraph/common'
+import { isDefined, combineLatestOrDefault, isErrorLike } from '@sourcegraph/common'
 import { Location } from '@sourcegraph/extension-api-types'
 import { FetchFileParameters } from '@sourcegraph/search-ui'
 import { ActionsNavItems } from '@sourcegraph/shared/src/actions/ActionsNavItems'
@@ -26,6 +26,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, useObservable, Tab, TabList, TabPanel, TabPanels, Tabs, Icon, Tooltip } from '@sourcegraph/wildcard'
 
+import { MixPreciseAndSearchBasedReferencesToggle } from './MixPreciseAndSearchBasedReferencesToggle'
 import { registerPanelToolbarContributions } from './views/contributions'
 import { EmptyPanelView } from './views/EmptyPanelView'
 import { ExtensionsLoadingPanelView } from './views/ExtensionsLoadingView'
@@ -147,6 +148,11 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
         )
     )
 
+    const isTabbedReferencesPanelEnabled =
+        !isErrorLike(props.settingsCascade.final) &&
+        props.settingsCascade.final !== null &&
+        props.settingsCascade.final['codeIntel.referencesPanel'] === 'tabbed'
+
     const [tabIndex, setTabIndex] = useState(0)
     const location = useLocation()
     const { hash, pathname, search } = location
@@ -193,11 +199,13 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
                                 .filter(panelView =>
                                     panelView.selector !== null ? match(panelView.selector, document) : true
                                 )
-                                .filter(
-                                    panelView =>
-                                        // We use the new reference panel and don't want to display additional
-                                        // 'implementations_' panels
-                                        !panelView.component?.locationProvider?.startsWith('implementations_')
+                                .filter(panelView =>
+                                    // If we use the tree-view reference panel
+                                    // we don't want to display additional
+                                    // 'implementations_' panels
+                                    !isTabbedReferencesPanelEnabled
+                                        ? !panelView.component?.locationProvider?.startsWith('implementations_')
+                                        : true
                                 )
                                 .map((panelView: PanelViewWithComponent) => {
                                     const locationProviderID = panelView.component?.locationProvider
@@ -229,7 +237,7 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
                     )
                 )
             )
-        }, [extensionsController])
+        }, [isTabbedReferencesPanelEnabled, extensionsController])
     )
 
     const panelViews = useMemo(() => [...(builtinTabbedPanels || []), ...(extensionPanels || [])], [
@@ -299,29 +307,37 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
                 wrapperClassName={classNames(styles.panelHeader, 'sticky-top')}
                 actions={
                     <div className="align-items-center d-flex">
-                        {activeTab && extensionsController !== null && (
-                            <>
-                                <ActionsNavItems
-                                    {...props}
-                                    extensionsController={extensionsController}
-                                    // TODO remove references to global branded classes from shared, get class name from prop
-                                    // This is okay for now because the Panel is currently only used in the webapp
-                                    listClass="d-flex justify-content-end list-unstyled m-0 align-items-center"
-                                    listItemClass="px-2 mx-2"
-                                    actionItemClass={classNames(styles.actionItemUnconstrained, 'font-weight-medium')}
-                                    actionItemIconClass="icon-inline"
-                                    menu={ContributableMenu.PanelToolbar}
-                                    scope={{
-                                        type: 'panelView',
-                                        id: activeTab.id,
-                                        hasLocations: Boolean(activeTab.hasLocations),
-                                    }}
-                                    wrapInList={true}
-                                    location={location}
-                                    transformContributions={transformPanelContributions}
+                        <ul className="d-flex justify-content-end list-unstyled m-0 align-items-center">
+                            {activeTab && (
+                                <MixPreciseAndSearchBasedReferencesToggle
+                                    settingsCascade={props.settingsCascade}
+                                    platformContext={props.platformContext}
                                 />
-                            </>
-                        )}
+                            )}
+                            {activeTab && extensionsController !== null && (
+                                <>
+                                    <ActionsNavItems
+                                        {...props}
+                                        extensionsController={extensionsController}
+                                        listItemClass="px-2 mx-2"
+                                        actionItemClass={classNames(
+                                            styles.actionItemUnconstrained,
+                                            'font-weight-medium'
+                                        )}
+                                        actionItemIconClass="icon-inline"
+                                        menu={ContributableMenu.PanelToolbar}
+                                        scope={{
+                                            type: 'panelView',
+                                            id: activeTab.id,
+                                            hasLocations: Boolean(activeTab.hasLocations),
+                                        }}
+                                        wrapInList={false}
+                                        location={location}
+                                        transformContributions={transformPanelContributions}
+                                    />
+                                </>
+                            )}
+                        </ul>
                         <Tooltip content="Close panel" placement="left">
                             <Button
                                 onClick={handlePanelClose}
@@ -378,7 +394,11 @@ function transformPanelContributions(contributions: Evaluated<Contributions>): E
         // work for the case this is hackily trying to prevent: multiple extensions generated with the
         // same manifest.
         const strings = new Set(panelMenuItems.map(menuItem => JSON.stringify(menuItem)))
-        const uniquePanelMenuItems = [...strings].map(string => JSON.parse(string))
+        const uniquePanelMenuItems = [...strings]
+            .map(string => JSON.parse(string))
+            // We render the MixPreciseAndSearchBasedReferencesToggle in React now
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+            .filter((item: any) => item.action !== 'mixPreciseAndSearchBasedReferences.toggle')
 
         return {
             ...contributions,

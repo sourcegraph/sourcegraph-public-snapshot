@@ -238,12 +238,11 @@ func parseShortLog(out []byte) ([]*gitdomain.ContributorCount, error) {
 // the following somewhat-common malformed syntax where a user has misconfigured
 // their email address as their name:
 //
-// 	foo@gmail.com <foo@gmail.com>
+//	foo@gmail.com <foo@gmail.com>
 //
 // As a valid name, whereas mail.ParseAddress would return an error:
 //
-// 	mail: expected single address, got "<foo@gmail.com>"
-//
+//	mail: expected single address, got "<foo@gmail.com>"
 func lenientParseAddress(address string) (*mail.Address, error) {
 	addr, err := mail.ParseAddress(address)
 	if err != nil && strings.Contains(err.Error(), "expected single address") {
@@ -366,10 +365,6 @@ func (c *clientImplementor) DiffSymbols(ctx context.Context, repo api.RepoName, 
 
 // ReadDir reads the contents of the named directory at commit.
 func (c *clientImplementor) ReadDir(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error) {
-	if Mocks.ReadDir != nil {
-		return Mocks.ReadDir(commit, path, recurse)
-	}
-
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: ReadDir")
 	span.SetTag("Commit", commit)
 	span.SetTag("Path", path)
@@ -945,9 +940,6 @@ func runRevParse(ctx context.Context, cmd GitCommand, spec string) (api.CommitID
 
 // LsFiles returns the output of `git ls-files`.
 func (c *clientImplementor) LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pathspecs ...gitdomain.Pathspec) ([]string, error) {
-	if Mocks.LsFiles != nil {
-		return Mocks.LsFiles(repo, commit)
-	}
 	args := []string{
 		"ls-files",
 		"-z",
@@ -1042,8 +1034,8 @@ func (c *clientImplementor) ListDirectoryChildren(
 // cleanDirectoriesForLsTree sanitizes the input dirnames to a git ls-tree command. There are a
 // few peculiarities handled here:
 //
-//   1. The root of the tree must be indicated with `.`, and
-//   2. In order for git ls-tree to return a directory's contents, the name must end in a slash.
+//  1. The root of the tree must be indicated with `.`, and
+//  2. In order for git ls-tree to return a directory's contents, the name must end in a slash.
 func cleanDirectoriesForLsTree(dirnames []string) []string {
 	var args []string
 	for _, dir := range dirnames {
@@ -1159,9 +1151,6 @@ func parseTags(in []byte) ([]*gitdomain.Tag, error) {
 // If the repository is empty or currently being cloned, empty values and no
 // error are returned.
 func (c *clientImplementor) GetDefaultBranch(ctx context.Context, repo api.RepoName, short bool) (refName string, commit api.CommitID, err error) {
-	if Mocks.GetDefaultBranch != nil {
-		return Mocks.GetDefaultBranch(repo)
-	}
 	args := []string{"symbolic-ref", "HEAD"}
 	if short {
 		args = append(args, "--short")
@@ -1286,9 +1275,6 @@ func (c *clientImplementor) ReadFile(ctx context.Context, repo api.RepoName, com
 // NewFileReader returns an io.ReadCloser reading from the named file at commit.
 // The caller should always close the reader after use
 func (c *clientImplementor) NewFileReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string, checker authz.SubRepoPermissionChecker) (io.ReadCloser, error) {
-	if Mocks.NewFileReader != nil {
-		return Mocks.NewFileReader(commit, name)
-	}
 	a := actor.FromContext(ctx)
 	if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, name); err != nil {
 		return nil, err
@@ -1381,10 +1367,6 @@ func (br *blobReader) convertError(err error) error {
 
 // Stat returns a FileInfo describing the named file at commit.
 func (c *clientImplementor) Stat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
-	if Mocks.Stat != nil {
-		return Mocks.Stat(commit, path)
-	}
-
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: Stat")
 	span.SetTag("Commit", commit)
 	span.SetTag("Path", path)
@@ -1433,10 +1415,6 @@ var recordGetCommitQueries = os.Getenv("RECORD_GET_COMMIT_QUERIES") == "1"
 
 // getCommit returns the commit with the given id.
 func (c *clientImplementor) getCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions, checker authz.SubRepoPermissionChecker) (_ *gitdomain.Commit, err error) {
-	if Mocks.GetCommit != nil {
-		return Mocks.GetCommit(id)
-	}
-
 	if honey.Enabled() && recordGetCommitQueries {
 		defer func() {
 			ev := honey.NewEvent("getCommit")
@@ -1499,10 +1477,7 @@ func (c *clientImplementor) GetCommit(ctx context.Context, repo api.RepoName, id
 
 // Commits returns all commits matching the options.
 func (c *clientImplementor) Commits(ctx context.Context, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error) {
-	if Mocks.Commits != nil {
-		return Mocks.Commits(repo, opt)
-	}
-
+	opt = addNameOnly(opt, checker)
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: Commits")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
@@ -1510,7 +1485,6 @@ func (c *clientImplementor) Commits(ctx context.Context, repo api.RepoName, opt 
 	if err := checkSpecArgSafety(opt.Range); err != nil {
 		return nil, err
 	}
-	opt = addNameOnly(opt, checker)
 	return c.commitLog(ctx, repo, opt, checker)
 }
 

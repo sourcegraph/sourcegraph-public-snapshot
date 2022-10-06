@@ -18,10 +18,10 @@ import (
 	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/download"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/interrupt"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/internal/download"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -43,6 +43,14 @@ func Commands(ctx context.Context, parentEnv map[string]string, verbose bool, cm
 
 	root, err := root.RepositoryRoot()
 	if err != nil {
+		return err
+	}
+
+	// binaries get installed to <repository-root>/.bin. If the binary is installed with go build, then go
+	// will create .bin directory. Some binaries (like docsite) get downloaded instead of built and therefore
+	// need the directory to exist before hand.
+	binDir := filepath.Join(root, ".bin")
+	if err := os.Mkdir(binDir, 0755); err != nil && !os.IsExist(err) {
 		return err
 	}
 
@@ -552,7 +560,7 @@ var installFuncs = map[string]installFunc{
 		}
 		archiveName := fmt.Sprintf("docsite_%s_%s_%s", version, runtime.GOOS, runtime.GOARCH)
 		url := fmt.Sprintf("https://github.com/sourcegraph/docsite/releases/download/%s/%s", version, archiveName)
-		_, err = download.Executable(ctx, url, target)
+		_, err = download.Executable(ctx, url, target, false)
 		return err
 	},
 }

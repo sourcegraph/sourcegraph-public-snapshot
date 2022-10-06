@@ -14,7 +14,6 @@ import { CodeExcerpt } from '@sourcegraph/search-ui'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'
-import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'
 import { getRepositoryUrl } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -24,6 +23,7 @@ import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeI
 import { LoadingSpinner, useObservable, Icon, Alert } from '@sourcegraph/wildcard'
 
 import { BlockProps, FileBlock, FileBlockInput } from '../..'
+import { HighlightLineRange } from '../../../graphql-operations'
 import { focusEditor } from '../../codemirror-utils'
 import { parseFileBlockInput } from '../../serialize'
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
@@ -77,7 +77,7 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
         )
 
         const onLineRangeChange = useCallback(
-            (lineRange: IHighlightLineRange | null) => {
+            (lineRange: HighlightLineRange | null) => {
                 onFileSelected({
                     repositoryName: input.repositoryName,
                     revision: input.revision,

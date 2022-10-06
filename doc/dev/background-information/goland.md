@@ -22,3 +22,15 @@ Useful feature for making Go code comments look consistent across the codebase. 
 
 See it in action here:
 https://www.jetbrains.com/go/guide/tips/fill-paragraph-for-go-comments/
+
+### Use "code folding" to see previews of formatted strings
+
+Wondering what string is logged here? 
+
+`logger.Info(fmt.Sprintf("%s (sampling immunity token: %s)", record.Action, uuid.New().String()), fields...)`
+
+Enable code folding to see string previews:
+
+- Editor -> General -> Code Folding -> check "Format strings" in "Go" section
+
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/img/193618371-1b794c8d-3b41-472e-94b8-8f04a0c19e76.png" class="lead-screenshot">

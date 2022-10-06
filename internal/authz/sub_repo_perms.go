@@ -43,7 +43,7 @@ type SubRepoPermissionChecker interface {
 	// If the userID represents an anonymous user, ErrUnauthenticated is returned.
 	Permissions(ctx context.Context, userID int32, content RepoContent) (Perms, error)
 
-	// FilePermissionFunc returns a FilePermissionFunc for userID in repo.
+	// FilePermissionsFunc returns a FilePermissionFunc for userID in repo.
 	// This function should only be used during the lifetime of a request. It
 	// exists to amortize the cost of checking many files in a repo.
 	//
@@ -125,10 +125,44 @@ type cachedRules struct {
 	timestamp time.Time
 }
 
+type path struct {
+	globPath  glob.Glob
+	exclusion bool
+}
+
 type compiledRules struct {
-	includes    []glob.Glob
-	excludes    []glob.Glob
-	dirIncludes []glob.Glob
+	paths []path
+	// parent directories of all included paths so that we can still see
+	// the paths in file navigation
+	dirs []glob.Glob
+}
+
+// GetPermissionsForPath tries to match a given path to a list of rules.
+// Since the last applicable rule is the one that applies, the list is
+// traversed in reverse, and the function returns as soon as a match is found.
+// If no match is found, None is returned.
+func (rules compiledRules) GetPermissionsForPath(path string) Perms {
+	// We want to match any directories above paths that we include so that we
+	// can browse down the file hierarchy.
+	if strings.HasSuffix(path, "/") {
+		for _, dir := range rules.dirs {
+			if dir.Match(path) {
+				return Read
+			}
+		}
+	}
+
+	for i := len(rules.paths) - 1; i >= 0; i-- {
+		if rules.paths[i].globPath.Match(path) {
+			if rules.paths[i].exclusion {
+				return None
+			}
+			return Read
+		}
+	}
+
+	// Return None if no rule matches
+	return None
 }
 
 // NewSubRepoPermsClient instantiates an instance of authz.SubRepoPermsClient
@@ -227,64 +261,62 @@ func (s *SubRepoPermsClient) Permissions(ctx context.Context, userID int32, cont
 		}
 	}()
 
+	f, err := s.FilePermissionsFunc(ctx, userID, content.Repo)
+	if err != nil {
+		return None, err
+	}
+	return f(content.Path)
+}
+
+// filePermissionsFuncAllRead is a FilePermissionFunc which _always_ returns
+// Read. Only use in cases that sub repo permission checks should not be done.
+func filePermissionsFuncAllRead(_ string) (Perms, error) {
+	return Read, nil
+}
+
+func (s *SubRepoPermsClient) FilePermissionsFunc(ctx context.Context, userID int32, repo api.RepoName) (FilePermissionFunc, error) {
+	// Are sub-repo permissions enabled at the site level
+	if !s.Enabled() {
+		return filePermissionsFuncAllRead, nil
+	}
+
 	if s.permissionsGetter == nil {
-		return None, errors.New("PermissionsGetter is nil")
+		return nil, errors.New("PermissionsGetter is nil")
 	}
 
 	if userID == 0 {
-		return None, &ErrUnauthenticated{}
-	}
-
-	// An empty path is equivalent to repo permissions so we can assume it has
-	// already been checked at that level.
-	if content.Path == "" {
-		return Read, nil
+		return nil, &ErrUnauthenticated{}
 	}
 
 	repoRules, err := s.getCompiledRules(ctx, userID)
 	if err != nil {
-		return None, errors.Wrap(err, "compiling match rules")
+		return nil, errors.Wrap(err, "compiling match rules")
 	}
 
-	rules, ok := repoRules[content.Repo]
-	if !ok {
+	rules, rulesExist := repoRules[repo]
+	if !rulesExist {
 		// If we make it this far it implies that we have access at the repo level.
 		// Having any empty set of rules here implies that we can access the whole repo.
 		// Repos that support sub-repo permissions will only have an entry in our
 		// repo_permissions table after all sub-repo permissions have been processed.
-		return Read, nil
+		return filePermissionsFuncAllRead, nil
 	}
 
-	// The current path needs to either be included or NOT excluded and we'll give
-	// preference to exclusion.
-	for _, rule := range rules.excludes {
-		if rule.Match(content.Path) {
-			return None, nil
-		}
-	}
-	for _, rule := range rules.includes {
-		if rule.Match(content.Path) {
+	return func(path string) (Perms, error) {
+		// An empty path is equivalent to repo permissions so we can assume it has
+		// already been checked at that level.
+		if path == "" {
 			return Read, nil
 		}
-	}
 
-	// We also want to match any directories above paths that we include so that we
-	// can browse down the file hierarchy.
-	if strings.HasSuffix(content.Path, "/") {
-		for _, rule := range rules.dirIncludes {
-			if rule.Match(content.Path) {
-				return Read, nil
-			}
+		// Prefix path with "/", otherwise suffix rules like "**/file.txt" won't match
+		if !strings.HasPrefix(path, "/") {
+			path = "/" + path
 		}
-	}
 
-	// Return None if no rule matches to be safe
-	return None, nil
-}
-
-func (s *SubRepoPermsClient) FilePermissionsFunc(ctx context.Context, userID int32, repo api.RepoName) (FilePermissionFunc, error) {
-	return func(path string) (Perms, error) {
-		return s.Permissions(ctx, userID, RepoContent{Repo: repo, Path: path})
+		// Iterate through all rules for the current path, and the final match takes
+		// preference.
+		return rules.GetPermissionsForPath(path), nil
 	}, nil
 }
 
@@ -318,15 +350,23 @@ func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32)
 			timestamp: time.Time{},
 		}
 		for repo, perms := range repoPerms {
-			includes := make([]glob.Glob, 0, len(perms.PathIncludes))
-			dirIncludes := make([]glob.Glob, 0)
+			paths := make([]path, 0, len(perms.Paths))
+			allDirs := make([]glob.Glob, 0)
 			dirSeen := make(map[string]struct{})
-			for _, rule := range perms.PathIncludes {
+			for _, rule := range perms.Paths {
+				exclusion := strings.HasPrefix(rule, "-")
+				rule = strings.TrimPrefix(rule, "-")
+
+				if !strings.HasPrefix(rule, "/") {
+					rule = "/" + rule
+				}
+
 				g, err := glob.Compile(rule, '/')
 				if err != nil {
 					return nil, errors.Wrap(err, "building include matcher")
 				}
-				includes = append(includes, g)
+
+				paths = append(paths, path{g, exclusion})
 
 				// We should include all directories above an include rule
 				dirs := expandDirs(rule)
@@ -338,23 +378,17 @@ func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32)
 					if err != nil {
 						return nil, errors.Wrap(err, "building include matcher for dir")
 					}
-					dirIncludes = append(dirIncludes, g)
+					if exclusion {
+						continue
+					}
+					allDirs = append(allDirs, g)
 					dirSeen[dir] = struct{}{}
 				}
 			}
 
-			excludes := make([]glob.Glob, 0, len(perms.PathExcludes))
-			for _, rule := range perms.PathExcludes {
-				g, err := glob.Compile(rule, '/')
-				if err != nil {
-					return nil, errors.Wrap(err, "building exclude matcher")
-				}
-				excludes = append(excludes, g)
-			}
 			toCache.rules[repo] = compiledRules{
-				includes:    includes,
-				excludes:    excludes,
-				dirIncludes: dirIncludes,
+				paths: paths,
+				dirs:  allDirs,
 			}
 		}
 		toCache.timestamp = s.clock()
@@ -386,16 +420,20 @@ func (s *SubRepoPermsClient) EnabledForRepo(ctx context.Context, repo api.RepoNa
 func expandDirs(rule string) []string {
 	dirs := make([]string, 0)
 
+	// Make sure the rule starts with a slash
+	if !strings.HasPrefix(rule, "/") {
+		rule = "/" + rule
+	}
 	// We can't support rules that start with a wildcard because we can only
 	// see one level of the tree at a time so we have no way of knowing which path leads
 	// to a file the user is allowed to see.
-	if strings.HasPrefix(rule, "*") {
+	if strings.HasPrefix(rule, "/*") {
 		return dirs
 	}
 
 	for {
 		lastSlash := strings.LastIndex(rule, "/")
-		if lastSlash == -1 {
+		if lastSlash <= 0 { // we have to ignore the slash at index 0
 			break
 		}
 		// Drop anything after the last slash
@@ -410,13 +448,12 @@ func expandDirs(rule string) []string {
 // NewSimpleChecker is exposed for testing and allows creation of a simple
 // checker based on the rules provided. The rules are expected to be in glob
 // format.
-func NewSimpleChecker(repo api.RepoName, includes []string, excludes []string) (SubRepoPermissionChecker, error) {
+func NewSimpleChecker(repo api.RepoName, paths []string) (SubRepoPermissionChecker, error) {
 	getter := NewMockSubRepoPermissionsGetter()
 	getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]SubRepoPermissions, error) {
 		return map[api.RepoName]SubRepoPermissions{
 			repo: {
-				PathIncludes: includes,
-				PathExcludes: excludes,
+				Paths: paths,
 			},
 		}, nil
 	})
@@ -608,14 +645,35 @@ func FilterActorPath(ctx context.Context, checker SubRepoPermissionChecker, a *a
 	return perms.Include(Read), nil
 }
 
-func FilterActorFileInfos(ctx context.Context, checker SubRepoPermissionChecker, a *actor.Actor, repo api.RepoName, fis []fs.FileInfo) ([]fs.FileInfo, error) {
+func FilterActorFileInfos(ctx context.Context, checker SubRepoPermissionChecker, a *actor.Actor, repo api.RepoName, fis []fs.FileInfo) (_ []fs.FileInfo, err error) {
+	if doCheck, err := actorSubRepoEnabled(checker, a); err != nil {
+		return nil, errors.Wrap(err, "checking sub-repo permissions")
+	} else if !doCheck {
+		return fis, nil
+	}
+
+	start := time.Now()
+	var checkPathPermsCount int
+	defer func() {
+		// we intentionally use the same metric, since we are essentially
+		// measuring the same operation.
+		metricFilterActorPathsLenTotal.Add(float64(checkPathPermsCount))
+		metricFilterActorPathsDuration.WithLabelValues(strconv.FormatBool(err != nil)).Observe(time.Since(start).Seconds())
+	}()
+
+	checkPathPerms, err := checker.FilePermissionsFunc(ctx, a.UID, repo)
+	if err != nil {
+		return nil, errors.Wrap(err, "checking sub-repo permissions")
+	}
+
 	filtered := make([]fs.FileInfo, 0, len(fis))
 	for _, fi := range fis {
-		include, err := FilterActorFileInfo(ctx, checker, a, repo, fi)
+		checkPathPermsCount++
+		perms, err := checkPathPerms(fileInfoPath(fi))
 		if err != nil {
 			return nil, err
 		}
-		if include {
+		if perms.Include(Read) {
 			filtered = append(filtered, fi)
 		}
 	}
@@ -623,7 +681,10 @@ func FilterActorFileInfos(ctx context.Context, checker SubRepoPermissionChecker,
 }
 
 func FilterActorFileInfo(ctx context.Context, checker SubRepoPermissionChecker, a *actor.Actor, repo api.RepoName, fi fs.FileInfo) (bool, error) {
-	rc := repoContentFromFileInfo(repo, fi)
+	rc := RepoContent{
+		Repo: repo,
+		Path: fileInfoPath(fi),
+	}
 	perms, err := ActorPermissions(ctx, checker, a, rc)
 	if err != nil {
 		return false, errors.Wrap(err, "checking sub-repo permissions")
@@ -631,13 +692,11 @@ func FilterActorFileInfo(ctx context.Context, checker SubRepoPermissionChecker, 
 	return perms.Include(Read), nil
 }
 
-func repoContentFromFileInfo(repo api.RepoName, fi fs.FileInfo) RepoContent {
-	rc := RepoContent{
-		Repo: repo,
-		Path: fi.Name(),
-	}
+// fileInfoPath returns path for a fi as used by our sub repo filtering. If fi
+// is a dir, the path has a trailing slash.
+func fileInfoPath(fi fs.FileInfo) string {
 	if fi.IsDir() {
-		rc.Path += "/"
+		return fi.Name() + "/"
 	}
-	return rc
+	return fi.Name()
 }

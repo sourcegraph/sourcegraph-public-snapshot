@@ -38,12 +38,12 @@ func NewDocumentationResultEdge(id, inV, outV uint64) DocumentationResultEdge {
 //
 // It allows one represent hierarchical documentation like:
 //
-// "project" (e.g. an HTTP library)
-// -> "documentationResult" (e.g. "HTTP library" library documentation)
-//   -> "documentationResult" (e.g. docs for the "Server" class in the HTTP library)
-//     -> "documentationResult" (e.g. docs for the "Listen" method on the "Server" class)
-//     -> "documentationResult" (e.g. docs for the "Shutdown" method on the "Server" class)
-//       -> ...
+//	"project" (e.g. an HTTP library)
+//	-> "documentationResult" (e.g. "HTTP library" library documentation)
+//	  -> "documentationResult" (e.g. docs for the "Server" class in the HTTP library)
+//	    -> "documentationResult" (e.g. docs for the "Listen" method on the "Server" class)
+//	    -> "documentationResult" (e.g. docs for the "Shutdown" method on the "Server" class)
+//	      -> ...
 //
 // Note: the "project" -> "documentationResult" attachment above is expressed via a
 // "documentationResult" edge, since the parent is not a "documentationResult" vertex.
@@ -100,10 +100,10 @@ func NewDocumentationResult(id uint64, result Documentation) DocumentationResult
 //
 // Attached to this vertex MUST be two "documentationString" vertices:
 //
-// 1. A "documentationString" vertex with `type: "label"`, which is a one-line label or this section
-//    of documentation.
-// 1. A "documentationString" vertex with `type: "detail"`, which is a multi-line detailed string
-//    for this section of documentation.
+//  1. A "documentationString" vertex with `type: "label"`, which is a one-line label or this section
+//     of documentation.
+//  1. A "documentationString" vertex with `type: "detail"`, which is a multi-line detailed string
+//     for this section of documentation.
 //
 // Both are attached to the documentationResult via a "documentationString" edge.
 //
@@ -275,11 +275,11 @@ const (
 // strings, which are "documentationString" vertices. The overall structure looks like the
 // following roughly:
 //
-// 	{id: 53, type:"vertex", label:"documentationResult", result:{identifier:"httpserver", ...}}
-// 	{id: 54, type:"vertex", label:"documentationString", result:{kind:"plaintext", "value": "A single-line label for an HTTPServer instance"}}
-// 	{id: 55, type:"vertex", label:"documentationString", result:{kind:"plaintext", "value": "A multi-line\n detailed\n explanation of an HTTPServer instance, what it does, etc."}}
-// 	{id: 54, type:"edge", label:"documentationString", inV: 54, outV: 53, kind:"label"}
-// 	{id: 54, type:"edge", label:"documentationString", inV: 55, outV: 53, kind:"detail"}
+//	{id: 53, type:"vertex", label:"documentationResult", result:{identifier:"httpserver", ...}}
+//	{id: 54, type:"vertex", label:"documentationString", result:{kind:"plaintext", "value": "A single-line label for an HTTPServer instance"}}
+//	{id: 55, type:"vertex", label:"documentationString", result:{kind:"plaintext", "value": "A multi-line\n detailed\n explanation of an HTTPServer instance, what it does, etc."}}
+//	{id: 54, type:"edge", label:"documentationString", inV: 54, outV: 53, kind:"label"}
+//	{id: 54, type:"edge", label:"documentationString", inV: 55, outV: 53, kind:"detail"}
 //
 // Hover, definition, etc. results can then be attached to ranges within the "documentationString"
 // vertices themselves (vertex 54 / 55), see the docs for DocumentationString for more details.
@@ -332,13 +332,12 @@ func NewDocumentationStringEdge(id, inV, outV uint64, kind DocumentationStringKi
 // in the documentation string's markup content itself) using a "contains" edge. This enables
 // ranges within a documentation string to have:
 //
-// * "hoverResult"s (e.g. you can hover over a type signature in the documentation string and get info)
-// * "definitionResult" and "referenceResults"
-// * "documentationResult" itself - allowing a range of text in one documentation to link to another
-//   documentation section (e.g. in the same way a hyperlink works in HTML.)
-// * "moniker" to link to another project's hover/definition/documentation results, across
-//   repositories.
-//
+//   - "hoverResult"s (e.g. you can hover over a type signature in the documentation string and get info)
+//   - "definitionResult" and "referenceResults"
+//   - "documentationResult" itself - allowing a range of text in one documentation to link to another
+//     documentation section (e.g. in the same way a hyperlink works in HTML.)
+//   - "moniker" to link to another project's hover/definition/documentation results, across
+//     repositories.
 type DocumentationString struct {
 	Vertex
 	Result MarkupContent `json:"result"`

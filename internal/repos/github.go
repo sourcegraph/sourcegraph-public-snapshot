@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -313,7 +314,7 @@ func newGithubSource(
 	}, nil
 }
 
-func (s GitHubSource) WithAuthenticator(a auth.Authenticator) (Source, error) {
+func (s *GitHubSource) WithAuthenticator(a auth.Authenticator) (Source, error) {
 	switch a.(type) {
 	case *auth.OAuthBearerToken,
 		*auth.OAuthBearerTokenWithSSH:
@@ -323,7 +324,7 @@ func (s GitHubSource) WithAuthenticator(a auth.Authenticator) (Source, error) {
 		return nil, newUnsupportedAuthenticatorError("GitHubSource", a)
 	}
 
-	sc := s
+	sc := *s
 	sc.v3Client = sc.v3Client.WithAuthenticator(a)
 	sc.v4Client = sc.v4Client.WithAuthenticator(a)
 	sc.searchClient = sc.searchClient.WithAuthenticator(a)
@@ -336,18 +337,18 @@ type githubResult struct {
 	repo *github.Repository
 }
 
-func (s GitHubSource) ValidateAuthenticator(ctx context.Context) error {
+func (s *GitHubSource) ValidateAuthenticator(ctx context.Context) error {
 	_, err := s.v3Client.GetAuthenticatedUser(ctx)
 	return err
 }
 
-func (s GitHubSource) Version(ctx context.Context) (string, error) {
+func (s *GitHubSource) Version(ctx context.Context) (string, error) {
 	return s.v3Client.GetVersion(ctx)
 }
 
 // ListRepos returns all Github repositories accessible to all connections configured
 // in Sourcegraph via the external services configuration.
-func (s GitHubSource) ListRepos(ctx context.Context, results chan SourceResult) {
+func (s *GitHubSource) ListRepos(ctx context.Context, results chan SourceResult) {
 	unfiltered := make(chan *githubResult)
 	go func() {
 		s.listAllRepositories(ctx, unfiltered)
@@ -368,13 +369,13 @@ func (s GitHubSource) ListRepos(ctx context.Context, results chan SourceResult) 
 }
 
 // ExternalServices returns a singleton slice containing the external service.
-func (s GitHubSource) ExternalServices() types.ExternalServices {
+func (s *GitHubSource) ExternalServices() types.ExternalServices {
 	return types.ExternalServices{s.svc}
 }
 
 // GetRepo returns the GitHub repository with the given name and owner
 // ("org/repo-name")
-func (s GitHubSource) GetRepo(ctx context.Context, nameWithOwner string) (*types.Repo, error) {
+func (s *GitHubSource) GetRepo(ctx context.Context, nameWithOwner string) (*types.Repo, error) {
 	r, err := s.getRepository(ctx, nameWithOwner)
 	if err != nil {
 		return nil, err
@@ -382,7 +383,7 @@ func (s GitHubSource) GetRepo(ctx context.Context, nameWithOwner string) (*types
 	return s.makeRepo(r), nil
 }
 
-func (s GitHubSource) makeRepo(r *github.Repository) *types.Repo {
+func (s *GitHubSource) makeRepo(r *github.Repository) *types.Repo {
 	urn := s.svc.URN()
 	metadata := *r
 	// This field flip flops depending on which token was used to retrieve the repo
@@ -476,11 +477,19 @@ func (s *GitHubSource) paginate(ctx context.Context, results chan *githubResult,
 		}
 
 		for _, r := range pageRepos {
+			if err := ctx.Err(); err != nil {
+				results <- &githubResult{err: err}
+				return
+			}
+
 			results <- &githubResult{repo: r}
 		}
 
 		if hasNext && cost > 0 {
-			time.Sleep(s.v3Client.RateLimitMonitor().RecommendedWaitForBackgroundOp(cost))
+			// 0-duration sleep unless nearing rate limit exhaustion, or
+			// shorter if context has been canceled (next iteration of loop
+			// will then return `ctx.Err()`).
+			timeutil.SleepWithContext(ctx, s.v3Client.RateLimitMonitor().RecommendedWaitForBackgroundOp(cost))
 		}
 	}
 }
@@ -537,21 +546,22 @@ func (s *GitHubSource) listOrg(ctx context.Context, org string, results chan *gi
 
 		err := getReposByType("all")
 		// Handle 404 from org repos endpoint by trying user repos endpoint
-		if err != nil {
+		if err != nil && ctx.Err() == nil {
 			if s.listUser(ctx, org, dedupC) != nil {
-				dedupC <- &githubResult{
-					err: err,
-				}
+				dedupC <- &githubResult{err: err}
 			}
+			return
+		}
+
+		if err := ctx.Err(); err != nil {
+			dedupC <- &githubResult{err: err}
 			return
 		}
 
 		// if the first call succeeded,
 		// call the same endpoint with the "internal" type
 		if err = getReposByType("internal"); err != nil {
-			dedupC <- &githubResult{
-				err: err,
-			}
+			dedupC <- &githubResult{err: err}
 		}
 	}()
 
@@ -603,6 +613,9 @@ func (s *GitHubSource) listRepos(ctx context.Context, repos []string, results ch
 	if err := s.fetchAllRepositoriesInBatches(ctx, results); err == nil {
 		return
 	} else {
+		if err := ctx.Err(); err != nil {
+			return
+		}
 		// The way we fetch repositories in batches through the GraphQL API -
 		// using aliases to query multiple repositories in one query - is
 		// currently "undefined behaviour". Very rarely but unreproducibly it
@@ -642,7 +655,13 @@ func (s *GitHubSource) listRepos(ctx context.Context, repos []string, results ch
 
 		results <- &githubResult{repo: repo}
 
-		time.Sleep(s.v3Client.RateLimitMonitor().RecommendedWaitForBackgroundOp(1)) // 0-duration sleep unless nearing rate limit exhaustion
+		// If there is another iteration of the loop: 0-duration sleep unless
+		// nearing rate limit exhaustion, or shorter if context has been
+		// canceled. If context has been canceled, the `ctx.Err()` will be
+		// returned by next iteration.
+		if i > 0 {
+			timeutil.SleepWithContext(ctx, s.v3Client.RateLimitMonitor().RecommendedWaitForBackgroundOp(1))
+		}
 	}
 }
 
@@ -692,8 +711,12 @@ func (s *GitHubSource) listPublic(ctx context.Context, results chan *githubResul
 		}
 		s.logger.Debug("github sync public", log.Int("repos", len(repos)), log.Error(err))
 		for _, r := range repos {
-			_, isArchived := archivedRepos[r.ID]
+		  _, isArchived := archivedRepos[r.ID]
 			r.IsArchived = isArchived
+			if err := ctx.Err(); err != nil {
+				results <- &githubResult{err: err}
+				return
+			}
 
 			results <- &githubResult{repo: r}
 			if sinceRepoID < r.DatabaseID {
@@ -788,6 +811,11 @@ func (q *repositoryQuery) Do(ctx context.Context, results chan *githubResult) {
 	// 5) At this point we have scanned all results between 2007 -> To, move the From and To pointers to the remaining unscanned timeslice (To+1 -> Now()), repeat from step 3
 	// 6) Once all the repos created from 2007 to Now() are found, return
 	for {
+		if err := ctx.Err(); err != nil {
+			results <- &githubResult{err: ctx.Err()}
+			return
+		}
+
 		res, err := q.Searcher.SearchRepos(ctx, github.SearchReposParams{
 			Query: q.String(),
 			First: q.First,
@@ -994,6 +1022,11 @@ func (s *GitHubSource) fetchAllRepositoriesInBatches(ctx context.Context, result
 
 		s.logger.Debug("github sync: GetReposByNameWithOwner", log.Strings("repos", batch))
 		for _, r := range repos {
+			if err := ctx.Err(); err != nil {
+				results <- &githubResult{err: err}
+				return err
+			}
+
 			results <- &githubResult{repo: r}
 		}
 	}
@@ -1024,7 +1057,7 @@ func (s *GitHubSource) AffiliatedRepositories(ctx context.Context) ([]types.Code
 	for hasNextPage {
 		select {
 		case <-ctx.Done():
-			return nil, errors.Errorf("context canceled")
+			return nil, ctx.Err()
 		default:
 		}
 

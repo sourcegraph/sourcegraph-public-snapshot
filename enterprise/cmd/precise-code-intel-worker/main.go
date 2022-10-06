@@ -8,17 +8,14 @@ import (
 
 	smithyhttp "github.com/aws/smithy-go/transport/http"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel"
 
-	"github.com/sourcegraph/log"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/worker"
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifuploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -62,7 +59,6 @@ func main() {
 	conf.Init()
 	go conf.Watch(liblog.Update(conf.GetLogSinks))
 	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
-	trace.Init()
 	profiler.Init()
 
 	logger := log.Scoped("worker", "The precise-code-intel-worker service converts LSIF upload file into Postgres data.")
@@ -99,11 +95,6 @@ func main() {
 	close(ready)
 
 	// Initialize stores
-	dbStore := dbstore.NewWithDB(db, observationContext)
-	workerStore := dbstore.WorkerutilUploadStore(dbStore, makeObservationContext(observationContext, false))
-	lsifStore := lsifstore.NewStore(codeIntelDB, conf.Get(), observationContext)
-	gitserverClient := gitserver.New(db, dbStore, observationContext)
-
 	uploadStore, err := lsifuploadstore.New(context.Background(), config.LSIFUploadStoreConfig, observationContext)
 	if err != nil {
 		logger.Fatal("Failed to create upload store", log.Error(err))
@@ -118,22 +109,29 @@ func main() {
 		logger.Fatal("Failed to create sub-repo client", log.Error(err))
 	}
 
-	// Initialize metrics
-	dbworker.InitPrometheusMetric(observationContext, workerStore, "codeintel", "upload", nil)
+	services, err := codeintel.GetServices(codeintel.Databases{
+		DB:          db,
+		CodeIntelDB: codeIntelDB,
+	})
+	if err != nil {
+		logger.Fatal("Failed to create codeintel services", log.Error(err))
+	}
 
 	// Initialize worker
-	worker := worker.NewWorker(
-		&worker.DBStoreShim{Store: dbStore},
-		workerStore,
-		&worker.LSIFStoreShim{Store: lsifStore},
+	rootContext := actor.WithInternalActor(context.Background())
+	handler := services.UploadsService.WorkerutilHandler(
 		uploadStore,
-		gitserverClient,
-		config.WorkerPollInterval,
 		config.WorkerConcurrency,
 		config.WorkerBudget,
-		config.MaximumRuntimePerJob,
-		makeWorkerMetrics(observationContext),
 	)
+	worker := dbworker.NewWorker(rootContext, services.UploadsService.WorkerutilStore(), handler, workerutil.WorkerOptions{
+		Name:                 "precise_code_intel_upload_worker",
+		NumHandlers:          config.WorkerConcurrency,
+		Interval:             config.WorkerPollInterval,
+		HeartbeatInterval:    time.Second,
+		Metrics:              makeWorkerMetrics(observationContext),
+		MaximumRuntimePerJob: config.MaximumRuntimePerJob,
+	})
 
 	// Initialize health server
 	server := httpserver.NewFromAddr(addr, &http.Server{

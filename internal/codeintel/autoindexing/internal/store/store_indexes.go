@@ -9,13 +9,14 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // InsertIndexes inserts a new index and returns the hydrated index models.
-func (s *store) InsertIndexes(ctx context.Context, indexes []shared.Index) (_ []shared.Index, err error) {
+func (s *store) InsertIndexes(ctx context.Context, indexes []types.Index) (_ []types.Index, err error) {
 	ctx, _, endObservation := s.operations.insertIndex.With(ctx, &err, observation.Args{})
 	defer func() {
 		endObservation(1, observation.Args{LogFields: []log.Field{
@@ -30,7 +31,7 @@ func (s *store) InsertIndexes(ctx context.Context, indexes []shared.Index) (_ []
 	values := make([]*sqlf.Query, 0, len(indexes))
 	for _, index := range indexes {
 		if index.DockerSteps == nil {
-			index.DockerSteps = []shared.DockerStep{}
+			index.DockerSteps = []types.DockerStep{}
 		}
 		if index.IndexerArgs == nil {
 			index.IndexerArgs = []string{}
@@ -88,7 +89,7 @@ RETURNING id
 `
 
 // GetIndexes returns a list of indexes and the total count of records matching the given conditions.
-func (s *store) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (_ []shared.Index, _ int, err error) {
+func (s *store) GetIndexes(ctx context.Context, opts types.GetIndexesOptions) (_ []types.Index, _ int, err error) {
 	ctx, trace, endObservation := s.operations.getIndexes.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", opts.RepositoryID),
 		log.String("state", opts.State),
@@ -204,7 +205,7 @@ func makeStateCondition(state string) *sqlf.Query {
 }
 
 // GetIndexByID returns an index by its identifier and boolean flag indicating its existence.
-func (s *store) GetIndexByID(ctx context.Context, id int) (_ shared.Index, _ bool, err error) {
+func (s *store) GetIndexByID(ctx context.Context, id int) (_ types.Index, _ bool, err error) {
 	ctx, _, endObservation := s.operations.getIndexByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("id", id),
 	}})
@@ -212,7 +213,7 @@ func (s *store) GetIndexByID(ctx context.Context, id int) (_ shared.Index, _ boo
 
 	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
 	if err != nil {
-		return shared.Index{}, false, err
+		return types.Index{}, false, err
 	}
 
 	return scanFirstIndex(s.db.Query(ctx, sqlf.Sprintf(getIndexByIDQuery, id, authzConds)))
@@ -265,7 +266,7 @@ WHERE repo.deleted_at IS NULL AND u.id = %s AND %s
 
 // GetIndexesByIDs returns an index for each of the given identifiers. Not all given ids will necessarily
 // have a corresponding element in the returned list.
-func (s *store) GetIndexesByIDs(ctx context.Context, ids ...int) (_ []shared.Index, err error) {
+func (s *store) GetIndexesByIDs(ctx context.Context, ids ...int) (_ []types.Index, err error) {
 	ctx, _, endObservation := s.operations.getIndexesByIDs.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("ids", intsToString(ids)),
 	}})
@@ -439,6 +440,84 @@ SELECT COUNT(*) WHERE EXISTS (
 	UNION
 	SELECT id FROM lsif_indexes_with_repository_name WHERE repository_id = %s AND commit = %s
 )
+`
+
+// QueueRepoRev enqueues the given repository and rev to be processed by the auto-indexing scheduler.
+// This method is ultimately used to index on-demand (with deduplication) from transport layers.
+func (s *store) QueueRepoRev(ctx context.Context, repositoryID int, rev string) (err error) {
+	ctx, _, endObservation := s.operations.queueRepoRev.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+		log.String("rev", rev),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	tx, err := s.transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	isQueued, err := tx.IsQueued(ctx, repositoryID, rev)
+	if err != nil {
+		return err
+	}
+	if isQueued {
+		return nil
+	}
+
+	return tx.db.Exec(ctx, sqlf.Sprintf(queueRepoRevQuery, repositoryID, rev))
+}
+
+const queueRepoRevQuery = `
+-- source: internal/codeintel/stores/dbstore/indexes.go:QueuedRepoRev
+INSERT INTO codeintel_autoindex_queue (repository_id, rev)
+VALUES (%s, %s)
+ON CONFLICT DO NOTHING
+`
+
+type RepoRev struct {
+	ID           int
+	RepositoryID int
+	Rev          string
+}
+
+// GetQueuedRepoRev selects a batch of repository and revisions to be processed by the auto-indexing
+// scheduler. If in a transaction, the seleted records will remain locked until the enclosing transaction
+// has been committed or rolled back.
+func (s *store) GetQueuedRepoRev(ctx context.Context, batchSize int) (_ []RepoRev, err error) {
+	ctx, _, endObservation := s.operations.getQueuedRepoRev.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("batchSize", batchSize),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	return ScanRepoRevs(s.db.Query(ctx, sqlf.Sprintf(getQueuedRepoRevQuery, batchSize)))
+}
+
+const getQueuedRepoRevQuery = `
+-- source: internal/codeintel/stores/dbstore/indexes.go:GetQueuedRepoRev
+SELECT id, repository_id, rev
+FROM codeintel_autoindex_queue
+WHERE processed_at IS NULL
+ORDER BY queued_at ASC
+FOR UPDATE SKIP LOCKED
+LIMIT %s
+`
+
+// MarkRepoRevsAsProcessed sets processed_at for each matching record in codeintel_autoindex_queue.
+func (s *store) MarkRepoRevsAsProcessed(ctx context.Context, ids []int) (err error) {
+	ctx, _, endObservation := s.operations.markRepoRevsAsProcessed.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("numIDs", len(ids)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	return s.db.Exec(ctx, sqlf.Sprintf(markRepoRevsAsProcessedQuery, pq.Array(ids)))
+}
+
+const markRepoRevsAsProcessedQuery = `
+-- source: internal/codeintel/stores/dbstore/indexes.go:MarkRepoRevsAsProcessed
+UPDATE codeintel_autoindex_queue
+SET processed_at = NOW()
+WHERE id = ANY(%s)
 `
 
 // GetRecentIndexesSummary returns the set of "interesting" indexes for the repository with the given identifier.

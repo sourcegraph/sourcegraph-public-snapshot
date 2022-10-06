@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -216,7 +217,6 @@ func (r *externalServiceResolver) SyncJobs(ctx context.Context, args *externalSe
 }
 
 type externalServiceSyncJobConnectionResolver struct {
-	logger            log.Logger
 	args              *externalServiceSyncJobsArgs
 	externalServiceID int64
 	db                database.DB
@@ -299,7 +299,7 @@ func unmarshalExternalServiceSyncJobID(id graphql.ID) (jobID int64, err error) {
 
 func externalServiceSyncJobByID(ctx context.Context, db database.DB, gqlID graphql.ID) (Node, error) {
 	// Site-admin only for now.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
 		return nil, err
 	}
 
@@ -324,11 +324,14 @@ func (r *externalServiceSyncJobResolver) ID() graphql.ID {
 }
 
 func (r *externalServiceSyncJobResolver) State() string {
+	if r.job.Cancel && r.job.State == "processing" {
+		return "CANCELING"
+	}
 	return strings.ToUpper(r.job.State)
 }
 
 func (r *externalServiceSyncJobResolver) FailureMessage() *string {
-	if r.job.FailureMessage == "" {
+	if r.job.FailureMessage == "" || r.job.Cancel {
 		return nil
 	}
 

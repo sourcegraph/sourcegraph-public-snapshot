@@ -62,7 +62,6 @@ func Main(setup SetupFunc) {
 	conf.Init()
 	go conf.Watch(liblog.Update(conf.GetLogSinks))
 	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
-	trace.Init()
 	profiler.Init()
 
 	routines := []goroutine.BackgroundRoutine{}

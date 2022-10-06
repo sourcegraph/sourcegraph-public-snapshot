@@ -3,6 +3,7 @@ package command
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"strings"
 	"sync"
@@ -269,4 +270,31 @@ func redact(entry *workerutil.ExecutionLogEntry, replacer *strings.Replacer) {
 		entry.Command[i] = replacer.Replace(arg)
 	}
 	entry.Out = replacer.Replace(entry.Out)
+}
+
+func NewWriterLogger(w io.Writer) Logger {
+	return &writerLogger{w}
+}
+
+type writerLogger struct {
+	w io.Writer
+}
+
+func (*writerLogger) Flush() error { return nil }
+func (l *writerLogger) Log(key string, command []string) LogEntry {
+	fmt.Fprintf(l.w, "%s: %s", key, strings.Join(command, " "))
+	return &writerLogEntry{w: l.w}
+}
+
+type writerLogEntry struct {
+	w io.Writer
+}
+
+func (l *writerLogEntry) Write(p []byte) (n int, err error) {
+	return fmt.Fprint(l.w, string(p))
+}
+func (*writerLogEntry) Close() error          { return nil }
+func (*writerLogEntry) Finalize(exitCode int) {}
+func (*writerLogEntry) CurrentLogEntry() workerutil.ExecutionLogEntry {
+	return workerutil.ExecutionLogEntry{}
 }

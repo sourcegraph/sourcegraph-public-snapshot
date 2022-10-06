@@ -18,7 +18,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, H2, Text, useObservable } from '@sourcegraph/wildcard'
+import { Button, Heading, Text, useObservable } from '@sourcegraph/wildcard'
 
 import { getFileDecorations } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
@@ -177,7 +177,9 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
     return (
         <>
             <section className={classNames('test-tree-entries mb-3', styles.section)}>
-                <H2>Files and directories</H2>
+                <Heading as="h3" styleAs="h2">
+                    Files and directories
+                </Heading>
                 <TreeEntriesSection
                     parentPath={filePath}
                     entries={tree.entries}
@@ -194,7 +196,9 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                 >
                     {items => (
                         <section className={styles.section}>
-                            <H2>Actions</H2>
+                            <Heading as="h3" styleAs="h2">
+                                Actions
+                            </Heading>
                             {items.map(item => (
                                 <Button
                                     {...props}
@@ -212,7 +216,9 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
             ) : null}
 
             <div className={styles.section}>
-                <H2>Changes</H2>
+                <Heading as="h3" styleAs="h2">
+                    Changes
+                </Heading>
                 <FilteredConnection<
                     GitCommitFields,
                     Pick<GitCommitNodeProps, 'className' | 'compact' | 'messageSubjectClassName' | 'wrapperElement'>

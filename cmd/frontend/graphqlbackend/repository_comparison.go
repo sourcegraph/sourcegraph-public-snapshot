@@ -63,7 +63,7 @@ type FileDiff interface {
 	InternalID() string
 }
 
-func NewRepositoryComparison(ctx context.Context, db database.DB, r *RepositoryResolver, args *RepositoryComparisonInput) (*RepositoryComparisonResolver, error) {
+func NewRepositoryComparison(ctx context.Context, db database.DB, client gitserver.Client, r *RepositoryResolver, args *RepositoryComparisonInput) (*RepositoryComparisonResolver, error) {
 	var baseRevspec, headRevspec string
 	if args.Base == nil {
 		baseRevspec = "HEAD"
@@ -76,7 +76,6 @@ func NewRepositoryComparison(ctx context.Context, db database.DB, r *RepositoryR
 		headRevspec = *args.Head
 	}
 
-	client := gitserver.NewClient(db)
 	getCommit := func(ctx context.Context, repo api.RepoName, revspec string) (*GitCommitResolver, error) {
 		if revspec == gitserver.DevNullSHA {
 			return nil, nil
@@ -93,7 +92,7 @@ func NewRepositoryComparison(ctx context.Context, db database.DB, r *RepositoryR
 			return nil, err
 		}
 
-		return NewGitCommitResolver(db, r, commitID, nil), nil
+		return NewGitCommitResolver(db, client, r, commitID, nil), nil
 	}
 
 	head, err := getCommit(ctx, r.RepoName(), headRevspec)
@@ -121,22 +120,24 @@ func NewRepositoryComparison(ctx context.Context, db database.DB, r *RepositoryR
 	}
 
 	return &RepositoryComparisonResolver{
-		db:          db,
-		baseRevspec: baseRevspec,
-		headRevspec: headRevspec,
-		base:        base,
-		head:        head,
-		repo:        r,
-		rangeType:   rangeType,
+		db:              db,
+		gitserverClient: client,
+		baseRevspec:     baseRevspec,
+		headRevspec:     headRevspec,
+		base:            base,
+		head:            head,
+		repo:            r,
+		rangeType:       rangeType,
 	}, nil
 }
 
 func (r *RepositoryResolver) Comparison(ctx context.Context, args *RepositoryComparisonInput) (*RepositoryComparisonResolver, error) {
-	return NewRepositoryComparison(ctx, r.db, r, args)
+	return NewRepositoryComparison(ctx, r.db, r.gitserverClient, r, args)
 }
 
 type RepositoryComparisonResolver struct {
 	db                       database.DB
+	gitserverClient          gitserver.Client
 	baseRevspec, headRevspec string
 	base, head               *GitCommitResolver
 	rangeType                string
@@ -167,20 +168,29 @@ func (r *RepositoryComparisonResolver) Range() *gitRevisionRange {
 	}
 }
 
+// RepositoryComparisonCommitsArgs is a set of arguments for listing commits on the RepositoryComparisonResolver
+type RepositoryComparisonCommitsArgs struct {
+	graphqlutil.ConnectionArgs
+	Path *string
+}
+
 func (r *RepositoryComparisonResolver) Commits(
-	args *graphqlutil.ConnectionArgs,
+	args *RepositoryComparisonCommitsArgs,
 ) *gitCommitConnectionResolver {
 	return &gitCommitConnectionResolver{
-		db:            r.db,
-		revisionRange: r.baseRevspec + ".." + r.headRevspec,
-		first:         args.First,
-		repo:          r.repo,
+		db:              r.db,
+		gitserverClient: r.gitserverClient,
+		revisionRange:   r.baseRevspec + ".." + r.headRevspec,
+		first:           args.First,
+		repo:            r.repo,
+		path:            args.Path,
 	}
 }
 
 func (r *RepositoryComparisonResolver) FileDiffs(ctx context.Context, args *FileDiffsConnectionArgs) (FileDiffConnection, error) {
 	return NewFileDiffConnectionResolver(
 		r.db,
+		r.gitserverClient,
 		r.base,
 		r.head,
 		args,
@@ -192,7 +202,7 @@ func (r *RepositoryComparisonResolver) FileDiffs(ctx context.Context, args *File
 // repositoryComparisonNewFile is the default NewFileFunc used by
 // RepositoryComparisonResolver to produce the new file in a FileDiffResolver.
 func repositoryComparisonNewFile(db database.DB, r *FileDiffResolver) FileResolver {
-	return NewGitTreeEntryResolver(db, r.Head, CreateFileInfo(r.FileDiff.NewName, false))
+	return NewGitTreeEntryResolver(db, r.gitserverClient, r.Head, CreateFileInfo(r.FileDiff.NewName, false))
 }
 
 // computeRepositoryComparisonDiff returns a ComputeDiffFunc for the given
@@ -289,28 +299,31 @@ type NewFileFunc func(db database.DB, r *FileDiffResolver) FileResolver
 
 func NewFileDiffConnectionResolver(
 	db database.DB,
+	gitserverClient gitserver.Client,
 	base, head *GitCommitResolver,
 	args *FileDiffsConnectionArgs,
 	compute ComputeDiffFunc,
 	newFileFunc NewFileFunc,
 ) *fileDiffConnectionResolver {
 	return &fileDiffConnectionResolver{
-		db:      db,
-		base:    base,
-		head:    head,
-		args:    args,
-		compute: compute,
-		newFile: newFileFunc,
+		db:              db,
+		gitserverClient: gitserverClient,
+		base:            base,
+		head:            head,
+		args:            args,
+		compute:         compute,
+		newFile:         newFileFunc,
 	}
 }
 
 type fileDiffConnectionResolver struct {
-	db      database.DB
-	base    *GitCommitResolver
-	head    *GitCommitResolver
-	args    *FileDiffsConnectionArgs
-	compute ComputeDiffFunc
-	newFile NewFileFunc
+	db              database.DB
+	gitserverClient gitserver.Client
+	base            *GitCommitResolver
+	head            *GitCommitResolver
+	args            *FileDiffsConnectionArgs
+	compute         ComputeDiffFunc
+	newFile         NewFileFunc
 }
 
 func (r *fileDiffConnectionResolver) Nodes(ctx context.Context) ([]FileDiff, error) {
@@ -329,11 +342,12 @@ func (r *fileDiffConnectionResolver) Nodes(ctx context.Context) ([]FileDiff, err
 	resolvers := make([]FileDiff, len(fileDiffs))
 	for i, fileDiff := range fileDiffs {
 		resolvers[i] = &FileDiffResolver{
-			db:       r.db,
-			newFile:  r.newFile,
-			FileDiff: fileDiff,
-			Base:     r.base,
-			Head:     r.head,
+			db:              r.db,
+			gitserverClient: r.gitserverClient,
+			newFile:         r.newFile,
+			FileDiff:        fileDiff,
+			Base:            r.base,
+			Head:            r.head,
 		}
 	}
 	return resolvers, nil
@@ -394,8 +408,9 @@ type FileDiffResolver struct {
 	Base     *GitCommitResolver
 	Head     *GitCommitResolver
 
-	db      database.DB
-	newFile NewFileFunc
+	db              database.DB
+	gitserverClient gitserver.Client
+	newFile         NewFileFunc
 }
 
 func (r *FileDiffResolver) OldPath() *string { return diffPathOrNull(r.FileDiff.OrigName) }
@@ -422,7 +437,7 @@ func (r *FileDiffResolver) OldFile() FileResolver {
 	if diffPathOrNull(r.FileDiff.OrigName) == nil {
 		return nil
 	}
-	return NewGitTreeEntryResolver(r.db, r.Base, CreateFileInfo(r.FileDiff.OrigName, false))
+	return NewGitTreeEntryResolver(r.db, r.gitserverClient, r.Base, CreateFileInfo(r.FileDiff.OrigName, false))
 }
 
 func (r *FileDiffResolver) NewFile() FileResolver {
@@ -656,26 +671,22 @@ func (r *DiffHunkRange) Lines() int32     { return r.lines }
 
 func NewDiffStat(s diff.Stat) *DiffStat {
 	return &DiffStat{
-		added:   s.Added,
-		changed: s.Changed,
-		deleted: s.Deleted,
+		added:   s.Added + s.Changed,
+		deleted: s.Deleted + s.Changed,
 	}
 }
 
-type DiffStat struct{ added, changed, deleted int32 }
+type DiffStat struct{ added, deleted int32 }
 
 func (r *DiffStat) AddStat(s diff.Stat) {
-	r.added += s.Added
-	r.changed += s.Changed
-	r.deleted += s.Deleted
+	r.added += s.Added + s.Changed
+	r.deleted += s.Deleted + s.Changed
 }
 
 func (r *DiffStat) AddDiffStat(s *DiffStat) {
 	r.added += s.Added()
-	r.changed += s.Changed()
 	r.deleted += s.Deleted()
 }
 
 func (r *DiffStat) Added() int32   { return r.added }
-func (r *DiffStat) Changed() int32 { return r.changed }
 func (r *DiffStat) Deleted() int32 { return r.deleted }

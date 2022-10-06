@@ -129,3 +129,8 @@
     background-color: var(--body-bg);
     color: var(--body-color);
 }
+
+.clickable-row:hover {
+    cursor: pointer;
+    background-color: var(--body-bg);
+}

@@ -9,8 +9,6 @@ import {
 } from '@visx/axis'
 import { GridRows } from '@visx/grid'
 import { Group } from '@visx/group'
-import { TextProps } from '@visx/text'
-import classNames from 'classnames'
 
 import { Tick } from './Tick'
 import { formatYTick, getXScaleTicks, getYScaleTicks } from './tick-formatters'
@@ -18,10 +16,11 @@ import { formatYTick, getXScaleTicks, getYScaleTicks } from './tick-formatters'
 import styles from './Axis.module.scss'
 
 // TODO: Remove this prop generation, see https://github.com/sourcegraph/sourcegraph/issues/39874
-const getTickYLabelProps: TickLabelProps<number> = (value, index, values): Partial<TextProps> => ({
+const getTickYLabelProps: TickLabelProps<number> = value => ({
     dy: '0.25em',
     textAnchor: 'end',
-    'aria-label': `Tick axis ${index + 1} of ${values.length}. Value: ${value}`,
+    'aria-label': `Axis tick, Value: ${value}`,
+    role: 'listitem',
 })
 
 type OwnSharedAxisProps = Omit<SharedAxisProps<AxisScale>, 'tickLabelProps'>
@@ -57,9 +56,10 @@ export const AxisLeft = memo(
                     scale={scale}
                     tickValues={tickValues}
                     className={styles.gridLine}
+                    aria-hidden={true}
                 />
 
-                <Group innerRef={reference} top={top} left={left}>
+                <Group innerRef={reference} top={top} left={left} role="list" aria-label="X axis">
                     <VisxAxisLeft
                         {...attributes}
                         scale={scale}
@@ -67,8 +67,8 @@ export const AxisLeft = memo(
                         tickFormat={tickFormat}
                         tickLabelProps={getTickYLabelProps}
                         tickComponent={tickComponent}
-                        axisLineClassName={classNames(styles.axisLine, styles.axisLineVertical)}
-                        tickClassName={classNames(styles.axisTick, styles.axisTickVertical)}
+                        hideTicks={true}
+                        hideAxisLine={true}
                     />
                 </Group>
             </>
@@ -79,9 +79,10 @@ export const AxisLeft = memo(
 AxisLeft.displayName = 'AxisLeft'
 
 // TODO: Remove this prop generation, see https://github.com/sourcegraph/sourcegraph/issues/39874
-const getTickXLabelProps: TickLabelProps<Date> = (value, index, values): Partial<TextProps> => ({
-    'aria-label': `Tick axis ${index + 1} of ${values.length}. Value: ${value}`,
+const getTickXLabelProps: TickLabelProps<Date> = value => ({
+    'aria-label': `Axis tick, Value: ${value}`,
     textAnchor: 'middle',
+    role: 'listitem',
 })
 
 export interface AxisBottomProps extends OwnSharedAxisProps {
@@ -93,7 +94,7 @@ export const AxisBottom = memo(
         const { scale, top, left, width, tickValues, tickComponent = Tick, ...attributes } = props
 
         return (
-            <Group innerRef={reference} top={top} left={left} width={width}>
+            <Group innerRef={reference} top={top} left={left} width={width} role="list" aria-label="X axis">
                 <VisxAsixBottom
                     {...attributes}
                     scale={scale}
@@ -102,6 +103,7 @@ export const AxisBottom = memo(
                     tickLabelProps={getTickXLabelProps}
                     axisLineClassName={styles.axisLine}
                     tickClassName={styles.axisTick}
+                    tickLineProps={{ 'aria-hidden': true }}
                 />
             </Group>
         )

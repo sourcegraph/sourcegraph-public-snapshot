@@ -10,11 +10,11 @@ import {
     QueryState,
     SearchPatternType,
 } from '@sourcegraph/search'
-import type { TelemetryService } from '@sourcegraph/shared/out/src/telemetry/telemetryService'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import {
     aggregateStreamingSearch,
+    AggregateStreamingSearchResults,
     LATEST_VERSION,
     Progress,
     SearchMatch,
@@ -22,6 +22,7 @@ import {
 } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable, WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import { initializeSourcegraphSettings } from '../sourcegraphSettings'
@@ -45,13 +46,28 @@ interface Props {
     onPreviewChange: (match: SearchMatch, lineOrSymbolMatchIndex?: number) => Promise<void>
     onPreviewClear: () => Promise<void>
     onOpen: (match: SearchMatch, lineOrSymbolMatchIndex?: number) => Promise<void>
+    onSearchError: (errorMessage: string) => Promise<void>
     initialSearch: Search | null
+    backendVersion: string | null
     authenticatedUser: AuthenticatedUser | null
     telemetryService: TelemetryService
 }
 
 function fetchStreamSuggestionsWithStaticUrl(query: string): Observable<SearchMatch[]> {
     return fetchStreamSuggestions(query, getInstanceURL() + '.api')
+}
+
+function fallbackToLiteralSearchIfNeeded(
+    patternType: SearchPatternType | undefined,
+    backendVersion: string | null
+): SearchPatternType | undefined {
+    if (backendVersion === null || patternType !== SearchPatternType.standard) {
+        return patternType
+    }
+
+    const [major, minor] = backendVersion.split('.').map(Number)
+    // SearchPatternType.standard is not supported by versions before 3.43.0
+    return major < 3 || (major === 3 && minor < 43) ? SearchPatternType.literal : SearchPatternType.standard
 }
 
 export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
@@ -62,10 +78,12 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     onPreviewChange,
     onPreviewClear,
     onOpen,
+    onSearchError,
     initialSearch,
+    backendVersion,
     authenticatedUser,
     telemetryService,
-}: Props) => {
+}) => {
     const authState = authenticatedUser !== null ? 'success' : 'failure'
 
     const requestGraphQL = useCallback<PlatformContext['requestGraphQL']>(
@@ -98,7 +116,9 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
         initialSearch ?? {
             query: '',
             caseSensitive: false,
-            patternType: SearchPatternType.standard,
+            patternType:
+                fallbackToLiteralSearchIfNeeded(SearchPatternType.standard, backendVersion) ||
+                SearchPatternType.literal,
             selectedSearchContextSpec: 'global',
         }
     )
@@ -121,7 +141,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
         }) => {
             const query = userQueryState.query ?? ''
             const caseSensitive = options?.caseSensitive
-            const patternType = options?.patternType
+            const patternType = fallbackToLiteralSearchIfNeeded(options?.patternType, backendVersion)
             const contextSpec = options?.contextSpec
             const forceNewSearch = options?.forceNewSearch ?? false
 
@@ -158,7 +178,14 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                     decorationContextLines: 0,
                     displayLimit: 200,
                 }
-            ).subscribe(searchResults => {
+            ).subscribe((searchResults: AggregateStreamingSearchResults) => {
+                if (searchResults.state === 'error') {
+                    setProgressState('error')
+                    onSearchError(searchResults.error.message)
+                        .then(() => {})
+                        .catch(() => {})
+                    return
+                }
                 setMatches(searchResults.results)
                 setProgress(searchResults.progress)
                 setProgressState(searchResults.state)
@@ -168,7 +195,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
             saveLastSearch(nextSearch)
             telemetryService.log('IDESearchSubmitted')
         },
-        [lastSearch, userQueryState.query, telemetryService, instanceURL]
+        [lastSearch, backendVersion, userQueryState.query, telemetryService, instanceURL, onSearchError]
     )
 
     const [didInitialSubmit, setDidInitialSubmit] = useState(false)

@@ -15,7 +15,7 @@ import { createRecord } from './utils/createRecord'
 
 export type MinimalConfiguredRegistryExtension = Pick<
     ConfiguredRegistryExtension<RegistryExtensionFieldsForList>,
-    'manifest' | 'id'
+    'manifest' | 'id' | 'registryExtension'
 >
 
 export interface ConfiguredRegistryExtensions {

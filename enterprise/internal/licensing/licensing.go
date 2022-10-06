@@ -118,7 +118,7 @@ func GetConfiguredProductLicenseInfoWithSignature() (*Info, string, error) {
 				return nil, "", err
 			}
 
-			if err = info.hasUnknownPlan(); EnforceTiers && err != nil {
+			if err = info.hasUnknownPlan(); err != nil {
 				return nil, "", err
 			}
 

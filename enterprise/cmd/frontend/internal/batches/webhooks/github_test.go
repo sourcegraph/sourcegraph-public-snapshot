@@ -27,6 +27,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -64,15 +65,15 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 			DisplayName: "GitHub",
 			Config: extsvc.NewUnencryptedConfig(bt.MarshalJSON(t, &schema.GitHubConnection{
 				Url:      "https://github.com",
-				Token:    token,
 				Repos:    []string{"sourcegraph/sourcegraph"},
 				Webhooks: []*schema.GitHubWebhook{{Org: "sourcegraph", Secret: secret}},
+				Token:    "abc",
 			})),
 		}
 
 		err := esStore.Upsert(ctx, extSvc)
 		if err != nil {
-			t.Fatal(t)
+			t.Fatal(err)
 		}
 
 		githubSrc, err := repos.NewGithubSource(ctx, logtest.Scoped(t), db.ExternalServices(), extSvc, cf)
@@ -91,6 +92,16 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 		}
 
 		s := store.NewWithClock(db, &observation.TestContext, nil, clock)
+		if err := s.CreateSiteCredential(ctx, &btypes.SiteCredential{
+			ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
+			ExternalServiceID:   githubRepo.ExternalRepo.ServiceID,
+		},
+			&auth.OAuthBearerTokenWithSSH{
+				OAuthBearerToken: auth.OAuthBearerToken{Token: token},
+			},
+		); err != nil {
+			t.Fatal(err)
+		}
 		sourcer := sources.NewSourcer(cf)
 
 		spec := &btypes.BatchSpec{
@@ -138,7 +149,7 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 		})
 		defer state.Unmock()
 
-		src, err := sourcer.ForRepo(ctx, s, githubRepo)
+		src, err := sourcer.ForChangeset(ctx, s, changeset)
 		if err != nil {
 			t.Fatal(err)
 		}

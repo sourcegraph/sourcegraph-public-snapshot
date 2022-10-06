@@ -5,6 +5,7 @@ import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { logger } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -149,11 +150,11 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
     useEffect(() => {
         refreshSiteFlags()
             .toPromise()
-            .then(null, error => console.error(error))
+            .then(null, error => logger.error(error))
         return () => {
             refreshSiteFlags()
                 .toPromise()
-                .then(null, error => console.error(error))
+                .then(null, error => logger.error(error))
         }
     }, [])
 
@@ -202,6 +203,13 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 color: 'var(--body-color)',
                 position: 'right',
                 tooltip: 'The number of repositories that have been cloned.',
+            },
+            {
+                value: data.repositoryStats.indexed,
+                description: 'Indexed',
+                color: 'var(--body-color)',
+                position: 'right',
+                tooltip: 'The number of repositories that have been indexed for search.',
             },
             {
                 value: data.repositoryStats.failedFetch,

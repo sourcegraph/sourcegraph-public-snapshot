@@ -29,8 +29,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -99,7 +100,6 @@ func main() {
 	go conf.Watch(liblog.Update(conf.GetLogSinks))
 
 	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
-	trace.Init()
 	profiler.Init()
 
 	logger := log.Scoped("server", "the gitserver service")
@@ -123,7 +123,14 @@ func main() {
 	db := database.NewDB(logger, sqlDB)
 
 	repoStore := db.Repos()
-	depsSvc := livedependencies.GetService(db)
+	services, err := codeintel.GetServices(codeintel.Databases{
+		DB:          db,
+		CodeIntelDB: stores.NoopDB,
+	})
+	if err != nil {
+		logger.Fatal("failed to initialize codeintel services", zap.Error(err))
+	}
+	depsSvc := services.DependenciesService
 	externalServiceStore := db.ExternalServices()
 
 	err = keyring.Init(ctx)
@@ -188,7 +195,7 @@ func main() {
 		logger.Warn("error performing initial site level rate limit sync", log.Error(err))
 	}
 
-	go syncRateLimiters(ctx, externalServiceStore, rateLimitSyncerLimitPerSecond)
+	go syncRateLimiters(ctx, logger, externalServiceStore, rateLimitSyncerLimitPerSecond)
 	go debugserver.NewServerRoutine(ready).Start()
 	go gitserver.Janitor(janitorInterval)
 	go gitserver.SyncRepoState(syncRepoStateInterval, syncRepoStateBatchSize, syncRepoStateUpdatePerSecond)
@@ -527,10 +534,10 @@ func syncSiteLevelExternalServiceRateLimiters(ctx context.Context, store databas
 
 // Sync rate limiters from config. Since we don't have a trigger that watches for
 // changes to rate limits we'll run this periodically in the background.
-func syncRateLimiters(ctx context.Context, store database.ExternalServiceStore, perSecond int) {
+func syncRateLimiters(ctx context.Context, logger log.Logger, store database.ExternalServiceStore, perSecond int) {
 	backoff := 5 * time.Second
 	batchSize := 50
-	logger := log.Scoped("syncRateLimiters", "sync rate limiters from config")
+	logger = logger.Scoped("syncRateLimiters", "sync rate limiters from config")
 
 	// perSecond should be spread across all gitserver instances and we want to wait
 	// until we know about at least one instance.

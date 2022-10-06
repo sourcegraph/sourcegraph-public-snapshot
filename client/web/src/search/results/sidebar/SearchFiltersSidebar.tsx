@@ -9,7 +9,6 @@ import {
     getDynamicFilterLinks,
     getRepoFilterLinks,
     getSearchSnippetLinks,
-    getQuickLinks,
     getSearchReferenceFactory,
     getSearchTypeLinks,
     getFiltersOfKind,
@@ -20,8 +19,6 @@ import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
-import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Code, Tooltip, Icon } from '@sourcegraph/wildcard'
 
@@ -42,6 +39,7 @@ export interface SearchFiltersSidebarProps extends TelemetryProps, SettingsCasca
     aggregationUIMode?: AggregationUIMode
     onNavbarQueryChange: (queryState: QueryStateUpdate) => void
     onSearchSubmit: (updates: QueryUpdate[]) => void
+    setSidebarCollapsed: (collapsed: boolean) => void
 }
 
 export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProps>> = memo(props => {
@@ -56,6 +54,7 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
         aggregationUIMode,
         onNavbarQueryChange,
         onSearchSubmit,
+        setSidebarCollapsed,
         telemetryService,
         settingsCascade,
         children,
@@ -63,14 +62,10 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
     } = props
 
     // Settings
-    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
-    const enableSearchAggregations = useExperimentalFeatures(
-        features => features.enableSearchResultsAggregations ?? false
+    const enableSearchAggregations = useExperimentalFeatures(features => features.searchResultsAggregations ?? true)
+    const proactiveSearchAggregations = useExperimentalFeatures(
+        features => features.proactiveSearchResultsAggregations ?? true
     )
-    const disableProactiveSearchAggregations = useExperimentalFeatures(
-        features => features.disableProactiveSearchAggregations ?? false
-    )
-    const [, setSelectedTab] = useTemporarySetting('search.sidebar.selectedTab', 'filters')
 
     // Derived state
     const repoFilters = useMemo(() => getFiltersOfKind(filters, FilterType.repo), [filters])
@@ -107,19 +102,23 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
     )
 
     return (
-        <SearchSidebar {...attributes} onClose={() => setSelectedTab(null)}>
+        <SearchSidebar {...attributes} onClose={() => setSidebarCollapsed(true)}>
             {children}
 
             {showAggregationPanel && enableSearchAggregations && aggregationUIMode === AggregationUIMode.Sidebar && (
                 <SearchSidebarSection
                     sectionId={SectionID.GROUPED_BY}
                     header={<CustomAggregationHeading telemetryService={props.telemetryService} />}
+                    // SearchAggregations content contains component that makes a few API network requests
+                    // in order to prevent these calls if this section is collapsed we turn off force render
+                    // for collapse section component
+                    forcedRender={false}
                     onToggle={handleGroupedByToggle}
                 >
                     <SearchAggregations
                         query={submittedURLQuery}
                         patternType={patternType}
-                        proactive={!disableProactiveSearchAggregations}
+                        proactive={proactiveSearchAggregations}
                         caseSensitive={caseSensitive}
                         telemetryService={telemetryService}
                         onQuerySubmit={handleAggregationBarLinkClick}
@@ -137,23 +136,9 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
                 })}
             </SearchSidebarSection>
 
-            {!coreWorkflowImprovementsEnabled && (
-                <SearchSidebarSection sectionId={SectionID.DYNAMIC_FILTERS} header="Dynamic Filters">
-                    {getDynamicFilterLinks(
-                        filters,
-                        ['lang', 'file', 'utility'],
-                        onDynamicFilterClicked,
-                        (label, value) => `Filter by ${value}`,
-                        (label, value) => value
-                    )}
-                </SearchSidebarSection>
-            )}
-
-            {coreWorkflowImprovementsEnabled && (
-                <SearchSidebarSection sectionId={SectionID.LANGUAGES} header="Languages">
-                    {getDynamicFilterLinks(filters, ['lang'], onDynamicFilterClicked, label => `Search ${label} files`)}
-                </SearchSidebarSection>
-            )}
+            <SearchSidebarSection sectionId={SectionID.LANGUAGES} header="Languages">
+                {getDynamicFilterLinks(filters, ['lang'], onDynamicFilterClicked, label => `Search ${label} files`)}
+            </SearchSidebarSection>
 
             <SearchSidebarSection
                 sectionId={SectionID.REPOSITORIES}
@@ -162,19 +147,15 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
                 minItems={1}
                 noResultText={getRepoFilterNoResultText}
             >
-                {getRepoFilterLinks(repoFilters, onDynamicFilterClicked, coreWorkflowImprovementsEnabled)}
+                {getRepoFilterLinks(repoFilters, onDynamicFilterClicked)}
             </SearchSidebarSection>
 
-            {coreWorkflowImprovementsEnabled && (
-                <>
-                    <SearchSidebarSection sectionId={SectionID.FILE_TYPES} header="File types">
-                        {getDynamicFilterLinks(filters, ['file'], onDynamicFilterClicked)}
-                    </SearchSidebarSection>
-                    <SearchSidebarSection sectionId={SectionID.OTHER} header="Other">
-                        {getDynamicFilterLinks(filters, ['utility'], onDynamicFilterClicked)}
-                    </SearchSidebarSection>
-                </>
-            )}
+            <SearchSidebarSection sectionId={SectionID.FILE_TYPES} header="File types">
+                {getDynamicFilterLinks(filters, ['file'], onDynamicFilterClicked)}
+            </SearchSidebarSection>
+            <SearchSidebarSection sectionId={SectionID.OTHER} header="Other">
+                {getDynamicFilterLinks(filters, ['utility'], onDynamicFilterClicked)}
+            </SearchSidebarSection>
 
             {repoName && (
                 <SearchSidebarSection
@@ -201,12 +182,6 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
             <SearchSidebarSection sectionId={SectionID.SEARCH_SNIPPETS} header="Search snippets">
                 {getSearchSnippetLinks(settingsCascade, onSnippetClicked)}
             </SearchSidebarSection>
-
-            {!coreWorkflowImprovementsEnabled && (
-                <SearchSidebarSection sectionId={SectionID.QUICK_LINKS} header="Quicklinks">
-                    {getQuickLinks(settingsCascade)}
-                </SearchSidebarSection>
-            )}
         </SearchSidebar>
     )
 })

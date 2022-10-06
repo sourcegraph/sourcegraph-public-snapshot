@@ -7,6 +7,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/cliutil"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -41,7 +42,7 @@ sg live -n 50 s2
 			Usage:   "Number of commits to check for live version",
 		},
 	},
-	BashComplete: completeOptions(func() (options []string) {
+	BashComplete: cliutil.CompleteOptions(func() (options []string) {
 		return append(environmentNames(), `https\://...`)
 	}),
 }
@@ -64,11 +65,11 @@ func liveExec(ctx *cli.Context) error {
 	args := ctx.Args().Slice()
 	if len(args) == 0 {
 		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: No environment specified"))
-		return NewEmptyExitErr(1)
+		return cliutil.NewEmptyExitErr(1)
 	}
 	if len(args) != 1 {
 		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: Too many arguments"))
-		return NewEmptyExitErr(1)
+		return cliutil.NewEmptyExitErr(1)
 	}
 
 	e, ok := getEnvironment(args[0])
@@ -77,7 +78,7 @@ func liveExec(ctx *cli.Context) error {
 			e = environment{Name: customURL.Host, URL: customURL.String()}
 		} else {
 			std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: Environment %q not found, or is not a valid URL :(", args[0]))
-			return NewEmptyExitErr(1)
+			return cliutil.NewEmptyExitErr(1)
 		}
 	}
 

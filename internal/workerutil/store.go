@@ -2,7 +2,11 @@ package workerutil
 
 import (
 	"context"
+	"database/sql/driver"
+	"encoding/json"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Record is a generic interface for record conforming to the requirements of the store.
@@ -59,4 +63,17 @@ type ExecutionLogEntry struct {
 	ExitCode   *int      `json:"exitCode,omitempty"`
 	Out        string    `json:"out,omitempty"`
 	DurationMs *int      `json:"durationMs,omitempty"`
+}
+
+func (e *ExecutionLogEntry) Scan(value any) error {
+	b, ok := value.([]byte)
+	if !ok {
+		return errors.Errorf("value is not []byte: %T", value)
+	}
+
+	return json.Unmarshal(b, &e)
+}
+
+func (e ExecutionLogEntry) Value() (driver.Value, error) {
+	return json.Marshal(e)
 }

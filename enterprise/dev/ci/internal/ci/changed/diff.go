@@ -18,6 +18,7 @@ const (
 	DatabaseSchema
 	Docs
 	Dockerfiles
+	ExecutorVMImage
 	ExecutorDockerRegistryMirror
 	CIScripts
 	Terraform
@@ -55,7 +56,7 @@ var topLevelGoDirs = []string{
 // ParseDiff identifies what has changed in files by generating a Diff that can be used
 // to check for specific changes, e.g.
 //
-// 	if diff.Has(changed.Client | changed.GraphQL) { ... }
+//	if diff.Has(changed.Client | changed.GraphQL) { ... }
 //
 // To introduce a new type of Diff, add it a new Diff constant above and add a check in
 // this function to identify the Diff.
@@ -131,6 +132,11 @@ func ParseDiff(files []string) (diff Diff) {
 			diff |= ExecutorDockerRegistryMirror
 		}
 
+		// Affects executor VM image
+		if strings.HasPrefix(p, "docker-images/executor-vm/") {
+			diff |= ExecutorVMImage
+		}
+
 		// Affects CI scripts
 		if strings.HasPrefix(p, "enterprise/dev/ci/scripts") {
 			diff |= CIScripts
@@ -187,6 +193,8 @@ func (d Diff) String() string {
 		return "Dockerfiles"
 	case ExecutorDockerRegistryMirror:
 		return "ExecutorDockerRegistryMirror"
+	case ExecutorVMImage:
+		return "ExecutorVMImage"
 	case CIScripts:
 		return "CIScripts"
 	case Terraform:

@@ -7,19 +7,14 @@ import (
 	"github.com/jackc/pgtype"
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/commitgraph"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/commitgraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-func scanUploadByID(s dbutil.Scanner) (upload shared.Upload, err error) {
-	return upload, s.Scan(
-		&upload.ID,
-	)
-}
-
-func scanCompleteUpload(s dbutil.Scanner) (upload shared.Upload, _ error) {
+func scanCompleteUpload(s dbutil.Scanner) (upload types.Upload, _ error) {
 	var rawUploadedParts []sql.NullInt32
 	if err := s.Scan(
 		&upload.ID,
@@ -56,17 +51,14 @@ func scanCompleteUpload(s dbutil.Scanner) (upload shared.Upload, _ error) {
 	return upload, nil
 }
 
-var (
-	scanUploadComplete = basestore.NewSliceScanner(scanCompleteUpload)
-	scanUploads        = basestore.NewSliceScanner(scanUploadByID)
-)
+var scanUploadComplete = basestore.NewSliceScanner(scanCompleteUpload)
 
 // scanFirstUpload scans a slice of uploads from the return value of `*Store.query` and returns the first.
 var scanFirstUpload = basestore.NewFirstScanner(scanCompleteUpload)
 
 var scanUploadsWithCount = basestore.NewSliceWithCountScanner(scanUploadWithCount)
 
-func scanUploadWithCount(s dbutil.Scanner) (upload shared.Upload, count int, err error) {
+func scanUploadWithCount(s dbutil.Scanner) (upload types.Upload, count int, err error) {
 	var rawUploadedParts []sql.NullInt32
 	if err = s.Scan(
 		&upload.ID,
@@ -126,7 +118,7 @@ func scanCounts(rows *sql.Rows, queryErr error) (_ map[int]int, err error) {
 }
 
 // scanDumps scans a slice of dumps from the return value of `*Store.query`.
-func scanDump(s dbutil.Scanner) (dump shared.Dump, err error) {
+func scanDump(s dbutil.Scanner) (dump types.Dump, err error) {
 	return dump, s.Scan(
 		&dump.ID,
 		&dump.Commit,
@@ -283,7 +275,7 @@ func scanRepoNames(rows *sql.Rows, queryErr error) (_ map[int]string, err error)
 	return names, nil
 }
 
-func scanUploadAuditLog(s dbutil.Scanner) (log shared.UploadLog, _ error) {
+func scanUploadAuditLog(s dbutil.Scanner) (log types.UploadLog, _ error) {
 	hstores := pgtype.HstoreArray{}
 	err := s.Scan(
 		&log.LogTimestamp,

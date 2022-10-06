@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
@@ -597,6 +598,7 @@ type ExternalServiceSyncJob struct {
 	NumResets         int
 	ExternalServiceID int64
 	NumFailures       int
+	Cancel            bool
 }
 
 // URN returns a unique resource identifier of this external service,
@@ -909,9 +911,6 @@ type BatchChangesUsageStatistics struct {
 	// PublishedChangesetsDiffStatAddedSum is the total sum of lines added by
 	// changesets published on the code host by batch changes.
 	PublishedChangesetsDiffStatAddedSum int32
-	// PublishedChangesetsDiffStatChangedSum is the total sum of lines changed by
-	// changesets published on the code host by batch changes.
-	PublishedChangesetsDiffStatChangedSum int32
 	// PublishedChangesetsDiffStatDeletedSum is the total sum of lines deleted by
 	// changesets published on the code host by batch changes.
 	PublishedChangesetsDiffStatDeletedSum int32
@@ -924,9 +923,6 @@ type BatchChangesUsageStatistics struct {
 	// PublishedChangesetsMergedDiffStatAddedSum is the total sum of lines added by
 	// changesets published on the code host by batch changes and merged.
 	PublishedChangesetsMergedDiffStatAddedSum int32
-	// PublishedChangesetsMergedDiffStatChangedSum is the total sum of lines changed by
-	// changesets published on the code host by batch changes and merged.
-	PublishedChangesetsMergedDiffStatChangedSum int32
 	// PublishedChangesetsMergedDiffStatDeletedSum is the total sum of lines deleted by
 	// changesets published on the code host by batch changes and merged.
 	PublishedChangesetsMergedDiffStatDeletedSum int32
@@ -1281,6 +1277,36 @@ type IDEExtensionsUsageUserState struct {
 	Uninstalls int32
 }
 
+// MigratedExtensionsUsageStatistics repreents the numbers of interactions with
+// the migrated extensions (git blame, open in editor, search exports, and go
+// imports search).
+type MigratedExtensionsUsageStatistics struct {
+	GitBlameEnabled                 *int32
+	GitBlameEnabledUniqueUsers      *int32
+	GitBlameDisabled                *int32
+	GitBlameDisabledUniqueUsers     *int32
+	GitBlamePopupViewed             *int32
+	GitBlamePopupViewedUniqueUsers  *int32
+	GitBlamePopupClicked            *int32
+	GitBlamePopupClickedUniqueUsers *int32
+
+	SearchExportPerformed            *int32
+	SearchExportPerformedUniqueUsers *int32
+	SearchExportFailed               *int32
+	SearchExportFailedUniqueUsers    *int32
+
+	GoImportsSearchQueryTransformed            *int32
+	GoImportsSearchQueryTransformedUniqueUsers *int32
+
+	OpenInEditor []*MigratedExtensionsOpenInEditorUsageStatistics
+}
+
+type MigratedExtensionsOpenInEditorUsageStatistics struct {
+	IdeKind            string
+	Clicked            *int32
+	ClickedUniqueUsers *int32
+}
+
 // CodeHostIntegrationUsage represents the daily, weekly and monthly
 // number of unique users and events for code host integration usage
 // and inbound traffic from code host integration to Sourcegraph instance
@@ -1428,6 +1454,7 @@ type GroupResultPing struct {
 	AggregationMode *string
 	UIMode          *string
 	Count           *int32
+	BarIndex        *int32
 }
 
 type GroupResultExpandedViewPing struct {
@@ -1613,4 +1640,27 @@ type SearchContext struct {
 type SearchContextRepositoryRevisions struct {
 	Repo      MinimalRepo
 	Revisions []string
+}
+
+type EncryptableSecret = encryption.Encryptable
+
+func NewEmptySecret() *EncryptableSecret {
+	return NewUnencryptedSecret("")
+}
+
+func NewUnencryptedSecret(value string) *EncryptableSecret {
+	return encryption.NewUnencrypted(value)
+}
+
+func NewEncryptedSecret(cipher, keyID string, key encryption.Key) *EncryptableSecret {
+	return encryption.NewEncrypted(cipher, keyID, key)
+}
+
+type Webhook struct {
+	ID           string
+	CodeHostKind string
+	CodeHostURN  string
+	Secret       *EncryptableSecret
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
 }
