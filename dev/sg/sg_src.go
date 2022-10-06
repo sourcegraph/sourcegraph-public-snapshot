@@ -52,7 +52,7 @@ var srcCommand = &cli.Command{
 				{
 					Name:    "register",
 					Usage:   "",
-					Aliases: []string{"update, add"},
+					Aliases: []string{"update"},
 					Flags: []cli.Flag{
 						&cli.StringFlag{
 							Name:     "name",
