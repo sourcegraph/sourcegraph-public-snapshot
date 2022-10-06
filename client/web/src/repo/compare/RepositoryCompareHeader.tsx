@@ -19,7 +19,6 @@ export const RepositoryCompareHeader: React.FunctionComponent<
 > = ({ base, head, className, repo }) => (
     <div className={classNames(styles.repositoryCompareHeader, className)}>
         <PageHeader
-            path={[{ text: 'Compare changes across revisions' }]}
             description={
                 <span className="mb-3">
                     Select a revision or provide a{' '}
@@ -33,7 +32,11 @@ export const RepositoryCompareHeader: React.FunctionComponent<
                     for more fine-grained comparisons
                 </span>
             }
-        />
+        >
+            <PageHeader.Heading as="h2" styleAs="h1">
+                <PageHeader.Breadcrumb>Compare changes across revisions</PageHeader.Breadcrumb>
+            </PageHeader.Heading>
+        </PageHeader>
         <div className="d-flex align-items-center">
             <RepositoryComparePopover id="base-popover" type="base" comparison={{ base, head }} repo={repo} />
             <Icon className="mx-2" aria-hidden={true} svgPath={mdiDotsHorizontal} />

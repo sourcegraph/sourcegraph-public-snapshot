@@ -1,49 +1,68 @@
 package uploads
 
 import (
-	"sync"
-
-	"github.com/prometheus/client_golang/prometheus"
-	"go.opentelemetry.io/otel"
-
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
+	policiesEnterprise "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/memo"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-var (
-	svc     *Service
-	svcOnce sync.Once
-)
-
-// GetService creates or returns an already-initialized uploads service. If the service is
-// new, it will use the given database handle.
-func GetService(db, codeIntelDB database.DB, gsc GitserverClient) *Service {
-	svcOnce.Do(func() {
-		logger := log.Scoped(
-			"uploads",
-			"codeintel uploads service",
-		)
-
-		observationContext := &observation.Context{
-			Logger:     logger,
-			Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-			Registerer: prometheus.DefaultRegisterer,
-		}
-
-		store := store.New(db, observationContext)
-		locker := locker.NewWith(db, "codeintel")
-		repoStore := backend.NewRepos(logger, db)
-		lsifstore := lsifstore.New(codeIntelDB, observationContext)
-
-		svc = newService(store, repoStore, lsifstore, gsc, locker, observationContext)
+// GetService creates or returns an already-initialized uploads service.
+// If the service is not yet initialized, it will use the provided dependencies.
+func GetService(
+	db database.DB,
+	codeIntelDB stores.CodeIntelDB,
+	gsc GitserverClient,
+) *Service {
+	svc, _ := initServiceMemo.Init(serviceDependencies{
+		db,
+		codeIntelDB,
+		gsc,
 	})
 
 	return svc
+}
+
+type serviceDependencies struct {
+	db          database.DB
+	codeIntelDB stores.CodeIntelDB
+	gsc         GitserverClient
+}
+
+var initServiceMemo = memo.NewMemoizedConstructorWithArg(func(deps serviceDependencies) (*Service, error) {
+	store := store.New(deps.db, scopedContext("store"))
+	repoStore := backend.NewRepos(scopedContext("repos").Logger, deps.db, gitserver.NewClient(deps.db))
+	lsifStore := lsifstore.New(deps.codeIntelDB, scopedContext("lsifstore"))
+	policyMatcher := policiesEnterprise.NewMatcher(deps.gsc, policiesEnterprise.RetentionExtractor, true, false)
+	locker := locker.NewWith(deps.db, "codeintel")
+	repoUpdater := repoupdater.New(&observation.TestContext)
+
+	svc := newService(
+		store,
+		repoStore,
+		lsifStore,
+		deps.gsc,
+		nil, // written in circular fashion
+		nil, // written in circular fashion
+		policyMatcher,
+		locker,
+		scopedContext("service"),
+	)
+	svc.policySvc = policies.GetService(deps.db, svc, deps.gsc)
+	svc.autoIndexingSvc = autoindexing.GetService(deps.db, svc, dependencies.GetService(deps.db, deps.gsc), svc.policySvc, deps.gsc, repoUpdater)
+	return svc, nil
+})
+
+func scopedContext(component string) *observation.Context {
+	return observation.ScopedContext("codeintel", "uploads", component)
 }

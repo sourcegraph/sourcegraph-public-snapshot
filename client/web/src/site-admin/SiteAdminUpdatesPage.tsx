@@ -35,12 +35,12 @@ export const SiteAdminUpdatesPage: React.FunctionComponent<React.PropsWithChildr
             <PageTitle title="Updates - Admin" />
             <PageHeader path={[{ text: 'Updates' }]} headingElement="h2" className="mb-3" />
 
-            <Container>
+            <Container className="mb-2">
                 {error && !loading && <ErrorAlert error={error} />}
                 {loading && !error && <LoadingSpinner />}
                 {data && (
                     <>
-                        <Text className="mb-2">
+                        <Text className="mb-1">
                             Version {data.site.productVersion}{' '}
                             <small className="text-muted">
                                 (

@@ -1,6 +1,8 @@
 package querybuilder
 
 import (
+	"strings"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -54,4 +56,19 @@ func ParametersFromQueryPlan(plan query.Plan) []query.Parameter {
 		parameters = append(parameters, basic.Parameters...)
 	}
 	return parameters
+}
+
+func ContainsField(rawQuery, field string) (bool, error) {
+	plan, err := ParseQuery(rawQuery, "literal")
+	if err != nil {
+		return false, errors.Wrap(err, "ParseQuery")
+	}
+	for _, basic := range plan {
+		for _, param := range basic.Parameters {
+			if strings.EqualFold(field, param.Field) && param.Value != "" {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
 }

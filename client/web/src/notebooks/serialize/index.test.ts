@@ -1,6 +1,6 @@
 import { of } from 'rxjs'
 
-import { SymbolKind } from '@sourcegraph/shared/src/schema'
+import { SymbolKind } from '../../graphql-operations'
 
 import { parseLineRange, serializeBlockInput, serializeLineRange } from '.'
 

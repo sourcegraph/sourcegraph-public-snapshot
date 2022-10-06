@@ -11,15 +11,6 @@ import (
 )
 
 type operations struct {
-	// Not used yet.
-	list     *observation.Operation
-	get      *observation.Operation
-	getBatch *observation.Operation
-	enqueue  *observation.Operation
-	delete   *observation.Operation
-
-	uploadsVisibleTo *observation.Operation
-
 	// Commits
 	getOldestCommitDate       *observation.Operation
 	getCommitsVisibleToUpload *observation.Operation
@@ -68,6 +59,7 @@ type operations struct {
 
 	// References
 	updatePackageReferences *observation.Operation
+	referencesForUpload     *observation.Operation
 
 	// Audit Logs
 	getAuditLogsForUpload *observation.Operation
@@ -113,14 +105,6 @@ func newOperations(observationContext *observation.Context) *operations {
 	observationContext.Registerer.MustRegister(uploadSizeGuage)
 
 	return &operations{
-		// Not used yet.
-		list:             op("List"),
-		get:              op("Get"),
-		getBatch:         op("GetBatch"),
-		enqueue:          op("Enqueue"),
-		delete:           op("Delete"),
-		uploadsVisibleTo: op("UploadsVisibleTo"),
-
 		// Commits
 		getOldestCommitDate:       op("GetOldestCommitDate"),
 		getCommitsVisibleToUpload: op("GetCommitsVisibleToUpload"),
@@ -169,6 +153,7 @@ func newOperations(observationContext *observation.Context) *operations {
 
 		// References
 		updatePackageReferences: op("UpdatePackageReferences"),
+		referencesForUpload:     op("ReferencesForUpload"),
 
 		// Audit Logs
 		getAuditLogsForUpload: op("GetAuditLogsForUpload"),

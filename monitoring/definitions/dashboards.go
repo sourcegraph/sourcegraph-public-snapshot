@@ -28,6 +28,7 @@ func Default() Dashboards {
 		CodeIntelAutoIndexing(),
 		CodeIntelUploads(),
 		CodeIntelPolicies(),
+		CodeIntelCodeNav(),
 		Telemetry(),
 	}
 }

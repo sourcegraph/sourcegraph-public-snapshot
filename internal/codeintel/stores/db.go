@@ -30,25 +30,21 @@ type codeIntelDB struct {
 
 func (d *codeIntelDB) Transact(ctx context.Context) (CodeIntelDB, error) {
 	tx, err := d.Store.Transact(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &codeIntelDB{tx}, nil
+	return &codeIntelDB{tx}, err
 }
 
-func (d *codeIntelDB) Done(err error) error {
-	return d.Store.Done(err)
+func (db *codeIntelDB) Done(err error) error {
+	return db.Store.Done(err)
 }
 
-func (d *codeIntelDB) QueryContext(ctx context.Context, q string, args ...any) (*sql.Rows, error) {
-	return d.Handle().QueryContext(ctx, q, args...)
+func (db *codeIntelDB) QueryContext(ctx context.Context, q string, args ...any) (*sql.Rows, error) {
+	return db.Handle().QueryContext(ctx, q, args...)
 }
 
-func (d *codeIntelDB) ExecContext(ctx context.Context, q string, args ...any) (sql.Result, error) {
-	return d.Handle().ExecContext(ctx, q, args...)
-
+func (db *codeIntelDB) ExecContext(ctx context.Context, q string, args ...any) (sql.Result, error) {
+	return db.Handle().ExecContext(ctx, q, args...)
 }
 
-func (d *codeIntelDB) QueryRowContext(ctx context.Context, q string, args ...any) *sql.Row {
-	return d.Handle().QueryRowContext(ctx, q, args...)
+func (db *codeIntelDB) QueryRowContext(ctx context.Context, q string, args ...any) *sql.Row {
+	return db.Handle().QueryRowContext(ctx, q, args...)
 }

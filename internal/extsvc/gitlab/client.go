@@ -230,6 +230,10 @@ func isGitLabDotComURL(baseURL *url.URL) bool {
 	return hostname == "gitlab.com" || hostname == "www.gitlab.com"
 }
 
+func (c *Client) Urn() string {
+	return c.urn
+}
+
 // do is the default method for making API requests and will prepare the correct
 // base path.
 func (c *Client) do(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {

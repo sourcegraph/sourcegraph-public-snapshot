@@ -2683,6 +2683,17 @@ CREATE SEQUENCE lsif_uploads_audit_logs_seq
 
 ALTER SEQUENCE lsif_uploads_audit_logs_seq OWNED BY lsif_uploads_audit_logs.sequence;
 
+CREATE TABLE lsif_uploads_reference_counts (
+    upload_id integer NOT NULL,
+    reference_count integer NOT NULL
+);
+
+COMMENT ON TABLE lsif_uploads_reference_counts IS 'A less hot-path reference count for upload records.';
+
+COMMENT ON COLUMN lsif_uploads_reference_counts.upload_id IS 'The identifier of the referenced upload.';
+
+COMMENT ON COLUMN lsif_uploads_reference_counts.reference_count IS 'The number of references to the associated upload from other records (via lsif_references).';
+
 CREATE TABLE lsif_uploads_visible_at_tip (
     repository_id integer NOT NULL,
     upload_id integer NOT NULL,
@@ -3509,6 +3520,24 @@ CREATE SEQUENCE webhook_logs_id_seq
 
 ALTER SEQUENCE webhook_logs_id_seq OWNED BY webhook_logs.id;
 
+CREATE TABLE webhooks (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    code_host_kind text NOT NULL,
+    code_host_urn text NOT NULL,
+    secret text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    encryption_key_id text DEFAULT ''::text NOT NULL
+);
+
+COMMENT ON TABLE webhooks IS 'Webhooks registered in Sourcegraph instance.';
+
+COMMENT ON COLUMN webhooks.code_host_kind IS 'Kind of an external service for which webhooks are registered.';
+
+COMMENT ON COLUMN webhooks.code_host_urn IS 'URN of a code host. This column maps to external_service_id column of repo table.';
+
+COMMENT ON COLUMN webhooks.secret IS 'Secret used to decrypt webhook payload (if supported by the code host).';
+
 ALTER TABLE ONLY access_tokens ALTER COLUMN id SET DEFAULT nextval('access_tokens_id_seq'::regclass);
 
 ALTER TABLE ONLY batch_changes ALTER COLUMN id SET DEFAULT nextval('batch_changes_id_seq'::regclass);
@@ -3869,6 +3898,9 @@ ALTER TABLE ONLY lsif_retention_configuration
 ALTER TABLE ONLY lsif_uploads
     ADD CONSTRAINT lsif_uploads_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY lsif_uploads_reference_counts
+    ADD CONSTRAINT lsif_uploads_reference_counts_upload_id_key UNIQUE (upload_id);
+
 ALTER TABLE ONLY names
     ADD CONSTRAINT names_pkey PRIMARY KEY (name);
 
@@ -3991,6 +4023,9 @@ ALTER TABLE ONLY versions
 
 ALTER TABLE ONLY webhook_logs
     ADD CONSTRAINT webhook_logs_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY webhooks
+    ADD CONSTRAINT webhooks_pkey PRIMARY KEY (id);
 
 CREATE INDEX access_tokens_lookup ON access_tokens USING hash (value_sha256) WHERE (deleted_at IS NULL);
 
@@ -4590,6 +4625,9 @@ ALTER TABLE ONLY gitserver_repos
 
 ALTER TABLE ONLY insights_query_runner_jobs_dependencies
     ADD CONSTRAINT insights_query_runner_jobs_dependencies_fk_job_id FOREIGN KEY (job_id) REFERENCES insights_query_runner_jobs(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY lsif_uploads_reference_counts
+    ADD CONSTRAINT lsif_data_docs_search_private_repo_name_id_fk FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY lsif_dependency_syncing_jobs
     ADD CONSTRAINT lsif_dependency_indexing_jobs_upload_id_fkey FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE;

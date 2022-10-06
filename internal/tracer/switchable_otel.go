@@ -40,22 +40,36 @@ func newSwitchableOtelTracerProvider(logger log.Logger) *switchableOtelTracerPro
 	return &switchableOtelTracerProvider{logger: logger, current: &v}
 }
 
+// Tracer implements the OpenTelemetry TracerProvider interface. It must do nothing except
+// return s.concreteTracer.
 func (s *switchableOtelTracerProvider) Tracer(instrumentationName string, opts ...oteltrace.TracerOption) oteltrace.Tracer {
-	val := s.current.Load().(*otelTracerProviderCarrier) // must be initialized
+	return s.concreteTracer(instrumentationName, opts...)
+}
+
+// concreteTracer generates a concrete concreteTracer OpenTelemetry Tracer implementation, and is used by
+// Tracer to implement TracerProvider, and is used by tests to assert against concreteTracer types.
+func (s *switchableOtelTracerProvider) concreteTracer(instrumentationName string, opts ...oteltrace.TracerOption) *shouldTraceTracer {
+	carrier := s.loadCarrier()
 
 	logger := s.logger
-	if val.debug {
+	if carrier.debug {
 		// Only assign fields to logger in debug mode
 		logger = s.logger.With(
 			log.String("tracerName", instrumentationName),
-			log.String("provider", fmt.Sprintf("%T", val.provider)))
+			log.String("provider", fmt.Sprintf("%T", carrier.provider)))
 		logger.Info("Tracer")
 	}
 	return &shouldTraceTracer{
 		logger: logger,
-		debug:  val.debug,
-		tracer: val.provider.Tracer(instrumentationName, opts...),
+		debug:  carrier.debug,
+		tracer: carrier.provider.Tracer(instrumentationName, opts...),
 	}
+}
+
+// loadCarrier retrieves the carrier struct that configures the current TracerProvider and
+// pipeline closer. The current value must already be initialized in the constructor.
+func (s *switchableOtelTracerProvider) loadCarrier() *otelTracerProviderCarrier {
+	return s.current.Load().(*otelTracerProviderCarrier)
 }
 
 func (s *switchableOtelTracerProvider) set(provider oteltrace.TracerProvider, closer io.Closer, debug bool) {
@@ -65,7 +79,7 @@ func (s *switchableOtelTracerProvider) set(provider oteltrace.TracerProvider, cl
 	}
 
 	// Shut down previous provider
-	if previous := s.current.Load().(*otelTracerProviderCarrier); previous.closer != nil {
+	if previous := s.loadCarrier(); previous.closer != nil {
 		go previous.closer.Close() // non-blocking
 	}
 

@@ -14,13 +14,11 @@ func TestRanges(t *testing.T) {
 	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
-	mockGitserverClient := NewMockGitserverClient()
 
 	resolver := NewGitBlobLSIFDataResolverQueryResolver(
 		mockAutoIndexingSvc,
 		mockUploadsService,
 		mockPolicyService,
-		mockGitserverClient,
 		mockGitBlobResolver,
 		observation.NewErrorCollector(),
 	)
@@ -46,13 +44,11 @@ func TestDefinitions(t *testing.T) {
 	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
-	mockGitserverClient := NewMockGitserverClient()
 
 	resolver := NewGitBlobLSIFDataResolverQueryResolver(
 		mockAutoIndexingSvc,
 		mockUploadsService,
 		mockPolicyService,
-		mockGitserverClient,
 		mockGitBlobResolver,
 		observation.NewErrorCollector(),
 	)
@@ -78,13 +74,11 @@ func TestReferences(t *testing.T) {
 	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
-	mockGitserverClient := NewMockGitserverClient()
 
 	resolver := NewGitBlobLSIFDataResolverQueryResolver(
 		mockAutoIndexingSvc,
 		mockUploadsService,
 		mockPolicyService,
-		mockGitserverClient,
 		mockGitBlobResolver,
 		observation.NewErrorCollector(),
 	)
@@ -127,13 +121,11 @@ func TestReferencesDefaultLimit(t *testing.T) {
 	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
-	mockGitserverClient := NewMockGitserverClient()
 
 	resolver := NewGitBlobLSIFDataResolverQueryResolver(
 		mockAutoIndexingSvc,
 		mockUploadsService,
 		mockPolicyService,
-		mockGitserverClient,
 		mockGitBlobResolver,
 		observation.NewErrorCollector(),
 	)
@@ -163,13 +155,11 @@ func TestReferencesDefaultIllegalLimit(t *testing.T) {
 	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
-	mockGitserverClient := NewMockGitserverClient()
 
 	resolver := NewGitBlobLSIFDataResolverQueryResolver(
 		mockAutoIndexingSvc,
 		mockUploadsService,
 		mockPolicyService,
-		mockGitserverClient,
 		mockGitBlobResolver,
 		observation.NewErrorCollector(),
 	)
@@ -193,13 +183,11 @@ func TestHover(t *testing.T) {
 	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
-	mockGitserverClient := NewMockGitserverClient()
 
 	resolver := NewGitBlobLSIFDataResolverQueryResolver(
 		mockAutoIndexingSvc,
 		mockUploadsService,
 		mockPolicyService,
-		mockGitserverClient,
 		mockGitBlobResolver,
 		observation.NewErrorCollector(),
 	)
@@ -225,13 +213,11 @@ func TestDiagnostics(t *testing.T) {
 	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
-	mockGitserverClient := NewMockGitserverClient()
 
 	resolver := NewGitBlobLSIFDataResolverQueryResolver(
 		mockAutoIndexingSvc,
 		mockUploadsService,
 		mockPolicyService,
-		mockGitserverClient,
 		mockGitBlobResolver,
 		observation.NewErrorCollector(),
 	)
@@ -258,13 +244,11 @@ func TestDiagnosticsDefaultLimit(t *testing.T) {
 	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
-	mockGitserverClient := NewMockGitserverClient()
 
 	resolver := NewGitBlobLSIFDataResolverQueryResolver(
 		mockAutoIndexingSvc,
 		mockUploadsService,
 		mockPolicyService,
-		mockGitserverClient,
 		mockGitBlobResolver,
 		observation.NewErrorCollector(),
 	)
@@ -290,13 +274,11 @@ func TestDiagnosticsDefaultIllegalLimit(t *testing.T) {
 	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
-	mockGitserverClient := NewMockGitserverClient()
 
 	resolver := NewGitBlobLSIFDataResolverQueryResolver(
 		mockAutoIndexingSvc,
 		mockUploadsService,
 		mockPolicyService,
-		mockGitserverClient,
 		mockGitBlobResolver,
 		observation.NewErrorCollector(),
 	)
