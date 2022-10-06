@@ -145,7 +145,7 @@ executor test-vm [--repo=github.com/sourcegraph/sourcegraph --revision=main]
 
 This should succeed and print a command to use to attach to the guest VM. If it is able to spin up properly, that is usually good indication that everything is set up properly. If you need to debug some issue further, this can be helpful as you can exec into the guest VM from here.
 
-### **Step 4:** Make executor a systemd service (optional, systemd-based distributions only)
+### **Step 5:** Make executor a systemd service (optional, systemd-based distributions only)
 
 To make sure that the executor runs post-boot of the machine, you might want to wrap it in a systemd service. This is an example of how that could look like:
 
@@ -176,6 +176,6 @@ EOF
 systemctl enable executor
 ```
 
-### **Step 5:** Start receiving workloads
+### **Step 6:** Start receiving workloads
 
 If you use the systemd service, simply run `systemctl start executor`, otherwise run `executor run`. Your executor should start listening for jobs now! All done!
