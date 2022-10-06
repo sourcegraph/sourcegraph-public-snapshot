@@ -14,10 +14,9 @@ import (
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifuploadstore"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -96,8 +95,6 @@ func main() {
 	close(ready)
 
 	// Initialize stores
-	gitserverClient := gitserver.New(db, observationContext)
-
 	uploadStore, err := lsifuploadstore.New(context.Background(), config.LSIFUploadStoreConfig, observationContext)
 	if err != nil {
 		logger.Fatal("Failed to create upload store", log.Error(err))
@@ -112,16 +109,22 @@ func main() {
 		logger.Fatal("Failed to create sub-repo client", log.Error(err))
 	}
 
-	uploadsSvc := uploads.GetService(db, codeIntelDB, gitserverClient)
+	services, err := codeintel.GetServices(codeintel.Databases{
+		DB:          db,
+		CodeIntelDB: codeIntelDB,
+	})
+	if err != nil {
+		logger.Fatal("Failed to create codeintel services", log.Error(err))
+	}
 
 	// Initialize worker
 	rootContext := actor.WithInternalActor(context.Background())
-	handler := uploadsSvc.WorkerutilHandler(
+	handler := services.UploadsService.WorkerutilHandler(
 		uploadStore,
 		config.WorkerConcurrency,
 		config.WorkerBudget,
 	)
-	worker := dbworker.NewWorker(rootContext, uploadsSvc.WorkerutilStore(), handler, workerutil.WorkerOptions{
+	worker := dbworker.NewWorker(rootContext, services.UploadsService.WorkerutilStore(), handler, workerutil.WorkerOptions{
 		Name:                 "precise_code_intel_upload_worker",
 		NumHandlers:          config.WorkerConcurrency,
 		Interval:             config.WorkerPollInterval,
