@@ -218,7 +218,7 @@ func startExec(ctx *cli.Context) error {
 		update := std.Out.Pending(output.Styled(output.StylePending, "Checking for dev-private changes..."))
 		shouldUpdate, err := shouldUpdateDevPrivate(ctx.Context, devPrivatePath)
 		if shouldUpdate {
-			update.WriteLine(output.Line(output.EmojiInfo, output.StyleSuggestion, "We found some changes in dev-private that you're missing out on! If you want the new changes, do a git stash and then a git pull!"))
+			update.WriteLine(output.Line(output.EmojiInfo, output.StyleSuggestion, "We found some changes in dev-private that you're missing out on! If you want the new changes, 'cd ../dev-private' and then do a 'git stash' and a 'git pull'!"))
 		}
 		if err != nil {
 			update.Close()
