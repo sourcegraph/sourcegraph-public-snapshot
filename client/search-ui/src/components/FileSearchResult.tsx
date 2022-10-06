@@ -220,31 +220,40 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
             className={containerClassName}
             ref={rootRef}
         >
-            <FileMatchChildren
-                result={result}
-                grouped={expanded ? expandedMatchGroups.grouped : collapsedMatchGroups.grouped}
-                fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                settingsCascade={settingsCascade}
-                telemetryService={telemetryService}
-                openInNewTab={openInNewTab}
-                extensionsController={extensionsController}
-                hoverifier={hoverifier}
-            />
-            {collapsible && (
-                <button
-                    type="button"
-                    className={classNames(styles.toggleMatchesButton, expanded && styles.toggleMatchesButtonExpanded)}
-                    onClick={toggle}
-                    data-testid="toggle-matches-container"
-                >
-                    <Icon aria-hidden={true} svgPath={expanded ? mdiChevronUp : mdiChevronDown} />
-                    <span className={styles.toggleMatchesButtonText}>
-                        {expanded
-                            ? 'Show less'
-                            : `Show ${hiddenMatchesCount} more ${pluralize('match', hiddenMatchesCount, 'matches')}`}
-                    </span>
-                </button>
-            )}
+            <div data-testid="file-search-result" data-expanded={expanded}>
+                <FileMatchChildren
+                    result={result}
+                    grouped={expanded ? expandedMatchGroups.grouped : collapsedMatchGroups.grouped}
+                    fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                    settingsCascade={settingsCascade}
+                    telemetryService={telemetryService}
+                    openInNewTab={openInNewTab}
+                    extensionsController={extensionsController}
+                    hoverifier={hoverifier}
+                />
+                {collapsible && (
+                    <button
+                        type="button"
+                        className={classNames(
+                            styles.toggleMatchesButton,
+                            expanded && styles.toggleMatchesButtonExpanded
+                        )}
+                        onClick={toggle}
+                        data-testid="toggle-matches-container"
+                    >
+                        <Icon aria-hidden={true} svgPath={expanded ? mdiChevronUp : mdiChevronDown} />
+                        <span className={styles.toggleMatchesButtonText}>
+                            {expanded
+                                ? 'Show less'
+                                : `Show ${hiddenMatchesCount} more ${pluralize(
+                                      'match',
+                                      hiddenMatchesCount,
+                                      'matches'
+                                  )}`}
+                        </span>
+                    </button>
+                )}
+            </div>
         </ResultContainer>
     )
 }

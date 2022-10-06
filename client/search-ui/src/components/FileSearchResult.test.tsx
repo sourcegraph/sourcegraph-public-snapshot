@@ -25,7 +25,7 @@ describe('FileSearchResult', () => {
         result: RESULT,
         icon: FileIcon,
         onSelect: sinon.spy(),
-        expanded: true,
+        defaultExpanded: true,
         showAllMatches: true,
         fetchHighlightedFileLineRanges: HIGHLIGHTED_FILE_LINES_REQUEST,
         settingsCascade: NOOP_SETTINGS_CASCADE,
