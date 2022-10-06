@@ -3,7 +3,6 @@ import { from, Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { gql, getDocumentNode } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 
 import { ExecutorFields, ExecutorsResult, ExecutorsVariables } from '../../graphql-operations'
 
@@ -51,7 +50,7 @@ const EXECUTORS = gql`
 `
 
 export const queryExecutors = (
-    { query, active, first, after }: GQL.IExecutorsOnQueryArguments,
+    { query, active, first, after }: Partial<ExecutorsVariables>,
     client: ApolloClient<object>
 ): Observable<ExecutorConnection> => {
     const variables: ExecutorsVariables = {

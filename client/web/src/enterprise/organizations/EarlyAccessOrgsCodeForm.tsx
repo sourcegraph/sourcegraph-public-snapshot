@@ -5,11 +5,10 @@ import { RouteComponentProps } from 'react-router'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { logger } from '@sourcegraph/common'
 import { gql, useLazyQuery, useMutation } from '@sourcegraph/http-client'
-import { IFeatureFlagOverride } from '@sourcegraph/shared/src/schema'
 import { Input, Alert, H2, Text } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../components/LoaderButton'
-import { Maybe, OrganizationVariables } from '../../graphql-operations'
+import { Maybe, OrganizationVariables, CreateFeatureFlagOverrideResult } from '../../graphql-operations'
 
 const ORG_CODE_FLAG = 'org-code'
 
@@ -20,7 +19,7 @@ interface OrgResult {
 }
 
 interface FeatureFlagOverrideResult {
-    createFeatureFlagOverride: Maybe<IFeatureFlagOverride>
+    createFeatureFlagOverride: Maybe<CreateFeatureFlagOverrideResult['createFeatureFlagOverride']>
 }
 
 interface FeatureFlagOverrideVariables {

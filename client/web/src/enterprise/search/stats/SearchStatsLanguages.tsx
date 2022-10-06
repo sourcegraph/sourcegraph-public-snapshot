@@ -3,11 +3,10 @@ import React, { useCallback } from 'react'
 import { PieChart, Pie, Tooltip, ResponsiveContainer, PieLabelRenderProps, Cell, TooltipFormatter } from 'recharts'
 
 import { numberWithCommas, pluralize } from '@sourcegraph/common'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { CardHeader, Link, CardBody, Card } from '@sourcegraph/wildcard'
 
-import { SearchPatternType } from '../../../graphql-operations'
+import { SearchPatternType, SearchResultsStatsFields } from '../../../graphql-operations'
 
 const OTHER_LANGUAGE = 'Other'
 const UNKNOWN_LANGUAGE = 'Unknown'
@@ -17,17 +16,14 @@ const UNKNOWN_LANGUAGE = 'Unknown'
  * grouped together as "" (which is displayed as "Other").
  */
 export const summarizeSearchResultsStatsLanguages = (
-    languages: GQL.ISearchResultsStats['languages'],
+    languages: SearchResultsStatsFields['languages'],
     minFraction: number
-): GQL.ISearchResultsStats['languages'] => {
+): SearchResultsStatsFields['languages'] => {
     const totalLines = languages.reduce((sum, language) => sum + language.totalLines, 0)
     const minLines = minFraction * totalLines
     const languagesAboveMin = languages.filter(language => language.totalLines >= minLines)
     const otherLines = totalLines - languagesAboveMin.reduce((sum, language) => sum + language.totalLines, 0)
-    return [
-        ...languagesAboveMin,
-        { __typename: 'LanguageStatistics', name: OTHER_LANGUAGE, totalBytes: 0, totalLines: otherLines },
-    ]
+    return [...languagesAboveMin, { __typename: 'LanguageStatistics', name: OTHER_LANGUAGE, totalLines: otherLines }]
 }
 
 /** Nice-looking colors for the pie chart that have good contrast in both light and dark themes. */
@@ -38,7 +34,7 @@ const UNKNOWN_COLOR = '#777777'
 
 interface Props {
     query: string
-    stats: GQL.ISearchResultsStats
+    stats: SearchResultsStatsFields
 }
 
 /**

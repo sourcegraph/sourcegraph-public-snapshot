@@ -29,15 +29,18 @@ const queryProductLicenseInfo = (): Observable<{
                     actualUserCountDate
                     noLicenseWarningUserCount
                     license {
-                        tags
-                        userCount
-                        expiresAt
+                        ...ProductLicenseInfoLicenseFields
                     }
                 }
             }
             users {
                 totalCount
             }
+        }
+        fragment ProductLicenseInfoLicenseFields on ProductLicenseInfo {
+            tags
+            userCount
+            expiresAt
         }
     `).pipe(
         map(dataOrThrowErrors),

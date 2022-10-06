@@ -1,12 +1,11 @@
 import React from 'react'
 
-import * as GQL from '@sourcegraph/shared/src/schema'
-
+import { ProductLicenseFields } from '../../graphql-operations'
 import { formatUserCount } from '../../productSubscription/helpers'
 
 export const ProductLicenseInfoDescription: React.FunctionComponent<
     React.PropsWithChildren<{
-        licenseInfo: GQL.IProductLicenseInfo
+        licenseInfo: NonNullable<ProductLicenseFields['info']>
         className?: string
     }>
 > = ({ licenseInfo, className = '' }) => (

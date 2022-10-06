@@ -5,7 +5,6 @@ import { mdiCheckboxBlankCircle, mdiMapSearch } from '@mdi/js'
 import { RouteComponentProps, useHistory } from 'react-router'
 import { Subject } from 'rxjs'
 
-import { ExecutorCompatibility } from '@sourcegraph/shared/src/schema'
 import { Alert, Badge, Container, Link, PageHeader, Icon, H3, H4, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../components/Collapsible'
@@ -16,7 +15,7 @@ import {
 } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
-import { ExecutorFields } from '../../graphql-operations'
+import { ExecutorFields, ExecutorCompatibility } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import { queryExecutors as defaultQueryExecutors } from './useExecutors'

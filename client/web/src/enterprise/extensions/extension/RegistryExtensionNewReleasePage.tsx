@@ -13,7 +13,6 @@ import { asError, isErrorLike } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { ConfiguredRegistryExtension } from '@sourcegraph/shared/src/extensions/extension'
 import { ExtensionManifest } from '@sourcegraph/shared/src/extensions/extensionManifest'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import extensionSchemaJSON from '@sourcegraph/shared/src/schema/extension.schema.json'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -36,12 +35,16 @@ import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
 import { mutateGraphQL } from '../../../backend/graphql'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
-import { RegistryExtensionFields } from '../../../graphql-operations'
+import {
+    PublishRegistryExtensionVariables,
+    PublishRegistryExtensionResult,
+    RegistryExtensionFields,
+} from '../../../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../../settings/DynamicallyImportedMonacoSettingsEditor'
 
 const publishExtension = (
-    args: Pick<GQL.IPublishExtensionOnExtensionRegistryMutationArguments, 'extensionID' | 'manifest' | 'bundle'>
-): Promise<GQL.IExtensionRegistryPublishExtensionResult> =>
+    args: PublishRegistryExtensionVariables
+): Promise<PublishRegistryExtensionResult['extensionRegistry']['publishExtension']> =>
     mutateGraphQL(
         gql`
             mutation PublishRegistryExtension($extensionID: String!, $manifest: String!, $bundle: String!) {
@@ -123,7 +126,11 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(
                             return concat(
                                 [LOADING],
                                 from(
-                                    publishExtension({ extensionID: extension.id, manifest, bundle: bundleOrError })
+                                    publishExtension({
+                                        extensionID: extension.id,
+                                        manifest,
+                                        bundle: bundleOrError ?? '',
+                                    })
                                 ).pipe(catchError(error => [asError(error)]))
                             )
                         })
