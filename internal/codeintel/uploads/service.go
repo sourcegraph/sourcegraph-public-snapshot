@@ -6,6 +6,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/derision-test/glock"
 	"github.com/opentracing/opentracing-go/log"
 	logger "github.com/sourcegraph/log"
 
@@ -98,6 +99,7 @@ type Service struct {
 	locker            Locker
 	logger            logger.Logger
 	operations        *operations
+	clock             glock.Clock
 }
 
 func newService(
@@ -131,6 +133,7 @@ func newService(
 		locker:            locker,
 		logger:            observationContext.Logger,
 		operations:        newOperations(observationContext),
+		clock:             glock.NewRealClock(),
 	}
 }
 
