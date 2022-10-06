@@ -496,6 +496,24 @@ func (h *historicalEnqueuer) buildFrames(ctx context.Context, definitions []ityp
 		}
 		return nil
 	})
+
+	seriesRecordingTimes := make([]itypes.InsightSeriesRecordingTimes, 0, len(definitions))
+	for _, series := range definitions {
+		frames := timeseries.BuildFrames(12, timeseries.TimeInterval{
+			Unit:  itypes.IntervalUnit(series.SampleIntervalUnit),
+			Value: series.SampleIntervalValue,
+		}, series.CreatedAt.Truncate(time.Hour*24))
+		seriesRecordingTimes = append(seriesRecordingTimes, itypes.InsightSeriesRecordingTimes{
+			SeriesID:       series.SeriesID,
+			RecordingTimes: timeseries.GetRecordingTimesFromFrames(frames),
+		})
+	}
+	fmt.Println("$$$ SetInsightSeriesRecordingTimes - start")
+	if err := h.dataSeriesStore.SetInsightSeriesRecordingTimes(ctx, seriesRecordingTimes); err != nil {
+		return errors.Wrap(err, "SetInsightSeriesRecordingTimes")
+	}
+	fmt.Println("$$$ SetInsightSeriesRecordingTimes - end")
+
 	if multi != nil {
 		log15.Error("historical_enqueuer.buildFrames - multierror", "err", multi)
 	}

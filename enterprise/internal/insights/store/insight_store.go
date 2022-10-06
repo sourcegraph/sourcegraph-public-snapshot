@@ -802,6 +802,7 @@ type DataSeriesStore interface {
 	IncrementBackfillAttempts(ctx context.Context, series types.InsightSeries) error
 	GetScopedSearchSeriesNeedBackfill(ctx context.Context) ([]types.InsightSeries, error)
 	CompleteJustInTimeConversionAttempt(ctx context.Context, series types.InsightSeries) error
+	SetInsightSeriesRecordingTimes(ctx context.Context, recordingTimes []types.InsightSeriesRecordingTimes) error
 }
 
 type InsightMetadataStore interface {
@@ -956,7 +957,7 @@ func (s *InsightStore) SetSeriesBackfillComplete(ctx context.Context, seriesId s
 	return s.Exec(ctx, sqlf.Sprintf(setSeriesBackfillComplete, timestamp, seriesId))
 }
 
-func (s *Store) SetInsightSeriesRecordingTimes(ctx context.Context, seriesRecordingTimes []types.InsightSeriesRecordingTimes) (err error) {
+func (s *InsightStore) SetInsightSeriesRecordingTimes(ctx context.Context, seriesRecordingTimes []types.InsightSeriesRecordingTimes) (err error) {
 	tx, err := s.Transact(ctx)
 	if err != nil {
 		return err
@@ -985,33 +986,33 @@ func (s *Store) SetInsightSeriesRecordingTimes(ctx context.Context, seriesRecord
 	return nil
 }
 
-func (s *Store) GetInsightSeriesRecordingTimes(ctx context.Context, seriesID string) (_ types.InsightSeriesRecordingTimes, err error) {
-	tx, err := s.Transact(ctx)
-	if err != nil {
-		return types.InsightSeriesRecordingTimes{}, err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	recordingTimes := []time.Time{}
-	err = s.query(ctx, sqlf.Sprintf(getInsightSeriesRecordingTimesStr, seriesID), func(sc scanner) (err error) {
-		var recordingTime time.Time
-		err = sc.Scan(
-			&recordingTime,
-		)
-		if err != nil {
-			return err
-		}
-
-		recordingTimes = append(recordingTimes, recordingTime)
-
-		return nil
-	})
-
-	return types.InsightSeriesRecordingTimes{
-		SeriesID:       seriesID,
-		RecordingTimes: recordingTimes,
-	}, nil
-}
+//func (s *InsightStore) GetInsightSeriesRecordingTimes(ctx context.Context, seriesID string) (_ types.InsightSeriesRecordingTimes, err error) {
+//	tx, err := s.Transact(ctx)
+//	if err != nil {
+//		return types.InsightSeriesRecordingTimes{}, err
+//	}
+//	defer func() { err = tx.Done(err) }()
+//
+//	recordingTimes := []time.Time{}
+//	err = s.query(ctx, sqlf.Sprintf(getInsightSeriesRecordingTimesStr, seriesID), func(sc scanner) (err error) {
+//		var recordingTime time.Time
+//		err = sc.Scan(
+//			&recordingTime,
+//		)
+//		if err != nil {
+//			return err
+//		}
+//
+//		recordingTimes = append(recordingTimes, recordingTime)
+//
+//		return nil
+//	})
+//
+//	return types.InsightSeriesRecordingTimes{
+//		SeriesID:       seriesID,
+//		RecordingTimes: recordingTimes,
+//	}, nil
+//}
 
 const setSeriesStatusSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:SetSeriesStatus
