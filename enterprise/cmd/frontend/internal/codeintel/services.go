@@ -9,15 +9,10 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifuploadstore"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/repoupdater"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	uploadshttp "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/http"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -27,68 +22,54 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-type Services struct {
+type FrontendServices struct {
+	codeintel.Services
+
 	// shared with executor queue
 	InternalUploadHandler http.Handler
 	ExternalUploadHandler http.Handler
 
 	gitserverClient *gitserver.Client
-
-	// used by resolvers
-	AutoIndexingSvc *autoindexing.Service
-	UploadsSvc      *uploads.Service
-	CodeNavSvc      *codenav.Service
-	PoliciesSvc     *policies.Service
-	UploadSvc       *uploads.Service
 }
 
-func NewServices(ctx context.Context, config *Config, siteConfig conftypes.WatchableSiteConfig, db database.DB) (*Services, error) {
-	// Initialize tracing/metrics
+func NewServices(ctx context.Context, config *Config, siteConfig conftypes.WatchableSiteConfig, db database.DB) (*FrontendServices, error) {
 	logger := log.Scoped("codeintel", "codeintel services")
+
+	// Connect to the separate LSIF database
+	codeIntelDB := mustInitializeCodeIntelDB(logger)
+
+	services, err := codeintel.GetServices(codeintel.Databases{
+		DB:          db,
+		CodeIntelDB: codeIntelDB,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Initialize blob stores
 	observationContext := &observation.Context{
 		Logger:     logger,
 		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
-
-	// Connect to the separate LSIF database
-	codeIntelLsifStore := mustInitializeCodeIntelDB(logger)
-
-	// Initialize blob stores
 	uploadStore, err := lsifuploadstore.New(context.Background(), config.LSIFUploadStoreConfig, observationContext)
 	if err != nil {
 		return nil, err
 	}
 
-	// Initialize gitserver client & repoupdater
-	gitserverClient := gitserver.New(db, observationContext)
-	repoUpdaterClient := repoupdater.New(observationContext)
-
-	// Initialize services
-	uploadSvc := uploads.GetService(db, codeIntelLsifStore, gitserverClient)
-	codenavSvc := codenav.GetService(db, codeIntelLsifStore, uploadSvc, gitserverClient)
-	policySvc := policies.GetService(db, uploadSvc, gitserverClient)
-	depsSvc := dependencies.GetService(db, gitserverClient)
-	autoindexingSvc := autoindexing.GetService(db, uploadSvc, depsSvc, policySvc, gitserverClient, repoUpdaterClient)
-
 	// Initialize http endpoints
 	newUploadHandler := func(withCodeHostAuth bool) http.Handler {
-		return uploadshttp.GetHandler(uploadSvc, db, uploadStore, withCodeHostAuth)
+		return uploadshttp.GetHandler(services.UploadsService, db, uploadStore, withCodeHostAuth)
 	}
 	internalUploadHandler := newUploadHandler(false)
 	externalUploadHandler := newUploadHandler(true)
 
-	return &Services{
+	return &FrontendServices{
+		Services: services,
+
 		InternalUploadHandler: internalUploadHandler,
 		ExternalUploadHandler: externalUploadHandler,
-
-		gitserverClient: gitserverClient,
-
-		AutoIndexingSvc: autoindexingSvc,
-		UploadsSvc:      uploadSvc,
-		CodeNavSvc:      codenavSvc,
-		PoliciesSvc:     policySvc,
-		UploadSvc:       uploadSvc,
+		gitserverClient:       gitserver.New(db, &observation.TestContext),
 	}, nil
 }
 

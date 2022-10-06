@@ -24,15 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-type syncer struct {
-	depsSvc               *Service
-	externalServicesStore ExternalServiceStore
-	gitClient             GitserverClient
-	interval              time.Duration
-}
-
-var _ goroutine.Handler = &syncer{}
-
 func (s *Service) NewCrateSyncer() goroutine.BackgroundRoutine {
 	if s.gitClient == nil {
 		panic("illegal service construction - NewCrateSyncer called without a registered gitClient")
@@ -52,16 +43,13 @@ func (s *Service) NewCrateSyncer() goroutine.BackgroundRoutine {
 		}
 	}
 
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &syncer{
-		depsSvc:               s,
-		externalServicesStore: s.extSvcStore,
-		gitClient:             s.gitClient,
-		interval:              interval,
-	})
+	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
+		return s.handleCrateSyncer(ctx, interval)
+	}))
 }
 
-func (s *syncer) Handle(ctx context.Context) error {
-	exists, externalService, err := singleRustExternalService(ctx, s.externalServicesStore)
+func (s *Service) handleCrateSyncer(ctx context.Context, interval time.Duration) error {
+	exists, externalService, err := singleRustExternalService(ctx, s.extSvcStore)
 	if !exists || err != nil {
 		// err can be nil when there is no RUSTPACKAGES code host.
 		return err
@@ -78,7 +66,7 @@ func (s *syncer) Handle(ctx context.Context) error {
 	}
 
 	repoName := api.RepoName(config.IndexRepositoryName)
-	update, err := s.gitClient.RequestRepoUpdate(ctx, repoName, s.interval)
+	update, err := s.gitClient.RequestRepoUpdate(ctx, repoName, interval)
 	if err != nil {
 		return err
 	}
@@ -141,7 +129,7 @@ func (s *syncer) Handle(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		new, err := s.depsSvc.UpsertDependencyRepos(ctx, pkgs)
+		new, err := s.dependenciesStore.UpsertDependencyRepos(ctx, pkgs)
 		if err != nil {
 			return errors.Wrapf(err, "failed to insert Rust crate")
 		}
@@ -152,7 +140,7 @@ func (s *syncer) Handle(ctx context.Context) error {
 		// We picked up new crates so we trigger a new sync for the RUSTPACKAGES code host.
 		nextSync := time.Now()
 		externalService.NextSyncAt = nextSync
-		if err := s.externalServicesStore.Upsert(ctx, externalService); err != nil {
+		if err := s.extSvcStore.Upsert(ctx, externalService); err != nil {
 			return err
 		}
 	}
