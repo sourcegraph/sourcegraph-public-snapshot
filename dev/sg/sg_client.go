@@ -11,13 +11,13 @@ import (
 )
 
 var clientCommand = &cli.Command{
-	Name:  "client",
-	Usage: "Perform common tasks on a Sourcegraph instance",
+	Name:     "client",
+	Usage:    "Perform common tasks on a Sourcegraph instance",
+	Category: CategoryUtil,
 	Subcommands: []*cli.Command{
 		{
 			Name:      "codehost",
 			ArgsUsage: " ",
-			Category:  CategoryUtil,
 			Usage:     "Interact with codehosts on a given Sourcegraph instance",
 			Subcommands: []*cli.Command{
 				{
