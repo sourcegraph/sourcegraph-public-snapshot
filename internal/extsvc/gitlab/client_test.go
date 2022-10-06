@@ -18,7 +18,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -48,7 +47,7 @@ func createTestProvider(t *testing.T) *ClientProvider {
 		t.Fatal(err)
 	}
 	baseURL, _ := url.Parse("https://gitlab.com/")
-	provider := NewClientProvider("Test", baseURL, doer, nil)
+	provider := NewClientProvider("Test", baseURL, doer)
 	return provider
 }
 
@@ -111,11 +110,14 @@ func TestClient_doWithBaseURL(t *testing.T) {
 		Scopes: []string{"read_user"},
 	}
 
-	provider := NewClientProvider("Test", baseURL, doer, func(ctx context.Context, doer httpcli.Doer, oauthCtxt oauthutil.OAuthContext) (string, error) {
-		return "refreshed-token", nil
-	})
+	provider := NewClientProvider("Test", baseURL, doer)
 
-	client := provider.getClient(&auth.OAuthBearerToken{Token: "bad token"})
+	client := provider.getClient(&auth.OAuthBearerToken{Token: "bad token", RefreshToken: "refresh token", RefreshFunc: func(obt *auth.OAuthBearerToken) (*auth.OAuthBearerToken, error) {
+		obt.Token = "refreshed-token"
+		obt.RefreshToken = "refresh-now"
+
+		return obt, nil
+	}})
 
 	req, err := http.NewRequest(http.MethodGet, "url", nil)
 	require.NoError(t, err)
@@ -192,7 +194,7 @@ func TestGetOAuthContext(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got := getOAuthContext(test.baseURL)
+			got := GetOAuthContext(test.baseURL)
 			assert.Equal(t, test.want, got)
 		})
 	}
