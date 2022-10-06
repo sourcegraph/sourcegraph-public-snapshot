@@ -114,7 +114,7 @@ export function useField<ErrorContext, FormValues, Key extends keyof FormValues>
         const customValidationMessage = getCustomValidationMessage(customValidationResult)
         const customValidationContext = getCustomValidationContext(customValidationResult)
 
-        if (customValidationResult) {
+        if (customValidationMessage) {
             // We have to cancel async validation from previous call
             // if we got sync validation native or custom.
             cancelAsyncValidation()

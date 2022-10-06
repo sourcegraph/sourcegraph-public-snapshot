@@ -13,12 +13,6 @@
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
 
-    // Fix line height for the code insight creation UI purpose
-    // stylelint-disable-next-line selector-class-pattern
-    :global(.cm-lineWrapping) {
-        line-height: 1.3125rem; // 21 px
-    }
-
     // Fix loading spinner layout position (since line height has non default value
     // loading layout requires layout change)
     // stylelint-disable-next-line selector-class-pattern
