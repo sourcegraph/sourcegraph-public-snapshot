@@ -4,6 +4,7 @@ import type { HoverAlert } from 'sourcegraph'
 
 import { combineLatestOrDefault } from '@sourcegraph/common'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
+import { ButtonLink } from '@sourcegraph/wildcard'
 
 import { observeStorageKey, storage } from '../../../browser-extension/web-extension-api/storage'
 import { SyncStorageItems } from '../../../browser-extension/web-extension-api/types'
@@ -55,14 +56,21 @@ export async function onHoverAlertDismissed(alertType: string): Promise<void> {
  */
 export const createRepoNotFoundHoverAlert = (codeHost: Pick<CodeHost, 'hoverOverlayClassProps'>): HoverAlert => ({
     type: 'private-code',
+    buttons: [
+        <ButtonLink
+            key="learn_more"
+            href="https://docs.sourcegraph.com/admin/repo/add"
+            className={codeHost.hoverOverlayClassProps?.actionItemClassName ?? ''}
+            target="_blank"
+            rel="noopener norefferer"
+        >
+            Learn more
+        </ButtonLink>,
+    ],
     summary: {
         kind: MarkupKind.Markdown,
         value:
             '#### Repository not added\n\n' +
-            'This repository is not indexed by your Sourcegraph instance. Add the repository to get Code Intelligence overlays.' +
-            '\n\n' +
-            `<a href="https://docs.sourcegraph.com/admin/repo/add" class="${
-                codeHost.hoverOverlayClassProps?.actionItemClassName ?? ''
-            }" target="_blank" rel="noopener norefferer">Learn more</a>`,
+            'This repository is not indexed by your Sourcegraph instance. Add the repository to get Code Intelligence overlays.',
     },
 })
