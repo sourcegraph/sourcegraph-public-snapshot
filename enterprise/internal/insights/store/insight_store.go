@@ -963,7 +963,7 @@ func (s *Store) SetInsightSeriesRecordingTimes(ctx context.Context, seriesRecord
 	}
 	defer func() { err = tx.Done(err) }()
 
-	inserter := batch.NewInserter(ctx, tx.Handle(), "insight_series_recording_times", batch.MaxNumPostgresParameters, "series_id", "recording_time")
+	inserter := batch.NewInserterWithConflict(ctx, tx.Handle(), "insight_series_recording_times", batch.MaxNumPostgresParameters, "ON CONFLICT DO NOTHING", "series_id", "recording_time")
 
 	for _, series := range seriesRecordingTimes {
 		seriesID := series.SeriesID
