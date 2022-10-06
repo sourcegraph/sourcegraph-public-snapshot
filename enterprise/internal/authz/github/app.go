@@ -22,7 +22,7 @@ import (
 
 // newAppProvider creates a new authz Provider for GitHub App.
 func newAppProvider(
-	externalServicesStore database.ExternalServiceStore,
+	db database.DB,
 	svc *types.ExternalService,
 	urn string,
 	baseURL *url.URL,
@@ -73,7 +73,7 @@ func newAppProvider(
 				return err
 			}
 
-			externalServicesStore.Update(context.Background(),
+			db.ExternalServices().Update(context.Background(),
 				conf.Get().AuthProviders,
 				svc.ID,
 				&database.ExternalServiceUpdate{
@@ -103,5 +103,6 @@ func newAppProvider(
 			}, nil
 		},
 		InstallationID: &installationID,
+		db:             db,
 	}, nil
 }
