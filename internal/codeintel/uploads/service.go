@@ -135,18 +135,18 @@ func newService(
 	}
 }
 
-func (s *Service) GetCommitGraphMetadata(ctx context.Context, repositoryID int) (stale bool, updatedAt *time.Time, err error) {
-	ctx, _, endObservation := s.operations.getCommitGraphMetadata.With(ctx, &err, observation.Args{LogFields: []log.Field{log.Int("repositoryID", repositoryID)}})
-	defer endObservation(1, observation.Args{})
-
-	return s.store.GetCommitGraphMetadata(ctx, repositoryID)
-}
-
 func (s *Service) GetCommitsVisibleToUpload(ctx context.Context, uploadID, limit int, token *string) (_ []string, nextToken *string, err error) {
 	ctx, _, endObservation := s.operations.getCommitsVisibleToUpload.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	return s.store.GetCommitsVisibleToUpload(ctx, uploadID, limit, token)
+}
+
+func (s *Service) GetCommitGraphMetadata(ctx context.Context, repositoryID int) (stale bool, updatedAt *time.Time, err error) {
+	ctx, _, endObservation := s.operations.getCommitGraphMetadata.With(ctx, &err, observation.Args{LogFields: []log.Field{log.Int("repositoryID", repositoryID)}})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.GetCommitGraphMetadata(ctx, repositoryID)
 }
 
 func (s *Service) GetRepoName(ctx context.Context, repositoryID int) (_ string, err error) {
