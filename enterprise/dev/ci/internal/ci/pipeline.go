@@ -97,7 +97,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
 			// TODO: (@umpox, @valerybugakov) Figure out if we can reliably enable this in PRs.
 			ClientLintOnlyChangedFiles: false,
-		}, c.RunType))
+		}))
 
 		// Now we set up conditional operations that only apply to pull requests.
 		if c.Diff.Has(changed.Client) {
@@ -137,7 +137,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Merge(CoreTestOperations(
 			testDiff,
 			CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion},
-			c.RunType,
 		))
 
 	case runtype.BextReleaseBranch:
@@ -147,7 +146,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addClientLintersForAllFiles,
 			addBrowserExtensionUnitTests,
 			addBrowserExtensionIntegrationTests(0), // we pass 0 here as we don't have other pipeline steps to contribute to the resulting Percy build
-			addFrontendTests,
+			frontendTests,
 			wait,
 			addBrowserExtensionReleaseSteps)
 
@@ -166,7 +165,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addClientLintersForAllFiles,
 			addBrowserExtensionUnitTests,
 			recordBrowserExtensionIntegrationTests,
-			addFrontendTests,
+			frontendTests,
 			wait,
 			addBrowserExtensionE2ESteps)
 
@@ -195,7 +194,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Test images
 		ops.Merge(CoreTestOperations(changed.All, CoreTestOperationsOptions{
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
-		}, c.RunType))
+		}))
 		// Publish images after everything is done
 		ops.Append(
 			wait,
@@ -271,7 +270,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			ChromaticShouldAutoAccept: c.RunType.Is(runtype.MainBranch),
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
 			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
-		}, c.RunType))
+		}))
 
 		// Integration tests
 		ops.Merge(operations.NewNamedSet("Integration tests",
