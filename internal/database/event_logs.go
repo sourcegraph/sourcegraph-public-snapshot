@@ -525,7 +525,7 @@ func createCountUniqueUserConds(opt *CountUniqueUsersOptions) []*sqlf.Query {
 		// This may incur false positives, but we acknowledge this risk as we would prefer to
 		// undercount rather than overcount.
 		if opt.ExcludeSourcegraphAdmins {
-			conds = append(conds, sqlf.Sprintf("users.username NOT ILIKE 'managed-%%' AND users.username NOT ILIKE 'sourcegraph-management-%%' AND users.username != 'sourcegraph-admin'"))
+			conds = append(conds, sqlf.Sprintf("users.username IS NULL OR (users.username NOT ILIKE 'managed-%%' AND users.username NOT ILIKE 'sourcegraph-management-%%' AND users.username != 'sourcegraph-admin')"))
 		}
 		if opt.EventFilters != nil {
 			if opt.EventFilters.ByEventNamePrefix != "" {
@@ -831,7 +831,7 @@ func (l *eventLogStore) siteUsageCurrentPeriods(ctx context.Context, now time.Ti
 		// This may incur false positives, but we acknowledge this risk as we would prefer to
 		// undercount rather than overcount.
 		if opt.ExcludeSourcegraphAdmins {
-			conds = append(conds, sqlf.Sprintf("users.username NOT ILIKE 'managed-%%' AND users.username NOT ILIKE 'sourcegraph-management-%%' AND users.username != 'sourcegraph-admin'"))
+			conds = append(conds, sqlf.Sprintf("users.username IS NULL OR (users.username NOT ILIKE 'managed-%%' AND users.username NOT ILIKE 'sourcegraph-management-%%' AND users.username != 'sourcegraph-admin')"))
 		}
 	}
 
