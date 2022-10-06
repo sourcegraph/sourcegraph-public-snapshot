@@ -41,7 +41,7 @@ func WebhooksWith(other basestore.ShareableStore, key encryption.Key) WebhookSto
 // Create the webhook
 func (s *webhookStore) Create(ctx context.Context, hook *types.Webhook) (*types.Webhook, error) {
 	encryptedSecret, keyID, err := hook.Secret.Encrypt(ctx, s.key)
-	if err != nil || encryptedSecret == "" || keyID == "" {
+	if err != nil || (encryptedSecret == "" && keyID == "") {
 		return nil, errors.Wrap(err, "encrypting secret")
 	}
 
