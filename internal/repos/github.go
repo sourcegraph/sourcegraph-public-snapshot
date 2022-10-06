@@ -207,6 +207,9 @@ func newGithubSource(
 
 		externalServicesStore := db.ExternalServices()
 		rawConfig, err := svc.Config.Decrypt(context.Background())
+		if err != nil {
+			return nil, errors.Wrap(err, "decrypting service config")
+		}
 
 		installationRefreshFunc := func(auther *auth.GitHubAppInstallationAuthenticator) error {
 			token, err := appClient.CreateAppInstallationAccessToken(context.Background(), installationID)
@@ -235,6 +238,9 @@ func newGithubSource(
 		}
 
 		installationAuther, err := auth.NewGitHubAppInstallationAuthenticator(installationID, "", installationRefreshFunc)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating GitHub App installation authenticator")
+		}
 
 		v3Client = github.NewV3Client(v3ClientLogger, urn, apiURL, installationAuther, cli)
 		v4Client = github.NewV4Client(urn, apiURL, installationAuther, cli)
