@@ -92,8 +92,13 @@ func (c *Dashboard) noAlertsDefined() bool {
 }
 
 // renderDashboard generates the Grafana renderDashboard for this container.
+// UIDs are globally unique identifiers for a given dashboard on Grafana. For normal Sourcegraph usage,
+// there is only ever a single dashboard with a given name but Cloud usage requires multiple copies
+// of the same dashboards to exist for different folders so we allow the ability to inject custom
+// label matchers and folder names to uniquely id the dashboards. UIDs need to be deterministic however
+// to generate appropriate alerts and documentations
 func (c *Dashboard) renderDashboard(injectLabelMatchers []*labels.Matcher, folder string) (*sdk.Board, error) {
-
+	// If the folder is not specified simply use the name for the UID
 	uid := c.Name
 	if folder != "" {
 		uid = fmt.Sprintf("%s-%s", folder, uid)
