@@ -2,7 +2,6 @@ import React from 'react'
 
 import { mdiInformationOutline } from '@mdi/js'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useQuery } from '@sourcegraph/http-client'
 import { Icon, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
 
@@ -32,7 +31,7 @@ export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildre
         )
     }
     if (error && !data) {
-        return <ErrorAlert error={error} />
+        return null
     }
     if (!data) {
         return null
