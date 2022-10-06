@@ -1063,8 +1063,6 @@ query($includeLocallyExecutedSpecs: Boolean) {
 					{name: "site-admin", currentUser: adminID, wantAuthErr: false},
 				}
 
-				const batchChangeIDKind = "BatchChange"
-
 				for _, tc := range tests {
 					t.Run(tc.name, func(t *testing.T) {
 						cleanUpBatchChanges(t, bstore)

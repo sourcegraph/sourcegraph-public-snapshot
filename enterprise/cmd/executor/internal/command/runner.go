@@ -59,6 +59,10 @@ type FirecrackerOptions struct {
 	// virtual machines.
 	KernelImage string
 
+	// SandboxImage is the docker image used by ignite for isolation of the Firecracker
+	// process.
+	SandboxImage string
+
 	// VMStartupScriptPath is a path to a file on the host that is loaded into a fresh
 	// virtual machine and executed on startup.
 	VMStartupScriptPath string
@@ -77,10 +81,18 @@ type ResourceOptions struct {
 	Memory string
 
 	// DiskSpace is the maximum amount of disk a container or VM can use.
+	// Only available in firecracker.
 	DiskSpace string
 
+	// MaxIngressBandwidth configures the maximum permissible ingress bytes per second
+	// per job. Only available in Firecracker.
+	MaxIngressBandwidth int
+	// MaxEgressBandwidth configures the maximum permissible egress bytes per second
+	// per job. Only available in Firecracker.
+	MaxEgressBandwidth int
+
 	// DockerHostMountPath, if supplied, replaces the workspace parent directory in the
-	// volume mounts of Docker containers. This option is used when running privilegled
+	// volume mounts of Docker containers. This option is used when running privileged
 	// executors in k8s or docker-compose without requiring the host and node paths to
 	// be identical.
 	DockerHostMountPath string

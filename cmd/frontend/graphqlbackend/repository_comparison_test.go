@@ -16,9 +16,9 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -41,21 +41,20 @@ func TestRepositoryComparisonNoMergeBase(t *testing.T) {
 	}
 
 	t.Cleanup(gitserver.ResetMocks)
+	gsClient := gitserver.NewMockClient()
+	gsClient.MergeBaseFunc.SetDefaultReturn("", errors.Errorf("merge base doesn't exist!"))
 	gitserver.Mocks.ResolveRevision = func(spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		if spec != wantBaseRevision && spec != wantHeadRevision {
 			t.Fatalf("ResolveRevision received wrong spec: %s", spec)
 		}
 		return api.CommitID(spec), nil
 	}
-	gitserver.Mocks.MergeBase = func(repo api.RepoName, a, b api.CommitID) (api.CommitID, error) {
-		return "", errors.Errorf("merge base doesn't exist!")
-	}
 
 	input := &RepositoryComparisonInput{Base: &wantBaseRevision, Head: &wantHeadRevision}
-	repoResolver := NewRepositoryResolver(db, repo)
+	repoResolver := NewRepositoryResolver(db, gsClient, repo)
 
 	// There shouldn't be any error even when there is no merge base.
-	comp, err := NewRepositoryComparison(ctx, db, repoResolver, input)
+	comp, err := NewRepositoryComparison(ctx, db, gsClient, repoResolver, input)
 	require.Nil(t, err)
 	require.Equal(t, wantBaseRevision, comp.baseRevspec)
 	require.Equal(t, wantHeadRevision, comp.headRevspec)
@@ -77,13 +76,13 @@ func TestRepositoryComparison(t *testing.T) {
 		CreatedAt: time.Now(),
 	}
 
-	gitserver.Mocks.ResolveRevision = func(spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+	gsClient := gitserver.NewMockClient()
+	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		if spec != wantMergeBaseRevision && spec != wantHeadRevision {
 			t.Fatalf("ResolveRevision received wrong spec: %s", spec)
 		}
 		return api.CommitID(spec), nil
-	}
-	t.Cleanup(func() { gitserver.Mocks.ResolveRevision = nil })
+	})
 
 	gitserver.Mocks.ExecReader = func(args []string) (io.ReadCloser, error) {
 		if len(args) < 1 && args[0] != "diff" {
@@ -96,18 +95,17 @@ func TestRepositoryComparison(t *testing.T) {
 	}
 	t.Cleanup(func() { gitserver.Mocks.ExecReader = nil })
 
-	gitserver.Mocks.MergeBase = func(repo api.RepoName, a, b api.CommitID) (api.CommitID, error) {
+	gsClient.MergeBaseFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, a, b api.CommitID) (api.CommitID, error) {
 		if string(a) != wantBaseRevision || string(b) != wantHeadRevision {
 			t.Fatalf("gitserver.MergeBase received wrong args: %s %s", a, b)
 		}
 		return api.CommitID(wantMergeBaseRevision), nil
-	}
-	t.Cleanup(func() { gitserver.Mocks.MergeBase = nil })
+	})
 
 	input := &RepositoryComparisonInput{Base: &wantBaseRevision, Head: &wantHeadRevision}
-	repoResolver := NewRepositoryResolver(db, repo)
+	repoResolver := NewRepositoryResolver(db, gsClient, repo)
 
-	comp, err := NewRepositoryComparison(ctx, db, repoResolver, input)
+	comp, err := NewRepositoryComparison(ctx, db, gsClient, repoResolver, input)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -139,7 +137,8 @@ func TestRepositoryComparison(t *testing.T) {
 			{ID: api.CommitID(wantHeadRevision)},
 		}
 
-		gitserver.Mocks.Commits = func(repo api.RepoName, opts gitserver.CommitsOptions) ([]*gitdomain.Commit, error) {
+		mockGSClient := gitserver.NewMockClient()
+		mockGSClient.CommitsFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, opts gitserver.CommitsOptions, _ authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error) {
 			wantRange := fmt.Sprintf("%s..%s", wantBaseRevision, wantHeadRevision)
 
 			if have, want := opts.Range, wantRange; have != want {
@@ -147,10 +146,14 @@ func TestRepositoryComparison(t *testing.T) {
 			}
 
 			return commits, nil
+		})
+
+		newComp, err := NewRepositoryComparison(ctx, db, mockGSClient, repoResolver, input)
+		if err != nil {
+			t.Fatal(err)
 		}
 
-		defer func() { gitserver.Mocks.Commits = nil }()
-		commitConnection := comp.Commits(&graphqlutil.ConnectionArgs{})
+		commitConnection := newComp.Commits(&RepositoryComparisonCommitsArgs{})
 
 		nodes, err := commitConnection.Nodes(ctx)
 		if err != nil {
@@ -179,6 +182,36 @@ func TestRepositoryComparison(t *testing.T) {
 		}
 	})
 
+	t.Run("Commits with Path", func(t *testing.T) {
+		commits := []*gitdomain.Commit{
+			{ID: api.CommitID(wantBaseRevision)},
+		}
+
+		mockGSClient := gitserver.NewMockClient()
+		mockGSClient.CommitsFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, opts gitserver.CommitsOptions, _ authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error) {
+			if opts.Path == "" {
+				t.Fatalf("expected a path as part of commits args")
+			}
+			return commits, nil
+		})
+
+		newComp, err := NewRepositoryComparison(ctx, db, mockGSClient, repoResolver, input)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		testPath := "testpath"
+		commitConnection := newComp.Commits(&RepositoryComparisonCommitsArgs{Path: &testPath})
+
+		nodes, err := commitConnection.Nodes(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(nodes) != len(commits) {
+			t.Fatalf("wrong length of nodes: %d", len(nodes))
+		}
+	})
 	t.Run("FileDiffs", func(t *testing.T) {
 		t.Run("RawDiff", func(t *testing.T) {
 			diffConnection, err := comp.FileDiffs(ctx, &FileDiffsConnectionArgs{})

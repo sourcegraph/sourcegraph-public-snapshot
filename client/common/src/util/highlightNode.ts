@@ -29,6 +29,46 @@ export function highlightNode(node: HTMLElement, start: number, length: number):
     highlightNodeHelper(node, 0, start, length)
 }
 
+/**
+ * Highlights match ranges within visibleRows, with support for highlighting match ranges that span multiple lines.
+ *
+ * @param visibleRows the visible rows of the HTML table containing the code excerpt
+ * @param startRow the row within the table where highlighting should begin
+ * @param endRow the row within the table where highlighting should end
+ * @param startRowIndex the index of startRow within visibleRows
+ * @param endRowIndex the index of endRow within visibleRows
+ * @param startCharacter the 0-based character offset from the beginning of startRow's text content where highlighting should begin
+ * @param endCharacter the 0-based character offset from the beginning of endRow's text content where highlighting should end
+ */
+export function highlightNodeMultiline(
+    visibleRows: NodeListOf<HTMLElement>,
+    startRow: HTMLElement,
+    endRow: HTMLElement,
+    startRowIndex: number,
+    endRowIndex: number,
+    startCharacter: number,
+    endCharacter: number
+): void {
+    // Take the lastChild of the row to select the code portion of the table row (each table row consists of the line number and code).
+    const startRowCode = startRow.lastChild as HTMLTableCellElement
+    const endRowCode = endRow.lastChild as HTMLTableCellElement
+
+    // Highlight a single-line match
+    if (endRowIndex === startRowIndex) {
+        return highlightNode(startRowCode, startCharacter, endCharacter - startCharacter)
+    }
+
+    // Otherwise the match is a multiline match. Highlight from the start character through to the end character.
+    highlightNode(startRowCode, startCharacter, startRowCode.textContent!.length - startCharacter)
+    for (let currRowIndex = startRowIndex + 1; currRowIndex < endRowIndex; ++currRowIndex) {
+        if (visibleRows[currRowIndex]) {
+            const currRowCode = visibleRows[currRowIndex].lastChild as HTMLTableCellElement
+            highlightNode(currRowCode, 0, currRowCode.textContent!.length)
+        }
+    }
+    highlightNode(endRowCode, 0, endCharacter)
+}
+
 interface HighlightResult {
     highlightingCompleted: boolean
     charsConsumed: number

@@ -256,10 +256,13 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
         <>
             <div className="d-flex justify-content-between align-items-center">
                 <div>
-                    <PageHeader
-                        path={[{ icon: mdiSourceRepository, text: displayRepoName(repoName) }]}
-                        className="mb-3 test-tree-page-title"
-                    />
+                    <PageHeader className="mb-3 test-tree-page-title">
+                        <PageHeader.Heading as="h2" styleAs="h1">
+                            <PageHeader.Breadcrumb icon={mdiSourceRepository}>
+                                {displayRepoName(repo!.name)}
+                            </PageHeader.Breadcrumb>
+                        </PageHeader.Heading>
+                    </PageHeader>
                     {repo?.description && <Text>{repo.description}</Text>}
                 </div>
                 {isNewRepoPageEnabled && (
@@ -328,10 +331,11 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                             {treeOrError.isRoot ? (
                                 <RootHeaderSection tree={treeOrError} />
                             ) : (
-                                <PageHeader
-                                    path={[{ icon: mdiFolder, text: filePath }]}
-                                    className="mb-3 mr-2 test-tree-page-title"
-                                />
+                                <PageHeader className="mb-3 mr-2 test-tree-page-title">
+                                    <PageHeader.Heading as="h2" styleAs="h1">
+                                        <PageHeader.Breadcrumb icon={mdiFolder}>{filePath}</PageHeader.Breadcrumb>
+                                    </PageHeader.Heading>
+                                </PageHeader>
                             )}
                         </header>
 

@@ -10,7 +10,7 @@ import (
 	autoindexinggraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql"
 	codenavgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql"
 	policiesgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
-	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/sharedresolvers"
+	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
 	uploadsgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
 	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 )
@@ -68,6 +68,11 @@ func (r *Resolver) LSIFUploadsByRepo(ctx context.Context, args *uploadsgraphql.L
 // 🚨 SECURITY: Only site admins may modify code intelligence upload data
 func (r *Resolver) DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (_ *sharedresolvers.EmptyResponse, err error) {
 	return r.resolver.UploadRootResolver().DeleteLSIFUpload(ctx, args)
+}
+
+// 🚨 SECURITY: Only site admins may modify code intelligence upload data
+func (r *Resolver) DeleteLSIFUploads(ctx context.Context, args *uploadsgraphql.DeleteLSIFUploadsArgs) (_ *sharedresolvers.EmptyResponse, err error) {
+	return r.resolver.UploadRootResolver().DeleteLSIFUploads(ctx, args)
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for GetIndexByID

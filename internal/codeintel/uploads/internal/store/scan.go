@@ -14,12 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-func scanUploadByID(s dbutil.Scanner) (upload types.Upload, err error) {
-	return upload, s.Scan(
-		&upload.ID,
-	)
-}
-
 func scanCompleteUpload(s dbutil.Scanner) (upload types.Upload, _ error) {
 	var rawUploadedParts []sql.NullInt32
 	if err := s.Scan(
@@ -57,10 +51,7 @@ func scanCompleteUpload(s dbutil.Scanner) (upload types.Upload, _ error) {
 	return upload, nil
 }
 
-var (
-	scanUploadComplete = basestore.NewSliceScanner(scanCompleteUpload)
-	scanUploads        = basestore.NewSliceScanner(scanUploadByID)
-)
+var scanUploadComplete = basestore.NewSliceScanner(scanCompleteUpload)
 
 // scanFirstUpload scans a slice of uploads from the return value of `*Store.query` and returns the first.
 var scanFirstUpload = basestore.NewFirstScanner(scanCompleteUpload)

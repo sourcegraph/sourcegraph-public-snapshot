@@ -1,12 +1,14 @@
 package backend
 
 import (
+	"context"
 	"strings"
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -42,7 +44,7 @@ func TestRepos_ResolveRev_noRevSpecified_getsDefaultBranch(t *testing.T) {
 	defer gitserver.ResetMocks()
 
 	// (no rev/branch specified)
-	commitID, err := NewRepos(logger, database.NewMockDB()).ResolveRev(ctx, &types.Repo{Name: "a"}, "")
+	commitID, err := NewRepos(logger, database.NewMockDB(), gitserver.NewMockClient()).ResolveRev(ctx, &types.Repo{Name: "a"}, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -82,7 +84,7 @@ func TestRepos_ResolveRev_noCommitIDSpecified_resolvesRev(t *testing.T) {
 	}
 	defer gitserver.ResetMocks()
 
-	commitID, err := NewRepos(logger, database.NewMockDB()).ResolveRev(ctx, &types.Repo{Name: "a"}, "b")
+	commitID, err := NewRepos(logger, database.NewMockDB(), gitserver.NewMockClient()).ResolveRev(ctx, &types.Repo{Name: "a"}, "b")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -122,7 +124,7 @@ func TestRepos_ResolveRev_commitIDSpecified_resolvesCommitID(t *testing.T) {
 	}
 	defer gitserver.ResetMocks()
 
-	commitID, err := NewRepos(logger, database.NewMockDB()).ResolveRev(ctx, &types.Repo{Name: "a"}, strings.Repeat("a", 40))
+	commitID, err := NewRepos(logger, database.NewMockDB(), gitserver.NewMockClient()).ResolveRev(ctx, &types.Repo{Name: "a"}, strings.Repeat("a", 40))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -162,7 +164,7 @@ func TestRepos_ResolveRev_commitIDSpecified_failsToResolve(t *testing.T) {
 	}
 	defer gitserver.ResetMocks()
 
-	_, err := NewRepos(logger, database.NewMockDB()).ResolveRev(ctx, &types.Repo{Name: "a"}, strings.Repeat("a", 40))
+	_, err := NewRepos(logger, database.NewMockDB(), gitserver.NewMockClient()).ResolveRev(ctx, &types.Repo{Name: "a"}, strings.Repeat("a", 40))
 	if !errors.Is(err, want) {
 		t.Fatalf("got err %v, want %v", err, want)
 	}
@@ -191,13 +193,14 @@ func TestRepos_GetCommit_repoupdaterError(t *testing.T) {
 	}
 	defer func() { repoupdater.MockRepoLookup = nil }()
 	var calledVCSRepoGetCommit bool
-	gitserver.Mocks.GetCommit = func(commitID api.CommitID) (*gitdomain.Commit, error) {
+
+	gsClient := gitserver.NewMockClient()
+	gsClient.GetCommitFunc.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, gitserver.ResolveRevisionOptions, authz.SubRepoPermissionChecker) (*gitdomain.Commit, error) {
 		calledVCSRepoGetCommit = true
 		return &gitdomain.Commit{ID: want}, nil
-	}
-	defer gitserver.ResetMocks()
+	})
 
-	commit, err := NewRepos(logger, database.NewMockDB()).GetCommit(ctx, &types.Repo{Name: "a"}, want)
+	commit, err := NewRepos(logger, database.NewMockDB(), gsClient).GetCommit(ctx, &types.Repo{Name: "a"}, want)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -5,17 +5,14 @@ const settingsCascadeFragment = gql`
         subjects {
             __typename
             ... on Org {
-                id
                 name
                 displayName
             }
             ... on User {
-                id
                 username
                 displayName
             }
             ... on Site {
-                id
                 siteID
                 allowSiteSettingsEdits
             }
@@ -23,6 +20,7 @@ const settingsCascadeFragment = gql`
                 id
                 contents
             }
+            id
             settingsURL
             viewerCanAdminister
         }

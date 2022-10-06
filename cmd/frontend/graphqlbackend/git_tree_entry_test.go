@@ -14,9 +14,9 @@ import (
 
 func TestGitTreeEntry_RawZipArchiveURL(t *testing.T) {
 	db := database.NewMockDB()
-	got := NewGitTreeEntryResolver(db,
+	got := NewGitTreeEntryResolver(db, gitserver.NewClient(db),
 		&GitCommitResolver{
-			repoResolver: NewRepositoryResolver(db, &types.Repo{Name: "my/repo"}),
+			repoResolver: NewRepositoryResolver(db, gitserver.NewClient(db), &types.Repo{Name: "my/repo"}),
 		},
 		CreateFileInfo("a/b", true)).
 		RawZipArchiveURL()
@@ -39,9 +39,9 @@ func TestGitTreeEntry_Content(t *testing.T) {
 	t.Cleanup(func() { gitserver.Mocks.ReadFile = nil })
 
 	db := database.NewMockDB()
-	gitTree := NewGitTreeEntryResolver(db,
+	gitTree := NewGitTreeEntryResolver(db, gitserver.NewClient(db),
 		&GitCommitResolver{
-			repoResolver: NewRepositoryResolver(db, &types.Repo{Name: "my/repo"}),
+			repoResolver: NewRepositoryResolver(db, gitserver.NewClient(db), &types.Repo{Name: "my/repo"}),
 		},
 		CreateFileInfo(wantPath, true))
 

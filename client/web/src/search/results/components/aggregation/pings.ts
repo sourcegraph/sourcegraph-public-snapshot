@@ -13,10 +13,4 @@ export enum GroupResultsPing {
     ExpandFullViewPanel = 'GroupResultsExpandedViewOpen',
     CollapseFullViewPanel = 'GroupResultsExpandedViewCollapse',
     InfoIconHover = 'GroupResultsInfoIconHover',
-
-    // Proactive
-    ProactiveLimitHit = 'ProactiveLimitHit',
-    ProactiveLimitSuccess = 'ProactiveLimitSuccess',
-    ExplicitLimitHit = 'ExplicitLimitHit',
-    ExplicitLimitSuccess = 'ExplicitLimitSuccess',
 }

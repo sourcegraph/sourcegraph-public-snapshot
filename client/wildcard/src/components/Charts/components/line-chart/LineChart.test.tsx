@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { assert, stub } from 'sinon'
 
@@ -15,7 +15,7 @@ interface RenderChartArgs {
 const renderChart = ({ series }: RenderChartArgs) => render(<LineChart width={400} height={400} series={series} />)
 
 describe('LineChart', () => {
-    // Non exhaustive smoke tests to check that the chart renders correctly
+    // Non-exhaustive smoke tests to check that the chart renders correctly
     // All other general rendering tests are covered by chromatic
     describe('should render', () => {
         it('empty series', () => {
@@ -25,21 +25,24 @@ describe('LineChart', () => {
         it('series with data', () => {
             renderChart(defaultArgs)
 
+            // Query chart series list
+            const element = screen.getByLabelText('Chart series')
+
             // Check number of series rendered
-            expect(screen.getAllByRole('listitem')).toHaveLength(totalSeries)
+            expect(within(element).getAllByRole('listitem')).toHaveLength(totalSeries)
 
             // Check number of data points rendered
             expect(screen.getAllByRole(/(link|graphics-dataunit)/)).toHaveLength(totalDataPoints)
 
             // Spot check y axis labels
-            expect(screen.getByLabelText(/tick axis 1 of 8. value: 8/i)).toBeInTheDocument()
-            expect(screen.getByLabelText(/tick axis 4 of 8. value: 20/i)).toBeInTheDocument()
-            expect(screen.getByLabelText(/tick axis 8 of 8. value: 36/i)).toBeInTheDocument()
+            expect(screen.getByLabelText(/axis tick, value: 8/i)).toBeInTheDocument()
+            expect(screen.getByLabelText(/axis tick, value: 20/i)).toBeInTheDocument()
+            expect(screen.getByLabelText(/axis tick, value: 36/i)).toBeInTheDocument()
 
             // Spot check x axis labels
-            expect(screen.getByLabelText(/tick axis 1 of 8. value:.*jan 01/i)).toBeInTheDocument()
-            expect(screen.getByLabelText(/tick axis 4 of 8. value:.*oct 01/i)).toBeInTheDocument()
-            expect(screen.getByLabelText(/tick axis 8 of 8. value:.*oct 01/i)).toBeInTheDocument()
+            expect(screen.getByLabelText(/axis tick, value: .*jan 01 2021/i)).toBeInTheDocument()
+            expect(screen.getByLabelText(/axis tick, value: .*oct 01 2021/i)).toBeInTheDocument()
+            expect(screen.getByLabelText(/axis tick, value: .*oct 01 2022/i)).toBeInTheDocument()
         })
     })
 

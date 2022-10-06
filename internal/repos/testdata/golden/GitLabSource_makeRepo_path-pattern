@@ -41,7 +41,7 @@
    "Description": "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
    "Fork": false,
    "Archived": false,
-   "Private": false,
+   "Private": true,
    "CreatedAt": "0001-01-01T00:00:00Z",
    "UpdatedAt": "0001-01-01T00:00:00Z",
    "DeletedAt": "0001-01-01T00:00:00Z",

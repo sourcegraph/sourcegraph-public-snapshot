@@ -53,7 +53,13 @@ type Service struct {
 	operations *operations
 }
 
-func newService(store store.Store, lsifstore lsifstore.LsifStore, uploadSvc UploadService, gitserver GitserverClient, observationContext *observation.Context) *Service {
+func newService(
+	store store.Store,
+	lsifstore lsifstore.LsifStore,
+	uploadSvc UploadService,
+	gitserver GitserverClient,
+	observationContext *observation.Context,
+) *Service {
 	return &Service{
 		store:      store,
 		lsifstore:  lsifstore,
@@ -1138,7 +1144,8 @@ func (s *Service) GetStencil(ctx context.Context, args shared.RequestArgs, reque
 	}
 	trace.Log(traceLog.Int("numRanges", len(adjustedRanges)))
 
-	return sortRanges(adjustedRanges), nil
+	sortedRanges := sortRanges(adjustedRanges)
+	return dedupeRanges(sortedRanges), nil
 }
 
 func (s *Service) GetMonikersByPosition(ctx context.Context, bundleID int, path string, line, character int) (_ [][]precise.MonikerData, err error) {
