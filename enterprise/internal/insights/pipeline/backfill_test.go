@@ -10,42 +10,31 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
-func makeJobGenerator(numJobs int) SearchJobGenerator {
-	return func(ctx context.Context, req BackfillRequest) <-chan SearchJobGeneratorOutput {
-		output := make(chan SearchJobGeneratorOutput)
-		goroutine.Go(func() {
-			defer close(output)
-			for i := 0; i < numJobs; i++ {
-				output <- SearchJobGeneratorOutput{
-					BackfillRequest: &req,
-					Job: &queryrunner.Job{
-						SeriesID:    req.Series.SeriesID,
-						SearchQuery: fmt.Sprintf("%d", i),
-					},
-				}
-			}
-		})
+// type SearchJobGenerator func(ctx context.Context, req requestContext) (context.Context, *requestContext, []*queryrunner.Job, error)
+// type SearchRunner func(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.Job, err error) (context.Context, *requestContext, []store.RecordSeriesPointArgs, error)
+// type ResultsPersister func(ctx context.Context, reqContext *requestContext, points []store.RecordSeriesPointArgs, err error) (*requestContext, error)
 
-		return output
+func makeJobGenerator(numJobs int) SearchJobGenerator {
+	return func(ctx context.Context, req requestContext) (context.Context, *requestContext, []*queryrunner.Job, error) {
+		jobs := make([]*queryrunner.Job, 0, numJobs)
+		for i := 0; i < numJobs; i++ {
+			jobs = append(jobs, &queryrunner.Job{
+				SeriesID:    req.backfillRequest.Series.SeriesID,
+				SearchQuery: fmt.Sprintf("%d", i),
+			})
+		}
+		return ctx, &req, jobs, nil
 	}
 }
 
-func searchRunner(ctx context.Context, input <-chan SearchJobGeneratorOutput) <-chan SearchResultOutput {
-	output := make(chan SearchResultOutput)
-	goroutine.Go(func() {
-		defer close(output)
-		for job := range input {
-			output <- SearchResultOutput{
-				points:          []store.RecordSeriesPointArgs{{Point: store.SeriesPoint{Value: 10}}},
-				BackfillRequest: job.BackfillRequest,
-				err:             nil}
-		}
-	})
-
-	return output
+func searchRunner(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.Job, err error) (context.Context, *requestContext, []store.RecordSeriesPointArgs, error) {
+	points := make([]store.RecordSeriesPointArgs, 0, len(jobs))
+	for _, _ = range jobs {
+		points = append(points, store.RecordSeriesPointArgs{Point: store.SeriesPoint{Value: 10}})
+	}
+	return ctx, reqContext, points, nil
 }
 
 type runCounts struct {
@@ -66,19 +55,16 @@ func TestBackfillStepsConnected(t *testing.T) {
 
 	for _, tc := range testCases {
 		got := runCounts{}
-		countingPersister := func(ctx context.Context, input <-chan SearchResultOutput) error {
-			for r := range input {
+		countingPersister := func(ctx context.Context, reqContext *requestContext, points []store.RecordSeriesPointArgs, err error) (*requestContext, error) {
+			for _, p := range points {
 				got.resultCount++
-				for _, p := range r.points {
-					got.totalCount += int(p.Point.Value)
-				}
+				got.totalCount += int(p.Point.Value)
 			}
-			return nil
+			return reqContext, nil
 		}
 
 		backfiller := NewBackfiller(makeJobGenerator(tc.numJobs), searchRunner, countingPersister)
 		got.err = backfiller.Run(context.Background(), BackfillRequest{Series: &types.InsightSeries{SeriesID: "1"}})
 		tc.want.Equal(t, got)
 	}
-
 }
