@@ -5,7 +5,7 @@ import { noop, random } from 'lodash'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../../../components/WebStory'
-import { useCodeInsights } from '../../../../../../stores'
+import { useCodeInsightsState } from '../../../../../../stores'
 import { CodeInsightsBackendStoryMock } from '../../../../CodeInsightsBackendStoryMock'
 import { SERIES_MOCK_CHART } from '../../../../components'
 
@@ -60,7 +60,7 @@ const codeInsightsBackend = {
 }
 
 export const SearchInsightCreationPage: Story = () => {
-    useCodeInsights.setState({ licensed: true, insightsLimit: null })
+    useCodeInsightsState.setState({ licensed: true, insightsLimit: null })
 
     return (
         <CodeInsightsBackendStoryMock mocks={codeInsightsBackend}>

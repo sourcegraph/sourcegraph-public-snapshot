@@ -7,7 +7,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { Button, Link, LegendItem, LegendList, ParentSize } from '@sourcegraph/wildcard'
 
 import { useSeriesToggle } from '../../../../../../../../insights/utils/use-series-toggle'
-import { useCodeInsights } from '../../../../../../../../stores'
+import { useCodeInsightsState } from '../../../../../../../../stores'
 import {
     InsightCard,
     InsightCardHeader,
@@ -135,7 +135,7 @@ const CodeInsightCaptureExample: FunctionComponent<CodeInsightCaptureExampleProp
     } = props
     const seriesToggleState = useSeriesToggle()
 
-    const { licensed } = useCodeInsights()
+    const { licensed } = useCodeInsightsState()
 
     const { mode } = useContext(CodeInsightsLandingPageContext)
     const bigTemplateClickPingName = useLogEventName('InsightsGetStartedBigTemplateClick')

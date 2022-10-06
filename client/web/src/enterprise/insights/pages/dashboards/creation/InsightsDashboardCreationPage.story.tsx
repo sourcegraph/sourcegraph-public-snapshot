@@ -4,7 +4,7 @@ import { of } from 'rxjs'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../../components/WebStory'
-import { useCodeInsights } from '../../../../../stores'
+import { useCodeInsightsState } from '../../../../../stores'
 import { CodeInsightsBackendStoryMock } from '../../../CodeInsightsBackendStoryMock'
 import { CodeInsightsGqlBackend } from '../../../core/backend/gql-backend/code-insights-gql-backend'
 import { InsightsDashboardOwnerType } from '../../../core/types'
@@ -35,7 +35,7 @@ const codeInsightsBackend: Partial<CodeInsightsGqlBackend> = {
 }
 
 export const InsightsDashboardCreationLicensed: Story = () => {
-    useCodeInsights.setState({ licensed: true, insightsLimit: null })
+    useCodeInsightsState.setState({ licensed: true, insightsLimit: null })
 
     return (
         <CodeInsightsBackendStoryMock mocks={codeInsightsBackend}>
@@ -45,7 +45,7 @@ export const InsightsDashboardCreationLicensed: Story = () => {
 }
 
 export const InsightsDashboardCreationUnlicensed: Story = () => {
-    useCodeInsights.setState({ licensed: false, insightsLimit: 2 })
+    useCodeInsightsState.setState({ licensed: false, insightsLimit: 2 })
 
     return (
         <CodeInsightsBackendStoryMock mocks={codeInsightsBackend}>

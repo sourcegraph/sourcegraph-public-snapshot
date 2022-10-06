@@ -4,7 +4,7 @@ import { noop } from 'lodash'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../../../components/WebStory'
-import { useCodeInsights } from '../../../../../../stores'
+import { useCodeInsightsState } from '../../../../../../stores'
 import { CodeInsightsBackendContext, SeriesChartContent, CodeInsightsGqlBackend } from '../../../../core'
 
 import { CaptureGroupCreationPage as CaptureGroupCreationPageComponent } from './CaptureGroupCreationPage'
@@ -35,7 +35,7 @@ class CodeInsightExampleBackend extends CodeInsightsGqlBackend {
 const api = new CodeInsightExampleBackend({} as any)
 
 export const CaptureGroupCreationPage: Story = () => {
-    useCodeInsights.setState({ licensed: true, insightsLimit: null })
+    useCodeInsightsState.setState({ licensed: true, insightsLimit: null })
 
     return (
         <CodeInsightsBackendContext.Provider value={api}>

@@ -10,4 +10,4 @@ const defaultState: CodeInsightsState = {
     insightsLimit: 2,
 }
 
-export const useCodeInsights = create<CodeInsightsState>(() => defaultState)
+export const useCodeInsightsState = create<CodeInsightsState>(() => defaultState)

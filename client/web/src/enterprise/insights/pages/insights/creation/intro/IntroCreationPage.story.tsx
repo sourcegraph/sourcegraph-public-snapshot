@@ -3,7 +3,7 @@ import { Meta, Story } from '@storybook/react'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../../../components/WebStory'
-import { useCodeInsights } from '../../../../../../stores'
+import { useCodeInsightsState } from '../../../../../../stores'
 import { CodeInsightsBackendContext, CodeInsightsGqlBackend } from '../../../../core'
 
 import { IntroCreationPage } from './IntroCreationPage'
@@ -24,7 +24,7 @@ export default config
 const API = new CodeInsightsGqlBackend({} as any)
 
 export const IntroPageLicensed: Story = () => {
-    useCodeInsights.setState({ licensed: true, insightsLimit: null })
+    useCodeInsightsState.setState({ licensed: true, insightsLimit: null })
 
     return (
         <CodeInsightsBackendContext.Provider value={API}>
@@ -34,7 +34,7 @@ export const IntroPageLicensed: Story = () => {
 }
 
 export const IntroPageUnLicensed: Story = () => {
-    useCodeInsights.setState({ licensed: false, insightsLimit: 2 })
+    useCodeInsightsState.setState({ licensed: false, insightsLimit: 2 })
 
     return (
         <CodeInsightsBackendContext.Provider value={API}>

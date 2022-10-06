@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { gql, useApolloClient } from '@apollo/client'
 
 import { IsCodeInsightsLicensedResult } from '../../../graphql-operations'
-import { useCodeInsights } from '../../../stores'
+import { useCodeInsightsState } from '../../../stores'
 
 /**
  * Returns the full or limited version of the API based on
@@ -24,7 +24,7 @@ export function useLicense(): boolean {
             })
             .then(result => {
                 const licensed = result.data.enterpriseLicenseHasFeature
-                useCodeInsights.setState({ licensed, insightsLimit: licensed ? null : 2 })
+                useCodeInsightsState.setState({ licensed, insightsLimit: licensed ? null : 2 })
                 setFetched(true)
             })
             .catch(() => new Error('Something went wrong fetching the license.'))
