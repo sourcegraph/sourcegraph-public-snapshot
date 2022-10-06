@@ -1285,9 +1285,6 @@ func (c *clientImplementor) ReadFile(ctx context.Context, repo api.RepoName, com
 // NewFileReader returns an io.ReadCloser reading from the named file at commit.
 // The caller should always close the reader after use
 func (c *clientImplementor) NewFileReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string, checker authz.SubRepoPermissionChecker) (io.ReadCloser, error) {
-	if Mocks.NewFileReader != nil {
-		return Mocks.NewFileReader(commit, name)
-	}
 	a := actor.FromContext(ctx)
 	if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, name); err != nil {
 		return nil, err
@@ -1432,10 +1429,6 @@ var recordGetCommitQueries = os.Getenv("RECORD_GET_COMMIT_QUERIES") == "1"
 
 // getCommit returns the commit with the given id.
 func (c *clientImplementor) getCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions, checker authz.SubRepoPermissionChecker) (_ *gitdomain.Commit, err error) {
-	if Mocks.GetCommit != nil {
-		return Mocks.GetCommit(id)
-	}
-
 	if honey.Enabled() && recordGetCommitQueries {
 		defer func() {
 			ev := honey.NewEvent("getCommit")

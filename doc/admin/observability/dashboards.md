@@ -9127,7 +9127,7 @@ Query: `sum(increase(src_codeintel_background_errors_total{job=~"^worker.*"}[5m]
 
 ### Worker: Codeintel: Auto-index scheduler
 
-#### worker: codeintel_index_scheduler_total
+#### worker: codeintel_autoindexing_total
 
 <p class="subtitle">Auto-indexing job scheduler operations every 10m</p>
 
@@ -9140,13 +9140,13 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100700` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_index_scheduler_total{job=~"^worker.*"}[10m]))`
+Query: `sum(increase(src_codeintel_autoindexing_total{op='HandleIndexSchedule',job=~"^worker.*"}[10m]))`
 
 </details>
 
 <br />
 
-#### worker: codeintel_index_scheduler_99th_percentile_duration
+#### worker: codeintel_autoindexing_99th_percentile_duration
 
 <p class="subtitle">Aggregate successful auto-indexing job scheduler operation duration distribution over 10m</p>
 
@@ -9159,13 +9159,13 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100701` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_index_scheduler_duration_seconds_bucket{job=~"^worker.*"}[10m]))`
+Query: `sum  by (le)(rate(src_codeintel_autoindexing_duration_seconds_bucket{op='HandleIndexSchedule',job=~"^worker.*"}[10m]))`
 
 </details>
 
 <br />
 
-#### worker: codeintel_index_scheduler_errors_total
+#### worker: codeintel_autoindexing_errors_total
 
 <p class="subtitle">Auto-indexing job scheduler operation errors every 10m</p>
 
@@ -9178,13 +9178,13 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100702` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_index_scheduler_errors_total{job=~"^worker.*"}[10m]))`
+Query: `sum(increase(src_codeintel_autoindexing_errors_total{op='HandleIndexSchedule',job=~"^worker.*"}[10m]))`
 
 </details>
 
 <br />
 
-#### worker: codeintel_index_scheduler_error_rate
+#### worker: codeintel_autoindexing_error_rate
 
 <p class="subtitle">Auto-indexing job scheduler operation error rate over 10m</p>
 
@@ -9197,7 +9197,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100703` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_index_scheduler_errors_total{job=~"^worker.*"}[10m])) / (sum(increase(src_codeintel_index_scheduler_total{job=~"^worker.*"}[10m])) + sum(increase(src_codeintel_index_scheduler_errors_total{job=~"^worker.*"}[10m]))) * 100`
+Query: `sum(increase(src_codeintel_autoindexing_errors_total{op='HandleIndexSchedule',job=~"^worker.*"}[10m])) / (sum(increase(src_codeintel_autoindexing_total{op='HandleIndexSchedule',job=~"^worker.*"}[10m])) + sum(increase(src_codeintel_autoindexing_errors_total{op='HandleIndexSchedule',job=~"^worker.*"}[10m]))) * 100`
 
 </details>
 
@@ -19229,7 +19229,7 @@ Query: `sum(increase(src_codeintel_dbstore_indexes_inserted[5m]))`
 
 <br />
 
-#### codeintel-autoindexing: codeintel_index_scheduler_error_rate
+#### codeintel-autoindexing: codeintel_autoindexing_error_rate
 
 <p class="subtitle">Auto-indexing job scheduler operation error rate over 10m</p>
 
@@ -19242,7 +19242,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_index_scheduler_errors_total{job=~"^.*"}[10m])) / (sum(increase(src_codeintel_index_scheduler_total{job=~"^.*"}[10m])) + sum(increase(src_codeintel_index_scheduler_errors_total{job=~"^.*"}[10m]))) * 100`
+Query: `sum(increase(src_codeintel_autoindexing_errors_total{op='HandleIndexSchedule',job=~"^.*"}[10m])) / (sum(increase(src_codeintel_autoindexing_total{op='HandleIndexSchedule',job=~"^.*"}[10m])) + sum(increase(src_codeintel_autoindexing_errors_total{op='HandleIndexSchedule',job=~"^.*"}[10m]))) * 100`
 
 </details>
 

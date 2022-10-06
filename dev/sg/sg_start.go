@@ -216,7 +216,7 @@ func startExec(ctx *cli.Context) error {
 
 		// dev-private exists, try to update the configuration
 		update := std.Out.Pending(output.Styled(output.StylePending, "Updating dev-private..."))
-		if err := sgrun.Bash(ctx.Context, "git pull origin main").
+		if err := sgrun.Bash(ctx.Context, "git pull origin master").
 			Dir(devPrivatePath).
 			Run().Wait(); err != nil {
 
@@ -225,6 +225,8 @@ func startExec(ctx *cli.Context) error {
 			std.Out.Write("")
 			std.Out.Write(err.Error())
 			std.Out.Write("")
+		} else {
+			update.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Done updating dev-private"))
 		}
 	}
 
