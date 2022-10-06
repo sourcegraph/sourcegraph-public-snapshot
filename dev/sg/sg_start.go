@@ -239,7 +239,7 @@ func shouldUpdateDevPrivate(ctx context.Context, path string) (bool, error) {
 	if err := sgrun.Bash(ctx, "git fetch origin master").Dir(path).Run().Wait(); err != nil {
 		return false, err
 	}
-	// now we check if there are any changes ie. if the output is empty, we're not missing out on anything
+	// Now we check if there are any changes. If the output is empty, we're not missing out on anything.
 	output, err := sgrun.Bash(ctx, "git diff --shortstat origin/HEAD").Dir(path).Run().String()
 	if err != nil {
 		return false, err
