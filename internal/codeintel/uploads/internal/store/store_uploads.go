@@ -103,6 +103,7 @@ WHERE %s ORDER BY %s LIMIT %d OFFSET %d
 const uploadRankQueryFragment = `
 SELECT
 	r.id,
+	-- ... and here to reflect in the UI
 	ROW_NUMBER() OVER (ORDER BY COALESCE(r.process_after, r.uploaded_at), r.id) as rank
 FROM lsif_uploads_with_repository_name r
 WHERE r.state = 'queued'

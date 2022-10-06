@@ -51,7 +51,7 @@ var uploadWorkerStoreOptions = dbworkerstore.Options{
 	ViewName:          "lsif_uploads_with_repository_name u",
 	ColumnExpressions: uploadColumnsWithNullRank,
 	Scan:              dbworkerstore.BuildWorkerScan(scanCompleteUpload),
-	OrderByExpression: sqlf.Sprintf("u.uploaded_at, u.id"),
+	OrderByExpression: sqlf.Sprintf("u.uploaded_at, u.id"), // prepend new expr here
 	StalledMaxAge:     StalledUploadMaxAge,
 	MaxNumResets:      UploadMaxNumResets,
 }
