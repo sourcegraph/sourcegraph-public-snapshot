@@ -36,7 +36,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/adminanalytics"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/check"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
@@ -137,19 +136,9 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	)) // Experimental: DevX is observing how sampling affects the errors signal
 	defer liblog.Sync()
 
-	hc := &check.HealthChecker{Checks: []check.Check{
-		checkCanReachGitserver,
-		checkCanReachSearcher,
-	}}
-	hc.Init()
-
 	logger := sglog.Scoped("server", "the frontend server program")
 	ready := make(chan struct{})
-	go debugserver.NewServerRoutine(ready, debugserver.Endpoint{
-		Name:    "Health Checks",
-		Path:    "/aggregate-checks",
-		Handler: check.NewAggregateHealthCheckHandler(check.DefaultEndpointProvider),
-	}).Start()
+	go debugserver.NewServerRoutine(ready).Start()
 
 	sqlDB, err := InitDB(logger)
 	if err != nil {
@@ -302,7 +291,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 		return err
 	}
 
-	internalAPI, err := makeInternalAPI(schema, db, enterprise, rateLimitWatcher, hc)
+	internalAPI, err := makeInternalAPI(schema, db, enterprise, rateLimitWatcher)
 	if err != nil {
 		return err
 	}
@@ -361,7 +350,7 @@ func makeExternalAPI(db database.DB, schema *graphql.Schema, enterprise enterpri
 	return server, nil
 }
 
-func makeInternalAPI(schema *graphql.Schema, db database.DB, enterprise enterprise.Services, rateLimiter graphqlbackend.LimitWatcher, healthCheckHandler http.Handler) (goroutine.BackgroundRoutine, error) {
+func makeInternalAPI(schema *graphql.Schema, db database.DB, enterprise enterprise.Services, rateLimiter graphqlbackend.LimitWatcher) (goroutine.BackgroundRoutine, error) {
 	if httpAddrInternal == "" {
 		return nil, nil
 	}
@@ -378,7 +367,6 @@ func makeInternalAPI(schema *graphql.Schema, db database.DB, enterprise enterpri
 		enterprise.NewCodeIntelUploadHandler,
 		enterprise.NewComputeStreamHandler,
 		rateLimiter,
-		healthCheckHandler,
 	)
 	httpServer := &http.Server{
 		Handler:     internalHandler,
