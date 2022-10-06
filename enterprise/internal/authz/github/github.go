@@ -349,12 +349,17 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 	}
 
 	oauthToken := &auth.OAuthBearerToken{
-		Token:              tok.AccessToken,
-		RefreshToken:       tok.RefreshToken,
-		Expiry:             tok.Expiry,
-		RefreshFunc:        database.GetAccountRefreshAndStoreOAuthTokenFunc(p.db, account.ID, github.GetOAuthContext(p.codeHost.BaseURL.String())),
-		NeedsRefreshBuffer: 5,
+		Token:        tok.AccessToken,
+		RefreshToken: tok.RefreshToken,
+		Expiry:       tok.Expiry,
 	}
+
+	if p.db != nil {
+		// Only used if created by newAppProvider
+		oauthToken.RefreshFunc = database.GetAccountRefreshAndStoreOAuthTokenFunc(p.db, account.ID, github.GetOAuthContext(p.codeHost.BaseURL.String()))
+		oauthToken.NeedsRefreshBuffer = 5
+	}
+
 	return p.fetchUserPermsByToken(ctx, extsvc.AccountID(account.AccountID), oauthToken, opts)
 }
 
