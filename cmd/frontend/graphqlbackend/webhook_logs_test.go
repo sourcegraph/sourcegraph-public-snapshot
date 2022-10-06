@@ -8,8 +8,8 @@ import (
 	mockassert "github.com/derision-test/go-mockgen/testutil/assert"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -101,7 +101,7 @@ func TestNewWebhookLogConnectionResolver(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		_, err := newWebhookLogConnectionResolver(context.Background(), db, nil, webhookLogsUnmatchedExternalService)
-		assert.ErrorIs(t, err, backend.ErrNotAuthenticated)
+		assert.ErrorIs(t, err, auth.ErrNotAuthenticated)
 	})
 
 	t.Run("regular user", func(t *testing.T) {
@@ -112,7 +112,7 @@ func TestNewWebhookLogConnectionResolver(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		_, err := newWebhookLogConnectionResolver(context.Background(), db, nil, webhookLogsUnmatchedExternalService)
-		assert.ErrorIs(t, err, backend.ErrMustBeSiteAdmin)
+		assert.ErrorIs(t, err, auth.ErrMustBeSiteAdmin)
 	})
 
 	t.Run("admin user", func(t *testing.T) {

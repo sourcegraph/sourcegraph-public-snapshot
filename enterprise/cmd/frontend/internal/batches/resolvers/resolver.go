@@ -8,7 +8,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
@@ -18,12 +17,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	extsvcauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -51,7 +51,7 @@ func batchChangesCreateAccess(ctx context.Context, db database.DB) error {
 
 	act := actor.FromContext(ctx)
 	if !act.IsAuthenticated() {
-		return backend.ErrNotAuthenticated
+		return auth.ErrNotAuthenticated
 	}
 	return nil
 }
@@ -223,7 +223,7 @@ func (r *Resolver) ResolveWorkspacesForBatchSpec(ctx context.Context, args *grap
 	// Verify the user is authenticated.
 	act := actor.FromContext(ctx)
 	if !act.IsAuthenticated() {
-		return nil, backend.ErrNotAuthenticated
+		return nil, auth.ErrNotAuthenticated
 	}
 
 	// Run the resolution.
@@ -296,7 +296,7 @@ func (r *Resolver) changesetSpecByID(ctx context.Context, id graphql.ID) (graphq
 
 type batchChangesCredentialResolver interface {
 	graphqlbackend.BatchChangesCredentialResolver
-	authenticator(ctx context.Context) (auth.Authenticator, error)
+	authenticator(ctx context.Context) (extsvcauth.Authenticator, error)
 }
 
 func (r *Resolver) batchChangesCredentialByID(ctx context.Context, id graphql.ID) (batchChangesCredentialResolver, error) {
@@ -329,7 +329,7 @@ func (r *Resolver) batchChangesUserCredentialByID(ctx context.Context, id int64)
 		return nil, err
 	}
 
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.store.DatabaseDB(), cred.UserID); err != nil {
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.store.DatabaseDB(), cred.UserID); err != nil {
 		return nil, err
 	}
 
@@ -338,7 +338,7 @@ func (r *Resolver) batchChangesUserCredentialByID(ctx context.Context, id int64)
 
 func (r *Resolver) batchChangesSiteCredentialByID(ctx context.Context, id int64) (batchChangesCredentialResolver, error) {
 	// Todo: Is this required? Should everyone be able to see there are _some_ credentials?
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -624,7 +624,7 @@ func (r *Resolver) CreateChangesetSpec(ctx context.Context, args *graphqlbackend
 	// To be extra safe, we'll just do the cheap check again here so if anyone ever modifies
 	// batchChangesCreateAccess, we still enforce it here.
 	if !act.IsAuthenticated() {
-		return nil, backend.ErrNotAuthenticated
+		return nil, auth.ErrNotAuthenticated
 	}
 
 	svc := service.New(r.store)
@@ -752,11 +752,11 @@ func (r *Resolver) BatchChanges(ctx context.Context, args *graphqlbackend.ListBa
 		opts.Cursor = cursor
 	}
 
-	authErr := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB())
-	if authErr != nil && authErr != backend.ErrMustBeSiteAdmin {
+	authErr := auth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB())
+	if authErr != nil && authErr != auth.ErrMustBeSiteAdmin {
 		return nil, authErr
 	}
-	isSiteAdmin := authErr != backend.ErrMustBeSiteAdmin
+	isSiteAdmin := authErr != auth.ErrMustBeSiteAdmin
 	if !isSiteAdmin {
 		actor := actor.FromContext(ctx)
 		if args.ViewerCanAdminister != nil && *args.ViewerCanAdminister {
@@ -822,7 +822,7 @@ func (r *Resolver) BatchChangesCodeHosts(ctx context.Context, args *graphqlbacke
 
 	if args.UserID != nil {
 		// 🚨 SECURITY: Only viewable for self or by site admins.
-		if err := backend.CheckSiteAdminOrSameUser(ctx, r.store.DatabaseDB(), *args.UserID); err != nil {
+		if err := auth.CheckSiteAdminOrSameUser(ctx, r.store.DatabaseDB(), *args.UserID); err != nil {
 			return nil, err
 		}
 	}
@@ -1075,7 +1075,7 @@ func (r *Resolver) CreateBatchChangesCredential(ctx context.Context, args *graph
 
 func (r *Resolver) createBatchChangesUserCredential(ctx context.Context, externalServiceURL, externalServiceType string, userID int32, credential string, username *string) (graphqlbackend.BatchChangesCredentialResolver, error) {
 	// 🚨 SECURITY: Check that the requesting user can create the credential.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.store.DatabaseDB(), userID); err != nil {
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.store.DatabaseDB(), userID); err != nil {
 		return nil, err
 	}
 
@@ -1109,7 +1109,7 @@ func (r *Resolver) createBatchChangesUserCredential(ctx context.Context, externa
 func (r *Resolver) createBatchChangesSiteCredential(ctx context.Context, externalServiceURL, externalServiceType string, credential string, username *string) (graphqlbackend.BatchChangesCredentialResolver, error) {
 	// 🚨 SECURITY: Check that a site credential can only be created
 	// by a site-admin.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -1140,10 +1140,10 @@ func (r *Resolver) createBatchChangesSiteCredential(ctx context.Context, externa
 	return &batchChangesSiteCredentialResolver{credential: cred}, nil
 }
 
-func (r *Resolver) generateAuthenticatorForCredential(ctx context.Context, externalServiceType, externalServiceURL, credential string, username *string) (auth.Authenticator, error) {
+func (r *Resolver) generateAuthenticatorForCredential(ctx context.Context, externalServiceType, externalServiceURL, credential string, username *string) (extsvcauth.Authenticator, error) {
 	svc := service.New(r.store)
 
-	var a auth.Authenticator
+	var a extsvcauth.Authenticator
 	keypair, err := encryption.GenerateRSAKey()
 	if err != nil {
 		return nil, err
@@ -1157,22 +1157,22 @@ func (r *Resolver) generateAuthenticatorForCredential(ctx context.Context, exter
 			}
 			return nil, err
 		}
-		a = &auth.BasicAuthWithSSH{
-			BasicAuth:  auth.BasicAuth{Username: username, Password: credential},
+		a = &extsvcauth.BasicAuthWithSSH{
+			BasicAuth:  extsvcauth.BasicAuth{Username: username, Password: credential},
 			PrivateKey: keypair.PrivateKey,
 			PublicKey:  keypair.PublicKey,
 			Passphrase: keypair.Passphrase,
 		}
 	} else if externalServiceType == extsvc.TypeBitbucketCloud {
-		a = &auth.BasicAuthWithSSH{
-			BasicAuth:  auth.BasicAuth{Username: *username, Password: credential},
+		a = &extsvcauth.BasicAuthWithSSH{
+			BasicAuth:  extsvcauth.BasicAuth{Username: *username, Password: credential},
 			PrivateKey: keypair.PrivateKey,
 			PublicKey:  keypair.PublicKey,
 			Passphrase: keypair.Passphrase,
 		}
 	} else {
-		a = &auth.OAuthBearerTokenWithSSH{
-			OAuthBearerToken: auth.OAuthBearerToken{Token: credential},
+		a = &extsvcauth.OAuthBearerTokenWithSSH{
+			OAuthBearerToken: extsvcauth.OAuthBearerToken{Token: credential},
 			PrivateKey:       keypair.PrivateKey,
 			PublicKey:        keypair.PublicKey,
 			Passphrase:       keypair.Passphrase,
@@ -1220,7 +1220,7 @@ func (r *Resolver) deleteBatchChangesUserCredential(ctx context.Context, credent
 	}
 
 	// 🚨 SECURITY: Check that the requesting user may delete the credential.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.store.DatabaseDB(), cred.UserID); err != nil {
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.store.DatabaseDB(), cred.UserID); err != nil {
 		return nil, err
 	}
 
@@ -1234,7 +1234,7 @@ func (r *Resolver) deleteBatchChangesUserCredential(ctx context.Context, credent
 
 func (r *Resolver) deleteBatchChangesSiteCredential(ctx context.Context, credentialDBID int64) (*graphqlbackend.EmptyResponse, error) {
 	// 🚨 SECURITY: Check that the requesting user may delete the credential.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -1496,7 +1496,7 @@ func (r *Resolver) BatchSpecs(ctx context.Context, args *graphqlbackend.ListBatc
 	// 🚨 SECURITY: If the user is not an admin, we don't want to include
 	// BatchSpecs that were created with CreateBatchSpecFromRaw and not owned
 	// by the user
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
 		opts.ExcludeCreatedFromRawNotOwnedByUser = actor.FromContext(ctx).UID
 	}
 
@@ -1797,7 +1797,7 @@ func (r *Resolver) UpsertBatchSpecInput(ctx context.Context, args *graphqlbacken
 
 func (r *Resolver) CancelBatchSpecWorkspaceExecution(ctx context.Context, args *graphqlbackend.CancelBatchSpecWorkspaceExecutionArgs) (*graphqlbackend.EmptyResponse, error) {
 	// TODO(ssbc): currently admin only.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 	// TODO(ssbc): not implemented
@@ -1839,7 +1839,7 @@ func (r *Resolver) RetryBatchSpecExecution(ctx context.Context, args *graphqlbac
 
 func (r *Resolver) EnqueueBatchSpecWorkspaceExecution(ctx context.Context, args *graphqlbackend.EnqueueBatchSpecWorkspaceExecutionArgs) (*graphqlbackend.EmptyResponse, error) {
 	// TODO(ssbc): currently admin only.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 	// TODO(ssbc): not implemented
@@ -1848,7 +1848,7 @@ func (r *Resolver) EnqueueBatchSpecWorkspaceExecution(ctx context.Context, args 
 
 func (r *Resolver) ToggleBatchSpecAutoApply(ctx context.Context, args *graphqlbackend.ToggleBatchSpecAutoApplyArgs) (graphqlbackend.BatchSpecResolver, error) {
 	// TODO(ssbc): currently admin only.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 	// TODO(ssbc): not implemented
@@ -1857,7 +1857,7 @@ func (r *Resolver) ToggleBatchSpecAutoApply(ctx context.Context, args *graphqlba
 
 func (r *Resolver) DeleteBatchSpec(ctx context.Context, args *graphqlbackend.DeleteBatchSpecArgs) (*graphqlbackend.EmptyResponse, error) {
 	// TODO(ssbc): currently admin only.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 	// TODO(ssbc): not implemented

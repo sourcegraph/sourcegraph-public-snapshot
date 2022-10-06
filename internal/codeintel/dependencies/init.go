@@ -1,16 +1,10 @@
 package dependencies
 
 import (
-	"sync"
-
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/memo"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-)
-
-var (
-	svc     *Service
-	svcOnce sync.Once
 )
 
 // GetService creates or returns an already-initialized dependencies service.
@@ -19,20 +13,30 @@ func GetService(
 	db database.DB,
 	gitserver GitserverClient,
 ) *Service {
-	svcOnce.Do(func() {
-		store := store.New(db, scopedContext("store"))
-		externalServiceStore := db.ExternalServices()
-
-		svc = newService(
-			store,
-			gitserver,
-			externalServiceStore,
-			scopedContext("service"),
-		)
+	svc, _ := initServiceMemo.Init(serviceDependencies{
+		db,
+		gitserver,
 	})
 
 	return svc
 }
+
+type serviceDependencies struct {
+	db        database.DB
+	gitserver GitserverClient
+}
+
+var initServiceMemo = memo.NewMemoizedConstructorWithArg(func(deps serviceDependencies) (*Service, error) {
+	store := store.New(deps.db, scopedContext("store"))
+	externalServiceStore := deps.db.ExternalServices()
+
+	return newService(
+		store,
+		deps.gitserver,
+		externalServiceStore,
+		scopedContext("service"),
+	), nil
+})
 
 // TestService creates a new dependencies service with noop observation contexts.
 func TestService(

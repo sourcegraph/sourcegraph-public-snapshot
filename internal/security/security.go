@@ -4,6 +4,8 @@ package security
 
 import (
 	"fmt"
+	"net"
+	"strconv"
 	"unicode"
 	"unicode/utf8"
 
@@ -11,6 +13,34 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+// ValidateRemoteAddr validates if the input is a valid IP or a valid hostname.
+// It validates the hostname by attempting to resolve it.
+func ValidateRemoteAddr(raddr string) bool {
+	host, port, err := net.SplitHostPort(raddr)
+
+	if err == nil {
+		raddr = host
+		_, err := strconv.Atoi(port)
+
+		// return false if port is not an int
+		if err != nil {
+			return false
+		}
+	}
+
+	validIP := net.ParseIP(raddr) != nil
+	validHost := true
+
+	_, err = net.LookupHost(raddr)
+
+	if err != nil {
+		// we cannot resolve the addr
+		validHost = false
+	}
+
+	return validIP || validHost
+}
 
 // maxPasswordRunes is the maximum number of UTF-8 runes that a password can contain.
 // This safety limit is to protect us from a DDOS attack caused by hashing very large passwords on Sourcegraph.com.

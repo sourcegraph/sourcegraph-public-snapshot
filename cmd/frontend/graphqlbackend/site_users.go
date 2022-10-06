@@ -6,7 +6,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/users"
 )
 
@@ -21,7 +21,7 @@ func (s *siteResolver) Users(ctx context.Context, args *struct {
 	EventsCount  *users.UsersStatsNumberRange
 }) (*siteUsersResolver, error) {
 	// 🚨 SECURITY: Only site admins can see users.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, s.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, s.db); err != nil {
 		return nil, err
 	}
 

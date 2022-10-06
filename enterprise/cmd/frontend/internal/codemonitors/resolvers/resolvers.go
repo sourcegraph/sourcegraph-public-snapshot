@@ -9,12 +9,12 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/background"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -352,7 +352,7 @@ func (r *Resolver) createRecipients(ctx context.Context, emailID int64, recipien
 // actions (emails, webhooks) immediately. This is useful during development and
 // troubleshooting. Only site admins can call this functions.
 func (r *Resolver) ResetTriggerQueryTimestamps(ctx context.Context, args *graphqlbackend.ResetTriggerQueryTimestampsArgs) (*graphqlbackend.EmptyResponse, error) {
-	err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db)
+	err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db)
 	if err != nil {
 		return nil, err
 	}
@@ -673,7 +673,7 @@ func (r *Resolver) isAllowedToCreate(ctx context.Context, owner graphql.ID) erro
 	}
 	switch kind := relay.UnmarshalKind(owner); kind {
 	case "User":
-		return backend.CheckSiteAdminOrSameUser(ctx, r.db, ownerInt32)
+		return auth.CheckSiteAdminOrSameUser(ctx, r.db, ownerInt32)
 	case "Org":
 		return errors.Errorf("creating a code monitor with an org namespace is no longer supported")
 	default:
