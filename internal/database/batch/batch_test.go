@@ -86,6 +86,38 @@ func TestBatchInserterWithReturnWithConflicts(t *testing.T) {
 	}
 }
 
+func TestBatchInserterWithConflict(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
+	setupTestTable(t, db)
+
+	tableSizeFactor := 2
+	duplicationFactor := 2
+	expectedValues := makeTestValues(tableSizeFactor, 0)
+	testInsertWithConflicts(t, db, duplicationFactor, expectedValues)
+
+	rows, err := db.Query("SELECT col1, col2, col3, col4, col5 from batch_inserter_test")
+	if err != nil {
+		t.Fatalf("unexpected error querying data: %s", err)
+	}
+	defer rows.Close()
+
+	var values [][]any
+	for rows.Next() {
+		var v1, v2, v3, v4 int
+		var v5 string
+		if err := rows.Scan(&v1, &v2, &v3, &v4, &v5); err != nil {
+			t.Fatalf("unexpected error scanning data: %s", err)
+		}
+
+		values = append(values, []any{v1, v2, v3, v4, v5})
+	}
+
+	if diff := cmp.Diff(expectedValues, values); diff != "" {
+		t.Errorf("unexpected table contents (-want +got):\n%s", diff)
+	}
+}
+
 func BenchmarkBatchInserter(b *testing.B) {
 	logger := logtest.Scoped(b)
 	db := dbtest.NewDB(logger, b)
@@ -239,4 +271,29 @@ func testInsertWithReturnWithConflicts(t testing.TB, db *sql.DB, n int, expected
 	}
 
 	return insertedIDs
+}
+
+func testInsertWithConflicts(t testing.TB, db *sql.DB, n int, expectedValues [][]any) {
+	ctx := context.Background()
+
+	inserter := NewInserterWithConflict(
+		ctx,
+		db,
+		"batch_inserter_test",
+		MaxNumPostgresParameters,
+		"ON CONFLICT DO NOTHING",
+		"id", "col1", "col2", "col3", "col4", "col5",
+	)
+
+	for i := 0; i < n; i++ {
+		for j, values := range expectedValues {
+			if err := inserter.Insert(ctx, append([]any{j + 1}, values...)...); err != nil {
+				t.Fatalf("unexpected error inserting values: %s", err)
+			}
+		}
+	}
+
+	if err := inserter.Flush(ctx); err != nil {
+		t.Fatalf("unexpected error flushing: %s", err)
+	}
 }
