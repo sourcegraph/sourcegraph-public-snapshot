@@ -1274,6 +1274,47 @@ Flags:
 * `--priority, -p="<value>"`: Alert priority, importance decreases from P1 (critical) to P5 (lowest), defaults to P5 (default: P5)
 * `--url="<value>"`: URL field for alert details (optional)
 
+## sg src
+
+Run src-cli on a given instance.
+
+```sh
+$ sg src [instance] [src-cli args]
+```
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
+### sg src instance
+
+
+
+```sh
+$ todo
+```
+
+#### sg src instance register
+
+
+
+
+Flags:
+
+* `--access-token="<value>"`: AccessToken for the new instance
+* `--endpoint="<value>"`: Endpoint for the new instance (ex: https://sourcegraph.sourcegraph.com)
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--name="<value>"`: Name for the new instance (ex: s2)
+
+#### sg src instance list
+
+
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
 ## sg help
 
 Get help and docs about sg.
