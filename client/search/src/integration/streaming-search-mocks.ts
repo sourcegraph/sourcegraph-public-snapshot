@@ -99,13 +99,51 @@ export const mixedSearchStreamEvents: SearchEvent[] = [
                 repository: 'gitlab.sgdev.org/sourcegraph/lsif-cpp',
                 branches: [''],
                 commit: '2e3569cf60646c9ce4e37a43e5cf698a00cbd41a',
-                lineMatches: [
+                chunkMatches: [
                     {
-                        line: "test('does not emit items with duplicate IDs', async () => {",
-                        lineNumber: 38,
-                        offsetAndLengths: [[0, 4]],
+                        content: 'test(\'does not emit items with duplicate IDs\', async () => {',
+                        contentStart: {
+                            offset: 939,
+                            line: 38,
+                            column: 0
+                        },
+                        ranges: [
+                            {
+                                start: {
+                                    offset: 939,
+                                    line: 38,
+                                    column: 0
+                                },
+                                end: {
+                                    offset: 943,
+                                    line: 38,
+                                    column: 4
+                                }
+                            }
+                        ]
                     },
-                    { line: "test('five', async () => {", lineNumber: 63, offsetAndLengths: [[0, 4]] },
+                    {
+                        content: 'test(\'five\', async () => {',
+                        contentStart: {
+                            offset: 1658,
+                            line: 63,
+                            column: 0
+                        },
+                        ranges: [
+                            {
+                                start: {
+                                    offset: 1658,
+                                    line: 63,
+                                    column: 0
+                                },
+                                end: {
+                                    offset: 1662,
+                                    line: 63,
+                                    column: 4
+                                }
+                            }
+                        ]
+                    }
                 ],
             },
         ],

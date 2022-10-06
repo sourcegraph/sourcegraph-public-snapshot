@@ -24,14 +24,14 @@ const defaultProps = {
     location: history.location,
     matches: [
         {
-            preview: 'third line of code',
-            line: 3,
-            highlightRanges: [{ start: 7, highlightLength: 4 }],
+            content: 'third line of code',
+            startLine: 3,
+            highlightRanges: [{ startLine: 3, startCharacter: 7, endLine: 3, endCharacter: 11 }],
         },
     ],
     grouped: [
         {
-            matches: [{ line: 3, character: 7, highlightLength: 4 }],
+            matches: [{ startLine: 3, startCharacter: 7, endLine: 3, endCharacter: 11 }],
             position: { line: 3, character: 7 },
             startLine: 3,
             endLine: 4,
