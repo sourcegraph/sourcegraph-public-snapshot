@@ -15,8 +15,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var _ service = (*Service)(nil)
+// var _ service = (*Service)(nil)
 
+// TODO - remove or re-sync with implementation
 type service interface {
 	// Configurations
 	GetConfigurationPolicies(ctx context.Context, opts types.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error)

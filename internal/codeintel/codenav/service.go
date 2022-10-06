@@ -20,8 +20,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var _ service = (*Service)(nil)
+// var _ service = (*Service)(nil)
 
+// TODO - remove or re-sync with implementation
 type service interface {
 	GetDefinitions(ctx context.Context, args shared.RequestArgs, requestState RequestState) (_ []types.UploadLocation, err error)
 	GetDiagnostics(ctx context.Context, args shared.RequestArgs, requestState RequestState) (diagnosticsAtUploads []shared.DiagnosticAtUpload, _ int, err error)

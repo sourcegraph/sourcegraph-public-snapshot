@@ -29,8 +29,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var _ service = (*Service)(nil)
+// var _ service = (*Service)(nil)
 
+// TODO - remove or re-sync with implementation
 type service interface {
 	// Commits
 	GetStaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []shared.SourcedCommits, err error)
