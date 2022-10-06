@@ -81,8 +81,7 @@ const sumHighlightRanges = (count: number, item: MatchItem): number => count + i
 const BY_LINE_RANKING = 'by-line-number'
 const DEFAULT_CONTEXT = 1
 
-// This is a search result for types file (content), path, or symbol.
-export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     containerClassName,
     result,
     settingsCascade,

@@ -13,9 +13,9 @@ import {
 } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import '@sourcegraph/shared/dev/mockReactVisibilitySensor'
 
-import { FileSearchResult } from './FileSearchResult'
+import { FileContentSearchResult } from './FileContentSearchResult'
 
-describe('FileSearchResult', () => {
+describe('FileContentSearchResult', () => {
     afterAll(cleanup)
     const history = createBrowserHistory()
     history.replace({ pathname: '/search' })
@@ -33,7 +33,7 @@ describe('FileSearchResult', () => {
     }
 
     it('renders one result container', () => {
-        const { container } = renderWithBrandedContext(<FileSearchResult {...defaultProps} />)
+        const { container } = renderWithBrandedContext(<FileContentSearchResult {...defaultProps} />)
         expect(getByTestId(container, 'result-container')).toBeVisible()
         expect(getAllByTestId(container, 'result-container').length).toBe(1)
     })
@@ -70,7 +70,7 @@ describe('FileSearchResult', () => {
             ],
         }
         const { container } = renderWithBrandedContext(
-            <FileSearchResult {...defaultProps} result={result} settingsCascade={settingsCascade} />
+            <FileContentSearchResult {...defaultProps} result={result} settingsCascade={settingsCascade} />
         )
         const tableRows = container.querySelectorAll('[data-testid="code-excerpt"] tr')
         expect(tableRows.length).toBe(7)

@@ -10,7 +10,7 @@ import { SearchContextProps } from '@sourcegraph/search'
 import {
     CommitSearchResult,
     RepoSearchResult,
-    FileSearchResult,
+    FileContentSearchResult,
     FilePathSearchResult,
     SymbolSearchResult,
     FetchFileParameters,
@@ -163,7 +163,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                             as="li"
                         >
                             {result.type === 'content' && (
-                                <FileSearchResult
+                                <FileContentSearchResult
                                     index={index}
                                     location={location}
                                     telemetryService={telemetryService}
