@@ -30,9 +30,6 @@ export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildre
             </div>
         )
     }
-    if (error && !data) {
-        return null
-    }
     if (!data) {
         return null
     }
