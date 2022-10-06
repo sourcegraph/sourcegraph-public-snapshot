@@ -2,8 +2,8 @@ package memo
 
 import "sync"
 
-// MemoizedConstructor wraps a function returning a value and an error
-// and memoizes its result. Multiple calls to Init will result in the
+// MemoizedConstructor wraps a function returning a value and an error,
+// memoizing its result. Multiple calls to Init will result in the
 // underlying constructor being called once. All callers will receive
 // the same return values.
 type MemoizedConstructor[T any] struct {

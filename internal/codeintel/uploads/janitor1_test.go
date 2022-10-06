@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/derision-test/glock"
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/log/logtest"
@@ -18,25 +19,29 @@ import (
 
 func TestUploadExpirer(t *testing.T) {
 	now := timeutil.Now()
+	clock := glock.NewMockClock()
+	clock.SetCurrent(now)
 	uploadSvc := setupMockUploadService(now)
 	policySvc := setupMockPolicyService()
 	policyMatcher := testUploadExpirerMockPolicyMatcher()
 
-	uploadExpirer := &expirer{
-		uploadSvc:     uploadSvc,
-		policySvc:     policySvc,
-		policyMatcher: policyMatcher,
-		metrics:       newExpirationMetrics(&observation.TestContext),
-		logger:        logtest.Scoped(t),
+	uploadExpirer := &Service{
+		store:             uploadSvc,
+		policySvc:         policySvc,
+		policyMatcher:     policyMatcher,
+		expirationMetrics: newExpirationMetrics(&observation.TestContext),
+		logger:            logtest.Scoped(t),
+		operations:        newOperations(&observation.TestContext),
+		clock:             clock,
+	}
 
+	if err := uploadExpirer.handleUploadExpirer(context.Background(), expirerConfig{
 		repositoryProcessDelay: 24 * time.Hour,
 		repositoryBatchSize:    100,
 		uploadProcessDelay:     24 * time.Hour,
 		uploadBatchSize:        100,
 		commitBatchSize:        100,
-	}
-
-	if err := uploadExpirer.Handle(context.Background()); err != nil {
+	}); err != nil {
 		t.Fatalf("unexpected error from handle: %s", err)
 	}
 
@@ -110,7 +115,7 @@ func setupMockPolicyService() *MockPolicyService {
 	return policySvc
 }
 
-func setupMockUploadService(now time.Time) *MockUploadServiceForExpiration {
+func setupMockUploadService(now time.Time) *MockStore {
 	uploads := []types.Upload{
 		{ID: 11, State: "completed", RepositoryID: 50, Commit: "deadbeef01", UploadedAt: daysAgo(now, 1)}, // repo 50
 		{ID: 12, State: "completed", RepositoryID: 50, Commit: "deadbeef02", UploadedAt: daysAgo(now, 2)},
@@ -205,7 +210,7 @@ func setupMockUploadService(now time.Time) *MockUploadServiceForExpiration {
 		return nil, nil, nil
 	}
 
-	uploadSvc := NewMockUploadServiceForExpiration()
+	uploadSvc := NewMockStore()
 	uploadSvc.SetRepositoriesForRetentionScanFunc.SetDefaultHook(setRepositoriesForRetentionScanFunc)
 	uploadSvc.GetUploadsFunc.SetDefaultHook(getUploads)
 	uploadSvc.UpdateUploadRetentionFunc.SetDefaultHook(updateUploadRetention)

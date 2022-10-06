@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -139,36 +140,6 @@ func newService(
 func (s *Service) WorkerutilStore() dbworkerstore.Store         { return s.workerutilStore }
 func (s *Service) DependencySyncStore() dbworkerstore.Store     { return s.dependencySyncStore }
 func (s *Service) DependencyIndexingStore() dbworkerstore.Store { return s.dependencyIndexingStore }
-
-// NewIndexResetter returns a background routine that periodically resets index
-// records that are marked as being processed but are no longer being processed
-// by a worker.
-func (s *Service) NewIndexResetter(interval time.Duration) *dbworker.Resetter {
-	return dbworker.NewResetter(s.logger, s.workerutilStore, dbworker.ResetterOptions{
-		Name:     "precise_code_intel_index_worker_resetter",
-		Interval: interval,
-		Metrics: dbworker.ResetterMetrics{
-			RecordResets:        s.metrics.numIndexResets,
-			RecordResetFailures: s.metrics.numIndexResetFailures,
-			Errors:              s.metrics.numIndexResetErrors,
-		},
-	})
-}
-
-// NewDependencyIndexResetter returns a background routine that periodically resets
-// dependency index records that are marked as being processed but are no longer being
-// processed by a worker.
-func (s *Service) NewDependencyIndexResetter(interval time.Duration) *dbworker.Resetter {
-	return dbworker.NewResetter(s.logger, s.dependencyIndexingStore, dbworker.ResetterOptions{
-		Name:     "precise_code_intel_dependency_index_worker_resetter",
-		Interval: interval,
-		Metrics: dbworker.ResetterMetrics{
-			RecordResets:        s.metrics.numDependencyIndexResets,
-			RecordResetFailures: s.metrics.numDependencyIndexResetFailures,
-			Errors:              s.metrics.numDependencyIndexResetErrors,
-		},
-	})
-}
 
 func (s *Service) InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error) {
 	ctx, _, endObservation := s.operations.insertDependencyIndexingJob.With(ctx, &err, observation.Args{})
@@ -501,6 +472,7 @@ func (s *Service) queueIndexForRepositoryAndCommit(ctx context.Context, reposito
 }
 
 var overrideScript = os.Getenv("SRC_CODEINTEL_INFERENCE_OVERRIDE_SCRIPT")
+var maximumIndexJobsPerInferredConfiguration = env.MustGetInt("PRECISE_CODE_INTEL_AUTO_INDEX_MAXIMUM_INDEX_JOBS_PER_INFERRED_CONFIGURATION", 25, "Repositories with a number of inferred auto-index jobs exceeding this threshold will not be auto-indexed.")
 
 // inferIndexJobsFromRepositoryStructure collects the result of  InferIndexJobs over all registered recognizers.
 func (s *Service) inferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]config.IndexJob, error) {

@@ -550,18 +550,6 @@ UNION
 	SELECT id FROM repo_names WHERE name = %s;
 `
 
-const recordSeriesPointFmtstr = `
--- source: enterprise/internal/insights/store/store.go:RecordSeriesPoint
-INSERT INTO %s (
-	series_id,
-	time,
-	value,
-	repo_id,
-	repo_name_id,
-	original_repo_name_id, capture)
-VALUES (%s, %s, %s, %s, %s, %s, %s);
-`
-
 func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
 	rows, err := s.Store.Query(ctx, q)
 	if err != nil {

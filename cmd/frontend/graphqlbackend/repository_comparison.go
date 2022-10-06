@@ -168,8 +168,14 @@ func (r *RepositoryComparisonResolver) Range() *gitRevisionRange {
 	}
 }
 
+// RepositoryComparisonCommitsArgs is a set of arguments for listing commits on the RepositoryComparisonResolver
+type RepositoryComparisonCommitsArgs struct {
+	graphqlutil.ConnectionArgs
+	Path *string
+}
+
 func (r *RepositoryComparisonResolver) Commits(
-	args *graphqlutil.ConnectionArgs,
+	args *RepositoryComparisonCommitsArgs,
 ) *gitCommitConnectionResolver {
 	return &gitCommitConnectionResolver{
 		db:              r.db,
@@ -177,6 +183,7 @@ func (r *RepositoryComparisonResolver) Commits(
 		revisionRange:   r.baseRevspec + ".." + r.headRevspec,
 		first:           args.First,
 		repo:            r.repo,
+		path:            args.Path,
 	}
 }
 

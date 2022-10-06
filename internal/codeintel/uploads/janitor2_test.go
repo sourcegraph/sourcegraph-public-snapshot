@@ -98,37 +98,41 @@ func testUnknownCommitsJanitor(t *testing.T, resolveRevisionFunc func(commit str
 		return api.CommitID(spec), resolveRevisionFunc(spec)
 	})
 
-	uploadSvc := NewMockUploadServiceForCleanup()
-	uploadSvc.GetStaleSourcedCommitsFunc.SetDefaultReturn(testSourcedCommits, nil)
+	store := NewMockStore()
+	lsifStore := NewMockLsifStore()
+	store.GetStaleSourcedCommitsFunc.SetDefaultReturn(testSourcedCommits, nil)
 	autoIndexingSvc := NewMockAutoIndexingService()
-	janitor := &janitor{
-		gsc:       gitserverClient,
-		uploadSvc: uploadSvc,
-		indexSvc:  autoIndexingSvc,
-		clock:     glock.NewRealClock(),
-		logger:    logtest.Scoped(t),
-		metrics:   newJanitorMetrics(&observation.TestContext),
-
-		minimumTimeSinceLastCheck:      1 * time.Hour,
-		commitResolverBatchSize:        10,
-		auditLogMaxAge:                 1 * time.Hour,
-		commitResolverMaximumCommitLag: 1 * time.Hour,
-		uploadTimeout:                  1 * time.Hour,
+	janitor := &Service{
+		store:           store,
+		lsifstore:       lsifStore,
+		gitserverClient: gitserverClient,
+		autoIndexingSvc: autoIndexingSvc,
+		clock:           glock.NewRealClock(),
+		logger:          logtest.Scoped(t),
+		operations:      newOperations(&observation.TestContext),
+		janitorMetrics:  newJanitorMetrics(&observation.TestContext),
 	}
 
-	if err := janitor.Handle(context.Background()); err != nil {
+	if err := janitor.handleCleanup(
+		context.Background(), janitorConfig{
+			minimumTimeSinceLastCheck:      1 * time.Hour,
+			commitResolverBatchSize:        10,
+			auditLogMaxAge:                 1 * time.Hour,
+			commitResolverMaximumCommitLag: 1 * time.Hour,
+			uploadTimeout:                  1 * time.Hour,
+		}); err != nil {
 		t.Fatalf("unexpected error running janitor: %s", err)
 	}
 
 	var sanitizedCalls []updateInvocation
-	for _, call := range uploadSvc.UpdateSourcedCommitsFunc.History() {
+	for _, call := range store.UpdateSourcedCommitsFunc.History() {
 		sanitizedCalls = append(sanitizedCalls, updateInvocation{
 			RepositoryID: call.Arg1,
 			Commit:       call.Arg2,
 			Delete:       false,
 		})
 	}
-	for _, call := range uploadSvc.DeleteSourcedCommitsFunc.History() {
+	for _, call := range store.DeleteSourcedCommitsFunc.History() {
 		sanitizedCalls = append(sanitizedCalls, updateInvocation{
 			RepositoryID: call.Arg1,
 			Commit:       call.Arg2,
