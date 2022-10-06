@@ -227,28 +227,28 @@ describe('recentSearches', () => {
         const suggestionContext = { position: 0, onAbort: stub() }
 
         test('returns null if no recent searches', () => {
-            const searches = buildMockTempSettings(0)
+            const recentSearches = buildMockTempSettings(0)
             const onSelection = stub()
 
-            const source = searchHistorySource({ searches, onSelection })
+            const source = searchHistorySource({ recentSearches, onSelection })
             expect(source(suggestionContext, [])).toBeNull()
         })
 
         test('returns null if there are any tokens', () => {
-            const searches = buildMockTempSettings(5)
+            const recentSearches = buildMockTempSettings(5)
             const onSelection = stub()
 
             const tokens: Token[] = [{ type: 'literal', value: 'test', quoted: false, range: { start: 0, end: 4 } }]
 
-            const source = searchHistorySource({ searches, onSelection })
+            const source = searchHistorySource({ recentSearches, onSelection })
             expect(source(suggestionContext, tokens)).toBeNull()
         })
 
         test('returns recent searches in the correct format', () => {
-            const searches = buildMockTempSettings(5)
+            const recentSearches = buildMockTempSettings(5)
             const onSelection = stub()
 
-            const source = searchHistorySource({ searches, onSelection })
+            const source = searchHistorySource({ recentSearches, onSelection })
             expect(source(suggestionContext, [])).toMatchInlineSnapshot(
                 `
                 Object {

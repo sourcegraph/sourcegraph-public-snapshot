@@ -30,11 +30,11 @@ export const SEARCH_HISTORY_EVENT_LOGS_QUERY = gql`
 `
 
 export function searchHistorySource({
-    searches,
+    recentSearches,
     selectedSearchContext,
     onSelection,
 }: {
-    searches: RecentSearch[] | undefined
+    recentSearches: RecentSearch[] | undefined
     selectedSearchContext?: string
     onSelection: (index: number) => void
 }): StandardSuggestionSource {
@@ -45,7 +45,7 @@ export function searchHistorySource({
 
         // If there are no tokens we must be at position 0
         try {
-            if (!searches || searches.length === 0) {
+            if (!recentSearches || recentSearches.length === 0) {
                 return null
             }
 
@@ -62,7 +62,7 @@ export function searchHistorySource({
             return {
                 from: 0,
                 filter: false,
-                options: searches
+                options: recentSearches
                     .map(
                         (search): Completion => {
                             let query = search.query
@@ -155,11 +155,14 @@ export function useRecentSearches(): {
 
     // Adds a new search to the top of the recent searches list.
     // If the search is already in the recent searches list, it moves it to the top.
-    const addRecentSearch = useCallback(
-        (query: string) => {
+
+    const [pendingAdditions, setPendingAdditions] = useState<RecentSearch[]>([])
+
+    const addOrMoveRecentSearchToTop = useCallback(
+        (recentSearch: RecentSearch) => {
             setRecentSearches(recentSearches => {
-                const newRecentSearches = recentSearches?.filter(search => search.query !== query) || []
-                newRecentSearches.unshift({ query, timestamp: new Date().toISOString() })
+                const newRecentSearches = recentSearches?.filter(search => search.query !== recentSearch.query) || []
+                newRecentSearches.unshift(recentSearch)
                 // Truncate array if it's too long
                 if (newRecentSearches.length > MAX_RECENT_SEARCHES) {
                     newRecentSearches.length = MAX_RECENT_SEARCHES
@@ -169,6 +172,28 @@ export function useRecentSearches(): {
         },
         [setRecentSearches]
     )
+
+    const addRecentSearch = useCallback(
+        (query: string) => {
+            const recentSearch = { query, timestamp: new Date().toISOString() }
+
+            if (state === 'success') {
+                addOrMoveRecentSearchToTop(recentSearch)
+            } else {
+                setPendingAdditions(pendingAdditions => pendingAdditions.concat(recentSearch))
+            }
+        },
+        [addOrMoveRecentSearchToTop, state]
+    )
+
+    useEffect(() => {
+        if (state === 'success' && pendingAdditions.length > 0) {
+            for (const pendingAddition of pendingAdditions) {
+                addOrMoveRecentSearchToTop(pendingAddition)
+            }
+            setPendingAdditions([])
+        }
+    }, [addOrMoveRecentSearchToTop, pendingAdditions, state])
 
     return { recentSearches, addRecentSearch, state }
 }
