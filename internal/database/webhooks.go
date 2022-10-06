@@ -2,7 +2,9 @@ package database
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
 
@@ -19,7 +21,7 @@ type WebhookStore interface {
 	Create(ctx context.Context, kind, urn string, secret *types.EncryptableSecret) (*types.Webhook, error)
 	GetByID(ctx context.Context, id int32) (*types.Webhook, error)
 	GetByRandomID(ctx context.Context, id string) (*types.Webhook, error)
-	Delete(ctx context.Context, id int32) error
+	Delete(ctx context.Context, id string) error
 	Update(ctx context.Context, newWebhook *types.Webhook) (*types.Webhook, error)
 	List(ctx context.Context) ([]*types.Webhook, error)
 }
@@ -118,59 +120,45 @@ func (s *webhookStore) GetByRandomID(ctx context.Context, id string) (*types.Web
 	panic("Implement this method")
 }
 
-func (s *webhookStore) scanWebhook(hook *types.Webhook, sc dbutil.Scanner) error {
-	var keyID string
-	var rawSecret string
+const webhookDeleteQueryFmtstr = `
+-- source: internal/database/webhooks.go:Delete
+DELETE FROM webhooks
+WHERE rand_id = %s
+RETURNING rand_id
+`
 
-	if err := sc.Scan(
-		&hook.ID,
-		&hook.CodeHostKind,
-		&hook.CodeHostURN,
-		&rawSecret,
-		&hook.CreatedAt,
-		&hook.UpdatedAt,
-		&keyID,
-	); err != nil {
-		return err
+// Delete the webhook. Error is returned when provided UUID is invalid, the
+// webhook is not found or something went wrong during an SQL query.
+func (s *webhookStore) Delete(ctx context.Context, id string) error {
+	_, err := uuid.Parse(id)
+	if err != nil {
+		return errors.Wrap(err, "invalid UUID provided")
 	}
 
-	hook.Secret = types.NewEncryptedSecret(rawSecret, keyID, s.key)
+	q := sqlf.Sprintf(webhookDeleteQueryFmtstr, id)
+	_, exists, err := basestore.ScanFirstString(s.Query(ctx, q))
 
+	if err != nil {
+		return errors.Wrap(err, "scanning webhook ID after deletion")
+	}
+
+	if !exists {
+		return &WebhookNotFoundError{Message: fmt.Sprintf("Cannot delete a webhook with id=%s: not found.", id)}
+	}
 	return nil
 }
 
-var webhookColumns = []*sqlf.Query{
-	sqlf.Sprintf("id"),
-	sqlf.Sprintf("code_host_kind"),
-	sqlf.Sprintf("code_host_urn"),
-	sqlf.Sprintf("secret"),
-	sqlf.Sprintf("created_at"),
-	sqlf.Sprintf("updated_at"),
-	sqlf.Sprintf("encryption_key_id"),
+// WebhookNotFoundError occurs when a webhook is not found.
+type WebhookNotFoundError struct {
+	Message string
 }
 
-const webhookCreateQueryFmtstr = `
--- source: internal/database/webhooks.go:Create
-INSERT INTO
-	webhooks (
-		code_host_kind,
-		code_host_urn,
-		secret,
-		encryption_key_id
-	)
-	VALUES (
-		%s,
-		%s,
-		%s,
-		%s
-	)
-	RETURNING %s
-`
+func (w *WebhookNotFoundError) Error() string {
+	return fmt.Sprintf("webhook not found: %s", w.Message)
+}
 
-// Delete the webhook
-func (s *webhookStore) Delete(ctx context.Context, id int32) error {
-	// TODO(sashaostrikov) implement this method
-	panic("implement this method")
+func (w *WebhookNotFoundError) NotFound() bool {
+	return true
 }
 
 // Update the webhook

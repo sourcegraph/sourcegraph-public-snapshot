@@ -48320,7 +48320,7 @@ func NewMockWebhookStore() *MockWebhookStore {
 			},
 		},
 		DeleteFunc: &WebhookStoreDeleteFunc{
-			defaultHook: func(context.Context, int32) (r0 error) {
+			defaultHook: func(context.Context, string) (r0 error) {
 				return
 			},
 		},
@@ -48362,7 +48362,7 @@ func NewStrictMockWebhookStore() *MockWebhookStore {
 			},
 		},
 		DeleteFunc: &WebhookStoreDeleteFunc{
-			defaultHook: func(context.Context, int32) error {
+			defaultHook: func(context.Context, string) error {
 				panic("unexpected invocation of MockWebhookStore.Delete")
 			},
 		},
@@ -48539,15 +48539,15 @@ func (c WebhookStoreCreateFuncCall) Results() []interface{} {
 // WebhookStoreDeleteFunc describes the behavior when the Delete method of
 // the parent MockWebhookStore instance is invoked.
 type WebhookStoreDeleteFunc struct {
-	defaultHook func(context.Context, int32) error
-	hooks       []func(context.Context, int32) error
+	defaultHook func(context.Context, string) error
+	hooks       []func(context.Context, string) error
 	history     []WebhookStoreDeleteFuncCall
 	mutex       sync.Mutex
 }
 
 // Delete delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockWebhookStore) Delete(v0 context.Context, v1 int32) error {
+func (m *MockWebhookStore) Delete(v0 context.Context, v1 string) error {
 	r0 := m.DeleteFunc.nextHook()(v0, v1)
 	m.DeleteFunc.appendCall(WebhookStoreDeleteFuncCall{v0, v1, r0})
 	return r0
@@ -48555,7 +48555,7 @@ func (m *MockWebhookStore) Delete(v0 context.Context, v1 int32) error {
 
 // SetDefaultHook sets function that is called when the Delete method of the
 // parent MockWebhookStore instance is invoked and the hook queue is empty.
-func (f *WebhookStoreDeleteFunc) SetDefaultHook(hook func(context.Context, int32) error) {
+func (f *WebhookStoreDeleteFunc) SetDefaultHook(hook func(context.Context, string) error) {
 	f.defaultHook = hook
 }
 
@@ -48563,7 +48563,7 @@ func (f *WebhookStoreDeleteFunc) SetDefaultHook(hook func(context.Context, int32
 // Delete method of the parent MockWebhookStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *WebhookStoreDeleteFunc) PushHook(hook func(context.Context, int32) error) {
+func (f *WebhookStoreDeleteFunc) PushHook(hook func(context.Context, string) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -48572,19 +48572,19 @@ func (f *WebhookStoreDeleteFunc) PushHook(hook func(context.Context, int32) erro
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *WebhookStoreDeleteFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int32) error {
+	f.SetDefaultHook(func(context.Context, string) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *WebhookStoreDeleteFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int32) error {
+	f.PushHook(func(context.Context, string) error {
 		return r0
 	})
 }
 
-func (f *WebhookStoreDeleteFunc) nextHook() func(context.Context, int32) error {
+func (f *WebhookStoreDeleteFunc) nextHook() func(context.Context, string) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -48622,7 +48622,7 @@ type WebhookStoreDeleteFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 int32
+	Arg1 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
