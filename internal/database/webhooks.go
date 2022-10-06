@@ -118,6 +118,55 @@ func (s *webhookStore) GetByRandomID(ctx context.Context, id string) (*types.Web
 	panic("Implement this method")
 }
 
+func (s *webhookStore) scanWebhook(hook *types.Webhook, sc dbutil.Scanner) error {
+	var keyID string
+	var rawSecret string
+
+	if err := sc.Scan(
+		&hook.ID,
+		&hook.CodeHostKind,
+		&hook.CodeHostURN,
+		&rawSecret,
+		&hook.CreatedAt,
+		&hook.UpdatedAt,
+		&keyID,
+	); err != nil {
+		return err
+	}
+
+	hook.Secret = types.NewEncryptedSecret(rawSecret, keyID, s.key)
+
+	return nil
+}
+
+var webhookColumns = []*sqlf.Query{
+	sqlf.Sprintf("id"),
+	sqlf.Sprintf("code_host_kind"),
+	sqlf.Sprintf("code_host_urn"),
+	sqlf.Sprintf("secret"),
+	sqlf.Sprintf("created_at"),
+	sqlf.Sprintf("updated_at"),
+	sqlf.Sprintf("encryption_key_id"),
+}
+
+const webhookCreateQueryFmtstr = `
+-- source: internal/database/webhooks.go:Create
+INSERT INTO
+	webhooks (
+		code_host_kind,
+		code_host_urn,
+		secret,
+		encryption_key_id
+	)
+	VALUES (
+		%s,
+		%s,
+		%s,
+		%s
+	)
+	RETURNING %s
+`
+
 // Delete the webhook
 func (s *webhookStore) Delete(ctx context.Context, id int32) error {
 	// TODO(sashaostrikov) implement this method
