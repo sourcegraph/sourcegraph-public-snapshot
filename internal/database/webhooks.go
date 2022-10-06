@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -50,5 +51,3 @@ func (s *webhookStore) List(ctx context.Context) ([]*types.Webhook, error) {
 	// TODO(sashaostrikov) implement this method
 	panic("implement this method")
 }
-
-
