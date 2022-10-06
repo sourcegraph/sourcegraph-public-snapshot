@@ -27,6 +27,9 @@ type CoreTestOperationsOptions struct {
 	MinimumUpgradeableVersion  string
 	ClientLintOnlyChangedFiles bool
 	ForceReadyForReview        bool
+	// for addWebApp
+	CacheBundleSize      bool
+	CreateBundleSizeDiff bool
 }
 
 // CoreTestOperations is a core set of tests that should be run in most CI cases. More
@@ -59,7 +62,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 			clientIntegrationTests,
 			clientChromaticTests(opts),
 			frontendTests,                // ~4.5m
-			addWebApp,                    // ~5.5m
+			addWebApp(opts),              // ~5.5m
 			addBrowserExtensionUnitTests, // ~4.5m
 			addJetBrainsUnitTests,        // ~2.5m
 			addTypescriptCheck,           // ~4m
@@ -177,29 +180,31 @@ func addClientLintersForChangedFiles(pipeline *bk.Pipeline) {
 }
 
 // Adds steps for the OSS and Enterprise web app builds. Runs the web app tests.
-func addWebApp(pipeline *bk.Pipeline) {
-	// Webapp build
-	pipeline.AddStep(":webpack::globe_with_meridians: Build",
-		withYarnCache(),
-		bk.Cmd("dev/ci/yarn-build.sh client/web"),
-		bk.Env("NODE_ENV", "production"),
-		bk.Env("ENTERPRISE", ""))
+func addWebApp(opts CoreTestOperationsOptions) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		// Webapp build
+		pipeline.AddStep(":webpack::globe_with_meridians: Build",
+			withYarnCache(),
+			bk.Cmd("dev/ci/yarn-build.sh client/web"),
+			bk.Env("NODE_ENV", "production"),
+			bk.Env("ENTERPRISE", ""))
 
-	addWebEnterpriseBuild(pipeline)
+		addWebEnterpriseBuild(pipeline, opts)
 
-	// Webapp tests
-	pipeline.AddStep(":jest::globe_with_meridians: Test (client/web)",
-		withYarnCache(),
-		bk.AnnotatedCmd("dev/ci/yarn-test.sh client/web", bk.AnnotatedCmdOpts{
-			TestReports: &bk.TestReportOpts{
-				TestSuiteKeyVariableName: "BUILDKITE_ANALYTICS_FRONTEND_UNIT_TEST_SUITE_API_KEY",
-			},
-		}),
-		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
+		// Webapp tests
+		pipeline.AddStep(":jest::globe_with_meridians: Test (client/web)",
+			withYarnCache(),
+			bk.AnnotatedCmd("dev/ci/yarn-test.sh client/web", bk.AnnotatedCmdOpts{
+				TestReports: &bk.TestReportOpts{
+					TestSuiteKeyVariableName: "BUILDKITE_ANALYTICS_FRONTEND_UNIT_TEST_SUITE_API_KEY",
+				},
+			}),
+			bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
+	}
 }
 
 // Webapp enterprise build
-func addWebEnterpriseBuild(pipeline *bk.Pipeline) {
+func addWebEnterpriseBuild(pipeline *bk.Pipeline, opts CoreTestOperationsOptions) {
 	commit := os.Getenv("BUILDKITE_COMMIT")
 	branch := os.Getenv("BUILDKITE_BRANCH")
 
@@ -211,18 +216,19 @@ func addWebEnterpriseBuild(pipeline *bk.Pipeline) {
 		bk.Env("CHECK_BUNDLESIZE", "1"),
 		// To ensure the Bundlesize output can be diffed to the baseline on main
 		bk.Env("WEBPACK_USE_NAMED_CHUNKS", "true"),
-		// Emit a stats.json file for bundle size diffs
-		bk.Env("WEBPACK_EXPORT_STATS_FILENAME", "stats-"+commit+".json"),
 	}
 
-	if branch == "main" {
-		// On main builds, we want to persist the generated stats file to the
-		// cache.
-		cmds = append(cmds, withBundleSizeCache())
-	} else {
-		// On feature builds, we want to run report-bundle-diff.sh to compare
-		// the branch against the merge base.
+	if opts.CacheBundleSize {
 		cmds = append(cmds,
+			// Emit a stats.json file for bundle size diffs
+			bk.Env("WEBPACK_EXPORT_STATS_FILENAME", "stats-"+commit+".json"),
+			withBundleSizeCache())
+	}
+
+	if opts.CreateBundleSizeDiff {
+		cmds = append(cmds,
+			// Emit a stats.json file for bundle size diffs
+			bk.Env("WEBPACK_EXPORT_STATS_FILENAME", "stats-"+commit+".json"),
 			bk.Env("BRANCH", branch),
 			bk.Env("COMMIT", commit),
 			bk.Cmd("dev/ci/report-bundle-diff.sh"),
