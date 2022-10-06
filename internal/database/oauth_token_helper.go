@@ -14,9 +14,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// ExternalAccountTokenRefresher returns an oauthutil.TokenRefresher for the
+// externalAccountTokenRefresher returns an oauthutil.TokenRefresher for the
 // given external account.
-func ExternalAccountTokenRefresher(db DB, externalAccountID int32, refreshToken string) oauthutil.TokenRefresher {
+func externalAccountTokenRefresher(db DB, externalAccountID int32, refreshToken string) oauthutil.TokenRefresher {
 	return func(ctx context.Context, doer httpcli.Doer, oauthCtx oauthutil.OAuthContext) (token *auth.OAuthBearerToken, err error) {
 		defer func() {
 			success := err == nil
@@ -49,9 +49,9 @@ func ExternalAccountTokenRefresher(db DB, externalAccountID int32, refreshToken 
 	}
 }
 
-// ExternalServiceTokenRefresher returns an oauthutil.TokenRefresher for the
+// externalServiceTokenRefresher returns an oauthutil.TokenRefresher for the
 // given external service.
-func ExternalServiceTokenRefresher(db DB, externalServiceID int64, refreshToken string) oauthutil.TokenRefresher {
+func externalServiceTokenRefresher(db DB, externalServiceID int64, refreshToken string) oauthutil.TokenRefresher {
 	return func(ctx context.Context, doer httpcli.Doer, oauthCtx oauthutil.OAuthContext) (token *auth.OAuthBearerToken, err error) {
 		defer func() {
 			success := err == nil
@@ -101,16 +101,26 @@ func ExternalServiceTokenRefresher(db DB, externalServiceID int64, refreshToken 
 	}
 }
 
-func GetServiceRefreshAndStoreOAuthTokenFunc(db DB, externalServiceID int64, oauthContext *oauthutil.OAuthContext) func(*auth.OAuthBearerToken) (*auth.OAuthBearerToken, error) {
-	return func(a *auth.OAuthBearerToken) (*auth.OAuthBearerToken, error) {
-		tokenRefresher := ExternalServiceTokenRefresher(db, externalServiceID, a.RefreshToken)
-		return tokenRefresher(context.Background(), http.DefaultClient, *oauthContext)
+func GetServiceRefreshAndStoreOAuthTokenFunc(db DB, externalServiceID int64, oauthContext *oauthutil.OAuthContext) func(*auth.OAuthBearerToken) (string, string, time.Time, error) {
+	return func(a *auth.OAuthBearerToken) (string, string, time.Time, error) {
+		tokenRefresher := externalServiceTokenRefresher(db, externalServiceID, a.RefreshToken)
+		token, err := tokenRefresher(context.Background(), http.DefaultClient, *oauthContext)
+		if err != nil {
+			return "", "", time.Time{}, err
+		}
+
+		return token.Token, token.RefreshToken, token.Expiry, nil
 	}
 }
 
-func GetAccountRefreshAndStoreOAuthTokenFunc(db DB, externalAccountID int32, oauthContext *oauthutil.OAuthContext) func(*auth.OAuthBearerToken) (*auth.OAuthBearerToken, error) {
-	return func(a *auth.OAuthBearerToken) (*auth.OAuthBearerToken, error) {
-		tokenRefresher := ExternalAccountTokenRefresher(db, externalAccountID, a.RefreshToken)
-		return tokenRefresher(context.Background(), http.DefaultClient, *oauthContext)
+func GetAccountRefreshAndStoreOAuthTokenFunc(db DB, externalAccountID int32, oauthContext *oauthutil.OAuthContext) func(*auth.OAuthBearerToken) (string, string, time.Time, error) {
+	return func(a *auth.OAuthBearerToken) (string, string, time.Time, error) {
+		tokenRefresher := externalAccountTokenRefresher(db, externalAccountID, a.RefreshToken)
+		token, err := tokenRefresher(context.Background(), http.DefaultClient, *oauthContext)
+		if err != nil {
+			return "", "", time.Time{}, err
+		}
+
+		return token.Token, token.RefreshToken, token.Expiry, nil
 	}
 }

@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/regexp"
@@ -112,11 +113,11 @@ func TestClient_doWithBaseURL(t *testing.T) {
 
 	provider := NewClientProvider("Test", baseURL, doer)
 
-	client := provider.getClient(&auth.OAuthBearerToken{Token: "bad token", RefreshToken: "refresh token", RefreshFunc: func(obt *auth.OAuthBearerToken) (*auth.OAuthBearerToken, error) {
+	client := provider.getClient(&auth.OAuthBearerToken{Token: "bad token", RefreshToken: "refresh token", RefreshFunc: func(obt *auth.OAuthBearerToken) (string, string, time.Time, error) {
 		obt.Token = "refreshed-token"
 		obt.RefreshToken = "refresh-now"
 
-		return obt, nil
+		return "refreshed-token", "refresh-now", time.Now().Add(1 * time.Hour), nil
 	}})
 
 	req, err := http.NewRequest(http.MethodGet, "url", nil)

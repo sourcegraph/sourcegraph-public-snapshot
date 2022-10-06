@@ -277,12 +277,10 @@ func (c *Client) doWithBaseURL(ctx context.Context, oauthContext *oauthutil.OAut
 		}
 		code = resp.StatusCode
 		header = resp.Header
+		// We swallow the error here, because we don't want to fail. Parsing the body
+		// is just optional to provide some more context.
 		body, _ = io.ReadAll(resp.Body)
 		resp.Body.Close()
-		if err != nil {
-			trace("GitLab API error", "method", req.Method, "url", req.URL.String(), "err", err)
-			return nil, 0, errors.Wrap(err, "do request with retry and refresh")
-		}
 	} else {
 		if c.Auth != nil {
 			if err := c.Auth.Authenticate(req); err != nil {
