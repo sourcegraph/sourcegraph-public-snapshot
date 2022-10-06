@@ -2482,8 +2482,8 @@ func TestRestrictions(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	bstore := store.New(db, &observation.TestContext, nil)
-	repoStore := database.ReposWith(logger, bstore)
-	esStore := database.ExternalServicesWith(logger, bstore)
+	// repoStore := database.ReposWith(logger, bstore)
+	// esStore := database.ExternalServicesWith(logger, bstore)
 
 	s, err := newSchema(db, &Resolver{store: bstore})
 	if err != nil {
@@ -2493,8 +2493,9 @@ func TestRestrictions(t *testing.T) {
 	orgname := "test-org"
 	userID := bt.CreateTestUser(t, db, false).ID
 	user2ID := bt.CreateTestUser(t, db, false).ID
-	// adminID := bt.CreateTestUser(t, db, true).ID
-	orgID := bt.CreateTestOrg(t, db, orgname, userID).ID
+	user3ID := bt.CreateTestUser(t, db, false).ID
+	adminID := bt.CreateTestUser(t, db, true).ID
+	orgID := bt.CreateTestOrg(t, db, orgname, userID, user3ID).ID
 
 	spec, err := btypes.NewBatchSpecFromRaw(bt.TestRawBatchSpec)
 	if err != nil {
@@ -2506,58 +2507,91 @@ func TestRestrictions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	apiID := string(marshalBatchSpecRandID(spec.RandID))
-
-	var response struct{ Node apitest.BatchSpec }
-
-	userActorCtx := actor.WithActor(ctx, actor.FromUser(user2ID))
-	input := map[string]any{"batchSpec": apiID}
-
-	errs := apitest.Exec(userActorCtx, t, s, input, &response, queryBatchSpecDetails)
-
-	fmt.Printf("response id: %v\n\n", response.Node.ID)
-	fmt.Printf("errors: %v\n\n", errs)
-	if haveID, wantID := response.Node.ID, nil; haveID != wantID {
-		t.Fatalf("IDs didn't match")
-
-	// user2ActorCtx := actor.WithActor(ctx, actor.FromUser(user2ID))
-	// input = map[string]any{"batchSpec": apiID}
-	// errs := apitest.Exec(userActorCtx, t, s, input, &response, queryBatchSpecDetails)
-	// if haveID := response.Node.ID; wantID := nil; haveID !== wantID {
-	// 	t.Fatalf("IDs didn't match")
-
-	// userActorCtx := actor.WithActor(ctx, actor.FromUser(user2ID))
-	// input := map[string]any{"batchSpec": apiID}
-	// errs := apitest.Exec(userActorCtx, t, s, input, &response, queryBatchSpecDetails)
-
-	fmt.Printf("response id: %v\n\n", response.Node.ID)
-	fmt.Printf("errors: %v\n\n", errs)
-	if haveID := response.Node.ID; wantID := nil; haveID !== wantID {
-		t.Fatalf("IDs didn't match")
+	spec2, err := btypes.NewBatchSpecFromRaw(bt.TestRawBatchSpec)
+	if err != nil {
+		t.Fatal(err)
 	}
-	t.Fatal("not finished!")
+	spec2.UserID = userID
+	// spec2.NamespaceUserID = userID
+	if err := bstore.CreateBatchSpec(ctx, spec2); err != nil {
+		t.Fatal(err)
+	}
+
+	specRandID := string(marshalBatchSpecRandID(spec.RandID))
+	specRandID2 := string(marshalBatchSpecRandID(spec2.RandID))
+
+	t.Run("batch spec access by creator", func(t *testing.T) {
+		var response struct{ Node apitest.BatchSpec }
+
+		userActorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+		input := map[string]any{"batchSpec": specRandID}
+
+		errs := apitest.Exec(userActorCtx, t, s, input, &response, queryBatchSpecDetails)
+
+		// fmt.Printf("response id: %v\n\n", response.Node.ID)
+		// fmt.Printf("errors: %v\n\n", errs)
+
+		if len(errs) > 0 {
+			t.Fatalf("expected no error, but got %d: %s", len(errs), errs)
+		}
+		assert.Equal(t, response.Node.ID, specRandID, "authenticated user")
+	})
+
+	t.Run("batch spec access by non same user, non admin and non org member", func(t *testing.T) {
+		var response struct{ Node apitest.BatchSpec }
+
+		userActorCtx := actor.WithActor(ctx, actor.FromUser(user2ID))
+		input := map[string]any{"batchSpec": specRandID}
+
+		errs := apitest.Exec(userActorCtx, t, s, input, &response, queryBatchSpecDetails)
+
+		//There is no error here because the user is not an org member and is authenticated, so we dont return the batch spec nor do we return an error
+		if len(errs) > 0 {
+			t.Fatalf("expected no error, but got %d: %s", len(errs), errs)
+		}
+
+		assert.Equal(t, response.Node.ID, "", "non same user, non admin, non org member")
+	})
+
+	t.Run("batch spec access by admin", func(t *testing.T) {
+		var response struct{ Node apitest.BatchSpec }
+
+		userActorCtx := actor.WithActor(ctx, actor.FromUser(adminID))
+		input := map[string]any{"batchSpec": specRandID}
+
+		errs := apitest.Exec(userActorCtx, t, s, input, &response, queryBatchSpecDetails)
+
+		if len(errs) > 0 {
+			t.Fatalf("expected no error, but got %d: %s", len(errs), errs)
+		}
+		assert.Equal(t, response.Node.ID, specRandID, "admin user")
+	})
+
+	t.Run("batch spec access by non same user and non admin, but org member", func(t *testing.T) {
+		var response struct{ Node apitest.BatchSpec }
+
+		userActorCtx := actor.WithActor(ctx, actor.FromUser(user3ID))
+		input := map[string]any{"batchSpec": specRandID2}
+
+		errs := apitest.Exec(userActorCtx, t, s, input, &response, queryBatchSpecDetails)
+
+		// if len(errs) > 0 {
+		// 	t.Fatalf("expected no error, but got %d: %s", len(errs), errs)
+		// }
+
+		assert.Equal(t, response.Node.ID, "", "non same user")
+		fmt.Println("hi bolaji", errs)
+
+	})
+
 }
 
 const queryBatchSpecDetails = `
-	fragment u on User { id, databaseID }
-	fragment o on Org  { id, name }
-
 query($batchSpec: ID!) {
   node(id: $batchSpec) {
     __typename
-
     ... on BatchSpec {
       id
-      originalInput
-      parsedInput
-
-      creator { ...u }
-      namespace {
-        ... on User { ...u }
-        ... on Org  { ...o }
-      }
-
-     viewerCanAdminister
 		}
 	}
 }
