@@ -231,7 +231,6 @@ const RepoSyncErrorAlert: React.FunctionComponent<
                                 }).href
                             }
                             {...NEW_TAB_LINK_PROPS}
-                            className={styles.link}
                         >
                             private Sourcegraph instance
                         </Link>{' '}
@@ -247,7 +246,6 @@ const RepoSyncErrorAlert: React.FunctionComponent<
                                 }).href
                             }
                             {...NEW_TAB_LINK_PROPS}
-                            className={styles.link}
                         >
                             Add your repository to Sourcegraph
                         </Link>{' '}
