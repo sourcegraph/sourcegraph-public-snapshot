@@ -3,6 +3,8 @@ package ranking
 import (
 	"context"
 	"errors"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -15,7 +17,13 @@ func (s *Service) RepositoryIndexer(interval time.Duration) goroutine.Background
 	}))
 }
 
+var rankingEnabled, _ = strconv.ParseBool(os.Getenv("ENABLE_EXPERIMENTAL_RANKING"))
+
 func (s *Service) indexRepositories(ctx context.Context) (err error) {
+	if !rankingEnabled {
+		return nil
+	}
+
 	_, _, endObservation := s.operations.indexRepositories.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
