@@ -23,65 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// var _ service = (*Service)(nil)
-
-// TODO - remove or re-sync with implementation
-type service interface {
-	// Commits
-	GetOldestCommitDate(ctx context.Context, repositoryID int) (time.Time, bool, error)
-	GetCommitsVisibleToUpload(ctx context.Context, uploadID, limit int, token *string) (_ []string, nextToken *string, err error)
-	GetStaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []shared.SourcedCommits, err error)
-	GetCommitGraphMetadata(ctx context.Context, repositoryID int) (stale bool, updatedAt *time.Time, err error)
-	UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (uploadsUpdated int, err error)
-	DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (uploadsUpdated int, uploadsDeleted int, err error)
-
-	// Repositories
-	GetRepoName(ctx context.Context, repositoryID int) (_ string, err error)
-	GetRepositoriesForIndexScan(ctx context.Context, table, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int, now time.Time) (_ []int, err error)
-	GetRepositoriesMaxStaleAge(ctx context.Context) (_ time.Duration, err error)
-	GetDirtyRepositories(ctx context.Context) (_ map[int]int, err error)
-	SetRepositoryAsDirty(ctx context.Context, repositoryID int) (err error)
-	SetRepositoriesForRetentionScan(ctx context.Context, processDelay time.Duration, limit int) (_ []int, err error)
-
-	// Uploads
-	GetUploads(ctx context.Context, opts types.GetUploadsOptions) (uploads []types.Upload, totalCount int, err error)
-	GetUploadByID(ctx context.Context, id int) (_ types.Upload, _ bool, err error)
-	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []types.Upload, err error)
-	GetUploadIDsWithReferences(ctx context.Context, orderedMonikers []precise.QualifiedMonikerData, ignoreIDs []int, repositoryID int, commit string, limit int, offset int) (ids []int, recordsScanned int, totalCount int, err error)
-	GetUploadDocumentsForPath(ctx context.Context, bundleID int, pathPattern string) ([]string, int, error)
-	GetRecentUploadsSummary(ctx context.Context, repositoryID int) (upload []shared.UploadsWithRepositoryNamespace, err error)
-	GetLastUploadRetentionScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error)
-	UpdateUploadsVisibleToCommits(ctx context.Context, repositoryID int, graph *gitdomain.CommitGraph, refDescriptions map[string][]gitdomain.RefDescription, maxAgeForNonStaleBranches, maxAgeForNonStaleTags time.Duration, dirtyToken int, now time.Time) error
-	UpdateUploadRetention(ctx context.Context, protectedIDs, expiredIDs []int) (err error)
-	UpdateUploadsReferenceCounts(ctx context.Context, ids []int, dependencyUpdateType shared.DependencyReferenceCountUpdateType) (updated int, err error)
-	SoftDeleteExpiredUploads(ctx context.Context) (count int, err error)
-	HardDeleteExpiredUploads(ctx context.Context) (count int, err error)
-	DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_ int, err error)
-	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error)
-	DeleteUploadByID(ctx context.Context, id int) (_ bool, err error)
-	InferClosestUploads(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) ([]types.Dump, error)
-
-	// Dumps
-	FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) (_ []types.Dump, err error)
-	FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, commitGraph *gitdomain.CommitGraph) (_ []types.Dump, err error)
-	GetDumpsWithDefinitionsForMonikers(ctx context.Context, monikers []precise.QualifiedMonikerData) (_ []types.Dump, err error)
-	GetDumpsByIDs(ctx context.Context, ids []int) (_ []types.Dump, err error)
-
-	// Packages
-	UpdatePackages(ctx context.Context, dumpID int, packages []precise.Package) (err error)
-
-	// References
-	UpdatePackageReferences(ctx context.Context, dumpID int, references []precise.PackageReference) (err error)
-	ReferencesForUpload(ctx context.Context, uploadID int) (_ shared.PackageReferenceScanner, err error)
-
-	// Audit Logs
-	GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []types.UploadLog, err error)
-	DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (count int, err error)
-
-	// Tags
-	GetListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) (_ []*gitdomain.Tag, err error)
-}
-
 type Service struct {
 	store             store.Store
 	repoStore         RepoStore
@@ -133,6 +74,14 @@ func newService(
 		operations:        newOperations(observationContext),
 		clock:             glock.NewRealClock(),
 	}
+}
+
+// NOTE: Used by autoindexing (for some reason?)
+func (s *Service) GetDirtyRepositories(ctx context.Context) (_ map[int]int, err error) {
+	ctx, _, endObservation := s.operations.getDirtyRepositories.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.GetDirtyRepositories(ctx)
 }
 
 func (s *Service) GetCommitsVisibleToUpload(ctx context.Context, uploadID, limit int, token *string) (_ []string, nextToken *string, err error) {
@@ -370,12 +319,4 @@ func (s *Service) GetListTags(ctx context.Context, repo api.RepoName, commitObjs
 	defer endObservation(1, observation.Args{})
 
 	return s.gitserverClient.ListTags(ctx, repo, commitObjs...)
-}
-
-// NOTE: Used by autoindexing (for some reason?)
-func (s *Service) GetDirtyRepositories(ctx context.Context) (_ map[int]int, err error) {
-	ctx, _, endObservation := s.operations.getDirtyRepositories.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	return s.store.GetDirtyRepositories(ctx)
 }
