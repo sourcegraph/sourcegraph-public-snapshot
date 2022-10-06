@@ -6,12 +6,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hexops/autogold"
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/hexops/autogold"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
-	priority2 "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/priority"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/priority"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -132,7 +131,7 @@ func TestQueryExecution_ToQueueJob(t *testing.T) {
 		exec.Revision = "asdf1234"
 		exec.SharedRecordings = append(exec.SharedRecordings, bTime.Add(time.Hour*24))
 
-		got := ToQueueJob(&exec, "series1", "sourcegraphquery1", priority2.Cost(500), priority2.Low)
+		got := ToQueueJob(&exec, "series1", "sourcegraphquery1", priority.Cost(500), priority.Low)
 		autogold.Equal(t, got, autogold.ExportedOnly())
 	})
 	t.Run("test to job without dependents", func(t *testing.T) {
@@ -140,7 +139,7 @@ func TestQueryExecution_ToQueueJob(t *testing.T) {
 		exec.RecordingTime = bTime
 		exec.Revision = "asdf1234"
 
-		got := ToQueueJob(&exec, "series1", "sourcegraphquery1", priority2.Cost(500), priority2.Low)
+		got := ToQueueJob(&exec, "series1", "sourcegraphquery1", priority.Cost(500), priority.Low)
 		autogold.Equal(t, got, autogold.ExportedOnly())
 	})
 }
