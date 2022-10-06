@@ -117,6 +117,7 @@ describe('StreamingSearchResults', () => {
             patternType: SearchPatternType.regexp,
             caseSensitive: true,
             trace: undefined,
+            chunkMatches: true,
         })
     })
 

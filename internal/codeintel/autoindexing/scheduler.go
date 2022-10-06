@@ -4,9 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/log"
-
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -21,35 +18,17 @@ func (s *Service) NewScheduler(
 	repositoryBatchSize int,
 	policyBatchSize int,
 ) goroutine.BackgroundRoutine {
-	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), interval, &scheduler{
-		autoindexingSvc:        s,
-		policySvc:              s.policiesSvc,
-		uploadSvc:              s.uploadSvc,
-		policyMatcher:          s.policyMatcher,
-		logger:                 log.Scoped("autoindexing-scheduler", ""),
-		repositoryProcessDelay: repositoryProcessDelay,
-		repositoryBatchSize:    repositoryBatchSize,
-		policyBatchSize:        policyBatchSize,
-	}, s.operations.handleIndexScheduler)
+	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
+		return s.handleScheduler(ctx, repositoryProcessDelay, repositoryBatchSize, policyBatchSize)
+	}), s.operations.handleIndexScheduler)
 }
 
-type scheduler struct {
-	autoindexingSvc        *Service
-	policySvc              PoliciesService
-	uploadSvc              shared.UploadService
-	policyMatcher          PolicyMatcher
-	logger                 log.Logger
-	repositoryProcessDelay time.Duration
-	repositoryBatchSize    int
-	policyBatchSize        int
-}
-
-var (
-	_ goroutine.Handler      = &scheduler{}
-	_ goroutine.ErrorHandler = &scheduler{}
-)
-
-func (s *scheduler) Handle(ctx context.Context) error {
+func (s *Service) handleScheduler(
+	ctx context.Context,
+	repositoryProcessDelay time.Duration,
+	repositoryBatchSize int,
+	policyBatchSize int,
+) error {
 	if !autoIndexingEnabled() {
 		return nil
 	}
@@ -67,10 +46,10 @@ func (s *scheduler) Handle(ctx context.Context) error {
 		ctx,
 		"lsif_last_index_scan",
 		"last_index_scan_at",
-		s.repositoryProcessDelay,
+		repositoryProcessDelay,
 		conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
 		repositoryMatchLimit,
-		s.repositoryBatchSize,
+		repositoryBatchSize,
 		time.Now(),
 	)
 	if err != nil {
@@ -84,7 +63,7 @@ func (s *scheduler) Handle(ctx context.Context) error {
 	now := timeutil.Now()
 
 	for _, repositoryID := range repositories {
-		if repositoryErr := s.handleRepository(ctx, repositoryID, now); repositoryErr != nil {
+		if repositoryErr := s.handleRepository(ctx, repositoryID, policyBatchSize, now); repositoryErr != nil {
 			if err == nil {
 				err = repositoryErr
 			} else {
@@ -96,15 +75,15 @@ func (s *scheduler) Handle(ctx context.Context) error {
 	return err
 }
 
-func (s *scheduler) handleRepository(ctx context.Context, repositoryID int, now time.Time) error {
+func (s *Service) handleRepository(ctx context.Context, repositoryID, policyBatchSize int, now time.Time) error {
 	offset := 0
 
 	for {
 		// Retrieve the set of configuration policies that affect indexing for this repository.
-		policies, totalCount, err := s.policySvc.GetConfigurationPolicies(ctx, types.GetConfigurationPoliciesOptions{
+		policies, totalCount, err := s.policiesSvc.GetConfigurationPolicies(ctx, types.GetConfigurationPoliciesOptions{
 			RepositoryID: repositoryID,
 			ForIndexing:  true,
-			Limit:        s.policyBatchSize,
+			Limit:        policyBatchSize,
 			Offset:       offset,
 		})
 		if err != nil {
@@ -124,7 +103,7 @@ func (s *scheduler) handleRepository(ctx context.Context, repositoryID int, now 
 			}
 
 			// Attempt to queue an index if one does not exist for each of the matching commits
-			if _, err := s.autoindexingSvc.QueueIndexes(ctx, repositoryID, commit, "", false, false); err != nil {
+			if _, err := s.QueueIndexes(ctx, repositoryID, commit, "", false, false); err != nil {
 				if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 					continue
 				}
@@ -139,6 +118,12 @@ func (s *scheduler) handleRepository(ctx context.Context, repositoryID int, now 
 	}
 }
 
-func (s *scheduler) HandleError(err error) {
-	s.logger.Error("Failed to schedule index jobs", log.Error(err))
+func (s *Service) NewOnDemandScheduler(interval time.Duration, batchSize int) goroutine.BackgroundRoutine {
+	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
+		if !autoIndexingEnabled() {
+			return nil
+		}
+
+		return s.ProcessRepoRevs(ctx, batchSize)
+	}))
 }
