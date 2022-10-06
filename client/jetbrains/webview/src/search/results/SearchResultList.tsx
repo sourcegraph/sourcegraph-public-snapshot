@@ -38,7 +38,7 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
     const matchIdToMatchMap = useMemo((): Map<string, SearchMatch> => {
         const map = new Map<string, SearchMatch>()
         for (const match of matches) {
-            if (['commit', 'content', 'path', 'repo', 'symbol'].includes(match.type)) {
+            if (['commit', 'contentWithLineMatches', 'path', 'repo', 'symbol'].includes(match.type)) {
                 map.set(getMatchId(match), match)
             }
         }
@@ -54,7 +54,7 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
                 if (match) {
                     onPreviewChange(
                         match,
-                        match.type === 'content' || match.type === 'symbol'
+                        match.type === 'contentWithLineMatches' || match.type === 'symbol'
                             ? getLineOrSymbolMatchIndexForFileResult(resultId)
                             : undefined
                     )
@@ -81,7 +81,7 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
                 if (match) {
                     onOpen(
                         match,
-                        match.type === 'content' || match.type === 'symbol'
+                        match.type === 'contentWithLineMatches' || match.type === 'symbol'
                             ? getLineOrSymbolMatchIndexForFileResult(resultId)
                             : undefined
                     )
@@ -130,7 +130,7 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
                 if (match) {
                     onOpen(
                         match,
-                        match.type === 'content' || match.type === 'symbol'
+                        match.type === 'contentWithLineMatches' || match.type === 'symbol'
                             ? getLineOrSymbolMatchIndexForFileResult(selectedResultId)
                             : undefined
                     )
@@ -186,7 +186,7 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
                                 openResult={openResult}
                             />
                         )
-                    case 'content':
+                    case 'contentWithLineMatches':
                         return (
                             <FileSearchResult
                                 key={`${match.repository}-${match.path}`}

@@ -351,20 +351,20 @@ describe('Search', () => {
                         { type: 'repo', repository: 'github.com/sourcegraph/sourcegraph' },
                         {
                             type: 'content',
-                            lineMatches: [],
+                            chunkMatches: [],
                             path: 'stream.ts',
                             repository: 'github.com/sourcegraph/sourcegraph',
                         },
                         {
                             type: 'content',
-                            lineMatches: [],
+                            chunkMatches: [],
                             path: 'stream.ts',
                             repository: 'github.com/sourcegraph/sourcegraph',
                             commit: 'abcd',
                         },
                         {
                             type: 'content',
-                            lineMatches: [],
+                            chunkMatches: [],
                             path: 'stream.ts',
                             repository: 'github.com/sourcegraph/sourcegraph',
                             branches: ['test/branch'],

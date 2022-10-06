@@ -203,6 +203,8 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                             as="li"
                         />
                     )
+                default:
+                    return (<></>)
             }
         },
         [

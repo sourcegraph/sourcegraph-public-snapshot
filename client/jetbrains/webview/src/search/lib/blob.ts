@@ -1,5 +1,5 @@
 import { gql } from '@sourcegraph/http-client'
-import { ContentMatch, PathMatch, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
+import {ContentMatchWithLineMatches, PathMatch, SymbolMatch} from '@sourcegraph/shared/src/search/stream'
 
 import { BlobContentResult, BlobContentVariables } from '../../graphql-operations'
 import { getMatchId } from '../results/utils'
@@ -12,7 +12,7 @@ const THIRTY_MINUTES = 30 * 60 * 1000
 const cachedContentRequests = new ExpirationCache<string, Promise<string | null>>(THIRTY_MINUTES)
 const inflightRequestAbortControllers: Set<AbortController> = new Set()
 
-export async function loadContent(match: ContentMatch | PathMatch | SymbolMatch): Promise<string | null> {
+export async function loadContent(match: ContentMatchWithLineMatches | PathMatch | SymbolMatch): Promise<string | null> {
     const cacheKey = getMatchId(match)
 
     if (cachedContentRequests.has(cacheKey)) {
@@ -35,7 +35,7 @@ export async function loadContent(match: ContentMatch | PathMatch | SymbolMatch)
     return loadPromise
 }
 
-async function fetchBlobContent(match: ContentMatch | PathMatch | SymbolMatch): Promise<string | null> {
+async function fetchBlobContent(match: ContentMatchWithLineMatches | PathMatch | SymbolMatch): Promise<string | null> {
     const abortController = new AbortController()
     inflightRequestAbortControllers.add(abortController)
     try {

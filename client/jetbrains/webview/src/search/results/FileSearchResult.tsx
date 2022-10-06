@@ -4,7 +4,7 @@ import AlphaSBoxIcon from 'mdi-react/AlphaSBoxIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 
 import { formatRepositoryStarCount, SearchResultStar } from '@sourcegraph/search-ui'
-import { ContentMatch, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
+import {ContentMatchWithLineMatches, SymbolMatch} from '@sourcegraph/shared/src/search/stream'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 
 import { InfoDivider } from './InfoDivider'
@@ -18,12 +18,12 @@ import { getResultId } from './utils'
 import styles from './FileSearchResult.module.scss'
 
 function renderResultElementsForContentMatch(
-    match: ContentMatch,
+    match: ContentMatchWithLineMatches,
     selectedResult: string | null,
     selectResult: (resultId: string) => void,
     openResult: (resultId: string) => void
 ): JSX.Element[] {
-    return match.lineMatches?.map(line => (
+    return match.lineMatches.map(line => (
         <SelectableSearchResult
             key={getResultId(match, line)}
             lineOrSymbolMatch={line}
@@ -38,13 +38,13 @@ function renderResultElementsForContentMatch(
                 </SearchResultLayout>
             )}
         </SelectableSearchResult>
-    )) || []
+    ))
 }
 
 interface Props {
     selectResult: (resultId: string) => void
     selectedResult: null | string
-    match: ContentMatch | SymbolMatch
+    match: ContentMatchWithLineMatches | SymbolMatch
     openResult: (resultId: string) => void
 }
 
@@ -80,22 +80,24 @@ export const FileSearchResult: React.FunctionComponent<Props> = ({
     openResult,
 }: Props) => {
     const lines =
-        match.type === 'content'
+        match.type === 'contentWithLineMatches'
             ? renderResultElementsForContentMatch(match, selectedResult, selectResult, openResult)
-            : renderResultElementsForSymbolMatch(match, selectedResult, selectResult, openResult)
+            : match.type === 'symbol'
+                ? renderResultElementsForSymbolMatch(match, selectedResult, selectResult, openResult)
+                : []
 
     const formattedRepositoryStarCount = formatRepositoryStarCount(match.repoStars)
 
     const onClick = (): void =>
         lines.length
-            ? selectResult(getResultId(match, match.type === 'content' ? match.lineMatches![0] : match.symbols[0]))
+            ? selectResult(getResultId(match, match.type === 'contentWithLineMatches' ? match.lineMatches[0] : match.symbols[0]))
             : undefined
 
     const title = (
         <SearchResultHeader onClick={onClick}>
             <SearchResultLayout
                 iconColumn={{
-                    icon: match.type === 'content' ? FileDocumentIcon : AlphaSBoxIcon,
+                    icon: match.type === 'contentWithLineMatches' ? FileDocumentIcon : AlphaSBoxIcon,
                     repoName: match.repository,
                 }}
                 infoColumn={
