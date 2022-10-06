@@ -1515,7 +1515,7 @@ func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auther a
 		var ok bool
 		autherWithRefresh, ok = auther.(auth.AuthenticatorWithRefresh)
 		// Check if we should pre-emptively refresh
-		if ok && autherWithRefresh.ShouldRefresh() {
+		if ok && autherWithRefresh.NeedsRefresh() {
 			autherWithRefresh.Refresh()
 		}
 		if err := auther.Authenticate(req); err != nil {
