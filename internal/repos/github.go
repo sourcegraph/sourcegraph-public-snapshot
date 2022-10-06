@@ -10,7 +10,6 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/tidwall/gjson"
 
 	"github.com/sourcegraph/log"
 
@@ -97,66 +96,6 @@ func IsGitHubAppEnabled(schema *schema.GitHubApp) bool {
 		schema.Slug != "" &&
 		schema.ClientID != "" &&
 		schema.ClientSecret != ""
-}
-
-// GetOrRenewGitHubAppInstallationAccessToken extracts and returns the token
-// stored in the given external service config. It automatically renews and
-// updates the access token if it had expired or about to expire in 5 minutes.
-func GetOrRenewGitHubAppInstallationAccessToken(
-	ctx context.Context,
-	logger log.Logger,
-	externalServicesStore database.ExternalServiceStore,
-	svc *types.ExternalService,
-	client *github.V3Client,
-	installationID int64,
-) (string, error) {
-	rawConfig, err := svc.Config.Decrypt(ctx)
-	if err != nil {
-		return "", nil
-	}
-
-	token := gjson.Get(rawConfig, "token").String()
-	// It is incorrect to have GitHub App installation access token without an
-	// expiration time, and being conservative to have 5-minute buffer in case the
-	// expiration time is close to the current time.
-	if token != "" && svc.TokenExpiresAt != nil && time.Until(*svc.TokenExpiresAt) > 5*time.Minute {
-		return token, nil
-	}
-
-	reqCtx, cancel := context.WithTimeout(ctx, time.Minute)
-	defer cancel()
-
-	tok, err := client.CreateAppInstallationAccessToken(reqCtx, installationID)
-	if err != nil {
-		return "", errors.Wrap(err, "create app installation access token")
-	}
-	if tok.Token == nil || *tok.Token == "" {
-		return "", errors.New("empty token returned")
-	}
-
-	// NOTE: Use `json.Marshal` breaks the actual external service config that fails
-	// validation with missing "repos" property when no repository has been selected,
-	// due to generated JSON tag of ",omitempty".
-	rawConfig, err = jsonc.Edit(rawConfig, *tok.Token, "token")
-	if err != nil {
-		return "", errors.Wrap(err, "edit token")
-	}
-
-	err = externalServicesStore.Update(ctx,
-		conf.Get().AuthProviders,
-		svc.ID,
-		&database.ExternalServiceUpdate{
-			Config:         &rawConfig,
-			TokenExpiresAt: tok.ExpiresAt,
-		},
-	)
-	if err != nil {
-		// If we failed to update the new token and its expiration time, it is fine to
-		// try again later. We should not block further process since we already have the
-		// new token available for use at this time.
-		logger.Error("GetOrRenewGitHubAppInstallationAccessToken.updateExternalService", log.Int64("id", svc.ID), log.Error(err))
-	}
-	return *tok.Token, nil
 }
 
 func newGithubSource(
