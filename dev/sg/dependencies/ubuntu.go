@@ -242,7 +242,7 @@ YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
 	},
 	{
 		Name:      "Internal tooling",
-		DependsOn: []string{depsHomebrew},
+		DependsOn: []string{depsBaseUtilities},
 		Enabled:   enableForTeammatesOnly(),
 		Checks: []*dependency{
 			{
