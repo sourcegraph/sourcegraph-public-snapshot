@@ -3727,6 +3727,9 @@ type MockDB struct {
 	// WebhookLogsFunc is an instance of a mock function object controlling
 	// the behavior of the method WebhookLogs.
 	WebhookLogsFunc *DBWebhookLogsFunc
+	// WebhooksFunc is an instance of a mock function object controlling the
+	// behavior of the method Webhooks.
+	WebhooksFunc *DBWebhooksFunc
 }
 
 // NewMockDB creates a new mock of the DB interface. All methods return zero
@@ -3915,6 +3918,11 @@ func NewMockDB() *MockDB {
 		},
 		WebhookLogsFunc: &DBWebhookLogsFunc{
 			defaultHook: func(encryption.Key) (r0 WebhookLogStore) {
+				return
+			},
+		},
+		WebhooksFunc: &DBWebhooksFunc{
+			defaultHook: func(encryption.Key) (r0 WebhookStore) {
 				return
 			},
 		},
@@ -4110,6 +4118,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.WebhookLogs")
 			},
 		},
+		WebhooksFunc: &DBWebhooksFunc{
+			defaultHook: func(encryption.Key) WebhookStore {
+				panic("unexpected invocation of MockDB.Webhooks")
+			},
+		},
 	}
 }
 
@@ -4227,6 +4240,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		WebhookLogsFunc: &DBWebhookLogsFunc{
 			defaultHook: i.WebhookLogs,
+		},
+		WebhooksFunc: &DBWebhooksFunc{
+			defaultHook: i.Webhooks,
 		},
 	}
 }
@@ -7938,6 +7954,107 @@ func (c DBWebhookLogsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBWebhookLogsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBWebhooksFunc describes the behavior when the Webhooks method of the
+// parent MockDB instance is invoked.
+type DBWebhooksFunc struct {
+	defaultHook func(encryption.Key) WebhookStore
+	hooks       []func(encryption.Key) WebhookStore
+	history     []DBWebhooksFuncCall
+	mutex       sync.Mutex
+}
+
+// Webhooks delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockDB) Webhooks(v0 encryption.Key) WebhookStore {
+	r0 := m.WebhooksFunc.nextHook()(v0)
+	m.WebhooksFunc.appendCall(DBWebhooksFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Webhooks method of
+// the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBWebhooksFunc) SetDefaultHook(hook func(encryption.Key) WebhookStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Webhooks method of the parent MockDB instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBWebhooksFunc) PushHook(hook func(encryption.Key) WebhookStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBWebhooksFunc) SetDefaultReturn(r0 WebhookStore) {
+	f.SetDefaultHook(func(encryption.Key) WebhookStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBWebhooksFunc) PushReturn(r0 WebhookStore) {
+	f.PushHook(func(encryption.Key) WebhookStore {
+		return r0
+	})
+}
+
+func (f *DBWebhooksFunc) nextHook() func(encryption.Key) WebhookStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBWebhooksFunc) appendCall(r0 DBWebhooksFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBWebhooksFuncCall objects describing the
+// invocations of this function.
+func (f *DBWebhooksFunc) History() []DBWebhooksFuncCall {
+	f.mutex.Lock()
+	history := make([]DBWebhooksFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBWebhooksFuncCall is an object that describes an invocation of method
+// Webhooks on an instance of MockDB.
+type DBWebhooksFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 encryption.Key
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 WebhookStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBWebhooksFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBWebhooksFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
