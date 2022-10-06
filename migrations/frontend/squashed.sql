@@ -3523,15 +3523,16 @@ ALTER SEQUENCE webhook_logs_id_seq OWNED BY webhook_logs.id;
 CREATE TABLE webhooks (
     id uuid NOT NULL,
     code_host_kind text NOT NULL,
-    code_host_urn text,
+    code_host_urn text NOT NULL,
     secret text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    encryption_key_id text DEFAULT ''::text NOT NULL
 );
 
 COMMENT ON TABLE webhooks IS 'Webhooks registered in Sourcegraph instance.';
 
-COMMENT ON COLUMN webhooks.code_host_kind IS 'Kind of an external service which webhooks are registered.';
+COMMENT ON COLUMN webhooks.code_host_kind IS 'Kind of an external service for which webhooks are registered.';
 
 COMMENT ON COLUMN webhooks.code_host_urn IS 'URN of a code host. This column maps to external_service_id column of repo table.';
 
