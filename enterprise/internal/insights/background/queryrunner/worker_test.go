@@ -6,17 +6,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hexops/autogold"
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/hexops/autogold"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/priority"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
 )
 
 // TestJobQueue tests that EnqueueJob and dequeueJob work mutually to transfer jobs to/from the

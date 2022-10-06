@@ -20,16 +20,16 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	extsvcauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -63,7 +63,7 @@ func Init(
 	}
 	appID = gitHubAppConfig.AppID
 
-	auther, err := auth.NewOAuthBearerTokenWithGitHubApp(appID, privateKey)
+	auther, err := extsvcauth.NewOAuthBearerTokenWithGitHubApp(appID, privateKey)
 	if err != nil {
 		return errors.Wrap(err, "new authenticator with GitHub App")
 	}
@@ -298,7 +298,7 @@ func newGitHubAppSetupHandler(db database.DB, apiURL *url.URL, client githubClie
 			return
 		}
 
-		err = backend.CheckOrgAccess(r.Context(), db, orgID)
+		err = auth.CheckOrgAccess(r.Context(), db, orgID)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			_, _ = w.Write([]byte("the authenticated user does not belong to the organization requested"))

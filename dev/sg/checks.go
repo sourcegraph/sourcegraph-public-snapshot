@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -35,7 +34,7 @@ var checks = map[string]check.CheckFunc{
 	"asdf":                  check.CommandOutputContains("asdf", "version"),
 	"git":                   check.Combine(check.InPath("git"), checkGitVersion(">= 2.34.1")),
 	"yarn":                  check.Combine(check.InPath("yarn"), checkYarnVersion("~> 1.22.4")),
-	"go":                    check.Combine(check.InPath("go"), checkGoVersion("~> 1.18.1")),
+	"go":                    check.Combine(check.InPath("go"), checkGoVersion("~> 1.18.7")),
 	"node":                  check.Combine(check.InPath("node"), check.CommandOutputContains(`node -e "console.log(\"foobar\")"`, "foobar")),
 	"rust":                  check.Combine(check.InPath("cargo"), check.CommandOutputContains(`cargo version`, "1.58.0")),
 	"docker-installed":      check.WrapErrMessage(check.InPath("docker"), "if Docker is installed and the check fails, you might need to start Docker.app and restart terminal and 'sg setup'"),
@@ -43,16 +42,6 @@ var checks = map[string]check.CheckFunc{
 		check.Combine(check.InPath("docker"), check.CommandExitCode("docker info", 0)),
 		"Docker needs to be running",
 	),
-}
-
-func getCheck(name string) check.CheckFunc {
-	return func(ctx context.Context) error {
-		fn, ok := checks[name]
-		if !ok {
-			return errors.Newf("check %q not found", name)
-		}
-		return fn(ctx)
-	}
 }
 
 func runChecksWithName(ctx context.Context, names []string) error {
@@ -121,36 +110,6 @@ func runChecks(ctx context.Context, checks map[string]check.CheckFunc) error {
 	std.Out.Write("")
 
 	return errors.Newf("%d failed checks", len(failed))
-}
-
-func checkInMainRepoOrRepoInDirectory(context.Context) error {
-	_, err := root.RepositoryRoot()
-	if err != nil {
-		ok, err := pathExists("sourcegraph")
-		if !ok || err != nil {
-			return errors.New("'sg setup' is not run in sourcegraph and repository is also not found in current directory")
-		}
-		return nil
-	}
-	return nil
-}
-
-func checkDevPrivateInParentOrInCurrentDirectory(context.Context) error {
-	ok, err := pathExists("dev-private")
-	if ok && err == nil {
-		return nil
-	}
-	wd, err := os.Getwd()
-	if err != nil {
-		return errors.Wrap(err, "failed to check for dev-private repository")
-	}
-
-	p := filepath.Join(wd, "..", "dev-private")
-	ok, err = pathExists(p)
-	if ok && err == nil {
-		return nil
-	}
-	return errors.New("could not find dev-private repository either in current directory or one above")
 }
 
 // checkPostgresConnection succeeds connecting to the default user database works, regardless
