@@ -32,7 +32,8 @@ import {
 } from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
 import { submitSearch } from '../helpers'
-import { searchHistorySource, useRecentSearches } from '../input/recentSearches'
+import { searchHistorySource } from '../input/searchHistorySource'
+import { useRecentSearches } from '../input/useRecentSearches'
 
 import styles from './SearchPageInput.module.scss'
 

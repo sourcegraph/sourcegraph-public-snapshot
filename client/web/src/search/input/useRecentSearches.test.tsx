@@ -3,19 +3,17 @@ import React, { useState } from 'react'
 import { MockedResponse } from '@apollo/client/testing'
 import { render, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { stub } from 'sinon'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
-import { Token } from '@sourcegraph/shared/src/search/query/token'
 import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
 import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { SearchHistoryEventLogsQueryResult } from '../../graphql-operations'
 
-import { searchHistorySource, SEARCH_HISTORY_EVENT_LOGS_QUERY, useRecentSearches } from './recentSearches'
+import { SEARCH_HISTORY_EVENT_LOGS_QUERY, useRecentSearches } from './useRecentSearches'
 
-function buildMockTempSettings(items: number): RecentSearch[] {
+export function buildMockTempSettings(items: number): RecentSearch[] {
     return Array.from({ length: items }, (_item, index) => ({
         query: `test${index}`,
         timestamp: '2021-01-01T00:00:00Z',
@@ -221,70 +219,6 @@ describe('recentSearches', () => {
                   "test18",
                 ]
             `)
-        })
-    })
-
-    describe('searchHistorySource', () => {
-        const suggestionContext = { position: 0, onAbort: stub() }
-
-        test('returns null if no recent searches', () => {
-            const recentSearches = buildMockTempSettings(0)
-            const onSelection = stub()
-
-            const source = searchHistorySource({ recentSearches, onSelection })
-            expect(source(suggestionContext, [])).toBeNull()
-        })
-
-        test('returns null if there are any tokens', () => {
-            const recentSearches = buildMockTempSettings(5)
-            const onSelection = stub()
-
-            const tokens: Token[] = [{ type: 'literal', value: 'test', quoted: false, range: { start: 0, end: 4 } }]
-
-            const source = searchHistorySource({ recentSearches, onSelection })
-            expect(source(suggestionContext, tokens)).toBeNull()
-        })
-
-        test('returns recent searches in the correct format', () => {
-            const recentSearches = buildMockTempSettings(5)
-            const onSelection = stub()
-
-            const source = searchHistorySource({ recentSearches, onSelection })
-            expect(source(suggestionContext, [])).toMatchInlineSnapshot(
-                `
-                Object {
-                  "filter": false,
-                  "from": 0,
-                  "options": Array [
-                    Object {
-                      "apply": [Function],
-                      "label": "test0",
-                      "type": "searchhistory",
-                    },
-                    Object {
-                      "apply": [Function],
-                      "label": "test1",
-                      "type": "searchhistory",
-                    },
-                    Object {
-                      "apply": [Function],
-                      "label": "test2",
-                      "type": "searchhistory",
-                    },
-                    Object {
-                      "apply": [Function],
-                      "label": "test3",
-                      "type": "searchhistory",
-                    },
-                    Object {
-                      "apply": [Function],
-                      "label": "test4",
-                      "type": "searchhistory",
-                    },
-                  ],
-                }
-            `
-            )
         })
     })
 })

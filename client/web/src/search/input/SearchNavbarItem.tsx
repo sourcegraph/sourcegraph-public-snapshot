@@ -17,7 +17,7 @@ import { AuthenticatedUser } from '../../auth'
 import { useExperimentalFeatures, useNavbarQueryState, setSearchCaseSensitivity } from '../../stores'
 import { NavbarQueryState, setSearchPatternType } from '../../stores/navbarSearchQueryState'
 
-import { useRecentSearches } from './recentSearches'
+import { useRecentSearches } from './useRecentSearches'
 
 interface Props
     extends ActivationProps,
