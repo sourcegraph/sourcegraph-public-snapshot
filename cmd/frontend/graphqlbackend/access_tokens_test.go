@@ -10,9 +10,9 @@ import (
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -101,7 +101,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 			Scopes: []string{authz.ScopeUserAll, authz.ScopeSiteAdminSudo},
 			Note:   "n",
 		})
-		if want := backend.ErrMustBeSiteAdmin; err != want {
+		if want := auth.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("got err %v, want %v", err, want)
 		}
 		if result != nil {
@@ -170,7 +170,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 					{
 						Path:          []any{"createAccessToken"},
 						Message:       "must be authenticated as user with id 1",
-						ResolverError: &backend.InsufficientAuthorizationError{Message: fmt.Sprintf("must be authenticated as user with id %d", 1)},
+						ResolverError: &auth.InsufficientAuthorizationError{Message: fmt.Sprintf("must be authenticated as user with id %d", 1)},
 					},
 				},
 			},

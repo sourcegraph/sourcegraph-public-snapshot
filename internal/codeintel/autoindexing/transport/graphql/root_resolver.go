@@ -8,9 +8,9 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -92,7 +92,7 @@ func (r *rootResolver) DeleteLSIFIndex(ctx context.Context, args *struct{ ID gra
 	}})
 	defer endObservation(1, observation.Args{})
 
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
 		return nil, err
 	}
 	if !autoIndexingEnabled() {
@@ -205,7 +205,7 @@ func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *Queu
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
 		return nil, err
 	}
 	if !autoIndexingEnabled() {
@@ -259,7 +259,7 @@ func (r *rootResolver) UpdateRepositoryIndexConfiguration(ctx context.Context, a
 	}})
 	defer endObservation(1, observation.Args{})
 
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
 		return nil, err
 	}
 	if !autoIndexingEnabled() {

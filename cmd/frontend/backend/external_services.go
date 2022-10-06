@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -27,12 +28,12 @@ func CheckExternalServiceAccess(ctx context.Context, db database.DB, namespaceUs
 		return nil
 	}
 
-	if namespaceOrgID > 0 && CheckOrgAccess(ctx, db, namespaceOrgID) == nil {
+	if namespaceOrgID > 0 && auth.CheckOrgAccess(ctx, db, namespaceOrgID) == nil {
 		return nil
 	}
 
 	// Special case when external service has no owner
-	if namespaceUserID == 0 && namespaceOrgID == 0 && CheckCurrentUserIsSiteAdmin(ctx, db) == nil {
+	if namespaceUserID == 0 && namespaceOrgID == 0 && auth.CheckCurrentUserIsSiteAdmin(ctx, db) == nil {
 		return nil
 	}
 
