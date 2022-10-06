@@ -270,7 +270,7 @@ func (r *Resolver) batchSpecByID(ctx context.Context, id graphql.ID) (graphqlbac
 	}
 
 	if !canAdminister {
-		return nil, errors.New("User does not have permissions to view this batch spec")
+		return nil, nil
 	}
 
 	return specResolver, nil

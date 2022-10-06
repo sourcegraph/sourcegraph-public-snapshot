@@ -2471,3 +2471,76 @@ query($includeLocallyExecutedSpecs: Boolean!) {
 `
 
 func stringPtr(s string) *string { return &s }
+
+
+// func TestRestrictions(t *testing.T) {
+// 	if testing.Short() {
+// 		t.Skip()
+// 	}
+// 	logger := logtest.Scoped(t)
+
+// 	ctx := context.Background()
+// 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+
+// 	bstore := store.New(db, &observation.TestContext, nil)
+// 	repoStore := database.ReposWith(logger, bstore)
+// 	esStore := database.ExternalServicesWith(logger, bstore)
+
+// 	repo := newGitHubTestRepo("github.com/sourcegraph/batch-spec-test", newGitHubExternalService(t, esStore))
+// 	if err := repoStore.Create(ctx, repo); err != nil {
+// 		t.Fatal(err)
+// 	}
+// 	repoID := graphqlbackend.MarshalRepositoryID(repo.ID)
+
+// 	orgname := "test-org"
+// 	userID := bt.CreateTestUser(t, db, false).ID
+// 	adminID := bt.CreateTestUser(t, db, true).ID
+// 	orgID := bt.CreateTestOrg(t, db, orgname, userID).ID
+
+// 	spec, err := btypes.NewBatchSpecFromRaw(bt.TestRawBatchSpec)
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
+// 	spec.UserID = userID
+// 	spec.NamespaceOrgID = orgID
+// 	if err := bstore.CreateBatchSpec(ctx, spec); err != nil {
+// 		t.Fatal(err)
+// 	}
+
+// 	apiID := string(marshalBatchSpecRandID(spec.RandID))
+// 	userAPIID := string(graphqlbackend.MarshalUserID(userID))
+// 	orgAPIID := string(graphqlbackend.MarshalOrgID(orgID))
+
+// 	var unmarshaled any
+// 	err = json.Unmarshal([]byte(spec.RawSpec), &unmarshaled)
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}}
+
+// 	fragment u on User { id, databaseID }
+// 	fragment o on Org  { id, name }
+
+// `query($batchSpec: ID!) {
+//   node(id: $batchSpec) {
+//     __typename
+
+//     ... on BatchSpec {
+//       id
+//       originalInput
+//       parsedInput
+
+//       creator { ...u }
+//       namespace {
+//         ... on User { ...u }
+//         ... on Org  { ...o }
+//       }
+
+//      viewerCanAdminister
+//           }
+//         }
+//       }
+
+// `
+
+// var response struct{ Node apitest.Node }
+// 	errs := apitest.Exec(actorCtx, t, s, input, &response, queryBatchSpecById)
