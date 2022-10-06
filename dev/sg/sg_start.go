@@ -225,6 +225,8 @@ func startExec(ctx *cli.Context) error {
 			std.Out.Write("")
 			std.Out.Write(err.Error())
 			std.Out.Write("")
+		} else {
+			update.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Done updating dev-private"))
 		}
 	}
 
