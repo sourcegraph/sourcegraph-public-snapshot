@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/ignite"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -21,6 +22,7 @@ import (
 type handler struct {
 	nameSet       *janitor.NameSet
 	store         workerutil.Store
+	filesStore    store.FilesStore
 	options       Options
 	operations    *command.Operations
 	runnerFactory func(dir string, logger command.Logger, options command.Options, operations *command.Operations) command.Runner

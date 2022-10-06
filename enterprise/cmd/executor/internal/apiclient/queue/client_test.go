@@ -1,4 +1,4 @@
-package apiclient
+package queue
 
 import (
 	"context"
@@ -13,7 +13,9 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
+	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -428,10 +430,12 @@ func testRoute(t *testing.T, spec routeSpec, f func(client *Client)) {
 
 	options := Options{
 		ExecutorName: "deadbeef",
-		PathPrefix:   "/.executors/queue",
-		EndpointOptions: EndpointOptions{
-			URL:   ts.URL,
-			Token: "hunter2",
+		BaseClientOptions: apiclient.BaseClientOptions{
+			EndpointOptions: apiclient.EndpointOptions{
+				URL:        ts.URL,
+				PathPrefix: "/.executors/queue",
+				Token:      "hunter2",
+			},
 		},
 		TelemetryOptions: TelemetryOptions{
 			OS:              "test-os",
@@ -444,7 +448,8 @@ func testRoute(t *testing.T, spec routeSpec, f func(client *Client)) {
 		},
 	}
 
-	client := New(options, prometheus.GathererFunc(func() ([]*dto.MetricFamily, error) { return nil, nil }), &observation.TestContext)
+	client, err := New(options, prometheus.GathererFunc(func() ([]*dto.MetricFamily, error) { return nil, nil }), &observation.TestContext)
+	require.NoError(t, err)
 	f(client)
 }
 

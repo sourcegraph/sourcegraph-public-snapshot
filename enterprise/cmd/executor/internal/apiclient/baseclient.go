@@ -4,17 +4,20 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
-	"path/filepath"
+	"path"
 
 	"github.com/inconshreveable/log15"
 	"golang.org/x/net/context/ctxhttp"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+// schemeExecutorToken is the special type of token to communicate with the executor endpoints.
+const schemeExecutorToken = "token-executor"
 
 // BaseClient is an abstract HTTP API-backed data access layer. Instances of this
 // struct should not be used directly, but should be used compositionally by other
@@ -32,7 +35,7 @@ import (
 //	func (c *SprocketClient) Fabricate(ctx context.Context(), spec SprocketSpec) (Sprocket, error) {
 //	    url := c.baseURL.ResolveReference(&url.URL{Path: "/new"})
 //
-//	    req, err := httpcli.MakeJSONRequest("POST", url.String(), spec)
+//	    req, err := httpcli.NewJSONRequest("POST", url.String(), spec)
 //	    if err != nil {
 //	        return Sprocket{}, err
 //	    }
@@ -44,19 +47,40 @@ import (
 type BaseClient struct {
 	httpClient *http.Client
 	options    BaseClientOptions
+	baseURL    *url.URL
 }
 
 type BaseClientOptions struct {
 	// UserAgent specifies the user agent string to supply on requests.
 	UserAgent string
+
+	// EndpointOptions configures the endpoint the BaseClient will call for requests.
+	EndpointOptions EndpointOptions
+}
+
+type EndpointOptions struct {
+	// URL is the target request URL.
+	URL string
+
+	// PathPrefix is the prefix of the path to be called by the BaseClient.
+	PathPrefix string
+
+	// Token is the authorization token to include with all requests (via Authorization header).
+	Token string
 }
 
 // NewBaseClient creates a new BaseClient with the given transport.
-func NewBaseClient(options BaseClientOptions) *BaseClient {
+func NewBaseClient(options BaseClientOptions) (*BaseClient, error) {
+	// Parse the base url upfront to save on overhead.
+	baseURL, err := url.Parse(options.EndpointOptions.URL)
+	if err != nil {
+		return nil, err
+	}
 	return &BaseClient{
 		httpClient: httpcli.InternalClient,
 		options:    options,
-	}
+		baseURL:    baseURL,
+	}, nil
 }
 
 // Do performs the given HTTP request and returns the body. If there is no content
@@ -84,10 +108,18 @@ func (c *BaseClient) Do(ctx context.Context, req *http.Request) (hasContent bool
 			log15.Error("apiclient got unexpected status code", "code", resp.StatusCode, "body", string(content))
 		}
 
-		return false, nil, errors.Errorf("unexpected status code %d", resp.StatusCode)
+		return false, nil, &UnexpectedStatusCodeErr{StatusCode: resp.StatusCode}
 	}
 
 	return true, resp.Body, nil
+}
+
+type UnexpectedStatusCodeErr struct {
+	StatusCode int
+}
+
+func (e *UnexpectedStatusCodeErr) Error() string {
+	return fmt.Sprintf("unexpected status code %d", e.StatusCode)
 }
 
 // DoAndDecode performs the given HTTP request and unmarshals the response body into the
@@ -113,30 +145,54 @@ func (c *BaseClient) DoAndDrop(ctx context.Context, req *http.Request) error {
 	return err
 }
 
-func (c *BaseClient) MakeRequest(method string, baseURL, path string, payload any) (*http.Request, error) {
-	u, err := makeRelativeURL(
-		baseURL,
-		path,
-	)
+// NewRequest creates a new http.Request with the provided URL and path.
+func NewRequest(method string, baseURL, urlPath string, payload any) (*http.Request, error) {
+	u, err := url.Parse(baseURL)
+	if err != nil {
+		return nil, err
+	}
+	u.Path = path.Join(u.Path, urlPath)
+	return newJSONRequest(method, u, payload)
+}
+
+// NewRequest creates a new http.Request where only the Authorization HTTP header is set.
+func (c *BaseClient) NewRequest(method, path string, payload io.Reader) (*http.Request, error) {
+	u := c.newRelativeURL(path)
+
+	r, err := http.NewRequest(method, u.String(), payload)
 	if err != nil {
 		return nil, err
 	}
 
-	return MakeJSONRequest(method, u, payload)
+	r.Header.Add("Authorization", fmt.Sprintf("%s %s", schemeExecutorToken, c.options.EndpointOptions.Token))
+	return r, nil
 }
 
-func makeRelativeURL(base string, path ...string) (*url.URL, error) {
-	baseURL, err := url.Parse(base)
+// NewJSONRequest creates a new http.Request where the Content-Type is set to 'application/json' and the Authorization
+// HTTP header is set.
+func (c *BaseClient) NewJSONRequest(method, path string, payload any) (*http.Request, error) {
+	u := c.newRelativeURL(path)
+
+	r, err := newJSONRequest(method, u, payload)
 	if err != nil {
 		return nil, err
 	}
 
-	return baseURL.ResolveReference(&url.URL{Path: filepath.Join(path...)}), nil
+	r.Header.Add("Authorization", fmt.Sprintf("%s %s", schemeExecutorToken, c.options.EndpointOptions.Token))
+	return r, nil
 }
 
-// MakeJSONRequest creates an HTTP request with the given payload serialized as JSON. This
+// newRelativeURL builds the relative URL on the provided base URL and adds any additional paths.
+func (c *BaseClient) newRelativeURL(endpointPath string) *url.URL {
+	// Create a shallow clone
+	u := *c.baseURL
+	u.Path = path.Join(u.Path, c.options.EndpointOptions.PathPrefix, endpointPath)
+	return &u
+}
+
+// newJSONRequest creates an HTTP request with the given payload serialized as JSON. This
 // will also ensure that the proper content type header (which is necessary, not pedantic).
-func MakeJSONRequest(method string, url *url.URL, payload any) (*http.Request, error) {
+func newJSONRequest(method string, url *url.URL, payload any) (*http.Request, error) {
 	contents, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err

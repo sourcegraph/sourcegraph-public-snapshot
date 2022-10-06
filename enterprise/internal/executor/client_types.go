@@ -1,6 +1,10 @@
 package executor
 
-import "github.com/sourcegraph/sourcegraph/internal/workerutil"
+import (
+	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+)
 
 // Job describes a series of steps to perform within an executor.
 type Job struct {
@@ -33,7 +37,7 @@ type Job struct {
 	// VirtualMachineFiles is a map from file names to content. Each entry in
 	// this map will be written into the workspace prior to job execution.
 	// The file paths must be relative and within the working directory.
-	VirtualMachineFiles map[string]string `json:"files"`
+	VirtualMachineFiles map[string]VirtualMachineFile `json:"files"`
 
 	// DockerSteps describe a series of docker run commands to be invoked in the
 	// workspace. This may be done inside or outside of a Firecracker virtual
@@ -50,6 +54,24 @@ type Job struct {
 	// environment variables, as well as secret values passed along with the dequeued job
 	// payload, which may be sensitive (e.g. shared API tokens, URLs with credentials).
 	RedactedValues map[string]string `json:"redactedValues"`
+}
+
+// VirtualMachineFile is a file that will be written to the VM. A file can contain the raw content of the file or
+// specify the coordinates of the file in the file store.
+// A file must either contain Content or a Bucket/Key. If neither are provided, an empty file is written.
+type VirtualMachineFile struct {
+	// Content is the raw content of the file. If not provided, the file is retrieved from the file store based on the
+	// configured Bucket and Key. If Content, Bucket, and Key are not provided, an empty file will be written.
+	Content string `json:"content,omitempty"`
+
+	// Bucket is the bucket in the files store the file belongs to. A Key must also be configured.
+	Bucket string `json:"bucket,omitempty"`
+
+	// Key the key or coordinates of the files in the Bucket. The Bucket must be configured.
+	Key string `json:"key,omitempty"`
+
+	// ModifiedAt an optional field that specifies when the file was last modified.
+	ModifiedAt time.Time `json:"modifiedAt,omitempty"`
 }
 
 func (j Job) RecordID() int {
