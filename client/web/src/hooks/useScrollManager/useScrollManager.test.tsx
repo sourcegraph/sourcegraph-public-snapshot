@@ -34,16 +34,14 @@ describe('useScrollManager', () => {
         // scrollTo is not supported in JSDOM, so we mock it for this one test
         // https://github.com/jsdom/jsdom/issues/1422
         Element.prototype.scrollTo = scrollToMock
-
-        jest.useFakeTimers()
     })
     afterAll(() => {
         Element.prototype.scrollTo = originalScrollTo
-
-        jest.useRealTimers()
     })
 
     it('handles scroll correctly', () => {
+        jest.useFakeTimers()
+
         const wrapper = renderWithBrandedContext(<TestApp />)
         act(() => {
             wrapper.history.push('/page-1')

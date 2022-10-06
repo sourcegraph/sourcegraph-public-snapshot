@@ -5,19 +5,15 @@ import sinon from 'sinon'
 
 import { createUseParallelRequestsHook, FetchResult } from './use-parallel-request'
 
+jest.useFakeTimers()
+
 describe('useParallelRequests', () => {
     let useParallelRequests: <D>(request: () => ObservableInput<D>) => FetchResult<D>
 
     beforeEach(() => {
-        jest.useFakeTimers()
-
         const { query } = createUseParallelRequestsHook({ maxRequests: 1 })
 
         useParallelRequests = query
-    })
-
-    afterEach(() => {
-        jest.useRealTimers()
     })
 
     describe('with single request', () => {
