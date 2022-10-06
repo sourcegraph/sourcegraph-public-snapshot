@@ -42,10 +42,10 @@ export function searchHistorySource({
         if (tokens.length > 0) {
             return null
         }
-        // If there are no tokens we must be at position 0
 
+        // If there are no tokens we must be at position 0
         try {
-            if (!searches) {
+            if (!searches || searches.length === 0) {
                 return null
             }
 
@@ -142,7 +142,7 @@ export function useRecentSearches(): {
                 })
                 .catch(() => {
                     logger.error('Error fetching recent searches from event log')
-                    setState('error')
+                    setState('success') // Ignore the error and use the empty list from temporary settings
                 })
         }
     }, [recentSearches, loadFromEventLog, setRecentSearches])
@@ -160,6 +160,10 @@ export function useRecentSearches(): {
             setRecentSearches(recentSearches => {
                 const newRecentSearches = recentSearches?.filter(search => search.query !== query) || []
                 newRecentSearches.unshift({ query, timestamp: new Date().toISOString() })
+                // Truncate array if it's too long
+                if (newRecentSearches.length > MAX_RECENT_SEARCHES) {
+                    newRecentSearches.length = MAX_RECENT_SEARCHES
+                }
                 return newRecentSearches
             })
         },

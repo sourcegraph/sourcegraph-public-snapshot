@@ -1,17 +1,21 @@
+/* eslint-disable react/forbid-elements */
 /* eslint-disable react/no-array-index-key */
-import React from 'react'
+import React, { useState } from 'react'
 
 import { MockedResponse } from '@apollo/client/testing'
 import { render, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { stub } from 'sinon'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { Token } from '@sourcegraph/shared/src/search/query/token'
 import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
 import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { SearchHistoryEventLogsQueryResult } from '../../graphql-operations'
 
-import { SEARCH_HISTORY_EVENT_LOGS_QUERY, useRecentSearches } from './recentSearches'
+import { searchHistorySource, SEARCH_HISTORY_EVENT_LOGS_QUERY, useRecentSearches } from './recentSearches'
 
 function buildMockTempSettings(items: number): RecentSearch[] {
     return Array.from({ length: items }, (_item, index) => ({
@@ -55,7 +59,10 @@ const Wrapper: React.FunctionComponent<{
 }
 
 const InnerWrapper: React.FunctionComponent<{}> = () => {
-    const { recentSearches, state } = useRecentSearches()
+    const { recentSearches, addRecentSearch, state } = useRecentSearches()
+
+    const [searchToAdd, setSearchToAdd] = useState('')
+
     return (
         <>
             <ul>
@@ -64,6 +71,13 @@ const InnerWrapper: React.FunctionComponent<{}> = () => {
                 ))}
             </ul>
             <div data-testid="state">{state}</div>
+            <input
+                type="text"
+                data-testid="input"
+                value={searchToAdd}
+                onInput={event => setSearchToAdd(event.currentTarget.value)}
+            />
+            <button type="button" data-testid="button" onClick={() => addRecentSearch(searchToAdd)} />
         </>
     )
 }
@@ -100,32 +114,176 @@ describe('recentSearches', () => {
             await waitFor(() => expect(getByTestId('state')).toHaveTextContent('success'))
 
             const items = queryAllByRole('listitem').map(element => element.textContent)
-            expect(items).toMatchInlineSnapshot(
-                `
+            expect(items).toMatchInlineSnapshot(`
                 Array [
                   "test0",
                   "test1",
                 ]
-            `
-            )
+            `)
         })
 
-        test('recent searches is populated from temp settings', () => {})
+        test('recent searches is populated from temp settings', async () => {
+            const { queryAllByRole, getByTestId } = render(
+                <Wrapper tempSettings={buildMockTempSettings(4)} eventLogs={buildMockEventLogs(0)} />
+            )
 
-        test('adding item to recent searches puts it at the top', () => {})
+            await waitFor(() => expect(getByTestId('state')).toHaveTextContent('success'))
+
+            const items = queryAllByRole('listitem').map(element => element.textContent)
+            expect(items).toMatchInlineSnapshot(`
+                Array [
+                  "test0",
+                  "test1",
+                  "test2",
+                  "test3",
+                ]
+            `)
+        })
     })
 
     describe('useRecentSearches().addRecentSearch', () => {
-        test('adding item to recent searches puts it at the top', () => {})
+        test('adding item to recent searches puts it at the top', async () => {
+            const { queryAllByRole, getByTestId } = render(
+                <Wrapper tempSettings={buildMockTempSettings(4)} eventLogs={buildMockEventLogs(0)} />
+            )
 
-        test('adding an exisitng item to recent searches deduplicates it and puts it at the top', () => {})
+            await waitFor(() => expect(getByTestId('state')).toHaveTextContent('success'))
 
-        test('adding an item beyond the limit of the list removes the last item', () => {})
+            userEvent.type(getByTestId('input'), 'test4')
+            userEvent.click(getByTestId('button'))
+
+            const items = queryAllByRole('listitem').map(element => element.textContent)
+            expect(items).toMatchInlineSnapshot(`
+                Array [
+                  "test4",
+                  "test0",
+                  "test1",
+                  "test2",
+                  "test3",
+                ]
+            `)
+        })
+
+        test('adding an exisitng item to recent searches deduplicates it and puts it at the top', async () => {
+            const { queryAllByRole, getByTestId } = render(
+                <Wrapper tempSettings={buildMockTempSettings(4)} eventLogs={buildMockEventLogs(0)} />
+            )
+
+            await waitFor(() => expect(getByTestId('state')).toHaveTextContent('success'))
+
+            userEvent.type(getByTestId('input'), 'test2')
+            userEvent.click(getByTestId('button'))
+
+            const items = queryAllByRole('listitem').map(element => element.textContent)
+            expect(items).toMatchInlineSnapshot(`
+                    Array [
+                      "test2",
+                      "test0",
+                      "test1",
+                      "test3",
+                    ]
+                `)
+        })
+
+        test('adding an item beyond the limit of the list removes the last item', async () => {
+            const { queryAllByRole, getByTestId } = render(
+                <Wrapper tempSettings={buildMockTempSettings(20)} eventLogs={buildMockEventLogs(0)} />
+            )
+
+            await waitFor(() => expect(getByTestId('state')).toHaveTextContent('success'))
+
+            userEvent.type(getByTestId('input'), 'test20')
+            userEvent.click(getByTestId('button'))
+
+            const items = queryAllByRole('listitem').map(element => element.textContent)
+            expect(items).toMatchInlineSnapshot(`
+                Array [
+                  "test20",
+                  "test0",
+                  "test1",
+                  "test2",
+                  "test3",
+                  "test4",
+                  "test5",
+                  "test6",
+                  "test7",
+                  "test8",
+                  "test9",
+                  "test10",
+                  "test11",
+                  "test12",
+                  "test13",
+                  "test14",
+                  "test15",
+                  "test16",
+                  "test17",
+                  "test18",
+                ]
+            `)
+        })
     })
 
     describe('searchHistorySource', () => {
-        test('returns null if no recent searches', () => {})
+        const suggestionContext = { position: 0, onAbort: stub() }
 
-        test('returns recent searches in the correct format', () => {})
+        test('returns null if no recent searches', () => {
+            const searches = buildMockTempSettings(0)
+            const onSelection = stub()
+
+            const source = searchHistorySource({ searches, onSelection })
+            expect(source(suggestionContext, [])).toBeNull()
+        })
+
+        test('returns null if there are any tokens', () => {
+            const searches = buildMockTempSettings(5)
+            const onSelection = stub()
+
+            const tokens: Token[] = [{ type: 'literal', value: 'test', quoted: false, range: { start: 0, end: 4 } }]
+
+            const source = searchHistorySource({ searches, onSelection })
+            expect(source(suggestionContext, tokens)).toBeNull()
+        })
+
+        test('returns recent searches in the correct format', () => {
+            const searches = buildMockTempSettings(5)
+            const onSelection = stub()
+
+            const source = searchHistorySource({ searches, onSelection })
+            expect(source(suggestionContext, [])).toMatchInlineSnapshot(
+                `
+                Object {
+                  "filter": false,
+                  "from": 0,
+                  "options": Array [
+                    Object {
+                      "apply": [Function],
+                      "label": "test0",
+                      "type": "searchhistory",
+                    },
+                    Object {
+                      "apply": [Function],
+                      "label": "test1",
+                      "type": "searchhistory",
+                    },
+                    Object {
+                      "apply": [Function],
+                      "label": "test2",
+                      "type": "searchhistory",
+                    },
+                    Object {
+                      "apply": [Function],
+                      "label": "test3",
+                      "type": "searchhistory",
+                    },
+                    Object {
+                      "apply": [Function],
+                      "label": "test4",
+                      "type": "searchhistory",
+                    },
+                  ],
+                }
+            `
+            )
+        })
     })
 })
