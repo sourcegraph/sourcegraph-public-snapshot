@@ -1030,6 +1030,19 @@ helm uninstall sourcegraph
 
 Some Persistent Volumes may be retained after the uninstall is complete. In your cloud provider, check for unattached disks and delete them as necessary.
 
+## Helm Troubleshooting
+
+### Helm upgrade command returns an error when installing a new version. 
+
+```none
+Error: UPGRADE FAILED: rendered manifests contain a resource that already exists. Unable to continue with update: could not get information about the resource ClusterRole "cadvisor" in namespace "": clusterroles.rbac.authorization.k8s.io "cadvisor" is forbidden
+```
+
+#### Diagnose 
+1. Confirm you have cluster-admin permissions or permissions to deploy within the namespace.
+2. Inspect the Sourcegrap helm chart to see if a Chart.lock file is in use. If so, make sure the appropriate upgrade version is set in the Chart.lock file. 
+
+
 [backendconfig]: https://cloud.google.com/kubernetes-engine/docs/how-to/ingress-features#create_backendconfig
 [azure application gateway]: https://docs.microsoft.com/en-us/azure/application-gateway/overview
 [Container-native load balancing]: https://cloud.google.com/kubernetes-engine/docs/how-to/container-native-load-balancing
