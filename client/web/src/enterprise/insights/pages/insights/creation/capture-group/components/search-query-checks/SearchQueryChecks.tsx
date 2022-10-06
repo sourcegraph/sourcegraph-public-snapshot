@@ -60,7 +60,7 @@ const CheckListItem: FC<PropsWithChildren<CheckListItemProps>> = props => {
 
     if (valid === true) {
         return (
-            <li aria-label="Validation is passed">
+            <li aria-label="Successful validation check">
                 <Icon aria-hidden={true} className={classNames(styles.icon, 'text-success')} as={Check} />
                 <span className={classNames(styles.valid, 'text-muted')}>{children}</span>
             </li>
@@ -74,7 +74,7 @@ const CheckListItem: FC<PropsWithChildren<CheckListItemProps>> = props => {
                 <span aria-hidden={true} className="text-muted">
                     {children}
                 </span>
-                <VisuallyHidden>{errorMessage}</VisuallyHidden>
+                <VisuallyHidden>Failed validation check. {errorMessage}</VisuallyHidden>
             </li>
         )
     }
