@@ -460,6 +460,8 @@ type CountUniqueUsersOptions struct {
 	// If set, excludes events that don't meet the criteria of "active" usage of Sourcegraph.
 	// These are mostly actions taken by signed-out users.
 	ExcludeNonActiveUsers bool
+	// If set, excludes Sourcegraph (employee) admins.
+	ExcludeSourcegraphAdmins bool
 }
 
 // EventFilterOptions provides options for filtering events.
@@ -506,10 +508,24 @@ func createCountUniqueUserConds(opt *CountUniqueUsersOptions) []*sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt != nil {
 		if opt.ExcludeSystemUsers {
-			conds = append(conds, sqlf.Sprintf("user_id > 0 OR anonymous_user_id <> 'backend'"))
+			conds = append(conds, sqlf.Sprintf("event_logs.user_id > 0 OR event_logs.anonymous_user_id <> 'backend'"))
 		}
 		if opt.ExcludeNonActiveUsers {
-			conds = append(conds, sqlf.Sprintf("name NOT IN ('"+strings.Join(eventlogger.NonActiveUserEvents, "','")+"')"))
+			conds = append(conds, sqlf.Sprintf("event_logs.name NOT IN ('"+strings.Join(eventlogger.NonActiveUserEvents, "','")+"')"))
+		}
+		// NOTE: This is a hack which should be replaced when we have proper user types.
+		// However, for billing purposes and more accurate ping data, we need a way to exclude
+		// Sourcegraph (employee) admins when counting users. The following username patterns
+		// are used to filter out Sourcegraph admins:
+		//
+		// - managed-*
+		// - sourcegraph-management-*
+		// - sourcegraph-admin
+		//
+		// This may incur false positives, but we acknowledge this risk as we would prefer to
+		// undercount rather than overcount.
+		if opt.ExcludeSourcegraphAdmins {
+			conds = append(conds, sqlf.Sprintf("users.username NOT ILIKE 'managed-%%' AND users.username NOT ILIKE 'sourcegraph-management-%%' AND users.username != 'sourcegraph-admin'"))
 		}
 		if opt.EventFilters != nil {
 			if opt.EventFilters.ByEventNamePrefix != "" {
@@ -618,9 +634,10 @@ unique_users_by_dwm AS (
     ` + makeDateTruncExpression("day", "timestamp") + ` AS day_period,
 	` + makeDateTruncExpression("week", "timestamp") + ` AS week_period,
 	` + makeDateTruncExpression("month", "timestamp") + ` AS month_period,
-	user_id > 0 AS registered,
+	event_logs.user_id > 0 AS registered,
 	` + aggregatedUserIDQueryFragment + ` as aggregated_user_id
   FROM event_logs
+  LEFT OUTER JOIN users ON users.id = event_logs.user_id
   WHERE (%s)
   GROUP BY day_period, week_period, month_period, aggregated_user_id, registered
 ),
@@ -700,6 +717,7 @@ func (l *eventLogStore) countUniqueUsersBySQL(ctx context.Context, startDate, en
 	}
 	q := sqlf.Sprintf(`SELECT COUNT(DISTINCT `+userIDQueryFragment+`)
 		FROM event_logs
+		LEFT OUTER JOIN users ON users.id = event_logs.user_id
 		WHERE (DATE(TIMEZONE('UTC'::text, timestamp)) >= %s) AND (DATE(TIMEZONE('UTC'::text, timestamp)) <= %s) AND (%s)`, startDate, endDate, sqlf.Join(conds, ") AND ("))
 	r := l.QueryRow(ctx, q)
 	var count int
@@ -780,12 +798,15 @@ type SiteUsageOptions struct {
 	ExcludeSystemUsers bool
 	// Exclude events that don't meet the criteria of "active" usage of Sourcegraph. These are mostly actions taken by signed-out users.
 	ExcludeNonActiveUsers bool
+	// Exclude Sourcegraph (employee) admins.
+	ExcludeSourcegraphAdmins bool
 }
 
 func (l *eventLogStore) SiteUsageCurrentPeriods(ctx context.Context) (types.SiteUsageSummary, error) {
 	return l.siteUsageCurrentPeriods(ctx, time.Now().UTC(), &SiteUsageOptions{
-		ExcludeSystemUsers:    true,
-		ExcludeNonActiveUsers: true,
+		ExcludeSystemUsers:       true,
+		ExcludeNonActiveUsers:    true,
+		ExcludeSourcegraphAdmins: true,
 	})
 }
 
@@ -793,10 +814,24 @@ func (l *eventLogStore) siteUsageCurrentPeriods(ctx context.Context, now time.Ti
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt != nil {
 		if opt.ExcludeSystemUsers {
-			conds = append(conds, sqlf.Sprintf("user_id > 0 OR anonymous_user_id <> 'backend'"))
+			conds = append(conds, sqlf.Sprintf("event_logs.user_id > 0 OR event_logs.anonymous_user_id <> 'backend'"))
 		}
 		if opt.ExcludeNonActiveUsers {
-			conds = append(conds, sqlf.Sprintf("name NOT IN ('"+strings.Join(eventlogger.NonActiveUserEvents, "','")+"')"))
+			conds = append(conds, sqlf.Sprintf("event_logs.name NOT IN ('"+strings.Join(eventlogger.NonActiveUserEvents, "','")+"')"))
+		}
+		// NOTE: This is a hack which should be replaced when we have proper user types.
+		// However, for billing purposes and more accurate ping data, we need a way to exclude
+		// Sourcegraph (employee) admins when counting users. The following username patterns
+		// are used to filter out Sourcegraph admins:
+		//
+		// - managed-*
+		// - sourcegraph-management-*
+		// - sourcegraph-admin
+		//
+		// This may incur false positives, but we acknowledge this risk as we would prefer to
+		// undercount rather than overcount.
+		if opt.ExcludeSourcegraphAdmins {
+			conds = append(conds, sqlf.Sprintf("users.username NOT ILIKE 'managed-%%' AND users.username NOT ILIKE 'sourcegraph-management-%%' AND users.username != 'sourcegraph-admin'"))
 		}
 	}
 
@@ -852,6 +887,7 @@ FROM (
     ` + makeDateTruncExpression("week", "%s::timestamp") + ` as current_week,
     ` + makeDateTruncExpression("day", "%s::timestamp") + ` as current_day
   FROM event_logs
+  LEFT OUTER JOIN users ON users.id = event_logs.user_id
   WHERE (timestamp >= ` + makeDateTruncExpression("month", "%s::timestamp") + `) AND (%s)
 ) events
 
