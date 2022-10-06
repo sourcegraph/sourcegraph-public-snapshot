@@ -1,5 +1,3 @@
-/* eslint-disable react/forbid-elements */
-/* eslint-disable react/no-array-index-key */
 import React, { useState } from 'react'
 
 import { MockedResponse } from '@apollo/client/testing'
@@ -66,11 +64,14 @@ const InnerWrapper: React.FunctionComponent<{}> = () => {
     return (
         <>
             <ul>
-                {recentSearches?.map((recentSearch, index) => (
-                    <li key={index}>{recentSearch.query}</li>
+                {recentSearches?.map(recentSearch => (
+                    <>
+                        <li key={recentSearch.query}>{recentSearch.query}</li>
+                    </>
                 ))}
             </ul>
             <div data-testid="state">{state}</div>
+            {/* eslint-disable-next-line react/forbid-elements*/}
             <input
                 type="text"
                 data-testid="input"

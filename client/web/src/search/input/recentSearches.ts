@@ -91,7 +91,7 @@ export function searchHistorySource({
                             }
 
                             return {
-                                label: query,
+                                label: query.trim(),
                                 type: 'searchhistory',
                             }
                         }
@@ -110,7 +110,7 @@ export function searchHistorySource({
     }
 }
 
-// Returns all recent searches from temporary settings.
+// Returns all recent searches from temporary settings and a function to add a new search to the list.
 // If no recent searches exist, the temporary settings is initialized with
 // the user's recent searches from the event log.
 export function useRecentSearches(): {
@@ -123,9 +123,14 @@ export function useRecentSearches(): {
 
     // If recentSearches from temporary settings is empty, fetch recent searches from the event log
     // and populate temporary settings with that instead.
+    // This is a temporary solution to get users some starting data for this feature.
+    // Once this feature is enabled for a while we can remove this.
     const [loadFromEventLog] = useLazyQuery<SearchHistoryEventLogsQueryResult, SearchHistoryEventLogsQueryVariables>(
         SEARCH_HISTORY_EVENT_LOGS_QUERY,
         {
+            // Note: It's possible that we end up with less than MAX_RECENT_SEARCHES after removing duplicates.
+            // This should be fine, since this is meant to be a starting point
+            // for when the user first gets this feature.
             variables: { first: MAX_RECENT_SEARCHES },
         }
     )
@@ -155,9 +160,7 @@ export function useRecentSearches(): {
 
     // Adds a new search to the top of the recent searches list.
     // If the search is already in the recent searches list, it moves it to the top.
-
-    const [pendingAdditions, setPendingAdditions] = useState<RecentSearch[]>([])
-
+    // If the list is full, the oldest search is removed.
     const addOrMoveRecentSearchToTop = useCallback(
         (recentSearch: RecentSearch) => {
             setRecentSearches(recentSearches => {
@@ -173,6 +176,12 @@ export function useRecentSearches(): {
         [setRecentSearches]
     )
 
+    const [pendingAdditions, setPendingAdditions] = useState<RecentSearch[]>([])
+
+    // If the search is being added after the list is finished loading,
+    // add it immediately.
+    // If the search is being added before the list is finished loading,
+    // queue it to be added after loading is complete.
     const addRecentSearch = useCallback(
         (query: string) => {
             const recentSearch = { query, timestamp: new Date().toISOString() }
@@ -186,6 +195,7 @@ export function useRecentSearches(): {
         [addOrMoveRecentSearchToTop, state]
     )
 
+    // Process the queue of pending additions after the list is finished loading.
     useEffect(() => {
         if (state === 'success' && pendingAdditions.length > 0) {
             for (const pendingAddition of pendingAdditions) {
