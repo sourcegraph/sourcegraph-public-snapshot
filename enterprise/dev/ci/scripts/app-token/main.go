@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/x509"
 	"encoding/pem"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -16,15 +17,23 @@ import (
 )
 
 func main() {
-	appID := os.Getenv("GITHUB_APP_ID")
+	appID := flag.String("appid", os.Getenv("GITHUB_APP_ID"), "(required) github application id.")
+	keyPath := flag.String("keypath", os.Getenv("KEY_PATH"), "(required) path to private key file for github app.")
+	help := flag.Bool("help", false, "Show help.")
 
-	jwt := genJwtToken(appID)
+	flag.Parse()
+
+	if *help || len(*appID) == 0 || len(*keyPath) == 0 {
+		flag.PrintDefaults()
+		os.Exit(0)
+	}
+
+	jwt := genJwtToken(*appID, *keyPath)
 
 	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: jwt},
 	)
-
 	tc := oauth2.NewClient(ctx, ts)
 	ghc := github.NewClient(tc)
 
@@ -32,8 +41,8 @@ func main() {
 
 }
 
-func genJwtToken(appID string) string {
-	rawPem, err := ioutil.ReadFile("private.pem")
+func genJwtToken(appID string, keyPath string) string {
+	rawPem, err := ioutil.ReadFile(keyPath)
 	if err != nil {
 		log.Fatal(err)
 	}
