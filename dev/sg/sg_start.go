@@ -29,6 +29,8 @@ func init() {
 	})
 }
 
+const devPrivateDefaultBranch = "master"
+
 var (
 	debugStartServices cli.StringSlice
 	infoStartServices  cli.StringSlice
@@ -216,7 +218,7 @@ func startExec(ctx *cli.Context) error {
 
 		// dev-private exists, let's see if there are any changes
 		update := std.Out.Pending(output.Styled(output.StylePending, "Checking for dev-private changes..."))
-		shouldUpdate, err := shouldUpdateDevPrivate(ctx.Context, devPrivatePath)
+		shouldUpdate, err := shouldUpdateDevPrivate(ctx.Context, devPrivatePath, devPrivateDefaultBranch)
 		if shouldUpdate {
 			update.WriteLine(output.Line(output.EmojiInfo, output.StyleSuggestion, "We found some changes in dev-private that you're missing out on! If you want the new changes, 'cd ../dev-private' and then do a 'git stash' and a 'git pull'!"))
 		}
@@ -234,13 +236,13 @@ func startExec(ctx *cli.Context) error {
 	return startCommandSet(ctx.Context, set, config)
 }
 
-func shouldUpdateDevPrivate(ctx context.Context, path string) (bool, error) {
+func shouldUpdateDevPrivate(ctx context.Context, path, branch string) (bool, error) {
 	// git fetch so that we check whether there are any remote changes
-	if err := sgrun.Bash(ctx, "git fetch origin master").Dir(path).Run().Wait(); err != nil {
+	if err := sgrun.Bash(ctx, fmt.Sprintf("git fetch origin %s", branch)).Dir(path).Run().Wait(); err != nil {
 		return false, err
 	}
 	// Now we check if there are any changes. If the output is empty, we're not missing out on anything.
-	output, err := sgrun.Bash(ctx, "git diff --shortstat origin/HEAD").Dir(path).Run().String()
+	output, err := sgrun.Bash(ctx, fmt.Sprintf("git diff --shortstat origin/%s", branch)).Dir(path).Run().String()
 	if err != nil {
 		return false, err
 	}
