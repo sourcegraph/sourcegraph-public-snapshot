@@ -17,6 +17,7 @@ import { parseRepoURI } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner, Alert, Panel } from '@sourcegraph/wildcard'
 
 import { hierarchicalLocationViewHasResultContext } from '../TabbedPanelContent'
+
 import { FileLocations, FileLocationsError, FileLocationsNotFound } from './FileLocations'
 import { HierarchicalLocationsViewButton } from './HierarchicalLocationsViewButton'
 import { groupLocations } from './locations'
