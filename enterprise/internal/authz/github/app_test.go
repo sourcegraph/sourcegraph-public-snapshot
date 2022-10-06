@@ -82,6 +82,8 @@ func TestNewAppProvider(t *testing.T) {
 	baseURL, err := url.Parse(schema.DefaultGitHubURL)
 	require.NoError(t, err)
 
+	db := database.NewMockDB()
+	db.ExternalServicesFunc.SetDefaultReturn(database.NewMockExternalServiceStore())
 	t.Run("with non-nil service", func(t *testing.T) {
 		svc := &types.ExternalService{
 			ID:     1,
@@ -89,7 +91,7 @@ func TestNewAppProvider(t *testing.T) {
 			Config: extsvc.NewUnencryptedConfig(string(config)),
 		}
 
-		provider, err := newAppProvider(database.NewMockExternalServiceStore(), svc, "", baseURL, "1234", bogusKey, 1234, doer)
+		provider, err := newAppProvider(db, svc, "", baseURL, "1234", bogusKey, 1234, doer)
 		require.NoError(t, err)
 
 		cli, err := provider.client()
@@ -106,7 +108,7 @@ func TestNewAppProvider(t *testing.T) {
 		var svc *types.ExternalService
 
 		// just validate that a new provider can be created for validation if svc is nil
-		_, err = newAppProvider(database.NewMockExternalServiceStore(), svc, "", baseURL, "1234", bogusKey, 1234, doer)
+		_, err = newAppProvider(db, svc, "", baseURL, "1234", bogusKey, 1234, doer)
 		require.NoError(t, err)
 	})
 
