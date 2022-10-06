@@ -40,18 +40,25 @@ type service interface {
 }
 
 type Service struct {
-	store      store.Store
-	uploadSvc  UploadService
-	gitserver  GitserverClient
-	operations *operations
+	store          store.Store
+	uploadSvc      UploadService
+	gitserver      GitserverClient
+	operations     *operations
+	matcherMetrics *matcherMetrics
 }
 
-func newService(policiesStore store.Store, uploadSvc UploadService, gitserver GitserverClient, observationContext *observation.Context) *Service {
+func newService(
+	policiesStore store.Store,
+	uploadSvc UploadService,
+	gitserver GitserverClient,
+	observationContext *observation.Context,
+) *Service {
 	return &Service{
-		store:      policiesStore,
-		uploadSvc:  uploadSvc,
-		gitserver:  gitserver,
-		operations: newOperations(observationContext),
+		store:          policiesStore,
+		uploadSvc:      uploadSvc,
+		gitserver:      gitserver,
+		operations:     newOperations(observationContext),
+		matcherMetrics: newMetrics(observationContext),
 	}
 }
 
@@ -233,25 +240,6 @@ func (s *Service) GetPreviewGitObjectFilter(ctx context.Context, repositoryID in
 
 func (s *Service) GetUnsafeDB() database.DB {
 	return s.store.GetUnsafeDB()
-}
-
-func (s *Service) SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context, batchSize int) (configurationPolicies []types.ConfigurationPolicy, err error) {
-	ctx, _, endObservation := s.operations.selectPoliciesForRepositoryMembershipUpdate.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	configurationPolicies, err = s.store.SelectPoliciesForRepositoryMembershipUpdate(ctx, batchSize)
-	if err != nil {
-		return nil, err
-	}
-
-	return configurationPolicies, nil
-}
-
-func (s *Service) UpdateReposMatchingPatterns(ctx context.Context, patterns []string, policyID int, repositoryMatchLimit *int) (err error) {
-	ctx, _, endObservation := s.operations.updateReposMatchingPatterns.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	return s.store.UpdateReposMatchingPatterns(ctx, patterns, policyID, repositoryMatchLimit)
 }
 
 func (s *Service) getCommitsVisibleToUpload(ctx context.Context, upload types.Upload) (commits []string, err error) {

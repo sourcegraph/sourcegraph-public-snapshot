@@ -15,9 +15,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	autoindex "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql"
 	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
-	resolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/sharedresolvers"
+	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
 	uploads "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -139,8 +140,8 @@ func (r *RepositoryResolver) Description(ctx context.Context) (string, error) {
 }
 
 func (r *RepositoryResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		if err == backend.ErrMustBeSiteAdmin || err == backend.ErrNotAuthenticated {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		if err == auth.ErrMustBeSiteAdmin || err == auth.ErrNotAuthenticated {
 			return false, nil // not an error
 		}
 		return false, err
@@ -153,8 +154,8 @@ func (r *RepositoryResolver) CloneInProgress(ctx context.Context) (bool, error) 
 }
 
 func (r *RepositoryResolver) DiskSizeBytes(ctx context.Context) (*BigInt, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		if err == backend.ErrMustBeSiteAdmin || err == backend.ErrNotAuthenticated {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		if err == auth.ErrMustBeSiteAdmin || err == auth.ErrNotAuthenticated {
 			return nil, nil // not an error
 		}
 		return nil, err
@@ -194,7 +195,7 @@ func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitA
 		return nil, err
 	}
 
-	commitID, err := backend.NewRepos(r.logger, r.db).ResolveRev(ctx, repo, args.Rev)
+	commitID, err := backend.NewRepos(r.logger, r.db, gitserver.NewClient(r.db)).ResolveRev(ctx, repo, args.Rev)
 	if err != nil {
 		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			return nil, nil
@@ -242,13 +243,14 @@ func (r *RepositoryResolver) Language(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	commitID, err := backend.NewRepos(r.logger, r.db).ResolveRev(ctx, repo, "")
+	gsClient := gitserver.NewClient(r.db)
+	commitID, err := backend.NewRepos(r.logger, r.db, gsClient).ResolveRev(ctx, repo, "")
 	if err != nil {
 		// Comment: Should we return a nil error?
 		return "", err
 	}
 
-	inventory, err := backend.NewRepos(r.logger, r.db).GetInventory(ctx, repo, commitID, false)
+	inventory, err := backend.NewRepos(r.logger, r.db, gsClient).GetInventory(ctx, repo, commitID, false)
 	if err != nil {
 		return "", err
 	}
@@ -362,14 +364,14 @@ func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 	return r.err
 }
 
-func (r *RepositoryResolver) LSIFUploads(ctx context.Context, args *uploads.LSIFUploadsQueryArgs) (resolvers.LSIFUploadConnectionResolver, error) {
+func (r *RepositoryResolver) LSIFUploads(ctx context.Context, args *uploads.LSIFUploadsQueryArgs) (sharedresolvers.LSIFUploadConnectionResolver, error) {
 	return EnterpriseResolvers.codeIntelResolver.LSIFUploadsByRepo(ctx, &uploads.LSIFRepositoryUploadsQueryArgs{
 		LSIFUploadsQueryArgs: args,
 		RepositoryID:         r.ID(),
 	})
 }
 
-func (r *RepositoryResolver) LSIFIndexes(ctx context.Context, args *autoindex.LSIFIndexesQueryArgs) (resolvers.LSIFIndexConnectionResolver, error) {
+func (r *RepositoryResolver) LSIFIndexes(ctx context.Context, args *autoindex.LSIFIndexesQueryArgs) (sharedresolvers.LSIFIndexConnectionResolver, error) {
 	return EnterpriseResolvers.codeIntelResolver.LSIFIndexesByRepo(ctx, &autoindex.LSIFRepositoryIndexesQueryArgs{
 		LSIFIndexesQueryArgs: args,
 		RepositoryID:         r.ID(),
@@ -384,7 +386,7 @@ func (r *RepositoryResolver) CodeIntelligenceCommitGraph(ctx context.Context) (u
 	return EnterpriseResolvers.codeIntelResolver.CommitGraph(ctx, r.ID())
 }
 
-func (r *RepositoryResolver) CodeIntelSummary(ctx context.Context) (resolvers.CodeIntelRepositorySummaryResolver, error) {
+func (r *RepositoryResolver) CodeIntelSummary(ctx context.Context) (sharedresolvers.CodeIntelRepositorySummaryResolver, error) {
 	return EnterpriseResolvers.codeIntelResolver.RepositorySummary(ctx, r.ID())
 }
 
@@ -619,7 +621,7 @@ func (r *schemaResolver) AddRepoKeyValuePair(ctx context.Context, args struct {
 	Value *string
 },
 ) (*EmptyResponse, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return &EmptyResponse{}, err
 	}
 
@@ -637,7 +639,7 @@ func (r *schemaResolver) UpdateRepoKeyValuePair(ctx context.Context, args struct
 	Value *string
 },
 ) (*EmptyResponse, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return &EmptyResponse{}, err
 	}
 
@@ -655,7 +657,7 @@ func (r *schemaResolver) DeleteRepoKeyValuePair(ctx context.Context, args struct
 	Key  string
 },
 ) (*EmptyResponse, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return &EmptyResponse{}, err
 	}
 

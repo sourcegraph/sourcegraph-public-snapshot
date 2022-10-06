@@ -5,19 +5,10 @@ import (
 
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
-
-func scanPolicy(s dbutil.Scanner) (policy shared.Policy, err error) {
-	return policy, s.Scan(
-		&policy.ID,
-	)
-}
-
-var scanPolicies = basestore.NewSliceScanner(scanPolicy)
 
 // scanConfigurationPolicies scans a slice of configuration policies from the return value of `*Store.query`.
 var scanConfigurationPolicies = basestore.NewSliceScanner(scanConfigurationPolicy)

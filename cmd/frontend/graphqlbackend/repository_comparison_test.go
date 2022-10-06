@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -158,7 +157,7 @@ func TestRepositoryComparison(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		commitConnection := newComp.Commits(&graphqlutil.ConnectionArgs{})
+		commitConnection := newComp.Commits(&RepositoryComparisonCommitsArgs{})
 
 		nodes, err := commitConnection.Nodes(ctx)
 		if err != nil {
@@ -187,6 +186,36 @@ func TestRepositoryComparison(t *testing.T) {
 		}
 	})
 
+	t.Run("Commits with Path", func(t *testing.T) {
+		commits := []*gitdomain.Commit{
+			{ID: api.CommitID(wantBaseRevision)},
+		}
+
+		mockGSClient := gitserver.NewMockClient()
+		mockGSClient.CommitsFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, opts gitserver.CommitsOptions, _ authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error) {
+			if opts.Path == "" {
+				t.Fatalf("expected a path as part of commits args")
+			}
+			return commits, nil
+		})
+
+		newComp, err := NewRepositoryComparison(ctx, db, mockGSClient, repoResolver, input)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		testPath := "testpath"
+		commitConnection := newComp.Commits(&RepositoryComparisonCommitsArgs{Path: &testPath})
+
+		nodes, err := commitConnection.Nodes(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(nodes) != len(commits) {
+			t.Fatalf("wrong length of nodes: %d", len(nodes))
+		}
+	})
 	t.Run("FileDiffs", func(t *testing.T) {
 		t.Run("RawDiff", func(t *testing.T) {
 			diffConnection, err := comp.FileDiffs(ctx, &FileDiffsConnectionArgs{})

@@ -21,6 +21,11 @@ type passwordTest struct {
 	errorStr string
 }
 
+type addrTest struct {
+	addr string
+	pass bool
+}
+
 // setMockPasswordPolicyConfig helper for returning a customized mock config
 func setMockPasswordPolicyConfig(opts mockPolicyOpts) {
 	conf.Mock(&conf.Unified{
@@ -126,4 +131,25 @@ func TestPasswordPolicy(t *testing.T) {
 		password = "thisshouldnowpassaswell"
 		assert.Nil(t, ValidatePassword(password))
 	})
+}
+
+func TestAddrValidation(t *testing.T) {
+	var addrTests = []addrTest{
+		{"127/0.0.1", false},
+		{"-oFooBaz", false},
+		{"sourcegraph com", false},
+		{"127.0.0.1", true},
+		{"127.0.0.1:80", true},
+		{"127.0.0.1:foo", false},
+		{"sourcegraph.com", true},
+		{"sourcegraph.com:443", true},
+		{"sourcegraph.com:-baz", false},
+	}
+
+	t.Run("correctly validates addresses", func(t *testing.T) {
+		for _, a := range addrTests {
+			assert.True(t, ValidateRemoteAddr(a.addr) == a.pass)
+		}
+	})
+
 }

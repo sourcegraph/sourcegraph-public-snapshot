@@ -10,10 +10,10 @@ import (
 	"github.com/Masterminds/semver"
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
@@ -72,7 +72,7 @@ func (r *siteResolver) Alerts(ctx context.Context) ([]*Alert, error) {
 
 	args := AlertFuncArgs{
 		IsAuthenticated:     actor.FromContext(ctx).IsAuthenticated(),
-		IsSiteAdmin:         backend.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil,
+		IsSiteAdmin:         auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil,
 		ViewerFinalSettings: settings,
 	}
 

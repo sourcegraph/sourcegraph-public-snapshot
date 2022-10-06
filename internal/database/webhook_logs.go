@@ -67,7 +67,7 @@ func (s *webhookLogStore) Create(ctx context.Context, log *types.WebhookLog) err
 	)
 
 	row := s.QueryRow(ctx, q)
-	if err := s.scanWebhookLog(ctx, log, row); err != nil {
+	if err := s.scanWebhookLog(log, row); err != nil {
 		return errors.Wrap(err, "scanning webhook log")
 	}
 
@@ -83,7 +83,7 @@ func (s *webhookLogStore) GetByID(ctx context.Context, id int64) (*types.Webhook
 
 	row := s.QueryRow(ctx, q)
 	log := types.WebhookLog{}
-	if err := s.scanWebhookLog(ctx, &log, row); err != nil {
+	if err := s.scanWebhookLog(&log, row); err != nil {
 		return nil, errors.Wrap(err, "scanning webhook log")
 	}
 
@@ -177,7 +177,7 @@ func (s *webhookLogStore) List(ctx context.Context, opts WebhookLogListOpts) ([]
 	logs := []*types.WebhookLog{}
 	for rows.Next() {
 		log := types.WebhookLog{}
-		if err := s.scanWebhookLog(ctx, &log, rows); err != nil {
+		if err := s.scanWebhookLog(&log, rows); err != nil {
 			return nil, 0, err
 		}
 		logs = append(logs, &log)
@@ -276,7 +276,7 @@ WHERE
 	received_at <= %s
 `
 
-func (s *webhookLogStore) scanWebhookLog(ctx context.Context, log *types.WebhookLog, sc dbutil.Scanner) error {
+func (s *webhookLogStore) scanWebhookLog(log *types.WebhookLog, sc dbutil.Scanner) error {
 	var (
 		externalServiceID int64 = -1
 		request, response []byte
