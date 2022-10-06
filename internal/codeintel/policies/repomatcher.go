@@ -4,17 +4,19 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func (s *Service) NewRepoMatcher(interval time.Duration, configurationPolicyMembershipBatchSize int) goroutine.BackgroundRoutine {
+func (s *Service) NewRepositoryMatcher(interval time.Duration, configurationPolicyMembershipBatchSize int) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
-		return s.handleRepoMatcherBatch(ctx, configurationPolicyMembershipBatchSize)
+		return s.handleRepositoryMatcherBatch(ctx, configurationPolicyMembershipBatchSize)
 	}))
 }
 
-func (s *Service) handleRepoMatcherBatch(ctx context.Context, batchSize int) error {
+func (s *Service) handleRepositoryMatcherBatch(ctx context.Context, batchSize int) error {
 	policies, err := s.SelectPoliciesForRepositoryMembershipUpdate(ctx, batchSize)
 	if err != nil {
 		return err
@@ -42,4 +44,23 @@ func (s *Service) handleRepoMatcherBatch(ctx context.Context, batchSize int) err
 	}
 
 	return nil
+}
+
+func (s *Service) SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context, batchSize int) (configurationPolicies []types.ConfigurationPolicy, err error) {
+	ctx, _, endObservation := s.operations.selectPoliciesForRepositoryMembershipUpdate.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	configurationPolicies, err = s.store.SelectPoliciesForRepositoryMembershipUpdate(ctx, batchSize)
+	if err != nil {
+		return nil, err
+	}
+
+	return configurationPolicies, nil
+}
+
+func (s *Service) UpdateReposMatchingPatterns(ctx context.Context, patterns []string, policyID int, repositoryMatchLimit *int) (err error) {
+	ctx, _, endObservation := s.operations.updateReposMatchingPatterns.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.UpdateReposMatchingPatterns(ctx, patterns, policyID, repositoryMatchLimit)
 }

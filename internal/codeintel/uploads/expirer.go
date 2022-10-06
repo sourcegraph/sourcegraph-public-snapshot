@@ -4,16 +4,18 @@ import (
 	"context"
 	"time"
 
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
 
 	policiesEnterprise "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (s *Service) NewExpirer(
+func (s *Service) NewUploadExpirer(
 	interval time.Duration,
 	repositoryProcessDelay time.Duration,
 	repositoryBatchSize int,
@@ -23,7 +25,7 @@ func (s *Service) NewExpirer(
 	policyBatchSize int,
 ) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
-		return s.handleUploadExpirer(ctx, expirerConfig{
+		return s.handleExpiredUploadsBatch(ctx, expirerConfig{
 			repositoryProcessDelay: repositoryProcessDelay,
 			repositoryBatchSize:    repositoryBatchSize,
 			uploadProcessDelay:     uploadProcessDelay,
@@ -43,12 +45,12 @@ type expirerConfig struct {
 	policyBatchSize        int
 }
 
-// HandleUploadExpirer compares the age of upload records against the age of uploads
+// handleExpiredUploadsBatch compares the age of upload records against the age of uploads
 // protected by global and repository specific data retention policies.
 //
 // Uploads that are older than the protected retention age are marked as expired. Expired records with
 // no dependents will be removed by the expiredUploadDeleter.
-func (e *Service) handleUploadExpirer(ctx context.Context, cfg expirerConfig) (err error) {
+func (e *Service) handleExpiredUploadsBatch(ctx context.Context, cfg expirerConfig) (err error) {
 	// Get the batch of repositories that we'll handle in this invocation of the periodic goroutine. This
 	// set should contain repositories that have yet to be updated, or that have been updated least recently.
 	// This allows us to update every repository reliably, even if it takes a long time to process through
@@ -77,6 +79,18 @@ func (e *Service) handleUploadExpirer(ctx context.Context, cfg expirerConfig) (e
 	}
 
 	return err
+}
+
+func (s *Service) SetRepositoriesForRetentionScan(ctx context.Context, processDelay time.Duration, limit int) (_ []int, err error) {
+	ctx, _, endObservation := s.operations.setRepositoriesForRetentionScan.With(ctx, &err, observation.Args{
+		LogFields: []otlog.Field{
+			otlog.Int("processDelay in ms", int(processDelay.Milliseconds())),
+			otlog.Int("limit", limit),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.SetRepositoriesForRetentionScan(ctx, processDelay, limit)
 }
 
 func (e *Service) handleRepository(ctx context.Context, repositoryID int, cfg expirerConfig, now time.Time) error {
