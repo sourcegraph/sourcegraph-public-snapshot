@@ -172,7 +172,8 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 	if err != nil {
 		return nil, errors.Wrap(err, "get client")
 	}
-	client = client.WithToken(token)
+	oauthToken := &auth.OAuthBearerToken{Token: token}
+	client = client.WithAuthenticator(oauthToken)
 
 	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
 	// when appending the first 100 results to the slice.

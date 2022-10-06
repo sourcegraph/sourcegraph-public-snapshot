@@ -98,12 +98,12 @@ func (token *GitHubAppInstallationAuthenticator) Hash() string {
 }
 
 func (token *GitHubAppInstallationAuthenticator) NeedsRefresh() bool {
-    if token.Expiry != nil {
-        return time.Until(*token.Expiry) < 5*time.Minute
-    }
+	if token.Expiry != nil {
+		return time.Until(*token.Expiry) < 5*time.Minute
+	}
 
-    // If no expiry is set we default to False
-    return false
+	// If no expiry is set we default to False
+	return false
 }
 
 func (token *GitHubAppInstallationAuthenticator) Refresh() error {
