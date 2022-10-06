@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -802,7 +801,6 @@ type DataSeriesStore interface {
 	IncrementBackfillAttempts(ctx context.Context, series types.InsightSeries) error
 	GetScopedSearchSeriesNeedBackfill(ctx context.Context) ([]types.InsightSeries, error)
 	CompleteJustInTimeConversionAttempt(ctx context.Context, series types.InsightSeries) error
-	SetInsightSeriesRecordingTimes(ctx context.Context, recordingTimes []types.InsightSeriesRecordingTimes) error
 }
 
 type InsightMetadataStore interface {
@@ -956,63 +954,6 @@ func (s *InsightStore) UnfreezeGlobalInsights(ctx context.Context, count int) er
 func (s *InsightStore) SetSeriesBackfillComplete(ctx context.Context, seriesId string, timestamp time.Time) error {
 	return s.Exec(ctx, sqlf.Sprintf(setSeriesBackfillComplete, timestamp, seriesId))
 }
-
-func (s *InsightStore) SetInsightSeriesRecordingTimes(ctx context.Context, seriesRecordingTimes []types.InsightSeriesRecordingTimes) (err error) {
-	tx, err := s.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	inserter := batch.NewInserterWithConflict(ctx, tx.Handle(), "insight_series_recording_times", batch.MaxNumPostgresParameters, "ON CONFLICT DO NOTHING", "series_id", "recording_time")
-
-	for _, series := range seriesRecordingTimes {
-		seriesID := series.SeriesID
-		for _, recordTime := range series.RecordingTimes {
-			if err := inserter.Insert(
-				ctx,
-				seriesID,   // series_id
-				recordTime, // recording_time
-			); err != nil {
-				return errors.Wrap(err, "Insert")
-			}
-		}
-	}
-
-	if err := inserter.Flush(ctx); err != nil {
-		return errors.Wrap(err, "Flush")
-	}
-
-	return nil
-}
-
-//func (s *InsightStore) GetInsightSeriesRecordingTimes(ctx context.Context, seriesID string) (_ types.InsightSeriesRecordingTimes, err error) {
-//	tx, err := s.Transact(ctx)
-//	if err != nil {
-//		return types.InsightSeriesRecordingTimes{}, err
-//	}
-//	defer func() { err = tx.Done(err) }()
-//
-//	recordingTimes := []time.Time{}
-//	err = s.query(ctx, sqlf.Sprintf(getInsightSeriesRecordingTimesStr, seriesID), func(sc scanner) (err error) {
-//		var recordingTime time.Time
-//		err = sc.Scan(
-//			&recordingTime,
-//		)
-//		if err != nil {
-//			return err
-//		}
-//
-//		recordingTimes = append(recordingTimes, recordingTime)
-//
-//		return nil
-//	})
-//
-//	return types.InsightSeriesRecordingTimes{
-//		SeriesID:       seriesID,
-//		RecordingTimes: recordingTimes,
-//	}, nil
-//}
 
 const setSeriesStatusSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:SetSeriesStatus
@@ -1241,10 +1182,4 @@ SELECT unique_id FROM insight_view WHERE is_frozen = FALSE;
 const setSeriesBackfillComplete = `
 -- source: enterprise/internal/insights/store/insight_store.go:SetSeriesBackfillComplete
 update insight_series set backfill_completed_at = %s where series_id = %s;
-`
-
-const getInsightSeriesRecordingTimesStr = `
--- source: enterprise/internal/insights/store/store.go:GetInsightSeriesRecordingTimes
-SELECT recording_time FROM insight_series_recording_times
-WHERE series_id = %s;
 `

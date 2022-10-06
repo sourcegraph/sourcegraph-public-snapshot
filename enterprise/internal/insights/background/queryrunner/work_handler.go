@@ -2,6 +2,7 @@ package queryrunner
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -105,6 +106,8 @@ func (r *workHandler) Handle(ctx context.Context, logger log.Logger, record work
 	if !ok {
 		return errors.Newf("unable to handle record for series_id: %s and generation_method: %s", series.SeriesID, series.GenerationMethod)
 	}
+
+	fmt.Println("execute search")
 
 	recordings, err := executableHandler(ctx, job, series, recordTime)
 	if err != nil {

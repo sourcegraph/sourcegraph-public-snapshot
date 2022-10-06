@@ -2,6 +2,7 @@ package queryrunner
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
@@ -225,8 +226,30 @@ func (r *workHandler) persistRecordings(ctx context.Context, job *Job, series *t
 		// The purpose of the snapshot is for low fidelity but recently updated data points.
 		// We store one snapshot of an insight at any time, so we prune the table whenever adding a new series.
 		if err := tx.DeleteSnapshots(ctx, series); err != nil {
-			return err
+			return errors.Wrap(err, "DeleteSnapshots")
 		}
+	} else if job.RecordTime != nil && series.LastRecordedAt.IsZero() {
+		fmt.Println("$$$ saving recording times")
+		seriesRecordingTimes, err := tx.GetInsightSeriesRecordingTimes(ctx, series.SeriesID)
+		if err != nil {
+			return errors.Wrap(err, "GetInsightSeriesRecordingTimes")
+		}
+		recordingTimes := seriesRecordingTimes.RecordingTimes
+		var newRecordingTimes []time.Time
+		aYearAgo := job.RecordTime.AddDate(-1, 0, 0)
+		if len(recordingTimes) < 12 {
+			newRecordingTimes = append(recordingTimes, *job.RecordTime)
+		} else if len(recordingTimes) > 12 && recordingTimes[0].Before(aYearAgo) {
+			newRecordingTimes = append(recordingTimes[1:], *job.RecordTime)
+		} else if len(recordingTimes) > 12 && recordingTimes[0].After(aYearAgo) {
+			newRecordingTimes = append(recordingTimes, *job.RecordTime)
+		}
+		if len(newRecordingTimes) > 0 {
+			if err := tx.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{seriesRecordingTimes}); err != nil {
+				return errors.Wrap(err, "SetInsightSeriesRecordingTimes")
+			}
+		}
+		fmt.Println("end - success!")
 	}
 
 	// Newly queued queries should be scoped to correct repos however leaving filtering
@@ -240,6 +263,11 @@ func (r *workHandler) persistRecordings(ctx context.Context, job *Job, series *t
 		err = errors.Append(err, errors.Wrap(recordErr, "RecordSeriesPointsCapture"))
 	}
 	return err
+}
+
+func updateSeriesRecordingTimes(recordingTimes []time.Time, newTime time.Time) []time.Time {
+
+	return nil
 }
 
 func filterRecordingsBySeriesRepos(ctx context.Context, repoStore discovery.RepoStore, series *types.InsightSeries, recordings []store.RecordSeriesPointArgs) ([]store.RecordSeriesPointArgs, error) {

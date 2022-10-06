@@ -509,7 +509,7 @@ func (h *historicalEnqueuer) buildFrames(ctx context.Context, definitions []ityp
 		})
 	}
 	fmt.Println("$$$ SetInsightSeriesRecordingTimes - start")
-	if err := h.dataSeriesStore.SetInsightSeriesRecordingTimes(ctx, seriesRecordingTimes); err != nil {
+	if err := h.insightsStore.SetInsightSeriesRecordingTimes(ctx, seriesRecordingTimes); err != nil {
 		return errors.Wrap(err, "SetInsightSeriesRecordingTimes")
 	}
 	fmt.Println("$$$ SetInsightSeriesRecordingTimes - end")

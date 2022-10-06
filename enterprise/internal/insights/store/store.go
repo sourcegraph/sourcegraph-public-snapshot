@@ -25,6 +25,8 @@ type Interface interface {
 	SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]SeriesPoint, error)
 	RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointArgs) error
 	CountData(ctx context.Context, opts CountDataOpts) (int, error)
+	SetInsightSeriesRecordingTimes(ctx context.Context, recordingTimes []types.InsightSeriesRecordingTimes) error
+	GetInsightSeriesRecordingTimes(ctx context.Context, seriesID string) (types.InsightSeriesRecordingTimes, error)
 }
 
 var _ Interface = &Store{}
@@ -537,6 +539,63 @@ func (s *Store) RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointA
 	return nil
 }
 
+func (s *Store) SetInsightSeriesRecordingTimes(ctx context.Context, seriesRecordingTimes []types.InsightSeriesRecordingTimes) (err error) {
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	inserter := batch.NewInserterWithConflict(ctx, tx.Handle(), "insight_series_recording_times", batch.MaxNumPostgresParameters, "ON CONFLICT DO NOTHING", "series_id", "recording_time")
+
+	for _, series := range seriesRecordingTimes {
+		seriesID := series.SeriesID
+		for _, recordTime := range series.RecordingTimes {
+			if err := inserter.Insert(
+				ctx,
+				seriesID,   // series_id
+				recordTime, // recording_time
+			); err != nil {
+				return errors.Wrap(err, "Insert")
+			}
+		}
+	}
+
+	if err := inserter.Flush(ctx); err != nil {
+		return errors.Wrap(err, "Flush")
+	}
+
+	return nil
+}
+
+func (s *Store) GetInsightSeriesRecordingTimes(ctx context.Context, seriesID string) (_ types.InsightSeriesRecordingTimes, err error) {
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return types.InsightSeriesRecordingTimes{}, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	recordingTimes := []time.Time{}
+	err = s.query(ctx, sqlf.Sprintf(getInsightSeriesRecordingTimesStr, seriesID), func(sc scanner) (err error) {
+		var recordingTime time.Time
+		err = sc.Scan(
+			&recordingTime,
+		)
+		if err != nil {
+			return err
+		}
+
+		recordingTimes = append(recordingTimes, recordingTime)
+
+		return nil
+	})
+
+	return types.InsightSeriesRecordingTimes{
+		SeriesID:       seriesID,
+		RecordingTimes: recordingTimes,
+	}, nil
+}
+
 const upsertRepoNameFmtStr = `
 -- source: enterprise/internal/insights/store/store.go:RecordSeriesPoint
 WITH e AS(
@@ -548,6 +607,13 @@ WITH e AS(
 SELECT * FROM e
 UNION
 	SELECT id FROM repo_names WHERE name = %s;
+`
+
+const getInsightSeriesRecordingTimesStr = `
+-- source: enterprise/internal/insights/store/store.go:GetInsightSeriesRecordingTimes
+SELECT recording_time FROM insight_series_recording_times
+WHERE series_id = %s
+ORDER BY recording_time ASC;
 `
 
 func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
