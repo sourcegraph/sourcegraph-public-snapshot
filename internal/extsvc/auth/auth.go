@@ -27,6 +27,21 @@ type Authenticator interface {
 	Hash() string
 }
 
+type AuthenticatorWithRefresh interface {
+	// Must implement the base Authenticator interface
+	Authenticator
+
+	// ShouldRefresh returns true if the Authenticator is no longer valid and
+	// needs to be refreshed, such as checking if an OAuth token is close to
+	// expiry or already expired.
+	ShouldRefresh() bool
+
+	// Refresh refreshes the Authenticator. This should be an in-place mutation,
+	// and if any storage updates should happen after refreshing, that is done
+	// here as well.
+	Refresh() error
+}
+
 // AuthenticatorWithSSH wraps the Authenticator interface and augments it by
 // additional methods to authenticate over SSH with this credential, in addition
 // to the enclosed Authenticator. This can be used for a credential that needs

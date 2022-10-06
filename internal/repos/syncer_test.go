@@ -2494,6 +2494,9 @@ func testEnqueueWebhookBuildJob(s repos.Store) func(*testing.T) {
 		}})
 
 		token := os.Getenv("GITHUB_TOKEN")
+		if token == "" {
+			token = "test-token"
+		}
 
 		esStore := s.ExternalServiceStore()
 		repoStore := s.RepoStore()

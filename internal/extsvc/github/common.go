@@ -1505,12 +1505,20 @@ func newHttpResponseState(statusCode int, headers http.Header) *httpResponseStat
 	}
 }
 
-func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auth auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, httpClient httpcli.Doer, req *http.Request, result any) (responseState *httpResponseState, err error) {
+func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auther auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, httpClient httpcli.Doer, req *http.Request, result any) (responseState *httpResponseState, err error) {
 	req.URL.Path = path.Join(apiURL.Path, req.URL.Path)
 	req.URL = apiURL.ResolveReference(req.URL)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	if auth != nil {
-		if err := auth.Authenticate(req); err != nil {
+
+	var autherWithRefresh auth.AuthenticatorWithRefresh
+	if auther != nil {
+		var ok bool
+		autherWithRefresh, ok = auther.(auth.AuthenticatorWithRefresh)
+		// Check if we should pre-emptively refresh
+		if ok && autherWithRefresh.ShouldRefresh() {
+			autherWithRefresh.Refresh()
+		}
+		if err := auther.Authenticate(req); err != nil {
 			return nil, errors.Wrap(err, "authenticating request")
 		}
 	}

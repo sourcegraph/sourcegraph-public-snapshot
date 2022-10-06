@@ -116,6 +116,11 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 
 	ctx := context.Background()
 
+	token := os.Getenv("GITHUB_TOKEN")
+	if token == "" {
+		token = "test-token"
+	}
+
 	secret := "secret"
 	esStore := db.ExternalServices()
 	extSvc := &types.ExternalService{
@@ -123,7 +128,7 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 		DisplayName: "GitHub",
 		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
 			Url:      "https://github.com",
-			Token:    os.Getenv("GITHUB_TOKEN"),
+			Token:    token,
 			Repos:    []string{"sourcegraph/sourcegraph"},
 			Webhooks: []*schema.GitHubWebhook{{Org: "sourcegraph", Secret: secret}},
 		})),
@@ -131,7 +136,7 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 
 	err := esStore.Upsert(ctx, extSvc)
 	if err != nil {
-		t.Fatal(t)
+		t.Fatal(err)
 	}
 
 	hook := GitHubWebhook{
