@@ -5,6 +5,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/ranking"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/repoupdater"
@@ -19,6 +20,7 @@ type Services struct {
 	CodenavService      *codenav.Service
 	DependenciesService *dependencies.Service
 	PoliciesService     *policies.Service
+	RankingService      *ranking.Service
 	UploadsService      *uploads.Service
 }
 
@@ -40,16 +42,18 @@ var initServicesMemo = memo.NewMemoizedConstructorWithArg(func(dbs Databases) (S
 	repoUpdaterClient := repoupdater.New(scopedContext("repo-updater"))
 
 	uploadsSvc := uploads.GetService(db, codeIntelDB, gitserverClient)
-	codenavSvc := codenav.GetService(db, codeIntelDB, uploadsSvc, gitserverClient)
 	dependenciesSvc := dependencies.GetService(db, gitserverClient)
 	policiesSvc := policies.GetService(db, uploadsSvc, gitserverClient)
 	autoIndexingSvc := autoindexing.GetService(db, uploadsSvc, dependenciesSvc, policiesSvc, gitserverClient, repoUpdaterClient)
+	codenavSvc := codenav.GetService(db, codeIntelDB, uploadsSvc, gitserverClient)
+	rankingSvc := ranking.GetService(uploadsSvc)
 
 	return Services{
 		AutoIndexingService: autoIndexingSvc,
 		CodenavService:      codenavSvc,
 		DependenciesService: dependenciesSvc,
 		PoliciesService:     policiesSvc,
+		RankingService:      rankingSvc,
 		UploadsService:      uploadsSvc,
 	}, nil
 })
