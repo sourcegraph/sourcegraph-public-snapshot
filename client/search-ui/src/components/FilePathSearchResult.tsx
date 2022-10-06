@@ -15,7 +15,6 @@ export interface FilePathSearchResult {
     repoDisplayName: string
     onSelect: () => void
     containerClassName?: string
-    as?: React.ElementType
     index: number
 }
 
@@ -24,7 +23,6 @@ export const FilePathSearchResult: React.FunctionComponent<FilePathSearchResult>
     repoDisplayName,
     onSelect,
     containerClassName,
-    as,
     index,
 }) => {
     const repoAtRevisionURL = getRepositoryUrl(result.repository, result.branches)
@@ -55,7 +53,6 @@ export const FilePathSearchResult: React.FunctionComponent<FilePathSearchResult>
             repoName={result.repository}
             repoStars={result.repoStars}
             className={containerClassName}
-            as={as}
         >
             <div className={classNames(styles.searchResultMatch, 'p-2')}>
                 {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}

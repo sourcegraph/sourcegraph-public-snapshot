@@ -1,9 +1,6 @@
 import React, { useCallback } from 'react'
 
 import classNames from 'classnames'
-import AlphaSBoxIcon from 'mdi-react/AlphaSBoxIcon'
-import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
-import FileIcon from 'mdi-react/FileIcon'
 import { useLocation } from 'react-router'
 import { Observable } from 'rxjs'
 
@@ -27,9 +24,6 @@ import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import {
     AggregateStreamingSearchResults,
-    ContentMatch,
-    SymbolMatch,
-    PathMatch,
     SearchMatch,
     getMatchUrl,
     getRevision,
@@ -173,10 +167,9 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                     index={index}
                                     location={location}
                                     telemetryService={telemetryService}
-                                    icon={getFileMatchIcon(result)}
                                     result={result}
                                     onSelect={() => logSearchResultClicked(index, 'fileMatch')}
-                                    expanded={false}
+                                    defaultExpanded={false}
                                     showAllMatches={false}
                                     allExpanded={allExpanded}
                                     fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
@@ -296,15 +289,4 @@ function itemKey(item: SearchMatch): string {
         return `file:${getMatchUrl(item)}`
     }
     return getMatchUrl(item)
-}
-
-function getFileMatchIcon(result: ContentMatch | SymbolMatch | PathMatch): React.ComponentType<{ className?: string }> {
-    switch (result.type) {
-        case 'content':
-            return FileDocumentIcon
-        case 'symbol':
-            return AlphaSBoxIcon
-        case 'path':
-            return FileIcon
-    }
 }

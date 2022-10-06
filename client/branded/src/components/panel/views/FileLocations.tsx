@@ -188,9 +188,8 @@ export class FileLocations extends React.PureComponent<Props, State> {
             index={index}
             location={this.props.location}
             telemetryService={this.props.telemetryService}
-            expanded={true}
+            defaultExpanded={true}
             result={referencesToContentMatch(uri, locationsByURI.get(uri)!)}
-            icon={this.props.icon}
             onSelect={this.onSelect}
             showAllMatches={true}
             fetchHighlightedFileLineRanges={this.props.fetchHighlightedFileLineRanges}

@@ -1,5 +1,6 @@
-import React, { useMemo } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { Observable } from 'rxjs'
@@ -17,12 +18,12 @@ import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
 import { ContentMatch, getFileMatchUrl, getRepositoryUrl, getRevision } from '@sourcegraph/shared/src/search/stream'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Badge } from '@sourcegraph/wildcard'
+import { Icon, Badge } from '@sourcegraph/wildcard'
 
 import { FetchFileParameters } from './CodeExcerpt'
 import { FileMatchChildren } from './FileMatchChildren'
-import { LegacyResultContainerProps, LegacyResultContainer } from './LegacyResultContainer'
 import { RepoFileLink } from './RepoFileLink'
+import { ResultContainer } from './ResultContainer'
 
 import styles from './SearchResult.module.scss'
 
@@ -40,19 +41,14 @@ interface Props extends SettingsCascadeProps, TelemetryProps {
     repoDisplayName?: string
 
     /**
-     * The icon to show to the left of the title.
-     */
-    icon: React.ComponentType<{ className?: string }>
-
-    /**
      * Called when the file's search result is selected.
      */
     onSelect: () => void
 
     /**
-     * Whether this file should be rendered as expanded.
+     * Whether this file should be rendered as expanded by default.
      */
-    expanded: boolean
+    defaultExpanded: boolean
 
     /**
      * Whether or not to show all matches for this file, or only a subset.
@@ -77,7 +73,6 @@ interface Props extends SettingsCascadeProps, TelemetryProps {
 
     hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
 
-    as?: React.ElementType
     index: number
 }
 
@@ -86,46 +81,50 @@ const sumHighlightRanges = (count: number, item: MatchItem): number => count + i
 const BY_LINE_RANKING = 'by-line-number'
 const DEFAULT_CONTEXT = 1
 
-type CommonResultContainerProps = Omit<
-    LegacyResultContainerProps,
-    | 'description'
-    | 'collapsedChildren'
-    | 'expandedChildren'
-    | 'collapsible'
-    | 'collapseLabel'
-    | 'expandLabel'
-    | 'matchCountLabel'
->
-
 // This is a search result for types file (content), path, or symbol.
-export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
-    const result = props.result
+export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    containerClassName,
+    result,
+    settingsCascade,
+    location,
+    index,
+    repoDisplayName,
+    defaultExpanded,
+    allExpanded,
+    showAllMatches,
+    openInNewTab,
+    extensionsController,
+    hoverifier,
+    telemetryService,
+    fetchHighlightedFileLineRanges,
+    onSelect,
+}) => {
     const repoAtRevisionURL = getRepositoryUrl(result.repository, result.branches)
     const revisionDisplayName = getRevision(result.branches, result.commit)
-    const settings = props.settingsCascade.final
 
     const ranking = useMemo(() => {
+        const settings = settingsCascade.final
         if (!isErrorLike(settings) && settings?.experimentalFeatures?.clientSearchResultRanking === BY_LINE_RANKING) {
             return new LineRanking(5)
         }
         return new ZoektRanking(3)
-    }, [settings])
+    }, [settingsCascade])
 
     // The number of lines of context to show before and after each match.
     const context = useMemo(() => {
-        if (props.location?.pathname === '/search') {
+        if (location?.pathname === '/search') {
             // Check if search.contextLines is configured in settings.
             const contextLinesSetting =
-                isSettingsValid(props.settingsCascade) &&
-                props.settingsCascade.final &&
-                (props.settingsCascade.final['search.contextLines'] as number | undefined)
+                isSettingsValid(settingsCascade) &&
+                settingsCascade.final &&
+                (settingsCascade.final['search.contextLines'] as number | undefined)
 
             if (typeof contextLinesSetting === 'number' && contextLinesSetting >= 0) {
                 return contextLinesSetting
             }
         }
         return DEFAULT_CONTEXT
-    }, [props.location, props.settingsCascade])
+    }, [location, settingsCascade])
 
     const items: MatchItem[] = useMemo(
         () =>
@@ -142,6 +141,36 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
                 : [],
         [result]
     )
+
+    const expandedMatchGroups = useMemo(() => ranking.expandedResults(items, context), [items, context, ranking])
+    const collapsedMatchGroups = useMemo(() => ranking.collapsedResults(items, context), [items, context, ranking])
+    const collapsedMatchCount = collapsedMatchGroups.matches.length
+
+    const highlightRangesCount = useMemo(() => items.reduce(sumHighlightRanges, 0), [items])
+    const collapsedHighlightRangesCount = useMemo(() => collapsedMatchGroups.matches.reduce(sumHighlightRanges, 0), [
+        collapsedMatchGroups,
+    ])
+
+    const hiddenMatchesCount = highlightRangesCount - collapsedHighlightRangesCount
+    const collapsible = !showAllMatches && items.length > collapsedMatchCount
+
+    const [expanded, setExpanded] = useState(allExpanded || defaultExpanded)
+    useEffect(() => setExpanded(allExpanded || defaultExpanded), [allExpanded, defaultExpanded])
+
+    const rootRef = useRef<HTMLDivElement>(null)
+    const toggle = useCallback((): void => {
+        if (collapsible) {
+            setExpanded(expanded => !expanded)
+        }
+
+        // Scroll back to top of result when collapsing
+        if (expanded) {
+            setTimeout(() => {
+                const reducedMotion = !window.matchMedia('(prefers-reduced-motion: no-preference)').matches
+                rootRef.current?.scrollIntoView({ block: 'nearest', behavior: reducedMotion ? 'auto' : 'smooth' })
+            }, 0)
+        }
+    }, [collapsible, expanded])
 
     const description =
         items.length > 0 ? (
@@ -161,74 +190,63 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
             </>
         ) : undefined
 
-    const expandedMatchGroups = useMemo(() => ranking.expandedResults(items, context), [items, context, ranking])
-    const collapsedMatchGroups = useMemo(() => ranking.collapsedResults(items, context), [items, context, ranking])
-    const collapsedMatchCount = collapsedMatchGroups.matches.length
-
-    const highlightRangesCount = useMemo(() => items.reduce(sumHighlightRanges, 0), [items])
-    const collapsedHighlightRangesCount = useMemo(() => collapsedMatchGroups.matches.reduce(sumHighlightRanges, 0), [
-        collapsedMatchGroups,
-    ])
-
-    const matchCount = highlightRangesCount
-    const matchCountLabel = matchCount ? `${matchCount} ${pluralize('match', matchCount, 'matches')}` : ''
-
-    const expandedChildren = <FileMatchChildren {...props} result={result} {...expandedMatchGroups} />
-
-    const commonContainerProps: CommonResultContainerProps = {
-        index: props.index,
-        defaultExpanded: props.expanded,
-        icon: props.icon,
-        title: (
+    const title = (
+        <>
             <RepoFileLink
                 repoName={result.repository}
                 repoURL={repoAtRevisionURL}
                 filePath={result.path}
-                pathMatchRanges={'pathMatches' in result ? result.pathMatches : []}
+                pathMatchRanges={result.pathMatches ?? []}
                 fileURL={getFileMatchUrl(result)}
                 repoDisplayName={
-                    props.repoDisplayName
-                        ? `${props.repoDisplayName}${revisionDisplayName ? `@${revisionDisplayName}` : ''}`
+                    repoDisplayName
+                        ? `${repoDisplayName}${revisionDisplayName ? `@${revisionDisplayName}` : ''}`
                         : undefined
                 }
                 className={classNames(styles.titleInner, styles.mutedRepoFileLink)}
             />
-        ),
-        allExpanded: props.allExpanded,
-        repoName: result.repository,
-        repoStars: result.repoStars,
-        repoLastFetched: result.repoLastFetched,
-        onResultClicked: props.onSelect,
-        className: props.containerClassName,
-        resultType: result.type,
-    }
+            {description && <span className={classNames('ml-2', styles.headerDescription)}>{description}</span>}
+        </>
+    )
 
-    let containerProps: LegacyResultContainerProps
-
-    if (props.showAllMatches) {
-        containerProps = {
-            ...commonContainerProps,
-            collapsible: false,
-            description,
-            expandedChildren,
-            matchCountLabel,
-        }
-    } else {
-        const length = highlightRangesCount - collapsedHighlightRangesCount
-        containerProps = {
-            ...commonContainerProps,
-            collapsible: items.length > collapsedMatchCount,
-            description,
-            collapsedChildren: <FileMatchChildren {...props} result={result} {...collapsedMatchGroups} />,
-            expandedChildren,
-            collapseLabel: 'Show less',
-            expandLabel: `Show ${length} more ${pluralize('match', length, 'matches')}`,
-            matchCountLabel,
-            as: props.as,
-        }
-    }
-
-    return <LegacyResultContainer {...containerProps} titleClassName="test-search-result-label" />
+    return (
+        <ResultContainer
+            index={index}
+            title={title}
+            resultType={result.type}
+            onResultClicked={onSelect}
+            repoName={result.repository}
+            repoStars={result.repoStars}
+            className={containerClassName}
+            ref={rootRef}
+        >
+            <FileMatchChildren
+                result={result}
+                grouped={expanded ? expandedMatchGroups.grouped : collapsedMatchGroups.grouped}
+                fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                settingsCascade={settingsCascade}
+                telemetryService={telemetryService}
+                openInNewTab={openInNewTab}
+                extensionsController={extensionsController}
+                hoverifier={hoverifier}
+            />
+            {collapsible && (
+                <button
+                    type="button"
+                    className={classNames(styles.toggleMatchesButton, expanded && styles.toggleMatchesButtonExpanded)}
+                    onClick={toggle}
+                    data-testid="toggle-matches-container"
+                >
+                    <Icon aria-hidden={true} svgPath={expanded ? mdiChevronUp : mdiChevronDown} />
+                    <span className={styles.toggleMatchesButtonText}>
+                        {expanded
+                            ? 'Show less'
+                            : `Show ${hiddenMatchesCount} more ${pluralize('match', hiddenMatchesCount, 'matches')}`}
+                    </span>
+                </button>
+            )}
+        </ResultContainer>
+    )
 }
 
 function aggregateBadges(items: MatchItem[]): AggregableBadge[] {
