@@ -113,23 +113,21 @@ func (s *securityEventLogsStore) InsertList(ctx context.Context, events []*Secur
 
 	if _, err := s.Handle().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 		return errors.Wrap(err, "INSERT")
-	} else {
-		if auditLogEnabled() {
-			for _, event := range events {
-				audit.Log(ctx, s.logger, audit.Record{
-					Entity: "security events",
-					Action: string(event.Name),
-					Fields: []log.Field{
-						log.Object("event",
-							log.String("URL", event.URL),
-							log.String("source", event.Source),
-							log.String("argument", event.parseArgument()),
-							log.String("version", version.Version()),
-							log.String("timestamp", event.Timestamp.UTC().String()),
-						),
-					},
-				})
-			}
+	} else if auditLogEnabled() {
+		for _, event := range events {
+			audit.Log(ctx, s.logger, audit.Record{
+				Entity: "security events",
+				Action: string(event.Name),
+				Fields: []log.Field{
+					log.Object("event",
+						log.String("URL", event.URL),
+						log.String("source", event.Source),
+						log.String("argument", event.parseArgument()),
+						log.String("version", version.Version()),
+						log.String("timestamp", event.Timestamp.UTC().String()),
+					),
+				},
+			})
 		}
 	}
 	return nil

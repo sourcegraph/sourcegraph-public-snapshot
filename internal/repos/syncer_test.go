@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos/webhookworker"
@@ -1660,6 +1661,9 @@ func testUserAddedRepos(store repos.Store) func(*testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		ctx = actor.WithActor(ctx, &actor.Actor{
+			UID: userID,
+		})
 
 		userService := &types.ExternalService{
 			Kind:            extsvc.KindGitHub,
