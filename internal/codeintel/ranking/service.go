@@ -35,3 +35,11 @@ func (s *Service) GetRepoRank(ctx context.Context, repoName api.RepoName) (_ flo
 	// TODO
 	return 0, errors.New("codeintel.ranking.service.GetRepoRank unimplemented")
 }
+
+func (s *Service) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ map[string]float64, err error) {
+	_, _, endObservation := s.operations.getDocumentRanks.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	// TODO
+	return nil, errors.New("codeintel.ranking.service.GetDocumentRanks unimplemented")
+}
