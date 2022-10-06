@@ -3,7 +3,6 @@ import { createBrowserHistory } from 'history'
 import FileIcon from 'mdi-react/FileIcon'
 import sinon from 'sinon'
 
-import { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
@@ -14,7 +13,7 @@ import {
 } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import '@sourcegraph/shared/dev/mockReactVisibilitySensor'
 
-import { FileSearchResult, limitGroup } from './FileSearchResult'
+import { FileSearchResult } from './FileSearchResult'
 
 describe('FileSearchResult', () => {
     afterAll(cleanup)
@@ -75,167 +74,5 @@ describe('FileSearchResult', () => {
         )
         const tableRows = container.querySelectorAll('[data-testid="code-excerpt"] tr')
         expect(tableRows.length).toBe(7)
-    })
-})
-
-describe('limitGroup', () => {
-    it('truncates a group', () => {
-        const group: MatchGroup = {
-            blobLines: ['line0', 'line1', 'line2'],
-            matches: [
-                {
-                    line: 0,
-                    character: 0,
-                    highlightLength: 1,
-                },
-                {
-                    line: 2,
-                    character: 0,
-                    highlightLength: 1,
-                },
-            ],
-            position: {
-                line: 1,
-                character: 1,
-            },
-            startLine: 0,
-            endLine: 3,
-        }
-
-        const expected: MatchGroup = {
-            blobLines: ['line0', 'line1'],
-            matches: [
-                {
-                    line: 0,
-                    character: 0,
-                    highlightLength: 1,
-                },
-            ],
-            position: {
-                line: 1,
-                character: 1,
-            },
-            startLine: 0,
-            endLine: 2,
-        }
-        const limitedGroup = limitGroup(group, 1)
-        expect(limitedGroup).toStrictEqual(expected)
-    })
-
-    it('preserves a group that does not need limited', () => {
-        const group: MatchGroup = {
-            blobLines: ['line0', 'line1', 'line2'],
-            matches: [
-                {
-                    line: 0,
-                    character: 0,
-                    highlightLength: 1,
-                },
-            ],
-            position: {
-                line: 1,
-                character: 1,
-            },
-            startLine: 0,
-            endLine: 3,
-        }
-        const limitedGroup = limitGroup(group, 10)
-        expect(limitedGroup).toStrictEqual(group)
-    })
-
-    it('truncates a group, but saves a match if it is in the context line', () => {
-        const group: MatchGroup = {
-            blobLines: ['line0', 'line1', 'line2'],
-            matches: [
-                {
-                    line: 0,
-                    character: 0,
-                    highlightLength: 1,
-                },
-                {
-                    line: 1,
-                    character: 0,
-                    highlightLength: 1,
-                },
-            ],
-            position: {
-                line: 1,
-                character: 1,
-            },
-            startLine: 0,
-            endLine: 3,
-        }
-
-        const expected: MatchGroup = {
-            blobLines: ['line0', 'line1'],
-            matches: [
-                {
-                    line: 0,
-                    character: 0,
-                    highlightLength: 1,
-                },
-                {
-                    line: 1,
-                    character: 0,
-                    highlightLength: 1,
-                },
-            ],
-            position: {
-                line: 1,
-                character: 1,
-            },
-            startLine: 0,
-            endLine: 2,
-        }
-        const limitedGroup = limitGroup(group, 1)
-        expect(limitedGroup).toStrictEqual(expected)
-    })
-
-    it('truncates a group, but saves a match if it is on the last line', () => {
-        const group: MatchGroup = {
-            blobLines: ['line0', 'line1', 'line2'],
-            matches: [
-                {
-                    line: 0,
-                    character: 0,
-                    highlightLength: 1,
-                },
-                {
-                    line: 0,
-                    character: 2,
-                    highlightLength: 3,
-                },
-            ],
-            position: {
-                line: 1,
-                character: 1,
-            },
-            startLine: 0,
-            endLine: 3,
-        }
-
-        const expected: MatchGroup = {
-            blobLines: ['line0', 'line1'],
-            matches: [
-                {
-                    line: 0,
-                    character: 0,
-                    highlightLength: 1,
-                },
-                {
-                    line: 0,
-                    character: 2,
-                    highlightLength: 3,
-                },
-            ],
-            position: {
-                line: 1,
-                character: 1,
-            },
-            startLine: 0,
-            endLine: 2,
-        }
-        const limitedGroup = limitGroup(group, 1)
-        expect(limitedGroup).toStrictEqual(expected)
     })
 })

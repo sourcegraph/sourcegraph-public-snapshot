@@ -10,7 +10,7 @@ import { Hoverifier } from '@sourcegraph/codeintellify'
 import { isErrorLike, pluralize } from '@sourcegraph/common'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { LineRanking } from '@sourcegraph/shared/src/components/ranking/LineRanking'
-import { MatchGroup, MatchItem } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
+import { MatchItem } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 import { ZoektRanking } from '@sourcegraph/shared/src/components/ranking/ZoektRanking'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
@@ -205,74 +205,7 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
 
     let containerProps: LegacyResultContainerProps
 
-    if (result.type === 'content' && result.hunks) {
-        // We should only get here if the new streamed highlight format is sent
-        const grouped: MatchGroup[] =
-            result.hunks?.map(hunk => ({
-                blobLines: hunk.content.html?.split(/\r?\n/),
-                matches: hunk.matches.map(match => ({
-                    line: match.start.line,
-                    character: match.start.column,
-                    highlightLength: match.end.column - match.start.column,
-                })),
-                startLine: hunk.lineStart,
-                endLine: hunk.lineStart + hunk.lineCount,
-                position: {
-                    line: hunk.matches[0].start.line + hunk.lineStart + 1,
-                    character: hunk.matches[0].start.column + 1,
-                },
-            })) || []
-
-        const matchCount = grouped.reduce((previous, group) => previous + group.matches.length, 0)
-        const matchCountLabel = `${matchCount} ${pluralize('match', matchCount, 'matches')}`
-
-        const { limitedGrouped, limitedMatchCount } = grouped.reduce(
-            (previous, group) => {
-                const remaining = collapsedMatchCount - previous.limitedMatchCount
-                if (remaining <= 0) {
-                    return previous
-                }
-
-                if (group.matches.length <= remaining) {
-                    // We have room for the whole group
-                    previous.limitedGrouped.push(group)
-                    previous.limitedMatchCount += group.matches.length
-                    return previous
-                }
-
-                const limitedGroup = limitGroup(group, remaining)
-                previous.limitedGrouped.push(limitedGroup)
-                previous.limitedMatchCount += limitedGroup.matches.length
-                return previous
-            },
-            { limitedGrouped: [] as MatchGroup[], limitedMatchCount: 0 }
-        )
-
-        const collapsedChildren = <FileMatchChildren {...props} result={result} grouped={limitedGrouped} />
-        const expandedChildren = <FileMatchChildren {...props} result={result} grouped={grouped} />
-
-        if (props.showAllMatches) {
-            containerProps = {
-                ...commonContainerProps,
-                collapsible: false,
-                description: undefined, // TODO we need badges for the description
-                collapsedChildren,
-                expandedChildren,
-                matchCountLabel,
-            }
-        } else {
-            const hideCount = matchCount - limitedMatchCount
-            containerProps = {
-                ...commonContainerProps,
-                collapsible: limitedMatchCount < matchCount,
-                collapsedChildren,
-                expandedChildren,
-                collapseLabel: 'Show less',
-                expandLabel: `Show ${hideCount} more ${pluralize('match', hideCount, 'matches')}`,
-                matchCountLabel,
-            }
-        }
-    } else if (props.showAllMatches) {
+    if (props.showAllMatches) {
         containerProps = {
             ...commonContainerProps,
             collapsible: false,
@@ -305,39 +238,4 @@ function aggregateBadges(items: MatchItem[]): AggregableBadge[] {
     }
 
     return [...aggregatedBadges.values()].sort((a, b) => a.text.localeCompare(b.text))
-}
-
-export function limitGroup(group: MatchGroup, limit: number): MatchGroup {
-    if (limit < 1 || group.matches.length === 0) {
-        throw new Error('cannot limit a group to less than one match')
-    }
-
-    if (group.matches.length <= limit) {
-        return group
-    }
-
-    // Do a somewhat deep copy of the group so we can mutate it
-    const partialGroup: MatchGroup = {
-        blobLines: [...(group.blobLines || [])],
-        matches: [...group.matches],
-        position: { ...group.position },
-        startLine: group.startLine,
-        endLine: group.endLine,
-    }
-
-    partialGroup.matches = partialGroup.matches.slice(0, limit)
-
-    // Add matches on the same line and next line (context line) as the limited match
-    const [lastMatch] = partialGroup.matches.slice(-1)
-    for (const match of group.matches.slice(limit, undefined)) {
-        if (match.line <= lastMatch.line + 1) {
-            // include an extra context line
-            partialGroup.matches.push(match)
-            continue
-        }
-        break
-    }
-    partialGroup.endLine = lastMatch.line + 2 // include an extra context line
-    partialGroup.blobLines = partialGroup.blobLines?.slice(0, partialGroup.endLine - partialGroup.startLine)
-    return partialGroup
 }
