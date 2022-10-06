@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/url"
 
 	"github.com/sourcegraph/log"
 
@@ -146,14 +145,4 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 		// Nothing to redact for now. We want to add secrets here once implemented.
 		RedactedValues: map[string]string{},
 	}, nil
-}
-
-func makeURL(base, password string) (string, error) {
-	u, err := url.Parse(base)
-	if err != nil {
-		return "", err
-	}
-
-	u.User = url.UserPassword("sourcegraph", password)
-	return u.String(), nil
 }

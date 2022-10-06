@@ -401,10 +401,8 @@ func TestRedirectTreeOrBlob(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			gitserver.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
-				return test.mockStat, nil
-			}
-			t.Cleanup(gitserver.ResetMocks)
+			gsClient := gitserver.NewMockClient()
+			gsClient.StatFunc.SetDefaultReturn(test.mockStat, nil)
 
 			w := httptest.NewRecorder()
 			r, err := http.NewRequest("GET", test.path, nil)
@@ -412,7 +410,7 @@ func TestRedirectTreeOrBlob(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			handled, err := redirectTreeOrBlob(test.route, test.path, test.common, w, r, database.NewMockDB())
+			handled, err := redirectTreeOrBlob(test.route, test.path, test.common, w, r, database.NewMockDB(), gsClient)
 			if err != nil {
 				t.Fatal(err)
 			}

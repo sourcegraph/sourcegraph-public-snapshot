@@ -16,10 +16,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -58,6 +61,8 @@ type service interface {
 	WorkerutilStore() dbworkerstore.Store
 	DependencySyncStore() dbworkerstore.Store
 	DependencyIndexingStore() dbworkerstore.Store
+	NewIndexResetter(interval time.Duration) *dbworker.Resetter
+	NewDependencyIndexResetter(interval time.Duration) *dbworker.Resetter
 	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error)
 
 	ListFiles(ctx context.Context, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error)
@@ -76,17 +81,32 @@ type Service struct {
 	dependencySyncStore     dbworkerstore.Store
 	dependencyIndexingStore dbworkerstore.Store
 	uploadSvc               shared.UploadService
+	depsSvc                 DependenciesService
+	policiesSvc             PoliciesService
+	repoStore               ReposStore
+	gitserverRepoStore      GitserverRepoStore
+	externalServiceStore    ExternalServiceStore
+	policyMatcher           PolicyMatcher
 	gitserverClient         shared.GitserverClient
 	symbolsClient           *symbols.Client
 	repoUpdater             shared.RepoUpdaterClient
 	inferenceService        shared.InferenceService
 	logger                  log.Logger
 	operations              *operations
+	metrics                 *resetterMetrics
+	depencencySyncMetrics   workerutil.WorkerMetrics
+	depencencyIndexMetrics  workerutil.WorkerMetrics
 }
 
 func newService(
 	store store.Store,
 	uploadSvc shared.UploadService,
+	dependenciesSvc DependenciesService,
+	policiesSvc PoliciesService,
+	repoStore ReposStore,
+	gitserverRepoStore GitserverRepoStore,
+	externalServiceStore ExternalServiceStore,
+	policyMatcher PolicyMatcher,
 	gitserver shared.GitserverClient,
 	symbolsClient *symbols.Client,
 	repoUpdater shared.RepoUpdaterClient,
@@ -99,12 +119,21 @@ func newService(
 		dependencySyncStore:     store.WorkerutilDependencySyncStore(observationContext),
 		dependencyIndexingStore: store.WorkerutilDependencyIndexStore(observationContext),
 		uploadSvc:               uploadSvc,
+		depsSvc:                 dependenciesSvc,
+		policiesSvc:             policiesSvc,
+		repoStore:               repoStore,
+		gitserverRepoStore:      gitserverRepoStore,
+		externalServiceStore:    externalServiceStore,
+		policyMatcher:           policyMatcher,
 		gitserverClient:         gitserver,
 		symbolsClient:           symbolsClient,
 		repoUpdater:             repoUpdater,
 		inferenceService:        inferenceSvc,
 		logger:                  observationContext.Logger,
 		operations:              newOperations(observationContext),
+		metrics:                 newMetrics(observationContext),
+		depencencySyncMetrics:   workerutil.NewMetrics(observationContext, "codeintel_dependency_index_processor"),
+		depencencyIndexMetrics:  workerutil.NewMetrics(observationContext, "codeintel_dependency_index_queueing"),
 	}
 }
 
@@ -443,6 +472,7 @@ func (s *Service) queueIndexForRepositoryAndCommit(ctx context.Context, reposito
 }
 
 var overrideScript = os.Getenv("SRC_CODEINTEL_INFERENCE_OVERRIDE_SCRIPT")
+var maximumIndexJobsPerInferredConfiguration = env.MustGetInt("PRECISE_CODE_INTEL_AUTO_INDEX_MAXIMUM_INDEX_JOBS_PER_INFERRED_CONFIGURATION", 25, "Repositories with a number of inferred auto-index jobs exceeding this threshold will not be auto-indexed.")
 
 // inferIndexJobsFromRepositoryStructure collects the result of  InferIndexJobs over all registered recognizers.
 func (s *Service) inferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]config.IndexJob, error) {

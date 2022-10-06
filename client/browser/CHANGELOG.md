@@ -13,6 +13,8 @@ All notable changes to Sourcegraph [Browser Extensions](./README.md) are documen
 
 ## Unreleased
 
+- Updated the info text when accessing an unindexed repository [pull/42509](https://github.com/sourcegraph/sourcegraph/pull/42509)
+
 ## Chrome & Firefox v22.9.27.1330, Safari v1.16
 
 - Remove tracking parameters from all shareable URLs [pull/42022](https://github.com/sourcegraph/sourcegraph/pull/42022)

@@ -17,11 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type Handler struct {
-	svc        *uploads.Service
-	operations *operations
-}
-
 var revhashPattern = lazyregexp.New(`^[a-z0-9]{40}$`)
 
 func newHandler(

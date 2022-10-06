@@ -13,6 +13,7 @@ import (
 	uploads "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/http/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/uploadhandler"
@@ -42,7 +43,7 @@ func GetHandler(svc *uploads.Service, db database.DB, uploadStore uploadstore.St
 		uploadHandlerOperations := uploadhandler.NewOperations("codeintel", observationContext)
 
 		userStore := db.Users()
-		repoStore := backend.NewRepos(logger, db)
+		repoStore := backend.NewRepos(logger, db, gitserver.NewClient(db))
 
 		// Construct base handler, used in internal routes and as internal handler wrapped
 		// in the auth middleware defined on the next few lines
