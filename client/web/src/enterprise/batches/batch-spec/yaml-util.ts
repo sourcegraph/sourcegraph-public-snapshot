@@ -441,19 +441,20 @@ export const insertFieldIntoLibraryItem = (
     const finalValue = quotable ? quoteYAMLString(value) : value
 
     if (commentExistingValue) {
-        let shouldAppendNewLine = false
+        /**
+         * We get a slice of the spec containing the fields we want to replace. By doing this we can have a copy of the old value.
+         * We then split by new line so we can check each line and comment it out, we want to also make sure we don't comment out 
+         * existing comments, so we check if each line starts with "#".
+         */
         const existingValueArray = librarySpec
             .slice(fieldMapping.value.startPosition, fieldMapping.value.endPosition)
             .split('\n')
             .map(line => (line === '' || line.startsWith('#')) ? line : `# ${line}`)
 
         existingValue = existingValueArray.join('\n')
+        // If the existing value contains a trailing new line, we also want to add that in.
         if (existingValueArray.at(-1) === '') {
             existingValue = existingValue.trim()
-            shouldAppendNewLine = true
-        }
-
-        if (shouldAppendNewLine) {
             existingValue = existingValue + '\n'
         }
     }
