@@ -76,14 +76,6 @@ func newService(
 	}
 }
 
-// NOTE: Used by autoindexing (for some reason?)
-func (s *Service) GetDirtyRepositories(ctx context.Context) (_ map[int]int, err error) {
-	ctx, _, endObservation := s.operations.getDirtyRepositories.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	return s.store.GetDirtyRepositories(ctx)
-}
-
 func (s *Service) GetCommitsVisibleToUpload(ctx context.Context, uploadID, limit int, token *string) (_ []string, nextToken *string, err error) {
 	ctx, _, endObservation := s.operations.getCommitsVisibleToUpload.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
@@ -119,6 +111,14 @@ func (s *Service) GetRepositoriesForIndexScan(ctx context.Context, table, column
 	defer endObservation(1, observation.Args{})
 
 	return s.store.GetRepositoriesForIndexScan(ctx, table, column, processDelay, allowGlobalPolicies, repositoryMatchLimit, limit, now)
+}
+
+// NOTE: Used by autoindexing (for some reason?)
+func (s *Service) GetDirtyRepositories(ctx context.Context) (_ map[int]int, err error) {
+	ctx, _, endObservation := s.operations.getDirtyRepositories.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.GetDirtyRepositories(ctx)
 }
 
 func (s *Service) GetUploads(ctx context.Context, opts types.GetUploadsOptions) (uploads []types.Upload, totalCount int, err error) {
