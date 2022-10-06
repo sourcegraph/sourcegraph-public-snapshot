@@ -3,7 +3,7 @@ package sharedresolvers
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
@@ -53,8 +53,8 @@ func (r *executionLogEntryResolver) DurationMilliseconds() *int32 {
 
 func (r *executionLogEntryResolver) Out(ctx context.Context) (string, error) {
 	// 🚨 SECURITY: Only site admins can view executor log contents.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.svc.GetUnsafeDB()); err != nil {
-		if err != backend.ErrMustBeSiteAdmin {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.svc.GetUnsafeDB()); err != nil {
+		if err != auth.ErrMustBeSiteAdmin {
 			return "", err
 		}
 

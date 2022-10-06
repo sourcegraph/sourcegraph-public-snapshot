@@ -1,9 +1,8 @@
-package backend
+package auth
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -13,17 +12,13 @@ import (
 var ErrNotAuthenticated = errors.New("not authenticated")
 
 // CheckOrgAccessOrSiteAdmin returns an error if:
-// (1) if we are on Cloud instance and the user is not a member of the organization
-// (2) if we are NOT on Cloud and
-//
-//	(a) the user is not a member of the organization
-//	(b) the user is not a site admin
+// (1) the user is not a member of the organization
+// (2) the user is not a site admin
 //
 // It is used when an action on an org can only be performed by the
-// organization's members, (or site-admins - not on Cloud).
+// organization's members, or site-admins.
 func CheckOrgAccessOrSiteAdmin(ctx context.Context, db database.DB, orgID int32) error {
-	allowAdmin := !envvar.SourcegraphDotComMode()
-	return checkOrgAccess(ctx, db, orgID, allowAdmin)
+	return checkOrgAccess(ctx, db, orgID, true)
 }
 
 // CheckOrgAccess returns an error if the user is not a member of the
@@ -36,7 +31,7 @@ func CheckOrgAccess(ctx context.Context, db database.DB, orgID int32) error {
 }
 
 // checkOrgAccess is a helper method used above which allows optionally allowing
-// site admins to access all organisations.
+// site admins to access all organizations.
 func checkOrgAccess(ctx context.Context, db database.DB, orgID int32, allowAdmin bool) error {
 	if actor.FromContext(ctx).IsInternal() {
 		return nil

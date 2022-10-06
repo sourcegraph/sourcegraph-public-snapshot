@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -78,7 +79,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 			if err = backend.CheckOrgExternalServices(ctx, r.db, namespaceOrgID); err != nil {
 				return nil, err
 			}
-			if err = backend.CheckOrgAccess(ctx, r.db, namespaceOrgID); err != nil {
+			if err = auth.CheckOrgAccess(ctx, r.db, namespaceOrgID); err != nil {
 				err = errors.New("the authenticated user does not belong to the organization requested")
 				return nil, err
 			}
@@ -92,8 +93,8 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 			}
 		}
 
-	} else if backend.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
-		err = backend.ErrMustBeSiteAdmin
+	} else if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
+		err = auth.ErrMustBeSiteAdmin
 		return nil, err
 	}
 

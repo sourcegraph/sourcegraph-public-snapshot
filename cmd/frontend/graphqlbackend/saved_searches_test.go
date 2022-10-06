@@ -9,9 +9,9 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -299,7 +299,7 @@ func TestUpdateSavedSearchPermissions(t *testing.T) {
 	}, {
 		execUser: user1,
 		ssUserID: &user2.ID,
-		errIs:    &backend.InsufficientAuthorizationError{},
+		errIs:    &auth.InsufficientAuthorizationError{},
 	}, {
 		execUser: user1,
 		ssOrgID:  &org1.ID,
@@ -307,7 +307,7 @@ func TestUpdateSavedSearchPermissions(t *testing.T) {
 	}, {
 		execUser: user1,
 		ssOrgID:  &org2.ID,
-		errIs:    backend.ErrNotAnOrgMember,
+		errIs:    auth.ErrNotAnOrgMember,
 	}, {
 		execUser: admin,
 		ssOrgID:  &user1.ID,

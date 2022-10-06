@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -41,7 +42,7 @@ func TestAddExternalService(t *testing.T) {
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 			result, err := newSchemaResolver(db).AddExternalService(ctx, &addExternalServiceArgs{})
-			if want := backend.ErrMustBeSiteAdmin; err != want {
+			if want := auth.ErrMustBeSiteAdmin; err != want {
 				t.Errorf("err: want %q but got %q", want, err)
 			}
 			if result != nil {

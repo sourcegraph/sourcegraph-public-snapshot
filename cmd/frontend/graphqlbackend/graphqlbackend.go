@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -614,7 +615,7 @@ func (r *schemaResolver) RecloneRepository(ctx context.Context, args *struct {
 	}
 
 	// 🚨 SECURITY: Only site admins can reclone repositories.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -639,7 +640,7 @@ func (r *schemaResolver) DeleteRepositoryFromDisk(ctx context.Context, args *str
 		return nil, err
 	}
 	// 🚨 SECURITY: Only site admins can delete repositories from disk.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -773,13 +774,13 @@ func (r *schemaResolver) AffiliatedRepositories(ctx context.Context, args *struc
 	}
 	if userID > 0 {
 		// 🚨 SECURITY: Make sure the user is the same user being requested
-		if err := backend.CheckSameUser(ctx, userID); err != nil {
+		if err := auth.CheckSameUser(ctx, userID); err != nil {
 			return nil, err
 		}
 	}
 	if orgID > 0 {
 		// 🚨 SECURITY: Make sure the user can access the organization
-		if err := backend.CheckOrgAccess(ctx, r.db, orgID); err != nil {
+		if err := auth.CheckOrgAccess(ctx, r.db, orgID); err != nil {
 			return nil, err
 		}
 	}
