@@ -380,8 +380,6 @@ func editGitHubAppExternalServiceConfigToken(
 	cli httpcli.Doer,
 	db database.DB,
 ) (string, error) {
-	logger := log.Scoped("editGitHubAppExternalServiceConfigToken", "updates the 'token' field of the given external service")
-
 	baseURL, err := url.Parse(gjson.Get(rawConfig, "url").String())
 	if err != nil {
 		return "", errors.Wrap(err, "parse base URL")
@@ -406,24 +404,23 @@ func editGitHubAppExternalServiceConfigToken(
 		return "", errors.Wrap(err, "no site-level GitHub App config found")
 	}
 
-	auther, err := auth.NewGitHubAppAuthenticator(appID, pkey)
-	if err != nil {
-		return "", errors.Wrap(err, "new authenticator with GitHub App")
-	}
-
-	rawConfig, err = svc.Config.Decrypt(ctx)
-	if err != nil {
-		return "", nil
-	}
 	var c schema.GitHubConnection
 	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return "", nil
 	}
 
-	client := github.NewV3Client(logger, svc.URN(), apiURL, auther, cli)
+	appAuther, err := auth.NewGitHubAppAuthenticator(appID, pkey)
+	if err != nil {
+		return "", errors.Wrap(err, "new authenticator with GitHub App")
+	}
+
+	appClient := github.NewV3Client(
+		log.Scoped("app", "github client for github app").
+			With(log.String("appID", appID)),
+		svc.URN(), apiURL, appAuther, cli)
 
 	externalServiceStore := db.ExternalServices()
-	token, err := repos.GetOrRenewGitHubAppInstallationAccessToken(ctx, log.Scoped("GetOrRenewGitHubAppInstallationAccessToken", ""), externalServiceStore, svc, client, installationID)
+	token, err := appClient.CreateAppInstallationAccessToken(ctx, installationID)
 	if err != nil {
 		return "", errors.Wrap(err, "get or renew GitHub App installation access token")
 	}
@@ -431,10 +428,15 @@ func editGitHubAppExternalServiceConfigToken(
 	// NOTE: Use `json.Marshal` breaks the actual external service config that fails
 	// validation with missing "repos" property when no repository has been selected,
 	// due to generated JSON tag of ",omitempty".
-	config, err := jsonc.Edit(rawConfig, token, "token")
+	config, err := jsonc.Edit(rawConfig, token.Token, "token")
 	if err != nil {
 		return "", errors.Wrap(err, "edit token")
 	}
+	externalServiceStore.Update(ctx, conf.Get().AuthProviders, svc.ID,
+		&database.ExternalServiceUpdate{
+			Config:         &config,
+			TokenExpiresAt: token.ExpiresAt,
+		})
 	return config, nil
 }
 
