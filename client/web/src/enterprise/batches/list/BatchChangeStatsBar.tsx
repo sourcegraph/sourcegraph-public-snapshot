@@ -1,13 +1,11 @@
 import React from 'react'
 
 import { mdiInformationOutline } from '@mdi/js'
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useQuery } from '@sourcegraph/http-client'
 import { Icon, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
 
-import { HeroPage } from '../../../components/HeroPage'
 import { GlobalChangesetsStatsResult, GlobalChangesetsStatsVariables } from '../../../graphql-operations'
 import { DEFAULT_MINS_SAVED_PER_CHANGESET } from '../../../site-admin/analytics/AnalyticsBatchChangesPage'
 import { ChangesetStatusClosed, ChangesetStatusOpen } from '../detail/changesets/ChangesetStatusCell'
@@ -37,7 +35,7 @@ export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildre
         return <ErrorAlert error={error} />
     }
     if (!data) {
-        return <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+        return null
     }
 
     const numMinPerItemSaved: number =
