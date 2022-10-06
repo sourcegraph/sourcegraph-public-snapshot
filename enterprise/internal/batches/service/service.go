@@ -477,11 +477,6 @@ type createBatchSpecForExecutionOpts struct {
 // transaction, possibly creating ChangesetSpecs if the spec contains
 // importChangesets statements, and finally creating a BatchSpecResolutionJob.
 func (s *Service) createBatchSpecForExecution(ctx context.Context, tx *store.Store, opts createBatchSpecForExecutionOpts) error {
-	// Temporarily prevent mounts for server-side processing.
-	if hasMount(opts.spec) {
-		return errors.New("mounts are not allowed for server-side processing")
-	}
-
 	// The global env is always mocked to be empty for executors, so we just
 	// want to throw a validation error here for now.
 	var errs error
@@ -509,15 +504,6 @@ func (s *Service) createBatchSpecForExecution(ctx context.Context, tx *store.Sto
 		BatchSpecID: opts.spec.ID,
 		InitiatorID: opts.spec.UserID,
 	})
-}
-
-func hasMount(spec *btypes.BatchSpec) bool {
-	for _, step := range spec.Spec.Steps {
-		if len(step.Mount) > 0 {
-			return true
-		}
-	}
-	return false
 }
 
 type ErrBatchSpecResolutionErrored struct {
