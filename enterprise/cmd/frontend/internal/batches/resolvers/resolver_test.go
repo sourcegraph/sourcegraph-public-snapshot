@@ -2472,75 +2472,93 @@ query($includeLocallyExecutedSpecs: Boolean!) {
 
 func stringPtr(s string) *string { return &s }
 
+func TestRestrictions(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	logger := logtest.Scoped(t)
 
-// func TestRestrictions(t *testing.T) {
-// 	if testing.Short() {
-// 		t.Skip()
-// 	}
-// 	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-// 	ctx := context.Background()
-// 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	bstore := store.New(db, &observation.TestContext, nil)
+	repoStore := database.ReposWith(logger, bstore)
+	esStore := database.ExternalServicesWith(logger, bstore)
 
-// 	bstore := store.New(db, &observation.TestContext, nil)
-// 	repoStore := database.ReposWith(logger, bstore)
-// 	esStore := database.ExternalServicesWith(logger, bstore)
+	s, err := newSchema(db, &Resolver{store: bstore})
+	if err != nil {
+		t.Fatal(err)
+	}
 
-// 	repo := newGitHubTestRepo("github.com/sourcegraph/batch-spec-test", newGitHubExternalService(t, esStore))
-// 	if err := repoStore.Create(ctx, repo); err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	repoID := graphqlbackend.MarshalRepositoryID(repo.ID)
+	orgname := "test-org"
+	userID := bt.CreateTestUser(t, db, false).ID
+	user2ID := bt.CreateTestUser(t, db, false).ID
+	// adminID := bt.CreateTestUser(t, db, true).ID
+	orgID := bt.CreateTestOrg(t, db, orgname, userID).ID
 
-// 	orgname := "test-org"
-// 	userID := bt.CreateTestUser(t, db, false).ID
-// 	adminID := bt.CreateTestUser(t, db, true).ID
-// 	orgID := bt.CreateTestOrg(t, db, orgname, userID).ID
+	spec, err := btypes.NewBatchSpecFromRaw(bt.TestRawBatchSpec)
+	if err != nil {
+		t.Fatal(err)
+	}
+	spec.UserID = userID
+	spec.NamespaceOrgID = orgID
+	if err := bstore.CreateBatchSpec(ctx, spec); err != nil {
+		t.Fatal(err)
+	}
 
-// 	spec, err := btypes.NewBatchSpecFromRaw(bt.TestRawBatchSpec)
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	spec.UserID = userID
-// 	spec.NamespaceOrgID = orgID
-// 	if err := bstore.CreateBatchSpec(ctx, spec); err != nil {
-// 		t.Fatal(err)
-// 	}
+	apiID := string(marshalBatchSpecRandID(spec.RandID))
 
-// 	apiID := string(marshalBatchSpecRandID(spec.RandID))
-// 	userAPIID := string(graphqlbackend.MarshalUserID(userID))
-// 	orgAPIID := string(graphqlbackend.MarshalOrgID(orgID))
+	var response struct{ Node apitest.BatchSpec }
 
-// 	var unmarshaled any
-// 	err = json.Unmarshal([]byte(spec.RawSpec), &unmarshaled)
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}}
+	userActorCtx := actor.WithActor(ctx, actor.FromUser(user2ID))
+	input := map[string]any{"batchSpec": apiID}
 
-// 	fragment u on User { id, databaseID }
-// 	fragment o on Org  { id, name }
+	errs := apitest.Exec(userActorCtx, t, s, input, &response, queryBatchSpecDetails)
 
-// `query($batchSpec: ID!) {
-//   node(id: $batchSpec) {
-//     __typename
+	fmt.Printf("response id: %v\n\n", response.Node.ID)
+	fmt.Printf("errors: %v\n\n", errs)
+	if haveID, wantID := response.Node.ID, nil; haveID != wantID {
+		t.Fatalf("IDs didn't match")
 
-//     ... on BatchSpec {
-//       id
-//       originalInput
-//       parsedInput
+	// user2ActorCtx := actor.WithActor(ctx, actor.FromUser(user2ID))
+	// input = map[string]any{"batchSpec": apiID}
+	// errs := apitest.Exec(userActorCtx, t, s, input, &response, queryBatchSpecDetails)
+	// if haveID := response.Node.ID; wantID := nil; haveID !== wantID {
+	// 	t.Fatalf("IDs didn't match")
 
-//       creator { ...u }
-//       namespace {
-//         ... on User { ...u }
-//         ... on Org  { ...o }
-//       }
+	// userActorCtx := actor.WithActor(ctx, actor.FromUser(user2ID))
+	// input := map[string]any{"batchSpec": apiID}
+	// errs := apitest.Exec(userActorCtx, t, s, input, &response, queryBatchSpecDetails)
 
-//      viewerCanAdminister
-//           }
-//         }
-//       }
+	fmt.Printf("response id: %v\n\n", response.Node.ID)
+	fmt.Printf("errors: %v\n\n", errs)
+	if haveID := response.Node.ID; wantID := nil; haveID !== wantID {
+		t.Fatalf("IDs didn't match")
+	}
+	t.Fatal("not finished!")
+}
 
-// `
+const queryBatchSpecDetails = `
+	fragment u on User { id, databaseID }
+	fragment o on Org  { id, name }
 
-// var response struct{ Node apitest.Node }
-// 	errs := apitest.Exec(actorCtx, t, s, input, &response, queryBatchSpecById)
+query($batchSpec: ID!) {
+  node(id: $batchSpec) {
+    __typename
+
+    ... on BatchSpec {
+      id
+      originalInput
+      parsedInput
+
+      creator { ...u }
+      namespace {
+        ... on User { ...u }
+        ... on Org  { ...o }
+      }
+
+     viewerCanAdminister
+		}
+	}
+}
+`
