@@ -711,7 +711,7 @@ func (s *GitHubSource) listPublic(ctx context.Context, results chan *githubResul
 		}
 		s.logger.Debug("github sync public", log.Int("repos", len(repos)), log.Error(err))
 		for _, r := range repos {
-		  _, isArchived := archivedRepos[r.ID]
+			_, isArchived := archivedRepos[r.ID]
 			r.IsArchived = isArchived
 			if err := ctx.Err(); err != nil {
 				results <- &githubResult{err: err}
