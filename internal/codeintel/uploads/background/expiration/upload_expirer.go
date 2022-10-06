@@ -1,31 +1,63 @@
-package expiration
+package uploads
 
 import (
 	"context"
 	"time"
 
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
 
 	policiesEnterprise "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// HandleUploadExpirer compares the age of upload records against the age of uploads
+func (s *Service) NewUploadExpirer(
+	interval time.Duration,
+	repositoryProcessDelay time.Duration,
+	repositoryBatchSize int,
+	uploadProcessDelay time.Duration,
+	uploadBatchSize int,
+	commitBatchSize int,
+	policyBatchSize int,
+) goroutine.BackgroundRoutine {
+	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
+		return s.handleExpiredUploadsBatch(ctx, expirerConfig{
+			repositoryProcessDelay: repositoryProcessDelay,
+			repositoryBatchSize:    repositoryBatchSize,
+			uploadProcessDelay:     uploadProcessDelay,
+			uploadBatchSize:        uploadBatchSize,
+			commitBatchSize:        commitBatchSize,
+			policyBatchSize:        policyBatchSize,
+		})
+	}))
+}
+
+type expirerConfig struct {
+	repositoryProcessDelay time.Duration
+	repositoryBatchSize    int
+	uploadProcessDelay     time.Duration
+	uploadBatchSize        int
+	commitBatchSize        int
+	policyBatchSize        int
+}
+
+// handleExpiredUploadsBatch compares the age of upload records against the age of uploads
 // protected by global and repository specific data retention policies.
 //
 // Uploads that are older than the protected retention age are marked as expired. Expired records with
 // no dependents will be removed by the expiredUploadDeleter.
-func (e *expirer) HandleUploadExpirer(ctx context.Context) (err error) {
+func (e *Service) handleExpiredUploadsBatch(ctx context.Context, cfg expirerConfig) (err error) {
 	// Get the batch of repositories that we'll handle in this invocation of the periodic goroutine. This
 	// set should contain repositories that have yet to be updated, or that have been updated least recently.
 	// This allows us to update every repository reliably, even if it takes a long time to process through
 	// the backlog. Note that this set of repositories require a fresh commit graph, so we're not trying to
 	// process records that have been uploaded but the commits from which they are visible have yet to be
 	// determined (and appearing as if they are visible to no commit).
-	repositories, err := e.uploadSvc.SetRepositoriesForRetentionScan(ctx, ConfigInst.RepositoryProcessDelay, ConfigInst.RepositoryBatchSize)
+	repositories, err := e.SetRepositoriesForRetentionScan(ctx, cfg.repositoryProcessDelay, cfg.repositoryBatchSize)
 	if err != nil {
 		return errors.Wrap(err, "uploadSvc.SelectRepositoriesForRetentionScan")
 	}
@@ -37,7 +69,7 @@ func (e *expirer) HandleUploadExpirer(ctx context.Context) (err error) {
 	now := timeutil.Now()
 
 	for _, repositoryID := range repositories {
-		if repositoryErr := e.handleRepository(ctx, repositoryID, now); repositoryErr != nil {
+		if repositoryErr := e.handleRepository(ctx, repositoryID, cfg, now); repositoryErr != nil {
 			if err == nil {
 				err = repositoryErr
 			} else {
@@ -49,19 +81,26 @@ func (e *expirer) HandleUploadExpirer(ctx context.Context) (err error) {
 	return err
 }
 
-// func (e *expirer) HandleError(err error) {
-// 	e.metrics.numErrors.Inc()
-// 	log15.Error("Failed to expire old codeintel records", "error", err)
-// }
+func (s *Service) SetRepositoriesForRetentionScan(ctx context.Context, processDelay time.Duration, limit int) (_ []int, err error) {
+	ctx, _, endObservation := s.operations.setRepositoriesForRetentionScan.With(ctx, &err, observation.Args{
+		LogFields: []otlog.Field{
+			otlog.Int("processDelay in ms", int(processDelay.Milliseconds())),
+			otlog.Int("limit", limit),
+		},
+	})
+	defer endObservation(1, observation.Args{})
 
-func (e *expirer) handleRepository(ctx context.Context, repositoryID int, now time.Time) error {
-	e.metrics.numRepositoriesScanned.Inc()
+	return s.store.SetRepositoriesForRetentionScan(ctx, processDelay, limit)
+}
+
+func (e *Service) handleRepository(ctx context.Context, repositoryID int, cfg expirerConfig, now time.Time) error {
+	e.expirationMetrics.numRepositoriesScanned.Inc()
 
 	// Build a map from commits to the set of policies that affect them. Note that this map should
 	// never be empty as we have multiple protected data retention policies on the global scope so
 	// that all data visible from a tag or branch tip is protected for at least a short amount of
 	// time after upload.
-	commitMap, err := e.buildCommitMap(ctx, repositoryID, now)
+	commitMap, err := e.buildCommitMap(ctx, repositoryID, cfg, now)
 	if err != nil {
 		return err
 	}
@@ -74,7 +113,7 @@ func (e *expirer) handleRepository(ctx context.Context, repositoryID int, now ti
 	// upload process delay is shorter than the time it takes to process one batch of uploads. This
 	// is obviously a mis-configuration, but one we can make a bit less catastrophic by not updating
 	// this value in the loop.
-	lastRetentionScanBefore := now.Add(-ConfigInst.UploadProcessDelay)
+	lastRetentionScanBefore := now.Add(-cfg.uploadProcessDelay)
 
 	for {
 		// Each record pulled back by this query will either have its expired flag or its last
@@ -87,12 +126,12 @@ func (e *expirer) handleRepository(ctx context.Context, repositoryID int, now ti
 		// out new uploads that would happen to be visible to no commits since they were never
 		// installed into the commit graph.
 
-		uploads, _, err := e.uploadSvc.GetUploads(ctx, types.GetUploadsOptions{
+		uploads, _, err := e.GetUploads(ctx, types.GetUploadsOptions{
 			State:                   "completed",
 			RepositoryID:            repositoryID,
 			AllowExpired:            false,
 			OldestFirst:             true,
-			Limit:                   ConfigInst.UploadBatchSize,
+			Limit:                   cfg.uploadBatchSize,
 			LastRetentionScanBefore: &lastRetentionScanBefore,
 			InCommitGraph:           true,
 		})
@@ -100,7 +139,7 @@ func (e *expirer) handleRepository(ctx context.Context, repositoryID int, now ti
 			return err
 		}
 
-		if err := e.handleUploads(ctx, commitMap, uploads, now); err != nil {
+		if err := e.handleUploads(ctx, commitMap, uploads, cfg, now); err != nil {
 			// Note that we collect errors in the lop of the handleUploads call, but we will still terminate
 			// this loop on any non-nil error from that function. This is required to prevent us from pullling
 			// back the same set of failing records from the database in a tight loop.
@@ -111,7 +150,7 @@ func (e *expirer) handleRepository(ctx context.Context, repositoryID int, now ti
 
 // buildCommitMap will iterate the complete set of configuration policies that apply to a particular
 // repository and build a map from commits to the policies that apply to them.
-func (e *expirer) buildCommitMap(ctx context.Context, repositoryID int, now time.Time) (map[string][]policiesEnterprise.PolicyMatch, error) {
+func (e *Service) buildCommitMap(ctx context.Context, repositoryID int, cfg expirerConfig, now time.Time) (map[string][]policiesEnterprise.PolicyMatch, error) {
 	var (
 		offset   int
 		policies []types.ConfigurationPolicy
@@ -122,7 +161,7 @@ func (e *expirer) buildCommitMap(ctx context.Context, repositoryID int, now time
 		policyBatch, totalCount, err := e.policySvc.GetConfigurationPolicies(ctx, types.GetConfigurationPoliciesOptions{
 			RepositoryID:     repositoryID,
 			ForDataRetention: true,
-			Limit:            ConfigInst.PolicyBatchSize,
+			Limit:            cfg.policyBatchSize,
 			Offset:           offset,
 		})
 		if err != nil {
@@ -137,16 +176,15 @@ func (e *expirer) buildCommitMap(ctx context.Context, repositoryID int, now time
 		}
 	}
 
-	cp := convertConfigPolicies(policies)
-
 	// Get the set of commits within this repository that match a data retention policy
-	return e.policyMatcher.CommitsDescribedByPolicy(ctx, repositoryID, cp, now)
+	return e.policyMatcher.CommitsDescribedByPolicy(ctx, repositoryID, policies, now)
 }
 
-func (e *expirer) handleUploads(
+func (e *Service) handleUploads(
 	ctx context.Context,
 	commitMap map[string][]policiesEnterprise.PolicyMatch,
 	uploads []types.Upload,
+	cfg expirerConfig,
 	now time.Time,
 ) (err error) {
 	// Categorize each upload as protected or expired
@@ -156,7 +194,7 @@ func (e *expirer) handleUploads(
 	)
 
 	for _, upload := range uploads {
-		protected, checkErr := e.isUploadProtectedByPolicy(ctx, commitMap, upload, now)
+		protected, checkErr := e.isUploadProtectedByPolicy(ctx, commitMap, upload, cfg, now)
 		if checkErr != nil {
 			if err == nil {
 				err = checkErr
@@ -181,7 +219,7 @@ func (e *expirer) handleUploads(
 	// records with the given expired identifiers so that the expiredUploadDeleter process can remove then once
 	// they are no longer referenced.
 
-	if updateErr := e.uploadSvc.UpdateUploadRetention(ctx, protectedUploadIDs, expiredUploadIDs); updateErr != nil {
+	if updateErr := e.UpdateUploadRetention(ctx, protectedUploadIDs, expiredUploadIDs); updateErr != nil {
 		if updateErr := errors.Wrap(err, "uploadSvc.UpdateUploadRetention"); err == nil {
 			err = updateErr
 		} else {
@@ -191,19 +229,20 @@ func (e *expirer) handleUploads(
 
 	if count := len(expiredUploadIDs); count > 0 {
 		e.logger.Info("Expiring codeintel uploads", log.Int("count", count))
-		e.metrics.numUploadsExpired.Add(float64(count))
+		e.expirationMetrics.numUploadsExpired.Add(float64(count))
 	}
 
 	return err
 }
 
-func (e *expirer) isUploadProtectedByPolicy(
+func (e *Service) isUploadProtectedByPolicy(
 	ctx context.Context,
 	commitMap map[string][]policiesEnterprise.PolicyMatch,
 	upload types.Upload,
+	cfg expirerConfig,
 	now time.Time,
 ) (bool, error) {
-	e.metrics.numUploadsScanned.Inc()
+	e.expirationMetrics.numUploadsScanned.Inc()
 
 	var token *string
 
@@ -218,13 +257,13 @@ func (e *expirer) isUploadProtectedByPolicy(
 		//
 		// We check the set of commits visible to an upload in batches as in some cases it can be very large; for
 		// example, a single historic commit providing code intelligence for all descendants.
-		commits, nextToken, err := e.uploadSvc.GetCommitsVisibleToUpload(ctx, upload.ID, ConfigInst.CommitBatchSize, token)
+		commits, nextToken, err := e.GetCommitsVisibleToUpload(ctx, upload.ID, cfg.commitBatchSize, token)
 		if err != nil {
 			return false, errors.Wrap(err, "uploadSvc.CommitsVisibleToUpload")
 		}
 		token = nextToken
 
-		e.metrics.numCommitsScanned.Add(float64(len(commits)))
+		e.expirationMetrics.numCommitsScanned.Add(float64(len(commits)))
 
 		for _, commit := range commits {
 			if policyMatches, ok := commitMap[commit]; ok {
@@ -238,27 +277,4 @@ func (e *expirer) isUploadProtectedByPolicy(
 	}
 
 	return false, nil
-}
-
-func convertConfigPolicies(configs []types.ConfigurationPolicy) []dbstore.ConfigurationPolicy {
-	configPolicy := make([]dbstore.ConfigurationPolicy, 0, len(configs))
-	for _, c := range configs {
-		configPolicy = append(configPolicy, dbstore.ConfigurationPolicy{
-			ID:                        c.ID,
-			RepositoryID:              c.RepositoryID,
-			RepositoryPatterns:        c.RepositoryPatterns,
-			Name:                      c.Name,
-			Type:                      dbstore.GitObjectType(c.Type),
-			Pattern:                   c.Pattern,
-			Protected:                 c.Protected,
-			RetentionEnabled:          c.RetentionEnabled,
-			RetentionDuration:         c.RetentionDuration,
-			RetainIntermediateCommits: c.RetainIntermediateCommits,
-			IndexingEnabled:           c.IndexingEnabled,
-			IndexCommitMaxAge:         c.IndexCommitMaxAge,
-			IndexIntermediateCommits:  c.IndexIntermediateCommits,
-		})
-	}
-
-	return configPolicy
 }
