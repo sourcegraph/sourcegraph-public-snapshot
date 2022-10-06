@@ -9,8 +9,6 @@ import (
 	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	codeintelresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
-	codeintelgqlresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/graphql"
 	autoindexinggraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql"
 	codenavgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql"
 	policiesgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
@@ -32,14 +30,43 @@ func Init(ctx context.Context, db database.DB, config *Config, enterpriseService
 
 	executorResolver := executorgraphql.New(db)
 
-	codenavRootResolver := codenavgraphql.NewRootResolver(services.CodenavService, services.AutoIndexingService, services.UploadsService, services.PoliciesService, services.gitserverClient, config.MaximumIndexesPerMonikerSearch, config.HunkCacheSize, oc("codenav"))
-	policyRootResolver := policiesgraphql.NewRootResolver(services.PoliciesService, oc("policies"))
-	autoindexingRootResolver := autoindexinggraphql.NewRootResolver(services.AutoIndexingService, services.UploadsService, services.PoliciesService, oc("autoindexing"))
-	uploadRootResolver := uploadgraphql.NewRootResolver(services.UploadsService, services.AutoIndexingService, services.PoliciesService, oc("upload"))
+	codenavRootResolver := codenavgraphql.NewRootResolver(
+		services.CodenavService,
+		services.AutoIndexingService,
+		services.UploadsService,
+		services.PoliciesService,
+		services.gitserverClient,
+		config.MaximumIndexesPerMonikerSearch,
+		config.HunkCacheSize,
+		oc("codenav"),
+	)
 
-	resolvers := codeintelresolvers.NewResolver(codenavRootResolver, executorResolver, policyRootResolver, autoindexingRootResolver, uploadRootResolver)
+	policyRootResolver := policiesgraphql.NewRootResolver(
+		services.PoliciesService,
+		oc("policies"),
+	)
 
-	enterpriseServices.CodeIntelResolver = codeintelgqlresolvers.NewResolver(resolvers)
+	autoindexingRootResolver := autoindexinggraphql.NewRootResolver(
+		services.AutoIndexingService,
+		services.UploadsService,
+		services.PoliciesService,
+		oc("autoindexing"),
+	)
+
+	uploadRootResolver := uploadgraphql.NewRootResolver(
+		services.UploadsService,
+		services.AutoIndexingService,
+		services.PoliciesService,
+		oc("upload"),
+	)
+
+	enterpriseServices.CodeIntelResolver = newResolver(
+		autoindexingRootResolver,
+		codenavRootResolver,
+		executorResolver,
+		policyRootResolver,
+		uploadRootResolver,
+	)
 	enterpriseServices.NewCodeIntelUploadHandler = newUploadHandler(services)
 
 	return nil
