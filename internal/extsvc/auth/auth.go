@@ -31,10 +31,10 @@ type AuthenticatorWithRefresh interface {
 	// Must implement the base Authenticator interface
 	Authenticator
 
-	// ShouldRefresh returns true if the Authenticator is no longer valid and
+	// NeedsRefresh returns true if the Authenticator is no longer valid and
 	// needs to be refreshed, such as checking if an OAuth token is close to
 	// expiry or already expired.
-	ShouldRefresh() bool
+	NeedsRefresh() bool
 
 	// Refresh refreshes the Authenticator. This should be an in-place mutation,
 	// and if any storage updates should happen after refreshing, that is done

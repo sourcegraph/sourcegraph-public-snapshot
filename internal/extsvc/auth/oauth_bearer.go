@@ -15,11 +15,13 @@ import (
 // OAuthBearerToken implements OAuth Bearer Token authentication for extsvc
 // clients.
 type OAuthBearerToken struct {
-	Token        string                                             `json:"token"`
-	TokenType    string                                             `json:"token_type,omitempty"`
-	RefreshToken string                                             `json:"refresh_token,omitempty"`
-	Expiry       time.Time                                          `json:"expiry,omitempty"`
-	RefreshFunc  func(*OAuthBearerToken) (*OAuthBearerToken, error) `json:"-"`
+	Token        string                                                     `json:"token"`
+	TokenType    string                                                     `json:"token_type,omitempty"`
+	RefreshToken string                                                     `json:"refresh_token,omitempty"`
+	Expiry       time.Time                                                  `json:"expiry,omitempty"`
+	RefreshFunc  func(*OAuthBearerToken) (string, string, time.Time, error) `json:"-"`
+	// Number of minutes before expiry when token should be refreshed.
+	NeedsRefreshBuffer int `json:"-"`
 }
 
 func (token *OAuthBearerToken) Refresh() error {
@@ -31,21 +33,21 @@ func (token *OAuthBearerToken) Refresh() error {
 		return errors.New("refresh not implemented")
 	}
 
-	newToken, err := token.RefreshFunc(token)
+	newToken, newRefreshToken, newExpiry, err := token.RefreshFunc(token)
 	if err != nil {
 		return err
 	}
 
-	token.Token = newToken.Token
-	token.Expiry = newToken.Expiry
-	token.RefreshToken = newToken.RefreshToken
+	token.Token = newToken
+	token.Expiry = newExpiry
+	token.RefreshToken = newRefreshToken
 
 	return nil
 }
 
-func (token *OAuthBearerToken) ShouldRefresh() bool {
-	// Refresh 5 minutes before expiry
-	return time.Until(token.Expiry) < 5*time.Minute
+func (token *OAuthBearerToken) NeedsRefresh() bool {
+	// Refresh if the current time falls within the buffer period to expiry.
+	return time.Until(token.Expiry) <= time.Duration(token.NeedsRefreshBuffer)*time.Minute
 }
 
 var _ Authenticator = &OAuthBearerToken{}

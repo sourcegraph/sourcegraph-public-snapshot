@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"os"
 	"sort"
 	"strings"
 	"testing"
@@ -22,6 +21,7 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos/webhookworker"
@@ -2493,10 +2493,7 @@ func testEnqueueWebhookBuildJob(s repos.Store) func(*testing.T) {
 			},
 		}})
 
-		token := os.Getenv("GITHUB_TOKEN")
-		if token == "" {
-			token = "test-token"
-		}
+		token := env.Get("GITHUB_TOKEN", "test-token", "Environment variable for GitHub tests")
 
 		esStore := s.ExternalServiceStore()
 		repoStore := s.RepoStore()

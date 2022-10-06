@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 
 	gh "github.com/google/go-github/v43/github"
@@ -18,6 +17,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -116,10 +116,7 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 
 	ctx := context.Background()
 
-	token := os.Getenv("GITHUB_TOKEN")
-	if token == "" {
-		token = "test-token"
-	}
+	token := env.Get("GITHUB_TOKEN", "test-token", "Environment variable for GitHub tests")
 
 	secret := "secret"
 	esStore := db.ExternalServices()
