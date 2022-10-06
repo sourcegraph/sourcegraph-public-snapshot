@@ -450,10 +450,10 @@ func (codeIntelligence) NewExecutorTeardownCommandGroup(containerName string) mo
 	})
 }
 
-// src_apiworker_apiclient_total
-// src_apiworker_apiclient_duration_seconds_bucket
-// src_apiworker_apiclient_errors_total
-func (codeIntelligence) NewExecutorAPIClientGroup(containerName string) monitoring.Group {
+// src_apiworker_apiclient_queue_total
+// src_apiworker_apiclient_queue_duration_seconds_bucket
+// src_apiworker_apiclient_queue_errors_total
+func (codeIntelligence) NewExecutorAPIQueueClientGroup(containerName string) monitoring.Group {
 	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "executor",
@@ -461,7 +461,41 @@ func (codeIntelligence) NewExecutorAPIClientGroup(containerName string) monitori
 			Hidden:          true,
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "apiworker_apiclient",
+				MetricNameRoot:        "apiworker_apiclient_queue",
+				JobLabel:              "sg_job",
+				MetricDescriptionRoot: "client",
+				Filters:               nil,
+				By:                    []string{"op"},
+			},
+		},
+
+		SharedObservationGroupOptions: SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+		Aggregate: &SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+	})
+}
+
+// src_apiworker_apiclient_files_total
+// src_apiworker_apiclient_files_duration_seconds_bucket
+// src_apiworker_apiclient_files_errors_total
+func (codeIntelligence) NewExecutorAPIFilesClientGroup(containerName string) monitoring.Group {
+	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+		GroupConstructorOptions: GroupConstructorOptions{
+			Namespace:       "executor",
+			DescriptionRoot: "Files API client",
+			Hidden:          true,
+
+			ObservableConstructorOptions: ObservableConstructorOptions{
+				MetricNameRoot:        "apiworker_apiclient_files",
 				JobLabel:              "sg_job",
 				MetricDescriptionRoot: "client",
 				Filters:               nil,
