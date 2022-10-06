@@ -4,7 +4,9 @@ import (
 	"context"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/sourcegraph/log/logtest"
+	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -13,13 +15,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func TestWebhookCreate(t *testing.T) {
+func TestWebhookCreateUnencrypted(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 
 	tx, err := db.Transact(ctx)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	defer func() { _ = tx.Done(errors.New("rollback")) }()
 
 	store := tx.Webhooks(nil)
@@ -28,29 +30,91 @@ func TestWebhookCreate(t *testing.T) {
 		ID:           "",
 		CodeHostKind: extsvc.KindGitHub,
 		CodeHostURN:  "https://github.com",
-		Secret:       types.NewEmptySecret(),
+		Secret:       types.NewUnencryptedSecret("very secret (not)"),
 	}
 	created, err := store.Create(ctx, hook)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	// Check that the calculated fields were correctly calculated.
-	assert.NotZero(t, created.ID)
+	id := created.ID
+	assert.NotZero(t, id)
+	_ = uuid.MustParse(id)
+	assert.Equal(t, hook.CodeHostKind, created.CodeHostKind)
+	assert.Equal(t, hook.CodeHostURN, created.CodeHostURN)
+	assert.NotZero(t, created.CreatedAt)
+	assert.NotZero(t, created.UpdatedAt)
 
-	//// Check that the database has bare JSON versions of the request and
-	//// response.
-	//row := tx.QueryRowContext(ctx, "SELECT request, response FROM webhook_logs")
-	//var haveReq, haveResp []byte
-	//err = row.Scan(&haveReq, &haveResp)
-	//assert.Nil(t, err)
-	//
-	//logRequest, err := log.Request.Decrypt(ctx)
-	//assert.Nil(t, err)
-	//logResponse, err := log.Response.Decrypt(ctx)
-	//assert.Nil(t, err)
-	//
-	//wantReq, _ := json.Marshal(logRequest)
-	//wantResp, _ := json.Marshal(logResponse)
-	//
-	//assert.Equal(t, string(wantReq), string(haveReq))
-	//assert.Equal(t, string(wantResp), string(haveResp))
+	// getting the secret from the DB as is to verify that it is not encrypted
+	row := tx.QueryRowContext(ctx, "SELECT secret FROM webhooks")
+	var rawSecret string
+	err = row.Scan(&rawSecret)
+	assert.NoError(t, err)
+
+	decryptedSecret, err := created.Secret.Decrypt(ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, rawSecret, decryptedSecret)
+}
+
+func TestWebhookCreateEncrypted(t *testing.T) {
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+
+	tx, err := db.Transact(ctx)
+	assert.NoError(t, err)
+	defer func() { _ = tx.Done(errors.New("rollback")) }()
+
+	store := tx.Webhooks(et.ByteaTestKey{})
+
+	const secret = "don't tell anyone"
+	hook := &types.Webhook{
+		ID:           "",
+		CodeHostKind: extsvc.KindGitHub,
+		CodeHostURN:  "https://github.com",
+		Secret:       types.NewUnencryptedSecret(secret),
+	}
+	created, err := store.Create(ctx, hook)
+	assert.NoError(t, err)
+
+	// Check that the calculated fields were correctly calculated.
+	id := created.ID
+	assert.NotZero(t, id)
+	_ = uuid.MustParse(id)
+	assert.Equal(t, hook.CodeHostKind, created.CodeHostKind)
+	assert.Equal(t, hook.CodeHostURN, created.CodeHostURN)
+	assert.NotZero(t, created.CreatedAt)
+	assert.NotZero(t, created.UpdatedAt)
+
+	// getting the secret from the DB as is to verify that it is encrypted
+	row := tx.QueryRowContext(ctx, "SELECT secret FROM webhooks")
+	var rawSecret string
+	err = row.Scan(&rawSecret)
+	assert.NoError(t, err)
+
+	decryptedSecret, err := created.Secret.Decrypt(ctx)
+	assert.NoError(t, err)
+	assert.NotEqual(t, rawSecret, decryptedSecret)
+	assert.Equal(t, secret, decryptedSecret)
+}
+
+func TestWebhookCreateWithBadKey(t *testing.T) {
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+
+	tx, err := db.Transact(ctx)
+	assert.NoError(t, err)
+	defer func() { _ = tx.Done(errors.New("rollback")) }()
+
+	store := tx.Webhooks(&et.BadKey{Err: errors.New("some error occurred, sorry")})
+
+	hook := &types.Webhook{
+		ID:           "",
+		CodeHostKind: extsvc.KindGitHub,
+		CodeHostURN:  "https://github.com",
+		Secret:       types.NewUnencryptedSecret("very secret (not)"),
+	}
+	_, err = store.Create(ctx, hook)
+	assert.Error(t, err)
+	assert.Equal(t, "encrypting secret: some error occurred, sorry", err.Error())
 }
