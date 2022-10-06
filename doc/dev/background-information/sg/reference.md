@@ -237,11 +237,20 @@ Supported run types when providing an argument for 'sg ci build [runtype]':
 * backend-integration
 
 For run types that require branch arguments, you will be prompted for an argument, or you
-can provide it directly (for example, 'sg ci build [runtype] [argument]').
+can provide it directly (for example, 'sg ci build [runtype] <argument>').
 
 Learn more about pipeline run types in https://docs.sourcegraph.com/dev/background-information/ci/reference.
 
-Arguments: `[runtype]`
+```sh
+# Start a main-dry-run build
+$ sg ci build main-dry-run
+
+# Publish a custom image build
+$ sg ci build docker-images-patch
+
+# Publish a custom Prometheus image build without running tests
+$ sg ci build docker-images-patch-notest prometheus
+```
 
 Flags:
 

@@ -9,8 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-const schemaErrorPrefix = "insights oob migration schema error"
-
 type insightsMigrationJob struct {
 	userID             *int32
 	orgID              *int32

@@ -12,7 +12,7 @@ Interacting with a code host (such as creating, updating, or syncing changesets)
 There are two types of access token that can be configured for use with Batch Changes:
 
 1. [**Personal access token**](#personal-access-tokens) - A token set by an individual Batch Changes user for their personal code host user account.
-1. [**Global service account token**](#global-service-account-tokens) (*Admins only*) - A token that can be used by any Batch Changes user who does not have a personal access token configured. These are also required for [importing changesets](./tracking_existing_changesets.md) and syncing changeset state from the code host when webhooks are not configured.
+1. [**Global service account token**](#global-service-account-tokens) (*Configurable by admins only*) - A token that can be used by any Batch Changes user who does not have a personal access token configured. These are also required for [importing changesets](./tracking_existing_changesets.md) and syncing changeset state from the code host when webhooks are not configured. Although currently importing changesets is not supported without a global access token, if you’re concerned about individual user permissions, we would not advise using a global access token.
 
 Different tokens are used for different types of operations, as is illustrated in the hierarchy table below.
 

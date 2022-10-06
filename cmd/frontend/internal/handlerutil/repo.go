@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -21,7 +22,7 @@ import (
 func GetRepo(ctx context.Context, logger log.Logger, db database.DB, vars map[string]string) (*types.Repo, error) {
 	origRepo := routevar.ToRepo(vars)
 
-	repo, err := backend.NewRepos(logger, db).GetByName(ctx, origRepo)
+	repo, err := backend.NewRepos(logger, db, gitserver.NewClient(db)).GetByName(ctx, origRepo)
 	if err != nil {
 		return nil, err
 	}
@@ -36,11 +37,12 @@ func GetRepo(ctx context.Context, logger log.Logger, db database.DB, vars map[st
 // getRepoRev resolves the repository and commit specified in the route vars.
 func getRepoRev(ctx context.Context, logger log.Logger, db database.DB, vars map[string]string, repoID api.RepoID) (api.RepoID, api.CommitID, error) {
 	repoRev := routevar.ToRepoRev(vars)
-	repo, err := backend.NewRepos(logger, db).Get(ctx, repoID)
+	gsClient := gitserver.NewClient(db)
+	repo, err := backend.NewRepos(logger, db, gsClient).Get(ctx, repoID)
 	if err != nil {
 		return repoID, "", err
 	}
-	commitID, err := backend.NewRepos(logger, db).ResolveRev(ctx, repo, repoRev.Rev)
+	commitID, err := backend.NewRepos(logger, db, gsClient).ResolveRev(ctx, repo, repoRev.Rev)
 	if err != nil {
 		return repoID, "", err
 	}

@@ -55,11 +55,8 @@ func run(logger log.Logger, depot string, input io.Reader) {
 	}
 	for depot, subRepo := range perms.SubRepoPermissions {
 		logger.Debug("Sub repo permissions", log.String("depot", string(depot)))
-		for _, include := range subRepo.PathIncludes {
-			logger.Debug("Include rule", log.String("rule", include))
-		}
-		for _, exclude := range subRepo.PathExcludes {
-			logger.Debug("Include rule", log.String("rule", exclude))
+		for _, path := range subRepo.Paths {
+			logger.Debug("Include rule", log.String("rule", path))
 		}
 	}
 }

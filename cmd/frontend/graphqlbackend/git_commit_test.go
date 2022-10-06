@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -21,6 +22,7 @@ import (
 func TestGitCommitResolver(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewMockDB()
+	client := gitserver.NewClient(db)
 
 	commit := &gitdomain.Commit{
 		ID:      "c1",
@@ -39,14 +41,14 @@ func TestGitCommitResolver(t *testing.T) {
 	}
 
 	t.Run("URL Escaping", func(t *testing.T) {
-		repo := NewRepositoryResolver(db, &types.Repo{Name: "xyz"})
-		commitResolver := NewGitCommitResolver(db, repo, "c1", commit)
+		repo := NewRepositoryResolver(db, gitserver.NewClient(db), &types.Repo{Name: "xyz"})
+		commitResolver := NewGitCommitResolver(db, client, repo, "c1", commit)
 		{
 			inputRev := "master^1"
 			commitResolver.inputRev = &inputRev
 			require.Equal(t, "/xyz/-/commit/master%5E1", commitResolver.URL())
 
-			treeResolver := NewGitTreeEntryResolver(db, commitResolver, CreateFileInfo("a/b", false))
+			treeResolver := NewGitTreeEntryResolver(db, client, commitResolver, CreateFileInfo("a/b", false))
 			url, err := treeResolver.URL(ctx)
 			require.Nil(t, err)
 			require.Equal(t, "/xyz@master%5E1/-/blob/a/b", url)
@@ -59,11 +61,9 @@ func TestGitCommitResolver(t *testing.T) {
 	})
 
 	t.Run("Lazy loading", func(t *testing.T) {
-		gitserver.Mocks.GetCommit = func(api.CommitID) (*gitdomain.Commit, error) {
+		client := gitserver.NewMockClient()
+		client.GetCommitFunc.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, gitserver.ResolveRevisionOptions, authz.SubRepoPermissionChecker) (*gitdomain.Commit, error) {
 			return commit, nil
-		}
-		t.Cleanup(func() {
-			gitserver.Mocks.GetCommit = nil
 		})
 
 		for _, tc := range []struct {
@@ -115,10 +115,10 @@ func TestGitCommitResolver(t *testing.T) {
 			},
 		}} {
 			t.Run(tc.name, func(t *testing.T) {
-				repo := NewRepositoryResolver(db, &types.Repo{Name: "bob-repo"})
+				repo := NewRepositoryResolver(db, gitserver.NewClient(db), &types.Repo{Name: "bob-repo"})
 				// We pass no commit here to test that it gets lazy loaded via
 				// the git.GetCommit mock above.
-				r := NewGitCommitResolver(db, repo, "c1", nil)
+				r := NewGitCommitResolver(db, client, repo, "c1", nil)
 
 				have, err := tc.have(r)
 				if err != nil {

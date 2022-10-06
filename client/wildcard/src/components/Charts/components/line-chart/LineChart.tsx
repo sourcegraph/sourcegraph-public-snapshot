@@ -102,7 +102,7 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
                 margin: {
                     top: 16,
                     right: 16,
-                    left: yAxisElement?.getBBox?.().width ?? 0,
+                    left: (yAxisElement?.getBBox?.().width ?? 0) + 8,
                     bottom: xAxisReference?.getBBox?.().height ?? 0,
                 },
             }),
@@ -204,7 +204,7 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
                 tickFormat={formatDateTick}
             />
 
-            <Group top={content.top} left={content.left} role="list">
+            <Group top={content.top} left={content.left} aria-label="Chart series" role="list">
                 {stacked && <StackedArea dataSeries={activeSeries} xScale={xScale} yScale={yScale} />}
 
                 {activeSeries.map(line => (

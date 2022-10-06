@@ -174,6 +174,7 @@ export const listExternalServiceFragment = gql`
         nextSyncAt
         updatedAt
         createdAt
+        webhookURL
         namespace {
             id
             namespaceName

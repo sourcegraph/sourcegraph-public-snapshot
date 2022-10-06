@@ -40,18 +40,25 @@ type service interface {
 }
 
 type Service struct {
-	store      store.Store
-	uploadSvc  UploadService
-	gitserver  GitserverClient
-	operations *operations
+	store          store.Store
+	uploadSvc      UploadService
+	gitserver      GitserverClient
+	operations     *operations
+	matcherMetrics *matcherMetrics
 }
 
-func newService(policiesStore store.Store, uploadSvc UploadService, gitserver GitserverClient, observationContext *observation.Context) *Service {
+func newService(
+	policiesStore store.Store,
+	uploadSvc UploadService,
+	gitserver GitserverClient,
+	observationContext *observation.Context,
+) *Service {
 	return &Service{
-		store:      policiesStore,
-		uploadSvc:  uploadSvc,
-		gitserver:  gitserver,
-		operations: newOperations(observationContext),
+		store:          policiesStore,
+		uploadSvc:      uploadSvc,
+		gitserver:      gitserver,
+		operations:     newOperations(observationContext),
+		matcherMetrics: newMetrics(observationContext),
 	}
 }
 

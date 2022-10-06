@@ -3118,6 +3118,11 @@ type MirrorRepositoryInfo {
     The byte size of the repo.
     """
     byteSize: BigInt!
+    """
+    The gitserver shard on which the repository is or will be cloned.
+    Only site admins can access this field.
+    """
+    shard: String
 }
 
 """
@@ -3366,6 +3371,12 @@ type RepositoryComparison {
         Return the first n commits from the list.
         """
         first: Int
+
+        """
+        Filter to only the commits that modify files that match path.
+        Path can be either a file or a containing directory.
+        """
+        path: String
     ): GitCommitConnection!
     """
     The file diffs for each changed file.
@@ -6435,6 +6446,10 @@ type AnalyticsSearchResult {
     File open analytics
     """
     fileOpens: AnalyticsStatItem!
+    """
+    Code copied from search results analytics
+    """
+    codeCopied: AnalyticsStatItem!
 }
 
 """

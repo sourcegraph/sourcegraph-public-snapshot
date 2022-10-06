@@ -36,7 +36,7 @@ func TestRetrievingAndDeduplicatingIndexedRefs(t *testing.T) {
 	defer gitserver.ResetMocks()
 
 	repoIndexResolver := &repositoryTextSearchIndexResolver{
-		repo: NewRepositoryResolver(db, &types.Repo{Name: "alice/repo"}),
+		repo: NewRepositoryResolver(db, gitserver.NewClient(db), &types.Repo{Name: "alice/repo"}),
 		client: &backend.FakeSearcher{Repos: []*zoekt.RepoListEntry{{
 			Repository: zoekt.Repository{
 				Name: string("alice/repo"),
