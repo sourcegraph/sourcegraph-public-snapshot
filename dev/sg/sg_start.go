@@ -214,23 +214,38 @@ func startExec(ctx *cli.Context) error {
 			return cliutil.NewEmptyExitErr(1)
 		}
 
-		// dev-private exists, try to update the configuration
-		update := std.Out.Pending(output.Styled(output.StylePending, "Updating dev-private..."))
-		if err := sgrun.Bash(ctx.Context, "git pull origin master").
-			Dir(devPrivatePath).
-			Run().Wait(); err != nil {
-
+		// dev-private exists, let's see if there are any changes
+		update := std.Out.Pending(output.Styled(output.StylePending, "Checking for dev-private changes..."))
+		shouldUpdate, err := shouldUpdateDevPrivate(ctx.Context, devPrivatePath)
+		if shouldUpdate {
+			update.WriteLine(output.Line(output.EmojiInfo, output.StyleSuggestion, "We found some changes in dev-private that you're missing out on! If you want the new changes, do a git stash and then a git pull!"))
+		}
+		if err != nil {
 			update.Close()
-			std.Out.WriteWarningf("WARNING: failed to update dev-private:")
+			std.Out.WriteWarningf("WARNING: Encountered some trouble while checking if there are remote changes in dev-private!")
 			std.Out.Write("")
 			std.Out.Write(err.Error())
 			std.Out.Write("")
 		} else {
-			update.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Done updating dev-private"))
+			update.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Done checking dev-private changes"))
 		}
 	}
 
 	return startCommandSet(ctx.Context, set, config)
+}
+
+func shouldUpdateDevPrivate(ctx context.Context, path string) (bool, error) {
+	// git fetch so that we check whether there are any remote changes
+	if err := sgrun.Bash(ctx, "git fetch origin master").Dir(path).Run().Wait(); err != nil {
+		return false, err
+	}
+	// now we check if there are any changes ie. if the output is empty, we're not missing out on anything
+	output, err := sgrun.Bash(ctx, "git diff --shortstat origin/HEAD").Dir(path).Run().String()
+	if err != nil {
+		return false, err
+	}
+	return len(output) > 0, err
+
 }
 
 func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.Config) error {
