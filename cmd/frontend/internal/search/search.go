@@ -365,11 +365,13 @@ func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Sear
 	var (
 		eventLineMatches  []streamhttp.EventLineMatch
 		eventChunkMatches []streamhttp.ChunkMatch
+		typ               streamhttp.MatchType
 	)
 
 	if enableChunkMatches {
 		eventChunkMatches = fromChunkMatches(fm.ChunkMatches)
 	} else {
+		typ = streamhttp.ContentMatchWithLineMatchesType
 		lineMatches := fm.ChunkMatches.AsLineMatches()
 		eventLineMatches = make([]streamhttp.EventLineMatch, 0, len(lineMatches))
 		for _, lm := range lineMatches {
@@ -382,7 +384,7 @@ func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Sear
 	}
 
 	contentEvent := &streamhttp.EventContentMatch{
-		Type:         streamhttp.ContentMatchType,
+		Type:         typ,
 		Path:         fm.Path,
 		PathMatches:  fromRanges(fm.PathMatches),
 		RepositoryID: int32(fm.Repo.ID),

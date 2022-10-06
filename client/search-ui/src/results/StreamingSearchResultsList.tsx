@@ -30,6 +30,7 @@ import {
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import {Alert, Code, Text} from '@sourcegraph/wildcard';
 
 import { smartSearchClickedEvent } from '../util/events'
 
@@ -203,6 +204,14 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                             as="li"
                         />
                     )
+                default:
+                    // eslint-disable-next-line no-console
+                    console.error(`Unexpected result type, ${result.type}`)
+                    return <Alert className="d-flex m-3" variant="info">
+                        <Text className="m-0">
+                            <strong>Unexpected result type: </strong> <Code>{result.type}</Code>
+                        </Text>
+                    </Alert>
             }
         },
         [

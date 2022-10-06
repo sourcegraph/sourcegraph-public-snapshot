@@ -34,7 +34,7 @@ export const JetBrainsSearchResultListStory: Story = () => {
 
     const matches: SearchMatch[] = [
         {
-            type: 'content',
+            type: 'contentWithLineMatches',
             path: '/CHANGELOG.md',
             repository: 'test-repository',
             repoStars: 1,

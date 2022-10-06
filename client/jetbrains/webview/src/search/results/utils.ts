@@ -1,4 +1,4 @@
-import { ContentMatch, SearchMatch, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
+import {ContentMatchWithLineMatches, SearchMatch, SymbolMatch} from '@sourcegraph/shared/src/search/stream'
 
 const SUPPORTED_TYPES = new Set(['commit', 'content', 'path', 'symbol', 'repo'])
 const ID_SEPERATOR = '-#-'
@@ -9,11 +9,11 @@ export function getFirstResultId(results: SearchMatch[]): string | null {
     if (firstSupportedMatch) {
         return getResultId(
             firstSupportedMatch,
-            firstSupportedMatch.type === 'content'
-                ? firstSupportedMatch.lineMatches![0]
+            firstSupportedMatch.type === 'contentWithLineMatches'
+                ? firstSupportedMatch.lineMatches[0]
                 : firstSupportedMatch.type === 'symbol'
-                ? firstSupportedMatch.symbols[0]
-                : undefined
+                    ? firstSupportedMatch.symbols[0]
+                    : undefined
         )
     }
     return null
@@ -24,7 +24,7 @@ export function getMatchId(match: SearchMatch): string {
         return `${match.repository}-${match.oid.slice(0, 7)}`
     }
 
-    if (match.type === 'content' || match.type === 'path' || match.type === 'symbol') {
+    if (match.type === 'contentWithLineMatches' || match.type === 'path' || match.type === 'symbol') {
         return `${match.repository}-${match.path}`
     }
 
@@ -42,11 +42,11 @@ export function getMatchIdForResult(resultId: string): string {
     return resultId.split(ID_SEPERATOR)[0]
 }
 
-export type LineMatchItem = NonNullable<ContentMatch['lineMatches']>[0]
+export type LineMatchItem = ContentMatchWithLineMatches['lineMatches'][0]
 export type SymbolMatchItem = SymbolMatch['symbols'][0]
 export function getResultId(match: SearchMatch, lineOrSymbolMatch?: LineMatchItem | SymbolMatchItem): string {
-    if (match.type === 'content') {
-        return `${getMatchId(match)}${ID_SEPERATOR}${match.lineMatches?.indexOf(lineOrSymbolMatch as LineMatchItem)}`
+    if (match.type === 'contentWithLineMatches') {
+        return `${getMatchId(match)}${ID_SEPERATOR}${match.lineMatches.indexOf(lineOrSymbolMatch as LineMatchItem)}`
     }
     if (match.type === 'symbol') {
         return `${getMatchId(match)}${ID_SEPERATOR}${match.symbols.indexOf(lineOrSymbolMatch as SymbolMatchItem)}`

@@ -208,6 +208,7 @@ const (
 	SymbolMatchType
 	CommitMatchType
 	PathMatchType
+	ContentMatchWithLineMatchesType
 )
 
 func (t MatchType) MarshalJSON() ([]byte, error) {
@@ -222,6 +223,8 @@ func (t MatchType) MarshalJSON() ([]byte, error) {
 		return []byte(`"commit"`), nil
 	case PathMatchType:
 		return []byte(`"path"`), nil
+	case ContentMatchWithLineMatchesType:
+		return []byte(`"contentWithLineMatches"`), nil
 	default:
 		return nil, errors.Errorf("unknown MatchType: %d", t)
 	}

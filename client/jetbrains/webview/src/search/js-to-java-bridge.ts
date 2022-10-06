@@ -2,7 +2,7 @@ import { encode } from 'js-base64'
 
 import { splitPath } from '@sourcegraph/shared/src/components/RepoLink'
 import {
-    ContentMatch,
+    ContentMatchWithLineMatches,
     getRepoMatchUrl,
     PathMatch,
     SearchMatch,
@@ -158,7 +158,7 @@ export async function indicateFinishedLoading(
 export async function onPreviewChange(match: SearchMatch, lineOrSymbolMatchIndex?: number): Promise<void> {
     try {
         const initiationDateTime = new Date()
-        if (match.type === 'content' || match.type === 'path' || match.type === 'symbol') {
+        if (match.type === 'contentWithLineMatches' || match.type === 'path' || match.type === 'symbol') {
             lastPreviewUpdateCallSendDateTime = initiationDateTime
             await callJava({
                 action: 'previewLoading',
@@ -249,7 +249,7 @@ export async function createPreviewContent(
         }
     }
 
-    if (match.type === 'content') {
+    if (match.type === 'contentWithLineMatches') {
         return createPreviewContentForContentMatch(match, lineOrSymbolMatchIndex as number)
     }
 
@@ -284,7 +284,7 @@ export async function createPreviewContent(
 }
 
 async function createPreviewContentForContentMatch(
-    match: ContentMatch,
+    match: ContentMatchWithLineMatches,
     lineMatchIndex: number
 ): Promise<PreviewContent> {
     const fileName = splitPath(match.path)[1]

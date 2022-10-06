@@ -29,7 +29,7 @@ export type SearchEvent =
     | { type: 'error'; data: ErrorLike }
     | { type: 'done'; data: {} }
 
-export type SearchMatch = ContentMatch | RepositoryMatch | CommitMatch | SymbolMatch | PathMatch
+export type SearchMatch = ContentMatch | ContentMatchWithLineMatches | RepositoryMatch | CommitMatch | SymbolMatch | PathMatch
 
 export interface PathMatch {
     type: 'path'
@@ -51,8 +51,20 @@ export interface ContentMatch {
     repoLastFetched?: string
     branches?: string[]
     commit?: string
-    lineMatches?: LineMatch[]
-    chunkMatches?: ChunkMatch[]
+    chunkMatches: ChunkMatch[]
+    hunks?: DecoratedHunk[]
+}
+
+export interface ContentMatchWithLineMatches {
+    type: 'contentWithLineMatches'
+    path: string
+    pathMatches?: Range[]
+    repository: string
+    repoStars?: number
+    repoLastFetched?: string
+    branches?: string[]
+    commit?: string
+    lineMatches: LineMatch[]
     hunks?: DecoratedHunk[]
 }
 
@@ -534,7 +546,7 @@ export function getRevision(branches?: string[], version?: string): string {
     return revision
 }
 
-export function getFileMatchUrl(fileMatch: ContentMatch | SymbolMatch | PathMatch): string {
+export function getFileMatchUrl(fileMatch: ContentMatch | ContentMatchWithLineMatches | SymbolMatch | PathMatch): string {
     const revision = getRevision(fileMatch.branches, fileMatch.commit)
     return `/${fileMatch.repository}${revision ? '@' + revision : ''}/-/blob/${fileMatch.path}`
 }
@@ -558,6 +570,7 @@ export function getMatchUrl(match: SearchMatch): string {
     switch (match.type) {
         case 'path':
         case 'content':
+        case 'contentWithLineMatches':
         case 'symbol':
             return getFileMatchUrl(match)
         case 'commit':
