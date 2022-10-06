@@ -27,6 +27,5 @@ func (s *Service) indexRepositories(ctx context.Context) (err error) {
 	_, _, endObservation := s.operations.indexRepositories.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	// TODO
 	return errors.New("codeintel.ranking.service.indexRepositories unimplemented")
 }
