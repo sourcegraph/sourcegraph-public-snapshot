@@ -30,7 +30,7 @@ func newAppProvider(
 	privateKey string,
 	installationID int64,
 	cli httpcli.Doer,
-) (*Provider, error) {
+) (*AppProvider, error) {
 	pkey, err := base64.StdEncoding.DecodeString(privateKey)
 	if err != nil {
 		return nil, errors.Wrap(err, "decode private key")
@@ -91,18 +91,19 @@ func newAppProvider(
 		}
 	}
 
-	return &Provider{
-		urn:      urn,
-		codeHost: extsvc.NewCodeHost(baseURL, extsvc.TypeGitHub),
-		client: func() (client, error) {
-			logger := log.Scoped("installation", "github client for installation").
-				With(log.String("appID", appID), log.Int64("installationID", installationID))
+	return &AppProvider{
+		Provider: Provider{
+			urn:      urn,
+			codeHost: extsvc.NewCodeHost(baseURL, extsvc.TypeGitHub),
+			client: func() (client, error) {
+				logger := log.Scoped("installation", "github client for installation").
+					With(log.String("appID", appID), log.Int64("installationID", installationID))
 
-			return &ClientAdapter{
-				V3Client: github.NewV3Client(logger, urn, apiURL, installationAuther, cli),
-			}, nil
+				return &ClientAdapter{
+					V3Client: github.NewV3Client(logger, urn, apiURL, installationAuther, cli),
+				}, nil
+			},
+			InstallationID: &installationID,
 		},
-		InstallationID: &installationID,
-		db:             db,
-	}, nil
+		db: db}, nil
 }

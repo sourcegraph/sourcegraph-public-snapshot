@@ -57,17 +57,7 @@ func NewAuthzProviders(
 		}
 	}
 
-	for _, c := range conns {
-		// Initialize authz (permissions) provider.
-		p, err := newAuthzProvider(db, c)
-		if err != nil {
-			invalidConnections = append(invalidConnections, extsvc.TypeGitHub)
-			problems = append(problems, err.Error())
-		}
-		if p == nil {
-			continue
-		}
-
+	configureProvider := func(p *Provider, warnings []string) {
 		// We want to make the feature flag available to the GitHub provider, but at the same time
 		// also not use the global conf.SiteConfig which is discouraged and could cause race
 		// conditions. As a result, we use a temporary hack by setting this on the provider for now.
@@ -92,6 +82,43 @@ func NewAuthzProviders(
 					p.ServiceID()))
 			// Forcibly disable groups cache.
 			p.groupsCache = nil
+		}
+	}
+
+	for _, c := range conns {
+		// Initialize authz (permissions) provider.
+
+		var p authz.Provider
+		var err error
+		gitHubAppConfig := conf.SiteConfig().GitHubApp
+		if c.GithubAppInstallationID != "" && repos.IsGitHubAppEnabled(gitHubAppConfig) {
+			var appProvider *AppProvider
+			installationID, err := strconv.ParseInt(c.GithubAppInstallationID, 10, 64)
+			if err != nil {
+				problems = append(problems, err.Error())
+			}
+
+			gitHubAppConfig := conf.SiteConfig().GitHubApp
+			baseURL, err := url.Parse(c.Url)
+
+			appProvider, err = newAppProvider(db, c.ExternalService, c.GitHubConnection.URN, baseURL, gitHubAppConfig.AppID, gitHubAppConfig.PrivateKey, installationID, nil)
+
+			configureProvider(&appProvider.Provider, warnings)
+
+			p = appProvider
+		} else {
+			var provider *Provider
+			provider, err = newAuthzProvider(db, c)
+			configureProvider(provider, warnings)
+			p = provider
+		}
+
+		if err != nil {
+			invalidConnections = append(invalidConnections, extsvc.TypeGitHub)
+			problems = append(problems, err.Error())
+		}
+		if p == nil {
+			continue
 		}
 
 		// Register this provider.
@@ -118,20 +145,6 @@ func newAuthzProvider(
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, errors.Errorf("could not parse URL for GitHub instance %q: %s", c.Url, err)
-	}
-
-	if c.GithubAppInstallationID != "" {
-		installationID, err := strconv.ParseInt(c.GithubAppInstallationID, 10, 64)
-		if err != nil {
-			return nil, errors.Wrap(err, "parse installation ID")
-		}
-
-		gitHubAppConfig := conf.SiteConfig().GitHubApp
-		if repos.IsGitHubAppEnabled(gitHubAppConfig) {
-			return newAppProvider(db, c.ExternalService, c.GitHubConnection.URN, baseURL, gitHubAppConfig.AppID, gitHubAppConfig.PrivateKey, installationID, nil)
-		}
-
-		return nil, errors.Errorf("connection contains an GitHub App installation ID while GitHub App for Sourcegraph is not enabled")
 	}
 
 	// Disable by default for now

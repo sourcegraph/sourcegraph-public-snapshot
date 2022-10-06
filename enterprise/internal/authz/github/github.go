@@ -38,7 +38,10 @@ type Provider struct {
 	enableGithubInternalRepoVisibility bool
 
 	InstallationID *int64
+}
 
+type AppProvider struct {
+	Provider
 	db database.DB
 }
 
@@ -334,6 +337,36 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 //
 // API docs: https://developer.github.com/v3/repos/#list-repositories-for-the-authenticated-user
 func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+	if account == nil {
+		return nil, errors.New("no account provided")
+	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {
+		return nil, errors.Errorf("not a code host of the account: want %q but have %q",
+			account.AccountSpec.ServiceID, p.codeHost.ServiceID)
+	}
+
+	_, tok, err := github.GetExternalAccountData(ctx, &account.AccountData)
+	if err != nil {
+		return nil, errors.Wrap(err, "get external account data")
+	} else if tok == nil {
+		return nil, errors.New("no token found in the external account data")
+	}
+
+	oauthToken := &auth.OAuthBearerToken{
+		Token: tok.AccessToken,
+	}
+
+	return p.fetchUserPermsByToken(ctx, extsvc.AccountID(account.AccountID), oauthToken, opts)
+}
+
+// FetchUserPerms returns a list of repository IDs (on code host) that the given account
+// has read access on the code host. The repository ID has the same value as it would be
+// used as api.ExternalRepoSpec.ID. The returned list only includes private repository IDs.
+//
+// This method may return partial but valid results in case of error, and it is up to
+// callers to decide whether to discard.
+//
+// API docs: https://developer.github.com/v3/repos/#list-repositories-for-the-authenticated-user
+func (p *AppProvider) FetchUserPerms(ctx context.Context, account *extsvc.Account, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	if account == nil {
 		return nil, errors.New("no account provided")
 	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {
