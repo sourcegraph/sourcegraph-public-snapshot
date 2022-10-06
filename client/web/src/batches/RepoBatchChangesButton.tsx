@@ -20,6 +20,7 @@ export const RepoBatchChangesButton: FC<React.PropsWithChildren<RepoBatchChanges
 }) => {
     const { data } = useQuery<RepoChangesetsStatsResult, RepoChangesetsStatsVariables>(REPO_CHANGESETS_STATS, {
         variables: { name: repoName },
+        fetchPolicy: 'cache-first',
     })
 
     if (!data || !data.repository) {
