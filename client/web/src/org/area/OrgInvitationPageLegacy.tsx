@@ -6,7 +6,7 @@ import { catchError, concatMap, distinctUntilKeyChanged, map, mapTo, tap, withLa
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { OrganizationInvitationResponseType } from '@sourcegraph/shared/src/graphql-operations'
 import { LoadingSpinner, Button, Link, Alert, H3, Text } from '@sourcegraph/wildcard'
@@ -90,7 +90,7 @@ export const OrgInvitationPageLegacy = withAuthenticatedUser(
                     )
                     .subscribe(
                         stateUpdate => this.setState(stateUpdate as State),
-                        error => console.error(error)
+                        error => logger.error(error)
                     )
             )
 

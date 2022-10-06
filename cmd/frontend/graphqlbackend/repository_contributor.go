@@ -30,12 +30,13 @@ func (r *repositoryContributorResolver) Commits(args *struct {
 		revisionRange = *r.args.RevisionRange
 	}
 	return &gitCommitConnectionResolver{
-		db:            r.db,
-		revisionRange: revisionRange,
-		path:          r.args.Path,
-		author:        &r.email, // TODO(sqs): support when contributor resolves to user, and user has multiple emails
-		after:         r.args.AfterDate,
-		first:         args.First,
-		repo:          r.repo,
+		db:              r.db,
+		gitserverClient: r.repo.gitserverClient,
+		revisionRange:   revisionRange,
+		path:            r.args.Path,
+		author:          &r.email, // TODO(sqs): support when contributor resolves to user, and user has multiple emails
+		after:           r.args.AfterDate,
+		first:           args.First,
+		repo:            r.repo,
 	}
 }

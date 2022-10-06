@@ -229,13 +229,22 @@ input UserSubRepoPermission {
     """
     bindID: String!
     """
+    DEPRECATED
     An array of paths that the user is allowed to access, in glob format.
     """
-    pathIncludes: [String!]!
+    pathIncludes: [String!] @deprecated(reason: "use paths instead.")
     """
+    DEPRECATED
     An array of paths that the user is not allowed to access, in glob format.
     """
-    pathExcludes: [String!]!
+    pathExcludes: [String!] @deprecated(reason: "use paths instead.")
+    """
+    An array of paths in glob format. Paths starting with a minus (-)
+    (i.e. "-/dev/private") prevent access, otherwise paths grant access.
+    The last applicable path takes precedence.
+    When paths is set, pathIncludes and pathExcludes are ignored.
+    """
+    paths: [String!]
 }
 
 """

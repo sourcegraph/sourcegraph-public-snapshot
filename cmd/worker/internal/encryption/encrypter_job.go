@@ -40,11 +40,11 @@ func (j *recordEncrypterJob) Routines(startupCtx context.Context, logger log.Log
 	}
 	metrics := newMetrics(observationContext)
 
-	db, err := workerdb.Init()
+	db, err := workerdb.InitDBWithLogger(logger)
 	if err != nil {
 		return nil, err
 	}
-	store := database.NewRecordEncrypter(database.NewDB(logger, db))
+	store := database.NewRecordEncrypter(db)
 
 	return []goroutine.BackgroundRoutine{
 		goroutine.NewPeriodicGoroutine(context.Background(), ConfigInst.EncryptionInterval, &recordEncrypter{

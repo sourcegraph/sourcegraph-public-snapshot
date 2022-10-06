@@ -3,6 +3,8 @@ import { from, Subscription } from 'rxjs'
 import { first } from 'rxjs/operators'
 import { Unsubscribable } from 'sourcegraph'
 
+import { logger } from '@sourcegraph/common'
+
 import { PlatformContext, ClosableEndpointPair } from '../../platform/context'
 import { isSettingsValid } from '../../settings/settings'
 import { FlatExtensionHostAPI, MainThreadAPI } from '../contract'
@@ -88,7 +90,7 @@ export async function createExtensionHostClientConnection(
 
     comlink.expose(clientAPI, endpoints.expose)
     proxy.mainThreadAPIInitialized().catch(() => {
-        console.error('Error notifying extension host of main thread API init.')
+        logger.error('Error notifying extension host of main thread API init.')
     })
 
     // TODO(tj): return MainThreadAPI and add to Controller interface

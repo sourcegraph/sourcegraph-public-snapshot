@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"net/url"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -248,31 +247,13 @@ func (c *Client) Heartbeat(ctx context.Context, queueName string, jobIDs []int) 
 const SchemeExecutorToken = "token-executor"
 
 func (c *Client) makeRequest(method, path string, payload any) (*http.Request, error) {
-	u, err := makeRelativeURL(
-		c.options.EndpointOptions.URL,
-		c.options.PathPrefix,
-		path,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	r, err := MakeJSONRequest(method, u, payload)
+	r, err := c.client.MakeRequest(method, c.options.EndpointOptions.URL, filepath.Join(c.options.PathPrefix, path), payload)
 	if err != nil {
 		return nil, err
 	}
 
 	r.Header.Add("Authorization", fmt.Sprintf("%s %s", SchemeExecutorToken, c.options.EndpointOptions.Token))
 	return r, nil
-}
-
-func makeRelativeURL(base string, path ...string) (*url.URL, error) {
-	baseURL, err := url.Parse(base)
-	if err != nil {
-		return nil, err
-	}
-
-	return baseURL.ResolveReference(&url.URL{Path: filepath.Join(path...)}), nil
 }
 
 func intsToString(ints []int) string {

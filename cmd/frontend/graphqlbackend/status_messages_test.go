@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -43,7 +43,7 @@ func TestStatusMessages(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		result, err := newSchemaResolver(db).StatusMessages(context.Background())
-		if want := backend.ErrNotAuthenticated; err != want {
+		if want := auth.ErrNotAuthenticated; err != want {
 			t.Errorf("got err %v, want %v", err, want)
 		}
 		if result != nil {

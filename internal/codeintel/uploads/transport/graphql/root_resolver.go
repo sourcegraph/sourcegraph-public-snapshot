@@ -7,8 +7,8 @@ import (
 
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/sharedresolvers"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
+	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -18,6 +18,7 @@ type RootResolver interface {
 	LSIFUploads(ctx context.Context, args *LSIFUploadsQueryArgs) (sharedresolvers.LSIFUploadConnectionResolver, error)
 	LSIFUploadsByRepo(ctx context.Context, args *LSIFRepositoryUploadsQueryArgs) (sharedresolvers.LSIFUploadConnectionResolver, error)
 	DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (*sharedresolvers.EmptyResponse, error)
+	DeleteLSIFUploads(ctx context.Context, args *DeleteLSIFUploadsArgs) (*sharedresolvers.EmptyResponse, error)
 }
 
 type rootResolver struct {
@@ -96,6 +97,13 @@ type LSIFRepositoryUploadsQueryArgs struct {
 	RepositoryID graphql.ID
 }
 
+type DeleteLSIFUploadsArgs struct {
+	Query           *string
+	State           *string
+	IsLatestForRepo *bool
+	Repository      *graphql.ID
+}
+
 // 🚨 SECURITY: dbstore layer handles authz for GetUploads
 func (r *rootResolver) LSIFUploads(ctx context.Context, args *LSIFUploadsQueryArgs) (_ sharedresolvers.LSIFUploadConnectionResolver, err error) {
 	// Delegate behavior to LSIFUploadsByRepo with no specified repository identifier
@@ -130,7 +138,7 @@ func (r *rootResolver) DeleteLSIFUpload(ctx context.Context, args *struct{ ID gr
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
 		return nil, err
 	}
 
@@ -140,6 +148,26 @@ func (r *rootResolver) DeleteLSIFUpload(ctx context.Context, args *struct{ ID gr
 	}
 
 	if _, err := r.uploadSvc.DeleteUploadByID(ctx, int(uploadID)); err != nil {
+		return nil, err
+	}
+
+	return &sharedresolvers.EmptyResponse{}, nil
+}
+
+// 🚨 SECURITY: Only site admins may modify code intelligence upload data
+func (r *rootResolver) DeleteLSIFUploads(ctx context.Context, args *DeleteLSIFUploadsArgs) (_ *sharedresolvers.EmptyResponse, err error) {
+	ctx, _, endObservation := r.operations.deleteLsifUploads.With(ctx, &err, observation.Args{})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
+		return nil, err
+	}
+
+	opts, err := makeDeleteUploadsOptions(args)
+	if err != nil {
+		return nil, err
+	}
+	if err := r.uploadSvc.DeleteUploads(ctx, opts); err != nil {
 		return nil, err
 	}
 

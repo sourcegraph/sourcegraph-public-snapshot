@@ -8,7 +8,7 @@ import { merge, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { asError } from '@sourcegraph/common'
+import { asError, logger } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { Button, Link, Alert, Icon, H2, Text, Tooltip } from '@sourcegraph/wildcard'
 
@@ -98,7 +98,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                             this.props.onDidUpdate()
                         }
                     },
-                    error => console.error(error)
+                    error => logger.error(error)
                 )
         )
     }

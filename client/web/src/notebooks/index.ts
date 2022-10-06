@@ -3,9 +3,10 @@ import { Observable } from 'rxjs'
 
 import { FetchFileParameters, HighlightRange } from '@sourcegraph/search-ui'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
-import { IHighlightLineRange, SymbolKind } from '@sourcegraph/shared/src/schema'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
+
+import { HighlightLineRange, SymbolKind } from '../graphql-operations'
 
 // When adding a new block type, make sure to track its usage in internal/usagestats/notebooks.go.
 export type BlockType = 'md' | 'query' | 'file' | 'compute' | 'symbol'
@@ -39,7 +40,7 @@ export interface FileBlockInput {
     repositoryName: string
     revision: string
     filePath: string
-    lineRange: IHighlightLineRange | null
+    lineRange: HighlightLineRange | null
     initialQueryInput?: string
 }
 
@@ -66,7 +67,7 @@ export interface SymbolBlockOutput {
     symbolFoundAtLatestRevision: boolean
     effectiveRevision: string
     symbolRange: UIRangeSpec['range']
-    highlightLineRange: IHighlightLineRange
+    highlightLineRange: HighlightLineRange
     highlightedLines: string[]
     highlightSymbolRange: HighlightRange
 }

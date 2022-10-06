@@ -7,7 +7,7 @@ import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, createAggregateError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { Container, PageHeader, Button, Link, Alert } from '@sourcegraph/wildcard'
 
@@ -99,7 +99,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                     stateUpdate => {
                         this.setState(stateUpdate)
                     },
-                    error => console.error(error)
+                    error => logger.error(error)
                 )
         )
     }

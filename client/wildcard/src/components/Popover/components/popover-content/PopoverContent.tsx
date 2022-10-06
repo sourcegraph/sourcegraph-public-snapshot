@@ -55,7 +55,13 @@ export const PopoverContent = forwardRef(function PopoverContent(props, referenc
     })
 
     // Close popover on escape
-    useKeyboard({ detectKeys: ['Escape'] }, () => setOpen({ isOpen: false, reason: PopoverOpenEventReason.Esc }))
+    useKeyboard({ detectKeys: ['Escape'] }, () => {
+        // Only fire if we can be sure that the popover is open.
+        // Both for controlled and uncontrolled popovers.
+        if (isOpen || isOpenContext) {
+            setOpen({ isOpen: false, reason: PopoverOpenEventReason.Esc })
+        }
+    })
 
     // Native behavior of browsers about focus elements says - if element that gets focus
     // is in outside the visible viewport then browser should scroll to this element automatically.
