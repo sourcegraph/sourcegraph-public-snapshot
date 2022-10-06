@@ -18,7 +18,7 @@ interface BatchChangeStatsBarProps {
 }
 
 export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildren<BatchChangeStatsBarProps>> = () => {
-    const { data, error, loading } = useQuery<GlobalChangesetsStatsResult, GlobalChangesetsStatsVariables>(
+    const { data, loading } = useQuery<GlobalChangesetsStatsResult, GlobalChangesetsStatsVariables>(
         GLOBAL_CHANGESETS_STATS,
         {}
     )
