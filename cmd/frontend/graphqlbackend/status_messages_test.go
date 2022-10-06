@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -42,7 +43,7 @@ func TestStatusMessages(t *testing.T) {
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(nil, nil)
 		db.UsersFunc.SetDefaultReturn(users)
 
-		result, err := newSchemaResolver(db).StatusMessages(context.Background())
+		result, err := newSchemaResolver(db, gitserver.NewClient(db)).StatusMessages(context.Background())
 		if want := auth.ErrNotAuthenticated; err != want {
 			t.Errorf("got err %v, want %v", err, want)
 		}
