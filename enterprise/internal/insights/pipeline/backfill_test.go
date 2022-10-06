@@ -8,6 +8,7 @@ import (
 	"github.com/hexops/autogold"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
@@ -38,7 +39,7 @@ func searchRunner(ctx context.Context, input <-chan SearchJobGeneratorOutput) <-
 		defer close(output)
 		for job := range input {
 			output <- SearchResultOutput{
-				result:          searchResult{count: 10, capture: "", repo: job.Repo},
+				points:          []store.RecordSeriesPointArgs{{Point: store.SeriesPoint{Value: 10}}},
 				BackfillRequest: job.BackfillRequest,
 				err:             nil}
 		}
@@ -68,7 +69,9 @@ func TestBackfillStepsConnected(t *testing.T) {
 		countingPersister := func(ctx context.Context, input <-chan SearchResultOutput) error {
 			for r := range input {
 				got.resultCount++
-				got.totalCount += r.result.count
+				for _, p := range r.points {
+					got.totalCount += int(p.Point.Value)
+				}
 			}
 			return nil
 		}
