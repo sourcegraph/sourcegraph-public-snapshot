@@ -2,6 +2,7 @@ package iterator
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"testing"
@@ -40,15 +41,25 @@ func TestIterator(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		// t.Log(repoId)
+		// t.Log(fmt.Sprintf("%v", *itr))
+		// t.Log(fmt.Sprintf("%v", itr.errors.String()))
 	}
-
-	t.Log(fmt.Sprintf("%v", *itr))
-	t.Log(fmt.Sprintf("%v", itr.errors.String()))
 
 	err = itr.MarkComplete(ctx, store)
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	reloaded, err := Load(ctx, store, itr.id)
+
+	test, _ := json.Marshal(reloaded)
+	t.Log(string(test))
+
+	// t.Log("reloaded")
+	// t.Log(fmt.Sprintf("%v", *reloaded))
+	// t.Log(fmt.Sprintf("%v", reloaded.errors.String()))
+
 }
 
 func doAThing(ctx context.Context, store *basestore.Store, repoId api.RepoID, finish finishFunc) (err error) {

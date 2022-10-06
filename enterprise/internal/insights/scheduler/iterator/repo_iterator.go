@@ -2,8 +2,6 @@ package iterator
 
 import (
 	"context"
-	"fmt"
-	"strings"
 	"time"
 
 	"github.com/derision-test/glock"
@@ -54,34 +52,6 @@ type persistentRepoIterator struct {
 
 type errorMap map[uint32]*IterationError
 
-func (m errorMap) String() string {
-	sb := strings.Builder{}
-	sb.WriteString("[")
-	for _, val := range m {
-		sb.WriteString(fmt.Sprintf("{repo:%d failures:%d errors:%v}", val.RepoId, val.FailureCount, val.ErrorMessages))
-	}
-	sb.WriteString("]")
-	return sb.String()
-}
-
-func (p *persistentRepoIterator) NextWithFinish() (api.RepoID, bool, finishFunc) {
-	if !p.CompletedAt.IsZero() || !p.internalItr.HasNext() {
-		return 0, false, func(ctx context.Context, store *basestore.Store, err error) error {
-			return nil
-		}
-	}
-	p.itrStart = p.glock.Now()
-	current := p.internalItr.PeekNext()
-
-	return api.RepoID(current), true, func(ctx context.Context, store *basestore.Store, maybeErr error) error {
-		p.itrEnd = p.glock.Now()
-		if err := p.doFinish(ctx, store, maybeErr); err != nil {
-			return err
-		}
-		return nil
-	}
-}
-
 type IterationError struct {
 	id            int
 	RepoId        int
@@ -112,6 +82,31 @@ var repoIteratorErrorCols = []*sqlf.Query{
 }
 var errorJoinCols = sqlf.Join(repoIteratorErrorCols, ", ")
 
+// New returns a new (durable) repo iterator starting from cursor position 0.
+func New(ctx context.Context, store *basestore.Store, repos []int) (*persistentRepoIterator, error) {
+	return NewWithClock(ctx, store, glock.NewRealClock(), repos)
+}
+
+// NewWithClock returns a new (durable) repo iterator starting from cursor position 0 and optionally overrides the internal clock. Useful for tests.
+func NewWithClock(ctx context.Context, store *basestore.Store, clock glock.Clock, repos []int) (*persistentRepoIterator, error) {
+	if len(repos) == 0 {
+		return nil, errors.New("unable to construct a repo iterator for an empty set")
+	}
+	q := "insert into repo_iterator(repos, total_count) VALUES (%s, %s) returning id"
+	id, err := basestore.ScanInt(store.QueryRow(ctx, sqlf.Sprintf(q, repos, len(repos))))
+	if err != nil {
+		return nil, err
+	}
+
+	loaded, err := Load(ctx, store, id)
+	if err != nil {
+		return nil, err
+	}
+	loaded.glock = clock
+	return loaded, nil
+}
+
+// Load will load a repo iterator that has been persisted and prepare it at the current cursor state.
 func Load(ctx context.Context, store *basestore.Store, id int) (got *persistentRepoIterator, err error) {
 	baseQuery := "select %s from repo_iterator where repo_iterator.id = %s"
 	row := store.QueryRow(ctx, sqlf.Sprintf(baseQuery, iteratorJoinCols, id))
@@ -153,89 +148,38 @@ func Load(ctx context.Context, store *basestore.Store, id int) (got *persistentR
 	return &tmp, nil
 }
 
-func New(ctx context.Context, store *basestore.Store, repos []int) (*persistentRepoIterator, error) {
-	return NewWithClock(ctx, store, glock.NewRealClock(), repos)
-}
-
-func NewWithClock(ctx context.Context, store *basestore.Store, clock glock.Clock, repos []int) (*persistentRepoIterator, error) {
-	q := "insert into repo_iterator(repos, total_count) VALUES (%s, %s) returning id"
-	id, err := basestore.ScanInt(store.QueryRow(ctx, sqlf.Sprintf(q, repos, len(repos))))
-	if err != nil {
-		return nil, err
-	}
-
-	return Load(ctx, store, id)
-}
-
-func loadRepoIteratorErrors(ctx context.Context, store *basestore.Store, iterator *persistentRepoIterator) (got map[uint32]*IterationError, err error) {
-	baseQuery := "select %s from repo_iterator_errors where repo_iterator_id = %s"
-	rows, err := store.Query(ctx, sqlf.Sprintf(baseQuery, errorJoinCols, iterator.id))
-	if err != nil {
-		return nil, err
-	}
-	got = make(map[uint32]*IterationError)
-	for rows.Next() {
-		var tmp IterationError
-		if err := rows.Scan(
-			&tmp.id,
-			&tmp.RepoId,
-			pq.Array(&tmp.ErrorMessages),
-			&tmp.FailureCount,
-		); err != nil {
-			return nil, err
+// NextWithFinish will iterate the repository set from the current cursor position. If the iterator is marked complete
+// or has no more repositories this will do nothing. The finish function returned is a mechanism to have atomic updates,
+// callers will need to call the finish function when complete with work. Errors during work processing can be passed
+// into the finish function and will be marked as errors on the repo iterator.
+func (p *persistentRepoIterator) NextWithFinish() (api.RepoID, bool, finishFunc) {
+	if !p.CompletedAt.IsZero() || !p.internalItr.HasNext() {
+		return 0, false, func(ctx context.Context, store *basestore.Store, err error) error {
+			return nil
 		}
-		got[uint32(tmp.RepoId)] = &tmp
 	}
+	p.itrStart = p.glock.Now()
+	current := p.internalItr.PeekNext()
 
-	return got, err
+	return api.RepoID(current), true, func(ctx context.Context, store *basestore.Store, maybeErr error) error {
+		p.itrEnd = p.glock.Now()
+		if err := p.doFinish(ctx, store, maybeErr); err != nil {
+			return err
+		}
+		return nil
+	}
 }
 
-func (p *persistentRepoIterator) doFinish(ctx context.Context, store *basestore.Store, maybeErr error) (err error) {
-	cursor := p.Cursor + 1
-	success := p.SuccessCount
-	pct := p.PercentComplete
-	if maybeErr == nil {
-		success = p.SuccessCount + 1
-		pct = percent(success, p.TotalCount)
-	}
-	itrDuration := p.itrEnd.Sub(p.itrStart)
-
-	tx, err := store.Transact(ctx)
+// MarkComplete will mark the repo iterator as complete. Once marked complete the iterator is no longer eligible for iteration.
+// This can be called at any time to mark the iterator as complete, and does not require the cursor have passed all the way through the set.
+func (p *persistentRepoIterator) MarkComplete(ctx context.Context, store *basestore.Store) error {
+	now := p.glock.Now()
+	err := store.Exec(ctx, sqlf.Sprintf("update repo_iterator set percent_complete = 1, completed_at = %s, last_updated_at = %s", now, now))
 	if err != nil {
 		return err
 	}
-	defer func() { err = tx.Done(err) }()
-
-	q := "update repo_iterator set percent_complete = %s, success_count = %s, repo_cursor = %s, last_updated_at = %s, runtime_duration = runtime_duration + %s"
-	if err = tx.Exec(ctx, sqlf.Sprintf(q, pct, success, cursor, p.glock.Now(), itrDuration)); err != nil {
-		return errors.Wrapf(err, "unable to update cursor on iteration success iteratorId: %d, new_cursor:%d", p.id, cursor)
-	}
-	if maybeErr != nil {
-		if err = p.insertIterationError(ctx, tx, int(p.internalItr.PeekNext()), maybeErr.Error()); err != nil {
-			return errors.Wrapf(err, "unable to upsert error iteratorId: %d, new_cursor:%d", p.id, cursor)
-		}
-	}
-	if p.CreatedAt.IsZero() {
-		if err = stampStartedAt(ctx, tx, p.id, p.itrStart); err != nil {
-			return errors.Wrap(err, "stampStartedAt")
-		}
-		p.CreatedAt = p.itrStart
-	}
-
-	p.Cursor = cursor
-	p.SuccessCount = success
-	p.PercentComplete = pct
-	p.internalItr.Next()
-	p.RuntimeDuration += itrDuration
-	p.itrStart = time.Time{}
-	p.itrEnd = time.Time{}
-
+	p.CompletedAt = now
 	return nil
-}
-
-func (p *persistentRepoIterator) MarkComplete(ctx context.Context, store *basestore.Store) error {
-	now := p.glock.Now()
-	return store.Exec(ctx, sqlf.Sprintf("update repo_iterator set percent_complete = 1, completed_at = %s, last_updated_at = %s", now, now))
 }
 
 func stampStartedAt(ctx context.Context, store *basestore.Store, itrId int, stampTime time.Time) error {
@@ -245,7 +189,7 @@ func stampStartedAt(ctx context.Context, store *basestore.Store, itrId int, stam
 func (p *persistentRepoIterator) insertIterationError(ctx context.Context, store *basestore.Store, repoId int, msg string) (err error) {
 	var query *sqlf.Query
 	if p.id == 0 {
-		return errors.New("invalid iterator to insert error")
+		return errors.New("invalid iterator to insert iterator error")
 	}
 
 	v, ok := p.errors[uint32(repoId)]
@@ -277,4 +221,70 @@ func percent(success, total int) float64 {
 		return 1
 	}
 	return float64(success) / float64(total)
+}
+
+func (p *persistentRepoIterator) doFinish(ctx context.Context, store *basestore.Store, maybeErr error) (err error) {
+	cursor := p.Cursor + 1
+	success := p.SuccessCount
+	pct := p.PercentComplete
+	if maybeErr == nil {
+		success = p.SuccessCount + 1
+		pct = percent(success, p.TotalCount)
+	}
+	itrDuration := p.itrEnd.Sub(p.itrStart)
+
+	tx, err := store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	q := "update repo_iterator set percent_complete = %s, success_count = %s, repo_cursor = %s, last_updated_at = %s, runtime_duration = runtime_duration + %s"
+	if err = tx.Exec(ctx, sqlf.Sprintf(q, pct, success, cursor, p.glock.Now(), itrDuration)); err != nil {
+		return errors.Wrapf(err, "unable to update cursor on iteration success iteratorId: %d, new_cursor:%d", p.id, cursor)
+	}
+	if maybeErr != nil {
+		if err = p.insertIterationError(ctx, tx, int(p.internalItr.PeekNext()), maybeErr.Error()); err != nil {
+			return errors.Wrapf(err, "unable to upsert error iteratorId: %d, new_cursor:%d", p.id, cursor)
+		}
+	}
+	if p.StartedAt.IsZero() {
+		if err = stampStartedAt(ctx, tx, p.id, p.itrStart); err != nil {
+			return errors.Wrap(err, "stampStartedAt")
+		}
+		p.StartedAt = p.itrStart
+	}
+
+	p.Cursor = cursor
+	p.SuccessCount = success
+	p.PercentComplete = pct
+	p.internalItr.Next()
+	p.RuntimeDuration += itrDuration
+	p.itrStart = time.Time{}
+	p.itrEnd = time.Time{}
+
+	return nil
+}
+
+func loadRepoIteratorErrors(ctx context.Context, store *basestore.Store, iterator *persistentRepoIterator) (got map[uint32]*IterationError, err error) {
+	baseQuery := "select %s from repo_iterator_errors where repo_iterator_id = %s"
+	rows, err := store.Query(ctx, sqlf.Sprintf(baseQuery, errorJoinCols, iterator.id))
+	if err != nil {
+		return nil, err
+	}
+	got = make(map[uint32]*IterationError)
+	for rows.Next() {
+		var tmp IterationError
+		if err := rows.Scan(
+			&tmp.id,
+			&tmp.RepoId,
+			pq.Array(&tmp.ErrorMessages),
+			&tmp.FailureCount,
+		); err != nil {
+			return nil, err
+		}
+		got[uint32(tmp.RepoId)] = &tmp
+	}
+
+	return got, err
 }
