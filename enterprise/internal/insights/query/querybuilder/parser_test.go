@@ -184,6 +184,12 @@ func TestContainsField(t *testing.T) {
 			query.FieldRepo,
 			true,
 		},
+		{
+			"doesn't count empty field",
+			"mysearch repo:",
+			query.FieldRepo,
+			false,
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {

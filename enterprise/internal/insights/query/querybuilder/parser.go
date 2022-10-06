@@ -59,7 +59,6 @@ func ParametersFromQueryPlan(plan query.Plan) []query.Parameter {
 }
 
 func ContainsField(rawQuery, field string) (bool, error) {
-
 	plan, err := ParseQuery(rawQuery, "literal")
 	if err != nil {
 		return false, errors.Wrap(err, "ParseQuery")
@@ -71,6 +70,5 @@ func ContainsField(rawQuery, field string) (bool, error) {
 			}
 		}
 	}
-
 	return false, nil
 }
