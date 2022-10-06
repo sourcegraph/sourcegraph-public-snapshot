@@ -6,14 +6,14 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
 // OutOfBandMigrationByID resolves a single out-of-band migration by its identifier.
 func (r *schemaResolver) OutOfBandMigrationByID(ctx context.Context, id graphql.ID) (*outOfBandMigrationResolver, error) {
 	// 🚨 SECURITY: Only site admins may view out-of-band migrations
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -33,7 +33,7 @@ func (r *schemaResolver) OutOfBandMigrationByID(ctx context.Context, id graphql.
 // OutOfBandMigrations resolves all registered single out-of-band migrations.
 func (r *schemaResolver) OutOfBandMigrations(ctx context.Context) ([]*outOfBandMigrationResolver, error) {
 	// 🚨 SECURITY: Only site admins may view out-of-band migrations
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -56,7 +56,7 @@ func (r *schemaResolver) SetMigrationDirection(ctx context.Context, args *struct
 	ApplyReverse bool
 }) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins may modify out-of-band migrations
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 

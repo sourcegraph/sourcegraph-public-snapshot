@@ -1,12 +1,14 @@
 import React, { useState, useCallback } from 'react'
 
 import { mdiChevronDoubleLeft, mdiChevronDoubleRight, mdiOpenInNew } from '@mdi/js'
+import { useLocation } from 'react-router'
 import { animated, useSpring } from 'react-spring'
 
 import { Button, useLocalStorage, H3, H4, Icon, Link, Text, VIEWPORT_XL } from '@sourcegraph/wildcard'
 
 import { Scalars } from '../../../../../graphql-operations'
 import { eventLogger } from '../../../../../tracking/eventLogger'
+import { createRenderTemplate } from '../../../create/useSearchTemplate'
 import { insertNameIntoLibraryItem } from '../../yaml-util'
 
 import combySample from './comby.batch.yaml'
@@ -104,15 +106,32 @@ export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<Librar
         [animateContainer, animateContent, animateHeader, setDefaultCollapsed]
     )
 
+    const { search: searchQuery } = useLocation()
+    const updateTemplateWithQueryAndName = useCallback((template: string): string => {
+        if (searchQuery !== '') {
+            const parameters = new URLSearchParams(location.search)
+
+            const query = parameters.get('q')
+            const patternType = parameters.get('patternType')
+
+            if (query) {
+                const searchQuery = `${query} ${patternType ? `patternType:${patternType}` : ''}`
+                const renderTemplate = createRenderTemplate(searchQuery, template, true)
+                return renderTemplate(name)
+            }
+        }
+        return insertNameIntoLibraryItem(template, name)
+    }, [name, searchQuery])
+
     const onConfirm = useCallback(() => {
         if (selectedItem && !('isReadOnly' in props && props.isReadOnly)) {
+            const codeWithName = updateTemplateWithQueryAndName(selectedItem.code)
             const templateName = selectedItem.name
-            const codeWithName = insertNameIntoLibraryItem(selectedItem.code, name)
             eventLogger.log('batch_change_editor:template:loaded', { template: templateName })
             props.onReplaceItem(codeWithName)
             setSelectedItem(undefined)
         }
-    }, [name, selectedItem, props])
+    }, [selectedItem, props, updateTemplateWithQueryAndName])
 
     return (
         <>

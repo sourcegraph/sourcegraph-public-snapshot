@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 
 	"github.com/sourcegraph/log"
 
@@ -19,17 +20,21 @@ import (
 )
 
 const (
-	srcInputPath = "input.json"
-	srcTempDir   = ".src-tmp"
-	srcRepoDir   = "repository"
+	srcInputPath         = "input.json"
+	srcRepoDir           = "repository"
+	srcTempDir           = ".src-tmp"
+	srcWorkspaceFilesDir = "workspace-files"
 )
 
 type BatchesStore interface {
 	GetBatchSpecWorkspace(context.Context, store.GetBatchSpecWorkspaceOpts) (*btypes.BatchSpecWorkspace, error)
 	GetBatchSpec(context.Context, store.GetBatchSpecOpts) (*btypes.BatchSpec, error)
+	ListBatchSpecWorkspaceFiles(ctx context.Context, opts store.ListBatchSpecWorkspaceFileOpts) ([]*btypes.BatchSpecWorkspaceFile, int64, error)
 
 	DatabaseDB() database.DB
 }
+
+const fileStoreBucket = "batch-changes"
 
 // transformRecord transforms a *btypes.BatchSpecWorkspaceExecutionJob into an apiclient.Job.
 func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job *btypes.BatchSpecWorkspaceExecutionJob) (apiclient.Job, error) {
@@ -107,7 +112,23 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 	if err != nil {
 		return apiclient.Job{}, err
 	}
-	files := map[string]string{srcInputPath: string(marshaledInput)}
+	files := map[string]apiclient.VirtualMachineFile{
+		srcInputPath: {
+			Content: string(marshaledInput),
+		},
+	}
+
+	workspaceFiles, _, err := s.ListBatchSpecWorkspaceFiles(ctx, store.ListBatchSpecWorkspaceFileOpts{BatchSpecRandID: batchSpec.RandID})
+	if err != nil {
+		return apiclient.Job{}, errors.Wrap(err, "fetching workspace files")
+	}
+	for _, workspaceFile := range workspaceFiles {
+		files[filepath.Join(srcWorkspaceFilesDir, workspaceFile.Path, workspaceFile.FileName)] = apiclient.VirtualMachineFile{
+			Bucket:     fileStoreBucket,
+			Key:        filepath.Join(batchSpec.RandID, workspaceFile.RandID),
+			ModifiedAt: workspaceFile.ModifiedAt,
+		}
+	}
 
 	// If we only want to fetch the workspace, we add a sparse checkout pattern.
 	sparseCheckout := []string{}
@@ -137,6 +158,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 					// Tell src to store tmp files inside the workspace. Src currently
 					// runs on the host and we don't want pollution outside of the workspace.
 					"-tmp", srcTempDir,
+					"-workspaceFiles", srcWorkspaceFilesDir,
 				},
 				Dir: ".",
 				Env: []string{},

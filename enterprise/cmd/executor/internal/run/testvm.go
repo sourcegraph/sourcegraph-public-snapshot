@@ -67,6 +67,8 @@ func createVM(ctx context.Context, config *config.Config, repositoryName, revisi
 	hostRunner := command.NewRunner("", commandLogger, command.Options{}, operations)
 	workspace, err := workspace.NewFirecrackerWorkspace(
 		ctx,
+		// No need for files store in the test.
+		nil,
 		// Just enough to spin up a VM.
 		executor.Job{
 			RepositoryName: repositoryName,

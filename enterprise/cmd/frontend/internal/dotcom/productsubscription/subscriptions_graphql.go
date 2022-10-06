@@ -11,9 +11,9 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
@@ -48,7 +48,7 @@ func productSubscriptionByDBID(ctx context.Context, logger log.Logger, db databa
 		return nil, err
 	}
 	// 🚨 SECURITY: Only site admins and the subscription account's user may view a product subscription.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, db, v.UserID); err != nil {
+	if err := auth.CheckSiteAdminOrSameUser(ctx, db, v.UserID); err != nil {
 		return nil, err
 	}
 	return &productSubscription{v: v, db: db}, nil
@@ -107,7 +107,7 @@ func (r *productSubscription) ActiveLicense(ctx context.Context) (graphqlbackend
 func (r *productSubscription) ProductLicenses(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.ProductLicenseConnection, error) {
 	// 🚨 SECURITY: Only site admins may list historical product licenses (to reduce confusion
 	// around old license reuse). Other viewers should use ProductSubscription.activeLicense.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -133,7 +133,7 @@ func (r *productSubscription) URL(ctx context.Context) (string, error) {
 func (r *productSubscription) URLForSiteAdmin(ctx context.Context) *string {
 	// 🚨 SECURITY: Only site admins may see this URL. Currently it does not contain any sensitive
 	// info, but there is no need to show it to non-site admins.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil
 	}
 	u := fmt.Sprintf("/site-admin/dotcom/product/subscriptions/%s", r.v.ID)
@@ -142,7 +142,7 @@ func (r *productSubscription) URLForSiteAdmin(ctx context.Context) *string {
 
 func (r ProductSubscriptionLicensingResolver) CreateProductSubscription(ctx context.Context, args *graphqlbackend.CreateProductSubscriptionArgs) (graphqlbackend.ProductSubscription, error) {
 	// 🚨 SECURITY: Only site admins may create product subscriptions.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.DB); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.DB); err != nil {
 		return nil, err
 	}
 
@@ -159,7 +159,7 @@ func (r ProductSubscriptionLicensingResolver) CreateProductSubscription(ctx cont
 
 func (r ProductSubscriptionLicensingResolver) ArchiveProductSubscription(ctx context.Context, args *graphqlbackend.ArchiveProductSubscriptionArgs) (*graphqlbackend.EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins may archive product subscriptions.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.DB); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.DB); err != nil {
 		return nil, err
 	}
 
@@ -192,11 +192,11 @@ func (r ProductSubscriptionLicensingResolver) ProductSubscriptions(ctx context.C
 	// 🚨 SECURITY: Users may only list their own product subscriptions. Site admins may list
 	// licenses for all users, or for any other user.
 	if accountUser == nil {
-		if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.DB); err != nil {
+		if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.DB); err != nil {
 			return nil, err
 		}
 	} else {
-		if err := backend.CheckSiteAdminOrSameUser(ctx, r.DB, accountUser.DatabaseID()); err != nil {
+		if err := auth.CheckSiteAdminOrSameUser(ctx, r.DB, accountUser.DatabaseID()); err != nil {
 			return nil, err
 		}
 	}
@@ -210,7 +210,7 @@ func (r ProductSubscriptionLicensingResolver) ProductSubscriptions(ctx context.C
 		// 🚨 SECURITY: Only site admins may query or view license for all users, or for any other user.
 		// Note this check is currently repetitive with the check above. However, it is duplicated here to
 		// ensure it remains in effect if the code path above chagnes.
-		if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.DB); err != nil {
+		if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.DB); err != nil {
 			return nil, err
 		}
 		opt.Query = *args.Query
