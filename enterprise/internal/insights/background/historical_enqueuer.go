@@ -191,7 +191,7 @@ func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, definitions []ity
 	var totalJobs []*queryrunner.Job
 	var totalPreempted []store.RecordSeriesPointArgs
 	err = iterator.ForEach(ctx, func(repoName string, id api.RepoID) error {
-		jobs, preempted, _, err, multi := analyzer.buildForRepo(ctx, index[repoName], repoName, id)
+		jobs, preempted, err, multi := analyzer.buildForRepo(ctx, index[repoName], repoName, id)
 		if err != nil {
 			return err
 		} else if multi != nil {
@@ -478,7 +478,7 @@ func (h *historicalEnqueuer) buildFrames(ctx context.Context, definitions []ityp
 	var multi error
 
 	hardErr := h.repoIterator(ctx, func(repoName string, id api.RepoID) error {
-		jobs, preempted, _, err, softErr := h.analyzer.buildForRepo(ctx, definitions, repoName, id)
+		jobs, preempted, err, softErr := h.analyzer.buildForRepo(ctx, definitions, repoName, id)
 		if err != nil {
 			return err
 		}
@@ -520,7 +520,7 @@ func (h *historicalEnqueuer) buildFrames(ctx context.Context, definitions []ityp
 	return hardErr
 }
 
-func (a *backfillAnalyzer) buildForRepo(ctx context.Context, definitions []itypes.InsightSeries, repoName string, id api.RepoID) (jobs []*queryrunner.Job, preempted []store.RecordSeriesPointArgs, seriesRecordingTimes []itypes.InsightSeriesRecordingTimes, err error, softErr error) {
+func (a *backfillAnalyzer) buildForRepo(ctx context.Context, definitions []itypes.InsightSeries, repoName string, id api.RepoID) (jobs []*queryrunner.Job, preempted []store.RecordSeriesPointArgs, err error, softErr error) {
 	span, ctx := ot.StartSpanFromContext(policy.WithShouldTrace(ctx, true), "historical_enqueuer.buildForRepo")
 	span.SetTag("repo_id", id)
 	defer func() {
@@ -545,16 +545,16 @@ func (a *backfillAnalyzer) buildForRepo(ctx context.Context, definitions []itype
 
 		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) || gitdomain.IsRepoNotExist(err) {
 			log15.Warn("insights backfill repository skipped - missing rev/repo", "repo_id", id, "repo_name", repoName)
-			return nil, nil, nil, nil, softErr // no error - repo may not be cloned yet (or not even pushed to code host yet)
+			return nil, nil, nil, softErr // no error - repo may not be cloned yet (or not even pushed to code host yet)
 		}
 		if errors.Is(err, discovery.EmptyRepoErr) {
 			log15.Warn("insights backfill repository skipped - empty repo", "repo_id", id, "repo_name", repoName)
-			return nil, nil, nil, nil, softErr // repository is empty
+			return nil, nil, nil, softErr // repository is empty
 		}
 		// soft error, repo may be in a bad state but others might be OK.
 		softErr = errors.Append(softErr, errors.Wrap(err, "FirstEverCommit "+repoName))
 		log15.Error("insights backfill repository skipped", "repo_id", id, "repo_name", repoName, "error", err)
-		return nil, nil, nil, nil, softErr
+		return nil, nil, nil, softErr
 	}
 
 	// For every series that we want to potentially gather historical data for, try.
@@ -563,10 +563,6 @@ func (a *backfillAnalyzer) buildForRepo(ctx context.Context, definitions []itype
 			Unit:  itypes.IntervalUnit(series.SampleIntervalUnit),
 			Value: series.SampleIntervalValue,
 		}, series.CreatedAt.Truncate(time.Hour*24))
-		seriesRecordingTimes = append(seriesRecordingTimes, itypes.InsightSeriesRecordingTimes{
-			SeriesID:       series.SeriesID,
-			RecordingTimes: timeseries.GetRecordingTimesFromFrames(frames),
-		})
 
 		log15.Debug("insights: starting frames", "repo_id", id, "series_id", series.SeriesID, "frames", frames)
 		plan := a.frameFilter.FilterFrames(ctx, frames, id)
@@ -581,7 +577,7 @@ func (a *backfillAnalyzer) buildForRepo(ctx context.Context, definitions []itype
 
 			err := a.limiter.Wait(ctx)
 			if err != nil {
-				return nil, nil, nil, errors.Wrap(err, "limiter.Wait"), nil
+				return nil, nil, errors.Wrap(err, "limiter.Wait"), nil
 			}
 
 			// Build historical data for this unique timeframe+repo+series.
@@ -605,7 +601,7 @@ func (a *backfillAnalyzer) buildForRepo(ctx context.Context, definitions []itype
 		}
 	}
 	log15.Info("[historical_enqueuer_backfill] buildForRepo end", "repo_id", id, "repo_name", repoName)
-	return jobs, preempted, seriesRecordingTimes, nil, softErr
+	return jobs, preempted, nil, softErr
 }
 
 // buildSeriesContext describes context/parameters for a call to analyzeSeries()
