@@ -7,15 +7,18 @@ import {
     findNext,
     findPrevious,
     getSearchQuery,
+    openSearchPanel,
     search as codemirrorSearch,
     searchKeymap,
     SearchQuery,
     setSearchQuery,
 } from '@codemirror/search'
-import { Extension } from '@codemirror/state'
-import { EditorView, keymap, Panel, runScopeHandlers, ViewUpdate } from '@codemirror/view'
+import { Compartment, Extension } from '@codemirror/state'
+import { EditorView, KeyBinding, keymap, Panel, runScopeHandlers, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 
+import { isMacPlatform } from '@sourcegraph/common'
+import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { createSVGIcon } from '@sourcegraph/shared/src/util/dom'
 import { getButtonClassName, getLabelClassName } from '@sourcegraph/wildcard'
 
@@ -31,8 +34,9 @@ class SearchPanel implements Panel {
     private input: HTMLInputElement
     private caseSensitive: HTMLInputElement
     private regexp: HTMLInputElement
+    private overrideBrowserSearch: HTMLInputElement
 
-    constructor(private view: EditorView) {
+    constructor(private view: EditorView, private config: SearchConfig) {
         const previous = createElement(
             'button',
             {
@@ -70,6 +74,16 @@ class SearchPanel implements Panel {
         this.caseSensitive.setAttribute('data-testid', 'blob-view-search-case-sensitive')
         this.regexp = createElement('input', { type: 'checkbox', className: 'mr-2', onchange: this.commit })
         this.regexp.setAttribute('data-testid', 'blob-view-search-regexp')
+        this.overrideBrowserSearch = createElement('input', {
+            type: 'checkbox',
+            className: 'mr-2',
+            onchange: event => {
+                this.view.dispatch({
+                    effects: setOverrideBrowserFindInPageShortcut.of((event.target as HTMLInputElement).checked),
+                })
+            },
+        })
+        this.caseSensitive.setAttribute('data-testid', 'blob-view-search-case-sensitive')
 
         this.dom = createElement(
             'div',
@@ -83,7 +97,13 @@ class SearchPanel implements Panel {
                 this.caseSensitive,
                 'Match case'
             ),
-            createElement('label', { className: `form-check-label mx-2 ${labelClassName}` }, this.regexp, 'Regexp')
+            createElement('label', { className: `form-check-label mx-2 ${labelClassName}` }, this.regexp, 'Regexp'),
+            createElement(
+                'label',
+                { className: `form-check-label mx-2 ${labelClassName}` },
+                this.overrideBrowserSearch,
+                `${isMacPlatform() ? 'Cmd' : 'Ctrl'}-f triggers file search`
+            )
         )
 
         this.query = getSearchQuery(this.view.state)
@@ -96,6 +116,7 @@ class SearchPanel implements Panel {
         if (!currentQuery.eq(getSearchQuery(update.startState))) {
             this.setQuery(currentQuery)
         }
+        this.overrideBrowserSearch.checked = update.state.field(overrideBrowserFindInPageShortcut)
     }
 
     public mount(): void {
@@ -176,40 +197,72 @@ class SearchPanel implements Panel {
     }
 }
 
-export const search: Extension = [
-    EditorView.theme({
-        '.search-container': {
-            backgroundColor: 'var(--code-bg)',
-            display: 'flex',
-            alignItems: 'center',
-            padding: '0.375rem 1rem',
-        },
-        '.search-container > input.form-control': {
-            width: '15rem',
-        },
-        '.search-container input[type="checkbox"]': {
-            verticalAlign: 'text-bottom',
-        },
-        '.search-container svg': {
-            width: 'var(--icon-inline-size)',
-            height: 'var(--icon-inline-size)',
-            boxSizing: 'border-box',
-            textAlign: 'center',
-            marginRight: '0.25rem',
-            // The icons contain whitespace themselves, this makes the button
-            // look more centered
-            marginLeft: '-0.125rem',
-            verticalAlign: 'text-bottom',
-        },
-        '.cm-searchMatch': {
-            backgroundColor: 'var(--mark-bg)',
-        },
-        '.cm-searchMatch-selected': {
-            backgroundColor: 'var(--oc-orange-3)',
-        },
-    }),
-    keymap.of(searchKeymap),
-    codemirrorSearch({
-        createPanel: view => new SearchPanel(view),
-    }),
-]
+interface SearchConfig {
+    overrideBrowserFindInPageShortcut: boolean
+    onOverrideBrowserFindInPageToggle: (enabled: boolean) => void
+}
+
+const [overrideBrowserFindInPageShortcut, , setOverrideBrowserFindInPageShortcut] = createUpdateableField(true)
+
+export function search(config: SearchConfig): Extension {
+    const keymapCompartment = new Compartment()
+
+    function getKeyBindings(override: boolean): readonly KeyBinding[] {
+        if (override) {
+            return searchKeymap
+        }
+        return searchKeymap.filter(binding => binding.key !== 'Mod-f' && binding.key !== 'Escape')
+    }
+
+    return [
+        overrideBrowserFindInPageShortcut.init(() => config.overrideBrowserFindInPageShortcut),
+        EditorView.updateListener.of(update => {
+            const override = update.state.field(overrideBrowserFindInPageShortcut)
+            if (update.startState.field(overrideBrowserFindInPageShortcut) !== override) {
+                config.onOverrideBrowserFindInPageToggle(override)
+                update.view.dispatch({ effects: keymapCompartment.reconfigure(keymap.of(getKeyBindings(override))) })
+            }
+        }),
+        EditorView.theme({
+            '.search-container': {
+                backgroundColor: 'var(--code-bg)',
+                display: 'flex',
+                alignItems: 'center',
+                padding: '0.375rem 1rem',
+            },
+            '.search-container > input.form-control': {
+                width: '15rem',
+            },
+            '.search-container input[type="checkbox"]': {
+                verticalAlign: 'text-bottom',
+            },
+            '.search-container svg': {
+                width: 'var(--icon-inline-size)',
+                height: 'var(--icon-inline-size)',
+                boxSizing: 'border-box',
+                textAlign: 'center',
+                marginRight: '0.25rem',
+                // The icons contain whitespace themselves, this makes the button
+                // look more centered
+                marginLeft: '-0.125rem',
+                verticalAlign: 'text-bottom',
+            },
+            '.cm-searchMatch': {
+                backgroundColor: 'var(--mark-bg)',
+            },
+            '.cm-searchMatch-selected': {
+                backgroundColor: 'var(--oc-orange-3)',
+            },
+        }),
+        keymapCompartment.of(keymap.of(getKeyBindings(config.overrideBrowserFindInPageShortcut))),
+        codemirrorSearch({
+            createPanel: view => new SearchPanel(view, config),
+        }),
+        ViewPlugin.define(view => {
+            if (!config.overrideBrowserFindInPageShortcut) {
+                window.requestAnimationFrame(() => openSearchPanel(view))
+            }
+            return {}
+        }),
+    ]
+}
