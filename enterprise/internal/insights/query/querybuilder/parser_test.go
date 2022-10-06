@@ -172,6 +172,18 @@ func TestContainsField(t *testing.T) {
 			query.FieldRepo,
 			true,
 		},
+		{
+			"field in first plan of query",
+			"(file:test repo:test) OR (some other search)",
+			query.FieldRepo,
+			true,
+		},
+		{
+			"field in 2nd plan of query",
+			"(some other search) OR (file:test repo:test) ",
+			query.FieldRepo,
+			true,
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
