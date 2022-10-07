@@ -30,7 +30,6 @@ import {
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import {Alert, Code, Text} from '@sourcegraph/wildcard';
 
 import { smartSearchClickedEvent } from '../util/events'
 
