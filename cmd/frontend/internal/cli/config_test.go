@@ -30,8 +30,9 @@ func TestServiceConnections(t *testing.T) {
 func TestWriteSiteConfig(t *testing.T) {
 	db := database.NewMockDB()
 	confStore := database.NewMockConfStore()
+	conf := &database.SiteConfig{ID: 1}
 	confStore.SiteGetLatestFunc.SetDefaultReturn(
-		&database.SiteConfig{ID: 1},
+		conf,
 		nil,
 	)
 	logger := logtest.Scoped(t)
@@ -39,12 +40,12 @@ func TestWriteSiteConfig(t *testing.T) {
 	confSource := newConfigurationSource(logger, db)
 
 	t.Run("error when incorrect last ID", func(t *testing.T) {
-		err := confSource.Write(context.Background(), conftypes.RawUnified{}, 0)
+		err := confSource.Write(context.Background(), conftypes.RawUnified{}, conf.ID-1)
 		assert.Error(t, err)
 	})
 
 	t.Run("no error when correct last ID", func(t *testing.T) {
-		err := confSource.Write(context.Background(), conftypes.RawUnified{}, 1)
+		err := confSource.Write(context.Background(), conftypes.RawUnified{}, conf.ID)
 		assert.NoError(t, err)
 	})
 }
