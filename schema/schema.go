@@ -607,7 +607,7 @@ type ExperimentalFeatures struct {
 	ApidocsSearchIndexing string `json:"apidocs.search.indexing,omitempty"`
 	// BitbucketServerFastPerm description: DEPRECATED: Configure in Bitbucket Server config.
 	BitbucketServerFastPerm string `json:"bitbucketServerFastPerm,omitempty"`
-	// CustomGitFetch description: JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command. This feature can be disabled by setting environment variable `DISABLE_CUSTOM_GIT_FETCH` as `true` on gitserver.
+	// CustomGitFetch description: JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command. This feature can be disabled by default. The environment variable `ENABLE_CUSTOM_GIT_FETCH` must be set to `true` on gitserver to enable this feature.
 	CustomGitFetch []*CustomGitFetchMapping `json:"customGitFetch,omitempty"`
 	// DebugLog description: Turns on debug logging for specific debugging scenarios.
 	DebugLog *DebugLog `json:"debug.log,omitempty"`

@@ -17,10 +17,10 @@ var customGitFetch = conf.Cached(func() map[string][]string {
 	return buildCustomFetchMappings(exp.CustomGitFetch)
 })
 
-var disableCustomGitFetch = env.Get("DISABLE_CUSTOM_GIT_FETCH", "false", "Disable custom git fetch")
+var enableCustomGitFetch = env.Get("ENABLE_CUSTOM_GIT_FETCH", "false", "Enable custom git fetch")
 
 func buildCustomFetchMappings(c []*schema.CustomGitFetchMapping) map[string][]string {
-	if c == nil || disableCustomGitFetch == "true" {
+	if c == nil || enableCustomGitFetch == "false" {
 		return map[string][]string{}
 	}
 

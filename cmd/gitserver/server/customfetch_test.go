@@ -31,10 +31,10 @@ func TestDisabledCustomGitFetch(t *testing.T) {
 	}
 	remoteUrl := "https://8cd1419f4d5c1e0527f2893c9422f1a2a435116d@github.com/foo/normal/one"
 
-	// env var DISABLE_CUSTOM_GIT_FETCH is set to true
-	disableCustomGitFetch = "true"
+	// env var ENABLE_CUSTOM_GIT_FETCH is set to false
+	enableCustomGitFetch = "false"
 	t.Cleanup(func() {
-		disableCustomGitFetch = "false"
+		enableCustomGitFetch = "true"
 	})
 
 	customGitFetch = func() map[string][]string {
