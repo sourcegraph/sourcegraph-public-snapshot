@@ -83,6 +83,7 @@ export function PieChart<Datum>(props: PieChartProps<Datum>): ReactElement | nul
         <svg
             {...attributes}
             aria-label="Pie chart"
+            role="group"
             width={width}
             height={height}
             className={classNames(styles.svg, className)}
@@ -95,18 +96,19 @@ export function PieChart<Datum>(props: PieChartProps<Datum>): ReactElement | nul
                             : pie.arcs
 
                         return (
-                            <Group>
+                            <Group role="list">
                                 {arcs.map((arc, index) => (
                                     <MaybeLink
                                         key={getDatumName(arc.data)}
                                         to={getDatumLink(arc.data)}
                                         target="_blank"
                                         rel="noopener"
-                                        className={styles.link}
                                         role={getDatumLink(arc.data) ? 'link' : 'graphics-dataunit'}
-                                        aria-label={`Element ${index + 1} of ${arcs.length}. Name: ${getDatumName(
-                                            arc.data
-                                        )}. Value: ${getSubtitle(arc, total)}.`}
+                                        aria-label={`Name: ${getDatumName(arc.data)}. Value: ${getSubtitle(
+                                            arc,
+                                            total
+                                        )}.`}
+                                        className={styles.link}
                                         onClick={event => onDatumLinkClick(event, arc.data, index)}
                                     >
                                         <PieArc
