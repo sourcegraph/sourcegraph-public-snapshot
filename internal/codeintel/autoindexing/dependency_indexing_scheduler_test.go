@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	autoindexingshared "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -73,7 +74,7 @@ func TestDependencyIndexingSchedulerHandler(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	job := codeinteltypes.DependencyIndexingJob{
+	job := autoindexingshared.DependencyIndexingJob{
 		UploadID:            42,
 		ExternalServiceKind: "",
 		ExternalServiceSync: time.Time{},
@@ -174,7 +175,7 @@ func TestDependencyIndexingSchedulerHandlerCustomer(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	job := codeinteltypes.DependencyIndexingJob{
+	job := autoindexingshared.DependencyIndexingJob{
 		UploadID:            42,
 		ExternalServiceKind: "",
 		ExternalServiceSync: time.Time{},
@@ -267,7 +268,7 @@ func TestDependencyIndexingSchedulerHandlerRequeueNotCloned(t *testing.T) {
 		repoUpdater:        mockRepoUpdater,
 	}
 
-	job := codeinteltypes.DependencyIndexingJob{
+	job := autoindexingshared.DependencyIndexingJob{
 		UploadID:            42,
 		ExternalServiceKind: "",
 		ExternalServiceSync: time.Time{},
@@ -329,7 +330,7 @@ func TestDependencyIndexingSchedulerHandlerSkipNonExistant(t *testing.T) {
 		repoStore:          mockRepoStore,
 	}
 
-	job := codeinteltypes.DependencyIndexingJob{
+	job := autoindexingshared.DependencyIndexingJob{
 		UploadID:            42,
 		ExternalServiceKind: "",
 		ExternalServiceSync: time.Time{},
@@ -374,7 +375,7 @@ func TestDependencyIndexingSchedulerHandlerShouldSkipRepository(t *testing.T) {
 		repoStore:          mockRepoStore,
 	}
 
-	job := codeinteltypes.DependencyIndexingJob{
+	job := autoindexingshared.DependencyIndexingJob{
 		ExternalServiceKind: "",
 		ExternalServiceSync: time.Time{},
 		UploadID:            42,
