@@ -60,9 +60,13 @@ func AuthzQueryConds(ctx context.Context, db DB) (*sqlf.Query, error) {
 
 //nolint:unparam // unparam complains that `perms` always has same value across call-sites, but that's OK, as we only support read permissions right now.
 func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID int32, perms authz.Perms) *sqlf.Query {
-	const queryFmtString = `(
-    %s                            -- TRUE or FALSE to indicate whether to bypass the check
-OR (
+	if bypassAuthz {
+		// if bypassAuthz is true, we don't care about any of the checks
+		return sqlf.Sprintf("TRUE")
+	}
+
+	const unrestrictedReposQuery = `
+(
 	-- Unrestricted repos are visible to all users
 	EXISTS (
 		SELECT
@@ -71,23 +75,25 @@ OR (
 		AND unrestricted
 	)
 )
-OR  (
-	NOT %s                        -- Disregard unrestricted state when permissions user mapping is enabled
-	AND (
-		NOT repo.private          -- Happy path of non-private repositories
-		OR  EXISTS (              -- Each external service defines if repositories are unrestricted
-			SELECT
-			FROM external_services AS es
-			JOIN external_service_repos AS esr ON (
-					esr.external_service_id = es.id
-				AND esr.repo_id = repo.id
-				AND es.unrestricted = TRUE
-				AND es.deleted_at IS NULL
-			)
-		)
+`
+	const externalServiceUnrestrictedQuery = `
+(
+	(
+    NOT repo.private          -- Happy path of non-private repositories
+    OR  EXISTS (              -- Each external service defines if repositories are unrestricted
+        SELECT
+        FROM external_services AS es
+        JOIN external_service_repos AS esr ON (
+                esr.external_service_id = es.id
+            AND esr.repo_id = repo.id
+            AND es.unrestricted = TRUE
+            AND es.deleted_at IS NULL
+        )
 	)
 )
-OR  (                             -- Restricted repositories require checking permissions
+`
+	const restrictedRepositoriesQuery = `
+(                             -- Restricted repositories require checking permissions
 	(
 		SELECT object_ids_ints @> INTSET(repo.id)
 		FROM user_permissions
@@ -112,12 +118,17 @@ OR  (                             -- Restricted repositories require checking pe
 		)
 	)
 )
-)
 `
+	queryFmtString := "(" + unrestrictedReposQuery
+
+	// Disregard unrestricted state when permissions user mapping is enabled
+	if !usePermissionsUserMapping {
+		queryFmtString = queryFmtString + "OR" + externalServiceUnrestrictedQuery
+	}
+
+	queryFmtString = queryFmtString + "OR" + restrictedRepositoriesQuery + ")"
 
 	return sqlf.Sprintf(queryFmtString,
-		bypassAuthz,
-		usePermissionsUserMapping,
 		authenticatedUserID,
 		perms.String(),
 		authenticatedUserID,
