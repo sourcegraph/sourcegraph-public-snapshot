@@ -2,11 +2,9 @@ package uploads
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/opentracing/opentracing-go/log"
-	otlog "github.com/opentracing/opentracing-go/log"
 
 	gitserverOptions "github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -28,14 +26,6 @@ func (s *Service) NewCommitGraphUpdater(interval time.Duration, maxAgeForNonStal
 // will always be the one we want.
 
 func (s *Service) updateAllDirtyCommitGraphs(ctx context.Context, maxAgeForNonStaleBranches time.Duration, maxAgeForNonStaleTags time.Duration) (err error) {
-	ctx, _, endObservation := s.operations.updateDirtyRepositories.With(ctx, &err, observation.Args{
-		LogFields: []log.Field{
-			log.Int("maxAgeForNonStaleBranches in ms", int(maxAgeForNonStaleBranches.Milliseconds())),
-			log.Int("maxAgeForNonStaleTags in ms", int(maxAgeForNonStaleTags.Milliseconds())),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
 	repositoryIDs, err := s.GetDirtyRepositories(ctx)
 	if err != nil {
 		return errors.Wrap(err, "uploadSvc.DirtyRepositories")
@@ -53,13 +43,6 @@ func (s *Service) updateAllDirtyCommitGraphs(ctx context.Context, maxAgeForNonSt
 	}
 
 	return updateErr
-}
-
-func (s *Service) GetDirtyRepositories(ctx context.Context) (_ map[int]int, err error) {
-	ctx, _, endObservation := s.operations.getDirtyRepositories.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	return s.store.GetDirtyRepositories(ctx)
 }
 
 // lockAndUpdateUploadsVisibleToCommits will call UpdateUploadsVisibleToCommits while holding an advisory lock to give exclusive access to the
@@ -105,7 +88,7 @@ func (s *Service) lockAndUpdateUploadsVisibleToCommits(ctx context.Context, repo
 	// Decorate the commit graph with the set of processed uploads are visible from each commit,
 	// then bulk update the denormalized view in Postgres. We call this with an empty graph as well
 	// so that we end up clearing the stale data and bulk inserting nothing.
-	if err := s.UpdateUploadsVisibleToCommits(ctx, repositoryID, commitGraph, refDescriptions, maxAgeForNonStaleBranches, maxAgeForNonStaleTags, dirtyToken, time.Time{}); err != nil {
+	if err := s.store.UpdateUploadsVisibleToCommits(ctx, repositoryID, commitGraph, refDescriptions, maxAgeForNonStaleBranches, maxAgeForNonStaleTags, dirtyToken, time.Time{}); err != nil {
 		return errors.Wrap(err, "uploadSvc.UpdateUploadsVisibleToCommits")
 	}
 
@@ -124,7 +107,7 @@ func (s *Service) lockAndUpdateUploadsVisibleToCommits(ctx context.Context, repo
 // accelerating rate, as we routinely expire old information for active repositories in a janitor
 // process.
 func (s *Service) getCommitGraph(ctx context.Context, repositoryID int) (*gitdomain.CommitGraph, error) {
-	commitDate, ok, err := s.GetOldestCommitDate(ctx, repositoryID)
+	commitDate, ok, err := s.store.GetOldestCommitDate(ctx, repositoryID)
 	if err != nil {
 		return nil, err
 	}
@@ -147,21 +130,4 @@ func (s *Service) getCommitGraph(ctx context.Context, repositoryID int) (*gitdom
 	}
 
 	return commitGraph, nil
-}
-
-func (s *Service) UpdateUploadsVisibleToCommits(ctx context.Context, repositoryID int, graph *gitdomain.CommitGraph, refDescriptions map[string][]gitdomain.RefDescription, maxAgeForNonStaleBranches, maxAgeForNonStaleTags time.Duration, dirtyToken int, now time.Time) (err error) {
-	ctx, _, endObservation := s.operations.updateUploadsVisibleToCommits.With(ctx, &err, observation.Args{
-		LogFields: []otlog.Field{
-			otlog.Int("repositoryID", repositoryID),
-			otlog.String("graph", fmt.Sprintf("%v", graph)),
-			otlog.String("refDescriptions", fmt.Sprintf("%v", refDescriptions)),
-			otlog.String("maxAgeForNonStaleBranches", maxAgeForNonStaleBranches.String()),
-			otlog.String("maxAgeForNonStaleTags", maxAgeForNonStaleTags.String()),
-			otlog.Int("dirtyToken", dirtyToken),
-			otlog.String("now", now.String()),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	return s.store.UpdateUploadsVisibleToCommits(ctx, repositoryID, graph, refDescriptions, maxAgeForNonStaleBranches, maxAgeForNonStaleTags, dirtyToken, now)
 }

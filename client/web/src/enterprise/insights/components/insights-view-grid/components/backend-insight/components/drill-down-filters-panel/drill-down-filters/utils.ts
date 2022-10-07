@@ -7,7 +7,7 @@ import {
 import { DEFAULT_SERIES_DISPLAY_OPTIONS } from '../../../../../../../core'
 import { MAX_NUMBER_OF_SERIES } from '../../../../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
 import { SeriesDisplayOptions, SeriesDisplayOptionsInputRequired } from '../../../../../../../core/types/insight/common'
-import { Validator } from '../../../../../../form/hooks/useField'
+import { Validator } from '../../../../../../form'
 
 import { DrillDownFiltersFormValues } from './DrillDownInsightFilters'
 

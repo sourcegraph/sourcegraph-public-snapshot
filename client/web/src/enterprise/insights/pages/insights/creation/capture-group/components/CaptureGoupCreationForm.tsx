@@ -1,4 +1,4 @@
-import React, { FC, ReactNode } from 'react'
+import { FC, ReactNode } from 'react'
 
 import classNames from 'classnames'
 
@@ -17,7 +17,7 @@ import {
 } from '../../../../../components'
 import { useUiFeatures } from '../../../../../hooks'
 import { CaptureGroupFormFields } from '../types'
-import { searchQueryValidator } from '../utils/search-query-validator'
+import { Checks } from '../utils/search-query-validator'
 
 import { CaptureGroupSeriesInfoBadge } from './info-badge/CaptureGroupSeriesInfoBadge'
 import { CaptureGroupQueryInput } from './query-input/CaptureGroupQueryInput'
@@ -30,7 +30,7 @@ interface CaptureGroupCreationFormProps {
     allReposMode: useFieldAPI<CaptureGroupFormFields['allRepos']>
     step: useFieldAPI<CaptureGroupFormFields['step']>
     stepValue: useFieldAPI<CaptureGroupFormFields['stepValue']>
-    query: useFieldAPI<CaptureGroupFormFields['groupSearchQuery']>
+    query: useFieldAPI<CaptureGroupFormFields['groupSearchQuery'], Checks>
 
     dashboardReferenceCount?: number
     isFormClearActive: boolean
@@ -109,7 +109,7 @@ export const CaptureGroupCreationForm: FC<CaptureGroupCreationFormProps> = props
                 </small>
             </FormGroup>
 
-            <hr className="my-4 w-100" />
+            <hr aria-hidden={true} className="my-4 w-100" />
 
             <FormGroup
                 name="data series"
@@ -130,19 +130,30 @@ export const CaptureGroupCreationForm: FC<CaptureGroupCreationFormProps> = props
                 <Card className="p-3">
                     <Label className="w-100">
                         <div className="mb-2">Search query</div>
-                        <QueryFieldSubtitle className="mb-3" />
+
+                        <small className={classNames('mb-3', 'text-muted', 'd-block', 'font-weight-normal')}>
+                            Search query must contain a properly formatted regular expression with at least one{' '}
+                            <Link
+                                to="/help/code_insights/explanations/automatically_generated_data_series#regular-expression-capture-group-resources"
+                                target="_blank"
+                                rel="noopener"
+                            >
+                                capture group.
+                            </Link>{' '}
+                            The capture group cannot match file or repository names, it can match only the file
+                            contents.
+                        </small>
 
                         <Input
-                            required={true}
                             as={CaptureGroupQueryInput}
+                            required={true}
                             repositories={repositories.input.value}
                             placeholder="Example: file:\.pom$ <java\.version>(.*)</java\.version>"
-                            className="mb-3"
                             {...getDefaultInputProps(query)}
                         />
                     </Label>
 
-                    <SearchQueryChecks checks={searchQueryValidator(query.input.value, query.meta.touched)} />
+                    <SearchQueryChecks checks={query.meta.validationContext} />
 
                     {!licensed && (
                         <LimitedAccessLabel message="Unlock Code Insights for unlimited data series" className="my-3" />
@@ -175,7 +186,7 @@ export const CaptureGroupCreationForm: FC<CaptureGroupCreationFormProps> = props
                 </Card>
             </FormGroup>
 
-            <hr className="my-4 w-100" />
+            <hr aria-hidden={true} className="my-4 w-100" />
 
             <FormGroup name="chart settings group" title="Chart settings">
                 <Input
@@ -202,23 +213,9 @@ export const CaptureGroupCreationForm: FC<CaptureGroupCreationFormProps> = props
                 <CodeInsightDashboardsVisibility className="mt-5 mb-n1" dashboardCount={dashboardReferenceCount} />
             )}
 
-            <hr className="my-4 w-100" />
+            <hr aria-hidden={true} className="my-4 w-100" />
 
             {children({ submitting, submitErrors, isFormClearActive })}
         </form>
     )
 }
-
-const QueryFieldSubtitle: React.FunctionComponent<React.PropsWithChildren<{ className?: string }>> = props => (
-    <small className={classNames(props.className, 'text-muted', 'd-block', 'font-weight-normal')}>
-        Search query must contain a properly formatted regular expression with at least one{' '}
-        <Link
-            to="/help/code_insights/explanations/automatically_generated_data_series#regular-expression-capture-group-resources"
-            target="_blank"
-            rel="noopener"
-        >
-            capture group.
-        </Link>{' '}
-        The capture group cannot match file or repository names, it can match only the file contents.
-    </small>
-)

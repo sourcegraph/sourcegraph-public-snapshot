@@ -37,6 +37,12 @@ func wrap(ctx context.Context, cmd string) wrapped {
 	case ShellType(ctx) == FishShell:
 		w.Command = fmt.Sprintf("fish || true; %s", cmd)
 
+	case ShellType(ctx) == BashShell:
+		// -i sets the bash shell to be interactive, since this IS an interactive step but more importantly
+		// on some platforms (I'm looking at you Ubuntu runner from github actions) the ~/.bashrc file has a section
+		// where it EXITs early out of the bashrc file if it is not running in interactive mode ...
+		w.ShellFlags = []string{"-i", "-c"}
+		w.Command = fmt.Sprintf("source %s || true; %s", ShellConfigPath(ctx), cmd)
 	default:
 		// The above interactive shell approach fails on OSX because the default shell configuration
 		// prints sessions restoration informations that will mess with the output. So we fall back

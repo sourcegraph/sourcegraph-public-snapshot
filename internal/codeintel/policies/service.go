@@ -15,30 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var _ service = (*Service)(nil)
-
-type service interface {
-	// Configurations
-	GetConfigurationPolicies(ctx context.Context, opts types.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error)
-	GetConfigurationPolicyByID(ctx context.Context, id int) (_ types.ConfigurationPolicy, _ bool, err error)
-	CreateConfigurationPolicy(ctx context.Context, configurationPolicy types.ConfigurationPolicy) (types.ConfigurationPolicy, error)
-	UpdateConfigurationPolicy(ctx context.Context, policy types.ConfigurationPolicy) (err error)
-	DeleteConfigurationPolicyByID(ctx context.Context, id int) (err error)
-
-	// Retention Policy
-	GetRetentionPolicyOverview(ctx context.Context, upload types.Upload, matchesOnly bool, first int, after int64, query string, now time.Time) (matches []types.RetentionPolicyMatchCandidate, totalCount int, err error)
-
-	// Repository
-	GetPreviewRepositoryFilter(ctx context.Context, patterns []string, limit, offset int) (_ []int, totalCount int, repositoryMatchLimit *int, _ error)
-	GetPreviewGitObjectFilter(ctx context.Context, repositoryID int, gitObjectType types.GitObjectType, pattern string) (map[string][]string, error)
-	SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context, batchSize int) (configurationPolicies []types.ConfigurationPolicy, err error)
-	UpdateReposMatchingPatterns(ctx context.Context, patterns []string, policyID int, repositoryMatchLimit *int) (err error)
-
-	// GetUnsafeDB returns the underlying database handle. This is used by the
-	// resolvers that have the old convention of using the database handle directly.
-	GetUnsafeDB() database.DB
-}
-
 type Service struct {
 	store          store.Store
 	uploadSvc      UploadService
@@ -328,10 +304,12 @@ func policyByID(policies []types.ConfigurationPolicy, id int) *types.Configurati
 	if id == -1 {
 		return nil
 	}
+
 	for _, policy := range policies {
 		if policy.ID == id {
 			return &policy
 		}
 	}
+
 	return nil
 }

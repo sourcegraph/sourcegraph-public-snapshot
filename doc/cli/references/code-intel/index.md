@@ -1,4 +1,4 @@
-# `src lsif`
+# `src code-intel`
 
 ## Subcommands
 

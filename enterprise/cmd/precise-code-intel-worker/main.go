@@ -12,7 +12,6 @@ import (
 	"go.opentelemetry.io/otel"
 
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
@@ -35,8 +34,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/version"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -94,16 +91,8 @@ func main() {
 	// be ready for traffic.
 	close(ready)
 
-	// Initialize stores
-	uploadStore, err := lsifuploadstore.New(context.Background(), config.LSIFUploadStoreConfig, observationContext)
-	if err != nil {
-		logger.Fatal("Failed to create upload store", log.Error(err))
-	}
-	if err := initializeUploadStore(context.Background(), uploadStore); err != nil {
-		logger.Fatal("Failed to initialize upload store", log.Error(err))
-	}
-
 	// Initialize sub-repo permissions client
+	var err error
 	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(db.SubRepoPerms())
 	if err != nil {
 		logger.Fatal("Failed to create sub-repo client", log.Error(err))
@@ -117,21 +106,23 @@ func main() {
 		logger.Fatal("Failed to create codeintel services", log.Error(err))
 	}
 
+	// Initialize stores
+	uploadStore, err := lsifuploadstore.New(context.Background(), config.LSIFUploadStoreConfig, observationContext)
+	if err != nil {
+		logger.Fatal("Failed to create upload store", log.Error(err))
+	}
+	if err := initializeUploadStore(context.Background(), uploadStore); err != nil {
+		logger.Fatal("Failed to initialize upload store", log.Error(err))
+	}
+
 	// Initialize worker
-	rootContext := actor.WithInternalActor(context.Background())
-	handler := services.UploadsService.WorkerutilHandler(
+	worker := services.UploadsService.NewWorker(
 		uploadStore,
 		config.WorkerConcurrency,
 		config.WorkerBudget,
+		config.WorkerPollInterval,
+		config.MaximumRuntimePerJob,
 	)
-	worker := dbworker.NewWorker(rootContext, services.UploadsService.WorkerutilStore(), handler, workerutil.WorkerOptions{
-		Name:                 "precise_code_intel_upload_worker",
-		NumHandlers:          config.WorkerConcurrency,
-		Interval:             config.WorkerPollInterval,
-		HeartbeatInterval:    time.Second,
-		Metrics:              makeWorkerMetrics(observationContext),
-		MaximumRuntimePerJob: config.MaximumRuntimePerJob,
-	})
 
 	// Initialize health server
 	server := httpserver.NewFromAddr(addr, &http.Server{
@@ -192,10 +183,6 @@ func makeObservationContext(observationContext *observation.Context, withHoney b
 	ctx := *observationContext
 	ctx.HoneyDataset = nil
 	return &ctx
-}
-
-func makeWorkerMetrics(observationContext *observation.Context) workerutil.WorkerMetrics {
-	return workerutil.NewMetrics(observationContext, "codeintel_upload_processor")
 }
 
 func initializeUploadStore(ctx context.Context, uploadStore uploadstore.Store) error {

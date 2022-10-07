@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import { ListboxGroup, ListboxGroupLabel, ListboxInput, ListboxList, ListboxPopover } from '@reach/listbox'
 import { VisuallyHidden } from '@reach/visually-hidden'
@@ -7,7 +7,6 @@ import classNames from 'classnames'
 import { Input, H3, Text } from '@sourcegraph/wildcard'
 
 import {
-    CodeInsightsBackendContext,
     CustomInsightDashboard,
     InsightDashboard,
     isCustomDashboard,
@@ -16,6 +15,7 @@ import {
     isPersonalDashboard,
     isVirtualDashboard,
 } from '../../../../../core'
+import { useUiFeatures } from '../../../../../hooks'
 
 import { MenuButton, SelectDashboardOption, SelectOption } from './components'
 
@@ -44,9 +44,7 @@ export const DashboardSelect: React.FunctionComponent<React.PropsWithChildren<Da
     const { value, dashboards: rawDashboards, onSelect, className } = props
     const [filter, setFilter] = useState('')
     const [dashboards, setDashboards] = useState(rawDashboards)
-    const {
-        UIFeatures: { licensed },
-    } = useContext(CodeInsightsBackendContext)
+    const { licensed } = useUiFeatures()
 
     const handleChange = (value: string): void => {
         const dashboard = dashboards.find(dashboard => dashboard.id === value)

@@ -77,14 +77,24 @@ export interface SearchResultsInfoBarProps
 export const SearchResultsInfoBar: React.FunctionComponent<
     React.PropsWithChildren<SearchResultsInfoBarProps>
 > = props => {
+    const globalTypeFilter = useMemo(
+        () => (props.query ? findFilter(props.query, 'type', FilterKind.Global)?.value?.value : undefined),
+        [props.query]
+    )
+
     const canCreateMonitorFromQuery = useMemo(() => {
-        if (!props.query) {
+        if (globalTypeFilter) {
             return false
         }
-        const globalTypeFilterInQuery = findFilter(props.query, 'type', FilterKind.Global)
-        const globalTypeFilterValue = globalTypeFilterInQuery?.value ? globalTypeFilterInQuery.value.value : undefined
-        return globalTypeFilterValue === 'diff' || globalTypeFilterValue === 'commit'
-    }, [props.query])
+        return globalTypeFilter === 'diff' || globalTypeFilter === 'commit'
+    }, [globalTypeFilter])
+
+    const canCreateBatchChangeFromQuery = useMemo(() => {
+        if (!globalTypeFilter) {
+            return true
+        }
+        return globalTypeFilter !== 'diff' && globalTypeFilter !== 'commit'
+    }, [globalTypeFilter])
 
     // When adding a new create action check and update the $collapse-breakpoint in CreateActions.module.scss.
     // The collapse breakpoint indicates at which window size we hide the buttons and show the collapsed menu instead.
@@ -94,8 +104,12 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                 getBatchChangeCreateAction(
                     props.query,
                     props.patternType,
-                    props.authenticatedUser,
-                    props.batchChangesEnabled && props.batchChangesExecutionEnabled
+                    Boolean(
+                        props.batchChangesEnabled &&
+                            props.batchChangesExecutionEnabled &&
+                            props.authenticatedUser &&
+                            canCreateBatchChangeFromQuery
+                    )
                 ),
                 getSearchContextCreateAction(props.query, props.authenticatedUser),
                 getInsightsCreateAction(
@@ -112,6 +126,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
             props.query,
             props.batchChangesEnabled,
             props.batchChangesExecutionEnabled,
+            canCreateBatchChangeFromQuery,
         ]
     )
 

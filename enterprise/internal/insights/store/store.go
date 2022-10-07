@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -303,12 +304,23 @@ func seriesPointsQuery(baseQuery string, opts SeriesPointsOpts) *sqlf.Query {
 	if opts.Limit > 0 {
 		limitClause = fmt.Sprintf("LIMIT %d", opts.Limit)
 	}
-	repoFilterJoinClause := " "
+	joinClause := " "
 	if len(opts.IncludeRepoRegex) > 0 || len(opts.ExcludeRepoRegex) > 0 {
-		repoFilterJoinClause = ` JOIN repo_names rn ON sp.repo_name_id = rn.id `
+		joinClause = ` JOIN repo_names rn ON sp.repo_name_id = rn.id `
+	}
+	if len(opts.Excluded) > 0 {
+		excludedStrings := []string{}
+		for _, id := range opts.Excluded {
+			excludedStrings = append(excludedStrings, strconv.Itoa(int(id)))
+		}
+
+		excludeReposJoin := ` LEFT JOIN ( select unnest('{%s}'::_int4) as excluded_repo ) perm
+			ON sp.repo_id = perm.excluded_repo `
+
+		joinClause = joinClause + fmt.Sprintf(excludeReposJoin, strings.Join(excludedStrings, ","))
 	}
 
-	queryWithJoin := fmt.Sprintf(baseQuery, repoFilterJoinClause, `%s`) // this is a little janky
+	queryWithJoin := fmt.Sprintf(baseQuery, joinClause, `%s`) // this is a little janky
 	return sqlf.Sprintf(
 		queryWithJoin+limitClause,
 		sqlf.Join(preds, "\n AND "),
@@ -336,8 +348,7 @@ func seriesPointsPredicates(opts SeriesPointsOpts) []*sqlf.Query {
 		preds = append(preds, sqlf.Sprintf(s))
 	}
 	if len(opts.Excluded) > 0 {
-		s := fmt.Sprintf("repo_id != all(%v)", values(opts.Excluded))
-		preds = append(preds, sqlf.Sprintf(s))
+		preds = append(preds, sqlf.Sprintf("perm.excluded_repo IS NULL"))
 	}
 	if len(opts.IncludeRepoRegex) > 0 {
 		for _, regex := range opts.IncludeRepoRegex {
