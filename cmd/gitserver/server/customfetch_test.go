@@ -33,6 +33,9 @@ func TestDisabledCustomGitFetch(t *testing.T) {
 
 	// env var DISABLE_CUSTOM_GIT_FETCH is set to true
 	disableCustomGitFetch = "true"
+	t.Cleanup(func() {
+		disableCustomGitFetch = "false"
+	})
 
 	customGitFetch = func() map[string][]string {
 		return buildCustomFetchMappings(mapping)
