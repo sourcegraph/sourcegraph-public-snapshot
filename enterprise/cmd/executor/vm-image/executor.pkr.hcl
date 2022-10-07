@@ -91,7 +91,7 @@ source "amazon-ebs" "aws" {
         max_attempts = var.aws_max_attempts
       }
       shutdown_behavior = "terminate"
-      ami_regions = ["us-west-1", "us-west-2", "us-east-1", "us-east-2", "eu-west-2"]
+      ami_regions = var.aws_regions
       tags = {
         Name = var.name
         OS_Version = "Ubuntu"
