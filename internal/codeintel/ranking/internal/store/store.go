@@ -65,10 +65,12 @@ func (s *store) GetStarRank(ctx context.Context, repoName api.RepoName) (float64
 
 const getStarRankQuery = `
 SELECT
-	1 - (
-		(DENSE_RANK() OVER (ORDER BY stars DESC))::float /
-		(SELECT COUNT(*) FROM repo)::float
-	)
-FROM repo
-WHERE name = %s
+	s.rank
+FROM (
+	SELECT
+		name,
+		percent_rank() OVER (ORDER BY stars) AS rank
+	FROM repo
+) s
+WHERE s.name = %s
 `
