@@ -17,7 +17,9 @@ type WebhookStore interface {
 	basestore.ShareableStore
 
 	Create(ctx context.Context, newWebhook *types.Webhook) (*types.Webhook, error)
-	Delete(ctx context.Context, id string) error
+	GetByID(ctx context.Context, id int32) (*types.Webhook, error)
+	GetByRandomID(ctx context.Context, id string) (*types.Webhook, error)
+	Delete(ctx context.Context, id int32) error
 	Update(ctx context.Context, newWebhook *types.Webhook) (*types.Webhook, error)
 	List(ctx context.Context) ([]*types.Webhook, error)
 }
@@ -93,8 +95,16 @@ var webhookColumns = []*sqlf.Query{
 	sqlf.Sprintf("encryption_key_id"),
 }
 
+func (s *webhookStore) GetByID(ctx context.Context, id int32) (*types.Webhook, error) {
+	panic("Implement this method")
+}
+
+func (s *webhookStore) GetByRandomID(ctx context.Context, id string) (*types.Webhook, error) {
+	panic("Implement this method")
+}
+
 // Delete the webhook
-func (s *webhookStore) Delete(ctx context.Context, id string) error {
+func (s *webhookStore) Delete(ctx context.Context, id int32) error {
 	// TODO(sashaostrikov) implement this method
 	panic("implement this method")
 }
