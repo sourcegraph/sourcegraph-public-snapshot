@@ -64,52 +64,52 @@ interface ChangesetStatusIconProps extends React.HTMLAttributes<HTMLDivElement> 
 }
 
 export const ChangesetStatusUnpublished: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
-    label,
+    label = <span>Unpublished</span>,
     className,
     ...props
 }) => (
     <div className={classNames(iconClassNames, className)} {...props}>
-        <Icon svgPath={mdiSourceBranch} inline={false} aria-hidden={true} label="Unpublished" />
+        <Icon svgPath={mdiSourceBranch} inline={false} aria-hidden={true} />
         {label}
     </div>
 )
 export const ChangesetStatusClosed: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
-    label,
+    label = <span>Closed</span>,
     className,
     ...props
 }) => (
     <div className={classNames(iconClassNames, className)} {...props}>
-        <Icon className="text-danger" svgPath={mdiSourcePull} inline={false} aria-hidden={true} label="Closed" />
+        <Icon className="text-danger" svgPath={mdiSourcePull} inline={false} aria-hidden={true} />
         {label}
     </div>
 )
 export const ChangesetStatusMerged: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
-    label,
+    label = <span>Merged</span>,
     className,
     ...props
 }) => (
     <div className={classNames(iconClassNames, className)} {...props}>
-        <Icon className="text-merged" svgPath={mdiSourceMerge} inline={false} aria-hidden={true} label="Merged" />
+        <Icon className="text-merged" svgPath={mdiSourceMerge} inline={false} aria-hidden={true} />
         {label}
     </div>
 )
 export const ChangesetStatusOpen: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
-    label,
+    label = <span>Opened</span>,
     className,
     ...props
 }) => (
     <div className={classNames(iconClassNames, className)} {...props}>
-        <Icon className="text-success" svgPath={mdiSourcePull} inline={false} aria-hidden={true} label="Opened" />
+        <Icon className="text-success" svgPath={mdiSourcePull} inline={false} aria-hidden={true} />
         {label}
     </div>
 )
 export const ChangesetStatusDraft: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
-    label,
+    label = <span>Draft</span>,
     className,
     ...props
 }) => (
     <div className={classNames(iconClassNames, className)} {...props}>
-        <Icon svgPath={mdiSourcePull} inline={false} aria-hidden={true} label="Draft" />
+        <Icon svgPath={mdiSourcePull} inline={false} aria-hidden={true} />
         {label}
     </div>
 )
