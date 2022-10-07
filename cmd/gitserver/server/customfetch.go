@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -16,8 +17,10 @@ var customGitFetch = conf.Cached(func() map[string][]string {
 	return buildCustomFetchMappings(exp.CustomGitFetch)
 })
 
+var disableCustomGitFetch = env.Get("DISABLE_CUSTOM_GIT_FETCH", "false", "Disable custom git fetch")
+
 func buildCustomFetchMappings(c []*schema.CustomGitFetchMapping) map[string][]string {
-	if c == nil {
+	if c == nil || disableCustomGitFetch == "true" {
 		return map[string][]string{}
 	}
 
