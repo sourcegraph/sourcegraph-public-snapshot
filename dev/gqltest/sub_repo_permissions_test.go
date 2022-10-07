@@ -342,14 +342,18 @@ func syncUserPerms(t *testing.T, userID, userName string) {
 func enableSubRepoPermissions(t *testing.T) {
 	t.Helper()
 
-	siteConfig, err := client.SiteConfiguration()
+	siteConfig, lastID, err := client.SiteConfiguration()
 	if err != nil {
 		t.Fatal(err)
 	}
 	oldSiteConfig := new(schema.SiteConfiguration)
 	*oldSiteConfig = *siteConfig
 	t.Cleanup(func() {
-		err = client.UpdateSiteConfiguration(oldSiteConfig)
+		_, lastID, err := client.SiteConfiguration()
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = client.UpdateSiteConfiguration(oldSiteConfig, lastID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -361,7 +365,7 @@ func enableSubRepoPermissions(t *testing.T) {
 			Enabled: true,
 		},
 	}
-	err = client.UpdateSiteConfiguration(siteConfig)
+	err = client.UpdateSiteConfiguration(siteConfig, lastID)
 	if err != nil {
 		t.Fatal(err)
 	}

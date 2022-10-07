@@ -69,7 +69,7 @@ func TestCodeIntelEndpoints(t *testing.T) {
 
 	t.Run("LSIF upload", func(t *testing.T) {
 		// Update site configuration to enable "lsifEnforceAuth".
-		siteConfig, err := client.SiteConfiguration()
+		siteConfig, lastID, err := client.SiteConfiguration()
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -77,14 +77,18 @@ func TestCodeIntelEndpoints(t *testing.T) {
 		oldSiteConfig := new(schema.SiteConfiguration)
 		*oldSiteConfig = *siteConfig
 		defer func() {
-			err = client.UpdateSiteConfiguration(oldSiteConfig)
+			_, lastID, err := client.SiteConfiguration()
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = client.UpdateSiteConfiguration(oldSiteConfig, lastID)
 			if err != nil {
 				t.Fatal(err)
 			}
 		}()
 
 		siteConfig.LsifEnforceAuth = true
-		err = client.UpdateSiteConfiguration(siteConfig)
+		err = client.UpdateSiteConfiguration(siteConfig, lastID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -161,7 +165,7 @@ func TestCodeIntelEndpoints(t *testing.T) {
 }
 
 func setExecutorAccessToken(t *testing.T, token string) func() {
-	siteConfig, err := client.SiteConfiguration()
+	siteConfig, lastID, err := client.SiteConfiguration()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -170,11 +174,15 @@ func setExecutorAccessToken(t *testing.T, token string) func() {
 	*oldSiteConfig = *siteConfig
 	siteConfig.ExecutorsAccessToken = token
 
-	if err := client.UpdateSiteConfiguration(siteConfig); err != nil {
+	if err := client.UpdateSiteConfiguration(siteConfig, lastID); err != nil {
 		t.Fatal(err)
 	}
 	return func() {
-		if err := client.UpdateSiteConfiguration(oldSiteConfig); err != nil {
+		_, lastID, err := client.SiteConfiguration()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := client.UpdateSiteConfiguration(oldSiteConfig, lastID); err != nil {
 			t.Fatal(err)
 		}
 	}
