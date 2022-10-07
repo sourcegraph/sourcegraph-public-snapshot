@@ -44,6 +44,7 @@ Batch Changes makes it possible to create changesets in tens, hundreds, or thous
       * If using Docker 3.x, ensure your version is at least 3.0.1
       * In 3.x versions, the gRPC setting must be disabled
   * You must be able to run `docker` commands as the same user `src` is running as. On Linux, this may require either `sudo` or adding your user to the `docker` group.
+  * Note: podman is not supported ([#855](https://github.com/sourcegraph/src-cli/issues/855))
 * Disk space
   * The required disk space is equal to each batch change's largest repository plus any dependencies or requirements specified by the run steps, times the number of parallel jobs.
       * The default number of parallel jobs defaults to the number of CPU cores on the system running src-cli. This setting can be configured with the [`-j` flag when running `src batch apply` or `src batch preview`](../../cli/references/batch/apply.md).
