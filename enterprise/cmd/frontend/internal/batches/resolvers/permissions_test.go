@@ -348,12 +348,6 @@ func TestPermissionLevels(t *testing.T) {
 					batchSpec:               orgBatchSpecCreatedFromRawRandID,
 					wantViewerCanAdminister: true,
 				},
-				{
-					name:                    "non-site-admin viewing created-from-raw batch spec in org they do not belong to",
-					currentUser:             nonOrgUserID,
-					batchSpec:               orgBatchSpecCreatedFromRawRandID,
-					wantViewerCanAdminister: false,
-				},
 			}
 
 			for _, tc := range tests {
@@ -406,6 +400,11 @@ func TestPermissionLevels(t *testing.T) {
 					name:        "non-site-admin viewing batch spec in org they do not belong to",
 					currentUser: nonOrgUserID,
 					batchSpec:   orgBatchSpec,
+				},
+				{
+					name:        "non-site-admin viewing created-from-raw batch spec in org they do not belong to",
+					currentUser: nonOrgUserID,
+					batchSpec:   orgBatchSpecCreatedFromRawRandID,
 				},
 			}
 
