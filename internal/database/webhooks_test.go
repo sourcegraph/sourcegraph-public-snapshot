@@ -29,7 +29,6 @@ func TestWebhookCreateUnencrypted(t *testing.T) {
 	store := tx.Webhooks(nil)
 
 	hook := &types.Webhook{
-		ID:           "",
 		CodeHostKind: extsvc.KindGitHub,
 		CodeHostURN:  "https://github.com",
 		Secret:       types.NewUnencryptedSecret("very secret (not)"),
@@ -71,7 +70,6 @@ func TestWebhookCreateEncrypted(t *testing.T) {
 
 	const secret = "don't tell anyone"
 	hook := &types.Webhook{
-		ID:           "",
 		CodeHostKind: extsvc.KindGitHub,
 		CodeHostURN:  "https://github.com",
 		Secret:       types.NewUnencryptedSecret(secret),
@@ -113,7 +111,6 @@ func TestWebhookCreateWithBadKey(t *testing.T) {
 	store := tx.Webhooks(&et.BadKey{Err: errors.New("some error occurred, sorry")})
 
 	hook := &types.Webhook{
-		ID:           "",
 		CodeHostKind: extsvc.KindGitHub,
 		CodeHostURN:  "https://github.com",
 		Secret:       types.NewUnencryptedSecret("very secret (not)"),
