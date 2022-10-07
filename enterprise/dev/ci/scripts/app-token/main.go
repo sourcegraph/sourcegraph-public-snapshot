@@ -14,6 +14,8 @@ import (
 	"github.com/golang-jwt/jwt"
 	"github.com/google/go-github/v47/github"
 	"golang.org/x/oauth2"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func main() {
@@ -41,16 +43,16 @@ func main() {
 
 }
 
-func genJwtToken(appID string, keyPath string) string {
+func genJwtToken(appID string, keyPath string) (string, error) {
 	rawPem, err := ioutil.ReadFile(keyPath)
 	if err != nil {
-		log.Fatal(err)
+		return "", errors.Wrap(err, "ReadKeyFile")
 	}
 
 	privPem, _ := pem.Decode(rawPem)
 	priv, err := x509.ParsePKCS1PrivateKey(privPem.Bytes)
 	if err != nil {
-		log.Fatal(err)
+		return "", errors.Wrap(err, "ParseKey")
 	}
 	// Create new JWT token with 10 minute (max duration) expiry
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
@@ -61,10 +63,10 @@ func genJwtToken(appID string, keyPath string) string {
 
 	jwtString, err := token.SignedString(priv)
 	if err != nil {
-		log.Fatal(err)
+		return "", errors.Wrap(err, "TokenString")
 	}
 
-	return jwtString
+	return jwtString, nil
 
 }
 
