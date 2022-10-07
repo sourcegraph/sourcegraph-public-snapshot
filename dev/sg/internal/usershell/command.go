@@ -38,12 +38,9 @@ func wrap(ctx context.Context, cmd string) wrapped {
 		w.Command = fmt.Sprintf("fish || true; %s", cmd)
 
 	case ShellType(ctx) == BashShell:
-		// Using `source ~/.bashrc || true; <some command>` fails on ubuntu. The environment does not
-		// get sourced and the subsequent command fails because it the enviornment is not as it
-		// expects it to be.
-		// The default shell is expected to be bash, so with bash we utilize the bash cli arg
-		// `--rcfile` which more directly tells bash to execute THIS file aka ~/.bashrc when it
-		// starts up
+		// -i sets the bash shell to be interactive, since this IS an interactive step but more importantly
+		// on some platforms (I'm looking at you Ubuntu runner from github actions) the ~/.bashrc file has a section
+		// where it EXITs early out of the bashrc file if it is not running in interactive mode ...
 		w.ShellFlags = []string{"-i", "-c"}
 		w.Command = fmt.Sprintf("source %s || true; %s", ShellConfigPath(ctx), cmd)
 	default:
