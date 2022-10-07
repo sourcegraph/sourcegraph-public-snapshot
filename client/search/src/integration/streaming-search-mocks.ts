@@ -101,49 +101,49 @@ export const mixedSearchStreamEvents: SearchEvent[] = [
                 commit: '2e3569cf60646c9ce4e37a43e5cf698a00cbd41a',
                 chunkMatches: [
                     {
-                        content: 'test(\'does not emit items with duplicate IDs\', async () => {',
+                        content: "test('does not emit items with duplicate IDs', async () => {",
                         contentStart: {
                             offset: 939,
                             line: 38,
-                            column: 0
+                            column: 0,
                         },
                         ranges: [
                             {
                                 start: {
                                     offset: 939,
                                     line: 38,
-                                    column: 0
+                                    column: 0,
                                 },
                                 end: {
                                     offset: 943,
                                     line: 38,
-                                    column: 4
-                                }
-                            }
-                        ]
+                                    column: 4,
+                                },
+                            },
+                        ],
                     },
                     {
-                        content: 'test(\'five\', async () => {',
+                        content: "test('five', async () => {",
                         contentStart: {
                             offset: 1658,
                             line: 63,
-                            column: 0
+                            column: 0,
                         },
                         ranges: [
                             {
                                 start: {
                                     offset: 1658,
                                     line: 63,
-                                    column: 0
+                                    column: 0,
                                 },
                                 end: {
                                     offset: 1662,
                                     line: 63,
-                                    column: 4
-                                }
-                            }
-                        ]
-                    }
+                                    column: 4,
+                                },
+                            },
+                        ],
+                    },
                 ],
             },
         ],

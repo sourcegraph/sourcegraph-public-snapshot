@@ -34,9 +34,9 @@ export const RESULT: ContentMatch = {
                         offset: 23,
                         column: 11,
                     },
-                }
-            ]
-        }
+                },
+            ],
+        },
     ],
 }
 
@@ -79,235 +79,235 @@ export const MULTIPLE_MATCH_RESULT: ContentMatch = {
             contentStart: {
                 offset: 238,
                 line: 11,
-                column: 0
+                column: 0,
             },
             ranges: [
                 {
                     start: {
                         offset: 253,
                         line: 11,
-                        column: 15
+                        column: 15,
                     },
                     end: {
                         offset: 257,
                         line: 11,
-                        column: 19
-                    }
-                }
-            ]
+                        column: 19,
+                    },
+                },
+            ],
         },
         {
             content: '\t"testing"',
             contentStart: {
                 offset: 270,
                 line: 13,
-                column: 0
+                column: 0,
             },
             ranges: [
                 {
                     start: {
                         offset: 272,
                         line: 13,
-                        column: 2
+                        column: 2,
                     },
                     end: {
                         offset: 276,
                         line: 13,
-                        column: 6
-                    }
-                }
-            ]
+                        column: 6,
+                    },
+                },
+            ],
         },
         {
             content: 'func TestTokenSourceGrantTypeOverride(t *testing.T) {',
             contentStart: {
                 offset: 793,
                 line: 36,
-                column: 0
+                column: 0,
             },
             ranges: [
                 {
                     start: {
                         offset: 798,
                         line: 36,
-                        column: 5
+                        column: 5,
                     },
                     end: {
                         offset: 802,
                         line: 36,
-                        column: 9
-                    }
+                        column: 9,
+                    },
                 },
                 {
                     start: {
                         offset: 834,
                         line: 36,
-                        column: 41
+                        column: 41,
                     },
                     end: {
                         offset: 838,
                         line: 36,
-                        column: 45
-                    }
-                }
-            ]
+                        column: 45,
+                    },
+                },
+            ],
         },
         {
             content: '\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {',
             contentStart: {
                 offset: 901,
                 line: 39,
-                column: 0
+                column: 0,
             },
             ranges: [
                 {
                     start: {
                         offset: 912,
                         line: 39,
-                        column: 11
+                        column: 11,
                     },
                     end: {
                         offset: 916,
                         line: 39,
-                        column: 15
-                    }
-                }
-            ]
+                        column: 15,
+                    },
+                },
+            ],
         },
         {
             content: 'func TestTokenRequest(t *testing.T) {',
             contentStart: {
                 offset: 2084,
                 line: 73,
-                column: 0
+                column: 0,
             },
             ranges: [
                 {
                     start: {
                         offset: 2089,
                         line: 73,
-                        column: 5
+                        column: 5,
                     },
                     end: {
                         offset: 2093,
                         line: 73,
-                        column: 9
-                    }
+                        column: 9,
+                    },
                 },
                 {
                     start: {
                         offset: 2109,
                         line: 73,
-                        column: 25
+                        column: 25,
                     },
                     end: {
                         offset: 2113,
                         line: 73,
-                        column: 29
-                    }
-                }
-            ]
+                        column: 29,
+                    },
+                },
+            ],
         },
         {
             content: '\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {',
             contentStart: {
                 offset: 2122,
                 line: 74,
-                column: 0
+                column: 0,
             },
             ranges: [
                 {
                     start: {
                         offset: 2133,
                         line: 74,
-                        column: 11
+                        column: 11,
                     },
                     end: {
                         offset: 2137,
                         line: 74,
-                        column: 15
-                    }
-                }
-            ]
+                        column: 15,
+                    },
+                },
+            ],
         },
         {
             content: 'func TestTokenRefreshRequest(t *testing.T) {',
             contentStart: {
                 offset: 3663,
                 line: 115,
-                column: 0
+                column: 0,
             },
             ranges: [
                 {
                     start: {
                         offset: 3668,
                         line: 115,
-                        column: 5
+                        column: 5,
                     },
                     end: {
                         offset: 3672,
                         line: 115,
-                        column: 9
-                    }
+                        column: 9,
+                    },
                 },
                 {
                     start: {
                         offset: 3695,
                         line: 115,
-                        column: 32
+                        column: 32,
                     },
                     end: {
                         offset: 3699,
                         line: 115,
-                        column: 36
-                    }
-                }
-            ]
+                        column: 36,
+                    },
+                },
+            ],
         },
         {
             content: '\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {',
             contentStart: {
                 offset: 3735,
                 line: 117,
-                column: 0
+                column: 0,
             },
             ranges: [
                 {
                     start: {
                         offset: 3746,
                         line: 117,
-                        column: 11
+                        column: 11,
                     },
                     end: {
                         offset: 3750,
                         line: 117,
-                        column: 15
-                    }
-                }
-            ]
+                        column: 15,
+                    },
+                },
+            ],
         },
         {
             content: '\t\tio.WriteString(w, `{"access_token": "foo", "refresh_token": "bar"}`)',
             contentStart: {
                 offset: 4469,
                 line: 134,
-                column: 0
+                column: 0,
             },
             ranges: [
                 {
                     start: {
                         offset: 4477,
                         line: 134,
-                        column: 8
+                        column: 8,
                     },
                     end: {
                         offset: 4481,
                         line: 134,
-                        column: 12
-                    }
-                }
-            ]
-        }
+                        column: 12,
+                    },
+                },
+            ],
+        },
     ],
 }
 
@@ -353,22 +353,22 @@ export const MULTIPLE_SEARCH_RESULT: AggregateStreamingSearchResults = {
                     contentStart: {
                         offset: 160,
                         line: 4,
-                        column: 0
+                        column: 0,
                     },
                     ranges: [
                         {
                             start: {
                                 offset: 175,
                                 line: 4,
-                                column: 15
+                                column: 15,
                             },
                             end: {
                                 offset: 179,
                                 line: 4,
-                                column: 19
-                            }
-                        }
-                    ]
+                                column: 19,
+                            },
+                        },
+                    ],
                 },
             ],
             repoStars: 42,
@@ -398,130 +398,130 @@ export const COLLAPSABLE_SEARCH_RESULT: AggregateStreamingSearchResults = {
                     contentStart: {
                         offset: 160,
                         line: 4,
-                        column: 0
+                        column: 0,
                     },
                     ranges: [
                         {
                             start: {
                                 offset: 175,
                                 line: 4,
-                                column: 15
+                                column: 15,
                             },
                             end: {
                                 offset: 179,
                                 line: 4,
-                                column: 19
-                            }
+                                column: 19,
+                            },
                         },
                         {
                             start: {
                                 offset: 175,
                                 line: 4,
-                                column: 15
+                                column: 15,
                             },
                             end: {
                                 offset: 179,
                                 line: 4,
-                                column: 19
-                            }
+                                column: 19,
+                            },
                         },
                         {
                             start: {
                                 offset: 175,
                                 line: 4,
-                                column: 15
+                                column: 15,
                             },
                             end: {
                                 offset: 179,
                                 line: 4,
-                                column: 19
-                            }
+                                column: 19,
+                            },
                         },
                         {
                             start: {
                                 offset: 175,
                                 line: 4,
-                                column: 15
+                                column: 15,
                             },
                             end: {
                                 offset: 179,
                                 line: 4,
-                                column: 19
-                            }
+                                column: 19,
+                            },
                         },
                         {
                             start: {
                                 offset: 175,
                                 line: 4,
-                                column: 15
+                                column: 15,
                             },
                             end: {
                                 offset: 179,
                                 line: 4,
-                                column: 19
-                            }
+                                column: 19,
+                            },
                         },
                         {
                             start: {
                                 offset: 175,
                                 line: 4,
-                                column: 15
+                                column: 15,
                             },
                             end: {
                                 offset: 179,
                                 line: 4,
-                                column: 19
-                            }
+                                column: 19,
+                            },
                         },
                         {
                             start: {
                                 offset: 175,
                                 line: 4,
-                                column: 15
+                                column: 15,
                             },
                             end: {
                                 offset: 179,
                                 line: 4,
-                                column: 19
-                            }
+                                column: 19,
+                            },
                         },
                         {
                             start: {
                                 offset: 175,
                                 line: 4,
-                                column: 15
+                                column: 15,
                             },
                             end: {
                                 offset: 179,
                                 line: 4,
-                                column: 19
-                            }
+                                column: 19,
+                            },
                         },
                         {
                             start: {
                                 offset: 175,
                                 line: 4,
-                                column: 15
+                                column: 15,
                             },
                             end: {
                                 offset: 179,
                                 line: 4,
-                                column: 19
-                            }
+                                column: 19,
+                            },
                         },
                         {
                             start: {
                                 offset: 175,
                                 line: 4,
-                                column: 15
+                                column: 15,
                             },
                             end: {
                                 offset: 179,
                                 line: 4,
-                                column: 19
-                            }
-                        }
-                    ]
+                                column: 19,
+                            },
+                        },
+                    ],
                 },
             ],
             repoStars: 42,
