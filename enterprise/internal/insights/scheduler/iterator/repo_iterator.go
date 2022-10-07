@@ -21,6 +21,8 @@ import (
 
 type finishFunc func(ctx context.Context, store *basestore.Store, maybeErr error) error
 
+// persistentRepoIterator represents a durable (persisted) iterator over a set of repositories. This iteration is not
+// concurrency safe and only one consumer should have access to this resource at a time.
 type persistentRepoIterator struct {
 	id              int
 	CreatedAt       time.Time
@@ -137,7 +139,10 @@ func LoadWithClock(ctx context.Context, store *basestore.Store, id int, clock gl
 // NextWithFinish will iterate the repository set from the current cursor position. If the iterator is marked complete
 // or has no more repositories this will do nothing. The finish function returned is a mechanism to have atomic updates,
 // callers will need to call the finish function when complete with work. Errors during work processing can be passed
-// into the finish function and will be marked as errors on the repo iterator.
+// into the finish function and will be marked as errors on the repo iterator. Calling NextWithFinish without calling the
+// finish function will infinitely loop on the current cursor. This iteration for a given repo iterator is not
+// concurrency safe and should only be called from a single thread. Care should be taken to ensure in a distributed
+// environment only one consumer is able to access this resource at a time.
 func (p *persistentRepoIterator) NextWithFinish() (api.RepoID, bool, finishFunc) {
 	current, got := p.peek(p.Cursor)
 	if !p.CompletedAt.IsZero() || !got {
