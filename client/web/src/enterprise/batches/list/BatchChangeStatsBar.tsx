@@ -41,17 +41,17 @@ export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildre
         <div className={styles.statsBar}>
             <div className={styles.leftSide}>
                 <div className="pr-4">
-                    <span className="font-weight-bold">{data.batchChanges.totalCount}</span>
+                    <span className="font-weight-bold h3">{data.batchChanges.totalCount}</span>
                     <br />
                     <span>Batch changes</span>
                 </div>
                 <div className="pr-4">
-                    <span className="font-weight-bold">{data.globalChangesetsStats.merged}</span>
+                    <span className="font-weight-bold h3">{data.globalChangesetsStats.merged}</span>
                     <br />
                     <span>Changesets merged</span>
                 </div>
                 <div className="pr-4">
-                    <span className="font-weight-bold">
+                    <span className="font-weight-bold h3">
                         {data ? (data.globalChangesetsStats.merged * numMinPerItemSaved) / 60 : '--'}
                     </span>
                     <br />
@@ -64,13 +64,13 @@ export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildre
                 </div>
             </div>
             <div className={styles.rightSide}>
-                <div className="pr-4 text-center">
+                <div className="pr-4 text-center text-muted">
                     <ChangesetStatusOpen label="" />
-                    <span className="font-weight-bold">{data.globalChangesetsStats.open}</span> <span>open</span>
+                    <span>{data.globalChangesetsStats.open} open</span>
                 </div>
-                <div className="text-center">
+                <div className="text-center text-muted">
                     <ChangesetStatusClosed label="" />
-                    <span className="font-weight-bold">{data.globalChangesetsStats.closed}</span> <span>closed</span>
+                    <span>{data.globalChangesetsStats.closed} closed</span>
                 </div>
             </div>
         </div>
