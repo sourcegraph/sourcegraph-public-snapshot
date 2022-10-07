@@ -44,8 +44,8 @@ func wrap(ctx context.Context, cmd string) wrapped {
 		// The default shell is expected to be bash, so with bash we utilize the bash cli arg
 		// `--rcfile` which more directly tells bash to execute THIS file aka ~/.bashrc when it
 		// starts up
-		w.ShellFlags = []string{"--rcfile", ShellConfigPath(ctx), "-c"}
-		w.Command = cmd
+		w.ShellFlags = []string{"-i", "-c"}
+		w.Command = fmt.Sprintf("source %s || true; %s", ShellConfigPath(ctx), cmd)
 	default:
 		// The above interactive shell approach fails on OSX because the default shell configuration
 		// prints sessions restoration informations that will mess with the output. So we fall back

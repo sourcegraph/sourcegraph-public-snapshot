@@ -13,6 +13,7 @@ import (
 )
 
 func aptGetInstall(pkg string, preinstall ...string) check.FixAction[CheckArgs] {
+	//Fake change to trigger github action 5
 	commands := []string{
 		`sudo apt-get update`,
 	}
