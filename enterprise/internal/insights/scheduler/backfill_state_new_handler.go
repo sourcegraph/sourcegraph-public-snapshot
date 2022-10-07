@@ -43,7 +43,7 @@ func makeNewBackfillWorker(ctx context.Context, config JobMonitorConfig) (*worke
 
 	name := "backfill_new_backfill_worker"
 
-	workerStore := dbworkerstore.NewWithMetrics(insightsDB.Handle(), dbworkerstore.Options[*BaseJob]{
+	workerStore := dbworkerstore.New(insightsDB.Handle(), dbworkerstore.Options[*BaseJob]{
 		Name:              fmt.Sprintf("%s_store", name),
 		TableName:         "insights_background_jobs",
 		ViewName:          "insights_jobs_backfill_new",

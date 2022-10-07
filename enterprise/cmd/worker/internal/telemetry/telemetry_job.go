@@ -40,10 +40,11 @@ import (
 )
 
 type telemetryJob struct {
+	observationContext *observation.Context
 }
 
-func NewTelemetryJob() *telemetryJob {
-	return &telemetryJob{}
+func NewTelemetryJob(observationContext *observation.Context) *telemetryJob {
+	return &telemetryJob{observationContext}
 }
 
 func (t *telemetryJob) Description() string {
@@ -60,7 +61,7 @@ func (t *telemetryJob) Routines(startupCtx context.Context, logger log.Logger) (
 	}
 	logger.Info("Usage telemetry export enabled - initializing background routine")
 
-	db, err := workerdb.InitDBWithLogger(logger)
+	db, err := workerdb.InitDBWithLogger(logger, t.observationContext)
 	if err != nil {
 		return nil, err
 	}
@@ -178,8 +179,10 @@ func newTelemetryHandler(logger log.Logger, store database.EventLogStore, userEm
 
 var disabledErr = errors.New("Usage telemetry export is disabled, but the background job is attempting to execute. This means the configuration was disabled without restarting the worker service. This job is aborting, and no telemetry will be exported.")
 
-const MaxEventsCountDefault = 1000
-const JobCooldownDuration = time.Second * 60
+const (
+	MaxEventsCountDefault = 1000
+	JobCooldownDuration   = time.Second * 60
+)
 
 func (t *telemetryHandler) Handle(ctx context.Context) (err error) {
 	if !isEnabled() {
@@ -284,9 +287,11 @@ const (
 	projectNameEnvVar = "EXPORT_USAGE_DATA_TOPIC_PROJECT"
 )
 
-var enabled, _ = strconv.ParseBool(env.Get(enabledEnvVar, "false", "Export usage data from this Sourcegraph instance to centralized Sourcegraph analytics (requires restart)."))
-var topicName = env.Get(topicNameEnvVar, "", "GCP pubsub topic name for event level data usage exporter")
-var projectName = env.Get(projectNameEnvVar, "", "GCP project name for pubsub topic for event level data usage exporter")
+var (
+	enabled, _  = strconv.ParseBool(env.Get(enabledEnvVar, "false", "Export usage data from this Sourcegraph instance to centralized Sourcegraph analytics (requires restart)."))
+	topicName   = env.Get(topicNameEnvVar, "", "GCP pubsub topic name for event level data usage exporter")
+	projectName = env.Get(projectNameEnvVar, "", "GCP project name for pubsub topic for event level data usage exporter")
+)
 
 func emptyIfNil(s *string) string {
 	if s == nil {

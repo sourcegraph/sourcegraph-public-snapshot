@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/go-ctags"
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	symbolsGitserver "github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
 	symbolsParser "github.com/sourcegraph/sourcegraph/cmd/symbols/parser"
@@ -126,7 +127,7 @@ func loadRockskipConfig(baseConfig env.BaseConfig, ctags types.CtagsConfig, repo
 func setupRockskip(config rockskipConfig, observationContext *observation.Context, gitserverClient symbolsGitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, string, error) {
 	logger := log.Scoped("rockskip", "rockskip-based symbols")
 
-	codeintelDB := mustInitializeCodeIntelDB(logger)
+	codeintelDB := mustInitializeCodeIntelDB(logger, observationContext)
 	createParser := func() (ctags.Parser, error) {
 		return symbolsParser.SpawnCtags(log.Scoped("parser", "ctags parser"), config.Ctags)
 	}
@@ -138,7 +139,7 @@ func setupRockskip(config rockskipConfig, observationContext *observation.Contex
 	return server.Search, server.HandleStatus, nil, config.Ctags.Command, nil
 }
 
-func mustInitializeCodeIntelDB(logger log.Logger) *sql.DB {
+func mustInitializeCodeIntelDB(logger log.Logger, observationContext *observation.Context) *sql.DB {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeIntelPostgresDSN
 	})
@@ -146,7 +147,7 @@ func mustInitializeCodeIntelDB(logger log.Logger) *sql.DB {
 		db  *sql.DB
 		err error
 	)
-	db, err = connections.EnsureNewCodeIntelDB(dsn, "symbols", &observation.TestContext)
+	db, err = connections.EnsureNewCodeIntelDB(dsn, "symbols", observationContext)
 	if err != nil {
 		logger.Fatal("failed to connect to codeintel database", log.Error(err))
 	}

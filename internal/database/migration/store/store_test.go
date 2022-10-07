@@ -340,7 +340,8 @@ func TestWrappedUp(t *testing.T) {
 			Version: 14,
 			Up:      true,
 			Success: boolPtr(true),
-		}, {
+		},
+		{
 			Schema:  defaultTestTableName,
 			Version: 15,
 			Up:      true,

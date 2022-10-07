@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -25,10 +26,12 @@ var _ job.Job = (*sourcegraphOperatorCleaner)(nil)
 
 // sourcegraphOperatorCleaner is a worker responsible for cleaning up expired
 // Sourcegraph Operator user accounts.
-type sourcegraphOperatorCleaner struct{}
+type sourcegraphOperatorCleaner struct {
+	observationContext *observation.Context
+}
 
-func NewSourcegraphOperatorCleaner() job.Job {
-	return &sourcegraphOperatorCleaner{}
+func NewSourcegraphOperatorCleaner(observationContext *observation.Context) job.Job {
+	return &sourcegraphOperatorCleaner{observationContext}
 }
 
 func (j *sourcegraphOperatorCleaner) Description() string {
@@ -45,7 +48,7 @@ func (j *sourcegraphOperatorCleaner) Routines(_ context.Context, logger log.Logg
 		return nil, nil
 	}
 
-	db, err := workerdb.InitDBWithLogger(logger)
+	db, err := workerdb.InitDBWithLogger(logger, j.observationContext)
 	if err != nil {
 		return nil, errors.Wrap(err, "init DB")
 	}

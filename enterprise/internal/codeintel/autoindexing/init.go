@@ -27,33 +27,35 @@ func NewService(
 	depsSvc DependenciesService,
 	policiesSvc PoliciesService,
 	gitserver GitserverClient,
+	observationContext *observation.Context,
 ) *Service {
-	store := store.New(db, scopedContext("store"))
+	store := store.New(db, scopedContext("store", observationContext))
 	symbolsClient := symbols.DefaultClient
 	repoUpdater := repoupdater.DefaultClient
 	inferenceSvc := inference.NewService(db)
 
-	svc := newService(store, uploadSvc, inferenceSvc, repoUpdater, gitserver, symbolsClient, scopedContext("service"))
+	svc := newService(store, uploadSvc, inferenceSvc, repoUpdater, gitserver, symbolsClient, scopedContext("service", observationContext))
 
 	return svc
 }
 
 type serviceDependencies struct {
-	db          database.DB
-	uploadSvc   UploadService
-	depsSvc     DependenciesService
-	policiesSvc PoliciesService
-	gitserver   GitserverClient
+	db                 database.DB
+	uploadSvc          UploadService
+	depsSvc            DependenciesService
+	policiesSvc        PoliciesService
+	gitserver          GitserverClient
+	observationContext *observation.Context
 }
 
-func scopedContext(component string) *observation.Context {
-	return observation.ScopedContext("codeintel", "autoindexing", component)
+func scopedContext(component string, observationContext *observation.Context) *observation.Context {
+	return observation.ScopedContext("codeintel", "autoindexing", component, observationContext)
 }
 
 func NewResetters(db database.DB, observationContext *observation.Context) []goroutine.BackgroundRoutine {
 	metrics := background.NewResetterMetrics(observationContext)
-	indexStore := dbworkerstore.NewWithMetrics(db.Handle(), background.IndexWorkerStoreOptions, observationContext)
-	dependencyIndexingStore := dbworkerstore.NewWithMetrics(db.Handle(), background.DependencyIndexingJobWorkerStoreOptions, observationContext)
+	indexStore := dbworkerstore.New(db.Handle(), background.IndexWorkerStoreOptions, observationContext)
+	dependencyIndexingStore := dbworkerstore.New(db.Handle(), background.DependencyIndexingJobWorkerStoreOptions, observationContext)
 
 	return []goroutine.BackgroundRoutine{
 		background.NewIndexResetter(ConfigCleanupInst.Interval, indexStore, observationContext.Logger.Scoped("indexResetter", ""), metrics),
@@ -115,8 +117,8 @@ func NewDependencyIndexSchedulers(
 	repoUpdater RepoUpdaterClient,
 	observationContext *observation.Context,
 ) []goroutine.BackgroundRoutine {
-	dependencySyncStore := dbworkerstore.NewWithMetrics(db.Handle(), background.DependencySyncingJobWorkerStoreOptions, observationContext)
-	dependencyIndexingStore := dbworkerstore.NewWithMetrics(db.Handle(), background.DependencyIndexingJobWorkerStoreOptions, observationContext)
+	dependencySyncStore := dbworkerstore.New(db.Handle(), background.DependencySyncingJobWorkerStoreOptions, observationContext)
+	dependencyIndexingStore := dbworkerstore.New(db.Handle(), background.DependencyIndexingJobWorkerStoreOptions, observationContext)
 
 	externalServiceStore := db.ExternalServices()
 	repoStore := db.Repos()

@@ -18,19 +18,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
 )
 
 func RegisterEnterpriseMigrators(ctx context.Context, db database.DB, runner *oobmigration.Runner) error {
-	codeIntelDB, err := workerCodeIntel.InitDB()
+	codeIntelDB, err := workerCodeIntel.InitDB(&observation.TestContext)
 	if err != nil {
 		return err
 	}
 
 	var insightsStore *basestore.Store
 	if internalInsights.IsEnabled() {
-		codeInsightsDB, err := internalInsights.InitializeCodeInsightsDB("worker-oobmigrator")
+		codeInsightsDB, err := internalInsights.InitializeCodeInsightsDB("worker-oobmigrator", &observation.TestContext)
 		if err != nil {
 			return err
 		}

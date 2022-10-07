@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -27,6 +28,7 @@ func (i *insightsQueryRunnerBaseConfig) Load() {
 
 type insightsQueryRunnerJob struct {
 	env.BaseConfig
+	observationContext *observation.Context
 }
 
 var insightsQueryRunnerConfigInst = &insightsQueryRunnerBaseConfig{}
@@ -46,7 +48,7 @@ func (s *insightsQueryRunnerJob) Routines(startupCtx context.Context, logger log
 	}
 	logger.Info("Code Insights Enabled. Enabling query runner.")
 
-	db, err := workerdb.InitDBWithLogger(logger)
+	db, err := workerdb.InitDBWithLogger(logger, s.observationContext)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +58,7 @@ func (s *insightsQueryRunnerJob) Routines(startupCtx context.Context, logger log
 		return nil, errors.Errorf("Failed to create sub-repo client: %v", err)
 	}
 
-	insightsDB, err := insights.InitializeCodeInsightsDB("query-runner-worker")
+	insightsDB, err := insights.InitializeCodeInsightsDB("query-runner-worker", s.observationContext)
 	if err != nil {
 		return nil, err
 	}
@@ -64,6 +66,11 @@ func (s *insightsQueryRunnerJob) Routines(startupCtx context.Context, logger log
 	return background.GetBackgroundQueryRunnerJob(context.Background(), logger, db, insightsDB), nil
 }
 
-func NewInsightsQueryRunnerJob() job.Job {
-	return &insightsQueryRunnerJob{}
+func NewInsightsQueryRunnerJob(observationContext *observation.Context) job.Job {
+	return &insightsQueryRunnerJob{observationContext: &observation.Context{
+		Logger:       log.NoOp(),
+		Tracer:       observationContext.Tracer,
+		Registerer:   observationContext.Registerer,
+		HoneyDataset: observationContext.HoneyDataset,
+	}}
 }

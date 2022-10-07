@@ -3,9 +3,7 @@ package encryption
 import (
 	"context"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
@@ -13,17 +11,23 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-type recordEncrypterJob struct{}
+type recordEncrypterJob struct {
+	observationContext *observation.Context
+}
 
-func NewRecordEncrypterJob() job.Job {
-	return &recordEncrypterJob{}
+func NewRecordEncrypterJob(observationContext *observation.Context) job.Job {
+	return &recordEncrypterJob{observationContext: &observation.Context{
+		Logger:       log.NoOp(),
+		Tracer:       observationContext.Tracer,
+		Registerer:   observationContext.Registerer,
+		HoneyDataset: observationContext.HoneyDataset,
+	}}
 }
 
 func (j *recordEncrypterJob) Description() string {
-	return ""
+	return "encrypter routines"
 }
 
 func (j *recordEncrypterJob) Config() []env.Config {
@@ -33,14 +37,9 @@ func (j *recordEncrypterJob) Config() []env.Config {
 }
 
 func (j *recordEncrypterJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	observationContext := &observation.Context{
-		Logger:     logger.Scoped("routines", "encrypter routines"),
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
-	metrics := newMetrics(observationContext)
+	metrics := newMetrics(j.observationContext)
 
-	db, err := workerdb.InitDBWithLogger(logger)
+	db, err := workerdb.InitDBWithLogger(logger, j.observationContext)
 	if err != nil {
 		return nil, err
 	}

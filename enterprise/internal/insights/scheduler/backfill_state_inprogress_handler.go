@@ -41,7 +41,7 @@ func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*worker
 
 	name := "backfill_in_progress_worker"
 
-	workerStore := dbworkerstore.NewWithMetrics(db.Handle(), dbworkerstore.Options[*BaseJob]{
+	workerStore := dbworkerstore.New(db.Handle(), dbworkerstore.Options[*BaseJob]{
 		Name:              fmt.Sprintf("%s_store", name),
 		TableName:         "insights_background_jobs",
 		ViewName:          "insights_jobs_backfill_in_progress",

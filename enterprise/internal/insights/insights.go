@@ -59,7 +59,7 @@ func Init(
 		}
 		return nil
 	}
-	rawInsightsDB, err := InitializeCodeInsightsDB("frontend")
+	rawInsightsDB, err := InitializeCodeInsightsDB("frontend", observationContext)
 	if err != nil {
 		return err
 	}
@@ -72,11 +72,11 @@ func Init(
 // database migrations before returning. It is safe to call from multiple services/containers (in
 // which case, one's migration will win and the other caller will receive an error and should exit
 // and restart until the other finishes.)
-func InitializeCodeInsightsDB(app string) (edb.InsightsDB, error) {
+func InitializeCodeInsightsDB(app string, observationContext *observation.Context) (edb.InsightsDB, error) {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeInsightsDSN
 	})
-	db, err := connections.EnsureNewCodeInsightsDB(dsn, app, &observation.TestContext)
+	db, err := connections.EnsureNewCodeInsightsDB(dsn, app, observationContext)
 	if err != nil {
 		return nil, errors.Errorf("Failed to connect to codeinsights database: %s", err)
 	}

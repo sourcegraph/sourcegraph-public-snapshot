@@ -21,14 +21,16 @@ import (
 
 // migrator configures an out of band migration runner process to execute in the background.
 type migrator struct {
-	registerMigrators oobmigration.RegisterMigratorsFunc
+	registerMigrators  oobmigration.RegisterMigratorsFunc
+	observationContext *observation.Context
 }
 
 var _ job.Job = &migrator{}
 
 func NewMigrator(registerMigrators oobmigration.RegisterMigratorsFunc) job.Job {
 	return &migrator{
-		registerMigrators: registerMigrators,
+		registerMigrators:  registerMigrators,
+		observationContext: &observation.TestContext,
 	}
 }
 
@@ -41,11 +43,12 @@ func (m *migrator) Config() []env.Config {
 }
 
 func (m *migrator) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	db, err := workerdb.InitDBWithLogger(logger)
+	db, err := workerdb.InitDBWithLogger(logger, m.observationContext)
 	if err != nil {
 		return nil, err
 	}
 
+	// TODO(nsc) from above?
 	observationContext := &observation.Context{
 		Logger:     logger.Scoped("routines", "migrator routines"),
 		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},

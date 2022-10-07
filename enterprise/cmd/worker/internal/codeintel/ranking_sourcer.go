@@ -14,10 +14,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type rankingSourcerJob struct{}
+type rankingSourcerJob struct {
+	observationContext *observation.Context
+}
 
-func NewRankingSourcerJob() job.Job {
-	return &rankingSourcerJob{}
+func NewRankingSourcerJob(observationContext *observation.Context) job.Job {
+	return &rankingSourcerJob{observationContext}
 }
 
 func (j *rankingSourcerJob) Description() string {
@@ -32,13 +34,13 @@ func (j *rankingSourcerJob) Config() []env.Config {
 }
 
 func (j *rankingSourcerJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	services, err := codeintel.InitServices()
+	services, err := codeintel.InitServices(j.observationContext)
 	if err != nil {
 		return nil, err
 	}
 
 	return append(
-		ranking.NewIndexer(services.RankingService, observation.ContextWithLogger(logger)),
-		ranking.NewPageRankLoader(services.RankingService, observation.ContextWithLogger(logger))...,
+		ranking.NewIndexer(services.RankingService, observation.ContextWithLogger(logger, j.observationContext)),
+		ranking.NewPageRankLoader(services.RankingService, observation.ContextWithLogger(logger, j.observationContext))...,
 	), nil
 }

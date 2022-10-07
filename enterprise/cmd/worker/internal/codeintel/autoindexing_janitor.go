@@ -15,10 +15,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type autoindexingJanitorJob struct{}
+type autoindexingJanitorJob struct {
+	observationContext *observation.Context
+}
 
-func NewAutoindexingJanitorJob() job.Job {
-	return &autoindexingJanitorJob{}
+func NewAutoindexingJanitorJob(observationContext *observation.Context) job.Job {
+	return &autoindexingJanitorJob{observationContext: &observation.Context{
+		Logger:       log.NoOp(),
+		Tracer:       observationContext.Tracer,
+		Registerer:   observationContext.Registerer,
+		HoneyDataset: observationContext.HoneyDataset,
+	}}
 }
 
 func (j *autoindexingJanitorJob) Description() string {
@@ -30,20 +37,20 @@ func (j *autoindexingJanitorJob) Config() []env.Config {
 }
 
 func (j *autoindexingJanitorJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	services, err := codeintel.InitServices()
+	services, err := codeintel.InitServices(j.observationContext)
 	if err != nil {
 		return nil, err
 	}
 
-	db, err := workerdb.InitDBWithLogger(logger)
+	db, err := workerdb.InitDBWithLogger(logger, j.observationContext)
 	if err != nil {
 		return nil, err
 	}
 
-	gitserverClient := gitserver.New(db, observation.ScopedContext("codeintel", "janitor", "gitserver"))
+	gitserverClient := gitserver.New(db, observation.ScopedContext("codeintel", "janitor", "gitserver", j.observationContext))
 
 	return append(
-		autoindexing.NewJanitorJobs(services.AutoIndexingService, gitserverClient, observation.ContextWithLogger(logger)),
-		autoindexing.NewResetters(db, observation.ContextWithLogger(logger))...,
+		autoindexing.NewJanitorJobs(services.AutoIndexingService, gitserverClient, observation.ContextWithLogger(logger, j.observationContext)),
+		autoindexing.NewResetters(db, observation.ContextWithLogger(logger, j.observationContext))...,
 	), nil
 }

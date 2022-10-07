@@ -276,6 +276,10 @@ type Server struct {
 	// Logger should be used for all logging and logger creation.
 	Logger log.Logger
 
+	// ObservationContext is used to initialize an operations struct
+	// with the appropriate metrics register etc.
+	ObservationContext *observation.Context
+
 	// ReposDir is the path to the base directory for gitserver storage.
 	ReposDir string
 
@@ -1521,7 +1525,7 @@ func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
 // constructs and memoizes a no-op operations value (for use in tests).
 func (s *Server) ensureOperations() *operations {
 	if s.operations == nil {
-		s.operations = newOperations(&observation.TestContext)
+		s.operations = newOperations(s.ObservationContext)
 	}
 
 	return s.operations
@@ -2649,7 +2653,7 @@ func removeBadRefs(ctx context.Context, dir GitDir) {
 func ensureHEAD(dir GitDir) {
 	head, err := os.Stat(dir.Path("HEAD"))
 	if os.IsNotExist(err) || head.Size() == 0 {
-		os.WriteFile(dir.Path("HEAD"), []byte("ref: refs/heads/master"), 0600)
+		os.WriteFile(dir.Path("HEAD"), []byte("ref: refs/heads/master"), 0o600)
 	}
 }
 

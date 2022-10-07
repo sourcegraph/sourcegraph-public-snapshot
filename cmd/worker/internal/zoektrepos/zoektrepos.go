@@ -11,15 +11,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 )
 
-type updater struct{}
+type updater struct {
+	observationContext *observation.Context
+}
 
 var _ job.Job = &updater{}
 
-func NewUpdater() job.Job {
-	return &updater{}
+func NewUpdater(observationContext *observation.Context) job.Job {
+	return &updater{observationContext}
 }
 
 func (j *updater) Description() string {
@@ -31,7 +34,7 @@ func (j *updater) Config() []env.Config {
 }
 
 func (j *updater) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	db, err := workerdb.InitDBWithLogger(logger)
+	db, err := workerdb.InitDBWithLogger(logger, j.observationContext)
 	if err != nil {
 		return nil, err
 	}
@@ -49,8 +52,10 @@ type handler struct {
 	logger log.Logger
 }
 
-var _ goroutine.Handler = &handler{}
-var _ goroutine.ErrorHandler = &handler{}
+var (
+	_ goroutine.Handler      = &handler{}
+	_ goroutine.ErrorHandler = &handler{}
+)
 
 func (h *handler) Handle(ctx context.Context) error {
 	indexed, err := search.ListAllIndexed(ctx)

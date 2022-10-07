@@ -36,5 +36,5 @@ var bulkOperationWorkerStoreOpts = dbworkerstore.Options[*types.ChangesetJob]{
 }
 
 func NewBulkOperationWorkerStore(handle basestore.TransactableHandle, observationContext *observation.Context) dbworkerstore.Store[*types.ChangesetJob] {
-	return dbworkerstore.NewWithMetrics(handle, bulkOperationWorkerStoreOpts, observationContext)
+	return dbworkerstore.New(handle, bulkOperationWorkerStoreOpts, observationContext)
 }

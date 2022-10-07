@@ -17,7 +17,7 @@ func QueueOptions(db database.DB, accessToken func() string, observationContext 
 		return transformRecord(record, resourceMetadata, accessToken())
 	}
 
-	store := store.NewWithMetrics(db.Handle(), autoindexing.IndexWorkerStoreOptions, observationContext)
+	store := store.New(db.Handle(), autoindexing.IndexWorkerStoreOptions, observationContext)
 
 	return handler.QueueOptions[types.Index]{
 		Name:              "codeintel",

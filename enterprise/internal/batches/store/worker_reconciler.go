@@ -41,5 +41,5 @@ var reconcilerWorkerStoreOpts = dbworkerstore.Options[*types.Changeset]{
 }
 
 func NewReconcilerWorkerStore(handle basestore.TransactableHandle, observationContext *observation.Context) dbworkerstore.Store[*types.Changeset] {
-	return dbworkerstore.NewWithMetrics(handle, reconcilerWorkerStoreOpts, observationContext)
+	return dbworkerstore.New(handle, reconcilerWorkerStoreOpts, observationContext)
 }

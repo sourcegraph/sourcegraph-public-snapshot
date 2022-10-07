@@ -56,7 +56,7 @@ var batchSpecWorkspaceExecutionWorkerStoreOptions = dbworkerstore.Options[*btype
 // wraps the batch_spec_workspace_execution_jobs table.
 func NewBatchSpecWorkspaceExecutionWorkerStore(handle basestore.TransactableHandle, observationContext *observation.Context) dbworkerstore.Store[*btypes.BatchSpecWorkspaceExecutionJob] {
 	return &batchSpecWorkspaceExecutionWorkerStore{
-		Store:              dbworkerstore.NewWithMetrics(handle, batchSpecWorkspaceExecutionWorkerStoreOptions, observationContext),
+		Store:              dbworkerstore.New(handle, batchSpecWorkspaceExecutionWorkerStoreOptions, observationContext),
 		observationContext: observationContext,
 		logger:             log.Scoped("batch-spec-workspace-execution-worker-store", "The worker store backing the executor queue for Batch Changes"),
 	}

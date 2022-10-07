@@ -4,9 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel"
 
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -15,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repos/webhookworker"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -23,10 +20,12 @@ import (
 
 // webhookBuildJob implements the Job interface
 // from package job
-type webhookBuildJob struct{}
+type webhookBuildJob struct {
+	observationContext *observation.Context
+}
 
-func NewWebhookBuildJob() *webhookBuildJob {
-	return &webhookBuildJob{}
+func NewWebhookBuildJob(observationContext *observation.Context) *webhookBuildJob {
+	return &webhookBuildJob{observationContext}
 }
 
 func (w *webhookBuildJob) Description() string {
@@ -38,22 +37,18 @@ func (w *webhookBuildJob) Config() []env.Config {
 }
 
 func (w *webhookBuildJob) Routines(_ context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	observationContext := &observation.Context{
-		Logger:     logger.Scoped("background", "background webhook build job"),
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
+	observationContext := observation.ContextWithLogger(logger.Scoped("background", "background webhook build job"), w.observationContext)
 
 	webhookBuildWorkerMetrics, webhookBuildResetterMetrics := newWebhookBuildWorkerMetrics(observationContext, "webhook_build_worker")
 
-	db, err := workerdb.InitDBWithLogger(logger)
+	db, err := workerdb.InitDBWithLogger(logger, w.observationContext)
 	if err != nil {
 		return nil, err
 	}
 
 	store := NewStore(logger, db)
 	baseStore := basestore.NewWithHandle(store.Handle())
-	workerStore := webhookworker.CreateWorkerStore(logger.Scoped("webhookworker.WorkerStore", ""), store.Handle())
+	workerStore := webhookworker.CreateWorkerStore(store.Handle(), observation.ContextWithLogger(logger.Scoped("webhookworker.WorkerStore", ""), observationContext))
 
 	cf := httpcli.NewExternalClientFactory(httpcli.NewLoggingMiddleware(logger))
 	doer, err := cf.Doer()

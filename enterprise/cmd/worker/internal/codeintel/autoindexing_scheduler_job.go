@@ -13,14 +13,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type autoindexingScheduler struct{}
+type autoindexingScheduler struct {
+	observationContext *observation.Context
+}
 
-func NewAutoindexingSchedulerJob() job.Job {
-	return &autoindexingScheduler{}
+func NewAutoindexingSchedulerJob(observationContext *observation.Context) job.Job {
+	return &autoindexingScheduler{observationContext: &observation.Context{
+		Logger:       log.NoOp(),
+		Tracer:       observationContext.Tracer,
+		Registerer:   observationContext.Registerer,
+		HoneyDataset: observationContext.HoneyDataset,
+	}}
 }
 
 func (j *autoindexingScheduler) Description() string {
@@ -34,23 +40,23 @@ func (j *autoindexingScheduler) Config() []env.Config {
 }
 
 func (j *autoindexingScheduler) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	services, err := codeintel.InitServices()
+	services, err := codeintel.InitServices(j.observationContext)
 	if err != nil {
 		return nil, err
 	}
 
-	db, err := workerdb.InitDBWithLogger(logger)
+	db, err := workerdb.InitDBWithLogger(logger, j.observationContext)
 	if err != nil {
 		return nil, err
 	}
 
-	gitserverClient := gitserver.New(db, observation.ScopedContext("codeintel", "indexScheduler", "gitserver"))
+	gitserverClient := gitserver.New(db, observation.ScopedContext("codeintel", "indexScheduler", "gitserver", j.observationContext))
 
 	return autoindexing.NewIndexSchedulers(
 		services.UploadsService,
 		services.PoliciesService,
 		policies.NewMatcher(gitserverClient, policies.IndexingExtractor, false, true),
 		services.AutoIndexingService,
-		observation.ContextWithLogger(logger),
+		observation.ContextWithLogger(logger, j.observationContext),
 	), nil
 }

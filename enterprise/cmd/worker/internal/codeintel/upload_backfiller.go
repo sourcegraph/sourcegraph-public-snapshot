@@ -11,12 +11,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type uploadBackfillerJob struct{}
+type uploadBackfillerJob struct {
+	observationContext *observation.Context
+}
 
-func NewUploadBackfillerJob() job.Job {
-	return &uploadBackfillerJob{}
+func NewUploadBackfillerJob(observationContext *observation.Context) job.Job {
+	return &uploadBackfillerJob{observationContext: &observation.Context{
+		Logger:       log.NoOp(),
+		Tracer:       observationContext.Tracer,
+		Registerer:   observationContext.Registerer,
+		HoneyDataset: observationContext.HoneyDataset,
+	}}
 }
 
 func (j *uploadBackfillerJob) Description() string {
@@ -30,7 +38,7 @@ func (j *uploadBackfillerJob) Config() []env.Config {
 }
 
 func (j *uploadBackfillerJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	services, err := codeintel.InitServices()
+	services, err := codeintel.InitServices(j.observationContext)
 	if err != nil {
 		return nil, err
 	}

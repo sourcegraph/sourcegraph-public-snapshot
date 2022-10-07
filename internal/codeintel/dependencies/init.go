@@ -8,12 +8,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func NewService(db database.DB) *Service {
-	return newService(store.New(db, scopedContext("store")), scopedContext("service"))
+func NewService(db database.DB, obsevationContext *observation.Context) *Service {
+	return newService(store.New(db, scopedContext("store", obsevationContext)), scopedContext("service", obsevationContext))
 }
 
 type serviceDependencies struct {
-	db database.DB
+	db                 database.DB
+	observationContext *observation.Context
 }
 
 // TestService creates a new dependencies service with noop observation contexts.
@@ -23,8 +24,8 @@ func TestService(db database.DB, gitserver GitserverClient) *Service {
 	return newService(store, &observation.TestContext)
 }
 
-func scopedContext(component string) *observation.Context {
-	return observation.ScopedContext("codeintel", "dependencies", component)
+func scopedContext(component string, parent *observation.Context) *observation.Context {
+	return observation.ScopedContext("codeintel", "dependencies", component, parent)
 }
 
 func CrateSyncerJob(dependenciesSvc background.DependenciesService, gitserverClient background.GitserverClient, extSvcStore background.ExternalServiceStore, observationContext *observation.Context) []goroutine.BackgroundRoutine {

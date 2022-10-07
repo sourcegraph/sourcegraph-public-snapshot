@@ -33,10 +33,11 @@ func NewService(
 	db database.DB,
 	codeIntelDB codeintelshared.CodeIntelDB,
 	gsc GitserverClient,
+	observationContext *observation.Context,
 ) *Service {
-	store := store.New(db, scopedContext("store"))
-	repoStore := backend.NewRepos(scopedContext("repos").Logger, db, gitserver.NewClient(db))
-	lsifStore := lsifstore.New(codeIntelDB, scopedContext("lsifstore"))
+	store := store.New(db, scopedContext("store", observationContext))
+	repoStore := backend.NewRepos(scopedContext("repos", observationContext).Logger, db, gitserver.NewClient(db))
+	lsifStore := lsifstore.New(codeIntelDB, scopedContext("lsifstore", observationContext))
 	policyMatcher := policiesEnterprise.NewMatcher(gsc, policiesEnterprise.RetentionExtractor, true, false)
 	locker := locker.NewWith(db, "codeintel")
 
@@ -68,9 +69,9 @@ func NewService(
 		nil, // written in circular fashion
 		policyMatcher,
 		locker,
-		scopedContext("service"),
+		scopedContext("service", observationContext),
 	)
-	svc.policySvc = policies.NewService(db, svc, gsc)
+	svc.policySvc = policies.NewService(db, svc, gsc, observationContext)
 
 	return svc
 }
@@ -90,8 +91,8 @@ var (
 	rankingBucketCredentialsFile = env.Get("CODEINTEL_UPLOADS_RANKING_GOOGLE_APPLICATION_CREDENTIALS_FILE", "", "The path to a service account key file with access to GCS.")
 )
 
-func scopedContext(component string) *observation.Context {
-	return observation.ScopedContext("codeintel", "uploads", component)
+func scopedContext(component string, parent *observation.Context) *observation.Context {
+	return observation.ScopedContext("codeintel", "uploads", component, parent)
 }
 
 func NewUploadProcessorJob(
@@ -104,7 +105,7 @@ func NewUploadProcessorJob(
 	maximumRuntimePerJob time.Duration,
 	observationContext *observation.Context,
 ) goroutine.BackgroundRoutine {
-	uploadsProcessorStore := dbworkerstore.NewWithMetrics(db.Handle(), store.UploadWorkerStoreOptions, observationContext)
+	uploadsProcessorStore := dbworkerstore.New(db.Handle(), store.UploadWorkerStoreOptions, observationContext)
 
 	dbworker.InitPrometheusMetric(observationContext, uploadsProcessorStore, "codeintel", "upload", nil)
 
@@ -163,7 +164,7 @@ func NewReconciler(uploadSvc *Service, observationContext *observation.Context) 
 
 func NewResetters(db database.DB, observationContext *observation.Context) []goroutine.BackgroundRoutine {
 	metrics := background.NewResetterMetrics(observationContext)
-	uploadsResetterStore := dbworkerstore.NewWithMetrics(db.Handle(), store.UploadWorkerStoreOptions, observationContext)
+	uploadsResetterStore := dbworkerstore.New(db.Handle(), store.UploadWorkerStoreOptions, observationContext)
 
 	return []goroutine.BackgroundRoutine{
 		background.NewUploadResetter(uploadsResetterStore, ConfigJanitorInst.Interval, observationContext.Logger.Scoped("uploadResetter", ""), metrics),

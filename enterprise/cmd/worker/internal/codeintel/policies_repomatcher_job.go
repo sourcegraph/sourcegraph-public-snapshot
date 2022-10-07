@@ -13,14 +13,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type policiesRepositoryMatcherJob struct{}
+type policiesRepositoryMatcherJob struct {
+	observationContext *observation.Context
+}
 
-func NewPoliciesRepositoryMatcherJob() job.Job {
-	return &policiesRepositoryMatcherJob{}
+func NewPoliciesRepositoryMatcherJob(observationContext *observation.Context) job.Job {
+	return &policiesRepositoryMatcherJob{observationContext: &observation.Context{
+		Logger:       log.NoOp(),
+		Tracer:       observationContext.Tracer,
+		Registerer:   observationContext.Registerer,
+		HoneyDataset: observationContext.HoneyDataset,
+	}}
 }
 
 func (j *policiesRepositoryMatcherJob) Description() string {
-	return ""
+	return "code-intel policies repository matcher"
 }
 
 func (j *policiesRepositoryMatcherJob) Config() []env.Config {
@@ -30,11 +37,11 @@ func (j *policiesRepositoryMatcherJob) Config() []env.Config {
 }
 
 func (j *policiesRepositoryMatcherJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	services, err := codeintel.InitServices()
+	services, err := codeintel.InitServices(j.observationContext)
 	if err != nil {
 		return nil, err
 	}
 
 	// TODO(nsc): https://github.com/sourcegraph/sourcegraph/pull/42765
-	return policies.PolicyMatcherJobs(services.PoliciesService, observation.ScopedContext("codeintel", "policies", "repoMatcherJob")), nil
+	return policies.PolicyMatcherJobs(services.PoliciesService, observation.ScopedContext("codeintel", "policies", "repoMatcherJob", j.observationContext)), nil
 }

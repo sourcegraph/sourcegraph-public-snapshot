@@ -14,17 +14,25 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 const syncInterval = 24 * time.Hour
 
-func NewSyncingJob() job.Job {
-	return &syncingJob{}
+func NewSyncingJob(observationContext *observation.Context) job.Job {
+	return &syncingJob{observationContext: &observation.Context{
+		Logger:       log.NoOp(),
+		Tracer:       observationContext.Tracer,
+		Registerer:   observationContext.Registerer,
+		HoneyDataset: observationContext.HoneyDataset,
+	}}
 }
 
-type syncingJob struct{}
+type syncingJob struct {
+	observationContext *observation.Context
+}
 
 func (j *syncingJob) Description() string {
 	return ""
@@ -40,7 +48,7 @@ func (j *syncingJob) Routines(_ context.Context, logger log.Logger) ([]goroutine
 		return nil, nil
 	}
 
-	db, err := workerdb.InitDBWithLogger(logger)
+	db, err := workerdb.InitDBWithLogger(logger, j.observationContext)
 	if err != nil {
 		return nil, err
 	}

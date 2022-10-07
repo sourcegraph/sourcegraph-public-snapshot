@@ -75,9 +75,10 @@ func EnterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterp
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	codeIntelServices, err := codeintel.NewServices(codeintel.Databases{
-		DB:          db,
-		CodeIntelDB: mustInitializeCodeIntelDB(logger),
+	codeIntelServices, err := codeintel.NewServices(codeintel.ServiceDependencies{
+		DB:                 db,
+		CodeIntelDB:        mustInitializeCodeIntelDB(logger),
+		ObservationContext: observationContext,
 	})
 	if err != nil {
 		logger.Fatal("failed to initialize code intelligence", log.Error(err))

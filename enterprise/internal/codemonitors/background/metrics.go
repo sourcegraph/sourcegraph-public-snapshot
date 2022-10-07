@@ -2,12 +2,8 @@ package background
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
-	"go.opentelemetry.io/otel"
-
-	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
@@ -18,12 +14,8 @@ type codeMonitorsMetrics struct {
 	errors        prometheus.Counter
 }
 
-func newMetricsForTriggerQueries(logger log.Logger) codeMonitorsMetrics {
-	observationContext := &observation.Context{
-		Logger:     logger.Scoped("triggers", "code monitor triggers"),
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
+func newMetricsForTriggerQueries(observationContext *observation.Context) codeMonitorsMetrics {
+	observationContext = observation.ContextWithLogger(observationContext.Logger.Scoped("triggers", "code monitor triggers"), observationContext)
 
 	resetFailures := prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "src_codemonitors_query_reset_failures_total",
@@ -51,12 +43,8 @@ func newMetricsForTriggerQueries(logger log.Logger) codeMonitorsMetrics {
 	}
 }
 
-func newActionMetrics(logger log.Logger) codeMonitorsMetrics {
-	observationContext := &observation.Context{
-		Logger:     logger.Scoped("actions", "code monitors actions"),
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
+func newActionMetrics(observationContext *observation.Context) codeMonitorsMetrics {
+	observationContext = observation.ContextWithLogger(observationContext.Logger.Scoped("actions", "code monitors actions"), observationContext)
 
 	resetFailures := prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "src_codemonitors_action_reset_failures_total",

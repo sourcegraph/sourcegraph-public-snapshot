@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	workerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -38,8 +39,8 @@ func NewResetter(ctx context.Context, logger log.Logger, workerStore workerstore
 	return dbworker.NewResetter(logger, workerStore, options)
 }
 
-func CreateWorkerStore(logger log.Logger, dbHandle basestore.TransactableHandle) workerstore.Store[*Job] {
-	return workerstore.New(logger, dbHandle, workerstore.Options[*Job]{
+func CreateWorkerStore(dbHandle basestore.TransactableHandle, observationContext *observation.Context) workerstore.Store[*Job] {
+	return workerstore.New(dbHandle, workerstore.Options[*Job]{
 		Name:              "webhook_build_worker_store",
 		TableName:         "webhook_build_jobs",
 		Scan:              workerstore.BuildWorkerScan(scanWebhookBuildJob),
@@ -48,7 +49,7 @@ func CreateWorkerStore(logger log.Logger, dbHandle basestore.TransactableHandle)
 		StalledMaxAge:     30 * time.Second,
 		MaxNumResets:      5,
 		MaxNumRetries:     5,
-	})
+	}, observationContext)
 }
 
 func EnqueueJob(ctx context.Context, workerBaseStore *basestore.Store, job *Job) (id int, err error) {

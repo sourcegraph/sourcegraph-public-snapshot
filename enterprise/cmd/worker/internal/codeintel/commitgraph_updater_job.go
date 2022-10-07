@@ -10,12 +10,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type commitGraphUpdaterJob struct{}
+type commitGraphUpdaterJob struct {
+	observationContext *observation.Context
+}
 
-func NewCommitGraphUpdaterJob() job.Job {
-	return &commitGraphUpdaterJob{}
+func NewCommitGraphUpdaterJob(observationContext *observation.Context) job.Job {
+	return &commitGraphUpdaterJob{observationContext: &observation.Context{
+		Logger:       log.NoOp(),
+		Tracer:       observationContext.Tracer,
+		Registerer:   observationContext.Registerer,
+		HoneyDataset: observationContext.HoneyDataset,
+	}}
 }
 
 func (j *commitGraphUpdaterJob) Description() string {
@@ -29,7 +37,7 @@ func (j *commitGraphUpdaterJob) Config() []env.Config {
 }
 
 func (j *commitGraphUpdaterJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	services, err := codeintel.InitServices()
+	services, err := codeintel.InitServices(j.observationContext)
 	if err != nil {
 		return nil, err
 	}

@@ -11,16 +11,23 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // compactor is a worker responsible for compacting rows in the repo_statistics table.
-type compactor struct{}
+type compactor struct {
+	observationContext *observation.Context
+}
 
 var _ job.Job = &compactor{}
 
-func NewCompactor() job.Job {
-	return &compactor{}
-
+func NewCompactor(observationContext *observation.Context) job.Job {
+	return &compactor{observationContext: &observation.Context{
+		Logger:       log.NoOp(),
+		Tracer:       observationContext.Tracer,
+		Registerer:   observationContext.Registerer,
+		HoneyDataset: observationContext.HoneyDataset,
+	}}
 }
 
 func (j *compactor) Description() string {
@@ -32,7 +39,7 @@ func (j *compactor) Config() []env.Config {
 }
 
 func (j *compactor) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	db, err := workerdb.InitDBWithLogger(logger)
+	db, err := workerdb.InitDBWithLogger(logger, j.observationContext)
 	if err != nil {
 		return nil, err
 	}
@@ -50,8 +57,10 @@ type handler struct {
 	logger log.Logger
 }
 
-var _ goroutine.Handler = &handler{}
-var _ goroutine.ErrorHandler = &handler{}
+var (
+	_ goroutine.Handler      = &handler{}
+	_ goroutine.ErrorHandler = &handler{}
+)
 
 func (h *handler) Handle(ctx context.Context) error {
 	return h.store.CompactRepoStatistics(ctx)

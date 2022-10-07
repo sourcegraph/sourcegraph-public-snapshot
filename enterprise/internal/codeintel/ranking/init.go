@@ -23,6 +23,7 @@ func NewService(
 	db database.DB,
 	uploadSvc *uploads.Service,
 	gitserverClient GitserverClient,
+	observationContext *observation.Context,
 ) *Service {
 	if resultsGraphKey == "" {
 		// The codenav default
@@ -49,13 +50,13 @@ func NewService(
 	}()
 
 	return newService(
-		store.New(db, scopedContext("store")),
+		store.New(db, scopedContext("store", observationContext)),
 		uploadSvc,
 		gitserverClient,
 		symbols.DefaultClient,
 		conf.DefaultClient(),
 		resultsBucket,
-		scopedContext("service"),
+		scopedContext("service", observationContext),
 	)
 }
 
@@ -79,8 +80,8 @@ var (
 	mergeBatchSize = env.MustGetInt("CODEINTEL_RANKING_MERGE_BATCH_SIZE", 5000, "")
 )
 
-func scopedContext(component string) *observation.Context {
-	return observation.ScopedContext("codeintel", "ranking", component)
+func scopedContext(component string, observationContext *observation.Context) *observation.Context {
+	return observation.ScopedContext("codeintel", "ranking", component, observationContext)
 }
 
 func NewIndexer(service *Service, observationContext *observation.Context) []goroutine.BackgroundRoutine {

@@ -811,7 +811,7 @@ func TestBatchSpecWorkspaceCreatorProcess_Importing(t *testing.T) {
 	clock := func() time.Time { return now }
 	s := store.NewWithClock(db, &observation.TestContext, nil, clock)
 
-	var testSpecYAML = `
+	testSpecYAML := `
 name: my-unique-name
 importChangesets:
   - repository: ` + string(repos[0].Name) + `
@@ -869,7 +869,7 @@ func TestBatchSpecWorkspaceCreatorProcess_NoDiff(t *testing.T) {
 	clock := func() time.Time { return now }
 	s := store.NewWithClock(db, &observation.TestContext, nil, clock)
 
-	var testSpecYAML = `
+	testSpecYAML := `
 name: my-unique-name
 importChangesets:
   - repository: ` + string(repos[0].Name) + `

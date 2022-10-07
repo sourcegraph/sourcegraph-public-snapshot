@@ -266,11 +266,11 @@ type Options[T workerutil.Record] struct {
 type ResultsetScanFn[T workerutil.Record] func(rows *sql.Rows, err error) ([]T, error)
 
 // New creates a new store with the given database handle and options.
-func New[T workerutil.Record](logger log.Logger, handle basestore.TransactableHandle, options Options[T]) Store[T] {
-	return NewWithMetrics(handle, options, observation.ContextWithLogger(logger))
-}
+// func New[T workerutil.Record](logger log.Logger, handle basestore.TransactableHandle, options Options[T]) Store[T] {
+// 	return NewWithMetrics(handle, options, observation.ContextWithLogger(logger))
+// }
 
-func NewWithMetrics[T workerutil.Record](handle basestore.TransactableHandle, options Options[T], observationContext *observation.Context) Store[T] {
+func New[T workerutil.Record](handle basestore.TransactableHandle, options Options[T], observationContext *observation.Context) Store[T] {
 	return newStore(handle, options, observationContext)
 }
 

@@ -15,12 +15,12 @@ import (
 )
 
 // InitDB initializes and returns a connection to the codeintel db.
-func InitDB() (*sql.DB, error) {
-	return initDBMemo.Init()
+func InitDB(observationContext *observation.Context) (*sql.DB, error) {
+	return initDBMemo.Init(observationContext)
 }
 
-func InitDBWithLogger(logger log.Logger) (codeintelshared.CodeIntelDB, error) {
-	rawDB, err := InitDB()
+func InitDBWithLogger(logger log.Logger, observationContext *observation.Context) (codeintelshared.CodeIntelDB, error) {
+	rawDB, err := InitDB(observationContext)
 	if err != nil {
 		return nil, err
 	}
@@ -28,12 +28,12 @@ func InitDBWithLogger(logger log.Logger) (codeintelshared.CodeIntelDB, error) {
 	return codeintelshared.NewCodeIntelDB(rawDB), nil
 }
 
-var initDBMemo = memo.NewMemoizedConstructor(func() (*sql.DB, error) {
+var initDBMemo = memo.NewMemoizedConstructorWithArg(func(observationContext *observation.Context) (*sql.DB, error) {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeIntelPostgresDSN
 	})
 
-	db, err := connections.EnsureNewCodeIntelDB(dsn, "worker", &observation.TestContext)
+	db, err := connections.EnsureNewCodeIntelDB(dsn, "worker", observationContext)
 	if err != nil {
 		return nil, errors.Errorf("failed to connect to codeintel database: %s", err)
 	}

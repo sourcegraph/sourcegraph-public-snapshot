@@ -117,7 +117,6 @@ func TestCommitIndexer_indexAll(t *testing.T) {
 				}
 			}
 		}
-
 	})
 }
 
@@ -169,7 +168,6 @@ func Test_getMetadata_NoInsertRequired(t *testing.T) {
 
 	t.Run("get_metadata", func(t *testing.T) {
 		metadata, err := getMetadata(ctx, 1, commitStore)
-
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -280,7 +278,6 @@ func TestCommitIndexer_windowing(t *testing.T) {
 	endOfApril5Window := time.Date(2020, time.April, 5, 0, 0, 0, 0, time.UTC).Add(24 * 30 * time.Hour)
 
 	t.Run("multi_repository_paging", func(t *testing.T) {
-
 		conf.Mock(&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
 				InsightsCommitIndexerWindowDuration: 30,
@@ -351,14 +348,13 @@ func TestCommitIndexer_windowing(t *testing.T) {
 			checkIndexedThough(t, clock().UTC(), commitStore.InsertCommitsFunc.history[7].Arg3)
 
 		}
-
 	})
 }
 
 func Test_IsEmptyRepoError(t *testing.T) {
 	t.Parallel()
 
-	defaultDate := time.Date(2022, 07, 01, 12, 12, 12, 10, time.UTC)
+	defaultDate := time.Date(2022, 0o7, 0o1, 12, 12, 12, 10, time.UTC)
 	defaultError := errors.New(generateEmptyRepoErrorMessagePrefix(defaultDate, nil) + emptyRepoErrMessageSuffix)
 
 	testCases := []struct {

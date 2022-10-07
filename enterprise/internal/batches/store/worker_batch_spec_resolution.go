@@ -34,5 +34,5 @@ var batchSpecResolutionWorkerOpts = dbworkerstore.Options[*types.BatchSpecResolu
 }
 
 func NewBatchSpecResolutionWorkerStore(handle basestore.TransactableHandle, observationContext *observation.Context) dbworkerstore.Store[*types.BatchSpecResolutionJob] {
-	return dbworkerstore.NewWithMetrics(handle, batchSpecResolutionWorkerOpts, observationContext)
+	return dbworkerstore.New(handle, batchSpecResolutionWorkerOpts, observationContext)
 }

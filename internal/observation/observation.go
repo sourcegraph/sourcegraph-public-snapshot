@@ -12,7 +12,6 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -32,7 +31,7 @@ var enableTraceLog = os.Getenv("SRC_TRACE_LOG") == "true"
 // metrics. It should be created once on service startup, and passed around to
 // any location that wants to use it for observing operations.
 type Context struct {
-	Logger       log.Logger
+	Logger log.Logger
 	Tracer       *trace.Tracer
 	Registerer   prometheus.Registerer
 	HoneyDataset *honey.Dataset
@@ -42,20 +41,21 @@ type Context struct {
 var TestContext = Context{Logger: log.NoOp(), Registerer: metrics.TestRegisterer}
 
 // ContextWithLogger creates a live Context with the given logger instance.
-func ContextWithLogger(logger log.Logger) *Context {
+func ContextWithLogger(logger log.Logger, parent *Context) *Context {
 	return &Context{
-		Logger:     logger,
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
+		Logger:       logger,
+		Tracer:       parent.Tracer,
+		Registerer:   parent.Registerer,
+		HoneyDataset: parent.HoneyDataset,
 	}
 }
 
 // ScopedContext creates a live Context with a logger configured with the given values.
-func ScopedContext(team, domain, component string) *Context {
+func ScopedContext(team, domain, component string, parent *Context) *Context {
 	return ContextWithLogger(log.Scoped(
 		fmt.Sprintf("%s.%s.%s", team, domain, component),
 		fmt.Sprintf("%s %s %s", team, domain, component),
-	))
+	), parent)
 }
 
 type ErrorFilterBehaviour uint8

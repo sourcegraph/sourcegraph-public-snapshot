@@ -16,10 +16,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type autoindexingDependencyScheduler struct{}
+type autoindexingDependencyScheduler struct {
+	observationContext *observation.Context
+}
 
-func NewAutoindexingDependencySchedulerJob() job.Job {
-	return &autoindexingDependencyScheduler{}
+func NewAutoindexingDependencySchedulerJob(observationContext *observation.Context) job.Job {
+	return &autoindexingDependencyScheduler{observationContext: &observation.Context{
+		Logger:       log.NoOp(),
+		Tracer:       observationContext.Tracer,
+		Registerer:   observationContext.Registerer,
+		HoneyDataset: observationContext.HoneyDataset,
+	}}
 }
 
 func (j *autoindexingDependencyScheduler) Description() string {
@@ -33,12 +40,12 @@ func (j *autoindexingDependencyScheduler) Config() []env.Config {
 }
 
 func (j *autoindexingDependencyScheduler) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	services, err := codeintel.InitServices()
+	services, err := codeintel.InitServices(j.observationContext)
 	if err != nil {
 		return nil, err
 	}
 
-	db, err := workerdb.InitDBWithLogger(logger)
+	db, err := workerdb.InitDBWithLogger(logger, j.observationContext)
 	if err != nil {
 		return nil, err
 	}
@@ -49,6 +56,6 @@ func (j *autoindexingDependencyScheduler) Routines(startupCtx context.Context, l
 		services.DependenciesService,
 		services.AutoIndexingService,
 		repoupdater.DefaultClient,
-		observation.ContextWithLogger(logger),
+		observation.ContextWithLogger(logger, j.observationContext),
 	), nil
 }

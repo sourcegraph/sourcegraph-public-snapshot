@@ -29,7 +29,7 @@ type SyncWorkerOptions struct {
 }
 
 // NewSyncWorker creates a new external service sync worker.
-func NewSyncWorker(ctx context.Context, logger log.Logger, dbHandle basestore.TransactableHandle, handler workerutil.Handler[*SyncJob], opts SyncWorkerOptions) (*workerutil.Worker[*SyncJob], *dbworker.Resetter[*SyncJob]) {
+func NewSyncWorker(ctx context.Context, dbHandle basestore.TransactableHandle, handler workerutil.Handler[*SyncJob], opts SyncWorkerOptions, observationContext *observation.Context) (*workerutil.Worker[*SyncJob], *dbworker.Resetter[*SyncJob]) {
 	if opts.NumHandlers == 0 {
 		opts.NumHandlers = 3
 	}
@@ -54,7 +54,7 @@ func NewSyncWorker(ctx context.Context, logger log.Logger, dbHandle basestore.Tr
 		sqlf.Sprintf("next_sync_at"),
 	}
 
-	store := workerstore.New(logger.Scoped("repo.sync.workerstore.Store", ""), dbHandle, workerstore.Options[*SyncJob]{
+	store := workerstore.New(dbHandle, workerstore.Options[*SyncJob]{
 		Name:              "repo_sync_worker_store",
 		TableName:         "external_service_sync_jobs",
 		ViewName:          "external_service_sync_jobs_with_next_sync_at",
@@ -64,7 +64,7 @@ func NewSyncWorker(ctx context.Context, logger log.Logger, dbHandle basestore.Tr
 		StalledMaxAge:     30 * time.Second,
 		MaxNumResets:      5,
 		MaxNumRetries:     0,
-	})
+	}, observation.ContextWithLogger(observationContext.Logger.Scoped("repo.sync.workerstore.Store", ""), observationContext))
 
 	worker := dbworker.NewWorker(ctx, store, handler, workerutil.WorkerOptions{
 		Name:              "repo_sync_worker",
@@ -74,14 +74,14 @@ func NewSyncWorker(ctx context.Context, logger log.Logger, dbHandle basestore.Tr
 		Metrics:           newWorkerMetrics(opts.PrometheusRegisterer),
 	})
 
-	resetter := dbworker.NewResetter(logger.Scoped("repo.sync.worker.Resetter", ""), store, dbworker.ResetterOptions{
+	resetter := dbworker.NewResetter(observationContext.Logger.Scoped("repo.sync.worker.Resetter", ""), store, dbworker.ResetterOptions{
 		Name:     "repo_sync_worker_resetter",
 		Interval: 5 * time.Minute,
 		Metrics:  newResetterMetrics(opts.PrometheusRegisterer),
 	})
 
 	if opts.CleanupOldJobs {
-		go runJobCleaner(ctx, logger, dbHandle, opts.CleanupOldJobsInterval)
+		go runJobCleaner(ctx, observationContext.Logger, dbHandle, opts.CleanupOldJobsInterval)
 	}
 
 	return worker, resetter

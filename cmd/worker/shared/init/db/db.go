@@ -16,12 +16,12 @@ import (
 )
 
 // Init initializes and returns a connection to the frontend database.
-func Init() (*sql.DB, error) {
-	return initDatabaseMemo.Init()
+func Init(observationContext *observation.Context) (*sql.DB, error) {
+	return initDatabaseMemo.Init(observationContext)
 }
 
-func InitDBWithLogger(logger log.Logger) (database.DB, error) {
-	rawDB, err := Init()
+func InitDBWithLogger(logger log.Logger, observationContext *observation.Context) (database.DB, error) {
+	rawDB, err := Init(observationContext)
 	if err != nil {
 		return nil, err
 	}
@@ -29,11 +29,11 @@ func InitDBWithLogger(logger log.Logger) (database.DB, error) {
 	return database.NewDB(logger, rawDB), nil
 }
 
-var initDatabaseMemo = memo.NewMemoizedConstructor(func() (*sql.DB, error) {
+var initDatabaseMemo = memo.NewMemoizedConstructorWithArg(func(observationContext *observation.Context) (*sql.DB, error) {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
-	db, err := connections.EnsureNewFrontendDB(dsn, "worker", &observation.TestContext)
+	db, err := connections.EnsureNewFrontendDB(dsn, "worker", observationContext)
 	if err != nil {
 		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
 	}

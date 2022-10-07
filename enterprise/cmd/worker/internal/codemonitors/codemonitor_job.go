@@ -11,12 +11,20 @@ import (
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type codeMonitorJob struct{}
+type codeMonitorJob struct {
+	observationContext *observation.Context
+}
 
-func NewCodeMonitorJob() job.Job {
-	return &codeMonitorJob{}
+func NewCodeMonitorJob(observationContext *observation.Context) job.Job {
+	return &codeMonitorJob{observationContext: &observation.Context{
+		Logger:       log.NoOp(),
+		Tracer:       observationContext.Tracer,
+		Registerer:   observationContext.Registerer,
+		HoneyDataset: observationContext.HoneyDataset,
+	}}
 }
 
 func (j *codeMonitorJob) Description() string {
@@ -28,10 +36,10 @@ func (j *codeMonitorJob) Config() []env.Config {
 }
 
 func (j *codeMonitorJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	db, err := workerdb.InitDBWithLogger(logger)
+	db, err := workerdb.InitDBWithLogger(logger, j.observationContext)
 	if err != nil {
 		return nil, err
 	}
 
-	return background.NewBackgroundJobs(logger, edb.NewEnterpriseDB(db)), nil
+	return background.NewBackgroundJobs(edb.NewEnterpriseDB(db), j.observationContext), nil
 }

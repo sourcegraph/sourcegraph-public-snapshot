@@ -92,7 +92,7 @@ func NewResetter(ctx context.Context, logger log.Logger, workerStore dbworkersto
 //
 // See internal/workerutil/dbworker for more information about dbworkers.
 func CreateDBWorkerStore(s *basestore.Store, observationContext *observation.Context) dbworkerstore.Store[*Job] {
-	return dbworkerstore.NewWithMetrics(s.Handle(), dbworkerstore.Options[*Job]{
+	return dbworkerstore.New(s.Handle(), dbworkerstore.Options[*Job]{
 		Name:              "insights_query_runner_jobs_store",
 		TableName:         "insights_query_runner_jobs",
 		ColumnExpressions: jobsColumns,

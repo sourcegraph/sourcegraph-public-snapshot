@@ -14,14 +14,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type cratesSyncerJob struct{}
+type cratesSyncerJob struct {
+	observationContext *observation.Context
+}
 
-func NewCratesSyncerJob() job.Job {
-	return &cratesSyncerJob{}
+func NewCratesSyncerJob(observationContext *observation.Context) job.Job {
+	return &cratesSyncerJob{observationContext: &observation.Context{
+		Logger:       log.NoOp(),
+		Tracer:       observationContext.Tracer,
+		Registerer:   observationContext.Registerer,
+		HoneyDataset: observationContext.HoneyDataset,
+	}}
 }
 
 func (j *cratesSyncerJob) Description() string {
-	return ""
+	return "crates.io syncer"
 }
 
 func (j *cratesSyncerJob) Config() []env.Config {
@@ -29,18 +36,18 @@ func (j *cratesSyncerJob) Config() []env.Config {
 }
 
 func (j *cratesSyncerJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	db, err := workerdb.InitDBWithLogger(logger)
+	db, err := workerdb.InitDBWithLogger(logger, j.observationContext)
 	if err != nil {
 		return nil, err
 	}
 
 	gitserverClient := gitserver.NewClient(db)
-	dependenciesService := dependencies.NewService(db)
+	dependenciesService := dependencies.NewService(db, j.observationContext)
 
 	return dependencies.CrateSyncerJob(
 		dependenciesService,
 		gitserverClient,
 		db.ExternalServices(),
-		observation.ContextWithLogger(logger),
+		observation.ContextWithLogger(logger, j.observationContext),
 	), nil
 }

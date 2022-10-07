@@ -12,25 +12,27 @@ func NewService(
 	db database.DB,
 	uploadSvc UploadService,
 	gitserver GitserverClient,
+	observationContext *observation.Context,
 ) *Service {
-	store := store.New(db, scopedContext("store"))
+	store := store.New(db, scopedContext("store", observationContext))
 
 	return newService(
 		store,
 		uploadSvc,
 		gitserver,
-		scopedContext("service"),
+		observationContext,
 	)
 }
 
 type serviceDependencies struct {
-	db        database.DB
-	uploadSvc UploadService
-	gitserver GitserverClient
+	db                 database.DB
+	uploadSvc          UploadService
+	gitserver          GitserverClient
+	observationContext *observation.Context
 }
 
-func scopedContext(component string) *observation.Context {
-	return observation.ScopedContext("codeintel", "policies", component)
+func scopedContext(component string, parent *observation.Context) *observation.Context {
+	return observation.ScopedContext("codeintel", "policies", component, parent)
 }
 
 func PolicyMatcherJobs(service *Service, observationContext *observation.Context) []goroutine.BackgroundRoutine {

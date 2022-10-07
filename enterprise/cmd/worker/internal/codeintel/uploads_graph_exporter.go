@@ -13,10 +13,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type graphExporterJob struct{}
+type graphExporterJob struct {
+	observationContext *observation.Context
+}
 
-func NewGraphExporterJob() job.Job {
-	return &graphExporterJob{}
+func NewGraphExporterJob(observationContext *observation.Context) job.Job {
+	return &graphExporterJob{observationContext}
 }
 
 func (j *graphExporterJob) Description() string {
@@ -30,10 +32,10 @@ func (j *graphExporterJob) Config() []env.Config {
 }
 
 func (j *graphExporterJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	services, err := codeintel.InitServices()
+	services, err := codeintel.InitServices(j.observationContext)
 	if err != nil {
 		return nil, err
 	}
 
-	return uploads.NewGraphExporters(services.UploadsService, observation.ContextWithLogger(logger)), nil
+	return uploads.NewGraphExporters(services.UploadsService, observation.ContextWithLogger(logger, j.observationContext)), nil
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -52,10 +53,10 @@ func TestSyncWorkerPlumbing(t *testing.T) {
 	h := &fakeRepoSyncHandler{
 		jobChan: jobChan,
 	}
-	worker, resetter := repos.NewSyncWorker(ctx, logtest.Scoped(t), store.Handle(), h, repos.SyncWorkerOptions{
+	worker, resetter := repos.NewSyncWorker(ctx, store.Handle(), h, repos.SyncWorkerOptions{
 		NumHandlers:    1,
 		WorkerInterval: 1 * time.Millisecond,
-	})
+	}, observation.ContextWithLogger(logtest.Scoped(t), &observation.TestContext))
 	go worker.Start()
 	go resetter.Start()
 

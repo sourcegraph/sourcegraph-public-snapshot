@@ -32,7 +32,7 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete(t *testing.T) {
 
 	repo, _ := bt.CreateTestRepo(t, ctx, db)
 	s := New(db, &observation.TestContext, nil)
-	workStore := dbworkerstore.NewWithMetrics(s.Handle(), batchSpecWorkspaceExecutionWorkerStoreOptions, &observation.TestContext)
+	workStore := dbworkerstore.New(s.Handle(), batchSpecWorkspaceExecutionWorkerStoreOptions, &observation.TestContext)
 
 	// Setup all the associations
 	batchSpec := &btypes.BatchSpec{UserID: user.ID, NamespaceUserID: user.ID, RawSpec: "horse", Spec: &batcheslib.BatchSpec{
@@ -226,7 +226,7 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_MarkFailed(t *testing.T) {
 
 	repo, _ := bt.CreateTestRepo(t, ctx, db)
 	s := New(db, &observation.TestContext, nil)
-	workStore := dbworkerstore.NewWithMetrics(s.Handle(), batchSpecWorkspaceExecutionWorkerStoreOptions, &observation.TestContext)
+	workStore := dbworkerstore.New(s.Handle(), batchSpecWorkspaceExecutionWorkerStoreOptions, &observation.TestContext)
 
 	// Setup all the associations
 	batchSpec := &btypes.BatchSpec{UserID: user.ID, NamespaceUserID: user.ID, RawSpec: "horse", Spec: &batcheslib.BatchSpec{
@@ -382,7 +382,7 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete_EmptyDiff(t *testin
 	repo, _ := bt.CreateTestRepo(t, ctx, db)
 
 	s := New(db, &observation.TestContext, nil)
-	workStore := dbworkerstore.NewWithMetrics(s.Handle(), batchSpecWorkspaceExecutionWorkerStoreOptions, &observation.TestContext)
+	workStore := dbworkerstore.New(s.Handle(), batchSpecWorkspaceExecutionWorkerStoreOptions, &observation.TestContext)
 
 	// Setup all the associations
 	batchSpec := &btypes.BatchSpec{UserID: user.ID, NamespaceUserID: user.ID, RawSpec: "horse", Spec: &batcheslib.BatchSpec{
@@ -466,7 +466,7 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_Dequeue_RoundRobin(t *testing.T)
 	repo, _ := bt.CreateTestRepo(t, ctx, db)
 
 	s := New(db, &observation.TestContext, nil)
-	workerStore := dbworkerstore.NewWithMetrics(s.Handle(), batchSpecWorkspaceExecutionWorkerStoreOptions, &observation.TestContext)
+	workerStore := dbworkerstore.New(s.Handle(), batchSpecWorkspaceExecutionWorkerStoreOptions, &observation.TestContext)
 
 	user1 := bt.CreateTestUser(t, db, true)
 	user2 := bt.CreateTestUser(t, db, true)
@@ -515,7 +515,7 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_Dequeue_RoundRobin_NoDoubleDeque
 	repo, _ := bt.CreateTestRepo(t, ctx, db)
 
 	s := New(db, &observation.TestContext, nil)
-	workerStore := dbworkerstore.NewWithMetrics(s.Handle(), batchSpecWorkspaceExecutionWorkerStoreOptions, &observation.TestContext)
+	workerStore := dbworkerstore.New(s.Handle(), batchSpecWorkspaceExecutionWorkerStoreOptions, &observation.TestContext)
 
 	user1 := bt.CreateTestUser(t, db, true)
 	user2 := bt.CreateTestUser(t, db, true)

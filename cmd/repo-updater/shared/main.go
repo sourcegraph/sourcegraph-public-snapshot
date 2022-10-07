@@ -89,6 +89,11 @@ func Main(enterpriseInit EnterpriseInit) {
 	profiler.Init()
 
 	logger := log.Scoped("service", "repo-updater service")
+	observationContext := &observation.Context{
+		Logger:     log.NoOp(),
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
+		Registerer: prometheus.DefaultRegisterer,
+	}
 
 	// Signals health of startup
 	ready := make(chan struct{})
@@ -106,7 +111,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
-	sqlDB, err := connections.EnsureNewFrontendDB(dsn, "repo-updater", &observation.TestContext)
+	sqlDB, err := connections.EnsureNewFrontendDB(dsn, "repo-updater", observationContext)
 	if err != nil {
 		logger.Fatal("failed to initialize database store", log.Error(err))
 	}
@@ -137,12 +142,13 @@ func Main(enterpriseInit EnterpriseInit) {
 		m := repos.NewSourceMetrics()
 		m.MustRegister(prometheus.DefaultRegisterer)
 
-		src = repos.NewSourcer(sourcerLogger, db, cf, repos.WithDependenciesService(dependencies.NewService(db)), repos.ObservedSource(sourcerLogger, m))
+		src = repos.NewSourcer(sourcerLogger, db, cf, repos.WithDependenciesService(dependencies.NewService(db, observationContext)), repos.ObservedSource(sourcerLogger, m))
 	}
 
 	updateScheduler := repos.NewUpdateScheduler(logger, db)
 	server := &repoupdater.Server{
 		Logger:                logger,
+		ObservationContext:    observationContext,
 		Store:                 store,
 		Scheduler:             updateScheduler,
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
@@ -163,7 +169,6 @@ func Main(enterpriseInit EnterpriseInit) {
 	}
 
 	syncer := &repos.Syncer{
-		Logger:  logger.Scoped("syncer", "repo syncer"),
 		Sourcer: src,
 		Store:   store,
 		// We always want to listen on the Synced channel since external service syncing
@@ -171,6 +176,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		Synced:     make(chan repos.Diff),
 		Now:        clock,
 		Registerer: prometheus.DefaultRegisterer,
+		ObsvCtx:    observation.ContextWithLogger(logger.Scoped("syncer", "repo syncer"), observationContext),
 	}
 
 	go watchSyncer(ctx, logger, syncer, updateScheduler, server.PermsSyncer, server.ChangesetSyncRegistry)
