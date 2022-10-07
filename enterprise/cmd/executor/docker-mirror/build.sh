@@ -36,6 +36,6 @@ else
 fi
 
 pushd "$TMR_WORKDIR" 1>/dev/null
-packer init executor.pkr.hcl
-packer build -force executor.pkr.hcl
+packer init docker-mirror.pkr.hcl
+packer build -force docker-mirror.pkr.hcl
 popd 1>/dev/null
