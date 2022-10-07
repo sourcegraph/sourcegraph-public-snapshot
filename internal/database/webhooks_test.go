@@ -37,9 +37,8 @@ func TestWebhookCreateUnencrypted(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check that the calculated fields were correctly calculated.
-	id := created.ID
-	assert.NotZero(t, id)
-	_, err = uuid.Parse(id)
+	assert.NotZero(t, created.ID)
+	_, err = uuid.Parse(created.RandomID)
 	assert.NoError(t, err)
 	assert.Equal(t, hook.CodeHostKind, created.CodeHostKind)
 	assert.Equal(t, hook.CodeHostURN, created.CodeHostURN)
@@ -47,7 +46,7 @@ func TestWebhookCreateUnencrypted(t *testing.T) {
 	assert.NotZero(t, created.UpdatedAt)
 
 	// getting the secret from the DB as is to verify that it is not encrypted
-	row := tx.QueryRowContext(ctx, "SELECT secret FROM webhooks where id = $1", id)
+	row := tx.QueryRowContext(ctx, "SELECT secret FROM webhooks where id = $1", created.ID)
 	var rawSecret string
 	err = row.Scan(&rawSecret)
 	assert.NoError(t, err)
@@ -79,9 +78,8 @@ func TestWebhookCreateEncrypted(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check that the calculated fields were correctly calculated.
-	id := created.ID
-	assert.NotZero(t, id)
-	_, err = uuid.Parse(id)
+	assert.NotZero(t, created.ID)
+	_, err = uuid.Parse(created.RandomID)
 	assert.NoError(t, err)
 	assert.Equal(t, hook.CodeHostKind, created.CodeHostKind)
 	assert.Equal(t, hook.CodeHostURN, created.CodeHostURN)
@@ -89,7 +87,7 @@ func TestWebhookCreateEncrypted(t *testing.T) {
 	assert.NotZero(t, created.UpdatedAt)
 
 	// getting the secret from the DB as is to verify that it is encrypted
-	row := tx.QueryRowContext(ctx, "SELECT secret FROM webhooks where id = $1", id)
+	row := tx.QueryRowContext(ctx, "SELECT secret FROM webhooks where id = $1", created.ID)
 	var rawSecret string
 	err = row.Scan(&rawSecret)
 	assert.NoError(t, err)

@@ -84,6 +84,7 @@ INSERT INTO
 
 var webhookColumns = []*sqlf.Query{
 	sqlf.Sprintf("id"),
+	sqlf.Sprintf("rand_id"),
 	sqlf.Sprintf("code_host_kind"),
 	sqlf.Sprintf("code_host_urn"),
 	sqlf.Sprintf("secret"),
@@ -117,6 +118,7 @@ func scanWebhook(sc dbutil.Scanner, key encryption.Key) (*types.Webhook, error) 
 
 	if err := sc.Scan(
 		&hook.ID,
+		&hook.RandomID,
 		&hook.CodeHostKind,
 		&hook.CodeHostURN,
 		&rawSecret,
