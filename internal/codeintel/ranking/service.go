@@ -4,12 +4,12 @@ import (
 	"context"
 	"sort"
 
-	"github.com/grafana/regexp"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -43,13 +43,13 @@ func (s *Service) GetRepoRank(ctx context.Context, repoName api.RepoName) (_ flo
 	return s.store.GetStarRank(ctx, repoName)
 }
 
-var allPathsPattern = regexp.MustCompile(".*")
+var allPathsPattern = lazyregexp.New(".*")
 
 func (s *Service) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ map[string]float64, err error) {
 	_, _, endObservation := s.operations.getDocumentRanks.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	paths, err := s.gitserverClient.ListFilesForRepo(ctx, repoName, "HEAD", allPathsPattern)
+	paths, err := s.gitserverClient.ListFilesForRepo(ctx, repoName, "HEAD", allPathsPattern.Re())
 	if err != nil {
 		return nil, err
 	}
