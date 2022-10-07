@@ -21,7 +21,7 @@ require (
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
 	github.com/sourcegraph/go-diff v0.6.1
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
-	github.com/sourcegraph/scip v0.2.1
+	github.com/sourcegraph/scip v0.2.3
 	github.com/sourcegraph/sourcegraph/lib v0.0.0-20221004162410-237d5855fa13
 	github.com/stretchr/testify v1.8.0
 	golang.org/x/net v0.0.0-20220722155237-a158d28d115b
@@ -42,7 +42,7 @@ require (
 	github.com/cockroachdb/errors v1.9.0 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20211118104740-dabe8e521a4f // indirect
 	github.com/cockroachdb/redact v1.1.3 // indirect
-	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
+	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dlclark/regexp2 v1.4.0 // indirect
 	github.com/envoyproxy/protoc-gen-validate v0.3.0-java // indirect

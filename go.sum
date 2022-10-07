@@ -56,8 +56,9 @@ github.com/coreos/etcd v3.3.10+incompatible/go.mod h1:uF7uidLiAD3TWHmW31ZFd/JWoc
 github.com/coreos/go-etcd v2.0.0+incompatible/go.mod h1:Jez6KQU2B/sWsbdaef3ED8NzMklzPG4d5KIOhIy30Tk=
 github.com/coreos/go-semver v0.2.0/go.mod h1:nnelYz7RCh+5ahJtPPxZlU+153eP4D4r3EedlOD2RNk=
 github.com/cpuguy83/go-md2man v1.0.10/go.mod h1:SmD6nW6nTyfqj6ABTjUi3V3JVMnlJmwcJI5acqYI6dE=
-github.com/cpuguy83/go-md2man/v2 v2.0.1 h1:r/myEWzV9lfsM1tFLgDyu0atFtJ1fXn261LKYj/3DxU=
 github.com/cpuguy83/go-md2man/v2 v2.0.1/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46tRHOmNcaadrF8o=
+github.com/cpuguy83/go-md2man/v2 v2.0.2 h1:p1EgwI/C7NhT0JmVkwCD2ZBK8j4aeHQX2pMHHBfMQ6w=
+github.com/cpuguy83/go-md2man/v2 v2.0.2/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46tRHOmNcaadrF8o=
 github.com/creack/goselect v0.1.2 h1:2DNy14+JPjRBgPzAd1thbQp4BSIihxcBf0IXhQXDRa0=
 github.com/creack/goselect v0.1.2/go.mod h1:a/NhLweNvqIYMuxcMOuWY516Cimucms3DglDzQP3hKY=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
@@ -371,8 +372,8 @@ github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf h1:oAdWFqhStsWii
 github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf/go.mod h1:ppFaPm6kpcHnZGqQTFhUIAQRIEhdQDWP1PCv4/ON354=
 github.com/sourcegraph/log v0.0.0-20220901143117-fc0516a694c9 h1:JjFyvx9hCD5+JpuRV6t+gTQgGFvwkxXMZzOc4sLiPqc=
 github.com/sourcegraph/log v0.0.0-20220901143117-fc0516a694c9/go.mod h1:UxiwB6C3xk3xOySJpW1R0MDUyfGuJRFS5Z8C+SA5p2I=
-github.com/sourcegraph/scip v0.2.1 h1:t4cTR8TU81Psfmcj3ZYer67JFzsR/Sc7w5rsuckRo1Y=
-github.com/sourcegraph/scip v0.2.1/go.mod h1:EYyT39nXdZDNVmgbJAlyIVWbEb1txnAOKpJPSYpvgXk=
+github.com/sourcegraph/scip v0.2.3 h1:6nRsTlNTELn+1V7JxLrDVbBpb9H1gAbUF48N7x5B8Y4=
+github.com/sourcegraph/scip v0.2.3/go.mod h1:3D/RLCMvrrSam85RtFmC67SE/jhV9++hpCR5MTDzbA0=
 github.com/sourcegraph/sourcegraph/lib v0.0.0-20221004162410-237d5855fa13 h1:HEj9QVz35nIU4plPb7iJSFjcTA14zVnfAdfYZF5jsKg=
 github.com/sourcegraph/sourcegraph/lib v0.0.0-20221004162410-237d5855fa13/go.mod h1:e3v3msUOgthv/QCWUzhFdfR3+hwUSn37rtuw49IVJg4=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152 h1:z/MpntplPaW6QW95pzcAR/72Z5TWDyDnSo0EOcyij9o=
