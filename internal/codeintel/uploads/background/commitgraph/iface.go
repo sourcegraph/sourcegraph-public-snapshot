@@ -7,5 +7,9 @@ import (
 )
 
 type UploadService interface {
-	NewUpdater(interval time.Duration, maxAgeForNonStaleBranches time.Duration, maxAgeForNonStaleTags time.Duration) goroutine.BackgroundRoutine
+	NewCommitGraphUpdater(
+		interval time.Duration,
+		maxAgeForNonStaleBranches time.Duration,
+		maxAgeForNonStaleTags time.Duration,
+	) goroutine.BackgroundRoutine
 }

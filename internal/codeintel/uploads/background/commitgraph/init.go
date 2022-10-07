@@ -6,6 +6,10 @@ import (
 
 func NewUpdater(uploadSvc UploadService) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
-		uploadSvc.NewUpdater(ConfigInst.CommitGraphUpdateTaskInterval, ConfigInst.MaxAgeForNonStaleBranches, ConfigInst.MaxAgeForNonStaleTags),
+		uploadSvc.NewCommitGraphUpdater(
+			ConfigInst.CommitGraphUpdateTaskInterval,
+			ConfigInst.MaxAgeForNonStaleBranches,
+			ConfigInst.MaxAgeForNonStaleTags,
+		),
 	}
 }

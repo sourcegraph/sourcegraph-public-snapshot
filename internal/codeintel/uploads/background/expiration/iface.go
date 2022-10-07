@@ -7,7 +7,8 @@ import (
 )
 
 type UploadService interface {
-	NewExpirer(interval time.Duration,
+	NewUploadExpirer(
+		interval time.Duration,
 		repositoryProcessDelay time.Duration,
 		repositoryBatchSize int,
 		uploadProcessDelay time.Duration,
@@ -15,5 +16,9 @@ type UploadService interface {
 		commitBatchSize int,
 		policyBatchSize int,
 	) goroutine.BackgroundRoutine
-	NewReferenceCountUpdater(interval time.Duration, batchSize int) goroutine.BackgroundRoutine
+
+	NewReferenceCountUpdater(
+		interval time.Duration,
+		batchSize int,
+	) goroutine.BackgroundRoutine
 }

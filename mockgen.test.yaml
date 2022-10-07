@@ -29,6 +29,9 @@
     - path: github.com/sourcegraph/sourcegraph/internal/workerutil
       interfaces:
         - Store
+    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/store
+      interfaces:
+        - FilesStore
 - filename: enterprise/cmd/frontend/internal/app/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/app
   interfaces:

@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 type PreviewRepositoryComparisonResolver interface {
@@ -54,7 +55,7 @@ func (r *previewRepositoryComparisonResolver) BaseRepository() *RepositoryResolv
 }
 
 func (r *previewRepositoryComparisonResolver) FileDiffs(ctx context.Context, args *FileDiffsConnectionArgs) (FileDiffConnection, error) {
-	return NewFileDiffConnectionResolver(r.db, r.commit, r.commit, args, fileDiffConnectionCompute(r.patch), previewNewFile), nil
+	return NewFileDiffConnectionResolver(r.db, gitserver.NewClient(r.db), r.commit, r.commit, args, fileDiffConnectionCompute(r.patch), previewNewFile), nil
 }
 
 func fileDiffConnectionCompute(patch string) func(ctx context.Context, args *FileDiffsConnectionArgs) ([]*diff.FileDiff, int32, bool, error) {

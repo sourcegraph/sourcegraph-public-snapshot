@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	autoindex "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql"
 	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
@@ -139,8 +140,8 @@ func (r *RepositoryResolver) Description(ctx context.Context) (string, error) {
 }
 
 func (r *RepositoryResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		if err == backend.ErrMustBeSiteAdmin || err == backend.ErrNotAuthenticated {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		if err == auth.ErrMustBeSiteAdmin || err == auth.ErrNotAuthenticated {
 			return false, nil // not an error
 		}
 		return false, err
@@ -153,8 +154,8 @@ func (r *RepositoryResolver) CloneInProgress(ctx context.Context) (bool, error) 
 }
 
 func (r *RepositoryResolver) DiskSizeBytes(ctx context.Context) (*BigInt, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		if err == backend.ErrMustBeSiteAdmin || err == backend.ErrNotAuthenticated {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		if err == auth.ErrMustBeSiteAdmin || err == auth.ErrNotAuthenticated {
 			return nil, nil // not an error
 		}
 		return nil, err
@@ -620,7 +621,7 @@ func (r *schemaResolver) AddRepoKeyValuePair(ctx context.Context, args struct {
 	Value *string
 },
 ) (*EmptyResponse, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return &EmptyResponse{}, err
 	}
 
@@ -638,7 +639,7 @@ func (r *schemaResolver) UpdateRepoKeyValuePair(ctx context.Context, args struct
 	Value *string
 },
 ) (*EmptyResponse, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return &EmptyResponse{}, err
 	}
 
@@ -656,7 +657,7 @@ func (r *schemaResolver) DeleteRepoKeyValuePair(ctx context.Context, args struct
 	Key  string
 },
 ) (*EmptyResponse, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return &EmptyResponse{}, err
 	}
 

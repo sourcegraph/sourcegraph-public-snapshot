@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -115,7 +116,7 @@ func TestAddUserEmail(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := newSchemaResolver(db).AddUserEmail(
+				_, err := newSchemaResolver(db, gitserver.NewClient(db)).AddUserEmail(
 					test.ctx,
 					&addUserEmailArgs{
 						User: MarshalUserID(1),
@@ -174,7 +175,7 @@ func TestRemoveUserEmail(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := newSchemaResolver(db).RemoveUserEmail(
+				_, err := newSchemaResolver(db, gitserver.NewClient(db)).RemoveUserEmail(
 					test.ctx,
 					&removeUserEmailArgs{
 						User: MarshalUserID(1),
@@ -233,7 +234,7 @@ func TestSetUserEmailPrimary(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := newSchemaResolver(db).SetUserEmailPrimary(
+				_, err := newSchemaResolver(db, gitserver.NewClient(db)).SetUserEmailPrimary(
 					test.ctx,
 					&setUserEmailPrimaryArgs{
 						User: MarshalUserID(1),
@@ -292,7 +293,7 @@ func TestSetUserEmailVerified(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := newSchemaResolver(database.NewMockDB()).SetUserEmailVerified(
+				_, err := newSchemaResolver(db, gitserver.NewClient(db)).SetUserEmailVerified(
 					test.ctx,
 					&setUserEmailVerifiedArgs{
 						User: MarshalUserID(1),
@@ -429,7 +430,8 @@ func TestResendUserEmailVerification(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := newSchemaResolver(database.NewMockDB()).ResendVerificationEmail(
+				db := database.NewMockDB()
+				_, err := newSchemaResolver(db, gitserver.NewClient(db)).ResendVerificationEmail(
 					test.ctx,
 					&resendVerificationEmailArgs{
 						User: MarshalUserID(1),

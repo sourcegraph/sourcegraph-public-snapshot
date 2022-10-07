@@ -19426,7 +19426,7 @@
           "Index": 1,
           "TypeName": "uuid",
           "IsNullable": false,
-          "Default": "",
+          "Default": "gen_random_uuid()",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -19461,7 +19461,18 @@
           "Comment": ""
         }
       ],
-      "Indexes": [],
+      "Indexes": [
+        {
+          "Name": "webhooks_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX webhooks_pkey ON webhooks USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        }
+      ],
       "Constraints": null,
       "Triggers": []
     }

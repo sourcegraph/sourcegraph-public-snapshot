@@ -3046,15 +3046,17 @@ Foreign-key constraints:
 
 # Table "public.webhooks"
 ```
-      Column       |           Type           | Collation | Nullable | Default  
--------------------+--------------------------+-----------+----------+----------
- id                | uuid                     |           | not null | 
+      Column       |           Type           | Collation | Nullable |      Default      
+-------------------+--------------------------+-----------+----------+-------------------
+ id                | uuid                     |           | not null | gen_random_uuid()
  code_host_kind    | text                     |           | not null | 
  code_host_urn     | text                     |           | not null | 
  secret            | text                     |           |          | 
  created_at        | timestamp with time zone |           | not null | now()
  updated_at        | timestamp with time zone |           | not null | now()
  encryption_key_id | text                     |           | not null | ''::text
+Indexes:
+    "webhooks_pkey" PRIMARY KEY, btree (id)
 
 ```
 

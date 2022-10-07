@@ -3521,7 +3521,7 @@ CREATE SEQUENCE webhook_logs_id_seq
 ALTER SEQUENCE webhook_logs_id_seq OWNED BY webhook_logs.id;
 
 CREATE TABLE webhooks (
-    id uuid NOT NULL,
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
     code_host_kind text NOT NULL,
     code_host_urn text NOT NULL,
     secret text,
@@ -4023,6 +4023,9 @@ ALTER TABLE ONLY versions
 
 ALTER TABLE ONLY webhook_logs
     ADD CONSTRAINT webhook_logs_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY webhooks
+    ADD CONSTRAINT webhooks_pkey PRIMARY KEY (id);
 
 CREATE INDEX access_tokens_lookup ON access_tokens USING hash (value_sha256) WHERE (deleted_at IS NULL);
 
