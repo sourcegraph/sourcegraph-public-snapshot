@@ -47,7 +47,7 @@ func TestWebhookCreateUnencrypted(t *testing.T) {
 	assert.NotZero(t, created.UpdatedAt)
 
 	// getting the secret from the DB as is to verify that it is not encrypted
-	row := tx.QueryRowContext(ctx, "SELECT secret FROM webhooks")
+	row := tx.QueryRowContext(ctx, "SELECT secret FROM webhooks where id = $1", id)
 	var rawSecret string
 	err = row.Scan(&rawSecret)
 	assert.NoError(t, err)
@@ -89,7 +89,7 @@ func TestWebhookCreateEncrypted(t *testing.T) {
 	assert.NotZero(t, created.UpdatedAt)
 
 	// getting the secret from the DB as is to verify that it is encrypted
-	row := tx.QueryRowContext(ctx, "SELECT secret FROM webhooks")
+	row := tx.QueryRowContext(ctx, "SELECT secret FROM webhooks where id = $1", id)
 	var rawSecret string
 	err = row.Scan(&rawSecret)
 	assert.NoError(t, err)
