@@ -220,9 +220,10 @@ export class Notebook {
                             endLine: range.end.line + lineContext,
                         }
                         const highlightSymbolRange = {
-                            line: range.start.line - 1,
-                            character: range.start.character - 1,
-                            highlightLength: range.end.character - range.start.character,
+                            startLine: range.start.line - 1,
+                            startCharacter: range.start.character - 1,
+                            endLine: range.end.line - 1,
+                            endCharacter: range.end.character - 1,
                         }
                         return this.dependencies
                             .fetchHighlightedFileLineRanges({

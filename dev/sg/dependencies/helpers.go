@@ -85,36 +85,6 @@ func pathExists(path string) (bool, error) {
 	return false, err
 }
 
-func checkInMainRepoOrRepoInDirectory(context.Context) error {
-	_, err := root.RepositoryRoot()
-	if err != nil {
-		ok, err := pathExists("sourcegraph")
-		if !ok || err != nil {
-			return errors.New("'sg setup' is not run in sourcegraph and repository is also not found in current directory")
-		}
-		return nil
-	}
-	return nil
-}
-
-func checkDevPrivateInParentOrInCurrentDirectory(context.Context) error {
-	ok, err := pathExists("dev-private")
-	if ok && err == nil {
-		return nil
-	}
-	wd, err := os.Getwd()
-	if err != nil {
-		return errors.Wrap(err, "failed to check for dev-private repository")
-	}
-
-	p := filepath.Join(wd, "..", "dev-private")
-	ok, err = pathExists(p)
-	if ok && err == nil {
-		return nil
-	}
-	return errors.New("could not find dev-private repository either in current directory or one above")
-}
-
 // checkPostgresConnection succeeds connecting to the default user database works, regardless
 // of if it's running locally or with docker.
 func checkPostgresConnection(ctx context.Context) error {

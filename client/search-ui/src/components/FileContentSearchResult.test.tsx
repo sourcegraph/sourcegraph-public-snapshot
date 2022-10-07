@@ -43,11 +43,28 @@ describe('FileContentSearchResult', () => {
             type: 'content',
             path: '.travis.yml',
             repository: 'github.com/golang/oauth2',
-            lineMatches: [
+            chunkMatches: [
                 {
-                    line: '  - go test -v golang.org/x/oauth2/...',
-                    lineNumber: 4,
-                    offsetAndLengths: [[7, 4]],
+                    content: '  - go test -v golang.org/x/oauth2/...',
+                    contentStart: {
+                        offset: 223,
+                        line: 12,
+                        column: 0,
+                    },
+                    ranges: [
+                        {
+                            start: {
+                                offset: 230,
+                                line: 12,
+                                column: 7,
+                            },
+                            end: {
+                                offset: 234,
+                                line: 12,
+                                column: 11,
+                            },
+                        },
+                    ],
                 },
             ],
         }
@@ -73,6 +90,6 @@ describe('FileContentSearchResult', () => {
             <FileContentSearchResult {...defaultProps} result={result} settingsCascade={settingsCascade} />
         )
         const tableRows = container.querySelectorAll('[data-testid="code-excerpt"] tr')
-        expect(tableRows.length).toBe(7)
+        expect(tableRows.length).toBe(4)
     })
 })

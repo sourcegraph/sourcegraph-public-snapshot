@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
+	"github.com/sourcegraph/sourcegraph/internal/security"
 )
 
 func (s *Server) handleListGitolite(w http.ResponseWriter, r *http.Request) {
@@ -35,7 +36,7 @@ func (g gitoliteFetcher) listRepos(ctx context.Context, gitoliteHost string, w h
 		err   error
 	)
 
-	if gitoliteHost != "" {
+	if gitoliteHost != "" || !security.ValidateRemoteAddr(gitoliteHost) {
 		if repos, err = g.client.ListRepos(ctx, gitoliteHost); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

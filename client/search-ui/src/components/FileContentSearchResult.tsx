@@ -128,13 +128,16 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
     const items: MatchItem[] = useMemo(
         () =>
             result.type === 'content'
-                ? result.lineMatches?.map(match => ({
-                      highlightRanges: match.offsetAndLengths.map(([start, highlightLength]) => ({
-                          start,
-                          highlightLength,
+                ? result.chunkMatches?.map(match => ({
+                      highlightRanges: match.ranges.map(range => ({
+                          startLine: range.start.line,
+                          startCharacter: range.start.column,
+                          endLine: range.end.line,
+                          endCharacter: range.end.column,
                       })),
-                      preview: match.line,
-                      line: match.lineNumber,
+                      content: match.content,
+                      startLine: match.contentStart.line,
+                      endLine: match.ranges[match.ranges.length - 1].end.line,
                       aggregableBadges: match.aggregableBadges,
                   })) || []
                 : [],
