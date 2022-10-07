@@ -1,8 +1,6 @@
 package querybuilder
 
 import (
-	"strings"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -32,7 +30,7 @@ func DetectSearchType(rawQuery string, patternType string) (query.SearchType, er
 func ParseQuery(q string, patternType string) (query.Plan, error) {
 	searchType, err := DetectSearchType(q, patternType)
 	if err != nil {
-		return nil, errors.Wrap(err, "overrideSearchType")
+		return nil, errors.Wrap(err, "DetectSearchType")
 	}
 	plan, err := query.Pipeline(query.Init(q, searchType))
 	if err != nil {
@@ -64,10 +62,8 @@ func ContainsField(rawQuery, field string) (bool, error) {
 		return false, errors.Wrap(err, "ParseQuery")
 	}
 	for _, basic := range plan {
-		for _, param := range basic.Parameters {
-			if strings.EqualFold(field, param.Field) && param.Value != "" {
-				return true, nil
-			}
+		if basic.Parameters.Exists(field) {
+			return true, nil
 		}
 	}
 	return false, nil
