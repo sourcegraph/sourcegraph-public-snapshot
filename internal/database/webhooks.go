@@ -16,7 +16,7 @@ import (
 type WebhookStore interface {
 	basestore.ShareableStore
 
-	Create(ctx context.Context, newWebhook *types.Webhook) (*types.Webhook, error)
+	Create(ctx context.Context, kind, urn string, secret *types.EncryptableSecret) (*types.Webhook, error)
 	GetByID(ctx context.Context, id int32) (*types.Webhook, error)
 	GetByRandomID(ctx context.Context, id string) (*types.Webhook, error)
 	Delete(ctx context.Context, id int32) error
@@ -42,19 +42,26 @@ func WebhooksWith(other basestore.ShareableStore, key encryption.Key) WebhookSto
 
 // Create the webhook
 //
-// TODO: Many fields are generated on creation, only take required fields so that
-// the caller doesn't have to guess which ones they need to populate on the hook.
-func (s *webhookStore) Create(ctx context.Context, hook *types.Webhook) (*types.Webhook, error) {
-	encryptedSecret, keyID, err := hook.Secret.Encrypt(ctx, s.key)
-	if err != nil || (encryptedSecret == "" && keyID == "") {
-		return nil, errors.Wrap(err, "encrypting secret")
+// secret is optional since some code hosts do not support signing payloads.
+func (s *webhookStore) Create(ctx context.Context, kind, urn string, secret *types.EncryptableSecret) (*types.Webhook, error) {
+	var encryptedSecret *string
+	var keyID *string
+
+	if secret != nil {
+		cipher, kID, err := secret.Encrypt(ctx, s.key)
+		if err != nil || (cipher == "" && kID == "") {
+			return nil, errors.Wrap(err, "encrypting secret")
+		}
+		encryptedSecret = &cipher
+		keyID = &kID
 	}
 
 	q := sqlf.Sprintf(webhookCreateQueryFmtstr,
-		hook.CodeHostKind,
-		hook.CodeHostURN,
-		encryptedSecret,
-		keyID,
+		kind,
+		urn,
+		&dbutil.NullString{S: encryptedSecret},
+		&dbutil.NullString{S: keyID},
+		// Returning
 		sqlf.Join(webhookColumns, ", "),
 	)
 

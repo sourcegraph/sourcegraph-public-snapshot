@@ -25,20 +25,19 @@ func TestWebhookCreateUnencrypted(t *testing.T) {
 
 	store := db.Webhooks(nil)
 
-	hook := &types.Webhook{
-		CodeHostKind: extsvc.KindGitHub,
-		CodeHostURN:  "https://github.com",
-		Secret:       types.NewUnencryptedSecret("very secret (not)"),
-	}
-	created, err := store.Create(ctx, hook)
+	kind := extsvc.KindGitHub
+	urn := "https://github.com"
+	secret := types.NewUnencryptedSecret("very secret (not)")
+
+	created, err := store.Create(ctx, kind, urn, secret)
 	assert.NoError(t, err)
 
 	// Check that the calculated fields were correctly calculated.
 	assert.NotZero(t, created.ID)
 	_, err = uuid.Parse(created.RandomID)
 	assert.NoError(t, err)
-	assert.Equal(t, hook.CodeHostKind, created.CodeHostKind)
-	assert.Equal(t, hook.CodeHostURN, created.CodeHostURN)
+	assert.Equal(t, kind, created.CodeHostKind)
+	assert.Equal(t, urn, created.CodeHostURN)
 	assert.NotZero(t, created.CreatedAt)
 	assert.NotZero(t, created.UpdatedAt)
 
@@ -63,20 +62,19 @@ func TestWebhookCreateEncrypted(t *testing.T) {
 	store := db.Webhooks(et.ByteaTestKey{})
 
 	const secret = "don't tell anyone"
-	hook := &types.Webhook{
-		CodeHostKind: extsvc.KindGitHub,
-		CodeHostURN:  "https://github.com",
-		Secret:       types.NewUnencryptedSecret(secret),
-	}
-	created, err := store.Create(ctx, hook)
+	kind := extsvc.KindGitHub
+	urn := "https://github.com"
+	encryptedSecret := types.NewUnencryptedSecret(secret)
+
+	created, err := store.Create(ctx, kind, urn, encryptedSecret)
 	assert.NoError(t, err)
 
 	// Check that the calculated fields were correctly calculated.
 	assert.NotZero(t, created.ID)
 	_, err = uuid.Parse(created.RandomID)
 	assert.NoError(t, err)
-	assert.Equal(t, hook.CodeHostKind, created.CodeHostKind)
-	assert.Equal(t, hook.CodeHostURN, created.CodeHostURN)
+	assert.Equal(t, kind, created.CodeHostKind)
+	assert.Equal(t, urn, created.CodeHostURN)
 	assert.NotZero(t, created.CreatedAt)
 	assert.NotZero(t, created.UpdatedAt)
 
@@ -101,12 +99,7 @@ func TestWebhookCreateWithBadKey(t *testing.T) {
 
 	store := db.Webhooks(&et.BadKey{Err: errors.New("some error occurred, sorry")})
 
-	hook := &types.Webhook{
-		CodeHostKind: extsvc.KindGitHub,
-		CodeHostURN:  "https://github.com",
-		Secret:       types.NewUnencryptedSecret("very secret (not)"),
-	}
-	_, err := store.Create(ctx, hook)
+	_, err := store.Create(ctx, extsvc.KindGitHub, "https://github.com", types.NewUnencryptedSecret("very secret (not)"))
 	assert.Error(t, err)
 	assert.Equal(t, "encrypting secret: some error occurred, sorry", err.Error())
 }
