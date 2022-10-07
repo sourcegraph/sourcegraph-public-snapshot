@@ -9,6 +9,7 @@ import (
 	"time"
 	"unsafe"
 
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -17,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
@@ -40,7 +42,7 @@ func (s *Service) NewDependencyIndexingScheduler(pollInterval time.Duration, num
 		repoStore:          s.repoStore,
 		extsvcStore:        s.externalServiceStore,
 		gitserverRepoStore: s.gitserverRepoStore,
-		indexEnqueuer:      s,
+		indexEnqueuer:      &AutoIndexingServiceForDepSchedulingShim{s},
 		workerStore:        s.dependencyIndexingStore,
 		repoUpdater:        s.repoUpdater,
 	}
@@ -52,6 +54,51 @@ func (s *Service) NewDependencyIndexingScheduler(pollInterval time.Duration, num
 		Metrics:           s.depencencyIndexMetrics,
 		HeartbeatInterval: 1 * time.Second,
 	})
+}
+
+// QueueIndexesForPackage enqueues index jobs for a dependency of a recently-processed precise code
+// intelligence index.
+func (s *Service) queueIndexesForPackage(ctx context.Context, pkg precise.Package) (err error) {
+	ctx, trace, endObservation := s.operations.queueIndexForPackage.With(ctx, &err, observation.Args{
+		LogFields: []otlog.Field{
+			otlog.String("scheme", pkg.Scheme),
+			otlog.String("name", pkg.Name),
+			otlog.String("version", pkg.Version),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
+	repoName, revision, ok := InferRepositoryAndRevision(pkg)
+	if !ok {
+		return nil
+	}
+	trace.Log(otlog.String("repoName", string(repoName)))
+	trace.Log(otlog.String("revision", revision))
+
+	resp, err := s.repoUpdater.EnqueueRepoUpdate(ctx, repoName)
+	if err != nil {
+		if errcode.IsNotFound(err) {
+			return nil
+		}
+
+		return errors.Wrap(err, "repoUpdater.EnqueueRepoUpdate")
+	}
+
+	commit, err := s.gitserverClient.ResolveRevision(ctx, int(resp.ID), revision)
+	if err != nil {
+		if errcode.IsNotFound(err) {
+			return nil
+		}
+
+		return errors.Wrap(err, "gitserverClient.ResolveRevision")
+	}
+
+	_, err = s.queueIndexForRepositoryAndCommit(ctx, int(resp.ID), string(commit), "", false, false, nil) // trace)
+	return err
+}
+
+func (s *Service) insertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error) {
+	return s.store.InsertDependencyIndexingJob(ctx, uploadID, externalServiceKind, syncTime)
 }
 
 type dependencyIndexingSchedulerHandler struct {

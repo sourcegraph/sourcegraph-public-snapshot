@@ -41,7 +41,7 @@ func (s *Service) NewDependencySyncScheduler(pollInterval time.Duration) *worker
 	handler := &dependencySyncSchedulerHandler{
 		uploadsSvc:      s.uploadSvc,
 		depsSvc:         s.depsSvc,
-		autoindexingSvc: s,
+		autoindexingSvc: &AutoIndexingServiceForDepSchedulingShim{s},
 		workerStore:     workerStore,
 		extsvcStore:     s.externalServiceStore,
 	}

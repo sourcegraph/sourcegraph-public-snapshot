@@ -5,7 +5,6 @@ import (
 	"sort"
 	"time"
 
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
 
 	autoindexingshared "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
@@ -13,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -71,7 +69,7 @@ func (s *Service) handleCleanup(ctx context.Context, cfg janitorConfig) (errs er
 }
 
 func (s *Service) handleDeletedRepository(ctx context.Context) (err error) {
-	uploadsCounts, err := s.DeleteUploadsWithoutRepository(ctx, time.Now())
+	uploadsCounts, err := s.store.DeleteUploadsWithoutRepository(ctx, time.Now())
 	if err != nil {
 		return errors.Wrap(err, "uploadSvc.DeleteUploadsWithoutRepository")
 	}
@@ -130,7 +128,7 @@ func gatherCounts(uploadsCounts, indexesCounts map[int]int) []recordCount {
 }
 
 func (s *Service) handleUnknownCommit(ctx context.Context, cfg janitorConfig) (err error) {
-	staleUploads, err := s.GetStaleSourcedCommits(ctx, cfg.minimumTimeSinceLastCheck, cfg.commitResolverBatchSize, s.clock.Now())
+	staleUploads, err := s.store.GetStaleSourcedCommits(ctx, cfg.minimumTimeSinceLastCheck, cfg.commitResolverBatchSize, s.clock.Now())
 	if err != nil {
 		return errors.Wrap(err, "uploadSvc.StaleSourcedCommits")
 	}
@@ -209,7 +207,7 @@ func (s *Service) handleCommit(ctx context.Context, repositoryID int, repository
 	}
 
 	if shouldDelete {
-		_, uploadsDeleted, err := s.DeleteSourcedCommits(ctx, repositoryID, commit, cfg.commitResolverMaximumCommitLag, s.clock.Now())
+		_, uploadsDeleted, err := s.store.DeleteSourcedCommits(ctx, repositoryID, commit, cfg.commitResolverMaximumCommitLag, s.clock.Now())
 		if err != nil {
 			return errors.Wrap(err, "uploadSvc.DeleteSourcedCommits")
 		}
@@ -230,7 +228,7 @@ func (s *Service) handleCommit(ctx context.Context, repositoryID int, repository
 		return nil
 	}
 
-	if _, err := s.UpdateSourcedCommits(ctx, repositoryID, commit, s.clock.Now()); err != nil {
+	if _, err := s.store.UpdateSourcedCommits(ctx, repositoryID, commit, s.clock.Now()); err != nil {
 		return errors.Wrap(err, "uploadSvc.UpdateSourcedCommits")
 	}
 
@@ -241,36 +239,9 @@ func (s *Service) handleCommit(ctx context.Context, repositoryID int, repository
 	return nil
 }
 
-func (s *Service) DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (uploadsUpdated int, uploadsDeleted int, err error) {
-	ctx, _, endObservation := s.operations.deleteSourcedCommits.With(ctx, &err, observation.Args{
-		LogFields: []otlog.Field{
-			otlog.Int("repositoryID", repositoryID),
-			otlog.String("commit", commit),
-			otlog.Int("maximumCommitLag in ms", int(maximumCommitLag.Milliseconds())),
-			otlog.String("now", now.String()),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	return s.store.DeleteSourcedCommits(ctx, repositoryID, commit, maximumCommitLag, now)
-}
-
-func (s *Service) UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (uploadsUpdated int, err error) {
-	ctx, _, endObservation := s.operations.updateSourcedCommits.With(ctx, &err, observation.Args{
-		LogFields: []otlog.Field{
-			otlog.Int("repositoryID", repositoryID),
-			otlog.String("commit", commit),
-			otlog.String("now", now.String()),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	return s.store.UpdateSourcedCommits(ctx, repositoryID, commit, now)
-}
-
 // handleAbandonedUpload removes upload records which have not left the uploading state within the given TTL.
 func (s *Service) handleAbandonedUpload(ctx context.Context, cfg janitorConfig) error {
-	count, err := s.DeleteUploadsStuckUploading(ctx, time.Now().UTC().Add(-cfg.uploadTimeout))
+	count, err := s.store.DeleteUploadsStuckUploading(ctx, time.Now().UTC().Add(-cfg.uploadTimeout))
 	if err != nil {
 		return errors.Wrap(err, "dbstore.DeleteUploadsStuckUploading")
 	}
@@ -282,19 +253,8 @@ func (s *Service) handleAbandonedUpload(ctx context.Context, cfg janitorConfig) 
 	return nil
 }
 
-func (s *Service) DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_ int, err error) {
-	ctx, _, endObservation := s.operations.deleteUploadsStuckUploading.With(ctx, &err, observation.Args{
-		LogFields: []otlog.Field{
-			otlog.String("uploadedBefore", uploadedBefore.String()),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	return s.store.DeleteUploadsStuckUploading(ctx, uploadedBefore)
-}
-
 func (s *Service) handleExpiredUploadDeleter(ctx context.Context) error {
-	count, err := s.SoftDeleteExpiredUploads(ctx)
+	count, err := s.store.SoftDeleteExpiredUploads(ctx)
 	if err != nil {
 		return errors.Wrap(err, "SoftDeleteExpiredUploads")
 	}
@@ -306,15 +266,8 @@ func (s *Service) handleExpiredUploadDeleter(ctx context.Context) error {
 	return nil
 }
 
-func (s *Service) SoftDeleteExpiredUploads(ctx context.Context) (count int, err error) {
-	ctx, _, endObservation := s.operations.softDeleteExpiredUploads.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	return s.store.SoftDeleteExpiredUploads(ctx)
-}
-
 func (s *Service) handleHardDeleter(ctx context.Context) error {
-	count, err := s.HardDeleteExpiredUploads(ctx)
+	count, err := s.hardDeleteExpiredUploads(ctx)
 	if err != nil {
 		return errors.Wrap(err, "uploadSvc.HardDeleteExpiredUploads")
 	}
@@ -323,10 +276,7 @@ func (s *Service) handleHardDeleter(ctx context.Context) error {
 	return nil
 }
 
-func (s *Service) HardDeleteExpiredUploads(ctx context.Context) (count int, err error) {
-	ctx, _, endObservation := s.operations.hardDeleteUploads.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
+func (s *Service) hardDeleteExpiredUploads(ctx context.Context) (count int, err error) {
 	const uploadsBatchSize = 100
 	options := types.GetUploadsOptions{
 		State:            "deleted",
@@ -364,7 +314,7 @@ func (s *Service) HardDeleteExpiredUploads(ctx context.Context) (count int, err 
 }
 
 func (s *Service) handleAuditLog(ctx context.Context, cfg janitorConfig) (err error) {
-	count, err := s.DeleteOldAuditLogs(ctx, cfg.auditLogMaxAge, time.Now())
+	count, err := s.store.DeleteOldAuditLogs(ctx, cfg.auditLogMaxAge, time.Now())
 	if err != nil {
 		return errors.Wrap(err, "dbstore.DeleteOldAuditLogs")
 	}
@@ -373,14 +323,12 @@ func (s *Service) handleAuditLog(ctx context.Context, cfg janitorConfig) (err er
 	return nil
 }
 
-func (s *Service) DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (count int, err error) {
-	ctx, _, endObservation := s.operations.deleteOldAuditLogs.With(ctx, &err, observation.Args{
-		LogFields: []otlog.Field{
-			otlog.String("maxAge", maxAge.String()),
-			otlog.String("now", now.String()),
-		},
-	})
-	defer endObservation(1, observation.Args{})
+func uploadIDs(uploads []types.Upload) []int {
+	ids := make([]int, 0, len(uploads))
+	for i := range uploads {
+		ids = append(ids, uploads[i].ID)
+	}
+	sort.Ints(ids)
 
-	return s.store.DeleteOldAuditLogs(ctx, maxAge, now)
+	return ids
 }
