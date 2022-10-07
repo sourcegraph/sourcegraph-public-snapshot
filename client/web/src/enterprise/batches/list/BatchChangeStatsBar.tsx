@@ -70,7 +70,7 @@ export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildre
                 </div>
                 <div className="text-center">
                     <ChangesetStatusClosed label="" />
-                    <span className="font-weight-bold">{data.globalChangesetsStats.closed}</span> <span>Closed</span>
+                    <span className="font-weight-bold">{data.globalChangesetsStats.closed}</span> <span>closed</span>
                 </div>
             </div>
         </div>
