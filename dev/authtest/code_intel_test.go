@@ -95,7 +95,7 @@ func TestCodeIntelEndpoints(t *testing.T) {
 
 		// Retry because the configuration update endpoint is eventually consistent
 		var lastBody string
-		err = gqltestutil.Retry(10*time.Second, func() error {
+		err = gqltestutil.Retry(15*time.Second, func() error {
 			resp, err := userClient.Post(*baseURL+"/.api/lsif/upload?commit=6ffc6072f5ed13d8e8782490705d9689cd2c546a&repository=github.com/sgtest/private", nil)
 			if err != nil {
 				t.Fatal(err)
