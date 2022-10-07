@@ -143,11 +143,13 @@ func validateToolsRequired(useFirecracker bool) error {
 			notFoundTools = append(notFoundTools, tool)
 		}
 	}
-	for _, tool := range config.RequiredCLIToolsFirecracker {
-		if found, err := existsPath(tool); err != nil {
-			return err
-		} else if !found {
-			notFoundTools = append(notFoundTools, tool)
+	if useFirecracker {
+		for _, tool := range config.RequiredCLIToolsFirecracker {
+			if found, err := existsPath(tool); err != nil {
+				return err
+			} else if !found {
+				notFoundTools = append(notFoundTools, tool)
+			}
 		}
 	}
 
@@ -155,6 +157,7 @@ func validateToolsRequired(useFirecracker bool) error {
 		var errs error
 		for _, tool := range notFoundTools {
 			helptext, ok := config.RequiredCLITools[tool]
+			// TODO: Help lines for config.RequiredCLIToolsFirecracker.
 			helpLine := ""
 			if ok {
 				helpLine = fmt.Sprintf("\n%s", helptext)
