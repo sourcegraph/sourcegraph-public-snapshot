@@ -21,6 +21,8 @@ import (
 	"go.opentelemetry.io/otel"
 
 	oce "github.com/sourcegraph/sourcegraph/cmd/frontend/oneclickexport"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
+	internalcodeintel "github.com/sourcegraph/sourcegraph/internal/codeintel"
 
 	sglog "github.com/sourcegraph/log"
 
@@ -293,7 +295,12 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 		return err
 	}
 
-	internalAPI, err := makeInternalAPI(schema, db, enterprise, rateLimitWatcher)
+	codeIntelServices, err := codeintel.InitServices()
+	if err != nil {
+		return err
+	}
+
+	internalAPI, err := makeInternalAPI(schema, db, enterprise, rateLimitWatcher, codeIntelServices)
 	if err != nil {
 		return err
 	}
@@ -352,7 +359,13 @@ func makeExternalAPI(db database.DB, schema *graphql.Schema, enterprise enterpri
 	return server, nil
 }
 
-func makeInternalAPI(schema *graphql.Schema, db database.DB, enterprise enterprise.Services, rateLimiter graphqlbackend.LimitWatcher) (goroutine.BackgroundRoutine, error) {
+func makeInternalAPI(
+	schema *graphql.Schema,
+	db database.DB,
+	enterprise enterprise.Services,
+	rateLimiter graphqlbackend.LimitWatcher,
+	codeIntelServices internalcodeintel.Services,
+) (goroutine.BackgroundRoutine, error) {
 	if httpAddrInternal == "" {
 		return nil, nil
 	}
@@ -369,6 +382,7 @@ func makeInternalAPI(schema *graphql.Schema, db database.DB, enterprise enterpri
 		enterprise.NewCodeIntelUploadHandler,
 		enterprise.NewComputeStreamHandler,
 		rateLimiter,
+		codeIntelServices,
 	)
 	httpServer := &http.Server{
 		Handler:     internalHandler,
