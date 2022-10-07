@@ -349,6 +349,45 @@ Indexes:
 
 ```
 
+# Table "public.repo_iterator"
+```
+      Column      |            Type             | Collation | Nullable |                  Default                  
+------------------+-----------------------------+-----------+----------+-------------------------------------------
+ id               | integer                     |           | not null | nextval('repo_iterator_id_seq'::regclass)
+ created_at       | timestamp without time zone |           |          | now()
+ started_at       | timestamp without time zone |           |          | 
+ completed_at     | timestamp without time zone |           |          | 
+ last_updated_at  | timestamp without time zone |           | not null | now()
+ runtime_duration | bigint                      |           | not null | 0
+ percent_complete | double precision            |           | not null | 0
+ total_count      | integer                     |           | not null | 0
+ success_count    | integer                     |           | not null | 0
+ repos            | integer[]                   |           |          | 
+ repo_cursor      | integer                     |           |          | 0
+Indexes:
+    "repo_iterator_pk" PRIMARY KEY, btree (id)
+Referenced by:
+    TABLE "repo_iterator_errors" CONSTRAINT "repo_iterator_fk" FOREIGN KEY (repo_iterator_id) REFERENCES repo_iterator(id)
+
+```
+
+# Table "public.repo_iterator_errors"
+```
+      Column      |  Type   | Collation | Nullable |                     Default                      
+------------------+---------+-----------+----------+--------------------------------------------------
+ id               | integer |           | not null | nextval('repo_iterator_errors_id_seq'::regclass)
+ repo_iterator_id | integer |           | not null | 
+ repo_id          | integer |           | not null | 
+ error_message    | text[]  |           | not null | 
+ failure_count    | integer |           |          | 1
+Indexes:
+    "repo_iterator_errors_pk" PRIMARY KEY, btree (id)
+    "repo_iterator_errors_fk_idx" btree (repo_iterator_id)
+Foreign-key constraints:
+    "repo_iterator_fk" FOREIGN KEY (repo_iterator_id) REFERENCES repo_iterator(id)
+
+```
+
 # Table "public.repo_names"
 ```
  Column |  Type  | Collation | Nullable |                Default                 
