@@ -43,7 +43,7 @@ variable "aws_poll_delay_seconds" {
 
 source "googlecompute" "gcp" {
     project_id = "sourcegraph-ci"
-    source_image_project_id = "ubuntu-os-cloud"
+    source_image_project_id = ["ubuntu-os-cloud"]
     source_image_family = "ubuntu-2004-lts"
     disk_size = 10
     ssh_username = "packer"
