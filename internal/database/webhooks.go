@@ -43,6 +43,13 @@ func WebhooksWith(other basestore.ShareableStore, key encryption.Key) WebhookSto
 // Create the webhook
 //
 // secret is optional since some code hosts do not support signing payloads.
+// Also, encryption at the instance level is also optional. If encryption is
+// disabled then the secret value will be stored in plain text in the secret
+// column and encryption_key_id will be blank.
+//
+// If encryption IS enabled then the encrypted value will be stored in secret and
+// the encryption_key_id field will also be populated so that we can decrypt the
+// value later.
 func (s *webhookStore) Create(ctx context.Context, kind, urn string, secret *types.EncryptableSecret) (*types.Webhook, error) {
 	var (
 		err             error
