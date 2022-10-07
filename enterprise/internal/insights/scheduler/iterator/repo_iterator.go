@@ -239,8 +239,8 @@ func (p *persistentRepoIterator) doFinish(ctx context.Context, store *basestore.
 	}
 	defer func() { err = tx.Done(err) }()
 
-	q := "update repo_iterator set percent_complete = %s, success_count = %s, repo_cursor = %s, last_updated_at = %s, runtime_duration = runtime_duration + %s"
-	if err = tx.Exec(ctx, sqlf.Sprintf(q, pct, success, cursor, p.glock.Now(), itrDuration)); err != nil {
+	q := "update repo_iterator set percent_complete = %s, success_count = %s, repo_cursor = %s, last_updated_at = %s, runtime_duration = runtime_duration + %s where id = %s"
+	if err = tx.Exec(ctx, sqlf.Sprintf(q, pct, success, cursor, p.glock.Now(), itrDuration, p.id)); err != nil {
 		return errors.Wrapf(err, "unable to update cursor on iteration success iteratorId: %d, new_cursor:%d", p.id, cursor)
 	}
 	if maybeErr != nil {
