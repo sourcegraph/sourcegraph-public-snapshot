@@ -45,7 +45,6 @@ var checks = map[string]check.CheckFunc{
 }
 
 func runChecksWithName(ctx context.Context, names []string) error {
-	// Just touching this file to trigger this check
 	funcs := make(map[string]check.CheckFunc, len(names))
 	for _, name := range names {
 		if check, ok := checks[name]; ok {
