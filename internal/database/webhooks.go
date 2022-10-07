@@ -41,7 +41,7 @@ func WebhooksWith(other basestore.ShareableStore, key encryption.Key) WebhookSto
 // Create the webhook
 //
 // TODO: Many fields are generated on creation, only take required fields so that
-// the caller doesn't have to guess which one they need to populate on the hook.
+// the caller doesn't have to guess which ones they need to populate on the hook.
 func (s *webhookStore) Create(ctx context.Context, hook *types.Webhook) (*types.Webhook, error) {
 	encryptedSecret, keyID, err := hook.Secret.Encrypt(ctx, s.key)
 	if err != nil || (encryptedSecret == "" && keyID == "") {
