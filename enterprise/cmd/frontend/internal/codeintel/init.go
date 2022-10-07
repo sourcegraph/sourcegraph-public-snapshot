@@ -2,7 +2,6 @@ package codeintel
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/prometheus/client_golang/prometheus"
 	logger "github.com/sourcegraph/log"
@@ -31,28 +30,12 @@ func Init(ctx context.Context, db database.DB, config *Config, enterpriseService
 	}
 
 	executorResolver := executorgraphql.New(db)
-
 	codenavRootResolver := codenavgraphql.NewRootResolver(services.CodenavService, services.AutoIndexingService, services.UploadsService, services.PoliciesService, services.gitserverClient, config.MaximumIndexesPerMonikerSearch, config.HunkCacheSize, oc("codenav"))
 	policyRootResolver := policiesgraphql.NewRootResolver(services.PoliciesService, oc("policies"))
 	autoindexingRootResolver := autoindexinggraphql.NewRootResolver(services.AutoIndexingService, services.UploadsService, services.PoliciesService, oc("autoindexing"))
 	uploadRootResolver := uploadgraphql.NewRootResolver(services.UploadsService, services.AutoIndexingService, services.PoliciesService, oc("upload"))
-
 	resolvers := codeintelresolvers.NewResolver(codenavRootResolver, executorResolver, policyRootResolver, autoindexingRootResolver, uploadRootResolver)
-
 	enterpriseServices.CodeIntelResolver = codeintelgqlresolvers.NewResolver(resolvers)
-	enterpriseServices.NewCodeIntelUploadHandler = newUploadHandler(services)
-
+	enterpriseServices.NewCodeIntelUploadHandler = services.NewUploadHandler
 	return nil
-}
-
-func newUploadHandler(services *FrontendServices) func(internal bool) http.Handler {
-	uploadHandler := func(internal bool) http.Handler {
-		if internal {
-			return services.InternalUploadHandler
-		}
-
-		return services.ExternalUploadHandler
-	}
-
-	return uploadHandler
 }

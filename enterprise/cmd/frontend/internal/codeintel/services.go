@@ -24,12 +24,8 @@ import (
 
 type FrontendServices struct {
 	codeintel.Services
-
-	// shared with executor queue
-	InternalUploadHandler http.Handler
-	ExternalUploadHandler http.Handler
-
-	gitserverClient *gitserver.Client
+	gitserverClient  *gitserver.Client
+	NewUploadHandler func(withCodeHostAuth bool) http.Handler
 }
 
 func NewServices(ctx context.Context, config *Config, siteConfig conftypes.WatchableSiteConfig, db database.DB) (*FrontendServices, error) {
@@ -57,19 +53,12 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 		return nil, err
 	}
 
-	// Initialize http endpoints
-	newUploadHandler := func(withCodeHostAuth bool) http.Handler {
-		return uploadshttp.GetHandler(services.UploadsService, db, uploadStore, withCodeHostAuth)
-	}
-	internalUploadHandler := newUploadHandler(false)
-	externalUploadHandler := newUploadHandler(true)
-
 	return &FrontendServices{
-		Services: services,
-
-		InternalUploadHandler: internalUploadHandler,
-		ExternalUploadHandler: externalUploadHandler,
-		gitserverClient:       gitserver.New(db, &observation.TestContext),
+		Services:        services,
+		gitserverClient: gitserver.New(db, &observation.TestContext),
+		NewUploadHandler: func(withCodeHostAuth bool) http.Handler {
+			return uploadshttp.GetHandler(services.UploadsService, db, uploadStore, withCodeHostAuth)
+		},
 	}, nil
 }
 
