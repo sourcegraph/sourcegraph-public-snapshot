@@ -63,6 +63,10 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 		return apiclient.Job{}, errors.Wrap(err, "fetching repo")
 	}
 
+	// TODO: For now, until we can figure out which secrets are actually required:
+	// Load all global secrets and all secrets for the namespace this batch spec
+	// lives in, then overlay these, with org having higher precedence.
+
 	executionInput := batcheslib.WorkspacesExecutionInput{
 		Repository: batcheslib.WorkspaceRepo{
 			ID:   string(graphqlbackend.MarshalRepositoryID(repo.ID)),
@@ -82,6 +86,10 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 		BatchChangeAttributes: template.BatchChangeAttributes{
 			Name:        batchSpec.Spec.Name,
 			Description: batchSpec.Spec.Description,
+		},
+		// TODO: Pass all secrets loaded above down here.
+		Secrets: map[string]string{
+			"GH_TOKEN": "asdf",
 		},
 	}
 
@@ -170,7 +178,10 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 				Env:      []string{},
 			},
 		},
-		// Nothing to redact for now. We want to add secrets here once implemented.
-		RedactedValues: map[string]string{},
+		// TODO: Create a map of all secret values we pass down:
+		// $VALUE: : "${{ secrets.$KEY }}"
+		RedactedValues: map[string]string{
+			"asdf-super-secret-token": "${{ secrets.GH_TOKEN }}",
+		},
 	}, nil
 }

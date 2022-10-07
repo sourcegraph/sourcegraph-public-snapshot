@@ -190,6 +190,7 @@ type StepContext struct {
 	PreviousStep execution.AfterStepResult
 	// Repository is the Sourcegraph repository in which the steps are executed.
 	Repository Repository
+	Secrets    map[string]string
 }
 
 // ToFuncMap returns a template.FuncMap to access fields on the StepContext in a
@@ -245,6 +246,13 @@ func (stepCtx *StepContext) ToFuncMap() template.FuncMap {
 				"name":        stepCtx.BatchChange.Name,
 				"description": stepCtx.BatchChange.Description,
 			}
+		},
+		"secrets": func() map[string]any {
+			ret := make(map[string]any, len(stepCtx.Secrets))
+			for k, v := range stepCtx.Secrets {
+				ret[k] = v
+			}
+			return ret
 		},
 	}
 }

@@ -1650,6 +1650,86 @@ type Query {
 }
 
 """
+Enum of the possible scopes for executor secrets.
+"""
+enum ExecutorSecretScope {
+    """
+    The secret is meant to be used with Batch Changes execution.
+    """
+    BATCHES
+}
+
+type ExecutorSecret implements Node {
+    """
+    The unique identifier of the secret.
+    """
+    id: ID!
+    """
+    The key under which the secret is available.
+    """
+    key: String!
+    """
+    The scope of this secret.
+    """
+    scope: ExecutorSecretScope!
+    """
+    The namespace this secret belongs to. Null, if a global secret.
+    Global secrets are available in every execution.
+    """
+    namespace: Namespace
+    """
+    The creator of the secret. Null, if the creator has been deleted.
+    """
+    creator: User
+    """
+    The date and time this secret has been created.
+    """
+    createdAt: DateTime!
+    """
+    The date and time this secret has been last updated.
+    """
+    updatedAt: DateTime!
+}
+
+"""
+A list of active executor secrets.
+"""
+type ExecutorSecretConnection {
+    """
+    A list of executor secrets.
+    """
+    nodes: [ExecutorSecret!]!
+
+    """
+    The total number of records in this result set.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+extend type Query {
+    executorSecrets(scope: ExecutorSecretScope!, first: Int, after: String): ExecutorSecretConnection!
+}
+
+extend type User {
+    executorSecrets(scope: ExecutorSecretScope!, first: Int, after: String): ExecutorSecretConnection!
+}
+
+extend type Organization {
+    executorSecrets(scope: ExecutorSecretScope!, first: Int, after: String): ExecutorSecretConnection!
+}
+
+extend type Mutation {
+    createExecutorSecret(key: String!, value: String!, scope: ExecutorSecretScope!, namespace: ID): ExecutorSecret!
+    deleteExecutorSecret(id: ID!): EmptyResponse
+    updateExecutorSecret(id: ID!, secretValue: String!): ExecutorSecret!
+}
+
+"""
 A feature flag is either a static boolean feature flag or a rollout feature flag
 """
 union FeatureFlag = FeatureFlagBoolean | FeatureFlagRollout

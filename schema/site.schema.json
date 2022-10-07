@@ -1748,6 +1748,9 @@
         },
         "webhookKey": {
           "$ref": "#/definitions/EncryptionKey"
+        },
+        "executorSecretKey": {
+          "$ref": "#/definitions/EncryptionKey"
         }
       }
     },
