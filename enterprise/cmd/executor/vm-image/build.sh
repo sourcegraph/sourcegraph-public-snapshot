@@ -54,22 +54,22 @@ echo "--- packer build"
 # Copy files into workspace.
 cp .tool-versions "$OUTPUT"
 pushd ./enterprise/cmd/executor/vm-image 1>/dev/null
-cp executor.json "$OUTPUT"
+cp executor.pkr.hcl "$OUTPUT"
 cp install.sh "$OUTPUT"
 popd 1>/dev/null
 pushd ./docker-images 1>/dev/null
 cp -R executor-vm "$OUTPUT"
 
-export NAME
-NAME="${IMAGE_FAMILY}-${BUILDKITE_BUILD_NUMBER}"
-export SRC_CLI_VERSION=${SRC_CLI_VERSION}
-export AWS_EXECUTOR_AMI_ACCESS_KEY=${AWS_EXECUTOR_AMI_ACCESS_KEY}
-export AWS_EXECUTOR_AMI_SECRET_KEY=${AWS_EXECUTOR_AMI_SECRET_KEY}
+export PKR_VAR_NAME
+PKR_VAR_NAME="${IMAGE_FAMILY}-${BUILDKITE_BUILD_NUMBER}"
+export PKR_VAR_SRC_CLI_VERSION=${SRC_CLI_VERSION}
+export PKR_VAR_AWS_EXECUTOR_AMI_ACCESS_KEY=${AWS_EXECUTOR_AMI_ACCESS_KEY}
+export PKR_VAR_AWS_EXECUTOR_AMI_SECRET_KEY=${AWS_EXECUTOR_AMI_SECRET_KEY}
 # This should prevent some occurrences of Failed waiting for AMI failures:
 # https://austincloud.guru/2020/05/14/long-running-packer-builds-failing/
-export AWS_MAX_ATTEMPTS=480
-export AWS_POLL_DELAY_SECONDS=5
+export PKR_VAR_AWS_MAX_ATTEMPTS=480
+export PKR_VAR_AWS_POLL_DELAY_SECONDS=5
 
 pushd "$OUTPUT" 1>/dev/null
-packer build -force executor.json
+packer build -force executor.pkr.hcl
 popd 1>/dev/null
