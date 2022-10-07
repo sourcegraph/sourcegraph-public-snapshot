@@ -18,7 +18,7 @@ interface CodeInsightTimeStepPickerProps {
     name?: string
     valid?: boolean
     disabled?: boolean
-    error?: string
+    error?: string | false
     errorInputState?: boolean
 
     onChange: (event: ChangeEvent<HTMLInputElement>) => void

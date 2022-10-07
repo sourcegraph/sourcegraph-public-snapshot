@@ -2,8 +2,9 @@ import React, { PropsWithChildren, ReactNode, RefObject } from 'react'
 
 import classNames from 'classnames'
 
-import styles from './FormGroup.module.scss'
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
+
+import styles from './FormGroup.module.scss'
 
 interface FormGroupProps {
     /** Name attr value for root fieldset element. */
@@ -13,7 +14,7 @@ interface FormGroupProps {
     /** Subtitle of group. */
     subtitle?: ReactNode
     /** Error message for field group. */
-    error?: string
+    error?: string | false
     /** Description text, renders below of content inputs of group. */
     description?: ReactNode
     /** Custom class name for root fieldset element. */

@@ -138,7 +138,7 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
                     innerRef={series.input.ref}
                     name="data series group"
                     title="Data series"
-                    error={(series.meta.touched && series.meta.error) || undefined}
+                    error={series.meta.touched && series.meta.error}
                     subtitle={
                         licensed
                             ? 'Add any number of data series to your chart'
