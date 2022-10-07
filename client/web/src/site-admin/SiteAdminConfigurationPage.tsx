@@ -438,7 +438,8 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
             this.setState({
                 saving: false,
                 error: new Error(
-                    'Error while saving site config: ' + error + '\nBackup changes before reloading the page'
+                    String(error) +
+                        '\nError occured while attempting to save site configuration. Please backup changes before reloading the page.'
                 ),
             })
             throw error
