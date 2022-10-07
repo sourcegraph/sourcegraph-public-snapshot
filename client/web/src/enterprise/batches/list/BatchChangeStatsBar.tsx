@@ -48,7 +48,7 @@ export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildre
                 <div className="pr-4">
                     <span className="font-weight-bold">{data.globalChangesetsStats.merged}</span>
                     <br />
-                    <span>Merged</span>
+                    <span>Changesets merged</span>
                 </div>
                 <div className="pr-4">
                     <span className="font-weight-bold">
