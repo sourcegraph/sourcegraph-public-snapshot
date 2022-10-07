@@ -173,8 +173,6 @@ public class SettingsComponent {
             .getPanel();
         userAuthenticationPanel.setBorder(IdeBorderFactory.createTitledBorder("User Authentication", true, JBUI.insetsTop(8)));
 
-        // Value can be: [a-zA-Z0-9_ :;.,\/"'?!(){}[\]@<>=+*#$&`|~^%-]+
-
         return userAuthenticationPanel;
     }
 
@@ -296,7 +294,6 @@ public class SettingsComponent {
         //noinspection DialogTitleCapitalization
         defaultBranchNameTextField.getEmptyText().setText("main");
         defaultBranchNameTextField.setToolTipText("Usually \"main\" or \"master\", but can be any name");
-        String defaultBranchNameTooltip = "The branch to use if the current branch is not yet pushed";
 
         JBLabel remoteUrlReplacementsLabel = new JBLabel("Remote URL replacements:");
         remoteUrlReplacementsTextField = new JBTextField();
@@ -312,7 +309,7 @@ public class SettingsComponent {
 
         JPanel navigationSettingsPanel = FormBuilder.createFormBuilder()
             .addLabeledComponent(defaultBranchNameLabel, defaultBranchNameTextField)
-            .addTooltip(defaultBranchNameTooltip)
+            .addTooltip("The branch to use if the current branch is not yet pushed")
             .addLabeledComponent(remoteUrlReplacementsLabel, remoteUrlReplacementsTextField)
             .addTooltip("You can replace specified strings in your repo's remote URL.")
             .addTooltip("Use any number of pairs: \"search1, replacement1, search2, replacement2, ...\".")

@@ -55,7 +55,7 @@ function handleRequest(
                 JSON.stringify({
                     instanceURL,
                     accessToken,
-                    customRequestHeadersAsString: 'Client-ID,55,Test,a999999',
+                    customRequestHeadersAsString: 'Client-ID,99999,X-Test-Header,Some value',
                     isGlobbingEnabled: true,
                     pluginVersion: '1.2.3',
                     anonymousUserId: 'test',

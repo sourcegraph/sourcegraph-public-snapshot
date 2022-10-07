@@ -52,7 +52,7 @@ public class GraphQlClient {
         if (accessToken != null) {
             request.setHeader("Authorization", "token " + accessToken);
         }
-        // Do some checks to make sure the request is same, but fail silently
+        // Do some checks to make sure the string and its parts are well-formed, but fail silently in each case
         if (pairs.length % 2 == 0) {
             for (int i = 0; i < pairs.length; i += 2) {
                 String headerName = pairs[i].trim();
