@@ -6,8 +6,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/sourcegraph/log/logtest"
-	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/stretchr/testify/assert"
+
+	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -16,6 +17,8 @@ import (
 )
 
 func TestWebhookCreateUnencrypted(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
@@ -56,6 +59,8 @@ func TestWebhookCreateUnencrypted(t *testing.T) {
 }
 
 func TestWebhookCreateEncrypted(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
@@ -98,6 +103,8 @@ func TestWebhookCreateEncrypted(t *testing.T) {
 }
 
 func TestWebhookCreateWithBadKey(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
