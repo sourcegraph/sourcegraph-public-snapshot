@@ -46,7 +46,7 @@ func testForNextAndFinish(t *testing.T, store *basestore.Store, itr *persistentR
 	return itr, seen
 }
 
-func TestTestAsdf(t *testing.T) {
+func TestForNextAndFinish(t *testing.T) {
 	logger := logtest.Scoped(t)
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	store := basestore.NewWithHandle(insightsDB.Handle())

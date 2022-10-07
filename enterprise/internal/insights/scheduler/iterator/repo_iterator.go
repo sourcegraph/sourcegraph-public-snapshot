@@ -203,7 +203,7 @@ func (p *persistentRepoIterator) insertIterationError(ctx context.Context, store
 		); err != nil {
 			return errors.Wrap(err, "InsertIterationError")
 		}
-		p.errors[int32(tmp.RepoId)] = &tmp
+		p.errors[tmp.RepoId] = &tmp
 	} else {
 		v.FailureCount += 1
 		query = sqlf.Sprintf("update repo_iterator_errors set failure_count = %s, error_message = array_append(error_message, %s) where id = %s", v.FailureCount, msg, v.id)
