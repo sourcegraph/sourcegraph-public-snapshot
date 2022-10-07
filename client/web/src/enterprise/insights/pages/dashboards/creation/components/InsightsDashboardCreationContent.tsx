@@ -1,4 +1,4 @@
-import React, { ReactNode, useContext } from 'react'
+import React, { ReactNode } from 'react'
 
 import classNames from 'classnames'
 
@@ -12,13 +12,8 @@ import { useField } from '../../../../components/form/hooks/useField'
 import { FORM_ERROR, FormAPI, SubmissionErrors, useForm } from '../../../../components/form/hooks/useForm'
 import { createRequiredValidator } from '../../../../components/form/validators'
 import { LimitedAccessLabel } from '../../../../components/limited-access-label/LimitedAccessLabel'
-import {
-    CodeInsightsBackendContext,
-    InsightsDashboardOwner,
-    isGlobalOwner,
-    isOrganizationOwner,
-    isPersonalOwner,
-} from '../../../../core'
+import { InsightsDashboardOwner, isGlobalOwner, isOrganizationOwner, isPersonalOwner } from '../../../../core'
+import { useUiFeatures } from '../../../../hooks'
 
 import styles from './InsightsDashboardCreationContent.module.scss'
 
@@ -47,8 +42,7 @@ export interface InsightsDashboardCreationContentProps {
 export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsDashboardCreationContentProps> = props => {
     const { initialValues, owners, onSubmit, children } = props
 
-    const { UIFeatures } = useContext(CodeInsightsBackendContext)
-    const { licensed } = UIFeatures
+    const { licensed } = useUiFeatures()
 
     const userOwner = owners.find(isPersonalOwner)
     const personalOwners = owners.filter(isPersonalOwner)
