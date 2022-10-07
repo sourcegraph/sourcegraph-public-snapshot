@@ -1,8 +1,9 @@
 import * as React from 'react'
 
 import { gql } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { Link } from '@sourcegraph/wildcard'
+
+import { ProductSubscriptionFields } from '../../../graphql-operations'
 
 import { ProductSubscriptionLabel } from './ProductSubscriptionLabel'
 
@@ -15,8 +16,7 @@ export const productSubscriptionFragment = gql`
             username
             displayName
             emails {
-                email
-                verified
+                ...UserEmailFields
             }
         }
         activeLicense {
@@ -32,6 +32,10 @@ export const productSubscriptionFragment = gql`
         isArchived
         url
     }
+    fragment UserEmailFields on UserEmail {
+        email
+        verified
+    }
 `
 
 export const ProductSubscriptionNodeHeader: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
@@ -44,7 +48,7 @@ export const ProductSubscriptionNodeHeader: React.FunctionComponent<React.PropsW
 )
 
 export interface ProductSubscriptionNodeProps {
-    node: GQL.IProductSubscription
+    node: ProductSubscriptionFields
 }
 
 export const ProductSubscriptionNode: React.FunctionComponent<

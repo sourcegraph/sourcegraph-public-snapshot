@@ -244,13 +244,7 @@ function queryProductSubscription(uuid: string): Observable<GQL.IProductSubscrip
                         id
                         name
                         account {
-                            id
-                            username
-                            displayName
-                            emails {
-                                email
-                                verified
-                            }
+                            ...DotComProductSubscriptionAccountFields
                         }
                         productLicenses {
                             nodes {
@@ -272,6 +266,16 @@ function queryProductSubscription(uuid: string): Observable<GQL.IProductSubscrip
                         isArchived
                         url
                     }
+                }
+            }
+
+            fragment DotComProductSubscriptionAccountFields on User {
+                id
+                username
+                displayName
+                emails {
+                    email
+                    verified
                 }
             }
         `,

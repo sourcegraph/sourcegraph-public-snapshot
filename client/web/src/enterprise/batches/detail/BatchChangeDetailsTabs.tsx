@@ -6,7 +6,6 @@ import { useHistory, useLocation } from 'react-router'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
 import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -14,7 +13,7 @@ import { Badge, Container, Icon, Tab, TabPanel, TabPanels } from '@sourcegraph/w
 
 import { isBatchChangesExecutionEnabled } from '../../../batches'
 import { resetFilteredConnectionURLQuery } from '../../../components/FilteredConnection'
-import { BatchSpecState, BatchChangeFields } from '../../../graphql-operations'
+import { BatchSpecState, BatchChangeFields, BatchSpecSource } from '../../../graphql-operations'
 import { BatchChangeTabList, BatchChangeTabs } from '../BatchChangeTabs'
 import { BatchSpec, BatchSpecDownloadButton, BatchSpecMeta } from '../BatchSpec'
 import { BatchChangeBatchSpecList } from '../BatchSpecsPage'
