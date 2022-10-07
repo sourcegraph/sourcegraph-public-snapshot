@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -93,6 +94,7 @@ type Service struct {
 	expirationMetrics *expirationMetrics
 	resetterMetrics   *resetterMetrics
 	janitorMetrics    *janitorMetrics
+	workerMetrics     workerutil.WorkerMetrics
 	policyMatcher     PolicyMatcher
 	locker            Locker
 	logger            logger.Logger
@@ -127,6 +129,7 @@ func newService(
 		expirationMetrics: newExpirationMetrics(observationContext),
 		resetterMetrics:   newResetterMetrics(observationContext),
 		janitorMetrics:    newJanitorMetrics(observationContext),
+		workerMetrics:     workerutil.NewMetrics(observationContext, "codeintel_upload_processor"),
 		policyMatcher:     policyMatcher,
 		locker:            locker,
 		logger:            observationContext.Logger,
