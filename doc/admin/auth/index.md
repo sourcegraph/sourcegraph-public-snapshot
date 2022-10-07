@@ -449,7 +449,7 @@ Let's say the email field in your Sourcegraph account was kept blank when a site
 Exceptions to this rule are [HTTP Proxies](#http-authentication-proxies), where there's an option to make the link via username only.
 For [Bitbucket](../config/authorization_and_authentication.md#bitbucket-server-bitbucket-data-center-authorization), we don't support OAuth. Still, the match between the chosen auth provider used with Bitbucket and a user's Bitbucket account happens via username.
 
-**Using only a username to match a Sourcegraph account to an auth provider account is not recommended**.
+Using only a username to match a Sourcegraph account to an auth provider account is not recommended, as you can see [here](../repo/permissions#username), for example.
 Usernames in Sourcegraph are mutable, so a malicious user could change a username, elevating their privileges.
 
 ## Linking accounts from multiple auth providers
