@@ -6,8 +6,6 @@ import "strings"
 // It does not deal with how a search query should be prioritized according to its cost.
 
 type QueryAnalyzer struct {
-	QueryObject
-
 	costHandlers []CostHeuristic
 }
 
@@ -27,15 +25,14 @@ var DefaultCostHandlers = []CostHeuristic{
 
 func NewQueryAnalyzer(object QueryObject, handlers []CostHeuristic) *QueryAnalyzer {
 	return &QueryAnalyzer{
-		QueryObject:  object,
 		costHandlers: handlers,
 	}
 }
 
-func (a *QueryAnalyzer) Cost() int {
+func (a *QueryAnalyzer) Cost(o QueryObject) int {
 	totalCost := 0
 	for _, handler := range a.costHandlers {
-		totalCost += handler.fn(a.QueryObject) * handler.weight
+		totalCost += handler.fn(o) * handler.weight
 	}
 	return totalCost
 }
