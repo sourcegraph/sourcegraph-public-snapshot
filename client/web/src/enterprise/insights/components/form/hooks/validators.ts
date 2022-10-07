@@ -1,12 +1,16 @@
 /**
- * If validator returns nothing, that means that validation has passed successfully
+ * If validator returns nothing, that means that validation has passed successfully.
  */
-export type SuccessValidationResult<Context> =
-    | undefined
-    | void
-    | {
-          context?: Context
-      }
+export type SuccessValidationResult<Context> = undefined | void | SuccessContextValidationResult<Context>
+
+/**
+ * Context-based success validation result, context is used when validation has passed
+ * successfully, but you also want to show some success validation details, like what
+ * validation exactly has passed.
+ */
+interface SuccessContextValidationResult<Context> {
+    context?: Context
+}
 
 /**
  * Failed validation result supports two formats, if validator returns
