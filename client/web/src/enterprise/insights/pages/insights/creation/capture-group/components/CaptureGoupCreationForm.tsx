@@ -1,4 +1,4 @@
-import { FC, ReactNode } from 'react'
+import { FC, FormHTMLAttributes, ReactNode } from 'react'
 
 import classNames from 'classnames'
 
@@ -23,7 +23,7 @@ import { CaptureGroupSeriesInfoBadge } from './info-badge/CaptureGroupSeriesInfo
 import { CaptureGroupQueryInput } from './query-input/CaptureGroupQueryInput'
 import { SearchQueryChecks } from './search-query-checks/SearchQueryChecks'
 
-interface CaptureGroupCreationFormProps {
+interface CaptureGroupCreationFormProps extends Omit<FormHTMLAttributes<HTMLFormElement>, 'title' | 'children'> {
     form: Form<CaptureGroupFormFields>
     title: useFieldAPI<CaptureGroupFormFields['title']>
     repositories: useFieldAPI<CaptureGroupFormFields['repositories']>
@@ -34,7 +34,6 @@ interface CaptureGroupCreationFormProps {
 
     dashboardReferenceCount?: number
     isFormClearActive: boolean
-    className?: string
     children: (inputs: RenderPropertyInputs) => ReactNode
 
     onFormReset: () => void
@@ -56,10 +55,10 @@ export const CaptureGroupCreationForm: FC<CaptureGroupCreationFormProps> = props
         step,
         stepValue,
         dashboardReferenceCount,
-        className,
         isFormClearActive,
         children,
         onFormReset,
+        ...attributes
     } = props
 
     const {
@@ -70,7 +69,7 @@ export const CaptureGroupCreationForm: FC<CaptureGroupCreationFormProps> = props
 
     return (
         // eslint-disable-next-line react/forbid-elements
-        <form noValidate={true} className={className} onSubmit={handleSubmit} onReset={onFormReset}>
+        <form {...attributes} noValidate={true} onSubmit={handleSubmit} onReset={onFormReset}>
             <FormGroup
                 name="insight repositories"
                 title="Targeted repositories"

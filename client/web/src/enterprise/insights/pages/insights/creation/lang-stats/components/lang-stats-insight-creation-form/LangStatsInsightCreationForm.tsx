@@ -1,6 +1,4 @@
-import { FC, FormEventHandler, ReactNode } from 'react'
-
-import classNames from 'classnames'
+import { FC, FormEventHandler, FormHTMLAttributes, ReactNode } from 'react'
 
 import { Input } from '@sourcegraph/wildcard'
 
@@ -15,11 +13,11 @@ import { LangStatsCreationFormFields } from '../../types'
 
 import styles from './LangStatsInsightCreationForm.module.scss'
 
-export interface LangStatsInsightCreationFormProps {
+export interface LangStatsInsightCreationFormProps
+    extends Omit<FormHTMLAttributes<HTMLFormElement>, 'title' | 'children'> {
     handleSubmit: FormEventHandler
     submitErrors: SubmissionErrors
     submitting: boolean
-    className?: string
     isFormClearActive: boolean
     dashboardReferenceCount?: number
 
@@ -42,7 +40,6 @@ export const LangStatsInsightCreationForm: FC<LangStatsInsightCreationFormProps>
         handleSubmit,
         submitErrors,
         submitting,
-        className,
         title,
         repository,
         threshold,
@@ -50,16 +47,12 @@ export const LangStatsInsightCreationForm: FC<LangStatsInsightCreationFormProps>
         dashboardReferenceCount,
         onFormReset,
         children,
+        ...attributes
     } = props
 
     return (
         // eslint-disable-next-line react/forbid-elements
-        <form
-            noValidate={true}
-            className={classNames(className, 'd-flex flex-column')}
-            onSubmit={handleSubmit}
-            onReset={onFormReset}
-        >
+        <form {...attributes} noValidate={true} onSubmit={handleSubmit} onReset={onFormReset}>
             {/*
                 a11y-ignore
                 Rule: aria-allowed-role ARIA - role should be appropriate for the element
@@ -103,7 +96,7 @@ export const LangStatsInsightCreationForm: FC<LangStatsInsightCreationFormProps>
                 <CodeInsightDashboardsVisibility className="mt-5 mb-n1" dashboardCount={dashboardReferenceCount} />
             )}
 
-            <hr className={styles.formSeparator} />
+            <hr aria-hidden={true} className={styles.formSeparator} />
 
             {children({ submitting, submitErrors, isFormClearActive })}
         </form>
