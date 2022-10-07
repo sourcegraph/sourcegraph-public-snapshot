@@ -17,7 +17,7 @@ func (adt *AddHeaderTransport) RoundTrip(req *http.Request) (*http.Response, err
 	return adt.T.RoundTrip(req)
 }
 
-func NewAddHeaderTransport(t http.RoundTripper, headers map[string]string) *AddHeaderTransport {
+func New(t http.RoundTripper, headers map[string]string) *AddHeaderTransport {
 	if t == nil {
 		t = http.DefaultTransport
 	}

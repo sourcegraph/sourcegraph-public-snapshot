@@ -96,7 +96,7 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 		if len(opts.GrafanaHeaders) > 0 {
 			gclog.Debug("Adding additional headers to Grafana requests",
 				log.String("headers", fmt.Sprintf("%v", opts.GrafanaHeaders)))
-			httpClient.Transport = headertransport.NewAddHeaderTransport(httpClient.Transport, opts.GrafanaHeaders)
+			httpClient.Transport = headertransport.New(httpClient.Transport, opts.GrafanaHeaders)
 		}
 
 		// Init Grafana client
