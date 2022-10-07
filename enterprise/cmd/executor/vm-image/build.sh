@@ -62,9 +62,10 @@ cp -R executor-vm "$OUTPUT"
 
 export PKR_VAR_name
 PKR_VAR_name="${IMAGE_FAMILY}-${BUILDKITE_BUILD_NUMBER}"
+export PKR_VAR_version="${VERSION}"
 export PKR_VAR_src_cli_version=${SRC_CLI_VERSION}
-export PKR_VAR_aws_executor_ami_access_key=${AWS_EXECUTOR_AMI_ACCESS_KEY}
-export PKR_VAR_aws_executor_ami_secret_key=${AWS_EXECUTOR_AMI_SECRET_KEY}
+export PKR_VAR_aws_access_key=${AWS_EXECUTOR_AMI_ACCESS_KEY}
+export PKR_VAR_aws_secret_key=${AWS_EXECUTOR_AMI_SECRET_KEY}
 # This should prevent some occurrences of Failed waiting for AMI failures:
 # https://austincloud.guru/2020/05/14/long-running-packer-builds-failing/
 export PKR_VAR_aws_max_attempts=480
