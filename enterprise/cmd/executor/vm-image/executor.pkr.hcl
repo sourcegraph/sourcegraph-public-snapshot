@@ -63,7 +63,7 @@ source "amazon-ebs" "aws" {
     ssh_username = "ubuntu"
     instance_type = "t3.micro"
     source_ami_filter {
-        filters {
+        filters = {
           virtualization-type = "hvm"
           name = "ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"
           root-device-type = "ebs"
