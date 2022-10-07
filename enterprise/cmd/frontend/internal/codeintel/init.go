@@ -66,6 +66,6 @@ func Init(ctx context.Context, db database.DB, config *Config, enterpriseService
 		policyRootResolver,
 		uploadRootResolver,
 	)
-	enterpriseServices.NewCodeIntelUploadHandler = newUploadHandler(services)
+	enterpriseServices.NewCodeIntelUploadHandler = services.NewUploadHandler
 	return nil
 }
