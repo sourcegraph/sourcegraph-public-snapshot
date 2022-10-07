@@ -115,6 +115,10 @@ export const calculateMatchGroupsSorted = (
     maxMatches: number,
     context: number
 ): { matches: MatchItem[]; grouped: MatchGroup[] } => {
+    if (matches.length === 0) {
+        return { matches: [], grouped: [] }
+    }
+
     const sortedMatches = matches.sort((a, b) => {
         if (a.startLine < b.startLine) {
             return -1
@@ -146,9 +150,7 @@ export const calculateMatchGroupsSorted = (
     // area (if any.)
     const showMatches = sortedMatches.filter(
         (match, index) =>
-            maxMatches === 0 ||
-            index < maxMatches ||
-            match.endLine <= highestLineNumberWithinSubsetMatches + context
+            maxMatches === 0 || index < maxMatches || match.endLine <= highestLineNumberWithinSubsetMatches + context
     )
 
     const grouped = mergeContext(

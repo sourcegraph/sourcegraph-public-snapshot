@@ -3,7 +3,7 @@
 import { Observable } from 'rxjs'
 
 import { GraphQLResult } from '@sourcegraph/http-client'
-import { Settings } from '@sourcegraph/shared/src/settings/settings'
+import { Settings, SettingsCascade } from '@sourcegraph/shared/src/settings/settings'
 
 import { PlatformContext } from '../../platform/context'
 
@@ -1012,7 +1012,7 @@ export interface CodeIntelContext extends Pick<PlatformContext, 'requestGraphQL'
 
 export type SettingsGetter = <T>(setting: string) => T | undefined
 
-export function newSettingsGetter(settingsCascade: Settings): SettingsGetter {
+export function newSettingsGetter(settingsCascade: SettingsCascade<Settings>): SettingsGetter {
     return <T>(setting: string): T | undefined =>
         settingsCascade.final && (settingsCascade.final[setting] as T | undefined)
 }

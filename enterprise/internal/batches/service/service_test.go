@@ -1638,7 +1638,7 @@ changesetTemplate:
 			assertNoChangesetSpecs(t, spec.ID)
 		})
 
-		t.Run("mount error", func(t *testing.T) {
+		t.Run("has mount", func(t *testing.T) {
 			spec := createBatchSpecWithWorkspacesAndChangesetSpecs(t)
 
 			_, err := svc.ReplaceBatchSpecInput(adminCtx, ReplaceBatchSpecInputOpts{
@@ -1660,7 +1660,7 @@ changesetTemplate:
     message: Test
 `,
 			})
-			assert.Equal(t, "mounts are not allowed for server-side processing", err.Error())
+			assert.NoError(t, err)
 		})
 	})
 
@@ -1770,7 +1770,7 @@ changesetTemplate:
 			}
 		})
 
-		t.Run("mount error", func(t *testing.T) {
+		t.Run("has mount", func(t *testing.T) {
 			_, err := svc.CreateBatchSpecFromRaw(adminCtx, CreateBatchSpecFromRawOpts{
 				RawSpec: `
 name: test-spec
@@ -1790,7 +1790,7 @@ changesetTemplate:
 `,
 				NamespaceUserID: admin.ID,
 			})
-			assert.Equal(t, "mounts are not allowed for server-side processing", err.Error())
+			assert.NoError(t, err)
 		})
 	})
 
@@ -1836,7 +1836,7 @@ changesetTemplate:
 			assert.Equal(t, store.ErrNoResults, err)
 		})
 
-		t.Run("mount error", func(t *testing.T) {
+		t.Run("has mount", func(t *testing.T) {
 			_, err := svc.UpsertBatchSpecInput(adminCtx, UpsertBatchSpecInputOpts{
 				RawSpec: `
 name: test-spec
@@ -1856,7 +1856,7 @@ changesetTemplate:
 `,
 				NamespaceUserID: admin.ID,
 			})
-			assert.Equal(t, "mounts are not allowed for server-side processing", err.Error())
+			assert.NoError(t, err)
 		})
 	})
 

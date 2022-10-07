@@ -17,63 +17,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-var _ service = (*Service)(nil)
-
-type service interface {
-	// Commits
-	GetStaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []shared.SourcedCommits, err error)
-	UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (indexesUpdated int, err error)
-	DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (indexesDeleted int, err error)
-
-	// Indexes
-	GetIndexes(ctx context.Context, opts types.GetIndexesOptions) (_ []types.Index, _ int, err error)
-	GetIndexByID(ctx context.Context, id int) (_ types.Index, _ bool, err error)
-	GetIndexesByIDs(ctx context.Context, ids ...int) (_ []types.Index, err error)
-	GetRecentIndexesSummary(ctx context.Context, repositoryID int) (summaries []shared.IndexesWithRepositoryNamespace, err error)
-	GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error)
-	DeleteIndexByID(ctx context.Context, id int) (_ bool, err error)
-	DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error)
-	QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force, bypassLimit bool) (_ []types.Index, err error)
-	QueueIndexesForPackage(ctx context.Context, pkg precise.Package) (err error)
-
-	// Index configurations
-	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (_ shared.IndexConfiguration, _ bool, err error)
-	InferIndexConfiguration(ctx context.Context, repositoryID int, commit string, bypassLimit bool) (_ *config.IndexConfiguration, hints []config.IndexJobHint, err error)
-	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, data []byte) (err error)
-
-	// Tags
-	GetListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) (_ []*gitdomain.Tag, err error)
-
-	// Utilities
-	GetUnsafeDB() database.DB
-	WorkerutilStore() dbworkerstore.Store
-	DependencySyncStore() dbworkerstore.Store
-	DependencyIndexingStore() dbworkerstore.Store
-	NewIndexResetter(interval time.Duration) *dbworker.Resetter
-	NewDependencyIndexResetter(interval time.Duration) *dbworker.Resetter
-	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error)
-
-	ListFiles(ctx context.Context, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error)
-
-	// Symbols client
-	GetSupportedByCtags(ctx context.Context, filepath string, repoName api.RepoName) (bool, string, error)
-
-	// Language Support
-	GetLanguagesRequestedBy(ctx context.Context, userID int) (_ []string, err error)
-	SetRequestLanguageSupport(ctx context.Context, userID int, language string) (err error)
-}
 
 type Service struct {
 	store                   store.Store
@@ -141,13 +92,6 @@ func (s *Service) WorkerutilStore() dbworkerstore.Store         { return s.worke
 func (s *Service) DependencySyncStore() dbworkerstore.Store     { return s.dependencySyncStore }
 func (s *Service) DependencyIndexingStore() dbworkerstore.Store { return s.dependencyIndexingStore }
 
-func (s *Service) InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error) {
-	ctx, _, endObservation := s.operations.insertDependencyIndexingJob.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	return s.store.InsertDependencyIndexingJob(ctx, uploadID, externalServiceKind, syncTime)
-}
-
 func (s *Service) GetIndexes(ctx context.Context, opts types.GetIndexesOptions) (_ []types.Index, _ int, err error) {
 	ctx, _, endObservation := s.operations.getIndexes.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
@@ -190,33 +134,27 @@ func (s *Service) DeleteIndexByID(ctx context.Context, id int) (_ bool, err erro
 	return s.store.DeleteIndexByID(ctx, id)
 }
 
-func (s *Service) DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error) {
-	ctx, _, endObservation := s.operations.deleteIndexesWithoutRepository.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+//
+// Used by upload janitor, we need our own version of that janitor
 
+func (s *Service) DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error) {
 	return s.store.DeleteIndexesWithoutRepository(ctx, now)
 }
 
 func (s *Service) GetStaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []shared.SourcedCommits, err error) {
-	ctx, _, endObservation := s.operations.getStaleSourcedCommits.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
 	return s.store.GetStaleSourcedCommits(ctx, minimumTimeSinceLastCheck, limit, now)
 }
 
 func (s *Service) UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (indexesUpdated int, err error) {
-	ctx, _, endObservation := s.operations.updateSourcedCommits.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
 	return s.store.UpdateSourcedCommits(ctx, repositoryID, commit, now)
 }
 
 func (s *Service) DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (indexesDeleted int, err error) {
-	ctx, _, endObservation := s.operations.deleteSourcedCommits.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
 	return s.store.DeleteSourcedCommits(ctx, repositoryID, commit, maximumCommitLag)
 }
+
+//
+//
 
 func (s *Service) GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (_ shared.IndexConfiguration, _ bool, err error) {
 	ctx, _, endObservation := s.operations.getIndexConfigurationByRepositoryID.With(ctx, &err, observation.Args{})
@@ -343,37 +281,6 @@ func (s *Service) QueueRepoRev(ctx context.Context, repositoryID int, rev string
 	return s.store.QueueRepoRev(ctx, repositoryID, rev)
 }
 
-func (s *Service) ProcessRepoRevs(ctx context.Context, batchSize int) (err error) {
-	ctx, _, endObservation := s.operations.queueRepoRev.With(ctx, &err, observation.Args{
-		LogFields: []otlog.Field{
-			otlog.Int("batchSize", batchSize),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	tx, err := s.store.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	repoRevs, err := tx.GetQueuedRepoRev(ctx, batchSize)
-	if err != nil {
-		return err
-	}
-
-	ids := make([]int, 0, len(repoRevs))
-	for _, repoRev := range repoRevs {
-		if _, err := s.QueueIndexes(ctx, repoRev.RepositoryID, repoRev.Rev, "", false, false); err != nil {
-			return err
-		}
-
-		ids = append(ids, repoRev.ID)
-	}
-
-	return tx.MarkRepoRevsAsProcessed(ctx, ids)
-}
-
 // QueueIndexes enqueues a set of index jobs for the following repository and commit. If a non-empty
 // configuration is given, it will be used to determine the set of jobs to enqueue. Otherwise, it will
 // the configuration will be determined based on the regular index scheduling rules: first read any
@@ -401,47 +308,6 @@ func (s *Service) QueueIndexes(ctx context.Context, repositoryID int, rev, confi
 	trace.Log(otlog.String("commit", commit))
 
 	return s.queueIndexForRepositoryAndCommit(ctx, repositoryID, commit, configuration, force, bypassLimit, nil) // trace)
-}
-
-// QueueIndexesForPackage enqueues index jobs for a dependency of a recently-processed precise code
-// intelligence index.
-func (s *Service) QueueIndexesForPackage(ctx context.Context, pkg precise.Package) (err error) {
-	ctx, trace, endObservation := s.operations.queueIndexForPackage.With(ctx, &err, observation.Args{
-		LogFields: []otlog.Field{
-			otlog.String("scheme", pkg.Scheme),
-			otlog.String("name", pkg.Name),
-			otlog.String("version", pkg.Version),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	repoName, revision, ok := InferRepositoryAndRevision(pkg)
-	if !ok {
-		return nil
-	}
-	trace.Log(otlog.String("repoName", string(repoName)))
-	trace.Log(otlog.String("revision", revision))
-
-	resp, err := s.repoUpdater.EnqueueRepoUpdate(ctx, repoName)
-	if err != nil {
-		if errcode.IsNotFound(err) {
-			return nil
-		}
-
-		return errors.Wrap(err, "repoUpdater.EnqueueRepoUpdate")
-	}
-
-	commit, err := s.gitserverClient.ResolveRevision(ctx, int(resp.ID), revision)
-	if err != nil {
-		if errcode.IsNotFound(err) {
-			return nil
-		}
-
-		return errors.Wrap(err, "gitserverClient.ResolveRevision")
-	}
-
-	_, err = s.queueIndexForRepositoryAndCommit(ctx, int(resp.ID), string(commit), "", false, false, nil) // trace)
-	return err
 }
 
 // queueIndexForRepositoryAndCommit determines a set of index jobs to enqueue for the given repository and commit.

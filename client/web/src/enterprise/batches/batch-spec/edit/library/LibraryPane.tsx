@@ -107,21 +107,24 @@ export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<Librar
     )
 
     const { search: searchQuery } = useLocation()
-    const updateTemplateWithQueryAndName = useCallback((template: string): string => {
-        if (searchQuery !== '') {
-            const parameters = new URLSearchParams(location.search)
+    const updateTemplateWithQueryAndName = useCallback(
+        (template: string): string => {
+            if (searchQuery !== '') {
+                const parameters = new URLSearchParams(location.search)
 
-            const query = parameters.get('q')
-            const patternType = parameters.get('patternType')
+                const query = parameters.get('q')
+                const patternType = parameters.get('patternType')
 
-            if (query) {
-                const searchQuery = `${query} ${patternType ? `patternType:${patternType}` : ''}`
-                const renderTemplate = createRenderTemplate(searchQuery, template, true)
-                return renderTemplate(name)
+                if (query) {
+                    const searchQuery = `${query} ${patternType ? `patternType:${patternType}` : ''}`
+                    const renderTemplate = createRenderTemplate(searchQuery, template, true)
+                    return renderTemplate(name)
+                }
             }
-        }
-        return insertNameIntoLibraryItem(template, name)
-    }, [name, searchQuery])
+            return insertNameIntoLibraryItem(template, name)
+        },
+        [name, searchQuery]
+    )
 
     const onConfirm = useCallback(() => {
         if (selectedItem && !('isReadOnly' in props && props.isReadOnly)) {

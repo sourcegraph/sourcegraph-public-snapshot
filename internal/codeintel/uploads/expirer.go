@@ -4,13 +4,11 @@ import (
 	"context"
 	"time"
 
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
 
 	policiesEnterprise "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -57,7 +55,7 @@ func (e *Service) handleExpiredUploadsBatch(ctx context.Context, cfg expirerConf
 	// the backlog. Note that this set of repositories require a fresh commit graph, so we're not trying to
 	// process records that have been uploaded but the commits from which they are visible have yet to be
 	// determined (and appearing as if they are visible to no commit).
-	repositories, err := e.SetRepositoriesForRetentionScan(ctx, cfg.repositoryProcessDelay, cfg.repositoryBatchSize)
+	repositories, err := e.store.SetRepositoriesForRetentionScan(ctx, cfg.repositoryProcessDelay, cfg.repositoryBatchSize)
 	if err != nil {
 		return errors.Wrap(err, "uploadSvc.SelectRepositoriesForRetentionScan")
 	}
@@ -79,18 +77,6 @@ func (e *Service) handleExpiredUploadsBatch(ctx context.Context, cfg expirerConf
 	}
 
 	return err
-}
-
-func (s *Service) SetRepositoriesForRetentionScan(ctx context.Context, processDelay time.Duration, limit int) (_ []int, err error) {
-	ctx, _, endObservation := s.operations.setRepositoriesForRetentionScan.With(ctx, &err, observation.Args{
-		LogFields: []otlog.Field{
-			otlog.Int("processDelay in ms", int(processDelay.Milliseconds())),
-			otlog.Int("limit", limit),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	return s.store.SetRepositoriesForRetentionScan(ctx, processDelay, limit)
 }
 
 func (e *Service) handleRepository(ctx context.Context, repositoryID int, cfg expirerConfig, now time.Time) error {
@@ -219,7 +205,7 @@ func (e *Service) handleUploads(
 	// records with the given expired identifiers so that the expiredUploadDeleter process can remove then once
 	// they are no longer referenced.
 
-	if updateErr := e.UpdateUploadRetention(ctx, protectedUploadIDs, expiredUploadIDs); updateErr != nil {
+	if updateErr := e.store.UpdateUploadRetention(ctx, protectedUploadIDs, expiredUploadIDs); updateErr != nil {
 		if updateErr := errors.Wrap(err, "uploadSvc.UpdateUploadRetention"); err == nil {
 			err = updateErr
 		} else {
