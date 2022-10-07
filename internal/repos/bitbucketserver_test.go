@@ -181,7 +181,7 @@ func TestBitbucketServerSource_WithAuthenticator(t *testing.T) {
 	t.Run("supported", func(t *testing.T) {
 		for name, tc := range map[string]auth.Authenticator{
 			"BasicAuth":           &auth.BasicAuth{},
-			"OAuthBearerToken":    &auth.OAuthBearerToken{},
+			"PersonalAccessToken": &auth.PersonalAccessToken{},
 			"SudoableOAuthClient": &bitbucketserver.SudoableOAuthClient{},
 		} {
 			t.Run(name, func(t *testing.T) {

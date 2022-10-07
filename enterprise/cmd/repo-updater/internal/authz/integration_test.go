@@ -87,7 +87,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
+			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.PersonalAccessToken{Token: token}, doer)
 
 			testDB := database.NewDB(logger, dbtest.NewDB(logger, t))
 			ctx := actor.WithInternalActor(context.Background())
@@ -167,7 +167,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
+			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.PersonalAccessToken{Token: token}, doer)
 
 			testDB := database.NewDB(logger, dbtest.NewDB(logger, t))
 			ctx := actor.WithInternalActor(context.Background())
@@ -252,7 +252,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 		})
 	})
 
-	// This integration tests performs a repository-centric permissions syncing against
+	// This integration tests performs a user-centric permissions syncing against
 	// https://github.com, then check if permissions are correctly granted for the test
 	// user "sourcegraph-vcr", who is a collaborator of "sourcegraph-vcr-repos/private-org-repo-1".
 	t.Run("user-centric", func(t *testing.T) {
@@ -270,7 +270,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
+			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.PersonalAccessToken{Token: token}, doer)
 
 			testDB := database.NewDB(logger, dbtest.NewDB(logger, t))
 			ctx := actor.WithInternalActor(context.Background())
@@ -353,7 +353,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
+			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.PersonalAccessToken{Token: token}, doer)
 
 			testDB := database.NewDB(logger, dbtest.NewDB(logger, t))
 			ctx := actor.WithInternalActor(context.Background())

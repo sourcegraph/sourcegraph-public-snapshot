@@ -67,11 +67,11 @@ type tokenJSON struct {
 	ErrorURI         string         `json:"error_uri"`
 }
 
-func (e *tokenJSON) expiry() (t time.Time) {
+func (e *tokenJSON) expiry() time.Time {
 	if v := e.ExpiresIn; v != 0 {
 		return time.Now().Add(time.Duration(v) * time.Second)
 	}
-	return
+	return time.Time{}
 }
 
 type expirationTime int32

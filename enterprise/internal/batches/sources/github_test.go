@@ -582,7 +582,7 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 	}
 
 	t.Run("supported", func(t *testing.T) {
-		src, err := githubSrc.WithAuthenticator(&auth.OAuthBearerToken{})
+		src, err := githubSrc.WithAuthenticator(&auth.PersonalAccessToken{})
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
@@ -596,9 +596,10 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 
 	t.Run("unsupported", func(t *testing.T) {
 		for name, tc := range map[string]auth.Authenticator{
-			"nil":         nil,
-			"BasicAuth":   &auth.BasicAuth{},
-			"OAuthClient": &auth.OAuthClient{},
+			"nil":              nil,
+			"BasicAuth":        &auth.BasicAuth{},
+			"OAuthClient":      &auth.OAuthClient{},
+			"OAuthBearerToken": &auth.OAuthBearerToken{},
 		} {
 			t.Run(name, func(t *testing.T) {
 				src, err := githubSrc.WithAuthenticator(tc)

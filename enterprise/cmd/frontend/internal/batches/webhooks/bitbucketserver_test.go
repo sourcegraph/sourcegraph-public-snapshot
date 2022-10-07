@@ -101,8 +101,8 @@ func testBitbucketServerWebhook(db database.DB, userID int32) func(*testing.T) {
 			ExternalServiceType: bitbucketRepo.ExternalRepo.ServiceType,
 			ExternalServiceID:   bitbucketRepo.ExternalRepo.ServiceID,
 		},
-			&auth.OAuthBearerTokenWithSSH{
-				OAuthBearerToken: auth.OAuthBearerToken{Token: bitbucketServerToken},
+			&auth.PersonalAccessTokenWithSSH{
+				PersonalAccessToken: auth.PersonalAccessToken{Token: bitbucketServerToken},
 			},
 		); err != nil {
 			t.Fatal(err)

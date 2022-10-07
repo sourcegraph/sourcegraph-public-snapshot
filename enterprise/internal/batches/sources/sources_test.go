@@ -178,12 +178,12 @@ func TestLoadExternalService(t *testing.T) {
 }
 
 func TestGitserverPushConfig(t *testing.T) {
-	oauthHTTPSAuthenticator := auth.OAuthBearerToken{Token: "bearer-test"}
-	oauthSSHAuthenticator := auth.OAuthBearerTokenWithSSH{
-		OAuthBearerToken: oauthHTTPSAuthenticator,
-		PrivateKey:       "private-key",
-		Passphrase:       "passphrase",
-		PublicKey:        "public-key",
+	patHTTPSAuthenticator := auth.PersonalAccessToken{Token: "bearer-test"}
+	patSSHAuthenticator := auth.PersonalAccessTokenWithSSH{
+		PersonalAccessToken: patHTTPSAuthenticator,
+		PrivateKey:          "private-key",
+		Passphrase:          "passphrase",
+		PublicKey:           "public-key",
 	}
 	basicHTTPSAuthenticator := auth.BasicAuth{Username: "basic", Password: "pw"}
 	basicSSHAuthenticator := auth.BasicAuthWithSSH{
@@ -216,7 +216,7 @@ func TestGitserverPushConfig(t *testing.T) {
 			repoName:            "github.com/sourcegraph/sourcegraph",
 			externalServiceType: extsvc.TypeGitHub,
 			cloneURLs:           []string{"https://github.com/sourcegraph/sourcegraph"},
-			authenticator:       &oauthHTTPSAuthenticator,
+			authenticator:       &patHTTPSAuthenticator,
 			wantPushConfig: &protocol.PushConfig{
 				RemoteURL: "https://bearer-test@github.com/sourcegraph/sourcegraph",
 			},
@@ -226,7 +226,7 @@ func TestGitserverPushConfig(t *testing.T) {
 			repoName:            "github.com/sourcegraph/sourcegraph",
 			externalServiceType: extsvc.TypeGitHub,
 			cloneURLs:           []string{"git@github.com:sourcegraph/sourcegraph.git"},
-			authenticator:       &oauthSSHAuthenticator,
+			authenticator:       &patSSHAuthenticator,
 			wantPushConfig: &protocol.PushConfig{
 				RemoteURL:  "git@github.com:sourcegraph/sourcegraph.git",
 				PrivateKey: "private-key",
@@ -238,7 +238,7 @@ func TestGitserverPushConfig(t *testing.T) {
 			repoName:            "sourcegraph/sourcegraph",
 			externalServiceType: extsvc.TypeGitLab,
 			cloneURLs:           []string{"https://gitlab.com/sourcegraph/sourcegraph"},
-			authenticator:       &oauthHTTPSAuthenticator,
+			authenticator:       &patHTTPSAuthenticator,
 			wantPushConfig: &protocol.PushConfig{
 				RemoteURL: "https://git:bearer-test@gitlab.com/sourcegraph/sourcegraph",
 			},
@@ -248,7 +248,7 @@ func TestGitserverPushConfig(t *testing.T) {
 			repoName:            "sourcegraph/sourcegraph",
 			externalServiceType: extsvc.TypeGitLab,
 			cloneURLs:           []string{"git@gitlab.com:sourcegraph/sourcegraph.git"},
-			authenticator:       &oauthSSHAuthenticator,
+			authenticator:       &patSSHAuthenticator,
 			wantPushConfig: &protocol.PushConfig{
 				RemoteURL:  "git@gitlab.com:sourcegraph/sourcegraph.git",
 				PrivateKey: "private-key",
@@ -348,8 +348,8 @@ func TestSourcer_ForChangeset(t *testing.T) {
 		},
 	}
 
-	siteToken := &auth.OAuthBearerToken{Token: "site"}
-	userToken := &auth.OAuthBearerToken{Token: "user"}
+	siteToken := &auth.PersonalAccessToken{Token: "site"}
+	userToken := &auth.OAuthBearerToken{AccessToken: "user"}
 
 	t.Run("created changesets", func(t *testing.T) {
 		bc := &btypes.BatchChange{ID: 1, LastApplierID: 3}

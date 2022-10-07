@@ -109,7 +109,7 @@ func (p *OAuthProvider) FetchUserPerms(ctx context.Context, account *extsvc.Acco
 	}
 
 	token := &auth.OAuthBearerToken{
-		Token:              tok.AccessToken,
+		AccessToken:        tok.AccessToken,
 		RefreshToken:       tok.RefreshToken,
 		Expiry:             tok.Expiry,
 		RefreshFunc:        database.GetAccountRefreshAndStoreOAuthTokenFunc(p.db, account.ID, gitlab.GetOAuthContext(strings.TrimSuffix(p.ServiceID(), "/"))),

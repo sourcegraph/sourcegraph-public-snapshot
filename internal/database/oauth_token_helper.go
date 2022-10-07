@@ -42,7 +42,7 @@ func externalAccountTokenRefresher(db DB, externalAccountID int32, refreshToken 
 			return nil, errors.Wrap(err, "save refreshed token")
 		}
 		return &auth.OAuthBearerToken{
-			Token:        refreshedToken.AccessToken,
+			AccessToken:  refreshedToken.AccessToken,
 			RefreshToken: refreshedToken.RefreshToken,
 			Expiry:       refreshedToken.Expiry,
 		}, nil
@@ -64,7 +64,7 @@ func externalServiceTokenRefresher(db DB, externalServiceID int64, refreshToken 
 		}
 
 		oauthBearerToken := &auth.OAuthBearerToken{
-			Token:        refreshedToken.AccessToken,
+			AccessToken:  refreshedToken.AccessToken,
 			RefreshToken: refreshedToken.RefreshToken,
 			Expiry:       refreshedToken.Expiry,
 		}
@@ -79,7 +79,7 @@ func externalServiceTokenRefresher(db DB, externalServiceID int64, refreshToken 
 			return nil, errors.Wrap(err, "decrypt config")
 		}
 
-		config, err = jsonc.Edit(config, oauthBearerToken.Token, "token")
+		config, err = jsonc.Edit(config, oauthBearerToken.AccessToken, "token")
 		if err != nil {
 			return nil, errors.Wrap(err, "update OAuth token")
 		}
@@ -109,7 +109,7 @@ func GetServiceRefreshAndStoreOAuthTokenFunc(db DB, externalServiceID int64, oau
 			return "", "", time.Time{}, err
 		}
 
-		return token.Token, token.RefreshToken, token.Expiry, nil
+		return token.AccessToken, token.RefreshToken, token.Expiry, nil
 	}
 }
 
@@ -121,6 +121,6 @@ func GetAccountRefreshAndStoreOAuthTokenFunc(db DB, externalAccountID int32, oau
 			return "", "", time.Time{}, err
 		}
 
-		return token.Token, token.RefreshToken, token.Expiry, nil
+		return token.AccessToken, token.RefreshToken, token.Expiry, nil
 	}
 }

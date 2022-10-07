@@ -24,6 +24,8 @@ const (
 	AuthenticatorTypeOAuthBearerTokenWithSSH            AuthenticatorType = "OAuthBearerTokenWithSSH"
 	AuthenticatorTypeBitbucketServerSudoableOAuthClient AuthenticatorType = "BitbucketSudoableOAuthClient"
 	AuthenticatorTypeGitLabSudoableToken                AuthenticatorType = "GitLabSudoableToken"
+	AuthenticatorTypePersonalAccessToken                AuthenticatorType = "PersonalAccessToken"
+	AuthenticatorTypePersonalAccessTokenWithSSH         AuthenticatorType = "PersonalAccessTokenWithSSH"
 )
 
 // NullAuthenticator represents an authenticator that may be null. It implements
@@ -79,6 +81,10 @@ func MarshalAuthenticator(a auth.Authenticator) (string, error) {
 		t = AuthenticatorTypeOAuthBearerToken
 	case *auth.OAuthBearerTokenWithSSH:
 		t = AuthenticatorTypeOAuthBearerTokenWithSSH
+	case *auth.PersonalAccessToken:
+		t = AuthenticatorTypePersonalAccessToken
+	case *auth.PersonalAccessTokenWithSSH:
+		t = AuthenticatorTypePersonalAccessTokenWithSSH
 	case *bitbucketserver.SudoableOAuthClient:
 		t = AuthenticatorTypeBitbucketServerSudoableOAuthClient
 	case *gitlab.SudoableToken:
@@ -125,6 +131,10 @@ func UnmarshalAuthenticator(raw string) (auth.Authenticator, error) {
 		a = &auth.OAuthBearerToken{}
 	case AuthenticatorTypeOAuthBearerTokenWithSSH:
 		a = &auth.OAuthBearerTokenWithSSH{}
+	case AuthenticatorTypePersonalAccessToken:
+		a = &auth.PersonalAccessToken{}
+	case AuthenticatorTypePersonalAccessTokenWithSSH:
+		a = &auth.PersonalAccessTokenWithSSH{}
 	case AuthenticatorTypeBitbucketServerSudoableOAuthClient:
 		a = &bitbucketserver.SudoableOAuthClient{}
 	case AuthenticatorTypeGitLabSudoableToken:

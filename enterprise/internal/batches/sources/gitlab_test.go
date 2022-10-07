@@ -1250,7 +1250,7 @@ func TestGitLabSource_WithAuthenticator(t *testing.T) {
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
-		src, err = src.WithAuthenticator(&auth.OAuthBearerToken{})
+		src, err = src.WithAuthenticator(&auth.PersonalAccessToken{})
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}

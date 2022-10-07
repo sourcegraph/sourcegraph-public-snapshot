@@ -140,8 +140,8 @@ func newGitLabSource(ctx context.Context, logger log.Logger, db database.DB, svc
 
 func (s GitLabSource) WithAuthenticator(a auth.Authenticator) (Source, error) {
 	switch a.(type) {
-	case *auth.OAuthBearerToken,
-		*auth.OAuthBearerTokenWithSSH:
+	case *auth.PersonalAccessToken,
+		*auth.PersonalAccessTokenWithSSH:
 		break
 
 	default:

@@ -568,7 +568,7 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 	}
 
 	t.Run("supported", func(t *testing.T) {
-		src, err := githubSrc.WithAuthenticator(&auth.OAuthBearerToken{})
+		src, err := githubSrc.WithAuthenticator(&auth.PersonalAccessToken{})
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
@@ -722,7 +722,7 @@ func TestRepositoryQuery_Do(t *testing.T) {
 			}
 
 			apiURL, _ := url.Parse("https://api.github.com")
-			token := &auth.OAuthBearerToken{Token: os.Getenv("GITHUB_TOKEN")}
+			token := &auth.PersonalAccessToken{Token: os.Getenv("GITHUB_TOKEN")}
 
 			q := repositoryQuery{
 				Logger:   logtest.Scoped(t),

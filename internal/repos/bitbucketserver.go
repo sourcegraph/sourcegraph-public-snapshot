@@ -97,8 +97,8 @@ func (s BitbucketServerSource) ListRepos(ctx context.Context, results chan Sourc
 
 func (s BitbucketServerSource) WithAuthenticator(a auth.Authenticator) (Source, error) {
 	switch a.(type) {
-	case *auth.OAuthBearerToken,
-		*auth.OAuthBearerTokenWithSSH,
+	case *auth.PersonalAccessToken,
+		*auth.PersonalAccessTokenWithSSH,
 		*auth.BasicAuth,
 		*auth.BasicAuthWithSSH,
 		*bitbucketserver.SudoableOAuthClient:

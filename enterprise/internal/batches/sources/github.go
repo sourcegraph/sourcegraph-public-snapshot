@@ -64,7 +64,7 @@ func newGithubSource(urn string, c *schema.GitHubConnection, cf *httpcli.Factory
 
 	var authr = au
 	if au == nil {
-		authr = &auth.OAuthBearerToken{Token: c.Token}
+		authr = &auth.PersonalAccessToken{Token: c.Token}
 	}
 
 	return &GithubSource{
@@ -79,8 +79,8 @@ func (s GithubSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfi
 
 func (s GithubSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
 	switch a.(type) {
-	case *auth.OAuthBearerToken,
-		*auth.OAuthBearerTokenWithSSH:
+	case *auth.PersonalAccessToken,
+		*auth.PersonalAccessTokenWithSSH:
 		break
 
 	default:

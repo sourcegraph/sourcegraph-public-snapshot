@@ -132,8 +132,8 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 			ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
 			ExternalServiceID:   githubRepo.ExternalRepo.ServiceID,
 		},
-		&auth.OAuthBearerTokenWithSSH{
-			OAuthBearerToken: auth.OAuthBearerToken{Token: gitHubToken},
+		&auth.PersonalAccessTokenWithSSH{
+			PersonalAccessToken: auth.PersonalAccessToken{Token: gitHubToken},
 		},
 	); err != nil {
 		t.Fatal(err)

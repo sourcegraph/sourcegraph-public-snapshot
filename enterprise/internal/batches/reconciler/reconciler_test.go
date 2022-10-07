@@ -139,7 +139,7 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 			fakeSource := &stesting.FakeChangesetSource{
 				Svc:                  extSvc,
 				FakeMetadata:         githubPR,
-				CurrentAuthenticator: &auth.OAuthBearerTokenWithSSH{},
+				CurrentAuthenticator: &auth.PersonalAccessTokenWithSSH{},
 			}
 			if changesetSpec != nil {
 				fakeSource.WantHeadRef = changesetSpec.HeadRef

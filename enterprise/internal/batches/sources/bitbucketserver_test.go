@@ -647,6 +647,7 @@ func TestBitbucketServerSource_WithAuthenticator(t *testing.T) {
 			"BasicAuth":           &auth.BasicAuth{},
 			"OAuthBearerToken":    &auth.OAuthBearerToken{},
 			"SudoableOAuthClient": &bitbucketserver.SudoableOAuthClient{},
+			"PersonalAccessToken": &auth.PersonalAccessToken{},
 		} {
 			t.Run(name, func(t *testing.T) {
 				src, err := bbsSrc.WithAuthenticator(tc)

@@ -25,8 +25,8 @@ var TokenMissingRefreshCounter = promauto.NewCounter(prometheus.CounterOpts{
 
 // SudoableToken represents a personal access token with an optional sudo scope.
 type SudoableToken struct {
-	Token string
-	Sudo  string
+	auth.PersonalAccessToken
+	Sudo string
 }
 
 var _ auth.Authenticator = &SudoableToken{}

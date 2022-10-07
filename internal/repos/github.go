@@ -157,7 +157,7 @@ func newGithubSource(
 	if err != nil {
 		return nil, err
 	}
-	token := &auth.OAuthBearerToken{Token: c.Token}
+	token := &auth.PersonalAccessToken{Token: c.Token}
 	urn := svc.URN()
 
 	var (
@@ -257,8 +257,8 @@ func newGithubSource(
 
 func (s *GitHubSource) WithAuthenticator(a auth.Authenticator) (Source, error) {
 	switch a.(type) {
-	case *auth.OAuthBearerToken,
-		*auth.OAuthBearerTokenWithSSH:
+	case *auth.PersonalAccessToken,
+		*auth.PersonalAccessTokenWithSSH:
 		break
 
 	default:

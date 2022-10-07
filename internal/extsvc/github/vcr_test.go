@@ -9,18 +9,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 )
 
-// vcrToken is the OAuthBearerToken used for updating VCR fixtures used in tests in this
+// vcrToken is the PersonalAccessToken used for updating VCR fixtures used in tests in this
 // package.
 //
 // Please use the token of the "sourcegraph-vcr" user for GITHUB_TOKEN, which can be found
 // in 1Password.
-var vcrToken = &auth.OAuthBearerToken{
+var vcrToken = &auth.PersonalAccessToken{
 	Token: os.Getenv("GITHUB_TOKEN"),
 }
 
 // Please use the token of the "GitHub Enterprise Admin Account" user for GHE_TOKEN,
 // which can be found in 1Password.
-var gheToken = &auth.OAuthBearerToken{
+var gheToken = &auth.PersonalAccessToken{
 	Token: os.Getenv("GHE_TOKEN"),
 }
 

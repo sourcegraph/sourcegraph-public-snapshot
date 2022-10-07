@@ -41,7 +41,7 @@ type Client struct {
 
 	// Auth is the authentication method used when accessing the server.
 	// Supported types are:
-	// * auth.OAuthBearerToken for a personal access token; see also
+	// * auth.PersonalAccessToken for a personal access token; see also
 	//   https://bitbucket.example.com/plugins/servlet/access-tokens/manage
 	// * auth.BasicAuth for a username and password combination. Typically
 	//   these are only used when the server doesn't support personal access
@@ -70,7 +70,7 @@ func NewClient(urn string, config *schema.BitbucketServerConnection, httpClient 
 
 	if config.Authorization == nil {
 		if config.Token != "" {
-			client.Auth = &auth.OAuthBearerToken{Token: config.Token}
+			client.Auth = &auth.PersonalAccessToken{Token: config.Token}
 		} else {
 			client.Auth = &auth.BasicAuth{
 				Username: config.Username,

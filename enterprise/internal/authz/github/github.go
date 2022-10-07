@@ -57,7 +57,7 @@ func NewProvider(urn string, opts ProviderOptions) *Provider {
 	if opts.GitHubClient == nil {
 		apiURL, _ := github.APIRoot(opts.GitHubURL)
 		opts.GitHubClient = github.NewV3Client(log.Scoped("provider.github.v3", "provider github client"),
-			urn, apiURL, &auth.OAuthBearerToken{Token: opts.BaseToken}, nil)
+			urn, apiURL, &auth.PersonalAccessToken{Token: opts.BaseToken}, nil)
 	}
 
 	codeHost := extsvc.NewCodeHost(opts.GitHubURL, extsvc.TypeGitHub)
@@ -349,7 +349,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 	}
 
 	oauthToken := &auth.OAuthBearerToken{
-		Token:        tok.AccessToken,
+		AccessToken:  tok.AccessToken,
 		RefreshToken: tok.RefreshToken,
 		Expiry:       tok.Expiry,
 	}
@@ -366,7 +366,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 // FetchUserPermsByToken is the same as FetchUserPerms, but it only requires a
 // token.
 func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
-	return p.fetchUserPermsByToken(ctx, "", &auth.OAuthBearerToken{Token: token}, opts)
+	return p.fetchUserPermsByToken(ctx, "", &auth.OAuthBearerToken{AccessToken: token}, opts)
 }
 
 // FetchRepoPerms returns a list of user IDs (on code host) who have read access to

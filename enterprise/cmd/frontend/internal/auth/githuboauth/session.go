@@ -54,7 +54,11 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		return nil, fmt.Sprintf("Error normalizing the username %q. See https://docs.sourcegraph.com/admin/auth/#username-normalization.", login), err
 	}
 
-	ghClient := s.newClient(token.AccessToken)
+	oauthToken := &esauth.OAuthBearerToken{
+		AccessToken: token.AccessToken,
+		// Token is possibly not saved yet, so we don't care about a refresh function
+	}
+	ghClient := s.newClient(oauthToken)
 
 	// 🚨 SECURITY: Ensure that the user email is verified
 	verifiedEmails := getVerifiedEmails(ctx, ghClient)
@@ -289,10 +293,10 @@ func derefInt64(i *int64) int64 {
 	return *i
 }
 
-func (s *sessionIssuerHelper) newClient(token string) *githubsvc.V3Client {
+func (s *sessionIssuerHelper) newClient(auther esauth.Authenticator) *githubsvc.V3Client {
 	apiURL, _ := githubsvc.APIRoot(s.BaseURL)
 	return githubsvc.NewV3Client(log.Scoped("session.github.v3", "github v3 client for session issuer"),
-		extsvc.URNGitHubOAuth, apiURL, &esauth.OAuthBearerToken{Token: token}, nil)
+		extsvc.URNGitHubOAuth, apiURL, auther, nil)
 }
 
 // getVerifiedEmails returns the list of user emails that are verified. If the primary email is verified,

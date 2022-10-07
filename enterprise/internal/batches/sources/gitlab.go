@@ -64,12 +64,7 @@ func newGitLabSource(urn string, c *schema.GitLabConnection, cf *httpcli.Factory
 	// Don't modify passed-in parameter.
 	var authr auth.Authenticator
 	if c.Token != "" {
-		switch c.TokenType {
-		case "oauth":
-			authr = &auth.OAuthBearerToken{Token: c.Token}
-		default:
-			authr = &gitlab.SudoableToken{Token: c.Token}
-		}
+		authr = &gitlab.SudoableToken{PersonalAccessToken: auth.PersonalAccessToken{Token: c.Token}}
 	}
 
 	provider := gitlab.NewClientProvider(urn, baseURL, cli)
@@ -85,8 +80,8 @@ func (s GitLabSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfi
 
 func (s GitLabSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
 	switch a.(type) {
-	case *auth.OAuthBearerToken,
-		*auth.OAuthBearerTokenWithSSH:
+	case *auth.PersonalAccessToken,
+		*auth.PersonalAccessTokenWithSSH:
 		break
 
 	default:

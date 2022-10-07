@@ -96,8 +96,8 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 			ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
 			ExternalServiceID:   githubRepo.ExternalRepo.ServiceID,
 		},
-			&auth.OAuthBearerTokenWithSSH{
-				OAuthBearerToken: auth.OAuthBearerToken{Token: token},
+			&auth.PersonalAccessTokenWithSSH{
+				PersonalAccessToken: auth.PersonalAccessToken{Token: token},
 			},
 		); err != nil {
 			t.Fatal(err)

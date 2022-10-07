@@ -121,7 +121,7 @@ func (p *ClientProvider) GetPATClient(personalAccessToken, sudo string) *Client 
 	if personalAccessToken == "" {
 		return p.getClient(nil)
 	}
-	return p.getClient(&SudoableToken{Token: personalAccessToken, Sudo: sudo})
+	return p.getClient(&SudoableToken{PersonalAccessToken: auth.PersonalAccessToken{Token: personalAccessToken}, Sudo: sudo})
 }
 
 // GetOAuthClient returns a client authenticated by the OAuth token.
@@ -129,7 +129,7 @@ func (p *ClientProvider) GetOAuthClient(oauthToken string) *Client {
 	if oauthToken == "" {
 		return p.getClient(nil)
 	}
-	return p.getClient(&auth.OAuthBearerToken{Token: oauthToken})
+	return p.getClient(&auth.OAuthBearerToken{AccessToken: oauthToken})
 }
 
 // GetClient returns an unauthenticated client.

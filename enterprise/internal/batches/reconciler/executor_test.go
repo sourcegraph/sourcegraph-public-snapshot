@@ -606,7 +606,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				Err:                     tc.sourcerErr,
 				ChangesetExists:         tc.alreadyExists,
 				IsArchivedPushErrorTrue: tc.isRepoArchived,
-				CurrentAuthenticator:    &auth.OAuthBearerTokenWithSSH{OAuthBearerToken: auth.OAuthBearerToken{Token: "token"}},
+				CurrentAuthenticator:    &auth.PersonalAccessTokenWithSSH{PersonalAccessToken: auth.PersonalAccessToken{Token: "token"}},
 			}
 
 			if tc.sourcerMetadata != nil {
@@ -900,7 +900,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			user:       user,
 			extSvc:     gitHubExtSvc,
 			repo:       gitHubRepo,
-			credential: &auth.OAuthBearerToken{Token: "my-secret-github-token"},
+			credential: &auth.PersonalAccessToken{Token: "my-secret-github-token"},
 			wantPushConfig: &gitprotocol.PushConfig{
 				RemoteURL: "https://my-secret-github-token@github.com/sourcegraph/" + string(gitHubRepo.Name),
 			},
@@ -924,7 +924,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			user:       user,
 			extSvc:     gitLabExtSvc,
 			repo:       gitLabRepo,
-			credential: &auth.OAuthBearerToken{Token: "my-secret-gitlab-token"},
+			credential: &auth.PersonalAccessToken{Token: "my-secret-gitlab-token"},
 			wantPushConfig: &gitprotocol.PushConfig{
 				RemoteURL: "https://git:my-secret-gitlab-token@gitlab.com/sourcegraph/" + string(gitLabRepo.Name),
 			},
@@ -986,11 +986,11 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			user:   admin,
 			extSvc: bbsSSHExtsvc,
 			repo:   bbsSSHRepo,
-			credential: &auth.OAuthBearerTokenWithSSH{
-				OAuthBearerToken: auth.OAuthBearerToken{Token: "test"},
-				PrivateKey:       "private key",
-				PublicKey:        "public key",
-				Passphrase:       "passphrase",
+			credential: &auth.PersonalAccessTokenWithSSH{
+				PersonalAccessToken: auth.PersonalAccessToken{Token: "test"},
+				PrivateKey:          "private key",
+				PublicKey:           "public key",
+				Passphrase:          "passphrase",
 			},
 			wantPushConfig: &gitprotocol.PushConfig{
 				RemoteURL:  "ssh://git@bitbucket.sgdev.org:7999/" + string(bbsSSHRepo.Name),
@@ -1003,7 +1003,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			user:       admin,
 			extSvc:     bbsSSHExtsvc,
 			repo:       bbsSSHRepo,
-			credential: &auth.OAuthBearerToken{Token: "test"},
+			credential: &auth.PersonalAccessToken{Token: "test"},
 			wantErr:    true,
 		},
 	}

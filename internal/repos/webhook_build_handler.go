@@ -65,7 +65,7 @@ func (w *webhookBuildHandler) handleKindGitHub(ctx context.Context, logger log.L
 	if err != nil {
 		return errcode.MakeNonRetryable(errors.Wrap(err, "handleKindGitHub: parse baseURL failed"))
 	}
-	client := github.NewV3Client(logger, svc.URN(), baseURL, &auth.OAuthBearerToken{Token: conn.Token}, w.doer)
+	client := github.NewV3Client(logger, svc.URN(), baseURL, &auth.PersonalAccessToken{Token: conn.Token}, w.doer)
 
 	// TODO: Not make an API call upon every request. We would need a way to save
 	// whether or not we created a hook locally

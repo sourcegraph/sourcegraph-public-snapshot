@@ -96,6 +96,8 @@ func TestBitbucketCloudSource_WithAuthenticator(t *testing.T) {
 			&auth.OAuthBearerToken{},
 			&auth.OAuthBearerTokenWithSSH{},
 			&auth.OAuthClient{},
+			&auth.PersonalAccessToken{},
+			&auth.PersonalAccessTokenWithSSH{},
 		} {
 			t.Run(fmt.Sprintf("%T", au), func(t *testing.T) {
 				newSource, err := s.WithAuthenticator(au)

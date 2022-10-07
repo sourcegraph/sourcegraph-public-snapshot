@@ -183,12 +183,12 @@ func GitserverPushConfig(repo *types.Repo, au auth.Authenticator) (*protocol.Pus
 
 	extSvcType := repo.ExternalRepo.ServiceType
 	switch av := au.(type) {
-	case *auth.OAuthBearerTokenWithSSH:
-		if err := setOAuthTokenAuth(cloneURL, extSvcType, av.Token); err != nil {
+	case *auth.PersonalAccessTokenWithSSH:
+		if err := setTokenAuth(cloneURL, extSvcType, av.Token); err != nil {
 			return nil, err
 		}
-	case *auth.OAuthBearerToken:
-		if err := setOAuthTokenAuth(cloneURL, extSvcType, av.Token); err != nil {
+	case *auth.PersonalAccessToken:
+		if err := setTokenAuth(cloneURL, extSvcType, av.Token); err != nil {
 			return nil, err
 		}
 
@@ -351,9 +351,9 @@ func loadSiteCredential(ctx context.Context, s SourcerStore, opts store.GetSiteC
 	return nil, nil
 }
 
-// setOAuthTokenAuth sets the user part of the given URL to use the provided OAuth token,
+// setTokenAuth sets the user part of the given URL to use the provided OAuth token,
 // with the specific quirks per code host.
-func setOAuthTokenAuth(u *vcs.URL, extSvcType, token string) error {
+func setTokenAuth(u *vcs.URL, extSvcType, token string) error {
 	switch extSvcType {
 	case extsvc.TypeGitHub:
 		u.User = url.User(token)
@@ -365,7 +365,7 @@ func setOAuthTokenAuth(u *vcs.URL, extSvcType, token string) error {
 		return errors.New("require username/token to push commits to BitbucketServer")
 
 	default:
-		panic(fmt.Sprintf("setOAuthTokenAuth: invalid external service type %q", extSvcType))
+		panic(fmt.Sprintf("setTokenAuth: invalid external service type %q", extSvcType))
 	}
 	return nil
 }

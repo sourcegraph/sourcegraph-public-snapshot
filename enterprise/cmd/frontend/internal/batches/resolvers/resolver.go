@@ -1171,11 +1171,11 @@ func (r *Resolver) generateAuthenticatorForCredential(ctx context.Context, exter
 			Passphrase: keypair.Passphrase,
 		}
 	} else {
-		a = &auth.OAuthBearerTokenWithSSH{
-			OAuthBearerToken: auth.OAuthBearerToken{Token: credential},
-			PrivateKey:       keypair.PrivateKey,
-			PublicKey:        keypair.PublicKey,
-			Passphrase:       keypair.Passphrase,
+		a = &auth.PersonalAccessTokenWithSSH{
+			PersonalAccessToken: auth.PersonalAccessToken{Token: credential},
+			PrivateKey:          keypair.PrivateKey,
+			PublicKey:           keypair.PublicKey,
+			Passphrase:          keypair.Passphrase,
 		}
 	}
 

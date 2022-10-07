@@ -3,11 +3,13 @@ package gitlab
 import (
 	"net/http"
 	"testing"
+
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 )
 
 func TestSudoableToken(t *testing.T) {
 	t.Run("Authenticate without Sudo", func(t *testing.T) {
-		token := SudoableToken{Token: "abcdef"}
+		token := SudoableToken{PersonalAccessToken: auth.PersonalAccessToken{Token: "abcdef"}}
 
 		req, err := http.NewRequest("GET", "/", nil)
 		if err != nil {
@@ -27,7 +29,7 @@ func TestSudoableToken(t *testing.T) {
 	})
 
 	t.Run("Authenticate with Sudo", func(t *testing.T) {
-		token := SudoableToken{Token: "abcdef", Sudo: "neo"}
+		token := SudoableToken{PersonalAccessToken: auth.PersonalAccessToken{Token: "abcdef"}, Sudo: "neo"}
 
 		req, err := http.NewRequest("GET", "/", nil)
 		if err != nil {
@@ -48,10 +50,10 @@ func TestSudoableToken(t *testing.T) {
 
 	t.Run("Hash", func(t *testing.T) {
 		hashes := []string{
-			(&SudoableToken{Token: ""}).Hash(),
-			(&SudoableToken{Token: "foobar"}).Hash(),
-			(&SudoableToken{Token: "foobar", Sudo: "neo"}).Hash(),
-			(&SudoableToken{Token: "foobar\x00"}).Hash(),
+			(&SudoableToken{PersonalAccessToken: auth.PersonalAccessToken{Token: ""}}).Hash(),
+			(&SudoableToken{PersonalAccessToken: auth.PersonalAccessToken{Token: "foobar"}}).Hash(),
+			(&SudoableToken{PersonalAccessToken: auth.PersonalAccessToken{Token: "foobar"}, Sudo: "neo"}).Hash(),
+			(&SudoableToken{PersonalAccessToken: auth.PersonalAccessToken{Token: "foobar\x00"}}).Hash(),
 		}
 
 		seen := make(map[string]struct{})
