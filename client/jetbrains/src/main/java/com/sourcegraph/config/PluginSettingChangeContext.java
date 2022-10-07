@@ -16,17 +16,17 @@ public class PluginSettingChangeContext {
     public final String newAccessToken;
 
     @Nullable
-    public final String newRequestHeaders;
+    public final String newCustomRequestHeaders;
 
     public PluginSettingChangeContext(@Nullable String oldUrl,
                                       @Nullable String oldAccessToken,
                                       @Nullable String newUrl,
                                       @Nullable String newAccessToken,
-                                      @Nullable String newRequestHeaders) {
+                                      @Nullable String newCustomRequestHeaders) {
         this.oldUrl = oldUrl;
         this.oldAccessToken = oldAccessToken;
         this.newUrl = newUrl;
         this.newAccessToken = newAccessToken;
-        this.newRequestHeaders = newRequestHeaders;
+        this.newCustomRequestHeaders = newCustomRequestHeaders;
     }
 }

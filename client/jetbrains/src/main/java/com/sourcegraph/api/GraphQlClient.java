@@ -22,8 +22,8 @@ import java.nio.charset.StandardCharsets;
 
 public class GraphQlClient {
     @NotNull
-    public static GraphQlResponse callGraphQLService(@NotNull String instanceUrl, @Nullable String accessToken, @Nullable String requestHeaders, @NotNull String query, @NotNull JsonObject variables) throws IOException {
-        HttpPost request = createRequest(instanceUrl, accessToken, requestHeaders, query, variables);
+    public static GraphQlResponse callGraphQLService(@NotNull String instanceUrl, @Nullable String accessToken, @Nullable String customRequestHeaders, @NotNull String query, @NotNull JsonObject variables) throws IOException {
+        HttpPost request = createRequest(instanceUrl, accessToken, customRequestHeaders, query, variables);
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             CloseableHttpResponse httpResponse = client.execute(request);
             GraphQlResponse response = new GraphQlResponse(getStatusCode(httpResponse), getResponseBody(httpResponse));
@@ -43,8 +43,8 @@ public class GraphQlClient {
     }
 
     @NotNull
-    private static HttpPost createRequest(@NotNull String instanceUrl, @Nullable String accessToken, @Nullable String requestHeadersAsString, @NotNull String query, @NotNull JsonObject variables) {
-        String[] pairs = requestHeadersAsString != null ? requestHeadersAsString.split(",") : new String[0];
+    private static HttpPost createRequest(@NotNull String instanceUrl, @Nullable String accessToken, @Nullable String customRequestHeadersAsString, @NotNull String query, @NotNull JsonObject variables) {
+        String[] pairs = customRequestHeadersAsString != null ? customRequestHeadersAsString.split(",") : new String[0];
         HttpPost request = new HttpPost(getGraphQLApiURI(instanceUrl));
 
         request.setHeader("Content-Type", "application/json");

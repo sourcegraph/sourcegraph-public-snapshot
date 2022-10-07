@@ -20,7 +20,7 @@ export interface Theme {
 export interface PluginConfig {
     instanceURL: string
     accessToken: string | null
-    requestHeadersAsString: string | null
+    customRequestHeadersAsString: string | null
     isGlobbingEnabled: boolean
     pluginVersion: string
     anonymousUserId: string

@@ -55,11 +55,10 @@ function handleRequest(
                 JSON.stringify({
                     instanceURL,
                     accessToken,
-                    requestHeadersAsString: 'Client-ID,55,Test,a999999',
+                    customRequestHeadersAsString: 'Client-ID,55,Test,a999999',
                     isGlobbingEnabled: true,
                     pluginVersion: '1.2.3',
                     anonymousUserId: 'test',
-                    pluginVersion: '1.2.3',
                 })
             )
             break

@@ -35,7 +35,7 @@ public class SettingsComponent {
     private JBTextField accessTokenTextField;
     private JBLabel userDocsLinkComment;
     private JBLabel accessTokenLinkComment;
-    private JBTextField requestHeadersTextField;
+    private JBTextField customRequestHeadersTextField;
     private JBTextField defaultBranchNameTextField;
     private JBTextField remoteUrlReplacementsTextField;
     private JBCheckBox globbingCheckBox;
@@ -140,23 +140,23 @@ public class SettingsComponent {
             .getPanel();
 
         // Create the "Request headers" text box
-        JBLabel requestHeadersLabel = new JBLabel("Request headers:");
-        requestHeadersTextField = new JBTextField();
-        requestHeadersTextField.getEmptyText().setText("Client-ID, client-one, X-Extra, some metadata");
-        requestHeadersTextField.setToolTipText("You can even overwrite \"Authorization\" that Access token sets above.");
-        addValidation(requestHeadersTextField, () -> {
-            if (requestHeadersTextField.getText().length() == 0) {
+        JBLabel customRequestHeadersLabel = new JBLabel("Custom request headers:");
+        customRequestHeadersTextField = new JBTextField();
+        customRequestHeadersTextField.getEmptyText().setText("Client-ID, client-one, X-Extra, some metadata");
+        customRequestHeadersTextField.setToolTipText("You can even overwrite \"Authorization\" that Access token sets above.");
+        addValidation(customRequestHeadersTextField, () -> {
+            if (customRequestHeadersTextField.getText().length() == 0) {
                 return null;
             }
-            String[] pairs = requestHeadersTextField.getText().split(",");
+            String[] pairs = customRequestHeadersTextField.getText().split(",");
             if (pairs.length % 2 != 0) {
-                return new ValidationInfo("Must be a comma-separated list of pairs", requestHeadersTextField);
+                return new ValidationInfo("Must be a comma-separated list of pairs", customRequestHeadersTextField);
             }
 
             for (int i = 0; i < pairs.length; i += 2) {
                 String headerName = pairs[i].trim();
                 if (!headerName.matches("[\\w-]+")) {
-                    return new ValidationInfo("Invalid HTTP header name: " + headerName, requestHeadersTextField);
+                    return new ValidationInfo("Invalid HTTP header name: " + headerName, customRequestHeadersTextField);
                 }
             }
             return null;
@@ -166,7 +166,7 @@ public class SettingsComponent {
         JPanel userAuthenticationPanel = FormBuilder.createFormBuilder()
             .addComponent(dotComPanel)
             .addComponent(enterprisePanel, 5)
-            .addLabeledComponent(requestHeadersLabel, requestHeadersTextField)
+            .addLabeledComponent(customRequestHeadersLabel, customRequestHeadersTextField)
             .addTooltip("Any custom headers to send with every request to Sourcegraph.")
             .addTooltip("Use any number of pairs: \"header1, value1, header2, value2, ...\".")
             .addTooltip("Whitespace around commas doesn't matter.")
@@ -197,12 +197,12 @@ public class SettingsComponent {
     }
 
     @NotNull
-    public String getRequestHeaders() {
-        return requestHeadersTextField.getText();
+    public String getCustomRequestHeaders() {
+        return customRequestHeadersTextField.getText();
     }
 
-    public void setRequestHeaders(@NotNull String requestHeaders) {
-        this.requestHeadersTextField.setText(requestHeaders);
+    public void setCustomRequestHeaders(@NotNull String customRequestHeaders) {
+        this.customRequestHeadersTextField.setText(customRequestHeaders);
     }
 
     @NotNull

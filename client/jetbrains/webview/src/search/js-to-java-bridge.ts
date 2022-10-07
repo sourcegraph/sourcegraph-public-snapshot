@@ -110,10 +110,10 @@ export async function getConfigAlwaysFulfill(): Promise<PluginConfig> {
         return {
             instanceURL: 'https://sourcegraph.com/',
             accessToken: null,
+            customRequestHeadersAsString: null,
             isGlobbingEnabled: false,
             pluginVersion: '0.0.0',
             anonymousUserId: 'no-user-id',
-            pluginVersion: '0.0.0',
         }
     }
 }
