@@ -1,4 +1,4 @@
-# `src lsif upload`
+# `src code-intel upload`
 
 
 ## Flags
@@ -27,7 +27,7 @@
 ## Usage
 
 ```
-Usage of 'src lsif upload':
+Usage of 'src code-intel upload':
   -associated-index-id int
     	ID of the associated index record for this upload. For internal use only. (default -1)
   -commit string

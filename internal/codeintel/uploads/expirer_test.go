@@ -35,7 +35,7 @@ func TestUploadExpirer(t *testing.T) {
 		clock:             clock,
 	}
 
-	if err := uploadExpirer.handleUploadExpirer(context.Background(), expirerConfig{
+	if err := uploadExpirer.handleExpiredUploadsBatch(context.Background(), expirerConfig{
 		repositoryProcessDelay: 24 * time.Hour,
 		repositoryBatchSize:    100,
 		uploadProcessDelay:     24 * time.Hour,

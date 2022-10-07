@@ -2,10 +2,24 @@ package uploads
 
 import (
 	"context"
+	"fmt"
 	"time"
 
+	"github.com/opentracing/opentracing-go/log"
+	otlog "github.com/opentracing/opentracing-go/log"
+
+	gitserverOptions "github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+func (s *Service) NewCommitGraphUpdater(interval time.Duration, maxAgeForNonStaleBranches time.Duration, maxAgeForNonStaleTags time.Duration) goroutine.BackgroundRoutine {
+	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
+		return s.updateAllDirtyCommitGraphs(ctx, maxAgeForNonStaleBranches, maxAgeForNonStaleTags)
+	}))
+}
 
 // Handle periodically re-calculates the commit and upload visibility graph for repositories
 // that are marked as dirty by the worker process. This is done out-of-band from the rest of
@@ -13,8 +27,141 @@ import (
 // for the same repository and should not repeat the work since the last calculation performed
 // will always be the one we want.
 
-func (s *Service) NewUpdater(interval time.Duration, maxAgeForNonStaleBranches time.Duration, maxAgeForNonStaleTags time.Duration) goroutine.BackgroundRoutine {
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
-		return s.UpdateDirtyRepositories(ctx, maxAgeForNonStaleBranches, maxAgeForNonStaleTags)
-	}))
+func (s *Service) updateAllDirtyCommitGraphs(ctx context.Context, maxAgeForNonStaleBranches time.Duration, maxAgeForNonStaleTags time.Duration) (err error) {
+	ctx, _, endObservation := s.operations.updateDirtyRepositories.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{
+			log.Int("maxAgeForNonStaleBranches in ms", int(maxAgeForNonStaleBranches.Milliseconds())),
+			log.Int("maxAgeForNonStaleTags in ms", int(maxAgeForNonStaleTags.Milliseconds())),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
+	repositoryIDs, err := s.GetDirtyRepositories(ctx)
+	if err != nil {
+		return errors.Wrap(err, "uploadSvc.DirtyRepositories")
+	}
+
+	var updateErr error
+	for repositoryID, dirtyFlag := range repositoryIDs {
+		if err := s.lockAndUpdateUploadsVisibleToCommits(ctx, repositoryID, dirtyFlag, maxAgeForNonStaleBranches, maxAgeForNonStaleTags); err != nil {
+			if updateErr == nil {
+				updateErr = err
+			} else {
+				updateErr = errors.Append(updateErr, err)
+			}
+		}
+	}
+
+	return updateErr
+}
+
+func (s *Service) GetDirtyRepositories(ctx context.Context) (_ map[int]int, err error) {
+	ctx, _, endObservation := s.operations.getDirtyRepositories.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.GetDirtyRepositories(ctx)
+}
+
+// lockAndUpdateUploadsVisibleToCommits will call UpdateUploadsVisibleToCommits while holding an advisory lock to give exclusive access to the
+// update procedure for this repository. If the lock is already held, this method will simply do nothing.
+func (s *Service) lockAndUpdateUploadsVisibleToCommits(ctx context.Context, repositoryID, dirtyToken int, maxAgeForNonStaleBranches time.Duration, maxAgeForNonStaleTags time.Duration) (err error) {
+	ctx, trace, endObservation := s.operations.updateUploadsVisibleToCommits.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{
+			log.Int("repositoryID", repositoryID),
+			log.Int("dirtyToken", dirtyToken),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
+	ok, unlock, err := s.locker.Lock(ctx, int32(repositoryID), false)
+	if err != nil || !ok {
+		return errors.Wrap(err, "locker.Lock")
+	}
+	defer func() {
+		err = unlock(err)
+	}()
+
+	// The following process pulls the commit graph for the given repository from gitserver, pulls the set of LSIF
+	// upload objects for the given repository from Postgres, and correlates them into a visibility
+	// graph. This graph is then upserted back into Postgres for use by find closest dumps queries.
+	//
+	// The user should supply a dirty token that is associated with the given repository so that
+	// the repository can be unmarked as long as the repository is not marked as dirty again before
+	// the update completes.
+
+	// Construct a view of the git graph that we will later decorate with upload information.
+	commitGraph, err := s.getCommitGraph(ctx, repositoryID)
+	if err != nil {
+		return err
+	}
+	trace.Log(log.Int("numCommitGraphKeys", len(commitGraph.Order())))
+
+	refDescriptions, err := s.gitserverClient.RefDescriptions(ctx, repositoryID)
+	if err != nil {
+		return errors.Wrap(err, "gitserver.RefDescriptions")
+	}
+	trace.Log(log.Int("numRefDescriptions", len(refDescriptions)))
+
+	// Decorate the commit graph with the set of processed uploads are visible from each commit,
+	// then bulk update the denormalized view in Postgres. We call this with an empty graph as well
+	// so that we end up clearing the stale data and bulk inserting nothing.
+	if err := s.UpdateUploadsVisibleToCommits(ctx, repositoryID, commitGraph, refDescriptions, maxAgeForNonStaleBranches, maxAgeForNonStaleTags, dirtyToken, time.Time{}); err != nil {
+		return errors.Wrap(err, "uploadSvc.UpdateUploadsVisibleToCommits")
+	}
+
+	return nil
+}
+
+// getCommitGraph builds a partial commit graph that includes the most recent commits on each branch
+// extending back as as the date of the oldest commit for which we have a processed upload for this
+// repository.
+//
+// This optimization is necessary as decorating the commit graph is an operation that scales with
+// the size of both the git graph and the number of uploads (multiplicatively). For repositories with
+// a very large number of commits or distinct roots (most monorepos) this is a necessary optimization.
+//
+// The number of commits pulled back here should not grow over time unless the repo is growing at an
+// accelerating rate, as we routinely expire old information for active repositories in a janitor
+// process.
+func (s *Service) getCommitGraph(ctx context.Context, repositoryID int) (*gitdomain.CommitGraph, error) {
+	commitDate, ok, err := s.GetOldestCommitDate(ctx, repositoryID)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		// No uploads exist for this repository
+		return gitdomain.ParseCommitGraph(nil), nil
+	}
+
+	// The --since flag for git log is exclusive, but we want to include the commit where the
+	// oldest dump is defined. This flag only has second resolution, so we shouldn't be pulling
+	// back any more data than we wanted.
+	commitDate = commitDate.Add(-time.Second)
+
+	commitGraph, err := s.gitserverClient.CommitGraph(ctx, repositoryID, gitserverOptions.CommitGraphOptions{
+		AllRefs: true,
+		Since:   &commitDate,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "gitserver.CommitGraph")
+	}
+
+	return commitGraph, nil
+}
+
+func (s *Service) UpdateUploadsVisibleToCommits(ctx context.Context, repositoryID int, graph *gitdomain.CommitGraph, refDescriptions map[string][]gitdomain.RefDescription, maxAgeForNonStaleBranches, maxAgeForNonStaleTags time.Duration, dirtyToken int, now time.Time) (err error) {
+	ctx, _, endObservation := s.operations.updateUploadsVisibleToCommits.With(ctx, &err, observation.Args{
+		LogFields: []otlog.Field{
+			otlog.Int("repositoryID", repositoryID),
+			otlog.String("graph", fmt.Sprintf("%v", graph)),
+			otlog.String("refDescriptions", fmt.Sprintf("%v", refDescriptions)),
+			otlog.String("maxAgeForNonStaleBranches", maxAgeForNonStaleBranches.String()),
+			otlog.String("maxAgeForNonStaleTags", maxAgeForNonStaleTags.String()),
+			otlog.Int("dirtyToken", dirtyToken),
+			otlog.String("now", now.String()),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.UpdateUploadsVisibleToCommits(ctx, repositoryID, graph, refDescriptions, maxAgeForNonStaleBranches, maxAgeForNonStaleTags, dirtyToken, now)
 }

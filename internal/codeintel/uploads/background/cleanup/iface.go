@@ -16,5 +16,6 @@ type UploadService interface {
 		commitResolverBatchSize int,
 		commitResolverMaximumCommitLag time.Duration,
 	) goroutine.BackgroundRoutine
+
 	NewUploadResetter(interval time.Duration) *dbworker.Resetter
 }

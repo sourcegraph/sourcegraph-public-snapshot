@@ -54,7 +54,7 @@ func TestBackfillCommittedAtBatch(t *testing.T) {
 	}
 
 	for i := 0; i < n/pageSize; i++ {
-		if err := svc.BackfillCommittedAtBatch(ctx, pageSize); err != nil {
+		if err := svc.backfillCommittedAtBatch(ctx, pageSize); err != nil {
 			t.Fatalf("unexpected error: %s", err)
 		}
 	}
@@ -131,7 +131,7 @@ func TestBackfillCommittedAtBatchUnknownCommits(t *testing.T) {
 	}
 
 	for i := 0; i < n/pageSize; i++ {
-		if err := svc.BackfillCommittedAtBatch(ctx, pageSize); err != nil {
+		if err := svc.backfillCommittedAtBatch(ctx, pageSize); err != nil {
 			t.Fatalf("unexpected error: %s", err)
 		}
 	}
