@@ -78,7 +78,6 @@ func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID
 `
 	const externalServiceUnrestrictedQuery = `
 (
-	(
     NOT repo.private          -- Happy path of non-private repositories
     OR  EXISTS (              -- Each external service defines if repositories are unrestricted
         SELECT
