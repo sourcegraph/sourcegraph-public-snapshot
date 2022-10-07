@@ -17,12 +17,12 @@ func (adt *AddHeaderTransport) RoundTrip(req *http.Request) (*http.Response, err
 	return adt.T.RoundTrip(req)
 }
 
-func NewAddHeaderTransport(T http.RoundTripper, headers map[string]string) *AddHeaderTransport {
-	if T == nil {
-		T = http.DefaultTransport
+func NewAddHeaderTransport(t http.RoundTripper, headers map[string]string) *AddHeaderTransport {
+	if t == nil {
+		t = http.DefaultTransport
 	}
 	return &AddHeaderTransport{
-		T:                 T,
+		T:                 t,
 		additionalHeaders: headers,
 	}
 }
