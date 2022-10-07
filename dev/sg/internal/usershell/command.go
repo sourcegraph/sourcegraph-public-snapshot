@@ -37,6 +37,15 @@ func wrap(ctx context.Context, cmd string) wrapped {
 	case ShellType(ctx) == FishShell:
 		w.Command = fmt.Sprintf("fish || true; %s", cmd)
 
+	case ShellType(ctx) == BashShell:
+		// Using `source ~/.bashrc || true; <some command>` fails on ubuntu. The environment does not
+		// get sourced and the subsequent command fails because it the enviornment is not as it
+		// expects it to be.
+		// The default shell is expected to be bash, so with bash we utilize the bash cli arg
+		// `--rcfile` which more directly tells bash to execute THIS file aka ~/.bashrc when it
+		// starts up
+		w.ShellFlags = []string{"--rcfile", ShellConfigPath(ctx), "-c"}
+		w.Command = cmd
 	default:
 		// The above interactive shell approach fails on OSX because the default shell configuration
 		// prints sessions restoration informations that will mess with the output. So we fall back
