@@ -61,6 +61,16 @@ func (s *store) InsertIndexes(ctx context.Context, indexes []types.Index) (_ []t
 	}
 	defer func() { err = tx.db.Done(err) }()
 
+	// Delete rows that already exist for this repo,commit,root,indexer
+	tuples := []*sqlf.Query{}
+	for _, index := range indexes {
+		tuples = append(tuples, sqlf.Sprintf("(%s, %s, %s, %s)", index.RepositoryID, index.Commit, index.Root, index.Indexer))
+	}
+	err = tx.db.Exec(ctx, sqlf.Sprintf("DELETE FROM lsif_indexes WHERE (repository_id, commit, root, indexer) IN (%s)", sqlf.Join(tuples, ",")))
+	if err != nil {
+		return nil, err
+	}
+
 	ids, err := basestore.ScanInts(tx.db.Query(ctx, sqlf.Sprintf(insertIndexQuery, sqlf.Join(values, ","))))
 	if err != nil {
 		return nil, err
@@ -157,6 +167,7 @@ SELECT
 	s.rank,
 	u.local_steps,
 	` + indexAssociatedUploadIDQueryFragment + `,
+	u.should_reindex,
 	COUNT(*) OVER() AS count
 FROM lsif_indexes u
 LEFT JOIN (` + indexRankQueryFragment + `) s
@@ -212,6 +223,58 @@ func (s *store) DeleteIndexes(ctx context.Context, opts shared.DeleteIndexesOpti
 const deleteIndexesQuery = `
 DELETE FROM lsif_indexes u
 USING repo
+WHERE u.repository_id = repo.id AND %s
+`
+
+// ReindexIndexes reindexes indexes matching the given filter criteria.
+func (s *store) ReindexIndexes(ctx context.Context, opts shared.ReindexIndexesOptions) (err error) {
+	ctx, _, endObservation := s.operations.reindexIndexes.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", opts.RepositoryID),
+		log.String("state", opts.State),
+		log.String("term", opts.Term),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	var conds []*sqlf.Query
+
+	if opts.RepositoryID != 0 {
+		conds = append(conds, sqlf.Sprintf("u.repository_id = %s", opts.RepositoryID))
+	}
+	if opts.Term != "" {
+		conds = append(conds, makeIndexSearchCondition(opts.Term))
+	}
+	if opts.State != "" {
+		conds = append(conds, makeStateCondition(opts.State))
+	}
+
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
+	if err != nil {
+		return err
+	}
+	conds = append(conds, authzConds)
+
+	tx, err := s.transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.db.Done(err) }()
+
+	unset, _ := tx.db.SetLocal(ctx, "codeintel.lsif_indexes_audit.reason", "direct reindex by filter criteria request")
+	defer unset(ctx)
+
+	err = tx.db.Exec(ctx, sqlf.Sprintf(reindexIndexesQuery, sqlf.Join(conds, " AND ")))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+const reindexIndexesQuery = `
+-- source: internal/codeintel/stores/dbstore/indexes.go:ReindexIndexes
+UPDATE lsif_indexes u
+SET should_reindex = true
+FROM repo
 WHERE u.repository_id = repo.id AND %s
 `
 
@@ -303,7 +366,8 @@ SELECT
 	u.execution_logs,
 	s.rank,
 	u.local_steps,
-	` + indexAssociatedUploadIDQueryFragment + `
+	` + indexAssociatedUploadIDQueryFragment + `,
+	u.should_reindex,
 FROM lsif_indexes u
 LEFT JOIN (` + indexRankQueryFragment + `) s
 ON u.id = s.id
@@ -358,7 +422,8 @@ SELECT
 	u.execution_logs,
 	s.rank,
 	u.local_steps,
-	` + indexAssociatedUploadIDQueryFragment + `
+	` + indexAssociatedUploadIDQueryFragment + `,
+	u.should_reindex
 FROM lsif_indexes u
 LEFT JOIN (` + indexRankQueryFragment + `) s
 ON u.id = s.id
@@ -406,6 +471,29 @@ func (s *store) DeleteIndexByID(ctx context.Context, id int) (_ bool, err error)
 
 const deleteIndexByIDQuery = `
 DELETE FROM lsif_indexes WHERE id = %s RETURNING repository_id
+`
+
+// ReindexIndexByID reindexes an index by its identifier.
+func (s *store) ReindexIndexByID(ctx context.Context, id int) (err error) {
+	ctx, _, endObservation := s.operations.reindexIndexByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("id", id),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	tx, err := s.transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.db.Done(err) }()
+
+	return tx.db.Exec(ctx, sqlf.Sprintf(reindexIndexByIDQuery, id))
+}
+
+const reindexIndexByIDQuery = `
+-- source: internal/codeintel/stores/dbstore/indexes.go:ReindexIndexByID
+UPDATE lsif_indexes u
+SET should_reindex = true
+WHERE id = %s
 `
 
 // DeletedRepositoryGracePeriod is the minimum allowable duration between
@@ -472,16 +560,23 @@ func (s *store) IsQueued(ctx context.Context, repositoryID int, commit string) (
 	}})
 	defer endObservation(1, observation.Args{})
 
-	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(isQueuedQuery, repositoryID, commit, repositoryID, commit)))
-	return count > 0, err
+	isQueued, _, err := basestore.ScanFirstBool(s.db.Query(ctx, sqlf.Sprintf(
+		isQueuedQuery,
+		repositoryID, commit,
+		repositoryID, commit,
+		repositoryID, commit,
+	)))
+	return isQueued, err
 }
 
 const isQueuedQuery = `
-SELECT COUNT(*) WHERE EXISTS (
-	SELECT id FROM lsif_uploads_with_repository_name WHERE repository_id = %s AND commit = %s AND state NOT IN ('deleted', 'deleting')
-	UNION
-	SELECT id FROM lsif_indexes_with_repository_name WHERE repository_id = %s AND commit = %s
-)
+SELECT
+	NOT EXISTS (SELECT id FROM lsif_indexes_with_repository_name WHERE repository_id = %s AND commit = %s AND should_reindex)
+	AND (
+		EXISTS (SELECT id FROM lsif_uploads_with_repository_name WHERE repository_id = %s AND commit = %s AND state NOT IN ('deleted', 'deleting'))
+		OR
+		EXISTS (SELECT id FROM lsif_indexes_with_repository_name WHERE repository_id = %s AND commit = %s AND NOT should_reindex)
+	)
 `
 
 // QueueRepoRev enqueues the given repository and rev to be processed by the auto-indexing scheduler.

@@ -126,6 +126,20 @@ func (s *Service) DeleteIndexes(ctx context.Context, opts shared.DeleteIndexesOp
 	return s.store.DeleteIndexes(ctx, opts)
 }
 
+func (s *Service) ReindexIndexByID(ctx context.Context, id int) (err error) {
+	ctx, _, endObservation := s.operations.reindexIndexByID.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.ReindexIndexByID(ctx, id)
+}
+
+func (s *Service) ReindexIndexes(ctx context.Context, opts shared.ReindexIndexesOptions) (err error) {
+	ctx, _, endObservation := s.operations.reindexIndexes.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.ReindexIndexes(ctx, opts)
+}
+
 func (s *Service) GetStaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []shared.SourcedCommits, err error) {
 	ctx, _, endObservation := s.operations.getStaleSourcedCommits.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
