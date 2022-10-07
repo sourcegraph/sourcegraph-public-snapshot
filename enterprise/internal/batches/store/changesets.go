@@ -1231,6 +1231,27 @@ func (s *Store) GetChangesetsStats(ctx context.Context, batchChangeID int64) (st
 	return stats, nil
 }
 
+const getChangesetStatsFmtstr = `
+-- source: enterprise/internal/batches/store_changesets.go:GetChangesetsStats
+SELECT
+	COUNT(*) AS total,
+	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'RETRYING') AS retrying,
+	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'FAILED') AS failed,
+	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'SCHEDULED') AS scheduled,
+	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'PROCESSING') AS processing,
+	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'UNPUBLISHED') AS unpublished,
+	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'CLOSED') AS closed,
+	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'DRAFT') AS draft,
+	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'MERGED') AS merged,
+	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'OPEN') AS open,
+	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'DELETED') AS deleted,
+	COUNT(*) FILTER (WHERE %s) AS archived
+FROM changesets
+INNER JOIN repo on repo.id = changesets.repo_id
+WHERE
+	%s
+`
+
 // GetRepoChangesetsStats returns statistics on all the changesets associated to the given repo.
 func (s *Store) GetRepoChangesetsStats(ctx context.Context, repoID api.RepoID) (stats *btypes.RepoChangesetsStats, err error) {
 	ctx, _, endObservation := s.operations.getRepoChangesetsStats.With(ctx, &err, observation.Args{LogFields: []log.Field{
@@ -1288,27 +1309,6 @@ func (s *Store) GetGlobalChangesetsStats(ctx context.Context) (stats *btypes.Glo
 	}
 	return stats, nil
 }
-
-const getChangesetStatsFmtstr = `
--- source: enterprise/internal/batches/store_changesets.go:GetChangesetsStats
-SELECT
-	COUNT(*) AS total,
-	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'RETRYING') AS retrying,
-	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'FAILED') AS failed,
-	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'SCHEDULED') AS scheduled,
-	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'PROCESSING') AS processing,
-	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'UNPUBLISHED') AS unpublished,
-	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'CLOSED') AS closed,
-	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'DRAFT') AS draft,
-	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'MERGED') AS merged,
-	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'OPEN') AS open,
-	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'DELETED') AS deleted,
-	COUNT(*) FILTER (WHERE %s) AS archived
-FROM changesets
-INNER JOIN repo on repo.id = changesets.repo_id
-WHERE
-	%s
-`
 
 func (s *Store) EnqueueNextScheduledChangeset(ctx context.Context) (ch *btypes.Changeset, err error) {
 	ctx, _, endObservation := s.operations.enqueueNextScheduledChangeset.With(ctx, &err, observation.Args{})

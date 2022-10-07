@@ -374,7 +374,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			enqueueChangesetsToClose:          op("EnqueueChangesetsToClose"),
 			getChangesetsStats:                op("GetChangesetsStats"),
 			getRepoChangesetsStats:            op("GetRepoChangesetsStats"),
-			getGlobalChangesetsStats:          op("GetRepoChangesetsStats"),
+			getGlobalChangesetsStats:          op("GetGlobalChangesetsStats"),
 			enqueueNextScheduledChangeset:     op("EnqueueNextScheduledChangeset"),
 			getChangesetPlaceInSchedulerQueue: op("GetChangesetPlaceInSchedulerQueue"),
 			cleanDetachedChangesets:           op("CleanDetachedChangesets"),

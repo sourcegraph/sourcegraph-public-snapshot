@@ -293,7 +293,7 @@ export const TimeSavedCalculator: React.FunctionComponent<TimeSavedCalculator> =
         return hoursSaved
     }, [hoursSaved, dateRange])
 
-    const stringMinPerItemSaved = minPerItemSaved.toLocaleString()
+    const stringMinPerItemSaved = minPerItemSaved.toString()
     localStorage.setItem('minPerItemSaved', stringMinPerItemSaved)
 
     return (

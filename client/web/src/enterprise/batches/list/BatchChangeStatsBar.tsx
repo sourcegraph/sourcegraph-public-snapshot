@@ -41,18 +41,18 @@ export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildre
         <div className={styles.statsBar}>
             <div className={styles.leftSide}>
                 <div className="pr-4">
-                    <span className="font-weight-bold">{data?.batchChanges.totalCount}</span>
+                    <span className="font-weight-bold">{data.batchChanges.totalCount}</span>
                     <br />
                     <span>Batch changes</span>
                 </div>
                 <div className="pr-4">
-                    <span className="font-weight-bold">{data?.globalChangesetsStats.merged}</span>
+                    <span className="font-weight-bold">{data.globalChangesetsStats.merged}</span>
                     <br />
                     <span>Merged</span>
                 </div>
                 <div className="pr-4">
                     <span className="font-weight-bold">
-                        {data ? (data?.globalChangesetsStats.merged * numMinPerItemSaved) / 60 : '--'}
+                        {data ? (data.globalChangesetsStats.merged * numMinPerItemSaved) / 60 : '--'}
                     </span>
                     <br />
                     <span>
@@ -66,11 +66,11 @@ export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildre
             <div className={styles.rightSide}>
                 <div className="pr-4 text-center">
                     <ChangesetStatusOpen />
-                    <span className="font-weight-bold">{data?.globalChangesetsStats.open}</span> <span>Open</span>
+                    <span className="font-weight-bold">{data.globalChangesetsStats.open}</span> <span>Open</span>
                 </div>
                 <div className="text-center">
                     <ChangesetStatusClosed />
-                    <span className="font-weight-bold">{data?.globalChangesetsStats.closed}</span> <span>Closed</span>
+                    <span className="font-weight-bold">{data.globalChangesetsStats.closed}</span> <span>Closed</span>
                 </div>
             </div>
         </div>
