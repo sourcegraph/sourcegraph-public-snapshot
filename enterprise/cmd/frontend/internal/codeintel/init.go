@@ -2,7 +2,6 @@ package codeintel
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/prometheus/client_golang/prometheus"
 	logger "github.com/sourcegraph/log"
@@ -68,18 +67,5 @@ func Init(ctx context.Context, db database.DB, config *Config, enterpriseService
 		uploadRootResolver,
 	)
 	enterpriseServices.NewCodeIntelUploadHandler = newUploadHandler(services)
-
 	return nil
-}
-
-func newUploadHandler(services *FrontendServices) func(internal bool) http.Handler {
-	uploadHandler := func(internal bool) http.Handler {
-		if internal {
-			return services.InternalUploadHandler
-		}
-
-		return services.ExternalUploadHandler
-	}
-
-	return uploadHandler
 }

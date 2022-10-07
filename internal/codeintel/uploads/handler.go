@@ -14,6 +14,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
@@ -24,11 +25,36 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+func (s *Service) NewWorker(
+	uploadStore uploadstore.Store,
+	workerConcurrency int,
+	workerBudget int64,
+	workerPollInterval time.Duration,
+	maximumRuntimePerJob time.Duration,
+) *workerutil.Worker {
+	rootContext := actor.WithInternalActor(context.Background())
+
+	handler := s.WorkerutilHandler(
+		uploadStore,
+		workerConcurrency,
+		workerBudget,
+	)
+	return dbworker.NewWorker(rootContext, s.WorkerutilStore(), handler, workerutil.WorkerOptions{
+		Name:                 "precise_code_intel_upload_worker",
+		NumHandlers:          workerConcurrency,
+		Interval:             workerPollInterval,
+		HeartbeatInterval:    time.Second,
+		Metrics:              s.workerMetrics,
+		MaximumRuntimePerJob: maximumRuntimePerJob,
+	})
+}
 
 func (s *Service) WorkerutilStore() dbworkerstore.Store {
 	return s.workerutilStore
