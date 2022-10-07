@@ -205,13 +205,10 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                         />
                     )
                 default:
+                    const exhaustiveCheck: never = result.type
                     // eslint-disable-next-line no-console
-                    console.error(`Unexpected result type, ${result.type}`)
-                    return <Alert className="d-flex m-3" variant="info">
-                        <Text className="m-0">
-                            <strong>Unexpected result type: </strong> <Code>{result.type}</Code>
-                        </Text>
-                    </Alert>
+                    console.error(`Unexpected result type, ${exhaustiveCheck as string}`)
+                    return <></>
             }
         },
         [
