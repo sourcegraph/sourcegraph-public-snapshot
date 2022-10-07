@@ -90,6 +90,38 @@ func TestWebhookCreateEncrypted(t *testing.T) {
 	assert.Equal(t, secret, decryptedSecret)
 }
 
+func TestWebhookCreateNoSecret(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+
+	store := db.Webhooks(et.ByteaTestKey{})
+
+	kind := extsvc.KindGitHub
+	urn := "https://github.com"
+
+	created, err := store.Create(ctx, kind, urn, nil)
+	assert.NoError(t, err)
+
+	// Check that the calculated fields were correctly calculated.
+	assert.NotZero(t, created.ID)
+	_, err = uuid.Parse(created.RandomID)
+	assert.NoError(t, err)
+	assert.Equal(t, kind, created.CodeHostKind)
+	assert.Equal(t, urn, created.CodeHostURN)
+	assert.NotZero(t, created.CreatedAt)
+	assert.NotZero(t, created.UpdatedAt)
+
+	// secret in the DB should be null
+	row := db.QueryRowContext(ctx, "SELECT secret FROM webhooks where id = $1", created.ID)
+	var rawSecret string
+	err = row.Scan(&rawSecret)
+	assert.NoError(t, err)
+	assert.Zero(t, rawSecret)
+}
+
 func TestWebhookCreateWithBadKey(t *testing.T) {
 	t.Parallel()
 

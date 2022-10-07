@@ -3528,7 +3528,7 @@ CREATE TABLE webhooks (
     secret text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    encryption_key_id text DEFAULT ''::text NOT NULL
+    encryption_key_id text
 );
 
 COMMENT ON TABLE webhooks IS 'Webhooks registered in Sourcegraph instance.';

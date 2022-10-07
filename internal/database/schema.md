@@ -3055,7 +3055,7 @@ Foreign-key constraints:
  secret            | text                     |           |          | 
  created_at        | timestamp with time zone |           | not null | now()
  updated_at        | timestamp with time zone |           | not null | now()
- encryption_key_id | text                     |           | not null | ''::text
+ encryption_key_id | text                     |           |          | 
 Indexes:
     "webhooks_pkey" PRIMARY KEY, btree (id)
 

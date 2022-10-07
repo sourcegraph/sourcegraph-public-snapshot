@@ -44,23 +44,24 @@ func WebhooksWith(other basestore.ShareableStore, key encryption.Key) WebhookSto
 //
 // secret is optional since some code hosts do not support signing payloads.
 func (s *webhookStore) Create(ctx context.Context, kind, urn string, secret *types.EncryptableSecret) (*types.Webhook, error) {
-	var encryptedSecret *string
-	var keyID *string
+	var (
+		err             error
+		encryptedSecret string
+		keyID           string
+	)
 
 	if secret != nil {
-		cipher, kID, err := secret.Encrypt(ctx, s.key)
-		if err != nil || (cipher == "" && kID == "") {
+		encryptedSecret, keyID, err = secret.Encrypt(ctx, s.key)
+		if err != nil || (encryptedSecret == "" && keyID == "") {
 			return nil, errors.Wrap(err, "encrypting secret")
 		}
-		encryptedSecret = &cipher
-		keyID = &kID
 	}
 
 	q := sqlf.Sprintf(webhookCreateQueryFmtstr,
 		kind,
 		urn,
-		&dbutil.NullString{S: encryptedSecret},
-		&dbutil.NullString{S: keyID},
+		encryptedSecret,
+		keyID,
 		// Returning
 		sqlf.Join(webhookColumns, ", "),
 	)
