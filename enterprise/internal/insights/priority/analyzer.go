@@ -2,16 +2,13 @@ package priority
 
 import "strings"
 
-// This package works by associating a cost to a search query according to a number of dimensions:
-// - How expensive the search query might be, based on its type
-// - How precise it is
-
-// The query analyzer does not deal with how a search query should be prioritized according to its cost.
+// The query analyzer gives a cost to a search query according to a number of dimensions.
+// It does not deal with how a search query should be prioritized according to its cost.
 
 type QueryAnalyzer struct {
 	QueryObject
 
-	costHandlers []CostHeuristicFunc
+	costHandlers []CostHeuristic
 }
 
 type QueryObject struct {
@@ -19,23 +16,20 @@ type QueryObject struct {
 	// the object can be augmented with repository information, or anything else.
 }
 
-type CostHeuristicFunc struct {
+type CostHeuristic struct {
 	fn     func(QueryObject) int
 	weight int
 }
 
-var DefaultCostHandlers = []CostHeuristicFunc{
-	{queryTypeHeuristic, 10},
+var DefaultCostHandlers = []CostHeuristic{
+	{queryTypeCost, 10},
 }
 
-func NewQueryAnalyzer(object QueryObject, handlers ...CostHeuristicFunc) *QueryAnalyzer {
-	qa := &QueryAnalyzer{
-		QueryObject: object,
+func NewQueryAnalyzer(object QueryObject, handlers []CostHeuristic) *QueryAnalyzer {
+	return &QueryAnalyzer{
+		QueryObject:  object,
+		costHandlers: handlers,
 	}
-	for _, h := range handlers {
-		qa.costHandlers = append(qa.costHandlers, h)
-	}
-	return qa
 }
 
 func (a *QueryAnalyzer) Cost() int {
@@ -46,8 +40,8 @@ func (a *QueryAnalyzer) Cost() int {
 	return totalCost
 }
 
-func queryTypeHeuristic(o QueryObject) int {
-	// simplified
+func queryTypeCost(o QueryObject) int {
+	// todo implement actual functionality
 	if strings.Contains(o.query, "patterntype:structural") {
 		return 100
 	}
