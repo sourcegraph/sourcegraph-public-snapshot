@@ -415,8 +415,10 @@ func TestPermissionLevels(t *testing.T) {
 					var res struct{ Node *apitest.BatchSpec }
 
 					input := map[string]any{"batchSpec": graphqlID}
-					queryBatchSpec := `query($batchSpec: ID!) {
-  node(id: $batchSpec) { ... on BatchSpec { id } }`
+					queryBatchSpec := `
+				  query($batchSpec: ID!) {
+				    node(id: $batchSpec) { ... on BatchSpec { id } }
+				  }`
 
 					actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
 					apitest.MustExec(actorCtx, t, s, input, &res, queryBatchSpec)
