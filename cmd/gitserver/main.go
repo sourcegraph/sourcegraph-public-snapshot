@@ -29,7 +29,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -121,7 +123,14 @@ func main() {
 	db := database.NewDB(logger, sqlDB)
 
 	repoStore := db.Repos()
-	depsSvc := dependencies.GetService(db, nil)
+	services, err := codeintel.GetServices(codeintel.Databases{
+		DB:          db,
+		CodeIntelDB: stores.NoopDB,
+	})
+	if err != nil {
+		logger.Fatal("failed to initialize codeintel services", zap.Error(err))
+	}
+	depsSvc := services.DependenciesService
 	externalServiceStore := db.ExternalServices()
 
 	err = keyring.Init(ctx)

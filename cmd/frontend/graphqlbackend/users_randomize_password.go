@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -55,7 +56,7 @@ func (r *schemaResolver) RandomizeUserPassword(ctx context.Context, args *struct
 		return nil, errors.New("unable to reset password because email sending is not configured")
 	}
 	// 🚨 SECURITY: Only site admins can randomize user passwords.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 

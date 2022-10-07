@@ -34,5 +34,5 @@ func (j *policiesRepositoryMatcherJob) Routines(startupCtx context.Context, logg
 		return nil, err
 	}
 
-	return repomatcher.NewMatchers(services.PoliciesService), nil
+	return repomatcher.NewRepositoryMatcher(services.PoliciesService), nil
 }

@@ -12,16 +12,16 @@ import (
 
 	sglog "github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/global"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	extsvcauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -477,11 +477,6 @@ type createBatchSpecForExecutionOpts struct {
 // transaction, possibly creating ChangesetSpecs if the spec contains
 // importChangesets statements, and finally creating a BatchSpecResolutionJob.
 func (s *Service) createBatchSpecForExecution(ctx context.Context, tx *store.Store, opts createBatchSpecForExecutionOpts) error {
-	// Temporarily prevent mounts for server-side processing.
-	if hasMount(opts.spec) {
-		return errors.New("mounts are not allowed for server-side processing")
-	}
-
 	// The global env is always mocked to be empty for executors, so we just
 	// want to throw a validation error here for now.
 	var errs error
@@ -509,15 +504,6 @@ func (s *Service) createBatchSpecForExecution(ctx context.Context, tx *store.Sto
 		BatchSpecID: opts.spec.ID,
 		InitiatorID: opts.spec.UserID,
 	})
-}
-
-func hasMount(spec *btypes.BatchSpec) bool {
-	for _, step := range spec.Spec.Steps {
-		if len(step.Mount) > 0 {
-			return true
-		}
-	}
-	return false
 }
 
 type ErrBatchSpecResolutionErrored struct {
@@ -922,7 +908,7 @@ func (s *Service) MoveBatchChange(ctx context.Context, opts MoveBatchChangeOpts)
 	}
 
 	// 🚨 SECURITY: Only the Author of the batch change can move it.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), batchChange.CreatorID); err != nil {
+	if err := auth.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), batchChange.CreatorID); err != nil {
 		return nil, err
 	}
 	// Check if current user has access to target namespace if set.
@@ -962,7 +948,7 @@ func (s *Service) CloseBatchChange(ctx context.Context, id int64, closeChangeset
 		return batchChange, nil
 	}
 
-	if err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), batchChange.CreatorID); err != nil {
+	if err := auth.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), batchChange.CreatorID); err != nil {
 		return nil, err
 	}
 
@@ -1004,7 +990,7 @@ func (s *Service) DeleteBatchChange(ctx context.Context, id int64) (err error) {
 		return err
 	}
 
-	if err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), batchChange.CreatorID); err != nil {
+	if err := auth.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), batchChange.CreatorID); err != nil {
 		return err
 	}
 
@@ -1042,7 +1028,7 @@ func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) (err error
 	)
 
 	for _, c := range batchChanges {
-		err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), c.CreatorID)
+		err := auth.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), c.CreatorID)
 		if err != nil {
 			authErr = err
 		} else {
@@ -1093,7 +1079,7 @@ func (s *Service) ReenqueueChangeset(ctx context.Context, id int64) (changeset *
 	)
 
 	for _, c := range attachedBatchChanges {
-		err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), c.CreatorID)
+		err := auth.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), c.CreatorID)
 		if err != nil {
 			authErr = err
 		} else {
@@ -1132,7 +1118,7 @@ func (s *Service) CheckNamespaceAccess(ctx context.Context, namespaceUserID, nam
 // error in that case.
 func (s *Service) CanAdministerInNamespace(ctx context.Context, namespaceUserID, namespaceOrgID int32) (bool, error) {
 	err := s.CheckNamespaceAccess(ctx, namespaceUserID, namespaceOrgID)
-	if err != nil && (err == backend.ErrNotAnOrgMember || errcode.IsUnauthorized(err)) {
+	if err != nil && (err == auth.ErrNotAnOrgMember || errcode.IsUnauthorized(err)) {
 		// These errors indicate that the viewer is valid, but that they simply
 		// don't have access to administer this batch change. We don't want to
 		// propagate that error to the caller.
@@ -1143,9 +1129,9 @@ func (s *Service) CanAdministerInNamespace(ctx context.Context, namespaceUserID,
 
 func (s *Service) checkNamespaceAccessWithDB(ctx context.Context, db database.DB, namespaceUserID, namespaceOrgID int32) (err error) {
 	if namespaceOrgID != 0 {
-		return backend.CheckOrgAccessOrSiteAdmin(ctx, db, namespaceOrgID)
+		return auth.CheckOrgAccessOrSiteAdmin(ctx, db, namespaceOrgID)
 	} else if namespaceUserID != 0 {
-		return backend.CheckSiteAdminOrSameUser(ctx, db, namespaceUserID)
+		return auth.CheckSiteAdminOrSameUser(ctx, db, namespaceUserID)
 	} else {
 		return ErrNoNamespace
 	}
@@ -1171,7 +1157,7 @@ func (s *Service) FetchUsernameForBitbucketServerToken(ctx context.Context, exte
 	defer endObservation(1, observation.Args{})
 
 	// Get a changeset source for the external service and use the given authenticator.
-	css, err := s.sourcer.ForExternalService(ctx, s.store, &auth.OAuthBearerToken{Token: token}, store.GetExternalServiceIDsOpts{
+	css, err := s.sourcer.ForExternalService(ctx, s.store, &extsvcauth.OAuthBearerToken{Token: token}, store.GetExternalServiceIDsOpts{
 		ExternalServiceType: externalServiceType,
 		ExternalServiceID:   externalServiceID,
 	})
@@ -1201,7 +1187,7 @@ var _ usernameSource = &sources.BitbucketServerSource{}
 
 // ValidateAuthenticator creates a ChangesetSource, configures it with the given
 // authenticator and validates it can correctly access the remote server.
-func (s *Service) ValidateAuthenticator(ctx context.Context, externalServiceID, externalServiceType string, a auth.Authenticator) (err error) {
+func (s *Service) ValidateAuthenticator(ctx context.Context, externalServiceID, externalServiceType string, a extsvcauth.Authenticator) (err error) {
 	ctx, _, endObservation := s.operations.validateAuthenticator.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -1244,7 +1230,7 @@ func (s *Service) CreateChangesetJobs(ctx context.Context, batchChangeID int64, 
 	}
 
 	// 🚨 SECURITY: Only the author of the batch change can create jobs.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), batchChange.CreatorID); err != nil {
+	if err := auth.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), batchChange.CreatorID); err != nil {
 		return bulkGroupID, err
 	}
 

@@ -132,7 +132,13 @@ func healthCheckMiddleware(next http.Handler) http.Handler {
 
 // newInternalHTTPHandler creates and returns the HTTP handler for the internal API (accessible to
 // other internal services).
-func newInternalHTTPHandler(schema *graphql.Schema, db database.DB, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler, newComputeStreamHandler enterprise.NewComputeStreamHandler, rateLimitWatcher graphqlbackend.LimitWatcher, healthCheckHandler http.Handler) http.Handler {
+func newInternalHTTPHandler(
+	schema *graphql.Schema,
+	db database.DB,
+	newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler,
+	newComputeStreamHandler enterprise.NewComputeStreamHandler,
+	rateLimitWatcher graphqlbackend.LimitWatcher,
+) http.Handler {
 	internalMux := http.NewServeMux()
 	logger := log.Scoped("internal", "internal http handlers")
 	internalMux.Handle("/.internal/", gziphandler.GzipHandler(
@@ -146,7 +152,6 @@ func newInternalHTTPHandler(schema *graphql.Schema, db database.DB, newCodeIntel
 					newCodeIntelUploadHandler,
 					newComputeStreamHandler,
 					rateLimitWatcher,
-					healthCheckHandler,
 				),
 			),
 		),
