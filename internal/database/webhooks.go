@@ -53,10 +53,8 @@ func (s *webhookStore) Create(ctx context.Context, hook *types.Webhook) (*types.
 		sqlf.Join(webhookColumns, ", "),
 	)
 
-	created := new(types.Webhook)
-	row := s.QueryRow(ctx, q)
-
-	if err := s.scanWebhook(created, row); err != nil {
+	created, err := scanWebhook(s.QueryRow(ctx, q), s.key)
+	if err != nil {
 		return nil, errors.Wrap(err, "scanning webhook")
 	}
 
@@ -109,7 +107,8 @@ func (s *webhookStore) List(ctx context.Context) ([]*types.Webhook, error) {
 	panic("implement this method")
 }
 
-func (s *webhookStore) scanWebhook(hook *types.Webhook, sc dbutil.Scanner) error {
+func scanWebhook(sc dbutil.Scanner, key encryption.Key) (*types.Webhook, error) {
+	var hook types.Webhook
 	var keyID string
 	var rawSecret string
 
@@ -122,10 +121,10 @@ func (s *webhookStore) scanWebhook(hook *types.Webhook, sc dbutil.Scanner) error
 		&hook.UpdatedAt,
 		&keyID,
 	); err != nil {
-		return err
+		return nil, err
 	}
 
-	hook.Secret = types.NewEncryptedSecret(rawSecret, keyID, s.key)
+	hook.Secret = types.NewEncryptedSecret(rawSecret, keyID, key)
 
-	return nil
+	return &hook, nil
 }
