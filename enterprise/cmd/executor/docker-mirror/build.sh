@@ -28,6 +28,9 @@ export PKR_VAR_aws_secret_key=${AWS_EXECUTOR_AMI_SECRET_KEY}
 # https://austincloud.guru/2020/05/14/long-running-packer-builds-failing/
 export PKR_VAR_aws_max_attempts=480
 export PKR_VAR_aws_poll_delay_seconds=5
+
+pushd "$TMR_WORKDIR" 1>/dev/null
+
 export PKR_VAR_aws_regions
 if [ "${EXECUTOR_IS_TAGGED_RELEASE}" = "true" ]; then
   PKR_VAR_aws_regions="$(jq -r '.' <aws_regions.json)"
@@ -35,7 +38,7 @@ else
   PKR_VAR_aws_regions='["us-west-2"]'
 fi
 
-pushd "$TMR_WORKDIR" 1>/dev/null
 packer init docker-mirror.pkr.hcl
 packer build -force docker-mirror.pkr.hcl
+
 popd 1>/dev/null
