@@ -435,7 +435,13 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
             restartToApply = await updateSiteConfiguration(lastConfigurationID, newContents).toPromise<boolean>()
         } catch (error) {
             logger.error(error)
-            this.setState({ saving: false, error })
+            this.setState({
+                saving: false,
+                error: new Error(
+                    'Error while saving site config: ' + error + '\nBackup changes before reloading the page'
+                ),
+            })
+            throw error
         }
 
         const oldContents = lastConfiguration?.effectiveContents || ''
