@@ -19,12 +19,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 )
 
-type RepoIterator interface {
-	NextWithFinish() (api.RepoID, bool, finishFunc)
-}
-
-var _ RepoIterator = &persistentRepoIterator{}
-
 type finishFunc func(ctx context.Context, store *basestore.Store, maybeErr error) error
 
 type persistentRepoIterator struct {
