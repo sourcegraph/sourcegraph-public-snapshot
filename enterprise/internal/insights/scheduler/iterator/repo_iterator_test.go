@@ -22,7 +22,7 @@ func TestIterator(t *testing.T) {
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	store := basestore.NewWithHandle(insightsDB.Handle())
 
-	repos := []int{1, 6, 10, 22, 55}
+	repos := []int32{1, 6, 10, 22, 55}
 
 	itr, err := New(ctx, store, repos)
 	if err != nil {
