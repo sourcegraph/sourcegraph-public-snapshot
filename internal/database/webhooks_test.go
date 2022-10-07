@@ -23,10 +23,7 @@ func TestWebhookCreateUnencrypted(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 
-	tx, err := db.Transact(ctx)
-	assert.NoError(t, err)
-
-	store := tx.Webhooks(nil)
+	store := db.Webhooks(nil)
 
 	hook := &types.Webhook{
 		CodeHostKind: extsvc.KindGitHub,
@@ -46,7 +43,7 @@ func TestWebhookCreateUnencrypted(t *testing.T) {
 	assert.NotZero(t, created.UpdatedAt)
 
 	// getting the secret from the DB as is to verify that it is not encrypted
-	row := tx.QueryRowContext(ctx, "SELECT secret FROM webhooks where id = $1", created.ID)
+	row := db.QueryRowContext(ctx, "SELECT secret FROM webhooks where id = $1", created.ID)
 	var rawSecret string
 	err = row.Scan(&rawSecret)
 	assert.NoError(t, err)
@@ -63,10 +60,7 @@ func TestWebhookCreateEncrypted(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 
-	tx, err := db.Transact(ctx)
-	assert.NoError(t, err)
-
-	store := tx.Webhooks(et.ByteaTestKey{})
+	store := db.Webhooks(et.ByteaTestKey{})
 
 	const secret = "don't tell anyone"
 	hook := &types.Webhook{
@@ -87,7 +81,7 @@ func TestWebhookCreateEncrypted(t *testing.T) {
 	assert.NotZero(t, created.UpdatedAt)
 
 	// getting the secret from the DB as is to verify that it is encrypted
-	row := tx.QueryRowContext(ctx, "SELECT secret FROM webhooks where id = $1", created.ID)
+	row := db.QueryRowContext(ctx, "SELECT secret FROM webhooks where id = $1", created.ID)
 	var rawSecret string
 	err = row.Scan(&rawSecret)
 	assert.NoError(t, err)
@@ -105,17 +99,14 @@ func TestWebhookCreateWithBadKey(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 
-	tx, err := db.Transact(ctx)
-	assert.NoError(t, err)
-
-	store := tx.Webhooks(&et.BadKey{Err: errors.New("some error occurred, sorry")})
+	store := db.Webhooks(&et.BadKey{Err: errors.New("some error occurred, sorry")})
 
 	hook := &types.Webhook{
 		CodeHostKind: extsvc.KindGitHub,
 		CodeHostURN:  "https://github.com",
 		Secret:       types.NewUnencryptedSecret("very secret (not)"),
 	}
-	_, err = store.Create(ctx, hook)
+	_, err := store.Create(ctx, hook)
 	assert.Error(t, err)
 	assert.Equal(t, "encrypting secret: some error occurred, sorry", err.Error())
 }
