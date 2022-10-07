@@ -19,10 +19,7 @@ export function createNoopController(platformContext: PlatformContext): Controll
     }> = new Promise((resolve, reject) => {
         platformContext.settings.subscribe(settingsCascade => {
             ;(async () => {
-                const [injectNewCodeintel, newSettingsGetter] = await Promise.all([
-                    import('../codeintel/api').then(module => module.injectNewCodeintel),
-                    import('../codeintel/legacy-extensions/api').then(module => module.newSettingsGetter),
-                ])
+                const injectNewCodeintel = await import('../codeintel/api').then(module => module.injectNewCodeintel)
 
                 if (!isSettingsValid(settingsCascade)) {
                     throw new Error('Settings are not valid')
@@ -39,7 +36,7 @@ export function createNoopController(platformContext: PlatformContext): Controll
                 const extensionHostAPI = injectNewCodeintel(createExtensionHostAPI(extensionHostState), {
                     requestGraphQL: platformContext.requestGraphQL,
                     telemetryService: platformContext.telemetryService,
-                    settings: newSettingsGetter(platformContext.settings),
+                    settings: key => settingsCascade.final[key],
                 })
                 const remoteExtensionHostAPI = pretendRemote(extensionHostAPI)
                 const exposedToClient = initMainThreadAPI(remoteExtensionHostAPI, platformContext).exposedToClient
