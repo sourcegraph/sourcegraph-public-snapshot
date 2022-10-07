@@ -39,7 +39,8 @@ func TestWebhookCreateUnencrypted(t *testing.T) {
 	// Check that the calculated fields were correctly calculated.
 	id := created.ID
 	assert.NotZero(t, id)
-	_ = uuid.MustParse(id)
+	_, err = uuid.Parse(id)
+	assert.NoError(t, err)
 	assert.Equal(t, hook.CodeHostKind, created.CodeHostKind)
 	assert.Equal(t, hook.CodeHostURN, created.CodeHostURN)
 	assert.NotZero(t, created.CreatedAt)
@@ -80,7 +81,8 @@ func TestWebhookCreateEncrypted(t *testing.T) {
 	// Check that the calculated fields were correctly calculated.
 	id := created.ID
 	assert.NotZero(t, id)
-	_ = uuid.MustParse(id)
+	_, err = uuid.Parse(id)
+	assert.NoError(t, err)
 	assert.Equal(t, hook.CodeHostKind, created.CodeHostKind)
 	assert.Equal(t, hook.CodeHostURN, created.CodeHostURN)
 	assert.NotZero(t, created.CreatedAt)
