@@ -24,58 +24,58 @@ describe('ResultContainer', () => {
     const expandedMatchGroups = {
         matches: [
             {
-                preview: '\t"net/http/httptest"',
-                line: 11,
-                highlightRanges: [{ start: 15, highlightLength: 4 }],
+                content: '\t"net/http/httptest"',
+                startLine: 11,
+                highlightRanges: [{ startLine: 11, startCharacter: 15, endLine: 11, endCharacter: 19 }],
             },
             {
-                preview: '\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {',
-                line: 39,
-                highlightRanges: [{ start: 11, highlightLength: 4 }],
+                content: '\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {',
+                startLine: 39,
+                highlightRanges: [{ startLine: 39, startCharacter: 11, endLine: 39, endCharacter: 15 }],
             },
             {
-                preview: 'func TestTokenRequest(t *testing.T) {',
-                line: 73,
-                highlightRanges: [{ start: 5, highlightLength: 4 }],
+                content: 'func TestTokenRequest(t *testing.T) {',
+                startLine: 73,
+                highlightRanges: [{ startLine: 39, startCharacter: 5, endLine: 39, endCharacter: 9 }],
             },
             {
-                preview: '\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {',
-                line: 117,
-                highlightRanges: [{ start: 11, highlightLength: 4 }],
+                content: '\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {',
+                startLine: 117,
+                highlightRanges: [{ startLine: 117, startCharacter: 11, endLine: 117, endCharacter: 15 }],
             },
             {
-                preview: '\t\tio.WriteString(w, `{"access_token": "foo", "refresh_token": "bar"}`)',
-                line: 134,
-                highlightRanges: [{ start: 8, highlightLength: 4 }],
+                content: '\t\tio.WriteString(w, `{"access_token": "foo", "refresh_token": "bar"}`)',
+                startLine: 134,
+                highlightRanges: [{ startLine: 134, startCharacter: 8, endLine: 124, endCharacter: 12 }],
             },
         ],
         grouped: [
             {
-                matches: [{ line: 11, character: 15, highlightLength: 4 }],
+                matches: [{ startLine: 11, startCharacter: 15, endLine: 11, endCharacter: 19 }],
                 position: { line: 11, character: 15 },
                 startLine: 11,
                 endLine: 12,
             },
             {
-                matches: [{ line: 39, character: 11, highlightLength: 4 }],
+                matches: [{ startLine: 39, startCharacter: 11, endLine: 39, endCharacter: 15 }],
                 position: { line: 39, character: 11 },
                 startLine: 39,
                 endLine: 40,
             },
             {
-                matches: [{ line: 73, character: 5, highlightLength: 4 }],
+                matches: [{ startLine: 73, startCharacter: 5, endLine: 73, endCharacter: 9 }],
                 position: { line: 73, character: 5 },
                 startLine: 73,
                 endLine: 74,
             },
             {
-                matches: [{ line: 117, character: 11, highlightLength: 4 }],
+                matches: [{ startLine: 117, startCharacter: 11, endLine: 117, endCharacter: 15 }],
                 position: { line: 117, character: 11 },
                 startLine: 117,
                 endLine: 118,
             },
             {
-                matches: [{ line: 134, character: 8, highlightLength: 4 }],
+                matches: [{ startLine: 134, startCharacter: 8, endLine: 124, endCharacter: 12 }],
                 position: { line: 134, character: 8 },
                 startLine: 134,
                 endLine: 135,
@@ -86,14 +86,14 @@ describe('ResultContainer', () => {
     const collapsedMatchGroups = {
         matches: [
             {
-                preview: '\t"net/http/httptest"',
-                line: 11,
-                highlightRanges: [{ start: 15, highlightLength: 4 }],
+                content: '\t"net/http/httptest"',
+                startLine: 11,
+                highlightRanges: [{ startLine: 11, startCharacter: 15, endLine: 11, endCharacter: 19 }],
             },
         ],
         grouped: [
             {
-                matches: [{ line: 11, character: 15, highlightLength: 4 }],
+                matches: [{ startLine: 11, startCharacter: 15, endLine: 11, endCharacter: 19 }],
                 position: { line: 11, character: 15 },
                 startLine: 11,
                 endLine: 12,

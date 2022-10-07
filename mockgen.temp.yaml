@@ -103,6 +103,7 @@
     - UserExternalAccountsStore
     - UserPublicRepoStore
     - UserStore
+    - WebhookStore
     - WebhookLogStore
 - filename: internal/gitserver/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/internal/gitserver

@@ -36,32 +36,36 @@
 ## 4.0 Features
 
 ### 🧠 Code intelligence: uplevel your code search
-* Understand usage and search structure with high-level aggregations of search results
-* A faster, simpler search experience
-* Configure precise code navigation for 9 languages (Ruby, Rust, Go, Java, Scala, Kotlin, Python, TypeScript, JavaScript) in a matter of minutes with auto-indexing
-* Your favorite extensions are now available by default
-* Quickly access answers within your codebase with a revamped reference panel
+
+- Understand usage and search structure with high-level aggregations of search results
+- A faster, simpler search experience
+- Configure precise code navigation for 9 languages (Ruby, Rust, Go, Java, Scala, Kotlin, Python, TypeScript, JavaScript) in a matter of minutes with auto-indexing
+- Your favorite extensions are now available by default
+- Quickly access answers within your codebase with a revamped reference panel
 
 <p align="center">
 <img src="https://storage.googleapis.com/sourcegraph-assets/blog/release-post/4.0/New-Search-UI.png" width="75%">
 </p>
 
 ### 🏗️ High-leverage ways to improve your entire codebase
-* Make changes across all of your codebase at enterprise scale with server-side Batch Changes (beta)
-  * Run large-scale or resource-intensive batch changes without clogging your local machine
-  * Run large batch changes quickly by distributing them across an autoscaled pool of compute instances
-  * Get a better debugging experience with the streaming of logs directly into Sourcegraph.
+
+- Make changes across all of your codebase at enterprise scale with server-side Batch Changes (beta)
+  - Run large-scale or resource-intensive batch changes without clogging your local machine
+  - Run large batch changes quickly by distributing them across an autoscaled pool of compute instances
+  - Get a better debugging experience with the streaming of logs directly into Sourcegraph.
 
 ### ☁️ Dedicated Sourcegraph Cloud instances for enterprise
-* Sourcegraph Cloud now offers dedicated, single-tenant instances of Sourcegraph
+
+- Sourcegraph Cloud now offers dedicated, single-tenant instances of Sourcegraph
 
 ### 📈 Advanced admin capabilities
-* Save time upgrading to Sourcegraph 4.0 with multi-version upgrades
-* View usage and measure the value of our platform with new and enhanced in-product analytics
-* Uncover developer time saved using Browser and IDE extensions
-* Easily export traces using OpenTelemetry
-* Quickly see the status on your repository and permissions syncing
-* Measure precise code navigation coverage with an enhanced analytics dashboard
+
+- Save time upgrading to Sourcegraph 4.0 with multi-version upgrades
+- View usage and measure the value of our platform with new and enhanced in-product analytics
+- Uncover developer time saved using Browser and IDE extensions
+- Easily export traces using OpenTelemetry
+- Quickly see the status on your repository and permissions syncing
+- Measure precise code navigation coverage with an enhanced analytics dashboard
 
 <p align="center">
 <img src="https://storage.googleapis.com/sourcegraph-assets/blog/release-post/4.0/Search.png" width="75%">
@@ -71,21 +75,21 @@
 
 ### Recommended
 
-* [Sourcegraph Cloud](https://docs.sourcegraph.com/cloud): create a single-tenant instance managed by Sourcegraph
+- [Sourcegraph Cloud](https://docs.sourcegraph.com/cloud): create a single-tenant instance managed by Sourcegraph
 
 ### Self-hosted
 
-* [AWS](https://docs.sourcegraph.com/admin/deploy/aws-ami)
-* [Azure](https://docs.sourcegraph.com/admin/deploy/docker-compose/azure)
-* [DigitalOcean](https://docs.sourcegraph.com/admin/deploy/docker-compose/digitalocean)
-* [Docker Compose](https://docs.sourcegraph.com/admin/deploy/docker-compose)
-* [Google Cloud (GCP)](https://docs.sourcegraph.com/admin/deploy/docker-compose/google_cloud)
-* [Private Cloud](https://docs.sourcegraph.com/admin/deploy)
-* [Kubernetes (Enterprise-only)](https://docs.sourcegraph.com/admin/deploy/kubernetes)
+- [AWS](https://docs.sourcegraph.com/admin/deploy/aws-ami)
+- [Azure](https://docs.sourcegraph.com/admin/deploy/docker-compose/azure)
+- [DigitalOcean](https://docs.sourcegraph.com/admin/deploy/docker-compose/digitalocean)
+- [Docker Compose](https://docs.sourcegraph.com/admin/deploy/docker-compose)
+- [Google Cloud (GCP)](https://docs.sourcegraph.com/admin/deploy/docker-compose/google_cloud)
+- [Private Cloud](https://docs.sourcegraph.com/admin/deploy)
+- [Kubernetes (Enterprise-only)](https://docs.sourcegraph.com/admin/deploy/kubernetes)
 
 ### Local machine
 
-* [Docker](https://docs.sourcegraph.com/admin/deploy/docker-single-container)
+- [Docker](https://docs.sourcegraph.com/admin/deploy/docker-single-container)
 
 ## Development
 

@@ -26,10 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const (
-	integrationSource = "CODEHOSTINTEGRATION"
-)
-
 type EventLogStore interface {
 	// AggregatedCodeIntelEvents calculates CodeIntelAggregatedEvent for each unique event type related to code intel.
 	AggregatedCodeIntelEvents(ctx context.Context) ([]types.CodeIntelAggregatedEvent, error)
@@ -420,21 +416,6 @@ const (
 	// Monthly is used to get a count of events or unique users within a month.
 	Monthly PeriodType = "monthly"
 )
-
-// intervalByPeriodType is a map of generate_series step values by period type.
-var intervalByPeriodType = map[PeriodType]*sqlf.Query{
-	Daily:   sqlf.Sprintf("'1 day'"),
-	Weekly:  sqlf.Sprintf("'1 week'"),
-	Monthly: sqlf.Sprintf("'1 month'"),
-}
-
-// periodByPeriodType is a map of SQL fragments that produce a timestamp bucket by period
-// type. This assumes the existence of a  field named `timestamp` in the enclosing query.
-var periodByPeriodType = map[PeriodType]*sqlf.Query{
-	Daily:   sqlf.Sprintf(makeDateTruncExpression("day", "timestamp")),
-	Weekly:  sqlf.Sprintf(makeDateTruncExpression("week", "timestamp")),
-	Monthly: sqlf.Sprintf(makeDateTruncExpression("month", "timestamp")),
-}
 
 // calcStartDate calculates the the starting date of a number of periods given the period type.
 // from the current time supplied as `now`. Returns a second false value if the period type is

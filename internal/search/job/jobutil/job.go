@@ -43,7 +43,7 @@ func NewPlanJob(inputs *search.Inputs, plan query.Plan) (job.Job, error) {
 	newJob := func(b query.Basic) (job.Job, error) {
 		return NewBasicJob(inputs, b)
 	}
-	if inputs.PatternType == query.SearchTypeLucky || inputs.Features.AbLuckySearch {
+	if inputs.SearchMode == search.SmartSearch || inputs.PatternType == query.SearchTypeLucky || inputs.Features.AbLuckySearch {
 		jobTree = lucky.NewFeelingLuckySearchJob(jobTree, newJob, plan)
 	} else if inputs.PatternType == query.SearchTypeKeyword && len(plan) == 1 {
 		newJobTree, err := keyword.NewKeywordSearchJob(plan[0], newJob)

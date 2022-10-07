@@ -21,6 +21,6 @@ export const LimitedAccessLabel: React.FunctionComponent<React.PropsWithChildren
         <Label className={styles.label} isUppercase={true}>
             <small>{label || 'Limited access'}</small>
         </Label>
-        <span className={classNames(styles.message, 'small')}>{message}</span>
+        <small className={styles.message}>{message}</small>
     </div>
 )

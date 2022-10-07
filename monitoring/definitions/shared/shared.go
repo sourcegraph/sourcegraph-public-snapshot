@@ -80,7 +80,7 @@ func (f ObservableOption) safeApply(observable Observable) Observable {
 
 // and creates a chained ObservableOption that first invokes the receiver,
 // and the the argument on the result of invoking the receiver.
-func (f ObservableOption) and(m ObservableOption) ObservableOption {
+func (f ObservableOption) and(m ObservableOption) ObservableOption { //nolint:unused
 	return func(observable Observable) Observable {
 		return m.safeApply(f.safeApply(observable))
 	}

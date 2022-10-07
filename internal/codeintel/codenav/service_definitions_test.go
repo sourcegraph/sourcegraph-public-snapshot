@@ -215,7 +215,7 @@ func TestDefinitionsRemote(t *testing.T) {
 		Line:         10,
 		Character:    20,
 	}
-	remoteUploads := updateSvcDumpToSharedDump(dumps)
+	remoteUploads := dumps
 	adjustedLocations, err := svc.GetDefinitions(context.Background(), mockRequest, mockRequestState)
 	if err != nil {
 		t.Fatalf("unexpected error querying definitions: %s", err)

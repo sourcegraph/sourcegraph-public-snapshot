@@ -2,6 +2,7 @@ package promql
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/grafana/regexp"
 
@@ -108,6 +109,16 @@ func InjectAsAlert(expression string, matchers []*labels.Matcher, vars VariableA
 	return rendered, nil
 }
 
+// Prometheus histograms require all 3 metrics in the set: https://prometheus.io/docs/practices/histograms/
+//
+// This map maps suffixes to the other 2 metrics in a set. If one is used, they must
+// all be listed.
+var histogramSuffixes = map[string][]string{
+	"_count":  {"_sum", "_bucket"},
+	"_sum":    {"_count", "_bucket"},
+	"_bucket": {"_count", "_sum"},
+}
+
 // ListMetrics returns all unique metrics used in the expression.
 func ListMetrics(expression string, vars VariableApplier) ([]string, error) {
 	// Generate AST
@@ -139,6 +150,17 @@ func ListMetrics(expression string, vars VariableApplier) ([]string, error) {
 			} else {
 				// Otherwise just add the vector
 				addMetric(vec.Name)
+
+				// If vector is part of a histogram set, add all the other metrics in the
+				// set.
+				for suffix, otherSuffixes := range histogramSuffixes {
+					if strings.HasSuffix(vec.Name, suffix) {
+						root := strings.TrimSuffix(vec.Name, suffix)
+						for _, s := range otherSuffixes {
+							addMetric(root + s)
+						}
+					}
+				}
 			}
 		}
 		return nil
