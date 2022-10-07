@@ -457,7 +457,7 @@ func (c *configurationSource) Write(ctx context.Context, input conftypes.RawUnif
 		return errors.Wrap(err, "ConfStore.SiteGetLatest")
 	}
 	if site.ID != lastID {
-		return errors.New("last site ID does not match latest site ID")
+		return errors.New("site config has been modified by another request, write not allowed")
 	}
 	_, err = c.db.Conf().SiteCreateIfUpToDate(ctx, &site.ID, input.Site)
 	if err != nil {
