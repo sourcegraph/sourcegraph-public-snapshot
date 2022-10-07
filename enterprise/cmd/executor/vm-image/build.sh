@@ -60,16 +60,17 @@ popd 1>/dev/null
 pushd ./docker-images 1>/dev/null
 cp -R executor-vm "$OUTPUT"
 
-export PKR_VAR_NAME
-PKR_VAR_NAME="${IMAGE_FAMILY}-${BUILDKITE_BUILD_NUMBER}"
-export PKR_VAR_SRC_CLI_VERSION=${SRC_CLI_VERSION}
-export PKR_VAR_AWS_EXECUTOR_AMI_ACCESS_KEY=${AWS_EXECUTOR_AMI_ACCESS_KEY}
-export PKR_VAR_AWS_EXECUTOR_AMI_SECRET_KEY=${AWS_EXECUTOR_AMI_SECRET_KEY}
+export PKR_VAR_name
+PKR_VAR_name="${IMAGE_FAMILY}-${BUILDKITE_BUILD_NUMBER}"
+export PKR_VAR_src_cli_version=${SRC_CLI_VERSION}
+export PKR_VAR_aws_executor_ami_access_key=${AWS_EXECUTOR_AMI_ACCESS_KEY}
+export PKR_VAR_aws_executor_ami_secret_key=${AWS_EXECUTOR_AMI_SECRET_KEY}
 # This should prevent some occurrences of Failed waiting for AMI failures:
 # https://austincloud.guru/2020/05/14/long-running-packer-builds-failing/
-export PKR_VAR_AWS_MAX_ATTEMPTS=480
-export PKR_VAR_AWS_POLL_DELAY_SECONDS=5
+export PKR_VAR_aws_max_attempts=480
+export PKR_VAR_aws_poll_delay_seconds=5
 
 pushd "$OUTPUT" 1>/dev/null
+packer init executor.pkr.hcl
 packer build -force executor.pkr.hcl
 popd 1>/dev/null

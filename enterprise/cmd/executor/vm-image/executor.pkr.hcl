@@ -19,25 +19,25 @@ variable "version" {
     type = string
 }
 
-variable "srcCliVersion" {
+variable "src_cli_version" {
     type = string
 }
 
-variable "awsAccessKey" {
-    type = string
-    sensitive = true
-}
-
-variable "awsSecretKey" {
+variable "aws_access_key" {
     type = string
     sensitive = true
 }
 
-variable "awsMaxAttempts" {
+variable "aws_secret_key" {
+    type = string
+    sensitive = true
+}
+
+variable "aws_max_attempts" {
     type = number
 }
 
-variable "awsPollDelaySeconds" {
+variable "aws_poll_delay_seconds" {
     type = number
 }
 
@@ -75,11 +75,11 @@ source "amazon-ebs" "aws" {
       vpc_id = "vpc-0fae37a99a5156b91"
       subnet_id = "subnet-0a71d7cd03fea6317"
       associate_public_ip_address = true
-      access_key = var.awsAccessKey
-      secret_key = var.awsSecretKey
+      access_key = var.aws_access_key
+      secret_key = var.aws_secret_key
       aws_polling {
-        delay_seconds = var.awsPollDelaySeconds
-        max_attempts = var.awsMaxAttempts
+        delay_seconds = var.aws_poll_delay_seconds
+        max_attempts = var.aws_max_attempts
       }
       shutdown_behavior = "terminate"
       ami_regions = ["us-west-1", "us-west-2", "us-east-1", "us-east-2", "eu-west-2"]
@@ -114,14 +114,14 @@ build {
         override = {
             "gcp" = {
                 environment_vars = [
-                    "SRC_CLI_VERSION=${var.srcCliVersion}",
+                    "SRC_CLI_VERSION=${var.src_cli_version}",
                     "VERSION=${var.version}",
                     "PLATFORM_TYPE=gcp"
                 ]
             },
             "aws" = {
                 environment_vars = [
-                    "SRC_CLI_VERSION=${var.srcCliVersion}",
+                    "SRC_CLI_VERSION=${var.src_cli_version}",
                     "VERSION=${var.version}",
                     "PLATFORM_TYPE=aws"
                 ]
