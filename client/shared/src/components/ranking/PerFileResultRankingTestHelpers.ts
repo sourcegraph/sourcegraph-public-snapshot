@@ -15,7 +15,10 @@ export const testDataRealMatches: MatchItem[] = [
         endLine: 2,
     },
     {
-        highlightRanges: [{ startLine: 3, startCharacter: 15, endLine: 3, endCharacter: 20 }, { startLine: 3, startCharacter: 39, endLine: 3, endCharacter: 44 }],
+        highlightRanges: [
+            { startLine: 3, startCharacter: 15, endLine: 3, endCharacter: 20 },
+            { startLine: 3, startCharacter: 39, endLine: 3, endCharacter: 44 },
+        ],
         content: '// to take any error, not just wrapped errors. This allows you to use errwrap',
         startLine: 3,
         endLine: 3,
@@ -39,7 +42,10 @@ export const testDataRealMatches: MatchItem[] = [
         endLine: 20,
     },
     {
-        highlightRanges: [{ startLine: 24, startCharacter: 8, endLine: 24, endCharacter: 13 }, { startLine: 24, startCharacter: 19, endLine: 24, endCharacter: 24 }],
+        highlightRanges: [
+            { startLine: 24, startCharacter: 8, endLine: 24, endCharacter: 13 },
+            { startLine: 24, startCharacter: 19, endLine: 24, endCharacter: 24 },
+        ],
         content: '\tWrappedErrors() []error',
         startLine: 24,
         endLine: 24,
@@ -69,7 +75,10 @@ export const testDataRealMatches: MatchItem[] = [
         endLine: 30,
     },
     {
-        highlightRanges: [{ startLine: 31, startCharacter: 8, endLine: 31, endCharacter: 13 }, { startLine: 31, startCharacter: 31, endLine: 31, endCharacter: 36 }],
+        highlightRanges: [
+            { startLine: 31, startCharacter: 8, endLine: 31, endCharacter: 13 },
+            { startLine: 31, startCharacter: 31, endLine: 31, endCharacter: 36 },
+        ],
         content: "// This error won't modify the error message at all (the outer message",
         startLine: 31,
         endLine: 31,
@@ -81,7 +90,10 @@ export const testDataRealMatches: MatchItem[] = [
         endLine: 32,
     },
     {
-        highlightRanges: [{ startLine: 33, startCharacter: 23, endLine: 33, endCharacter: 28 }, { startLine: 33, startCharacter: 30, endLine: 33, endCharacter: 35 }],
+        highlightRanges: [
+            { startLine: 33, startCharacter: 23, endLine: 33, endCharacter: 28 },
+            { startLine: 33, startCharacter: 30, endLine: 33, endCharacter: 35 },
+        ],
         content: 'func Wrap(outer, inner error) error {',
         startLine: 33,
         endLine: 33,
@@ -105,7 +117,11 @@ export const testDataRealMatches: MatchItem[] = [
         endLine: 40,
     },
     {
-        highlightRanges: [{ startLine: 41, startCharacter: 8, endLine: 41, endCharacter: 13 }, { startLine: 41, startCharacter: 27, endLine: 41, endCharacter: 32 }, { startLine: 41, startCharacter: 55, endLine: 41, endCharacter: 60 }],
+        highlightRanges: [
+            { startLine: 41, startCharacter: 8, endLine: 41, endCharacter: 13 },
+            { startLine: 41, startCharacter: 27, endLine: 41, endCharacter: 32 },
+            { startLine: 41, startCharacter: 55, endLine: 41, endCharacter: 60 },
+        ],
         content: "// `fmt.Errorf` to wrap an error. If you're using `fmt.Errorf` to wrap",
         startLine: 41,
         endLine: 41,
@@ -135,7 +151,10 @@ export const testDataRealMatches: MatchItem[] = [
         endLine: 47,
     },
     {
-        highlightRanges: [{ startLine: 48, startCharacter: 30, endLine: 48, endCharacter: 35 }, { startLine: 48, startCharacter: 37, endLine: 48, endCharacter: 42 }],
+        highlightRanges: [
+            { startLine: 48, startCharacter: 30, endLine: 48, endCharacter: 35 },
+            { startLine: 48, startCharacter: 37, endLine: 48, endCharacter: 42 },
+        ],
         content: 'func Wrapf(format string, err error) error {',
         startLine: 48,
         endLine: 48,
@@ -153,7 +172,10 @@ export const testDataRealMatches: MatchItem[] = [
         endLine: 54,
     },
     {
-        highlightRanges: [{ startLine: 60, startCharacter: 32, endLine: 60, endCharacter: 37 }, { startLine: 60, startCharacter: 50, endLine: 60, endCharacter: 55 }],
+        highlightRanges: [
+            { startLine: 60, startCharacter: 32, endLine: 60, endCharacter: 37 },
+            { startLine: 60, startCharacter: 50, endLine: 60, endCharacter: 55 },
+        ],
         content: '// Contains checks if the given error contains an error with the',
         startLine: 60,
         endLine: 60,
@@ -177,7 +199,10 @@ export const testDataRealMatches: MatchItem[] = [
         endLine: 63,
     },
     {
-        highlightRanges: [{ startLine: 67, startCharacter: 36, endLine: 67, endCharacter: 41 }, { startLine: 67, startCharacter: 54, endLine: 67, endCharacter: 59 }],
+        highlightRanges: [
+            { startLine: 67, startCharacter: 36, endLine: 67, endCharacter: 41 },
+            { startLine: 67, startCharacter: 54, endLine: 67, endCharacter: 59 },
+        ],
         content: '// ContainsType checks if the given error contains an error with',
         startLine: 67,
         endLine: 67,
@@ -201,7 +226,10 @@ export const testDataRealMatches: MatchItem[] = [
         endLine: 74,
     },
     {
-        highlightRanges: [{ startLine: 75, startCharacter: 13, endLine: 75, endCharacter: 18 }, { startLine: 75, startCharacter: 32, endLine: 75, endCharacter: 37 }],
+        highlightRanges: [
+            { startLine: 75, startCharacter: 13, endLine: 75, endCharacter: 18 },
+            { startLine: 75, startCharacter: 32, endLine: 75, endCharacter: 37 },
+        ],
         content: 'func Get(err error, msg string) error {',
         startLine: 75,
         endLine: 75,
@@ -213,7 +241,10 @@ export const testDataRealMatches: MatchItem[] = [
         endLine: 84,
     },
     {
-        highlightRanges: [{ startLine: 85, startCharacter: 17, endLine: 85, endCharacter: 22 }, { startLine: 85, startCharacter: 39, endLine: 85, endCharacter: 44 }],
+        highlightRanges: [
+            { startLine: 85, startCharacter: 17, endLine: 85, endCharacter: 22 },
+            { startLine: 85, startCharacter: 39, endLine: 85, endCharacter: 44 },
+        ],
         content: 'func GetType(err error, v interface{}) error {',
         startLine: 85,
         endLine: 85,
@@ -237,7 +268,10 @@ export const testDataRealMatches: MatchItem[] = [
         endLine: 96,
     },
     {
-        highlightRanges: [{ startLine: 97, startCharacter: 16, endLine: 97, endCharacter: 21 }, { startLine: 97, startCharacter: 37, endLine: 97, endCharacter: 42 }],
+        highlightRanges: [
+            { startLine: 97, startCharacter: 16, endLine: 97, endCharacter: 21 },
+            { startLine: 97, startCharacter: 37, endLine: 97, endCharacter: 42 },
+        ],
         content: 'func GetAll(err error, msg string) []error {',
         startLine: 97,
         endLine: 97,
@@ -267,7 +301,10 @@ export const testDataRealMatches: MatchItem[] = [
         endLine: 109,
     },
     {
-        highlightRanges: [{ startLine: 112, startCharacter: 20, endLine: 112, endCharacter: 25 }, { startLine: 112, startCharacter: 44, endLine: 112, endCharacter: 49 }],
+        highlightRanges: [
+            { startLine: 112, startCharacter: 20, endLine: 112, endCharacter: 25 },
+            { startLine: 112, startCharacter: 44, endLine: 112, endCharacter: 49 },
+        ],
         content: 'func GetAllType(err error, v interface{}) []error {',
         startLine: 112,
         endLine: 112,
@@ -303,7 +340,10 @@ export const testDataRealMatches: MatchItem[] = [
         endLine: 135,
     },
     {
-        highlightRanges: [{ startLine: 136, startCharacter: 19, endLine: 136, endCharacter: 24 }, { startLine: 136, startCharacter: 48, endLine: 136, endCharacter: 53 }],
+        highlightRanges: [
+            { startLine: 136, startCharacter: 19, endLine: 136, endCharacter: 24 },
+            { startLine: 136, startCharacter: 48, endLine: 136, endCharacter: 53 },
+        ],
         content: '// that implements error as well as the wrapped error itself.',
         startLine: 136,
         endLine: 136,
@@ -333,7 +373,10 @@ export const testDataRealMatches: MatchItem[] = [
         endLine: 152,
     },
     {
-        highlightRanges: [{ startLine: 160, startCharacter: 10, endLine: 160, endCharacter: 15 }, { startLine: 160, startCharacter: 40, endLine: 160, endCharacter: 45 }],
+        highlightRanges: [
+            { startLine: 160, startCharacter: 10, endLine: 160, endCharacter: 15 },
+            { startLine: 160, startCharacter: 40, endLine: 160, endCharacter: 45 },
+        ],
         content: '// wrappedError is an implementation of error that has both the',
         startLine: 160,
         endLine: 160,
@@ -363,7 +406,10 @@ export const testDataRealMatches: MatchItem[] = [
         endLine: 164,
     },
     {
-        highlightRanges: [{ startLine: 167, startCharacter: 16, endLine: 167, endCharacter: 21 }, { startLine: 167, startCharacter: 23, endLine: 167, endCharacter: 28 }],
+        highlightRanges: [
+            { startLine: 167, startCharacter: 16, endLine: 167, endCharacter: 21 },
+            { startLine: 167, startCharacter: 23, endLine: 167, endCharacter: 28 },
+        ],
         content: 'func (w *wrappedError) Error() string {',
         startLine: 167,
         endLine: 167,
@@ -375,7 +421,11 @@ export const testDataRealMatches: MatchItem[] = [
         endLine: 168,
     },
     {
-        highlightRanges: [{ startLine: 171, startCharacter: 16, endLine: 171, endCharacter: 21 }, { startLine: 171, startCharacter: 30, endLine: 171, endCharacter: 35 }, { startLine: 171, startCharacter: 41, endLine: 171, endCharacter: 46 }],
+        highlightRanges: [
+            { startLine: 171, startCharacter: 16, endLine: 171, endCharacter: 21 },
+            { startLine: 171, startCharacter: 30, endLine: 171, endCharacter: 35 },
+            { startLine: 171, startCharacter: 41, endLine: 171, endCharacter: 46 },
+        ],
         content: 'func (w *wrappedError) WrappedErrors() []error {',
         startLine: 171,
         endLine: 171,
@@ -387,7 +437,10 @@ export const testDataRealMatches: MatchItem[] = [
         endLine: 172,
     },
     {
-        highlightRanges: [{ startLine: 175, startCharacter: 16, endLine: 175, endCharacter: 21 }, { startLine: 175, startCharacter: 32, endLine: 175, endCharacter: 37 }],
+        highlightRanges: [
+            { startLine: 175, startCharacter: 16, endLine: 175, endCharacter: 21 },
+            { startLine: 175, startCharacter: 32, endLine: 175, endCharacter: 37 },
+        ],
         content: 'func (w *wrappedError) Unwrap() error {',
         startLine: 175,
         endLine: 175,
