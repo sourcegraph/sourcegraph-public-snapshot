@@ -36,7 +36,7 @@ func NewMockConfigurationSource() *MockConfigurationSource {
 			},
 		},
 		WriteFunc: &ConfigurationSourceWriteFunc{
-			defaultHook: func(context.Context, conftypes.RawUnified, int32) (r0 error) {
+			defaultHook: func(context.Context, conftypes.RawUnified) (r0 error) {
 				return
 			},
 		},
@@ -54,7 +54,7 @@ func NewStrictMockConfigurationSource() *MockConfigurationSource {
 			},
 		},
 		WriteFunc: &ConfigurationSourceWriteFunc{
-			defaultHook: func(context.Context, conftypes.RawUnified, int32) error {
+			defaultHook: func(context.Context, conftypes.RawUnified) error {
 				panic("unexpected invocation of MockConfigurationSource.Write")
 			},
 		},
@@ -183,24 +183,24 @@ func (c ConfigurationSourceReadFuncCall) Results() []interface{} {
 // ConfigurationSourceWriteFunc describes the behavior when the Write method
 // of the parent MockConfigurationSource instance is invoked.
 type ConfigurationSourceWriteFunc struct {
-	defaultHook func(context.Context, conftypes.RawUnified, int32) error
-	hooks       []func(context.Context, conftypes.RawUnified, int32) error
+	defaultHook func(context.Context, conftypes.RawUnified) error
+	hooks       []func(context.Context, conftypes.RawUnified) error
 	history     []ConfigurationSourceWriteFuncCall
 	mutex       sync.Mutex
 }
 
 // Write delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockConfigurationSource) Write(v0 context.Context, v1 conftypes.RawUnified, v2 int32) error {
-	r0 := m.WriteFunc.nextHook()(v0, v1, v2)
-	m.WriteFunc.appendCall(ConfigurationSourceWriteFuncCall{v0, v1, v2, r0})
+func (m *MockConfigurationSource) Write(v0 context.Context, v1 conftypes.RawUnified) error {
+	r0 := m.WriteFunc.nextHook()(v0, v1)
+	m.WriteFunc.appendCall(ConfigurationSourceWriteFuncCall{v0, v1, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the Write method of the
 // parent MockConfigurationSource instance is invoked and the hook queue is
 // empty.
-func (f *ConfigurationSourceWriteFunc) SetDefaultHook(hook func(context.Context, conftypes.RawUnified, int32) error) {
+func (f *ConfigurationSourceWriteFunc) SetDefaultHook(hook func(context.Context, conftypes.RawUnified) error) {
 	f.defaultHook = hook
 }
 
@@ -208,7 +208,7 @@ func (f *ConfigurationSourceWriteFunc) SetDefaultHook(hook func(context.Context,
 // Write method of the parent MockConfigurationSource instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *ConfigurationSourceWriteFunc) PushHook(hook func(context.Context, conftypes.RawUnified, int32) error) {
+func (f *ConfigurationSourceWriteFunc) PushHook(hook func(context.Context, conftypes.RawUnified) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -217,19 +217,19 @@ func (f *ConfigurationSourceWriteFunc) PushHook(hook func(context.Context, conft
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ConfigurationSourceWriteFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, conftypes.RawUnified, int32) error {
+	f.SetDefaultHook(func(context.Context, conftypes.RawUnified) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ConfigurationSourceWriteFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, conftypes.RawUnified, int32) error {
+	f.PushHook(func(context.Context, conftypes.RawUnified) error {
 		return r0
 	})
 }
 
-func (f *ConfigurationSourceWriteFunc) nextHook() func(context.Context, conftypes.RawUnified, int32) error {
+func (f *ConfigurationSourceWriteFunc) nextHook() func(context.Context, conftypes.RawUnified) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -268,9 +268,6 @@ type ConfigurationSourceWriteFuncCall struct {
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
 	Arg1 conftypes.RawUnified
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 int32
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -279,7 +276,7 @@ type ConfigurationSourceWriteFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ConfigurationSourceWriteFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
