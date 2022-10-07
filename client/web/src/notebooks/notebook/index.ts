@@ -169,6 +169,7 @@ export class Notebook {
                             patternType: SearchPatternType.standard,
                             caseSensitive: false,
                             trace: undefined,
+                            chunkMatches: true,
                         }
                     ).pipe(startWith(emptyAggregateResults)),
                 })
