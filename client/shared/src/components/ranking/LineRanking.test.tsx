@@ -275,7 +275,7 @@ describe('components/FileMatchContext', () => {
             const maxMatches = 3
             const context = 1
             const { grouped } = calculateMatchGroupsSorted([], maxMatches, context)
-            expect(grouped).toMatchInlineSnapshot(`[]`)
+            expect(grouped).toMatchInlineSnapshot('[]')
         })
     })
 })
