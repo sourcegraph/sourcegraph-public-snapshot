@@ -25,7 +25,6 @@ func TestWebhookCreateUnencrypted(t *testing.T) {
 
 	tx, err := db.Transact(ctx)
 	assert.NoError(t, err)
-	t.Cleanup(func() { _ = tx.Done(errors.New("rollback")) })
 
 	store := tx.Webhooks(nil)
 
@@ -67,7 +66,6 @@ func TestWebhookCreateEncrypted(t *testing.T) {
 
 	tx, err := db.Transact(ctx)
 	assert.NoError(t, err)
-	t.Cleanup(func() { _ = tx.Done(errors.New("rollback")) })
 
 	store := tx.Webhooks(et.ByteaTestKey{})
 
@@ -111,7 +109,6 @@ func TestWebhookCreateWithBadKey(t *testing.T) {
 
 	tx, err := db.Transact(ctx)
 	assert.NoError(t, err)
-	t.Cleanup(func() { _ = tx.Done(errors.New("rollback")) })
 
 	store := tx.Webhooks(&et.BadKey{Err: errors.New("some error occurred, sorry")})
 
