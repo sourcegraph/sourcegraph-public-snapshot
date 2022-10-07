@@ -56,7 +56,7 @@ export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildre
                     </span>
                     <br />
                     <span>
-                        Hours Saved
+                        Hours saved
                         <Tooltip content="Based on multiplier per changeset defined by site admin">
                             <Icon aria-label="More info" svgPath={mdiInformationOutline} className="ml-1" />
                         </Tooltip>
