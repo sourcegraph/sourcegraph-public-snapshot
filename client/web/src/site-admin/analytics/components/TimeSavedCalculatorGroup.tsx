@@ -10,6 +10,8 @@ import { formatNumber } from '../utils'
 
 import styles from './index.module.scss'
 
+export const MIN_PER_ITEM_SAVED_KEY = 'minPerItemSaved'
+
 interface TimeSavedCalculatorGroupItem {
     label: string
     value: number
@@ -294,7 +296,7 @@ export const TimeSavedCalculator: React.FunctionComponent<TimeSavedCalculator> =
     }, [hoursSaved, dateRange])
 
     const stringMinPerItemSaved = minPerItemSaved.toString()
-    localStorage.setItem('minPerItemSaved', stringMinPerItemSaved)
+    localStorage.setItem(MIN_PER_ITEM_SAVED_KEY, stringMinPerItemSaved)
 
     return (
         <Card className="mb-3 p-4">

@@ -35,7 +35,7 @@ export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildre
     }
 
     const numMinPerItemSaved: number =
-        parseInt(localStorage.getItem('minPerItemSaved') || '0', 10) || DEFAULT_MINS_SAVED_PER_CHANGESET
+        parseInt(localStorage.getItem('MIN_PER_ITEM_SAVED_KEY') || '0', 10) || DEFAULT_MINS_SAVED_PER_CHANGESET
 
     return (
         <div className={styles.statsBar}>
