@@ -29,10 +29,10 @@ export const SEARCH_HISTORY_EVENT_LOGS_QUERY = gql`
 export function useRecentSearches(): {
     recentSearches: RecentSearch[] | undefined
     addRecentSearch: (query: string) => void
-    state: 'loading' | 'error' | 'success'
+    state: 'loading' | 'success'
 } {
     const [recentSearches, setRecentSearches] = useTemporarySetting('search.input.recentSearches', [])
-    const [state, setState] = useState<'loading' | 'error' | 'success'>('loading')
+    const [state, setState] = useState<'loading' | 'success'>('loading')
 
     // If recentSearches from temporary settings is empty, fetch recent searches from the event log
     // and populate temporary settings with that instead.
@@ -49,27 +49,25 @@ export function useRecentSearches(): {
     )
 
     useEffect(() => {
-        if (recentSearches && recentSearches.length === 0) {
-            loadFromEventLog()
-                .then(result => {
-                    if (result.data) {
-                        const processedLogs = processEventLogs(result.data)
-                        setRecentSearches(processedLogs)
-                    }
-                    setState('success')
-                })
-                .catch(() => {
-                    logger.error('Error fetching recent searches from event log')
-                    setState('success') // Ignore the error and use the empty list from temporary settings
-                })
+        if (recentSearches) {
+            if (recentSearches && recentSearches.length > 0) {
+                setState('success')
+            } else {
+                loadFromEventLog()
+                    .then(result => {
+                        if (result.data) {
+                            const processedLogs = processEventLogs(result.data)
+                            setRecentSearches(processedLogs)
+                        }
+                        setState('success')
+                    })
+                    .catch(() => {
+                        logger.error('Error fetching recent searches from event log')
+                        setState('success') // Ignore the error and use the empty list from temporary settings
+                    })
+            }
         }
     }, [recentSearches, loadFromEventLog, setRecentSearches])
-
-    useEffect(() => {
-        if (recentSearches && recentSearches.length > 0) {
-            setState('success')
-        }
-    }, [recentSearches])
 
     // Adds a new search to the top of the recent searches list.
     // If the search is already in the recent searches list, it moves it to the top.
@@ -81,7 +79,7 @@ export function useRecentSearches(): {
                 newRecentSearches.unshift(recentSearch)
                 // Truncate array if it's too long
                 if (newRecentSearches.length > MAX_RECENT_SEARCHES) {
-                    newRecentSearches.length = MAX_RECENT_SEARCHES
+                    newRecentSearches.splice(MAX_RECENT_SEARCHES)
                 }
                 return newRecentSearches
             })

@@ -54,16 +54,16 @@ export function submitSearch({
     // Go to search results page
     const path = '/search?' + searchQueryParameter
 
-    const queryWithConext = appendContextFilter(query, selectedSearchContextSpec)
+    const queryWithContext = appendContextFilter(query, selectedSearchContextSpec)
     eventLogger.log(
         'SearchSubmitted',
         {
-            query: queryWithConext,
+            query: queryWithContext,
             source,
         },
         { source }
     )
-    addRecentSearch?.(queryWithConext)
+    addRecentSearch?.(queryWithContext)
     history.push(path, { ...(typeof history.location.state === 'object' ? history.location.state : null), query })
     if (activation) {
         activation.update({ DidSearch: true })
