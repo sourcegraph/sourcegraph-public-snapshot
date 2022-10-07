@@ -6,6 +6,8 @@ import "strings"
 // - How expensive the search query might be, based on its type
 // - How precise it is
 
+// The query analyzer does not deal with how a search query should be prioritized according to its cost.
+
 type QueryAnalyzer struct {
 	QueryObject
 
@@ -17,9 +19,15 @@ type QueryObject struct {
 	// the object can be augmented with repository information, or anything else.
 }
 
-type CostHeuristicFunc func(QueryObject) int
+type CostHeuristicFunc struct {
+	fn     func(QueryObject) int
+	weight int
+}
 
-// NewQueryAnalyzer will be initialized with default cost handlers and any additional handlers defined by the caller.
+var DefaultCostHandlers = []CostHeuristicFunc{
+	{queryTypeHeuristic, 10},
+}
+
 func NewQueryAnalyzer(object QueryObject, handlers ...CostHeuristicFunc) *QueryAnalyzer {
 	qa := &QueryAnalyzer{
 		QueryObject: object,
@@ -32,8 +40,8 @@ func NewQueryAnalyzer(object QueryObject, handlers ...CostHeuristicFunc) *QueryA
 
 func (a *QueryAnalyzer) Cost() int {
 	totalCost := 0
-	for _, handlerFunc := range a.costHandlers {
-		totalCost += handlerFunc(a.QueryObject)
+	for _, handler := range a.costHandlers {
+		totalCost += handler.fn(a.QueryObject) * handler.weight
 	}
 	return totalCost
 }
