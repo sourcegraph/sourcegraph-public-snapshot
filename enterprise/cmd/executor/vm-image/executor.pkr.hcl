@@ -41,6 +41,15 @@ variable "aws_poll_delay_seconds" {
     type = number
 }
 
+variable "aws_regions" {
+    type = list(string)
+
+    validation {
+        condition = length(var.aws_regions) > 0
+        error_message = "Must set at least 1 AWS region."
+    }
+}
+
 source "googlecompute" "gcp" {
     project_id = "sourcegraph-ci"
     source_image_project_id = ["ubuntu-os-cloud"]

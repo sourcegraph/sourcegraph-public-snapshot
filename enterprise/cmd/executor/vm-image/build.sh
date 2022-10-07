@@ -56,6 +56,7 @@ cp .tool-versions "$OUTPUT"
 pushd ./enterprise/cmd/executor/vm-image 1>/dev/null
 cp executor.pkr.hcl "$OUTPUT"
 cp install.sh "$OUTPUT"
+cp aws_regions.json "$OUTPUT"
 popd 1>/dev/null
 pushd ./docker-images 1>/dev/null
 cp -R executor-vm "$OUTPUT"
@@ -70,6 +71,12 @@ export PKR_VAR_aws_secret_key=${AWS_EXECUTOR_AMI_SECRET_KEY}
 # https://austincloud.guru/2020/05/14/long-running-packer-builds-failing/
 export PKR_VAR_aws_max_attempts=480
 export PKR_VAR_aws_poll_delay_seconds=5
+export PKR_VAR_aws_regions
+if [ "${EXECUTOR_IS_TAGGED_RELEASE}" = "true" ]; then
+  PKR_VAR_aws_regions="$(jq -r '.' <aws_regions.json)"
+else
+  PKR_VAR_aws_regions='["us-west-2"]'
+fi
 
 pushd "$OUTPUT" 1>/dev/null
 packer init executor.pkr.hcl
