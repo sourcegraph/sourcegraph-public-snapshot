@@ -32,7 +32,6 @@ type persistentRepoIterator struct {
 	CreatedAt       time.Time
 	StartedAt       time.Time
 	CompletedAt     time.Time
-	LastUpdatedAt   time.Time
 	RuntimeDuration time.Duration
 	PercentComplete float64
 	TotalCount      int
@@ -61,7 +60,6 @@ var repoIteratorCols = []*sqlf.Query{
 	sqlf.Sprintf("repo_iterator.created_at"),
 	sqlf.Sprintf("repo_iterator.started_at"),
 	sqlf.Sprintf("repo_iterator.completed_at"),
-	sqlf.Sprintf("repo_iterator.last_updated_at"),
 	sqlf.Sprintf("repo_iterator.runtime_duration"),
 	sqlf.Sprintf("repo_iterator.percent_complete"),
 	sqlf.Sprintf("repo_iterator.total_count"),
@@ -90,8 +88,8 @@ func NewWithClock(ctx context.Context, store *basestore.Store, clock glock.Clock
 		return nil, errors.New("unable to construct a repo iterator for an empty set")
 	}
 
-	q := "insert into repo_iterator(repos, total_count) VALUES (%s, %s) returning id"
-	id, err := basestore.ScanInt(store.QueryRow(ctx, sqlf.Sprintf(q, pq.Int32Array(repos), len(repos))))
+	q := "insert into repo_iterator(repos, total_count, created_at) VALUES (%s, %s, %s) returning id"
+	id, err := basestore.ScanInt(store.QueryRow(ctx, sqlf.Sprintf(q, pq.Int32Array(repos), len(repos), clock.Now())))
 	if err != nil {
 		return nil, err
 	}
@@ -106,6 +104,10 @@ func NewWithClock(ctx context.Context, store *basestore.Store, clock glock.Clock
 
 // Load will load a repo iterator that has been persisted and prepare it at the current cursor state.
 func Load(ctx context.Context, store *basestore.Store, id int) (got *persistentRepoIterator, err error) {
+	return LoadWithClock(ctx, store, id, glock.NewRealClock())
+}
+
+func LoadWithClock(ctx context.Context, store *basestore.Store, id int, clock glock.Clock) (_ *persistentRepoIterator, err error) {
 	baseQuery := "select %s from repo_iterator where repo_iterator.id = %s"
 	row := store.QueryRow(ctx, sqlf.Sprintf(baseQuery, iteratorJoinCols, id))
 	var repos pq.Int32Array
@@ -115,7 +117,6 @@ func Load(ctx context.Context, store *basestore.Store, id int) (got *persistentR
 		&tmp.CreatedAt,
 		&dbutil.NullTime{Time: &tmp.StartedAt},
 		&dbutil.NullTime{Time: &tmp.CompletedAt},
-		&tmp.LastUpdatedAt,
 		&tmp.RuntimeDuration,
 		&tmp.PercentComplete,
 		&tmp.TotalCount,
@@ -135,8 +136,7 @@ func Load(ctx context.Context, store *basestore.Store, id int) (got *persistentR
 		return nil, errors.Wrap(err, "loadRepoIteratorErrors")
 	}
 
-	tmp.glock = glock.NewRealClock()
-
+	tmp.glock = clock
 	return &tmp, nil
 }
 
@@ -145,7 +145,7 @@ func Load(ctx context.Context, store *basestore.Store, id int) (got *persistentR
 // callers will need to call the finish function when complete with work. Errors during work processing can be passed
 // into the finish function and will be marked as errors on the repo iterator.
 func (p *persistentRepoIterator) NextWithFinish() (api.RepoID, bool, finishFunc) {
-	current, got := p.peek(p.Cursor + 1)
+	current, got := p.peek(p.Cursor)
 	if !p.CompletedAt.IsZero() || !got {
 		return 0, false, func(ctx context.Context, store *basestore.Store, err error) error {
 			return nil
@@ -170,6 +170,7 @@ func (p *persistentRepoIterator) MarkComplete(ctx context.Context, store *basest
 		return err
 	}
 	p.CompletedAt = now
+	p.PercentComplete = 1
 	return nil
 }
 

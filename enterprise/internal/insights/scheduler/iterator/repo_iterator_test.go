@@ -3,9 +3,13 @@ package iterator
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"testing"
+	"time"
+
+	"github.com/derision-test/glock"
+	"github.com/hexops/autogold"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 
@@ -15,18 +19,27 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
-func TestIterator(t *testing.T) {
+func TestNextAndFinish(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	// clock := timeutil.Now
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	store := basestore.NewWithHandle(insightsDB.Handle())
+	clock := glock.NewMockClock()
+	clock.SetCurrent(time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC))
 
 	repos := []int32{1, 6, 10, 22, 55}
 
-	itr, err := New(ctx, store, repos)
+	itr, err := NewWithClock(ctx, store, clock, repos)
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	var seen []api.RepoID
+	doAThing := func(ctx context.Context, repoId api.RepoID, finish finishFunc) (err error) {
+		seen = append(seen, repoId)
+		defer func() { err = finish(ctx, store, err) }()
+		clock.Advance(time.Second * 1)
+		return nil
 	}
 
 	var more = true
@@ -37,13 +50,10 @@ func TestIterator(t *testing.T) {
 		if !more {
 			break
 		}
-		err := doAThing(ctx, store, repoId, finish)
+		err := doAThing(ctx, repoId, finish)
 		if err != nil {
 			t.Fatal(err)
 		}
-		// t.Log(repoId)
-		// t.Log(fmt.Sprintf("%v", *itr))
-		// t.Log(fmt.Sprintf("%v", itr.errors.String()))
 	}
 
 	err = itr.MarkComplete(ctx, store)
@@ -51,23 +61,30 @@ func TestIterator(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	reloaded, err := Load(ctx, store, itr.id)
+	reloaded, err := LoadWithClock(ctx, store, itr.id, clock)
+	require.Equal(t, itr, reloaded)
+	require.Equal(t, fmt.Sprintf("%v", repos), fmt.Sprintf("%v", seen))
 
-	test, _ := json.Marshal(reloaded)
-	t.Log(string(test))
-
-	// t.Log("reloaded")
-	// t.Log(fmt.Sprintf("%v", *reloaded))
-	// t.Log(fmt.Sprintf("%v", reloaded.errors.String()))
-
+	jsonify, _ := json.Marshal(reloaded)
+	autogold.Want("iterate 5 times with no errors", `{"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"2021-01-01T00:00:05Z","RuntimeDuration":5000000000,"PercentComplete":1,"TotalCount":5,"SuccessCount":5,"Cursor":5}`).Equal(t, string(jsonify))
 }
 
-func doAThing(ctx context.Context, store *basestore.Store, repoId api.RepoID, finish finishFunc) (err error) {
-	fmt.Println(fmt.Sprintf("repo_id: %d", repoId))
-	defer func() { err = finish(ctx, store, err) }()
+func TestNew(t *testing.T) {
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	store := basestore.NewWithHandle(insightsDB.Handle())
 
-	if repoId == api.RepoID(22) {
-		return errors.New("testing error")
+	repos := []int32{1, 6, 10, 22, 55}
+
+	itr, err := New(ctx, store, repos)
+	if err != nil {
+		t.Fatal(err)
 	}
-	return nil
+
+	load, err := Load(ctx, store, itr.id)
+	if err != nil {
+		return
+	}
+	require.Equal(t, itr, load)
 }
