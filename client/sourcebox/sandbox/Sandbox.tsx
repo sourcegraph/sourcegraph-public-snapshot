@@ -35,12 +35,12 @@ export const Sandbox: React.FunctionComponent = () => (
             </li>
         </ul>
         <h4>Usage examples</h4>
-        <UsageExamplesBox query="React.Children.count(...) repo:^github\.com/mui/material-ui$ patterntype:structural" />
+        <UsageExamplesBox query="React.Children.count(...) file:\.tsx$ -repo:native patterntype:structural" />
 
         <br />
 
         {/* eslint-disable-next-line react/forbid-dom-props */}
-        <section style={{ display: 'none' }}>
+        <section style={{ display: 'block' }}>
             <h3>
                 <code>Children.forEach(children, fn, thisArg?)</code>
             </h3>
@@ -72,6 +72,8 @@ export const Sandbox: React.FunctionComponent = () => (
                     aren't traversed. Fragments don't get traversed.
                 </li>
             </ul>
+            <h4>Usage examples</h4>
+            <UsageExamplesBox query="React.Children.forEach(...) repo:^github\.com/mui/material-ui$ patterntype:structural" />
         </section>
     </div>
 )
