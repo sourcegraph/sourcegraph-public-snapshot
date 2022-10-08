@@ -1,0 +1,6 @@
+// This is necessary because the `Tooltip` component renders a span that has no
+// width set and will thus take on it's children's width. This, in turn, causes
+// the text overflow truncation to no longer work.
+.force-sibling-to-w-100 > * {
+    width: 100%;
+}

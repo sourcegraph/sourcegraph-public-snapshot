@@ -5758,6 +5758,12 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@sourcegraph/sourcebox@workspace:client/sourcebox":
+  version: 0.0.0-use.local
+  resolution: "@sourcegraph/sourcebox@workspace:client/sourcebox"
+  languageName: unknown
+  linkType: soft
+
 "@sourcegraph/storybook@workspace:client/storybook":
   version: 0.0.0-use.local
   resolution: "@sourcegraph/storybook@workspace:client/storybook"
