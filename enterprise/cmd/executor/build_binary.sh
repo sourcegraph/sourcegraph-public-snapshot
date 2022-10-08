@@ -28,13 +28,12 @@ go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/vers
 popd 1>/dev/null
 
 echo "--- create binary artifacts"
-pushd "${OUTPUT}/$(git rev-parse HEAD)" 1>/dev/null
+INFO_PATH="${OUTPUT}/$(git rev-parse HEAD)/info.txt"
 
-echo "executor built from https://github.com/sourcegraph/sourcegraph" >info.txt
-echo >>info.txt
-git log -n1 >>info.txt
-sha256sum linux-amd64/executor >>linux-amd64/executor_SHA256SUM
-popd 1>/dev/null
+echo "executor built from https://github.com/sourcegraph/sourcegraph" >"${INFO_PATH}"
+echo >>"${INFO_PATH}"
+git log -n1 >>"${INFO_PATH}"
+sha256sum "${OUTPUT}/$(git rev-parse HEAD)/linux-amd64/executor" >>"${OUTPUT}/$(git rev-parse HEAD)/linux-amd64/executor_SHA256SUM"
 
 # Upload the new release folder
 echo "--- upload binary artifacts"
