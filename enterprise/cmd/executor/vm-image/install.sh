@@ -206,7 +206,7 @@ EOF
 function generate_ignite_base_image() {
   # TODO: Find a way to use executor install image executor-vm here.
   docker build -t "${EXECUTOR_FIRECRACKER_IMAGE}" --build-arg SRC_CLI_VERSION="${SRC_CLI_VERSION}" /tmp/executor-vm
-  ignite image import --runtime docker "${EXECUTOR_FIRECRACKER_IMAGE}"
+  ignite image import --runtime containerd "${EXECUTOR_FIRECRACKER_IMAGE}"
   docker image rm "${EXECUTOR_FIRECRACKER_IMAGE}"
   # Remove intermediate layers and base image used in executor-vm.
   # TODO: This removes the already pulled sandbox image.

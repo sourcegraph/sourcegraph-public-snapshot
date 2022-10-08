@@ -159,7 +159,7 @@ const completedSteps: LsifIndexStepsFields = {
                 'ignite',
                 'run',
                 '--runtime',
-                'docker',
+                'containerd',
                 '--network-plugin',
                 'docker-bridge',
                 '--cpus',

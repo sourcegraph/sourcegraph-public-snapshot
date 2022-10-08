@@ -127,7 +127,7 @@ func ensureExecutorVMImage(ctx context.Context, logger log.Logger, c *config.Con
 	// be a race condition and it is imported multiple times. Also, this would
 	// happen for the first job, which is not desirable.
 	logger.Info("Ensuring VM image is imported", log.String("image", c.FirecrackerImage))
-	cmd := exec.CommandContext(ctx, "ignite", "image", "import", "--runtime", "docker", c.FirecrackerImage)
+	cmd := exec.CommandContext(ctx, "ignite", "image", "import", "--runtime", "containerd", c.FirecrackerImage)
 	// Forward output.
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -147,7 +147,7 @@ func ensureKernelImage(ctx context.Context, logger log.Logger, c *config.Config)
 	// be a race condition and it is imported multiple times. Also, this would
 	// happen for the first job, which is not desirable.
 	logger.Info("Ensuring kernel is imported", log.String("image", c.FirecrackerKernelImage))
-	cmd := exec.CommandContext(ctx, "ignite", "kernel", "import", "--runtime", "docker", c.FirecrackerKernelImage)
+	cmd := exec.CommandContext(ctx, "ignite", "kernel", "import", "--runtime", "containerd", c.FirecrackerKernelImage)
 	// Forward output.
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

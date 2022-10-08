@@ -146,7 +146,7 @@ func TestSetupFirecracker(t *testing.T) {
 	expected := []string{
 		strings.Join([]string{
 			"ignite run",
-			"--runtime docker --network-plugin cni",
+			"--runtime containerd --network-plugin cni",
 			"--cpus 4 --memory 20G --size 1T",
 			"--copy-files /vm-startup.sh:/vm-startup.sh",
 			"--volumes /dev/loopX:/work",

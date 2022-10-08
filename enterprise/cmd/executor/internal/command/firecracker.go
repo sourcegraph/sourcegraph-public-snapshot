@@ -168,7 +168,7 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, 
 		Env: []string{fmt.Sprintf("CNI_CONF_DIR=%s", cniConfigDir)},
 		Command: flatten(
 			"ignite", "run",
-			"--runtime", "docker",
+			"--runtime", "containerd",
 			"--network-plugin", "cni",
 			firecrackerResourceFlags(options.ResourceOptions),
 			firecrackerCopyfileFlags(options.FirecrackerOptions.VMStartupScriptPath, daemonConfigFile),
