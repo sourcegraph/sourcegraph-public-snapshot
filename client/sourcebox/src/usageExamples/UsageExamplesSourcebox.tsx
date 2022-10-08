@@ -3,7 +3,9 @@ import React from 'react'
 import { SourceboxTheme } from '../theme'
 
 interface Props {
-    theme: SourceboxTheme
+    query: string
+
+    theme?: SourceboxTheme
 }
 
-export const UsageExamplesSourcebox: React.FunctionComponent<Props> = () => null
+export const UsageExamplesSourcebox: React.FunctionComponent<Props> = ({ query, theme }) => null

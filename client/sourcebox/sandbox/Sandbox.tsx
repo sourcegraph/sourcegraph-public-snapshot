@@ -1,6 +1,7 @@
 import React from 'react'
 
 import { UsageExamplesBox } from '../src/usageExamples/UsageExamplesBox'
+import { UsageExamplesSourcebox } from '../src/usageExamples/UsageExamplesSourcebox'
 
 export const Sandbox: React.FunctionComponent = () => (
     <div>
@@ -35,7 +36,7 @@ export const Sandbox: React.FunctionComponent = () => (
             </li>
         </ul>
         <h4>Usage examples</h4>
-        <UsageExamplesBox query="React.Children.count(...) file:\.tsx$ -repo:native patterntype:structural" />
+        <UsageExamplesSourcebox query="React.Children.count(...) file:\.tsx$ -repo:native patterntype:structural" />
 
         <br />
 
