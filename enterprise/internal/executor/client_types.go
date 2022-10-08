@@ -1,6 +1,7 @@
 package executor
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -54,6 +55,122 @@ type Job struct {
 	// environment variables, as well as secret values passed along with the dequeued job
 	// payload, which may be sensitive (e.g. shared API tokens, URLs with credentials).
 	RedactedValues map[string]string `json:"redactedValues"`
+}
+
+// UnmarshalJSON unmarshal the JSON into Job. This custom unmarshaler is needed to support the different Job structures
+// between 4.0 and 4.1 of Sourcegraph (the change to "files").
+func (j *Job) UnmarshalJSON(bytes []byte) error {
+	var v map[string]interface{}
+	if err := json.Unmarshal(bytes, &v); err != nil {
+		return err
+	}
+	j.ID = int(v["id"].(float64))
+	j.RepositoryName = toString(v["repositoryName"])
+	j.RepositoryDirectory = toString(v["repositoryDirectory"])
+	j.Commit = toString(v["commit"])
+	j.FetchTags = toBool(v["fetchTags"])
+	j.ShallowClone = toBool(v["shallowClone"])
+	j.SparseCheckout = toStringSlice(v["sparseCheckout"])
+
+	if v["files"] != nil {
+		files := v["files"].(map[string]interface{})
+		jobFiles := make(map[string]VirtualMachineFile)
+		for key, file := range files {
+			// If type string, then the structure is a 4.0 structure.
+			if value, ok := file.(string); ok {
+				jobFiles[key] = VirtualMachineFile{
+					Content: toString(value),
+				}
+			} else {
+				f := file.(map[string]interface{})
+				modAt, err := toTime(f["modifiedAt"])
+				if err != nil {
+					return err
+				}
+				jobFiles[key] = VirtualMachineFile{
+					Content:    toString(f["content"]),
+					Bucket:     toString(f["bucket"]),
+					Key:        toString(f["key"]),
+					ModifiedAt: modAt,
+				}
+			}
+		}
+		j.VirtualMachineFiles = jobFiles
+	}
+
+	if v["dockerSteps"] != nil {
+		dockerSteps := v["dockerSteps"].([]interface{})
+		jobDockerSteps := make([]DockerStep, len(dockerSteps), len(dockerSteps))
+		for i, s := range dockerSteps {
+			step := s.(map[string]interface{})
+			jobDockerSteps[i] = DockerStep{
+				Image:    toString(step["image"]),
+				Commands: toStringSlice(step["commands"]),
+				Dir:      toString(step["dir"]),
+				Env:      toStringSlice(step["env"]),
+			}
+		}
+		j.DockerSteps = jobDockerSteps
+	}
+
+	if v["cliSteps"] != nil {
+		cliSteps := v["cliSteps"].([]interface{})
+		jobCliSteps := make([]CliStep, len(cliSteps), len(cliSteps))
+		for i, s := range cliSteps {
+			step := s.(map[string]interface{})
+			jobCliSteps[i] = CliStep{
+				Commands: toStringSlice(step["commands"]),
+				Dir:      toString(step["dir"]),
+				Env:      toStringSlice(step["env"]),
+			}
+		}
+		j.CliSteps = jobCliSteps
+	}
+
+	if v["redactedValues"] != nil {
+		values := v["redactedValues"].(map[string]interface{})
+		jobRedactedValues := make(map[string]string)
+		for key, value := range values {
+			jobRedactedValues[key] = toString(value)
+		}
+		j.RedactedValues = jobRedactedValues
+	}
+
+	return nil
+}
+
+func toStringSlice(input interface{}) []string {
+	if input == nil {
+		return nil
+	}
+
+	slice := input.([]interface{})
+	strings := make([]string, len(slice), len(slice))
+	for i, v := range slice {
+		strings[i] = toString(v)
+	}
+	return strings
+}
+
+func toString(v interface{}) string {
+	if v == nil {
+		return ""
+	}
+	return v.(string)
+}
+
+func toBool(v interface{}) bool {
+	if v == nil {
+		return false
+	}
+	return v.(bool)
+}
+
+func toTime(v interface{}) (time.Time, error) {
+	if v == nil {
+		return time.Time{}, nil
+	}
+	return time.Parse(time.RFC3339, v.(string))
 }
 
 // VirtualMachineFile is a file that will be written to the VM. A file can contain the raw content of the file or
