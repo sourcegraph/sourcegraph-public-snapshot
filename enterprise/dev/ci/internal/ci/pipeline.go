@@ -225,12 +225,14 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops = operations.NewSet(
 			buildCandidateDockerImage(executorVMImage, c.Version, c.candidateImageTag(), false),
 			trivyScanCandidateImage(executorVMImage, c.candidateImageTag()),
-			buildExecutor(c, true),
+			buildExecutorVM(c, true),
 			buildExecutorDockerMirror(c),
+			buildExecutorBinary(c),
 			wait,
 			publishFinalDockerImage(c, executorVMImage),
-			publishExecutor(c, true),
+			publishExecutorVM(c, true),
 			publishExecutorDockerMirror(c),
+			publishExecutorBinary(c),
 		)
 
 	default:
@@ -251,7 +253,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Executor VM image
 		skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorVMImage)
 		if c.RunType.Is(runtype.MainDryRun, runtype.MainBranch, runtype.ReleaseBranch, runtype.TaggedRelease) {
-			imageBuildOps.Append(buildExecutor(c, skipHashCompare))
+			imageBuildOps.Append(buildExecutorVM(c, skipHashCompare))
+			imageBuildOps.Append(buildExecutorBinary(c))
 			if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
 				imageBuildOps.Append(buildExecutorDockerMirror(c))
 			}
@@ -295,7 +298,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 		// Executor VM image
 		if c.RunType.Is(runtype.MainBranch, runtype.TaggedRelease) {
-			publishOps.Append(publishExecutor(c, skipHashCompare))
+			publishOps.Append(publishExecutorVM(c, skipHashCompare))
+			publishOps.Append(publishExecutorBinary(c))
 			if c.RunType.Is(runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
 				publishOps.Append(publishExecutorDockerMirror(c))
 			}

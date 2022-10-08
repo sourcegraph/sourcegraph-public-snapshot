@@ -28,24 +28,6 @@ bin_name="$OUTPUT/$(basename $pkg)"
 go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" -buildmode exe -tags dist -o "$bin_name" "$pkg"
 popd 1>/dev/null
 
-echo "--- create binary artifacts"
-# Setup new release folder that contains binary, info text.
-mkdir -p "enterprise/cmd/executor/vm-image/artifacts/executor/$(git rev-parse HEAD)"
-pushd "enterprise/cmd/executor/vm-image/artifacts/executor/$(git rev-parse HEAD)" 1>/dev/null
-
-echo "executor built from https://github.com/sourcegraph/sourcegraph" >info.txt
-echo >>info.txt
-git log -n1 >>info.txt
-mkdir -p linux-amd64
-# Copy binary into new folder
-cp "$bin_name" linux-amd64/executor
-sha256sum linux-amd64/executor >>linux-amd64/executor_SHA256SUM
-popd 1>/dev/null
-# Upload the new release folder
-echo "--- upload binary artifacts"
-gsutil cp -r enterprise/cmd/executor/vm-image/artifacts/executor gs://sourcegraph-artifacts
-gsutil iam ch allUsers:objectViewer gs://sourcegraph-artifacts
-
 # Fetch the e2e builder service account so we can spawn a packer VM.
 echo "--- gcp secret"
 gcloud secrets versions access latest --secret=e2e-builder-sa-key --quiet --project=sourcegraph-ci >"$OUTPUT/builder-sa-key.json"
