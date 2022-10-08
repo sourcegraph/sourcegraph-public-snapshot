@@ -1,3 +1,21 @@
-import React from 'react'
+import React, { useState } from 'react'
 
-export const UsageExamplesBox: React.FunctionComponent<{}> = () => <h3>Hello foo box</h3>
+interface Props {
+    collapsible?: boolean
+}
+
+export const UsageExamplesBox: React.FunctionComponent<Props> = ({ collapsible }) => {
+    const [collapsed, setCollapsed] = useState(collapsible)
+
+    return (
+        <aside>
+            <header>Usage examples</header>
+            {!collapsed && (
+                <ol>
+                    <li>a</li>
+                    <li>b</li>
+                </ol>
+            )}
+        </aside>
+    )
+}
