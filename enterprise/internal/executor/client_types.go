@@ -100,7 +100,7 @@ func (j *Job) UnmarshalJSON(bytes []byte) error {
 
 	if v["dockerSteps"] != nil {
 		dockerSteps := v["dockerSteps"].([]interface{})
-		jobDockerSteps := make([]DockerStep, len(dockerSteps), len(dockerSteps))
+		jobDockerSteps := make([]DockerStep, len(dockerSteps))
 		for i, s := range dockerSteps {
 			step := s.(map[string]interface{})
 			jobDockerSteps[i] = DockerStep{
@@ -115,11 +115,11 @@ func (j *Job) UnmarshalJSON(bytes []byte) error {
 
 	if v["cliSteps"] != nil {
 		cliSteps := v["cliSteps"].([]interface{})
-		jobCliSteps := make([]CliStep, len(cliSteps), len(cliSteps))
+		jobCliSteps := make([]CliStep, len(cliSteps))
 		for i, s := range cliSteps {
 			step := s.(map[string]interface{})
 			jobCliSteps[i] = CliStep{
-				Commands: toStringSlice(step["commands"]),
+				Commands: toStringSlice(step["command"]),
 				Dir:      toString(step["dir"]),
 				Env:      toStringSlice(step["env"]),
 			}
@@ -145,7 +145,7 @@ func toStringSlice(input interface{}) []string {
 	}
 
 	slice := input.([]interface{})
-	strings := make([]string, len(slice), len(slice))
+	strings := make([]string, len(slice))
 	for i, v := range slice {
 		strings[i] = toString(v)
 	}
