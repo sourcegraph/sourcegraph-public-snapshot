@@ -11,7 +11,9 @@ cleanup() {
 }
 trap cleanup EXIT
 
-mkdir -p "${OUTPUT}/$(git rev-parse HEAD)/linux-amd64"
+GIT_COMMIT="$(git rev-parse HEAD)"
+
+mkdir -p "${OUTPUT}/${GIT_COMMIT}/linux-amd64"
 
 # Environment for building linux binaries
 export GO111MODULE=on
@@ -23,19 +25,19 @@ export VERSION
 echo "--- go build"
 pushd ./enterprise/cmd/executor 1>/dev/null
 pkg="github.com/sourcegraph/sourcegraph/enterprise/cmd/executor"
-bin_name="$OUTPUT/$(git rev-parse HEAD)/linux-amd64/$(basename $pkg)"
+bin_name="${OUTPUT}/${GIT_COMMIT}/linux-amd64/$(basename $pkg)"
 go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" -buildmode exe -tags dist -o "$bin_name" "$pkg"
 popd 1>/dev/null
 
 echo "--- create binary artifacts"
-INFO_PATH="${OUTPUT}/$(git rev-parse HEAD)/info.txt"
+INFO_PATH="${OUTPUT}/${GIT_COMMIT}/info.txt"
 
 echo "executor built from https://github.com/sourcegraph/sourcegraph" >"${INFO_PATH}"
 echo >>"${INFO_PATH}"
 git log -n1 >>"${INFO_PATH}"
-sha256sum "${OUTPUT}/$(git rev-parse HEAD)/linux-amd64/executor" >>"${OUTPUT}/$(git rev-parse HEAD)/linux-amd64/executor_SHA256SUM"
+sha256sum "${OUTPUT}/${GIT_COMMIT}/linux-amd64/executor" >>"${OUTPUT}/${GIT_COMMIT}/linux-amd64/executor_SHA256SUM"
 
 # Upload the new release folder
 echo "--- upload binary artifacts"
-gsutil cp -r "${OUTPUT}" gs://sourcegraph-artifacts
-gsutil iam ch allUsers:objectViewer gs://sourcegraph-artifacts
+gsutil cp -r "${OUTPUT}/${GIT_COMMIT}" gs://sourcegraph-artifacts/executor
+gsutil iam ch allUsers:objectViewer gs://sourcegraph-artifacts/executor
