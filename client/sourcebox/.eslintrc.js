@@ -8,6 +8,7 @@ module.exports = {
     ...baseConfig.parserOptions,
     project: [__dirname + '/tsconfig.json'],
   },
-  rules: { 'no-console': 'off' },
+  // TODO(sqs): react/forbid-elements is to prep for usage outside of our monorepo
+  rules: { 'no-console': 'off', 'react/forbid-elements': 'off' },
   overrides: baseConfig.overrides,
 }
