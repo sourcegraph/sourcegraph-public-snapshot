@@ -1,16 +1,16 @@
 import React from 'react'
 
-import { UsageExample } from './UsageExample'
+import { UsageExample, UsageExampleData } from './UsageExample'
 
 interface Props {
-    examples: { repo: string; file: string }[]
+    usageExamples: UsageExampleData[]
 }
 
-export const UsageExampleList: React.FunctionComponent<Props> = ({ examples }) => (
+export const UsageExampleList: React.FunctionComponent<Props> = ({ usageExamples }) => (
     <ol>
-        {examples.map((example, index) => (
+        {usageExamples.map((usageExample, index) => (
             <li key={index}>
-                <UsageExample repo={example.repo} file={example.file} />
+                <UsageExample usageExample={usageExample} />
             </li>
         ))}
     </ol>

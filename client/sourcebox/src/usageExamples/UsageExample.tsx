@@ -1,12 +1,17 @@
 import React from 'react'
 
-interface Props {
+export interface UsageExampleData {
     repo: string
     file: string
+    excerpts?: { content: string }[]
 }
 
-export const UsageExample: React.FunctionComponent<Props> = ({ repo, file }) => (
+interface Props {
+    usageExample: UsageExampleData
+}
+
+export const UsageExample: React.FunctionComponent<Props> = ({ usageExample: { repo, file, excerpts } }) => (
     <p>
-        {repo}: {file}
+        {repo}: {file} - {excerpts?.map(excerpt => excerpt.content).join(', ')}
     </p>
 )

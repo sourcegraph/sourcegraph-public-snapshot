@@ -34,7 +34,9 @@ const SEARCH_OPTIONS: StreamSearchOptions = {
     trace: undefined,
     sourcegraphURL: 'https://sourcegraph.com/.api',
     chunkMatches: true,
-    displayLimit: 10,
+    decorationContextLines: 3,
+    decorationKinds: ['html'],
+    displayLimit: 5,
 }
 
 const platformContext: PlatformContext = {
@@ -60,9 +62,15 @@ export const UsageExamplesBox: React.FunctionComponent<Props> = ({ query, collap
             <aside>
                 {!collapsed && results?.results && (
                     <UsageExampleList
-                        examples={results.results
+                        usageExamples={results.results
                             .filter((result): result is SearchMatchOfType<'content'> => result.type === 'content')
-                            .map(result => ({ repo: result.repository, file: result.path }))}
+                            .map(result => ({
+                                repo: result.repository,
+                                file: result.path,
+                                excerpts: result.chunkMatches?.map(chunkMatch => ({
+                                    content: chunkMatch.content,
+                                })),
+                            }))}
                     />
                 )}
             </aside>
