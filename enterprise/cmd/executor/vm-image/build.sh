@@ -11,6 +11,10 @@ cleanup() {
 }
 trap cleanup EXIT
 
+export EXECUTOR_FIRECRACKER_IMAGE="sourcegraph/executor-vm:$VERSION"
+# Used by the docker image build script.
+export IMAGE="${EXECUTOR_FIRECRACKER_IMAGE}"
+
 # Capture src cli version before we reconfigure the go environment.
 SRC_CLI_VERSION="$(go run ./internal/cmd/src-cli-version/main.go)"
 
@@ -27,6 +31,14 @@ pkg="github.com/sourcegraph/sourcegraph/enterprise/cmd/executor"
 bin_name="$OUTPUT/$(basename $pkg)"
 go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" -buildmode exe -tags dist -o "$bin_name" "$pkg"
 popd 1>/dev/null
+
+echo "--- build executor-vm image"
+pushd ./docker-images/executor-vm 1>/dev/null
+./build.sh
+popd 1>/dev/null
+
+echo "--- export executor-vm image"
+docker save --output "${OUTPUT}/executor-vm.tar" "${EXECUTOR_FIRECRACKER_IMAGE}"
 
 # Fetch the e2e builder service account so we can spawn a packer VM.
 echo "--- gcp secret"
