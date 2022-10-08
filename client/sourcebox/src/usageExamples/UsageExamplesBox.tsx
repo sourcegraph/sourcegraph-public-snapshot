@@ -2,9 +2,10 @@ import React, { useState } from 'react'
 
 interface Props {
     collapsible?: boolean
+    theme?: 'dark' | 'light'
 }
 
-export const UsageExamplesBox: React.FunctionComponent<Props> = ({ collapsible }) => {
+export const UsageExamplesBox: React.FunctionComponent<Props> = ({ collapsible, theme }) => {
     const [collapsed, setCollapsed] = useState(collapsible)
 
     return (

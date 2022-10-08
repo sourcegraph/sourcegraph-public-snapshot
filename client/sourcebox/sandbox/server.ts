@@ -1,16 +1,35 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 import path from 'path'
 
-import express from 'express'
+import * as esbuild from 'esbuild'
 
-const app = express()
-const port = 3888
+import { stylePlugin, buildTimerPlugin } from '@sourcegraph/build-config'
 
-const sourceboxRootPath = path.join(__dirname, '..')
+const rootPath = path.resolve(__dirname, '../../../')
+const sourceboxRootPath = path.join(rootPath, 'client', 'sourcebox')
+const sandboxPath = path.join(sourceboxRootPath, 'sandbox')
 
-app.use(express.static(__dirname))
-app.use('/dist', express.static(path.join(sourceboxRootPath, 'dist')))
+export async function serve(): Promise<void> {
+    const { host, port, wait } = await esbuild.serve(
+        { host: 'localhost', port: 3888, servedir: sandboxPath },
+        {
+            entryPoints: {
+                sandbox: path.join(__dirname, 'sandbox.tsx'),
+            },
+            bundle: true,
+            format: 'esm',
+            platform: 'browser',
+            splitting: true,
+            plugins: [stylePlugin, buildTimerPlugin],
+            outdir: path.join(sandboxPath, 'dist'),
+            assetNames: '[name]',
+            sourcemap: true,
+        }
+    )
+    console.log(`Sourcebox sandbox started on http://${host}:${port}`)
+    await wait
+}
 
-app.listen(port, () => {
-    console.log(`Sourcebox sandbox started on port ${port}`)
+serve().catch(error => {
+    console.error('Error:', error)
+    process.exit(1)
 })

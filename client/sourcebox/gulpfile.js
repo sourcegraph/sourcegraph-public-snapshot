@@ -6,10 +6,11 @@ require('ts-node').register({
   project: path.resolve(__dirname, './tsconfig.json'),
 })
 
+const {serve:sandbox} = require('./sandbox/server')
 const buildScripts = require('./scripts/build')
 
 async function esbuild() {
   await buildScripts.build()
 }
 
-module.exports = { esbuild }
+module.exports = { esbuild, sandbox }

@@ -1,10 +1,10 @@
-import './index.scss'
+import './sandbox.scss'
 
 import { createRoot } from 'react-dom/client'
 
 import { AnchorLink, setLinkComponent } from '@sourcegraph/wildcard'
 
-import { UsageExamplesBox } from './usageExamples/UsageExamplesBox'
+import { UsageExamplesBox } from '../src/usageExamples/UsageExamplesBox'
 
 setLinkComponent(AnchorLink)
 
