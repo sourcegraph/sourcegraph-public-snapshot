@@ -39,6 +39,7 @@ export const Sandbox: React.FunctionComponent = () => (
 
         <br />
 
+        {/* eslint-disable-next-line react/forbid-dom-props */}
         <section style={{ display: 'none' }}>
             <h3>
                 <code>Children.forEach(children, fn, thisArg?)</code>
