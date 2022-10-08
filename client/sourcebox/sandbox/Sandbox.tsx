@@ -35,7 +35,7 @@ export const Sandbox: React.FunctionComponent = () => (
             </li>
         </ul>
         <h4>Usage examples</h4>
-        <UsageExamplesBox />
+        <UsageExamplesBox query="React.Children.count(...) patterntype:structural" />
 
         <br />
 
