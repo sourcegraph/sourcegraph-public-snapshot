@@ -35,7 +35,7 @@ export const Sandbox: React.FunctionComponent = () => (
             </li>
         </ul>
         <h4>Usage examples</h4>
-        <UsageExamplesBox query="React.Children.count(...) patterntype:structural" />
+        <UsageExamplesBox query="React.Children.count(...) repo:^github\.com/mui/material-ui$ patterntype:structural" />
 
         <br />
 

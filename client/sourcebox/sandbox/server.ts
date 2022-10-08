@@ -2,7 +2,7 @@ import path from 'path'
 
 import * as esbuild from 'esbuild'
 
-import { stylePlugin, buildTimerPlugin } from '@sourcegraph/build-config'
+import { stylePlugin, buildTimerPlugin, packageResolutionPlugin } from '@sourcegraph/build-config'
 
 const rootPath = path.resolve(__dirname, '../../../')
 const sourceboxRootPath = path.join(rootPath, 'client', 'sourcebox')
@@ -19,10 +19,24 @@ export async function serve(): Promise<void> {
             format: 'esm',
             platform: 'browser',
             splitting: true,
-            plugins: [stylePlugin, buildTimerPlugin],
+            plugins: [
+                stylePlugin,
+                packageResolutionPlugin({
+                    path: require.resolve('path-browserify'),
+                }),
+                buildTimerPlugin,
+            ],
             outdir: path.join(sandboxPath, 'dist'),
             assetNames: '[name]',
             sourcemap: true,
+            define: {
+                'process.env.NODE_ENV': '"dev"',
+            },
+
+            // TODO(sqs): this is needed because monaco-editor somehow gets imported
+            loader: {
+                '.ttf': 'file',
+            },
         }
     )
     console.log(`Sourcebox sandbox started on http://${host}:${port}`)
