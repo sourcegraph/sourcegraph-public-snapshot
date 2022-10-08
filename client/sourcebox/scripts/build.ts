@@ -7,10 +7,10 @@ import { rm } from 'shelljs'
 import { packageResolutionPlugin, stylePlugin, workerPlugin, buildTimerPlugin } from '@sourcegraph/build-config'
 
 const rootPath = path.resolve(__dirname, '../../../')
-const sourceboxRootPath = path.resolve(rootPath, 'client', 'sourcebox')
-const sourcePath = path.resolve(sourceboxRootPath, 'src')
+const sourceboxRootPath = path.join(rootPath, 'client', 'sourcebox')
+const sourcePath = path.join(sourceboxRootPath, 'src')
 
-const distributionPath = path.resolve(rootPath, 'dist')
+const distributionPath = path.join(sourceboxRootPath, 'dist')
 
 export async function build(): Promise<void> {
     if (existsSync(distributionPath)) {
@@ -19,8 +19,7 @@ export async function build(): Promise<void> {
 
     await esbuild.build({
         entryPoints: {
-            search: path.resolve(sourcePath, 'index.tsx'),
-            style: path.join(sourcePath, 'index.scss'),
+            sourcebox: path.join(sourcePath, 'index.tsx'),
         },
         bundle: true,
         format: 'esm',
