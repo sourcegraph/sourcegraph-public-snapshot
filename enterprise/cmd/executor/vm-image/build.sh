@@ -52,8 +52,6 @@ cp executor.pkr.hcl "$OUTPUT"
 cp install.sh "$OUTPUT"
 cp aws_regions.json "$OUTPUT"
 popd 1>/dev/null
-pushd ./docker-images 1>/dev/null
-cp -R executor-vm "$OUTPUT"
 
 export PKR_VAR_name
 PKR_VAR_name="${IMAGE_FAMILY}-${BUILDKITE_BUILD_NUMBER}"

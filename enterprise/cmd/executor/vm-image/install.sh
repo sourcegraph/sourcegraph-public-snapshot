@@ -73,6 +73,7 @@ function install_executor() {
 
   # Import executor-vm image.
   docker load --input /tmp/executor-vm.tar
+  rm /tmp/executor-vm.tar
 
   # Install dependencies of ignite. Most of these are actually bundled by default, but
   # listing them out here explicitly makes it so that upstream image changes never
