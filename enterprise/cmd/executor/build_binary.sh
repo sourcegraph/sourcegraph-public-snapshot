@@ -40,4 +40,4 @@ sha256sum "${OUTPUT}/${GIT_COMMIT}/linux-amd64/executor" >>"${OUTPUT}/${GIT_COMM
 # Upload the new release folder
 echo "--- upload binary artifacts"
 gsutil cp -r "${OUTPUT}/${GIT_COMMIT}" gs://sourcegraph-artifacts/executor
-gsutil iam ch allUsers:objectViewer gs://sourcegraph-artifacts/executor
+gsutil iam ch allUsers:objectViewer gs://sourcegraph-artifacts
