@@ -1,15 +1,15 @@
-import './sandbox.scss'
+import './index.scss'
 
 import { createRoot } from 'react-dom/client'
 
 import { AnchorLink, setLinkComponent } from '@sourcegraph/wildcard'
 
-import { UsageExamplesBox } from '../src/usageExamples/UsageExamplesBox'
+import { Sandbox } from './Sandbox'
 
 setLinkComponent(AnchorLink)
 
 const container = document.querySelector('#react-container')
 if (container) {
     const root = createRoot(container)
-    root.render(<UsageExamplesBox />)
+    root.render(<Sandbox />)
 }

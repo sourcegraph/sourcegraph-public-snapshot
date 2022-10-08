@@ -13,7 +13,7 @@ export async function serve(): Promise<void> {
         { host: 'localhost', port: 3888, servedir: sandboxPath },
         {
             entryPoints: {
-                sandbox: path.join(__dirname, 'sandbox.tsx'),
+                index: path.join(__dirname, 'index.tsx'),
             },
             bundle: true,
             format: 'esm',

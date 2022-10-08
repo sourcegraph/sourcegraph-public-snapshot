@@ -6,9 +6,6 @@
     "lib": ["esnext", "DOM", "DOM.Iterable"],
     "sourceMap": true,
     "sourceRoot": "src",
-    "paths": {
-      "*": ["types/*", "../../shared/src/types/*", "../../common/src/types/*", "*"],
-    },
     "strict": true,
     "jsx": "react-jsx",
   },
