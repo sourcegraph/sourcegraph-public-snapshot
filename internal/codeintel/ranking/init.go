@@ -35,6 +35,7 @@ var initServiceMemo = memo.NewMemoizedConstructorWithArg(func(deps serviceDepend
 		store.New(deps.db, scopedContext("store")),
 		deps.uploadsService,
 		deps.gitserverClient,
+		siteConfigQuerier{},
 		scopedContext("service"),
 	), nil
 })

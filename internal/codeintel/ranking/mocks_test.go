@@ -13,6 +13,8 @@ import (
 	regexp "github.com/grafana/regexp"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/store"
+	conftypes "github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	schema "github.com/sourcegraph/sourcegraph/schema"
 )
 
 // MockStore is a mock implementation of the Store interface (from the
@@ -564,4 +566,151 @@ func (c GitserverClientListFilesForRepoFuncCall) Args() []interface{} {
 // invocation.
 func (c GitserverClientListFilesForRepoFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// MockSiteConfigQuerier is a mock implementation of the SiteConfigQuerier
+// interface (from the package
+// github.com/sourcegraph/sourcegraph/internal/conf/conftypes) used for unit
+// testing.
+type MockSiteConfigQuerier struct {
+	// SiteConfigFunc is an instance of a mock function object controlling
+	// the behavior of the method SiteConfig.
+	SiteConfigFunc *SiteConfigQuerierSiteConfigFunc
+}
+
+// NewMockSiteConfigQuerier creates a new mock of the SiteConfigQuerier
+// interface. All methods return zero values for all results, unless
+// overwritten.
+func NewMockSiteConfigQuerier() *MockSiteConfigQuerier {
+	return &MockSiteConfigQuerier{
+		SiteConfigFunc: &SiteConfigQuerierSiteConfigFunc{
+			defaultHook: func() (r0 schema.SiteConfiguration) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockSiteConfigQuerier creates a new mock of the
+// SiteConfigQuerier interface. All methods panic on invocation, unless
+// overwritten.
+func NewStrictMockSiteConfigQuerier() *MockSiteConfigQuerier {
+	return &MockSiteConfigQuerier{
+		SiteConfigFunc: &SiteConfigQuerierSiteConfigFunc{
+			defaultHook: func() schema.SiteConfiguration {
+				panic("unexpected invocation of MockSiteConfigQuerier.SiteConfig")
+			},
+		},
+	}
+}
+
+// NewMockSiteConfigQuerierFrom creates a new mock of the
+// MockSiteConfigQuerier interface. All methods delegate to the given
+// implementation, unless overwritten.
+func NewMockSiteConfigQuerierFrom(i conftypes.SiteConfigQuerier) *MockSiteConfigQuerier {
+	return &MockSiteConfigQuerier{
+		SiteConfigFunc: &SiteConfigQuerierSiteConfigFunc{
+			defaultHook: i.SiteConfig,
+		},
+	}
+}
+
+// SiteConfigQuerierSiteConfigFunc describes the behavior when the
+// SiteConfig method of the parent MockSiteConfigQuerier instance is
+// invoked.
+type SiteConfigQuerierSiteConfigFunc struct {
+	defaultHook func() schema.SiteConfiguration
+	hooks       []func() schema.SiteConfiguration
+	history     []SiteConfigQuerierSiteConfigFuncCall
+	mutex       sync.Mutex
+}
+
+// SiteConfig delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockSiteConfigQuerier) SiteConfig() schema.SiteConfiguration {
+	r0 := m.SiteConfigFunc.nextHook()()
+	m.SiteConfigFunc.appendCall(SiteConfigQuerierSiteConfigFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SiteConfig method of
+// the parent MockSiteConfigQuerier instance is invoked and the hook queue
+// is empty.
+func (f *SiteConfigQuerierSiteConfigFunc) SetDefaultHook(hook func() schema.SiteConfiguration) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SiteConfig method of the parent MockSiteConfigQuerier instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *SiteConfigQuerierSiteConfigFunc) PushHook(hook func() schema.SiteConfiguration) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *SiteConfigQuerierSiteConfigFunc) SetDefaultReturn(r0 schema.SiteConfiguration) {
+	f.SetDefaultHook(func() schema.SiteConfiguration {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *SiteConfigQuerierSiteConfigFunc) PushReturn(r0 schema.SiteConfiguration) {
+	f.PushHook(func() schema.SiteConfiguration {
+		return r0
+	})
+}
+
+func (f *SiteConfigQuerierSiteConfigFunc) nextHook() func() schema.SiteConfiguration {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SiteConfigQuerierSiteConfigFunc) appendCall(r0 SiteConfigQuerierSiteConfigFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of SiteConfigQuerierSiteConfigFuncCall objects
+// describing the invocations of this function.
+func (f *SiteConfigQuerierSiteConfigFunc) History() []SiteConfigQuerierSiteConfigFuncCall {
+	f.mutex.Lock()
+	history := make([]SiteConfigQuerierSiteConfigFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SiteConfigQuerierSiteConfigFuncCall is an object that describes an
+// invocation of method SiteConfig on an instance of MockSiteConfigQuerier.
+type SiteConfigQuerierSiteConfigFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 schema.SiteConfiguration
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SiteConfigQuerierSiteConfigFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SiteConfigQuerierSiteConfigFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }

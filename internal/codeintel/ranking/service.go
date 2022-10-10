@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -20,6 +20,7 @@ type Service struct {
 	store           store.Store
 	uploadSvc       *uploads.Service
 	gitserverClient GitserverClient
+	getConf         conftypes.SiteConfigQuerier
 	operations      *operations
 	logger          log.Logger
 }
@@ -28,12 +29,14 @@ func newService(
 	store store.Store,
 	uploadSvc *uploads.Service,
 	gitserverClient GitserverClient,
+	getConf conftypes.SiteConfigQuerier,
 	observationContext *observation.Context,
 ) *Service {
 	return &Service{
 		store:           store,
 		uploadSvc:       uploadSvc,
 		gitserverClient: gitserverClient,
+		getConf:         getConf,
 		operations:      newOperations(observationContext),
 		logger:          observationContext.Logger,
 	}
@@ -46,15 +49,14 @@ func (s *Service) GetRepoRank(ctx context.Context, repoName api.RepoName) (_ []f
 	_, _, endObservation := s.operations.getRepoRank.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	siteConfig := conf.Get().SiteConfiguration
-	userRank := repoRankFromConfig(siteConfig, string(repoName))
+	userRank := repoRankFromConfig(s.getConf.SiteConfig(), string(repoName))
 
 	starRank, err := s.store.GetStarRank(ctx, repoName)
 	if err != nil {
 		return nil, err
 	}
 
-	return []float64{userRank, 1 - starRank}, nil
+	return []float64{1 - squashRange(userRank), 1 - starRank}, nil
 }
 
 // copy pasta
@@ -136,7 +138,7 @@ func rank(name string, nameRank float64) []float64 {
 		test,
 
 		// With short names
-		squashRange(len(name)),
+		squashRange(float64(len(name))),
 
 		// // With many symbols
 		// 1.0 - squashRange(len(d.Symbols)),
@@ -153,7 +155,6 @@ func rank(name string, nameRank float64) []float64 {
 }
 
 // map [0,inf) to [0,1) monotonically
-func squashRange(j int) float64 {
-	x := float64(j)
-	return x / (1 + x)
+func squashRange(j float64) float64 {
+	return j / (1 + j)
 }
