@@ -27,7 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func serveGraphQL(schema *graphql.Schema, rlw graphqlbackend.LimitWatcher, logger sglog.Logger, isInternal bool) func(w http.ResponseWriter, r *http.Request) (err error) {
+func serveGraphQL(logger sglog.Logger, schema *graphql.Schema, rlw graphqlbackend.LimitWatcher, isInternal bool) func(w http.ResponseWriter, r *http.Request) (err error) {
 	return func(w http.ResponseWriter, r *http.Request) (err error) {
 		if r.Method != "POST" {
 			// The URL router should not have routed to this handler if method is not POST, but just in
@@ -231,11 +231,12 @@ func recordAuditLog(ctx context.Context, logger sglog.Logger, data traceData) {
 	audit.Log(ctx, logger, audit.Record{
 		Entity: "GraphQL",
 		Action: "request",
-		Fields: []sglog.Field{sglog.Object("request",
-			sglog.String("name", data.requestName),
-			sglog.String("source", data.requestSource),
-			sglog.String("variables", toJson(data.queryParams.Variables)),
-			sglog.String("query", data.queryParams.Query)),
+		Fields: []sglog.Field{
+			sglog.Object("request",
+				sglog.String("name", data.requestName),
+				sglog.String("source", data.requestSource),
+				sglog.String("variables", toJson(data.queryParams.Variables)),
+				sglog.String("query", data.queryParams.Query)),
 			sglog.Bool("mutation", strings.Contains(data.queryParams.Query, "mutation")),
 			sglog.Bool("successful", len(data.queryErrors) == 0),
 		},
