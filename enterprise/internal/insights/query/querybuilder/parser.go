@@ -30,7 +30,7 @@ func DetectSearchType(rawQuery string, patternType string) (query.SearchType, er
 func ParseQuery(q string, patternType string) (query.Plan, error) {
 	searchType, err := DetectSearchType(q, patternType)
 	if err != nil {
-		return nil, errors.Wrap(err, "DetectSearchType")
+		return nil, errors.Wrap(err, "overrideSearchType")
 	}
 	plan, err := query.Pipeline(query.Init(q, searchType))
 	if err != nil {
