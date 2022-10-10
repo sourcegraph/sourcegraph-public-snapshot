@@ -225,14 +225,12 @@ func (f *RepoContainsPathPredicate) Name() string  { return "contains.path" }
 
 type RepoContainsCommitAfterPredicate struct {
 	TimeRef string
+	Negated bool
 }
 
 func (f *RepoContainsCommitAfterPredicate) Unmarshal(params string, negated bool) error {
-	if negated {
-		return &NegatedPredicateError{f.Field() + ":" + f.Name()}
-	}
-
 	f.TimeRef = params
+	f.Negated = negated
 	return nil
 }
 
