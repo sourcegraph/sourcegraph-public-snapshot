@@ -24,6 +24,8 @@ type AutoIndexingService interface {
 	GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error)
 	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, data []byte) (err error)
 	DeleteIndexByID(ctx context.Context, id int) (_ bool, err error)
+	GetInferenceScript(ctx context.Context) (script string, err error)
+	SetInferenceScript(ctx context.Context, script string) (err error)
 
 	InferIndexConfiguration(ctx context.Context, repositoryID int, commit string, bypassLimit bool) (_ *config.IndexConfiguration, hints []config.IndexJobHint, err error)
 	QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force, bypassLimit bool) (_ []types.Index, err error)

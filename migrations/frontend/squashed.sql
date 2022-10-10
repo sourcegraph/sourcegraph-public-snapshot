@@ -1466,6 +1466,13 @@ CREATE SEQUENCE codeintel_autoindex_queue_id_seq
 
 ALTER SEQUENCE codeintel_autoindex_queue_id_seq OWNED BY codeintel_autoindex_queue.id;
 
+CREATE TABLE codeintel_inference_scripts (
+    insert_timestamp timestamp with time zone DEFAULT now() NOT NULL,
+    script text NOT NULL
+);
+
+COMMENT ON TABLE codeintel_inference_scripts IS 'Contains auto-index job inference Lua scripts as an alternative to setting via environment variables.';
+
 CREATE TABLE codeintel_langugage_support_requests (
     id integer NOT NULL,
     user_id integer NOT NULL,

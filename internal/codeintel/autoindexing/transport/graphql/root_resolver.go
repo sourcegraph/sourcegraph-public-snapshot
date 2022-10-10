@@ -40,6 +40,8 @@ type RootResolver interface {
 	GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error)
 	InferedIndexConfiguration(ctx context.Context, repositoryID int, commit string) (_ *config.IndexConfiguration, _ bool, err error)
 	InferedIndexConfigurationHints(ctx context.Context, repositoryID int, commit string) (_ []config.IndexJobHint, err error)
+	CodeIntelligenceInferenceScript(ctx context.Context) (script string, err error)
+	UpdateCodeIntelligenceInferenceScript(ctx context.Context, args *UpdateCodeIntelligenceInferenceScriptArgs) (err error)
 
 	// Symbols client
 	GetSupportedByCtags(ctx context.Context, filepath string, repoName api.RepoName) (bool, string, error)
@@ -280,6 +282,18 @@ func (r *rootResolver) UpdateRepositoryIndexConfiguration(ctx context.Context, a
 	}
 
 	return &sharedresolvers.EmptyResponse{}, nil
+}
+
+func (r *rootResolver) CodeIntelligenceInferenceScript(ctx context.Context) (script string, err error) {
+	return r.autoindexSvc.GetInferenceScript(ctx)
+}
+
+type UpdateCodeIntelligenceInferenceScriptArgs struct {
+	Script string
+}
+
+func (r *rootResolver) UpdateCodeIntelligenceInferenceScript(ctx context.Context, args *UpdateCodeIntelligenceInferenceScriptArgs) (err error) {
+	return r.autoindexSvc.SetInferenceScript(ctx, args.Script)
 }
 
 type GitTreeEntryCodeIntelInfoArgs struct {

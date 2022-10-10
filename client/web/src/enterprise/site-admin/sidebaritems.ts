@@ -112,6 +112,10 @@ const codeIntelGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/code-graph/configuration',
             label: 'Configuration',
         },
+        {
+            to: '/site-admin/code-graph/inference-configuration',
+            label: 'Inference'
+        }
     ],
 }
 
