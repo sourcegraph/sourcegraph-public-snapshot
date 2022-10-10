@@ -18,7 +18,7 @@ type Store interface {
 	Transact(ctx context.Context) (Store, error)
 	Done(err error) error
 
-	GetStarRank(ctx context.Context, rapoName api.RepoName) (float64, error)
+	GetStarRank(ctx context.Context, repoName api.RepoName) (float64, error)
 }
 
 // store manages the ranking store.

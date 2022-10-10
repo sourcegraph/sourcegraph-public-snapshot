@@ -3,6 +3,7 @@ package ranking
 import (
 	"context"
 	"sort"
+	"strings"
 
 	"github.com/sourcegraph/log"
 
@@ -39,7 +40,7 @@ func newService(
 }
 
 // GetRepoRank returns a score vector for the given repository. Repositories are assumed to
-// be ordered by each pairwise component of the resulting vector, higher scores coming earlier.
+// be ordered by each pairwise component of the resulting vector, lower scores coming earlier.
 // We currently rank first by user-defined scores, then by GitHub star count.
 func (s *Service) GetRepoRank(ctx context.Context, repoName api.RepoName) (_ []float64, err error) {
 	_, _, endObservation := s.operations.getRepoRank.With(ctx, &err, observation.Args{})
@@ -53,7 +54,7 @@ func (s *Service) GetRepoRank(ctx context.Context, repoName api.RepoName) (_ []f
 		return nil, err
 	}
 
-	return []float64{userRank, starRank}, nil
+	return []float64{userRank, 1 - starRank}, nil
 }
 
 // copy pasta
@@ -82,7 +83,7 @@ func repoRankFromConfig(siteConfig schema.SiteConfiguration, repoName string) fl
 var allPathsPattern = lazyregexp.New(".*")
 
 // GetDocumentRank returns a map from paths within the given repo to their score vectors. Paths are
-// assumed to be ordered by each pairwise component of the resulting vector, higher scores coming
+// assumed to be ordered by each pairwise component of the resulting vector, lower scores coming
 // earlier. We currently rank lexicographically.
 func (s *Service) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ map[string][]float64, err error) {
 	_, _, endObservation := s.operations.getDocumentRanks.With(ctx, &err, observation.Args{})
@@ -97,8 +98,62 @@ func (s *Service) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (
 	n := float64(len(paths))
 	ranks := make(map[string][]float64, len(paths))
 	for i, path := range paths {
-		ranks[path] = []float64{(float64(i) / n)}
+		ranks[path] = rank(path, float64(i)/n)
 	}
 
 	return ranks, nil
+}
+
+var testPattern = lazyregexp.New("test")
+
+// copy pasta + modified
+// https://github.com/sourcegraph/zoekt/blob/f89a534103a224663d23b4579959854dd7816942/build/builder.go#L872-L918
+func rank(name string, nameRank float64) []float64 {
+	generated := 0.0
+	if strings.HasSuffix(name, "min.js") || strings.HasSuffix(name, "js.map") {
+		generated = 1.0
+	}
+
+	vendor := 0.0
+	if strings.Contains(name, "vendor/") || strings.Contains(name, "node_modules/") {
+		vendor = 1.0
+	}
+
+	test := 0.0
+	if testPattern.MatchString(name) {
+		test = 1.0
+	}
+
+	// Smaller is earlier (=better).
+	return []float64{
+		// Prefer docs that are not generated
+		generated,
+
+		// Prefer docs that are not vendored
+		vendor,
+
+		// Prefer docs that are not tests
+		test,
+
+		// With short names
+		squashRange(len(name)),
+
+		// // With many symbols
+		// 1.0 - squashRange(len(d.Symbols)),
+
+		// // With short content
+		// squashRange(len(d.Content)),
+
+		// // That is present is as many branches as possible
+		// 1.0 - squashRange(len(d.Branches)),
+
+		// Preserve original ordering.
+		nameRank,
+	}
+}
+
+// map [0,inf) to [0,1) monotonically
+func squashRange(j int) float64 {
+	x := float64(j)
+	return x / (1 + x)
 }
