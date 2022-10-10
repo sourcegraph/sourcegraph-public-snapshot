@@ -88,12 +88,8 @@ func enterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterp
 		logger.Fatal("failed to load codeintel config", log.Error(err))
 	}
 
-	services, err := codeintel.NewServices(ctx, codeIntelConfig, conf, db)
+	autoIndexingService, uploadHandler, err := codeintel.Init(ctx, codeIntelConfig, conf, db, &enterpriseServices)
 	if err != nil {
-		logger.Fatal(err.Error())
-	}
-
-	if err := codeintel.Init(ctx, db, codeIntelConfig, &enterpriseServices, services); err != nil {
 		logger.Fatal("failed to initialize codeintel", log.Error(err))
 	}
 
@@ -110,8 +106,17 @@ func enterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterp
 	}
 
 	// Initialize executor-specific services with the necessary code-intel and Batch Changes services.
-	if err := executor.Init(ctx, db, conf, &enterpriseServices, observationContext, services.AutoIndexingService, services.NewUploadHandler(false),
-		enterpriseServices.BatchesChangesFileGetHandler, enterpriseServices.BatchesChangesFileGetHandler); err != nil {
+	if err := executor.Init(
+		ctx,
+		db,
+		conf,
+		&enterpriseServices,
+		observationContext,
+		autoIndexingService,
+		uploadHandler,
+		enterpriseServices.BatchesChangesFileGetHandler,
+		enterpriseServices.BatchesChangesFileGetHandler,
+	); err != nil {
 		logger.Fatal("failed to initialize executor", log.Error(err))
 	}
 
