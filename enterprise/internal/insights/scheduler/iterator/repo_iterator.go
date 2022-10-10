@@ -209,13 +209,6 @@ func (p *persistentRepoIterator) insertIterationError(ctx context.Context, store
 	return nil
 }
 
-func percent(success, total int) float64 {
-	if total == 0 {
-		return 1
-	}
-	return float64(success) / float64(total)
-}
-
 func (p *persistentRepoIterator) doFinish(ctx context.Context, store *basestore.Store, maybeErr error, cursorVal int32) (err error) {
 	didSucceed := 0
 	didAttempt := 1
@@ -252,7 +245,6 @@ WHERE id = %s RETURNING percent_complete, success_count, repo_cursor, runtime_du
 	); err != nil {
 		return errors.Wrapf(err, "unable to update cursor on iteration success iteratorId: %d, new_cursor:%d", p.id, cursor)
 	}
-	// }
 	if maybeErr != nil {
 		if err = p.insertIterationError(ctx, tx, cursorVal, maybeErr.Error()); err != nil {
 			return errors.Wrapf(err, "unable to upsert error iteratorId: %d, new_cursor:%d", p.id, cursor)
