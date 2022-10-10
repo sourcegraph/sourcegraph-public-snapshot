@@ -23,6 +23,9 @@ sg rfc --private search "search terms"
 
 # Open a specific RFC
 sg rfc open 420
+
+# Open a specific private RFC
+sg rfc --private open 420
 `,
 	Category: CategoryCompany,
 	Flags: []cli.Flag{
