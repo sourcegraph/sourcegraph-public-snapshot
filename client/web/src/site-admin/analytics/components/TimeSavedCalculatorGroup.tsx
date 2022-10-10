@@ -7,7 +7,6 @@ import { Card, Input, Text, H2 } from '@sourcegraph/wildcard'
 
 import { AnalyticsDateRange } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { DEFAULT_MINS_SAVED_PER_CHANGESET } from '../AnalyticsBatchChangesPage'
 import { formatNumber } from '../utils'
 
 import styles from './index.module.scss'
@@ -227,7 +226,7 @@ export const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculat
                         <div className="d-flex flex-column align-items-center justify-content-center">
                             <Input
                                 type="number"
-                                value={minsSavedPerChangeset || DEFAULT_MINS_SAVED_PER_CHANGESET}
+                                value={minsSavedPerChangeset}
                                 className={classNames(styles.calculatorInput, 'mb-1')}
                                 onChange={event => {
                                     updateMinPerItem(index, Number(event.target.value))
