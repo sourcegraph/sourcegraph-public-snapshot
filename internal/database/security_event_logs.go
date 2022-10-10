@@ -3,13 +3,15 @@ package database
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/audit"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -54,6 +56,13 @@ type SecurityEvent struct {
 	Timestamp       time.Time
 }
 
+func (e *SecurityEvent) marshalArgumentAsJSON() string {
+	if e.Argument == nil {
+		return "{}"
+	}
+	return fmt.Sprintf("%s", e.Argument)
+}
+
 // SecurityEventLogsStore provides persistence for security events.
 type SecurityEventLogsStore interface {
 	basestore.ShareableStore
@@ -76,9 +85,9 @@ type securityEventLogsStore struct {
 }
 
 // SecurityEventLogsWith instantiates and returns a new SecurityEventLogsStore
-// using the other store handle.
-func SecurityEventLogsWith(other basestore.ShareableStore) SecurityEventLogsStore {
-	logger := log.Scoped("SecurityEvents", "Security events store")
+// using the other store handle, and a scoped sub-logger of the passed base logger.
+func SecurityEventLogsWith(baseLogger log.Logger, other basestore.ShareableStore) SecurityEventLogsStore {
+	logger := baseLogger.Scoped("SecurityEvents", "Security events store")
 	return &securityEventLogsStore{logger: logger, Store: basestore.NewWithHandle(other.Handle())}
 }
 
@@ -89,17 +98,13 @@ func (s *securityEventLogsStore) Insert(ctx context.Context, event *SecurityEven
 func (s *securityEventLogsStore) InsertList(ctx context.Context, events []*SecurityEvent) error {
 	vals := make([]*sqlf.Query, len(events))
 	for index, event := range events {
-		argument := event.Argument
-		if argument == nil {
-			argument = []byte(`{}`)
-		}
 		vals[index] = sqlf.Sprintf(`(%s, %s, %s, %s, %s, %s, %s, %s)`,
 			event.Name,
 			event.URL,
 			event.UserID,
 			event.AnonymousUserID,
 			event.Source,
-			argument,
+			event.marshalArgumentAsJSON(),
 			version.Version(),
 			event.Timestamp.UTC(),
 		)
@@ -109,7 +114,36 @@ func (s *securityEventLogsStore) InsertList(ctx context.Context, events []*Secur
 	if _, err := s.Handle().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 		return errors.Wrap(err, "INSERT")
 	}
+
+	if securityEventsAuditLogEnabled() {
+		for _, event := range events {
+			audit.Log(ctx, s.logger, audit.Record{
+				Entity: "security events",
+				Action: string(event.Name),
+				Fields: []log.Field{
+					log.Object("event",
+						log.String("URL", event.URL),
+						log.String("source", event.Source),
+						log.String("argument", event.marshalArgumentAsJSON()),
+						log.String("version", version.Version()),
+						log.String("timestamp", event.Timestamp.UTC().String()),
+					),
+				},
+			})
+		}
+	}
 	return nil
+}
+
+func securityEventsAuditLogEnabled() bool {
+	if logCfg := conf.Get().Log; logCfg != nil {
+		if auditCfg := logCfg.AuditLog; auditCfg != nil {
+			return auditCfg.SecurityEvents
+		}
+	}
+
+	// enabled by default for security events
+	return true
 }
 
 func (s *securityEventLogsStore) LogEvent(ctx context.Context, e *SecurityEvent) {
@@ -117,12 +151,6 @@ func (s *securityEventLogsStore) LogEvent(ctx context.Context, e *SecurityEvent)
 }
 
 func (s *securityEventLogsStore) LogEventList(ctx context.Context, events []*SecurityEvent) {
-	// We don't want to begin logging authentication or authorization events in
-	// on-premises installations yet.
-	if !envvar.SourcegraphDotComMode() {
-		return
-	}
-
 	if err := s.InsertList(ctx, events); err != nil {
 		names := make([]string, len(events))
 		for i, e := range events {

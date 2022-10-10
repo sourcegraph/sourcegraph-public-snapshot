@@ -118,7 +118,7 @@ func (d *db) EventLogs() EventLogStore {
 }
 
 func (d *db) SecurityEventLogs() SecurityEventLogsStore {
-	return SecurityEventLogsWith(d.Store)
+	return SecurityEventLogsWith(d.logger, d.Store)
 }
 
 func (d *db) ExternalServices() ExternalServiceStore {
