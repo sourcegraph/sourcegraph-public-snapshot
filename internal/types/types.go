@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -1670,8 +1671,8 @@ func NewEncryptedSecret(cipher, keyID string, key encryption.Key) *EncryptableSe
 type Webhook struct {
 	// The primary key, used for sorting and pagination
 	ID int32
-	// RandomID is the ID we display externally and will appear in the webhook URL
-	RandomID     string
+	// UUID is the ID we display externally and will appear in the webhook URL
+	UUID         uuid.UUID
 	CodeHostKind string
 	CodeHostURN  string
 	Secret       *EncryptableSecret
