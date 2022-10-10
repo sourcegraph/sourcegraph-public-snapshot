@@ -122,6 +122,19 @@ func TestMakeSearchJobs(t *testing.T) {
 		},
 		Repo: &itypes.MinimalRepo{ID: api.RepoID(1), Name: api.RepoName("testrepo")},
 	}
+
+	backfillReqInvalidQuery := &BackfillRequest{
+		Series: &types.InsightSeries{
+			ID:                  1,
+			SeriesID:            "abc",
+			Query:               "patterntype:regexp i++",
+			CreatedAt:           createdDate,
+			SampleIntervalUnit:  string(types.Week),
+			SampleIntervalValue: 1,
+		},
+		Repo: &itypes.MinimalRepo{ID: api.RepoID(1), Name: api.RepoName("testrepo")},
+	}
+
 	basicCommitClient := newFakeCommitClient(&firstCommit, recentCommits)
 	// used to simulate a single call to recent commits failing
 	recentsErrorAfter := func(times int, commits []*gitdomain.Commit) func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error) {
@@ -211,6 +224,7 @@ func TestMakeSearchJobs(t *testing.T) {
 			firstCommit:   basicCommitClient.FirstCommit,
 			recentCommits: recentsErrorAfter(6, recentCommits),
 		}, backfillReq: backfillReq, workers: 5, want: autogold.Want("Error in some jobs multiple worker", []string{"error occured: true"})},
+		{commitClient: basicCommitClient, backfillReq: backfillReqInvalidQuery, workers: 1, want: autogold.Want("Invalid query", []string{"error occured: true"})},
 	}
 
 	for _, tc := range testCases {
