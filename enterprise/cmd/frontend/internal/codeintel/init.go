@@ -10,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	autoindexinggraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql"
 	codenavgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql"
 	policiesgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
@@ -28,36 +27,32 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
+func init() {
+	ConfigInst.Load()
+}
+
 func Init(
 	ctx context.Context,
 	db database.DB,
-	siteConfig conftypes.WatchableSiteConfig,
-	config *Config,
+	siteConfig conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
-) (
-	*autoindexing.Service,
-	http.Handler,
-	error,
-) {
-	logger := log.Scoped("codeintel", "codeintel services")
+	observationContext *observation.Context,
+) error {
+	if err := ConfigInst.Validate(); err != nil {
+		return err
+	}
 
 	services, err := codeintel.GetServices(codeintel.Databases{
 		DB:          db,
-		CodeIntelDB: mustInitializeCodeIntelDB(logger),
+		CodeIntelDB: mustInitializeCodeIntelDB(observationContext.Logger),
 	})
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 
-	// Initialize blob stores
-	observationContext := &observation.Context{
-		Logger:     logger,
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
-	uploadStore, err := lsifuploadstore.New(context.Background(), config.LSIFUploadStoreConfig, observationContext)
+	uploadStore, err := lsifuploadstore.New(context.Background(), ConfigInst.LSIFUploadStoreConfig, observationContext)
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 
 	gitserverClient := gitserver.New(db, &observation.TestContext)
@@ -78,8 +73,8 @@ func Init(
 		services.UploadsService,
 		services.PoliciesService,
 		gitserverClient,
-		config.MaximumIndexesPerMonikerSearch,
-		config.HunkCacheSize,
+		ConfigInst.MaximumIndexesPerMonikerSearch,
+		ConfigInst.HunkCacheSize,
 		scopedContext("codenav"),
 	)
 
@@ -105,7 +100,8 @@ func Init(
 		uploadRootResolver,
 	)
 	enterpriseServices.NewCodeIntelUploadHandler = newUploadHandler
-	return services.AutoIndexingService, newUploadHandler(false), nil
+	enterpriseServices.CodeIntelAutoIndexingService = services.AutoIndexingService
+	return nil
 }
 
 func mustInitializeCodeIntelDB(logger log.Logger) stores.CodeIntelDB {

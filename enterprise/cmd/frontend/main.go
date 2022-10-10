@@ -49,21 +49,17 @@ func init() {
 type EnterpriseInitializer = func(context.Context, database.DB, conftypes.UnifiedWatchable, *enterprise.Services, *observation.Context) error
 
 var initFunctions = map[string]EnterpriseInitializer{
+	"app":            app.Init,
 	"authz":          authz.Init,
-	"licensing":      licensing.Init,
-	"insights":       insights.Init,
 	"batches":        batches.Init,
+	"codeintel":      codeintel.Init,
 	"codemonitors":   codemonitors.Init,
-	"dotcom":         dotcom.Init,
-	"searchcontexts": searchcontexts.Init,
-	"notebooks":      notebooks.Init,
 	"compute":        compute.Init,
-}
-
-var codeIntelConfig = &codeintel.Config{}
-
-func init() {
-	codeIntelConfig.Load()
+	"dotcom":         dotcom.Init,
+	"insights":       insights.Init,
+	"licensing":      licensing.Init,
+	"notebooks":      notebooks.Init,
+	"searchcontexts": searchcontexts.Init,
 }
 
 func enterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterprise.Services {
@@ -84,24 +80,10 @@ func enterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterp
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	if err := codeIntelConfig.Validate(); err != nil {
-		logger.Fatal("failed to load codeintel config", log.Error(err))
-	}
-
-	autoIndexingService, uploadHandler, err := codeintel.Init(ctx, db, conf, codeIntelConfig, &enterpriseServices)
-	if err != nil {
-		logger.Fatal("failed to initialize codeintel", log.Error(err))
-	}
-
-	if err := app.Init(db, conf, &enterpriseServices); err != nil {
-		logger.Fatal("failed to initialize app", log.Error(err))
-	}
-
 	// Initialize all the enterprise-specific services that do not need the codeintel-specific services.
 	for name, fn := range initFunctions {
-		initLogger := logger.Scoped(name, "")
 		if err := fn(ctx, db, conf, &enterpriseServices, observationContext); err != nil {
-			initLogger.Fatal("failed to initialize", log.Error(err))
+			logger.Fatal("failed to initialize", log.String("name", name), log.Error(err))
 		}
 	}
 
@@ -112,8 +94,8 @@ func enterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterp
 		conf,
 		&enterpriseServices,
 		observationContext,
-		autoIndexingService,
-		uploadHandler,
+		enterpriseServices.CodeIntelAutoIndexingService,
+		enterpriseServices.NewCodeIntelUploadHandler(false),
 		enterpriseServices.BatchesChangesFileGetHandler,
 		enterpriseServices.BatchesChangesFileGetHandler,
 	); err != nil {
