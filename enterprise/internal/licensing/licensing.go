@@ -56,7 +56,7 @@ func ParseProductLicenseKey(licenseKey string) (info *Info, signature string, er
 }
 
 func GetFreeLicenseInfo() (info *Info) {
-	return &Info{license.Info{Tags: []string{"plan:free"}, UserCount: 5, ExpiresAt: time.Now().Add(time.Hour * 8760)}}
+	return &Info{license.Info{Tags: []string{"plan:free"}, UserCount: 10, ExpiresAt: time.Now().Add(time.Hour * 8760)}}
 }
 
 var MockParseProductLicenseKeyWithBuiltinOrGenerationKey func(licenseKey string) (*Info, string, error)

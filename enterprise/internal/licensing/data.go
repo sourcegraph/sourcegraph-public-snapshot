@@ -124,5 +124,6 @@ var planFeatures = map[Plan][]Feature{
 	PlanFree: {
 		FeatureACLs,
 		FeatureSSO,
+		FeatureMonitoring,
 	},
 }
