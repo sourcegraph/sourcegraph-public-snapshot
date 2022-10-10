@@ -56,7 +56,7 @@ export const HEADERS_PLAIN = [
     },
     {
         name: 'Content-Length',
-        values: [LARGE_BODY_PLAIN.length.toString()],
+        values: [BODY_PLAIN.length.toString()],
     },
     {
         name: 'X-Complex-Header',
@@ -71,7 +71,7 @@ export const LARGE_HEADERS_PLAIN = [
     },
     {
         name: 'Content-Length',
-        values: [BODY_PLAIN.length.toString()],
+        values: [LARGE_BODY_PLAIN.length.toString()],
     },
     {
         name: 'X-Complex-Header',
