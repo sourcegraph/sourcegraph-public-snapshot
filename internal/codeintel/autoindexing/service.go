@@ -364,7 +364,7 @@ func (s *Service) inferIndexJobsFromRepositoryStructure(ctx context.Context, rep
 
 	script, err := s.store.GetInferenceScript(ctx)
 	if err != nil {
-		s.logger.Error("failed to fetch inference script from database", log.Error(err))
+		return nil, errors.Wrap(err, "failed to fetch inference script from database")
 	}
 	if script == "" {
 		script = overrideScript
