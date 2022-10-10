@@ -50,11 +50,12 @@ func TestForNextAndFinish(t *testing.T) {
 	logger := logtest.Scoped(t)
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	store := basestore.NewWithHandle(insightsDB.Handle())
-	clock := glock.NewMockClock()
-	clock.SetCurrent(time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC))
+
 	ctx := context.Background()
 
 	t.Run("iterate with no errors and no interruptions", func(t *testing.T) {
+		clock := glock.NewMockClock()
+		clock.SetCurrent(time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC))
 		repos := []int32{1, 5, 6, 14, 17}
 		itr, _ := NewWithClock(ctx, store, clock, repos)
 		var seen []api.RepoID
@@ -68,10 +69,12 @@ func TestForNextAndFinish(t *testing.T) {
 			return true
 		})
 		jsonify, _ := json.Marshal(got)
-		autogold.Want("iterate with no errors and no interruptions", `{"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"2021-01-01T00:00:05Z","RuntimeDuration":5000000000,"PercentComplete":1,"TotalCount":5,"SuccessCount":4,"Cursor":5}`).Equal(t, string(jsonify))
+		autogold.Want("iterate with no errors and no interruptions", `{"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"2021-01-01T00:00:05Z","RuntimeDuration":5000000000,"PercentComplete":1,"TotalCount":5,"SuccessCount":5,"Cursor":5}`).Equal(t, string(jsonify))
 	})
 
 	t.Run("iterate with one error and no interruptions", func(t *testing.T) {
+		clock := glock.NewMockClock()
+		clock.SetCurrent(time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC))
 		repos := []int32{1, 5, 6, 14, 17}
 		itr, _ := NewWithClock(ctx, store, clock, repos)
 		var seen []api.RepoID
@@ -99,6 +102,8 @@ func TestForNextAndFinish(t *testing.T) {
 	})
 
 	t.Run("iterate with no errors and one interruption", func(t *testing.T) {
+		clock := glock.NewMockClock()
+		clock.SetCurrent(time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC))
 		repos := []int32{1, 5, 6, 14, 17}
 		itr, _ := NewWithClock(ctx, store, clock, repos)
 		var seen []api.RepoID
