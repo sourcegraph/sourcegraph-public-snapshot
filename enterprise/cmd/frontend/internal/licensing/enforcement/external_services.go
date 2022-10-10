@@ -58,7 +58,7 @@ func NewBeforeCreateExternalServiceHook() func(ctx context.Context, store databa
 				return presentationError
 			}
 
-		case licensing.PlanFree:
+		case licensing.PlanFree0:
 			// Free plan can have unlimited number of code host connections for now
 		default:
 			// Default to unlimited number of code host connections

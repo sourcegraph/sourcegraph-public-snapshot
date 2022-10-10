@@ -74,7 +74,7 @@ func NewAfterCreateUserHook() func(context.Context, database.DB, *types.User) er
 			return err
 		}
 
-		if info.Plan() == licensing.PlanFree {
+		if info.Plan() == licensing.PlanFree0 {
 			store := tx.Users()
 			user.SiteAdmin = true
 			if err := store.SetIsSiteAdmin(ctx, user.ID, user.SiteAdmin); err != nil {

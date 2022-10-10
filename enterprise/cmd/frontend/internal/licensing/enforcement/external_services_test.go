@@ -23,7 +23,7 @@ func TestNewBeforeCreateExternalServiceHook(t *testing.T) {
 	}{
 		{
 			name:    "Free plan",
-			license: &license.Info{Tags: []string{"plan:free"}},
+			license: &license.Info{Tags: []string{"plan:free-0"}},
 			wantErr: false,
 		},
 
