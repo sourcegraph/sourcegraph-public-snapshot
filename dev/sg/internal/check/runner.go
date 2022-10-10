@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os/signal"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -59,6 +61,8 @@ type Runner[Args any] struct {
 // Categories, where this constructor applies some deduplication of Checks across
 // categories.
 func NewRunner[Args any](in io.Reader, out *std.Output, categories []Category[Args]) *Runner[Args] {
+	signal.Ignore(syscall.SIGTTOU, syscall.SIGTTIN)
+
 	checks := make(map[string]struct{})
 	for _, category := range categories {
 		for i, check := range category.Checks {
@@ -91,6 +95,7 @@ func (r *Runner[Args]) Check(
 	ctx context.Context,
 	args Args,
 ) error {
+
 	var span *analytics.Span
 	ctx, span = r.startSpan(ctx, "Check")
 	defer span.End()

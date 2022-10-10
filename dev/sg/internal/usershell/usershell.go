@@ -3,6 +3,7 @@ package usershell
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -80,6 +81,7 @@ func GuessUserShell() (shellPath string, shellrc string, shell Shell, error erro
 		shellrc = ".config/fish/config.fish"
 		shell = FishShell
 	}
+	fmt.Println("########### SHELLPATH ", shellPath)
 	return shellPath, filepath.Join(home, shellrc), shell, nil
 }
 

@@ -43,7 +43,7 @@ func NewOutput(dst io.Writer, verbose bool) *Output {
 // platforms/scenarios with problematic terminal detection.
 func NewFixedOutput(dst io.Writer, verbose bool) *Output {
 	return &Output{
-		Output: output.NewOutput(dst, newStaticOutputOptions(verbose)),
+		Output: output.NewOutput(dst, newStaticOutputOptions(true)),
 	}
 }
 

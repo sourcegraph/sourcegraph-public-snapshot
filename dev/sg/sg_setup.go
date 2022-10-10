@@ -73,12 +73,12 @@ var setupCommand = &cli.Command{
 		default:
 			// Prompt for details if flags are not set
 			if !cmd.IsSet("oss") {
-				std.Out.Promptf("Are you a Sourcegraph teammate? (y/n)")
-				var s string
-				if _, err := fmt.Scan(&s); err != nil {
-					return err
-				}
-				args.Teammate = s == "y"
+				// std.Out.Promptf("Are you a Sourcegraph teammate? (y/n)")
+				// var s string
+				// if _, err := fmt.Scan(&s); err != nil {
+				// 	return err
+				// }
+				args.Teammate = true
 			}
 			return setup.Interactive(cmd.Context, args)
 		}
