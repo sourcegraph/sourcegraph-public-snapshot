@@ -7,7 +7,6 @@ import (
 	"errors"
 	"io"
 	"os"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -73,7 +72,7 @@ func (s *Service) indexRepository(ctx context.Context, repoName api.RepoName) (e
 		return err
 	}
 
-	ranks, err := s.rankGraph(ctx, graph)
+	ranks, err := s.rankStreamingGraph(ctx, graph)
 	if err != nil {
 		return err
 	}
@@ -167,33 +166,4 @@ func (s *Service) forEachGoFileForDemo(ctx context.Context, repoName api.RepoNam
 	}
 
 	return nil
-}
-
-func (s *Service) rankGraph(ctx context.Context, graph streamingGraph) (map[string][]float64, error) {
-	inDegree := map[string]int{}
-	for {
-		_, to, ok, err := graph.Next(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if !ok {
-			break
-		}
-
-		inDegree[to]++
-	}
-
-	paths := make([]string, 0, len(inDegree))
-	for p := range inDegree {
-		paths = append(paths, p)
-	}
-	sort.Slice(paths, func(i, j int) bool { return inDegree[paths[i]] < inDegree[paths[j]] })
-
-	ranks := map[string][]float64{}
-	n := float64(len(paths))
-	for i, path := range paths {
-		ranks[path] = []float64{1 - float64(i)/n}
-	}
-
-	return ranks, nil
 }
