@@ -41,12 +41,9 @@ func Init(
 ) {
 	logger := log.Scoped("codeintel", "codeintel services")
 
-	// Connect to the separate LSIF database
-	codeIntelDB := mustInitializeCodeIntelDB(logger)
-
 	services, err := codeintel.GetServices(codeintel.Databases{
 		DB:          db,
-		CodeIntelDB: codeIntelDB,
+		CodeIntelDB: mustInitializeCodeIntelDB(logger),
 	})
 	if err != nil {
 		return nil, nil, err
@@ -115,16 +112,18 @@ func mustInitializeCodeIntelDB(logger log.Logger) stores.CodeIntelDB {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeIntelPostgresDSN
 	})
+
 	db, err := connections.EnsureNewCodeIntelDB(dsn, "frontend", &observation.TestContext)
 	if err != nil {
 		logger.Fatal("Failed to connect to codeintel database", log.Error(err))
 	}
+
 	return stores.NewCodeIntelDB(db)
 }
 
 func scopedContext(name string) *observation.Context {
 	return &observation.Context{
-		Logger:     logger.Scoped(name+".transport.graphql", "codeintel "+name+" graphql transport"),
+		Logger:     log.Scoped(name+".transport.graphql", "codeintel "+name+" graphql transport"),
 		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
