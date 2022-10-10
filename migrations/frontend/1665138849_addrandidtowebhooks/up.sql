@@ -3,7 +3,7 @@
 DROP TABLE IF EXISTS webhooks;
 
 CREATE TABLE webhooks (
-      id SERIAL,
+      id SERIAL PRIMARY KEY,
       rand_id uuid DEFAULT gen_random_uuid() NOT NULL,
       code_host_kind text NOT NULL,
       code_host_urn text NOT NULL,
@@ -22,6 +22,3 @@ COMMENT ON COLUMN webhooks.code_host_urn IS 'URN of a code host. This column map
 COMMENT ON COLUMN webhooks.secret IS 'Secret used to decrypt webhook payload (if supported by the code host).';
 
 COMMENT ON COLUMN webhooks.rand_id IS 'rand_id will be the user facing ID';
-
-ALTER TABLE webhooks
-    ADD CONSTRAINT webhooks_pkey PRIMARY KEY (id);
