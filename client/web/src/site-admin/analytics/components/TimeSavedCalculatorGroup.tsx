@@ -2,10 +2,12 @@ import React, { useMemo, useState, useEffect } from 'react'
 
 import classNames from 'classnames'
 
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { Card, Input, Text, H2 } from '@sourcegraph/wildcard'
 
 import { AnalyticsDateRange } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
+import { DEFAULT_MINS_SAVED_PER_CHANGESET } from '../AnalyticsBatchChangesPage'
 import { formatNumber } from '../utils'
 
 import styles from './index.module.scss'
@@ -54,6 +56,7 @@ export const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculat
     const [memoizedItems, setMemoizedItems] = useState(calculateHoursSaved(items))
     const [minutesInputChangeLogs, setMinutesInputChangeLogs] = useState<{ [index: number]: boolean }>({})
     const [percentageInputChangeLogs, setPercentageInputChangeLogs] = useState<{ [index: number]: boolean }>({})
+    const [minsSavedPerChangeset, setMinsSavedPerChangeset] = useTemporarySetting('batches.minsSavedPerChangeset', 15)
 
     useEffect(() => {
         if (!items.length) {
@@ -122,6 +125,8 @@ export const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculat
         }
         return totalSavedHours
     }, [totalSavedHours, dateRange])
+
+    console.log(minsSavedPerChangeset)
 
     return (
         <div>
@@ -222,11 +227,12 @@ export const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculat
                         <div className="d-flex flex-column align-items-center justify-content-center">
                             <Input
                                 type="number"
-                                value={minPerItem}
+                                value={minsSavedPerChangeset || DEFAULT_MINS_SAVED_PER_CHANGESET}
                                 className={classNames(styles.calculatorInput, 'mb-1')}
                                 onChange={event => {
                                     updateMinPerItem(index, Number(event.target.value))
-
+                                    setMinsSavedPerChangeset(Number(event.target.value))
+                                    console.log(minsSavedPerChangeset)
                                     if (!minutesInputChangeLogs[index]) {
                                         setMinutesInputChangeLogs({
                                             ...minutesInputChangeLogs,
