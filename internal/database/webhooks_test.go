@@ -160,7 +160,7 @@ func TestWebhookDelete(t *testing.T) {
 			name:              "Webhook with given ID doesn't exist",
 			existingWebhookID: "cafebabe-1337-0420-face-00deadbeef00",
 			deleteID:          "cafebabe-1337-0420-face-00baaaaaad00",
-			expectedErrorMsg:  "webhook not found: Cannot delete a webhook with id=cafebabe-1337-0420-face-00baaaaaad00: not found.",
+			expectedErrorMsg:  "webhook not found: Cannot delete a webhook with rand_id=\"cafebabe-1337-0420-face-00baaaaaad00\": not found.",
 		},
 		{
 			name:              "Webhook with given ID exists and successfully deleted",

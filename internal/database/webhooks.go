@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/uuid"
+	uuidlib "github.com/google/uuid"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
 
@@ -21,7 +21,7 @@ type WebhookStore interface {
 	Create(ctx context.Context, kind, urn string, secret *types.EncryptableSecret) (*types.Webhook, error)
 	GetByID(ctx context.Context, id int32) (*types.Webhook, error)
 	GetByRandomID(ctx context.Context, id string) (*types.Webhook, error)
-	Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, uuid string) error
 	Update(ctx context.Context, newWebhook *types.Webhook) (*types.Webhook, error)
 	List(ctx context.Context) ([]*types.Webhook, error)
 }
@@ -124,26 +124,29 @@ const webhookDeleteQueryFmtstr = `
 -- source: internal/database/webhooks.go:Delete
 DELETE FROM webhooks
 WHERE rand_id = %s
-RETURNING rand_id
 `
 
 // Delete the webhook. Error is returned when provided UUID is invalid, the
 // webhook is not found or something went wrong during an SQL query.
-func (s *webhookStore) Delete(ctx context.Context, id string) error {
-	_, err := uuid.Parse(id)
+func (s *webhookStore) Delete(ctx context.Context, uuid string) error {
+	// TODO(sashaostrikov) move validation to gql layer when it is implemented
+	_, err := uuidlib.Parse(uuid)
 	if err != nil {
 		return errors.Wrap(err, "invalid UUID provided")
 	}
 
-	q := sqlf.Sprintf(webhookDeleteQueryFmtstr, id)
-	_, exists, err := basestore.ScanFirstString(s.Query(ctx, q))
-
+	q := sqlf.Sprintf(webhookDeleteQueryFmtstr, uuid)
+	result, err := s.ExecResult(ctx, q)
 	if err != nil {
-		return errors.Wrap(err, "scanning webhook ID after deletion")
+		return errors.Wrap(err, "running delete SQL query")
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return errors.Wrap(err, "checking rows affected after deletion")
 	}
 
-	if !exists {
-		return &WebhookNotFoundError{Message: fmt.Sprintf("Cannot delete a webhook with id=%s: not found.", id)}
+	if rowsAffected == 0 {
+		return &WebhookNotFoundError{Message: fmt.Sprintf("Cannot delete a webhook with rand_id=%q: not found.", uuid)}
 	}
 	return nil
 }
