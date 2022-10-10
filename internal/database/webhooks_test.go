@@ -19,48 +19,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+var testSecret = "my secret"
+
 func TestWebhookCreateUnencrypted(t *testing.T) {
 	t.Parallel()
 
-	runCreateWebhookTest(context.Background(), t)
+	runCreateWebhookTest(context.Background(), t, false)
 }
 
 func TestWebhookCreateEncrypted(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-
-	store := db.Webhooks(et.ByteaTestKey{})
-
-	const secret = "don't tell anyone"
-	kind := extsvc.KindGitHub
-	urn := "https://github.com"
-	encryptedSecret := types.NewUnencryptedSecret(secret)
-
-	created, err := store.Create(ctx, kind, urn, encryptedSecret)
-	assert.NoError(t, err)
-
-	// Check that the calculated fields were correctly calculated.
-	assert.NotZero(t, created.ID)
-	assert.NotZero(t, created.UUID)
-	assert.NoError(t, err)
-	assert.Equal(t, kind, created.CodeHostKind)
-	assert.Equal(t, urn, created.CodeHostURN)
-	assert.NotZero(t, created.CreatedAt)
-	assert.NotZero(t, created.UpdatedAt)
-
-	// getting the secret from the DB as is to verify that it is encrypted
-	row := db.QueryRowContext(ctx, "SELECT secret FROM webhooks where id = $1", created.ID)
-	var rawSecret string
-	err = row.Scan(&rawSecret)
-	assert.NoError(t, err)
-
-	decryptedSecret, err := created.Secret.Decrypt(ctx)
-	assert.NoError(t, err)
-	assert.NotEqual(t, rawSecret, decryptedSecret)
-	assert.Equal(t, secret, decryptedSecret)
+	runCreateWebhookTest(context.Background(), t, true)
 }
 
 func TestWebhookCreateNoSecret(t *testing.T) {
@@ -140,11 +110,14 @@ func TestWebhookUpdate(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	t.Run("updating w/ unencrypted secret", func(t *testing.T) {
-		store, created := runCreateWebhookTest(ctx, t)
+	const newCodeHostURN = "https://new.github.com"
+	const updatedSecret = "my new secret"
 
-		created.CodeHostURN = "https://new.github.com"
-		created.Secret = types.NewUnencryptedSecret("my new secret")
+	t.Run("updating w/ unencrypted secret", func(t *testing.T) {
+		store, _, created := runCreateWebhookTest(ctx, t, false)
+
+		created.CodeHostURN = newCodeHostURN
+		created.Secret = types.NewUnencryptedSecret(updatedSecret)
 		updated, err := store.Update(ctx, created)
 		if err != nil {
 			t.Fatalf("error updating webhook: %s", err)
@@ -152,25 +125,69 @@ func TestWebhookUpdate(t *testing.T) {
 		assert.Equal(t, created.ID, updated.ID)
 		assert.Equal(t, created.UUID, updated.UUID)
 		assert.Equal(t, created.CodeHostKind, updated.CodeHostKind)
-		assert.Equal(t, "https://new.github.com", updated.CodeHostURN)
+		assert.Equal(t, newCodeHostURN, updated.CodeHostURN)
 		assert.NotZero(t, created.CreatedAt, updated.CreatedAt)
 		assert.NotZero(t, created.UpdatedAt)
 		assert.Greater(t, updated.UpdatedAt, created.UpdatedAt)
 	})
+
+	t.Run("updating w/ encrypted secret", func(t *testing.T) {
+		store, db, created := runCreateWebhookTest(ctx, t, true)
+		created.CodeHostURN = newCodeHostURN
+		created.Secret = types.NewUnencryptedSecret(updatedSecret)
+		updated, err := store.Update(ctx, created)
+		if err != nil {
+			t.Fatalf("error updating webhook: %s", err)
+		}
+		assert.Equal(t, created.ID, updated.ID)
+		assert.Equal(t, created.UUID, updated.UUID)
+		assert.Equal(t, created.CodeHostKind, updated.CodeHostKind)
+		assert.Equal(t, newCodeHostURN, updated.CodeHostURN)
+		assert.NotZero(t, created.CreatedAt, updated.CreatedAt)
+		assert.NotZero(t, created.UpdatedAt)
+		assert.Greater(t, updated.UpdatedAt, created.UpdatedAt)
+
+		row := db.QueryRowContext(ctx, "SELECT secret FROM webhooks where id = $1", created.ID)
+		var rawSecret string
+		err = row.Scan(&rawSecret)
+		assert.NoError(t, err)
+
+		decryptedSecret, err := updated.Secret.Decrypt(ctx)
+		assert.NoError(t, err)
+		assert.NotEqual(t, rawSecret, decryptedSecret)
+		assert.Equal(t, decryptedSecret, updatedSecret)
+	})
+
+	t.Run("updating webhook that doesn't exist", func(t *testing.T) {
+		webhook := types.Webhook{ID: 100}
+
+		logger := logtest.Scoped(t)
+		db := NewDB(logger, dbtest.NewDB(logger, t))
+
+		store := db.Webhooks(nil)
+		_, err := store.Update(context.Background(), &webhook)
+		if err == nil {
+			t.Fatal("attempting to update a non-existent webhook should return an error")
+		}
+		assert.Equal(t, err, webhookNotFoundErr{id: 100})
+	})
 }
 
-func runCreateWebhookTest(ctx context.Context, t *testing.T) (WebhookStore, *types.Webhook) {
+func runCreateWebhookTest(ctx context.Context, t *testing.T, encrypt bool) (WebhookStore, DB, *types.Webhook) {
 	t.Helper()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 
 	store := db.Webhooks(nil)
+	if encrypt {
+		store = db.Webhooks(et.ByteaTestKey{})
+	}
 
 	kind := extsvc.KindGitHub
 	urn := "https://github.com"
-	secret := types.NewUnencryptedSecret("very secret (not)")
+	encryptedSecret := types.NewUnencryptedSecret(testSecret)
 
-	created, err := store.Create(ctx, kind, urn, secret)
+	created, err := store.Create(ctx, kind, urn, encryptedSecret)
 	assert.NoError(t, err)
 
 	// Check that the calculated fields were correctly calculated.
@@ -181,7 +198,7 @@ func runCreateWebhookTest(ctx context.Context, t *testing.T) (WebhookStore, *typ
 	assert.NotZero(t, created.CreatedAt)
 	assert.NotZero(t, created.UpdatedAt)
 
-	// getting the secret from the DB as is to verify that it is not encrypted
+	// getting the secret from the DB as is to verify its encryption
 	row := db.QueryRowContext(ctx, "SELECT secret FROM webhooks where id = $1", created.ID)
 	var rawSecret string
 	err = row.Scan(&rawSecret)
@@ -189,7 +206,14 @@ func runCreateWebhookTest(ctx context.Context, t *testing.T) (WebhookStore, *typ
 
 	decryptedSecret, err := created.Secret.Decrypt(ctx)
 	assert.NoError(t, err)
-	assert.Equal(t, rawSecret, decryptedSecret)
 
-	return store, created
+	if !encrypt {
+		// if no encryption, raw secret stored in the db and decrypted secret should be the same
+		assert.Equal(t, rawSecret, decryptedSecret)
+	} else {
+		// if encryption is specified, decrypted secret and raw secret should not match
+		assert.NotEqual(t, rawSecret, decryptedSecret)
+		assert.Equal(t, testSecret, decryptedSecret)
+	}
+	return store, db, created
 }

@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/keegancsmith/sqlf"
@@ -178,6 +179,9 @@ func (s *webhookStore) Update(ctx context.Context, newWebhook *types.Webhook) (*
 
 	updated, err := scanWebhook(s.QueryRow(ctx, q), s.key)
 	if err != nil {
+		if strings.Contains(err.Error(), "no rows in result set") {
+			return nil, webhookNotFoundErr{id: newWebhook.ID}
+		}
 		return nil, errors.Wrap(err, "scanning webhook")
 	}
 
@@ -226,4 +230,17 @@ func scanWebhook(sc dbutil.Scanner, key encryption.Key) (*types.Webhook, error) 
 	hook.Secret = types.NewEncryptedSecret(rawSecret, keyID, key)
 
 	return &hook, nil
+}
+
+// webhookNotFoundErr is the error that is returned when a webhook for the given id is not found.
+type webhookNotFoundErr struct {
+	id int32
+}
+
+func (err webhookNotFoundErr) Error() string {
+	return fmt.Sprintf("webhook not found for id: %d", err.id)
+}
+
+func (err webhookNotFoundErr) NotFound() bool {
+	return true
 }
