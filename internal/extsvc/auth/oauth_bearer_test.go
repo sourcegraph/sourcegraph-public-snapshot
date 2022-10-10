@@ -43,7 +43,19 @@ func TestOAuthBearerToken(t *testing.T) {
 	})
 
 	t.Run("NeedsRefresh", func(t *testing.T) {
-		token := &OAuthBearerToken{AccessToken: "abcdef", Expiry: time.Now().Add(-1 * time.Hour)}
+		token := &OAuthBearerToken{AccessToken: "abcdef", Expiry: time.Now().Add(-1 * time.Minute)}
+
+		assert.True(t, token.NeedsRefresh())
+	})
+
+	t.Run("Does not need refresh", func(t *testing.T) {
+		token := &OAuthBearerToken{AccessToken: "abcdef", Expiry: time.Now().Add(1 * time.Minute)}
+
+		assert.False(t, token.NeedsRefresh())
+	})
+
+	t.Run("Needs refresh within buffer", func(t *testing.T) {
+		token := &OAuthBearerToken{AccessToken: "abcdef", Expiry: time.Now().Add(1 * time.Minute), NeedsRefreshBuffer: 5}
 
 		assert.True(t, token.NeedsRefresh())
 	})
