@@ -4,18 +4,26 @@ import (
 	"context"
 	"net/http"
 
+	logger "github.com/1log"
 	"github.com/prometheus/client_golang/prometheus"
-	logger "github.com/sourcegraph/log"
+	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	autoindexinggraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql"
 	codenavgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql"
 	policiesgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifuploadstore"
 	uploadgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
+	uploadshttp "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/http"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	executorgraphql "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -32,9 +40,33 @@ func Init(
 	http.Handler,
 	error,
 ) {
-	services, err := NewServices(ctx, config, siteConfig, db)
+	logger := log.Scoped("codeintel", "codeintel services")
+
+	// Connect to the separate LSIF database
+	codeIntelDB := mustInitializeCodeIntelDB(logger)
+
+	services, err := codeintel.GetServices(codeintel.Databases{
+		DB:          db,
+		CodeIntelDB: codeIntelDB,
+	})
 	if err != nil {
 		return nil, nil, err
+	}
+
+	// Initialize blob stores
+	observationContext := &observation.Context{
+		Logger:     logger,
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
+		Registerer: prometheus.DefaultRegisterer,
+	}
+	uploadStore, err := lsifuploadstore.New(context.Background(), config.LSIFUploadStoreConfig, observationContext)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	gitserverClient := gitserver.New(db, &observation.TestContext)
+	newUploadHandler := func(withCodeHostAuth bool) http.Handler {
+		return uploadshttp.GetHandler(services.UploadsService, db, uploadStore, withCodeHostAuth)
 	}
 
 	autoindexingRootResolver := autoindexinggraphql.NewRootResolver(
@@ -49,7 +81,7 @@ func Init(
 		services.AutoIndexingService,
 		services.UploadsService,
 		services.PoliciesService,
-		services.gitserverClient,
+		gitserverClient,
 		config.MaximumIndexesPerMonikerSearch,
 		config.HunkCacheSize,
 		scopedContext("codenav"),
@@ -76,8 +108,19 @@ func Init(
 		policyRootResolver,
 		uploadRootResolver,
 	)
-	enterpriseServices.NewCodeIntelUploadHandler = services.NewUploadHandler
-	return services.AutoIndexingService, services.NewUploadHandler(false), nil
+	enterpriseServices.NewCodeIntelUploadHandler = newUploadHandler
+	return services.AutoIndexingService, newUploadHandler(false), nil
+}
+
+func mustInitializeCodeIntelDB(logger log.Logger) stores.CodeIntelDB {
+	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
+		return serviceConnections.CodeIntelPostgresDSN
+	})
+	db, err := connections.EnsureNewCodeIntelDB(dsn, "frontend", &observation.TestContext)
+	if err != nil {
+		logger.Fatal("Failed to connect to codeintel database", log.Error(err))
+	}
+	return stores.NewCodeIntelDB(db)
 }
 
 func scopedContext(name string) *observation.Context {
