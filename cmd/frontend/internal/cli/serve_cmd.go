@@ -21,6 +21,8 @@ import (
 	"go.opentelemetry.io/otel"
 
 	oce "github.com/sourcegraph/sourcegraph/cmd/frontend/oneclickexport"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
 
 	sglog "github.com/sourcegraph/log"
 
@@ -293,7 +295,17 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 		return err
 	}
 
-	internalAPI, err := makeInternalAPI(schema, db, enterprise, rateLimitWatcher)
+	codeIntelDB := mustInitializeCodeIntelDB(logger)
+
+	codeIntelServices, err := codeintel.GetServices(codeintel.Databases{
+		DB:          db,
+		CodeIntelDB: codeIntelDB,
+	})
+	if err != nil {
+		return err
+	}
+
+	internalAPI, err := makeInternalAPI(schema, db, enterprise, rateLimitWatcher, codeIntelServices)
 	if err != nil {
 		return err
 	}
@@ -352,7 +364,13 @@ func makeExternalAPI(db database.DB, schema *graphql.Schema, enterprise enterpri
 	return server, nil
 }
 
-func makeInternalAPI(schema *graphql.Schema, db database.DB, enterprise enterprise.Services, rateLimiter graphqlbackend.LimitWatcher) (goroutine.BackgroundRoutine, error) {
+func makeInternalAPI(
+	schema *graphql.Schema,
+	db database.DB,
+	enterprise enterprise.Services,
+	rateLimiter graphqlbackend.LimitWatcher,
+	codeIntelServices codeintel.Services,
+) (goroutine.BackgroundRoutine, error) {
 	if httpAddrInternal == "" {
 		return nil, nil
 	}
@@ -369,6 +387,7 @@ func makeInternalAPI(schema *graphql.Schema, db database.DB, enterprise enterpri
 		enterprise.NewCodeIntelUploadHandler,
 		enterprise.NewComputeStreamHandler,
 		rateLimiter,
+		codeIntelServices,
 	)
 	httpServer := &http.Server{
 		Handler:     internalHandler,
@@ -414,4 +433,15 @@ func makeRateLimitWatcher() (*graphqlbackend.BasicLimitWatcher, error) {
 	}
 
 	return graphqlbackend.NewBasicLimitWatcher(sglog.Scoped("BasicLimitWatcher", "basic rate-limiter"), ratelimitStore), nil
+}
+
+func mustInitializeCodeIntelDB(logger sglog.Logger) stores.CodeIntelDB {
+	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
+		return serviceConnections.CodeIntelPostgresDSN
+	})
+	db, err := connections.EnsureNewCodeIntelDB(dsn, "frontend-internal", &observation.TestContext)
+	if err != nil {
+		logger.Fatal("Failed to connect to codeintel database", sglog.Error(err))
+	}
+	return stores.NewCodeIntelDB(db)
 }

@@ -11,7 +11,7 @@ export interface DrillDownInsightCreationFormValues {
     insightName: string
 }
 
-const insightRequiredValidator = createRequiredValidator('Insight name is a required field.')
+const INSIGHT_NAME_VALIDATORS = createRequiredValidator('Insight name is a required field.')
 
 const DEFAULT_FORM_VALUES: DrillDownInsightCreationFormValues = {
     insightName: '',
@@ -34,7 +34,7 @@ export const DrillDownInsightCreationForm: FunctionComponent<DrillDownInsightCre
     const insightName = useField({
         name: 'insightName',
         formApi: formAPI,
-        validators: { sync: insightRequiredValidator },
+        validators: { sync: INSIGHT_NAME_VALIDATORS },
     })
 
     return (

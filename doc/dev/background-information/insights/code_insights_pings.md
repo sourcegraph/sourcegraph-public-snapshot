@@ -345,6 +345,20 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
 - **Version added:** 3.38
 <!-- - **Version(s) broken:**  -->
 
+### Series backfill time
+
+**Type:** BE capture
+
+**Intended purpose:** To track how long on average it takes series to backfill.
+
+**Functional implementation:** Exposes aggregate information using the backfill times found on `insight_series`.
+
+**Other considerations:** N/A
+
+- Aggregation: weekly
+- Event Code: [WeeklySeriesBackfillTime](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+WeeklySeriesBackfillTime&patternType=standard)
+- **Version added:** 4.1
+
 ## Search results aggregations metrics
 
 ### Information icon hovers

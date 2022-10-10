@@ -752,6 +752,17 @@ Indexes:
 
 ```
 
+# Table "public.codeintel_inference_scripts"
+```
+      Column      |           Type           | Collation | Nullable | Default 
+------------------+--------------------------+-----------+----------+---------
+ insert_timestamp | timestamp with time zone |           | not null | now()
+ script           | text                     |           | not null | 
+
+```
+
+Contains auto-index job inference Lua scripts as an alternative to setting via environment variables.
+
 # Table "public.codeintel_langugage_support_requests"
 ```
    Column    |  Type   | Collation | Nullable |                             Default                              
@@ -3046,17 +3057,19 @@ Foreign-key constraints:
 
 # Table "public.webhooks"
 ```
-      Column       |           Type           | Collation | Nullable |      Default      
--------------------+--------------------------+-----------+----------+-------------------
- id                | uuid                     |           | not null | gen_random_uuid()
+      Column       |           Type           | Collation | Nullable |               Default                
+-------------------+--------------------------+-----------+----------+--------------------------------------
+ id                | integer                  |           | not null | nextval('webhooks_id_seq'::regclass)
  code_host_kind    | text                     |           | not null | 
  code_host_urn     | text                     |           | not null | 
  secret            | text                     |           |          | 
  created_at        | timestamp with time zone |           | not null | now()
  updated_at        | timestamp with time zone |           | not null | now()
- encryption_key_id | text                     |           | not null | ''::text
+ encryption_key_id | text                     |           |          | 
+ uuid              | uuid                     |           | not null | gen_random_uuid()
 Indexes:
     "webhooks_pkey" PRIMARY KEY, btree (id)
+    "webhooks_uuid_key" UNIQUE CONSTRAINT, btree (uuid)
 
 ```
 

@@ -10,7 +10,7 @@ import { Badged } from 'sourcegraph'
 
 import { asError, ErrorLike, isErrorLike, isDefined, property, logger } from '@sourcegraph/common'
 import { Location } from '@sourcegraph/extension-api-types'
-import { FileSearchResult, FetchFileParameters } from '@sourcegraph/search-ui'
+import { FileContentSearchResult, FetchFileParameters } from '@sourcegraph/search-ui'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -184,13 +184,12 @@ export class FileLocations extends React.PureComponent<Props, State> {
         { locationsByURI }: { locationsByURI: Map<string, Location[]> },
         index: number
     ): JSX.Element => (
-        <FileSearchResult
+        <FileContentSearchResult
             index={index}
             location={this.props.location}
             telemetryService={this.props.telemetryService}
-            expanded={true}
+            defaultExpanded={true}
             result={referencesToContentMatch(uri, locationsByURI.get(uri)!)}
-            icon={this.props.icon}
             onSelect={this.onSelect}
             showAllMatches={true}
             fetchHighlightedFileLineRanges={this.props.fetchHighlightedFileLineRanges}
@@ -216,16 +215,16 @@ function referencesToContentMatch(uri: string, references: Badged<Location>[]): 
             },
             ranges: [
                 {
-                   start: {
-                       line: reference.range.start.line,
-                       offset: 0,
-                       column: reference.range.start.character,
-                   },
-                   end: {
-                       line: reference.range.end.line,
-                       offset: 0,
-                       column: reference.range.end.character,
-                   },
+                    start: {
+                        line: reference.range.start.line,
+                        offset: 0,
+                        column: reference.range.start.character,
+                    },
+                    end: {
+                        line: reference.range.end.line,
+                        offset: 0,
+                        column: reference.range.end.character,
+                    },
                 },
             ],
             aggregableBadges: reference.aggregableBadges,
