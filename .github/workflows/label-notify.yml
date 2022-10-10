@@ -15,6 +15,7 @@ jobs:
              message: /cc {recipients}
              recipients: |
                   team/integrations=@muratsu @jjinnii @ryankscott
+                  team/growth=@sourcegraph/growth
                   team/cloud=@sourcegraph/cloud
                   team/search-product=@benvenker @lguychard
                   team/search-core=@sourcegraph/search-core
