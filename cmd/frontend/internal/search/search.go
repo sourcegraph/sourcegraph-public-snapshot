@@ -281,27 +281,6 @@ func strPtr(s string) *string {
 	return &s
 }
 
-// withDecoration hydrates event match with decorated hunks for a corresponding file match.
-func withDecoration(ctx context.Context, db database.DB, eventMatch streamhttp.EventMatch, internalResult result.Match, kind string, contextLines int) streamhttp.EventMatch {
-	// FIXME: Use contextLines to constrain hunks.
-	_ = contextLines
-	if _, ok := internalResult.(*result.FileMatch); !ok {
-		return eventMatch
-	}
-
-	event, ok := eventMatch.(*streamhttp.EventContentMatch)
-	if !ok {
-		return eventMatch
-	}
-
-	if kind == "html" {
-		event.Hunks = DecorateFileHunksHTML(ctx, db, internalResult.(*result.FileMatch))
-	}
-
-	// TODO(team/search-product): support additional decoration for terminal clients #24617.
-	return eventMatch
-}
-
 func fromMatch(match result.Match, repoCache map[api.RepoID]*types.SearchedRepo, enableChunkMatches bool) streamhttp.EventMatch {
 	switch v := match.(type) {
 	case *result.FileMatch:

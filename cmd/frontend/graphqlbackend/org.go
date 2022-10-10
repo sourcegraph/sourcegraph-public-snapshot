@@ -8,11 +8,11 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -29,7 +29,7 @@ func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name str
 	// 🚨 SECURITY: Only org members can get org details on Cloud
 	if envvar.SourcegraphDotComMode() {
 		hasAccess := func() error {
-			if backend.CheckOrgAccess(ctx, r.db, org.ID) == nil {
+			if auth.CheckOrgAccess(ctx, r.db, org.ID) == nil {
 				return nil
 			}
 
@@ -46,7 +46,7 @@ func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name str
 		}
 		if err := hasAccess(); err != nil {
 			// site admin can access org ID
-			if backend.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil {
+			if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil {
 				onlyOrgID := &types.Org{ID: org.ID}
 				return &OrgResolver{db: r.db, org: onlyOrgID}, nil
 			}
@@ -80,7 +80,7 @@ func orgByIDInt32WithForcedAccess(ctx context.Context, db database.DB, orgID int
 	// 🚨 SECURITY: Only org members can get org details on Cloud
 	//              And all invited users by email
 	if !forceAccess && envvar.SourcegraphDotComMode() {
-		err := backend.CheckOrgAccess(ctx, db, orgID)
+		err := auth.CheckOrgAccess(ctx, db, orgID)
 		if err != nil {
 			hasAccess := false
 			// allow invited user to view org details
@@ -141,8 +141,8 @@ func (o *OrgResolver) CreatedAt() DateTime { return DateTime{Time: o.org.Created
 
 func (o *OrgResolver) Members(ctx context.Context) (*staticUserConnectionResolver, error) {
 	// 🚨 SECURITY: Only org members can list other org members.
-	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, o.db, o.org.ID); err != nil {
-		if err == backend.ErrNotAnOrgMember {
+	if err := auth.CheckOrgAccessOrSiteAdmin(ctx, o.db, o.org.ID); err != nil {
+		if err == auth.ErrNotAnOrgMember {
 			return nil, errors.New("must be a member of this organization to view members")
 		}
 		return nil, err
@@ -170,7 +170,7 @@ func (o *OrgResolver) settingsSubject() api.SettingsSubject {
 func (o *OrgResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
 	// 🚨 SECURITY: Only organization members and site admins (not on cloud) may access the settings,
 	// because they may contain secrets or other sensitive data.
-	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, o.db, o.org.ID); err != nil {
+	if err := auth.CheckOrgAccessOrSiteAdmin(ctx, o.db, o.org.ID); err != nil {
 		return nil, err
 	}
 
@@ -210,7 +210,7 @@ func (o *OrgResolver) ViewerPendingInvitation(ctx context.Context) (*organizatio
 }
 
 func (o *OrgResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, o.db, o.org.ID); err == backend.ErrNotAuthenticated || err == backend.ErrNotAnOrgMember {
+	if err := auth.CheckOrgAccessOrSiteAdmin(ctx, o.db, o.org.ID); err == auth.ErrNotAuthenticated || err == auth.ErrNotAnOrgMember {
 		return false, nil
 	} else if err != nil {
 		return false, err
@@ -329,7 +329,7 @@ func (r *schemaResolver) UpdateOrganization(ctx context.Context, args *struct {
 
 	// 🚨 SECURITY: Check that the current user is a member
 	// of the org that is being modified.
-	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
+	if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
 		return nil, err
 	}
 
@@ -356,7 +356,7 @@ func (r *schemaResolver) RemoveUserFromOrganization(ctx context.Context, args *s
 
 	// 🚨 SECURITY: Check that the current user is a member of the org that is being modified, or a
 	// site admin.
-	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
+	if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
 		return nil, err
 	}
 	memberCount, err := r.db.OrgMembers().MemberCount(ctx, orgID)
@@ -382,10 +382,10 @@ func (r *schemaResolver) RemoveUserFromOrganization(ctx context.Context, args *s
 }
 
 func (r *schemaResolver) siteAdminSelfRemoving(ctx context.Context, userID int32) bool {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return false
 	}
-	if err := backend.CheckSameUser(ctx, userID); err != nil {
+	if err := auth.CheckSameUser(ctx, userID); err != nil {
 		return false
 	}
 	return true
@@ -403,13 +403,13 @@ func (r *schemaResolver) AddUserToOrganization(ctx context.Context, args *struct
 
 	// 🚨 SECURITY: Do not allow direct add on Cloud unless the site admin is a member of the org
 	if envvar.SourcegraphDotComMode() {
-		if err := backend.CheckOrgAccess(ctx, r.db, orgID); err != nil {
+		if err := auth.CheckOrgAccess(ctx, r.db, orgID); err != nil {
 			return nil, errors.Errorf("Must be a member of the organization to add members", err)
 		}
 	}
 	// 🚨 SECURITY: Must be a site admin to immediately add a user to an organization (bypassing the
 	// invitation step).
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 

@@ -29,14 +29,13 @@ func TestRetrievingAndDeduplicatingIndexedRefs(t *testing.T) {
 		}
 		return api.CommitID("deadbeef"), nil
 	}
-	gitserver.Mocks.GetDefaultBranch = func(repo api.RepoName) (refName string, commit api.CommitID, err error) {
-		// Mock default branch lookup in (*RepsitoryResolver).DefaultBranch.
-		return defaultBranchRef, "", nil
-	}
+	gsClient := gitserver.NewMockClient()
+	gsClient.GetDefaultBranchFunc.SetDefaultReturn(defaultBranchRef, "", nil)
+
 	defer gitserver.ResetMocks()
 
 	repoIndexResolver := &repositoryTextSearchIndexResolver{
-		repo: NewRepositoryResolver(db, gitserver.NewClient(db), &types.Repo{Name: "alice/repo"}),
+		repo: NewRepositoryResolver(db, gsClient, &types.Repo{Name: "alice/repo"}),
 		client: &backend.FakeSearcher{Repos: []*zoekt.RepoListEntry{{
 			Repository: zoekt.Repository{
 				Name: string("alice/repo"),

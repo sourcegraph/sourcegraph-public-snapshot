@@ -227,6 +227,12 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types
 	}
 	stats.WeeklyGroupResultsExpandedViewCollapse = weeklyGroupResultsExpandedViewCollapse
 
+	backfillTime, err := GetBackfillTimePing(ctx, db)
+	if err != nil {
+		return nil, errors.Wrap(err, "GetBackfillTimePing")
+	}
+	stats.WeeklySeriesBackfillTime = backfillTime
+
 	return &stats, nil
 }
 
@@ -436,6 +442,31 @@ func GetGroupResultsExpandedViewPing(ctx context.Context, db database.DB, pingNa
 	return groupResultsExpandedViewPings, nil
 }
 
+func GetBackfillTimePing(ctx context.Context, db database.DB) ([]types.InsightsBackfillTimePing, error) {
+	store := db.EventLogs()
+	name := InsightsBackfillTimePingName
+	all, err := store.ListAll(ctx, database.EventLogsListOptions{
+		LimitOffset: &database.LimitOffset{
+			Limit:  1,
+			Offset: 0,
+		},
+		EventName: &name,
+	})
+	if err != nil {
+		return []types.InsightsBackfillTimePing{}, err
+	} else if len(all) == 0 {
+		return []types.InsightsBackfillTimePing{}, nil
+	}
+
+	latest := all[0]
+	var backfillTimePing []types.InsightsBackfillTimePing
+	err = json.Unmarshal([]byte(latest.Argument), &backfillTimePing)
+	if err != nil {
+		return []types.InsightsBackfillTimePing{}, errors.Wrap(err, "Unmarshal")
+	}
+	return backfillTimePing, nil
+}
+
 // WithAll adds multiple pings by name to this builder
 func (b *PingQueryBuilder) WithAll(pings []types.PingName) *PingQueryBuilder {
 	for _, p := range pings {
@@ -559,3 +590,4 @@ const InsightsOrgVisibleInsightsPingName = `INSIGHT_ORG_VISIBLE_INSIGHTS`
 const InsightsTotalOrgsWithDashboardPingName = `INSIGHT_TOTAL_ORGS_WITH_DASHBOARD`
 const InsightsDashboardTotalCountPingName = `INSIGHT_DASHBOARD_TOTAL_COUNT`
 const InsightsPerDashboardPingName = `INSIGHTS_PER_DASHBORD_STATS`
+const InsightsBackfillTimePingName = `INSIGHTS_BACKFILL_TIME`

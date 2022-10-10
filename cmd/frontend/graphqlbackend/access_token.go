@@ -6,7 +6,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
@@ -34,7 +34,7 @@ func accessTokenByID(ctx context.Context, db database.DB, id graphql.ID) (*acces
 		return nil, err
 	}
 	// 🚨 SECURITY: Only the user (token owner) and site admins may retrieve the token.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, db, accessToken.SubjectUserID); err != nil {
+	if err := auth.CheckSiteAdminOrSameUser(ctx, db, accessToken.SubjectUserID); err != nil {
 		return nil, err
 	}
 	return &accessTokenResolver{db: db, accessToken: *accessToken}, nil
