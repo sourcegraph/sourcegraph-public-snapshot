@@ -63,7 +63,26 @@ func (s *Service) indexRepository(ctx context.Context, repoName api.RepoName) (e
 	_, _, endObservation := s.operations.indexRepository.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	// TODO - improve symbol extraction (this is major weak sauce)
+	pathsBySymbols, err := s.extractSymbols(ctx, repoName)
+	if err != nil {
+		return err
+	}
+
+	graph, err := s.buildGraph(ctx, repoName, pathsBySymbols)
+	if err != nil {
+		return err
+	}
+
+	ranks, err := s.rankGraph(ctx, graph)
+	if err != nil {
+		return err
+	}
+
+	return s.store.SetDocumentRanks(ctx, repoName, ranks)
+}
+
+// TODO - improve symbol extraction (this is major weak sauce)
+func (s *Service) extractSymbols(ctx context.Context, repoName api.RepoName) (map[string][]string, error) {
 	pathsBySymbols := map[string][]string{}
 	extractSymbols := func(h *tar.Header, content []byte) error {
 		matches := symbolPattern.FindAllStringSubmatch(string(content), -1)
@@ -74,9 +93,13 @@ func (s *Service) indexRepository(ctx context.Context, repoName api.RepoName) (e
 		return nil
 	}
 	if err := s.forEachGoFileForDemo(ctx, repoName, extractSymbols); err != nil {
-		return err
+		return nil, err
 	}
 
+	return pathsBySymbols, nil
+}
+
+func (s *Service) buildGraph(ctx context.Context, repoName api.RepoName, pathsBySymbols map[string][]string) (map[string]map[string]struct{}, error) {
 	// a value contains an occurrence defined by its key
 	graph := map[string]map[string]struct{}{}
 	extractGraphEdges := func(h *tar.Header, content []byte) error {
@@ -97,22 +120,10 @@ func (s *Service) indexRepository(ctx context.Context, repoName api.RepoName) (e
 		return nil
 	}
 	if err := s.forEachGoFileForDemo(ctx, repoName, extractGraphEdges); err != nil {
-		return err
+		return nil, err
 	}
 
-	paths := make([]string, 0, len(graph))
-	for p := range graph {
-		paths = append(paths, p)
-	}
-	sort.Slice(paths, func(i, j int) bool { return len(graph[paths[i]]) < len(graph[paths[j]]) })
-
-	ranks := map[string][]float64{}
-	n := float64(len(paths))
-	for i, path := range paths {
-		ranks[path] = []float64{1 - float64(i)/n}
-	}
-
-	return s.store.SetDocumentRanks(ctx, repoName, ranks)
+	return graph, nil
 }
 
 // NOTE: we only look at non-vendored Go files under 10,000 characters for demo
@@ -153,4 +164,20 @@ func (s *Service) forEachGoFileForDemo(ctx context.Context, repoName api.RepoNam
 	}
 
 	return nil
+}
+
+func (s *Service) rankGraph(_ context.Context, graph map[string]map[string]struct{}) (map[string][]float64, error) {
+	paths := make([]string, 0, len(graph))
+	for p := range graph {
+		paths = append(paths, p)
+	}
+	sort.Slice(paths, func(i, j int) bool { return len(graph[paths[i]]) < len(graph[paths[j]]) })
+
+	ranks := map[string][]float64{}
+	n := float64(len(paths))
+	for i, path := range paths {
+		ranks[path] = []float64{1 - float64(i)/n}
+	}
+
+	return ranks, nil
 }
