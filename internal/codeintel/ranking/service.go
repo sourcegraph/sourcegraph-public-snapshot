@@ -9,8 +9,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type Service struct {
@@ -43,14 +45,38 @@ func (s *Service) GetRepoRank(ctx context.Context, repoName api.RepoName) (_ []f
 	_, _, endObservation := s.operations.getRepoRank.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
+	siteConfig := conf.Get().SiteConfiguration
+	userRank := repoRankFromConfig(siteConfig, string(repoName))
+
 	starRank, err := s.store.GetStarRank(ctx, repoName)
 	if err != nil {
 		return nil, err
 	}
 
-	userRank := float64(0) // TODO
-
 	return []float64{userRank, starRank}, nil
+}
+
+// copy pasta
+// https://github.com/sourcegraph/sourcegraph/blob/942c417363b07c9e0a6377456f1d6a80a94efb99/cmd/frontend/internal/httpapi/search.go#L172
+func repoRankFromConfig(siteConfig schema.SiteConfiguration, repoName string) float64 {
+	val := 0.0
+	if siteConfig.ExperimentalFeatures == nil || siteConfig.ExperimentalFeatures.Ranking == nil {
+		return val
+	}
+	scores := siteConfig.ExperimentalFeatures.Ranking.RepoScores
+	if len(scores) == 0 {
+		return val
+	}
+	// try every "directory" in the repo name to assign it a value, so a repoName like
+	// "github.com/sourcegraph/zoekt" will have "github.com", "github.com/sourcegraph",
+	// and "github.com/sourcegraph/zoekt" tested.
+	for i := 0; i < len(repoName); i++ {
+		if repoName[i] == '/' {
+			val += scores[repoName[:i]]
+		}
+	}
+	val += scores[repoName]
+	return val
 }
 
 var allPathsPattern = lazyregexp.New(".*")
