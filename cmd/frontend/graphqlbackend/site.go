@@ -131,7 +131,11 @@ func (r *siteConfigurationResolver) ID(ctx context.Context) (int32, error) {
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return 0, err
 	}
-	return 0, nil // TODO(slimsag): future: return the real ID here to prevent races
+	conf, err := r.db.Conf().SiteGetLatest(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return conf.ID, nil
 }
 
 func (r *siteConfigurationResolver) EffectiveContents(ctx context.Context) (JSONCString, error) {
@@ -180,8 +184,7 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 		return false, errors.Errorf("error unredacting secrets: %s", err)
 	}
 	prev.Site = unredacted
-	// TODO(slimsag): future: actually pass lastID through to prevent race conditions
-	if err := globals.ConfigurationServerFrontendOnly.Write(ctx, prev); err != nil {
+	if err := globals.ConfigurationServerFrontendOnly.Write(ctx, prev, args.LastID); err != nil {
 		return false, err
 	}
 	return globals.ConfigurationServerFrontendOnly.NeedServerRestart(), nil
