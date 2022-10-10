@@ -13,7 +13,7 @@ type QueryAnalyzer struct {
 }
 
 type QueryObject struct {
-	query string
+	query query.Plan
 	// the object can be augmented with repository information, or anything else.
 }
 
@@ -45,15 +45,45 @@ func (a *QueryAnalyzer) Cost(o QueryObject) int {
 // - how precise the content is (e.g. file: selector)
 
 func queryContentCost(o QueryObject) int {
-	searchType, _ := querybuilder.DetectSearchType(o.query, "structural")
+	var contentCost int
+	nodes := o.query.ToQ()
+	queryString := nodes.String()
+	searchType, _ := querybuilder.DetectSearchType(queryString, "structural")
 	if searchType == query.SearchTypeStructural {
-		return 1000
+		contentCost += 1000
 	}
 	if searchType == query.SearchTypeRegex {
 		// todo detect if capture group pattern would match loads
-		return 800
+		// (although, if that is the case, do we even want to allow such a query?)
+		contentCost += 800
 	}
-	return 0
+
+	var unindexed, diff, commit bool
+	// todo visit each parameter and:
+	// if unindexed, diff, commit, set (slow stuff: matches slow)
+	query.VisitParameter(nodes, func(field, value string, negated bool, annotation query.Annotation) {
+		if field == "index" && (value == "no" || value == "n") {
+			unindexed = true
+		}
+		if field == "type" {
+			if value == "diff" {
+				diff = true
+			} else if value == "commit" {
+				commit = true
+			}
+		}
+	})
+	if unindexed {
+		contentCost += 1000
+	}
+	if diff {
+		contentCost += 1000
+	}
+	if commit {
+		contentCost += 800
+	}
+
+	return contentCost
 }
 
 func queryPrecisionCost(o QueryObject) int {
