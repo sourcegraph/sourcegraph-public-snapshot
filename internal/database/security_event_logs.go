@@ -113,7 +113,9 @@ func (s *securityEventLogsStore) InsertList(ctx context.Context, events []*Secur
 
 	if _, err := s.Handle().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 		return errors.Wrap(err, "INSERT")
-	} else if auditLogEnabled() {
+	}
+
+	if securityEventsAuditLogEnabled() {
 		for _, event := range events {
 			audit.Log(ctx, s.logger, audit.Record{
 				Entity: "security events",
