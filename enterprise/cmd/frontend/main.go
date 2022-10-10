@@ -88,7 +88,7 @@ func enterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterp
 		logger.Fatal("failed to load codeintel config", log.Error(err))
 	}
 
-	autoIndexingService, uploadHandler, err := codeintel.Init(ctx, codeIntelConfig, conf, db, &enterpriseServices)
+	autoIndexingService, uploadHandler, err := codeintel.Init(ctx, db, conf, codeIntelConfig, &enterpriseServices)
 	if err != nil {
 		logger.Fatal("failed to initialize codeintel", log.Error(err))
 	}

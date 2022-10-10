@@ -30,9 +30,9 @@ import (
 
 func Init(
 	ctx context.Context,
-	config *Config,
-	siteConfig conftypes.WatchableSiteConfig,
 	db database.DB,
+	siteConfig conftypes.WatchableSiteConfig,
+	config *Config,
 	enterpriseServices *enterprise.Services,
 ) (
 	*autoindexing.Service,
