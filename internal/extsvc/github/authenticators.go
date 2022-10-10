@@ -1,6 +1,7 @@
 package github
 
 import (
+	"context"
 	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/hex"
@@ -10,6 +11,7 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -72,13 +74,13 @@ func (token *gitHubAppAuthenticator) Hash() string {
 type GitHubAppInstallationAuthenticator struct {
 	installationID          int64
 	InstallationAccessToken string
-	Expiry                  *time.Time
-	refreshFunc             func(*GitHubAppInstallationAuthenticator) error
+	Expiry                  time.Time
+	refreshFunc             func(context.Context, httpcli.Doer) (string, time.Time, error)
 }
 
 // NewGitHubAppAuthenticator constructs a new OAuth Bearer Token
 // authenticator for GitHub Apps using given appID and private key.
-func NewGitHubAppInstallationAuthenticator(installationID int64, installationAccessToken string, expiry *time.Time, refreshFunc func(*GitHubAppInstallationAuthenticator) error) (auth.Authenticator, error) {
+func NewGitHubAppInstallationAuthenticator(installationID int64, installationAccessToken string, expiry time.Time, refreshFunc func(context.Context, httpcli.Doer) (string, time.Time, error)) (auth.AuthenticatorWithRefresh, error) {
 	return &GitHubAppInstallationAuthenticator{
 		installationID:          installationID,
 		InstallationAccessToken: installationAccessToken,
@@ -98,14 +100,22 @@ func (token *GitHubAppInstallationAuthenticator) Hash() string {
 }
 
 func (token *GitHubAppInstallationAuthenticator) NeedsRefresh() bool {
-	if token.Expiry != nil {
-		return time.Until(*token.Expiry) < 5*time.Minute
+	if !token.Expiry.IsZero() {
+		return time.Until(token.Expiry) < 5*time.Minute
 	}
 
 	// If no expiry is set we default to False
 	return false
 }
 
-func (token *GitHubAppInstallationAuthenticator) Refresh() error {
-	return token.refreshFunc(token)
+func (token *GitHubAppInstallationAuthenticator) Refresh(ctx context.Context, cli httpcli.Doer) error {
+	newToken, newExpiry, err := token.refreshFunc(ctx, cli)
+	if err != nil {
+		return err
+	}
+
+	token.InstallationAccessToken = newToken
+	token.Expiry = newExpiry
+
+	return nil
 }

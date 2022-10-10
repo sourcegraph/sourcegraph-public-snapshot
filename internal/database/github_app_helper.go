@@ -3,12 +3,14 @@ package database
 import (
 	"context"
 	"net/url"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/schema"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
@@ -16,24 +18,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func getGitHubAppInstallationRefreshFunc(externalServiceStore ExternalServiceStore, installationID int64, svc *types.ExternalService, appClient *github.V3Client) func(auther *github.GitHubAppInstallationAuthenticator) error {
-	return func(auther *github.GitHubAppInstallationAuthenticator) error {
-		token, err := appClient.CreateAppInstallationAccessToken(context.Background(), installationID)
+func getGitHubAppInstallationRefreshFunc(externalServiceStore ExternalServiceStore, installationID int64, svc *types.ExternalService, appClient *github.V3Client) func(context.Context, httpcli.Doer) (string, time.Time, error) {
+	return func(ctx context.Context, cli httpcli.Doer) (string, time.Time, error) {
+		token, err := appClient.CreateAppInstallationAccessToken(ctx, installationID)
 		if err != nil {
-			return err
+			return "", time.Time{}, err
 		}
-
-		auther.InstallationAccessToken = token.GetToken()
-		auther.Expiry = token.ExpiresAt
 
 		rawConfig, err := svc.Config.Decrypt(context.Background())
 		if err != nil {
-			return err
+			return "", time.Time{}, err
 		}
 
 		rawConfig, err = jsonc.Edit(rawConfig, token.GetToken(), "token")
 		if err != nil {
-			return err
+			return "", time.Time{}, err
 		}
 
 		externalServiceStore.Update(context.Background(),
@@ -45,7 +44,7 @@ func getGitHubAppInstallationRefreshFunc(externalServiceStore ExternalServiceSto
 			},
 		)
 
-		return nil
+		return *token.Token, token.GetExpiresAt(), nil
 	}
 }
 
@@ -54,7 +53,7 @@ func getGitHubAppInstallationRefreshFunc(externalServiceStore ExternalServiceSto
 // Access Tokens. The App Authenticator is used in the refresh function of the
 // Installation Authenticator, as installation tokens cannot be refreshed on their own.
 // The App Authenticator is used to generate a new token once it expires.
-func BuildGitHubAppInstallationAuther(externalServiceStore ExternalServiceStore, appID string, pkey []byte, urn string, apiURL *url.URL, cli httpcli.Doer, installationID int64, svc *types.ExternalService) (*github.GitHubAppInstallationAuthenticator, error) {
+func BuildGitHubAppInstallationAuther(externalServiceStore ExternalServiceStore, appID string, pkey []byte, urn string, apiURL *url.URL, cli httpcli.Doer, installationID int64, svc *types.ExternalService) (auth.AuthenticatorWithRefresh, error) {
 	if svc == nil {
 		return nil, nil
 	}
@@ -78,6 +77,10 @@ func BuildGitHubAppInstallationAuther(externalServiceStore ExternalServiceStore,
 			With(log.String("appID", appID)),
 		urn, apiURL, appAuther, cli)
 
-	github.NewGitHubAppInstallationAuthenticator(installationID, c.Token, svc.TokenExpiresAt, getGitHubAppInstallationRefreshFunc(externalServiceStore, installationID, svc, appClient))
-	return nil, nil
+	expiry := time.Time{}
+	if svc.TokenExpiresAt != nil {
+		expiry = *svc.TokenExpiresAt
+	}
+
+	return github.NewGitHubAppInstallationAuthenticator(installationID, c.Token, expiry, getGitHubAppInstallationRefreshFunc(externalServiceStore, installationID, svc, appClient))
 }
