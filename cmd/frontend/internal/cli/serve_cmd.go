@@ -438,9 +438,11 @@ func mustInitializeCodeIntelDB(logger sglog.Logger) stores.CodeIntelDB {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeIntelPostgresDSN
 	})
-	db, err := connections.EnsureNewCodeIntelDB(dsn, "frontend-internal", &observation.TestContext)
+
+	db, err := connections.EnsureNewCodeIntelDB(dsn, "frontend", &observation.TestContext)
 	if err != nil {
 		logger.Fatal("Failed to connect to codeintel database", sglog.Error(err))
 	}
+
 	return stores.NewCodeIntelDB(db)
 }
