@@ -8,12 +8,15 @@ package ranking
 
 import (
 	"context"
+	"io"
 	"sync"
 
 	regexp "github.com/grafana/regexp"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
+	authz "github.com/sourcegraph/sourcegraph/internal/authz"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/store"
 	conftypes "github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	gitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
 	schema "github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -25,12 +28,18 @@ type MockStore struct {
 	// DoneFunc is an instance of a mock function object controlling the
 	// behavior of the method Done.
 	DoneFunc *StoreDoneFunc
+	// GetDocumentRanksFunc is an instance of a mock function object
+	// controlling the behavior of the method GetDocumentRanks.
+	GetDocumentRanksFunc *StoreGetDocumentRanksFunc
 	// GetReposFunc is an instance of a mock function object controlling the
 	// behavior of the method GetRepos.
 	GetReposFunc *StoreGetReposFunc
 	// GetStarRankFunc is an instance of a mock function object controlling
 	// the behavior of the method GetStarRank.
 	GetStarRankFunc *StoreGetStarRankFunc
+	// SetDocumentRanksFunc is an instance of a mock function object
+	// controlling the behavior of the method SetDocumentRanks.
+	SetDocumentRanksFunc *StoreSetDocumentRanksFunc
 	// TransactFunc is an instance of a mock function object controlling the
 	// behavior of the method Transact.
 	TransactFunc *StoreTransactFunc
@@ -45,13 +54,23 @@ func NewMockStore() *MockStore {
 				return
 			},
 		},
+		GetDocumentRanksFunc: &StoreGetDocumentRanksFunc{
+			defaultHook: func(context.Context, api.RepoName) (r0 map[string][]float64, r1 bool, r2 error) {
+				return
+			},
+		},
 		GetReposFunc: &StoreGetReposFunc{
-			defaultHook: func(context.Context) (r0 []string, r1 error) {
+			defaultHook: func(context.Context) (r0 []api.RepoName, r1 error) {
 				return
 			},
 		},
 		GetStarRankFunc: &StoreGetStarRankFunc{
 			defaultHook: func(context.Context, api.RepoName) (r0 float64, r1 error) {
+				return
+			},
+		},
+		SetDocumentRanksFunc: &StoreSetDocumentRanksFunc{
+			defaultHook: func(context.Context, api.RepoName, map[string][]float64) (r0 error) {
 				return
 			},
 		},
@@ -72,14 +91,24 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.Done")
 			},
 		},
+		GetDocumentRanksFunc: &StoreGetDocumentRanksFunc{
+			defaultHook: func(context.Context, api.RepoName) (map[string][]float64, bool, error) {
+				panic("unexpected invocation of MockStore.GetDocumentRanks")
+			},
+		},
 		GetReposFunc: &StoreGetReposFunc{
-			defaultHook: func(context.Context) ([]string, error) {
+			defaultHook: func(context.Context) ([]api.RepoName, error) {
 				panic("unexpected invocation of MockStore.GetRepos")
 			},
 		},
 		GetStarRankFunc: &StoreGetStarRankFunc{
 			defaultHook: func(context.Context, api.RepoName) (float64, error) {
 				panic("unexpected invocation of MockStore.GetStarRank")
+			},
+		},
+		SetDocumentRanksFunc: &StoreSetDocumentRanksFunc{
+			defaultHook: func(context.Context, api.RepoName, map[string][]float64) error {
+				panic("unexpected invocation of MockStore.SetDocumentRanks")
 			},
 		},
 		TransactFunc: &StoreTransactFunc{
@@ -97,11 +126,17 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		DoneFunc: &StoreDoneFunc{
 			defaultHook: i.Done,
 		},
+		GetDocumentRanksFunc: &StoreGetDocumentRanksFunc{
+			defaultHook: i.GetDocumentRanks,
+		},
 		GetReposFunc: &StoreGetReposFunc{
 			defaultHook: i.GetRepos,
 		},
 		GetStarRankFunc: &StoreGetStarRankFunc{
 			defaultHook: i.GetStarRank,
+		},
+		SetDocumentRanksFunc: &StoreSetDocumentRanksFunc{
+			defaultHook: i.SetDocumentRanks,
 		},
 		TransactFunc: &StoreTransactFunc{
 			defaultHook: i.Transact,
@@ -210,34 +245,35 @@ func (c StoreDoneFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// StoreGetReposFunc describes the behavior when the GetRepos method of the
-// parent MockStore instance is invoked.
-type StoreGetReposFunc struct {
-	defaultHook func(context.Context) ([]string, error)
-	hooks       []func(context.Context) ([]string, error)
-	history     []StoreGetReposFuncCall
+// StoreGetDocumentRanksFunc describes the behavior when the
+// GetDocumentRanks method of the parent MockStore instance is invoked.
+type StoreGetDocumentRanksFunc struct {
+	defaultHook func(context.Context, api.RepoName) (map[string][]float64, bool, error)
+	hooks       []func(context.Context, api.RepoName) (map[string][]float64, bool, error)
+	history     []StoreGetDocumentRanksFuncCall
 	mutex       sync.Mutex
 }
 
-// GetRepos delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockStore) GetRepos(v0 context.Context) ([]string, error) {
-	r0, r1 := m.GetReposFunc.nextHook()(v0)
-	m.GetReposFunc.appendCall(StoreGetReposFuncCall{v0, r0, r1})
-	return r0, r1
+// GetDocumentRanks delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockStore) GetDocumentRanks(v0 context.Context, v1 api.RepoName) (map[string][]float64, bool, error) {
+	r0, r1, r2 := m.GetDocumentRanksFunc.nextHook()(v0, v1)
+	m.GetDocumentRanksFunc.appendCall(StoreGetDocumentRanksFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
 }
 
-// SetDefaultHook sets function that is called when the GetRepos method of
-// the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreGetReposFunc) SetDefaultHook(hook func(context.Context) ([]string, error)) {
+// SetDefaultHook sets function that is called when the GetDocumentRanks
+// method of the parent MockStore instance is invoked and the hook queue is
+// empty.
+func (f *StoreGetDocumentRanksFunc) SetDefaultHook(hook func(context.Context, api.RepoName) (map[string][]float64, bool, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// GetRepos method of the parent MockStore instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *StoreGetReposFunc) PushHook(hook func(context.Context) ([]string, error)) {
+// GetDocumentRanks method of the parent MockStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *StoreGetDocumentRanksFunc) PushHook(hook func(context.Context, api.RepoName) (map[string][]float64, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -245,20 +281,130 @@ func (f *StoreGetReposFunc) PushHook(hook func(context.Context) ([]string, error
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreGetReposFunc) SetDefaultReturn(r0 []string, r1 error) {
-	f.SetDefaultHook(func(context.Context) ([]string, error) {
+func (f *StoreGetDocumentRanksFunc) SetDefaultReturn(r0 map[string][]float64, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName) (map[string][]float64, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreGetDocumentRanksFunc) PushReturn(r0 map[string][]float64, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, api.RepoName) (map[string][]float64, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *StoreGetDocumentRanksFunc) nextHook() func(context.Context, api.RepoName) (map[string][]float64, bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreGetDocumentRanksFunc) appendCall(r0 StoreGetDocumentRanksFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreGetDocumentRanksFuncCall objects
+// describing the invocations of this function.
+func (f *StoreGetDocumentRanksFunc) History() []StoreGetDocumentRanksFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreGetDocumentRanksFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreGetDocumentRanksFuncCall is an object that describes an invocation
+// of method GetDocumentRanks on an instance of MockStore.
+type StoreGetDocumentRanksFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 map[string][]float64
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 bool
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreGetDocumentRanksFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreGetDocumentRanksFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// StoreGetReposFunc describes the behavior when the GetRepos method of the
+// parent MockStore instance is invoked.
+type StoreGetReposFunc struct {
+	defaultHook func(context.Context) ([]api.RepoName, error)
+	hooks       []func(context.Context) ([]api.RepoName, error)
+	history     []StoreGetReposFuncCall
+	mutex       sync.Mutex
+}
+
+// GetRepos delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockStore) GetRepos(v0 context.Context) ([]api.RepoName, error) {
+	r0, r1 := m.GetReposFunc.nextHook()(v0)
+	m.GetReposFunc.appendCall(StoreGetReposFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetRepos method of
+// the parent MockStore instance is invoked and the hook queue is empty.
+func (f *StoreGetReposFunc) SetDefaultHook(hook func(context.Context) ([]api.RepoName, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetRepos method of the parent MockStore instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *StoreGetReposFunc) PushHook(hook func(context.Context) ([]api.RepoName, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreGetReposFunc) SetDefaultReturn(r0 []api.RepoName, r1 error) {
+	f.SetDefaultHook(func(context.Context) ([]api.RepoName, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreGetReposFunc) PushReturn(r0 []string, r1 error) {
-	f.PushHook(func(context.Context) ([]string, error) {
+func (f *StoreGetReposFunc) PushReturn(r0 []api.RepoName, r1 error) {
+	f.PushHook(func(context.Context) ([]api.RepoName, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreGetReposFunc) nextHook() func(context.Context) ([]string, error) {
+func (f *StoreGetReposFunc) nextHook() func(context.Context) ([]api.RepoName, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -296,7 +442,7 @@ type StoreGetReposFuncCall struct {
 	Arg0 context.Context
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []string
+	Result0 []api.RepoName
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -421,6 +567,114 @@ func (c StoreGetStarRankFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// StoreSetDocumentRanksFunc describes the behavior when the
+// SetDocumentRanks method of the parent MockStore instance is invoked.
+type StoreSetDocumentRanksFunc struct {
+	defaultHook func(context.Context, api.RepoName, map[string][]float64) error
+	hooks       []func(context.Context, api.RepoName, map[string][]float64) error
+	history     []StoreSetDocumentRanksFuncCall
+	mutex       sync.Mutex
+}
+
+// SetDocumentRanks delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockStore) SetDocumentRanks(v0 context.Context, v1 api.RepoName, v2 map[string][]float64) error {
+	r0 := m.SetDocumentRanksFunc.nextHook()(v0, v1, v2)
+	m.SetDocumentRanksFunc.appendCall(StoreSetDocumentRanksFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SetDocumentRanks
+// method of the parent MockStore instance is invoked and the hook queue is
+// empty.
+func (f *StoreSetDocumentRanksFunc) SetDefaultHook(hook func(context.Context, api.RepoName, map[string][]float64) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetDocumentRanks method of the parent MockStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *StoreSetDocumentRanksFunc) PushHook(hook func(context.Context, api.RepoName, map[string][]float64) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreSetDocumentRanksFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, map[string][]float64) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreSetDocumentRanksFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, api.RepoName, map[string][]float64) error {
+		return r0
+	})
+}
+
+func (f *StoreSetDocumentRanksFunc) nextHook() func(context.Context, api.RepoName, map[string][]float64) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreSetDocumentRanksFunc) appendCall(r0 StoreSetDocumentRanksFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreSetDocumentRanksFuncCall objects
+// describing the invocations of this function.
+func (f *StoreSetDocumentRanksFunc) History() []StoreSetDocumentRanksFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreSetDocumentRanksFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreSetDocumentRanksFuncCall is an object that describes an invocation
+// of method SetDocumentRanks on an instance of MockStore.
+type StoreSetDocumentRanksFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 map[string][]float64
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreSetDocumentRanksFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreSetDocumentRanksFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
 // StoreTransactFunc describes the behavior when the Transact method of the
 // parent MockStore instance is invoked.
 type StoreTransactFunc struct {
@@ -530,6 +784,9 @@ func (c StoreTransactFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/internal/codeintel/ranking) used for
 // unit testing.
 type MockGitserverClient struct {
+	// ArchiveReaderFunc is an instance of a mock function object
+	// controlling the behavior of the method ArchiveReader.
+	ArchiveReaderFunc *GitserverClientArchiveReaderFunc
 	// ListFilesForRepoFunc is an instance of a mock function object
 	// controlling the behavior of the method ListFilesForRepo.
 	ListFilesForRepoFunc *GitserverClientListFilesForRepoFunc
@@ -540,6 +797,11 @@ type MockGitserverClient struct {
 // overwritten.
 func NewMockGitserverClient() *MockGitserverClient {
 	return &MockGitserverClient{
+		ArchiveReaderFunc: &GitserverClientArchiveReaderFunc{
+			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, gitserver.ArchiveOptions) (r0 io.ReadCloser, r1 error) {
+				return
+			},
+		},
 		ListFilesForRepoFunc: &GitserverClientListFilesForRepoFunc{
 			defaultHook: func(context.Context, api.RepoName, string, *regexp.Regexp) (r0 []string, r1 error) {
 				return
@@ -552,6 +814,11 @@ func NewMockGitserverClient() *MockGitserverClient {
 // interface. All methods panic on invocation, unless overwritten.
 func NewStrictMockGitserverClient() *MockGitserverClient {
 	return &MockGitserverClient{
+		ArchiveReaderFunc: &GitserverClientArchiveReaderFunc{
+			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, gitserver.ArchiveOptions) (io.ReadCloser, error) {
+				panic("unexpected invocation of MockGitserverClient.ArchiveReader")
+			},
+		},
 		ListFilesForRepoFunc: &GitserverClientListFilesForRepoFunc{
 			defaultHook: func(context.Context, api.RepoName, string, *regexp.Regexp) ([]string, error) {
 				panic("unexpected invocation of MockGitserverClient.ListFilesForRepo")
@@ -565,10 +832,128 @@ func NewStrictMockGitserverClient() *MockGitserverClient {
 // overwritten.
 func NewMockGitserverClientFrom(i GitserverClient) *MockGitserverClient {
 	return &MockGitserverClient{
+		ArchiveReaderFunc: &GitserverClientArchiveReaderFunc{
+			defaultHook: i.ArchiveReader,
+		},
 		ListFilesForRepoFunc: &GitserverClientListFilesForRepoFunc{
 			defaultHook: i.ListFilesForRepo,
 		},
 	}
+}
+
+// GitserverClientArchiveReaderFunc describes the behavior when the
+// ArchiveReader method of the parent MockGitserverClient instance is
+// invoked.
+type GitserverClientArchiveReaderFunc struct {
+	defaultHook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, gitserver.ArchiveOptions) (io.ReadCloser, error)
+	hooks       []func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, gitserver.ArchiveOptions) (io.ReadCloser, error)
+	history     []GitserverClientArchiveReaderFuncCall
+	mutex       sync.Mutex
+}
+
+// ArchiveReader delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGitserverClient) ArchiveReader(v0 context.Context, v1 authz.SubRepoPermissionChecker, v2 api.RepoName, v3 gitserver.ArchiveOptions) (io.ReadCloser, error) {
+	r0, r1 := m.ArchiveReaderFunc.nextHook()(v0, v1, v2, v3)
+	m.ArchiveReaderFunc.appendCall(GitserverClientArchiveReaderFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ArchiveReader method
+// of the parent MockGitserverClient instance is invoked and the hook queue
+// is empty.
+func (f *GitserverClientArchiveReaderFunc) SetDefaultHook(hook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, gitserver.ArchiveOptions) (io.ReadCloser, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ArchiveReader method of the parent MockGitserverClient instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *GitserverClientArchiveReaderFunc) PushHook(hook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, gitserver.ArchiveOptions) (io.ReadCloser, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverClientArchiveReaderFunc) SetDefaultReturn(r0 io.ReadCloser, r1 error) {
+	f.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, gitserver.ArchiveOptions) (io.ReadCloser, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverClientArchiveReaderFunc) PushReturn(r0 io.ReadCloser, r1 error) {
+	f.PushHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, gitserver.ArchiveOptions) (io.ReadCloser, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverClientArchiveReaderFunc) nextHook() func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, gitserver.ArchiveOptions) (io.ReadCloser, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverClientArchiveReaderFunc) appendCall(r0 GitserverClientArchiveReaderFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverClientArchiveReaderFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverClientArchiveReaderFunc) History() []GitserverClientArchiveReaderFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverClientArchiveReaderFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverClientArchiveReaderFuncCall is an object that describes an
+// invocation of method ArchiveReader on an instance of MockGitserverClient.
+type GitserverClientArchiveReaderFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 authz.SubRepoPermissionChecker
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 api.RepoName
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 gitserver.ArchiveOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 io.ReadCloser
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverClientArchiveReaderFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverClientArchiveReaderFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // GitserverClientListFilesForRepoFunc describes the behavior when the
