@@ -218,6 +218,23 @@ func TestWebhookUpdate(t *testing.T) {
 	})
 }
 
+func TestWebhookList(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	store := db.Webhooks(et.ByteaTestKey{})
+	ctx := context.Background()
+
+	encryptedSecret := types.NewUnencryptedSecret(testSecret)
+	for i := 0; i < 10; i++ {
+		_, err := store.Create(ctx, extsvc.KindGitHub, fmt.Sprintf("http://instance-%d.github.com", i), encryptedSecret)
+		assert.NoError(t, err)
+	}
+
+	allWebhooks, err := store.List(ctx)
+	assert.NoError(t, err)
+	assert.Len(t, allWebhooks, 10)
+}
+
 func createWebhook(ctx context.Context, t *testing.T, store WebhookStore) *types.Webhook {
 	t.Helper()
 	kind := extsvc.KindGitHub

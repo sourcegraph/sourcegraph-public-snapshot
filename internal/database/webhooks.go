@@ -247,9 +247,29 @@ RETURNING
 
 // List the webhooks
 func (s *webhookStore) List(ctx context.Context) ([]*types.Webhook, error) {
-	// TODO(sashaostrikov) implement this method
-	panic("implement this method")
+	q := sqlf.Sprintf(webhookListQueryFmtstr, sqlf.Join(webhookColumns, ", "))
+	rows, err := s.Query(ctx, q)
+	if err != nil {
+		return []*types.Webhook{}, errors.Wrap(err, "error running query")
+	}
+	defer rows.Close()
+	res := make([]*types.Webhook, 0, 10)
+	for rows.Next() {
+		webhook, err := scanWebhook(rows, s.key)
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, webhook)
+	}
+	return res, nil
 }
+
+const webhookListQueryFmtstr = `
+-- source: internal/database/webhooks.go:List
+SELECT
+	%s
+FROM webhooks
+`
 
 func scanWebhook(sc dbutil.Scanner, key encryption.Key) (*types.Webhook, error) {
 	var (
