@@ -2,6 +2,8 @@ import React from 'react'
 
 import classNames from 'classnames'
 
+import { ForwardReferenceExoticComponent } from '@sourcegraph/wildcard'
+
 import { formatRepositoryStarCount } from '../util/stars'
 
 import { CodeHostIcon } from './CodeHostIcon'
@@ -18,26 +20,30 @@ export interface ResultContainerProps {
     resultType?: string
     repoName: string
     className?: string
-    as?: React.ElementType
     onResultClicked?: () => void
 }
 
 /**
  * The container component for a result in the SearchResults component.
  */
-export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<ResultContainerProps>> = ({
-    children,
-    title,
-    titleClassName,
-    resultClassName,
-    index,
-    repoStars,
-    resultType,
-    repoName,
-    className,
-    as: Component = 'div',
-    onResultClicked,
-}) => {
+export const ResultContainer: ForwardReferenceExoticComponent<
+    React.ElementType,
+    React.PropsWithChildren<ResultContainerProps>
+> = React.forwardRef(function ResultContainer(props, reference) {
+    const {
+        children,
+        title,
+        titleClassName,
+        resultClassName,
+        index,
+        repoStars,
+        resultType,
+        repoName,
+        className,
+        as: Component = 'div',
+        onResultClicked,
+    } = props
+
     const formattedRepositoryStarCount = formatRepositoryStarCount(repoStars)
 
     const trackReferencePanelClick = (): void => onResultClicked?.()
@@ -48,6 +54,7 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
             data-testid="result-container"
             data-result-type={resultType}
             onClick={trackReferencePanelClick}
+            ref={reference}
         >
             <article aria-labelledby={`result-container-${index}`}>
                 <div className={styles.header} id={`result-container-${index}`}>
@@ -69,4 +76,4 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
             </article>
         </Component>
     )
-}
+})

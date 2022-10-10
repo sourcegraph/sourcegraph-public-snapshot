@@ -1,7 +1,6 @@
 import React, { useCallback, useMemo, KeyboardEvent, MouseEvent } from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
 import { useHistory } from 'react-router'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
@@ -32,7 +31,6 @@ import { LastSyncedIcon } from './LastSyncedIcon'
 import styles from './FileMatchChildren.module.scss'
 
 interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
-    location?: H.Location
     result: ContentMatch
     grouped: MatchGroup[]
     /* Clicking on a match opens the link in a new tab */

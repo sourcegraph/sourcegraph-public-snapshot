@@ -27,7 +27,6 @@ export interface SymbolSearchResultProps extends TelemetryProps, SettingsCascade
     openInNewTab?: boolean
     repoDisplayName: string
     containerClassName?: string
-    as?: React.ElementType
     index: number
     onSelect: () => void
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
@@ -39,7 +38,6 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
     repoDisplayName,
     onSelect,
     containerClassName,
-    as,
     index,
     telemetryService,
     settingsCascade,
@@ -133,7 +131,6 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
             repoStars={result.repoStars}
             className={containerClassName}
             resultClassName={styles.symbolsOverride}
-            as={as}
         >
             <div className={styles.symbols}>
                 {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
