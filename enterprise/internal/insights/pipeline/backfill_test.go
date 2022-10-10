@@ -42,7 +42,7 @@ func makeJobGenerator(numJobs int) SearchJobGenerator {
 
 func searchRunner(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.Job, err error) (context.Context, *requestContext, []store.RecordSeriesPointArgs, error) {
 	points := make([]store.RecordSeriesPointArgs, 0, len(jobs))
-	for _, _ = range jobs {
+	for range jobs {
 		points = append(points, store.RecordSeriesPointArgs{Point: store.SeriesPoint{Value: 10}})
 	}
 	return ctx, reqContext, points, nil
