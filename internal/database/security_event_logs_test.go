@@ -140,3 +140,22 @@ func TestSecurityEventLogs_WithAuditLogDisabled(t *testing.T) {
 	auditLogs := filterAudit(logs)
 	assert.Equal(t, 0, len(auditLogs))
 }
+
+func TestSecurityEventLogs_WithInternalActor(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger, _ := logtest.Captured(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	err := db.SecurityEventLogs().Insert(ctx, &SecurityEvent{
+		Name:            "test_event",
+		URL:             "http://sourcegraph.com",
+		Source:          "Web",
+		UserID:          0, // IMPORTANT: This is 0, just like for an internal actor
+		AnonymousUserID: "",
+	})
+	assert.Nilf(t, err, "insert failed")
+}
