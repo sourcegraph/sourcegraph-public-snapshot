@@ -9,11 +9,11 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, createAggregateError, ErrorLike, isErrorLike, logger, memoizeObservable } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { Link, LoadingSpinner, CardHeader, Card, Icon } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
+import { GitRefFields, RepositoryGitBranchesOverviewRepository } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { gitReferenceFragments, GitReferenceNode } from '../GitReference'
 
@@ -22,8 +22,8 @@ import { RepositoryBranchesAreaPageProps } from './RepositoryBranchesArea'
 import styles from './RepositoryBranchesOverviewPage.module.scss'
 
 interface Data {
-    defaultBranch: GQL.IGitRef | null
-    activeBranches: GQL.IGitRef[]
+    defaultBranch: GitRefFields | null
+    activeBranches: GitRefFields[]
     hasMoreActiveBranches: boolean
 }
 
@@ -33,21 +33,24 @@ export const queryGitBranches = memoizeObservable(
             gql`
                 query RepositoryGitBranchesOverview($repo: ID!, $first: Int!, $withBehindAhead: Boolean!) {
                     node(id: $repo) {
-                        ... on Repository {
-                            defaultBranch {
-                                ...GitRefFields
-                            }
-                            gitRefs(first: $first, type: GIT_BRANCH, orderBy: AUTHORED_OR_COMMITTED_AT) {
-                                nodes {
-                                    ...GitRefFields
-                                }
-                                pageInfo {
-                                    hasNextPage
-                                }
-                            }
+                        ...RepositoryGitBranchesOverviewRepository
+                    }
+                }
+
+                fragment RepositoryGitBranchesOverviewRepository on Repository {
+                    defaultBranch {
+                        ...GitRefFields
+                    }
+                    gitRefs(first: $first, type: GIT_BRANCH, orderBy: AUTHORED_OR_COMMITTED_AT) {
+                        nodes {
+                            ...GitRefFields
+                        }
+                        pageInfo {
+                            hasNextPage
                         }
                     }
                 }
+
                 ${gitReferenceFragments}
             `,
             { ...args, withBehindAhead: true }
@@ -56,7 +59,7 @@ export const queryGitBranches = memoizeObservable(
                 if (!data || !data.node) {
                     throw createAggregateError(errors)
                 }
-                const repo = data.node as GQL.IRepository
+                const repo = data.node as RepositoryGitBranchesOverviewRepository
                 if (!repo.gitRefs || !repo.gitRefs.nodes) {
                     throw createAggregateError(errors)
                 }

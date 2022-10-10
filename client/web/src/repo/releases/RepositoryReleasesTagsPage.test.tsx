@@ -2,7 +2,7 @@ import { render } from '@testing-library/react'
 import * as H from 'history'
 import { of } from 'rxjs'
 
-import { IRepository, IGitRef } from '@sourcegraph/shared/src/schema'
+import { RepositoryFields } from '../../graphql-operations'
 
 import { RepositoryReleasesTagsPage } from './RepositoryReleasesTagsPage'
 
@@ -14,11 +14,11 @@ describe('RepositoryReleasesTagsPage', () => {
                 <RepositoryReleasesTagsPage
                     history={history}
                     location={history.location}
-                    repo={{ id: '123' } as IRepository}
+                    repo={{ id: '123' } as RepositoryFields}
                     queryGitReferences={() =>
                         of({
                             totalCount: 0,
-                            nodes: [] as IGitRef[],
+                            nodes: [],
                             __typename: 'GitRefConnection',
                             pageInfo: { __typename: 'PageInfo', endCursor: '', hasNextPage: false },
                         })

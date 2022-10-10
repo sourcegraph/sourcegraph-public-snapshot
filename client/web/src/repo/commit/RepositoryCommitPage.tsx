@@ -26,7 +26,6 @@ import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -52,6 +51,7 @@ import {
     GitCommitFields,
     RepositoryCommitResult,
     RepositoryCommitVariables,
+    RepositoryComparisonFileDiffConnection,
     RepositoryFields,
     Scalars,
 } from '../../graphql-operations'
@@ -347,7 +347,7 @@ export class RepositoryCommitPage extends React.Component<RepositoryCommitPagePr
         )
     }
 
-    private queryDiffs = (args: FilteredConnectionQueryArguments): Observable<GQL.IFileDiffConnection> =>
+    private queryDiffs = (args: FilteredConnectionQueryArguments): Observable<RepositoryComparisonFileDiffConnection> =>
         queryRepositoryComparisonFileDiffs({
             ...args,
             repo: this.props.repo.id,

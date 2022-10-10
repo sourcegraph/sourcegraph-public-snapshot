@@ -9,7 +9,6 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { numberWithCommas, pluralize } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Button, ButtonGroup, Link, CardHeader, CardBody, Card, Input, Label, Tooltip } from '@sourcegraph/wildcard'
 
@@ -26,6 +25,7 @@ import {
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import {
+    ContributorCommitNodeFields,
     RepositoryContributorNodeFields,
     RepositoryContributorsResult,
     RepositoryContributorsVariables,
@@ -59,7 +59,7 @@ const RepositoryContributorNode: React.FunctionComponent<React.PropsWithChildren
     path,
     globbing,
 }) => {
-    const commit = node.commits.nodes[0] as GQL.IGitCommit | undefined
+    const commit = node.commits.nodes[0] as ContributorCommitNodeFields | undefined
 
     const query: string = [
         searchQueryForRepoRevision(repoName, globbing),
@@ -148,14 +148,18 @@ const CONTRIBUTORS_QUERY = gql`
         count
         commits(first: 1) {
             nodes {
-                oid
-                abbreviatedOID
-                url
-                subject
-                author {
-                    date
-                }
+                ...ContributorCommitNodeFields
             }
+        }
+    }
+
+    fragment ContributorCommitNodeFields on GitCommit {
+        oid
+        abbreviatedOID
+        url
+        subject
+        author {
+            date
         }
     }
 `

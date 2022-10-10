@@ -15,7 +15,6 @@ import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/ext
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, Heading, Text, useObservable } from '@sourcegraph/wildcard'
@@ -23,7 +22,7 @@ import { Button, Heading, Text, useObservable } from '@sourcegraph/wildcard'
 import { getFileDecorations } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
-import { GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphql-operations'
+import { GitCommitFields, Scalars, TreeCommitsAncestorFields, TreePageRepositoryFields } from '../../graphql-operations'
 import { GitCommitNodeProps, GitCommitNode } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 
@@ -38,7 +37,7 @@ export const fetchTreeCommits = memoizeObservable(
         first?: number
         filePath?: string
         after?: string
-    }): Observable<GQL.IGitCommitConnection> =>
+    }): Observable<TreeCommitsAncestorFields> =>
         queryGraphQL(
             gql`
                 query TreeCommits($repo: ID!, $revspec: String!, $first: Int, $filePath: String, $after: String) {
@@ -47,15 +46,19 @@ export const fetchTreeCommits = memoizeObservable(
                         ... on Repository {
                             commit(rev: $revspec) {
                                 ancestors(first: $first, path: $filePath, after: $after) {
-                                    nodes {
-                                        ...GitCommitFields
-                                    }
-                                    pageInfo {
-                                        hasNextPage
-                                    }
+                                    ...TreeCommitsAncestorFields
                                 }
                             }
                         }
+                    }
+                }
+
+                fragment TreeCommitsAncestorFields on GitCommitConnection {
+                    nodes {
+                        ...GitCommitFields
+                    }
+                    pageInfo {
+                        hasNextPage
                     }
                 }
                 ${gitCommitFragment}
@@ -114,7 +117,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
         ) ?? {}
 
     const queryCommits = useCallback(
-        (args: { first?: number }): Observable<GQL.IGitCommitConnection> => {
+        (args: { first?: number }): Observable<TreeCommitsAncestorFields> => {
             const after: string | undefined = showOlderCommits ? undefined : formatISO(subYears(Date.now(), 1))
             return fetchTreeCommits({
                 ...args,

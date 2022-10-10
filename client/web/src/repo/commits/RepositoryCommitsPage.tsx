@@ -6,7 +6,6 @@ import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Heading, LoadingSpinner } from '@sourcegraph/wildcard'
 
@@ -14,7 +13,13 @@ import { queryGraphQL } from '../../backend/graphql'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
-import { GitCommitFields, RepositoryFields, Scalars } from '../../graphql-operations'
+import {
+    GitCommitFields,
+    RepositoryCommitConnection,
+    RepositoryFields,
+    RepositoryGitCommitsRepository,
+    Scalars,
+} from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { externalLinkFieldsFragment } from '../backend'
 
@@ -75,23 +80,29 @@ const fetchGitCommits = (args: {
     revspec: string
     first?: number
     query?: string
-}): Observable<GQL.IGitCommitConnection> =>
+}): Observable<RepositoryCommitConnection> =>
     queryGraphQL(
         gql`
             query RepositoryGitCommits($repo: ID!, $revspec: String!, $first: Int, $query: String) {
                 node(id: $repo) {
-                    ... on Repository {
-                        commit(rev: $revspec) {
-                            ancestors(first: $first, query: $query) {
-                                nodes {
-                                    ...GitCommitFields
-                                }
-                                pageInfo {
-                                    hasNextPage
-                                }
-                            }
-                        }
+                    ...RepositoryGitCommitsRepository
+                }
+            }
+
+            fragment RepositoryGitCommitsRepository on Repository {
+                commit(rev: $revspec) {
+                    ancestors(first: $first, query: $query) {
+                        ...RepositoryCommitConnection
                     }
+                }
+            }
+
+            fragment RepositoryCommitConnection on GitCommitConnection {
+                nodes {
+                    ...GitCommitFields
+                }
+                pageInfo {
+                    hasNextPage
                 }
             }
             ${gitCommitFragment}
@@ -102,7 +113,7 @@ const fetchGitCommits = (args: {
             if (!data || !data.node) {
                 throw createAggregateError(errors)
             }
-            const repo = data.node as GQL.IRepository
+            const repo = data.node as RepositoryGitCommitsRepository
             if (!repo.commit || !repo.commit.ancestors) {
                 throw createAggregateError(errors)
             }
@@ -131,7 +142,7 @@ export const RepositoryCommitsPage: React.FunctionComponent<React.PropsWithChild
     useBreadcrumb(BREADCRUMB)
 
     const queryCommits = useCallback(
-        (args: FilteredConnectionQueryArguments): Observable<GQL.IGitCommitConnection> => {
+        (args: FilteredConnectionQueryArguments): Observable<RepositoryCommitConnection> => {
             if (!props.repo?.id) {
                 return of()
             }
