@@ -1,4 +1,4 @@
-import React, { KeyboardEvent, MouseEvent, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 
 import { mdiAlertCircle } from '@mdi/js'
 import classNames from 'classnames'
@@ -9,7 +9,7 @@ import { catchError, filter } from 'rxjs/operators'
 
 import { HoverMerged } from '@sourcegraph/client-api'
 import { DOMFunctions, findPositionsFromEvents, Hoverifier } from '@sourcegraph/codeintellify'
-import { asError, ErrorLike, isDefined, isErrorLike, highlightNode } from '@sourcegraph/common'
+import { asError, ErrorLike, isDefined, isErrorLike, highlightNodeMultiline } from '@sourcegraph/common'
 import { HighlightLineRange } from '@sourcegraph/search'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
@@ -61,17 +61,21 @@ interface Props extends Repo {
 
 export interface HighlightRange {
     /**
-     * The 0-based line number that this highlight appears in
+     * The 0-based line number where this highlight range begins
      */
-    line: number
+    startLine: number
     /**
-     * The 0-based character offset to start highlighting at
+     * The 0-based character offset from the beginning of startLine where this highlight range begins
      */
-    character: number
+    startCharacter: number
     /**
-     * The number of characters to highlight
+     * The 0-based line number where this highlight range ends
      */
-    highlightLength: number
+    endLine: number
+    /**
+     * The 0-based character offset from the beginning of endLine where this highlight range ends
+     */
+    endCharacter: number
 }
 
 const domFunctions: DOMFunctions = {
@@ -108,89 +112,6 @@ const domFunctions: DOMFunctions = {
 
 const makeTableHTML = (blobLines: string[]): string => '<table>' + blobLines.join('') + '</table>'
 const DEFAULT_VISIBILITY_OFFSET: Shape = { bottom: -500 }
-
-/**
- * This helper function determines whether a mouse/click event was triggered as
- * a result of selecting text in search results.
- * There are at least to ways to do this:
- *
- * - Tracking `mouseup`, `mousemove` and `mousedown` events. The occurrence of
- * a `mousemove` event would indicate a text selection. However, users
- * might slightly move the mouse while clicking, and solutions that would
- * take this into account seem fragile.
- * - (implemented here) Inspect the Selection object returned by
- * `window.getSelection()`.
- *
- * CAVEAT: Chromium and Firefox (and maybe other browsers) behave
- * differently when a search result is clicked *after* text selection was
- * made:
- *
- * - Firefox will clear the selection before executing the click event
- * handler, i.e. the search result will be opened.
- * - Chrome will only clear the selection if the click happens *outside*
- * of the selected text (in which case the search result will be
- * opened). If the click happens inside the selected text the selection
- * will be cleared only *after* executing the click event handler.
- */
-function isTextSelectionEvent(event: MouseEvent<HTMLElement>): boolean {
-    const selection = window.getSelection()
-
-    // Text selections are always ranges. Should the type not be set, verify
-    // that the selection is not empty.
-    if (selection && (selection.type === 'Range' || selection.toString() !== '')) {
-        // Firefox specific: Because our code excerpts are implemented as tables,
-        // CTRL+click would select the table cell. Since users don't know that we
-        // use tables, the most likely wanted to open the search results in a new
-        // tab instead though.
-        if ((event.ctrlKey || event.metaKey) && selection.anchorNode?.nodeName === 'TR') {
-            // Ugly side effect: We don't want the table cell to be highlighted.
-            // The focus style that Firefox uses doesn't seem to be affected by
-            // CSS so instead we clear the selection.
-            selection.empty()
-            return false
-        }
-
-        return true
-    }
-
-    return false
-}
-
-/**
- * This handler implements the logic to simulate the click/keyboard
- * activation behavior of links, while also allowing the selection of text
- * inside the element.
- * Because a click event is dispatched in both cases (clicking the search
- * result to open it as well as selecting text within it), we have to be
- * able to distinguish between those two actions.
- * If we detect a text selection action, we don't have to do anything.
- *
- * CAVEATS:
- * - In Firefox, Shift+click will open the URL in a new tab instead of
- * a window (unlike Chromium which seems to show the same behavior as with
- * native links).
- * - Firefox will insert \t\n in between table rows, causing the copied
- * text to be different from what is in the file/search result.
- */
-export function onClickCodeExcerptHref(
-    event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>,
-    onClickHref: (href: string) => void
-): void {
-    // Testing for text selection is only necessary for mouse/click
-    // events. Middle-click (event.button === 1) is already handled in the `onMouseUp` callback.
-    if (
-        (event.type === 'click' &&
-            !isTextSelectionEvent(event as MouseEvent<HTMLElement>) &&
-            (event as MouseEvent<HTMLElement>).button !== 1) ||
-        (event as KeyboardEvent<HTMLElement>).key === 'Enter'
-    ) {
-        const href = event.currentTarget.getAttribute('data-href')
-        if (!event.defaultPrevented && href) {
-            event.preventDefault()
-            onClickHref(href)
-        }
-    }
-}
 
 /**
  * A code excerpt that displays syntax highlighting and match range highlighting.
@@ -255,21 +176,32 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
     // Highlight the search matches
     useLayoutEffect(() => {
         if (tableContainerElement) {
-            const visibleRows = tableContainerElement.querySelectorAll('table tr')
+            const visibleRows = tableContainerElement.querySelectorAll<HTMLTableRowElement>('table tr')
             for (const highlight of highlightRanges) {
-                // Select the HTML row in the excerpt that corresponds to the line to be highlighted.
-                // highlight.line is the 0-indexed line number in the code file, and startLine is the 0-indexed
+                // Select the HTML rows in the excerpt that correspond to the first and last line to be highlighted.
+                // highlight.startLine is the 0-indexed line number in the code file, and startLine is the 0-indexed
                 // line number of the first visible line in the excerpt. So, subtract startLine
-                // from highlight.line to get the correct 0-based index in visibleRows that holds the HTML row.
-                const tableRow = visibleRows[highlight.line - startLine]
-                if (tableRow) {
-                    // Take the lastChild of the row to select the code portion of the table row (each table row consists of the line number and code).
-                    const code = tableRow.lastChild as HTMLTableCellElement
-                    highlightNode(code, highlight.character, highlight.highlightLength)
+                // from highlight.startLine to get the correct 0-based index in visibleRows that holds the HTML row
+                // where highlighting should begin. Subtract startLine from highlight.endLine to get the correct 0-based
+                // index in visibleRows that holds the HTML row where highlighting should end.
+                const startRowIndex = highlight.startLine - startLine
+                const endRowIndex = highlight.endLine - startLine
+                const startRow = visibleRows[startRowIndex]
+                const endRow = visibleRows[endRowIndex]
+                if (startRow && endRow) {
+                    highlightNodeMultiline(
+                        visibleRows,
+                        startRow,
+                        endRow,
+                        startRowIndex,
+                        endRowIndex,
+                        highlight.startCharacter,
+                        highlight.endCharacter
+                    )
                 }
             }
         }
-    }, [highlightRanges, startLine, tableContainerElement, blobLinesOrError])
+    }, [highlightRanges, startLine, endLine, tableContainerElement, blobLinesOrError])
 
     // Hook up the hover tooltips
     useEffect(() => {

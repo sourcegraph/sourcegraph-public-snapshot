@@ -8,9 +8,9 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -40,6 +40,8 @@ type RootResolver interface {
 	GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error)
 	InferedIndexConfiguration(ctx context.Context, repositoryID int, commit string) (_ *config.IndexConfiguration, _ bool, err error)
 	InferedIndexConfigurationHints(ctx context.Context, repositoryID int, commit string) (_ []config.IndexJobHint, err error)
+	CodeIntelligenceInferenceScript(ctx context.Context) (script string, err error)
+	UpdateCodeIntelligenceInferenceScript(ctx context.Context, args *UpdateCodeIntelligenceInferenceScriptArgs) (err error)
 
 	// Symbols client
 	GetSupportedByCtags(ctx context.Context, filepath string, repoName api.RepoName) (bool, string, error)
@@ -92,7 +94,7 @@ func (r *rootResolver) DeleteLSIFIndex(ctx context.Context, args *struct{ ID gra
 	}})
 	defer endObservation(1, observation.Args{})
 
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
 		return nil, err
 	}
 	if !autoIndexingEnabled() {
@@ -205,7 +207,7 @@ func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *Queu
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
 		return nil, err
 	}
 	if !autoIndexingEnabled() {
@@ -259,7 +261,7 @@ func (r *rootResolver) UpdateRepositoryIndexConfiguration(ctx context.Context, a
 	}})
 	defer endObservation(1, observation.Args{})
 
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
 		return nil, err
 	}
 	if !autoIndexingEnabled() {
@@ -280,6 +282,18 @@ func (r *rootResolver) UpdateRepositoryIndexConfiguration(ctx context.Context, a
 	}
 
 	return &sharedresolvers.EmptyResponse{}, nil
+}
+
+func (r *rootResolver) CodeIntelligenceInferenceScript(ctx context.Context) (script string, err error) {
+	return r.autoindexSvc.GetInferenceScript(ctx)
+}
+
+type UpdateCodeIntelligenceInferenceScriptArgs struct {
+	Script string
+}
+
+func (r *rootResolver) UpdateCodeIntelligenceInferenceScript(ctx context.Context, args *UpdateCodeIntelligenceInferenceScriptArgs) (err error) {
+	return r.autoindexSvc.SetInferenceScript(ctx, args.Script)
 }
 
 type GitTreeEntryCodeIntelInfoArgs struct {

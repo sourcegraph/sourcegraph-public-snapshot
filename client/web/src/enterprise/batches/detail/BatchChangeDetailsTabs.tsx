@@ -179,7 +179,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                         </span>
                     </span>
                 </Tab>
-                {shouldDisplayOldUI ? (
+                {shouldDisplayOldUI && (
                     <Tab>
                         <span>
                             <Icon aria-hidden={true} className="text-muted mr-2" svgPath={mdiFileDocument} />
@@ -188,7 +188,8 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                             </span>
                         </span>
                     </Tab>
-                ) : (
+                )}
+                {batchChange.viewerCanAdminister ? (
                     <Tab>
                         <span>
                             <Icon aria-hidden={true} className="text-muted mr-2" svgPath={mdiFileDocument} />
@@ -202,7 +203,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                             )}
                         </span>
                     </Tab>
-                )}
+                ) : null}
                 <Tab>
                     <span>
                         <Icon aria-hidden={true} className="text-muted mr-2" svgPath={mdiArchive} />

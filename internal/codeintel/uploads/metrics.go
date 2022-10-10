@@ -60,7 +60,7 @@ func (s *Service) MetricReporters(observationContext *observation.Context) {
 		Name: "src_codeintel_commit_graph_total",
 		Help: "Total number of repositories with stale commit graphs.",
 	}, func() float64 {
-		dirtyRepositories, err := s.GetDirtyRepositories(context.Background())
+		dirtyRepositories, err := s.store.GetDirtyRepositories(context.Background())
 		if err != nil {
 			observationContext.Logger.Error("Failed to determine number of dirty repositories", log.Error(err))
 		}
@@ -72,7 +72,7 @@ func (s *Service) MetricReporters(observationContext *observation.Context) {
 		Name: "src_codeintel_commit_graph_queued_duration_seconds_total",
 		Help: "The maximum amount of time a repository has had a stale commit graph.",
 	}, func() float64 {
-		age, err := s.GetRepositoriesMaxStaleAge(context.Background())
+		age, err := s.store.GetRepositoriesMaxStaleAge(context.Background())
 		if err != nil {
 			observationContext.Logger.Error("Failed to determine stale commit graph age", log.Error(err))
 			return 0

@@ -29,6 +29,10 @@ type MockBatchesStore struct {
 	// GetBatchSpecWorkspaceFunc is an instance of a mock function object
 	// controlling the behavior of the method GetBatchSpecWorkspace.
 	GetBatchSpecWorkspaceFunc *BatchesStoreGetBatchSpecWorkspaceFunc
+	// ListBatchSpecWorkspaceFilesFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// ListBatchSpecWorkspaceFiles.
+	ListBatchSpecWorkspaceFilesFunc *BatchesStoreListBatchSpecWorkspaceFilesFunc
 }
 
 // NewMockBatchesStore creates a new mock of the BatchesStore interface. All
@@ -47,6 +51,11 @@ func NewMockBatchesStore() *MockBatchesStore {
 		},
 		GetBatchSpecWorkspaceFunc: &BatchesStoreGetBatchSpecWorkspaceFunc{
 			defaultHook: func(context.Context, store.GetBatchSpecWorkspaceOpts) (r0 *types.BatchSpecWorkspace, r1 error) {
+				return
+			},
+		},
+		ListBatchSpecWorkspaceFilesFunc: &BatchesStoreListBatchSpecWorkspaceFilesFunc{
+			defaultHook: func(context.Context, store.ListBatchSpecWorkspaceFileOpts) (r0 []*types.BatchSpecWorkspaceFile, r1 int64, r2 error) {
 				return
 			},
 		},
@@ -72,6 +81,11 @@ func NewStrictMockBatchesStore() *MockBatchesStore {
 				panic("unexpected invocation of MockBatchesStore.GetBatchSpecWorkspace")
 			},
 		},
+		ListBatchSpecWorkspaceFilesFunc: &BatchesStoreListBatchSpecWorkspaceFilesFunc{
+			defaultHook: func(context.Context, store.ListBatchSpecWorkspaceFileOpts) ([]*types.BatchSpecWorkspaceFile, int64, error) {
+				panic("unexpected invocation of MockBatchesStore.ListBatchSpecWorkspaceFiles")
+			},
+		},
 	}
 }
 
@@ -88,6 +102,9 @@ func NewMockBatchesStoreFrom(i BatchesStore) *MockBatchesStore {
 		},
 		GetBatchSpecWorkspaceFunc: &BatchesStoreGetBatchSpecWorkspaceFunc{
 			defaultHook: i.GetBatchSpecWorkspace,
+		},
+		ListBatchSpecWorkspaceFilesFunc: &BatchesStoreListBatchSpecWorkspaceFilesFunc{
+			defaultHook: i.ListBatchSpecWorkspaceFiles,
 		},
 	}
 }
@@ -408,4 +425,119 @@ func (c BatchesStoreGetBatchSpecWorkspaceFuncCall) Args() []interface{} {
 // invocation.
 func (c BatchesStoreGetBatchSpecWorkspaceFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// BatchesStoreListBatchSpecWorkspaceFilesFunc describes the behavior when
+// the ListBatchSpecWorkspaceFiles method of the parent MockBatchesStore
+// instance is invoked.
+type BatchesStoreListBatchSpecWorkspaceFilesFunc struct {
+	defaultHook func(context.Context, store.ListBatchSpecWorkspaceFileOpts) ([]*types.BatchSpecWorkspaceFile, int64, error)
+	hooks       []func(context.Context, store.ListBatchSpecWorkspaceFileOpts) ([]*types.BatchSpecWorkspaceFile, int64, error)
+	history     []BatchesStoreListBatchSpecWorkspaceFilesFuncCall
+	mutex       sync.Mutex
+}
+
+// ListBatchSpecWorkspaceFiles delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockBatchesStore) ListBatchSpecWorkspaceFiles(v0 context.Context, v1 store.ListBatchSpecWorkspaceFileOpts) ([]*types.BatchSpecWorkspaceFile, int64, error) {
+	r0, r1, r2 := m.ListBatchSpecWorkspaceFilesFunc.nextHook()(v0, v1)
+	m.ListBatchSpecWorkspaceFilesFunc.appendCall(BatchesStoreListBatchSpecWorkspaceFilesFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the
+// ListBatchSpecWorkspaceFiles method of the parent MockBatchesStore
+// instance is invoked and the hook queue is empty.
+func (f *BatchesStoreListBatchSpecWorkspaceFilesFunc) SetDefaultHook(hook func(context.Context, store.ListBatchSpecWorkspaceFileOpts) ([]*types.BatchSpecWorkspaceFile, int64, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListBatchSpecWorkspaceFiles method of the parent MockBatchesStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *BatchesStoreListBatchSpecWorkspaceFilesFunc) PushHook(hook func(context.Context, store.ListBatchSpecWorkspaceFileOpts) ([]*types.BatchSpecWorkspaceFile, int64, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *BatchesStoreListBatchSpecWorkspaceFilesFunc) SetDefaultReturn(r0 []*types.BatchSpecWorkspaceFile, r1 int64, r2 error) {
+	f.SetDefaultHook(func(context.Context, store.ListBatchSpecWorkspaceFileOpts) ([]*types.BatchSpecWorkspaceFile, int64, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *BatchesStoreListBatchSpecWorkspaceFilesFunc) PushReturn(r0 []*types.BatchSpecWorkspaceFile, r1 int64, r2 error) {
+	f.PushHook(func(context.Context, store.ListBatchSpecWorkspaceFileOpts) ([]*types.BatchSpecWorkspaceFile, int64, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *BatchesStoreListBatchSpecWorkspaceFilesFunc) nextHook() func(context.Context, store.ListBatchSpecWorkspaceFileOpts) ([]*types.BatchSpecWorkspaceFile, int64, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *BatchesStoreListBatchSpecWorkspaceFilesFunc) appendCall(r0 BatchesStoreListBatchSpecWorkspaceFilesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// BatchesStoreListBatchSpecWorkspaceFilesFuncCall objects describing the
+// invocations of this function.
+func (f *BatchesStoreListBatchSpecWorkspaceFilesFunc) History() []BatchesStoreListBatchSpecWorkspaceFilesFuncCall {
+	f.mutex.Lock()
+	history := make([]BatchesStoreListBatchSpecWorkspaceFilesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// BatchesStoreListBatchSpecWorkspaceFilesFuncCall is an object that
+// describes an invocation of method ListBatchSpecWorkspaceFiles on an
+// instance of MockBatchesStore.
+type BatchesStoreListBatchSpecWorkspaceFilesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 store.ListBatchSpecWorkspaceFileOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*types.BatchSpecWorkspaceFile
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 int64
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c BatchesStoreListBatchSpecWorkspaceFilesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c BatchesStoreListBatchSpecWorkspaceFilesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }

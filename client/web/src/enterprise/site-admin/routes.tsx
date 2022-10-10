@@ -159,6 +159,14 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = ([
         ),
         exact: true,
     },
+    {
+        path: '/code-graph/inference-configuration',
+        render: lazyComponent(
+            () => import('../codeintel/configuration/pages/CodeIntelInferenceConfigurationPage'),
+            'CodeIntelInferenceConfigurationPage'
+        ),
+        exact: true,
+    },
 
     // Legacy routes
     {

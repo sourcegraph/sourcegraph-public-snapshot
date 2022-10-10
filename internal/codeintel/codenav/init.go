@@ -1,18 +1,12 @@
 package codenav
 
 import (
-	"sync"
-
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/memo"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-)
-
-var (
-	svc     *Service
-	svcOnce sync.Once
 )
 
 // GetService creates or returns an already-initialized symbols service.
@@ -23,21 +17,35 @@ func GetService(
 	uploadSvc UploadService,
 	gitserver GitserverClient,
 ) *Service {
-	svcOnce.Do(func() {
-		store := store.New(db, scopedContext("store"))
-		lsifStore := lsifstore.New(codeIntelDB, scopedContext("lsifstore"))
-
-		svc = newService(
-			store,
-			lsifStore,
-			uploadSvc,
-			gitserver,
-			scopedContext("service"),
-		)
+	svc, _ := initServiceMemo.Init(serviceDependencies{
+		db,
+		codeIntelDB,
+		uploadSvc,
+		gitserver,
 	})
 
 	return svc
 }
+
+type serviceDependencies struct {
+	db          database.DB
+	codeIntelDB stores.CodeIntelDB
+	uploadSvc   UploadService
+	gitserver   GitserverClient
+}
+
+var initServiceMemo = memo.NewMemoizedConstructorWithArg(func(deps serviceDependencies) (*Service, error) {
+	store := store.New(deps.db, scopedContext("store"))
+	lsifStore := lsifstore.New(deps.codeIntelDB, scopedContext("lsifstore"))
+
+	return newService(
+		store,
+		lsifStore,
+		deps.uploadSvc,
+		deps.gitserver,
+		scopedContext("service"),
+	), nil
+})
 
 func scopedContext(component string) *observation.Context {
 	return observation.ScopedContext("codeintel", "codenav", component)

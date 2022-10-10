@@ -4,8 +4,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
-func NewMatchers(policySvc PolicyService) []goroutine.BackgroundRoutine {
+func NewRepositoryMatcher(policySvc PolicyService) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
-		policySvc.NewRepoMatcher(ConfigInst.Interval, ConfigInst.ConfigurationPolicyMembershipBatchSize),
+		policySvc.NewRepositoryMatcher(
+			ConfigInst.Interval,
+			ConfigInst.ConfigurationPolicyMembershipBatchSize,
+		),
 	}
 }

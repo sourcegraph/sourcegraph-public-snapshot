@@ -51,8 +51,8 @@ func Init(ctx context.Context, db database.DB, conf conftypes.UnifiedWatchable, 
 			return nil
 		}
 
-		// We don't enforce anything in Free instance as of 4.0 launch.
-		if info == nil {
+		if info.Plan() == licensing.PlanFree0 {
+			// We don't enforce anything on the free plan
 			return nil
 		}
 
