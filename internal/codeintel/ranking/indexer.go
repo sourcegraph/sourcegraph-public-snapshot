@@ -101,12 +101,8 @@ func (s *Service) extractSymbols(ctx context.Context, repoName api.RepoName) (ma
 	return symbolsByPath, nil
 }
 
-func (s *Service) buildGraph(ctx context.Context, repoName api.RepoName, symbolsByPath map[string][]string) (rankableGraph, error) {
-	// a value contains an occurrence defined by its key
-	graph := rankableGraph{}
-	for p := range symbolsByPath {
-		graph[p] = map[string]struct{}{}
-	}
+func (s *Service) buildGraph(ctx context.Context, repoName api.RepoName, symbolsByPath map[string][]string) (streamingGraph, error) {
+	ch := make(chan streamedEdge)
 
 	extractGraphEdges := func(h *tar.Header, content []byte) error {
 		for p, ks := range symbolsByPath {
@@ -115,17 +111,22 @@ func (s *Service) buildGraph(ctx context.Context, repoName api.RepoName, symbols
 					continue
 				}
 
-				graph[p][h.Name] = struct{}{}
+				ch <- streamedEdge{from: h.Name, to: p}
 			}
 		}
 
 		return nil
 	}
-	if err := s.forEachGoFileForDemo(ctx, repoName, extractGraphEdges); err != nil {
-		return nil, err
-	}
 
-	return graph, nil
+	go func() {
+		defer close(ch)
+
+		if err := s.forEachGoFileForDemo(ctx, repoName, extractGraphEdges); err != nil {
+			ch <- streamedEdge{err: err}
+		}
+	}()
+
+	return &graphStreamer{ch: ch}, nil
 }
 
 // NOTE: we only look at non-vendored Go files under 10,000 characters for demo
@@ -168,14 +169,25 @@ func (s *Service) forEachGoFileForDemo(ctx context.Context, repoName api.RepoNam
 	return nil
 }
 
-type rankableGraph map[string]map[string]struct{}
+func (s *Service) rankGraph(ctx context.Context, graph streamingGraph) (map[string][]float64, error) {
+	inDegree := map[string]int{}
+	for {
+		_, to, ok, err := graph.Next(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if !ok {
+			break
+		}
 
-func (s *Service) rankGraph(_ context.Context, graph rankableGraph) (map[string][]float64, error) {
-	paths := make([]string, 0, len(graph))
-	for p := range graph {
+		inDegree[to]++
+	}
+
+	paths := make([]string, 0, len(inDegree))
+	for p := range inDegree {
 		paths = append(paths, p)
 	}
-	sort.Slice(paths, func(i, j int) bool { return len(graph[paths[i]]) < len(graph[paths[j]]) })
+	sort.Slice(paths, func(i, j int) bool { return inDegree[paths[i]] < inDegree[paths[j]] })
 
 	ranks := map[string][]float64{}
 	n := float64(len(paths))
