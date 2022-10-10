@@ -86,7 +86,8 @@ var allPathsPattern = lazyregexp.New(".*")
 
 // GetDocumentRank returns a map from paths within the given repo to their score vectors. Paths are
 // assumed to be ordered by each pairwise component of the resulting vector, lower scores coming
-// earlier. We currently rank lexicographically.
+// earlier. We currently rank documents by path name length and lexicographic order, while performing
+// a few heuristics to sink generated, test, and vendor files lower in the ranking.
 func (s *Service) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ map[string][]float64, err error) {
 	_, _, endObservation := s.operations.getDocumentRanks.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
