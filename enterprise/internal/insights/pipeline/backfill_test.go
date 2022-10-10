@@ -3,6 +3,7 @@ package pipeline
 import (
 	"context"
 	"fmt"
+	"sort"
 	"sync"
 	"testing"
 	"time"
@@ -104,16 +105,19 @@ func newFakeCommitClient(first *gitdomain.Commit, recents []*gitdomain.Commit) g
 
 func TestMakeSearchJobs(t *testing.T) {
 	// Setup
-	firstCommit := gitdomain.Commit{ID: "1", Committer: &gitdomain.Signature{}}
-	recentCommits := []*gitdomain.Commit{{ID: "1", Committer: &gitdomain.Signature{}}, {ID: "2", Committer: &gitdomain.Signature{}}}
+	threeWeeks := 24 * 21 * time.Hour
 	createdDate := time.Date(2022, time.April, 1, 1, 0, 0, 0, time.UTC)
+	firstCommit := gitdomain.Commit{ID: "1", Committer: &gitdomain.Signature{}}
+	recentFirstCommit := gitdomain.Commit{ID: "1", Committer: &gitdomain.Signature{}, Author: gitdomain.Signature{Date: createdDate.Add(-1 * threeWeeks)}}
+	recentCommits := []*gitdomain.Commit{{ID: "1", Committer: &gitdomain.Signature{}}, {ID: "2", Committer: &gitdomain.Signature{}}}
+
 	backfillReq := &BackfillRequest{
 		Series: &types.InsightSeries{
 			ID:                  1,
 			SeriesID:            "abc",
 			Query:               "test query",
 			CreatedAt:           createdDate,
-			SampleIntervalUnit:  string(types.Month),
+			SampleIntervalUnit:  string(types.Week),
 			SampleIntervalValue: 1,
 		},
 		Repo: &itypes.MinimalRepo{ID: api.RepoID(1), Name: api.RepoName("testrepo")},
@@ -144,31 +148,45 @@ func TestMakeSearchJobs(t *testing.T) {
 	}{
 		{commitClient: basicCommitClient, backfillReq: backfillReq, workers: 1,
 			want: autogold.Want("Base case single worker", []string{
-				"job recordtime:2022-03-01T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2022-02-01T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2022-01-01T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2021-12-01T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2021-11-01T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2021-10-01T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2021-09-01T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2021-08-01T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2021-07-01T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2021-06-01T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2021-05-01T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-04-01T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-03-25T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-03-18T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-03-11T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-03-04T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-02-25T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-02-18T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-02-11T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-02-04T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-01-28T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-01-21T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-01-14T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
 				"error occured: false",
 			})},
 		{commitClient: basicCommitClient, backfillReq: backfillReq, workers: 5, want: autogold.Want("Base case multiple workers", []string{
-			"job recordtime:2021-11-01T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-			"job recordtime:2021-10-01T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-			"job recordtime:2021-12-01T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-			"job recordtime:2021-11-01T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-			"job recordtime:2021-11-01T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-			"job recordtime:2021-09-01T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-			"job recordtime:2021-08-01T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-			"job recordtime:2021-06-01T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-			"job recordtime:2021-05-01T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-			"job recordtime:2021-11-01T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-			"job recordtime:2021-06-01T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+			"job recordtime:2022-04-01T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+			"job recordtime:2022-03-25T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+			"job recordtime:2022-03-18T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+			"job recordtime:2022-03-11T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+			"job recordtime:2022-03-04T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+			"job recordtime:2022-02-25T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+			"job recordtime:2022-02-18T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+			"job recordtime:2022-02-11T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+			"job recordtime:2022-02-04T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+			"job recordtime:2022-01-28T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+			"job recordtime:2022-01-21T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+			"job recordtime:2022-01-14T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+			"error occured: false",
+		})},
+		{commitClient: newFakeCommitClient(&recentFirstCommit, recentCommits), backfillReq: backfillReq, workers: 1, want: autogold.Want("First commit during backfill period", []string{
+			"job recordtime:2022-04-01T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+			"job recordtime:2022-03-25T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+			"job recordtime:2022-03-18T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+			"error occured: false",
+		})},
+		{commitClient: newFakeCommitClient(&recentFirstCommit, recentCommits), backfillReq: backfillReq, workers: 5, want: autogold.Want("First commit during backfill period multiple workers", []string{
+			"job recordtime:2022-04-01T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+			"job recordtime:2022-03-25T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
+			"job recordtime:2022-03-18T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
 			"error occured: false",
 		})},
 		{commitClient: basicCommitClient, backfillReq: backfillReq, workers: 1, cancled: true, want: autogold.Want("Cancled case single worker", []string{"error occured: true"})},
@@ -204,8 +222,11 @@ func TestMakeSearchJobs(t *testing.T) {
 			}
 			jobsFunc := makeSearchJobsFunc(logtest.NoOp(t), tc.commitClient, &compression.NoopFilter{}, tc.workers)
 			_, _, jobs, err := jobsFunc(testCtx, requestContext{backfillRequest: tc.backfillReq})
-
 			got := []string{}
+			// sorted jobs to make test stable
+			sort.SliceStable(jobs, func(i, j int) bool {
+				return jobs[i].RecordTime.After(*jobs[j].RecordTime)
+			})
 			for _, j := range jobs {
 				got = append(got, fmt.Sprintf("job recordtime:%s query:%s", j.RecordTime.Format(time.RFC3339Nano), j.SearchQuery))
 			}

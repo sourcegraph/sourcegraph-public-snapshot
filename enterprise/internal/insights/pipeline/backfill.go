@@ -98,13 +98,8 @@ func makeSearchJobsFunc(logger log.Logger, commitClient gitCommitClient, compres
 
 		searchPlan := compressionPlan.FilterFrames(ctx, frames, req.Repo.ID)
 
-		mu := &sync.Mutex{}
-		groupContext, groupCancel := context.WithCancel(ctx)
-		defer groupCancel()
-		g := group.New().WithContext(groupContext).WithMaxConcurrency(searchJobWorkerLimit).WithCancelOnError()
-		for i := len(searchPlan.Executions) - 1; i >= 0; i-- {
-			g.Go(func(ctx context.Context) error {
-				queryExecution := searchPlan.Executions[i]
+		workerFunc := func(queryExecution *compression.QueryExecution, mu *sync.Mutex) func(ctx context.Context) error {
+			return func(ctx context.Context) error {
 				// Build historical data for this unique timeframe+repo+series.
 				err, job, _ := buildJob(ctx, &buildSeriesContext{
 					execution:       queryExecution,
@@ -115,10 +110,25 @@ func makeSearchJobsFunc(logger log.Logger, commitClient gitCommitClient, compres
 					series:          req.Series,
 				})
 				mu.Lock()
-				jobs = append(jobs, job)
-				mu.Unlock()
+				defer mu.Unlock()
+				if job != nil {
+					jobs = append(jobs, job)
+				}
 				return err
-			})
+			}
+		}
+
+		mu := &sync.Mutex{}
+		groupContext, groupCancel := context.WithCancel(ctx)
+		defer groupCancel()
+		g := group.New().WithContext(groupContext).WithMaxConcurrency(searchJobWorkerLimit).WithCancelOnError()
+		for i := len(searchPlan.Executions) - 1; i >= 0; i-- {
+			execution := searchPlan.Executions[i]
+			if execution != nil {
+				f := workerFunc(execution, mu)
+				g.Go(f)
+			}
+
 		}
 		err = g.Wait()
 		if err != nil {
