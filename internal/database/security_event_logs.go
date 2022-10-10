@@ -134,10 +134,8 @@ func (s *securityEventLogsStore) InsertList(ctx context.Context, events []*Secur
 }
 
 func securityEventsAuditLogEnabled() bool {
-	logCfg := conf.Get().Log
-	if logCfg != nil {
-		auditCfg := logCfg.AuditLog
-		if auditCfg != nil {
+	if logCfg := conf.Get().Log; logCfg != nil {
+		if auditCfg := logCfg.AuditLog; auditCfg != nil {
 			return auditCfg.SecurityEvents
 		}
 	}
