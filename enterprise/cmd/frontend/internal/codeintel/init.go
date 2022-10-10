@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 
-	logger "github.com/1log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel"
