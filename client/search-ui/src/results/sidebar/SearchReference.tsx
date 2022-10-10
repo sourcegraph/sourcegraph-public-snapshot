@@ -225,7 +225,8 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
     {
         ...createQueryExampleFromString('has({key:value})'),
         field: FilterType.repo,
-        description: 'Search inside repositories associated with a key:value pair that matches the provided key:value pair.',
+        description:
+            'Search inside repositories associated with a key:value pair that matches the provided key:value pair.',
         examples: ['repo:has(owner:jordan)', '-repo:has(team:search)'],
         showSuggestions: false,
     },
