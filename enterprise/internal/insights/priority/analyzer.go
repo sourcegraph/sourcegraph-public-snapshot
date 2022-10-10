@@ -23,10 +23,10 @@ type CostHeuristic struct {
 }
 
 var DefaultCostHandlers = []CostHeuristic{
-	{queryContentCost, 10},
+	{queryContentCost, 1},
 }
 
-func NewQueryAnalyzer(object QueryObject, handlers []CostHeuristic) *QueryAnalyzer {
+func NewQueryAnalyzer(handlers []CostHeuristic) *QueryAnalyzer {
 	return &QueryAnalyzer{
 		costHandlers: handlers,
 	}
