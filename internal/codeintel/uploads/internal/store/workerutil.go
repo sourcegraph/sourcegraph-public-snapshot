@@ -51,9 +51,13 @@ var uploadWorkerStoreOptions = dbworkerstore.Options{
 	ViewName:          "lsif_uploads_with_repository_name u",
 	ColumnExpressions: uploadColumnsWithNullRank,
 	Scan:              dbworkerstore.BuildWorkerScan(scanCompleteUpload),
-	OrderByExpression: sqlf.Sprintf("u.uploaded_at, u.id"),
-	StalledMaxAge:     StalledUploadMaxAge,
-	MaxNumResets:      UploadMaxNumResets,
+	OrderByExpression: sqlf.Sprintf(`
+		u.associated_index_id IS NULL DESC,
+		COALESCE(u.process_after, u.uploaded_at),
+		u.id
+	`),
+	StalledMaxAge: StalledUploadMaxAge,
+	MaxNumResets:  UploadMaxNumResets,
 }
 
 func (s *store) WorkerutilStore(observationContext *observation.Context) dbworkerstore.Store {

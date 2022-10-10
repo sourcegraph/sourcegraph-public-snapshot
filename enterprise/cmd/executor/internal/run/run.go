@@ -11,6 +11,7 @@ import (
 	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/ignite"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
@@ -33,16 +34,16 @@ func RunRun(cliCtx *cli.Context, logger log.Logger, cfg *config.Config) error {
 	}
 
 	// Determine telemetry data.
-	telemetryOptions := func() apiclient.TelemetryOptions {
+	queueTelemetryOptions := func() queue.TelemetryOptions {
 		// Run for at most 5s to get telemetry options.
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		return newTelemetryOptions(ctx, cfg.UseFirecracker, logger)
+		return newQueueTelemetryOptions(ctx, cfg.UseFirecracker, logger)
 	}()
-	logger.Info("Telemetry information gathered", log.String("info", fmt.Sprintf("%+v", telemetryOptions)))
+	logger.Info("Telemetry information gathered", log.String("info", fmt.Sprintf("%+v", queueTelemetryOptions)))
 
-	apiWorkerOptions := apiWorkerOptions(cfg, telemetryOptions)
+	opts := apiWorkerOptions(cfg, queueTelemetryOptions)
 
 	// TODO: This is too similar to the RunValidate func. Make it share even more code.
 	if cliCtx.Bool("verify") {
@@ -59,8 +60,11 @@ func RunRun(cliCtx *cli.Context, logger log.Logger, cfg *config.Config) error {
 		// TODO: Validate access token.
 		// Validate src-cli is of a good version, rely on the connected instance to tell
 		// us what "good" means.
-		client := apiclient.NewBaseClient(apiWorkerOptions.ClientOptions.BaseClientOptions)
-		if err := validateSrcCLIVersion(cliCtx.Context, logger, client, apiWorkerOptions.ClientOptions.EndpointOptions); err != nil {
+		client, err := apiclient.NewBaseClient(opts.QueueOptions.BaseClientOptions)
+		if err != nil {
+			return err
+		}
+		if err := validateSrcCLIVersion(cliCtx.Context, logger, client, opts.QueueOptions.BaseClientOptions.EndpointOptions); err != nil {
 			return err
 		}
 
@@ -82,7 +86,11 @@ func RunRun(cliCtx *cli.Context, logger log.Logger, cfg *config.Config) error {
 
 	nameSet := janitor.NewNameSet()
 	ctx, cancel := context.WithCancel(cliCtx.Context)
-	worker := worker.NewWorker(nameSet, apiWorkerOptions, observationContext)
+	worker, err := worker.NewWorker(nameSet, opts, observationContext)
+	if err != nil {
+		cancel()
+		return err
+	}
 
 	routines := []goroutine.BackgroundRoutine{
 		worker,

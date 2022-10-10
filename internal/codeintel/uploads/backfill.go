@@ -4,10 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/opentracing/opentracing-go/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -21,11 +18,6 @@ func (s *Service) NewCommittedAtBackfiller(interval time.Duration, batchSize int
 // this value set. This method is used to backfill old upload records prior to this value being reliably set
 // during processing.
 func (s *Service) backfillCommittedAtBatch(ctx context.Context, batchSize int) (err error) {
-	ctx, _, endObservation := s.operations.backfillCommittedAtBatch.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("batchSize", batchSize),
-	}})
-	defer endObservation(1, observation.Args{})
-
 	tx, err := s.store.Transact(ctx)
 	defer func() {
 		err = tx.Done(err)

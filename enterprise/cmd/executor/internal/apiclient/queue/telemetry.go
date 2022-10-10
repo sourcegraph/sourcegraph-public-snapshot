@@ -1,4 +1,4 @@
-package apiclient
+package queue
 
 type TelemetryOptions struct {
 	OS              string

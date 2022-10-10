@@ -358,7 +358,11 @@ describe('Batch spec yaml utils', () => {
         })
 
         it('should add quoted query', () => {
-            const spec = insertQueryIntoLibraryItem(SPEC_WITH_QUERY, 'context:global "hello" patternType:standard', false)
+            const spec = insertQueryIntoLibraryItem(
+                SPEC_WITH_QUERY,
+                'context:global "hello" patternType:standard',
+                false
+            )
             expect(spec).toEqual(
                 'name: hello-world\n' +
                     'on:\n' +
@@ -367,7 +371,11 @@ describe('Batch spec yaml utils', () => {
         })
 
         it('should add unbalanced quoted query', () => {
-            const spec = insertQueryIntoLibraryItem(SPEC_WITH_QUERY, 'context:global "hello patternType:standard', false)
+            const spec = insertQueryIntoLibraryItem(
+                SPEC_WITH_QUERY,
+                'context:global "hello patternType:standard',
+                false
+            )
             expect(spec).toEqual(
                 'name: hello-world\n' +
                     'on:\n' +
@@ -376,7 +384,11 @@ describe('Batch spec yaml utils', () => {
         })
 
         it('should add query with colon', () => {
-            const spec = insertQueryIntoLibraryItem(SPEC_WITH_QUERY, 'context:global hello: world patternType:standard', false)
+            const spec = insertQueryIntoLibraryItem(
+                SPEC_WITH_QUERY,
+                'context:global hello: world patternType:standard',
+                false
+            )
             expect(spec).toEqual(
                 'name: hello-world\n' +
                     'on:\n' +
@@ -433,8 +445,7 @@ describe('Batch spec yaml utils', () => {
 on:
     - repositoriesMatchingQuery: "context:global hello: \\"world\\" patternType:standard"
 # - repositoriesMatchingQuery: file:README.md
-`
-            )
+`)
         })
     })
 

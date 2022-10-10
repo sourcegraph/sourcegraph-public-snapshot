@@ -1448,6 +1448,7 @@ type CodeInsightsUsageStatistics struct {
 	WeeklyGroupResultsChartBarClick                []GroupResultPing
 	WeeklyGroupResultsAggregationModeClicked       []GroupResultPing
 	WeeklyGroupResultsAggregationModeDisabledHover []GroupResultPing
+	WeeklySeriesBackfillTime                       []InsightsBackfillTimePing
 }
 
 type GroupResultPing struct {
@@ -1530,6 +1531,14 @@ type InsightsPerDashboardPing struct {
 	Min    int
 	StdDev float32
 	Median float32
+}
+
+type InsightsBackfillTimePing struct {
+	AllRepos   bool
+	P99Seconds int
+	P90Seconds int
+	P50Seconds int
+	Count      int
 }
 
 type CodeMonitoringUsageStatistics struct {
