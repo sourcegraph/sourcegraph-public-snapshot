@@ -19,6 +19,9 @@ sg rfc list
 sg rfc --private list
 
 # Search for an Public RFC
+sg rfc search "search terms"
+
+# Search for a Private RFC
 sg rfc --private search "search terms"
 
 # Open a specific RFC
