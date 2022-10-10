@@ -33,7 +33,7 @@ func makeJobGenerator(numJobs int) SearchJobGenerator {
 		for i := 0; i < numJobs; i++ {
 			jobs = append(jobs, &queryrunner.Job{
 				SeriesID:    req.backfillRequest.Series.SeriesID,
-				SearchQuery: fmt.Sprintf("%d", i),
+				SearchQuery: "test search",
 			})
 		}
 		return ctx, &req, jobs, nil
