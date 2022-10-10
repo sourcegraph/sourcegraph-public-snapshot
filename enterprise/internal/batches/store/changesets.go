@@ -1481,12 +1481,14 @@ FROM (
 		changesets.computed_state
 	FROM
 		changesets
+	INNER JOIN repo ON repo.id = changesets.repo_id 
 	WHERE
 		-- where the changeset is not archived on at least one batch change
 		jsonb_path_exists (batch_change_ids, '$.* ? ((!exists(@.isArchived) || @.isArchived == false) && (!exists(@.archive) || @.archive == false))')
-) AS fcs;
+	AND
 		-- where the repo is neither deleted nor blocked
-		where repo.deleted_at is null and repo.blocked is null
+		repo.deleted_at is null and repo.blocked is null
+		) AS fcs;
 `
 
 func batchChangesColumn(c *btypes.Changeset) ([]byte, error) {
