@@ -23,6 +23,7 @@ The commands are:
 
 	list      lists the external services on the Sourcegraph instance
 	edit      edits external services on the Sourcegraph instance
+	add       add an external service on the Sourcegraph instance
 
 Use "src extsvc [command] -h" for more information about a command.
 `
@@ -52,6 +53,8 @@ type externalService struct {
 	CreatedAt, UpdatedAt string
 }
 
+var errServiceNotFound = errors.New("no such external service")
+
 func lookupExternalService(ctx context.Context, client api.Client, byID, byName string) (*externalService, error) {
 	var result struct {
 		ExternalServices struct {
@@ -72,5 +75,5 @@ func lookupExternalService(ctx context.Context, client api.Client, byID, byName 
 			return svc, nil
 		}
 	}
-	return nil, errors.New("no such external service")
+	return nil, errServiceNotFound
 }
