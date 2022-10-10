@@ -67,10 +67,18 @@ export const WebhookLogNode: React.FunctionComponent<React.PropsWithChildren<Pro
                         </TabList>
                         <TabPanels>
                             <TabPanel>
-                                <MessagePanel className={styles.messagePanelContainer} message={request} requestOrStatusCode={request} />
+                                <MessagePanel
+                                    className={styles.messagePanelContainer}
+                                    message={request}
+                                    requestOrStatusCode={request}
+                                />
                             </TabPanel>
                             <TabPanel>
-                                <MessagePanel className={styles.messagePanelContainer} message={response} requestOrStatusCode={statusCode} />
+                                <MessagePanel
+                                    className={styles.messagePanelContainer}
+                                    message={response}
+                                    requestOrStatusCode={statusCode}
+                                />
                             </TabPanel>
                         </TabPanels>
                     </Tabs>
