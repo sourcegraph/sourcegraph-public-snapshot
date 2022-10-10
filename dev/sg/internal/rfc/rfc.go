@@ -99,8 +99,7 @@ func queryRFCs(ctx context.Context, query string, orderBy string, pager func(r *
 	q := fmt.Sprintf("%s and parents in '1zP3FxdDlcSQGC1qvM9lHZRaHH4I9Jwwa' or %s and parents in '1KCq4tMLnVlC0a1rwGuU5OSCw6mdDxLuv'", query, query)
 
 	list := srv.Files.List().
-		Corpora("drive").SupportsAllDrives(true).
-		DriveId("0AK4DcztHds_pUk9PVA").
+		Corpora("allDrives").SupportsAllDrives(true).
 		IncludeItemsFromAllDrives(true).
 		SupportsAllDrives(true).
 		PageSize(100).
