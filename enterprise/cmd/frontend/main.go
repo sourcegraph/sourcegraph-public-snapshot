@@ -80,25 +80,15 @@ func enterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterp
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	// Initialize all the enterprise-specific services that do not need the codeintel-specific services.
 	for name, fn := range initFunctions {
 		if err := fn(ctx, db, conf, &enterpriseServices, observationContext); err != nil {
 			logger.Fatal("failed to initialize", log.String("name", name), log.Error(err))
 		}
 	}
 
-	// Initialize executor-specific services with the necessary code-intel and Batch Changes services.
-	if err := executor.Init(
-		ctx,
-		db,
-		conf,
-		&enterpriseServices,
-		observationContext,
-		enterpriseServices.CodeIntelAutoIndexingService,
-		enterpriseServices.NewCodeIntelUploadHandler(false),
-		enterpriseServices.BatchesChangesFileGetHandler,
-		enterpriseServices.BatchesChangesFileGetHandler,
-	); err != nil {
+	// Inititalize executor last, as we require code intel and batch changes services to be
+	// already populated on the enterpriseServices object.
+	if err := executor.Init(ctx, db, conf, &enterpriseServices, observationContext); err != nil {
 		logger.Fatal("failed to initialize executor", log.Error(err))
 	}
 
