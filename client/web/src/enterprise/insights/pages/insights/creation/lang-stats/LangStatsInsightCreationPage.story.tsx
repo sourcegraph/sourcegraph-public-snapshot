@@ -5,6 +5,7 @@ import { noop } from 'lodash'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../../../components/WebStory'
+import { useCodeInsightsState } from '../../../../../../stores'
 import { CodeInsightsBackendStoryMock } from '../../../../CodeInsightsBackendStoryMock'
 
 import { getRandomLangStatsMock } from './components/live-preview-chart/constants'
@@ -51,13 +52,17 @@ const codeInsightsBackend = {
     },
 }
 
-export const LangStatsInsightCreationPage: Story = () => (
-    <CodeInsightsBackendStoryMock mocks={codeInsightsBackend}>
-        <LangStatsInsightCreationPageComponent
-            telemetryService={NOOP_TELEMETRY_SERVICE}
-            onInsightCreateRequest={fakeAPIRequest}
-            onSuccessfulCreation={noop}
-            onCancel={noop}
-        />
-    </CodeInsightsBackendStoryMock>
-)
+export const LangStatsInsightCreationPage: Story = () => {
+    useCodeInsightsState.setState({ licensed: true, insightsLimit: null })
+
+    return (
+        <CodeInsightsBackendStoryMock mocks={codeInsightsBackend}>
+            <LangStatsInsightCreationPageComponent
+                telemetryService={NOOP_TELEMETRY_SERVICE}
+                onInsightCreateRequest={fakeAPIRequest}
+                onSuccessfulCreation={noop}
+                onCancel={noop}
+            />
+        </CodeInsightsBackendStoryMock>
+    )
+}

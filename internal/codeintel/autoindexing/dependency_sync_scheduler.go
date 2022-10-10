@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -42,7 +41,7 @@ func (s *Service) NewDependencySyncScheduler(pollInterval time.Duration) *worker
 	handler := &dependencySyncSchedulerHandler{
 		uploadsSvc:      s.uploadSvc,
 		depsSvc:         s.depsSvc,
-		autoindexingSvc: s,
+		autoindexingSvc: &AutoIndexingServiceForDepSchedulingShim{s},
 		workerStore:     workerStore,
 		extsvcStore:     s.externalServiceStore,
 	}
@@ -69,7 +68,7 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.
 		return nil
 	}
 
-	job := record.(codeinteltypes.DependencySyncingJob)
+	job := record.(shared.DependencySyncingJob)
 
 	scanner, err := h.uploadsSvc.ReferencesForUpload(ctx, job.UploadID)
 	if err != nil {

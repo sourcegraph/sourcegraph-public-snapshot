@@ -37,9 +37,8 @@
     "build.allowImplicitNetworkAccess": true,
     "local": "github.com/sourcegraph/sourcegraph",
   },
-  "jest.pathToJest": "yarn -s test",
+  "jest.jestCommandLine": "yarn test",
   "jest.showCoverageOnLoad": false,
-  "jest.autoEnable": false, // until we confirm people like it
   "gulp.autoDetect": "off",
   "npm.packageManager": "yarn",
   "npm.runSilent": true,
@@ -60,7 +59,6 @@
   "go.lintTool": "golangci-lint",
   "shellformat.flag": "-i 2 -ci",
   "vscode-graphql.useSchemaFileDefinitions": true,
-  "jest.jestCommandLine": "yarn -s test",
   "nixEnvSelector.nixFile": "${workspaceRoot}/shell.nix",
   "nix.enableLanguageServer": true,
   "[nix]": {

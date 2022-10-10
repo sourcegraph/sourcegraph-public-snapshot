@@ -977,6 +977,8 @@ Flags:
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--grafana.creds="<value>"`: Credentials for the Grafana instance to reload (default: admin:admin)
 * `--grafana.dir="<value>"`: Output directory for generated Grafana assets (default: $SG_ROOT/docker-images/grafana/config/provisioning/dashboards/sourcegraph/)
+* `--grafana.folder="<value>"`: Folder on Grafana instance to put generated dashboards in
+* `--grafana.headers="<value>"`: Additional headers for HTTP requests to the Grafana instance
 * `--grafana.url="<value>"`: Address for the Grafana instance to reload (default: http://127.0.0.1:3370)
 * `--inject-label-matcher="<value>"`: Labels to inject into all selectors in Prometheus expressions: observable queries, dashboard template variables, etc.
 * `--no-prune`: Toggles pruning of dangling generated assets through simple heuristic - should be disabled during builds.

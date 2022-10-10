@@ -32,7 +32,8 @@ import {
 } from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
 import { submitSearch } from '../helpers'
-import { searchQueryHistorySource } from '../input/completion'
+import { searchHistorySource } from '../input/searchHistorySource'
+import { useRecentSearches } from '../input/useRecentSearches'
 
 import styles from './SearchPageInput.module.scss'
 
@@ -72,14 +73,16 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
     const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
+
     const [showSearchHistory] = useFeatureFlag('search-input-show-history')
+    const { recentSearches, addRecentSearch } = useRecentSearches()
 
     const suggestionSources = useMemo(
         () =>
             props.authenticatedUser && showSearchHistory
                 ? [
-                      searchQueryHistorySource({
-                          userId: props.authenticatedUser.id,
+                      searchHistorySource({
+                          recentSearches,
                           selectedSearchContext: props.selectedSearchContextSpec,
                           onSelection: index => {
                               props.telemetryService.log('SearchSuggestionItemClicked', {
@@ -90,7 +93,13 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                       }),
                   ]
                 : [],
-        [props.authenticatedUser, props.selectedSearchContextSpec, props.telemetryService, showSearchHistory]
+        [
+            props.authenticatedUser,
+            props.selectedSearchContextSpec,
+            props.telemetryService,
+            recentSearches,
+            showSearchHistory,
+        ]
     )
 
     const submitSearchOnChange = useCallback(
@@ -106,6 +115,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                     caseSensitive,
                     activation: props.activation,
                     selectedSearchContextSpec: props.selectedSearchContextSpec,
+                    addRecentSearch,
                     ...parameters,
                 })
             }
@@ -115,6 +125,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
             props.selectedSearchContextSpec,
             props.history,
             props.activation,
+            addRecentSearch,
             patternType,
             caseSensitive,
         ]

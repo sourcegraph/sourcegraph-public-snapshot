@@ -50,22 +50,22 @@ describe('FileSearchResult', () => {
                     contentStart: {
                         offset: 223,
                         line: 12,
-                        column: 0
+                        column: 0,
                     },
                     ranges: [
                         {
                             start: {
                                 offset: 230,
                                 line: 12,
-                                column: 7
+                                column: 7,
                             },
                             end: {
                                 offset: 234,
                                 line: 12,
-                                column: 11
-                            }
-                        }
-                    ]
+                                column: 11,
+                            },
+                        },
+                    ],
                 },
             ],
         }
