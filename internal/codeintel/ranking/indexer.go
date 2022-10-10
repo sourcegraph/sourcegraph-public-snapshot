@@ -63,12 +63,12 @@ func (s *Service) indexRepository(ctx context.Context, repoName api.RepoName) (e
 	_, _, endObservation := s.operations.indexRepository.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	pathsBySymbols, err := s.extractSymbols(ctx, repoName)
+	symbolsByPath, err := s.extractSymbols(ctx, repoName)
 	if err != nil {
 		return err
 	}
 
-	graph, err := s.buildGraph(ctx, repoName, pathsBySymbols)
+	graph, err := s.buildGraph(ctx, repoName, symbolsByPath)
 	if err != nil {
 		return err
 	}
@@ -83,11 +83,13 @@ func (s *Service) indexRepository(ctx context.Context, repoName api.RepoName) (e
 
 // TODO - improve symbol extraction (this is major weak sauce)
 func (s *Service) extractSymbols(ctx context.Context, repoName api.RepoName) (map[string][]string, error) {
-	pathsBySymbols := map[string][]string{}
+	symbolsByPath := map[string][]string{}
 	extractSymbols := func(h *tar.Header, content []byte) error {
-		matches := symbolPattern.FindAllStringSubmatch(string(content), -1)
-		for _, match := range matches {
-			pathsBySymbols[match[1]] = append(pathsBySymbols[match[1]], h.Name)
+		// Ensure we have a key entry for every header, even if it's an empty slice
+		symbolsByPath[h.Name] = nil
+
+		for _, match := range symbolPattern.FindAllStringSubmatch(string(content), -1) {
+			symbolsByPath[h.Name] = append(symbolsByPath[h.Name], match[1])
 		}
 
 		return nil
@@ -96,21 +98,21 @@ func (s *Service) extractSymbols(ctx context.Context, repoName api.RepoName) (ma
 		return nil, err
 	}
 
-	return pathsBySymbols, nil
+	return symbolsByPath, nil
 }
 
-func (s *Service) buildGraph(ctx context.Context, repoName api.RepoName, pathsBySymbols map[string][]string) (map[string]map[string]struct{}, error) {
+func (s *Service) buildGraph(ctx context.Context, repoName api.RepoName, symbolsByPath map[string][]string) (rankableGraph, error) {
 	// a value contains an occurrence defined by its key
-	graph := map[string]map[string]struct{}{}
-	extractGraphEdges := func(h *tar.Header, content []byte) error {
-		for k, ps := range pathsBySymbols {
-			if !bytes.Contains(content, []byte(k)) {
-				continue
-			}
+	graph := rankableGraph{}
+	for p := range symbolsByPath {
+		graph[p] = map[string]struct{}{}
+	}
 
-			for _, p := range ps {
-				if _, ok := graph[p]; !ok {
-					graph[p] = map[string]struct{}{}
+	extractGraphEdges := func(h *tar.Header, content []byte) error {
+		for p, ks := range symbolsByPath {
+			for _, k := range ks {
+				if !bytes.Contains(content, []byte(k)) {
+					continue
 				}
 
 				graph[p][h.Name] = struct{}{}
@@ -166,7 +168,9 @@ func (s *Service) forEachGoFileForDemo(ctx context.Context, repoName api.RepoNam
 	return nil
 }
 
-func (s *Service) rankGraph(_ context.Context, graph map[string]map[string]struct{}) (map[string][]float64, error) {
+type rankableGraph map[string]map[string]struct{}
+
+func (s *Service) rankGraph(_ context.Context, graph rankableGraph) (map[string][]float64, error) {
 	paths := make([]string, 0, len(graph))
 	for p := range graph {
 		paths = append(paths, p)
