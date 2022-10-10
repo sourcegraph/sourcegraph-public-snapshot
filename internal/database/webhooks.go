@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	uuidlib "github.com/google/uuid"
+	"github.com/google/uuid"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
 
@@ -21,7 +21,7 @@ type WebhookStore interface {
 	Create(ctx context.Context, kind, urn string, secret *types.EncryptableSecret) (*types.Webhook, error)
 	GetByID(ctx context.Context, id int32) (*types.Webhook, error)
 	GetByRandomID(ctx context.Context, id string) (*types.Webhook, error)
-	Delete(ctx context.Context, uuid string) error
+	Delete(ctx context.Context, id uuid.UUID) error
 	Update(ctx context.Context, newWebhook *types.Webhook) (*types.Webhook, error)
 	List(ctx context.Context) ([]*types.Webhook, error)
 }
@@ -128,14 +128,8 @@ WHERE rand_id = %s
 
 // Delete the webhook. Error is returned when provided UUID is invalid, the
 // webhook is not found or something went wrong during an SQL query.
-func (s *webhookStore) Delete(ctx context.Context, uuid string) error {
-	// TODO(sashaostrikov) move validation to gql layer when it is implemented
-	_, err := uuidlib.Parse(uuid)
-	if err != nil {
-		return errors.Wrap(err, "invalid UUID provided")
-	}
-
-	q := sqlf.Sprintf(webhookDeleteQueryFmtstr, uuid)
+func (s *webhookStore) Delete(ctx context.Context, id uuid.UUID) error {
+	q := sqlf.Sprintf(webhookDeleteQueryFmtstr, id)
 	result, err := s.ExecResult(ctx, q)
 	if err != nil {
 		return errors.Wrap(err, "running delete SQL query")
@@ -146,18 +140,18 @@ func (s *webhookStore) Delete(ctx context.Context, uuid string) error {
 	}
 
 	if rowsAffected == 0 {
-		return &WebhookNotFoundError{Message: fmt.Sprintf("Cannot delete a webhook with rand_id=%q: not found.", uuid)}
+		return errors.Wrap(&WebhookNotFoundError{ID: id}, "failed to delete webhook")
 	}
 	return nil
 }
 
 // WebhookNotFoundError occurs when a webhook is not found.
 type WebhookNotFoundError struct {
-	Message string
+	ID uuid.UUID
 }
 
 func (w *WebhookNotFoundError) Error() string {
-	return fmt.Sprintf("webhook not found: %s", w.Message)
+	return fmt.Sprintf("webhook with ID=%q not found", w.ID)
 }
 
 func (w *WebhookNotFoundError) NotFound() bool {

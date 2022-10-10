@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/stretchr/testify/assert"
 
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
@@ -143,67 +144,20 @@ func TestWebhookDelete(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
+	store := db.Webhooks(nil)
 
-	tests := []struct {
-		name              string
-		existingWebhookID string
-		deleteID          string
-		expectedErrorMsg  string
-	}{
-		{
-			name:              "Invalid UUID provided",
-			existingWebhookID: "",
-			deleteID:          "me-me ID did you get it? me, not you",
-			expectedErrorMsg:  "invalid UUID provided: invalid UUID format",
-		},
-		{
-			name:              "Webhook with given ID doesn't exist",
-			existingWebhookID: "cafebabe-1337-0420-face-00deadbeef00",
-			deleteID:          "cafebabe-1337-0420-face-00baaaaaad00",
-			expectedErrorMsg:  "webhook not found: Cannot delete a webhook with rand_id=\"cafebabe-1337-0420-face-00baaaaaad00\": not found.",
-		},
-		{
-			name:              "Webhook with given ID exists and successfully deleted",
-			existingWebhookID: "cafebabe-1338-0420-face-00deadbeef00",
-			deleteID:          "cafebabe-1338-0420-face-00deadbeef00",
-			expectedErrorMsg:  "",
-		},
+	// Test that delete with wrong ID returns an error
+	nonExistentUUID := uuid.New()
+	err := store.Delete(ctx, nonExistentUUID)
+	if !errors.HasType(err, &WebhookNotFoundError{}) {
+		t.Fatal("want WebhookNotFoundError")
 	}
+	assert.EqualError(t, err, fmt.Sprintf("failed to delete webhook: webhook with ID=%q not found", nonExistentUUID))
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			t.Parallel()
-			// init everything
-			tx, err := db.Transact(ctx)
-			assert.NoError(t, err)
-			t.Cleanup(func() {
-				_ = tx.Done(errors.New("rollback"))
-			})
+	// Test that delete with right ID deletes the webhook
+	createdWebhook, err := store.Create(ctx, extsvc.KindGitHub, "https://github.com", types.NewUnencryptedSecret("very secret (not)"))
+	err = store.Delete(ctx, uuid.MustParse(createdWebhook.RandomID))
 
-			store := tx.Webhooks(nil)
-
-			// creating a webhook if needed
-			if test.existingWebhookID != "" {
-				tx.QueryRowContext(ctx, fmt.Sprintf(`
-INSERT INTO webhooks (rand_id, code_host_kind, code_host_urn)
-VALUES ('%s', 'code_host_kind', 'code_host_urn')`,
-					test.existingWebhookID))
-			}
-
-			// deleting a webhook
-			err = store.Delete(ctx, test.deleteID)
-
-			if test.expectedErrorMsg != "" {
-				// checking that the error is expected
-				assert.EqualError(t, err, test.expectedErrorMsg)
-			} else {
-				// double-check that a webhook is deleted
-				row := tx.QueryRowContext(ctx, fmt.Sprintf("SELECT EXISTS(SELECT 1 FROM webhooks WHERE rand_id='%s')", test.deleteID))
-				var exists bool
-				err = row.Scan(&exists)
-				assert.NoError(t, err)
-				assert.False(t, exists)
-			}
-		})
-	}
+	exists, _, err := basestore.ScanFirstBool(db.QueryContext(ctx, "SELECT EXISTS(SELECT 1 FROM webhooks WHERE rand_id='%s')", createdWebhook.RandomID))
+	assert.False(t, exists)
 }

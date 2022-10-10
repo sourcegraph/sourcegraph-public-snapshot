@@ -19493,6 +19493,16 @@
           "IndexDefinition": "CREATE UNIQUE INDEX webhooks_pkey ON webhooks USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "webhooks_rand_id_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX webhooks_rand_id_idx ON webhooks USING btree (rand_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
       "Constraints": null,
