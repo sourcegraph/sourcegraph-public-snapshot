@@ -103,7 +103,7 @@ INSERT INTO
 
 var webhookColumns = []*sqlf.Query{
 	sqlf.Sprintf("id"),
-	sqlf.Sprintf("rand_id"),
+	sqlf.Sprintf("uuid"),
 	sqlf.Sprintf("code_host_kind"),
 	sqlf.Sprintf("code_host_urn"),
 	sqlf.Sprintf("secret"),
@@ -123,7 +123,7 @@ func (s *webhookStore) GetByRandomID(ctx context.Context, id string) (*types.Web
 const webhookDeleteQueryFmtstr = `
 -- source: internal/database/webhooks.go:Delete
 DELETE FROM webhooks
-WHERE rand_id = %s
+WHERE uuid = %s
 `
 
 // Delete the webhook. Error is returned when provided UUID is invalid, the
@@ -151,7 +151,7 @@ type WebhookNotFoundError struct {
 }
 
 func (w *WebhookNotFoundError) Error() string {
-	return fmt.Sprintf("webhook with ID=%q not found", w.ID)
+	return fmt.Sprintf("webhook with UUID=%q not found", w.ID)
 }
 
 func (w *WebhookNotFoundError) NotFound() bool {

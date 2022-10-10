@@ -19444,19 +19444,6 @@
           "Comment": ""
         },
         {
-          "Name": "rand_id",
-          "Index": 2,
-          "TypeName": "uuid",
-          "IsNullable": false,
-          "Default": "gen_random_uuid()",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": "rand_id will be the user facing ID"
-        },
-        {
           "Name": "secret",
           "Index": 5,
           "TypeName": "text",
@@ -19481,6 +19468,19 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
+        },
+        {
+          "Name": "uuid",
+          "Index": 9,
+          "TypeName": "uuid",
+          "IsNullable": false,
+          "Default": "gen_random_uuid()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
         }
       ],
       "Indexes": [
@@ -19495,14 +19495,14 @@
           "ConstraintDefinition": "PRIMARY KEY (id)"
         },
         {
-          "Name": "webhooks_rand_id_idx",
+          "Name": "webhooks_uuid_key",
           "IsPrimaryKey": false,
           "IsUnique": true,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX webhooks_rand_id_idx ON webhooks USING btree (rand_id)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
+          "IndexDefinition": "CREATE UNIQUE INDEX webhooks_uuid_key ON webhooks USING btree (uuid)",
+          "ConstraintType": "u",
+          "ConstraintDefinition": "UNIQUE (uuid)"
         }
       ],
       "Constraints": null,
