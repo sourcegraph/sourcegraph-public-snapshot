@@ -426,12 +426,12 @@ func editGitHubAppExternalServiceConfigToken(
 	if err != nil {
 		return "", errors.Wrap(err, "edit token")
 	}
-	externalServiceStore.Update(ctx, conf.Get().AuthProviders, svc.ID,
+	err = externalServiceStore.Update(ctx, conf.Get().AuthProviders, svc.ID,
 		&database.ExternalServiceUpdate{
 			Config:         &config,
 			TokenExpiresAt: token.ExpiresAt,
 		})
-	return config, nil
+	return config, err
 }
 
 func getVCSSyncer(
