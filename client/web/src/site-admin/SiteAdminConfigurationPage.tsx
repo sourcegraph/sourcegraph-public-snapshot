@@ -8,6 +8,7 @@ import { Subject, Subscription } from 'rxjs'
 import { delay, mergeMap, retryWhen, tap, timeout } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { logger } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -433,8 +434,15 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         try {
             restartToApply = await updateSiteConfiguration(lastConfigurationID, newContents).toPromise<boolean>()
         } catch (error) {
-            console.error(error)
-            this.setState({ saving: false, error })
+            logger.error(error)
+            this.setState({
+                saving: false,
+                error: new Error(
+                    String(error) +
+                        '\nError occured while attempting to save site configuration. Please backup changes before reloading the page.'
+                ),
+            })
+            throw error
         }
 
         const oldContents = lastConfiguration?.effectiveContents || ''
@@ -457,7 +465,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
             try {
                 await refreshSiteFlags().toPromise()
             } catch (error) {
-                console.error(error)
+                logger.error(error)
             }
         }
         this.setState({ restartToApply })

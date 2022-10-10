@@ -8,11 +8,11 @@ import { Observable } from 'rxjs'
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 import { SourcegraphLogo } from '@sourcegraph/branded/src/components/SourcegraphLogo'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
-import { IUser } from '@sourcegraph/shared/src/schema'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 import { useInputValidation, deriveInputClassName } from '@sourcegraph/shared/src/util/useInputValidation'
 import { Button, Link, Icon, Label, H4, Text } from '@sourcegraph/wildcard'
 
+import { CurrentUserResult } from '../../graphql-operations'
 import { getPlatformName, isDefaultSourcegraphUrl } from '../../shared/util/context'
 
 import { OptionsPageContainer } from './components/OptionsPageContainer'
@@ -47,7 +47,7 @@ export interface OptionsPageProps {
     requestPermissionsHandler?: React.MouseEventHandler
 
     hasRepoSyncError?: boolean
-    currentUser?: Pick<IUser, 'settingsURL' | 'siteAdmin'>
+    currentUser?: Pick<NonNullable<CurrentUserResult['currentUser']>, 'settingsURL' | 'siteAdmin'>
 }
 
 // "Error code" constants for Sourcegraph URL validation
@@ -222,22 +222,19 @@ const RepoSyncErrorAlert: React.FunctionComponent<
             <Text className="mb-0">
                 {isDefaultURL ? (
                     <>
+                        You need to setup a{' '}
                         <Link
                             to={
-                                createURLWithUTM(
-                                    new URL(`${currentUser.settingsURL!}/repositories/manage`, sourcegraphUrl),
-                                    {
-                                        utm_source: getPlatformName(),
-                                        utm_campaign: 'sync-private-repo-with-cloud',
-                                    }
-                                ).href
+                                createURLWithUTM(new URL('https://docs.sourcegraph.com/'), {
+                                    utm_source: getPlatformName(),
+                                    utm_campaign: 'sync-private-repo-with-cloud',
+                                }).href
                             }
                             {...NEW_TAB_LINK_PROPS}
-                            className={styles.link}
                         >
-                            Add your repository to Sourcegraph
+                            private Sourcegraph instance
                         </Link>{' '}
-                        to use this extension for private repositories.
+                        to use this extension with private repositories.
                     </>
                 ) : currentUser.siteAdmin ? (
                     <>
@@ -249,14 +246,13 @@ const RepoSyncErrorAlert: React.FunctionComponent<
                                 }).href
                             }
                             {...NEW_TAB_LINK_PROPS}
-                            className={styles.link}
                         >
                             Add your repository to Sourcegraph
                         </Link>{' '}
                         to use this extension.
                     </>
                 ) : (
-                    <>Contact your admin to add this repository to Sourcegraph.</>
+                    <>Contact your site administrator to add this repository to Sourcegraph.</>
                 )}
             </Text>
         </section>

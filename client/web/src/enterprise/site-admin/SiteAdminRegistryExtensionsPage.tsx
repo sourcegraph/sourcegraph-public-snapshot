@@ -7,7 +7,7 @@ import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, createAggregateError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { Button, ButtonLink, Link, Icon, H2, Text } from '@sourcegraph/wildcard'
@@ -17,12 +17,13 @@ import { FilteredConnection, FilteredConnectionFilter } from '../../components/F
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import { registryExtensionFragment } from '../../extensions/extension/ExtensionArea'
+import { RegistryExtensionFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { deleteRegistryExtensionWithConfirmation } from '../extensions/registry/backend'
 import { RegistryExtensionSourceBadge } from '../extensions/registry/RegistryExtensionSourceBadge'
 
 interface RegistryExtensionNodeSiteAdminProps {
-    node: GQL.IRegistryExtension
+    node: RegistryExtensionFields
     onDidUpdate: () => void
     history: H.History
 }
@@ -66,7 +67,7 @@ class RegistryExtensionNodeSiteAdminRow extends React.PureComponent<
                 )
                 .subscribe(
                     stateUpdate => this.setState(stateUpdate),
-                    error => console.error(error)
+                    error => logger.error(error)
                 )
         )
     }
@@ -202,7 +203,7 @@ export class SiteAdminRegistryExtensionsPage extends React.PureComponent<Props> 
                     Extensions add features to Sourcegraph and other connected tools (such as editors, code hosts, and
                     code review tools).
                 </Text>
-                <FilteredConnection<GQL.IRegistryExtension, Omit<RegistryExtensionNodeSiteAdminProps, 'node'>>
+                <FilteredConnection<RegistryExtensionFields, Omit<RegistryExtensionNodeSiteAdminProps, 'node'>>
                     className="list-group list-group-flush registry-extensions-list"
                     listComponent="ul"
                     noun="extension"

@@ -13,7 +13,7 @@ export const CodeHostIcon: React.FunctionComponent<
     const iconMap: { [key: string]: string } = {
         'github.com': mdiGithub,
         'gitlab.com': mdiGitlab,
-        'bitbucket.com': mdiBitbucket,
+        'bitbucket.org': mdiBitbucket,
     }
 
     const hostName = repoName.split('/')[0]

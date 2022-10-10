@@ -236,7 +236,7 @@ type CountBatchChangesOpts struct {
 	States      []btypes.BatchChangeState
 	RepoID      api.RepoID
 
-	CreatorID int32
+	OnlyAdministeredByUserID int32
 
 	NamespaceUserID int32
 	NamespaceOrgID  int32
@@ -297,8 +297,8 @@ func countBatchChangesQuery(opts *CountBatchChangesOpts, repoAuthzConds *sqlf.Qu
 		}
 	}
 
-	if opts.CreatorID != 0 {
-		preds = append(preds, sqlf.Sprintf("batch_changes.creator_id = %d", opts.CreatorID))
+	if opts.OnlyAdministeredByUserID != 0 {
+		preds = append(preds, sqlf.Sprintf("(batch_changes.namespace_user_id = %d OR (EXISTS (SELECT 1 FROM org_members WHERE org_id = batch_changes.namespace_org_id AND user_id = %s AND org_id <> 0)))", opts.OnlyAdministeredByUserID, opts.OnlyAdministeredByUserID))
 	}
 
 	if opts.NamespaceUserID != 0 {
@@ -407,6 +407,7 @@ SELECT %s FROM batch_changes
 LEFT JOIN users namespace_user ON batch_changes.namespace_user_id = namespace_user.id
 LEFT JOIN orgs  namespace_org  ON batch_changes.namespace_org_id = namespace_org.id
 WHERE %s
+ORDER BY id DESC
 LIMIT 1
 `
 
@@ -467,7 +468,7 @@ func (s *Store) GetBatchChangeDiffStat(ctx context.Context, opts GetBatchChangeD
 
 	var diffStat diff.Stat
 	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
-		return sc.Scan(&diffStat.Added, &diffStat.Changed, &diffStat.Deleted)
+		return sc.Scan(&diffStat.Added, &diffStat.Deleted)
 	})
 	if err != nil {
 		return nil, err
@@ -480,7 +481,6 @@ var getBatchChangeDiffStatQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_changes.go:GetBatchChangeDiffStat
 SELECT
 	COALESCE(SUM(diff_stat_added), 0) AS added,
-	COALESCE(SUM(diff_stat_changed), 0) AS changed,
 	COALESCE(SUM(diff_stat_deleted), 0) AS deleted
 FROM
 	changesets
@@ -510,7 +510,7 @@ func (s *Store) GetRepoDiffStat(ctx context.Context, repoID api.RepoID) (stat *d
 
 	var diffStat diff.Stat
 	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
-		return sc.Scan(&diffStat.Added, &diffStat.Changed, &diffStat.Deleted)
+		return sc.Scan(&diffStat.Added, &diffStat.Deleted)
 	})
 	if err != nil {
 		return nil, err
@@ -523,7 +523,6 @@ var getRepoDiffStatQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_changes.go:GetRepoDiffStat
 SELECT
 	COALESCE(SUM(diff_stat_added), 0) AS added,
-	COALESCE(SUM(diff_stat_changed), 0) AS changed,
 	COALESCE(SUM(diff_stat_deleted), 0) AS deleted
 FROM changesets
 INNER JOIN repo ON changesets.repo_id = repo.id
@@ -546,7 +545,7 @@ type ListBatchChangesOpts struct {
 	Cursor      int64
 	States      []btypes.BatchChangeState
 
-	CreatorID int32
+	OnlyAdministeredByUserID int32
 
 	NamespaceUserID int32
 	NamespaceOrgID  int32
@@ -629,8 +628,8 @@ func listBatchChangesQuery(opts *ListBatchChangesOpts, repoAuthzConds *sqlf.Quer
 		}
 	}
 
-	if opts.CreatorID != 0 {
-		preds = append(preds, sqlf.Sprintf("batch_changes.creator_id = %d", opts.CreatorID))
+	if opts.OnlyAdministeredByUserID != 0 {
+		preds = append(preds, sqlf.Sprintf("(batch_changes.namespace_user_id = %d OR (EXISTS (SELECT 1 FROM org_members WHERE org_id = batch_changes.namespace_org_id AND user_id = %s AND org_id <> 0)))", opts.OnlyAdministeredByUserID, opts.OnlyAdministeredByUserID))
 	}
 
 	if opts.NamespaceUserID != 0 {

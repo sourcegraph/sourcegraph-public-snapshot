@@ -40,6 +40,16 @@ var (
 		Name: "src_zoekt_final_queue_size",
 		Help: "the size of the results queue once streaming is done.",
 	})
+	metricMaxMatchCount = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "src_zoekt_queue_max_match_count",
+		Help:    "Maximum number of matches in the queue.",
+		Buckets: prometheus.ExponentialBuckets(4, 2, 20),
+	}, nil)
+	metricMaxSizeBytes = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "src_zoekt_queue_max_size_bytes",
+		Help:    "Maximum number of bytes in the queue.",
+		Buckets: prometheus.ExponentialBuckets(1000, 2, 20), // 1kb -> 500mb
+	}, nil)
 )
 
 // HorizontalSearcher is a Streamer which aggregates searches over
@@ -68,11 +78,11 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 		endpoints = append(endpoints, endpoint)
 	}
 
-	maxQueueDepth, maxReorderDuration := resultQueueSettingsFromConfig(conf.Get().SiteConfiguration)
+	siteConfig := newRankingSiteConfig(conf.Get().SiteConfiguration)
 
-	// resultQueue is used to re-order results by priority.
+	// rq is used to re-order results by priority.
 	var mu sync.Mutex
-	resultQueue := newResultQueue(maxQueueDepth, endpoints)
+	rq := newResultQueue(siteConfig, endpoints)
 
 	// Flush the queue latest after maxReorderDuration. The longer
 	// maxReorderDuration, the more stable the ranking and the more MEM pressure we
@@ -90,7 +100,7 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 	//
 	// maxQueueDepth should be chosen as large as possible given the available
 	// resources.
-	if maxReorderDuration > 0 {
+	if siteConfig.maxReorderDuration > 0 {
 		done := make(chan struct{})
 		defer close(done)
 
@@ -106,13 +116,13 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 		go func() {
 			select {
 			case <-done:
-			case <-time.After(maxReorderDuration):
+			case <-time.After(siteConfig.maxReorderDuration):
 				mu.Lock()
 				defer mu.Unlock()
 				if searchDone {
 					return
 				}
-				resultQueue.FlushAll(streamer)
+				rq.FlushAll(streamer)
 			}
 		}()
 	}
@@ -139,11 +149,11 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 
 				sr.Files = dedupper.Dedup(endpoint, sr.Files)
 
-				resultQueue.Enqueue(endpoint, sr)
-				resultQueue.FlushReady(streamer)
+				rq.Enqueue(endpoint, sr)
+				rq.FlushReady(streamer)
 			}))
 			mu.Lock()
-			resultQueue.Done(endpoint)
+			rq.Done(endpoint)
 			mu.Unlock()
 
 			if canIgnoreError(ctx, err) {
@@ -163,27 +173,52 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 	}
 
 	mu.Lock()
-	resultQueue.FlushAll(streamer)
+	metricReorderQueueSize.WithLabelValues().Observe(float64(rq.metricMaxLength))
+	metricMaxMatchCount.WithLabelValues().Observe(float64(rq.metricMaxMatchCount))
+	metricFinalQueueSize.Add(float64(rq.queue.Len()))
+	metricMaxSizeBytes.WithLabelValues().Observe(float64(rq.metricMaxSizeBytes))
+
+	rq.FlushAll(streamer)
 	mu.Unlock()
 
 	return nil
 }
 
-func resultQueueSettingsFromConfig(siteConfig schema.SiteConfiguration) (maxQueueDepth int, maxReorderDuration time.Duration) {
+type rankingSiteConfig struct {
+	maxQueueDepth      int
+	maxMatchCount      int
+	maxSizeBytes       int
+	maxReorderDuration time.Duration
+}
+
+func newRankingSiteConfig(siteConfig schema.SiteConfiguration) *rankingSiteConfig {
 	// defaults
-	maxQueueDepth = 24
-	maxReorderDuration = 0
+	c := &rankingSiteConfig{
+		maxQueueDepth:      24,
+		maxMatchCount:      -1,
+		maxReorderDuration: 0,
+		maxSizeBytes:       -1,
+	}
 
 	if siteConfig.ExperimentalFeatures == nil || siteConfig.ExperimentalFeatures.Ranking == nil {
-		return
+		return c
 	}
 
 	if siteConfig.ExperimentalFeatures.Ranking.MaxReorderQueueSize != nil {
-		maxQueueDepth = *siteConfig.ExperimentalFeatures.Ranking.MaxReorderQueueSize
+		c.maxQueueDepth = *siteConfig.ExperimentalFeatures.Ranking.MaxReorderQueueSize
 	}
 
-	maxReorderDuration = time.Duration(siteConfig.ExperimentalFeatures.Ranking.MaxReorderDurationMS) * time.Millisecond
-	return
+	if siteConfig.ExperimentalFeatures.Ranking.MaxQueueMatchCount != nil {
+		c.maxMatchCount = *siteConfig.ExperimentalFeatures.Ranking.MaxQueueMatchCount
+	}
+
+	if siteConfig.ExperimentalFeatures.Ranking.MaxQueueSizeBytes != nil {
+		c.maxSizeBytes = *siteConfig.ExperimentalFeatures.Ranking.MaxQueueSizeBytes
+	}
+
+	c.maxReorderDuration = time.Duration(siteConfig.ExperimentalFeatures.Ranking.MaxReorderDurationMS) * time.Millisecond
+
+	return c
 }
 
 // The results from each endpoint are mostly sorted by priority, with bounded
@@ -201,6 +236,25 @@ type resultQueue struct {
 	// results in memory.
 	maxQueueDepth int
 
+	// maxMatchCount will flush any items in the queue such that we never exceed
+	// maxMatchCount. This is used to prevent aggregating too many results in
+	// memory.
+	maxMatchCount int
+
+	// The number of matches currently in the queue. We keep track of the current
+	// matchCount separately from the stats, because the stats are reset with
+	// every event we sent.
+	matchCount          int
+	metricMaxMatchCount int
+
+	// The approximate size of the queue's content in memory.
+	sizeBytes uint64
+
+	// Set by site-config, which does not support uint64. In practice this should be
+	// fine. We flush once we reach the threshold of maxSizeBytes.
+	maxSizeBytes       int
+	metricMaxSizeBytes uint64
+
 	queue           priorityQueue
 	metricMaxLength int // for a prometheus metric
 
@@ -214,7 +268,7 @@ type resultQueue struct {
 	stats zoekt.Stats
 }
 
-func newResultQueue(maxQueueDepth int, endpoints []string) *resultQueue {
+func newResultQueue(siteConfig *rankingSiteConfig, endpoints []string) *resultQueue {
 	// To start, initialize every endpoint's maxPending to +inf since we don't yet know the bounds.
 	endpointMaxPendingPriority := map[string]float64{}
 	for _, endpoint := range endpoints {
@@ -222,7 +276,9 @@ func newResultQueue(maxQueueDepth int, endpoints []string) *resultQueue {
 	}
 
 	return &resultQueue{
-		maxQueueDepth:              maxQueueDepth,
+		maxQueueDepth:              siteConfig.maxQueueDepth,
+		maxMatchCount:              siteConfig.maxMatchCount,
+		maxSizeBytes:               siteConfig.maxSizeBytes,
 		endpointMaxPendingPriority: endpointMaxPendingPriority,
 	}
 }
@@ -232,14 +288,27 @@ func newResultQueue(maxQueueDepth int, endpoints []string) *resultQueue {
 func (q *resultQueue) Enqueue(endpoint string, sr *zoekt.SearchResult) {
 	// Update aggregate stats
 	q.stats.Add(sr.Stats)
-	sr.Stats = zoekt.Stats{}
+
+	q.matchCount += sr.MatchCount
+	if q.matchCount > q.metricMaxMatchCount {
+		q.metricMaxMatchCount = q.matchCount
+	}
+
+	sb := sr.SizeBytes()
+	q.sizeBytes += sb
+	if q.sizeBytes >= q.metricMaxSizeBytes {
+		q.metricMaxSizeBytes = q.sizeBytes
+	}
 
 	// Note the endpoint's updated MaxPendingPriority
 	q.endpointMaxPendingPriority[endpoint] = sr.Progress.MaxPendingPriority
 
 	// Don't add empty results to the heap.
 	if len(sr.Files) != 0 {
-		q.queue.add(sr)
+		q.queue.add(&queueSearchResult{SearchResult: sr, sizeBytes: sb})
+		if q.queue.Len() > q.metricMaxLength {
+			q.metricMaxLength = q.queue.Len()
+		}
 	}
 }
 
@@ -252,9 +321,7 @@ func (q *resultQueue) Done(endpoint string) {
 	delete(q.endpointMaxPendingPriority, endpoint)
 }
 
-// FlushReady will send results which are greater than the
-// maxPendingPriority. Note: it will also send results if we exceed
-// maxQueueDepth.
+// FlushReady sends results that are ready to be sent.
 func (q *resultQueue) FlushReady(streamer zoekt.Sender) {
 	// we can send any results such that priority > maxPending. Need to
 	// calculate maxPending.
@@ -265,32 +332,15 @@ func (q *resultQueue) FlushReady(streamer zoekt.Sender) {
 		}
 	}
 
-	if q.queue.Len() > q.metricMaxLength {
-		q.metricMaxLength = q.queue.Len()
-	}
-
-	// Pop and send search results where it is guaranteed that no
-	// higher-priority result is possible, because there are no pending shards
-	// with a greater priority.
-	for (q.maxQueueDepth >= 0 && q.queue.Len() > q.maxQueueDepth) || q.queue.isTopAbove(maxPending) {
-		// We need to use the current aggregate stats then clear them out.
-		sr := heap.Pop(&q.queue).(*zoekt.SearchResult)
-		sr.Stats = q.stats
-		q.stats = zoekt.Stats{}
-		streamer.Send(sr)
+	for q.hasResultsToSend(maxPending) {
+		streamer.Send(q.pop())
 	}
 }
 
-// FlushAll will send any remaining results that are in the queue and any
-// final statistics. This should only be called once all endpoints are done.
+// FlushAll will send all results in the queue and any aggregate statistics.
 func (q *resultQueue) FlushAll(streamer zoekt.Sender) {
-	metricReorderQueueSize.WithLabelValues().Observe(float64(q.metricMaxLength))
-	metricFinalQueueSize.Add(float64(q.queue.Len()))
 	for q.queue.Len() > 0 {
-		sr := heap.Pop(&q.queue).(*zoekt.SearchResult)
-		sr.Stats = q.stats
-		q.stats = zoekt.Stats{}
-		streamer.Send(sr)
+		streamer.Send(q.pop())
 	}
 
 	// We may have had no matches but had stats. Send the final stats if there
@@ -303,13 +353,58 @@ func (q *resultQueue) FlushAll(streamer zoekt.Sender) {
 	}
 }
 
+// pop returns 1 search result from q. The search result contains the current
+// aggregate stats. After the call to pop() we reset q's aggregate stats
+func (q *resultQueue) pop() *zoekt.SearchResult {
+	sr := heap.Pop(&q.queue).(*queueSearchResult)
+	q.matchCount -= sr.MatchCount
+	q.sizeBytes -= sr.sizeBytes
+
+	// We attach the current aggregate stats to the event and then reset them.
+	sr.Stats = q.stats
+	q.stats = zoekt.Stats{}
+
+	return sr.SearchResult
+}
+
+// hasResultsToSend returns true if there are search results in the queue that
+// should be sent up the stream. Retrieve search results by calling pop() on
+// resultQueue.
+func (q *resultQueue) hasResultsToSend(maxPending float64) bool {
+	if q.queue.Len() == 0 {
+		return false
+	}
+
+	if q.maxQueueDepth >= 0 && q.queue.Len() > q.maxQueueDepth {
+		return true
+	}
+
+	if q.maxMatchCount >= 0 && q.matchCount > q.maxMatchCount {
+		return true
+	}
+
+	if q.maxSizeBytes >= 0 && q.sizeBytes > uint64(q.maxSizeBytes) {
+		return true
+	}
+
+	return q.queue.isTopAbove(maxPending)
+}
+
+type queueSearchResult struct {
+	*zoekt.SearchResult
+
+	// optimization: It can be expensive to calculate sizeBytes, hence we cache it
+	// in the queue.
+	sizeBytes uint64
+}
+
 // priorityQueue modified from https://golang.org/pkg/container/heap/
 // A priorityQueue implements heap.Interface and holds Items.
 // All Exported methods are part of the container.heap interface, and
 // unexported methods are local helpers.
-type priorityQueue []*zoekt.SearchResult
+type priorityQueue []*queueSearchResult
 
-func (pq *priorityQueue) add(sr *zoekt.SearchResult) {
+func (pq *priorityQueue) add(sr *queueSearchResult) {
 	heap.Push(pq, sr)
 }
 
@@ -329,7 +424,7 @@ func (pq priorityQueue) Swap(i, j int) {
 }
 
 func (pq *priorityQueue) Push(x any) {
-	*pq = append(*pq, x.(*zoekt.SearchResult))
+	*pq = append(*pq, x.(*queueSearchResult))
 }
 
 func (pq *priorityQueue) Pop() any {

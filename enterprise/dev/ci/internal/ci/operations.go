@@ -33,9 +33,9 @@ type CoreTestOperationsOptions struct {
 // notably, this is what is used to define operations that run on PRs. Please read the
 // following notes:
 //
-// - opts should be used ONLY to adjust the behaviour of specific steps, e.g. by adding
-//   flags and not as a condition for adding steps or commands.
-// - be careful not to add duplicate steps.
+//   - opts should be used ONLY to adjust the behaviour of specific steps, e.g. by adding
+//     flags and not as a condition for adding steps or commands.
+//   - be careful not to add duplicate steps.
 //
 // If the conditions for the addition of an operation cannot be expressed using the above
 // arguments, please add it to the switch case within `GeneratePipeline` instead.
@@ -424,6 +424,7 @@ func buildGoTests(f func(description, testSuffix string)) {
 		"github.com/sourcegraph/sourcegraph/cmd/frontend",                                       // 100s
 		"github.com/sourcegraph/sourcegraph/enterprise/internal/database",                       // 94s
 		"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers", // 152s
+		"github.com/sourcegraph/sourcegraph/dev/sg",                                             // small, but much more practical to have it in its own job
 	}
 
 	f("all", "exclude "+strings.Join(slowGoTestPackages, " "))
@@ -527,11 +528,18 @@ func triggerAsync(buildOptions bk.BuildOptions) operations.Operation {
 func triggerReleaseBranchHealthchecks(minimumUpgradeableVersion string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		version := semver.MustParse(minimumUpgradeableVersion)
+
+		// HACK: we can't just subtract a single minor version once we roll over to 4.0,
+		// so hard-code the previous minor version.
+		previousMinorVersion := fmt.Sprintf("%d.%d", version.Major(), version.Minor()-1)
+		if version.Major() == 4 && version.Minor() == 0 {
+			previousMinorVersion = "3.43"
+		}
+
 		for _, branch := range []string{
 			// Most recent major.minor
 			fmt.Sprintf("%d.%d", version.Major(), version.Minor()),
-			// The previous major.minor-1
-			fmt.Sprintf("%d.%d", version.Major(), version.Minor()-1),
+			previousMinorVersion,
 		} {
 			name := fmt.Sprintf(":stethoscope: Trigger %s release branch healthcheck build", branch)
 			pipeline.AddTrigger(name, "sourcegraph",

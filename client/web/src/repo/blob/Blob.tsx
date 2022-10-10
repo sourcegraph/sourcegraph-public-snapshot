@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import { Remote } from 'comlink'
@@ -53,6 +53,7 @@ import {
     toPositionOrRangeQueryParameter,
     addLineRangeQueryParameter,
     formatSearchParameters,
+    logger,
 } from '@sourcegraph/common'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
@@ -99,13 +100,20 @@ import styles from './Blob.module.scss'
  */
 const toPortalID = (line: number): string => `line-decoration-attachment-${line}`
 
+// Logical grouping of props that are only used by the CodeMirror blob view
+// implementation.
+interface CodeMirrorBlobProps {
+    overrideBrowserSearchKeybinding?: boolean
+}
+
 export interface BlobProps
     extends SettingsCascadeProps,
         PlatformContextProps<'urlToFile' | 'requestGraphQL' | 'settings'>,
         TelemetryProps,
         HoverThresholdProps,
         ExtensionsControllerProps,
-        ThemeProps {
+        ThemeProps,
+        CodeMirrorBlobProps {
     location: H.Location
     history: H.History
     className: string
@@ -117,6 +125,9 @@ export interface BlobProps
     // Experimental reference panel
     disableStatusBar: boolean
     disableDecorations: boolean
+    // When navigateToLineOnAnyClick=true, the code intel popover is disabled
+    // and clicking on any line should navigate to that specific line.
+    navigateToLineOnAnyClick?: boolean
 
     // If set, nav is called when a user clicks on a token highlighted by
     // WebHoverOverlay
@@ -124,8 +135,8 @@ export interface BlobProps
     role?: string
     ariaLabel?: string
 
+    isBlameVisible?: boolean
     blameHunks?: BlameHunk[]
-    onHandleFuzzyFinder?: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
@@ -298,7 +309,8 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         []
     )
 
-    useEffect(() => {
+    // Need to use deep compare effect to avoid infinite loop in the tabbed references panel.
+    useDeepCompareEffect(() => {
         nextBlobInfoChange(blobInfo)
         return () => {
             // Clean up for any resources used by the previous viewer.
@@ -385,6 +397,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         ]
     )
 
+    const customHistoryAction = props.nav
     // Update URL when clicking on a line (which will trigger the line highlighting defined below)
     useObservable(
         useMemo(
@@ -401,10 +414,12 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                         window.getSelection()!.removeAllRanges()
 
                         const position = locateTarget(event.target as HTMLElement, domFunctions)
+                        if (!position) {
+                            return
+                        }
                         let query: string | undefined
                         let replace = false
                         if (
-                            position &&
                             event.shiftKey &&
                             hoverifier.hoverState.selectedPosition &&
                             hoverifier.hoverState.selectedPosition.line !== undefined
@@ -430,8 +445,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                             // will always be added.
                             const currentPosition = parseQueryAndHash(location.search, location.hash)
                             replace = Boolean(
-                                position &&
-                                    currentPosition.line &&
+                                currentPosition.line &&
                                     !currentPosition.endLine &&
                                     Math.abs(position.line - currentPosition.line) < 11
                             )
@@ -440,20 +454,34 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                         const parameters = new URLSearchParams(location.search)
                         parameters.delete('popover')
 
-                        if (position && !('character' in position)) {
-                            // Only change the URL when clicking on blank space on the line (not on
-                            // characters). Otherwise, this would interfere with go to definition.
-                            updateBrowserHistoryIfChanged(
-                                props.history,
-                                location,
-                                addLineRangeQueryParameter(parameters, query),
-                                replace
-                            )
+                        const isClickOnBlankSpace = !('character' in position)
+                        if (isClickOnBlankSpace || props.navigateToLineOnAnyClick) {
+                            if (customHistoryAction) {
+                                const entry: H.LocationDescriptor<unknown> = {
+                                    ...location,
+                                    search: formatSearchParameters(addLineRangeQueryParameter(parameters, query)),
+                                }
+                                customHistoryAction(props.history.createHref(entry))
+                            } else {
+                                updateBrowserHistoryIfChanged(
+                                    props.history,
+                                    location,
+                                    addLineRangeQueryParameter(parameters, query),
+                                    replace
+                                )
+                            }
                         }
                     }),
                     mapTo(undefined)
                 ),
-            [codeViewElements, hoverifier.hoverState.selectedPosition, location, props.history]
+            [
+                codeViewElements,
+                hoverifier.hoverState.selectedPosition,
+                location,
+                props.history,
+                props.navigateToLineOnAnyClick,
+                customHistoryAction,
+            ]
         )
     )
 
@@ -483,7 +511,6 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
     }, [parsedHash, blobInfo])
 
     // EXTENSION FEATURES
-
     // Data source for `viewerUpdates`
     useObservable(
         useMemo(
@@ -524,7 +551,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                               subscriptions.add(() => {
                                   extensionHostAPI
                                       .removeViewer(viewerId)
-                                      .catch(error => console.error('Error removing viewer from extension host', error))
+                                      .catch(error => logger.error('Error removing viewer from extension host', error))
                               })
 
                               viewerUpdates.next({ viewerId, blobInfo, extensionHostAPI, subscriptions })
@@ -600,7 +627,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                                 viewerData.extensionHostAPI
                                     .setEditorSelections(viewerData.viewerId, lprToSelectionsZeroIndexed(position))
                                     .catch(error =>
-                                        console.error('Error updating editor selections on extension host', error)
+                                        logger.error('Error updating editor selections on extension host', error)
                                     )
                             })
                         )
@@ -790,6 +817,29 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         }
     }, [codeViewElements])
 
+    // Add the `.clickable-row` CSS class to all rows to give visual hints that they're clickable.
+    useLayoutEffect(() => {
+        if (!props.navigateToLineOnAnyClick) {
+            return
+        }
+
+        const subscription = codeViewElements.subscribe(codeView => {
+            if (codeView) {
+                const table = codeView.firstElementChild as HTMLTableElement
+                for (const row of table.rows) {
+                    if (row.cells.length === 0) {
+                        continue
+                    }
+                    row.className = styles.clickableRow
+                }
+            }
+        })
+
+        return () => {
+            subscription.unsubscribe()
+        }
+    }, [codeViewElements, props.navigateToLineOnAnyClick])
+
     const logEventOnCopy = useCallback(() => {
         props.telemetryService.log(...codeCopiedEvent('blob'))
     }, [props.telemetryService])
@@ -812,7 +862,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                         __html: blobInfo.html,
                     }}
                 />
-                {hoverState.hoverOverlayProps && extensionsController !== null && (
+                {!props.navigateToLineOnAnyClick && hoverState.hoverOverlayProps && extensionsController !== null && (
                     <WebHoverOverlay
                         {...props}
                         {...hoverState.hoverOverlayProps}
@@ -824,7 +874,11 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                     />
                 )}
 
-                {props.blameHunks && <BlameColumn blameHunks={props.blameHunks} codeViewElements={codeViewElements} />}
+                <BlameColumn
+                    isBlameVisible={props.isBlameVisible}
+                    blameHunks={props.blameHunks}
+                    codeViewElements={codeViewElements}
+                />
 
                 {groupedDecorations &&
                     iterate(groupedDecorations)

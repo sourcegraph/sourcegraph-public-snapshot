@@ -9,6 +9,9 @@ import {
     snippet,
     CompletionSource,
     acceptCompletion,
+    selectedCompletion,
+    currentCompletions,
+    setSelectedCompletion,
 } from '@codemirror/autocomplete'
 import { Extension, Prec } from '@codemirror/state'
 import { keymap, EditorView } from '@codemirror/view'
@@ -50,17 +53,16 @@ import {
     PREDICATE_REGEX,
     regexInsertText,
     repositoryInsertText,
-} from '@sourcegraph/shared/src/search/query/completion'
+} from '@sourcegraph/shared/src/search/query/completion-utils'
 import { decorate, DecoratedToken, toDecoration } from '@sourcegraph/shared/src/search/query/decoratedToken'
 import { FILTERS, FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
-import { getSuggestionQuery } from '@sourcegraph/shared/src/search/query/providers'
+import { getSuggestionQuery } from '@sourcegraph/shared/src/search/query/providers-utils'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Filter, Token } from '@sourcegraph/shared/src/search/query/token'
 import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
+import { createSVGIcon } from '@sourcegraph/shared/src/util/dom'
 
 import { queryTokens } from './parsedQuery'
-
-import styles from '../CodeMirrorQueryInput.module.scss'
 
 type CompletionType = SymbolKind | 'queryfilter' | 'repository' | 'searchhistory'
 
@@ -96,19 +98,6 @@ const typeIconMap: Record<CompletionType, string> = {
     queryfilter: mdiFilterOutline,
     repository: mdiSourceBranch,
     searchhistory: mdiHistory,
-}
-
-function createIcon(pathSpec: string): Node {
-    const svgNS = 'http://www.w3.org/2000/svg'
-    const svg = document.createElementNS(svgNS, 'svg')
-    svg.setAttributeNS(null, 'viewBox', '0 0 24 24')
-    svg.setAttribute('aria-hidden', 'true')
-
-    const path = document.createElementNS(svgNS, 'path')
-    path.setAttribute('d', pathSpec)
-
-    svg.append(path)
-    return svg
 }
 
 interface SuggestionContext {
@@ -157,7 +146,7 @@ export function searchQueryAutocompletion(
         // This renders the completion icon
         {
             render(completion) {
-                return createIcon(
+                return createSVGIcon(
                     completion.type && completion.type in typeIconMap
                         ? typeIconMap[completion.type as CompletionType]
                         : typeIconMap[SymbolKind.UNKNOWN]
@@ -197,28 +186,31 @@ export function searchQueryAutocompletion(
         },
     ]
 
-    if (!applyOnEnter) {
-        // This renders the "Tab" indicator after the details text. It's
-        // only visible for the currently selected suggestion (handled
-        // by CSS).
-        addToOptions.push({
-            render() {
-                const node = document.createElement('span')
-                node.classList.add('completion-hint', styles.tabStyle)
-                node.textContent = 'Tab'
-                return node
-            },
-            position: 200,
-        })
-    }
-
     return [
         // Uses the default keymapping but changes accepting suggestions from Enter
         // to Tab
         Prec.highest(
             keymap.of(
                 applyOnEnter
-                    ? [...completionKeymap, { key: 'Tab', run: acceptCompletion }]
+                    ? [
+                          ...completionKeymap,
+                          {
+                              key: 'Tab',
+                              run(view) {
+                                  // Select first completion item if none is selected
+                                  // and items are available.
+                                  if (selectedCompletion(view.state) === null) {
+                                      if (currentCompletions(view.state).length > 0) {
+                                          view.dispatch({ effects: setSelectedCompletion(0) })
+                                          return true
+                                      }
+                                      return false
+                                  }
+                                  // Otherwise apply the selected completion item
+                                  return acceptCompletion(view)
+                              },
+                          },
+                      ]
                     : completionKeymap.map(keybinding =>
                           keybinding.key === 'Enter' ? { ...keybinding, key: 'Tab' } : keybinding
                       )

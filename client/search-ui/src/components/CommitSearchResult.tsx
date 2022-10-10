@@ -2,12 +2,10 @@ import React from 'react'
 
 import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
-import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { CommitMatch, getCommitMatchUrl, getRepositoryUrl } from '@sourcegraph/shared/src/search/stream'
-import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 // eslint-disable-next-line no-restricted-imports
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 import { Link, Code } from '@sourcegraph/wildcard'
@@ -36,15 +34,13 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
     as,
     index,
 }) => {
-    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
-
-    const renderTitle = (): JSX.Element => (
+    const title = (
         <div className={styles.title}>
             <span
                 className={classNames(
                     'test-search-result-label flex-grow-1',
                     styles.titleInner,
-                    coreWorkflowImprovementsEnabled && styles.mutedRepoFileLink
+                    styles.mutedRepoFileLink
                 )}
             >
                 <Link to={getRepositoryUrl(result.repository)}>{displayRepoName(result.repository)}</Link>
@@ -69,29 +65,23 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
         </div>
     )
 
-    const renderBody = (): JSX.Element => (
-        <CommitSearchResultMatch
-            key={result.url}
-            item={result}
-            platformContext={platformContext}
-            openInNewTab={openInNewTab}
-        />
-    )
-
     return (
         <ResultContainer
             index={index}
-            icon={SourceCommitIcon}
-            collapsible={false}
-            defaultExpanded={true}
-            title={renderTitle()}
+            title={title}
             resultType={result.type}
             onResultClicked={onSelect}
-            expandedChildren={renderBody()}
             repoName={result.repository}
             repoStars={result.repoStars}
             className={containerClassName}
             as={as}
-        />
+        >
+            <CommitSearchResultMatch
+                key={result.url}
+                item={result}
+                platformContext={platformContext}
+                openInNewTab={openInNewTab}
+            />
+        </ResultContainer>
     )
 }

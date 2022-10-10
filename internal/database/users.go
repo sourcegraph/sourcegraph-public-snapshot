@@ -210,7 +210,7 @@ type NewUser struct {
 // username/email and password. If no password is given, a non-builtin auth provider must be used to
 // sign into the account.
 //
-// CREATION OF SITE ADMINS
+// # CREATION OF SITE ADMINS
 //
 // The new user is made to be a site admin if the following are both true: (1) this user would be
 // the first and only user on the server, and (2) the site has not yet been initialized. Otherwise,
@@ -803,6 +803,10 @@ type UsersListOptions struct {
 
 	Tag string // only include users with this tag
 
+	// InactiveSince filters out users that have had an eventlog entry with a
+	// `timestamp` greater-than-or-equal to the given timestamp.
+	InactiveSince time.Time
+
 	*LimitOffset
 }
 
@@ -854,6 +858,15 @@ SELECT id, created_at, deleted_at
 FROM users
 ORDER BY id ASC
 `
+const listUsersInactiveCond = `
+(NOT EXISTS (
+	SELECT 1 FROM event_logs
+	WHERE
+		event_logs.user_id = u.id
+	AND
+		timestamp >= %s
+))
+`
 
 func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 	conds = []*sqlf.Query{sqlf.Sprintf("TRUE")}
@@ -877,6 +890,11 @@ func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 	if opt.Tag != "" {
 		conds = append(conds, sqlf.Sprintf("%s::text = ANY(u.tags)", opt.Tag))
 	}
+
+	if !opt.InactiveSince.IsZero() {
+		conds = append(conds, sqlf.Sprintf(listUsersInactiveCond, opt.InactiveSince))
+	}
+
 	return conds
 }
 

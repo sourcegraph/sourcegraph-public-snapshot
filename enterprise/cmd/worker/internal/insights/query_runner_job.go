@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -40,19 +39,19 @@ func (s *insightsQueryRunnerJob) Config() []env.Config {
 	return []env.Config{insightsQueryRunnerConfigInst}
 }
 
-func (s *insightsQueryRunnerJob) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
+func (s *insightsQueryRunnerJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	if !insights.IsEnabled() {
 		logger.Info("Code Insights Disabled. Disabling query runner.")
 		return []goroutine.BackgroundRoutine{}, nil
 	}
 	logger.Info("Code Insights Enabled. Enabling query runner.")
 
-	mainAppDb, err := workerdb.Init()
+	db, err := workerdb.InitDBWithLogger(logger)
 	if err != nil {
 		return nil, err
 	}
 
-	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(database.NewDB(logger, mainAppDb).SubRepoPerms())
+	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(db.SubRepoPerms())
 	if err != nil {
 		return nil, errors.Errorf("Failed to create sub-repo client: %v", err)
 	}
@@ -62,7 +61,7 @@ func (s *insightsQueryRunnerJob) Routines(ctx context.Context, logger log.Logger
 		return nil, err
 	}
 
-	return background.GetBackgroundQueryRunnerJob(context.Background(), logger, database.NewDB(logger, mainAppDb), insightsDB), nil
+	return background.GetBackgroundQueryRunnerJob(context.Background(), logger, db, insightsDB), nil
 }
 
 func NewInsightsQueryRunnerJob() job.Job {

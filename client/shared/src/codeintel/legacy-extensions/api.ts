@@ -3,7 +3,7 @@
 import { Observable } from 'rxjs'
 
 import { GraphQLResult } from '@sourcegraph/http-client'
-import { Settings } from '@sourcegraph/shared/src/settings/settings'
+import { Settings, SettingsCascade } from '@sourcegraph/shared/src/settings/settings'
 
 import { PlatformContext } from '../../platform/context'
 
@@ -773,31 +773,6 @@ export interface Hover {
      * position or the current position itself.
      */
     range?: Range
-
-    /**
-     * Alerts that should be shown in this hover.
-     */
-    alerts?: HoverAlert[]
-}
-
-export interface HoverAlert {
-    /**
-     * Text content to be shown on hovers. Since the alert is displayed inline,
-     * multiparagraph content will be rendered on one line. It's recommended to
-     * provide a brief message here, and place futher details in the badge or
-     * provide a link.
-     */
-    summary: MarkupContent
-
-    /**
-     * When an alert has a dismissal type, dismissing it will prevent all alerts
-     * of that type from being shown. If no type is provided, the alert is not
-     * dismissible.
-     */
-    type?: string
-
-    /** Predefined icons to display next ot the summary. */
-    iconKind?: 'info' | 'error' | 'warning'
 }
 
 export interface HoverProvider {
@@ -1037,7 +1012,7 @@ export interface CodeIntelContext extends Pick<PlatformContext, 'requestGraphQL'
 
 export type SettingsGetter = <T>(setting: string) => T | undefined
 
-export function newSettingsGetter(settingsCascade: Settings): SettingsGetter {
+export function newSettingsGetter(settingsCascade: SettingsCascade<Settings>): SettingsGetter {
     return <T>(setting: string): T | undefined =>
         settingsCascade.final && (settingsCascade.final[setting] as T | undefined)
 }

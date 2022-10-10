@@ -249,11 +249,11 @@ func buildAuthURLRedirect(p *provider, relayState relayState) (string, error) {
 // login flows.
 //
 // SAML overloads the term "RelayState".
-// * In the SP-initiated login flow, it is an opaque value originated from the SP and reflected
-//   back in the AuthnResponse. The Sourcegraph SP uses the base64-encoded JSON of this struct as
-//   the RelayState.
-// * In the IdP-initiated login flow, the RelayState can be any arbitrary hint, but in practice
-//   is the desired post-login redirect URL in plain text.
+//   - In the SP-initiated login flow, it is an opaque value originated from the SP and reflected
+//     back in the AuthnResponse. The Sourcegraph SP uses the base64-encoded JSON of this struct as
+//     the RelayState.
+//   - In the IdP-initiated login flow, the RelayState can be any arbitrary hint, but in practice
+//     is the desired post-login redirect URL in plain text.
 type relayState struct {
 	ProviderID  string `json:"k"`
 	ReturnToURL string `json:"r"`

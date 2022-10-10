@@ -9,7 +9,6 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
@@ -56,7 +55,6 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
     const showEnterpriseHomePanels = useExperimentalFeatures(features => features.showEnterpriseHomePanels ?? false)
     const homepageUserInvitation = useExperimentalFeatures(features => features.homepageUserInvitation) ?? false
     const showCollaborators = window.context.allowSignup && homepageUserInvitation && props.isSourcegraphDotCom
-    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
 
     /** The value entered by the user in the query input */
     const [queryState, setQueryState] = useState<QueryState>({
@@ -71,12 +69,7 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
             {props.isSourcegraphDotCom && (
                 <div className="text-muted text-center mt-3">Search millions of open source repositories</div>
             )}
-            <div
-                className={classNames(styles.searchContainer, {
-                    [styles.searchContainerWithContentBelow]:
-                        props.isSourcegraphDotCom || showEnterpriseHomePanels || coreWorkflowImprovementsEnabled,
-                })}
-            >
+            <div className={styles.searchContainer}>
                 <SearchPageInput {...props} queryState={queryState} setQueryState={setQueryState} source="home" />
             </div>
             <div
@@ -90,7 +83,7 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
                     <HomePanels showCollaborators={showCollaborators} {...props} />
                 )}
 
-                {coreWorkflowImprovementsEnabled && !showEnterpriseHomePanels && !props.isSourcegraphDotCom && (
+                {!showEnterpriseHomePanels && !props.isSourcegraphDotCom && (
                     <QueryExamplesHomepage
                         telemetryService={props.telemetryService}
                         queryState={queryState}

@@ -947,6 +947,29 @@ CREATE VIEW batch_spec_workspace_execution_jobs_with_rank AS
    FROM (batch_spec_workspace_execution_jobs j
      LEFT JOIN batch_spec_workspace_execution_queue q ON ((j.id = q.id)));
 
+CREATE TABLE batch_spec_workspace_files (
+    id integer NOT NULL,
+    rand_id text NOT NULL,
+    batch_spec_id bigint NOT NULL,
+    filename text NOT NULL,
+    path text NOT NULL,
+    size bigint NOT NULL,
+    content bytea NOT NULL,
+    modified_at timestamp with time zone NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE SEQUENCE batch_spec_workspace_files_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE batch_spec_workspace_files_id_seq OWNED BY batch_spec_workspace_files.id;
+
 CREATE TABLE batch_spec_workspaces (
     id bigint NOT NULL,
     batch_spec_id integer NOT NULL,
@@ -1010,7 +1033,6 @@ CREATE TABLE changeset_specs (
     repo_id integer NOT NULL,
     user_id integer,
     diff_stat_added integer,
-    diff_stat_changed integer,
     diff_stat_deleted integer,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
@@ -1026,7 +1048,8 @@ CREATE TABLE changeset_specs (
     commit_message text,
     commit_author_name text,
     commit_author_email text,
-    type text NOT NULL
+    type text NOT NULL,
+    CONSTRAINT changeset_specs_published_valid_values CHECK (((published = 'true'::text) OR (published = 'false'::text) OR (published = '"draft"'::text) OR (published IS NULL)))
 );
 
 CREATE TABLE changesets (
@@ -1045,7 +1068,6 @@ CREATE TABLE changesets (
     external_review_state text,
     external_check_state text,
     diff_stat_added integer,
-    diff_stat_changed integer,
     diff_stat_deleted integer,
     sync_state jsonb DEFAULT '{}'::jsonb NOT NULL,
     current_spec_id bigint,
@@ -1425,6 +1447,24 @@ CREATE SEQUENCE cm_webhooks_id_seq
     CACHE 1;
 
 ALTER SEQUENCE cm_webhooks_id_seq OWNED BY cm_webhooks.id;
+
+CREATE TABLE codeintel_autoindex_queue (
+    id integer NOT NULL,
+    repository_id integer NOT NULL,
+    rev text NOT NULL,
+    queued_at timestamp with time zone DEFAULT now() NOT NULL,
+    processed_at timestamp with time zone
+);
+
+CREATE SEQUENCE codeintel_autoindex_queue_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE codeintel_autoindex_queue_id_seq OWNED BY codeintel_autoindex_queue.id;
 
 CREATE TABLE codeintel_langugage_support_requests (
     id integer NOT NULL,
@@ -2643,6 +2683,17 @@ CREATE SEQUENCE lsif_uploads_audit_logs_seq
 
 ALTER SEQUENCE lsif_uploads_audit_logs_seq OWNED BY lsif_uploads_audit_logs.sequence;
 
+CREATE TABLE lsif_uploads_reference_counts (
+    upload_id integer NOT NULL,
+    reference_count integer NOT NULL
+);
+
+COMMENT ON TABLE lsif_uploads_reference_counts IS 'A less hot-path reference count for upload records.';
+
+COMMENT ON COLUMN lsif_uploads_reference_counts.upload_id IS 'The identifier of the referenced upload.';
+
+COMMENT ON COLUMN lsif_uploads_reference_counts.reference_count IS 'The number of references to the associated upload from other records (via lsif_references).';
+
 CREATE TABLE lsif_uploads_visible_at_tip (
     repository_id integer NOT NULL,
     upload_id integer NOT NULL,
@@ -2969,7 +3020,7 @@ CREATE TABLE users (
     searchable boolean DEFAULT true NOT NULL,
     CONSTRAINT users_display_name_max_length CHECK ((char_length(display_name) <= 255)),
     CONSTRAINT users_username_max_length CHECK ((char_length((username)::text) <= 255)),
-    CONSTRAINT users_username_valid_chars CHECK ((username OPERATOR(~) '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-.](?=[a-zA-Z0-9]))*-?$'::citext))
+    CONSTRAINT users_username_valid_chars CHECK ((username OPERATOR(~) '^\w(?:\w|[-.](?=\w))*-?$'::citext))
 );
 
 CREATE VIEW reconciler_changesets AS
@@ -2989,7 +3040,6 @@ CREATE VIEW reconciler_changesets AS
     c.external_review_state,
     c.external_check_state,
     c.diff_stat_added,
-    c.diff_stat_changed,
     c.diff_stat_deleted,
     c.sync_state,
     c.current_spec_id,
@@ -3246,10 +3296,13 @@ CREATE TABLE sub_repo_permissions (
     version integer DEFAULT 1 NOT NULL,
     path_includes text[],
     path_excludes text[],
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    paths text[]
 );
 
 COMMENT ON TABLE sub_repo_permissions IS 'Responsible for storing permissions at a finer granularity than repo';
+
+COMMENT ON COLUMN sub_repo_permissions.paths IS 'Paths that begin with a minus sign (-) are exclusion paths.';
 
 CREATE TABLE survey_responses (
     id bigint NOT NULL,
@@ -3467,6 +3520,37 @@ CREATE SEQUENCE webhook_logs_id_seq
 
 ALTER SEQUENCE webhook_logs_id_seq OWNED BY webhook_logs.id;
 
+CREATE TABLE webhooks (
+    id integer NOT NULL,
+    rand_id uuid DEFAULT gen_random_uuid() NOT NULL,
+    code_host_kind text NOT NULL,
+    code_host_urn text NOT NULL,
+    secret text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    encryption_key_id text
+);
+
+COMMENT ON TABLE webhooks IS 'Webhooks registered in Sourcegraph instance.';
+
+COMMENT ON COLUMN webhooks.rand_id IS 'rand_id will be the user facing ID';
+
+COMMENT ON COLUMN webhooks.code_host_kind IS 'Kind of an external service for which webhooks are registered.';
+
+COMMENT ON COLUMN webhooks.code_host_urn IS 'URN of a code host. This column maps to external_service_id column of repo table.';
+
+COMMENT ON COLUMN webhooks.secret IS 'Secret used to decrypt webhook payload (if supported by the code host).';
+
+CREATE SEQUENCE webhooks_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE webhooks_id_seq OWNED BY webhooks.id;
+
 ALTER TABLE ONLY access_tokens ALTER COLUMN id SET DEFAULT nextval('access_tokens_id_seq'::regclass);
 
 ALTER TABLE ONLY batch_changes ALTER COLUMN id SET DEFAULT nextval('batch_changes_id_seq'::regclass);
@@ -3478,6 +3562,8 @@ ALTER TABLE ONLY batch_spec_execution_cache_entries ALTER COLUMN id SET DEFAULT 
 ALTER TABLE ONLY batch_spec_resolution_jobs ALTER COLUMN id SET DEFAULT nextval('batch_spec_resolution_jobs_id_seq'::regclass);
 
 ALTER TABLE ONLY batch_spec_workspace_execution_jobs ALTER COLUMN id SET DEFAULT nextval('batch_spec_workspace_execution_jobs_id_seq'::regclass);
+
+ALTER TABLE ONLY batch_spec_workspace_files ALTER COLUMN id SET DEFAULT nextval('batch_spec_workspace_files_id_seq'::regclass);
 
 ALTER TABLE ONLY batch_spec_workspaces ALTER COLUMN id SET DEFAULT nextval('batch_spec_workspaces_id_seq'::regclass);
 
@@ -3506,6 +3592,8 @@ ALTER TABLE ONLY cm_slack_webhooks ALTER COLUMN id SET DEFAULT nextval('cm_slack
 ALTER TABLE ONLY cm_trigger_jobs ALTER COLUMN id SET DEFAULT nextval('cm_trigger_jobs_id_seq'::regclass);
 
 ALTER TABLE ONLY cm_webhooks ALTER COLUMN id SET DEFAULT nextval('cm_webhooks_id_seq'::regclass);
+
+ALTER TABLE ONLY codeintel_autoindex_queue ALTER COLUMN id SET DEFAULT nextval('codeintel_autoindex_queue_id_seq'::regclass);
 
 ALTER TABLE ONLY codeintel_langugage_support_requests ALTER COLUMN id SET DEFAULT nextval('codeintel_langugage_support_requests_id_seq'::regclass);
 
@@ -3607,6 +3695,8 @@ ALTER TABLE ONLY users ALTER COLUMN id SET DEFAULT nextval('users_id_seq'::regcl
 
 ALTER TABLE ONLY webhook_logs ALTER COLUMN id SET DEFAULT nextval('webhook_logs_id_seq'::regclass);
 
+ALTER TABLE ONLY webhooks ALTER COLUMN id SET DEFAULT nextval('webhooks_id_seq'::regclass);
+
 ALTER TABLE ONLY access_tokens
     ADD CONSTRAINT access_tokens_pkey PRIMARY KEY (id);
 
@@ -3639,6 +3729,9 @@ ALTER TABLE ONLY batch_spec_workspace_execution_jobs
 
 ALTER TABLE ONLY batch_spec_workspace_execution_last_dequeues
     ADD CONSTRAINT batch_spec_workspace_execution_last_dequeues_pkey PRIMARY KEY (user_id);
+
+ALTER TABLE ONLY batch_spec_workspace_files
+    ADD CONSTRAINT batch_spec_workspace_files_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY batch_spec_workspaces
     ADD CONSTRAINT batch_spec_workspaces_pkey PRIMARY KEY (id);
@@ -3690,6 +3783,9 @@ ALTER TABLE ONLY cm_trigger_jobs
 
 ALTER TABLE ONLY cm_webhooks
     ADD CONSTRAINT cm_webhooks_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY codeintel_autoindex_queue
+    ADD CONSTRAINT codeintel_autoindex_queue_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY codeintel_lockfile_references
     ADD CONSTRAINT codeintel_lockfile_references_pkey PRIMARY KEY (id);
@@ -3817,6 +3913,9 @@ ALTER TABLE ONLY lsif_retention_configuration
 ALTER TABLE ONLY lsif_uploads
     ADD CONSTRAINT lsif_uploads_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY lsif_uploads_reference_counts
+    ADD CONSTRAINT lsif_uploads_reference_counts_upload_id_key UNIQUE (upload_id);
+
 ALTER TABLE ONLY names
     ADD CONSTRAINT names_pkey PRIMARY KEY (name);
 
@@ -3940,6 +4039,9 @@ ALTER TABLE ONLY versions
 ALTER TABLE ONLY webhook_logs
     ADD CONSTRAINT webhook_logs_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY webhooks
+    ADD CONSTRAINT webhooks_pkey PRIMARY KEY (id);
+
 CREATE INDEX access_tokens_lookup ON access_tokens USING hash (value_sha256) WHERE (deleted_at IS NULL);
 
 CREATE INDEX batch_changes_namespace_org_id ON batch_changes USING btree (namespace_org_id);
@@ -3961,6 +4063,10 @@ CREATE INDEX batch_spec_workspace_execution_jobs_cancel ON batch_spec_workspace_
 CREATE INDEX batch_spec_workspace_execution_jobs_last_dequeue ON batch_spec_workspace_execution_jobs USING btree (user_id, started_at DESC);
 
 CREATE INDEX batch_spec_workspace_execution_jobs_state ON batch_spec_workspace_execution_jobs USING btree (state);
+
+CREATE UNIQUE INDEX batch_spec_workspace_files_batch_spec_id_filename_path ON batch_spec_workspace_files USING btree (batch_spec_id, filename, path);
+
+CREATE INDEX batch_spec_workspace_files_rand_id ON batch_spec_workspace_files USING btree (rand_id);
 
 CREATE INDEX batch_spec_workspaces_batch_spec_id ON batch_spec_workspaces USING btree (batch_spec_id);
 
@@ -4011,6 +4117,8 @@ CREATE INDEX cm_trigger_jobs_finished_at ON cm_trigger_jobs USING btree (finishe
 CREATE INDEX cm_trigger_jobs_state_idx ON cm_trigger_jobs USING btree (state);
 
 CREATE INDEX cm_webhooks_monitor ON cm_webhooks USING btree (monitor);
+
+CREATE UNIQUE INDEX codeintel_autoindex_queue_repository_id_commit ON codeintel_autoindex_queue USING btree (repository_id, rev);
 
 CREATE UNIQUE INDEX codeintel_langugage_support_requests_user_id_language ON codeintel_langugage_support_requests USING btree (user_id, language_id);
 
@@ -4347,6 +4455,9 @@ ALTER TABLE ONLY batch_spec_workspace_execution_jobs
 ALTER TABLE ONLY batch_spec_workspace_execution_last_dequeues
     ADD CONSTRAINT batch_spec_workspace_execution_last_dequeues_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
 
+ALTER TABLE ONLY batch_spec_workspace_files
+    ADD CONSTRAINT batch_spec_workspace_files_batch_spec_id_fkey FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE;
+
 ALTER TABLE ONLY batch_spec_workspaces
     ADD CONSTRAINT batch_spec_workspaces_batch_spec_id_fkey FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE;
 
@@ -4529,6 +4640,9 @@ ALTER TABLE ONLY gitserver_repos
 
 ALTER TABLE ONLY insights_query_runner_jobs_dependencies
     ADD CONSTRAINT insights_query_runner_jobs_dependencies_fk_job_id FOREIGN KEY (job_id) REFERENCES insights_query_runner_jobs(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY lsif_uploads_reference_counts
+    ADD CONSTRAINT lsif_data_docs_search_private_repo_name_id_fk FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY lsif_dependency_syncing_jobs
     ADD CONSTRAINT lsif_dependency_indexing_jobs_upload_id_fkey FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE;

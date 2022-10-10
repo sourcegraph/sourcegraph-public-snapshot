@@ -4,22 +4,14 @@
 @import 'open-color/open-color.scss';
 @import 'open-color/open-color.css';
 
-// Tell Bootstrap to use our colors.
 $blue: #0b70db;
-$indigo: #0864c6;
 $purple: #a305e1;
-$purple-01: #e8d1ff;
-$purple-03: #820dde;
-$pink: #d68cf3;
 $red: $oc-red-9;
 $orange: $oc-orange-7;
 $yellow: $oc-yellow-7;
 $green: $oc-green-7;
 $teal: $oc-teal-7;
 $cyan: #72dbe8;
-$body-color: var(--body-color);
-$body-bg: var(--body-bg);
-$text-muted: var(--text-muted);
 
 // Exception that's used in $theme-colors.
 $gray-02: #eff2f5;
@@ -79,11 +71,11 @@ $theme-colors: (
 
     // Other root palette colors.
     --blue: #{$blue};
-    --indigo: #{$indigo};
+    --indigo: #0864c6;
     --purple: #{$purple};
-    --purple-01: #{$purple-01};
-    --purple-03: #{$purple-03};
-    --pink: #{$pink};
+    --purple-01: #e8d1ff;
+    --purple-03: #820dde;
+    --pink: #d68cf3;
     --red: #{$red};
     --orange: #{$orange};
     --yellow: #{$yellow};
@@ -212,7 +204,6 @@ $theme-colors: (
         rgba(215, 240, 253, 0.25) 83.64%
     );
     --modal-bg: #{rgba($gray-04, 0.5)};
-    // Colors used in the search sidebar with .core-workflow-improvements-enabled
     --sidebar-bg: var(--color-bg-1);
     --sidebar-border-color: var(--border-color-2);
 }
@@ -304,7 +295,6 @@ $theme-colors: (
     --marketing-gradient: linear-gradient(90.64deg, rgba(108, 8, 223, 0.5) 3.11%, rgba(0, 165, 213, 0.5) 83.64%);
     --marketing-gradient-25: linear-gradient(90.64deg, rgba(108, 8, 223, 0.25) 3.11%, rgba(0, 165, 213, 0.25) 83.64%);
     --modal-bg: #{rgba($gray-08, 0.5)};
-    // Colors used in the search sidebar with .core-workflow-improvements-enabled
     --sidebar-bg: var(--black);
     --sidebar-border-color: var(--color-bg-2);
 }
@@ -317,6 +307,7 @@ $theme-colors: (
     --btn-link-disabled-color: var(--primary-2);
     --vulnerability-announcement: linear-gradient(to right, #8f3fce, #b80887);
     --text-muted-transparent: #{rgba($gray-06, 0.3)};
+    --search-box-focus-box-shadow: 0 0 0 2px rgba(28, 126, 214, 0.25);
 }
 
 // Syntax highlighting changes for WCAG 2.1 contrast compliance (currently behind feature flag)

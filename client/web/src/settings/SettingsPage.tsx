@@ -2,6 +2,7 @@ import * as React from 'react'
 
 import { RouteComponentProps } from 'react-router'
 
+import { logger } from '@sourcegraph/common'
 import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -70,7 +71,7 @@ export class SettingsPage extends React.PureComponent<Props, State> {
             this.props.onUpdate()
         } catch (commitError) {
             this.setState({ commitError })
-            console.error(commitError)
+            logger.error(commitError)
         }
     }
 

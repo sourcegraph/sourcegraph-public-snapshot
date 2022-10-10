@@ -78,7 +78,12 @@ import { addLineRangeQueryParameter, isErrorLike, toPositionOrRangeQueryParamete
 import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { UIPositionSpec, UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 
-import { WebHoverOverlay, WebHoverOverlayProps } from '../../../components/WebHoverOverlay'
+import {
+    getClickToGoToDefinition,
+    getGoToURL,
+    WebHoverOverlay,
+    WebHoverOverlayProps,
+} from '../../../components/WebHoverOverlay'
 import { BlobProps, updateBrowserHistoryIfChanged } from '../Blob'
 
 import { Container } from './react-interop'
@@ -88,6 +93,8 @@ import {
     preciseOffsetAtCoords,
     rangesContain,
     uiPositionToOffset,
+    zeroToOneBasedPosition,
+    zeroToOneBasedRange,
 } from './utils'
 
 import { blobPropsFacet } from '.'
@@ -111,7 +118,8 @@ interface HovercardRange {
     // click-to-go-to-definition should use this range if available.
     providerRange?: UIRange
 
-    // Used to provide "click to go to definition"
+    // Used to provide "click to go to definition". The presence of this value
+    // also indicates that the range should be decorated with a pointer cursor.
     onClick?: () => void
 
     // Whether or not this hovercard is considered "pinned". We only show a
@@ -129,10 +137,6 @@ export type HovercardSource = (view: EditorView, position: UIPosition) => Observ
  * Some style overrides to replicate the existing hovercard style.
  */
 const hovercardTheme = EditorView.theme({
-    '.cm-code-intel-hovercard': {
-        // Without this all text in the hovercard is monospace
-        fontFamily: 'sans-serif',
-    },
     [`.${webOverlayStyles.webHoverOverlay}`]: {
         // This is normally "position: 'absolute'". CodeMirror does the
         // positioning. Without this CodeMirror thinks the hover content is
@@ -147,6 +151,9 @@ const hovercardTheme = EditorView.theme({
         // panel header.
         zIndex: 1024,
     },
+    '.hover-gtd': {
+        cursor: 'pointer',
+    },
 })
 
 /**
@@ -160,6 +167,7 @@ const hovercardTheme = EditorView.theme({
 const addRange = StateEffect.define<HovercardRange>()
 const removeRange = StateEffect.define<HovercardRange>()
 const selectionHighlightDecoration = Decoration.mark({ class: 'selection-highlight' })
+const selectionGoToDefinitionDecoration = Decoration.mark({ class: 'selection-highlight hover-gtd' })
 
 const activeRanges = StateField.define<Map<number, HovercardRange>>({
     create() {
@@ -210,7 +218,9 @@ const activeRanges = StateField.define<Map<number, HovercardRange>>({
                 RangeSet.of(
                     Array.from(ranges.values(), range => {
                         const { from, to } = getHoverOffsets(range, view.state.doc)
-                        return selectionHighlightDecoration.range(from, to)
+                        return range.onClick
+                            ? selectionGoToDefinitionDecoration.range(from, to)
+                            : selectionHighlightDecoration.range(from, to)
                     }),
                     true
                 )
@@ -223,8 +233,13 @@ const activeRanges = StateField.define<Map<number, HovercardRange>>({
                         return false
                     }
 
-                    const offset = preciseOffsetAtCoords(view, event)
+                    // Ignore event when the click event is the result of the
+                    // user selecting text
+                    if (view.state.selection.main.from !== view.state.selection.main.to) {
+                        return false
+                    }
 
+                    const offset = preciseOffsetAtCoords(view, event)
                     if (offset === null) {
                         return false
                     }
@@ -257,10 +272,12 @@ function isOffsetInHoverRange(offset: number, range: HovercardRange, textDocumen
 
 function getHoverOffsets(range: HovercardRange, textDocument: Text): { from: number; to: number } {
     if (range.providerRange) {
-        return {
-            from: uiPositionToOffset(textDocument, range.providerRange.start),
-            to: uiPositionToOffset(textDocument, range.providerRange.end),
-        }
+        const from = uiPositionToOffset(textDocument, range.providerRange.start)
+        const to = uiPositionToOffset(textDocument, range.providerRange.end)
+        // We only use the code intel range if it maps to a valid position
+        // within the document. Otherwise we fall back to the range
+        // determined by CodeMirror
+        return { from: from ?? range.from, to: to ?? range.to }
     }
     return range
 }
@@ -521,6 +538,26 @@ class Hovercard implements TooltipView {
             return
         }
 
+        // Used to implement "click to go to definition"
+        let onClick: (() => void) | undefined
+
+        // Adaption of the "click to go to definition" code inside
+        // WebHoverOverlay
+        if (getClickToGoToDefinition(props.settingsCascade)) {
+            const urlAndType = getGoToURL(actionsOrError, props.location)
+            if (urlAndType) {
+                const { url, actionType } = urlAndType
+                onClick = () => {
+                    props.telemetryService.log(`${actionType}HoverOverlay.click`)
+                    if (props.nav) {
+                        props.nav(url)
+                    } else {
+                        props.history.push(url)
+                    }
+                }
+            }
+        }
+
         const hoverContext = {
             commitID: props.blobInfo.commitID,
             filePath: props.blobInfo.filePath,
@@ -533,27 +570,13 @@ class Hovercard implements TooltipView {
             ...this.range.range.start,
         }
 
-        // Used to implement "click to go to definition"
-        const clicks = new Subject<void>()
-        const onClick = (): void => clicks.next()
-
         if (hoverOrError && hoverOrError !== 'loading' && !isErrorLike(hoverOrError) && hoverOrError.range) {
             hoveredToken = {
                 ...hoveredToken,
-                line: hoverOrError.range.start.line + 1,
-                character: hoverOrError.range.start.character + 1,
+                ...zeroToOneBasedPosition(hoverOrError.range.start),
             }
             this.addRange({
-                providerRange: {
-                    start: {
-                        line: hoverOrError.range.start.line + 1,
-                        character: hoverOrError.range.start.character + 1,
-                    },
-                    end: {
-                        line: hoverOrError.range.end.line + 1,
-                        character: hoverOrError.range.end.character + 1,
-                    },
-                },
+                providerRange: zeroToOneBasedRange(hoverOrError.range),
                 onClick,
             })
         } else {
@@ -572,7 +595,6 @@ class Hovercard implements TooltipView {
                         settingsCascade={props.settingsCascade}
                         telemetryService={props.telemetryService}
                         extensionsController={props.extensionsController}
-                        nav={props.nav ?? (url => props.history.push(url))}
                         // Hover props
                         actionsOrError={actionsOrError}
                         hoverOrError={hoverOrError}
@@ -581,7 +603,6 @@ class Hovercard implements TooltipView {
                         // hovercard to render
                         overlayPosition={dummyOverlayPosition}
                         hoveredToken={hoveredToken}
-                        hoveredTokenClick={clicks.asObservable()}
                         onAlertDismissed={() => repositionTooltips(this.view)}
                         pinOptions={{
                             showCloseButton: pinned,

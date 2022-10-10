@@ -16,6 +16,7 @@ func Upgrade(
 	runnerFactory RunnerFactoryWithSchemas,
 	outFactory OutputFactory,
 	registerMigrators func(storeFactory migrations.StoreFactory) oobmigration.RegisterMigratorsFunc,
+	expectedSchemaFactories ...ExpectedSchemaFactory,
 ) *cli.Command {
 	fromFlag := &cli.StringFlag{
 		Name:     "from",
@@ -37,19 +38,29 @@ func Upgrade(
 		Usage: "Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.",
 		Value: false,
 	}
-	privilegedHashFlag := &cli.StringFlag{
+	privilegedHashesFlag := &cli.StringSliceFlag{
 		Name:  "privileged-hash",
-		Usage: "Running -noop-privileged without this value will supply a value that will unlock migration application for the current upgrade operation. Future (distinct) upgrade operations will require a unique hash.",
-		Value: "",
+		Usage: "Running --noop-privileged without this flag will print instructions and supply a value for use in a second invocation. Multiple privileged hash flags (for distinct schemas) may be supplied. Future (distinct) upgrade operations will require a unique hash.",
+		Value: nil,
 	}
 	skipVersionCheckFlag := &cli.BoolFlag{
 		Name:     "skip-version-check",
 		Usage:    "Skip validation of the instance's current version.",
 		Required: false,
 	}
+	skipDriftCheckFlag := &cli.BoolFlag{
+		Name:     "skip-drift-check",
+		Usage:    "Skip comparison of the instance's current schema against the expected version's schema.",
+		Required: false,
+	}
 	dryRunFlag := &cli.BoolFlag{
 		Name:     "dry-run",
 		Usage:    "Print the upgrade plan but do not execute it.",
+		Required: false,
+	}
+	disableAnimation := &cli.BoolFlag{
+		Name:     "disable-animation",
+		Usage:    "If set, progress bar animations are not displayed.",
 		Required: false,
 	}
 
@@ -98,11 +109,14 @@ func Upgrade(
 			runnerFactory,
 			plan,
 			privilegedMode,
-			privilegedHashFlag.Get(cmd),
+			privilegedHashesFlag.Get(cmd),
 			skipVersionCheckFlag.Get(cmd),
+			skipDriftCheckFlag.Get(cmd),
 			dryRunFlag.Get(cmd),
 			true, // up
+			!disableAnimation.Get(cmd),
 			registerMigrators,
+			expectedSchemaFactories,
 			out,
 		)
 	})
@@ -117,9 +131,11 @@ func Upgrade(
 			toFlag,
 			unprivilegedOnlyFlag,
 			noopPrivilegedFlag,
-			privilegedHashFlag,
+			privilegedHashesFlag,
 			skipVersionCheckFlag,
+			skipDriftCheckFlag,
 			dryRunFlag,
+			disableAnimation,
 		},
 	}
 }

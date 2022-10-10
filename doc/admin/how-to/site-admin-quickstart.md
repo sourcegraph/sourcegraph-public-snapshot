@@ -25,12 +25,6 @@ Regardless of the deployment option you choose, Sourcegraph can be self-hosted l
 ## Updating your instance 
 New versions of Sourcegraph are released monthly (with patches released in between, as needed). New updates are announced in the [Sourcegraph blog](https://about.sourcegraph.com/blog), and comprehensive update notes are available in the [changelog](https://docs.sourcegraph.com/CHANGELOG). 
 
-Regardless of the deployment type you choose, the following update rules apply: 
-- **Update one minor version at a time**, e.g., v3.26 –> v3.27 –> v3.28.
-    - Patches (e.g., vX.X.4 vs. vX.X.5) do not have to be adopted when moving between vX.X versions.
-- **Check the [update notes](../updates/index.md#update-notes) for your deployment type for any required manual actions** before updating.
-- Check [out of band migration status](../migration/index.md) before updating to avoid a necessary rollback while the migration finishes.
-
 To check the current version of your instance, go to **User menu > Site admin > Updates**.
 
 For more details on updating your instance, please refer to the [update docs](../updates/index.md).

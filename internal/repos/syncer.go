@@ -17,10 +17,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/repos/webhookworker"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -106,7 +108,7 @@ func (s *Syncer) Run(ctx context.Context, store Store, opts RunOptions) error {
 				s.Logger.Error("enqueuing sync jobs", log.Error(err))
 			}
 		}
-		sleep(ctx, opts.EnqueueInterval())
+		timeutil.SleepWithContext(ctx, opts.EnqueueInterval())
 	}
 
 	return ctx.Err()
@@ -125,14 +127,6 @@ func (s *syncHandler) Handle(ctx context.Context, logger log.Logger, record work
 	}
 
 	return s.syncer.SyncExternalService(ctx, sj.ExternalServiceID, s.minSyncInterval())
-}
-
-// sleep is a context aware time.Sleep
-func sleep(ctx context.Context, d time.Duration) {
-	select {
-	case <-ctx.Done():
-	case <-time.After(d):
-	}
 }
 
 // TriggerExternalServiceSync will enqueue a sync job for the supplied external
@@ -285,11 +279,11 @@ func (rm ReposModified) ReposModified(modified types.RepoModified) types.Repos {
 //
 // It works for repos from:
 //
-// 1. Public "cloud_default" code hosts since we don't sync them in the background
-//    (which would delete lazy synced repos).
-// 2. Any package hosts (i.e. npm, Maven, etc) since callers are expected to store
-//    repos in the `lsif_dependency_repos` table which is used as the source of truth
-//    for the next full sync, so lazy added repos don't get wiped.
+//  1. Public "cloud_default" code hosts since we don't sync them in the background
+//     (which would delete lazy synced repos).
+//  2. Any package hosts (i.e. npm, Maven, etc) since callers are expected to store
+//     repos in the `lsif_dependency_repos` table which is used as the source of truth
+//     for the next full sync, so lazy added repos don't get wiped.
 //
 // The "background" boolean flag indicates that we should run this
 // sync in the background vs block and call s.syncRepo synchronously.
@@ -531,6 +525,37 @@ func (s *Syncer) SyncExternalService(
 		return errors.Wrap(err, "fetching external services")
 	}
 
+	// We take an advisory lock here and also when deleting an external service to
+	// ensure that they can't happen at the same time.
+	lock := locker.NewWith(s.Store, "external_service")
+
+	var locked bool
+	var unlock locker.UnlockFunc
+	// We need both code paths here since our production code doesn't use a
+	// transaction but most of our tests DO run in transactions in order to make
+	// rolling back test state easier.
+	if s.Store.Handle().InTransaction() {
+		locked, err = lock.LockInTransaction(ctx, locker.StringKey(fmt.Sprintf("%d", svc.ID)), false)
+		if err != nil {
+			return errors.Wrap(err, "getting advisory lock")
+		}
+		if !locked {
+			return errors.Errorf("could not get advisory lock for service %d", svc.ID)
+		}
+	} else {
+		// We're NOT in a transaction
+		locked, unlock, err = lock.Lock(ctx, locker.StringKey(fmt.Sprintf("%d", svc.ID)), false)
+		if err != nil {
+			return errors.Wrap(err, "getting advisory lock")
+		}
+		if !locked {
+			return errors.Errorf("could not get advisory lock for service %d", svc.ID)
+		}
+		defer func() {
+			err = unlock(err)
+		}()
+	}
+
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -544,8 +569,10 @@ func (s *Syncer) SyncExternalService(
 		svc.NextSyncAt = now.Add(interval)
 		svc.LastSyncAt = now
 
-		// We only want to log this error, not return it
-		if err := s.Store.ExternalServiceStore().Upsert(ctx, svc); err != nil {
+		// We use context.Background() here because we want this update to
+		// succeed even if the job has been canceled.
+		if err := s.Store.ExternalServiceStore().Upsert(context.Background(), svc); err != nil {
+			// We only want to log this error, not return it
 			logger.Error("upserting external service", log.Error(err))
 		}
 
@@ -580,7 +607,6 @@ func (s *Syncer) SyncExternalService(
 	}
 
 	results := make(chan SourceResult)
-
 	go func() {
 		src.ListRepos(ctx, results)
 		close(results)
@@ -653,9 +679,10 @@ func (s *Syncer) SyncExternalService(
 
 			id, err := webhookworker.EnqueueJob(ctx, basestore.NewWithHandle(s.Store.Handle()), job)
 			if err != nil {
-				logger.Error("unable to enqueue webhook build job")
+				logger.Error("enqueueing webhook build job", log.Error(err))
+			} else {
+				logger.Info("enqueued webhook build job", log.Int("ID", id))
 			}
-			logger.Info("enqueued webhook build job", log.Int("ID", id))
 		}
 	}
 

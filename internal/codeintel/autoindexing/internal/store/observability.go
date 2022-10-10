@@ -26,10 +26,19 @@ type operations struct {
 	deleteIndexByID                *observation.Operation
 	deleteIndexesWithoutRepository *observation.Operation
 	isQueued                       *observation.Operation
+	queueRepoRev                   *observation.Operation
+	getQueuedRepoRev               *observation.Operation
+	markRepoRevsAsProcessed        *observation.Operation
 
 	// Index Configuration
 	getIndexConfigurationByRepositoryID    *observation.Operation
 	updateIndexConfigurationByRepositoryID *observation.Operation
+
+	// Language Support
+	getLanguagesRequestedBy   *observation.Operation
+	setRequestLanguageSupport *observation.Operation
+
+	insertDependencyIndexingJob *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -71,9 +80,18 @@ func newOperations(observationContext *observation.Context) *operations {
 		deleteIndexByID:                op("DeleteIndexByID"),
 		deleteIndexesWithoutRepository: op("DeleteIndexesWithoutRepository"),
 		isQueued:                       op("IsQueued"),
+		queueRepoRev:                   op("QueueRepoRev"),
+		getQueuedRepoRev:               op("GetQueuedRepoRev"),
+		markRepoRevsAsProcessed:        op("MarkRepoRevsAsProcessed"),
 
 		// Index Configuration
 		getIndexConfigurationByRepositoryID:    op("GetIndexConfigurationByRepositoryID"),
 		updateIndexConfigurationByRepositoryID: op("UpdateIndexConfigurationByRepositoryID"),
+
+		// Language Support
+		getLanguagesRequestedBy:   op("GetLanguagesRequestedBy"),
+		setRequestLanguageSupport: op("SetRequestLanguageSupport"),
+
+		insertDependencyIndexingJob: op("InsertDependencyIndexingJob"),
 	}
 }

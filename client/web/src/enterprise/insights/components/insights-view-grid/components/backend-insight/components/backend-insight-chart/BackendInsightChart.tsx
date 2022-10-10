@@ -99,7 +99,12 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                                         {...data.content}
                                     />
                                 ) : (
-                                    <BarChart width={parent.width} height={parent.height} {...data.content} />
+                                    <BarChart
+                                        aria-label="Bar chart"
+                                        width={parent.width}
+                                        height={parent.height}
+                                        {...data.content}
+                                    />
                                 )}
                             </>
                         )}

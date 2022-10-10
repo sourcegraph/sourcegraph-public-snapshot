@@ -26,7 +26,7 @@ func NewBeforeCreateUserHook() func(context.Context, database.DB) error {
 			// We prevent creating new users when the license is expired because we do not want
 			// all new users to be promoted as site admins automatically until the customer
 			// decides to downgrade to Free tier.
-			if licensing.EnforceTiers && info.IsExpired() {
+			if info.IsExpired() {
 				return errcode.NewPresentationError("Unable to create user account: Sourcegraph license expired! No new users can be created. Update the license key in the [**site configuration**](/site-admin/configuration) or downgrade to only using Sourcegraph Free features.")
 			}
 			licensedUserCount = int32(info.UserCount)
@@ -64,7 +64,7 @@ func NewBeforeCreateUserHook() func(context.Context, database.DB) error {
 // a new user should be promoted to site admin based on the product license.
 func NewAfterCreateUserHook() func(context.Context, database.DB, *types.User) error {
 	// 🚨 SECURITY: To be extra safe that we never promote any new user to be site admin on Sourcegraph Cloud.
-	if !licensing.EnforceTiers || envvar.SourcegraphDotComMode() {
+	if envvar.SourcegraphDotComMode() {
 		return nil
 	}
 
@@ -90,10 +90,6 @@ func NewAfterCreateUserHook() func(context.Context, database.DB, *types.User) er
 // NewBeforeSetUserIsSiteAdmin returns a BeforeSetUserIsSiteAdmin closure that determines whether
 // non-site admin roles are allowed (i.e. revoke site admins) based on the product license.
 func NewBeforeSetUserIsSiteAdmin() func(isSiteAdmin bool) error {
-	if !licensing.EnforceTiers {
-		return nil
-	}
-
 	return func(isSiteAdmin bool) error {
 		if isSiteAdmin {
 			return nil

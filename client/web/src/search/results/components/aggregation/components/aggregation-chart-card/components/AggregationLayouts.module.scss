@@ -1,22 +1,11 @@
 .text-layout {
     :global(.theme-dark) & rect {
-        fill: var(--gray-09);
+        fill: var(--gray-10);
     }
 
     :global(.theme-light) & rect {
-        fill: var(--gray-03);
-    }
-
-    // Simple UI mode theme
-    :global(.core-workflow-improvements-enabled) & {
-        :global(.theme-dark) & rect {
-            fill: var(--gray-10);
-        }
-
-        :global(.theme-light) & rect {
-            fill: var(--gray-02);
-            opacity: 0.6;
-        }
+        fill: var(--gray-02);
+        opacity: 0.6;
     }
 
     &-container {

@@ -198,7 +198,7 @@ var sg = &cli.App{
 			os.Setenv(log.EnvLogFormat, "console")
 		}
 		liblog := log.Init(log.Resource{Name: "sg", Version: BuildCommit})
-		interrupt.Register(func() { _ = liblog.Sync() })
+		interrupt.Register(liblog.Sync)
 
 		// Add autosuggestion hooks to commands with subcommands but no action
 		addSuggestionHooks(cmd.App.Commands)
@@ -263,6 +263,7 @@ var sg = &cli.App{
 		migrationCommand,
 		insightsCommand,
 		telemetryCommand,
+		monitoringCommand,
 
 		// Dev environment
 		secretCommand,

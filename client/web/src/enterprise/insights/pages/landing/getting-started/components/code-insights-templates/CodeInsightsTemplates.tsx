@@ -25,7 +25,8 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { useExperimentalFeatures } from '../../../../../../../stores'
-import { CodeInsightsBackendContext, InsightType } from '../../../../../core'
+import { InsightType } from '../../../../../core'
+import { useUiFeatures } from '../../../../../hooks'
 import { encodeCaptureInsightURL } from '../../../../insights/creation/capture-group'
 import { encodeSearchInsightUrl } from '../../../../insights/creation/search-insight'
 import {
@@ -146,9 +147,7 @@ const TemplateCard: React.FunctionComponent<React.PropsWithChildren<TemplateCard
     const { template, telemetryService } = props
     const { mode } = useContext(CodeInsightsLandingPageContext)
 
-    const {
-        UIFeatures: { licensed },
-    } = useContext(CodeInsightsBackendContext)
+    const { licensed } = useUiFeatures()
 
     const series =
         template.type === InsightType.SearchBased

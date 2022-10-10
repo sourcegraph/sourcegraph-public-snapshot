@@ -3727,6 +3727,9 @@ type MockDB struct {
 	// WebhookLogsFunc is an instance of a mock function object controlling
 	// the behavior of the method WebhookLogs.
 	WebhookLogsFunc *DBWebhookLogsFunc
+	// WebhooksFunc is an instance of a mock function object controlling the
+	// behavior of the method Webhooks.
+	WebhooksFunc *DBWebhooksFunc
 }
 
 // NewMockDB creates a new mock of the DB interface. All methods return zero
@@ -3915,6 +3918,11 @@ func NewMockDB() *MockDB {
 		},
 		WebhookLogsFunc: &DBWebhookLogsFunc{
 			defaultHook: func(encryption.Key) (r0 WebhookLogStore) {
+				return
+			},
+		},
+		WebhooksFunc: &DBWebhooksFunc{
+			defaultHook: func(encryption.Key) (r0 WebhookStore) {
 				return
 			},
 		},
@@ -4110,6 +4118,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.WebhookLogs")
 			},
 		},
+		WebhooksFunc: &DBWebhooksFunc{
+			defaultHook: func(encryption.Key) WebhookStore {
+				panic("unexpected invocation of MockDB.Webhooks")
+			},
+		},
 	}
 }
 
@@ -4227,6 +4240,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		WebhookLogsFunc: &DBWebhookLogsFunc{
 			defaultHook: i.WebhookLogs,
+		},
+		WebhooksFunc: &DBWebhooksFunc{
+			defaultHook: i.Webhooks,
 		},
 	}
 }
@@ -7938,6 +7954,107 @@ func (c DBWebhookLogsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBWebhookLogsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBWebhooksFunc describes the behavior when the Webhooks method of the
+// parent MockDB instance is invoked.
+type DBWebhooksFunc struct {
+	defaultHook func(encryption.Key) WebhookStore
+	hooks       []func(encryption.Key) WebhookStore
+	history     []DBWebhooksFuncCall
+	mutex       sync.Mutex
+}
+
+// Webhooks delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockDB) Webhooks(v0 encryption.Key) WebhookStore {
+	r0 := m.WebhooksFunc.nextHook()(v0)
+	m.WebhooksFunc.appendCall(DBWebhooksFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Webhooks method of
+// the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBWebhooksFunc) SetDefaultHook(hook func(encryption.Key) WebhookStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Webhooks method of the parent MockDB instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBWebhooksFunc) PushHook(hook func(encryption.Key) WebhookStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBWebhooksFunc) SetDefaultReturn(r0 WebhookStore) {
+	f.SetDefaultHook(func(encryption.Key) WebhookStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBWebhooksFunc) PushReturn(r0 WebhookStore) {
+	f.PushHook(func(encryption.Key) WebhookStore {
+		return r0
+	})
+}
+
+func (f *DBWebhooksFunc) nextHook() func(encryption.Key) WebhookStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBWebhooksFunc) appendCall(r0 DBWebhooksFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBWebhooksFuncCall objects describing the
+// invocations of this function.
+func (f *DBWebhooksFunc) History() []DBWebhooksFuncCall {
+	f.mutex.Lock()
+	history := make([]DBWebhooksFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBWebhooksFuncCall is an object that describes an invocation of method
+// Webhooks on an instance of MockDB.
+type DBWebhooksFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 encryption.Key
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 WebhookStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBWebhooksFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBWebhooksFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -12670,6 +12787,9 @@ func (c EventLogStoreWithFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/internal/database) used for unit
 // testing.
 type MockExternalServiceStore struct {
+	// CancelSyncJobFunc is an instance of a mock function object
+	// controlling the behavior of the method CancelSyncJob.
+	CancelSyncJobFunc *ExternalServiceStoreCancelSyncJobFunc
 	// CountFunc is an instance of a mock function object controlling the
 	// behavior of the method Count.
 	CountFunc *ExternalServiceStoreCountFunc
@@ -12740,6 +12860,11 @@ type MockExternalServiceStore struct {
 // results, unless overwritten.
 func NewMockExternalServiceStore() *MockExternalServiceStore {
 	return &MockExternalServiceStore{
+		CancelSyncJobFunc: &ExternalServiceStoreCancelSyncJobFunc{
+			defaultHook: func(context.Context, int64) (r0 error) {
+				return
+			},
+		},
 		CountFunc: &ExternalServiceStoreCountFunc{
 			defaultHook: func(context.Context, ExternalServicesListOptions) (r0 int, r1 error) {
 				return
@@ -12853,6 +12978,11 @@ func NewMockExternalServiceStore() *MockExternalServiceStore {
 // overwritten.
 func NewStrictMockExternalServiceStore() *MockExternalServiceStore {
 	return &MockExternalServiceStore{
+		CancelSyncJobFunc: &ExternalServiceStoreCancelSyncJobFunc{
+			defaultHook: func(context.Context, int64) error {
+				panic("unexpected invocation of MockExternalServiceStore.CancelSyncJob")
+			},
+		},
 		CountFunc: &ExternalServiceStoreCountFunc{
 			defaultHook: func(context.Context, ExternalServicesListOptions) (int, error) {
 				panic("unexpected invocation of MockExternalServiceStore.Count")
@@ -12966,6 +13096,9 @@ func NewStrictMockExternalServiceStore() *MockExternalServiceStore {
 // implementation, unless overwritten.
 func NewMockExternalServiceStoreFrom(i ExternalServiceStore) *MockExternalServiceStore {
 	return &MockExternalServiceStore{
+		CancelSyncJobFunc: &ExternalServiceStoreCancelSyncJobFunc{
+			defaultHook: i.CancelSyncJob,
+		},
 		CountFunc: &ExternalServiceStoreCountFunc{
 			defaultHook: i.Count,
 		},
@@ -13030,6 +13163,114 @@ func NewMockExternalServiceStoreFrom(i ExternalServiceStore) *MockExternalServic
 			defaultHook: i.WithEncryptionKey,
 		},
 	}
+}
+
+// ExternalServiceStoreCancelSyncJobFunc describes the behavior when the
+// CancelSyncJob method of the parent MockExternalServiceStore instance is
+// invoked.
+type ExternalServiceStoreCancelSyncJobFunc struct {
+	defaultHook func(context.Context, int64) error
+	hooks       []func(context.Context, int64) error
+	history     []ExternalServiceStoreCancelSyncJobFuncCall
+	mutex       sync.Mutex
+}
+
+// CancelSyncJob delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockExternalServiceStore) CancelSyncJob(v0 context.Context, v1 int64) error {
+	r0 := m.CancelSyncJobFunc.nextHook()(v0, v1)
+	m.CancelSyncJobFunc.appendCall(ExternalServiceStoreCancelSyncJobFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the CancelSyncJob method
+// of the parent MockExternalServiceStore instance is invoked and the hook
+// queue is empty.
+func (f *ExternalServiceStoreCancelSyncJobFunc) SetDefaultHook(hook func(context.Context, int64) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CancelSyncJob method of the parent MockExternalServiceStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ExternalServiceStoreCancelSyncJobFunc) PushHook(hook func(context.Context, int64) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ExternalServiceStoreCancelSyncJobFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int64) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ExternalServiceStoreCancelSyncJobFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int64) error {
+		return r0
+	})
+}
+
+func (f *ExternalServiceStoreCancelSyncJobFunc) nextHook() func(context.Context, int64) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ExternalServiceStoreCancelSyncJobFunc) appendCall(r0 ExternalServiceStoreCancelSyncJobFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ExternalServiceStoreCancelSyncJobFuncCall
+// objects describing the invocations of this function.
+func (f *ExternalServiceStoreCancelSyncJobFunc) History() []ExternalServiceStoreCancelSyncJobFuncCall {
+	f.mutex.Lock()
+	history := make([]ExternalServiceStoreCancelSyncJobFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ExternalServiceStoreCancelSyncJobFuncCall is an object that describes an
+// invocation of method CancelSyncJob on an instance of
+// MockExternalServiceStore.
+type ExternalServiceStoreCancelSyncJobFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ExternalServiceStoreCancelSyncJobFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ExternalServiceStoreCancelSyncJobFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // ExternalServiceStoreCountFunc describes the behavior when the Count
@@ -33859,12 +34100,12 @@ type MockSettingsStore struct {
 	// DoneFunc is an instance of a mock function object controlling the
 	// behavior of the method Done.
 	DoneFunc *SettingsStoreDoneFunc
-	// GetLastestSchemaSettingsFunc is an instance of a mock function object
-	// controlling the behavior of the method GetLastestSchemaSettings.
-	GetLastestSchemaSettingsFunc *SettingsStoreGetLastestSchemaSettingsFunc
 	// GetLatestFunc is an instance of a mock function object controlling
 	// the behavior of the method GetLatest.
 	GetLatestFunc *SettingsStoreGetLatestFunc
+	// GetLatestSchemaSettingsFunc is an instance of a mock function object
+	// controlling the behavior of the method GetLatestSchemaSettings.
+	GetLatestSchemaSettingsFunc *SettingsStoreGetLatestSchemaSettingsFunc
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *SettingsStoreHandleFunc
@@ -33893,13 +34134,13 @@ func NewMockSettingsStore() *MockSettingsStore {
 				return
 			},
 		},
-		GetLastestSchemaSettingsFunc: &SettingsStoreGetLastestSchemaSettingsFunc{
-			defaultHook: func(context.Context, api.SettingsSubject) (r0 *schema.Settings, r1 error) {
+		GetLatestFunc: &SettingsStoreGetLatestFunc{
+			defaultHook: func(context.Context, api.SettingsSubject) (r0 *api.Settings, r1 error) {
 				return
 			},
 		},
-		GetLatestFunc: &SettingsStoreGetLatestFunc{
-			defaultHook: func(context.Context, api.SettingsSubject) (r0 *api.Settings, r1 error) {
+		GetLatestSchemaSettingsFunc: &SettingsStoreGetLatestSchemaSettingsFunc{
+			defaultHook: func(context.Context, api.SettingsSubject) (r0 *schema.Settings, r1 error) {
 				return
 			},
 		},
@@ -33940,14 +34181,14 @@ func NewStrictMockSettingsStore() *MockSettingsStore {
 				panic("unexpected invocation of MockSettingsStore.Done")
 			},
 		},
-		GetLastestSchemaSettingsFunc: &SettingsStoreGetLastestSchemaSettingsFunc{
-			defaultHook: func(context.Context, api.SettingsSubject) (*schema.Settings, error) {
-				panic("unexpected invocation of MockSettingsStore.GetLastestSchemaSettings")
-			},
-		},
 		GetLatestFunc: &SettingsStoreGetLatestFunc{
 			defaultHook: func(context.Context, api.SettingsSubject) (*api.Settings, error) {
 				panic("unexpected invocation of MockSettingsStore.GetLatest")
+			},
+		},
+		GetLatestSchemaSettingsFunc: &SettingsStoreGetLatestSchemaSettingsFunc{
+			defaultHook: func(context.Context, api.SettingsSubject) (*schema.Settings, error) {
+				panic("unexpected invocation of MockSettingsStore.GetLatestSchemaSettings")
 			},
 		},
 		HandleFunc: &SettingsStoreHandleFunc{
@@ -33984,11 +34225,11 @@ func NewMockSettingsStoreFrom(i SettingsStore) *MockSettingsStore {
 		DoneFunc: &SettingsStoreDoneFunc{
 			defaultHook: i.Done,
 		},
-		GetLastestSchemaSettingsFunc: &SettingsStoreGetLastestSchemaSettingsFunc{
-			defaultHook: i.GetLastestSchemaSettings,
-		},
 		GetLatestFunc: &SettingsStoreGetLatestFunc{
 			defaultHook: i.GetLatest,
+		},
+		GetLatestSchemaSettingsFunc: &SettingsStoreGetLatestSchemaSettingsFunc{
+			defaultHook: i.GetLatestSchemaSettings,
 		},
 		HandleFunc: &SettingsStoreHandleFunc{
 			defaultHook: i.Handle,
@@ -34225,118 +34466,6 @@ func (c SettingsStoreDoneFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// SettingsStoreGetLastestSchemaSettingsFunc describes the behavior when the
-// GetLastestSchemaSettings method of the parent MockSettingsStore instance
-// is invoked.
-type SettingsStoreGetLastestSchemaSettingsFunc struct {
-	defaultHook func(context.Context, api.SettingsSubject) (*schema.Settings, error)
-	hooks       []func(context.Context, api.SettingsSubject) (*schema.Settings, error)
-	history     []SettingsStoreGetLastestSchemaSettingsFuncCall
-	mutex       sync.Mutex
-}
-
-// GetLastestSchemaSettings delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
-func (m *MockSettingsStore) GetLastestSchemaSettings(v0 context.Context, v1 api.SettingsSubject) (*schema.Settings, error) {
-	r0, r1 := m.GetLastestSchemaSettingsFunc.nextHook()(v0, v1)
-	m.GetLastestSchemaSettingsFunc.appendCall(SettingsStoreGetLastestSchemaSettingsFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// GetLastestSchemaSettings method of the parent MockSettingsStore instance
-// is invoked and the hook queue is empty.
-func (f *SettingsStoreGetLastestSchemaSettingsFunc) SetDefaultHook(hook func(context.Context, api.SettingsSubject) (*schema.Settings, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetLastestSchemaSettings method of the parent MockSettingsStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *SettingsStoreGetLastestSchemaSettingsFunc) PushHook(hook func(context.Context, api.SettingsSubject) (*schema.Settings, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *SettingsStoreGetLastestSchemaSettingsFunc) SetDefaultReturn(r0 *schema.Settings, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.SettingsSubject) (*schema.Settings, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *SettingsStoreGetLastestSchemaSettingsFunc) PushReturn(r0 *schema.Settings, r1 error) {
-	f.PushHook(func(context.Context, api.SettingsSubject) (*schema.Settings, error) {
-		return r0, r1
-	})
-}
-
-func (f *SettingsStoreGetLastestSchemaSettingsFunc) nextHook() func(context.Context, api.SettingsSubject) (*schema.Settings, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *SettingsStoreGetLastestSchemaSettingsFunc) appendCall(r0 SettingsStoreGetLastestSchemaSettingsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// SettingsStoreGetLastestSchemaSettingsFuncCall objects describing the
-// invocations of this function.
-func (f *SettingsStoreGetLastestSchemaSettingsFunc) History() []SettingsStoreGetLastestSchemaSettingsFuncCall {
-	f.mutex.Lock()
-	history := make([]SettingsStoreGetLastestSchemaSettingsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// SettingsStoreGetLastestSchemaSettingsFuncCall is an object that describes
-// an invocation of method GetLastestSchemaSettings on an instance of
-// MockSettingsStore.
-type SettingsStoreGetLastestSchemaSettingsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.SettingsSubject
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *schema.Settings
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c SettingsStoreGetLastestSchemaSettingsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c SettingsStoreGetLastestSchemaSettingsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
 // SettingsStoreGetLatestFunc describes the behavior when the GetLatest
 // method of the parent MockSettingsStore instance is invoked.
 type SettingsStoreGetLatestFunc struct {
@@ -34442,6 +34571,118 @@ func (c SettingsStoreGetLatestFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c SettingsStoreGetLatestFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// SettingsStoreGetLatestSchemaSettingsFunc describes the behavior when the
+// GetLatestSchemaSettings method of the parent MockSettingsStore instance
+// is invoked.
+type SettingsStoreGetLatestSchemaSettingsFunc struct {
+	defaultHook func(context.Context, api.SettingsSubject) (*schema.Settings, error)
+	hooks       []func(context.Context, api.SettingsSubject) (*schema.Settings, error)
+	history     []SettingsStoreGetLatestSchemaSettingsFuncCall
+	mutex       sync.Mutex
+}
+
+// GetLatestSchemaSettings delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockSettingsStore) GetLatestSchemaSettings(v0 context.Context, v1 api.SettingsSubject) (*schema.Settings, error) {
+	r0, r1 := m.GetLatestSchemaSettingsFunc.nextHook()(v0, v1)
+	m.GetLatestSchemaSettingsFunc.appendCall(SettingsStoreGetLatestSchemaSettingsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetLatestSchemaSettings method of the parent MockSettingsStore instance
+// is invoked and the hook queue is empty.
+func (f *SettingsStoreGetLatestSchemaSettingsFunc) SetDefaultHook(hook func(context.Context, api.SettingsSubject) (*schema.Settings, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetLatestSchemaSettings method of the parent MockSettingsStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *SettingsStoreGetLatestSchemaSettingsFunc) PushHook(hook func(context.Context, api.SettingsSubject) (*schema.Settings, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *SettingsStoreGetLatestSchemaSettingsFunc) SetDefaultReturn(r0 *schema.Settings, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.SettingsSubject) (*schema.Settings, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *SettingsStoreGetLatestSchemaSettingsFunc) PushReturn(r0 *schema.Settings, r1 error) {
+	f.PushHook(func(context.Context, api.SettingsSubject) (*schema.Settings, error) {
+		return r0, r1
+	})
+}
+
+func (f *SettingsStoreGetLatestSchemaSettingsFunc) nextHook() func(context.Context, api.SettingsSubject) (*schema.Settings, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SettingsStoreGetLatestSchemaSettingsFunc) appendCall(r0 SettingsStoreGetLatestSchemaSettingsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// SettingsStoreGetLatestSchemaSettingsFuncCall objects describing the
+// invocations of this function.
+func (f *SettingsStoreGetLatestSchemaSettingsFunc) History() []SettingsStoreGetLatestSchemaSettingsFuncCall {
+	f.mutex.Lock()
+	history := make([]SettingsStoreGetLatestSchemaSettingsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SettingsStoreGetLatestSchemaSettingsFuncCall is an object that describes
+// an invocation of method GetLatestSchemaSettings on an instance of
+// MockSettingsStore.
+type SettingsStoreGetLatestSchemaSettingsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.SettingsSubject
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *schema.Settings
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SettingsStoreGetLatestSchemaSettingsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SettingsStoreGetLatestSchemaSettingsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -48040,4 +48281,886 @@ func (c WebhookLogStoreListFuncCall) Args() []interface{} {
 // invocation.
 func (c WebhookLogStoreListFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// MockWebhookStore is a mock implementation of the WebhookStore interface
+// (from the package github.com/sourcegraph/sourcegraph/internal/database)
+// used for unit testing.
+type MockWebhookStore struct {
+	// CreateFunc is an instance of a mock function object controlling the
+	// behavior of the method Create.
+	CreateFunc *WebhookStoreCreateFunc
+	// DeleteFunc is an instance of a mock function object controlling the
+	// behavior of the method Delete.
+	DeleteFunc *WebhookStoreDeleteFunc
+	// GetByIDFunc is an instance of a mock function object controlling the
+	// behavior of the method GetByID.
+	GetByIDFunc *WebhookStoreGetByIDFunc
+	// GetByRandomIDFunc is an instance of a mock function object
+	// controlling the behavior of the method GetByRandomID.
+	GetByRandomIDFunc *WebhookStoreGetByRandomIDFunc
+	// HandleFunc is an instance of a mock function object controlling the
+	// behavior of the method Handle.
+	HandleFunc *WebhookStoreHandleFunc
+	// ListFunc is an instance of a mock function object controlling the
+	// behavior of the method List.
+	ListFunc *WebhookStoreListFunc
+	// UpdateFunc is an instance of a mock function object controlling the
+	// behavior of the method Update.
+	UpdateFunc *WebhookStoreUpdateFunc
+}
+
+// NewMockWebhookStore creates a new mock of the WebhookStore interface. All
+// methods return zero values for all results, unless overwritten.
+func NewMockWebhookStore() *MockWebhookStore {
+	return &MockWebhookStore{
+		CreateFunc: &WebhookStoreCreateFunc{
+			defaultHook: func(context.Context, string, string, *encryption.Encryptable) (r0 *types.Webhook, r1 error) {
+				return
+			},
+		},
+		DeleteFunc: &WebhookStoreDeleteFunc{
+			defaultHook: func(context.Context, int32) (r0 error) {
+				return
+			},
+		},
+		GetByIDFunc: &WebhookStoreGetByIDFunc{
+			defaultHook: func(context.Context, int32) (r0 *types.Webhook, r1 error) {
+				return
+			},
+		},
+		GetByRandomIDFunc: &WebhookStoreGetByRandomIDFunc{
+			defaultHook: func(context.Context, string) (r0 *types.Webhook, r1 error) {
+				return
+			},
+		},
+		HandleFunc: &WebhookStoreHandleFunc{
+			defaultHook: func() (r0 basestore.TransactableHandle) {
+				return
+			},
+		},
+		ListFunc: &WebhookStoreListFunc{
+			defaultHook: func(context.Context) (r0 []*types.Webhook, r1 error) {
+				return
+			},
+		},
+		UpdateFunc: &WebhookStoreUpdateFunc{
+			defaultHook: func(context.Context, *types.Webhook) (r0 *types.Webhook, r1 error) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockWebhookStore creates a new mock of the WebhookStore
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockWebhookStore() *MockWebhookStore {
+	return &MockWebhookStore{
+		CreateFunc: &WebhookStoreCreateFunc{
+			defaultHook: func(context.Context, string, string, *encryption.Encryptable) (*types.Webhook, error) {
+				panic("unexpected invocation of MockWebhookStore.Create")
+			},
+		},
+		DeleteFunc: &WebhookStoreDeleteFunc{
+			defaultHook: func(context.Context, int32) error {
+				panic("unexpected invocation of MockWebhookStore.Delete")
+			},
+		},
+		GetByIDFunc: &WebhookStoreGetByIDFunc{
+			defaultHook: func(context.Context, int32) (*types.Webhook, error) {
+				panic("unexpected invocation of MockWebhookStore.GetByID")
+			},
+		},
+		GetByRandomIDFunc: &WebhookStoreGetByRandomIDFunc{
+			defaultHook: func(context.Context, string) (*types.Webhook, error) {
+				panic("unexpected invocation of MockWebhookStore.GetByRandomID")
+			},
+		},
+		HandleFunc: &WebhookStoreHandleFunc{
+			defaultHook: func() basestore.TransactableHandle {
+				panic("unexpected invocation of MockWebhookStore.Handle")
+			},
+		},
+		ListFunc: &WebhookStoreListFunc{
+			defaultHook: func(context.Context) ([]*types.Webhook, error) {
+				panic("unexpected invocation of MockWebhookStore.List")
+			},
+		},
+		UpdateFunc: &WebhookStoreUpdateFunc{
+			defaultHook: func(context.Context, *types.Webhook) (*types.Webhook, error) {
+				panic("unexpected invocation of MockWebhookStore.Update")
+			},
+		},
+	}
+}
+
+// NewMockWebhookStoreFrom creates a new mock of the MockWebhookStore
+// interface. All methods delegate to the given implementation, unless
+// overwritten.
+func NewMockWebhookStoreFrom(i WebhookStore) *MockWebhookStore {
+	return &MockWebhookStore{
+		CreateFunc: &WebhookStoreCreateFunc{
+			defaultHook: i.Create,
+		},
+		DeleteFunc: &WebhookStoreDeleteFunc{
+			defaultHook: i.Delete,
+		},
+		GetByIDFunc: &WebhookStoreGetByIDFunc{
+			defaultHook: i.GetByID,
+		},
+		GetByRandomIDFunc: &WebhookStoreGetByRandomIDFunc{
+			defaultHook: i.GetByRandomID,
+		},
+		HandleFunc: &WebhookStoreHandleFunc{
+			defaultHook: i.Handle,
+		},
+		ListFunc: &WebhookStoreListFunc{
+			defaultHook: i.List,
+		},
+		UpdateFunc: &WebhookStoreUpdateFunc{
+			defaultHook: i.Update,
+		},
+	}
+}
+
+// WebhookStoreCreateFunc describes the behavior when the Create method of
+// the parent MockWebhookStore instance is invoked.
+type WebhookStoreCreateFunc struct {
+	defaultHook func(context.Context, string, string, *encryption.Encryptable) (*types.Webhook, error)
+	hooks       []func(context.Context, string, string, *encryption.Encryptable) (*types.Webhook, error)
+	history     []WebhookStoreCreateFuncCall
+	mutex       sync.Mutex
+}
+
+// Create delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockWebhookStore) Create(v0 context.Context, v1 string, v2 string, v3 *encryption.Encryptable) (*types.Webhook, error) {
+	r0, r1 := m.CreateFunc.nextHook()(v0, v1, v2, v3)
+	m.CreateFunc.appendCall(WebhookStoreCreateFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Create method of the
+// parent MockWebhookStore instance is invoked and the hook queue is empty.
+func (f *WebhookStoreCreateFunc) SetDefaultHook(hook func(context.Context, string, string, *encryption.Encryptable) (*types.Webhook, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Create method of the parent MockWebhookStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *WebhookStoreCreateFunc) PushHook(hook func(context.Context, string, string, *encryption.Encryptable) (*types.Webhook, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *WebhookStoreCreateFunc) SetDefaultReturn(r0 *types.Webhook, r1 error) {
+	f.SetDefaultHook(func(context.Context, string, string, *encryption.Encryptable) (*types.Webhook, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *WebhookStoreCreateFunc) PushReturn(r0 *types.Webhook, r1 error) {
+	f.PushHook(func(context.Context, string, string, *encryption.Encryptable) (*types.Webhook, error) {
+		return r0, r1
+	})
+}
+
+func (f *WebhookStoreCreateFunc) nextHook() func(context.Context, string, string, *encryption.Encryptable) (*types.Webhook, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *WebhookStoreCreateFunc) appendCall(r0 WebhookStoreCreateFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of WebhookStoreCreateFuncCall objects
+// describing the invocations of this function.
+func (f *WebhookStoreCreateFunc) History() []WebhookStoreCreateFuncCall {
+	f.mutex.Lock()
+	history := make([]WebhookStoreCreateFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// WebhookStoreCreateFuncCall is an object that describes an invocation of
+// method Create on an instance of MockWebhookStore.
+type WebhookStoreCreateFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 *encryption.Encryptable
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *types.Webhook
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c WebhookStoreCreateFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c WebhookStoreCreateFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// WebhookStoreDeleteFunc describes the behavior when the Delete method of
+// the parent MockWebhookStore instance is invoked.
+type WebhookStoreDeleteFunc struct {
+	defaultHook func(context.Context, int32) error
+	hooks       []func(context.Context, int32) error
+	history     []WebhookStoreDeleteFuncCall
+	mutex       sync.Mutex
+}
+
+// Delete delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockWebhookStore) Delete(v0 context.Context, v1 int32) error {
+	r0 := m.DeleteFunc.nextHook()(v0, v1)
+	m.DeleteFunc.appendCall(WebhookStoreDeleteFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Delete method of the
+// parent MockWebhookStore instance is invoked and the hook queue is empty.
+func (f *WebhookStoreDeleteFunc) SetDefaultHook(hook func(context.Context, int32) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Delete method of the parent MockWebhookStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *WebhookStoreDeleteFunc) PushHook(hook func(context.Context, int32) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *WebhookStoreDeleteFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int32) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *WebhookStoreDeleteFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int32) error {
+		return r0
+	})
+}
+
+func (f *WebhookStoreDeleteFunc) nextHook() func(context.Context, int32) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *WebhookStoreDeleteFunc) appendCall(r0 WebhookStoreDeleteFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of WebhookStoreDeleteFuncCall objects
+// describing the invocations of this function.
+func (f *WebhookStoreDeleteFunc) History() []WebhookStoreDeleteFuncCall {
+	f.mutex.Lock()
+	history := make([]WebhookStoreDeleteFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// WebhookStoreDeleteFuncCall is an object that describes an invocation of
+// method Delete on an instance of MockWebhookStore.
+type WebhookStoreDeleteFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c WebhookStoreDeleteFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c WebhookStoreDeleteFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// WebhookStoreGetByIDFunc describes the behavior when the GetByID method of
+// the parent MockWebhookStore instance is invoked.
+type WebhookStoreGetByIDFunc struct {
+	defaultHook func(context.Context, int32) (*types.Webhook, error)
+	hooks       []func(context.Context, int32) (*types.Webhook, error)
+	history     []WebhookStoreGetByIDFuncCall
+	mutex       sync.Mutex
+}
+
+// GetByID delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockWebhookStore) GetByID(v0 context.Context, v1 int32) (*types.Webhook, error) {
+	r0, r1 := m.GetByIDFunc.nextHook()(v0, v1)
+	m.GetByIDFunc.appendCall(WebhookStoreGetByIDFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetByID method of
+// the parent MockWebhookStore instance is invoked and the hook queue is
+// empty.
+func (f *WebhookStoreGetByIDFunc) SetDefaultHook(hook func(context.Context, int32) (*types.Webhook, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetByID method of the parent MockWebhookStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *WebhookStoreGetByIDFunc) PushHook(hook func(context.Context, int32) (*types.Webhook, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *WebhookStoreGetByIDFunc) SetDefaultReturn(r0 *types.Webhook, r1 error) {
+	f.SetDefaultHook(func(context.Context, int32) (*types.Webhook, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *WebhookStoreGetByIDFunc) PushReturn(r0 *types.Webhook, r1 error) {
+	f.PushHook(func(context.Context, int32) (*types.Webhook, error) {
+		return r0, r1
+	})
+}
+
+func (f *WebhookStoreGetByIDFunc) nextHook() func(context.Context, int32) (*types.Webhook, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *WebhookStoreGetByIDFunc) appendCall(r0 WebhookStoreGetByIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of WebhookStoreGetByIDFuncCall objects
+// describing the invocations of this function.
+func (f *WebhookStoreGetByIDFunc) History() []WebhookStoreGetByIDFuncCall {
+	f.mutex.Lock()
+	history := make([]WebhookStoreGetByIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// WebhookStoreGetByIDFuncCall is an object that describes an invocation of
+// method GetByID on an instance of MockWebhookStore.
+type WebhookStoreGetByIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *types.Webhook
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c WebhookStoreGetByIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c WebhookStoreGetByIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// WebhookStoreGetByRandomIDFunc describes the behavior when the
+// GetByRandomID method of the parent MockWebhookStore instance is invoked.
+type WebhookStoreGetByRandomIDFunc struct {
+	defaultHook func(context.Context, string) (*types.Webhook, error)
+	hooks       []func(context.Context, string) (*types.Webhook, error)
+	history     []WebhookStoreGetByRandomIDFuncCall
+	mutex       sync.Mutex
+}
+
+// GetByRandomID delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockWebhookStore) GetByRandomID(v0 context.Context, v1 string) (*types.Webhook, error) {
+	r0, r1 := m.GetByRandomIDFunc.nextHook()(v0, v1)
+	m.GetByRandomIDFunc.appendCall(WebhookStoreGetByRandomIDFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetByRandomID method
+// of the parent MockWebhookStore instance is invoked and the hook queue is
+// empty.
+func (f *WebhookStoreGetByRandomIDFunc) SetDefaultHook(hook func(context.Context, string) (*types.Webhook, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetByRandomID method of the parent MockWebhookStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *WebhookStoreGetByRandomIDFunc) PushHook(hook func(context.Context, string) (*types.Webhook, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *WebhookStoreGetByRandomIDFunc) SetDefaultReturn(r0 *types.Webhook, r1 error) {
+	f.SetDefaultHook(func(context.Context, string) (*types.Webhook, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *WebhookStoreGetByRandomIDFunc) PushReturn(r0 *types.Webhook, r1 error) {
+	f.PushHook(func(context.Context, string) (*types.Webhook, error) {
+		return r0, r1
+	})
+}
+
+func (f *WebhookStoreGetByRandomIDFunc) nextHook() func(context.Context, string) (*types.Webhook, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *WebhookStoreGetByRandomIDFunc) appendCall(r0 WebhookStoreGetByRandomIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of WebhookStoreGetByRandomIDFuncCall objects
+// describing the invocations of this function.
+func (f *WebhookStoreGetByRandomIDFunc) History() []WebhookStoreGetByRandomIDFuncCall {
+	f.mutex.Lock()
+	history := make([]WebhookStoreGetByRandomIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// WebhookStoreGetByRandomIDFuncCall is an object that describes an
+// invocation of method GetByRandomID on an instance of MockWebhookStore.
+type WebhookStoreGetByRandomIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *types.Webhook
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c WebhookStoreGetByRandomIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c WebhookStoreGetByRandomIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// WebhookStoreHandleFunc describes the behavior when the Handle method of
+// the parent MockWebhookStore instance is invoked.
+type WebhookStoreHandleFunc struct {
+	defaultHook func() basestore.TransactableHandle
+	hooks       []func() basestore.TransactableHandle
+	history     []WebhookStoreHandleFuncCall
+	mutex       sync.Mutex
+}
+
+// Handle delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockWebhookStore) Handle() basestore.TransactableHandle {
+	r0 := m.HandleFunc.nextHook()()
+	m.HandleFunc.appendCall(WebhookStoreHandleFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Handle method of the
+// parent MockWebhookStore instance is invoked and the hook queue is empty.
+func (f *WebhookStoreHandleFunc) SetDefaultHook(hook func() basestore.TransactableHandle) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Handle method of the parent MockWebhookStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *WebhookStoreHandleFunc) PushHook(hook func() basestore.TransactableHandle) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *WebhookStoreHandleFunc) SetDefaultReturn(r0 basestore.TransactableHandle) {
+	f.SetDefaultHook(func() basestore.TransactableHandle {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *WebhookStoreHandleFunc) PushReturn(r0 basestore.TransactableHandle) {
+	f.PushHook(func() basestore.TransactableHandle {
+		return r0
+	})
+}
+
+func (f *WebhookStoreHandleFunc) nextHook() func() basestore.TransactableHandle {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *WebhookStoreHandleFunc) appendCall(r0 WebhookStoreHandleFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of WebhookStoreHandleFuncCall objects
+// describing the invocations of this function.
+func (f *WebhookStoreHandleFunc) History() []WebhookStoreHandleFuncCall {
+	f.mutex.Lock()
+	history := make([]WebhookStoreHandleFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// WebhookStoreHandleFuncCall is an object that describes an invocation of
+// method Handle on an instance of MockWebhookStore.
+type WebhookStoreHandleFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 basestore.TransactableHandle
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c WebhookStoreHandleFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c WebhookStoreHandleFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// WebhookStoreListFunc describes the behavior when the List method of the
+// parent MockWebhookStore instance is invoked.
+type WebhookStoreListFunc struct {
+	defaultHook func(context.Context) ([]*types.Webhook, error)
+	hooks       []func(context.Context) ([]*types.Webhook, error)
+	history     []WebhookStoreListFuncCall
+	mutex       sync.Mutex
+}
+
+// List delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockWebhookStore) List(v0 context.Context) ([]*types.Webhook, error) {
+	r0, r1 := m.ListFunc.nextHook()(v0)
+	m.ListFunc.appendCall(WebhookStoreListFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the List method of the
+// parent MockWebhookStore instance is invoked and the hook queue is empty.
+func (f *WebhookStoreListFunc) SetDefaultHook(hook func(context.Context) ([]*types.Webhook, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// List method of the parent MockWebhookStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *WebhookStoreListFunc) PushHook(hook func(context.Context) ([]*types.Webhook, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *WebhookStoreListFunc) SetDefaultReturn(r0 []*types.Webhook, r1 error) {
+	f.SetDefaultHook(func(context.Context) ([]*types.Webhook, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *WebhookStoreListFunc) PushReturn(r0 []*types.Webhook, r1 error) {
+	f.PushHook(func(context.Context) ([]*types.Webhook, error) {
+		return r0, r1
+	})
+}
+
+func (f *WebhookStoreListFunc) nextHook() func(context.Context) ([]*types.Webhook, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *WebhookStoreListFunc) appendCall(r0 WebhookStoreListFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of WebhookStoreListFuncCall objects describing
+// the invocations of this function.
+func (f *WebhookStoreListFunc) History() []WebhookStoreListFuncCall {
+	f.mutex.Lock()
+	history := make([]WebhookStoreListFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// WebhookStoreListFuncCall is an object that describes an invocation of
+// method List on an instance of MockWebhookStore.
+type WebhookStoreListFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*types.Webhook
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c WebhookStoreListFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c WebhookStoreListFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// WebhookStoreUpdateFunc describes the behavior when the Update method of
+// the parent MockWebhookStore instance is invoked.
+type WebhookStoreUpdateFunc struct {
+	defaultHook func(context.Context, *types.Webhook) (*types.Webhook, error)
+	hooks       []func(context.Context, *types.Webhook) (*types.Webhook, error)
+	history     []WebhookStoreUpdateFuncCall
+	mutex       sync.Mutex
+}
+
+// Update delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockWebhookStore) Update(v0 context.Context, v1 *types.Webhook) (*types.Webhook, error) {
+	r0, r1 := m.UpdateFunc.nextHook()(v0, v1)
+	m.UpdateFunc.appendCall(WebhookStoreUpdateFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Update method of the
+// parent MockWebhookStore instance is invoked and the hook queue is empty.
+func (f *WebhookStoreUpdateFunc) SetDefaultHook(hook func(context.Context, *types.Webhook) (*types.Webhook, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Update method of the parent MockWebhookStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *WebhookStoreUpdateFunc) PushHook(hook func(context.Context, *types.Webhook) (*types.Webhook, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *WebhookStoreUpdateFunc) SetDefaultReturn(r0 *types.Webhook, r1 error) {
+	f.SetDefaultHook(func(context.Context, *types.Webhook) (*types.Webhook, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *WebhookStoreUpdateFunc) PushReturn(r0 *types.Webhook, r1 error) {
+	f.PushHook(func(context.Context, *types.Webhook) (*types.Webhook, error) {
+		return r0, r1
+	})
+}
+
+func (f *WebhookStoreUpdateFunc) nextHook() func(context.Context, *types.Webhook) (*types.Webhook, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *WebhookStoreUpdateFunc) appendCall(r0 WebhookStoreUpdateFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of WebhookStoreUpdateFuncCall objects
+// describing the invocations of this function.
+func (f *WebhookStoreUpdateFunc) History() []WebhookStoreUpdateFuncCall {
+	f.mutex.Lock()
+	history := make([]WebhookStoreUpdateFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// WebhookStoreUpdateFuncCall is an object that describes an invocation of
+// method Update on an instance of MockWebhookStore.
+type WebhookStoreUpdateFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *types.Webhook
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *types.Webhook
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c WebhookStoreUpdateFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c WebhookStoreUpdateFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }

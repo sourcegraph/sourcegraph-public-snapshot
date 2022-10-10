@@ -53,7 +53,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/repotrackutil"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -464,6 +463,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/repo-clone-progress", trace.WithRouteName("repo-clone-progress", s.handleRepoCloneProgress))
 	mux.HandleFunc("/delete", trace.WithRouteName("delete", s.handleRepoDelete))
 	mux.HandleFunc("/repo-update", trace.WithRouteName("repo-update", s.handleRepoUpdate))
+	mux.HandleFunc("/repo-clone", trace.WithRouteName("repo-clone", s.handleRepoClone))
 	mux.HandleFunc("/create-commit-from-patch", trace.WithRouteName("create-commit-from-patch", s.handleCreateCommitFromPatch))
 	mux.HandleFunc("/ping", trace.WithRouteName("ping", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -859,11 +859,6 @@ func (s *Server) acquireCloneLimiter(ctx context.Context) (context.Context, cont
 	return s.cloneLimiter.Acquire(ctx)
 }
 
-// queryCloneLimiter reports the capacity and length of the clone limiter's queue
-func (s *Server) queryCloneLimiter() (cap, len int) {
-	return s.cloneLimiter.GetLimit()
-}
-
 func (s *Server) acquireCloneableLimiter(ctx context.Context) (context.Context, context.CancelFunc, error) {
 	lsRemoteQueue.Inc()
 	defer lsRemoteQueue.Dec()
@@ -1018,6 +1013,31 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// handleRepoClone is an asynchronous (does not wait for update to complete or
+// time out) call to clone a repository.
+// Asynchronous errors will have to be checked in the gitserver_repos table under last_error.
+func (s *Server) handleRepoClone(w http.ResponseWriter, r *http.Request) {
+	logger := s.Logger.Scoped("handleRepoClone", "asynchronous http handler for repo clones")
+	var req protocol.RepoCloneRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	var resp protocol.RepoCloneResponse
+	req.Repo = protocol.NormalizeRepo(req.Repo)
+
+	_, err := s.cloneRepo(context.Background(), req.Repo, &cloneOptions{Block: false})
+	if err != nil {
+		logger.Warn("error cloning repo", log.String("repo", string(req.Repo)), log.Error(err))
+		resp.Error = err.Error()
+	}
+
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
 func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 	var (
 		logger    = s.Logger.Scoped("handleArchive", "http handler for repo archive")
@@ -1119,7 +1139,9 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	// Run the search
 	limitHit, searchErr := s.search(ctx, &args, matchesBuf)
 	if writeErr := eventWriter.Event("done", protocol.NewSearchEventDone(limitHit, searchErr)); writeErr != nil {
-		logger.Error("failed to send done event", log.Error(writeErr))
+		if !errors.Is(writeErr, syscall.EPIPE) {
+			logger.Error("failed to send done event", log.Error(writeErr))
+		}
 	}
 	tr.AddEvent("done", attribute.Bool("limit_hit", limitHit))
 	tr.SetError(searchErr)
@@ -1513,7 +1535,6 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 
 	// Instrumentation
 	{
-		repo := repotrackutil.GetTrackedRepo(req.Repo)
 		cmd := ""
 		if len(req.Args) > 0 {
 			cmd = req.Args[0]
@@ -1528,7 +1549,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 		)
 		logger = logger.WithTrace(trace.Context(ctx))
 
-		execRunning.WithLabelValues(cmd, repo).Inc()
+		execRunning.WithLabelValues(cmd).Inc()
 		defer func() {
 			tr.AddEvent(
 				"done",
@@ -1541,8 +1562,8 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 			tr.Finish()
 
 			duration := time.Since(start)
-			execRunning.WithLabelValues(cmd, repo).Dec()
-			execDuration.WithLabelValues(cmd, repo, status).Observe(duration.Seconds())
+			execRunning.WithLabelValues(cmd).Dec()
+			execDuration.WithLabelValues(cmd, status).Observe(duration.Seconds())
 
 			var cmdDuration time.Duration
 			var fetchDuration time.Duration
@@ -1782,7 +1803,7 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 		tr.SetAttributes(attribute.String("args", args))
 		logger = logger.WithTrace(trace.Context(ctx))
 
-		execRunning.WithLabelValues(cmd, req.P4Port).Inc()
+		execRunning.WithLabelValues(cmd).Inc()
 		defer func() {
 			tr.AddEvent("done",
 				attribute.String("status", status),
@@ -1793,8 +1814,8 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 			tr.Finish()
 
 			duration := time.Since(start)
-			execRunning.WithLabelValues(cmd, req.P4Port).Dec()
-			execDuration.WithLabelValues(cmd, req.P4Port, status).Observe(duration.Seconds())
+			execRunning.WithLabelValues(cmd).Dec()
+			execDuration.WithLabelValues(cmd, status).Observe(duration.Seconds())
 
 			var cmdDuration time.Duration
 			if !cmdStart.IsZero() {
@@ -1997,13 +2018,17 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 			return "", errors.Errorf("cannot clone from the same gitserver instance")
 		}
 
-		remoteURL, err = vcs.ParseURL(filepath.Join(opts.CloneFromShard, "git", string(repo)))
+		remoteURL, err = vcs.ParseURL(opts.CloneFromShard)
+		if err != nil {
+			return "", err
+		}
+		remoteURL = remoteURL.JoinPath("git", string(repo))
 	} else {
 		// We may be attempting to clone a private repo so we need an internal actor.
 		remoteURL, err = s.getRemoteURL(actor.WithInternalActor(ctx), repo)
-	}
-	if err != nil {
-		return "", err
+		if err != nil {
+			return "", err
+		}
 	}
 
 	// isCloneable causes a network request, so we limit the number that can
@@ -2316,12 +2341,12 @@ var (
 	execRunning = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "src_gitserver_exec_running",
 		Help: "number of gitserver.GitCommand running concurrently.",
-	}, []string{"cmd", "repo"})
+	}, []string{"cmd"})
 	execDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name:    "src_gitserver_exec_duration_seconds",
 		Help:    "gitserver.GitCommand latencies in seconds.",
 		Buckets: trace.UserLatencyBuckets,
-	}, []string{"cmd", "repo", "status"})
+	}, []string{"cmd", "status"})
 
 	searchRunning = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "src_gitserver_search_running",
@@ -2434,7 +2459,11 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec st
 
 			err = s.doBackgroundRepoUpdate(repo, revspec)
 			if err != nil {
-				s.Logger.Error("performing background repo update", log.Error(err))
+				// We don't want to spam our logs when the rate limiter has been set to block all
+				// updates
+				if !errors.Is(err, ratelimit.ErrBlockAll) {
+					s.Logger.Error("performing background repo update", log.Error(err))
+				}
 			}
 			s.setLastErrorNonFatal(s.ctx, repo, err)
 		})
@@ -2542,7 +2571,7 @@ var (
 // tag called HEAD (case insensitive), most commands will output a warning
 // from git:
 //
-//  warning: refname 'HEAD' is ambiguous.
+//	warning: refname 'HEAD' is ambiguous.
 //
 // Instead we just remove this ref.
 func removeBadRefs(ctx context.Context, dir GitDir) {

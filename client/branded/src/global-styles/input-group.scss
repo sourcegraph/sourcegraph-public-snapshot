@@ -89,9 +89,9 @@
     align-items: center;
     padding: var(--input-padding-y) var(--input-padding-x);
     margin-bottom: 0; // Allow use of <label> elements by overriding our default margin-bottom
-    font-size: $font-size-base;
+    font-size: var(--font-size-base);
     font-weight: 400;
-    line-height: $line-height-base;
+    line-height: var(--line-height-base);
     color: var(--input-group-addon-color);
     text-align: center;
     white-space: nowrap;

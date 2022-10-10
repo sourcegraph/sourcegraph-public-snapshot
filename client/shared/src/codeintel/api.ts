@@ -19,6 +19,7 @@ import { match } from '../api/client/types/textDocument'
 import { FlatExtensionHostAPI } from '../api/contract'
 import { proxySubscribable } from '../api/extension/api/common'
 import { toPosition } from '../api/extension/api/types'
+import { PanelViewData } from '../api/extension/extensionHostApi'
 import { getModeFromPath } from '../languages'
 import { parseRepoURI } from '../util/url'
 
@@ -39,7 +40,7 @@ export interface CodeIntelAPI {
         context: sourcegraph.ReferenceContext
     ): Observable<clientType.Location[]>
     getImplementations(parameters: TextDocumentPositionParameters): Observable<clientType.Location[]>
-    getHover(textParameters: TextDocumentPositionParameters): Observable<HoverMerged>
+    getHover(textParameters: TextDocumentPositionParameters): Observable<HoverMerged | null>
     getDocumentHighlights(textParameters: TextDocumentPositionParameters): Observable<sglegacy.DocumentHighlight[]>
 }
 
@@ -86,14 +87,14 @@ class DefaultCodeIntelAPI implements CodeIntelAPI {
             request.providers.implementations.provideLocations(request.document, request.position)
         )
     }
-    public getHover(textParameters: TextDocumentPositionParameters): Observable<HoverMerged> {
+    public getHover(textParameters: TextDocumentPositionParameters): Observable<HoverMerged | null> {
         const request = requestFor(textParameters)
         return (
             request.providers.hover
                 .provideHover(request.document, request.position)
                 // We intentionally don't use `defaultIfEmpty()` here because
                 // that makes the popover load with an empty docstring.
-                .pipe(map(result => fromHoverMerged([result]) || { contents: [] }))
+                .pipe(map(result => fromHoverMerged([result])))
         )
     }
     public getDocumentHighlights(
@@ -193,12 +194,32 @@ export function injectNewCodeintel(
         | 'getDefinition'
         | 'getLocations'
         | 'hasReferenceProvidersForDocument'
+        | 'getPanelViews'
     > = {
+        getPanelViews() {
+            const panels: PanelViewData[] = []
+            for (const spec of languageSpecs) {
+                if (spec.textDocumentImplemenationSupport) {
+                    const id = `implementations_${spec.languageID}`
+                    panels.push({
+                        id,
+                        content: '',
+                        component: { locationProvider: id },
+                        selector: selectorForSpec(spec),
+                        priority: 160,
+                        title: 'Implementations',
+                    })
+                }
+            }
+            return proxySubscribable(of(panels))
+        },
         hasReferenceProvidersForDocument(textParameters) {
             return proxySubscribable(codeintel.hasReferenceProvidersForDocument(textParameters))
         },
         getLocations(id, parameters) {
-            console.log({ id })
+            if (!id.startsWith('implementations_')) {
+                return proxySubscribable(thenMaybeLoadingResult(of([])))
+            }
             return proxySubscribable(thenMaybeLoadingResult(codeintel.getImplementations(parameters)))
         },
         getDefinition(parameters) {

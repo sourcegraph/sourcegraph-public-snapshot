@@ -34,7 +34,7 @@ func TestBatchChangeResolver(t *testing.T) {
 
 	userID := bt.CreateTestUser(t, db, true).ID
 	orgName := "test-batch-change-resolver-org"
-	orgID := bt.InsertTestOrg(t, db, orgName)
+	orgID := bt.CreateTestOrg(t, db, orgName).ID
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
@@ -78,7 +78,6 @@ func TestBatchChangeResolver(t *testing.T) {
 		Namespace:     apitest.UserOrg{ID: namespaceAPIID, Name: orgName},
 		Creator:       apiUser,
 		LastApplier:   apiUser,
-		SpecCreator:   apiUser,
 		LastAppliedAt: marshalDateTime(t, now),
 		URL:           fmt.Sprintf("/organizations/%s/batch-changes/%s", orgName, batchChange.Name),
 		CreatedAt:     marshalDateTime(t, now),
@@ -115,7 +114,6 @@ func TestBatchChangeResolver(t *testing.T) {
 
 	wantBatchChange.Creator = nil
 	wantBatchChange.LastApplier = nil
-	wantBatchChange.SpecCreator = nil
 
 	{
 		var response struct{ Node apitest.BatchChange }
@@ -259,7 +257,6 @@ query($batchChange: ID!){
       id, name, description, state
       creator { ...u }
       lastApplier    { ...u }
-      specCreator    { ...u }
       lastAppliedAt
       createdAt
       updatedAt
@@ -283,7 +280,6 @@ query($namespace: ID!, $name: String!){
     id, name, description, state
     creator { ...u }
     lastApplier    { ...u }
-    specCreator    { ...u }
     lastAppliedAt
     createdAt
     updatedAt

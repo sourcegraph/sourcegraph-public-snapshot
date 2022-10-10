@@ -65,7 +65,9 @@ export interface SubmitSearchParameters
         | 'scopePage'
         | 'communitySearchContextPage'
         | 'excludedResults'
+        | 'smartSearchDisabled'
     searchParameters?: { key: string; value: string }[]
+    addRecentSearch?: (query: string) => void
 }
 
 export interface SubmitSearchProps {

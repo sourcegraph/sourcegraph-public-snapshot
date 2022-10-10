@@ -14,6 +14,7 @@ import classNames from 'classnames'
 import { formatDistanceToNowStrict, startOfDay, endOfDay } from 'date-fns'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { logger } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import {
     H2,
@@ -88,7 +89,7 @@ const DEFAULT_FILTERS = {
     maxEventsCount: '',
     lastActiveAt: '',
     createdAt: '',
-    deletedAt: '',
+    deletedAt: '{"isNegated":true}',
 }
 
 const dateRangeQueryParameterToVariable = (
@@ -153,7 +154,7 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
         (error?: any) => {
             if (!error) {
                 // reload data
-                refetch(variables).catch(console.error)
+                refetch(variables).catch(logger.error)
                 onActionEnd?.()
             }
         },
@@ -450,9 +451,8 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
                         ]}
                         note={
                             <Text as="span">
-                                Note: Events is the count of{' '}
-                                <Link to="/help/admin/faq#how-are-active-users-calculated">all billable events</Link>{' '}
-                                which equate to billable usage.
+                                Note: Events is the count of <Link to="/help/admin/pricing">all billable events</Link>{' '}
+                                performed by a user.
                             </Text>
                         }
                     />

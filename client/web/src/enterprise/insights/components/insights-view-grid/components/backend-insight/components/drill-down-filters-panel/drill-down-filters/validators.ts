@@ -3,7 +3,23 @@ import { ApolloClient, gql } from '@apollo/client'
 import { InputStatus } from '@sourcegraph/wildcard'
 
 import { GetSearchContextByNameResult } from '../../../../../../../../../graphql-operations'
-import { useFieldAPI } from '../../../../../../form/hooks/useField'
+import { useFieldAPI, ValidationResult } from '../../../../../../form'
+
+export const REPO_FILTER_VALIDATORS = isValidRegexp
+
+function isValidRegexp(value = ''): ValidationResult {
+    if (value.trim() === '') {
+        return
+    }
+
+    try {
+        new RegExp(value)
+
+        return
+    } catch {
+        return 'Must be a valid regular expression string'
+    }
+}
 
 const GET_CONTEXT_BY_NAME = gql`
     query GetSearchContextByName($query: String!) {

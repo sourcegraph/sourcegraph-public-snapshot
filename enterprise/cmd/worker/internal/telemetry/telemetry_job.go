@@ -54,18 +54,16 @@ func (t *telemetryJob) Config() []env.Config {
 	return nil
 }
 
-func (t *telemetryJob) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
+func (t *telemetryJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	if !isEnabled() {
 		return nil, nil
 	}
 	logger.Info("Usage telemetry export enabled - initializing background routine")
 
-	sqlDB, err := workerdb.Init()
+	db, err := workerdb.InitDBWithLogger(logger)
 	if err != nil {
 		return nil, err
 	}
-
-	db := database.NewDB(logger, sqlDB)
 
 	return []goroutine.BackgroundRoutine{
 		newBackgroundTelemetryJob(logger, db),

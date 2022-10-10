@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -62,7 +61,7 @@ index 6f8b5d9..17400bc 100644
 var testDiffGraphQL = apitest.FileDiffs{
 	TotalCount: 2,
 	RawDiff:    testDiff,
-	DiffStat:   apitest.DiffStat{Changed: 2},
+	DiffStat:   apitest.DiffStat{Added: 2, Deleted: 2},
 	PageInfo:   apitest.PageInfo{},
 	Nodes: []apitest.FileDiff{
 		{
@@ -76,7 +75,7 @@ var testDiffGraphQL = apitest.FileDiffs{
 					NewRange: apitest.DiffRange{StartLine: 1, Lines: 2},
 				},
 			},
-			Stat: apitest.DiffStat{Changed: 1},
+			Stat: apitest.DiffStat{Added: 1, Deleted: 1},
 		},
 		{
 			OldPath: "urls.txt",
@@ -89,7 +88,7 @@ var testDiffGraphQL = apitest.FileDiffs{
 					NewRange: apitest.DiffRange{StartLine: 1, Lines: 3},
 				},
 			},
-			Stat: apitest.DiffStat{Changed: 1},
+			Stat: apitest.DiffStat{Added: 1, Deleted: 1},
 		},
 	},
 }
@@ -120,7 +119,7 @@ func parseJSONTime(t testing.TB, ts string) time.Time {
 }
 
 func newSchema(db database.DB, r graphqlbackend.BatchChangesResolver) (*graphql.Schema, error) {
-	return graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	return graphqlbackend.NewSchemaWithBatchChangesResolver(db, r)
 }
 
 func newGitHubExternalService(t *testing.T, store database.ExternalServiceStore) *types.ExternalService {
@@ -133,7 +132,7 @@ func newGitHubExternalService(t *testing.T, store database.ExternalServiceStore)
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "Github - Test",
 		// The authorization field is needed to enforce permissions
-		Config:    extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "authorization": {}}`),
+		Config:    extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "authorization": {}, "token": "abc", "repos": ["owner/name"]}`),
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
@@ -178,14 +177,6 @@ func mockBackendCommits(t *testing.T, revs ...api.CommitID) {
 		return api.CommitID(rev), nil
 	}
 	t.Cleanup(func() { backend.Mocks.Repos.ResolveRev = nil })
-
-	backend.Mocks.Repos.GetCommit = func(_ context.Context, _ *types.Repo, id api.CommitID) (*gitdomain.Commit, error) {
-		if _, ok := byRev[id]; !ok {
-			t.Fatalf("GetCommit received unexpected ID: %s", id)
-		}
-		return &gitdomain.Commit{ID: id}, nil
-	}
-	t.Cleanup(func() { backend.Mocks.Repos.GetCommit = nil })
 }
 
 func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
@@ -199,7 +190,6 @@ func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
 		}
 		return api.CommitID(spec), nil
 	}
-	t.Cleanup(func() { gitserver.Mocks.GetCommit = nil })
 
 	gitserver.Mocks.ExecReader = func(args []string) (io.ReadCloser, error) {
 		if len(args) < 1 && args[0] != "diff" {

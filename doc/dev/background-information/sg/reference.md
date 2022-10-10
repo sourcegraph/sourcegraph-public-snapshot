@@ -62,12 +62,16 @@ $ sg start batches
 
 # Override the logger levels for specific services
 $ sg start --debug=gitserver --error=enterprise-worker,enterprise-frontend enterprise
+
+# View configuration for a commandset
+$ sg start -describe oss
 ```
 
 Flags:
 
 * `--crit, -c="<value>"`: Services to set at info crit level.
 * `--debug, -d="<value>"`: Services to set at debug log level.
+* `--describe`: Print details about the selected commandset
 * `--error, -e="<value>"`: Services to set at info error level.
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--info, -i="<value>"`: Services to set at info log level.
@@ -86,6 +90,7 @@ Available commands in `sg.config.yaml`:
 * bext
 * caddy
 * codeintel-executor
+* codeintel-executor-firecracker
 * codeintel-worker
 * debug-env: Debug env vars
 * docsite: Docsite instance serving the docs
@@ -126,19 +131,23 @@ Available commands in `sg.config.yaml`:
 * zoekt-web-template
 
 ```sh
-# Run specific commands:
+# Run specific commands
 $ sg run gitserver
 $ sg run frontend
 
-# List available commands (defined under 'commands:' in 'sg.config.yaml'):
+# List available commands (defined under 'commands:' in 'sg.config.yaml')
 $ sg run -help
 
-# Run multiple commands:
+# Run multiple commands
 $ sg run gitserver frontend repo-updater
+
+# View configuration for a command
+$ sg run -describe jaeger
 ```
 
 Flags:
 
+* `--describe`: Print details about selected run target
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 
 ## sg ci
@@ -190,6 +199,7 @@ Flags:
 
 * `--branch, -b="<value>"`: Branch `name` of build to target (defaults to current branch)
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--format="<value>"`: Output format for the preview (one of 'markdown', 'json', or 'yaml') (default: markdown)
 
 ### sg ci status
 
@@ -227,11 +237,20 @@ Supported run types when providing an argument for 'sg ci build [runtype]':
 * backend-integration
 
 For run types that require branch arguments, you will be prompted for an argument, or you
-can provide it directly (for example, 'sg ci build [runtype] [argument]').
+can provide it directly (for example, 'sg ci build [runtype] <argument>').
 
 Learn more about pipeline run types in https://docs.sourcegraph.com/dev/background-information/ci/reference.
 
-Arguments: `[runtype]`
+```sh
+# Start a main-dry-run build
+$ sg ci build main-dry-run
+
+# Publish a custom image build
+$ sg ci build docker-images-patch
+
+# Publish a custom Prometheus image build without running tests
+$ sg ci build docker-images-patch-notest prometheus
+```
 
 Flags:
 
@@ -582,7 +601,7 @@ Flags:
 * `--ignore-single-dirty-log`: Ignore a single previously failed attempt if it will be immediately retried by this operation.
 * `--ignore-single-pending-log`: Ignore a single pending migration attempt if it will be immediately retried by this operation.
 * `--noop-privileged`: Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.
-* `--privileged-hash="<value>"`: Running -noop-privileged without this value will supply a value that will unlock migration application for the current upgrade operation. Future (distinct) upgrade operations will require a unique hash.
+* `--privileged-hash="<value>"`: Running --noop-privileged without this flag will print instructions and supply a value for use in a second invocation. Multiple privileged hash flags (for distinct schemas) may be supplied. Future (distinct) up operations will require a unique hash.
 * `--skip-oobmigration-validation`: Do not attempt to validate the progress of out-of-band migrations.
 * `--skip-upgrade-validation`: Do not attempt to compare the previous instance version with the target instance version for upgrade compatibility. Please refer to https://docs.sourcegraph.com/admin/updates#update-policy for our instance upgrade compatibility policy.
 * `--unprivileged-only`: Refuse to apply privileged migrations.
@@ -608,7 +627,7 @@ Flags:
 * `--ignore-single-dirty-log`: Ignore a single previously failed attempt if it will be immediately retried by this operation.
 * `--ignore-single-pending-log`: Ignore a single pending migration attempt if it will be immediately retried by this operation.
 * `--noop-privileged`: Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.
-* `--privileged-hash="<value>"`: Running -noop-privileged without this value will supply a value that will unlock migration application for the current upgrade operation. Future (distinct) upgrade operations will require a unique hash.
+* `--privileged-hash="<value>"`: Running --noop-privileged without this flag will print instructions and supply a value for use in a second invocation. Future (distinct) upto operations will require a unique hash.
 * `--target="<value>"`: The `migration` to apply. Comma-separated values are accepted.
 * `--unprivileged-only`: Refuse to apply privileged migrations.
 
@@ -652,7 +671,7 @@ Flags:
 * `--ignore-single-dirty-log`: Ignore a single previously failed attempt if it will be immediately retried by this operation.
 * `--ignore-single-pending-log`: Ignore a single pending migration attempt if it will be immediately retried by this operation.
 * `--noop-privileged`: Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.
-* `--privileged-hash="<value>"`: Running -noop-privileged without this value will supply a value that will unlock migration application for the current upgrade operation. Future (distinct) upgrade operations will require a unique hash.
+* `--privileged-hash="<value>"`: Running --noop-privileged without this flag will print instructions and supply a value for use in a second invocation. Future (distinct) downto operations will require a unique hash.
 * `--target="<value>"`: The migration to apply. Comma-separated values are accepted.
 * `--unprivileged-only`: Refuse to apply privileged migrations.
 
@@ -922,6 +941,75 @@ Flags:
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--migration`: Create migration files with the generated SQL.
 * `--name="<value>"`: Specifies the name of the resulting migration. (default: sg_telemetry_allowlist)
+
+## sg monitoring
+
+Sourcegraph's monitoring generator (dashboards, alerts, etc).
+
+Learn more about the Sourcegraph monitoring generator here: https://docs.sourcegraph.com/dev/background-information/observability/monitoring-generator
+
+Also refer to the generated reference documentation available for site admins:
+
+- https://docs.sourcegraph.com/admin/observability/dashboards
+- https://docs.sourcegraph.com/admin/observability/alerts
+
+
+
+### sg monitoring generate
+
+Generate monitoring assets - dashboards, alerts, and more.
+
+```sh
+# Generate all monitoring with default configuration into a temporary directory
+$ sg monitoring generate -all.dir /tmp/monitoring
+
+# Generate and reload local instances of Grafana, Prometheus, etc.
+$ sg monitoring generate -reload
+
+# Render dashboards in a custom directory, and disable rendering of docs
+$ sg monitoring generate -grafana.dir /tmp/my-dashboards -docs.dir ''
+```
+
+Flags:
+
+* `--all.dir="<value>"`: Override all other '-*.dir' directories
+* `--docs.dir="<value>"`: Output directory for generated documentation (default: $SG_ROOT/doc/admin/observability/)
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--grafana.creds="<value>"`: Credentials for the Grafana instance to reload (default: admin:admin)
+* `--grafana.dir="<value>"`: Output directory for generated Grafana assets (default: $SG_ROOT/docker-images/grafana/config/provisioning/dashboards/sourcegraph/)
+* `--grafana.folder="<value>"`: Folder on Grafana instance to put generated dashboards in
+* `--grafana.headers="<value>"`: Additional headers for HTTP requests to the Grafana instance
+* `--grafana.url="<value>"`: Address for the Grafana instance to reload (default: http://127.0.0.1:3370)
+* `--inject-label-matcher="<value>"`: Labels to inject into all selectors in Prometheus expressions: observable queries, dashboard template variables, etc.
+* `--no-prune`: Toggles pruning of dangling generated assets through simple heuristic - should be disabled during builds.
+* `--prometheus.dir="<value>"`: Output directory for generated Prometheus assets (default: $SG_ROOT/docker-images/prometheus/config/)
+* `--prometheus.url="<value>"`: Address for the Prometheus instance to reload (default: http://127.0.0.1:9090)
+* `--reload`: Trigger reload of active Prometheus or Grafana instance (requires respective output directories)
+
+### sg monitoring dashboards
+
+List and describe the default dashboards.
+
+Arguments: `<dashboard...>`
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--groups`: Show row groups
+* `--metrics`: Show metrics used in dashboards
+
+### sg monitoring metrics
+
+List metrics used in dashboards.
+
+For per-dashboard summaries, use 'sg monitoring dashboards' instead.
+
+Arguments: `<dashboard...>`
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--format, -f="<value>"`: Output format of list ('markdown', 'plain', 'regexp') (default: markdown)
 
 ## sg secret
 

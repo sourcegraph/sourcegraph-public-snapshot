@@ -57,8 +57,6 @@ export interface JetBrainsSearchBoxProps
     /** Don't show search help button */
     hideHelpButton?: boolean
 
-    onHandleFuzzyFinder?: React.Dispatch<React.SetStateAction<boolean>>
-
     /** Set in JSContext only available to the web app. */
     isExternalServicesUserModeAll?: boolean
 

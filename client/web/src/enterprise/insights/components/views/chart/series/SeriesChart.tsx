@@ -78,6 +78,7 @@ export function SeriesChart<Datum>(props: SeriesChartProps<Datum>): React.ReactE
 
     return (
         <LineChart
+            aria-label="Line chart"
             series={series}
             getLineGroupStyle={getHoverStyle}
             getActiveSeries={getActiveSeries}

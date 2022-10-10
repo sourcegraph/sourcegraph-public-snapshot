@@ -106,6 +106,7 @@ type serveErrorHandler func(w http.ResponseWriter, r *http.Request, db database.
 // mockNewCommon is used in tests to mock newCommon (duh!).
 //
 // Ensure that the mock is reset at the end of every test by adding a call like the following:
+//
 //	defer func() {
 //		mockNewCommon = nil
 //	}()
@@ -116,13 +117,13 @@ var mockNewCommon func(w http.ResponseWriter, r *http.Request, title string, ser
 // In the event of the repository having been renamed, the request is handled
 // by newCommon and nil, nil is returned. Basic usage looks like:
 //
-// 	common, err := newCommon(w, r, noIndex, serveError)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	if common == nil {
-// 		return nil // request was handled
-// 	}
+//	common, err := newCommon(w, r, noIndex, serveError)
+//	if err != nil {
+//		return err
+//	}
+//	if common == nil {
+//		return nil // request was handled
+//	}
 //
 // In the case of a repository that is cloning, a Common data structure is
 // returned but it has an incomplete RevSpec.
@@ -241,7 +242,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 
 	// common.Repo and common.CommitID are populated in the above if statement
 	if blobPath, ok := mux.Vars(r)["Path"]; ok && envvar.OpenGraphPreviewServiceURL() != "" && envvar.SourcegraphDotComMode() && common.Repo != nil {
-		lineRange := findLineRangeInQueryParameters(r.URL.Query())
+		lineRange := FindLineRangeInQueryParameters(r.URL.Query())
 
 		var symbolResult *result.Symbol
 		if lineRange != nil && lineRange.StartLine != 0 && lineRange.StartLineCharacter != 0 {
@@ -372,7 +373,7 @@ func serveEmbed(db database.DB) handlerFunc {
 
 // redirectTreeOrBlob redirects a blob page to a tree page if the file is actually a directory,
 // or a tree page to a blob page if the directory is actually a file.
-func redirectTreeOrBlob(routeName, path string, common *Common, w http.ResponseWriter, r *http.Request, db database.DB) (requestHandled bool, err error) {
+func redirectTreeOrBlob(routeName, path string, common *Common, w http.ResponseWriter, r *http.Request, db database.DB, client gitserver.Client) (requestHandled bool, err error) {
 	// NOTE: It makes no sense for this function to proceed if the commit ID
 	// for the repository is empty. It is most likely the repository is still
 	// clone in progress.
@@ -389,7 +390,7 @@ func redirectTreeOrBlob(routeName, path string, common *Common, w http.ResponseW
 		}
 		return false, nil
 	}
-	stat, err := gitserver.NewClient(db).Stat(r.Context(), authz.DefaultSubRepoPermsChecker, common.Repo.Name, common.CommitID, path)
+	stat, err := client.Stat(r.Context(), authz.DefaultSubRepoPermsChecker, common.Repo.Name, common.CommitID, path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			serveError(w, r, db, err, http.StatusNotFound)
@@ -431,7 +432,7 @@ func serveTree(db database.DB, title func(c *Common, r *http.Request) string) ha
 			w.Header().Set("X-Robots-Tag", "noindex")
 		}
 
-		handled, err := redirectTreeOrBlob(routeTree, mux.Vars(r)["Path"], common, w, r, db)
+		handled, err := redirectTreeOrBlob(routeTree, mux.Vars(r)["Path"], common, w, r, db, gitserver.NewClient(db))
 		if handled {
 			return nil
 		}
@@ -462,7 +463,7 @@ func serveRepoOrBlob(db database.DB, routeName string, title func(c *Common, r *
 			w.Header().Set("X-Robots-Tag", "noindex")
 		}
 
-		handled, err := redirectTreeOrBlob(routeName, mux.Vars(r)["Path"], common, w, r, db)
+		handled, err := redirectTreeOrBlob(routeName, mux.Vars(r)["Path"], common, w, r, db, gitserver.NewClient(db))
 		if handled {
 			return nil
 		}

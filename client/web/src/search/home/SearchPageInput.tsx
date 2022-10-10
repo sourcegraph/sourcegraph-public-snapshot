@@ -17,8 +17,7 @@ import { SearchBox } from '@sourcegraph/search-ui'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { SettingsCascadeProps, isSettingsValid } from '@sourcegraph/shared/src/settings/settings'
-import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
@@ -33,8 +32,8 @@ import {
 } from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
 import { submitSearch } from '../helpers'
-import { searchQueryHistorySource } from '../input/completion'
-import { QuickLinks } from '../QuickLinks'
+import { searchHistorySource } from '../input/searchHistorySource'
+import { useRecentSearches } from '../input/useRecentSearches'
 
 import styles from './SearchPageInput.module.scss'
 
@@ -72,18 +71,18 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
         features => features.showSearchContextManagement ?? false
     )
     const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
-    const applySuggestionsOnEnter = useExperimentalFeatures(
-        features => features.applySearchQuerySuggestionOnEnter ?? false
-    )
-    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
+    const applySuggestionsOnEnter =
+        useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
+
     const [showSearchHistory] = useFeatureFlag('search-input-show-history')
+    const { recentSearches, addRecentSearch } = useRecentSearches()
 
     const suggestionSources = useMemo(
         () =>
-            coreWorkflowImprovementsEnabled && props.authenticatedUser && showSearchHistory
+            props.authenticatedUser && showSearchHistory
                 ? [
-                      searchQueryHistorySource({
-                          userId: props.authenticatedUser.id,
+                      searchHistorySource({
+                          recentSearches,
                           selectedSearchContext: props.selectedSearchContextSpec,
                           onSelection: index => {
                               props.telemetryService.log('SearchSuggestionItemClicked', {
@@ -95,16 +94,13 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                   ]
                 : [],
         [
-            coreWorkflowImprovementsEnabled,
             props.authenticatedUser,
             props.selectedSearchContextSpec,
             props.telemetryService,
+            recentSearches,
             showSearchHistory,
         ]
     )
-
-    const quickLinks =
-        (isSettingsValid<Settings>(props.settingsCascade) && props.settingsCascade.final.quicklinks) || []
 
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
@@ -119,6 +115,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                     caseSensitive,
                     activation: props.activation,
                     selectedSearchContextSpec: props.selectedSearchContextSpec,
+                    addRecentSearch,
                     ...parameters,
                 })
             }
@@ -128,6 +125,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
             props.selectedSearchContextSpec,
             props.history,
             props.activation,
+            addRecentSearch,
             patternType,
             caseSensitive,
         ]
@@ -165,18 +163,15 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                         queryState={props.queryState}
                         onChange={props.setQueryState}
                         onSubmit={onSubmit}
-                        autoFocus={!coreWorkflowImprovementsEnabled && !isTouchOnlyDevice && props.autoFocus !== false}
+                        autoFocus={!showSearchHistory && !isTouchOnlyDevice && props.autoFocus !== false}
                         isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
                         structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
-                        applySuggestionsOnEnter={coreWorkflowImprovementsEnabled || applySuggestionsOnEnter}
+                        applySuggestionsOnEnter={applySuggestionsOnEnter}
                         suggestionSources={suggestionSources}
-                        defaultSuggestionsShowWhenEmpty={!coreWorkflowImprovementsEnabled}
-                        showSuggestionsOnFocus={coreWorkflowImprovementsEnabled}
+                        defaultSuggestionsShowWhenEmpty={false}
+                        showSuggestionsOnFocus={true}
                     />
                 </div>
-                {!coreWorkflowImprovementsEnabled && (
-                    <QuickLinks quickLinks={quickLinks} className={styles.inputSubContainer} />
-                )}
                 <Notices className="my-3" location="home" settingsCascade={props.settingsCascade} />
             </Form>
         </div>

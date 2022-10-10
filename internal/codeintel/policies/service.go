@@ -7,94 +7,56 @@ import (
 
 	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/internal/store"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var _ service = (*Service)(nil)
-
-type service interface {
-	// Not used yet.
-	CommitsMatchingRetentionPolicies(ctx context.Context, repoID int, policies []Policy, instant time.Time, commitSubset ...string) (commitsToPolicies map[string][]Policy, err error)
-	CommitsMatchingIndexingPolicies(ctx context.Context, repoID int, policies []Policy, instant time.Time) (commitsToPolicies map[string][]Policy, err error)
-
-	// Configurations
-	GetConfigurationPolicies(ctx context.Context, opts shared.GetConfigurationPoliciesOptions) ([]shared.ConfigurationPolicy, int, error)
-	GetConfigurationPolicyByID(ctx context.Context, id int) (_ shared.ConfigurationPolicy, _ bool, err error)
-	CreateConfigurationPolicy(ctx context.Context, configurationPolicy shared.ConfigurationPolicy) (shared.ConfigurationPolicy, error)
-	UpdateConfigurationPolicy(ctx context.Context, policy shared.ConfigurationPolicy) (err error)
-	DeleteConfigurationPolicyByID(ctx context.Context, id int) (err error)
-
-	// Retention Policy
-	GetRetentionPolicyOverview(ctx context.Context, upload shared.Upload, matchesOnly bool, first int, after int64, query string, now time.Time) (matches []shared.RetentionPolicyMatchCandidate, totalCount int, err error)
-
-	// Repository
-	GetPreviewRepositoryFilter(ctx context.Context, patterns []string, limit, offset int) (_ []int, totalCount int, repositoryMatchLimit *int, _ error)
-	GetPreviewGitObjectFilter(ctx context.Context, repositoryID int, gitObjectType shared.GitObjectType, pattern string) (map[string][]string, error)
-}
-
 type Service struct {
-	store      store.Store
-	uploadSvc  UploadService
-	gitserver  GitserverClient
-	operations *operations
+	store          store.Store
+	uploadSvc      UploadService
+	gitserver      GitserverClient
+	operations     *operations
+	matcherMetrics *matcherMetrics
 }
 
-func newService(policiesStore store.Store, uploadSvc UploadService, gitserver GitserverClient, observationContext *observation.Context) *Service {
+func newService(
+	policiesStore store.Store,
+	uploadSvc UploadService,
+	gitserver GitserverClient,
+	observationContext *observation.Context,
+) *Service {
 	return &Service{
-		store:      policiesStore,
-		uploadSvc:  uploadSvc,
-		gitserver:  gitserver,
-		operations: newOperations(observationContext),
+		store:          policiesStore,
+		uploadSvc:      uploadSvc,
+		gitserver:      gitserver,
+		operations:     newOperations(observationContext),
+		matcherMetrics: newMetrics(observationContext),
 	}
-}
-
-type Policy = shared.Policy
-
-type ListOpts struct {
-	Limit int
 }
 
 func (s *Service) getPolicyMatcherFromFactory(gitserver GitserverClient, extractor policies.Extractor, includeTipOfDefaultBranch bool, filterByCreatedDate bool) *policies.Matcher {
 	return policies.NewMatcher(gitserver, extractor, includeTipOfDefaultBranch, filterByCreatedDate)
 }
 
-func (s *Service) CommitsMatchingRetentionPolicies(ctx context.Context, repoID int, policies []Policy, instant time.Time, commitSubset ...string) (commitsToPolicies map[string][]Policy, err error) {
-	ctx, _, endObservation := s.operations.commitsMatchingRetentionPolicies.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33376
-	_ = ctx
-	return nil, errors.Newf("unimplemented: policies.CommitsMatchingRetentionPolicies")
-}
-
-func (s *Service) CommitsMatchingIndexingPolicies(ctx context.Context, repoID int, policies []Policy, instant time.Time) (commitsToPolicies map[string][]Policy, err error) {
-	ctx, _, endObservation := s.operations.commitsMatchingIndexingPolicies.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33376
-	_ = ctx
-	return nil, errors.Newf("unimplemented: policies.CommitsMatchingIndexingPolicies")
-}
-
-func (s *Service) GetConfigurationPolicies(ctx context.Context, opts shared.GetConfigurationPoliciesOptions) (_ []shared.ConfigurationPolicy, totalCount int, err error) {
+func (s *Service) GetConfigurationPolicies(ctx context.Context, opts types.GetConfigurationPoliciesOptions) (_ []types.ConfigurationPolicy, totalCount int, err error) {
 	ctx, _, endObservation := s.operations.getConfigurationPolicies.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	return s.store.GetConfigurationPolicies(ctx, opts)
 }
 
-func (s *Service) GetConfigurationPolicyByID(ctx context.Context, id int) (_ shared.ConfigurationPolicy, _ bool, err error) {
+func (s *Service) GetConfigurationPolicyByID(ctx context.Context, id int) (_ types.ConfigurationPolicy, _ bool, err error) {
 	ctx, _, endObservation := s.operations.getConfigurationPoliciesByID.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	return s.store.GetConfigurationPolicyByID(ctx, id)
 }
 
-func (s *Service) CreateConfigurationPolicy(ctx context.Context, configurationPolicy shared.ConfigurationPolicy) (_ shared.ConfigurationPolicy, err error) {
+func (s *Service) CreateConfigurationPolicy(ctx context.Context, configurationPolicy types.ConfigurationPolicy) (_ types.ConfigurationPolicy, err error) {
 	ctx, _, endObservation := s.operations.createConfigurationPolicy.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -110,7 +72,7 @@ func (s *Service) CreateConfigurationPolicy(ctx context.Context, configurationPo
 	return policy, nil
 }
 
-func (s *Service) updateReposMatchingPolicyPatterns(ctx context.Context, policy shared.ConfigurationPolicy) error {
+func (s *Service) updateReposMatchingPolicyPatterns(ctx context.Context, policy types.ConfigurationPolicy) error {
 	var patterns []string
 	if policy.RepositoryPatterns != nil {
 		patterns = *policy.RepositoryPatterns
@@ -132,7 +94,7 @@ func (s *Service) updateReposMatchingPolicyPatterns(ctx context.Context, policy 
 	return nil
 }
 
-func (s *Service) UpdateConfigurationPolicy(ctx context.Context, policy shared.ConfigurationPolicy) (err error) {
+func (s *Service) UpdateConfigurationPolicy(ctx context.Context, policy types.ConfigurationPolicy) (err error) {
 	ctx, _, endObservation := s.operations.updateConfigurationPolicy.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -150,13 +112,13 @@ func (s *Service) DeleteConfigurationPolicyByID(ctx context.Context, id int) (er
 	return s.store.DeleteConfigurationPolicyByID(ctx, id)
 }
 
-func (s *Service) GetRetentionPolicyOverview(ctx context.Context, upload shared.Upload, matchesOnly bool, first int, after int64, query string, now time.Time) (matches []shared.RetentionPolicyMatchCandidate, totalCount int, err error) {
+func (s *Service) GetRetentionPolicyOverview(ctx context.Context, upload types.Upload, matchesOnly bool, first int, after int64, query string, now time.Time) (matches []types.RetentionPolicyMatchCandidate, totalCount int, err error) {
 	ctx, _, endObservation := s.operations.getRetentionPolicyOverview.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	policyMatcher := s.getPolicyMatcherFromFactory(s.gitserver, policies.RetentionExtractor, true, false)
 
-	configPolicies, _, err := s.GetConfigurationPolicies(ctx, shared.GetConfigurationPoliciesOptions{
+	configPolicies, _, err := s.GetConfigurationPolicies(ctx, types.GetConfigurationPoliciesOptions{
 		RepositoryID:     upload.RepositoryID,
 		Term:             query,
 		ForDataRetention: true,
@@ -179,7 +141,7 @@ func (s *Service) GetRetentionPolicyOverview(ctx context.Context, upload shared.
 
 	var (
 		potentialMatchIndexSet map[int]int // map of policy ID to array index
-		potentialMatches       []shared.RetentionPolicyMatchCandidate
+		potentialMatches       []types.RetentionPolicyMatchCandidate
 	)
 
 	potentialMatches, potentialMatchIndexSet = s.populateMatchingCommits(visibleCommits, upload, matchingPolicies, configPolicies, now)
@@ -189,7 +151,7 @@ func (s *Service) GetRetentionPolicyOverview(ctx context.Context, upload shared.
 		for _, policy := range configPolicies {
 			policy := policy
 			if _, ok := potentialMatchIndexSet[policy.ID]; !ok {
-				potentialMatches = append(potentialMatches, shared.RetentionPolicyMatchCandidate{
+				potentialMatches = append(potentialMatches, types.RetentionPolicyMatchCandidate{
 					ConfigurationPolicy: &policy,
 					Matched:             false,
 				})
@@ -229,12 +191,12 @@ func (s *Service) GetPreviewRepositoryFilter(ctx context.Context, patterns []str
 	return ids, totalCount, repositoryMatchLimit, nil
 }
 
-func (s *Service) GetPreviewGitObjectFilter(ctx context.Context, repositoryID int, gitObjectType shared.GitObjectType, pattern string) (_ map[string][]string, err error) {
+func (s *Service) GetPreviewGitObjectFilter(ctx context.Context, repositoryID int, gitObjectType types.GitObjectType, pattern string) (_ map[string][]string, err error) {
 	ctx, _, endObservation := s.operations.getPreviewGitObjectFilter.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	policyMatcher := s.getPolicyMatcherFromFactory(s.gitserver, policies.NoopExtractor, false, false)
-	policyMatches, err := policyMatcher.CommitsDescribedByPolicyInternal(ctx, repositoryID, []shared.ConfigurationPolicy{{Type: gitObjectType, Pattern: pattern}}, timeutil.Now())
+	policyMatches, err := policyMatcher.CommitsDescribedByPolicyInternal(ctx, repositoryID, []types.ConfigurationPolicy{{Type: gitObjectType, Pattern: pattern}}, timeutil.Now())
 	if err != nil {
 		return nil, err
 	}
@@ -252,7 +214,11 @@ func (s *Service) GetPreviewGitObjectFilter(ctx context.Context, repositoryID in
 	return namesByCommit, nil
 }
 
-func (s *Service) getCommitsVisibleToUpload(ctx context.Context, upload shared.Upload) (commits []string, err error) {
+func (s *Service) GetUnsafeDB() database.DB {
+	return s.store.GetUnsafeDB()
+}
+
+func (s *Service) getCommitsVisibleToUpload(ctx context.Context, upload types.Upload) (commits []string, err error) {
 	var token *string
 	for first := true; first || token != nil; first = false {
 		cs, nextToken, err := s.uploadSvc.GetCommitsVisibleToUpload(ctx, upload.ID, 50, token)
@@ -272,13 +238,13 @@ func (s *Service) getCommitsVisibleToUpload(ctx context.Context, upload shared.U
 // policy IDs mapped to their index in the slice.
 func (s *Service) populateMatchingCommits(
 	visibleCommits []string,
-	upload shared.Upload,
+	upload types.Upload,
 	matchingPolicies map[string][]policies.PolicyMatch,
-	policies []shared.ConfigurationPolicy,
+	policies []types.ConfigurationPolicy,
 	now time.Time,
-) ([]shared.RetentionPolicyMatchCandidate, map[int]int) {
+) ([]types.RetentionPolicyMatchCandidate, map[int]int) {
 	var (
-		potentialMatches       = make([]shared.RetentionPolicyMatchCandidate, 0, len(policies))
+		potentialMatches       = make([]types.RetentionPolicyMatchCandidate, 0, len(policies))
 		potentialMatchIndexSet = make(map[int]int, len(policies))
 	)
 
@@ -293,7 +259,7 @@ func (s *Service) populateMatchingCommits(
 				if policyMatch.PolicyID != nil {
 					policyID = *policyMatch.PolicyID
 				}
-				potentialMatches = append(potentialMatches, shared.RetentionPolicyMatchCandidate{
+				potentialMatches = append(potentialMatches, types.RetentionPolicyMatchCandidate{
 					ConfigurationPolicy: policyByID(policies, policyID),
 					Matched:             true,
 				})
@@ -319,7 +285,7 @@ func (s *Service) populateMatchingCommits(
 					} else if !ok {
 						// Else if there's no entry for the policy, create an entry with this commit as the first "protecting commit".
 						// This should never override an entry for a policy matched directly, see the first comment on how this is avoided.
-						potentialMatches = append(potentialMatches, shared.RetentionPolicyMatchCandidate{
+						potentialMatches = append(potentialMatches, types.RetentionPolicyMatchCandidate{
 							ConfigurationPolicy: policyByID(policies, policyID),
 							Matched:             true,
 							ProtectingCommits:   []string{commit},
@@ -334,14 +300,16 @@ func (s *Service) populateMatchingCommits(
 	return potentialMatches, potentialMatchIndexSet
 }
 
-func policyByID(policies []shared.ConfigurationPolicy, id int) *shared.ConfigurationPolicy {
+func policyByID(policies []types.ConfigurationPolicy, id int) *types.ConfigurationPolicy {
 	if id == -1 {
 		return nil
 	}
+
 	for _, policy := range policies {
 		if policy.ID == id {
 			return &policy
 		}
 	}
+
 	return nil
 }

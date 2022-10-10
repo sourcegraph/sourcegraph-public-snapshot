@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { mdiChevronDoubleUp, mdiMenuDown, mdiMenuUp, mdiPlus, mdiPuzzleOutline, mdiChevronDoubleDown } from '@mdi/js'
+import { mdiChevronDoubleDown, mdiChevronDoubleUp, mdiMenuDown, mdiMenuUp, mdiPlus, mdiPuzzleOutline } from '@mdi/js'
 import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 import * as H from 'history'
@@ -252,8 +252,13 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
 
                 {source === 'blob' && (
                     <>
-                        <ToggleBlameAction location={props.location} />
-                        <OpenInEditorActionItem platformContext={props.platformContext} />
+                        <ToggleBlameAction />
+                        {window.context.isAuthenticatedUser && (
+                            <OpenInEditorActionItem
+                                platformContext={props.platformContext}
+                                externalServiceType={props.repo?.externalRepository?.serviceType}
+                            />
+                        )}
                     </>
                 )}
 

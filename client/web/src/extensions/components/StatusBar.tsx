@@ -8,7 +8,7 @@ import { filter, first, mapTo, switchMap } from 'rxjs/operators'
 import { tabbable } from 'tabbable'
 import { useMergeRefs } from 'use-callback-ref'
 
-import { isDefined } from '@sourcegraph/common'
+import { isDefined, logger } from '@sourcegraph/common'
 import { urlForClientCommandOpen } from '@sourcegraph/shared/src/actions/ActionItem'
 import { StatusBarItemWithKey } from '@sourcegraph/shared/src/api/extension/api/codeEditor'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
@@ -123,7 +123,7 @@ export const StatusBar: React.FunctionComponent<React.PropsWithChildren<StatusBa
                         })
                     )
                 })
-                .catch(error => console.error('Error registering "Focus status bar" command', error))
+                .catch(error => logger.error('Error registering "Focus status bar" command', error))
         }
 
         return () => subscription.unsubscribe()

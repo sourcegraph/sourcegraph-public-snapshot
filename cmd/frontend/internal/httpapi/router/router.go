@@ -28,6 +28,10 @@ const (
 	BitbucketServerWebhooks = "bitbucketServer.webhooks"
 	BitbucketCloudWebhooks  = "bitbucketCloud.webhooks"
 
+	BatchesFileGet    = "batches.file.get"
+	BatchesFileExists = "batches.file.exists"
+	BatchesFileUpload = "batches.file.upload"
+
 	ExternalURL            = "internal.app-url"
 	SendEmail              = "internal.send-email"
 	GitInfoRefs            = "internal.git.info-refs"
@@ -37,7 +41,8 @@ const (
 	SearchConfiguration    = "internal.search-configuration"
 	ExternalServiceConfigs = "internal.external-services.configs"
 	StreamingSearch        = "internal.stream-search"
-	Checks                 = "internal.checks"
+	RepoRank               = "internal.repo-rank"
+	DocumentRanks          = "internal.document-ranks"
 )
 
 // New creates a new API router with route URL pattern definitions but
@@ -55,11 +60,14 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/gitlab-webhooks").Methods("POST").Name(GitLabWebhooks)
 	base.Path("/bitbucket-server-webhooks").Methods("POST").Name(BitbucketServerWebhooks)
 	base.Path("/bitbucket-cloud-webhooks").Methods("POST").Name(BitbucketCloudWebhooks)
+	base.Path("/files/batch-changes/{spec}/{file}").Methods("GET").Name(BatchesFileGet)
+	base.Path("/files/batch-changes/{spec}/{file}").Methods("HEAD").Name(BatchesFileExists)
+	base.Path("/files/batch-changes/{spec}").Methods("POST").Name(BatchesFileUpload)
 	base.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
 	base.Path("/search/stream").Methods("GET").Name(SearchStream)
 	base.Path("/compute/stream").Methods("GET", "POST").Name(ComputeStream)
-	base.Path("/src-cli/{rest:.*}").Methods("GET").Name(SrcCli)
 	base.Path("/src-cli/versions/{rest:.*}").Methods("GET", "POST").Name(SrcCliVersionCache)
+	base.Path("/src-cli/{rest:.*}").Methods("GET").Name(SrcCli)
 
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").
 	repoPath := `/repos/` + routevar.Repo
@@ -88,12 +96,13 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/external-services/configs").Methods("POST").Name(ExternalServiceConfigs)
 	base.Path("/repos/index").Methods("POST").Name(ReposIndex)
 	base.Path("/configuration").Methods("POST").Name(Configuration)
+	base.Path("/ranks/{RepoName:.*}/documents").Methods("GET").Name(DocumentRanks)
+	base.Path("/ranks/{RepoName:.*}").Methods("GET").Name(RepoRank)
 	base.Path("/search/configuration").Methods("GET", "POST").Name(SearchConfiguration)
 	base.Path("/telemetry").Methods("POST").Name(Telemetry)
 	base.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
 	base.Path("/search/stream").Methods("GET").Name(StreamingSearch)
 	base.Path("/compute/stream").Methods("GET", "POST").Name(ComputeStream)
-	base.Path("/checks").Methods("GET").Name(Checks)
 	addRegistryRoute(base)
 	addGraphQLRoute(base)
 
