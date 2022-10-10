@@ -27,6 +27,7 @@ import {
 import { SettingsGetter } from './settings'
 import { sortByProximity } from './sort'
 import { isDefined } from './util/helpers'
+import { searchContext } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
 
 type LocationHandler = (locations: Location[]) => void
 
@@ -318,6 +319,11 @@ async function searchAndFilterReferences({
 }
 
 async function executeSearchQuery(terms: string[]): Promise<SearchResult[]> {
+    const context = searchContext()
+    if (context) {
+        terms.push(`context:${context}`)
+    }
+
     interface Response {
         search: {
             results: {
@@ -326,6 +332,7 @@ async function executeSearchQuery(terms: string[]): Promise<SearchResult[]> {
             }
         }
     }
+
     const client = await getWebGraphQLClient()
     const result = await client.query<Response, CodeIntelSearch2Variables>({
         query: getDocumentNode(CODE_INTEL_SEARCH_QUERY),
