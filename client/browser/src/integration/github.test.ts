@@ -9,7 +9,7 @@ import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing
 import { readEnvironmentBoolean, readEnvironmentString, retry } from '@sourcegraph/shared/src/testing/utils'
 
 import { BrowserIntegrationTestContext, createBrowserIntegrationTestContext } from './context'
-import { closeInstallPageTab, percySnapshot } from './shared'
+import { closeInstallPageTab } from './shared'
 
 describe('GitHub', () => {
     let driver: Driver
