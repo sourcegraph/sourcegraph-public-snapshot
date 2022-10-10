@@ -92,6 +92,7 @@ func filterAudit(logs []logtest.CapturedLog) []logtest.CapturedLog {
 }
 
 func assertAuditField(t *testing.T, field map[string]any) {
+    t.Helper()
 	assert.NotEmpty(t, field["auditId"])
 	assert.NotEmpty(t, field["entity"])
 
