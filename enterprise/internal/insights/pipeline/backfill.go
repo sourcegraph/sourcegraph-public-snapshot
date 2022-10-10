@@ -50,7 +50,7 @@ func NewBackfiller(jobGenerator SearchJobGenerator, searchRunner SearchRunner, r
 		searchJobGenerator: jobGenerator,
 		searchRunner:       searchRunner,
 		persister:          resultsPersister,
-		logger:             log.Scoped("insights_backfill_pipeline", ""),
+		logger:             log.Scoped("insightsBackfiller", ""),
 	}
 
 }
@@ -121,6 +121,9 @@ func makeSearchJobsFunc(logger log.Logger, commitClient gitCommitClient, compres
 			})
 		}
 		err = g.Wait()
+		if err != nil {
+			jobs = nil
+		}
 		return ctx, &reqContext, jobs, err
 	}
 }
