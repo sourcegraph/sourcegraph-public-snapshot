@@ -33,7 +33,7 @@ func (s *Service) indexRepositories(ctx context.Context) (err error) {
 	}
 
 	for _, repoName := range repos {
-		if err := s.indexRepository(ctx, api.RepoName(repoName)); err != nil {
+		if err := s.indexRepository(ctx, repoName); err != nil {
 			return err
 		}
 	}
