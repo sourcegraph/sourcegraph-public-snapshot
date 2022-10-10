@@ -161,5 +161,6 @@ func TestWebhookDelete(t *testing.T) {
 	assert.NoError(t, err)
 
 	exists, _, err := basestore.ScanFirstBool(db.QueryContext(ctx, "SELECT EXISTS(SELECT 1 FROM webhooks WHERE uuid='%s')", createdWebhook.RandomID))
+	assert.NoError(t, err)
 	assert.False(t, exists)
 }
