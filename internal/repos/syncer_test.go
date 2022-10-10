@@ -1661,9 +1661,7 @@ func testUserAddedRepos(store repos.Store) func(*testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		ctx = actor.WithActor(ctx, &actor.Actor{
-			UID: userID,
-		})
+		ctx = actor.WithInternalActor(ctx)
 
 		userService := &types.ExternalService{
 			Kind:            extsvc.KindGitHub,
