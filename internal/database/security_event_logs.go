@@ -56,7 +56,7 @@ type SecurityEvent struct {
 	Timestamp       time.Time
 }
 
-func (e *SecurityEvent) parseArgument() string {
+func (e *SecurityEvent) marshalArgumentAsJSON() string {
 	if e.Argument == nil {
 		return "{}"
 	}
@@ -104,7 +104,7 @@ func (s *securityEventLogsStore) InsertList(ctx context.Context, events []*Secur
 			event.UserID,
 			event.AnonymousUserID,
 			event.Source,
-			event.parseArgument(),
+			event.marshalArgumentAsJSON(),
 			version.Version(),
 			event.Timestamp.UTC(),
 		)
@@ -124,7 +124,7 @@ func (s *securityEventLogsStore) InsertList(ctx context.Context, events []*Secur
 					log.Object("event",
 						log.String("URL", event.URL),
 						log.String("source", event.Source),
-						log.String("argument", event.parseArgument()),
+						log.String("argument", event.marshalArgumentAsJSON()),
 						log.String("version", version.Version()),
 						log.String("timestamp", event.Timestamp.UTC().String()),
 					),
