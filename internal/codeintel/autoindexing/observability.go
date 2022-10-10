@@ -10,30 +10,21 @@ import (
 )
 
 type operations struct {
-	// Commits
-	getStaleSourcedCommits *observation.Operation
-	updateSourcedCommits   *observation.Operation
-	deleteSourcedCommits   *observation.Operation
-
 	// Indexes
-	getIndexes                     *observation.Operation
-	getIndexByID                   *observation.Operation
-	getIndexesByIDs                *observation.Operation
-	getRecentIndexesSummary        *observation.Operation
-	getLastIndexScanForRepository  *observation.Operation
-	deleteIndexByID                *observation.Operation
-	deleteIndexesWithoutRepository *observation.Operation
-	queueRepoRev                   *observation.Operation
-	queueIndex                     *observation.Operation
-	queueIndexForPackage           *observation.Operation
+	getIndexes                    *observation.Operation
+	getIndexByID                  *observation.Operation
+	getIndexesByIDs               *observation.Operation
+	getRecentIndexesSummary       *observation.Operation
+	getLastIndexScanForRepository *observation.Operation
+	deleteIndexByID               *observation.Operation
+	queueRepoRev                  *observation.Operation
+	queueIndex                    *observation.Operation
+	queueIndexForPackage          *observation.Operation
 
 	// Index Configuration
 	getIndexConfigurationByRepositoryID    *observation.Operation
 	updateIndexConfigurationByRepositoryID *observation.Operation
 	inferIndexConfiguration                *observation.Operation
-
-	// Auth
-	checkCurrentUserIsSiteAdmin *observation.Operation
 
 	// Tags
 	getListTags *observation.Operation
@@ -42,8 +33,7 @@ type operations struct {
 	getLanguagesRequestedBy   *observation.Operation
 	setRequestLanguageSupport *observation.Operation
 
-	insertDependencyIndexingJob *observation.Operation
-	handleIndexScheduler        *observation.Operation
+	handleIndexScheduler *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -75,30 +65,21 @@ func newOperations(observationContext *observation.Context) *operations {
 	})
 
 	return &operations{
-		// Commits
-		getStaleSourcedCommits: op("GetStaleSourcedCommits"),
-		updateSourcedCommits:   op("UpdateSourcedCommits"),
-		deleteSourcedCommits:   op("DeleteSourcedCommits"),
-
 		// Indexes
-		getIndexes:                     op("GetIndexes"),
-		getIndexByID:                   op("GetIndexByID"),
-		getIndexesByIDs:                op("GetIndexesByIDs"),
-		getRecentIndexesSummary:        op("GetRecentIndexesSummary"),
-		getLastIndexScanForRepository:  op("GetLastIndexScanForRepository"),
-		deleteIndexByID:                op("DeleteIndexByID"),
-		deleteIndexesWithoutRepository: op("DeleteIndexesWithoutRepository"),
-		queueRepoRev:                   op("QueueRepoRev"),
-		queueIndex:                     op("QueueIndex"),
-		queueIndexForPackage:           op("QueueIndexForPackage"),
+		getIndexes:                    op("GetIndexes"),
+		getIndexByID:                  op("GetIndexByID"),
+		getIndexesByIDs:               op("GetIndexesByIDs"),
+		getRecentIndexesSummary:       op("GetRecentIndexesSummary"),
+		getLastIndexScanForRepository: op("GetLastIndexScanForRepository"),
+		deleteIndexByID:               op("DeleteIndexByID"),
+		queueRepoRev:                  op("QueueRepoRev"),
+		queueIndex:                    op("QueueIndex"),
+		queueIndexForPackage:          op("QueueIndexForPackage"),
 
 		// Index Configuration
 		getIndexConfigurationByRepositoryID:    op("GetIndexConfigurationByRepositoryID"),
 		updateIndexConfigurationByRepositoryID: op("UpdateIndexConfigurationByRepositoryID"),
 		inferIndexConfiguration:                op("InferIndexConfiguration"),
-
-		// Auth
-		checkCurrentUserIsSiteAdmin: op("CheckCurrentUserIsSiteAdmin"),
 
 		// Tags
 		getListTags: op("GetListTags"),
@@ -107,7 +88,6 @@ func newOperations(observationContext *observation.Context) *operations {
 		getLanguagesRequestedBy:   op("GetLanguagesRequestedBy"),
 		setRequestLanguageSupport: op("SetRequestLanguageSupport"),
 
-		insertDependencyIndexingJob: op("InsertDependencyIndexingJob"),
-		handleIndexScheduler:        handleIndexScheduler,
+		handleIndexScheduler: handleIndexScheduler,
 	}
 }

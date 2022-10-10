@@ -124,6 +124,30 @@ func (s *Service) NewOnDemandScheduler(interval time.Duration, batchSize int) go
 			return nil
 		}
 
-		return s.ProcessRepoRevs(ctx, batchSize)
+		return s.processRepoRevs(ctx, batchSize)
 	}))
+}
+
+func (s *Service) processRepoRevs(ctx context.Context, batchSize int) (err error) {
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	repoRevs, err := tx.GetQueuedRepoRev(ctx, batchSize)
+	if err != nil {
+		return err
+	}
+
+	ids := make([]int, 0, len(repoRevs))
+	for _, repoRev := range repoRevs {
+		if _, err := s.QueueIndexes(ctx, repoRev.RepositoryID, repoRev.Rev, "", false, false); err != nil {
+			return err
+		}
+
+		ids = append(ids, repoRev.ID)
+	}
+
+	return tx.MarkRepoRevsAsProcessed(ctx, ids)
 }

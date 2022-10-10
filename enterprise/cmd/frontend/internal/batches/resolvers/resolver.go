@@ -255,7 +255,6 @@ func (r *Resolver) batchSpecByID(ctx context.Context, id graphql.ID) (graphqlbac
 	if batchSpecRandID == "" {
 		return nil, nil
 	}
-
 	batchSpec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{RandID: batchSpecRandID})
 	if err != nil {
 		if err == store.ErrNoResults {
@@ -264,8 +263,17 @@ func (r *Resolver) batchSpecByID(ctx context.Context, id graphql.ID) (graphqlbac
 		return nil, err
 	}
 
-	// Everyone can see batch specs, if they have the ID.
-	return &batchSpecResolver{store: r.store, batchSpec: batchSpec}, nil
+	specResolver := &batchSpecResolver{store: r.store, batchSpec: batchSpec}
+	canAdminister, err := specResolver.ViewerCanAdminister(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if !canAdminister {
+		return nil, nil
+	}
+
+	return specResolver, nil
 }
 
 func (r *Resolver) changesetSpecByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetSpecResolver, error) {
