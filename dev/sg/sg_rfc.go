@@ -18,13 +18,13 @@ sg rfc list
 # List all Private RFCs
 sg rfc --private list
 
-# Search for an Public RFC
+# Search for a Public RFC
 sg rfc search "search terms"
 
 # Search for a Private RFC
 sg rfc --private search "search terms"
 
-# Open a specific RFC
+# Open a specific Public RFC
 sg rfc open 420
 
 # Open a specific private RFC
@@ -34,6 +34,7 @@ sg rfc --private open 420
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
 			Name:     "private",
+			Usage:    "perform the rfc action on the private RFC drive",
 			Required: false,
 			Value:    false,
 		},
