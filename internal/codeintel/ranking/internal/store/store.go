@@ -101,7 +101,6 @@ WHERE
 ORDER BY r.name
 `
 
-// TODO - test
 func (s *store) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (map[string][]float64, bool, error) {
 	serialized, ok, err := basestore.ScanFirstString(s.db.Query(ctx, sqlf.Sprintf(getDocumentRanksQuery, repoName)))
 	if err != nil {
@@ -126,7 +125,6 @@ WHERE
 	r.blocked IS NULL
 `
 
-// TODO - test
 func (s *store) SetDocumentRanks(ctx context.Context, repoName api.RepoName, ranks map[string][]float64) error {
 	serialized, err := json.Marshal(ranks)
 	if err != nil {
