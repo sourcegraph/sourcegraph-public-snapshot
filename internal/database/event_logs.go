@@ -842,7 +842,9 @@ func (l *eventLogStore) SiteUsageCurrentPeriods(ctx context.Context) (types.Site
 
 func (l *eventLogStore) siteUsageCurrentPeriods(ctx context.Context, now time.Time, opt *SiteUsageOptions) (summary types.SiteUsageSummary, err error) {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
-	conds = buildCommonUsageConds(&opt.CommonUsageOptions, conds)
+	if opt != nil {
+		conds = buildCommonUsageConds(&opt.CommonUsageOptions, conds)
+	}
 
 	query := sqlf.Sprintf(siteUsageCurrentPeriodsQuery, now, now, now, now, sqlf.Join(conds, ") AND ("))
 
