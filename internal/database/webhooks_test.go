@@ -36,7 +36,7 @@ func TestWebhookCreateUnencrypted(t *testing.T) {
 
 	// Check that the calculated fields were correctly calculated.
 	assert.NotZero(t, created.ID)
-	_, err = uuid.Parse(created.RandomID)
+	assert.NotZero(t, created.UUID)
 	assert.NoError(t, err)
 	assert.Equal(t, kind, created.CodeHostKind)
 	assert.Equal(t, urn, created.CodeHostURN)
@@ -73,7 +73,7 @@ func TestWebhookCreateEncrypted(t *testing.T) {
 
 	// Check that the calculated fields were correctly calculated.
 	assert.NotZero(t, created.ID)
-	_, err = uuid.Parse(created.RandomID)
+	assert.NotZero(t, created.UUID)
 	assert.NoError(t, err)
 	assert.Equal(t, kind, created.CodeHostKind)
 	assert.Equal(t, urn, created.CodeHostURN)
@@ -109,7 +109,7 @@ func TestWebhookCreateNoSecret(t *testing.T) {
 
 	// Check that the calculated fields were correctly calculated.
 	assert.NotZero(t, created.ID)
-	_, err = uuid.Parse(created.RandomID)
+	assert.NotZero(t, created.UUID)
 	assert.NoError(t, err)
 	assert.Equal(t, kind, created.CodeHostKind)
 	assert.Equal(t, urn, created.CodeHostURN)
@@ -157,10 +157,10 @@ func TestWebhookDelete(t *testing.T) {
 	// Test that delete with right ID deletes the webhook
 	createdWebhook, err := store.Create(ctx, extsvc.KindGitHub, "https://github.com", types.NewUnencryptedSecret("very secret (not)"))
 	assert.NoError(t, err)
-	err = store.Delete(ctx, uuid.MustParse(createdWebhook.RandomID))
+	err = store.Delete(ctx, createdWebhook.UUID)
 	assert.NoError(t, err)
 
-	exists, _, err := basestore.ScanFirstBool(db.QueryContext(ctx, "SELECT EXISTS(SELECT 1 FROM webhooks WHERE uuid=$1)", createdWebhook.RandomID))
+	exists, _, err := basestore.ScanFirstBool(db.QueryContext(ctx, "SELECT EXISTS(SELECT 1 FROM webhooks WHERE uuid=$1)", createdWebhook.UUID))
 	assert.NoError(t, err)
 	assert.False(t, exists)
 }

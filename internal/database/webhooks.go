@@ -171,13 +171,15 @@ func (s *webhookStore) List(ctx context.Context) ([]*types.Webhook, error) {
 }
 
 func scanWebhook(sc dbutil.Scanner, key encryption.Key) (*types.Webhook, error) {
-	var hook types.Webhook
-	var keyID string
-	var rawSecret string
+	var (
+		hook      types.Webhook
+		keyID     string
+		rawSecret string
+	)
 
 	if err := sc.Scan(
 		&hook.ID,
-		&hook.RandomID,
+		&hook.UUID,
 		&hook.CodeHostKind,
 		&hook.CodeHostURN,
 		&rawSecret,
