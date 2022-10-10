@@ -970,7 +970,6 @@ export interface Range {
 // on a tight deadline so we decided not to do this refactoring during the
 // initial migration.
 let context: CodeIntelContext | undefined
-let _searchContext: string | undefined
 
 export function requestGraphQL<T>(query: string, vars?: { [name: string]: unknown }): Promise<GraphQLResult<T>> {
     if (!context) {
@@ -986,13 +985,6 @@ export function requestGraphQL<T>(query: string, vars?: { [name: string]: unknow
             .requestGraphQL<T, any>({ request: query, variables: vars as any, mightContainPrivateInfo: true })
             .toPromise()
     )
-}
-
-export function setCodeIntelSearchContext(newSearchContext: string | undefined): void {
-    _searchContext = newSearchContext
-}
-export function searchContext(): string | undefined {
-    return _searchContext
 }
 
 export function getSetting<T>(key: string): T | undefined {
