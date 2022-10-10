@@ -72,7 +72,7 @@ func (s *Service) indexRepository(ctx context.Context, repoName api.RepoName) (e
 		return err
 	}
 
-	ranks, err := s.rankStreamingGraph(ctx, graph)
+	ranks, err := s.pageRankFromStreamingGraph(ctx, graph)
 	if err != nil {
 		return err
 	}

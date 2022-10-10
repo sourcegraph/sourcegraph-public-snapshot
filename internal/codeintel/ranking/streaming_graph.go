@@ -2,7 +2,8 @@ package ranking
 
 import (
 	"context"
-	"sort"
+
+	"github.com/dcadenas/pagerank"
 )
 
 type streamingGraph interface {
@@ -32,10 +33,16 @@ func (gs *graphStreamer) Next(ctx context.Context) (from, to string, ok bool, er
 	}
 }
 
-func (s *Service) rankStreamingGraph(ctx context.Context, graph streamingGraph) (map[string][]float64, error) {
-	inDegree := map[string]int{}
+const pageRankFollowProbability = 0.85 // random jump 15% of the time
+const pageRankTolerance = 0.0001
+
+func (s *Service) pageRankFromStreamingGraph(ctx context.Context, graph streamingGraph) (map[string][]float64, error) {
+	g := pagerank.New()
+	idsToName := map[int]string{}
+	nameToIDs := map[string]int{}
+
 	for {
-		_, to, ok, err := graph.Next(ctx)
+		from, to, ok, err := graph.Next(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -43,20 +50,27 @@ func (s *Service) rankStreamingGraph(ctx context.Context, graph streamingGraph) 
 			break
 		}
 
-		inDegree[to]++
-	}
+		fromID, ok := nameToIDs[from]
+		if !ok {
+			fromID = len(idsToName)
+			idsToName[fromID] = from
+			nameToIDs[from] = fromID
+		}
 
-	paths := make([]string, 0, len(inDegree))
-	for p := range inDegree {
-		paths = append(paths, p)
+		toID, ok := nameToIDs[to]
+		if !ok {
+			toID = len(idsToName)
+			idsToName[toID] = from
+			nameToIDs[from] = toID
+		}
+
+		g.Link(fromID, toID)
 	}
-	sort.Slice(paths, func(i, j int) bool { return inDegree[paths[i]] < inDegree[paths[j]] })
 
 	ranks := map[string][]float64{}
-	n := float64(len(paths))
-	for i, path := range paths {
-		ranks[path] = []float64{1 - float64(i)/n}
-	}
+	g.Rank(pageRankFollowProbability, pageRankTolerance, func(identifier int, rank float64) {
+		ranks[idsToName[identifier]] = []float64{1 - rank}
+	})
 
 	return ranks, nil
 }

@@ -198,6 +198,7 @@ require (
 require github.com/XSAM/otelsql v0.15.0
 
 require (
+	github.com/dcadenas/pagerank v0.0.0-20171013173705-af922e3ceea8 // indirect
 	github.com/dennwc/varint v1.0.0 // indirect
 	github.com/emicklei/go-restful v2.16.0+incompatible // indirect
 	github.com/go-sql-driver/mysql v1.6.0 // indirect
