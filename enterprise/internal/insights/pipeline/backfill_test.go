@@ -23,11 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// type SearchJobGenerator func(ctx context.Context, req requestContext) (context.Context, *requestContext, []*queryrunner.Job, error)
-// type SearchRunner func(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.Job, err error) (context.Context, *requestContext, []store.RecordSeriesPointArgs, error)
-// type ResultsPersister func(ctx context.Context, reqContext *requestContext, points []store.RecordSeriesPointArgs, err error) (*requestContext, error)
-
-func makeJobGenerator(numJobs int) SearchJobGenerator {
+func makeTestJobGenerator(numJobs int) SearchJobGenerator {
 	return func(ctx context.Context, req requestContext) (context.Context, *requestContext, []*queryrunner.Job, error) {
 		jobs := make([]*queryrunner.Job, 0, numJobs)
 		for i := 0; i < numJobs; i++ {
@@ -40,7 +36,7 @@ func makeJobGenerator(numJobs int) SearchJobGenerator {
 	}
 }
 
-func searchRunner(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.Job, err error) (context.Context, *requestContext, []store.RecordSeriesPointArgs, error) {
+func testSearchRunner(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.Job, err error) (context.Context, *requestContext, []store.RecordSeriesPointArgs, error) {
 	points := make([]store.RecordSeriesPointArgs, 0, len(jobs))
 	for range jobs {
 		points = append(points, store.RecordSeriesPointArgs{Point: store.SeriesPoint{Value: 10}})
@@ -48,7 +44,7 @@ func searchRunner(ctx context.Context, reqContext *requestContext, jobs []*query
 	return ctx, reqContext, points, nil
 }
 
-type runCounts struct {
+type testRunCounts struct {
 	err         error
 	resultCount int
 	totalCount  int
@@ -60,13 +56,13 @@ func TestBackfillStepsConnected(t *testing.T) {
 		numJobs int
 		want    autogold.Value
 	}{
-		{10, autogold.Want("With Jobs", runCounts{resultCount: 10, totalCount: 100})},
-		{0, autogold.Want("No Jobs", runCounts{})},
+		{10, autogold.Want("With Jobs", testRunCounts{resultCount: 10, totalCount: 100})},
+		{0, autogold.Want("No Jobs", testRunCounts{})},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.want.Name(), func(t *testing.T) {
-			got := runCounts{}
+			got := testRunCounts{}
 			countingPersister := func(ctx context.Context, reqContext *requestContext, points []store.RecordSeriesPointArgs, err error) (*requestContext, error) {
 				for _, p := range points {
 					got.resultCount++
@@ -75,7 +71,7 @@ func TestBackfillStepsConnected(t *testing.T) {
 				return reqContext, nil
 			}
 
-			backfiller := NewBackfiller(makeJobGenerator(tc.numJobs), searchRunner, countingPersister)
+			backfiller := NewBackfiller(makeTestJobGenerator(tc.numJobs), testSearchRunner, countingPersister)
 			got.err = backfiller.Run(context.Background(), BackfillRequest{Series: &types.InsightSeries{SeriesID: "1"}})
 			tc.want.Equal(t, got)
 		})
