@@ -179,14 +179,6 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
         return <Redirect to={{ ...props.location, pathname: props.location.pathname.slice(0, -1) }} />
     }
 
-    // Note: this was a poor UX and is disabled for now, see https://github.com/sourcegraph/sourcegraph/issues/30192
-    // If a user has not accepted the Terms of Service yet, show the modal to force them to accept
-    // before continuing to use Sourcegraph. This is only done on self-hosted Sourcegraph Server;
-    // cloud users are all considered to have accepted regarless of the value of `tosAccepted`.
-    // if (!props.isSourcegraphDotCom && !tosAccepted) {
-    //     return <TosConsentModal afterTosAccepted={afterTosAccepted} />
-    // }
-
     const context: LayoutRouteComponentProps<any> = {
         ...props,
         ...themeProps,
