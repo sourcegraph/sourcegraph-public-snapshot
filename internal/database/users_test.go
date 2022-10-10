@@ -294,32 +294,21 @@ func TestUsers_ListCount(t *testing.T) {
 	}
 
 	// Create three users with common Sourcegraph admin username patterns.
-	_, err = db.Users().Create(ctx, NewUser{
-		Email:                 "b@b.com",
-		Username:              "sourcegraph-admin",
-		Password:              "p",
-		EmailVerificationCode: "c",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, err = db.Users().Create(ctx, NewUser{
-		Email:                 "c@c.com",
-		Username:              "sourcegraph-management-abc",
-		Password:              "p",
-		EmailVerificationCode: "c",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, err = db.Users().Create(ctx, NewUser{
-		Email:                 "c@c.com",
-		Username:              "managed-abc",
-		Password:              "p",
-		EmailVerificationCode: "c",
-	})
-	if err != nil {
-		t.Fatal(err)
+	for _, admin := range []struct {
+		username string
+		email    string
+	}{
+		{"sourcegraph-admin", "admin@sourcegraph.com"},
+		{"sourcegraph-management-abc", "support@sourcegraph.com"},
+		{"managed-abc", "abc-support@sourcegraph.com"},
+	} {
+		user, err := db.Users().Create(ctx, NewUser{Username: admin.username})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := db.UserEmails().Add(ctx, user.ID, admin.email, nil); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	if count, err := db.Users().Count(ctx, &UsersListOptions{ExcludeSourcegraphAdmins: false}); err != nil {
