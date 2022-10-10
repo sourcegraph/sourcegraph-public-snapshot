@@ -201,6 +201,7 @@ export const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculat
                                     className={classNames(styles.calculatorInput, 'mb-1')}
                                     onChange={event => {
                                         updatePercentage(index, Number(event.target.value))
+
                                         if (!percentageInputChangeLogs[index]) {
                                             setPercentageInputChangeLogs({
                                                 ...percentageInputChangeLogs,

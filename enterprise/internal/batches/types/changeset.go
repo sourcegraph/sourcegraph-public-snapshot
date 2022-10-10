@@ -1014,6 +1014,7 @@ type RepoChangesetsStats struct {
 	CommonChangesetsStats
 }
 
+// GlobalChangesetsStats holds stats information on all the changsets across the instance.
 type GlobalChangesetsStats struct {
 	CommonChangesetsStats
 }

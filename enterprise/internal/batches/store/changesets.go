@@ -1264,7 +1264,6 @@ func (s *Store) GetRepoChangesetsStats(ctx context.Context, repoID api.RepoID) (
 		return nil, errors.Wrap(err, "GetRepoChangesetsStats generating authz query conds")
 	}
 	q := getRepoChangesetsStatsQuery(int64(repoID), authzConds)
-
 	stats = &btypes.RepoChangesetsStats{}
 	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
 		if err := sc.Scan(
@@ -1486,6 +1485,8 @@ FROM (
 		-- where the changeset is not archived on at least one batch change
 		jsonb_path_exists (batch_change_ids, '$.* ? ((!exists(@.isArchived) || @.isArchived == false) && (!exists(@.archive) || @.archive == false))')
 ) AS fcs;
+		-- where the repo is neither deleted nor blocked
+		where repo.deleted_at is null and repo.blocked is null
 `
 
 func batchChangesColumn(c *btypes.Changeset) ([]byte, error) {
