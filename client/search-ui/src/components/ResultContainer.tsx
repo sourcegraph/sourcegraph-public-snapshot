@@ -26,7 +26,10 @@ export interface ResultContainerProps {
 /**
  * The container component for a result in the SearchResults component.
  */
-export const ResultContainer = React.forwardRef(function ResultContainer(props, reference) {
+export const ResultContainer: ForwardReferenceExoticComponent<
+    React.ElementType,
+    React.PropsWithChildren<ResultContainerProps>
+> = React.forwardRef(function ResultContainer(props, reference) {
     const {
         children,
         title,
@@ -73,4 +76,4 @@ export const ResultContainer = React.forwardRef(function ResultContainer(props, 
             </article>
         </Component>
     )
-}) as ForwardReferenceExoticComponent<React.ElementType, React.PropsWithChildren<ResultContainerProps>>
+})
