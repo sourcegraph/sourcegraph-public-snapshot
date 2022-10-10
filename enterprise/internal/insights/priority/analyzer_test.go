@@ -17,19 +17,19 @@ func TestQueryAnalyzerCost(t *testing.T) {
 		want     autogold.Value
 	}{
 		{
-			"type:diff author:someone insights",
+			"Type:diff author:someone insights",
 			DefaultCostHandlers,
-			autogold.Want("cost with default handlers", 1000),
+			autogold.Want("cost with default handlers", 1000*1-100*2),
 		},
 		{
 			"type:diff author:someone insights",
-			[]CostHeuristic{{queryContentCost, 1}, {queryPrecisionCost, 0}},
-			autogold.Want("nullify cost associated with heuristic", 100),
+			[]CostHeuristic{{queryContentCost, 1}, {queryScopeCost, 0}},
+			autogold.Want("nullify cost associated with heuristic", 1000*1),
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.want.Name(), func(t *testing.T) {
-			queryAnalyzer := NewQueryAnalyzer(DefaultCostHandlers)
+			queryAnalyzer := NewQueryAnalyzer(tc.handlers)
 			queryPlan, err := querybuilder.ParseQuery(tc.query, "literal")
 			if err != nil {
 				t.Fatal(err)

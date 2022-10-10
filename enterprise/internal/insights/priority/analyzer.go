@@ -5,7 +5,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 )
 
-// The query analyzer gives a cost to a search query according to a number of dimensions.
+// The query analyzer gives a cost to a search query according to a number of heuristics.
 // It does not deal with how a search query should be prioritized according to its cost.
 
 type QueryAnalyzer struct {
@@ -24,6 +24,7 @@ type CostHeuristic struct {
 
 var DefaultCostHandlers = []CostHeuristic{
 	{queryContentCost, 1},
+	{queryScopeCost, 2},
 }
 
 func NewQueryAnalyzer(handlers []CostHeuristic) *QueryAnalyzer {
@@ -37,34 +38,26 @@ func (a *QueryAnalyzer) Cost(o QueryObject) int {
 	for _, handler := range a.costHandlers {
 		totalCost += handler.fn(o) * handler.weight
 	}
+	if totalCost < 0 {
+		return 0
+	}
 	return totalCost
 }
 
-// analyze a query according to:
-// - the kind of content it will match (e.g. structural, literal)
-// - how precise the content is (e.g. file: selector)
-
+// queryContentCost will derive a cost based on the kind of content a query would match.
 func queryContentCost(o QueryObject) int {
 	var contentCost int
-	nodes := o.query.ToQ()
-	queryString := nodes.String()
-	searchType, _ := querybuilder.DetectSearchType(queryString, "structural")
-	if searchType == query.SearchTypeStructural {
-		contentCost += 1000
-	}
-	if searchType == query.SearchTypeRegex {
-		// todo detect if capture group pattern would match loads
-		// (although, if that is the case, do we even want to allow such a query?)
-		contentCost += 800
+	for _, basic := range o.query {
+		if basic.IsStructural() {
+			contentCost += 1000
+		}
+		if basic.IsRegexp() {
+			contentCost += 800
+		}
 	}
 
-	var unindexed, diff, commit bool
-	// todo visit each parameter and:
-	// if unindexed, diff, commit, set (slow stuff: matches slow)
-	query.VisitParameter(nodes, func(field, value string, negated bool, annotation query.Annotation) {
-		if field == "index" && (value == "no" || value == "n") {
-			unindexed = true
-		}
+	var diff, commit bool
+	query.VisitParameter(o.query.ToQ(), func(field, value string, negated bool, annotation query.Annotation) {
 		if field == "type" {
 			if value == "diff" {
 				diff = true
@@ -73,9 +66,6 @@ func queryContentCost(o QueryObject) int {
 			}
 		}
 	})
-	if unindexed {
-		contentCost += 1000
-	}
 	if diff {
 		contentCost += 1000
 	}
@@ -83,9 +73,51 @@ func queryContentCost(o QueryObject) int {
 		contentCost += 800
 	}
 
+	parameters := querybuilder.ParametersFromQueryPlan(o.query)
+	if parameters.Index() == query.No {
+		contentCost += 1000
+	}
+
 	return contentCost
 }
 
-func queryPrecisionCost(o QueryObject) int {
-	return 0
+// queryScopeCost will derive a cost based on how precise a query is (e.g. a commit query with an author field).
+func queryScopeCost(o QueryObject) int {
+	var scopeCost int
+
+	// this heuristic doesn't assert on whether a query is repo-scoped because of how insights are designed.
+	// we either run a global query or a single repo query.
+
+	parameters := querybuilder.ParametersFromQueryPlan(o.query)
+	if parameters.Exists(query.FieldFile) {
+		scopeCost -= 100
+	}
+	if parameters.Exists(query.FieldLang) {
+		scopeCost -= 50
+	}
+
+	archived := parameters.Archived()
+	if archived != nil && (*archived == query.Yes || *archived == query.Only) {
+		scopeCost += 50
+	}
+	fork := parameters.Fork()
+	if fork != nil && (*fork == query.Yes || *fork == query.Only) {
+		scopeCost += 50
+	}
+
+	var diffOrCommit bool
+	query.VisitParameter(o.query.ToQ(), func(field, value string, negated bool, annotation query.Annotation) {
+		if field == "type" {
+			if value == "diff" {
+				diffOrCommit = true
+			} else if value == "commit" {
+				diffOrCommit = true
+			}
+		}
+	})
+	if diffOrCommit && parameters.Exists(query.FieldAuthor) {
+		scopeCost -= 100
+	}
+
+	return scopeCost
 }
