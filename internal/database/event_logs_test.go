@@ -205,6 +205,9 @@ func TestEventLogs_SiteUsageMultiplePeriods(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if err := db.UserEmails().Add(ctx, sgAdmin.ID, "admin@sourcegraph.com", nil); err != nil {
+		t.Fatal(err)
+	}
 
 	user1, err := db.Users().Create(ctx, NewUser{Username: "a"})
 	if err != nil {
@@ -260,7 +263,7 @@ func TestEventLogs_SiteUsageMultiplePeriods(t *testing.T) {
 	assertUsageValue(t, values.DAUs[1], startDate.Add(time.Hour*24), 3, 3, 0, 0)
 	assertUsageValue(t, values.DAUs[2], startDate, 2, 2, 0, 0)
 
-	values, err = db.EventLogs().SiteUsageMultiplePeriods(ctx, now, 3, 0, 0, &CountUniqueUsersOptions{ExcludeSourcegraphAdmins: true})
+	values, err = db.EventLogs().SiteUsageMultiplePeriods(ctx, now, 3, 0, 0, &CountUniqueUsersOptions{CommonUsageOptions{ExcludeSourcegraphAdmins: true}, nil})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -456,6 +459,9 @@ func TestEventLogs_SiteUsage_ExcludeSourcegraphAdmins(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if err := db.UserEmails().Add(ctx, sgAdmin.ID, "admin@sourcegraph.com", nil); err != nil {
+		t.Fatal(err)
+	}
 
 	user1, err := db.Users().Create(ctx, NewUser{Username: "a"})
 	if err != nil {
@@ -515,7 +521,7 @@ func TestEventLogs_SiteUsage_ExcludeSourcegraphAdmins(t *testing.T) {
 	}
 
 	el := &eventLogStore{Store: basestore.NewWithHandle(db.Handle())}
-	summary, err := el.siteUsageCurrentPeriods(ctx, now, &SiteUsageOptions{ExcludeSourcegraphAdmins: false})
+	summary, err := el.siteUsageCurrentPeriods(ctx, now, &SiteUsageOptions{CommonUsageOptions{ExcludeSourcegraphAdmins: false}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -538,7 +544,7 @@ func TestEventLogs_SiteUsage_ExcludeSourcegraphAdmins(t *testing.T) {
 		t.Fatal(diff)
 	}
 
-	summary, err = el.siteUsageCurrentPeriods(ctx, now, &SiteUsageOptions{ExcludeSourcegraphAdmins: true})
+	summary, err = el.siteUsageCurrentPeriods(ctx, now, &SiteUsageOptions{CommonUsageOptions{ExcludeSourcegraphAdmins: true}})
 	if err != nil {
 		t.Fatal(err)
 	}
