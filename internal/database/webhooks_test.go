@@ -150,9 +150,9 @@ func TestWebhookDelete(t *testing.T) {
 	nonExistentUUID := uuid.New()
 	err := store.Delete(ctx, nonExistentUUID)
 	if !errors.HasType(err, &WebhookNotFoundError{}) {
-		t.Fatal("want WebhookNotFoundError")
+		t.Fatalf("want WebhookNotFoundError, got: %s", err)
 	}
-	assert.EqualError(t, err, fmt.Sprintf("failed to delete webhook: webhook with UUID=%q not found", nonExistentUUID))
+	assert.EqualError(t, err, fmt.Sprintf("failed to delete webhook: webhook with UUID %s not found", nonExistentUUID))
 
 	// Test that delete with right ID deletes the webhook
 	createdWebhook, err := store.Create(ctx, extsvc.KindGitHub, "https://github.com", types.NewUnencryptedSecret("very secret (not)"))
@@ -160,7 +160,7 @@ func TestWebhookDelete(t *testing.T) {
 	err = store.Delete(ctx, uuid.MustParse(createdWebhook.RandomID))
 	assert.NoError(t, err)
 
-	exists, _, err := basestore.ScanFirstBool(db.QueryContext(ctx, "SELECT EXISTS(SELECT 1 FROM webhooks WHERE uuid='%s')", createdWebhook.RandomID))
+	exists, _, err := basestore.ScanFirstBool(db.QueryContext(ctx, "SELECT EXISTS(SELECT 1 FROM webhooks WHERE uuid=$1)", createdWebhook.RandomID))
 	assert.NoError(t, err)
 	assert.False(t, exists)
 }

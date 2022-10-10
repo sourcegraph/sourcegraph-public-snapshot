@@ -151,7 +151,7 @@ type WebhookNotFoundError struct {
 }
 
 func (w *WebhookNotFoundError) Error() string {
-	return fmt.Sprintf("webhook with UUID=%q not found", w.ID)
+	return fmt.Sprintf("webhook with UUID %s not found", w.ID)
 }
 
 func (w *WebhookNotFoundError) NotFound() bool {
