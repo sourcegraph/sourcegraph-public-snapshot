@@ -254,7 +254,7 @@ func (s *PermsSyncer) listPrivateRepoNamesBySpecs(ctx context.Context, repoSpecs
 	return repoNames, nil
 }
 
-func (s *PermsSyncer) getUserGitHubAppInstallations(ctx context.Context, acct *extsvc.Account, db database.DB) ([]gh.Installation, error) {
+func (s *PermsSyncer) getUserGitHubAppInstallations(ctx context.Context, db database.DB, acct *extsvc.Account) ([]gh.Installation, error) {
 	if acct.ServiceType != extsvc.TypeGitHub {
 		return nil, nil
 	}
@@ -415,7 +415,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 
 		acctLogger.Debug("update GitHub App installation access", log.Int32("accountID", acct.ID))
 
-		installations, err := s.getUserGitHubAppInstallations(ctx, acct, s.db)
+		installations, err := s.getUserGitHubAppInstallations(ctx, s.db, acct)
 
 		// These errors aren't fatal, so we continue with the normal flow
 		// even if things go wrong.
