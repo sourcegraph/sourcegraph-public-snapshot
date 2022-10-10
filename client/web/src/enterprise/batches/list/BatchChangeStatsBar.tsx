@@ -3,10 +3,11 @@ import React from 'react'
 import { mdiInformationOutline } from '@mdi/js'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Icon, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
+import { H3, Icon, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
 
 import { GlobalChangesetsStatsResult, GlobalChangesetsStatsVariables } from '../../../graphql-operations'
 import { DEFAULT_MINS_SAVED_PER_CHANGESET } from '../../../site-admin/analytics/AnalyticsBatchChangesPage'
+import { MIN_PER_ITEM_SAVED_KEY } from '../../../site-admin/analytics/components/TimeSavedCalculatorGroup'
 import { ChangesetStatusClosed, ChangesetStatusOpen } from '../detail/changesets/ChangesetStatusCell'
 
 import { GLOBAL_CHANGESETS_STATS } from './backend'
@@ -35,26 +36,23 @@ export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildre
     }
 
     const numMinPerItemSaved: number =
-        parseInt(localStorage.getItem('MIN_PER_ITEM_SAVED_KEY') || '0', 10) || DEFAULT_MINS_SAVED_PER_CHANGESET
+        parseInt(localStorage.getItem(MIN_PER_ITEM_SAVED_KEY) || '0', 10) || DEFAULT_MINS_SAVED_PER_CHANGESET
 
     return (
         <div className={styles.statsBar}>
             <div className={styles.leftSide}>
                 <div className="pr-4">
-                    <span className="font-weight-bold h3">{data.batchChanges.totalCount}</span>
-                    <br />
+                    <H3 className="font-weight-bold mb-1">{data.batchChanges.totalCount}</H3>
                     <span>Batch changes</span>
                 </div>
                 <div className="pr-4">
-                    <span className="font-weight-bold h3">{data.globalChangesetsStats.merged}</span>
-                    <br />
+                    <H3 className="font-weight-bold mb-1">{data.globalChangesetsStats.merged}</H3>
                     <span>Changesets merged</span>
                 </div>
                 <div className="pr-4">
-                    <span className="font-weight-bold h3">
-                        {data ? (data.globalChangesetsStats.merged * numMinPerItemSaved) / 60 : '--'}
-                    </span>
-                    <br />
+                    <H3 className="font-weight-bold mb-1">
+                        {(data.globalChangesetsStats.merged * numMinPerItemSaved) / 60}
+                    </H3>
                     <span>
                         Hours saved
                         <Tooltip content="Based on multiplier per changeset defined by site admin">
@@ -65,11 +63,11 @@ export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildre
             </div>
             <div className={styles.rightSide}>
                 <div className="pr-4 text-center text-muted">
-                    <ChangesetStatusOpen label="" />
+                    <ChangesetStatusOpen />
                     <span>{data.globalChangesetsStats.open} open</span>
                 </div>
                 <div className="text-center text-muted">
-                    <ChangesetStatusClosed label="" />
+                    <ChangesetStatusClosed />
                     <span>{data.globalChangesetsStats.closed} closed</span>
                 </div>
             </div>
