@@ -89,3 +89,34 @@ Once the shared secret is set in Sourcegraph, you can start setting up executors
 If executor instances boot correctly and can authenticate with the Sourcegraph frontend, they will show up in the _Executors_ page under _Site Admin_ > _Maintenance_.
 
 ![Executor list in UI](https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/sg-3.34/executor-ui-test.png)
+
+## Maintaining and upgrading executors
+
+Executors are always _at least_ one minor version upward and downward compatible, or the immediate release before a major release. This table outlines that a bit clearer:
+
+| **Sourcegraph version** | **Executor version** | **Ok** |
+| ----------------------- | -------------------- | ------ |
+| 3.43.0                  | 3.43.\*              | ✅     |
+| 3.43.3                  | 3.43.\*              | ✅     |
+| 3.43.0                  | 4.0.\*               | ✅     |
+| 3.43.0                  | 3.42.\*              | ✅     |
+| 3.43.0                  | 3.41.\*              | 🚫     |
+| 3.43.0                  | 4.1.\*               | 🚫     |
+
+Executors are under active development and get a lot of feature and security enhancements, and get support for features regularly, so we recommend keeping them in sync with Sourcegraph as closely as possible, but to make upgrades not fail jobs while the rollout is happening, the upwards/downwards compatibility is maintained. This is only true for features, that didn't exist in the next minor version of Sourcegraph, but existing workloads will continue to function properly.
+
+### How to upgrade executors
+
+Check the "upgrading executors" section of the available install methods below:
+
+<div class="grid">
+  <a class="app-btn btn" href="/admin/deploy_executors_terraform#upgrading-executors">
+    <h3>Terraform</h3>
+    <p>Simply launch executors on AWS or GCP using Sourcegraph-maintained modules and machine images.</p>
+    <p>Supports auto scaling.</p>
+  </a>
+  <a class="app-btn btn" href="/admin/deploy_executors_binary#upgrading-executors">
+    <h3>Install executor on your machine</h3>
+    <p>Run executors on any linux amd64 machine.</p>
+  </a>
+</div>

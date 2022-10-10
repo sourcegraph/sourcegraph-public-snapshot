@@ -179,3 +179,39 @@ systemctl enable executor
 ### **Step 6:** Start receiving workloads
 
 If you use the systemd service, simply run `systemctl start executor`, otherwise run `executor run`. Your executor should start listening for jobs now! All done!
+
+## Upgrading executors
+
+Upgrading executors is relatively uninvolved. Simply follow the instructions below.
+Also, check the [executors changelog](TODO: Link) for any breaking changes or new features that you might want to configure.
+
+### **Step 1:** First, grab the executor binary for the new target Sourcegraph version.
+
+> NOTE: Keep in mind that only one minor version bumps are guaranteed to be disruption-free.
+
+```bash
+curl -sfLo executor https://storage.googleapis.com/sourcegraph-artifacts/executor/latest/linux-amd64/executor
+chmod +x executor
+# Assuming /usr/local/bin is in $PATH.
+mv executor /usr/local/bin
+```
+
+### **Step 2:** Make sure all ambient dependencies and configurations are up-to-date:
+
+```bash
+executor install all
+# OR run the following, to see how to install/configure components separately.
+executor install --help
+```
+
+### **Step 3:** Validate your machine is ready to receive workloads
+
+All set up! Before letting the executor start receiving workloads from your Sourcegraph instance, you might want to verify your setup. Run the following command:
+
+```bash
+executor validate
+```
+
+### **Step 4:** Restart your running executor / spin up a new machine
+
+Depending on how you set up executors, you might want to restart the systemd service, or restart/replace the machine running them, so the new binary is running.

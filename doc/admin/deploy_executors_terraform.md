@@ -221,3 +221,35 @@ To test if the metric is correctly reported into the Cloud provider:
 - On AWS, this can be found in the CloudWatch metrics section. Under **All metrics**, select the namespace `sourcegraph-executor` and then the metric `environment, queueName`. Make sure there are entries returned.
 
 Next, you can test whether the number of executors rises and shrinks as load spikes occur. Keep in mind that auto-scaling is not a real-time operation on most cloud providers and usually takes a short moment and can have some delays between the metric going down and the desired machine count adjusting.
+
+## Upgrading executors
+
+Upgrading executors is relatively uninvolved. Simply follow the instructions below.
+Also, check the [executors changelog](TODO: Link) for any breaking changes or new features or flags that you might want to configure.
+
+### **Step 1:** Update the source version of the terraform modules
+
+> NOTE: Keep in mind that only one minor version bumps are guaranteed to be disruption-free.
+
+```diff
+ module "executors" {
+   source  = "sourcegraph/executors/<cloud>"
+-  version = "4.0.0"
++  version = "4.1.0"
+ 
+   executor_sourcegraph_external_url            = "<sourcegraph_external_url>"
+   executor_sourcegraph_executor_proxy_password = "<shared_secret_configured_in_sourcegraph_instance>"
+   executor_queue_name                          = "<codeintel | batches>" # Type of work
+   executor_instance_tag                        = "codeintel"
+   executor_metrics_environment_label           = "prod"
+   executor_use_firecracker                     = true
+ }
+```
+
+### **Step 2:** Reapply the terraform configuration
+
+Simply reapply the terraform configuration and executors will be ready to go again.
+
+```bash
+terraform apply
+```
