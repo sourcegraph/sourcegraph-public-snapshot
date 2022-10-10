@@ -868,6 +868,15 @@
       "MaximumValue": 9223372036854775807,
       "Increment": 1,
       "CycleOption": "NO"
+    },
+    {
+      "Name": "webhooks_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
+      "Increment": 1,
+      "CycleOption": "NO"
     }
   ],
   "Tables": [
@@ -19371,7 +19380,7 @@
       "Columns": [
         {
           "Name": "code_host_kind",
-          "Index": 2,
+          "Index": 3,
           "TypeName": "text",
           "IsNullable": false,
           "Default": "",
@@ -19384,7 +19393,7 @@
         },
         {
           "Name": "code_host_urn",
-          "Index": 3,
+          "Index": 4,
           "TypeName": "text",
           "IsNullable": false,
           "Default": "",
@@ -19397,7 +19406,7 @@
         },
         {
           "Name": "created_at",
-          "Index": 5,
+          "Index": 6,
           "TypeName": "timestamp with time zone",
           "IsNullable": false,
           "Default": "now()",
@@ -19410,10 +19419,10 @@
         },
         {
           "Name": "encryption_key_id",
-          "Index": 7,
+          "Index": 8,
           "TypeName": "text",
-          "IsNullable": false,
-          "Default": "''::text",
+          "IsNullable": true,
+          "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -19424,9 +19433,9 @@
         {
           "Name": "id",
           "Index": 1,
-          "TypeName": "uuid",
+          "TypeName": "integer",
           "IsNullable": false,
-          "Default": "gen_random_uuid()",
+          "Default": "nextval('webhooks_id_seq'::regclass)",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -19435,8 +19444,21 @@
           "Comment": ""
         },
         {
+          "Name": "rand_id",
+          "Index": 2,
+          "TypeName": "uuid",
+          "IsNullable": false,
+          "Default": "gen_random_uuid()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "rand_id will be the user facing ID"
+        },
+        {
           "Name": "secret",
-          "Index": 4,
+          "Index": 5,
           "TypeName": "text",
           "IsNullable": true,
           "Default": "",
@@ -19449,7 +19471,7 @@
         },
         {
           "Name": "updated_at",
-          "Index": 6,
+          "Index": 7,
           "TypeName": "timestamp with time zone",
           "IsNullable": false,
           "Default": "now()",
