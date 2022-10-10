@@ -177,6 +177,15 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	conf.MustValidateDefaults()
 	go conf.Watch(liblog.Update(conf.GetLogSinks))
 
+	codeIntelServices, err := codeintel.GetServices(codeintel.Databases{
+		DB: db,
+		// N.B. must call after conf.Init()
+		CodeIntelDB: mustInitializeCodeIntelDB(logger),
+	})
+	if err != nil {
+		return err
+	}
+
 	// now we can init the keyring, as it depends on site config
 	if err := keyring.Init(ctx); err != nil {
 		return errors.Wrap(err, "failed to initialize encryption keyring")
@@ -291,16 +300,6 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	}
 
 	server, err := makeExternalAPI(db, schema, enterprise, rateLimitWatcher)
-	if err != nil {
-		return err
-	}
-
-	codeIntelDB := mustInitializeCodeIntelDB(logger)
-
-	codeIntelServices, err := codeintel.GetServices(codeintel.Databases{
-		DB:          db,
-		CodeIntelDB: codeIntelDB,
-	})
 	if err != nil {
 		return err
 	}
