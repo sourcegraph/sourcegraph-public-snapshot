@@ -57,6 +57,8 @@ func (t *prometheusTracer) TraceQuery(ctx context.Context, queryString string, o
 
 	ctx = context.WithValue(ctx, sgtrace.GraphQLQueryKey, queryString)
 
+	// TODO(4.2)
+	// DEPRECATED - LOG_ALL_GRAPHQL_REQUESTS env variable, and the associated handler logic, will be removed in favor of log.auditLog.graphQL site config setting
 	_, disableLog := os.LookupEnv("NO_GRAPHQL_LOG")
 	_, logAllRequests := os.LookupEnv("LOG_ALL_GRAPHQL_REQUESTS")
 

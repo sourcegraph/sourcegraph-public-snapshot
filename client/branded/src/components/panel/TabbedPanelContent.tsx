@@ -26,8 +26,8 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, useObservable, Tab, TabList, TabPanel, TabPanels, Tabs, Icon, Tooltip } from '@sourcegraph/wildcard'
 
+import { LegacyGroupByFileToggle } from './LegacyGroupByFileToggle'
 import { MixPreciseAndSearchBasedReferencesToggle } from './MixPreciseAndSearchBasedReferencesToggle'
-import { registerPanelToolbarContributions } from './views/contributions'
 import { EmptyPanelView } from './views/EmptyPanelView'
 import { ExtensionsLoadingPanelView } from './views/ExtensionsLoadingView'
 import { PanelView } from './views/PanelView'
@@ -104,6 +104,8 @@ const builtinTabbedPanelViewProviders = new BehaviorSubject<
     Map<string, { id: string; provider: Observable<BuiltinTabbedPanelView | null> }>
 >(new Map())
 
+export const hierarchicalLocationViewHasResultContext = new BehaviorSubject<undefined | boolean>(undefined)
+
 /**
  * BuiltinTabbedPanelView defines which BuiltinTabbedPanelViews will be available.
  */
@@ -160,6 +162,7 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
     const handlePanelClose = useCallback(() => history.replace(pathname), [history, pathname])
     const [currentTabLabel, currentTabID] = hash.split('=')
 
+    const legacyHierarchicalLocationViewHasResult = useObservable(hierarchicalLocationViewHasResultContext)
     const builtinTabbedPanels: PanelViewWithComponent[] | undefined = useObservable(
         useMemo(
             () =>
@@ -269,15 +272,6 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
         [location, panelViews, props, trackTabClick]
     )
 
-    useEffect(() => {
-        if (extensionsController === null) {
-            return
-        }
-
-        const subscription = registerPanelToolbarContributions(extensionsController.extHostAPI)
-        return () => subscription.unsubscribe()
-    }, [extensionsController])
-
     const handleActiveTab = useCallback(
         (index: number): void => {
             history.replace(`${pathname}${search}${currentTabLabel}=${items[index].id}`)
@@ -310,6 +304,12 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
                         <ul className="d-flex justify-content-end list-unstyled m-0 align-items-center">
                             {activeTab && (
                                 <MixPreciseAndSearchBasedReferencesToggle
+                                    settingsCascade={props.settingsCascade}
+                                    platformContext={props.platformContext}
+                                />
+                            )}
+                            {activeTab && legacyHierarchicalLocationViewHasResult && (
+                                <LegacyGroupByFileToggle
                                     settingsCascade={props.settingsCascade}
                                     platformContext={props.platformContext}
                                 />
@@ -398,7 +398,11 @@ function transformPanelContributions(contributions: Evaluated<Contributions>): E
             .map(string => JSON.parse(string))
             // We render the MixPreciseAndSearchBasedReferencesToggle in React now
             // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-            .filter((item: any) => item.action !== 'mixPreciseAndSearchBasedReferences.toggle')
+            .filter(
+                (item: any) =>
+                    item.action !== 'mixPreciseAndSearchBasedReferences.toggle' &&
+                    item.action !== 'panel.locations.groupByFile'
+            )
 
         return {
             ...contributions,

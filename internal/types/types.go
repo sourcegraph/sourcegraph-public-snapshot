@@ -1665,8 +1665,13 @@ func NewEncryptedSecret(cipher, keyID string, key encryption.Key) *EncryptableSe
 	return encryption.NewEncrypted(cipher, keyID, key)
 }
 
+// Webhook defines the information we need to handle incoming webhooks from a
+// code host
 type Webhook struct {
-	ID           string
+	// The primary key, used for sorting and pagination
+	ID int32
+	// RandomID is the ID we display externally and will appear in the webhook URL
+	RandomID     string
 	CodeHostKind string
 	CodeHostURN  string
 	Secret       *EncryptableSecret

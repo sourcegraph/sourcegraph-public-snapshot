@@ -12,10 +12,10 @@ import {
 } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { FileMatchChildren } from './FileMatchChildren'
+import { LegacyResultContainer } from './LegacyResultContainer'
 import { RepoFileLink } from './RepoFileLink'
-import { ResultContainer } from './ResultContainer'
 
-describe('ResultContainer', () => {
+describe('LegacyResultContainer', () => {
     afterAll(cleanup)
 
     const history = H.createBrowserHistory()
@@ -156,7 +156,7 @@ describe('ResultContainer', () => {
     }
 
     it('displays only one result when collapsed, which is the equivalent of subsetMatches', () => {
-        const { container } = renderWithBrandedContext(<ResultContainer {...defaultProps} />)
+        const { container } = renderWithBrandedContext(<LegacyResultContainer {...defaultProps} />)
 
         const expandedItems = container.querySelectorAll('[data-testid="file-match-children-item"]')
         // 1 is the value of subsetMatches
@@ -164,7 +164,7 @@ describe('ResultContainer', () => {
     })
 
     it('expands to display all results when the expand button is clicked', () => {
-        const { container } = renderWithBrandedContext(<ResultContainer {...defaultProps} />)
+        const { container } = renderWithBrandedContext(<LegacyResultContainer {...defaultProps} />)
 
         let expandedItems = container.querySelectorAll('[data-testid="file-match-children-item"]')
         // 1 is the value of subsetMatches
@@ -180,14 +180,14 @@ describe('ResultContainer', () => {
     })
 
     it('displays the expand label when collapsed', () => {
-        const { container } = renderWithBrandedContext(<ResultContainer {...defaultProps} />)
+        const { container } = renderWithBrandedContext(<LegacyResultContainer {...defaultProps} />)
         const header = getByTestId(container, 'result-container-header')
         expect(header).toBeVisible()
         expect(getByText(container, 'Show matches')).toBeVisible()
     })
 
     it('displays the collapse label when expanded', () => {
-        const { container } = renderWithBrandedContext(<ResultContainer {...defaultProps} />)
+        const { container } = renderWithBrandedContext(<LegacyResultContainer {...defaultProps} />)
 
         const button = container.querySelector('[data-testid="toggle-matches-container"]') as Element
         expect(button).toBeVisible()
@@ -198,14 +198,14 @@ describe('ResultContainer', () => {
     })
 
     it('displays all results by default, when allExpanded is true', () => {
-        const { container } = renderWithBrandedContext(<ResultContainer {...findReferencesProps} />)
+        const { container } = renderWithBrandedContext(<LegacyResultContainer {...findReferencesProps} />)
 
         const expandedItems = container.querySelectorAll('[data-testid="file-match-children-item"]')
         expect(expandedItems.length).toBe(5)
     })
 
     it('collapses to show no results when the collapse is clicked, when allExpanded is true', () => {
-        const { container } = renderWithBrandedContext(<ResultContainer {...findReferencesProps} />)
+        const { container } = renderWithBrandedContext(<LegacyResultContainer {...findReferencesProps} />)
 
         let expandedItems = container.querySelectorAll('[data-testid="file-match-children-item"]')
         expect(expandedItems.length).toBe(5)

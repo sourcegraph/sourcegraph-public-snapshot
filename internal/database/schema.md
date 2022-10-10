@@ -3046,15 +3046,16 @@ Foreign-key constraints:
 
 # Table "public.webhooks"
 ```
-      Column       |           Type           | Collation | Nullable |      Default      
--------------------+--------------------------+-----------+----------+-------------------
- id                | uuid                     |           | not null | gen_random_uuid()
+      Column       |           Type           | Collation | Nullable |               Default                
+-------------------+--------------------------+-----------+----------+--------------------------------------
+ id                | integer                  |           | not null | nextval('webhooks_id_seq'::regclass)
+ rand_id           | uuid                     |           | not null | gen_random_uuid()
  code_host_kind    | text                     |           | not null | 
  code_host_urn     | text                     |           | not null | 
  secret            | text                     |           |          | 
  created_at        | timestamp with time zone |           | not null | now()
  updated_at        | timestamp with time zone |           | not null | now()
- encryption_key_id | text                     |           | not null | ''::text
+ encryption_key_id | text                     |           |          | 
 Indexes:
     "webhooks_pkey" PRIMARY KEY, btree (id)
 
@@ -3065,6 +3066,8 @@ Webhooks registered in Sourcegraph instance.
 **code_host_kind**: Kind of an external service for which webhooks are registered.
 
 **code_host_urn**: URN of a code host. This column maps to external_service_id column of repo table.
+
+**rand_id**: rand_id will be the user facing ID
 
 **secret**: Secret used to decrypt webhook payload (if supported by the code host).
 

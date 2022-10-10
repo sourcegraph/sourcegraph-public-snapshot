@@ -3521,22 +3521,35 @@ CREATE SEQUENCE webhook_logs_id_seq
 ALTER SEQUENCE webhook_logs_id_seq OWNED BY webhook_logs.id;
 
 CREATE TABLE webhooks (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    id integer NOT NULL,
+    rand_id uuid DEFAULT gen_random_uuid() NOT NULL,
     code_host_kind text NOT NULL,
     code_host_urn text NOT NULL,
     secret text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    encryption_key_id text DEFAULT ''::text NOT NULL
+    encryption_key_id text
 );
 
 COMMENT ON TABLE webhooks IS 'Webhooks registered in Sourcegraph instance.';
+
+COMMENT ON COLUMN webhooks.rand_id IS 'rand_id will be the user facing ID';
 
 COMMENT ON COLUMN webhooks.code_host_kind IS 'Kind of an external service for which webhooks are registered.';
 
 COMMENT ON COLUMN webhooks.code_host_urn IS 'URN of a code host. This column maps to external_service_id column of repo table.';
 
 COMMENT ON COLUMN webhooks.secret IS 'Secret used to decrypt webhook payload (if supported by the code host).';
+
+CREATE SEQUENCE webhooks_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE webhooks_id_seq OWNED BY webhooks.id;
 
 ALTER TABLE ONLY access_tokens ALTER COLUMN id SET DEFAULT nextval('access_tokens_id_seq'::regclass);
 
@@ -3681,6 +3694,8 @@ ALTER TABLE ONLY user_pending_permissions ALTER COLUMN id SET DEFAULT nextval('u
 ALTER TABLE ONLY users ALTER COLUMN id SET DEFAULT nextval('users_id_seq'::regclass);
 
 ALTER TABLE ONLY webhook_logs ALTER COLUMN id SET DEFAULT nextval('webhook_logs_id_seq'::regclass);
+
+ALTER TABLE ONLY webhooks ALTER COLUMN id SET DEFAULT nextval('webhooks_id_seq'::regclass);
 
 ALTER TABLE ONLY access_tokens
     ADD CONSTRAINT access_tokens_pkey PRIMARY KEY (id);

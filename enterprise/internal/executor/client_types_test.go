@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
@@ -47,7 +47,7 @@ func TestJob_UnmarshalJSON(t *testing.T) {
 		"env": ["FOO=BAR"]
 	}],
 	"cliSteps": [{
-		"commands": ["x", "y", "z"],
+		"command": ["x", "y", "z"],
 		"dir": "raz/daz",
 		"env": ["BAZ=FAZ"]
 	}],
@@ -113,7 +113,7 @@ func TestJob_UnmarshalJSON(t *testing.T) {
 		"env": ["FOO=BAR"]
 	}],
 	"cliSteps": [{
-		"commands": ["x", "y", "z"],
+		"command": ["x", "y", "z"],
 		"dir": "raz/daz",
 		"env": ["BAZ=FAZ"]
 	}],
@@ -160,7 +160,9 @@ func TestJob_UnmarshalJSON(t *testing.T) {
 			var actual executor.Job
 			err := json.Unmarshal([]byte(test.input), &actual)
 			require.NoError(t, err)
-			assert.Equal(t, test.expected, actual)
+			if diff := cmp.Diff(test.expected, actual); diff != "" {
+				t.Fatal(diff)
+			}
 		})
 	}
 }
