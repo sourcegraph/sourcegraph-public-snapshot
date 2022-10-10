@@ -71,3 +71,8 @@ type Position struct {
 	Line      int
 	Character int
 }
+
+type DeleteUploadsOptions struct {
+	State string
+	Term  string
+}

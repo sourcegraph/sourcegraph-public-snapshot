@@ -101,6 +101,11 @@ func (r *Resolver) DeleteLSIFIndex(ctx context.Context, args *struct{ ID graphql
 	return r.autoIndexingRootResolver.DeleteLSIFIndex(ctx, args)
 }
 
+// 🚨 SECURITY: Only site admins may modify code intelligence upload data
+func (r *Resolver) DeleteLSIFIndexes(ctx context.Context, args *autoindexinggraphql.DeleteLSIFIndexesArgs) (_ *sharedresolvers.EmptyResponse, err error) {
+	return r.autoIndexingRootResolver.DeleteLSIFIndexes(ctx, args)
+}
+
 // 🚨 SECURITY: Only entrypoint is within the repository resolver so the user is already authenticated
 func (r *Resolver) CommitGraph(ctx context.Context, id graphql.ID) (_ uploadsgraphql.CodeIntelligenceCommitGraphResolver, err error) {
 	return r.uploadsRootResolver.CommitGraph(ctx, id)
