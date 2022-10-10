@@ -58,7 +58,7 @@ type SecurityEvent struct {
 
 func (e *SecurityEvent) parseArgument() string {
 	if e.Argument == nil {
-		return fmt.Sprintf("%s", []byte(`{}`))
+		return "{}"
 	}
 	return fmt.Sprintf("%s", e.Argument)
 }
