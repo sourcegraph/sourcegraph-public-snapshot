@@ -19,15 +19,12 @@ import (
 )
 
 func Init(ctx context.Context, db database.DB, config *Config, enterpriseServices *enterprise.Services, services *FrontendServices) error {
-	oc := func(name string) *observation.Context {
-		return &observation.Context{
-			Logger:     logger.Scoped(name+".transport.graphql", "codeintel "+name+" graphql transport"),
-			Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-			Registerer: prometheus.DefaultRegisterer,
-		}
-	}
-
-	executorResolver := executorgraphql.New(db)
+	autoindexingRootResolver := autoindexinggraphql.NewRootResolver(
+		services.AutoIndexingService,
+		services.UploadsService,
+		services.PoliciesService,
+		scopedContext("autoindexing"),
+	)
 
 	codenavRootResolver := codenavgraphql.NewRootResolver(
 		services.CodenavService,
@@ -37,26 +34,21 @@ func Init(ctx context.Context, db database.DB, config *Config, enterpriseService
 		services.gitserverClient,
 		config.MaximumIndexesPerMonikerSearch,
 		config.HunkCacheSize,
-		oc("codenav"),
+		scopedContext("codenav"),
 	)
+
+	executorResolver := executorgraphql.New(db)
 
 	policyRootResolver := policiesgraphql.NewRootResolver(
 		services.PoliciesService,
-		oc("policies"),
-	)
-
-	autoindexingRootResolver := autoindexinggraphql.NewRootResolver(
-		services.AutoIndexingService,
-		services.UploadsService,
-		services.PoliciesService,
-		oc("autoindexing"),
+		scopedContext("policies"),
 	)
 
 	uploadRootResolver := uploadgraphql.NewRootResolver(
 		services.UploadsService,
 		services.AutoIndexingService,
 		services.PoliciesService,
-		oc("upload"),
+		scopedContext("upload"),
 	)
 
 	enterpriseServices.CodeIntelResolver = newResolver(
@@ -68,4 +60,12 @@ func Init(ctx context.Context, db database.DB, config *Config, enterpriseService
 	)
 	enterpriseServices.NewCodeIntelUploadHandler = services.NewUploadHandler
 	return nil
+}
+
+func scopedContext(name string) *observation.Context {
+	return &observation.Context{
+		Logger:     logger.Scoped(name+".transport.graphql", "codeintel "+name+" graphql transport"),
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
+		Registerer: prometheus.DefaultRegisterer,
+	}
 }
