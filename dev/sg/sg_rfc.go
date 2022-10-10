@@ -35,6 +35,12 @@ func rfcExec(ctx *cli.Context) error {
 	case "list":
 		return rfc.List(ctx.Context, std.Out)
 
+	case "create":
+		if len(args) != 2 {
+			return errors.New("no title given")
+		}
+		return rfc.Create(ctx.Context, args[1], std.Out)
+
 	case "search":
 		if len(args) != 2 {
 			return errors.New("no search query given")

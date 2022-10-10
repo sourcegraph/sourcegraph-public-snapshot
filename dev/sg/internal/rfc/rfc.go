@@ -122,6 +122,11 @@ func Search(ctx context.Context, query string, out *std.Output) error {
 	return queryRFCs(ctx, fmt.Sprintf("(name contains '%s' or fullText contains '%s')", query, query), "", rfcTitlesPrinter(out), out)
 }
 
+func Create(ctx context.Context, title string, out *std.Output) error {
+	fmt.Println("creating shit")
+	return nil
+}
+
 func Open(ctx context.Context, number string, out *std.Output) error {
 	return queryRFCs(ctx, fmt.Sprintf("name contains 'RFC %s'", number), "", func(r *drive.FileList) error {
 		for _, f := range r.Files {
