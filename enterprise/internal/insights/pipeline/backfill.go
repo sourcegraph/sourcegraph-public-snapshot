@@ -239,12 +239,16 @@ func makeRunSearchFunc(logger log.Logger, searchHandlers map[types.GenerationMet
 					return err
 				}
 				mu.Lock()
+				defer mu.Unlock()
 				points = append(points, searchPoints...)
-				mu.Unlock()
 				return nil
 			})
 		}
 		err := g.Wait()
+		// don't return any points if they don't all succeed
+		if err != nil {
+			points = nil
+		}
 		return ctx, reqContext, points, err
 	}
 }
