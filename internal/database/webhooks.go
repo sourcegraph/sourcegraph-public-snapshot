@@ -151,11 +151,11 @@ type WebhookNotFoundError struct {
 	ID uuid.UUID
 }
 
-func (w *WebhookNotFoundError) Error() string {
+func (w WebhookNotFoundError) Error() string {
 	return fmt.Sprintf("webhook with UUID %s not found", w.ID)
 }
 
-func (w *WebhookNotFoundError) NotFound() bool {
+func (w WebhookNotFoundError) NotFound() bool {
 	return true
 }
 
@@ -174,13 +174,13 @@ func (s *webhookStore) Update(ctx context.Context, newWebhook *types.Webhook) (*
 	}
 
 	q := sqlf.Sprintf(webhookUpdateQueryFmtstr,
-		newWebhook.CodeHostURN, encryptedSecret, newWebhook.ID,
+		newWebhook.CodeHostURN, encryptedSecret, newWebhook.ID, newWebhook.UUID,
 		sqlf.Join(webhookColumns, ", "))
 
 	updated, err := scanWebhook(s.QueryRow(ctx, q), s.key)
 	if err != nil {
 		if strings.Contains(err.Error(), "no rows in result set") {
-			return nil, webhookNotFoundErr{id: newWebhook.ID}
+			return nil, WebhookNotFoundError{ID: newWebhook.UUID}
 		}
 		return nil, errors.Wrap(err, "scanning webhook")
 	}
@@ -196,7 +196,7 @@ SET
 	secret = %s,
 	updated_at = NOW()
 WHERE
-	id = %d
+	id = %s AND uuid = %s
 RETURNING
 	%s
 `
@@ -230,17 +230,4 @@ func scanWebhook(sc dbutil.Scanner, key encryption.Key) (*types.Webhook, error) 
 	hook.Secret = types.NewEncryptedSecret(rawSecret, keyID, key)
 
 	return &hook, nil
-}
-
-// webhookNotFoundErr is the error that is returned when a webhook for the given id is not found.
-type webhookNotFoundErr struct {
-	id int32
-}
-
-func (err webhookNotFoundErr) Error() string {
-	return fmt.Sprintf("webhook not found for id: %d", err.id)
-}
-
-func (err webhookNotFoundErr) NotFound() bool {
-	return true
 }

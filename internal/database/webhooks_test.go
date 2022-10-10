@@ -158,8 +158,21 @@ func TestWebhookUpdate(t *testing.T) {
 		assert.Equal(t, decryptedSecret, updatedSecret)
 	})
 
+	t.Run("updating webhook to have nil secret", func(t *testing.T) {
+		store, _, created := runCreateWebhookTest(ctx, t, true)
+		created.Secret = nil
+		updated, err := store.Update(ctx, created)
+		if err != nil {
+			t.Fatalf("unexpected error updating webhook: %s", err)
+		}
+		decryptedSecret, err := updated.Secret.Decrypt(ctx)
+		assert.NoError(t, err)
+		assert.Zero(t, decryptedSecret)
+	})
+
 	t.Run("updating webhook that doesn't exist", func(t *testing.T) {
-		webhook := types.Webhook{ID: 100}
+		nonExistentUUID := uuid.New()
+		webhook := types.Webhook{ID: 100, UUID: nonExistentUUID}
 
 		logger := logtest.Scoped(t)
 		db := NewDB(logger, dbtest.NewDB(logger, t))
@@ -169,7 +182,7 @@ func TestWebhookUpdate(t *testing.T) {
 		if err == nil {
 			t.Fatal("attempting to update a non-existent webhook should return an error")
 		}
-		assert.Equal(t, err, webhookNotFoundErr{id: 100})
+		assert.Equal(t, err, WebhookNotFoundError{ID: nonExistentUUID})
 	})
 }
 
