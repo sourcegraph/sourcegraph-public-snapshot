@@ -1,31 +1,28 @@
 import { FunctionComponent, useCallback, useMemo, useState } from 'react'
 
-import * as H from 'history'
+import { useHistory } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner, PageHeader, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { PageTitle } from '../../../../components/PageTitle'
 import { SaveToolbar, SaveToolbarProps, SaveToolbarPropsGenerator } from '../../../../components/SaveToolbar'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../../../settings/DynamicallyImportedMonacoSettingsEditor'
+import { ThemePreference, useTheme } from '../../../../theme'
 import { INFERENCE_SCRIPT, useInferenceScript } from '../hooks/useInferenceScript'
 import { useUpdateInferenceScript } from '../hooks/useUpdateInferenceScript'
 
 import styles from './CodeIntelConfigurationPageHeader.module.scss'
 
-export interface InferenceScriptEditorProps extends ThemeProps, TelemetryProps {
+export interface InferenceScriptEditorProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
-    history: H.History
 }
 
 export const InferenceScriptEditor: FunctionComponent<React.PropsWithChildren<InferenceScriptEditorProps>> = ({
     authenticatedUser,
-    isLightTheme,
     telemetryService,
-    history,
 }) => {
     const { inferenceScript, loadingScript, fetchError } = useInferenceScript()
     const { updateInferenceScript, isUpdating, updatingError } = useUpdateInferenceScript()
@@ -43,6 +40,8 @@ export const InferenceScriptEditor: FunctionComponent<React.PropsWithChildren<In
     )
 
     const [dirty, setDirty] = useState<boolean>()
+    const history = useHistory()
+    const isLightTheme = useTheme().enhancedThemePreference === ThemePreference.Light
 
     const customToolbar = useMemo<{
         saveToolbar: FunctionComponent<SaveToolbarProps>
@@ -51,7 +50,6 @@ export const InferenceScriptEditor: FunctionComponent<React.PropsWithChildren<In
         () => ({
             saveToolbar: SaveToolbar,
             propsGenerator: props => {
-                console.log(JSON.stringify(props))
                 const mergedProps = {
                     ...props,
                     loading: isUpdating,
