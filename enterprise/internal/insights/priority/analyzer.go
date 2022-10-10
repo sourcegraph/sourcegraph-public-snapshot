@@ -14,7 +14,7 @@ type QueryAnalyzer struct {
 
 type QueryObject struct {
 	query query.Plan
-	// the object can be augmented with repository information, or anything else.
+	// the object can be augmented with repository information, or anything else of value.
 }
 
 type CostHeuristic struct {

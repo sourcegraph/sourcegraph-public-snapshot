@@ -9,8 +9,6 @@ import (
 )
 
 func TestQueryAnalyzerCost(t *testing.T) {
-	// cost with default handlers
-	// can nullify cost associated with specific handler
 	testCases := []struct {
 		query    string
 		handlers []CostHeuristic
@@ -25,6 +23,11 @@ func TestQueryAnalyzerCost(t *testing.T) {
 			"type:diff author:someone insights",
 			[]CostHeuristic{{queryContentCost, 1}, {queryScopeCost, 0}},
 			autogold.Want("nullify cost associated with heuristic", 1000*1),
+		},
+		{
+			"query file:mine lang:go",
+			DefaultCostHandlers,
+			autogold.Want("negative cost defaults to 0", 0),
 		},
 	}
 	for _, tc := range testCases {
@@ -48,6 +51,10 @@ func Test_queryContentCost(t *testing.T) {
 			"[a] patterntype:structural",
 			autogold.Want("structural query cost", 1000),
 		},
+		{
+			"(type:diff newResolver) or (type:commit #)",
+			autogold.Want("multiple queries get costed correctly", 1000+800),
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.want.Name(), func(t *testing.T) {
@@ -56,6 +63,32 @@ func Test_queryContentCost(t *testing.T) {
 				t.Fatal(err)
 			}
 			cost := queryContentCost(QueryObject{queryPlan})
+			tc.want.Equal(t, cost)
+		})
+	}
+}
+
+func Test_queryScopeCost(t *testing.T) {
+	testCases := []struct {
+		query string
+		want  autogold.Value
+	}{
+		{
+			"[a] patterntype:structural file:test",
+			autogold.Want("file scoped cost", -100),
+		},
+		{
+			"archived:yes fork:only search",
+			autogold.Want("archives and forks", 50+50),
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.want.Name(), func(t *testing.T) {
+			queryPlan, err := querybuilder.ParseQuery(tc.query, "literal")
+			if err != nil {
+				t.Fatal(err)
+			}
+			cost := queryScopeCost(QueryObject{queryPlan})
 			tc.want.Equal(t, cost)
 		})
 	}
