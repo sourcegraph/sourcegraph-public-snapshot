@@ -268,7 +268,14 @@ type githubResult struct {
 }
 
 func (s *GitHubSource) ValidateAuthenticator(ctx context.Context) error {
-	_, err := s.v3Client.GetAuthenticatedUser(ctx)
+	var err error
+	if s.config.GithubAppInstallationID != "" {
+		// GitHub App does not have an affiliated user, use another
+		// request instead.
+		_, err = s.v3Client.GetAuthenticatedOAuthScopes(ctx)
+	} else {
+		_, err = s.v3Client.GetAuthenticatedUser(ctx)
+	}
 	return err
 }
 
