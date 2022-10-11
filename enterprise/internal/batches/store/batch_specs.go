@@ -387,6 +387,7 @@ type ListBatchSpecsOpts struct {
 
 	ExcludeCreatedFromRawNotOwnedByUser int32
 	IncludeLocallyExecutedSpecs         bool
+	ExcludeEmptySpecs                   bool
 }
 
 // ListBatchSpecs lists BatchSpecs with the given filters.
@@ -445,6 +446,10 @@ ON
 
 	if !opts.IncludeLocallyExecutedSpecs {
 		preds = append(preds, sqlf.Sprintf("batch_specs.created_from_raw IS TRUE"))
+	}
+
+	if opts.ExcludeEmptySpecs {
+		preds = append(preds, sqlf.Sprintf("(EXISTS (SELECT * FROM jsonb_object_keys(batch_specs.spec) AS t (k) WHERE t.k NOT LIKE 'name'))"))
 	}
 
 	if opts.NewestFirst {

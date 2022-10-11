@@ -31,22 +31,32 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock bt.C
 		for i := 0; i < cap(batchSpecs); i++ {
 			// only the fourth batch spec should be locally-created
 			createdFromRaw := i != 3
+			// only the third batch spec should be 'empty'
+			isEmpty := i == 2
 			falsy := overridable.FromBoolOrString(false)
-			c := &btypes.BatchSpec{
-				RawSpec: `{"name": "Foobar", "description": "My description"}`,
-				Spec: &batcheslib.BatchSpec{
-					Name:        "Foobar",
-					Description: "My description",
-					ChangesetTemplate: &batcheslib.ChangesetTemplate{
-						Title:  "Hello there",
-						Body:   "This is the body",
-						Branch: "my-branch",
-						Commit: batcheslib.ExpandedGitCommitDescription{
-							Message: "commit message",
-						},
-						Published: &falsy,
+			rs := `{"name": "Foobar", "description": "My description"}`
+			bs := &batcheslib.BatchSpec{
+				Name:        "Foobar",
+				Description: "My description",
+				ChangesetTemplate: &batcheslib.ChangesetTemplate{
+					Title:  "Hello there",
+					Body:   "This is the body",
+					Branch: "my-branch",
+					Commit: batcheslib.ExpandedGitCommitDescription{
+						Message: "commit message",
 					},
+					Published: &falsy,
 				},
+			}
+			if isEmpty {
+				bs = &batcheslib.BatchSpec{
+					Name: "Foobar",
+				}
+				rs = `{"name": "Foobar"}`
+			}
+			c := &btypes.BatchSpec{
+				RawSpec:          rs,
+				Spec:             bs,
 				CreatedFromRaw:   createdFromRaw,
 				AllowUnsupported: true,
 				AllowIgnored:     true,
@@ -338,6 +348,40 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock bt.C
 			}
 
 			want := batchSpecs[:(len(batchSpecs) - 1)]
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatalf("opts: %+v, diff: %s", opts, diff)
+			}
+		})
+
+		t.Run("IncludeEmptySpecs", func(t *testing.T) {
+			opts := ListBatchSpecsOpts{
+				IncludeLocallyExecutedSpecs: true,
+			}
+			have, _, err := s.ListBatchSpecs(ctx, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(have, batchSpecs); diff != "" {
+				t.Fatalf("opts: %+v, diff: %s", opts, diff)
+			}
+		})
+
+		t.Run("ExcludeEmptySpecs", func(t *testing.T) {
+			opts := ListBatchSpecsOpts{
+				ExcludeEmptySpecs:           true,
+				IncludeLocallyExecutedSpecs: true,
+			}
+			have, _, err := s.ListBatchSpecs(ctx, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+			// The third batch spec is the empty one
+			want := make([]*btypes.BatchSpec, 0, 4)
+			want = append(want, batchSpecs[0])
+			want = append(want, batchSpecs[1])
+			want = append(want, batchSpecs[3])
+
 			if diff := cmp.Diff(have, want); diff != "" {
 				t.Fatalf("opts: %+v, diff: %s", opts, diff)
 			}
