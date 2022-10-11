@@ -34,6 +34,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -169,9 +170,10 @@ func TestExecRequest(t *testing.T) {
 	gr := database.NewMockGitserverRepoStore()
 	db.GitserverReposFunc.SetDefaultReturn(gr)
 	s := &Server{
-		Logger:            logtest.Scoped(t),
-		ReposDir:          "/testroot",
-		skipCloneForTests: true,
+		Logger:             logtest.Scoped(t),
+		ObservationContext: &observation.TestContext,
+		ReposDir:           "/testroot",
+		skipCloneForTests:  true,
 		GetRemoteURLFunc: func(ctx context.Context, name api.RepoName) (string, error) {
 			return "https://" + string(name) + ".git", nil
 		},
@@ -287,9 +289,10 @@ func TestServer_handleP4Exec(t *testing.T) {
 	}
 
 	s := &Server{
-		Logger:            logtest.Scoped(t),
-		skipCloneForTests: true,
-		DB:                database.NewMockDB(),
+		Logger:             logtest.Scoped(t),
+		ObservationContext: &observation.TestContext,
+		skipCloneForTests:  true,
+		DB:                 database.NewMockDB(),
 	}
 	h := s.Handler()
 
@@ -336,7 +339,7 @@ func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_packed_refs(b *testing.B) {
 
 	dir := filepath.Join(tmp, ".git")
 	gitDir := GitDir(dir)
-	if err := os.Mkdir(dir, 0700); err != nil {
+	if err := os.Mkdir(dir, 0o700); err != nil {
 		b.Fatal(err)
 	}
 
@@ -344,7 +347,7 @@ func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_packed_refs(b *testing.B) {
 	// This simulates the most amount of work quickRevParseHead has to do, and
 	// is also the most common in prod. That is where the final rev is in
 	// packed-refs.
-	err := os.WriteFile(filepath.Join(dir, "HEAD"), []byte(fmt.Sprintf("ref: %s\n", masterRef)), 0600)
+	err := os.WriteFile(filepath.Join(dir, "HEAD"), []byte(fmt.Sprintf("ref: %s\n", masterRef)), 0o600)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -410,7 +413,7 @@ func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_unpacked_refs(b *testing.B) 
 
 	dir := filepath.Join(tmp, ".git")
 	gitDir := GitDir(dir)
-	if err := os.Mkdir(dir, 0700); err != nil {
+	if err := os.Mkdir(dir, 0o700); err != nil {
 		b.Fatal(err)
 	}
 
@@ -424,11 +427,11 @@ func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_unpacked_refs(b *testing.B) 
 	}
 	for path, content := range files {
 		path = filepath.Join(dir, path)
-		err := os.MkdirAll(filepath.Dir(path), 0700)
+		err := os.MkdirAll(filepath.Dir(path), 0o700)
 		if err != nil {
 			b.Fatal(err)
 		}
-		err = os.WriteFile(path, []byte(content), 0600)
+		err = os.WriteFile(path, []byte(content), 0o600)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -546,9 +549,10 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 		db = mDB
 	}
 	s := &Server{
-		Logger:           logtest.Scoped(t),
-		ReposDir:         repoDir,
-		GetRemoteURLFunc: staticGetRemoteURL(remote),
+		Logger:             logtest.Scoped(t),
+		ObservationContext: &observation.TestContext,
+		ReposDir:           repoDir,
+		GetRemoteURLFunc:   staticGetRemoteURL(remote),
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
 			return &GitRepoSyncer{}, nil
 		},
@@ -1029,7 +1033,7 @@ func TestHandleRepoUpdateFromShard(t *testing.T) {
 
 	reposDirSource := t.TempDir()
 	remote := filepath.Join(reposDirSource, "example.com/foo/bar")
-	os.MkdirAll(remote, 0755)
+	os.MkdirAll(remote, 0o755)
 	repoName := api.RepoName("example.com/foo/bar")
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
@@ -1152,7 +1156,7 @@ func TestRemoveBadRefs(t *testing.T) {
 		}
 
 		// Ref
-		if err := os.WriteFile(filepath.Join(dir, ".git", "refs", "heads", name), []byte(wantCommit), 0600); err != nil {
+		if err := os.WriteFile(filepath.Join(dir, ".git", "refs", "heads", name), []byte(wantCommit), 0o600); err != nil {
 			t.Fatal(err)
 		}
 
@@ -1339,9 +1343,10 @@ func TestHostnameMatch(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run("", func(t *testing.T) {
 			s := Server{
-				Logger:   logtest.Scoped(t),
-				Hostname: tc.hostname,
-				DB:       database.NewMockDB(),
+				Logger:             logtest.Scoped(t),
+				ObservationContext: &observation.TestContext,
+				Hostname:           tc.hostname,
+				DB:                 database.NewMockDB(),
 			}
 			have := s.hostnameMatch(tc.addr)
 			if have != tc.shouldMatch {
@@ -1553,6 +1558,7 @@ func TestHandleBatchLog(t *testing.T) {
 		t.Run(test.Name, func(t *testing.T) {
 			server := &Server{
 				Logger:                  logtest.Scoped(t),
+				ObservationContext:      &observation.TestContext,
 				GlobalBatchLogSemaphore: semaphore.NewWeighted(8),
 				DB:                      database.NewMockDB(),
 			}
