@@ -136,21 +136,21 @@ describe('StreamingSearchResults', () => {
         renderWrapper(<StreamingSearchResults {...defaultProps} streamSearch={() => of(COLLAPSABLE_SEARCH_RESULT)} />)
 
         screen
-            .getAllByTestId('result-container')
+            .getAllByTestId('file-search-result')
             .map(element => expect(element).toHaveAttribute('data-expanded', 'false'))
 
         userEvent.click(await screen.findByLabelText(/Open search actions menu/))
         simualateMenuItemClick(await screen.findByText(/Expand all/, { selector: '[role=menuitem]' }))
 
         screen
-            .getAllByTestId('result-container')
+            .getAllByTestId('file-search-result')
             .map(element => expect(element).toHaveAttribute('data-expanded', 'true'))
 
         userEvent.click(await screen.findByLabelText(/Open search actions menu/))
         simualateMenuItemClick(await screen.findByText(/Collapse all/, { selector: '[role=menuitem]' }))
 
         screen
-            .getAllByTestId('result-container')
+            .getAllByTestId('file-search-result')
             .map(element => expect(element).toHaveAttribute('data-expanded', 'false'))
     })
 

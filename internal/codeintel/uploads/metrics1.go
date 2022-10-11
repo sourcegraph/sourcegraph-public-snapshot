@@ -10,7 +10,6 @@ type janitorMetrics struct {
 	// Data retention metrics
 	numAuditLogRecordsExpired prometheus.Counter
 	numErrors                 prometheus.Counter
-	numIndexRecordsRemoved    prometheus.Counter
 	numUploadRecordsRemoved   prometheus.Counter
 	numUploadsPurged          prometheus.Counter
 }
@@ -31,14 +30,8 @@ func newJanitorMetrics(observationContext *observation.Context) *janitorMetrics 
 		"The number of audit log records removed due to age.",
 	)
 	numErrors := counter(
-		// TODO - make a dashboard pre-merge
-		// TODO - rename things here similar to this
 		"src_codeintel_uploads_background_cleanup_errors_total",
 		"The number of errors that occur during a codeintel expiration job.",
-	)
-	numIndexRecordsRemoved := counter(
-		"src_codeintel_background_index_records_removed_total",
-		"The number of codeintel index records removed.",
 	)
 	numUploadRecordsRemoved := counter(
 		"src_codeintel_background_upload_records_removed_total",
@@ -52,7 +45,6 @@ func newJanitorMetrics(observationContext *observation.Context) *janitorMetrics 
 	return &janitorMetrics{
 		numAuditLogRecordsExpired: numAuditLogRecordsExpired,
 		numErrors:                 numErrors,
-		numIndexRecordsRemoved:    numIndexRecordsRemoved,
 		numUploadRecordsRemoved:   numUploadRecordsRemoved,
 		numUploadsPurged:          numUploadsPurged,
 	}

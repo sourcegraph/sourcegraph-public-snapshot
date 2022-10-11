@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	policiesEnterprise "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"

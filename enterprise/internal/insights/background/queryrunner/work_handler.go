@@ -35,7 +35,7 @@ type workHandler struct {
 	searchHandlers map[types.GenerationMethod]InsightsHandler
 }
 
-type InsightsHandler func(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) ([]store.RecordSeriesPointArgs, error)
+type InsightsHandler func(ctx context.Context, job *SearchJob, series *types.InsightSeries, recordTime time.Time) ([]store.RecordSeriesPointArgs, error)
 
 func (r *workHandler) getSeries(ctx context.Context, seriesID string) (*types.InsightSeries, error) {
 	var val *types.InsightSeries
@@ -106,9 +106,9 @@ func (r *workHandler) Handle(ctx context.Context, logger log.Logger, record work
 		return errors.Newf("unable to handle record for series_id: %s and generation_method: %s", series.SeriesID, series.GenerationMethod)
 	}
 
-	recordings, err := executableHandler(ctx, job, series, recordTime)
+	recordings, err := executableHandler(ctx, &job.SearchJob, series, recordTime)
 	if err != nil {
 		return err
 	}
-	return r.persistRecordings(ctx, job, series, recordings)
+	return r.persistRecordings(ctx, &job.SearchJob, series, recordings)
 }

@@ -16,8 +16,11 @@ env:
   SRC_TRACE_LOG: false
   # Set this to true to show an iTerm link to the file:line where the log message came from
   SRC_LOG_SOURCE_LINK: false
-  SRC_GIT_SERVER_1: 127.0.0.1:3178
-  SRC_GIT_SERVERS: 127.0.0.1:3178
+
+  # Use two gitserver instances in local dev
+  SRC_GIT_SERVER_1: 127.0.0.1:3501
+  SRC_GIT_SERVER_2: 127.0.0.1:3502
+  SRC_GIT_SERVERS: 127.0.0.1:3501 127.0.0.1:3502
 
   # Enable sharded indexed search mode:
   INDEXED_SEARCH_SERVERS: localhost:3070 localhost:3071
@@ -47,7 +50,8 @@ env:
     [
       { "Name": "oss-frontend", "Host": "127.0.0.1:6063" },
       { "Name": "frontend", "Host": "127.0.0.1:6063" },
-      { "Name": "gitserver", "Host": "127.0.0.1:6068" },
+      { "Name": "gitserver-0", "Host": "127.0.0.1:3551" },
+      { "Name": "gitserver-1", "Host": "127.0.0.1:3552" },
       { "Name": "searcher", "Host": "127.0.0.1:6069" },
       { "Name": "oss-symbols", "Host": "127.0.0.1:6071" },
       { "Name": "symbols", "Host": "127.0.0.1:6071" },
@@ -174,7 +178,7 @@ commands:
       - enterprise/internal
       - enterprise/cmd/frontend
 
-  gitserver:
+  gitserver-template: &gitserver_template
     cmd: .bin/gitserver
     install: |
       if [ -n "$DELVE" ]; then
@@ -182,12 +186,33 @@ commands:
       fi
       go build -gcflags="$GCFLAGS" -o .bin/gitserver github.com/sourcegraph/sourcegraph/cmd/gitserver
     checkBinary: .bin/gitserver
-    env:
+    env: &gitserverenv
       HOSTNAME: 127.0.0.1:3178
     watch:
       - lib
       - internal
       - cmd/gitserver
+
+  # This is only here to stay backwards-compatible with people's custom
+  # `sg.config.overwrite.yaml` files
+  gitserver:
+    <<: *gitserver_template
+
+  gitserver-0:
+    <<: *gitserver_template
+    env:
+      <<: *gitserverenv
+      HOSTNAME: 127.0.0.1:3501
+      GITSERVER_ADDR: 127.0.0.1:3501
+      SRC_REPOS_DIR: $HOME/.sourcegraph/repos_1
+
+  gitserver-1:
+    <<: *gitserver_template
+    env:
+      <<: *gitserverenv
+      HOSTNAME: 127.0.0.1:3502
+      GITSERVER_ADDR: 127.0.0.1:3502
+      SRC_REPOS_DIR: $HOME/.sourcegraph/repos_2
 
   github-proxy:
     cmd: .bin/github-proxy
@@ -746,7 +771,8 @@ commandsets:
       - oss-worker
       - oss-repo-updater
       - oss-symbols
-      - gitserver
+      - gitserver-0
+      - gitserver-1
       - searcher
       - web
       - caddy
@@ -770,7 +796,8 @@ commandsets:
       - worker
       - repo-updater
       - web
-      - gitserver
+      - gitserver-0
+      - gitserver-1
       - searcher
       - symbols
       - caddy
@@ -806,7 +833,8 @@ commandsets:
       - worker
       - repo-updater
       - web
-      - gitserver
+      - gitserver-0
+      - gitserver-1
       - searcher
       - symbols
       - caddy
@@ -840,7 +868,8 @@ commandsets:
       - worker
       - repo-updater
       - web
-      - gitserver
+      - gitserver-0
+      - gitserver-1
       - searcher
       - symbols
       - caddy
@@ -866,7 +895,8 @@ commandsets:
       - frontend
       - worker
       - repo-updater
-      - gitserver
+      - gitserver-0
+      - gitserver-1
       - searcher
       - symbols
       - github-proxy
@@ -887,7 +917,8 @@ commandsets:
       - worker
       - repo-updater
       - web
-      - gitserver
+      - gitserver-0
+      - gitserver-1
       - searcher
       - symbols
       - caddy
@@ -911,7 +942,8 @@ commandsets:
       - frontend
       - repo-updater
       - web
-      - gitserver
+      - gitserver-0
+      - gitserver-1
       - caddy
       - github-proxy
 

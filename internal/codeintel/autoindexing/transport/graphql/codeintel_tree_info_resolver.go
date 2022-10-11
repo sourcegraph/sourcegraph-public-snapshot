@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"

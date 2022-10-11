@@ -7,7 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 
-	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 )
 
 func TestMakeGetIndexesOptions(t *testing.T) {

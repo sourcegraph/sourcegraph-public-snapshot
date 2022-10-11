@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )

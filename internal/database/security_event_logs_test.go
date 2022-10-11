@@ -9,7 +9,9 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestSecurityEventLogs_ValidInfo(t *testing.T) {
@@ -17,7 +19,7 @@ func TestSecurityEventLogs_ValidInfo(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	logger := logtest.Scoped(t)
+	logger, exportLogs := logtest.Captured(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
@@ -69,4 +71,72 @@ func TestSecurityEventLogs_ValidInfo(t *testing.T) {
 			assert.Equal(t, tc.err, got)
 		})
 	}
+
+	logs := exportLogs()
+	auditLogs := filterAudit(logs)
+	assert.Equal(t, 3, len(auditLogs))
+	for _, auditLog := range auditLogs {
+		assertAuditField(t, auditLog.Fields["audit"].(map[string]any))
+		assertEventField(t, auditLog.Fields["event"].(map[string]any))
+	}
+}
+
+func filterAudit(logs []logtest.CapturedLog) []logtest.CapturedLog {
+	var filtered []logtest.CapturedLog
+	for _, log := range logs {
+		if log.Fields["audit"] != nil {
+			filtered = append(filtered, log)
+		}
+	}
+	return filtered
+}
+
+func assertAuditField(t *testing.T, field map[string]any) {
+	t.Helper()
+	assert.NotEmpty(t, field["auditId"])
+	assert.NotEmpty(t, field["entity"])
+
+	actorField := field["actor"].(map[string]any)
+	assert.NotEmpty(t, actorField["actorUID"])
+	assert.NotEmpty(t, actorField["ip"])
+	assert.NotEmpty(t, actorField["X-Forwarded-For"])
+}
+
+func assertEventField(t *testing.T, field map[string]any) {
+	t.Helper()
+	assert.NotEmpty(t, field["URL"])
+	assert.NotEmpty(t, field["source"])
+	assert.NotEmpty(t, field["argument"])
+	assert.NotEmpty(t, field["version"])
+	assert.NotEmpty(t, field["timestamp"])
+}
+
+func TestSecurityEventLogs_WithAuditLogDisabled(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	conf.Mock(
+		&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				Log: &schema.Log{
+					AuditLog: &schema.AuditLog{
+						SecurityEvents: false,
+					},
+				},
+			},
+		},
+	)
+	defer conf.Mock(nil)
+
+	logger, exportLogs := logtest.Captured(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	err := db.SecurityEventLogs().Insert(ctx, &SecurityEvent{Name: "test_event", URL: "http://sourcegraph.com", Source: "Web", UserID: 1, AnonymousUserID: ""})
+	assert.Nilf(t, err, "insert failed")
+
+	logs := exportLogs()
+	auditLogs := filterAudit(logs)
+	assert.Equal(t, 0, len(auditLogs))
 }

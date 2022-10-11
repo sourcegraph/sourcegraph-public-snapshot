@@ -16,7 +16,7 @@ var (
 type Version struct {
 	ExternalServiceKind string `json:"external_service_kind"`
 	Version             string `json:"version"`
-	Key                 string `json:"key"`
+	Key                 string `json:"-"`
 }
 
 func storeVersions(versions []*Version) error {

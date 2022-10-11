@@ -135,6 +135,7 @@ $theme-colors: (
     --danger-2: #e9aaaa;
     --danger-3: #b52626;
     --danger-4: #fbeaea;
+    --danger-text: var(--oc-red-8);
     --body-color: var(--gray-08);
     --body-bg: var(--gray-01);
     --color-bg-1: var(--white);
@@ -155,8 +156,8 @@ $theme-colors: (
     // Start query highlighting
     --search-query-text-color: var(--gray-12);
     --search-filter-keyword-color: var(--primary);
-    --search-filter-separator-color: var(--oc-gray-6);
-    --search-path-separator-color: var(--oc-gray-6);
+    --search-filter-separator-color: var(--oc-gray-7);
+    --search-path-separator-color: var(--oc-gray-7);
     --search-keyword-color: var(--purple);
     --search-regexp-meta-assertion-color: var(--oc-red-9);
     --search-regexp-meta-delimited-color: var(--oc-red-9);
@@ -230,6 +231,7 @@ $theme-colors: (
     --danger-2: #6b1515;
     --danger-3: #801b1b;
     --danger-4: #3d0a0a;
+    --danger-text: var(--oc-red-6);
     --body-color: var(--gray-04);
     --body-bg: var(--gray-12);
     --color-bg-1: var(--gray-11);
@@ -250,8 +252,8 @@ $theme-colors: (
     // Start query highlighting
     --search-query-text-color: var(--gray-04);
     --search-filter-keyword-color: #4393e7;
-    --search-filter-separator-color: var(--oc-gray-6);
-    --search-path-separator-color: var(--oc-gray-6);
+    --search-filter-separator-color: var(--oc-gray-5);
+    --search-path-separator-color: var(--oc-gray-5);
     --search-keyword-color: var(--pink);
     --search-regexp-meta-assertion-color: var(--oc-red-5);
     --search-regexp-meta-delimited-color: var(--oc-red-5);
