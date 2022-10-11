@@ -444,8 +444,8 @@ func newStreamSearchTestServer(t *testing.T, matches map[string][]streamhttp.Eve
 		}
 
 		v := req.URL.Query().Get("v")
-		if v != "V3" {
-			http.Error(w, "only v3 search allowed", http.StatusBadRequest)
+		if v != searchAPIVersion {
+			http.Error(w, "wrong search api version", http.StatusBadRequest)
 			return
 		}
 

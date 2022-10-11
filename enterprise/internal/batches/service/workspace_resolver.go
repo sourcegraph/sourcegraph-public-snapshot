@@ -38,6 +38,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+const searchAPIVersion = "V3"
+
 // RepoRevision describes a repository on a branch at a fixed revision.
 type RepoRevision struct {
 	Repo        *types.Repo
@@ -405,7 +407,7 @@ const internalSearchClientUserAgent = "Batch Changes repository resolver"
 func newSearchRequest(baseURL, query string) (*http.Request, error) {
 	// We explicitly add the version here because `streaminghttp.NewRequest` gets bumped to the latest
 	// version when there's a new one. We want to manually update our version of Search when the time comes.
-	u := baseURL + "/search/stream?v=V3&q=" + url.QueryEscape(query)
+	u := fmt.Sprintf("%s/search/stream?v=%s&q=%s", baseURL, searchAPIVersion, url.QueryEscape(query))
 	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
 		return nil, err
