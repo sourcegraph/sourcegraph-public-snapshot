@@ -48316,7 +48316,7 @@ type MockWebhookStore struct {
 func NewMockWebhookStore() *MockWebhookStore {
 	return &MockWebhookStore{
 		CreateFunc: &WebhookStoreCreateFunc{
-			defaultHook: func(context.Context, string, string, *encryption.Encryptable) (r0 *types.Webhook, r1 error) {
+			defaultHook: func(context.Context, string, string, int32, *encryption.Encryptable) (r0 *types.Webhook, r1 error) {
 				return
 			},
 		},
@@ -48358,7 +48358,7 @@ func NewMockWebhookStore() *MockWebhookStore {
 func NewStrictMockWebhookStore() *MockWebhookStore {
 	return &MockWebhookStore{
 		CreateFunc: &WebhookStoreCreateFunc{
-			defaultHook: func(context.Context, string, string, *encryption.Encryptable) (*types.Webhook, error) {
+			defaultHook: func(context.Context, string, string, int32, *encryption.Encryptable) (*types.Webhook, error) {
 				panic("unexpected invocation of MockWebhookStore.Create")
 			},
 		},
@@ -48427,23 +48427,23 @@ func NewMockWebhookStoreFrom(i WebhookStore) *MockWebhookStore {
 // WebhookStoreCreateFunc describes the behavior when the Create method of
 // the parent MockWebhookStore instance is invoked.
 type WebhookStoreCreateFunc struct {
-	defaultHook func(context.Context, string, string, *encryption.Encryptable) (*types.Webhook, error)
-	hooks       []func(context.Context, string, string, *encryption.Encryptable) (*types.Webhook, error)
+	defaultHook func(context.Context, string, string, int32, *encryption.Encryptable) (*types.Webhook, error)
+	hooks       []func(context.Context, string, string, int32, *encryption.Encryptable) (*types.Webhook, error)
 	history     []WebhookStoreCreateFuncCall
 	mutex       sync.Mutex
 }
 
 // Create delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockWebhookStore) Create(v0 context.Context, v1 string, v2 string, v3 *encryption.Encryptable) (*types.Webhook, error) {
-	r0, r1 := m.CreateFunc.nextHook()(v0, v1, v2, v3)
-	m.CreateFunc.appendCall(WebhookStoreCreateFuncCall{v0, v1, v2, v3, r0, r1})
+func (m *MockWebhookStore) Create(v0 context.Context, v1 string, v2 string, v3 int32, v4 *encryption.Encryptable) (*types.Webhook, error) {
+	r0, r1 := m.CreateFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.CreateFunc.appendCall(WebhookStoreCreateFuncCall{v0, v1, v2, v3, v4, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Create method of the
 // parent MockWebhookStore instance is invoked and the hook queue is empty.
-func (f *WebhookStoreCreateFunc) SetDefaultHook(hook func(context.Context, string, string, *encryption.Encryptable) (*types.Webhook, error)) {
+func (f *WebhookStoreCreateFunc) SetDefaultHook(hook func(context.Context, string, string, int32, *encryption.Encryptable) (*types.Webhook, error)) {
 	f.defaultHook = hook
 }
 
@@ -48451,7 +48451,7 @@ func (f *WebhookStoreCreateFunc) SetDefaultHook(hook func(context.Context, strin
 // Create method of the parent MockWebhookStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *WebhookStoreCreateFunc) PushHook(hook func(context.Context, string, string, *encryption.Encryptable) (*types.Webhook, error)) {
+func (f *WebhookStoreCreateFunc) PushHook(hook func(context.Context, string, string, int32, *encryption.Encryptable) (*types.Webhook, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -48460,19 +48460,19 @@ func (f *WebhookStoreCreateFunc) PushHook(hook func(context.Context, string, str
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *WebhookStoreCreateFunc) SetDefaultReturn(r0 *types.Webhook, r1 error) {
-	f.SetDefaultHook(func(context.Context, string, string, *encryption.Encryptable) (*types.Webhook, error) {
+	f.SetDefaultHook(func(context.Context, string, string, int32, *encryption.Encryptable) (*types.Webhook, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *WebhookStoreCreateFunc) PushReturn(r0 *types.Webhook, r1 error) {
-	f.PushHook(func(context.Context, string, string, *encryption.Encryptable) (*types.Webhook, error) {
+	f.PushHook(func(context.Context, string, string, int32, *encryption.Encryptable) (*types.Webhook, error) {
 		return r0, r1
 	})
 }
 
-func (f *WebhookStoreCreateFunc) nextHook() func(context.Context, string, string, *encryption.Encryptable) (*types.Webhook, error) {
+func (f *WebhookStoreCreateFunc) nextHook() func(context.Context, string, string, int32, *encryption.Encryptable) (*types.Webhook, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -48516,7 +48516,10 @@ type WebhookStoreCreateFuncCall struct {
 	Arg2 string
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 *encryption.Encryptable
+	Arg3 int32
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 *encryption.Encryptable
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *types.Webhook
@@ -48528,7 +48531,7 @@ type WebhookStoreCreateFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c WebhookStoreCreateFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
 }
 
 // Results returns an interface slice containing the results of this

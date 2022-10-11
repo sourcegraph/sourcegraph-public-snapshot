@@ -8,7 +8,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
@@ -19,7 +18,7 @@ import (
 type WebhookStore interface {
 	basestore.ShareableStore
 
-	Create(ctx context.Context, kind, urn string, secret *types.EncryptableSecret) (*types.Webhook, error)
+	Create(ctx context.Context, kind, urn string, actorUID int32, secret *types.EncryptableSecret) (*types.Webhook, error)
 	GetByID(ctx context.Context, id int32) (*types.Webhook, error)
 	GetByUUID(ctx context.Context, id uuid.UUID) (*types.Webhook, error)
 	Delete(ctx context.Context, id uuid.UUID) error
@@ -53,7 +52,7 @@ func WebhooksWith(other basestore.ShareableStore, key encryption.Key) WebhookSto
 // If encryption IS enabled then the encrypted value will be stored in secret and
 // the encryption_key_id field will also be populated so that we can decrypt the
 // value later.
-func (s *webhookStore) Create(ctx context.Context, kind, urn string, secret *types.EncryptableSecret) (*types.Webhook, error) {
+func (s *webhookStore) Create(ctx context.Context, kind, urn string, actorUID int32, secret *types.EncryptableSecret) (*types.Webhook, error) {
 	var (
 		err             error
 		encryptedSecret string
@@ -72,7 +71,7 @@ func (s *webhookStore) Create(ctx context.Context, kind, urn string, secret *typ
 		urn,
 		encryptedSecret,
 		keyID,
-		actor.FromContext(ctx).UID,
+		actorUID,
 		// Returning
 		sqlf.Join(webhookColumns, ", "),
 	)
@@ -93,7 +92,7 @@ INSERT INTO
 		code_host_urn,
 		secret,
 		encryption_key_id,
-		created_by
+		created_by_user_id
 	)
 	VALUES (
 		%s,
@@ -114,8 +113,8 @@ var webhookColumns = []*sqlf.Query{
 	sqlf.Sprintf("created_at"),
 	sqlf.Sprintf("updated_at"),
 	sqlf.Sprintf("encryption_key_id"),
-	sqlf.Sprintf("created_by"),
-	sqlf.Sprintf("updated_by"),
+	sqlf.Sprintf("created_by_user_id"),
+	sqlf.Sprintf("updated_by_user_id"),
 }
 
 const webhookGetByIDFmtstr = `

@@ -22,6 +22,7 @@ import (
 const (
 	testSecret = "my secret"
 	testURN    = "https://github.com"
+	actorUserID int32 = 5
 )
 
 func TestWebhookCreate(t *testing.T) {
@@ -40,7 +41,7 @@ func TestWebhookCreate(t *testing.T) {
 			urn := "https://github.com"
 			encryptedSecret := types.NewUnencryptedSecret(testSecret)
 
-			created, err := store.Create(ctx, kind, urn, encryptedSecret)
+			created, err := store.Create(ctx, kind, urn, 0, encryptedSecret)
 			assert.NoError(t, err)
 
 			// Check that the calculated fields were correctly calculated.
@@ -48,6 +49,7 @@ func TestWebhookCreate(t *testing.T) {
 			assert.NotZero(t, created.UUID)
 			assert.Equal(t, kind, created.CodeHostKind)
 			assert.Equal(t, urn, created.CodeHostURN)
+			assert.Equal(t, int32(0), created.CreatedByUserID)
 			assert.NotZero(t, created.CreatedAt)
 			assert.NotZero(t, created.UpdatedAt)
 
@@ -77,7 +79,7 @@ func TestWebhookCreate(t *testing.T) {
 		kind := extsvc.KindGitHub
 		urn := "https://github.com"
 
-		created, err := store.Create(ctx, kind, urn, nil)
+		created, err := store.Create(ctx, kind, urn, actorUserID, nil)
 		assert.NoError(t, err)
 
 		// Check that the calculated fields were correctly calculated.
@@ -86,6 +88,7 @@ func TestWebhookCreate(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, kind, created.CodeHostKind)
 		assert.Equal(t, urn, created.CodeHostURN)
+		assert.Equal(t, actorUserID, created.CreatedByUserID)
 		assert.NotZero(t, created.CreatedAt)
 		assert.NotZero(t, created.UpdatedAt)
 
@@ -273,7 +276,7 @@ func TestGetByUUID(t *testing.T) {
 	assert.Nil(t, webhook)
 
 	// Test that existent webhook cannot be found
-	createdWebhook, err := store.Create(ctx, extsvc.KindGitHub, "https://github.com", types.NewUnencryptedSecret("very secret (not)"))
+	createdWebhook, err := store.Create(ctx, extsvc.KindGitHub, "https://github.com", 0, types.NewUnencryptedSecret("very secret (not)"))
 	assert.NoError(t, err)
 
 	webhook, err = store.GetByUUID(ctx, createdWebhook.UUID)
