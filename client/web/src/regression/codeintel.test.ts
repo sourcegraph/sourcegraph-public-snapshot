@@ -35,7 +35,7 @@ describe('Code graph regression test suite', () => {
     }
 
     const testRepoSlugs = [
-        'sourcegraph/sourcegraph',
+        'sourcegraph/run',
         'sourcegraph-testing/prometheus-common',
         'sourcegraph-testing/prometheus-client-golang',
         'sourcegraph-testing/prometheus-redefinitions',
