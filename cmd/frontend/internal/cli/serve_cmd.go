@@ -281,6 +281,7 @@ func Main(enterpriseSetupHook func(db database.DB, codeIntelServices codeintel.S
 		gitserver.NewClient(db),
 		enterprise.BatchChangesResolver,
 		enterprise.CodeIntelResolver,
+		enterprise.ExecutorResolver,
 		enterprise.InsightsResolver,
 		enterprise.AuthzResolver,
 		enterprise.CodeMonitorsResolver,

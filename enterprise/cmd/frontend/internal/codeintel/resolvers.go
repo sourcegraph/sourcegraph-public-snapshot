@@ -11,13 +11,11 @@ import (
 	policiesgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
 	uploadsgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
-	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 )
 
 type Resolver struct {
 	autoIndexingRootResolver autoindexinggraphql.RootResolver
 	codenavResolver          codenavgraphql.RootResolver
-	executorResolver         executor.Resolver
 	policiesRootResolver     policiesgraphql.RootResolver
 	uploadsRootResolver      uploadsgraphql.RootResolver
 }
@@ -25,14 +23,12 @@ type Resolver struct {
 func newResolver(
 	autoIndexingRootResolver autoindexinggraphql.RootResolver,
 	codenavResolver codenavgraphql.RootResolver,
-	executorResolver executor.Resolver,
 	policiesRootResolver policiesgraphql.RootResolver,
 	uploadsRootResolver uploadsgraphql.RootResolver,
 ) *Resolver {
 	return &Resolver{
 		autoIndexingRootResolver: autoIndexingRootResolver,
 		codenavResolver:          codenavResolver,
-		executorResolver:         executorResolver,
 		policiesRootResolver:     policiesRootResolver,
 		uploadsRootResolver:      uploadsRootResolver,
 	}
@@ -50,10 +46,6 @@ func (r *Resolver) NodeResolvers() map[string]gql.NodeByIDFunc {
 			return r.ConfigurationPolicyByID(ctx, id)
 		},
 	}
-}
-
-func (r *Resolver) ExecutorResolver() executor.Resolver {
-	return r.executorResolver
 }
 
 func (r *Resolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (_ sharedresolvers.LSIFUploadResolver, err error) {

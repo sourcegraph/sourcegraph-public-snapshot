@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	executorgraphql "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -68,8 +67,6 @@ func Init(
 		scopedContext("codenav"),
 	)
 
-	executorResolver := executorgraphql.New(db)
-
 	policyRootResolver := policiesgraphql.NewRootResolver(
 		codeIntelServices.PoliciesService,
 		scopedContext("policies"),
@@ -85,7 +82,6 @@ func Init(
 	enterpriseServices.CodeIntelResolver = newResolver(
 		autoindexingRootResolver,
 		codenavRootResolver,
-		executorResolver,
 		policyRootResolver,
 		uploadRootResolver,
 	)
