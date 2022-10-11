@@ -37,6 +37,9 @@ type MockStore struct {
 	// DeleteIndexByIDFunc is an instance of a mock function object
 	// controlling the behavior of the method DeleteIndexByID.
 	DeleteIndexByIDFunc *StoreDeleteIndexByIDFunc
+	// DeleteIndexesFunc is an instance of a mock function object
+	// controlling the behavior of the method DeleteIndexes.
+	DeleteIndexesFunc *StoreDeleteIndexesFunc
 	// DeleteIndexesWithoutRepositoryFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// DeleteIndexesWithoutRepository.
@@ -134,6 +137,11 @@ func NewMockStore() *MockStore {
 	return &MockStore{
 		DeleteIndexByIDFunc: &StoreDeleteIndexByIDFunc{
 			defaultHook: func(context.Context, int) (r0 bool, r1 error) {
+				return
+			},
+		},
+		DeleteIndexesFunc: &StoreDeleteIndexesFunc{
+			defaultHook: func(context.Context, types.DeleteIndexesOptions) (r0 error) {
 				return
 			},
 		},
@@ -284,6 +292,11 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.DeleteIndexByID")
 			},
 		},
+		DeleteIndexesFunc: &StoreDeleteIndexesFunc{
+			defaultHook: func(context.Context, types.DeleteIndexesOptions) error {
+				panic("unexpected invocation of MockStore.DeleteIndexes")
+			},
+		},
 		DeleteIndexesWithoutRepositoryFunc: &StoreDeleteIndexesWithoutRepositoryFunc{
 			defaultHook: func(context.Context, time.Time) (map[int]int, error) {
 				panic("unexpected invocation of MockStore.DeleteIndexesWithoutRepository")
@@ -428,6 +441,9 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 	return &MockStore{
 		DeleteIndexByIDFunc: &StoreDeleteIndexByIDFunc{
 			defaultHook: i.DeleteIndexByID,
+		},
+		DeleteIndexesFunc: &StoreDeleteIndexesFunc{
+			defaultHook: i.DeleteIndexes,
 		},
 		DeleteIndexesWithoutRepositoryFunc: &StoreDeleteIndexesWithoutRepositoryFunc{
 			defaultHook: i.DeleteIndexesWithoutRepository,
@@ -619,6 +635,110 @@ func (c StoreDeleteIndexByIDFuncCall) Args() []interface{} {
 // invocation.
 func (c StoreDeleteIndexByIDFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// StoreDeleteIndexesFunc describes the behavior when the DeleteIndexes
+// method of the parent MockStore instance is invoked.
+type StoreDeleteIndexesFunc struct {
+	defaultHook func(context.Context, types.DeleteIndexesOptions) error
+	hooks       []func(context.Context, types.DeleteIndexesOptions) error
+	history     []StoreDeleteIndexesFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteIndexes delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockStore) DeleteIndexes(v0 context.Context, v1 types.DeleteIndexesOptions) error {
+	r0 := m.DeleteIndexesFunc.nextHook()(v0, v1)
+	m.DeleteIndexesFunc.appendCall(StoreDeleteIndexesFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the DeleteIndexes method
+// of the parent MockStore instance is invoked and the hook queue is empty.
+func (f *StoreDeleteIndexesFunc) SetDefaultHook(hook func(context.Context, types.DeleteIndexesOptions) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteIndexes method of the parent MockStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *StoreDeleteIndexesFunc) PushHook(hook func(context.Context, types.DeleteIndexesOptions) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreDeleteIndexesFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, types.DeleteIndexesOptions) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreDeleteIndexesFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, types.DeleteIndexesOptions) error {
+		return r0
+	})
+}
+
+func (f *StoreDeleteIndexesFunc) nextHook() func(context.Context, types.DeleteIndexesOptions) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreDeleteIndexesFunc) appendCall(r0 StoreDeleteIndexesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreDeleteIndexesFuncCall objects
+// describing the invocations of this function.
+func (f *StoreDeleteIndexesFunc) History() []StoreDeleteIndexesFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreDeleteIndexesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreDeleteIndexesFuncCall is an object that describes an invocation of
+// method DeleteIndexes on an instance of MockStore.
+type StoreDeleteIndexesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 types.DeleteIndexesOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreDeleteIndexesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreDeleteIndexesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // StoreDeleteIndexesWithoutRepositoryFunc describes the behavior when the
@@ -5221,7 +5341,7 @@ func NewMockRepoUpdaterClient() *MockRepoUpdaterClient {
 			},
 		},
 		RepoLookupFunc: &RepoUpdaterClientRepoLookupFunc{
-			defaultHook: func(context.Context, api.RepoName) (r0 *protocol.RepoInfo, r1 error) {
+			defaultHook: func(context.Context, protocol.RepoLookupArgs) (r0 *protocol.RepoLookupResult, r1 error) {
 				return
 			},
 		},
@@ -5239,7 +5359,7 @@ func NewStrictMockRepoUpdaterClient() *MockRepoUpdaterClient {
 			},
 		},
 		RepoLookupFunc: &RepoUpdaterClientRepoLookupFunc{
-			defaultHook: func(context.Context, api.RepoName) (*protocol.RepoInfo, error) {
+			defaultHook: func(context.Context, protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
 				panic("unexpected invocation of MockRepoUpdaterClient.RepoLookup")
 			},
 		},
@@ -5375,15 +5495,15 @@ func (c RepoUpdaterClientEnqueueRepoUpdateFuncCall) Results() []interface{} {
 // RepoLookup method of the parent MockRepoUpdaterClient instance is
 // invoked.
 type RepoUpdaterClientRepoLookupFunc struct {
-	defaultHook func(context.Context, api.RepoName) (*protocol.RepoInfo, error)
-	hooks       []func(context.Context, api.RepoName) (*protocol.RepoInfo, error)
+	defaultHook func(context.Context, protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)
+	hooks       []func(context.Context, protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)
 	history     []RepoUpdaterClientRepoLookupFuncCall
 	mutex       sync.Mutex
 }
 
 // RepoLookup delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockRepoUpdaterClient) RepoLookup(v0 context.Context, v1 api.RepoName) (*protocol.RepoInfo, error) {
+func (m *MockRepoUpdaterClient) RepoLookup(v0 context.Context, v1 protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
 	r0, r1 := m.RepoLookupFunc.nextHook()(v0, v1)
 	m.RepoLookupFunc.appendCall(RepoUpdaterClientRepoLookupFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -5392,7 +5512,7 @@ func (m *MockRepoUpdaterClient) RepoLookup(v0 context.Context, v1 api.RepoName) 
 // SetDefaultHook sets function that is called when the RepoLookup method of
 // the parent MockRepoUpdaterClient instance is invoked and the hook queue
 // is empty.
-func (f *RepoUpdaterClientRepoLookupFunc) SetDefaultHook(hook func(context.Context, api.RepoName) (*protocol.RepoInfo, error)) {
+func (f *RepoUpdaterClientRepoLookupFunc) SetDefaultHook(hook func(context.Context, protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)) {
 	f.defaultHook = hook
 }
 
@@ -5400,7 +5520,7 @@ func (f *RepoUpdaterClientRepoLookupFunc) SetDefaultHook(hook func(context.Conte
 // RepoLookup method of the parent MockRepoUpdaterClient instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *RepoUpdaterClientRepoLookupFunc) PushHook(hook func(context.Context, api.RepoName) (*protocol.RepoInfo, error)) {
+func (f *RepoUpdaterClientRepoLookupFunc) PushHook(hook func(context.Context, protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -5408,20 +5528,20 @@ func (f *RepoUpdaterClientRepoLookupFunc) PushHook(hook func(context.Context, ap
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *RepoUpdaterClientRepoLookupFunc) SetDefaultReturn(r0 *protocol.RepoInfo, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName) (*protocol.RepoInfo, error) {
+func (f *RepoUpdaterClientRepoLookupFunc) SetDefaultReturn(r0 *protocol.RepoLookupResult, r1 error) {
+	f.SetDefaultHook(func(context.Context, protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *RepoUpdaterClientRepoLookupFunc) PushReturn(r0 *protocol.RepoInfo, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName) (*protocol.RepoInfo, error) {
+func (f *RepoUpdaterClientRepoLookupFunc) PushReturn(r0 *protocol.RepoLookupResult, r1 error) {
+	f.PushHook(func(context.Context, protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
 		return r0, r1
 	})
 }
 
-func (f *RepoUpdaterClientRepoLookupFunc) nextHook() func(context.Context, api.RepoName) (*protocol.RepoInfo, error) {
+func (f *RepoUpdaterClientRepoLookupFunc) nextHook() func(context.Context, protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -5459,10 +5579,10 @@ type RepoUpdaterClientRepoLookupFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 api.RepoName
+	Arg1 protocol.RepoLookupArgs
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 *protocol.RepoInfo
+	Result0 *protocol.RepoLookupResult
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error

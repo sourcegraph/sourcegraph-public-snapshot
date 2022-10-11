@@ -1,0 +1,21 @@
+.stats-bar {
+    display: flex;
+    padding: 1.5rem;
+    background-color: var(--color-bg-1);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.left-side {
+    display: flex;
+    width: 70%;
+    flex-direction: row;
+}
+
+.right-side {
+    display: flex;
+    width: 30%;
+    justify-content: flex-end;
+}

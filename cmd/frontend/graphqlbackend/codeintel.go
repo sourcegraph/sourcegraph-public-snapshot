@@ -35,6 +35,7 @@ type ExecutorResolver interface {
 type AutoindexingServiceResolver interface {
 	IndexConfiguration(ctx context.Context, id graphql.ID) (autoindexinggraphql.IndexConfigurationResolver, error) // TODO - rename ...ForRepo
 	DeleteLSIFIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*sharedresolvers.EmptyResponse, error)
+	DeleteLSIFIndexes(ctx context.Context, args *autoindexinggraphql.DeleteLSIFIndexesArgs) (*sharedresolvers.EmptyResponse, error)
 	LSIFIndexByID(ctx context.Context, id graphql.ID) (_ sharedresolvers.LSIFIndexResolver, err error)
 	LSIFIndexes(ctx context.Context, args *autoindexinggraphql.LSIFIndexesQueryArgs) (sharedresolvers.LSIFIndexConnectionResolver, error)
 	LSIFIndexesByRepo(ctx context.Context, args *autoindexinggraphql.LSIFRepositoryIndexesQueryArgs) (sharedresolvers.LSIFIndexConnectionResolver, error)

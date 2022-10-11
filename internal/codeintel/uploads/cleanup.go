@@ -7,7 +7,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	autoindexingshared "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -74,21 +73,14 @@ func (s *Service) handleDeletedRepository(ctx context.Context) (err error) {
 		return errors.Wrap(err, "uploadSvc.DeleteUploadsWithoutRepository")
 	}
 
-	indexesCounts, err := s.autoIndexingSvc.DeleteIndexesWithoutRepository(ctx, time.Now())
-	if err != nil {
-		return errors.Wrap(err, "indexSvc.DeleteIndexesWithoutRepository")
-	}
-
-	for _, counts := range gatherCounts(uploadsCounts, indexesCounts) {
+	for _, counts := range gatherCounts(uploadsCounts) {
 		s.logger.Debug(
 			"Deleted codeintel records with a deleted repository",
 			log.Int("repository_id", counts.repoID),
 			log.Int("uploads_count", counts.uploadsCount),
-			log.Int("indexes_count", counts.indexesCount),
 		)
 
 		s.janitorMetrics.numUploadRecordsRemoved.Add(float64(counts.uploadsCount))
-		s.janitorMetrics.numIndexRecordsRemoved.Add(float64(counts.indexesCount))
 	}
 
 	return nil
@@ -97,15 +89,11 @@ func (s *Service) handleDeletedRepository(ctx context.Context) (err error) {
 type recordCount struct {
 	repoID       int
 	uploadsCount int
-	indexesCount int
 }
 
-func gatherCounts(uploadsCounts, indexesCounts map[int]int) []recordCount {
+func gatherCounts(uploadsCounts map[int]int) []recordCount {
 	repoIDsMap := map[int]struct{}{}
 	for repoID := range uploadsCounts {
-		repoIDsMap[repoID] = struct{}{}
-	}
-	for repoID := range indexesCounts {
 		repoIDsMap[repoID] = struct{}{}
 	}
 
@@ -120,7 +108,6 @@ func gatherCounts(uploadsCounts, indexesCounts map[int]int) []recordCount {
 		recordCounts = append(recordCounts, recordCount{
 			repoID:       repoID,
 			uploadsCount: uploadsCounts[repoID],
-			indexesCount: indexesCounts[repoID],
 		})
 	}
 
@@ -133,13 +120,7 @@ func (s *Service) handleUnknownCommit(ctx context.Context, cfg janitorConfig) (e
 		return errors.Wrap(err, "uploadSvc.StaleSourcedCommits")
 	}
 
-	staleIndexes, err := s.autoIndexingSvc.GetStaleSourcedCommits(ctx, cfg.minimumTimeSinceLastCheck, cfg.commitResolverBatchSize, s.clock.Now())
-	if err != nil {
-		return errors.Wrap(err, "indexSvc.StaleSourcedCommits")
-	}
-
-	batch := mergeSourceCommits(staleUploads, staleIndexes)
-	for _, sourcedCommits := range batch {
+	for _, sourcedCommits := range staleUploads {
 		if err := s.handleSourcedCommits(ctx, sourcedCommits, cfg); err != nil {
 			return err
 		}
@@ -148,34 +129,7 @@ func (s *Service) handleUnknownCommit(ctx context.Context, cfg janitorConfig) (e
 	return nil
 }
 
-func mergeSourceCommits(usc []shared.SourcedCommits, isc []autoindexingshared.SourcedCommits) []SourcedCommits {
-	var sourceCommits []SourcedCommits
-	for _, uc := range usc {
-		sourceCommits = append(sourceCommits, SourcedCommits{
-			RepositoryID:   uc.RepositoryID,
-			RepositoryName: uc.RepositoryName,
-			Commits:        uc.Commits,
-		})
-	}
-
-	for _, ic := range isc {
-		sourceCommits = append(sourceCommits, SourcedCommits{
-			RepositoryID:   ic.RepositoryID,
-			RepositoryName: ic.RepositoryName,
-			Commits:        ic.Commits,
-		})
-	}
-
-	return sourceCommits
-}
-
-type SourcedCommits struct {
-	RepositoryID   int
-	RepositoryName string
-	Commits        []string
-}
-
-func (s *Service) handleSourcedCommits(ctx context.Context, sc SourcedCommits, cfg janitorConfig) error {
+func (s *Service) handleSourcedCommits(ctx context.Context, sc shared.SourcedCommits, cfg janitorConfig) error {
 	for _, commit := range sc.Commits {
 		if err := s.handleCommit(ctx, sc.RepositoryID, sc.RepositoryName, commit, cfg); err != nil {
 			return err
@@ -216,24 +170,11 @@ func (s *Service) handleCommit(ctx context.Context, repositoryID int, repository
 			s.janitorMetrics.numUploadRecordsRemoved.Add(float64(uploadsDeleted))
 		}
 
-		indexesDeleted, err := s.autoIndexingSvc.DeleteSourcedCommits(ctx, repositoryID, commit, cfg.commitResolverMaximumCommitLag, s.clock.Now())
-		if err != nil {
-			return errors.Wrap(err, "indexSvc.DeleteSourcedCommits")
-		}
-		if indexesDeleted > 0 {
-			// log.Debug("Deleted index records with unresolvable commits", "count", indexesDeleted)
-			s.janitorMetrics.numIndexRecordsRemoved.Add(float64(indexesDeleted))
-		}
-
 		return nil
 	}
 
 	if _, err := s.store.UpdateSourcedCommits(ctx, repositoryID, commit, s.clock.Now()); err != nil {
 		return errors.Wrap(err, "uploadSvc.UpdateSourcedCommits")
-	}
-
-	if _, err := s.autoIndexingSvc.UpdateSourcedCommits(ctx, repositoryID, commit, s.clock.Now()); err != nil {
-		return errors.Wrap(err, "indexSvc.UpdateSourcedCommits")
 	}
 
 	return nil

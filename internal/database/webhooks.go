@@ -21,7 +21,7 @@ type WebhookStore interface {
 
 	Create(ctx context.Context, kind, urn string, secret *types.EncryptableSecret) (*types.Webhook, error)
 	GetByID(ctx context.Context, id int32) (*types.Webhook, error)
-	GetByRandomID(ctx context.Context, id string) (*types.Webhook, error)
+	GetByUUID(ctx context.Context, id uuid.UUID) (*types.Webhook, error)
 	Delete(ctx context.Context, id uuid.UUID) error
 	Update(ctx context.Context, newWebhook *types.Webhook) (*types.Webhook, error)
 	List(ctx context.Context) ([]*types.Webhook, error)
@@ -113,12 +113,50 @@ var webhookColumns = []*sqlf.Query{
 	sqlf.Sprintf("encryption_key_id"),
 }
 
+const webhookGetByIDFmtstr = `
+-- source: internal/database/webhooks.go:GetByID
+SELECT %s FROM webhooks
+WHERE id = %d
+`
+
 func (s *webhookStore) GetByID(ctx context.Context, id int32) (*types.Webhook, error) {
-	panic("Implement this method")
+	q := sqlf.Sprintf(webhookGetByIDFmtstr,
+		sqlf.Join(webhookColumns, ", "),
+		id,
+	)
+
+	webhook, err := scanWebhook(s.QueryRow(ctx, q), s.key)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, &WebhookNotFoundError{ID: id}
+		}
+		return nil, errors.Wrap(err, "scanning webhook")
+	}
+
+	return webhook, nil
 }
 
-func (s *webhookStore) GetByRandomID(ctx context.Context, id string) (*types.Webhook, error) {
-	panic("Implement this method")
+const webhookGetByUUIDFmtstr = `
+-- source: internal/database/webhooks.go:GetByUUID
+SELECT %s FROM webhooks
+WHERE uuid = %s
+`
+
+func (s *webhookStore) GetByUUID(ctx context.Context, id uuid.UUID) (*types.Webhook, error) {
+	q := sqlf.Sprintf(webhookGetByUUIDFmtstr,
+		sqlf.Join(webhookColumns, ", "),
+		id,
+	)
+
+	webhook, err := scanWebhook(s.QueryRow(ctx, q), s.key)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, &WebhookNotFoundError{UUID: id}
+		}
+		return nil, errors.Wrap(err, "scanning webhook")
+	}
+
+	return webhook, nil
 }
 
 const webhookDeleteQueryFmtstr = `
@@ -141,21 +179,26 @@ func (s *webhookStore) Delete(ctx context.Context, id uuid.UUID) error {
 	}
 
 	if rowsAffected == 0 {
-		return errors.Wrap(&WebhookNotFoundError{ID: id}, "failed to delete webhook")
+		return errors.Wrap(&WebhookNotFoundError{UUID: id}, "failed to delete webhook")
 	}
 	return nil
 }
 
 // WebhookNotFoundError occurs when a webhook is not found.
 type WebhookNotFoundError struct {
-	ID uuid.UUID
+	ID   int32
+	UUID uuid.UUID
 }
 
-func (w WebhookNotFoundError) Error() string {
-	return fmt.Sprintf("webhook with UUID %s not found", w.ID)
+func (w *WebhookNotFoundError) Error() string {
+	if w.UUID != uuid.Nil {
+		return fmt.Sprintf("webhook with UUID %s not found", w.UUID)
+	} else {
+		return fmt.Sprintf("webhook with ID %d not found", w.ID)
+	}
 }
 
-func (w WebhookNotFoundError) NotFound() bool {
+func (w *WebhookNotFoundError) NotFound() bool {
 	return true
 }
 
@@ -180,7 +223,7 @@ func (s *webhookStore) Update(ctx context.Context, newWebhook *types.Webhook) (*
 	updated, err := scanWebhook(s.QueryRow(ctx, q), s.key)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, WebhookNotFoundError{ID: newWebhook.UUID}
+			return nil, &WebhookNotFoundError{ID: newWebhook.ID, UUID: newWebhook.UUID}
 		}
 		return nil, errors.Wrap(err, "scanning webhook")
 	}

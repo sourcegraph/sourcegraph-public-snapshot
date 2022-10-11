@@ -943,7 +943,7 @@ func isGlobal(op search.RepoOptions) bool {
 
 	// repo:has.commit.after() is handled during the repo resolution step,
 	// and we cannot depend on Zoekt for this information.
-	if op.CommitAfter != "" {
+	if op.CommitAfter != nil {
 		return false
 	}
 

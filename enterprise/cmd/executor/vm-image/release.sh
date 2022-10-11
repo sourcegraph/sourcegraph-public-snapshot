@@ -16,11 +16,17 @@ GOOGLE_IMAGE_NAME="${NAME}"
 gcloud compute images add-iam-policy-binding --project=sourcegraph-ci "${GOOGLE_IMAGE_NAME}" --member='allAuthenticatedUsers' --role='roles/compute.imageUser'
 gcloud compute images update --project=sourcegraph-ci "${GOOGLE_IMAGE_NAME}" --family="${IMAGE_FAMILY}"
 
-for region in $(jq -r '.builders[1].ami_regions[]' <executor.json); do
-  AWS_AMI_ID=$(aws ec2 --region="${region}" describe-images --filter "Name=name,Values=${NAME}" --query 'Images[*].[ImageId]' --output text)
+if [ "${EXECUTOR_IS_TAGGED_RELEASE}" = "true" ]; then
+  for region in $(jq -r '.[]' <aws_regions.json); do
+    AWS_AMI_ID=$(aws ec2 --region="${region}" describe-images --filter "Name=name,Values=${NAME}" --query 'Images[*].[ImageId]' --output text)
+    # Make executor AMI usable outside of Sourcegraph.
+    aws ec2 --region="${region}" modify-image-attribute --image-id "${AWS_AMI_ID}" --launch-permission "Add=[{Group=all}]"
+  done
+else
+  AWS_AMI_ID=$(aws ec2 --region="us-west-2" describe-images --filter "Name=name,Values=${NAME}" --query 'Images[*].[ImageId]' --output text)
   # Make executor AMI usable outside of Sourcegraph.
-  aws ec2 --region="${region}" modify-image-attribute --image-id "${AWS_AMI_ID}" --launch-permission "Add=[{Group=all}]"
-done
+  aws ec2 --region="us-west-2" modify-image-attribute --image-id "${AWS_AMI_ID}" --launch-permission "Add=[{Group=all}]"
+fi
 
 # Copy uploaded binary to 'latest'
 gsutil rm -rf gs://sourcegraph-artifacts/executor/latest || true

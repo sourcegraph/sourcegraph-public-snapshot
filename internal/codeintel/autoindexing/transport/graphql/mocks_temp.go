@@ -29,6 +29,9 @@ type MockAutoIndexingService struct {
 	// DeleteIndexByIDFunc is an instance of a mock function object
 	// controlling the behavior of the method DeleteIndexByID.
 	DeleteIndexByIDFunc *AutoIndexingServiceDeleteIndexByIDFunc
+	// DeleteIndexesFunc is an instance of a mock function object
+	// controlling the behavior of the method DeleteIndexes.
+	DeleteIndexesFunc *AutoIndexingServiceDeleteIndexesFunc
 	// GetIndexByIDFunc is an instance of a mock function object controlling
 	// the behavior of the method GetIndexByID.
 	GetIndexByIDFunc *AutoIndexingServiceGetIndexByIDFunc
@@ -93,6 +96,11 @@ func NewMockAutoIndexingService() *MockAutoIndexingService {
 	return &MockAutoIndexingService{
 		DeleteIndexByIDFunc: &AutoIndexingServiceDeleteIndexByIDFunc{
 			defaultHook: func(context.Context, int) (r0 bool, r1 error) {
+				return
+			},
+		},
+		DeleteIndexesFunc: &AutoIndexingServiceDeleteIndexesFunc{
+			defaultHook: func(context.Context, types.DeleteIndexesOptions) (r0 error) {
 				return
 			},
 		},
@@ -194,6 +202,11 @@ func NewStrictMockAutoIndexingService() *MockAutoIndexingService {
 				panic("unexpected invocation of MockAutoIndexingService.DeleteIndexByID")
 			},
 		},
+		DeleteIndexesFunc: &AutoIndexingServiceDeleteIndexesFunc{
+			defaultHook: func(context.Context, types.DeleteIndexesOptions) error {
+				panic("unexpected invocation of MockAutoIndexingService.DeleteIndexes")
+			},
+		},
 		GetIndexByIDFunc: &AutoIndexingServiceGetIndexByIDFunc{
 			defaultHook: func(context.Context, int) (types.Index, bool, error) {
 				panic("unexpected invocation of MockAutoIndexingService.GetIndexByID")
@@ -289,6 +302,9 @@ func NewMockAutoIndexingServiceFrom(i AutoIndexingService) *MockAutoIndexingServ
 	return &MockAutoIndexingService{
 		DeleteIndexByIDFunc: &AutoIndexingServiceDeleteIndexByIDFunc{
 			defaultHook: i.DeleteIndexByID,
+		},
+		DeleteIndexesFunc: &AutoIndexingServiceDeleteIndexesFunc{
+			defaultHook: i.DeleteIndexes,
 		},
 		GetIndexByIDFunc: &AutoIndexingServiceGetIndexByIDFunc{
 			defaultHook: i.GetIndexByID,
@@ -453,6 +469,114 @@ func (c AutoIndexingServiceDeleteIndexByIDFuncCall) Args() []interface{} {
 // invocation.
 func (c AutoIndexingServiceDeleteIndexByIDFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// AutoIndexingServiceDeleteIndexesFunc describes the behavior when the
+// DeleteIndexes method of the parent MockAutoIndexingService instance is
+// invoked.
+type AutoIndexingServiceDeleteIndexesFunc struct {
+	defaultHook func(context.Context, types.DeleteIndexesOptions) error
+	hooks       []func(context.Context, types.DeleteIndexesOptions) error
+	history     []AutoIndexingServiceDeleteIndexesFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteIndexes delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockAutoIndexingService) DeleteIndexes(v0 context.Context, v1 types.DeleteIndexesOptions) error {
+	r0 := m.DeleteIndexesFunc.nextHook()(v0, v1)
+	m.DeleteIndexesFunc.appendCall(AutoIndexingServiceDeleteIndexesFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the DeleteIndexes method
+// of the parent MockAutoIndexingService instance is invoked and the hook
+// queue is empty.
+func (f *AutoIndexingServiceDeleteIndexesFunc) SetDefaultHook(hook func(context.Context, types.DeleteIndexesOptions) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteIndexes method of the parent MockAutoIndexingService instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *AutoIndexingServiceDeleteIndexesFunc) PushHook(hook func(context.Context, types.DeleteIndexesOptions) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AutoIndexingServiceDeleteIndexesFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, types.DeleteIndexesOptions) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AutoIndexingServiceDeleteIndexesFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, types.DeleteIndexesOptions) error {
+		return r0
+	})
+}
+
+func (f *AutoIndexingServiceDeleteIndexesFunc) nextHook() func(context.Context, types.DeleteIndexesOptions) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AutoIndexingServiceDeleteIndexesFunc) appendCall(r0 AutoIndexingServiceDeleteIndexesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of AutoIndexingServiceDeleteIndexesFuncCall
+// objects describing the invocations of this function.
+func (f *AutoIndexingServiceDeleteIndexesFunc) History() []AutoIndexingServiceDeleteIndexesFuncCall {
+	f.mutex.Lock()
+	history := make([]AutoIndexingServiceDeleteIndexesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AutoIndexingServiceDeleteIndexesFuncCall is an object that describes an
+// invocation of method DeleteIndexes on an instance of
+// MockAutoIndexingService.
+type AutoIndexingServiceDeleteIndexesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 types.DeleteIndexesOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AutoIndexingServiceDeleteIndexesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AutoIndexingServiceDeleteIndexesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // AutoIndexingServiceGetIndexByIDFunc describes the behavior when the

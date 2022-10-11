@@ -214,7 +214,7 @@ func TestWebhookUpdate(t *testing.T) {
 		if err == nil {
 			t.Fatal("attempting to update a non-existent webhook should return an error")
 		}
-		assert.Equal(t, err, WebhookNotFoundError{ID: nonExistentUUID})
+		assert.Equal(t, err, &WebhookNotFoundError{ID: 100, UUID: nonExistentUUID})
 	})
 }
 
@@ -226,4 +226,64 @@ func createWebhook(ctx context.Context, t *testing.T, store WebhookStore) *types
 	created, err := store.Create(ctx, kind, testURN, encryptedSecret)
 	assert.NoError(t, err)
 	return created
+}
+
+func TestGetByID(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	store := db.Webhooks(nil)
+
+	// Test that non-existent webhook cannot be found
+	webhook, err := store.GetByID(ctx, 1)
+	assert.Error(t, err)
+	assert.EqualError(t, err, "webhook with ID 1 not found")
+	assert.Nil(t, webhook)
+
+	// Test that existent webhook cannot be found
+	createdWebhook, err := store.Create(ctx, extsvc.KindGitHub, "https://github.com", types.NewUnencryptedSecret("very secret (not)"))
+	assert.NoError(t, err)
+
+	webhook, err = store.GetByID(ctx, createdWebhook.ID)
+	assert.NoError(t, err)
+	assert.NotNil(t, webhook)
+	assert.Equal(t, webhook.ID, createdWebhook.ID)
+	assert.Equal(t, webhook.UUID, createdWebhook.UUID)
+	assert.Equal(t, webhook.Secret, createdWebhook.Secret)
+	assert.Equal(t, webhook.CodeHostKind, createdWebhook.CodeHostKind)
+	assert.Equal(t, webhook.CodeHostURN, createdWebhook.CodeHostURN)
+	assert.Equal(t, webhook.CreatedAt, createdWebhook.CreatedAt)
+	assert.Equal(t, webhook.UpdatedAt, createdWebhook.UpdatedAt)
+}
+
+func TestGetByUUID(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	store := db.Webhooks(nil)
+
+	// Test that non-existent webhook cannot be found
+	randomUUID := uuid.New()
+	webhook, err := store.GetByUUID(ctx, randomUUID)
+	assert.EqualError(t, err, fmt.Sprintf("webhook with UUID %s not found", randomUUID))
+	assert.Nil(t, webhook)
+
+	// Test that existent webhook cannot be found
+	createdWebhook, err := store.Create(ctx, extsvc.KindGitHub, "https://github.com", types.NewUnencryptedSecret("very secret (not)"))
+	assert.NoError(t, err)
+
+	webhook, err = store.GetByUUID(ctx, createdWebhook.UUID)
+	assert.NoError(t, err)
+	assert.NotNil(t, webhook)
+	assert.Equal(t, webhook.ID, createdWebhook.ID)
+	assert.Equal(t, webhook.UUID, createdWebhook.UUID)
+	assert.Equal(t, webhook.Secret, createdWebhook.Secret)
+	assert.Equal(t, webhook.CodeHostKind, createdWebhook.CodeHostKind)
+	assert.Equal(t, webhook.CodeHostURN, createdWebhook.CodeHostURN)
+	assert.Equal(t, webhook.CreatedAt, createdWebhook.CreatedAt)
+	assert.Equal(t, webhook.UpdatedAt, createdWebhook.UpdatedAt)
 }
