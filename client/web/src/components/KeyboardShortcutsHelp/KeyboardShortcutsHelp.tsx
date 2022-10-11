@@ -32,7 +32,7 @@ const LEGACY_KEYBOARD_SHORTCUTS: Record<string, KeyboardShortcut> = {
 const SHORTCUT_KEY_TO_NAME: { [P in Key | ModifierKey | string]?: string } = {
     Mod: ((modKey: string) => (modKey === 'Meta' ? (isMacPlatform() ? '⌘' : 'Cmd') : 'Ctrl'))(getModKey()),
     Meta: isMacPlatform() ? '⌘' : 'Cmd',
-    Shift: isMacPlatform() ? '⇧' : 'Cmd',
+    Shift: isMacPlatform() ? '⇧' : 'Shift',
     Control: 'Ctrl',
     '†': 't',
 }
