@@ -809,6 +809,8 @@ type UsersListOptions struct {
 	// `timestamp` greater-than-or-equal to the given timestamp.
 	InactiveSince time.Time
 
+	ExcludeSourcegraphAdmins bool // filter out users with a known Sourcegraph admin username
+
 	*LimitOffset
 }
 
@@ -897,6 +899,38 @@ func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 		conds = append(conds, sqlf.Sprintf(listUsersInactiveCond, opt.InactiveSince))
 	}
 
+	// NOTE: This is a hack which should be replaced when we have proper user types.
+	// However, for billing purposes and more accurate ping data, we need a way to
+	// exclude Sourcegraph (employee) admins when counting users. The following
+	// username patterns, in conjunction with the presence of a corresponding
+	// "@sourcegraph.com" email address, are used to filter out Sourcegraph admins:
+	//
+	// - managed-*
+	// - sourcegraph-management-*
+	// - sourcegraph-admin
+	//
+	// This method of filtering is imperfect and may still incur false positives, but
+	// the two together should help prevent that in the majority of cases, and we
+	// acknowledge this risk as we would prefer to undercount rather than overcount.
+	if opt.ExcludeSourcegraphAdmins {
+		conds = append(conds, sqlf.Sprintf(`
+-- The user does not...
+NOT(
+	-- ...have a known Sourcegraph admin username pattern
+	(u.username ILIKE 'managed-%%'
+		OR u.username ILIKE 'sourcegraph-management-%%'
+		OR u.username = 'sourcegraph-admin')
+	-- ...and have a matching sourcegraph email address
+	AND EXISTS (
+		SELECT
+			1 FROM user_emails
+		WHERE
+			user_emails.user_id = u.id
+			AND user_emails.email ILIKE '%%@sourcegraph.com')
+)
+`))
+
+	}
 	return conds
 }
 
