@@ -230,7 +230,7 @@ func TestWebhookList(t *testing.T) {
 		assert.NoError(t, err)
 	}
 
-	allWebhooks, err := store.List(ctx)
+	allWebhooks, err := store.List(ctx, WebhookListOptions{})
 	assert.NoError(t, err)
 	assert.Len(t, allWebhooks, 10)
 }

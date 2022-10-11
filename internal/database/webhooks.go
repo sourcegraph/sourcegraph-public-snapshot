@@ -24,7 +24,7 @@ type WebhookStore interface {
 	GetByUUID(ctx context.Context, id uuid.UUID) (*types.Webhook, error)
 	Delete(ctx context.Context, id uuid.UUID) error
 	Update(ctx context.Context, newWebhook *types.Webhook) (*types.Webhook, error)
-	List(ctx context.Context) ([]*types.Webhook, error)
+	List(ctx context.Context, opt WebhookListOptions) ([]*types.Webhook, error)
 }
 
 type webhookStore struct {
@@ -246,8 +246,14 @@ RETURNING
 `
 
 // List the webhooks
-func (s *webhookStore) List(ctx context.Context) ([]*types.Webhook, error) {
-	q := sqlf.Sprintf(webhookListQueryFmtstr, sqlf.Join(webhookColumns, ", "))
+func (s *webhookStore) List(ctx context.Context, opt WebhookListOptions) ([]*types.Webhook, error) {
+	var where *sqlf.Query
+	if opt.Kind != "" {
+		where = sqlf.Sprintf("WHERE kind = %s", opt.Kind)
+	}
+
+	q := sqlf.Sprintf(webhookListQueryFmtstr, sqlf.Join(webhookColumns, ", "), where)
+	fmt.Printf("QUERY\n%v\n", q)
 	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return []*types.Webhook{}, errors.Wrap(err, "error running query")
@@ -264,11 +270,16 @@ func (s *webhookStore) List(ctx context.Context) ([]*types.Webhook, error) {
 	return res, nil
 }
 
+type WebhookListOptions struct {
+	Kind string
+}
+
 const webhookListQueryFmtstr = `
 -- source: internal/database/webhooks.go:List
 SELECT
 	%s
 FROM webhooks
+%s
 `
 
 func scanWebhook(sc dbutil.Scanner, key encryption.Key) (*types.Webhook, error) {
