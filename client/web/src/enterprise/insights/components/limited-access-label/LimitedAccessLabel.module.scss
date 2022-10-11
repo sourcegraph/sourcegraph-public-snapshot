@@ -1,10 +1,11 @@
 .wrapper {
-    background: var(--marketing-gradient-25);
-    border-radius: 3px;
     display: flex;
     width: fit-content;
+    align-items: baseline;
     gap: 0.5rem;
     padding: 0.25rem 0.5rem;
+    background: var(--marketing-gradient-25);
+    border-radius: 3px;
 }
 
 .label {

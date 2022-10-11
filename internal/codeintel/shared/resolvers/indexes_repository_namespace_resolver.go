@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	autoindexingShared "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 )
 
 type LSIFIndexesWithRepositoryNamespaceResolver interface {

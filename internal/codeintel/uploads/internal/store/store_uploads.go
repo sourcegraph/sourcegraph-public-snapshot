@@ -13,7 +13,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/commitgraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -103,7 +103,12 @@ WHERE %s ORDER BY %s LIMIT %d OFFSET %d
 const uploadRankQueryFragment = `
 SELECT
 	r.id,
-	ROW_NUMBER() OVER (ORDER BY COALESCE(r.process_after, r.uploaded_at), r.id) as rank
+	ROW_NUMBER() OVER (ORDER BY
+		-- Note: this should be kept in-sync with the order given to workerutil
+		r.associated_index_id IS NULL DESC,
+		COALESCE(r.process_after, r.uploaded_at),
+		r.id
+	) as rank
 FROM lsif_uploads_with_repository_name r
 WHERE r.state = 'queued'
 `

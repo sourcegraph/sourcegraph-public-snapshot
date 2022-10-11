@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/memo"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 
 	policiesEnterprise "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
@@ -20,7 +21,6 @@ func GetService(
 	depsSvc DependenciesService,
 	policiesSvc PoliciesService,
 	gitserver shared.GitserverClient,
-	repoUpdater shared.RepoUpdaterClient,
 ) *Service {
 	svc, _ := initServiceMemo.Init(serviceDependencies{
 		db,
@@ -28,7 +28,6 @@ func GetService(
 		depsSvc,
 		policiesSvc,
 		gitserver,
-		repoUpdater,
 	})
 
 	return svc
@@ -40,7 +39,6 @@ type serviceDependencies struct {
 	depsSvc     DependenciesService
 	policiesSvc PoliciesService
 	gitserver   shared.GitserverClient
-	repoUpdater shared.RepoUpdaterClient
 }
 
 var initServiceMemo = memo.NewMemoizedConstructorWithArg(func(deps serviceDependencies) (*Service, error) {
@@ -50,6 +48,7 @@ var initServiceMemo = memo.NewMemoizedConstructorWithArg(func(deps serviceDepend
 	externalServiceStore := deps.db.ExternalServices()
 	policyMatcher := policiesEnterprise.NewMatcher(deps.gitserver, policiesEnterprise.IndexingExtractor, false, true)
 	symbolsClient := symbols.DefaultClient
+	repoUpdater := repoupdater.DefaultClient
 	inferenceSvc := inference.NewService(deps.db)
 
 	return newService(
@@ -63,7 +62,7 @@ var initServiceMemo = memo.NewMemoizedConstructorWithArg(func(deps serviceDepend
 		policyMatcher,
 		deps.gitserver,
 		symbolsClient,
-		deps.repoUpdater,
+		repoUpdater,
 		inferenceSvc,
 		scopedContext("service"),
 	), nil

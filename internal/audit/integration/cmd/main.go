@@ -27,12 +27,7 @@ func main() {
 		InstanceID: "",
 	})
 
-	defer func() {
-		err := callbacks.Sync()
-		if err != nil {
-			os.Exit(-1)
-		}
-	}()
+	defer callbacks.Sync()
 
 	logger := log.Scoped("test", "logger with sampling config")
 

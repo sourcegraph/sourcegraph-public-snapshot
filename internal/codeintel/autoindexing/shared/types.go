@@ -3,7 +3,7 @@ package shared
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 )
 
 type IndexJob struct {
@@ -70,4 +70,9 @@ type Range struct {
 type Position struct {
 	Line      int
 	Character int
+}
+
+type DeleteUploadsOptions struct {
+	State string
+	Term  string
 }

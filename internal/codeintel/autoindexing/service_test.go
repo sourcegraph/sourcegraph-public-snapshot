@@ -11,7 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
-	types "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	types "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
@@ -504,7 +504,7 @@ func TestQueueIndexesForPackage(t *testing.T) {
 
 	scheduler := newService(mockDBStore, mockUploadSvc, nil, nil, nil, nil, nil, nil, mockGitserverClient, nil, mockRepoUpdater, inferenceService, &observation.TestContext)
 
-	_ = scheduler.QueueIndexesForPackage(context.Background(), precise.Package{
+	_ = scheduler.queueIndexesForPackage(context.Background(), precise.Package{
 		Scheme:  "gomod",
 		Name:    "https://github.com/sourcegraph/sourcegraph",
 		Version: "v3.26.0-4e7eeb0f8a96",

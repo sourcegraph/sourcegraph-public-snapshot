@@ -28,3 +28,12 @@
         border: 1px solid var(--header-icon-color);
     }
 }
+
+.fuzzy-finder-item {
+    border-width: 1px;
+    border-color: var(--brand-secondary);
+}
+.fuzzy-finder-shortcut {
+    position: relative;
+    right: 2rem;
+}

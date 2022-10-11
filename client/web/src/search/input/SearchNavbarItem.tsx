@@ -17,6 +17,8 @@ import { AuthenticatedUser } from '../../auth'
 import { useExperimentalFeatures, useNavbarQueryState, setSearchCaseSensitivity } from '../../stores'
 import { NavbarQueryState, setSearchPatternType } from '../../stores/navbarSearchQueryState'
 
+import { useRecentSearches } from './useRecentSearches'
+
 interface Props
     extends ActivationProps,
         SettingsCascadeProps,
@@ -64,6 +66,8 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
+    const { addRecentSearch } = useRecentSearches()
+
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
             submitSearch({
@@ -71,10 +75,11 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                 source: 'nav',
                 activation: props.activation,
                 selectedSearchContextSpec: props.selectedSearchContextSpec,
+                addRecentSearch,
                 ...parameters,
             })
         },
-        [submitSearch, props.history, props.activation, props.selectedSearchContextSpec]
+        [submitSearch, props.history, props.activation, props.selectedSearchContextSpec, addRecentSearch]
     )
 
     const onSubmit = useCallback(

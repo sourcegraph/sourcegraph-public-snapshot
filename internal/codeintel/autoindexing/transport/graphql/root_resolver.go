@@ -24,6 +24,7 @@ type RootResolver interface {
 	// Mirrors AutoindexingServiceResolver in graphqlbackend
 	IndexConfiguration(ctx context.Context, id graphql.ID) (IndexConfigurationResolver, error) // TODO - rename ...ForRepo
 	DeleteLSIFIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*sharedresolvers.EmptyResponse, error)
+	DeleteLSIFIndexes(ctx context.Context, args *DeleteLSIFIndexesArgs) (*sharedresolvers.EmptyResponse, error)
 	LSIFIndexByID(ctx context.Context, id graphql.ID) (_ sharedresolvers.LSIFIndexResolver, err error)
 	LSIFIndexes(ctx context.Context, args *LSIFIndexesQueryArgs) (sharedresolvers.LSIFIndexConnectionResolver, error)
 	LSIFIndexesByRepo(ctx context.Context, args *LSIFRepositoryIndexesQueryArgs) (sharedresolvers.LSIFIndexConnectionResolver, error)
@@ -40,6 +41,8 @@ type RootResolver interface {
 	GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error)
 	InferedIndexConfiguration(ctx context.Context, repositoryID int, commit string) (_ *config.IndexConfiguration, _ bool, err error)
 	InferedIndexConfigurationHints(ctx context.Context, repositoryID int, commit string) (_ []config.IndexJobHint, err error)
+	CodeIntelligenceInferenceScript(ctx context.Context) (script string, err error)
+	UpdateCodeIntelligenceInferenceScript(ctx context.Context, args *UpdateCodeIntelligenceInferenceScriptArgs) (err error)
 
 	// Symbols client
 	GetSupportedByCtags(ctx context.Context, filepath string, repoName api.RepoName) (bool, string, error)
@@ -87,7 +90,7 @@ func (r *rootResolver) IndexConfiguration(ctx context.Context, id graphql.ID) (_
 
 // 🚨 SECURITY: Only site admins may modify code intelligence index data
 func (r *rootResolver) DeleteLSIFIndex(ctx context.Context, args *struct{ ID graphql.ID }) (_ *sharedresolvers.EmptyResponse, err error) {
-	ctx, _, endObservation := r.operations.deleteLsifIndexes.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := r.operations.deleteLsifIndex.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("indexID", string(args.ID)),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -105,6 +108,29 @@ func (r *rootResolver) DeleteLSIFIndex(ctx context.Context, args *struct{ ID gra
 	}
 
 	if _, err := r.autoindexSvc.DeleteIndexByID(ctx, int(indexID)); err != nil {
+		return nil, err
+	}
+
+	return &sharedresolvers.EmptyResponse{}, nil
+}
+
+// 🚨 SECURITY: Only site admins may modify code intelligence upload data
+func (r *rootResolver) DeleteLSIFIndexes(ctx context.Context, args *DeleteLSIFIndexesArgs) (_ *sharedresolvers.EmptyResponse, err error) {
+	ctx, _, endObservation := r.operations.deleteLsifIndexes.With(ctx, &err, observation.Args{})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
+		return nil, err
+	}
+	if !autoIndexingEnabled() {
+		return nil, errAutoIndexingNotEnabled
+	}
+
+	opts, err := makeDeleteIndexesOptions(args)
+	if err != nil {
+		return nil, err
+	}
+	if err := r.autoindexSvc.DeleteIndexes(ctx, opts); err != nil {
 		return nil, err
 	}
 
@@ -149,6 +175,12 @@ type LSIFIndexesQueryArgs struct {
 type LSIFRepositoryIndexesQueryArgs struct {
 	*LSIFIndexesQueryArgs
 	RepositoryID graphql.ID
+}
+
+type DeleteLSIFIndexesArgs struct {
+	Query      *string
+	State      *string
+	Repository *graphql.ID
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for GetIndexes
@@ -280,6 +312,18 @@ func (r *rootResolver) UpdateRepositoryIndexConfiguration(ctx context.Context, a
 	}
 
 	return &sharedresolvers.EmptyResponse{}, nil
+}
+
+func (r *rootResolver) CodeIntelligenceInferenceScript(ctx context.Context) (script string, err error) {
+	return r.autoindexSvc.GetInferenceScript(ctx)
+}
+
+type UpdateCodeIntelligenceInferenceScriptArgs struct {
+	Script string
+}
+
+func (r *rootResolver) UpdateCodeIntelligenceInferenceScript(ctx context.Context, args *UpdateCodeIntelligenceInferenceScriptArgs) (err error) {
+	return r.autoindexSvc.SetInferenceScript(ctx, args.Script)
 }
 
 type GitTreeEntryCodeIntelInfoArgs struct {

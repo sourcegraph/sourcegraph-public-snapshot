@@ -276,6 +276,11 @@ func (r *NodeResolver) ToWebhookLog() (*webhookLogResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToWebhook() (*webhookResolver, bool) {
+	n, ok := r.Node.(*webhookResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToExecutor() (*executor.ExecutorResolver, bool) {
 	n, ok := r.Node.(*executor.ExecutorResolver)
 	return n, ok

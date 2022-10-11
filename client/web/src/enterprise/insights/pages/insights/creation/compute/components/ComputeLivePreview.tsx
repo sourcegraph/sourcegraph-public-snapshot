@@ -154,4 +154,4 @@ const mapSeriesToCompute = (
 }
 
 const getComputeSeriesName = (series: Series<any>): string => (series.name ? series.name : 'Other')
-const getComputeSeriesColor = (series: SeriesPreviewSettings): string => series.stroke ?? 'var(--blue)'
+const getComputeSeriesColor = (series: SeriesPreviewSettings): string => series?.stroke ?? 'var(--blue)'
