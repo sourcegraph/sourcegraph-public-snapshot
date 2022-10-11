@@ -59,6 +59,8 @@ func performPurge(ctx context.Context, postgres database.DB, insightsdb edb.Insi
 				return errors.Wrap(err, "Delete")
 			}
 
+			// TODO(leo): also delete series recording times.
+
 			insightStoreTx := insightStore.With(tx)
 			return insightStoreTx.HardDeleteSeries(ctx, id)
 		}()

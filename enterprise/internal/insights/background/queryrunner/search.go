@@ -2,7 +2,6 @@ package queryrunner
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
@@ -215,7 +214,7 @@ func makeMappingComputeHandler(provider streamComputeProvider) InsightsHandler {
 	}
 }
 
-func (r *workHandler) persistRecordings(ctx context.Context, job *Job, series *types.InsightSeries, recordings []store.RecordSeriesPointArgs) (err error) {
+func (r *workHandler) persistRecordings(ctx context.Context, job *Job, series *types.InsightSeries, recordings []store.RecordSeriesPointArgs, recordTime time.Time) (err error) {
 	tx, err := r.insightsStore.Transact(ctx)
 	if err != nil {
 		return err
@@ -228,28 +227,22 @@ func (r *workHandler) persistRecordings(ctx context.Context, job *Job, series *t
 		if err := tx.DeleteSnapshots(ctx, series); err != nil {
 			return errors.Wrap(err, "DeleteSnapshots")
 		}
-	} else if job.RecordTime != nil && series.LastRecordedAt.IsZero() {
-		fmt.Println("$$$ saving recording times")
+		if err := tx.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{{series.SeriesID, []time.Time{recordTime}}}); err != nil {
+			return errors.Wrap(err, "SetInsightSeriesRecordingTimes")
+		}
+	} else {
+		// This will fetch insight series recording times even for jobs for a backfill when setting recording times
+		// isn't necessary, as we don't have a way of determining whether this is a backfill record job.
 		seriesRecordingTimes, err := tx.GetInsightSeriesRecordingTimes(ctx, series.SeriesID)
 		if err != nil {
 			return errors.Wrap(err, "GetInsightSeriesRecordingTimes")
 		}
-		recordingTimes := seriesRecordingTimes.RecordingTimes
-		var newRecordingTimes []time.Time
-		aYearAgo := job.RecordTime.AddDate(-1, 0, 0)
-		if len(recordingTimes) < 12 {
-			newRecordingTimes = append(recordingTimes, *job.RecordTime)
-		} else if len(recordingTimes) > 12 && recordingTimes[0].Before(aYearAgo) {
-			newRecordingTimes = append(recordingTimes[1:], *job.RecordTime)
-		} else if len(recordingTimes) > 12 && recordingTimes[0].After(aYearAgo) {
-			newRecordingTimes = append(recordingTimes, *job.RecordTime)
-		}
+		newRecordingTimes := updateSeriesRecordingTimes(seriesRecordingTimes.RecordingTimes, recordTime)
 		if len(newRecordingTimes) > 0 {
-			if err := tx.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{seriesRecordingTimes}); err != nil {
+			if err := tx.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{{series.SeriesID, newRecordingTimes}}); err != nil {
 				return errors.Wrap(err, "SetInsightSeriesRecordingTimes")
 			}
 		}
-		fmt.Println("end - success!")
 	}
 
 	// Newly queued queries should be scoped to correct repos however leaving filtering
@@ -266,8 +259,18 @@ func (r *workHandler) persistRecordings(ctx context.Context, job *Job, series *t
 }
 
 func updateSeriesRecordingTimes(recordingTimes []time.Time, newTime time.Time) []time.Time {
-
-	return nil
+	var newRecordingTimes []time.Time
+	aYearAgo := newTime.AddDate(-1, 0, 0)
+	if len(recordingTimes) < 12 {
+		newRecordingTimes = append(recordingTimes, newTime)
+	} else if len(recordingTimes) >= 12 && recordingTimes[0].Before(aYearAgo) {
+		// We replace the first recording time (shift left).
+		newRecordingTimes = append(recordingTimes[1:], newTime)
+	} else if len(recordingTimes) >= 12 && recordingTimes[0].After(aYearAgo) {
+		// This is an insight over less than a year ago, so we can just append to the list.
+		newRecordingTimes = append(recordingTimes, newTime)
+	}
+	return newRecordingTimes
 }
 
 func filterRecordingsBySeriesRepos(ctx context.Context, repoStore discovery.RepoStore, series *types.InsightSeries, recordings []store.RecordSeriesPointArgs) ([]store.RecordSeriesPointArgs, error) {

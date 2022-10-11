@@ -113,5 +113,5 @@ func (r *workHandler) Handle(ctx context.Context, logger log.Logger, record work
 	if err != nil {
 		return err
 	}
-	return r.persistRecordings(ctx, job, series, recordings)
+	return r.persistRecordings(ctx, job, series, recordings, recordTime)
 }
