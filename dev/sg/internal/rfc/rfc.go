@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/grafana/regexp"
@@ -18,6 +19,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
+
+var re = regexp.MustCompile(`(?i)^(private)?(\s)?RFC(\s)(private(\s))?([\d]+)`)
+var privateRFCDriveID = "1KCq4tMLnVlC0a1rwGuU5OSCw6mdDxLuv"
+var publicRFCDriveID = "1zP3FxdDlcSQGC1qvM9lHZRaHH4I9Jwwa"
 
 // Retrieve a token, saves the token, then returns the generated client.
 func getClient(ctx context.Context, config *oauth2.Config, out *std.Output) (*http.Client, error) {
@@ -62,11 +67,11 @@ func getTokenFromWeb(ctx context.Context, config *oauth2.Config, out *std.Output
 	return config.Exchange(ctx, authCode)
 }
 
-func queryRFCs(ctx context.Context, query string, orderBy string, pager func(r *drive.FileList) error, out *std.Output) error {
+func getService(ctx context.Context, out *std.Output) (*drive.Service, error) {
 	// If modifying these scopes, delete your previously saved token.json.
 	sec, err := secrets.FromContext(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	clientCredentials, err := sec.GetExternal(ctx, secrets.ExternalSecret{
 		Provider: secrets.ExternalProvider1Pass,
@@ -76,27 +81,48 @@ func queryRFCs(ctx context.Context, query string, orderBy string, pager func(r *
 		Field: "credential",
 	})
 	if err != nil {
-		return errors.Wrap(err, "failed to get google client credentials")
+		return nil, errors.Wrap(err, "failed to get google client credentials")
 	}
 
 	config, err := google.ConfigFromJSON([]byte(clientCredentials), drive.DriveMetadataReadonlyScope)
 	if err != nil {
-		return errors.Wrap(err, "Unable to parse client secret file to config")
+		return nil, errors.Wrap(err, "Unable to parse client secret file to config")
 	}
 	client, err := getClient(ctx, config, out)
 	if err != nil {
-		return errors.Wrap(err, "Unable to build client")
+		return nil, errors.Wrap(err, "Unable to build client")
 	}
 
 	srv, err := drive.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
-		return errors.Wrap(err, "Unable to retrieve Drive client")
+		return nil, errors.Wrap(err, "Unable to retrieve Drive client")
+	}
+	return srv, nil
+}
+
+func createRFC(title string) {
+	// srv, err := getService(ctx, out)
+	// if err != nil {
+	// 	return err
+	// }
+
+	// fileCopyCall := srv.Files.Copy("", &drive.File{DriveId: "0AK4DcztHds_pUk9PVA", Name: n})
+	// fileCopyCall.
+	// f, _ :=  fileCall.Do()
+
+	// f.
+}
+
+func queryRFCs(ctx context.Context, query string, orderBy string, pager func(r *drive.FileList) error, out *std.Output) error {
+	srv, err := getService(ctx, out)
+	if err != nil {
+		return err
 	}
 
 	if query == "" {
 		query = "name contains 'RFC'"
 	}
-	q := fmt.Sprintf("%s and parents in '1zP3FxdDlcSQGC1qvM9lHZRaHH4I9Jwwa' or %s and parents in '1KCq4tMLnVlC0a1rwGuU5OSCw6mdDxLuv'", query, query)
+	q := fmt.Sprintf("%s and parents in '%s' or %s and parents in '%s'", query, publicRFCDriveID, query, privateRFCDriveID)
 
 	list := srv.Files.List().
 		Corpora("drive").SupportsAllDrives(true).
@@ -123,8 +149,57 @@ func Search(ctx context.Context, query string, out *std.Output) error {
 }
 
 func Create(ctx context.Context, title string, out *std.Output) error {
-	fmt.Println("creating shit")
+	var i int
+	var files []*drive.File
+	if err := queryRFCs(ctx, "", "createdTime desc", func(r *drive.FileList) error {
+		for _, f := range r.Files {
+			if i > 10 {
+				break
+			}
+			i++
+			files = append(files, f)
+		}
+		return nil
+	}, out); err != nil {
+		return err
+	}
+
+	var rfcNumbers []int
+
+	// have the latest 5 files here.
+	for _, f := range files {
+		s := re.FindStringSubmatch(f.Name)
+		if len(s) == 7 {
+			n, err := strconv.Atoi(s[6])
+			if err != nil {
+				return err
+			}
+			rfcNumbers = append(rfcNumbers, n)
+		}
+	}
+
+	lastRfcNumber := max(rfcNumbers)
+	currentRfcNumber := lastRfcNumber + 1
+	fmt.Println(currentRfcNumber)
+
+	rfcTitle := fmt.Sprintf("RFC %d WIP: %s", currentRfcNumber, title)
+	// create a new document
+	createRFC(rfcTitle)
+
 	return nil
+}
+
+func max(nums []int) int {
+	if len(nums) == 0 {
+		return 0
+	}
+	highest := nums[0]
+	for _, n := range nums[1:] {
+		if n > highest {
+			highest = n
+		}
+	}
+	return highest
 }
 
 func Open(ctx context.Context, number string, out *std.Output) error {
