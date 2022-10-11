@@ -23,6 +23,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -547,7 +548,7 @@ func (s *Server) cleanupRepos(gitServerAddrs gitserver.GitServerAddresses) {
 		logger.Error("failed to write periodic stats", log.Error(err))
 	}
 
-	err = s.setRepoSizes(context.Background(), repoToSize)
+	err = s.setRepoSizes(actor.WithInternalActor(context.Background()), repoToSize)
 	if err != nil {
 		logger.Error("setting repo sizes", log.Error(err))
 	}

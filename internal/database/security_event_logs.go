@@ -10,7 +10,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/audit"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -152,11 +151,6 @@ func (s *securityEventLogsStore) LogEvent(ctx context.Context, e *SecurityEvent)
 }
 
 func (s *securityEventLogsStore) LogEventList(ctx context.Context, events []*SecurityEvent) {
-	// TODO: removing this causes local errors, will be tackled soon
-	if !envvar.SourcegraphDotComMode() {
-		return
-	}
-
 	if err := s.InsertList(ctx, events); err != nil {
 		names := make([]string, len(events))
 		for i, e := range events {

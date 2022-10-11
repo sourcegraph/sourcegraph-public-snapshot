@@ -67,14 +67,15 @@ func TestCleanup_computeStats(t *testing.T) {
 
 	// We run cleanupRepos because we want to test as a side-effect it creates
 	// the correct file in the correct place.
+	logger, capturedLogs := logtest.Captured(t)
 	s := &Server{ReposDir: root,
-		Logger: logtest.Scoped(t),
+		Logger: logger,
 		DB:     database.NewMockDB(),
 	}
 	s.testSetup(t)
 
 	if _, err := s.DB.ExecContext(context.Background(), `
-INSERT INTO repo(id, name) VALUES (1, 'a'), (2, 'b/d'), (3, 'c');
+INSERT INTO repo(id, name, private) VALUES (1, 'a', false), (2, 'b/d', false), (3, 'c', true);
 UPDATE gitserver_repos SET shard_id = 1;
 UPDATE gitserver_repos SET repo_size_bytes = 5 where repo_id = 3;
 `); err != nil {
@@ -116,6 +117,13 @@ UPDATE gitserver_repos SET repo_size_bytes = 5 where repo_id = 3;
 
 	if d := cmp.Diff(want, got); d != "" {
 		t.Fatalf("mismatch for (-want +got):\n%s", d)
+	}
+
+	logs := capturedLogs()
+	for _, cl := range logs {
+		if cl.Level == "error" {
+			t.Errorf("test run has collected an errorneous log: %s", cl.Message)
+		}
 	}
 }
 
