@@ -616,8 +616,10 @@ func (u *userStore) HardDeleteList(ctx context.Context, ids []int32) (err error)
 		return err
 	}
 	// Anonymize all entries for the deleted user
-	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE event_logs SET user_id=0, anonymous_user_id=%s WHERE user_id IN (%s)", uuid.New().String(), idsCond)); err != nil {
-		return err
+	for _, uid := range userIDs {
+		if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE event_logs SET user_id=0, anonymous_user_id=%s WHERE user_id=%s", uuid.New().String(), uid)); err != nil {
+			return err
+		}
 	}
 	// Settings that were merely authored by this user should not be deleted. They may be global or
 	// org settings that apply to other users, too. There is currently no way to hard-delete
