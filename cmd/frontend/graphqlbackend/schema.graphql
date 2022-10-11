@@ -1654,6 +1654,7 @@ type Query {
     """
     Lists webhooks.
     If no kind is given, it returns all webhooks.
+    If first is omitted, 20 items are returned
     """
     webhooks(
         """
