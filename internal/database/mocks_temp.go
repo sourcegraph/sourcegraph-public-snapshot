@@ -48297,9 +48297,9 @@ type MockWebhookStore struct {
 	// GetByIDFunc is an instance of a mock function object controlling the
 	// behavior of the method GetByID.
 	GetByIDFunc *WebhookStoreGetByIDFunc
-	// GetByRandomIDFunc is an instance of a mock function object
-	// controlling the behavior of the method GetByRandomID.
-	GetByRandomIDFunc *WebhookStoreGetByRandomIDFunc
+	// GetByUUIDFunc is an instance of a mock function object controlling
+	// the behavior of the method GetByUUID.
+	GetByUUIDFunc *WebhookStoreGetByUUIDFunc
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *WebhookStoreHandleFunc
@@ -48330,8 +48330,8 @@ func NewMockWebhookStore() *MockWebhookStore {
 				return
 			},
 		},
-		GetByRandomIDFunc: &WebhookStoreGetByRandomIDFunc{
-			defaultHook: func(context.Context, string) (r0 *types.Webhook, r1 error) {
+		GetByUUIDFunc: &WebhookStoreGetByUUIDFunc{
+			defaultHook: func(context.Context, uuid.UUID) (r0 *types.Webhook, r1 error) {
 				return
 			},
 		},
@@ -48372,9 +48372,9 @@ func NewStrictMockWebhookStore() *MockWebhookStore {
 				panic("unexpected invocation of MockWebhookStore.GetByID")
 			},
 		},
-		GetByRandomIDFunc: &WebhookStoreGetByRandomIDFunc{
-			defaultHook: func(context.Context, string) (*types.Webhook, error) {
-				panic("unexpected invocation of MockWebhookStore.GetByRandomID")
+		GetByUUIDFunc: &WebhookStoreGetByUUIDFunc{
+			defaultHook: func(context.Context, uuid.UUID) (*types.Webhook, error) {
+				panic("unexpected invocation of MockWebhookStore.GetByUUID")
 			},
 		},
 		HandleFunc: &WebhookStoreHandleFunc{
@@ -48409,8 +48409,8 @@ func NewMockWebhookStoreFrom(i WebhookStore) *MockWebhookStore {
 		GetByIDFunc: &WebhookStoreGetByIDFunc{
 			defaultHook: i.GetByID,
 		},
-		GetByRandomIDFunc: &WebhookStoreGetByRandomIDFunc{
-			defaultHook: i.GetByRandomID,
+		GetByUUIDFunc: &WebhookStoreGetByUUIDFunc{
+			defaultHook: i.GetByUUID,
 		},
 		HandleFunc: &WebhookStoreHandleFunc{
 			defaultHook: i.Handle,
@@ -48749,35 +48749,35 @@ func (c WebhookStoreGetByIDFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// WebhookStoreGetByRandomIDFunc describes the behavior when the
-// GetByRandomID method of the parent MockWebhookStore instance is invoked.
-type WebhookStoreGetByRandomIDFunc struct {
-	defaultHook func(context.Context, string) (*types.Webhook, error)
-	hooks       []func(context.Context, string) (*types.Webhook, error)
-	history     []WebhookStoreGetByRandomIDFuncCall
+// WebhookStoreGetByUUIDFunc describes the behavior when the GetByUUID
+// method of the parent MockWebhookStore instance is invoked.
+type WebhookStoreGetByUUIDFunc struct {
+	defaultHook func(context.Context, uuid.UUID) (*types.Webhook, error)
+	hooks       []func(context.Context, uuid.UUID) (*types.Webhook, error)
+	history     []WebhookStoreGetByUUIDFuncCall
 	mutex       sync.Mutex
 }
 
-// GetByRandomID delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockWebhookStore) GetByRandomID(v0 context.Context, v1 string) (*types.Webhook, error) {
-	r0, r1 := m.GetByRandomIDFunc.nextHook()(v0, v1)
-	m.GetByRandomIDFunc.appendCall(WebhookStoreGetByRandomIDFuncCall{v0, v1, r0, r1})
+// GetByUUID delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockWebhookStore) GetByUUID(v0 context.Context, v1 uuid.UUID) (*types.Webhook, error) {
+	r0, r1 := m.GetByUUIDFunc.nextHook()(v0, v1)
+	m.GetByUUIDFunc.appendCall(WebhookStoreGetByUUIDFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the GetByRandomID method
-// of the parent MockWebhookStore instance is invoked and the hook queue is
+// SetDefaultHook sets function that is called when the GetByUUID method of
+// the parent MockWebhookStore instance is invoked and the hook queue is
 // empty.
-func (f *WebhookStoreGetByRandomIDFunc) SetDefaultHook(hook func(context.Context, string) (*types.Webhook, error)) {
+func (f *WebhookStoreGetByUUIDFunc) SetDefaultHook(hook func(context.Context, uuid.UUID) (*types.Webhook, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// GetByRandomID method of the parent MockWebhookStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *WebhookStoreGetByRandomIDFunc) PushHook(hook func(context.Context, string) (*types.Webhook, error)) {
+// GetByUUID method of the parent MockWebhookStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *WebhookStoreGetByUUIDFunc) PushHook(hook func(context.Context, uuid.UUID) (*types.Webhook, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -48785,20 +48785,20 @@ func (f *WebhookStoreGetByRandomIDFunc) PushHook(hook func(context.Context, stri
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *WebhookStoreGetByRandomIDFunc) SetDefaultReturn(r0 *types.Webhook, r1 error) {
-	f.SetDefaultHook(func(context.Context, string) (*types.Webhook, error) {
+func (f *WebhookStoreGetByUUIDFunc) SetDefaultReturn(r0 *types.Webhook, r1 error) {
+	f.SetDefaultHook(func(context.Context, uuid.UUID) (*types.Webhook, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *WebhookStoreGetByRandomIDFunc) PushReturn(r0 *types.Webhook, r1 error) {
-	f.PushHook(func(context.Context, string) (*types.Webhook, error) {
+func (f *WebhookStoreGetByUUIDFunc) PushReturn(r0 *types.Webhook, r1 error) {
+	f.PushHook(func(context.Context, uuid.UUID) (*types.Webhook, error) {
 		return r0, r1
 	})
 }
 
-func (f *WebhookStoreGetByRandomIDFunc) nextHook() func(context.Context, string) (*types.Webhook, error) {
+func (f *WebhookStoreGetByUUIDFunc) nextHook() func(context.Context, uuid.UUID) (*types.Webhook, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -48811,32 +48811,32 @@ func (f *WebhookStoreGetByRandomIDFunc) nextHook() func(context.Context, string)
 	return hook
 }
 
-func (f *WebhookStoreGetByRandomIDFunc) appendCall(r0 WebhookStoreGetByRandomIDFuncCall) {
+func (f *WebhookStoreGetByUUIDFunc) appendCall(r0 WebhookStoreGetByUUIDFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of WebhookStoreGetByRandomIDFuncCall objects
+// History returns a sequence of WebhookStoreGetByUUIDFuncCall objects
 // describing the invocations of this function.
-func (f *WebhookStoreGetByRandomIDFunc) History() []WebhookStoreGetByRandomIDFuncCall {
+func (f *WebhookStoreGetByUUIDFunc) History() []WebhookStoreGetByUUIDFuncCall {
 	f.mutex.Lock()
-	history := make([]WebhookStoreGetByRandomIDFuncCall, len(f.history))
+	history := make([]WebhookStoreGetByUUIDFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// WebhookStoreGetByRandomIDFuncCall is an object that describes an
-// invocation of method GetByRandomID on an instance of MockWebhookStore.
-type WebhookStoreGetByRandomIDFuncCall struct {
+// WebhookStoreGetByUUIDFuncCall is an object that describes an invocation
+// of method GetByUUID on an instance of MockWebhookStore.
+type WebhookStoreGetByUUIDFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 string
+	Arg1 uuid.UUID
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *types.Webhook
@@ -48847,13 +48847,13 @@ type WebhookStoreGetByRandomIDFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c WebhookStoreGetByRandomIDFuncCall) Args() []interface{} {
+func (c WebhookStoreGetByUUIDFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c WebhookStoreGetByRandomIDFuncCall) Results() []interface{} {
+func (c WebhookStoreGetByUUIDFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
