@@ -15,10 +15,33 @@ interface UseNotebookEventHandlersProps
     selectBlock: (blockId: string | null) => void
 }
 
+function getBlockElement(id: string): HTMLDivElement | null {
+    return document.querySelector<HTMLDivElement>(`[data-block-id="${id}"] .block`)
+}
+
 export function focusBlockElement(blockId: string, isReadOnly: boolean): void {
     if (!isReadOnly) {
-        document.querySelector<HTMLDivElement>(`[data-block-id="${blockId}"] .block`)?.focus()
+        const blockElement = getBlockElement(blockId)
+        blockElement?.focus()
     }
+}
+
+function isTopOfBlockVisible(id: string): boolean {
+    const blockElement = getBlockElement(id)
+    if (!blockElement) {
+        return false
+    }
+    const { top } = blockElement.getBoundingClientRect()
+    return top >= 0
+}
+
+function isBottomOfBlockVisible(id: string): boolean {
+    const blockElement = getBlockElement(id)
+    if (!blockElement) {
+        return false
+    }
+    const { bottom } = blockElement.getBoundingClientRect()
+    return bottom <= window.innerHeight
 }
 
 export function isModifierKeyPressed(isMetaKey: boolean, isCtrlKey: boolean, isMacPlatform: boolean): boolean {
@@ -76,6 +99,12 @@ export function useNotebookEventHandlers({
         const handleKeyDown = (event: KeyboardEvent): void => {
             const target = event.target as HTMLElement
 
+            // Don't handle keydown events if the alt/option key is pressed.
+            // This allows using Opt+Arrow to page up/down on macOS.
+            if (event.altKey) {
+                return
+            }
+
             if (isInputElement(target)) {
                 return
             }
@@ -117,10 +146,19 @@ export function useNotebookEventHandlers({
                 const direction = event.key === 'ArrowUp' ? 'up' : 'down'
                 if (isModifierKeyDown) {
                     onMoveBlock(selectedBlockId, direction)
-                    // Prevent page scrolling in Firefox
+                    // Prevent page scrolling
                     event.preventDefault()
                 } else {
+                    // If the block is not visible in the direction we're moving, scroll the window. Otherwise, move the selection.
+                    if (
+                        (event.key === 'ArrowUp' && !isTopOfBlockVisible(selectedBlockId)) ||
+                        (event.key === 'ArrowDown' && !isBottomOfBlockVisible(selectedBlockId))
+                    ) {
+                        return
+                    }
                     onMoveBlockSelection(selectedBlockId, direction)
+                    // Prevent page scrolling
+                    event.preventDefault()
                 }
             } else if (event.key === 'Enter' && isModifierKeyDown) {
                 onRunBlock(selectedBlockId)
