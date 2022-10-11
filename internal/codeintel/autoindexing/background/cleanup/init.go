@@ -6,6 +6,9 @@ func NewJanitor(autoIndeingSvc AutoIndexingService) []goroutine.BackgroundRoutin
 	return []goroutine.BackgroundRoutine{
 		autoIndeingSvc.NewJanitor(
 			ConfigInst.Interval,
+			ConfigInst.MinimumTimeSinceLastCheck,
+			ConfigInst.CommitResolverBatchSize,
+			ConfigInst.CommitResolverMaximumCommitLag,
 		),
 	}
 }
