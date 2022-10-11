@@ -4,11 +4,11 @@ import { mdiInformationOutline } from '@mdi/js'
 import classNames from 'classnames'
 
 import { useQuery } from '@sourcegraph/http-client'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { H3, Icon, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
 
 import { GlobalChangesetsStatsResult, GlobalChangesetsStatsVariables } from '../../../graphql-operations'
 import { DEFAULT_MINS_SAVED_PER_CHANGESET } from '../../../site-admin/analytics/AnalyticsBatchChangesPage'
-import { MIN_PER_ITEM_SAVED_KEY } from '../../../site-admin/analytics/components/TimeSavedCalculatorGroup'
 import { ChangesetStatusClosed, ChangesetStatusOpen } from '../detail/changesets/ChangesetStatusCell'
 
 import { GLOBAL_CHANGESETS_STATS } from './backend'
@@ -20,6 +20,10 @@ interface BatchChangeStatsBarProps {
 }
 
 export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildren<BatchChangeStatsBarProps>> = () => {
+    const [minSavedPerChangeset = DEFAULT_MINS_SAVED_PER_CHANGESET] = useTemporarySetting(
+        'batches.minSavedPerChangeset'
+    )
+
     const { data, loading } = useQuery<GlobalChangesetsStatsResult, GlobalChangesetsStatsVariables>(
         GLOBAL_CHANGESETS_STATS,
         {}
@@ -36,9 +40,6 @@ export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildre
         return null
     }
 
-    const numMinPerItemSaved: number =
-        parseInt(localStorage.getItem(MIN_PER_ITEM_SAVED_KEY) || '0', 10) || DEFAULT_MINS_SAVED_PER_CHANGESET
-
     return (
         <div className={classNames(styles.statsBar, 'text-muted')}>
             <div className={styles.leftSide}>
@@ -52,7 +53,7 @@ export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildre
                 </div>
                 <div className="pr-4">
                     <H3 className="font-weight-bold mb-1">
-                        {Math.round((data.globalChangesetsStats.merged * numMinPerItemSaved) / 60).toFixed(2)}
+                        {Math.round((data.globalChangesetsStats.merged * minSavedPerChangeset) / 60).toFixed(2)}
                     </H3>
                     <span>
                         Hours saved
