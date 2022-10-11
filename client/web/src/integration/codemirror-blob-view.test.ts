@@ -144,7 +144,7 @@ describe('CodeMirror blob view', () => {
     })
 
     describe('line selection', () => {
-        async function getLineNumberElement(n: number): Promise<ElementHandle> {
+        async function getLineNumberElement(lineNumber: number): Promise<ElementHandle> {
             const lineNumberElement = (
                 await driver.page.evaluateHandle(
                     (blobSelector: string, lineNumber: number): HTMLElement | null => {
@@ -159,10 +159,10 @@ describe('CodeMirror blob view', () => {
                         return null
                     },
                     blobSelector,
-                    n
+                    lineNumber
                 )
             ).asElement()
-            assert(lineNumberElement, `found line number element ${n}`)
+            assert(lineNumberElement, `found line number element ${lineNumber}`)
             return lineNumberElement
         }
 
