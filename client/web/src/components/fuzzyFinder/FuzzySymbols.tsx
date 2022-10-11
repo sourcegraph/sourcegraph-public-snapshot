@@ -10,7 +10,7 @@ import { SearchValue } from '../../fuzzyFinder/FuzzySearch'
 
 import { emptyFuzzyCache, PersistableQueryResult } from './FuzzyLocalCache'
 import { FuzzyQuery } from './FuzzyQuery'
-import { FuzzyRepoRevision } from './FuzzyRepoRevision'
+import { FuzzyRepoRevision, fuzzyRepoRevisionSearchFilter } from './FuzzyRepoRevision'
 
 export const FUZZY_SYMBOLS_QUERY = gql`
     fragment FileMatchFields on FileMatch {
@@ -52,16 +52,6 @@ export class FuzzySymbols extends FuzzyQuery {
         // Symbol results should not be cached because stale symbol data is complicated to evict/invalidate.
         super(onNamesChanged, emptyFuzzyCache)
     }
-    private repoFilter(): string {
-        const { repositoryName, revision } = this.repoRevision.current
-        if (repositoryName && revision) {
-            return `repo:${repositoryName}@${revision} `
-        }
-        if (repositoryName) {
-            return `repo:${repositoryName} `
-        }
-        return ''
-    }
 
     /* override */ protected searchValues(): SearchValue[] {
         const repositoryName = this.repoRevision.current.repositoryName
@@ -80,7 +70,7 @@ export class FuzzySymbols extends FuzzyQuery {
     }
 
     /* override */ protected rawQuery(query: string): string {
-        return `${this.repoFilter()}type:symbol count:10 ${query}`
+        return `${fuzzyRepoRevisionSearchFilter(this.repoRevision.current)}type:symbol count:10 ${query}`
     }
 
     /* override */ protected async handleRawQueryPromise(query: string): Promise<PersistableQueryResult[]> {

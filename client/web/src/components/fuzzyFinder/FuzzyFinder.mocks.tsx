@@ -9,7 +9,7 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { FileNamesResult, FuzzyFinderRepoResult, FuzzyFinderSymbolsResult, SymbolKind } from '../../graphql-operations'
 import { ThemePreference } from '../../theme'
 
-import { FUZZY_FILES_QUERY } from './FuzzyFiles'
+import { FUZZY_GIT_LSFILES_QUERY } from './FuzzyFiles'
 import { FuzzyFinderContainer } from './FuzzyFinder'
 import { FUZZY_REPOS_QUERY } from './FuzzyRepos'
 import { FUZZY_SYMBOLS_QUERY } from './FuzzySymbols'
@@ -47,7 +47,7 @@ export const FuzzyWrapper: React.FunctionComponent<FuzzyWrapperProps> = props =>
 
 export const FUZZY_FILES_MOCK: MockedResponse<FileNamesResult> = {
     request: {
-        query: getDocumentNode(FUZZY_FILES_QUERY),
+        query: getDocumentNode(FUZZY_GIT_LSFILES_QUERY),
         variables: { repository: 'github.com/sourcegraph/sourcegraph', commit: 'main' },
     },
     result: {

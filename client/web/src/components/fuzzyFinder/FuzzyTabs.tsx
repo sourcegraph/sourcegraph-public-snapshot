@@ -13,7 +13,7 @@ import { parseBrowserRepoURL } from '../../util/url'
 import { Keybindings } from '../KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 
 import { createActionsFSM, getAllFuzzyActions, FuzzyActionProps } from './FuzzyActions'
-import { loadFilesFSM } from './FuzzyFiles'
+import { FuzzyFiles, loadFilesFSM } from './FuzzyFiles'
 import { getFuzzyFinderFeatureFlags } from './FuzzyFinderFeatureFlag'
 import { FuzzyFSM } from './FuzzyFsm'
 import { FuzzyRepoRevision } from './FuzzyRepoRevision'
@@ -85,9 +85,6 @@ export interface FuzzyState {
 }
 
 export function fuzzyIsActive(activeTab: FuzzyTabKey, repoRevision: FuzzyRepoRevision, tab: FuzzyTabKey): boolean {
-    if (tab === 'files' && !repoRevision.repositoryName) {
-        return false
-    }
     return activeTab === 'all' || tab === activeTab
 }
 
@@ -247,8 +244,20 @@ export function useFuzzyState(props: FuzzyTabsProps, onClickItem: () => void): F
             })
     )
 
+    const repoRevisionRef = useRef<FuzzyRepoRevision>({ repositoryName: '', revision: '' })
+    repoRevisionRef.current = { repositoryName: repoName, revision }
+
     const tabsRef = useRef(tabs)
     tabsRef.current = tabs
+    const [globalFilesNameChangeCount, setGlobalFilesNameChangeCount] = useState(0)
+    const globalFilesRef = useRef<FuzzyFiles | null>(null)
+    if (globalFilesRef.current === null) {
+        globalFilesRef.current = new FuzzyFiles(
+            apolloClient,
+            () => setGlobalFilesNameChangeCount(oldCount => oldCount + 1),
+            repoRevisionRef
+        )
+    }
 
     const [repositoryNameChangeCount, setRepositoryNameChangeCount] = useState(0)
     const repositoriesRef = useRef<FuzzyRepos | null>(null)
@@ -266,16 +275,13 @@ export function useFuzzyState(props: FuzzyTabsProps, onClickItem: () => void): F
         )
     }
 
-    const revisionRef = useRef<FuzzyRepoRevision>({ repositoryName: '', revision: '' })
-    revisionRef.current = { repositoryName: repoName, revision }
-
     const [symbolsNameCount, setSymbolNameCount] = useState(0)
     const symbolsRef = useRef<FuzzySymbols | null>(null)
     if (fuzzyFinderSymbols && symbolsRef.current === null) {
         symbolsRef.current = new FuzzySymbols(
             apolloClient,
             () => setSymbolNameCount(oldCount => oldCount + 1),
-            revisionRef
+            repoRevisionRef
         )
     }
 
@@ -366,12 +372,29 @@ export function useFuzzyState(props: FuzzyTabsProps, onClickItem: () => void): F
         if (!isVisible) {
             return
         }
+        if (!repoRevision.repositoryName) {
+            return
+        }
         setFilesFSM({ key: 'downloading' })
         loadFilesFSM(apolloClient, repoRevision, createURL).then(
             fsm => setFilesFSM(fsm),
             () => {}
         )
-    }, [isVisible, repoRevision, apolloClient, createURL, setFilesFSM])
+    }, [isVisible, query, repoRevision, apolloClient, createURL, setFilesFSM, globalFilesNameChangeCount])
+
+    useEffect(() => {
+        if (!isVisible) {
+            return
+        }
+        if (repoRevision.repositoryName) {
+            return
+        }
+        const globalFiles = globalFilesRef.current
+        if (!globalFiles) {
+            return
+        }
+        setFilesFSM(globalFiles.fuzzyFSM(query))
+    }, [query, isVisible, repoRevision, setFilesFSM])
 
     return { ...fuzzyState, tabs }
 }
