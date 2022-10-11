@@ -2,8 +2,8 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
-	"strings"
 
 	"github.com/google/uuid"
 	"github.com/keegancsmith/sqlf"
@@ -174,12 +174,12 @@ func (s *webhookStore) Update(ctx context.Context, newWebhook *types.Webhook) (*
 	}
 
 	q := sqlf.Sprintf(webhookUpdateQueryFmtstr,
-		newWebhook.CodeHostURN, encryptedSecret, newWebhook.ID, newWebhook.UUID,
+		newWebhook.CodeHostURN, encryptedSecret, newWebhook.ID,
 		sqlf.Join(webhookColumns, ", "))
 
 	updated, err := scanWebhook(s.QueryRow(ctx, q), s.key)
 	if err != nil {
-		if strings.Contains(err.Error(), "no rows in result set") {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, WebhookNotFoundError{ID: newWebhook.UUID}
 		}
 		return nil, errors.Wrap(err, "scanning webhook")
@@ -196,7 +196,7 @@ SET
 	secret = %s,
 	updated_at = NOW()
 WHERE
-	id = %s AND uuid = %s
+	id = %s
 RETURNING
 	%s
 `
