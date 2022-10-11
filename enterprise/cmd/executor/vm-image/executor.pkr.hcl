@@ -113,8 +113,8 @@ build {
     }
 
     provisioner "file" {
-        sources = ["executor-vm"]
-        destination = "/tmp"
+        sources = ["executor-vm.tar"]
+        destination = "/tmp/executor-vm.tar"
     }
 
     provisioner "shell" {

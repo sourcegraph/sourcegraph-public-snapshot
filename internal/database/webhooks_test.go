@@ -7,8 +7,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/sourcegraph/log/logtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 
@@ -18,124 +19,90 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func TestWebhookCreateUnencrypted(t *testing.T) {
-	t.Parallel()
+const (
+	testSecret = "my secret"
+	testURN    = "https://github.com"
+)
 
+func TestWebhookCreate(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
+	for _, encrypted := range []bool{true, false} {
+		t.Run(fmt.Sprintf("encrypted=%t", encrypted), func(t *testing.T) {
+			store := db.Webhooks(nil)
+			if encrypted {
+				store = db.Webhooks(et.ByteaTestKey{})
+			}
 
-	store := db.Webhooks(nil)
+			kind := extsvc.KindGitHub
+			urn := "https://github.com"
+			encryptedSecret := types.NewUnencryptedSecret(testSecret)
 
-	kind := extsvc.KindGitHub
-	urn := "https://github.com"
-	secret := types.NewUnencryptedSecret("very secret (not)")
+			created, err := store.Create(ctx, kind, urn, encryptedSecret)
+			assert.NoError(t, err)
 
-	created, err := store.Create(ctx, kind, urn, secret)
-	assert.NoError(t, err)
+			// Check that the calculated fields were correctly calculated.
+			assert.NotZero(t, created.ID)
+			assert.NotZero(t, created.UUID)
+			assert.Equal(t, kind, created.CodeHostKind)
+			assert.Equal(t, urn, created.CodeHostURN)
+			assert.NotZero(t, created.CreatedAt)
+			assert.NotZero(t, created.UpdatedAt)
 
-	// Check that the calculated fields were correctly calculated.
-	assert.NotZero(t, created.ID)
-	assert.NotZero(t, created.UUID)
-	assert.NoError(t, err)
-	assert.Equal(t, kind, created.CodeHostKind)
-	assert.Equal(t, urn, created.CodeHostURN)
-	assert.NotZero(t, created.CreatedAt)
-	assert.NotZero(t, created.UpdatedAt)
+			// getting the secret from the DB as is to verify its encryption
+			row := db.QueryRowContext(ctx, "SELECT secret FROM webhooks where id = $1", created.ID)
+			var rawSecret string
+			err = row.Scan(&rawSecret)
+			assert.NoError(t, err)
 
-	// getting the secret from the DB as is to verify that it is not encrypted
-	row := db.QueryRowContext(ctx, "SELECT secret FROM webhooks where id = $1", created.ID)
-	var rawSecret string
-	err = row.Scan(&rawSecret)
-	assert.NoError(t, err)
+			decryptedSecret, err := created.Secret.Decrypt(ctx)
+			assert.NoError(t, err)
 
-	decryptedSecret, err := created.Secret.Decrypt(ctx)
-	assert.NoError(t, err)
-	assert.Equal(t, rawSecret, decryptedSecret)
-}
+			if !encrypted {
+				// if no encryption, raw secret stored in the db and decrypted secret should be the same
+				assert.Equal(t, rawSecret, decryptedSecret)
+			} else {
+				// if encryption is specified, decrypted secret and raw secret should not match
+				assert.NotEqual(t, rawSecret, decryptedSecret)
+				assert.Equal(t, testSecret, decryptedSecret)
+			}
+		})
+	}
 
-func TestWebhookCreateEncrypted(t *testing.T) {
-	t.Parallel()
+	t.Run("no secret", func(t *testing.T) {
+		store := db.Webhooks(et.ByteaTestKey{})
 
-	ctx := context.Background()
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+		kind := extsvc.KindGitHub
+		urn := "https://github.com"
 
-	store := db.Webhooks(et.ByteaTestKey{})
+		created, err := store.Create(ctx, kind, urn, nil)
+		assert.NoError(t, err)
 
-	const secret = "don't tell anyone"
-	kind := extsvc.KindGitHub
-	urn := "https://github.com"
-	encryptedSecret := types.NewUnencryptedSecret(secret)
+		// Check that the calculated fields were correctly calculated.
+		assert.NotZero(t, created.ID)
+		assert.NotZero(t, created.UUID)
+		assert.NoError(t, err)
+		assert.Equal(t, kind, created.CodeHostKind)
+		assert.Equal(t, urn, created.CodeHostURN)
+		assert.NotZero(t, created.CreatedAt)
+		assert.NotZero(t, created.UpdatedAt)
 
-	created, err := store.Create(ctx, kind, urn, encryptedSecret)
-	assert.NoError(t, err)
+		// secret in the DB should be null
+		row := db.QueryRowContext(ctx, "SELECT secret FROM webhooks where id = $1", created.ID)
+		var rawSecret string
+		err = row.Scan(&rawSecret)
+		assert.NoError(t, err)
+		assert.Zero(t, rawSecret)
+	})
+	t.Run("with bad key", func(t *testing.T) {
+		store := db.Webhooks(&et.BadKey{Err: errors.New("some error occurred, sorry")})
 
-	// Check that the calculated fields were correctly calculated.
-	assert.NotZero(t, created.ID)
-	assert.NotZero(t, created.UUID)
-	assert.NoError(t, err)
-	assert.Equal(t, kind, created.CodeHostKind)
-	assert.Equal(t, urn, created.CodeHostURN)
-	assert.NotZero(t, created.CreatedAt)
-	assert.NotZero(t, created.UpdatedAt)
-
-	// getting the secret from the DB as is to verify that it is encrypted
-	row := db.QueryRowContext(ctx, "SELECT secret FROM webhooks where id = $1", created.ID)
-	var rawSecret string
-	err = row.Scan(&rawSecret)
-	assert.NoError(t, err)
-
-	decryptedSecret, err := created.Secret.Decrypt(ctx)
-	assert.NoError(t, err)
-	assert.NotEqual(t, rawSecret, decryptedSecret)
-	assert.Equal(t, secret, decryptedSecret)
-}
-
-func TestWebhookCreateNoSecret(t *testing.T) {
-	t.Parallel()
-
-	ctx := context.Background()
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-
-	store := db.Webhooks(et.ByteaTestKey{})
-
-	kind := extsvc.KindGitHub
-	urn := "https://github.com"
-
-	created, err := store.Create(ctx, kind, urn, nil)
-	assert.NoError(t, err)
-
-	// Check that the calculated fields were correctly calculated.
-	assert.NotZero(t, created.ID)
-	assert.NotZero(t, created.UUID)
-	assert.NoError(t, err)
-	assert.Equal(t, kind, created.CodeHostKind)
-	assert.Equal(t, urn, created.CodeHostURN)
-	assert.NotZero(t, created.CreatedAt)
-	assert.NotZero(t, created.UpdatedAt)
-
-	// secret in the DB should be null
-	row := db.QueryRowContext(ctx, "SELECT secret FROM webhooks where id = $1", created.ID)
-	var rawSecret string
-	err = row.Scan(&rawSecret)
-	assert.NoError(t, err)
-	assert.Zero(t, rawSecret)
-}
-
-func TestWebhookCreateWithBadKey(t *testing.T) {
-	t.Parallel()
-
-	ctx := context.Background()
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-
-	store := db.Webhooks(&et.BadKey{Err: errors.New("some error occurred, sorry")})
-
-	_, err := store.Create(ctx, extsvc.KindGitHub, "https://github.com", types.NewUnencryptedSecret("very secret (not)"))
-	assert.Error(t, err)
-	assert.Equal(t, "encrypting secret: some error occurred, sorry", err.Error())
+		_, err := store.Create(ctx, extsvc.KindGitHub, "https://github.com", types.NewUnencryptedSecret("very secret (not)"))
+		assert.Error(t, err)
+		assert.Equal(t, "encrypting secret: some error occurred, sorry", err.Error())
+	})
 }
 
 func TestWebhookDelete(t *testing.T) {
@@ -163,6 +130,102 @@ func TestWebhookDelete(t *testing.T) {
 	exists, _, err := basestore.ScanFirstBool(db.QueryContext(ctx, "SELECT EXISTS(SELECT 1 FROM webhooks WHERE uuid=$1)", createdWebhook.UUID))
 	assert.NoError(t, err)
 	assert.False(t, exists)
+}
+
+func TestWebhookUpdate(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+
+	const newCodeHostURN = "https://new.github.com"
+	const updatedSecret = "my new secret"
+
+	t.Run("updating w/ unencrypted secret", func(t *testing.T) {
+		store := db.Webhooks(nil)
+		created := createWebhook(ctx, t, store)
+
+		created.CodeHostURN = newCodeHostURN
+		created.Secret = types.NewUnencryptedSecret(updatedSecret)
+		updated, err := store.Update(ctx, created)
+		if err != nil {
+			t.Fatalf("error updating webhook: %s", err)
+		}
+		assert.Equal(t, created.ID, updated.ID)
+		assert.Equal(t, created.UUID, updated.UUID)
+		assert.Equal(t, created.CodeHostKind, updated.CodeHostKind)
+		assert.Equal(t, newCodeHostURN, updated.CodeHostURN)
+		assert.NotZero(t, created.CreatedAt, updated.CreatedAt)
+		assert.NotZero(t, created.UpdatedAt)
+		assert.Greater(t, updated.UpdatedAt, created.UpdatedAt)
+	})
+
+	t.Run("updating w/ encrypted secret", func(t *testing.T) {
+		store := db.Webhooks(et.ByteaTestKey{})
+		created := createWebhook(ctx, t, store)
+
+		created.CodeHostURN = newCodeHostURN
+		created.Secret = types.NewUnencryptedSecret(updatedSecret)
+		updated, err := store.Update(ctx, created)
+		if err != nil {
+			t.Fatalf("error updating webhook: %s", err)
+		}
+		assert.Equal(t, created.ID, updated.ID)
+		assert.Equal(t, created.UUID, updated.UUID)
+		assert.Equal(t, created.CodeHostKind, updated.CodeHostKind)
+		assert.Equal(t, newCodeHostURN, updated.CodeHostURN)
+		assert.NotZero(t, created.CreatedAt, updated.CreatedAt)
+		assert.NotZero(t, created.UpdatedAt)
+		assert.Greater(t, updated.UpdatedAt, created.UpdatedAt)
+
+		row := db.QueryRowContext(ctx, "SELECT secret FROM webhooks where id = $1", created.ID)
+		var rawSecret string
+		err = row.Scan(&rawSecret)
+		assert.NoError(t, err)
+
+		decryptedSecret, err := updated.Secret.Decrypt(ctx)
+		assert.NoError(t, err)
+		assert.NotEqual(t, rawSecret, decryptedSecret)
+		assert.Equal(t, decryptedSecret, updatedSecret)
+	})
+
+	t.Run("updating webhook to have nil secret", func(t *testing.T) {
+		store := db.Webhooks(nil)
+		created := createWebhook(ctx, t, store)
+		created.Secret = nil
+		updated, err := store.Update(ctx, created)
+		if err != nil {
+			t.Fatalf("unexpected error updating webhook: %s", err)
+		}
+		decryptedSecret, err := updated.Secret.Decrypt(ctx)
+		assert.NoError(t, err)
+		assert.Zero(t, decryptedSecret)
+	})
+
+	t.Run("updating webhook that doesn't exist", func(t *testing.T) {
+		nonExistentUUID := uuid.New()
+		webhook := types.Webhook{ID: 100, UUID: nonExistentUUID}
+
+		logger := logtest.Scoped(t)
+		db := NewDB(logger, dbtest.NewDB(logger, t))
+
+		store := db.Webhooks(nil)
+		_, err := store.Update(ctx, &webhook)
+		if err == nil {
+			t.Fatal("attempting to update a non-existent webhook should return an error")
+		}
+		assert.Equal(t, err, &WebhookNotFoundError{ID: 100, UUID: nonExistentUUID})
+	})
+}
+
+func createWebhook(ctx context.Context, t *testing.T, store WebhookStore) *types.Webhook {
+	t.Helper()
+	kind := extsvc.KindGitHub
+	encryptedSecret := types.NewUnencryptedSecret(testSecret)
+
+	created, err := store.Create(ctx, kind, testURN, encryptedSecret)
+	assert.NoError(t, err)
+	return created
 }
 
 func TestGetByID(t *testing.T) {

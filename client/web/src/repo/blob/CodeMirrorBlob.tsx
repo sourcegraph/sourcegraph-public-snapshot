@@ -95,6 +95,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         navigateToLineOnAnyClick,
 
         overrideBrowserSearchKeybinding,
+        'data-testid': dataTestId,
     } = props
 
     const [container, setContainer] = useState<HTMLDivElement | null>(null)
@@ -273,8 +274,9 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 ref={setContainer}
                 aria-label={ariaLabel}
                 role={role}
-                data-testid="repo-blob"
-                className={`${className} overflow-hidden`}
+                data-testid={dataTestId}
+                className={`${className} overflow-hidden test-editor`}
+                data-editor="codemirror6"
             />
             {overrideBrowserSearchKeybinding && (
                 <Shortcut ordered={['f']} held={['Mod']} onMatch={openSearch} ignoreInput={true} />

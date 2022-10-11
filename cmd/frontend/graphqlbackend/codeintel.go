@@ -10,7 +10,6 @@ import (
 	policiesgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
 	uploadsgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
-	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 )
 
 type CodeIntelResolver interface {
@@ -23,13 +22,8 @@ type CodeIntelResolver interface {
 	NodeResolvers() map[string]NodeByIDFunc
 
 	AutoindexingServiceResolver
-	ExecutorResolver
 	UploadsServiceResolver
 	PoliciesServiceResolver
-}
-
-type ExecutorResolver interface {
-	ExecutorResolver() executor.Resolver
 }
 
 type AutoindexingServiceResolver interface {

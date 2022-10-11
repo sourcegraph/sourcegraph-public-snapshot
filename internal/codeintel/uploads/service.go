@@ -10,7 +10,7 @@ import (
 	logger "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
@@ -31,7 +31,6 @@ type Service struct {
 	lsifstore         lsifstore.LsifStore
 	gitserverClient   GitserverClient
 	policySvc         PolicyService
-	autoIndexingSvc   AutoIndexingService
 	expirationMetrics *expirationMetrics
 	resetterMetrics   *resetterMetrics
 	janitorMetrics    *janitorMetrics
@@ -49,7 +48,6 @@ func newService(
 	lsifstore lsifstore.LsifStore,
 	gsc GitserverClient,
 	policySvc PolicyService,
-	autoindexingSvc AutoIndexingService,
 	policyMatcher PolicyMatcher,
 	locker Locker,
 	observationContext *observation.Context,
@@ -66,7 +64,6 @@ func newService(
 		lsifstore:         lsifstore,
 		gitserverClient:   gsc,
 		policySvc:         policySvc,
-		autoIndexingSvc:   autoindexingSvc,
 		expirationMetrics: newExpirationMetrics(observationContext),
 		resetterMetrics:   newResetterMetrics(observationContext),
 		janitorMetrics:    newJanitorMetrics(observationContext),

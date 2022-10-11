@@ -101,12 +101,10 @@ func testUnknownCommitsJanitor(t *testing.T, resolveRevisionFunc func(commit str
 	store := NewMockStore()
 	lsifStore := NewMockLsifStore()
 	store.GetStaleSourcedCommitsFunc.SetDefaultReturn(testSourcedCommits, nil)
-	autoIndexingSvc := NewMockAutoIndexingService()
 	janitor := &Service{
 		store:           store,
 		lsifstore:       lsifStore,
 		gitserverClient: gitserverClient,
-		autoIndexingSvc: autoIndexingSvc,
 		clock:           glock.NewRealClock(),
 		logger:          logtest.Scoped(t),
 		operations:      newOperations(&observation.TestContext),

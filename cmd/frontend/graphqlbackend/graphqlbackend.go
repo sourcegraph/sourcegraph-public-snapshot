@@ -342,23 +342,23 @@ func prometheusGraphQLRequestName(requestName string) string {
 }
 
 func NewSchemaWithNotebooksResolver(db database.DB, notebooks NotebooksResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(db), nil, nil, nil, nil, nil, nil, nil, nil, notebooks, nil, nil)
+	return NewSchema(db, gitserver.NewClient(db), nil, nil, nil, nil, nil, nil, nil, nil, nil, notebooks, nil, nil)
 }
 
 func NewSchemaWithAuthzResolver(db database.DB, authz AuthzResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(db), nil, nil, nil, authz, nil, nil, nil, nil, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(db), nil, nil, nil, nil, authz, nil, nil, nil, nil, nil, nil, nil)
 }
 
-func NewSchemaWithBatchChangesResolver(db database.DB, batchChanges BatchChangesResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(db), batchChanges, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+func NewSchemaWithBatchChangesResolver(db database.DB, batchChanges BatchChangesResolver, executorsResolver ExecutorResolver) (*graphql.Schema, error) {
+	return NewSchema(db, gitserver.NewClient(db), batchChanges, nil, executorsResolver, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
 func NewSchemaWithCodeMonitorsResolver(db database.DB, codeMonitors CodeMonitorsResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(db), nil, nil, nil, nil, codeMonitors, nil, nil, nil, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(db), nil, nil, nil, nil, nil, codeMonitors, nil, nil, nil, nil, nil, nil)
 }
 
 func NewSchemaWithLicenseResolver(db database.DB, license LicenseResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(db), nil, nil, nil, nil, nil, license, nil, nil, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(db), nil, nil, nil, nil, nil, nil, license, nil, nil, nil, nil, nil)
 }
 
 func NewSchema(
@@ -366,6 +366,7 @@ func NewSchema(
 	gitserverClient gitserver.Client,
 	batchChanges BatchChangesResolver,
 	codeIntel CodeIntelResolver,
+	executors ExecutorResolver,
 	insights InsightsResolver,
 	authz AuthzResolver,
 	codeMonitors CodeMonitorsResolver,
@@ -380,6 +381,10 @@ func NewSchema(
 	schemas := []string{mainSchema}
 
 	if batchChanges != nil {
+		if executors == nil {
+			return nil, errors.New("graphql: batches requires executors to also be initialized")
+		}
+
 		EnterpriseResolvers.batchChangesResolver = batchChanges
 		resolver.BatchChangesResolver = batchChanges
 		schemas = append(schemas, batchesSchema)
@@ -390,6 +395,10 @@ func NewSchema(
 	}
 
 	if codeIntel != nil {
+		if executors == nil {
+			return nil, errors.New("graphql: codeintel requires executors to also be initialized")
+		}
+
 		EnterpriseResolvers.codeIntelResolver = codeIntel
 		resolver.CodeIntelResolver = codeIntel
 		schemas = append(schemas, codeIntelSchema)
@@ -397,6 +406,12 @@ func NewSchema(
 		for kind, res := range codeIntel.NodeResolvers() {
 			resolver.nodeByIDFns[kind] = res
 		}
+	}
+
+	if executors != nil {
+		EnterpriseResolvers.executorsResolver = executors
+		resolver.ExecutorResolver = executors
+		schemas = append(schemas, executorsSchema)
 	}
 
 	if insights != nil {
@@ -495,6 +510,7 @@ type schemaResolver struct {
 	BatchChangesResolver
 	AuthzResolver
 	CodeIntelResolver
+	ExecutorResolver
 	ComputeResolver
 	InsightsResolver
 	CodeMonitorsResolver
@@ -575,6 +591,7 @@ func newSchemaResolver(db database.DB, gitserverClient gitserver.Client) *schema
 // in enterprise mode. These resolver instances are nil when running as OSS.
 var EnterpriseResolvers = struct {
 	codeIntelResolver           CodeIntelResolver
+	executorsResolver           ExecutorResolver
 	computeResolver             ComputeResolver
 	insightsResolver            InsightsResolver
 	authzResolver               AuthzResolver

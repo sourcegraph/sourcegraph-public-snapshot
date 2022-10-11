@@ -23,29 +23,29 @@ import (
 )
 
 type Client struct {
-	db         database.DB
-	dbStore    *store
-	operations *operations
+	gitserverClient gitserver.Client
+	dbStore         *store
+	operations      *operations
 }
 
 func New(db database.DB, observationContext *observation.Context) *Client {
 	return &Client{
-		db:         db,
-		dbStore:    newWithDB(db),
-		operations: newOperations(observationContext),
+		gitserverClient: gitserver.NewClient(db),
+		dbStore:         newWithDB(db),
+		operations:      newOperations(observationContext),
 	}
 }
 
 func (c *Client) ArchiveReader(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, options gitserver.ArchiveOptions) (io.ReadCloser, error) {
-	return gitserver.NewClient(c.db).ArchiveReader(ctx, checker, repo, options)
+	return c.gitserverClient.ArchiveReader(ctx, checker, repo, options)
 }
 
 func (c *Client) RequestRepoUpdate(ctx context.Context, name api.RepoName, t time.Duration) (*protocol.RepoUpdateResponse, error) {
-	return gitserver.NewClient(c.db).RequestRepoUpdate(ctx, name, t)
+	return c.gitserverClient.RequestRepoUpdate(ctx, name, t)
 }
 
 func (c *Client) DiffPath(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, sourceCommit, targetCommit, path string) ([]*diff.Hunk, error) {
-	return gitserver.NewClient(c.db).DiffPath(ctx, checker, repo, sourceCommit, targetCommit, path)
+	return c.gitserverClient.DiffPath(ctx, checker, repo, sourceCommit, targetCommit, path)
 }
 
 // CommitExists determines if the given commit exists in the given repository.
@@ -60,7 +60,7 @@ func (c *Client) CommitExists(ctx context.Context, repositoryID int, commit stri
 	if err != nil {
 		return false, err
 	}
-	return gitserver.NewClient(c.db).CommitExists(ctx, repo, api.CommitID(commit), authz.DefaultSubRepoPermsChecker)
+	return c.gitserverClient.CommitExists(ctx, repo, api.CommitID(commit), authz.DefaultSubRepoPermsChecker)
 }
 
 type RepositoryCommit struct {
@@ -113,7 +113,7 @@ func (c *Client) CommitsExist(ctx context.Context, commits []RepositoryCommit) (
 		originalIndexes = append(originalIndexes, i)
 	}
 
-	exists, err := gitserver.NewClient(c.db).CommitsExist(ctx, repoCommits, authz.DefaultSubRepoPermsChecker)
+	exists, err := c.gitserverClient.CommitsExist(ctx, repoCommits, authz.DefaultSubRepoPermsChecker)
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +151,7 @@ func (c *Client) Head(ctx context.Context, repositoryID int) (_ string, revision
 		return "", false, err
 	}
 
-	return gitserver.NewClient(c.db).Head(ctx, repo, authz.DefaultSubRepoPermsChecker)
+	return c.gitserverClient.Head(ctx, repo, authz.DefaultSubRepoPermsChecker)
 }
 
 // CommitDate returns the time that the given commit was committed. If the given revision does not exist,
@@ -168,8 +168,7 @@ func (c *Client) CommitDate(ctx context.Context, repositoryID int, commit string
 		return "", time.Time{}, false, nil
 	}
 
-	db := c.db
-	rev, tm, ok, err := gitserver.NewClient(db).CommitDate(ctx, repo, api.CommitID(commit), authz.DefaultSubRepoPermsChecker)
+	rev, tm, ok, err := c.gitserverClient.CommitDate(ctx, repo, api.CommitID(commit), authz.DefaultSubRepoPermsChecker)
 	if err == nil {
 		return rev, tm, ok, nil
 	}
@@ -179,7 +178,7 @@ func (c *Client) CommitDate(ctx context.Context, repositoryID int, commit string
 	// target of the command. If the revision fails to resolve, we return an instance
 	// of a RevisionNotFoundError error instead of an "exit 128".
 	if !gitdomain.IsRepoNotExist(err) {
-		if _, err := gitserver.NewClient(c.db).ResolveRevision(ctx, repo, commit, gitserver.ResolveRevisionOptions{}); err != nil {
+		if _, err := c.gitserverClient.ResolveRevision(ctx, repo, commit, gitserver.ResolveRevisionOptions{}); err != nil {
 			return "", time.Time{}, false, errors.Wrap(err, "git.ResolveRevision")
 		}
 	}
@@ -204,7 +203,7 @@ func (c *Client) CommitGraph(ctx context.Context, repositoryID int, opts gitserv
 		return nil, err
 	}
 
-	gitserverClient := gitserver.NewClient(c.db)
+	gitserverClient := c.gitserverClient
 	g, err := gitserverClient.CommitGraph(ctx, repo, opts)
 	if err == nil {
 		return g, nil
@@ -240,7 +239,7 @@ func (c *Client) RefDescriptions(ctx context.Context, repositoryID int, pointedA
 		return nil, err
 	}
 
-	return gitserver.NewClient(c.db).RefDescriptions(ctx, repo, authz.DefaultSubRepoPermsChecker, pointedAt...)
+	return c.gitserverClient.RefDescriptions(ctx, repo, authz.DefaultSubRepoPermsChecker, pointedAt...)
 }
 
 // CommitsUniqueToBranch returns a map from commits that exist on a particular branch in the given repository to
@@ -260,17 +259,17 @@ func (c *Client) CommitsUniqueToBranch(ctx context.Context, repositoryID int, br
 		return nil, err
 	}
 
-	return gitserver.NewClient(c.db).CommitsUniqueToBranch(ctx, repo, branchName, isDefaultBranch, maxAge, authz.DefaultSubRepoPermsChecker)
+	return c.gitserverClient.CommitsUniqueToBranch(ctx, repo, branchName, isDefaultBranch, maxAge, authz.DefaultSubRepoPermsChecker)
 }
 
-// BranchesContaining returns a map from branch names to branch tip hashes for each branch
+// branchesContaining returns a map from branch names to branch tip hashes for each branch
 // containing the given commit.
-func (c *Client) BranchesContaining(ctx context.Context, db database.DB, repositoryID int, commit string) ([]string, error) {
+func (c *Client) branchesContaining(ctx context.Context, repositoryID int, commit string) ([]string, error) {
 	repo, err := c.repositoryIDToRepo(ctx, repositoryID)
 	if err != nil {
 		return nil, err
 	}
-	return gitserver.NewClient(db).BranchesContaining(ctx, repo, api.CommitID(commit), authz.DefaultSubRepoPermsChecker)
+	return c.gitserverClient.BranchesContaining(ctx, repo, api.CommitID(commit), authz.DefaultSubRepoPermsChecker)
 }
 
 // DefaultBranchContains tells if the default branch contains the given commit ID.
@@ -291,7 +290,7 @@ func (c *Client) DefaultBranchContains(ctx context.Context, repositoryID int, co
 	}
 
 	// Determine if branch contains commit.
-	branches, err := c.BranchesContaining(ctx, c.db, repositoryID, commit)
+	branches, err := c.branchesContaining(ctx, repositoryID, commit)
 	if err != nil {
 		return false, errors.Wrap(err, "BranchesContaining")
 	}
@@ -317,8 +316,7 @@ func (c *Client) RawContents(ctx context.Context, repositoryID int, commit, file
 		return nil, err
 	}
 
-	db := c.db
-	out, err := gitserver.NewClient(db).ReadFile(ctx, repo, api.CommitID(commit), file, authz.DefaultSubRepoPermsChecker)
+	out, err := c.gitserverClient.ReadFile(ctx, repo, api.CommitID(commit), file, authz.DefaultSubRepoPermsChecker)
 	if err == nil {
 		return out, nil
 	}
@@ -328,7 +326,7 @@ func (c *Client) RawContents(ctx context.Context, repositoryID int, commit, file
 	// target of the command. If the revision fails to resolve, we return an instance
 	// of a RevisionNotFoundError error instead of an "exit 128".
 	if !gitdomain.IsRepoNotExist(err) {
-		if _, err := gitserver.NewClient(c.db).ResolveRevision(ctx, repo, commit, gitserver.ResolveRevisionOptions{}); err != nil {
+		if _, err := c.gitserverClient.ResolveRevision(ctx, repo, commit, gitserver.ResolveRevisionOptions{}); err != nil {
 			return nil, errors.Wrap(err, "git.ResolveRevision")
 		}
 	}
@@ -354,7 +352,7 @@ func (c *Client) DirectoryChildren(ctx context.Context, repositoryID int, commit
 		return nil, err
 	}
 
-	children, err := gitserver.NewClient(c.db).ListDirectoryChildren(ctx, authz.DefaultSubRepoPermsChecker, repo, api.CommitID(commit), dirnames)
+	children, err := c.gitserverClient.ListDirectoryChildren(ctx, authz.DefaultSubRepoPermsChecker, repo, api.CommitID(commit), dirnames)
 	if err == nil {
 		return children, err
 	}
@@ -364,7 +362,7 @@ func (c *Client) DirectoryChildren(ctx context.Context, repositoryID int, commit
 	// target of the command. If the revision fails to resolve, we return an instance
 	// of a RevisionNotFoundError error instead of an "exit 128".
 	if !gitdomain.IsRepoNotExist(err) {
-		if _, err := gitserver.NewClient(c.db).ResolveRevision(ctx, repo, commit, gitserver.ResolveRevisionOptions{}); err != nil {
+		if _, err := c.gitserverClient.ResolveRevision(ctx, repo, commit, gitserver.ResolveRevisionOptions{}); err != nil {
 			return nil, errors.Wrap(err, "git.ResolveRevision")
 		}
 	}
@@ -389,12 +387,11 @@ func (c *Client) FileExists(ctx context.Context, repositoryID int, commit, file 
 		return false, err
 	}
 
-	db := c.db
-	if _, err := gitserver.NewClient(c.db).ResolveRevision(ctx, repo, commit, gitserver.ResolveRevisionOptions{}); err != nil {
+	if _, err := c.gitserverClient.ResolveRevision(ctx, repo, commit, gitserver.ResolveRevisionOptions{}); err != nil {
 		return false, errors.Wrap(err, "git.ResolveRevision")
 	}
 
-	if _, err := gitserver.NewClient(db).Stat(ctx, authz.DefaultSubRepoPermsChecker, repo, api.CommitID(commit), file); err != nil {
+	if _, err := c.gitserverClient.Stat(ctx, authz.DefaultSubRepoPermsChecker, repo, api.CommitID(commit), file); err != nil {
 		if os.IsNotExist(err) {
 			return false, nil
 		}
@@ -424,7 +421,7 @@ func (c *Client) ListFiles(ctx context.Context, repositoryID int, commit string,
 }
 
 func (c *Client) ListFilesForRepo(ctx context.Context, repo api.RepoName, commit string, pattern *regexp.Regexp) (_ []string, err error) {
-	matching, err := gitserver.NewClient(c.db).ListFiles(ctx, repo, api.CommitID(commit), pattern, authz.DefaultSubRepoPermsChecker)
+	matching, err := c.gitserverClient.ListFiles(ctx, repo, api.CommitID(commit), pattern, authz.DefaultSubRepoPermsChecker)
 	if err == nil {
 		return matching, nil
 	}
@@ -434,7 +431,7 @@ func (c *Client) ListFilesForRepo(ctx context.Context, repo api.RepoName, commit
 	// target of the command. If the revision fails to resolve, we return an instance
 	// of a RevisionNotFoundError error instead of an "exit 128".
 	if !gitdomain.IsRepoNotExist(err) {
-		if _, err := gitserver.NewClient(c.db).ResolveRevision(ctx, repo, commit, gitserver.ResolveRevisionOptions{}); err != nil {
+		if _, err := c.gitserverClient.ResolveRevision(ctx, repo, commit, gitserver.ResolveRevisionOptions{}); err != nil {
 			return nil, errors.Wrap(err, "git.ResolveRevision")
 		}
 	}
@@ -458,7 +455,7 @@ func (c *Client) ResolveRevision(ctx context.Context, repositoryID int, versionS
 		return "", err
 	}
 
-	commitID, err = gitserver.NewClient(c.db).ResolveRevision(ctx, repoName, versionString, gitserver.ResolveRevisionOptions{})
+	commitID, err = c.gitserverClient.ResolveRevision(ctx, repoName, versionString, gitserver.ResolveRevisionOptions{})
 	if err != nil {
 		return "", errors.Wrap(err, "git.ResolveRevision")
 	}
@@ -472,7 +469,7 @@ func (c *Client) ListTags(ctx context.Context, repo api.RepoName, commitObjs ...
 	}})
 	defer endObservation(1, observation.Args{})
 
-	tags, err := gitserver.NewClient(c.db).ListTags(ctx, repo, commitObjs...)
+	tags, err := c.gitserverClient.ListTags(ctx, repo, commitObjs...)
 	if err != nil {
 		return nil, errors.Wrap(err, "git.ListTags")
 	}

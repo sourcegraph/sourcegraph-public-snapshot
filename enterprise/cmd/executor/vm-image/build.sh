@@ -11,6 +11,10 @@ cleanup() {
 }
 trap cleanup EXIT
 
+export EXECUTOR_FIRECRACKER_IMAGE="sourcegraph/executor-vm:$VERSION"
+# Used by the docker image build script.
+export IMAGE="${EXECUTOR_FIRECRACKER_IMAGE}"
+
 # Capture src cli version before we reconfigure the go environment.
 SRC_CLI_VERSION="$(go run ./internal/cmd/src-cli-version/main.go)"
 
@@ -28,23 +32,13 @@ bin_name="$OUTPUT/$(basename $pkg)"
 go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" -buildmode exe -tags dist -o "$bin_name" "$pkg"
 popd 1>/dev/null
 
-echo "--- create binary artifacts"
-# Setup new release folder that contains binary, info text.
-mkdir -p "enterprise/cmd/executor/vm-image/artifacts/executor/$(git rev-parse HEAD)"
-pushd "enterprise/cmd/executor/vm-image/artifacts/executor/$(git rev-parse HEAD)" 1>/dev/null
-
-echo "executor built from https://github.com/sourcegraph/sourcegraph" >info.txt
-echo >>info.txt
-git log -n1 >>info.txt
-mkdir -p linux-amd64
-# Copy binary into new folder
-cp "$bin_name" linux-amd64/executor
-sha256sum linux-amd64/executor >>linux-amd64/executor_SHA256SUM
+echo "--- build executor-vm image"
+pushd ./docker-images/executor-vm 1>/dev/null
+./build.sh
 popd 1>/dev/null
-# Upload the new release folder
-echo "--- upload binary artifacts"
-gsutil cp -r enterprise/cmd/executor/vm-image/artifacts/executor gs://sourcegraph-artifacts
-gsutil iam ch allUsers:objectViewer gs://sourcegraph-artifacts
+
+echo "--- export executor-vm image"
+docker save --output "${OUTPUT}/executor-vm.tar" "${EXECUTOR_FIRECRACKER_IMAGE}"
 
 # Fetch the e2e builder service account so we can spawn a packer VM.
 echo "--- gcp secret"
@@ -58,8 +52,6 @@ cp executor.pkr.hcl "$OUTPUT"
 cp install.sh "$OUTPUT"
 cp aws_regions.json "$OUTPUT"
 popd 1>/dev/null
-pushd ./docker-images 1>/dev/null
-cp -R executor-vm "$OUTPUT"
 
 export PKR_VAR_name
 PKR_VAR_name="${IMAGE_FAMILY}-${BUILDKITE_BUILD_NUMBER}"
