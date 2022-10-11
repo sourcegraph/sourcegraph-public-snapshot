@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel"
+	codeintelinit "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/compute"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom"
@@ -31,6 +31,7 @@ import (
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -46,13 +47,13 @@ func init() {
 	oobmigration.ReturnEnterpriseMigrations = true
 }
 
-type EnterpriseInitializer = func(context.Context, database.DB, conftypes.UnifiedWatchable, *enterprise.Services, *observation.Context) error
+type EnterpriseInitializer = func(context.Context, database.DB, codeintel.Services, conftypes.UnifiedWatchable, *enterprise.Services, *observation.Context) error
 
 var initFunctions = map[string]EnterpriseInitializer{
 	"app":            app.Init,
 	"authz":          authz.Init,
 	"batches":        batches.Init,
-	"codeintel":      codeintel.Init,
+	"codeintel":      codeintelinit.Init,
 	"codemonitors":   codemonitors.Init,
 	"compute":        compute.Init,
 	"dotcom":         dotcom.Init,
@@ -62,7 +63,7 @@ var initFunctions = map[string]EnterpriseInitializer{
 	"searchcontexts": searchcontexts.Init,
 }
 
-func enterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterprise.Services {
+func enterpriseSetupHook(db database.DB, codeIntelServices codeintel.Services, conf conftypes.UnifiedWatchable) enterprise.Services {
 	logger := log.Scoped("enterprise", "frontend enterprise edition")
 	debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
 	if debug {
@@ -81,7 +82,7 @@ func enterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterp
 	}
 
 	for name, fn := range initFunctions {
-		if err := fn(ctx, db, conf, &enterpriseServices, observationContext); err != nil {
+		if err := fn(ctx, db, codeIntelServices, conf, &enterpriseServices, observationContext); err != nil {
 			logger.Fatal("failed to initialize", log.String("name", name), log.Error(err))
 		}
 	}

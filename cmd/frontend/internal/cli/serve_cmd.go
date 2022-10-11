@@ -122,7 +122,7 @@ func InitDB(logger sglog.Logger) (*sql.DB, error) {
 }
 
 // Main is the main entrypoint for the frontend server program.
-func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable) enterprise.Services) error {
+func Main(enterpriseSetupHook func(db database.DB, codeIntelServices codeintel.Services, c conftypes.UnifiedWatchable) enterprise.Services) error {
 	ctx := context.Background()
 
 	log.SetFlags(0)
@@ -208,7 +208,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	profiler.Init()
 
 	// Run enterprise setup hook
-	enterprise := enterpriseSetupHook(db, conf.DefaultClient())
+	enterprise := enterpriseSetupHook(db, codeIntelServices, conf.DefaultClient())
 
 	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(db.SubRepoPerms())
 	if err != nil {
