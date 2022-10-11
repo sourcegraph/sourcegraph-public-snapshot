@@ -96,7 +96,6 @@ func Wait(ctx context.Context, out *std.Output) {
 
 	// Done!
 	close(jobs.output)
-	out.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "Background jobs done!"))
 	span.Succeeded()
 }
 
