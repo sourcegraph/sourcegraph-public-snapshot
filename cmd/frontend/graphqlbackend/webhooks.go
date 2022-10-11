@@ -16,24 +16,6 @@ import (
 
 // TODO: Tests
 
-func webhookByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*webhookResolver, error) {
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
-		return nil, err
-	}
-
-	id, err := unmarshalWebhookID(gqlID)
-	if err != nil {
-		return nil, err
-	}
-
-	hook, err := db.Webhooks(keyring.Default().WebhookLogKey).GetByID(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	return &webhookResolver{db: db, hook: hook}, nil
-}
-
 type webhookResolver struct {
 	db   database.DB
 	hook *types.Webhook
@@ -102,6 +84,24 @@ func (r *webhookConnectionResolver) TotalCount() (int32, error) {
 
 func (r *webhookConnectionResolver) PageInfo() (*graphqlutil.PageInfo, error) {
 	return nil, errors.New("TODO: PageInfo")
+}
+
+func webhookByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*webhookResolver, error) {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
+		return nil, err
+	}
+
+	id, err := unmarshalWebhookID(gqlID)
+	if err != nil {
+		return nil, err
+	}
+
+	hook, err := db.Webhooks(keyring.Default().WebhookLogKey).GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return &webhookResolver{db: db, hook: hook}, nil
 }
 
 func marshalWebhookID(id int32) graphql.ID {
