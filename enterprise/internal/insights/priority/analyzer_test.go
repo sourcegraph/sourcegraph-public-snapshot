@@ -79,7 +79,7 @@ func Test_queryScopeCost(t *testing.T) {
 		},
 		{
 			"archived:yes fork:only search",
-			autogold.Want("archives and forks", 50+50),
+			autogold.Want("archives and forks", 50-50),
 		},
 	}
 	for _, tc := range testCases {

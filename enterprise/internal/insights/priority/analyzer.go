@@ -13,13 +13,13 @@ type QueryAnalyzer struct {
 }
 
 type QueryObject struct {
-	query query.Plan
+	Query query.Plan
 	// the object can be augmented with repository information, or anything else of value.
 }
 
 type CostHeuristic struct {
-	fn     func(QueryObject) int
-	weight int
+	Func   func(QueryObject) int
+	Weight int
 }
 
 var DefaultCostHandlers = []CostHeuristic{
@@ -36,7 +36,7 @@ func NewQueryAnalyzer(handlers []CostHeuristic) *QueryAnalyzer {
 func (a *QueryAnalyzer) Cost(o QueryObject) int {
 	totalCost := 0
 	for _, handler := range a.costHandlers {
-		totalCost += handler.fn(o) * handler.weight
+		totalCost += handler.Func(o) * handler.Weight
 	}
 	if totalCost < 0 {
 		return 0
@@ -47,7 +47,7 @@ func (a *QueryAnalyzer) Cost(o QueryObject) int {
 // queryContentCost will derive a cost based on the kind of content a query would match.
 func queryContentCost(o QueryObject) int {
 	var contentCost int
-	for _, basic := range o.query {
+	for _, basic := range o.Query {
 		if basic.IsStructural() {
 			contentCost += 1000
 		}
@@ -57,7 +57,7 @@ func queryContentCost(o QueryObject) int {
 	}
 
 	var diff, commit bool
-	query.VisitParameter(o.query.ToQ(), func(field, value string, negated bool, annotation query.Annotation) {
+	query.VisitParameter(o.Query.ToQ(), func(field, value string, negated bool, annotation query.Annotation) {
 		if field == "type" {
 			if value == "diff" {
 				diff = true
@@ -73,7 +73,7 @@ func queryContentCost(o QueryObject) int {
 		contentCost += 800
 	}
 
-	parameters := querybuilder.ParametersFromQueryPlan(o.query)
+	parameters := querybuilder.ParametersFromQueryPlan(o.Query)
 	if parameters.Index() == query.No {
 		contentCost += 1000
 	}
@@ -85,7 +85,7 @@ func queryContentCost(o QueryObject) int {
 func queryScopeCost(o QueryObject) int {
 	var scopeCost int
 
-	parameters := querybuilder.ParametersFromQueryPlan(o.query)
+	parameters := querybuilder.ParametersFromQueryPlan(o.Query)
 	if parameters.Exists(query.FieldFile) {
 		scopeCost -= 100
 	}
@@ -111,7 +111,7 @@ func queryScopeCost(o QueryObject) int {
 	}
 
 	var diffOrCommit bool
-	query.VisitParameter(o.query.ToQ(), func(field, value string, negated bool, annotation query.Annotation) {
+	query.VisitParameter(o.Query.ToQ(), func(field, value string, negated bool, annotation query.Annotation) {
 		if field == "type" {
 			if value == "diff" {
 				diffOrCommit = true
