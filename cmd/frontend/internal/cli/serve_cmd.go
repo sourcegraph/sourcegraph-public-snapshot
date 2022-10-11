@@ -265,6 +265,7 @@ func Main(enterpriseSetupHook func(db database.DB, codeIntelServices codeintel.S
 
 	siteid.Init(db)
 
+	globals.WatchBranding()
 	globals.WatchExternalURL(defaultExternalURL(nginxAddr, httpAddr))
 	globals.WatchPermissionsUserMapping()
 
