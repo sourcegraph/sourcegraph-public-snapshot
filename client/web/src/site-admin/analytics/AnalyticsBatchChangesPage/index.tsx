@@ -11,7 +11,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
 import { ChartContainer } from '../components/ChartContainer'
 import { HorizontalSelect } from '../components/HorizontalSelect'
-import { TimeSavedCalculator } from '../components/TimeSavedCalculatorGroup'
+import { TimeSavedCalculator, TimeSavedCalculatorProps } from '../components/TimeSavedCalculatorGroup'
 import { ValueLegendList, ValueLegendListProps } from '../components/ValueLegendList'
 import { useChartFilters } from '../useChartFilters'
 import { StandardDatum } from '../utils'
@@ -85,15 +85,16 @@ export const AnalyticsBatchChangesPage: React.FunctionComponent<RouteComponentPr
             },
         ]
 
-        const calculatorProps = {
+        const calculatorProps: TimeSavedCalculatorProps = {
             page: 'BatchChanges',
             dateRange: dateRange.value,
             label: 'Changesets merged',
             color: 'var(--cyan)',
             value: changesetsMerged.summary.totalCount,
-            minPerItem: DEFAULT_MINS_SAVED_PER_CHANGESET,
+            defaultMinPerItem: DEFAULT_MINS_SAVED_PER_CHANGESET,
             description:
                 'Batch Changes automates opening changesets across many repositories and codehosts. It also significantly reduces the time required to manage cross-repository changes via tracking and management functions that are superior to custom solutions, spreadsheets and manually reaching out to developers.',
+            temporarySettingsKey: 'batches.minSavedPerChangeset',
         }
 
         return [stats, legends, calculatorProps]
