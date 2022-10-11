@@ -1707,7 +1707,7 @@
         "webhookLogKey": {
           "$ref": "#/definitions/EncryptionKey"
         },
-         "webhookKey": {
+        "webhookKey": {
           "$ref": "#/definitions/EncryptionKey"
         }
       }

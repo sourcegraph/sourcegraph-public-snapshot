@@ -53,6 +53,7 @@ var initServiceMemo = memo.NewMemoizedConstructorWithArg(func(deps serviceDepend
 		locker,
 		scopedContext("service"),
 	)
+
 	svc.policySvc = policies.GetService(deps.db, svc, deps.gsc)
 	return svc, nil
 })

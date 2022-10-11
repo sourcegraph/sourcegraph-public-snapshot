@@ -2,10 +2,6 @@ package pipeline
 
 import (
 	"context"
-	golog "log"
-	"math/rand"
-	"runtime/debug"
-	"strings"
 	"sync"
 	"time"
 
@@ -16,20 +12,24 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/priority"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	itypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 type BackfillRequest struct {
 	Series *types.InsightSeries
 	Repo   *itypes.MinimalRepo
+}
+
+type requestContext struct {
+	backfillRequest *BackfillRequest
 }
 
 type Backfiller interface {
@@ -41,27 +41,16 @@ type gitCommitClient interface {
 	RecentCommits(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error)
 }
 
-type SearchJobGeneratorOutput struct {
-	*BackfillRequest
-	Job *queryrunner.Job
-}
-
-type SearchResultOutput struct {
-	*BackfillRequest
-	err    error
-	result searchResult
-}
-
-type SearchJobGenerator func(ctx context.Context, req BackfillRequest) <-chan SearchJobGeneratorOutput
-type SearchRunner func(ctx context.Context, input <-chan SearchJobGeneratorOutput) <-chan SearchResultOutput
-type ResultsPersister func(ctx context.Context, input <-chan SearchResultOutput) error
+type SearchJobGenerator func(ctx context.Context, req requestContext) (context.Context, *requestContext, []*queryrunner.Job, error)
+type SearchRunner func(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.Job, err error) (context.Context, *requestContext, []store.RecordSeriesPointArgs, error)
+type ResultsPersister func(ctx context.Context, reqContext *requestContext, points []store.RecordSeriesPointArgs, err error) (*requestContext, error)
 
 func NewBackfiller(jobGenerator SearchJobGenerator, searchRunner SearchRunner, resultsPersister ResultsPersister) Backfiller {
 	return &backfiller{
 		searchJobGenerator: jobGenerator,
 		searchRunner:       searchRunner,
 		persister:          resultsPersister,
-		logger:             log.Scoped("insights_backfill_pipeline", ""),
+		logger:             log.Scoped("insightsBackfiller", ""),
 	}
 
 }
@@ -75,68 +64,70 @@ type backfiller struct {
 }
 
 func (b *backfiller) Run(ctx context.Context, req BackfillRequest) error {
-
-	jobsChan := b.searchJobGenerator(ctx, req)
-	searchResultsChan := b.searchRunner(ctx, jobsChan)
-	return b.persister(ctx, searchResultsChan)
-
+	_, err := b.persister(b.searchRunner(b.searchJobGenerator(ctx, requestContext{backfillRequest: &req})))
+	return err
 }
 
 // Implimentation of steps for Backfill process
 
-func makeSearchJobsFunc(logger log.Logger, commitClient gitCommitClient, compressionPlan compression.DataFrameFilter) func(ctx context.Context, req BackfillRequest) <-chan SearchJobGeneratorOutput {
-	return func(ctx context.Context, req BackfillRequest) <-chan SearchJobGeneratorOutput {
-		output := make(chan SearchJobGeneratorOutput, 12)
+func makeSearchJobsFunc(logger log.Logger, commitClient gitCommitClient, compressionPlan compression.DataFrameFilter, searchJobWorkerLimit int) SearchJobGenerator {
+	return func(ctx context.Context, reqContext requestContext) (context.Context, *requestContext, []*queryrunner.Job, error) {
+		jobs := make([]*queryrunner.Job, 0, 12)
+		if reqContext.backfillRequest == nil {
+			return ctx, &reqContext, jobs, errors.New("backfill request provided")
+		}
+
+		req := reqContext.backfillRequest
 		buildJob := makeHistoricalSearchJobFunc(logger, commitClient)
-
-		var wg sync.WaitGroup
-		go func() {
-			wg.Wait()
-			close(output)
-		}()
-		// launching a single worker
-		wg.Add(1)
-		goroutine.Go(func() {
-			defer wg.Done()
-
-			logger.Debug("making search plan")
-			// Find the first commit made to the repository on the default branch.
-			firstHEADCommit, err := commitClient.FirstCommit(ctx, req.Repo.Name)
-			if err != nil {
-
-				if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) || gitdomain.IsRepoNotExist(err) {
-					//return nil, err // error - repo may not be cloned yet (or not even pushed to code host yet)
-				}
-				if errors.Is(err, discovery.EmptyRepoErr) {
-					return
-				}
-				//TODO: deal with errors here
-				//return nil, err
+		logger.Debug("making search plan")
+		// Find the first commit made to the repository on the default branch.
+		firstHEADCommit, err := commitClient.FirstCommit(ctx, req.Repo.Name)
+		if err != nil {
+			if errors.Is(err, discovery.EmptyRepoErr) {
+				// This is fine it's empty there is no work to be done
+				return ctx, &reqContext, jobs, nil
 			}
 
-			frames := timeseries.BuildFrames(12, timeseries.TimeInterval{
-				Unit:  types.IntervalUnit(req.Series.SampleIntervalUnit),
-				Value: req.Series.SampleIntervalValue,
-			}, req.Series.CreatedAt.Truncate(time.Hour*24))
+			return ctx, &reqContext, jobs, err
+		}
 
-			searchPlan := compressionPlan.FilterFrames(ctx, frames, req.Repo.ID)
-			for i := len(searchPlan.Executions) - 1; i >= 0; i-- {
-				queryExecution := searchPlan.Executions[i]
+		frames := timeseries.BuildFrames(12, timeseries.TimeInterval{
+			Unit:  types.IntervalUnit(req.Series.SampleIntervalUnit),
+			Value: req.Series.SampleIntervalValue,
+		}, req.Series.CreatedAt.Truncate(time.Hour*24))
+
+		searchPlan := compressionPlan.FilterFrames(ctx, frames, req.Repo.ID)
+
+		mu := &sync.Mutex{}
+
+		groupContext, groupCancel := context.WithCancel(ctx)
+		defer groupCancel()
+		g := group.New().WithContext(groupContext).WithMaxConcurrency(searchJobWorkerLimit).WithCancelOnError()
+		for i := len(searchPlan.Executions) - 1; i >= 0; i-- {
+			execution := searchPlan.Executions[i]
+			g.Go(func(ctx context.Context) error {
 				// Build historical data for this unique timeframe+repo+series.
-				_, job, _ := buildJob(ctx, &buildSeriesContext{
-					execution:       queryExecution,
+				err, job, _ := buildJob(ctx, &buildSeriesContext{
+					execution:       execution,
 					repoName:        req.Repo.Name,
 					id:              req.Repo.ID,
 					firstHEADCommit: firstHEADCommit,
 					seriesID:        req.Series.SeriesID,
 					series:          req.Series,
 				})
-				output <- SearchJobGeneratorOutput{BackfillRequest: &req, Job: job}
-			}
-
-		})
-		return output
-
+				mu.Lock()
+				defer mu.Unlock()
+				if job != nil {
+					jobs = append(jobs, job)
+				}
+				return err
+			})
+		}
+		err = g.Wait()
+		if err != nil {
+			jobs = nil
+		}
+		return ctx, &reqContext, jobs, err
 	}
 }
 
@@ -162,16 +153,13 @@ type searchJobFunc func(ctx context.Context, bctx *buildSeriesContext) (err erro
 func makeHistoricalSearchJobFunc(logger log.Logger, commitClient gitCommitClient) searchJobFunc {
 	return func(ctx context.Context, bctx *buildSeriesContext) (err error, job *queryrunner.Job, preempted []store.RecordSeriesPointArgs) {
 		logger.Debug("making search job")
-		query := bctx.series.Query
-		// TODO(slimsag): future: use the search query parser here to avoid any false-positives like a
-		// search query with `content:"repo:"`.
-		if strings.Contains(query, "repo:") {
-			// We need to specify the repo: filter ourselves, so rewriting their query which already
-			// contains this would be complex (we would need to enumerate all repos their query would
-			// have matched the same way the search backend would've). We don't support this today.
-			//
-			// Another possibility is that they are specifying a non-default branch with the `repo:`
-			// filter. We would need to handle this below if so - we don't today.
+		rawQuery := bctx.series.Query
+		containsRepo, err := querybuilder.ContainsField(rawQuery, query.FieldRepo)
+		if err != nil {
+			return err, nil, nil
+		}
+		if containsRepo {
+			// This maintains existing behavior that searches with a repo filter are ignored
 			return nil, nil, nil
 		}
 
@@ -211,7 +199,7 @@ func makeHistoricalSearchJobFunc(logger log.Logger, commitClient gitCommitClient
 
 		// Construct the search query that will generate data for this repository and time (revision) tuple.
 		var newQueryStr string
-		modifiedQuery, err := querybuilder.SingleRepoQuery(querybuilder.BasicQuery(query), repoName, revision, querybuilder.CodeInsightsQueryDefaults(len(bctx.series.Repositories) == 0))
+		modifiedQuery, err := querybuilder.SingleRepoQuery(querybuilder.BasicQuery(rawQuery), repoName, revision, querybuilder.CodeInsightsQueryDefaults(len(bctx.series.Repositories) == 0))
 		if err != nil {
 			err = errors.Append(err, errors.Wrap(err, "SingleRepoQuery"))
 			return
@@ -226,75 +214,56 @@ func makeHistoricalSearchJobFunc(logger log.Logger, commitClient gitCommitClient
 			newQueryStr = computeQuery.String()
 		}
 
-		job = queryrunner.ToQueueJob(bctx.execution, bctx.seriesID, newQueryStr, priority.Unindexed, priority.FromTimeInterval(bctx.execution.RecordingTime, bctx.series.CreatedAt))
+		job = queryrunner.ToQueueJob(bctx.execution, bctx.seriesID, newQueryStr, priority.Unindexed, 0)
 		return err, job, preempted
 	}
 }
 
-type searchResult struct {
-	count       int
-	capture     string
-	repo        *itypes.MinimalRepo
-	pointInTime time.Time
-}
-
-func makeRunSearchFunc(logger log.Logger, searchClient streaming.SearchClient) func(context.Context, <-chan SearchJobGeneratorOutput) <-chan SearchResultOutput {
-	return func(ctx context.Context, in <-chan SearchJobGeneratorOutput) <-chan SearchResultOutput {
-
-		out := make(chan SearchResultOutput)
-		go func(ctx context.Context, outputChannel chan SearchResultOutput) {
-			defer func() {
-				if err := recover(); err != nil {
-					stack := debug.Stack()
-					golog.Printf("goroutine panic: %v\n%s", err, stack)
+func makeRunSearchFunc(logger log.Logger, searchHandlers map[types.GenerationMethod]queryrunner.InsightsHandler, searchWorkerLimit int) SearchRunner {
+	return func(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.Job, incomingErr error) (context.Context, *requestContext, []store.RecordSeriesPointArgs, error) {
+		points := make([]store.RecordSeriesPointArgs, 0, len(jobs))
+		// early return
+		if incomingErr != nil || ctx.Err() != nil {
+			return ctx, reqContext, points, incomingErr
+		}
+		series := reqContext.backfillRequest.Series
+		mu := &sync.Mutex{}
+		groupContext, groupCancel := context.WithCancel(ctx)
+		defer groupCancel()
+		g := group.New().WithContext(groupContext).WithMaxConcurrency(searchWorkerLimit).WithCancelOnError()
+		for _, job := range jobs {
+			g.Go(func(ctx context.Context) error {
+				h := searchHandlers[series.GenerationMethod]
+				searchPoints, err := h(ctx, job, series, *job.RecordTime)
+				if err != nil {
+					return err
 				}
-				close(out)
-			}()
-			for r := range in {
-
-				// run search
-				// some made up values
-				time.Sleep(time.Duration(rand.Intn(2000)) * time.Millisecond)
-				logger.Debug("running the search job")
-				outputChannel <- SearchResultOutput{
-					BackfillRequest: r.BackfillRequest,
-					result:          searchResult{count: 10, capture: "", repo: r.BackfillRequest.Repo, pointInTime: *r.Job.RecordTime},
-					err:             nil}
-			}
-		}(ctx, out)
-		return out
+				mu.Lock()
+				defer mu.Unlock()
+				points = append(points, searchPoints...)
+				return nil
+			})
+		}
+		err := g.Wait()
+		// don't return any points if they don't all succeed
+		if err != nil {
+			points = nil
+		}
+		return ctx, reqContext, points, err
 	}
 }
 
-func makeSaveResultsFunc(logger log.Logger, insightStore store.Interface) func(ctx context.Context, in <-chan SearchResultOutput) error {
-	return func(ctx context.Context, in <-chan SearchResultOutput) error {
-		points := make([]store.RecordSeriesPointArgs, 0, 12)
-		for search := range in {
-			if search.err != nil {
-				//TODO: what to do
-				continue
-			}
-			repoName := string(search.result.repo.Name)
-			repoID := search.result.repo.ID
-			capture := search.result.capture
-			points = append(points,
-				store.RecordSeriesPointArgs{
-					SeriesID: search.BackfillRequest.Series.SeriesID,
-					Point: store.SeriesPoint{
-						SeriesID: search.BackfillRequest.Series.SeriesID,
-						Time:     search.result.pointInTime,
-						Value:    float64(search.result.count),
-						Capture:  &capture,
-					},
-					RepoName:    &repoName,
-					RepoID:      &repoID,
-					PersistMode: store.RecordMode,
-				},
-			)
-
+func makeSaveResultsFunc(logger log.Logger, insightStore store.Interface) ResultsPersister {
+	return func(ctx context.Context, reqContext *requestContext, points []store.RecordSeriesPointArgs, incomingErr error) (*requestContext, error) {
+		if incomingErr != nil {
+			return reqContext, incomingErr
+		}
+		if ctx.Err() != nil {
+			return reqContext, ctx.Err()
 		}
 		logger.Debug("writing search results")
-		return insightStore.RecordSeriesPoints(ctx, points)
+		err := insightStore.RecordSeriesPoints(ctx, points)
+		return reqContext, err
 	}
 
 }
