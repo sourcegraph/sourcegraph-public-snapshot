@@ -61,7 +61,6 @@ function parseReport(commitFilename: string, compareFilename: string): Report {
 }
 
 function reportToMarkdown(report: Report): string {
-    const { diffWith, hash } = report[0]
     const initialSizeMetric = report[1]
     const totalSizeMetric = report[2]
     const asyncSizeMetric = report[3]
@@ -72,7 +71,7 @@ function reportToMarkdown(report: Report): string {
     const asyncSize = describeMetric(asyncSizeMetric, 10000) // 10kb
     const modules = describeMetric(modulesMetric, 0)
 
-    const url = `https://storage.cloud.google.com/sourcegraph_reports/statoscope-reports/${BRANCH}/compare-report.html#diff&diffWith=${diffWith}&hash=${hash}`
+    const url = `https://console.cloud.google.com/storage/browser/_details/sourcegraph_reports/statoscope-reports/${BRANCH}/compare-report.html;tab=live_object`
 
     let noExactDataWarning = ''
     if (MERGE_BASE !== COMPARE_REV) {
