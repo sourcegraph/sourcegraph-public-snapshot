@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -118,8 +119,14 @@ func parseJSONTime(t testing.TB, ts string) time.Time {
 	return timestamp
 }
 
+type mockExecutorResolver struct{}
+
+func (mockExecutorResolver) ExecutorResolver() executor.Resolver {
+	return nil
+}
+
 func newSchema(db database.DB, r graphqlbackend.BatchChangesResolver) (*graphql.Schema, error) {
-	return graphqlbackend.NewSchemaWithBatchChangesResolver(db, r)
+	return graphqlbackend.NewSchemaWithBatchChangesResolver(db, r, mockExecutorResolver{})
 }
 
 func newGitHubExternalService(t *testing.T, store database.ExternalServiceStore) *types.ExternalService {

@@ -349,8 +349,8 @@ func NewSchemaWithAuthzResolver(db database.DB, authz AuthzResolver) (*graphql.S
 	return NewSchema(db, gitserver.NewClient(db), nil, nil, nil, nil, authz, nil, nil, nil, nil, nil, nil, nil)
 }
 
-func NewSchemaWithBatchChangesResolver(db database.DB, batchChanges BatchChangesResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(db), batchChanges, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+func NewSchemaWithBatchChangesResolver(db database.DB, batchChanges BatchChangesResolver, executorsResolver ExecutorResolver) (*graphql.Schema, error) {
+	return NewSchema(db, gitserver.NewClient(db), batchChanges, nil, executorsResolver, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
 func NewSchemaWithCodeMonitorsResolver(db database.DB, codeMonitors CodeMonitorsResolver) (*graphql.Schema, error) {
@@ -381,6 +381,10 @@ func NewSchema(
 	schemas := []string{mainSchema}
 
 	if batchChanges != nil {
+		if executors == nil {
+			return nil, errors.New("graphql: batches requires executors to also be initialized")
+		}
+
 		EnterpriseResolvers.batchChangesResolver = batchChanges
 		resolver.BatchChangesResolver = batchChanges
 		schemas = append(schemas, batchesSchema)
@@ -391,6 +395,10 @@ func NewSchema(
 	}
 
 	if codeIntel != nil {
+		if executors == nil {
+			return nil, errors.New("graphql: codeintel requires executors to also be initialized")
+		}
+
 		EnterpriseResolvers.codeIntelResolver = codeIntel
 		resolver.CodeIntelResolver = codeIntel
 		schemas = append(schemas, codeIntelSchema)
