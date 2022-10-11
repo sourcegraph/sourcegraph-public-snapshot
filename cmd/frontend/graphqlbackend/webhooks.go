@@ -85,8 +85,7 @@ func (r *schemaResolver) Webhooks(ctx context.Context, args *struct {
 	After *string // Default to first item
 	Kind  *string // Default to no filtering
 }) *webhookConnectionResolver {
-	// TODO: Use the fields above to and a sync.Once to fetch the list of desired
-	// hooks
+	// TODO: Use the fields above to fetch the list of desired hooks
 	return &webhookConnectionResolver{}
 }
 
