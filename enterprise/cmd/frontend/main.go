@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/compute"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom"
 	executor "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executors"
 	licensing "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/init"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/notebooks"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
@@ -55,6 +56,7 @@ var initFunctions = map[string]EnterpriseInitializer{
 	"batches":        batches.Init,
 	"codeintel":      codeintelinit.Init,
 	"codemonitors":   codemonitors.Init,
+	"executors":      executors.Init,
 	"compute":        compute.Init,
 	"dotcom":         dotcom.Init,
 	"insights":       insights.Init,
