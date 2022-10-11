@@ -7718,6 +7718,9 @@ type TemporarySettings {
     contents: String!
 }
 
+"""
+Represents a webhook receiver from a code host.
+"""
 type Webhook implements Node {
     """
     The unique ID of the webhook.
