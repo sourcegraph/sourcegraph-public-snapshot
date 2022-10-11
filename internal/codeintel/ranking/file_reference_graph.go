@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -120,7 +119,6 @@ func (s *Service) buildFileReferenceGraph(ctx context.Context, repoName api.Repo
 	go func() {
 		defer close(ch)
 
-		now := time.Now()
 		if err := s.forEachFileInArchive(ctx, repoName, extensions, extractGraphEdges); err != nil {
 			select {
 			case ch <- streamedEdge{err: err}:
