@@ -17,6 +17,7 @@ type operations struct {
 	getRecentIndexesSummary       *observation.Operation
 	getLastIndexScanForRepository *observation.Operation
 	deleteIndexByID               *observation.Operation
+	deleteIndexes                 *observation.Operation
 	queueRepoRev                  *observation.Operation
 	queueIndex                    *observation.Operation
 	queueIndexForPackage          *observation.Operation
@@ -25,6 +26,8 @@ type operations struct {
 	getIndexConfigurationByRepositoryID    *observation.Operation
 	updateIndexConfigurationByRepositoryID *observation.Operation
 	inferIndexConfiguration                *observation.Operation
+	setInferenceScript                     *observation.Operation
+	getInferenceScript                     *observation.Operation
 
 	// Tags
 	getListTags *observation.Operation
@@ -72,6 +75,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		getRecentIndexesSummary:       op("GetRecentIndexesSummary"),
 		getLastIndexScanForRepository: op("GetLastIndexScanForRepository"),
 		deleteIndexByID:               op("DeleteIndexByID"),
+		deleteIndexes:                 op("DeleteIndexes"),
 		queueRepoRev:                  op("QueueRepoRev"),
 		queueIndex:                    op("QueueIndex"),
 		queueIndexForPackage:          op("QueueIndexForPackage"),
@@ -80,6 +84,8 @@ func newOperations(observationContext *observation.Context) *operations {
 		getIndexConfigurationByRepositoryID:    op("GetIndexConfigurationByRepositoryID"),
 		updateIndexConfigurationByRepositoryID: op("UpdateIndexConfigurationByRepositoryID"),
 		inferIndexConfiguration:                op("InferIndexConfiguration"),
+		getInferenceScript:                     op("GetInferenceScript"),
+		setInferenceScript:                     op("SetInferenceScript"),
 
 		// Tags
 		getListTags: op("GetListTags"),

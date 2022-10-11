@@ -218,3 +218,14 @@
   path: github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/telemetry
   interfaces:
     - bookmarkStore
+- filename: internal/codeintel/ranking/mocks_test.go
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/store
+      interfaces:
+        - Store
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/ranking
+      interfaces:
+        - GitserverClient
+    - path: github.com/sourcegraph/sourcegraph/internal/conf/conftypes
+      interfaces:
+        - SiteConfigQuerier

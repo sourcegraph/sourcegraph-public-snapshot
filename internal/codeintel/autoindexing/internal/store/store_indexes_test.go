@@ -16,7 +16,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -566,6 +566,30 @@ func TestDeleteIndexByID(t *testing.T) {
 
 	// Index no longer exists
 	if _, exists, err := store.GetIndexByID(context.Background(), 1); err != nil {
+		t.Fatalf("unexpected error getting index: %s", err)
+	} else if exists {
+		t.Fatal("unexpected record")
+	}
+}
+
+func TestDeleteIndexes(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	insertIndexes(t, db, types.Index{ID: 1, State: "completed"})
+	insertIndexes(t, db, types.Index{ID: 2, State: "errored"})
+
+	if err := store.DeleteIndexes(context.Background(), types.DeleteIndexesOptions{
+		State:        "errored",
+		Term:         "",
+		RepositoryID: 0,
+	}); err != nil {
+		t.Fatalf("unexpected error deleting indexes: %s", err)
+	}
+
+	// Index no longer exists
+	if _, exists, err := store.GetIndexByID(context.Background(), 2); err != nil {
 		t.Fatalf("unexpected error getting index: %s", err)
 	} else if exists {
 		t.Fatal("unexpected record")

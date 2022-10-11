@@ -15,8 +15,8 @@ import (
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	authz "github.com/sourcegraph/sourcegraph/internal/authz"
 	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	gitserver "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
-	types "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	gitserver "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/gitserver"
+	types "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
 	gitdomain "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )

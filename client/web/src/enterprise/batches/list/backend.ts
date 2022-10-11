@@ -96,3 +96,16 @@ export const GET_LICENSE_AND_USAGE_INFO = gql`
         maxUnlicensedChangesets
     }
 `
+
+export const GLOBAL_CHANGESETS_STATS = gql`
+    query GlobalChangesetsStats {
+        batchChanges {
+            totalCount
+        }
+        globalChangesetsStats {
+            open
+            closed
+            merged
+        }
+    }
+`

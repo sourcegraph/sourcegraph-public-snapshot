@@ -6,15 +6,15 @@ import (
 	"os"
 	"time"
 
+	"github.com/derision-test/glock"
 	"github.com/grafana/regexp"
 	otlog "github.com/opentracing/opentracing-go/log"
-	traceLog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -44,9 +44,11 @@ type Service struct {
 	inferenceService        shared.InferenceService
 	logger                  log.Logger
 	operations              *operations
+	janitorMetrics          *janitorMetrics
 	metrics                 *resetterMetrics
 	depencencySyncMetrics   workerutil.WorkerMetrics
 	depencencyIndexMetrics  workerutil.WorkerMetrics
+	clock                   glock.Clock
 }
 
 func newService(
@@ -82,9 +84,11 @@ func newService(
 		inferenceService:        inferenceSvc,
 		logger:                  observationContext.Logger,
 		operations:              newOperations(observationContext),
+		janitorMetrics:          newJanitorMetrics(observationContext),
 		metrics:                 newMetrics(observationContext),
 		depencencySyncMetrics:   workerutil.NewMetrics(observationContext, "codeintel_dependency_index_processor"),
 		depencencyIndexMetrics:  workerutil.NewMetrics(observationContext, "codeintel_dependency_index_queueing"),
+		clock:                   glock.NewRealClock(),
 	}
 }
 
@@ -134,27 +138,12 @@ func (s *Service) DeleteIndexByID(ctx context.Context, id int) (_ bool, err erro
 	return s.store.DeleteIndexByID(ctx, id)
 }
 
-//
-// Used by upload janitor, we need our own version of that janitor
+func (s *Service) DeleteIndexes(ctx context.Context, opts types.DeleteIndexesOptions) (err error) {
+	ctx, _, endObservation := s.operations.deleteIndexes.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
 
-func (s *Service) DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error) {
-	return s.store.DeleteIndexesWithoutRepository(ctx, now)
+	return s.store.DeleteIndexes(ctx, opts)
 }
-
-func (s *Service) GetStaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []shared.SourcedCommits, err error) {
-	return s.store.GetStaleSourcedCommits(ctx, minimumTimeSinceLastCheck, limit, now)
-}
-
-func (s *Service) UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (indexesUpdated int, err error) {
-	return s.store.UpdateSourcedCommits(ctx, repositoryID, commit, now)
-}
-
-func (s *Service) DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (indexesDeleted int, err error) {
-	return s.store.DeleteSourcedCommits(ctx, repositoryID, commit, maximumCommitLag)
-}
-
-//
-//
 
 func (s *Service) GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (_ shared.IndexConfiguration, _ bool, err error) {
 	ctx, _, endObservation := s.operations.getIndexConfigurationByRepositoryID.With(ctx, &err, observation.Args{})
@@ -244,7 +233,7 @@ func (s *Service) GetSupportedByCtags(ctx context.Context, filepath string, repo
 
 func (s *Service) SetRequestLanguageSupport(ctx context.Context, userID int, language string) (err error) {
 	ctx, _, endObservation := s.operations.setRequestLanguageSupport.With(ctx, &err, observation.Args{
-		LogFields: []traceLog.Field{traceLog.Int("userID", userID), traceLog.String("language", language)},
+		LogFields: []otlog.Field{otlog.Int("userID", userID), otlog.String("language", language)},
 	})
 	defer endObservation(1, observation.Args{})
 
@@ -253,7 +242,7 @@ func (s *Service) SetRequestLanguageSupport(ctx context.Context, userID int, lan
 
 func (s *Service) GetLanguagesRequestedBy(ctx context.Context, userID int) (_ []string, err error) {
 	ctx, _, endObservation := s.operations.getLanguagesRequestedBy.With(ctx, &err, observation.Args{
-		LogFields: []traceLog.Field{traceLog.Int("userID", userID)},
+		LogFields: []otlog.Field{otlog.Int("userID", userID)},
 	})
 	defer endObservation(1, observation.Args{})
 
@@ -262,7 +251,7 @@ func (s *Service) GetLanguagesRequestedBy(ctx context.Context, userID int) (_ []
 
 func (s *Service) GetListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) (_ []*gitdomain.Tag, err error) {
 	ctx, _, endObservation := s.operations.getListTags.With(ctx, &err, observation.Args{
-		LogFields: []traceLog.Field{traceLog.String("repo", string(repo)), traceLog.String("commitObjs", fmt.Sprintf("%v", commitObjs))},
+		LogFields: []otlog.Field{otlog.String("repo", string(repo)), otlog.String("commitObjs", fmt.Sprintf("%v", commitObjs))},
 	})
 	defer endObservation(1, observation.Args{})
 
@@ -279,6 +268,20 @@ func (s *Service) QueueRepoRev(ctx context.Context, repositoryID int, rev string
 	defer endObservation(1, observation.Args{})
 
 	return s.store.QueueRepoRev(ctx, repositoryID, rev)
+}
+
+func (s *Service) SetInferenceScript(ctx context.Context, script string) (err error) {
+	ctx, _, endObservation := s.operations.setInferenceScript.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.SetInferenceScript(ctx, script)
+}
+
+func (s *Service) GetInferenceScript(ctx context.Context) (script string, err error) {
+	ctx, _, endObservation := s.operations.getInferenceScript.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.GetInferenceScript(ctx)
 }
 
 // QueueIndexes enqueues a set of index jobs for the following repository and commit. If a non-empty
@@ -337,8 +340,10 @@ func (s *Service) queueIndexForRepositoryAndCommit(ctx context.Context, reposito
 	return s.store.InsertIndexes(ctx, indexes)
 }
 
-var overrideScript = os.Getenv("SRC_CODEINTEL_INFERENCE_OVERRIDE_SCRIPT")
-var maximumIndexJobsPerInferredConfiguration = env.MustGetInt("PRECISE_CODE_INTEL_AUTO_INDEX_MAXIMUM_INDEX_JOBS_PER_INFERRED_CONFIGURATION", 25, "Repositories with a number of inferred auto-index jobs exceeding this threshold will not be auto-indexed.")
+var (
+	overrideScript                           = os.Getenv("SRC_CODEINTEL_INFERENCE_OVERRIDE_SCRIPT")
+	maximumIndexJobsPerInferredConfiguration = env.MustGetInt("PRECISE_CODE_INTEL_AUTO_INDEX_MAXIMUM_INDEX_JOBS_PER_INFERRED_CONFIGURATION", 25, "Repositories with a number of inferred auto-index jobs exceeding this threshold will not be auto-indexed.")
+)
 
 // inferIndexJobsFromRepositoryStructure collects the result of  InferIndexJobs over all registered recognizers.
 func (s *Service) inferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]config.IndexJob, error) {
@@ -347,7 +352,15 @@ func (s *Service) inferIndexJobsFromRepositoryStructure(ctx context.Context, rep
 		return nil, err
 	}
 
-	indexes, err := s.inferenceService.InferIndexJobs(ctx, api.RepoName(repoName), commit, overrideScript)
+	script, err := s.store.GetInferenceScript(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to fetch inference script from database")
+	}
+	if script == "" {
+		script = overrideScript
+	}
+
+	indexes, err := s.inferenceService.InferIndexJobs(ctx, api.RepoName(repoName), commit, script)
 	if err != nil {
 		return nil, err
 	}

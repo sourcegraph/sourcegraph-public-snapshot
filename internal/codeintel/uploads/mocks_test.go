@@ -17,7 +17,7 @@ import (
 	authz "github.com/sourcegraph/sourcegraph/internal/authz"
 	shared1 "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	enterprise "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
-	types "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	types "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	lsifstore "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"

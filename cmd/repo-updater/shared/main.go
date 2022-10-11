@@ -11,14 +11,12 @@ import (
 	"strconv"
 	"time"
 
-	"go.opentelemetry.io/otel"
-	"golang.org/x/time/rate"
-
 	"github.com/getsentry/sentry-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel"
+	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -28,7 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
+	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -144,7 +142,7 @@ func Main(enterpriseInit EnterpriseInit) {
 
 		services, err := codeintel.GetServices(codeintel.Databases{
 			DB:          db,
-			CodeIntelDB: stores.NoopDB,
+			CodeIntelDB: codeintelshared.NoopDB,
 		})
 		if err != nil {
 			logger.Fatal("failed to initialize codeintelservices", log.Error(err))

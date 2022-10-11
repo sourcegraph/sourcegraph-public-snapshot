@@ -16,7 +16,7 @@ func TestBackfillCommittedAtBatch(t *testing.T) {
 	ctx := context.Background()
 	store := NewMockStore()
 	gitserverClient := NewMockGitserverClient()
-	svc := newService(store, nil, nil, gitserverClient, nil, nil, nil, nil, &observation.TestContext)
+	svc := newService(store, nil, nil, gitserverClient, nil, nil, nil, &observation.TestContext)
 
 	// Return self for txn
 	store.TransactFunc.SetDefaultReturn(store, nil)
@@ -88,7 +88,7 @@ func TestBackfillCommittedAtBatchUnknownCommits(t *testing.T) {
 	ctx := context.Background()
 	store := NewMockStore()
 	gitserverClient := NewMockGitserverClient()
-	svc := newService(store, nil, nil, gitserverClient, nil, nil, nil, nil, &observation.TestContext)
+	svc := newService(store, nil, nil, gitserverClient, nil, nil, nil, &observation.TestContext)
 
 	// Return self for txn
 	store.TransactFunc.SetDefaultReturn(store, nil)
