@@ -24,7 +24,7 @@ type WebhookStore interface {
 	GetByUUID(ctx context.Context, id uuid.UUID) (*types.Webhook, error)
 	Delete(ctx context.Context, id uuid.UUID) error
 	Update(ctx context.Context, newWebhook *types.Webhook) (*types.Webhook, error)
-	List(ctx context.Context, opt WebhookListOptions) ([]*types.Webhook, error)
+	List(ctx context.Context, opts WebhookListOptions) ([]*types.Webhook, error)
 }
 
 type webhookStore struct {
@@ -247,13 +247,13 @@ RETURNING
 
 // List the webhooks
 func (s *webhookStore) List(ctx context.Context, opt WebhookListOptions) ([]*types.Webhook, error) {
-	var where *sqlf.Query
+	q := sqlf.Sprintf(webhookListQueryFmtstr, sqlf.Join(webhookColumns, ", "))
 	if opt.Kind != "" {
-		where = sqlf.Sprintf("WHERE kind = %s", opt.Kind)
+		q = sqlf.Sprintf("%s\nWHERE code_host_kind = %s", q, opt.Kind)
 	}
-
-	q := sqlf.Sprintf(webhookListQueryFmtstr, sqlf.Join(webhookColumns, ", "), where)
-	fmt.Printf("QUERY\n%v\n", q)
+	if opt.LimitOffset != nil {
+		q = sqlf.Sprintf("%s\n%s", q, opt.LimitOffset.SQL())
+	}
 	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return []*types.Webhook{}, errors.Wrap(err, "error running query")
@@ -272,6 +272,7 @@ func (s *webhookStore) List(ctx context.Context, opt WebhookListOptions) ([]*typ
 
 type WebhookListOptions struct {
 	Kind string
+	*LimitOffset
 }
 
 const webhookListQueryFmtstr = `
@@ -279,7 +280,6 @@ const webhookListQueryFmtstr = `
 SELECT
 	%s
 FROM webhooks
-%s
 `
 
 func scanWebhook(sc dbutil.Scanner, key encryption.Key) (*types.Webhook, error) {
