@@ -2,7 +2,6 @@ package ranking
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"strconv"
 	"time"
@@ -54,9 +53,6 @@ var symbolPattern = lazyregexp.New(`func ([A-Z][^(]*)`)
 func (s *Service) indexRepository(ctx context.Context, repoName api.RepoName) (err error) {
 	_, _, endObservation := s.operations.indexRepository.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-
-	fmt.Printf("Indexing repo %s\n", repoName)
-	defer func() { fmt.Printf("Done indexing\n") }()
 
 	graph, err := s.buildFileReferenceGraph(ctx, repoName)
 	if err != nil {
