@@ -258,6 +258,16 @@ func handleCORSRequest(w http.ResponseWriter, r *http.Request, policy crossOrigi
 		return false
 	}
 
+	// If the crossOriginPolicyAssets is used and the requested asset is not from the extension folder,
+	// we do not write ANY Access-Control-Allow-* CORS headers, which triggers the browser's default
+	// (and strict) behavior of not allowing cross-origin requests.
+	//
+	// We allow cross-origin requests for assets in the `./ui/assets/extension` folder because they
+	// are required for the native Phabricator extension.
+	if policy == crossOriginPolicyAssets && !strings.HasPrefix(r.URL.Path, "/extension/") {
+		return false
+	}
+
 	// crossOriginPolicyAPI and crossOriginPolicyAssets - handling of API and static assets routes.
 	//
 	// Even if the request was not from a trusted origin, we will allow the browser to send it AND
