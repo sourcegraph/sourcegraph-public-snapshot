@@ -13,7 +13,7 @@ import { mergedHandler } from '../../fuzzyFinder/WordSensitiveFuzzySearch'
 
 import { FuzzyRepoRevision } from './FuzzyRepoRevision'
 import { fuzzyErrors, FuzzyState, fuzzyIsActive, FuzzyTabs, FuzzyTabKey } from './FuzzyTabs'
-import { HighlightedLink, linkStyle } from './HighlightedLink'
+import { HighlightedLink } from './HighlightedLink'
 
 import styles from './FuzzyModal.module.scss'
 
@@ -243,7 +243,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                 case event.key === 'Enter':
                     if (focusIndex < queryResult.resultCount) {
                         const fileAnchor = document.querySelector<HTMLAnchorElement>(
-                            `#fuzzy-modal-result-${focusIndex} .${linkStyle}`
+                            `#fuzzy-modal-result-${focusIndex} [data-fuzzy-clickable=true]`
                         )
                         fileAnchor?.click()
                     }
