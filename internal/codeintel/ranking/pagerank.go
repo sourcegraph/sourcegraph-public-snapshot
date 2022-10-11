@@ -2,7 +2,6 @@ package ranking
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/dcadenas/pagerank"
 )
@@ -14,8 +13,6 @@ func (s *Service) pageRankFromStreamingGraph(ctx context.Context, graph streamin
 	g := pagerank.New()
 	idsToName := map[int]string{}
 	nameToIDs := map[string]int{}
-
-	fmt.Printf("Starting to build this graph\n")
 
 	for {
 		from, to, ok, err := graph.Next(ctx)
@@ -42,9 +39,6 @@ func (s *Service) pageRankFromStreamingGraph(ctx context.Context, graph streamin
 
 		g.Link(fromID, toID)
 	}
-
-	fmt.Printf("About to page rank\n")
-	defer func() { fmt.Printf("Done ranking\n") }()
 
 	ranks := map[string][]float64{}
 	g.Rank(pageRankFollowProbability, pageRankTolerance, func(identifier int, rank float64) {

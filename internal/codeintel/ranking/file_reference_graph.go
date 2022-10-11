@@ -3,7 +3,6 @@ package ranking
 import (
 	"archive/tar"
 	"context"
-	"fmt"
 	"io"
 	"path/filepath"
 	"regexp"
@@ -129,8 +128,6 @@ func (s *Service) buildFileReferenceGraph(ctx context.Context, repoName api.Repo
 				return
 			}
 		}
-
-		fmt.Printf("Done for %s in %s\n", repoName, time.Since(now))
 	}()
 
 	return &graphStreamer{ch: ch}, nil
