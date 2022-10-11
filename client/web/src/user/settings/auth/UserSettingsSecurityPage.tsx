@@ -129,7 +129,7 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
         }
     }
 
-    const [updatePassword, {}] = useMutation<UpdatePasswordResult, UpdatePasswordVariables>(UPDATE_PASSWORD, {
+    const [updatePassword] = useMutation<UpdatePasswordResult, UpdatePasswordVariables>(UPDATE_PASSWORD, {
         variables: {
             oldPassword,
             newPassword,
@@ -139,7 +139,7 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
         },
     })
 
-    const [createPassword, {}] = useMutation<CreatePasswordResult, CreatePasswordVariables>(CREATE_PASSWORD, {
+    const [createPassword] = useMutation<CreatePasswordResult, CreatePasswordVariables>(CREATE_PASSWORD, {
         variables: {
             newPassword,
         },
@@ -151,9 +151,9 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
         if (shouldShowOldPasswordInput()) {
-            updatePassword()
+            updatePassword().catch(error => handleError(error))
         } else {
-            createPassword()
+            createPassword().catch(error => handleError(error))
         }
         setSaved(true)
     }
