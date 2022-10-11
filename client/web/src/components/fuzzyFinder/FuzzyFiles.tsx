@@ -1,4 +1,4 @@
-import { ApolloClient, ApolloError } from '@apollo/client'
+import { ApolloClient } from '@apollo/client'
 import { mdiFileDocumentOutline } from '@mdi/js'
 
 import { getDocumentNode, gql } from '@sourcegraph/http-client'
@@ -10,12 +10,6 @@ import { FileNamesResult, FileNamesVariables } from '../../graphql-operations'
 
 import { FuzzyFSM, newFuzzyFSMFromValues } from './FuzzyFsm'
 import { FuzzyRepoRevision } from './FuzzyRepoRevision'
-
-export interface FilenameResult {
-    downloadFilename: string[]
-    isLoadingFilename: boolean
-    filenameError: ApolloError | undefined
-}
 
 export const FUZZY_FILES_QUERY = gql`
     query FileNames($repository: String!, $commit: String!) {
@@ -51,20 +45,6 @@ export async function loadFilesFSM(
     } catch (error) {
         return { key: 'failed', errorMessage: JSON.stringify(error) }
     }
-}
-export function filesFSM(result: FilenameResult, createUrl: createUrlFunction): FuzzyFSM {
-    if (result.isLoadingFilename) {
-        return {
-            key: 'downloading',
-        }
-    }
-    if (result.filenameError) {
-        return {
-            key: 'failed',
-            errorMessage: JSON.stringify(result.filenameError),
-        }
-    }
-    return newFuzzyFSM(result.downloadFilename, createUrl)
 }
 
 export function newFuzzyFSM(filenames: string[], createUrl: createUrlFunction): FuzzyFSM {

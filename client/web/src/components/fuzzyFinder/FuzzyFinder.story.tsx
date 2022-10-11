@@ -11,6 +11,11 @@ const decorator: DecoratorFn = story => <WebStory>{() => story()}</WebStory>
 const config: Meta = {
     title: 'web/FuzzyFinder',
     decorators: [decorator],
+    parameters: {
+        chromatic: {
+            disableSnapshot: false,
+        },
+    },
 }
 
 export default config

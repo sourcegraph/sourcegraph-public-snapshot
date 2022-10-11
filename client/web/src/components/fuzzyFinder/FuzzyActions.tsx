@@ -15,7 +15,7 @@ export class FuzzyAction {
 export interface FuzzyActionProps {
     themeState: MutableRefObject<ThemeState>
 }
-export function allFuzzyActions(props: FuzzyActionProps): FuzzyAction[] {
+export function getAllFuzzyActions(props: FuzzyActionProps): FuzzyAction[] {
     return [
         new FuzzyAction('toggle.theme', 'Toggle Between Dark/Light Theme', () => {
             const themeState = props.themeState.current
@@ -29,7 +29,7 @@ export function allFuzzyActions(props: FuzzyActionProps): FuzzyAction[] {
     ]
 }
 
-export function actionsFSM(actions: FuzzyAction[]): FuzzyFSM {
+export function createActionsFSM(actions: FuzzyAction[]): FuzzyFSM {
     return newFuzzyFSMFromValues(
         actions.map(action => ({
             text: action.title,

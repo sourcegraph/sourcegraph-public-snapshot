@@ -16,7 +16,6 @@ export function getFuzzyFinderFeatureFlags(
         fuzzyFinderSymbols,
         fuzzyFinderNavbar,
     } = getExperimentalFeatures(finalSettings)
-    // fuzzyFinderAll = true // Uncomment this line if working with `sg start web-standalone`
     fuzzyFinderActions = fuzzyFinderAll || fuzzyFinderActions
     fuzzyFinderRepositories = fuzzyFinderAll || fuzzyFinderRepositories
     fuzzyFinderNavbar = fuzzyFinderAll || fuzzyFinderNavbar

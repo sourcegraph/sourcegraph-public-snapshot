@@ -31,22 +31,22 @@ export function useFuzzyShortcuts(settings?: SettingsCascadeOrError<Settings>['f
         },
         {
             name: 'actions',
-            isEnabled: (fuzzyFinderActions && Boolean(fuzzyFinderActionsShortcut)) || false,
+            isEnabled: (fuzzyFinderActions && !!fuzzyFinderActionsShortcut) || false,
             shortcut: fuzzyFinderActionsShortcut,
         },
         {
             name: 'repos',
-            isEnabled: (fuzzyFinderRepositories && Boolean(fuzzyFinderReposShortcut)) || false,
+            isEnabled: (fuzzyFinderRepositories && !!fuzzyFinderReposShortcut) || false,
             shortcut: fuzzyFinderReposShortcut,
         },
         {
             name: 'symbols',
-            isEnabled: (fuzzyFinderSymbols && Boolean(fuzzyFinderSymbolsShortcut)) || false,
+            isEnabled: (fuzzyFinderSymbols && !!fuzzyFinderSymbolsShortcut) || false,
             shortcut: fuzzyFinderSymbolsShortcut,
         },
         {
             name: 'files',
-            isEnabled: Boolean(fuzzyFinderFilesShortcut),
+            isEnabled: !!fuzzyFinderFilesShortcut,
             shortcut: fuzzyFinderFilesShortcut,
         },
     ]

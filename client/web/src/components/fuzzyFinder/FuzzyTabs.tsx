@@ -3,15 +3,16 @@ import { Dispatch, SetStateAction, useCallback, useEffect, useMemo, useRef, useS
 import { ApolloClient } from '@apollo/client'
 import * as H from 'history'
 
-import { isMacPlatform } from '@sourcegraph/common'
+import { KEYBOARD_SHORTCUTS } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import { useSessionStorage } from '@sourcegraph/wildcard'
 
 import { SearchIndexing } from '../../fuzzyFinder/FuzzySearch'
 import { parseBrowserRepoURL } from '../../util/url'
+import { Keybindings } from '../KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 
-import { actionsFSM, allFuzzyActions, FuzzyActionProps } from './FuzzyActions'
+import { createActionsFSM, getAllFuzzyActions, FuzzyActionProps } from './FuzzyActions'
 import { loadFilesFSM } from './FuzzyFiles'
 import { getFuzzyFinderFeatureFlags } from './FuzzyFinderFeatureFlag'
 import { FuzzyFSM } from './FuzzyFsm'
@@ -31,16 +32,32 @@ class Tab {
     }
 }
 
-function metaKey(): string {
-    return isMacPlatform() ? '⌘' : 'Ctrl-'
-}
-
 const defaultTabs: Tabs = {
-    all: new Tab('All', true, <kbd>{metaKey()}K</kbd>),
-    actions: new Tab('Actions', true, <kbd>{metaKey()}Shift-P</kbd>),
-    repos: new Tab('Repos', true, <kbd>{metaKey()}I</kbd>),
-    symbols: new Tab('Symbols', true, <kbd>{metaKey()}O</kbd>),
-    files: new Tab('Files', true, <kbd>{metaKey()}P</kbd>),
+    all: new Tab(
+        'All',
+        true,
+        <Keybindings uppercaseOrdered={true} keybindings={KEYBOARD_SHORTCUTS.fuzzyFinder.keybindings} />
+    ),
+    actions: new Tab(
+        'Actions',
+        true,
+        <Keybindings uppercaseOrdered={true} keybindings={KEYBOARD_SHORTCUTS.fuzzyFinderActions.keybindings} />
+    ),
+    repos: new Tab(
+        'Repos',
+        true,
+        <Keybindings uppercaseOrdered={true} keybindings={KEYBOARD_SHORTCUTS.fuzzyFinderRepos.keybindings} />
+    ),
+    symbols: new Tab(
+        'Symbols',
+        true,
+        <Keybindings uppercaseOrdered={true} keybindings={KEYBOARD_SHORTCUTS.fuzzyFinderSymbols.keybindings} />
+    ),
+    files: new Tab(
+        'Files',
+        true,
+        <Keybindings uppercaseOrdered={true} keybindings={KEYBOARD_SHORTCUTS.fuzzyFinderFiles.keybindings} />
+    ),
     lines: new Tab('Lines', true),
 }
 const hiddenKind: Tab = new Tab('Hidden', false)
@@ -221,7 +238,7 @@ export function useFuzzyState(props: FuzzyTabsProps, onClickItem: () => void): F
             new FuzzyTabs({
                 all: fuzzyFinderAll ? defaultTabs.all : hiddenKind,
                 actions: fuzzyFinderActions
-                    ? defaultTabs.actions.withFSM(actionsFSM(allFuzzyActions(props)))
+                    ? defaultTabs.actions.withFSM(createActionsFSM(getAllFuzzyActions(props)))
                     : hiddenKind,
                 repos: fuzzyFinderRepositories ? defaultTabs.repos : hiddenKind,
                 symbols: fuzzyFinderSymbols ? defaultTabs.symbols : hiddenKind,

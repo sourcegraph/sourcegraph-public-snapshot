@@ -1,4 +1,4 @@
-import { isMacPlatform } from '@sourcegraph/common'
+import { isMacPlatform, getBrowserName } from '@sourcegraph/common'
 
 import { KeyboardShortcut } from '../keyboardShortcuts'
 
@@ -41,7 +41,7 @@ export const KEYBOARD_SHORTCUTS: KEYBOARD_SHORTCUT_MAPPING = {
     },
     fuzzyFinderActions: {
         title: 'Fuzzy find actions',
-        keybindings: [{ held: ['Mod', 'Shift'], ordered: ['p'] }],
+        keybindings: [{ held: ['Mod', 'Shift'], ordered: ['a'] }],
         hideInHelp: true,
     },
     fuzzyFinderRepos: {
@@ -56,7 +56,8 @@ export const KEYBOARD_SHORTCUTS: KEYBOARD_SHORTCUT_MAPPING = {
     },
     fuzzyFinderSymbols: {
         title: 'Fuzzy find symbols',
-        keybindings: [{ held: ['Mod'], ordered: ['o'] }],
+        // NOTE: `isSafari()` returns true in Google Chrome on macOS.
+        keybindings: [{ held: getBrowserName() === 'safari' ? ['Mod', 'Shift'] : ['Mod'], ordered: ['o'] }],
         hideInHelp: true,
     },
     copyFullQuery: {

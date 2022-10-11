@@ -83,10 +83,19 @@ export const HighlightedLink: React.FunctionComponent<React.PropsWithChildren<Hi
             </Link>
         </Code>
     ) : (
-        <div role="link" tabIndex={0} className={styles.link} onClick={props.onClick} onKeyDown={props.onClick}>
-            {props.icon}
+        <Link
+            key="link"
+            tabIndex={-1}
+            className={styles.link}
+            to={`/commands/${props.text}`}
+            onClick={event => {
+                event.preventDefault()
+                props.onClick?.()
+            }}
+        >
+            {props.icon && <span key="icon">{props.icon}</span>}
             {spans}
-        </div>
+        </Link>
     )
 }
 
