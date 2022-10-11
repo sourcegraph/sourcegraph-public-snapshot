@@ -10,6 +10,7 @@ gazelle(
         "-from_file=go.mod",
         "-to_macro=deps.bzl%go_dependencies",
         "-prune",
+        "-build_file_proto_mode=disable",
     ],
     command = "update-repos",
 )
@@ -23,3 +24,6 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph",
     visibility = ["//visibility:public"],
 )
+
+# Use existing .pb.go files rather than building from .proto files
+# gazelle:proto disable
