@@ -99,8 +99,8 @@ func (s *Service) buildFileReferenceGraph(ctx context.Context, repoName api.Repo
 		pathBySearchTerms := pathBySearchTermsByExtension[extension]
 
 		toSet := map[string]struct{}{}
-		for path, terms := range pathBySearchTerms {
-			if terms.Match(content) {
+		for path, pattern := range pathBySearchTerms {
+			if pattern.Match(content) {
 				toSet[path] = struct{}{}
 			}
 		}
