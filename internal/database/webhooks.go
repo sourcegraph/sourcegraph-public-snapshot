@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
-
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
@@ -72,6 +72,7 @@ func (s *webhookStore) Create(ctx context.Context, kind, urn string, secret *typ
 		urn,
 		encryptedSecret,
 		keyID,
+		actor.FromContext(ctx).UID,
 		// Returning
 		sqlf.Join(webhookColumns, ", "),
 	)
@@ -91,13 +92,15 @@ INSERT INTO
 		code_host_kind,
 		code_host_urn,
 		secret,
-		encryption_key_id
+		encryption_key_id,
+		created_by
 	)
 	VALUES (
 		%s,
 		%s,
 		%s,
-		%s
+		%s,
+		%d
 	)
 	RETURNING %s
 `
@@ -111,6 +114,8 @@ var webhookColumns = []*sqlf.Query{
 	sqlf.Sprintf("created_at"),
 	sqlf.Sprintf("updated_at"),
 	sqlf.Sprintf("encryption_key_id"),
+	sqlf.Sprintf("created_by"),
+	sqlf.Sprintf("updated_by"),
 }
 
 const webhookGetByIDFmtstr = `
@@ -267,6 +272,8 @@ func scanWebhook(sc dbutil.Scanner, key encryption.Key) (*types.Webhook, error) 
 		&hook.CreatedAt,
 		&hook.UpdatedAt,
 		&keyID,
+		&dbutil.NullInt32{N: &hook.CreatedBy},
+		&dbutil.NullInt32{N: &hook.UpdatedBy},
 	); err != nil {
 		return nil, err
 	}

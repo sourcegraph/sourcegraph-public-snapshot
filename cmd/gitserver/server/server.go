@@ -631,7 +631,7 @@ func (s *Server) cloneJobConsumer(ctx context.Context, jobs <-chan *cloneJob) {
 
 			err := s.doClone(ctx, job.repo, job.dir, job.syncer, job.lock, job.remoteURL, job.options)
 			if err != nil {
-				logger.Error("failed to clone repo", log.Error(err))
+				logger.Warn("failed to clone repo", log.Error(err))
 			}
 			// Use a different context in case we failed because the original context failed.
 			s.setLastErrorNonFatal(s.ctx, job.repo, err)

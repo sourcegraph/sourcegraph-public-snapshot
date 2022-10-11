@@ -3068,6 +3068,8 @@ Foreign-key constraints:
  updated_at        | timestamp with time zone |           | not null | now()
  encryption_key_id | text                     |           |          | 
  uuid              | uuid                     |           | not null | gen_random_uuid()
+ created_by        | integer                  |           |          | 
+ updated_by        | integer                  |           |          | 
 Indexes:
     "webhooks_pkey" PRIMARY KEY, btree (id)
     "webhooks_uuid_key" UNIQUE CONSTRAINT, btree (uuid)
@@ -3080,7 +3082,11 @@ Webhooks registered in Sourcegraph instance.
 
 **code_host_urn**: URN of a code host. This column maps to external_service_id column of repo table.
 
+**created_by**: ID of a user, who created the webhook. If equals to zero, then the webhook is updated programmatically.
+
 **secret**: Secret used to decrypt webhook payload (if supported by the code host).
+
+**updated_by**: ID of a user, who updated the webhook. If equals to zero, then the webhook is updated programmatically.
 
 # View "public.batch_spec_workspace_execution_jobs_with_rank"
 

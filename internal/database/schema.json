@@ -19466,6 +19466,19 @@
           "Comment": ""
         },
         {
+          "Name": "created_by",
+          "Index": 10,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "ID of a user, who created the webhook. If equals to zero, then the webhook is updated programmatically."
+        },
+        {
           "Name": "encryption_key_id",
           "Index": 8,
           "TypeName": "text",
@@ -19516,6 +19529,19 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
+        },
+        {
+          "Name": "updated_by",
+          "Index": 11,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "ID of a user, who updated the webhook. If equals to zero, then the webhook is updated programmatically."
         },
         {
           "Name": "uuid",

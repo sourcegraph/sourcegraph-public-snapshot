@@ -3536,7 +3536,9 @@ CREATE TABLE webhooks (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     encryption_key_id text,
-    uuid uuid DEFAULT gen_random_uuid() NOT NULL
+    uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    created_by integer,
+    updated_by integer
 );
 
 COMMENT ON TABLE webhooks IS 'Webhooks registered in Sourcegraph instance.';
@@ -3546,6 +3548,10 @@ COMMENT ON COLUMN webhooks.code_host_kind IS 'Kind of an external service for wh
 COMMENT ON COLUMN webhooks.code_host_urn IS 'URN of a code host. This column maps to external_service_id column of repo table.';
 
 COMMENT ON COLUMN webhooks.secret IS 'Secret used to decrypt webhook payload (if supported by the code host).';
+
+COMMENT ON COLUMN webhooks.created_by IS 'ID of a user, who created the webhook. If equals to zero, then the webhook is updated programmatically.';
+
+COMMENT ON COLUMN webhooks.updated_by IS 'ID of a user, who updated the webhook. If equals to zero, then the webhook is updated programmatically.';
 
 CREATE SEQUENCE webhooks_id_seq
     AS integer

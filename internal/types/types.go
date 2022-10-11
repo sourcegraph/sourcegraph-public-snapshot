@@ -1678,4 +1678,6 @@ type Webhook struct {
 	Secret       *EncryptableSecret
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
+	CreatedBy    int32
+	UpdatedBy    int32
 }
