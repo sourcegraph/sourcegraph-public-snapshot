@@ -214,6 +214,18 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                 case event.key === 'Escape':
                     props.onClose()
                     break
+                case event.key === 'n':
+                    if (event.ctrlKey) {
+                        event.preventDefault()
+                        setRoundedFocusIndex(1)
+                        break
+                    }
+                case event.key === 'p':
+                    if (event.ctrlKey) {
+                        event.preventDefault()
+                        setRoundedFocusIndex(-1)
+                        break
+                    }
                 case event.key === 'ArrowDown':
                     event.preventDefault() // Don't move the cursor to the end of the input.
                     setRoundedFocusIndex(1)
