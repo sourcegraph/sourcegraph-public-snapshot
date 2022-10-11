@@ -4,7 +4,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
 	policiesEnterprise "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
+	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -18,7 +18,7 @@ import (
 // If the service is not yet initialized, it will use the provided dependencies.
 func GetService(
 	db database.DB,
-	codeIntelDB stores.CodeIntelDB,
+	codeIntelDB codeintelshared.CodeIntelDB,
 	gsc GitserverClient,
 ) *Service {
 	svc, _ := initServiceMemo.Init(serviceDependencies{
@@ -32,7 +32,7 @@ func GetService(
 
 type serviceDependencies struct {
 	db          database.DB
-	codeIntelDB stores.CodeIntelDB
+	codeIntelDB codeintelshared.CodeIntelDB
 	gsc         GitserverClient
 }
 
