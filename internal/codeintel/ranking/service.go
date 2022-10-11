@@ -20,6 +20,7 @@ type Service struct {
 	store           store.Store
 	uploadSvc       *uploads.Service
 	gitserverClient GitserverClient
+	symbolsClient   SymbolsClient
 	getConf         conftypes.SiteConfigQuerier
 	operations      *operations
 	logger          log.Logger
@@ -29,6 +30,7 @@ func newService(
 	store store.Store,
 	uploadSvc *uploads.Service,
 	gitserverClient GitserverClient,
+	symbolsClient SymbolsClient,
 	getConf conftypes.SiteConfigQuerier,
 	observationContext *observation.Context,
 ) *Service {
@@ -36,6 +38,7 @@ func newService(
 		store:           store,
 		uploadSvc:       uploadSvc,
 		gitserverClient: gitserverClient,
+		symbolsClient:   symbolsClient,
 		getConf:         getConf,
 		operations:      newOperations(observationContext),
 		logger:          observationContext.Logger,

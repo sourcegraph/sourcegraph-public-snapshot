@@ -16,7 +16,7 @@ func TestIndexRepository(t *testing.T) {
 	ctx := context.Background()
 	mockStore := NewMockStore()
 	gitserverClient := NewMockGitserverClient()
-	svc := newService(mockStore, nil, gitserverClient, siteConfigQuerier{}, &observation.TestContext)
+	svc := newService(mockStore, nil, gitserverClient, nil, siteConfigQuerier{}, &observation.TestContext)
 
 	repositoryContents := map[string]string{
 		"foo.go": "func Foo()",
