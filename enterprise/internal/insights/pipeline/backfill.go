@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/priority"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
@@ -41,8 +40,8 @@ type gitCommitClient interface {
 	RecentCommits(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error)
 }
 
-type SearchJobGenerator func(ctx context.Context, req requestContext) (context.Context, *requestContext, []*queryrunner.Job, error)
-type SearchRunner func(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.Job, err error) (context.Context, *requestContext, []store.RecordSeriesPointArgs, error)
+type SearchJobGenerator func(ctx context.Context, req requestContext) (context.Context, *requestContext, []*queryrunner.SearchJob, error)
+type SearchRunner func(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.SearchJob, err error) (context.Context, *requestContext, []store.RecordSeriesPointArgs, error)
 type ResultsPersister func(ctx context.Context, reqContext *requestContext, points []store.RecordSeriesPointArgs, err error) (*requestContext, error)
 
 func NewBackfiller(jobGenerator SearchJobGenerator, searchRunner SearchRunner, resultsPersister ResultsPersister) Backfiller {
@@ -71,8 +70,8 @@ func (b *backfiller) Run(ctx context.Context, req BackfillRequest) error {
 // Implimentation of steps for Backfill process
 
 func makeSearchJobsFunc(logger log.Logger, commitClient gitCommitClient, compressionPlan compression.DataFrameFilter, searchJobWorkerLimit int) SearchJobGenerator {
-	return func(ctx context.Context, reqContext requestContext) (context.Context, *requestContext, []*queryrunner.Job, error) {
-		jobs := make([]*queryrunner.Job, 0, 12)
+	return func(ctx context.Context, reqContext requestContext) (context.Context, *requestContext, []*queryrunner.SearchJob, error) {
+		jobs := make([]*queryrunner.SearchJob, 0, 12)
 		if reqContext.backfillRequest == nil {
 			return ctx, &reqContext, jobs, errors.New("backfill request provided")
 		}
@@ -148,10 +147,10 @@ type buildSeriesContext struct {
 	series   *types.InsightSeries
 }
 
-type searchJobFunc func(ctx context.Context, bctx *buildSeriesContext) (err error, job *queryrunner.Job, preempted []store.RecordSeriesPointArgs)
+type searchJobFunc func(ctx context.Context, bctx *buildSeriesContext) (err error, job *queryrunner.SearchJob, preempted []store.RecordSeriesPointArgs)
 
 func makeHistoricalSearchJobFunc(logger log.Logger, commitClient gitCommitClient) searchJobFunc {
-	return func(ctx context.Context, bctx *buildSeriesContext) (err error, job *queryrunner.Job, preempted []store.RecordSeriesPointArgs) {
+	return func(ctx context.Context, bctx *buildSeriesContext) (err error, job *queryrunner.SearchJob, preempted []store.RecordSeriesPointArgs) {
 		logger.Debug("making search job")
 		rawQuery := bctx.series.Query
 		containsRepo, err := querybuilder.ContainsField(rawQuery, query.FieldRepo)
@@ -214,13 +213,19 @@ func makeHistoricalSearchJobFunc(logger log.Logger, commitClient gitCommitClient
 			newQueryStr = computeQuery.String()
 		}
 
-		job = queryrunner.ToQueueJob(bctx.execution, bctx.seriesID, newQueryStr, priority.Unindexed, 0)
+		job = &queryrunner.SearchJob{
+			SeriesID:        bctx.seriesID,
+			SearchQuery:     newQueryStr,
+			RecordTime:      &bctx.execution.RecordingTime,
+			PersistMode:     string(store.RecordMode),
+			DependentFrames: bctx.execution.SharedRecordings,
+		}
 		return err, job, preempted
 	}
 }
 
 func makeRunSearchFunc(logger log.Logger, searchHandlers map[types.GenerationMethod]queryrunner.InsightsHandler, searchWorkerLimit int) SearchRunner {
-	return func(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.Job, incomingErr error) (context.Context, *requestContext, []store.RecordSeriesPointArgs, error) {
+	return func(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.SearchJob, incomingErr error) (context.Context, *requestContext, []store.RecordSeriesPointArgs, error) {
 		points := make([]store.RecordSeriesPointArgs, 0, len(jobs))
 		// early return
 		if incomingErr != nil || ctx.Err() != nil {

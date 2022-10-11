@@ -24,10 +24,10 @@ import (
 )
 
 func makeTestJobGenerator(numJobs int) SearchJobGenerator {
-	return func(ctx context.Context, req requestContext) (context.Context, *requestContext, []*queryrunner.Job, error) {
-		jobs := make([]*queryrunner.Job, 0, numJobs)
+	return func(ctx context.Context, req requestContext) (context.Context, *requestContext, []*queryrunner.SearchJob, error) {
+		jobs := make([]*queryrunner.SearchJob, 0, numJobs)
 		for i := 0; i < numJobs; i++ {
-			jobs = append(jobs, &queryrunner.Job{
+			jobs = append(jobs, &queryrunner.SearchJob{
 				SeriesID:    req.backfillRequest.Series.SeriesID,
 				SearchQuery: "test search",
 			})
@@ -36,7 +36,7 @@ func makeTestJobGenerator(numJobs int) SearchJobGenerator {
 	}
 }
 
-func testSearchRunner(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.Job, err error) (context.Context, *requestContext, []store.RecordSeriesPointArgs, error) {
+func testSearchRunner(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.SearchJob, err error) (context.Context, *requestContext, []store.RecordSeriesPointArgs, error) {
 	points := make([]store.RecordSeriesPointArgs, 0, len(jobs))
 	for range jobs {
 		points = append(points, store.RecordSeriesPointArgs{Point: store.SeriesPoint{Value: 10}})
