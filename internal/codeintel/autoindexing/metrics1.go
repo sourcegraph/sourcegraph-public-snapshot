@@ -24,8 +24,6 @@ func newJanitorMetrics(observationContext *observation.Context) *janitorMetrics 
 	}
 
 	numErrors := counter(
-		// TODO - make a dashboard pre-merge
-		// TODO - rename things here similar to this
 		"src_codeintel_autoindexing_background_cleanup_errors_total",
 		"The number of errors that occur during a codeintel expiration job.",
 	)
