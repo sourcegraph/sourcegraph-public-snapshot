@@ -42,10 +42,10 @@ func (j *metricsReporterJob) Routines(startupCtx context.Context, logger log.Log
 	)
 
 	services.UploadsService.MetricReporters(observationContext)
-	dbworker.InitPrometheusMetric(observationContext, services.AutoIndexingService.DependencySyncStore(), "codeintel", "dependency_sync", nil)
-	dbworker.InitPrometheusMetric(observationContext, services.AutoIndexingService.DependencyIndexingStore(), "codeintel", "dependency_index", nil)
+	dbworker.InitPrometheusMetric(observationContext, services.AutoIndexingService.GetBackgroundJobs().DependencySyncStore(), "codeintel", "dependency_sync", nil)
+	dbworker.InitPrometheusMetric(observationContext, services.AutoIndexingService.GetBackgroundJobs().DependencyIndexingStore(), "codeintel", "dependency_index", nil)
 
-	executorMetricsReporter, err := executorqueue.NewMetricReporter(observationContext, "codeintel", services.AutoIndexingService.WorkerutilStore(), configInst.MetricsConfig)
+	executorMetricsReporter, err := executorqueue.NewMetricReporter(observationContext, "codeintel", services.AutoIndexingService.GetBackgroundJobs().WorkerutilStore(), configInst.MetricsConfig)
 	if err != nil {
 		return nil, err
 	}

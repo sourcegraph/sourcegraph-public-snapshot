@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	backgroundjobs "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/background"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
@@ -46,6 +47,8 @@ type Service struct {
 	metrics                 *resetterMetrics
 	depencencySyncMetrics   workerutil.WorkerMetrics
 	depencencyIndexMetrics  workerutil.WorkerMetrics
+
+	backgroundJobs backgroundjobs.BackgroundJob
 }
 
 func newService(
@@ -64,32 +67,36 @@ func newService(
 	observationContext *observation.Context,
 ) *Service {
 	return &Service{
-		store:                   store,
-		workerutilStore:         store.WorkerutilStore(observationContext),
-		dependencySyncStore:     store.WorkerutilDependencySyncStore(observationContext),
-		dependencyIndexingStore: store.WorkerutilDependencyIndexStore(observationContext),
-		uploadSvc:               uploadSvc,
-		depsSvc:                 dependenciesSvc,
-		policiesSvc:             policiesSvc,
-		repoStore:               repoStore,
-		gitserverRepoStore:      gitserverRepoStore,
-		externalServiceStore:    externalServiceStore,
-		policyMatcher:           policyMatcher,
-		gitserverClient:         gitserver,
-		symbolsClient:           symbolsClient,
-		repoUpdater:             repoUpdater,
-		inferenceService:        inferenceSvc,
-		logger:                  observationContext.Logger,
-		operations:              newOperations(observationContext),
-		metrics:                 newMetrics(observationContext),
-		depencencySyncMetrics:   workerutil.NewMetrics(observationContext, "codeintel_dependency_index_processor"),
-		depencencyIndexMetrics:  workerutil.NewMetrics(observationContext, "codeintel_dependency_index_queueing"),
+		store: store,
+		// workerutilStore:         store.WorkerutilStore(observationContext),
+		// dependencySyncStore:     store.WorkerutilDependencySyncStore(observationContext),
+		// dependencyIndexingStore: store.WorkerutilDependencyIndexStore(observationContext),
+		uploadSvc:              uploadSvc,
+		depsSvc:                dependenciesSvc,
+		policiesSvc:            policiesSvc,
+		repoStore:              repoStore,
+		gitserverRepoStore:     gitserverRepoStore,
+		externalServiceStore:   externalServiceStore,
+		policyMatcher:          policyMatcher,
+		gitserverClient:        gitserver,
+		symbolsClient:          symbolsClient,
+		repoUpdater:            repoUpdater,
+		inferenceService:       inferenceSvc,
+		logger:                 observationContext.Logger,
+		operations:             newOperations(observationContext),
+		metrics:                newMetrics(observationContext),
+		depencencySyncMetrics:  workerutil.NewMetrics(observationContext, "codeintel_dependency_index_processor"),
+		depencencyIndexMetrics: workerutil.NewMetrics(observationContext, "codeintel_dependency_index_queueing"),
+
+		backgroundJobs: backgroundjobs.New(store.GetUnsafeDB(), uploadSvc, repoUpdater, gitserver, observationContext),
 	}
 }
 
-func (s *Service) WorkerutilStore() dbworkerstore.Store         { return s.workerutilStore }
-func (s *Service) DependencySyncStore() dbworkerstore.Store     { return s.dependencySyncStore }
-func (s *Service) DependencyIndexingStore() dbworkerstore.Store { return s.dependencyIndexingStore }
+func (s *Service) GetBackgroundJobs() backgroundjobs.BackgroundJob { return s.backgroundJobs }
+
+// func (s *Service) WorkerutilStore() dbworkerstore.Store            { return s.workerutilStore }
+// func (s *Service) DependencySyncStore() dbworkerstore.Store     { return s.dependencySyncStore }
+// func (s *Service) DependencyIndexingStore() dbworkerstore.Store { return s.dependencyIndexingStore }
 
 func (s *Service) GetIndexes(ctx context.Context, opts types.GetIndexesOptions) (_ []types.Index, _ int, err error) {
 	ctx, _, endObservation := s.operations.getIndexes.With(ctx, &err, observation.Args{})
