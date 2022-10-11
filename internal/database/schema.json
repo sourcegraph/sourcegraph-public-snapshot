@@ -19466,7 +19466,7 @@
           "Comment": ""
         },
         {
-          "Name": "created_by",
+          "Name": "created_by_user_id",
           "Index": 10,
           "TypeName": "integer",
           "IsNullable": true,
@@ -19531,7 +19531,7 @@
           "Comment": ""
         },
         {
-          "Name": "updated_by",
+          "Name": "updated_by_user_id",
           "Index": 11,
           "TypeName": "integer",
           "IsNullable": true,
