@@ -16,6 +16,7 @@ func CodeIntelAutoIndexing() *monitoring.Dashboard {
 			shared.CodeIntelligence.NewAutoindexingServiceGroup(""),
 			shared.CodeIntelligence.NewAutoindexingGraphQLTransportGroup(""),
 			shared.CodeIntelligence.NewAutoindexingStoreGroup(""),
+			shared.CodeIntelligence.NewAutoindexingBackgroundJobGroup(""),
 			shared.CodeIntelligence.NewAutoindexingInferenceServiceGroup(""),
 			shared.CodeIntelligence.NewLuasandboxServiceGroup(""),
 		},

@@ -22,14 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type dependencySyncSchedulerHandler struct {
-	uploadsSvc    shared.UploadService
-	depsSvc       DependenciesService
-	backgroundJob BackgroundJob
-	workerStore   dbworkerstore.Store
-	extsvcStore   ExternalServiceStore
-}
-
 // NewDependencySyncScheduler returns a new worker instance that processes
 // records from lsif_dependency_syncing_jobs.
 func (b *backgroundJob) NewDependencySyncScheduler(pollInterval time.Duration) *workerutil.Worker {
@@ -51,6 +43,14 @@ func (b *backgroundJob) NewDependencySyncScheduler(pollInterval time.Duration) *
 		HeartbeatInterval: 1 * time.Second,
 		Metrics:           b.depencencySyncMetrics,
 	})
+}
+
+type dependencySyncSchedulerHandler struct {
+	uploadsSvc    shared.UploadService
+	depsSvc       DependenciesService
+	backgroundJob BackgroundJob
+	workerStore   dbworkerstore.Store
+	extsvcStore   ExternalServiceStore
 }
 
 // For mocking in tests

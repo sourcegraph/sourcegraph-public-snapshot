@@ -108,6 +108,7 @@ func New(
 		operations: newOperations(observationContext),
 		logger:     observationContext.Logger,
 
+		metrics:                newMetrics(observationContext),
 		depencencySyncMetrics:  workerutil.NewMetrics(observationContext, "codeintel_dependency_index_processor"),
 		depencencyIndexMetrics: workerutil.NewMetrics(observationContext, "codeintel_dependency_index_queueing"),
 	}

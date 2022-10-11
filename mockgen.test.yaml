@@ -89,7 +89,7 @@
         - ReposStore
         - ExternalServiceStore
         - GitserverRepoStore
-        - BackgroundJobs
+        - BackgroundJob
         - PolicyMatcher
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared
       interfaces:
@@ -97,7 +97,7 @@
 
 # TODO - cannot merge with the one above because 'Store' is looked for in multiple packages.
 # This is a deficiency of go-mockgen filed in https://github.com/derision-test/go-mockgen/issues/36.
-- filename: internal/codeintel/autoindexing/mocks2_test.go
+- filename: internal/codeintel/autoindexing/internal/background/mocks_storeworker_test.go
   sources:
     - path: github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store
       interfaces:

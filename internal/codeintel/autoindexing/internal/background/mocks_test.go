@@ -4,7 +4,7 @@
 // this repository. To add additional mocks to this or another package, add a new entry
 // to the mockgen.yaml file in the root of this repository.
 
-package autoindexing
+package background
 
 import (
 	"context"
@@ -21,9 +21,11 @@ import (
 	shared1 "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
 	gitdomain "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	observation "github.com/sourcegraph/sourcegraph/internal/observation"
+	goroutine "github.com/sourcegraph/sourcegraph/internal/goroutine"
 	protocol "github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	types1 "github.com/sourcegraph/sourcegraph/internal/types"
+	workerutil "github.com/sourcegraph/sourcegraph/internal/workerutil"
+	dbworker "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	store1 "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	config "github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	precise "github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -118,17 +120,6 @@ type MockStore struct {
 	// UpdateSourcedCommitsFunc is an instance of a mock function object
 	// controlling the behavior of the method UpdateSourcedCommits.
 	UpdateSourcedCommitsFunc *StoreUpdateSourcedCommitsFunc
-	// WorkerutilDependencyIndexStoreFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// WorkerutilDependencyIndexStore.
-	WorkerutilDependencyIndexStoreFunc *StoreWorkerutilDependencyIndexStoreFunc
-	// WorkerutilDependencySyncStoreFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// WorkerutilDependencySyncStore.
-	WorkerutilDependencySyncStoreFunc *StoreWorkerutilDependencySyncStoreFunc
-	// WorkerutilStoreFunc is an instance of a mock function object
-	// controlling the behavior of the method WorkerutilStore.
-	WorkerutilStoreFunc *StoreWorkerutilStoreFunc
 }
 
 // NewMockStore creates a new mock of the Store interface. All methods
@@ -262,21 +253,6 @@ func NewMockStore() *MockStore {
 		},
 		UpdateSourcedCommitsFunc: &StoreUpdateSourcedCommitsFunc{
 			defaultHook: func(context.Context, int, string, time.Time) (r0 int, r1 error) {
-				return
-			},
-		},
-		WorkerutilDependencyIndexStoreFunc: &StoreWorkerutilDependencyIndexStoreFunc{
-			defaultHook: func(*observation.Context) (r0 store1.Store) {
-				return
-			},
-		},
-		WorkerutilDependencySyncStoreFunc: &StoreWorkerutilDependencySyncStoreFunc{
-			defaultHook: func(*observation.Context) (r0 store1.Store) {
-				return
-			},
-		},
-		WorkerutilStoreFunc: &StoreWorkerutilStoreFunc{
-			defaultHook: func(*observation.Context) (r0 store1.Store) {
 				return
 			},
 		},
@@ -417,21 +393,6 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.UpdateSourcedCommits")
 			},
 		},
-		WorkerutilDependencyIndexStoreFunc: &StoreWorkerutilDependencyIndexStoreFunc{
-			defaultHook: func(*observation.Context) store1.Store {
-				panic("unexpected invocation of MockStore.WorkerutilDependencyIndexStore")
-			},
-		},
-		WorkerutilDependencySyncStoreFunc: &StoreWorkerutilDependencySyncStoreFunc{
-			defaultHook: func(*observation.Context) store1.Store {
-				panic("unexpected invocation of MockStore.WorkerutilDependencySyncStore")
-			},
-		},
-		WorkerutilStoreFunc: &StoreWorkerutilStoreFunc{
-			defaultHook: func(*observation.Context) store1.Store {
-				panic("unexpected invocation of MockStore.WorkerutilStore")
-			},
-		},
 	}
 }
 
@@ -516,15 +477,6 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		},
 		UpdateSourcedCommitsFunc: &StoreUpdateSourcedCommitsFunc{
 			defaultHook: i.UpdateSourcedCommits,
-		},
-		WorkerutilDependencyIndexStoreFunc: &StoreWorkerutilDependencyIndexStoreFunc{
-			defaultHook: i.WorkerutilDependencyIndexStore,
-		},
-		WorkerutilDependencySyncStoreFunc: &StoreWorkerutilDependencySyncStoreFunc{
-			defaultHook: i.WorkerutilDependencySyncStore,
-		},
-		WorkerutilStoreFunc: &StoreWorkerutilStoreFunc{
-			defaultHook: i.WorkerutilStore,
 		},
 	}
 }
@@ -3366,318 +3318,6 @@ func (c StoreUpdateSourcedCommitsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// StoreWorkerutilDependencyIndexStoreFunc describes the behavior when the
-// WorkerutilDependencyIndexStore method of the parent MockStore instance is
-// invoked.
-type StoreWorkerutilDependencyIndexStoreFunc struct {
-	defaultHook func(*observation.Context) store1.Store
-	hooks       []func(*observation.Context) store1.Store
-	history     []StoreWorkerutilDependencyIndexStoreFuncCall
-	mutex       sync.Mutex
-}
-
-// WorkerutilDependencyIndexStore delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockStore) WorkerutilDependencyIndexStore(v0 *observation.Context) store1.Store {
-	r0 := m.WorkerutilDependencyIndexStoreFunc.nextHook()(v0)
-	m.WorkerutilDependencyIndexStoreFunc.appendCall(StoreWorkerutilDependencyIndexStoreFuncCall{v0, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the
-// WorkerutilDependencyIndexStore method of the parent MockStore instance is
-// invoked and the hook queue is empty.
-func (f *StoreWorkerutilDependencyIndexStoreFunc) SetDefaultHook(hook func(*observation.Context) store1.Store) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// WorkerutilDependencyIndexStore method of the parent MockStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *StoreWorkerutilDependencyIndexStoreFunc) PushHook(hook func(*observation.Context) store1.Store) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *StoreWorkerutilDependencyIndexStoreFunc) SetDefaultReturn(r0 store1.Store) {
-	f.SetDefaultHook(func(*observation.Context) store1.Store {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreWorkerutilDependencyIndexStoreFunc) PushReturn(r0 store1.Store) {
-	f.PushHook(func(*observation.Context) store1.Store {
-		return r0
-	})
-}
-
-func (f *StoreWorkerutilDependencyIndexStoreFunc) nextHook() func(*observation.Context) store1.Store {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreWorkerutilDependencyIndexStoreFunc) appendCall(r0 StoreWorkerutilDependencyIndexStoreFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of StoreWorkerutilDependencyIndexStoreFuncCall
-// objects describing the invocations of this function.
-func (f *StoreWorkerutilDependencyIndexStoreFunc) History() []StoreWorkerutilDependencyIndexStoreFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreWorkerutilDependencyIndexStoreFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreWorkerutilDependencyIndexStoreFuncCall is an object that describes
-// an invocation of method WorkerutilDependencyIndexStore on an instance of
-// MockStore.
-type StoreWorkerutilDependencyIndexStoreFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 *observation.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 store1.Store
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreWorkerutilDependencyIndexStoreFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreWorkerutilDependencyIndexStoreFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// StoreWorkerutilDependencySyncStoreFunc describes the behavior when the
-// WorkerutilDependencySyncStore method of the parent MockStore instance is
-// invoked.
-type StoreWorkerutilDependencySyncStoreFunc struct {
-	defaultHook func(*observation.Context) store1.Store
-	hooks       []func(*observation.Context) store1.Store
-	history     []StoreWorkerutilDependencySyncStoreFuncCall
-	mutex       sync.Mutex
-}
-
-// WorkerutilDependencySyncStore delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockStore) WorkerutilDependencySyncStore(v0 *observation.Context) store1.Store {
-	r0 := m.WorkerutilDependencySyncStoreFunc.nextHook()(v0)
-	m.WorkerutilDependencySyncStoreFunc.appendCall(StoreWorkerutilDependencySyncStoreFuncCall{v0, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the
-// WorkerutilDependencySyncStore method of the parent MockStore instance is
-// invoked and the hook queue is empty.
-func (f *StoreWorkerutilDependencySyncStoreFunc) SetDefaultHook(hook func(*observation.Context) store1.Store) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// WorkerutilDependencySyncStore method of the parent MockStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *StoreWorkerutilDependencySyncStoreFunc) PushHook(hook func(*observation.Context) store1.Store) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *StoreWorkerutilDependencySyncStoreFunc) SetDefaultReturn(r0 store1.Store) {
-	f.SetDefaultHook(func(*observation.Context) store1.Store {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreWorkerutilDependencySyncStoreFunc) PushReturn(r0 store1.Store) {
-	f.PushHook(func(*observation.Context) store1.Store {
-		return r0
-	})
-}
-
-func (f *StoreWorkerutilDependencySyncStoreFunc) nextHook() func(*observation.Context) store1.Store {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreWorkerutilDependencySyncStoreFunc) appendCall(r0 StoreWorkerutilDependencySyncStoreFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of StoreWorkerutilDependencySyncStoreFuncCall
-// objects describing the invocations of this function.
-func (f *StoreWorkerutilDependencySyncStoreFunc) History() []StoreWorkerutilDependencySyncStoreFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreWorkerutilDependencySyncStoreFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreWorkerutilDependencySyncStoreFuncCall is an object that describes an
-// invocation of method WorkerutilDependencySyncStore on an instance of
-// MockStore.
-type StoreWorkerutilDependencySyncStoreFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 *observation.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 store1.Store
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreWorkerutilDependencySyncStoreFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreWorkerutilDependencySyncStoreFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// StoreWorkerutilStoreFunc describes the behavior when the WorkerutilStore
-// method of the parent MockStore instance is invoked.
-type StoreWorkerutilStoreFunc struct {
-	defaultHook func(*observation.Context) store1.Store
-	hooks       []func(*observation.Context) store1.Store
-	history     []StoreWorkerutilStoreFuncCall
-	mutex       sync.Mutex
-}
-
-// WorkerutilStore delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockStore) WorkerutilStore(v0 *observation.Context) store1.Store {
-	r0 := m.WorkerutilStoreFunc.nextHook()(v0)
-	m.WorkerutilStoreFunc.appendCall(StoreWorkerutilStoreFuncCall{v0, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the WorkerutilStore
-// method of the parent MockStore instance is invoked and the hook queue is
-// empty.
-func (f *StoreWorkerutilStoreFunc) SetDefaultHook(hook func(*observation.Context) store1.Store) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// WorkerutilStore method of the parent MockStore instance invokes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *StoreWorkerutilStoreFunc) PushHook(hook func(*observation.Context) store1.Store) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *StoreWorkerutilStoreFunc) SetDefaultReturn(r0 store1.Store) {
-	f.SetDefaultHook(func(*observation.Context) store1.Store {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreWorkerutilStoreFunc) PushReturn(r0 store1.Store) {
-	f.PushHook(func(*observation.Context) store1.Store {
-		return r0
-	})
-}
-
-func (f *StoreWorkerutilStoreFunc) nextHook() func(*observation.Context) store1.Store {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreWorkerutilStoreFunc) appendCall(r0 StoreWorkerutilStoreFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of StoreWorkerutilStoreFuncCall objects
-// describing the invocations of this function.
-func (f *StoreWorkerutilStoreFunc) History() []StoreWorkerutilStoreFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreWorkerutilStoreFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreWorkerutilStoreFuncCall is an object that describes an invocation of
-// method WorkerutilStore on an instance of MockStore.
-type StoreWorkerutilStoreFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 *observation.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 store1.Store
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreWorkerutilStoreFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreWorkerutilStoreFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
 // MockGitserverClient is a mock implementation of the GitserverClient
 // interface (from the package
 // github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared)
@@ -6410,102 +6050,296 @@ func (c UploadServiceReferencesForUploadFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// MockAutoIndexingServiceForDepScheduling is a mock implementation of the
-// AutoIndexingServiceForDepScheduling interface (from the package
-// github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing) used
-// for unit testing.
-type MockAutoIndexingServiceForDepScheduling struct {
+// MockBackgroundJob is a mock implementation of the BackgroundJob interface
+// (from the package
+// github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/background)
+// used for unit testing.
+type MockBackgroundJob struct {
+	// DependencyIndexingStoreFunc is an instance of a mock function object
+	// controlling the behavior of the method DependencyIndexingStore.
+	DependencyIndexingStoreFunc *BackgroundJobDependencyIndexingStoreFunc
+	// DependencySyncStoreFunc is an instance of a mock function object
+	// controlling the behavior of the method DependencySyncStore.
+	DependencySyncStoreFunc *BackgroundJobDependencySyncStoreFunc
+	// InferIndexJobHintsFromRepositoryStructureFunc is an instance of a
+	// mock function object controlling the behavior of the method
+	// InferIndexJobHintsFromRepositoryStructure.
+	InferIndexJobHintsFromRepositoryStructureFunc *BackgroundJobInferIndexJobHintsFromRepositoryStructureFunc
+	// InferIndexJobsFromRepositoryStructureFunc is an instance of a mock
+	// function object controlling the behavior of the method
+	// InferIndexJobsFromRepositoryStructure.
+	InferIndexJobsFromRepositoryStructureFunc *BackgroundJobInferIndexJobsFromRepositoryStructureFunc
 	// InsertDependencyIndexingJobFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// InsertDependencyIndexingJob.
-	InsertDependencyIndexingJobFunc *AutoIndexingServiceForDepSchedulingInsertDependencyIndexingJobFunc
+	InsertDependencyIndexingJobFunc *BackgroundJobInsertDependencyIndexingJobFunc
+	// NewDependencyIndexResetterFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// NewDependencyIndexResetter.
+	NewDependencyIndexResetterFunc *BackgroundJobNewDependencyIndexResetterFunc
+	// NewDependencyIndexingSchedulerFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// NewDependencyIndexingScheduler.
+	NewDependencyIndexingSchedulerFunc *BackgroundJobNewDependencyIndexingSchedulerFunc
+	// NewDependencySyncSchedulerFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// NewDependencySyncScheduler.
+	NewDependencySyncSchedulerFunc *BackgroundJobNewDependencySyncSchedulerFunc
+	// NewIndexResetterFunc is an instance of a mock function object
+	// controlling the behavior of the method NewIndexResetter.
+	NewIndexResetterFunc *BackgroundJobNewIndexResetterFunc
+	// NewOnDemandSchedulerFunc is an instance of a mock function object
+	// controlling the behavior of the method NewOnDemandScheduler.
+	NewOnDemandSchedulerFunc *BackgroundJobNewOnDemandSchedulerFunc
+	// NewSchedulerFunc is an instance of a mock function object controlling
+	// the behavior of the method NewScheduler.
+	NewSchedulerFunc *BackgroundJobNewSchedulerFunc
+	// QueueIndexesFunc is an instance of a mock function object controlling
+	// the behavior of the method QueueIndexes.
+	QueueIndexesFunc *BackgroundJobQueueIndexesFunc
 	// QueueIndexesForPackageFunc is an instance of a mock function object
 	// controlling the behavior of the method QueueIndexesForPackage.
-	QueueIndexesForPackageFunc *AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFunc
+	QueueIndexesForPackageFunc *BackgroundJobQueueIndexesForPackageFunc
+	// WorkerutilStoreFunc is an instance of a mock function object
+	// controlling the behavior of the method WorkerutilStore.
+	WorkerutilStoreFunc *BackgroundJobWorkerutilStoreFunc
 }
 
-// NewMockAutoIndexingServiceForDepScheduling creates a new mock of the
-// AutoIndexingServiceForDepScheduling interface. All methods return zero
-// values for all results, unless overwritten.
-func NewMockAutoIndexingServiceForDepScheduling() *MockAutoIndexingServiceForDepScheduling {
-	return &MockAutoIndexingServiceForDepScheduling{
-		InsertDependencyIndexingJobFunc: &AutoIndexingServiceForDepSchedulingInsertDependencyIndexingJobFunc{
+// NewMockBackgroundJob creates a new mock of the BackgroundJob interface.
+// All methods return zero values for all results, unless overwritten.
+func NewMockBackgroundJob() *MockBackgroundJob {
+	return &MockBackgroundJob{
+		DependencyIndexingStoreFunc: &BackgroundJobDependencyIndexingStoreFunc{
+			defaultHook: func() (r0 store1.Store) {
+				return
+			},
+		},
+		DependencySyncStoreFunc: &BackgroundJobDependencySyncStoreFunc{
+			defaultHook: func() (r0 store1.Store) {
+				return
+			},
+		},
+		InferIndexJobHintsFromRepositoryStructureFunc: &BackgroundJobInferIndexJobHintsFromRepositoryStructureFunc{
+			defaultHook: func(context.Context, int, string) (r0 []config.IndexJobHint, r1 error) {
+				return
+			},
+		},
+		InferIndexJobsFromRepositoryStructureFunc: &BackgroundJobInferIndexJobsFromRepositoryStructureFunc{
+			defaultHook: func(context.Context, int, string, bool) (r0 []config.IndexJob, r1 error) {
+				return
+			},
+		},
+		InsertDependencyIndexingJobFunc: &BackgroundJobInsertDependencyIndexingJobFunc{
 			defaultHook: func(context.Context, int, string, time.Time) (r0 int, r1 error) {
 				return
 			},
 		},
-		QueueIndexesForPackageFunc: &AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFunc{
+		NewDependencyIndexResetterFunc: &BackgroundJobNewDependencyIndexResetterFunc{
+			defaultHook: func(time.Duration) (r0 *dbworker.Resetter) {
+				return
+			},
+		},
+		NewDependencyIndexingSchedulerFunc: &BackgroundJobNewDependencyIndexingSchedulerFunc{
+			defaultHook: func(time.Duration, int) (r0 *workerutil.Worker) {
+				return
+			},
+		},
+		NewDependencySyncSchedulerFunc: &BackgroundJobNewDependencySyncSchedulerFunc{
+			defaultHook: func(time.Duration) (r0 *workerutil.Worker) {
+				return
+			},
+		},
+		NewIndexResetterFunc: &BackgroundJobNewIndexResetterFunc{
+			defaultHook: func(time.Duration) (r0 *dbworker.Resetter) {
+				return
+			},
+		},
+		NewOnDemandSchedulerFunc: &BackgroundJobNewOnDemandSchedulerFunc{
+			defaultHook: func(time.Duration, int) (r0 goroutine.BackgroundRoutine) {
+				return
+			},
+		},
+		NewSchedulerFunc: &BackgroundJobNewSchedulerFunc{
+			defaultHook: func(time.Duration, time.Duration, int, int) (r0 goroutine.BackgroundRoutine) {
+				return
+			},
+		},
+		QueueIndexesFunc: &BackgroundJobQueueIndexesFunc{
+			defaultHook: func(context.Context, int, string, string, bool, bool) (r0 []types.Index, r1 error) {
+				return
+			},
+		},
+		QueueIndexesForPackageFunc: &BackgroundJobQueueIndexesForPackageFunc{
 			defaultHook: func(context.Context, precise.Package) (r0 error) {
+				return
+			},
+		},
+		WorkerutilStoreFunc: &BackgroundJobWorkerutilStoreFunc{
+			defaultHook: func() (r0 store1.Store) {
 				return
 			},
 		},
 	}
 }
 
-// NewStrictMockAutoIndexingServiceForDepScheduling creates a new mock of
-// the AutoIndexingServiceForDepScheduling interface. All methods panic on
-// invocation, unless overwritten.
-func NewStrictMockAutoIndexingServiceForDepScheduling() *MockAutoIndexingServiceForDepScheduling {
-	return &MockAutoIndexingServiceForDepScheduling{
-		InsertDependencyIndexingJobFunc: &AutoIndexingServiceForDepSchedulingInsertDependencyIndexingJobFunc{
-			defaultHook: func(context.Context, int, string, time.Time) (int, error) {
-				panic("unexpected invocation of MockAutoIndexingServiceForDepScheduling.InsertDependencyIndexingJob")
+// NewStrictMockBackgroundJob creates a new mock of the BackgroundJob
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockBackgroundJob() *MockBackgroundJob {
+	return &MockBackgroundJob{
+		DependencyIndexingStoreFunc: &BackgroundJobDependencyIndexingStoreFunc{
+			defaultHook: func() store1.Store {
+				panic("unexpected invocation of MockBackgroundJob.DependencyIndexingStore")
 			},
 		},
-		QueueIndexesForPackageFunc: &AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFunc{
+		DependencySyncStoreFunc: &BackgroundJobDependencySyncStoreFunc{
+			defaultHook: func() store1.Store {
+				panic("unexpected invocation of MockBackgroundJob.DependencySyncStore")
+			},
+		},
+		InferIndexJobHintsFromRepositoryStructureFunc: &BackgroundJobInferIndexJobHintsFromRepositoryStructureFunc{
+			defaultHook: func(context.Context, int, string) ([]config.IndexJobHint, error) {
+				panic("unexpected invocation of MockBackgroundJob.InferIndexJobHintsFromRepositoryStructure")
+			},
+		},
+		InferIndexJobsFromRepositoryStructureFunc: &BackgroundJobInferIndexJobsFromRepositoryStructureFunc{
+			defaultHook: func(context.Context, int, string, bool) ([]config.IndexJob, error) {
+				panic("unexpected invocation of MockBackgroundJob.InferIndexJobsFromRepositoryStructure")
+			},
+		},
+		InsertDependencyIndexingJobFunc: &BackgroundJobInsertDependencyIndexingJobFunc{
+			defaultHook: func(context.Context, int, string, time.Time) (int, error) {
+				panic("unexpected invocation of MockBackgroundJob.InsertDependencyIndexingJob")
+			},
+		},
+		NewDependencyIndexResetterFunc: &BackgroundJobNewDependencyIndexResetterFunc{
+			defaultHook: func(time.Duration) *dbworker.Resetter {
+				panic("unexpected invocation of MockBackgroundJob.NewDependencyIndexResetter")
+			},
+		},
+		NewDependencyIndexingSchedulerFunc: &BackgroundJobNewDependencyIndexingSchedulerFunc{
+			defaultHook: func(time.Duration, int) *workerutil.Worker {
+				panic("unexpected invocation of MockBackgroundJob.NewDependencyIndexingScheduler")
+			},
+		},
+		NewDependencySyncSchedulerFunc: &BackgroundJobNewDependencySyncSchedulerFunc{
+			defaultHook: func(time.Duration) *workerutil.Worker {
+				panic("unexpected invocation of MockBackgroundJob.NewDependencySyncScheduler")
+			},
+		},
+		NewIndexResetterFunc: &BackgroundJobNewIndexResetterFunc{
+			defaultHook: func(time.Duration) *dbworker.Resetter {
+				panic("unexpected invocation of MockBackgroundJob.NewIndexResetter")
+			},
+		},
+		NewOnDemandSchedulerFunc: &BackgroundJobNewOnDemandSchedulerFunc{
+			defaultHook: func(time.Duration, int) goroutine.BackgroundRoutine {
+				panic("unexpected invocation of MockBackgroundJob.NewOnDemandScheduler")
+			},
+		},
+		NewSchedulerFunc: &BackgroundJobNewSchedulerFunc{
+			defaultHook: func(time.Duration, time.Duration, int, int) goroutine.BackgroundRoutine {
+				panic("unexpected invocation of MockBackgroundJob.NewScheduler")
+			},
+		},
+		QueueIndexesFunc: &BackgroundJobQueueIndexesFunc{
+			defaultHook: func(context.Context, int, string, string, bool, bool) ([]types.Index, error) {
+				panic("unexpected invocation of MockBackgroundJob.QueueIndexes")
+			},
+		},
+		QueueIndexesForPackageFunc: &BackgroundJobQueueIndexesForPackageFunc{
 			defaultHook: func(context.Context, precise.Package) error {
-				panic("unexpected invocation of MockAutoIndexingServiceForDepScheduling.QueueIndexesForPackage")
+				panic("unexpected invocation of MockBackgroundJob.QueueIndexesForPackage")
+			},
+		},
+		WorkerutilStoreFunc: &BackgroundJobWorkerutilStoreFunc{
+			defaultHook: func() store1.Store {
+				panic("unexpected invocation of MockBackgroundJob.WorkerutilStore")
 			},
 		},
 	}
 }
 
-// NewMockAutoIndexingServiceForDepSchedulingFrom creates a new mock of the
-// MockAutoIndexingServiceForDepScheduling interface. All methods delegate
-// to the given implementation, unless overwritten.
-func NewMockAutoIndexingServiceForDepSchedulingFrom(i AutoIndexingServiceForDepScheduling) *MockAutoIndexingServiceForDepScheduling {
-	return &MockAutoIndexingServiceForDepScheduling{
-		InsertDependencyIndexingJobFunc: &AutoIndexingServiceForDepSchedulingInsertDependencyIndexingJobFunc{
+// NewMockBackgroundJobFrom creates a new mock of the MockBackgroundJob
+// interface. All methods delegate to the given implementation, unless
+// overwritten.
+func NewMockBackgroundJobFrom(i BackgroundJob) *MockBackgroundJob {
+	return &MockBackgroundJob{
+		DependencyIndexingStoreFunc: &BackgroundJobDependencyIndexingStoreFunc{
+			defaultHook: i.DependencyIndexingStore,
+		},
+		DependencySyncStoreFunc: &BackgroundJobDependencySyncStoreFunc{
+			defaultHook: i.DependencySyncStore,
+		},
+		InferIndexJobHintsFromRepositoryStructureFunc: &BackgroundJobInferIndexJobHintsFromRepositoryStructureFunc{
+			defaultHook: i.InferIndexJobHintsFromRepositoryStructure,
+		},
+		InferIndexJobsFromRepositoryStructureFunc: &BackgroundJobInferIndexJobsFromRepositoryStructureFunc{
+			defaultHook: i.InferIndexJobsFromRepositoryStructure,
+		},
+		InsertDependencyIndexingJobFunc: &BackgroundJobInsertDependencyIndexingJobFunc{
 			defaultHook: i.InsertDependencyIndexingJob,
 		},
-		QueueIndexesForPackageFunc: &AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFunc{
+		NewDependencyIndexResetterFunc: &BackgroundJobNewDependencyIndexResetterFunc{
+			defaultHook: i.NewDependencyIndexResetter,
+		},
+		NewDependencyIndexingSchedulerFunc: &BackgroundJobNewDependencyIndexingSchedulerFunc{
+			defaultHook: i.NewDependencyIndexingScheduler,
+		},
+		NewDependencySyncSchedulerFunc: &BackgroundJobNewDependencySyncSchedulerFunc{
+			defaultHook: i.NewDependencySyncScheduler,
+		},
+		NewIndexResetterFunc: &BackgroundJobNewIndexResetterFunc{
+			defaultHook: i.NewIndexResetter,
+		},
+		NewOnDemandSchedulerFunc: &BackgroundJobNewOnDemandSchedulerFunc{
+			defaultHook: i.NewOnDemandScheduler,
+		},
+		NewSchedulerFunc: &BackgroundJobNewSchedulerFunc{
+			defaultHook: i.NewScheduler,
+		},
+		QueueIndexesFunc: &BackgroundJobQueueIndexesFunc{
+			defaultHook: i.QueueIndexes,
+		},
+		QueueIndexesForPackageFunc: &BackgroundJobQueueIndexesForPackageFunc{
 			defaultHook: i.QueueIndexesForPackage,
+		},
+		WorkerutilStoreFunc: &BackgroundJobWorkerutilStoreFunc{
+			defaultHook: i.WorkerutilStore,
 		},
 	}
 }
 
-// AutoIndexingServiceForDepSchedulingInsertDependencyIndexingJobFunc
-// describes the behavior when the InsertDependencyIndexingJob method of the
-// parent MockAutoIndexingServiceForDepScheduling instance is invoked.
-type AutoIndexingServiceForDepSchedulingInsertDependencyIndexingJobFunc struct {
-	defaultHook func(context.Context, int, string, time.Time) (int, error)
-	hooks       []func(context.Context, int, string, time.Time) (int, error)
-	history     []AutoIndexingServiceForDepSchedulingInsertDependencyIndexingJobFuncCall
+// BackgroundJobDependencyIndexingStoreFunc describes the behavior when the
+// DependencyIndexingStore method of the parent MockBackgroundJob instance
+// is invoked.
+type BackgroundJobDependencyIndexingStoreFunc struct {
+	defaultHook func() store1.Store
+	hooks       []func() store1.Store
+	history     []BackgroundJobDependencyIndexingStoreFuncCall
 	mutex       sync.Mutex
 }
 
-// InsertDependencyIndexingJob delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockAutoIndexingServiceForDepScheduling) InsertDependencyIndexingJob(v0 context.Context, v1 int, v2 string, v3 time.Time) (int, error) {
-	r0, r1 := m.InsertDependencyIndexingJobFunc.nextHook()(v0, v1, v2, v3)
-	m.InsertDependencyIndexingJobFunc.appendCall(AutoIndexingServiceForDepSchedulingInsertDependencyIndexingJobFuncCall{v0, v1, v2, v3, r0, r1})
-	return r0, r1
+// DependencyIndexingStore delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockBackgroundJob) DependencyIndexingStore() store1.Store {
+	r0 := m.DependencyIndexingStoreFunc.nextHook()()
+	m.DependencyIndexingStoreFunc.appendCall(BackgroundJobDependencyIndexingStoreFuncCall{r0})
+	return r0
 }
 
 // SetDefaultHook sets function that is called when the
-// InsertDependencyIndexingJob method of the parent
-// MockAutoIndexingServiceForDepScheduling instance is invoked and the hook
-// queue is empty.
-func (f *AutoIndexingServiceForDepSchedulingInsertDependencyIndexingJobFunc) SetDefaultHook(hook func(context.Context, int, string, time.Time) (int, error)) {
+// DependencyIndexingStore method of the parent MockBackgroundJob instance
+// is invoked and the hook queue is empty.
+func (f *BackgroundJobDependencyIndexingStoreFunc) SetDefaultHook(hook func() store1.Store) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// InsertDependencyIndexingJob method of the parent
-// MockAutoIndexingServiceForDepScheduling instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *AutoIndexingServiceForDepSchedulingInsertDependencyIndexingJobFunc) PushHook(hook func(context.Context, int, string, time.Time) (int, error)) {
+// DependencyIndexingStore method of the parent MockBackgroundJob instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *BackgroundJobDependencyIndexingStoreFunc) PushHook(hook func() store1.Store) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -6513,20 +6347,20 @@ func (f *AutoIndexingServiceForDepSchedulingInsertDependencyIndexingJobFunc) Pus
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *AutoIndexingServiceForDepSchedulingInsertDependencyIndexingJobFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, string, time.Time) (int, error) {
-		return r0, r1
+func (f *BackgroundJobDependencyIndexingStoreFunc) SetDefaultReturn(r0 store1.Store) {
+	f.SetDefaultHook(func() store1.Store {
+		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *AutoIndexingServiceForDepSchedulingInsertDependencyIndexingJobFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, int, string, time.Time) (int, error) {
-		return r0, r1
+func (f *BackgroundJobDependencyIndexingStoreFunc) PushReturn(r0 store1.Store) {
+	f.PushHook(func() store1.Store {
+		return r0
 	})
 }
 
-func (f *AutoIndexingServiceForDepSchedulingInsertDependencyIndexingJobFunc) nextHook() func(context.Context, int, string, time.Time) (int, error) {
+func (f *BackgroundJobDependencyIndexingStoreFunc) nextHook() func() store1.Store {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -6539,29 +6373,470 @@ func (f *AutoIndexingServiceForDepSchedulingInsertDependencyIndexingJobFunc) nex
 	return hook
 }
 
-func (f *AutoIndexingServiceForDepSchedulingInsertDependencyIndexingJobFunc) appendCall(r0 AutoIndexingServiceForDepSchedulingInsertDependencyIndexingJobFuncCall) {
+func (f *BackgroundJobDependencyIndexingStoreFunc) appendCall(r0 BackgroundJobDependencyIndexingStoreFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
 // History returns a sequence of
-// AutoIndexingServiceForDepSchedulingInsertDependencyIndexingJobFuncCall
-// objects describing the invocations of this function.
-func (f *AutoIndexingServiceForDepSchedulingInsertDependencyIndexingJobFunc) History() []AutoIndexingServiceForDepSchedulingInsertDependencyIndexingJobFuncCall {
+// BackgroundJobDependencyIndexingStoreFuncCall objects describing the
+// invocations of this function.
+func (f *BackgroundJobDependencyIndexingStoreFunc) History() []BackgroundJobDependencyIndexingStoreFuncCall {
 	f.mutex.Lock()
-	history := make([]AutoIndexingServiceForDepSchedulingInsertDependencyIndexingJobFuncCall, len(f.history))
+	history := make([]BackgroundJobDependencyIndexingStoreFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// AutoIndexingServiceForDepSchedulingInsertDependencyIndexingJobFuncCall is
-// an object that describes an invocation of method
-// InsertDependencyIndexingJob on an instance of
-// MockAutoIndexingServiceForDepScheduling.
-type AutoIndexingServiceForDepSchedulingInsertDependencyIndexingJobFuncCall struct {
+// BackgroundJobDependencyIndexingStoreFuncCall is an object that describes
+// an invocation of method DependencyIndexingStore on an instance of
+// MockBackgroundJob.
+type BackgroundJobDependencyIndexingStoreFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 store1.Store
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c BackgroundJobDependencyIndexingStoreFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c BackgroundJobDependencyIndexingStoreFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// BackgroundJobDependencySyncStoreFunc describes the behavior when the
+// DependencySyncStore method of the parent MockBackgroundJob instance is
+// invoked.
+type BackgroundJobDependencySyncStoreFunc struct {
+	defaultHook func() store1.Store
+	hooks       []func() store1.Store
+	history     []BackgroundJobDependencySyncStoreFuncCall
+	mutex       sync.Mutex
+}
+
+// DependencySyncStore delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockBackgroundJob) DependencySyncStore() store1.Store {
+	r0 := m.DependencySyncStoreFunc.nextHook()()
+	m.DependencySyncStoreFunc.appendCall(BackgroundJobDependencySyncStoreFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the DependencySyncStore
+// method of the parent MockBackgroundJob instance is invoked and the hook
+// queue is empty.
+func (f *BackgroundJobDependencySyncStoreFunc) SetDefaultHook(hook func() store1.Store) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DependencySyncStore method of the parent MockBackgroundJob instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *BackgroundJobDependencySyncStoreFunc) PushHook(hook func() store1.Store) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *BackgroundJobDependencySyncStoreFunc) SetDefaultReturn(r0 store1.Store) {
+	f.SetDefaultHook(func() store1.Store {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *BackgroundJobDependencySyncStoreFunc) PushReturn(r0 store1.Store) {
+	f.PushHook(func() store1.Store {
+		return r0
+	})
+}
+
+func (f *BackgroundJobDependencySyncStoreFunc) nextHook() func() store1.Store {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *BackgroundJobDependencySyncStoreFunc) appendCall(r0 BackgroundJobDependencySyncStoreFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of BackgroundJobDependencySyncStoreFuncCall
+// objects describing the invocations of this function.
+func (f *BackgroundJobDependencySyncStoreFunc) History() []BackgroundJobDependencySyncStoreFuncCall {
+	f.mutex.Lock()
+	history := make([]BackgroundJobDependencySyncStoreFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// BackgroundJobDependencySyncStoreFuncCall is an object that describes an
+// invocation of method DependencySyncStore on an instance of
+// MockBackgroundJob.
+type BackgroundJobDependencySyncStoreFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 store1.Store
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c BackgroundJobDependencySyncStoreFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c BackgroundJobDependencySyncStoreFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// BackgroundJobInferIndexJobHintsFromRepositoryStructureFunc describes the
+// behavior when the InferIndexJobHintsFromRepositoryStructure method of the
+// parent MockBackgroundJob instance is invoked.
+type BackgroundJobInferIndexJobHintsFromRepositoryStructureFunc struct {
+	defaultHook func(context.Context, int, string) ([]config.IndexJobHint, error)
+	hooks       []func(context.Context, int, string) ([]config.IndexJobHint, error)
+	history     []BackgroundJobInferIndexJobHintsFromRepositoryStructureFuncCall
+	mutex       sync.Mutex
+}
+
+// InferIndexJobHintsFromRepositoryStructure delegates to the next hook
+// function in the queue and stores the parameter and result values of this
+// invocation.
+func (m *MockBackgroundJob) InferIndexJobHintsFromRepositoryStructure(v0 context.Context, v1 int, v2 string) ([]config.IndexJobHint, error) {
+	r0, r1 := m.InferIndexJobHintsFromRepositoryStructureFunc.nextHook()(v0, v1, v2)
+	m.InferIndexJobHintsFromRepositoryStructureFunc.appendCall(BackgroundJobInferIndexJobHintsFromRepositoryStructureFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// InferIndexJobHintsFromRepositoryStructure method of the parent
+// MockBackgroundJob instance is invoked and the hook queue is empty.
+func (f *BackgroundJobInferIndexJobHintsFromRepositoryStructureFunc) SetDefaultHook(hook func(context.Context, int, string) ([]config.IndexJobHint, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// InferIndexJobHintsFromRepositoryStructure method of the parent
+// MockBackgroundJob instance invokes the hook at the front of the queue and
+// discards it. After the queue is empty, the default hook function is
+// invoked for any future action.
+func (f *BackgroundJobInferIndexJobHintsFromRepositoryStructureFunc) PushHook(hook func(context.Context, int, string) ([]config.IndexJobHint, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *BackgroundJobInferIndexJobHintsFromRepositoryStructureFunc) SetDefaultReturn(r0 []config.IndexJobHint, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string) ([]config.IndexJobHint, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *BackgroundJobInferIndexJobHintsFromRepositoryStructureFunc) PushReturn(r0 []config.IndexJobHint, r1 error) {
+	f.PushHook(func(context.Context, int, string) ([]config.IndexJobHint, error) {
+		return r0, r1
+	})
+}
+
+func (f *BackgroundJobInferIndexJobHintsFromRepositoryStructureFunc) nextHook() func(context.Context, int, string) ([]config.IndexJobHint, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *BackgroundJobInferIndexJobHintsFromRepositoryStructureFunc) appendCall(r0 BackgroundJobInferIndexJobHintsFromRepositoryStructureFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// BackgroundJobInferIndexJobHintsFromRepositoryStructureFuncCall objects
+// describing the invocations of this function.
+func (f *BackgroundJobInferIndexJobHintsFromRepositoryStructureFunc) History() []BackgroundJobInferIndexJobHintsFromRepositoryStructureFuncCall {
+	f.mutex.Lock()
+	history := make([]BackgroundJobInferIndexJobHintsFromRepositoryStructureFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// BackgroundJobInferIndexJobHintsFromRepositoryStructureFuncCall is an
+// object that describes an invocation of method
+// InferIndexJobHintsFromRepositoryStructure on an instance of
+// MockBackgroundJob.
+type BackgroundJobInferIndexJobHintsFromRepositoryStructureFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []config.IndexJobHint
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c BackgroundJobInferIndexJobHintsFromRepositoryStructureFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c BackgroundJobInferIndexJobHintsFromRepositoryStructureFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// BackgroundJobInferIndexJobsFromRepositoryStructureFunc describes the
+// behavior when the InferIndexJobsFromRepositoryStructure method of the
+// parent MockBackgroundJob instance is invoked.
+type BackgroundJobInferIndexJobsFromRepositoryStructureFunc struct {
+	defaultHook func(context.Context, int, string, bool) ([]config.IndexJob, error)
+	hooks       []func(context.Context, int, string, bool) ([]config.IndexJob, error)
+	history     []BackgroundJobInferIndexJobsFromRepositoryStructureFuncCall
+	mutex       sync.Mutex
+}
+
+// InferIndexJobsFromRepositoryStructure delegates to the next hook function
+// in the queue and stores the parameter and result values of this
+// invocation.
+func (m *MockBackgroundJob) InferIndexJobsFromRepositoryStructure(v0 context.Context, v1 int, v2 string, v3 bool) ([]config.IndexJob, error) {
+	r0, r1 := m.InferIndexJobsFromRepositoryStructureFunc.nextHook()(v0, v1, v2, v3)
+	m.InferIndexJobsFromRepositoryStructureFunc.appendCall(BackgroundJobInferIndexJobsFromRepositoryStructureFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// InferIndexJobsFromRepositoryStructure method of the parent
+// MockBackgroundJob instance is invoked and the hook queue is empty.
+func (f *BackgroundJobInferIndexJobsFromRepositoryStructureFunc) SetDefaultHook(hook func(context.Context, int, string, bool) ([]config.IndexJob, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// InferIndexJobsFromRepositoryStructure method of the parent
+// MockBackgroundJob instance invokes the hook at the front of the queue and
+// discards it. After the queue is empty, the default hook function is
+// invoked for any future action.
+func (f *BackgroundJobInferIndexJobsFromRepositoryStructureFunc) PushHook(hook func(context.Context, int, string, bool) ([]config.IndexJob, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *BackgroundJobInferIndexJobsFromRepositoryStructureFunc) SetDefaultReturn(r0 []config.IndexJob, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string, bool) ([]config.IndexJob, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *BackgroundJobInferIndexJobsFromRepositoryStructureFunc) PushReturn(r0 []config.IndexJob, r1 error) {
+	f.PushHook(func(context.Context, int, string, bool) ([]config.IndexJob, error) {
+		return r0, r1
+	})
+}
+
+func (f *BackgroundJobInferIndexJobsFromRepositoryStructureFunc) nextHook() func(context.Context, int, string, bool) ([]config.IndexJob, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *BackgroundJobInferIndexJobsFromRepositoryStructureFunc) appendCall(r0 BackgroundJobInferIndexJobsFromRepositoryStructureFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// BackgroundJobInferIndexJobsFromRepositoryStructureFuncCall objects
+// describing the invocations of this function.
+func (f *BackgroundJobInferIndexJobsFromRepositoryStructureFunc) History() []BackgroundJobInferIndexJobsFromRepositoryStructureFuncCall {
+	f.mutex.Lock()
+	history := make([]BackgroundJobInferIndexJobsFromRepositoryStructureFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// BackgroundJobInferIndexJobsFromRepositoryStructureFuncCall is an object
+// that describes an invocation of method
+// InferIndexJobsFromRepositoryStructure on an instance of
+// MockBackgroundJob.
+type BackgroundJobInferIndexJobsFromRepositoryStructureFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 bool
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []config.IndexJob
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c BackgroundJobInferIndexJobsFromRepositoryStructureFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c BackgroundJobInferIndexJobsFromRepositoryStructureFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// BackgroundJobInsertDependencyIndexingJobFunc describes the behavior when
+// the InsertDependencyIndexingJob method of the parent MockBackgroundJob
+// instance is invoked.
+type BackgroundJobInsertDependencyIndexingJobFunc struct {
+	defaultHook func(context.Context, int, string, time.Time) (int, error)
+	hooks       []func(context.Context, int, string, time.Time) (int, error)
+	history     []BackgroundJobInsertDependencyIndexingJobFuncCall
+	mutex       sync.Mutex
+}
+
+// InsertDependencyIndexingJob delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockBackgroundJob) InsertDependencyIndexingJob(v0 context.Context, v1 int, v2 string, v3 time.Time) (int, error) {
+	r0, r1 := m.InsertDependencyIndexingJobFunc.nextHook()(v0, v1, v2, v3)
+	m.InsertDependencyIndexingJobFunc.appendCall(BackgroundJobInsertDependencyIndexingJobFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// InsertDependencyIndexingJob method of the parent MockBackgroundJob
+// instance is invoked and the hook queue is empty.
+func (f *BackgroundJobInsertDependencyIndexingJobFunc) SetDefaultHook(hook func(context.Context, int, string, time.Time) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// InsertDependencyIndexingJob method of the parent MockBackgroundJob
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *BackgroundJobInsertDependencyIndexingJobFunc) PushHook(hook func(context.Context, int, string, time.Time) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *BackgroundJobInsertDependencyIndexingJobFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string, time.Time) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *BackgroundJobInsertDependencyIndexingJobFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, int, string, time.Time) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *BackgroundJobInsertDependencyIndexingJobFunc) nextHook() func(context.Context, int, string, time.Time) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *BackgroundJobInsertDependencyIndexingJobFunc) appendCall(r0 BackgroundJobInsertDependencyIndexingJobFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// BackgroundJobInsertDependencyIndexingJobFuncCall objects describing the
+// invocations of this function.
+func (f *BackgroundJobInsertDependencyIndexingJobFunc) History() []BackgroundJobInsertDependencyIndexingJobFuncCall {
+	f.mutex.Lock()
+	history := make([]BackgroundJobInsertDependencyIndexingJobFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// BackgroundJobInsertDependencyIndexingJobFuncCall is an object that
+// describes an invocation of method InsertDependencyIndexingJob on an
+// instance of MockBackgroundJob.
+type BackgroundJobInsertDependencyIndexingJobFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -6584,48 +6859,47 @@ type AutoIndexingServiceForDepSchedulingInsertDependencyIndexingJobFuncCall stru
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c AutoIndexingServiceForDepSchedulingInsertDependencyIndexingJobFuncCall) Args() []interface{} {
+func (c BackgroundJobInsertDependencyIndexingJobFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c AutoIndexingServiceForDepSchedulingInsertDependencyIndexingJobFuncCall) Results() []interface{} {
+func (c BackgroundJobInsertDependencyIndexingJobFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFunc describes
-// the behavior when the QueueIndexesForPackage method of the parent
-// MockAutoIndexingServiceForDepScheduling instance is invoked.
-type AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFunc struct {
-	defaultHook func(context.Context, precise.Package) error
-	hooks       []func(context.Context, precise.Package) error
-	history     []AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFuncCall
+// BackgroundJobNewDependencyIndexResetterFunc describes the behavior when
+// the NewDependencyIndexResetter method of the parent MockBackgroundJob
+// instance is invoked.
+type BackgroundJobNewDependencyIndexResetterFunc struct {
+	defaultHook func(time.Duration) *dbworker.Resetter
+	hooks       []func(time.Duration) *dbworker.Resetter
+	history     []BackgroundJobNewDependencyIndexResetterFuncCall
 	mutex       sync.Mutex
 }
 
-// QueueIndexesForPackage delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
-func (m *MockAutoIndexingServiceForDepScheduling) QueueIndexesForPackage(v0 context.Context, v1 precise.Package) error {
-	r0 := m.QueueIndexesForPackageFunc.nextHook()(v0, v1)
-	m.QueueIndexesForPackageFunc.appendCall(AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFuncCall{v0, v1, r0})
+// NewDependencyIndexResetter delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockBackgroundJob) NewDependencyIndexResetter(v0 time.Duration) *dbworker.Resetter {
+	r0 := m.NewDependencyIndexResetterFunc.nextHook()(v0)
+	m.NewDependencyIndexResetterFunc.appendCall(BackgroundJobNewDependencyIndexResetterFuncCall{v0, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the
-// QueueIndexesForPackage method of the parent
-// MockAutoIndexingServiceForDepScheduling instance is invoked and the hook
-// queue is empty.
-func (f *AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFunc) SetDefaultHook(hook func(context.Context, precise.Package) error) {
+// NewDependencyIndexResetter method of the parent MockBackgroundJob
+// instance is invoked and the hook queue is empty.
+func (f *BackgroundJobNewDependencyIndexResetterFunc) SetDefaultHook(hook func(time.Duration) *dbworker.Resetter) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// QueueIndexesForPackage method of the parent
-// MockAutoIndexingServiceForDepScheduling instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFunc) PushHook(hook func(context.Context, precise.Package) error) {
+// NewDependencyIndexResetter method of the parent MockBackgroundJob
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *BackgroundJobNewDependencyIndexResetterFunc) PushHook(hook func(time.Duration) *dbworker.Resetter) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -6633,20 +6907,20 @@ func (f *AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFunc) PushHook
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, precise.Package) error {
+func (f *BackgroundJobNewDependencyIndexResetterFunc) SetDefaultReturn(r0 *dbworker.Resetter) {
+	f.SetDefaultHook(func(time.Duration) *dbworker.Resetter {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, precise.Package) error {
+func (f *BackgroundJobNewDependencyIndexResetterFunc) PushReturn(r0 *dbworker.Resetter) {
+	f.PushHook(func(time.Duration) *dbworker.Resetter {
 		return r0
 	})
 }
 
-func (f *AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFunc) nextHook() func(context.Context, precise.Package) error {
+func (f *BackgroundJobNewDependencyIndexResetterFunc) nextHook() func(time.Duration) *dbworker.Resetter {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -6659,28 +6933,791 @@ func (f *AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFunc) nextHook
 	return hook
 }
 
-func (f *AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFunc) appendCall(r0 AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFuncCall) {
+func (f *BackgroundJobNewDependencyIndexResetterFunc) appendCall(r0 BackgroundJobNewDependencyIndexResetterFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
 // History returns a sequence of
-// AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFuncCall objects
-// describing the invocations of this function.
-func (f *AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFunc) History() []AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFuncCall {
+// BackgroundJobNewDependencyIndexResetterFuncCall objects describing the
+// invocations of this function.
+func (f *BackgroundJobNewDependencyIndexResetterFunc) History() []BackgroundJobNewDependencyIndexResetterFuncCall {
 	f.mutex.Lock()
-	history := make([]AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFuncCall, len(f.history))
+	history := make([]BackgroundJobNewDependencyIndexResetterFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFuncCall is an
-// object that describes an invocation of method QueueIndexesForPackage on
-// an instance of MockAutoIndexingServiceForDepScheduling.
-type AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFuncCall struct {
+// BackgroundJobNewDependencyIndexResetterFuncCall is an object that
+// describes an invocation of method NewDependencyIndexResetter on an
+// instance of MockBackgroundJob.
+type BackgroundJobNewDependencyIndexResetterFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 time.Duration
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *dbworker.Resetter
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c BackgroundJobNewDependencyIndexResetterFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c BackgroundJobNewDependencyIndexResetterFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// BackgroundJobNewDependencyIndexingSchedulerFunc describes the behavior
+// when the NewDependencyIndexingScheduler method of the parent
+// MockBackgroundJob instance is invoked.
+type BackgroundJobNewDependencyIndexingSchedulerFunc struct {
+	defaultHook func(time.Duration, int) *workerutil.Worker
+	hooks       []func(time.Duration, int) *workerutil.Worker
+	history     []BackgroundJobNewDependencyIndexingSchedulerFuncCall
+	mutex       sync.Mutex
+}
+
+// NewDependencyIndexingScheduler delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockBackgroundJob) NewDependencyIndexingScheduler(v0 time.Duration, v1 int) *workerutil.Worker {
+	r0 := m.NewDependencyIndexingSchedulerFunc.nextHook()(v0, v1)
+	m.NewDependencyIndexingSchedulerFunc.appendCall(BackgroundJobNewDependencyIndexingSchedulerFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// NewDependencyIndexingScheduler method of the parent MockBackgroundJob
+// instance is invoked and the hook queue is empty.
+func (f *BackgroundJobNewDependencyIndexingSchedulerFunc) SetDefaultHook(hook func(time.Duration, int) *workerutil.Worker) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// NewDependencyIndexingScheduler method of the parent MockBackgroundJob
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *BackgroundJobNewDependencyIndexingSchedulerFunc) PushHook(hook func(time.Duration, int) *workerutil.Worker) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *BackgroundJobNewDependencyIndexingSchedulerFunc) SetDefaultReturn(r0 *workerutil.Worker) {
+	f.SetDefaultHook(func(time.Duration, int) *workerutil.Worker {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *BackgroundJobNewDependencyIndexingSchedulerFunc) PushReturn(r0 *workerutil.Worker) {
+	f.PushHook(func(time.Duration, int) *workerutil.Worker {
+		return r0
+	})
+}
+
+func (f *BackgroundJobNewDependencyIndexingSchedulerFunc) nextHook() func(time.Duration, int) *workerutil.Worker {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *BackgroundJobNewDependencyIndexingSchedulerFunc) appendCall(r0 BackgroundJobNewDependencyIndexingSchedulerFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// BackgroundJobNewDependencyIndexingSchedulerFuncCall objects describing
+// the invocations of this function.
+func (f *BackgroundJobNewDependencyIndexingSchedulerFunc) History() []BackgroundJobNewDependencyIndexingSchedulerFuncCall {
+	f.mutex.Lock()
+	history := make([]BackgroundJobNewDependencyIndexingSchedulerFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// BackgroundJobNewDependencyIndexingSchedulerFuncCall is an object that
+// describes an invocation of method NewDependencyIndexingScheduler on an
+// instance of MockBackgroundJob.
+type BackgroundJobNewDependencyIndexingSchedulerFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 time.Duration
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *workerutil.Worker
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c BackgroundJobNewDependencyIndexingSchedulerFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c BackgroundJobNewDependencyIndexingSchedulerFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// BackgroundJobNewDependencySyncSchedulerFunc describes the behavior when
+// the NewDependencySyncScheduler method of the parent MockBackgroundJob
+// instance is invoked.
+type BackgroundJobNewDependencySyncSchedulerFunc struct {
+	defaultHook func(time.Duration) *workerutil.Worker
+	hooks       []func(time.Duration) *workerutil.Worker
+	history     []BackgroundJobNewDependencySyncSchedulerFuncCall
+	mutex       sync.Mutex
+}
+
+// NewDependencySyncScheduler delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockBackgroundJob) NewDependencySyncScheduler(v0 time.Duration) *workerutil.Worker {
+	r0 := m.NewDependencySyncSchedulerFunc.nextHook()(v0)
+	m.NewDependencySyncSchedulerFunc.appendCall(BackgroundJobNewDependencySyncSchedulerFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// NewDependencySyncScheduler method of the parent MockBackgroundJob
+// instance is invoked and the hook queue is empty.
+func (f *BackgroundJobNewDependencySyncSchedulerFunc) SetDefaultHook(hook func(time.Duration) *workerutil.Worker) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// NewDependencySyncScheduler method of the parent MockBackgroundJob
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *BackgroundJobNewDependencySyncSchedulerFunc) PushHook(hook func(time.Duration) *workerutil.Worker) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *BackgroundJobNewDependencySyncSchedulerFunc) SetDefaultReturn(r0 *workerutil.Worker) {
+	f.SetDefaultHook(func(time.Duration) *workerutil.Worker {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *BackgroundJobNewDependencySyncSchedulerFunc) PushReturn(r0 *workerutil.Worker) {
+	f.PushHook(func(time.Duration) *workerutil.Worker {
+		return r0
+	})
+}
+
+func (f *BackgroundJobNewDependencySyncSchedulerFunc) nextHook() func(time.Duration) *workerutil.Worker {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *BackgroundJobNewDependencySyncSchedulerFunc) appendCall(r0 BackgroundJobNewDependencySyncSchedulerFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// BackgroundJobNewDependencySyncSchedulerFuncCall objects describing the
+// invocations of this function.
+func (f *BackgroundJobNewDependencySyncSchedulerFunc) History() []BackgroundJobNewDependencySyncSchedulerFuncCall {
+	f.mutex.Lock()
+	history := make([]BackgroundJobNewDependencySyncSchedulerFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// BackgroundJobNewDependencySyncSchedulerFuncCall is an object that
+// describes an invocation of method NewDependencySyncScheduler on an
+// instance of MockBackgroundJob.
+type BackgroundJobNewDependencySyncSchedulerFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 time.Duration
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *workerutil.Worker
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c BackgroundJobNewDependencySyncSchedulerFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c BackgroundJobNewDependencySyncSchedulerFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// BackgroundJobNewIndexResetterFunc describes the behavior when the
+// NewIndexResetter method of the parent MockBackgroundJob instance is
+// invoked.
+type BackgroundJobNewIndexResetterFunc struct {
+	defaultHook func(time.Duration) *dbworker.Resetter
+	hooks       []func(time.Duration) *dbworker.Resetter
+	history     []BackgroundJobNewIndexResetterFuncCall
+	mutex       sync.Mutex
+}
+
+// NewIndexResetter delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockBackgroundJob) NewIndexResetter(v0 time.Duration) *dbworker.Resetter {
+	r0 := m.NewIndexResetterFunc.nextHook()(v0)
+	m.NewIndexResetterFunc.appendCall(BackgroundJobNewIndexResetterFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the NewIndexResetter
+// method of the parent MockBackgroundJob instance is invoked and the hook
+// queue is empty.
+func (f *BackgroundJobNewIndexResetterFunc) SetDefaultHook(hook func(time.Duration) *dbworker.Resetter) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// NewIndexResetter method of the parent MockBackgroundJob instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *BackgroundJobNewIndexResetterFunc) PushHook(hook func(time.Duration) *dbworker.Resetter) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *BackgroundJobNewIndexResetterFunc) SetDefaultReturn(r0 *dbworker.Resetter) {
+	f.SetDefaultHook(func(time.Duration) *dbworker.Resetter {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *BackgroundJobNewIndexResetterFunc) PushReturn(r0 *dbworker.Resetter) {
+	f.PushHook(func(time.Duration) *dbworker.Resetter {
+		return r0
+	})
+}
+
+func (f *BackgroundJobNewIndexResetterFunc) nextHook() func(time.Duration) *dbworker.Resetter {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *BackgroundJobNewIndexResetterFunc) appendCall(r0 BackgroundJobNewIndexResetterFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of BackgroundJobNewIndexResetterFuncCall
+// objects describing the invocations of this function.
+func (f *BackgroundJobNewIndexResetterFunc) History() []BackgroundJobNewIndexResetterFuncCall {
+	f.mutex.Lock()
+	history := make([]BackgroundJobNewIndexResetterFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// BackgroundJobNewIndexResetterFuncCall is an object that describes an
+// invocation of method NewIndexResetter on an instance of
+// MockBackgroundJob.
+type BackgroundJobNewIndexResetterFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 time.Duration
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *dbworker.Resetter
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c BackgroundJobNewIndexResetterFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c BackgroundJobNewIndexResetterFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// BackgroundJobNewOnDemandSchedulerFunc describes the behavior when the
+// NewOnDemandScheduler method of the parent MockBackgroundJob instance is
+// invoked.
+type BackgroundJobNewOnDemandSchedulerFunc struct {
+	defaultHook func(time.Duration, int) goroutine.BackgroundRoutine
+	hooks       []func(time.Duration, int) goroutine.BackgroundRoutine
+	history     []BackgroundJobNewOnDemandSchedulerFuncCall
+	mutex       sync.Mutex
+}
+
+// NewOnDemandScheduler delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockBackgroundJob) NewOnDemandScheduler(v0 time.Duration, v1 int) goroutine.BackgroundRoutine {
+	r0 := m.NewOnDemandSchedulerFunc.nextHook()(v0, v1)
+	m.NewOnDemandSchedulerFunc.appendCall(BackgroundJobNewOnDemandSchedulerFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the NewOnDemandScheduler
+// method of the parent MockBackgroundJob instance is invoked and the hook
+// queue is empty.
+func (f *BackgroundJobNewOnDemandSchedulerFunc) SetDefaultHook(hook func(time.Duration, int) goroutine.BackgroundRoutine) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// NewOnDemandScheduler method of the parent MockBackgroundJob instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *BackgroundJobNewOnDemandSchedulerFunc) PushHook(hook func(time.Duration, int) goroutine.BackgroundRoutine) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *BackgroundJobNewOnDemandSchedulerFunc) SetDefaultReturn(r0 goroutine.BackgroundRoutine) {
+	f.SetDefaultHook(func(time.Duration, int) goroutine.BackgroundRoutine {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *BackgroundJobNewOnDemandSchedulerFunc) PushReturn(r0 goroutine.BackgroundRoutine) {
+	f.PushHook(func(time.Duration, int) goroutine.BackgroundRoutine {
+		return r0
+	})
+}
+
+func (f *BackgroundJobNewOnDemandSchedulerFunc) nextHook() func(time.Duration, int) goroutine.BackgroundRoutine {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *BackgroundJobNewOnDemandSchedulerFunc) appendCall(r0 BackgroundJobNewOnDemandSchedulerFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of BackgroundJobNewOnDemandSchedulerFuncCall
+// objects describing the invocations of this function.
+func (f *BackgroundJobNewOnDemandSchedulerFunc) History() []BackgroundJobNewOnDemandSchedulerFuncCall {
+	f.mutex.Lock()
+	history := make([]BackgroundJobNewOnDemandSchedulerFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// BackgroundJobNewOnDemandSchedulerFuncCall is an object that describes an
+// invocation of method NewOnDemandScheduler on an instance of
+// MockBackgroundJob.
+type BackgroundJobNewOnDemandSchedulerFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 time.Duration
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 goroutine.BackgroundRoutine
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c BackgroundJobNewOnDemandSchedulerFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c BackgroundJobNewOnDemandSchedulerFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// BackgroundJobNewSchedulerFunc describes the behavior when the
+// NewScheduler method of the parent MockBackgroundJob instance is invoked.
+type BackgroundJobNewSchedulerFunc struct {
+	defaultHook func(time.Duration, time.Duration, int, int) goroutine.BackgroundRoutine
+	hooks       []func(time.Duration, time.Duration, int, int) goroutine.BackgroundRoutine
+	history     []BackgroundJobNewSchedulerFuncCall
+	mutex       sync.Mutex
+}
+
+// NewScheduler delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockBackgroundJob) NewScheduler(v0 time.Duration, v1 time.Duration, v2 int, v3 int) goroutine.BackgroundRoutine {
+	r0 := m.NewSchedulerFunc.nextHook()(v0, v1, v2, v3)
+	m.NewSchedulerFunc.appendCall(BackgroundJobNewSchedulerFuncCall{v0, v1, v2, v3, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the NewScheduler method
+// of the parent MockBackgroundJob instance is invoked and the hook queue is
+// empty.
+func (f *BackgroundJobNewSchedulerFunc) SetDefaultHook(hook func(time.Duration, time.Duration, int, int) goroutine.BackgroundRoutine) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// NewScheduler method of the parent MockBackgroundJob instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *BackgroundJobNewSchedulerFunc) PushHook(hook func(time.Duration, time.Duration, int, int) goroutine.BackgroundRoutine) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *BackgroundJobNewSchedulerFunc) SetDefaultReturn(r0 goroutine.BackgroundRoutine) {
+	f.SetDefaultHook(func(time.Duration, time.Duration, int, int) goroutine.BackgroundRoutine {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *BackgroundJobNewSchedulerFunc) PushReturn(r0 goroutine.BackgroundRoutine) {
+	f.PushHook(func(time.Duration, time.Duration, int, int) goroutine.BackgroundRoutine {
+		return r0
+	})
+}
+
+func (f *BackgroundJobNewSchedulerFunc) nextHook() func(time.Duration, time.Duration, int, int) goroutine.BackgroundRoutine {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *BackgroundJobNewSchedulerFunc) appendCall(r0 BackgroundJobNewSchedulerFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of BackgroundJobNewSchedulerFuncCall objects
+// describing the invocations of this function.
+func (f *BackgroundJobNewSchedulerFunc) History() []BackgroundJobNewSchedulerFuncCall {
+	f.mutex.Lock()
+	history := make([]BackgroundJobNewSchedulerFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// BackgroundJobNewSchedulerFuncCall is an object that describes an
+// invocation of method NewScheduler on an instance of MockBackgroundJob.
+type BackgroundJobNewSchedulerFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 time.Duration
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 time.Duration
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 goroutine.BackgroundRoutine
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c BackgroundJobNewSchedulerFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c BackgroundJobNewSchedulerFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// BackgroundJobQueueIndexesFunc describes the behavior when the
+// QueueIndexes method of the parent MockBackgroundJob instance is invoked.
+type BackgroundJobQueueIndexesFunc struct {
+	defaultHook func(context.Context, int, string, string, bool, bool) ([]types.Index, error)
+	hooks       []func(context.Context, int, string, string, bool, bool) ([]types.Index, error)
+	history     []BackgroundJobQueueIndexesFuncCall
+	mutex       sync.Mutex
+}
+
+// QueueIndexes delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockBackgroundJob) QueueIndexes(v0 context.Context, v1 int, v2 string, v3 string, v4 bool, v5 bool) ([]types.Index, error) {
+	r0, r1 := m.QueueIndexesFunc.nextHook()(v0, v1, v2, v3, v4, v5)
+	m.QueueIndexesFunc.appendCall(BackgroundJobQueueIndexesFuncCall{v0, v1, v2, v3, v4, v5, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the QueueIndexes method
+// of the parent MockBackgroundJob instance is invoked and the hook queue is
+// empty.
+func (f *BackgroundJobQueueIndexesFunc) SetDefaultHook(hook func(context.Context, int, string, string, bool, bool) ([]types.Index, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// QueueIndexes method of the parent MockBackgroundJob instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *BackgroundJobQueueIndexesFunc) PushHook(hook func(context.Context, int, string, string, bool, bool) ([]types.Index, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *BackgroundJobQueueIndexesFunc) SetDefaultReturn(r0 []types.Index, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string, string, bool, bool) ([]types.Index, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *BackgroundJobQueueIndexesFunc) PushReturn(r0 []types.Index, r1 error) {
+	f.PushHook(func(context.Context, int, string, string, bool, bool) ([]types.Index, error) {
+		return r0, r1
+	})
+}
+
+func (f *BackgroundJobQueueIndexesFunc) nextHook() func(context.Context, int, string, string, bool, bool) ([]types.Index, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *BackgroundJobQueueIndexesFunc) appendCall(r0 BackgroundJobQueueIndexesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of BackgroundJobQueueIndexesFuncCall objects
+// describing the invocations of this function.
+func (f *BackgroundJobQueueIndexesFunc) History() []BackgroundJobQueueIndexesFuncCall {
+	f.mutex.Lock()
+	history := make([]BackgroundJobQueueIndexesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// BackgroundJobQueueIndexesFuncCall is an object that describes an
+// invocation of method QueueIndexes on an instance of MockBackgroundJob.
+type BackgroundJobQueueIndexesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 bool
+	// Arg5 is the value of the 6th argument passed to this method
+	// invocation.
+	Arg5 bool
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []types.Index
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c BackgroundJobQueueIndexesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c BackgroundJobQueueIndexesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// BackgroundJobQueueIndexesForPackageFunc describes the behavior when the
+// QueueIndexesForPackage method of the parent MockBackgroundJob instance is
+// invoked.
+type BackgroundJobQueueIndexesForPackageFunc struct {
+	defaultHook func(context.Context, precise.Package) error
+	hooks       []func(context.Context, precise.Package) error
+	history     []BackgroundJobQueueIndexesForPackageFuncCall
+	mutex       sync.Mutex
+}
+
+// QueueIndexesForPackage delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockBackgroundJob) QueueIndexesForPackage(v0 context.Context, v1 precise.Package) error {
+	r0 := m.QueueIndexesForPackageFunc.nextHook()(v0, v1)
+	m.QueueIndexesForPackageFunc.appendCall(BackgroundJobQueueIndexesForPackageFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// QueueIndexesForPackage method of the parent MockBackgroundJob instance is
+// invoked and the hook queue is empty.
+func (f *BackgroundJobQueueIndexesForPackageFunc) SetDefaultHook(hook func(context.Context, precise.Package) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// QueueIndexesForPackage method of the parent MockBackgroundJob instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *BackgroundJobQueueIndexesForPackageFunc) PushHook(hook func(context.Context, precise.Package) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *BackgroundJobQueueIndexesForPackageFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, precise.Package) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *BackgroundJobQueueIndexesForPackageFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, precise.Package) error {
+		return r0
+	})
+}
+
+func (f *BackgroundJobQueueIndexesForPackageFunc) nextHook() func(context.Context, precise.Package) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *BackgroundJobQueueIndexesForPackageFunc) appendCall(r0 BackgroundJobQueueIndexesForPackageFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of BackgroundJobQueueIndexesForPackageFuncCall
+// objects describing the invocations of this function.
+func (f *BackgroundJobQueueIndexesForPackageFunc) History() []BackgroundJobQueueIndexesForPackageFuncCall {
+	f.mutex.Lock()
+	history := make([]BackgroundJobQueueIndexesForPackageFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// BackgroundJobQueueIndexesForPackageFuncCall is an object that describes
+// an invocation of method QueueIndexesForPackage on an instance of
+// MockBackgroundJob.
+type BackgroundJobQueueIndexesForPackageFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -6694,20 +7731,120 @@ type AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFuncCall) Args() []interface{} {
+func (c BackgroundJobQueueIndexesForPackageFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c AutoIndexingServiceForDepSchedulingQueueIndexesForPackageFuncCall) Results() []interface{} {
+func (c BackgroundJobQueueIndexesForPackageFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// BackgroundJobWorkerutilStoreFunc describes the behavior when the
+// WorkerutilStore method of the parent MockBackgroundJob instance is
+// invoked.
+type BackgroundJobWorkerutilStoreFunc struct {
+	defaultHook func() store1.Store
+	hooks       []func() store1.Store
+	history     []BackgroundJobWorkerutilStoreFuncCall
+	mutex       sync.Mutex
+}
+
+// WorkerutilStore delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockBackgroundJob) WorkerutilStore() store1.Store {
+	r0 := m.WorkerutilStoreFunc.nextHook()()
+	m.WorkerutilStoreFunc.appendCall(BackgroundJobWorkerutilStoreFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the WorkerutilStore
+// method of the parent MockBackgroundJob instance is invoked and the hook
+// queue is empty.
+func (f *BackgroundJobWorkerutilStoreFunc) SetDefaultHook(hook func() store1.Store) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// WorkerutilStore method of the parent MockBackgroundJob instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *BackgroundJobWorkerutilStoreFunc) PushHook(hook func() store1.Store) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *BackgroundJobWorkerutilStoreFunc) SetDefaultReturn(r0 store1.Store) {
+	f.SetDefaultHook(func() store1.Store {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *BackgroundJobWorkerutilStoreFunc) PushReturn(r0 store1.Store) {
+	f.PushHook(func() store1.Store {
+		return r0
+	})
+}
+
+func (f *BackgroundJobWorkerutilStoreFunc) nextHook() func() store1.Store {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *BackgroundJobWorkerutilStoreFunc) appendCall(r0 BackgroundJobWorkerutilStoreFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of BackgroundJobWorkerutilStoreFuncCall
+// objects describing the invocations of this function.
+func (f *BackgroundJobWorkerutilStoreFunc) History() []BackgroundJobWorkerutilStoreFuncCall {
+	f.mutex.Lock()
+	history := make([]BackgroundJobWorkerutilStoreFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// BackgroundJobWorkerutilStoreFuncCall is an object that describes an
+// invocation of method WorkerutilStore on an instance of MockBackgroundJob.
+type BackgroundJobWorkerutilStoreFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 store1.Store
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c BackgroundJobWorkerutilStoreFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c BackgroundJobWorkerutilStoreFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
 // MockDependenciesService is a mock implementation of the
 // DependenciesService interface (from the package
-// github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing) used
-// for unit testing.
+// github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/background)
+// used for unit testing.
 type MockDependenciesService struct {
 	// UpsertDependencyReposFunc is an instance of a mock function object
 	// controlling the behavior of the method UpsertDependencyRepos.
@@ -6865,8 +8002,8 @@ func (c DependenciesServiceUpsertDependencyReposFuncCall) Results() []interface{
 
 // MockExternalServiceStore is a mock implementation of the
 // ExternalServiceStore interface (from the package
-// github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing) used
-// for unit testing.
+// github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/background)
+// used for unit testing.
 type MockExternalServiceStore struct {
 	// ListFunc is an instance of a mock function object controlling the
 	// behavior of the method List.
@@ -7148,8 +8285,8 @@ func (c ExternalServiceStoreUpsertFuncCall) Results() []interface{} {
 
 // MockGitserverRepoStore is a mock implementation of the GitserverRepoStore
 // interface (from the package
-// github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing) used
-// for unit testing.
+// github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/background)
+// used for unit testing.
 type MockGitserverRepoStore struct {
 	// GetByNamesFunc is an instance of a mock function object controlling
 	// the behavior of the method GetByNames.
@@ -7311,8 +8448,8 @@ func (c GitserverRepoStoreGetByNamesFuncCall) Results() []interface{} {
 
 // MockPolicyMatcher is a mock implementation of the PolicyMatcher interface
 // (from the package
-// github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing) used
-// for unit testing.
+// github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/background)
+// used for unit testing.
 type MockPolicyMatcher struct {
 	// CommitsDescribedByPolicyInternalFunc is an instance of a mock
 	// function object controlling the behavior of the method
@@ -7485,8 +8622,8 @@ func (c PolicyMatcherCommitsDescribedByPolicyInternalFuncCall) Results() []inter
 
 // MockReposStore is a mock implementation of the ReposStore interface (from
 // the package
-// github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing) used
-// for unit testing.
+// github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/background)
+// used for unit testing.
 type MockReposStore struct {
 	// ListMinimalReposFunc is an instance of a mock function object
 	// controlling the behavior of the method ListMinimalRepos.
