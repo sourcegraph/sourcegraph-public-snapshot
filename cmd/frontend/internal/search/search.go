@@ -30,7 +30,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	streamclient "github.com/sourcegraph/sourcegraph/internal/search/streaming/client"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
@@ -97,6 +96,7 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 		otlog.String("query", args.Query),
 		otlog.String("version", args.Version),
 		otlog.String("pattern_type", args.PatternType),
+		otlog.Int("search_mode", args.SearchMode),
 	)
 
 	settings, err := graphqlbackend.DecodedViewerFinalSettings(ctx, h.db)
@@ -104,9 +104,18 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 		return err
 	}
 
-	inputs, err := h.searchClient.Plan(ctx, args.Version, strPtr(args.PatternType), args.Query, search.Streaming, settings, envvar.SourcegraphDotComMode())
+	inputs, err := h.searchClient.Plan(
+		ctx,
+		args.Version,
+		strPtr(args.PatternType),
+		args.Query,
+		search.Mode(args.SearchMode),
+		search.Streaming,
+		settings,
+		envvar.SourcegraphDotComMode(),
+	)
 	if err != nil {
-		var queryErr *run.QueryError
+		var queryErr *client.QueryError
 		if errors.As(err, &queryErr) {
 			eventWriter.Alert(search.AlertForQuery(queryErr.Query, queryErr.Err))
 			return nil
@@ -127,7 +136,7 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 	progress := &streamclient.ProgressAggregator{
 		Start:        start,
 		Limit:        limit,
-		Trace:        trace.URL(trace.ID(ctx), conf.ExternalURL(), conf.Tracer()),
+		Trace:        trace.URL(trace.ID(ctx), conf.DefaultClient()),
 		DisplayLimit: displayLimit,
 		RepoNamer:    streamclient.RepoNamer(ctx, h.db),
 	}
@@ -206,6 +215,7 @@ type args struct {
 	PatternType        string
 	Display            int
 	EnableChunkMatches bool
+	SearchMode         int
 
 	// Optional decoration parameters for server-side rendering a result set
 	// or subset. Decorations may specify, e.g., highlighting results with
@@ -226,7 +236,7 @@ func parseURLQuery(q url.Values) (*args, error) {
 
 	a := args{
 		Query:          get("q", ""),
-		Version:        get("v", "V2"),
+		Version:        get("v", "V3"),
 		PatternType:    get("t", ""),
 		DecorationKind: get("dk", "html"),
 	}
@@ -244,6 +254,11 @@ func parseURLQuery(q url.Values) (*args, error) {
 	chunkMatches := get("cm", "f")
 	if a.EnableChunkMatches, err = strconv.ParseBool(chunkMatches); err != nil {
 		return nil, errors.Errorf("chunk matches must be parseable as a boolean, got %q: %w", chunkMatches, err)
+	}
+
+	searchMode := get("sm", "0")
+	if a.SearchMode, err = strconv.Atoi(searchMode); err != nil {
+		return nil, errors.Errorf("search mode must be integer, got %q: %w", searchMode, err)
 	}
 
 	decorationLimit := get("dl", "0")
@@ -264,27 +279,6 @@ func strPtr(s string) *string {
 		return nil
 	}
 	return &s
-}
-
-// withDecoration hydrates event match with decorated hunks for a corresponding file match.
-func withDecoration(ctx context.Context, db database.DB, eventMatch streamhttp.EventMatch, internalResult result.Match, kind string, contextLines int) streamhttp.EventMatch {
-	// FIXME: Use contextLines to constrain hunks.
-	_ = contextLines
-	if _, ok := internalResult.(*result.FileMatch); !ok {
-		return eventMatch
-	}
-
-	event, ok := eventMatch.(*streamhttp.EventContentMatch)
-	if !ok {
-		return eventMatch
-	}
-
-	if kind == "html" {
-		event.Hunks = DecorateFileHunksHTML(ctx, db, internalResult.(*result.FileMatch))
-	}
-
-	// TODO(team/search-product): support additional decoration for terminal clients #24617.
-	return eventMatch
 }
 
 func fromMatch(match result.Match, repoCache map[api.RepoID]*types.SearchedRepo, enableChunkMatches bool) streamhttp.EventMatch {
@@ -313,6 +307,7 @@ func fromPathMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Searche
 	pathEvent := &streamhttp.EventPathMatch{
 		Type:         streamhttp.PathMatchType,
 		Path:         fm.Path,
+		PathMatches:  fromRanges(fm.PathMatches),
 		Repository:   string(fm.Repo.Name),
 		RepositoryID: int32(fm.Repo.ID),
 		Commit:       string(fm.CommitID),
@@ -389,6 +384,7 @@ func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Sear
 	contentEvent := &streamhttp.EventContentMatch{
 		Type:         streamhttp.ContentMatchType,
 		Path:         fm.Path,
+		PathMatches:  fromRanges(fm.PathMatches),
 		RepositoryID: int32(fm.Repo.ID),
 		Repository:   string(fm.Repo.Name),
 		Commit:       string(fm.CommitID),
@@ -454,10 +450,12 @@ func fromRepository(rm *result.RepoMatch, repoCache map[api.RepoID]*types.Search
 	}
 
 	repoEvent := &streamhttp.EventRepoMatch{
-		Type:         streamhttp.RepoMatchType,
-		RepositoryID: int32(rm.ID),
-		Repository:   string(rm.Name),
-		Branches:     branches,
+		Type:               streamhttp.RepoMatchType,
+		RepositoryID:       int32(rm.ID),
+		Repository:         string(rm.Name),
+		RepositoryMatches:  fromRanges(rm.RepoNameMatches),
+		Branches:           branches,
+		DescriptionMatches: fromRanges(rm.DescriptionMatches),
 	}
 
 	if r, ok := repoCache[rm.ID]; ok {
@@ -467,6 +465,7 @@ func fromRepository(rm *result.RepoMatch, repoCache map[api.RepoID]*types.Search
 		repoEvent.Fork = r.Fork
 		repoEvent.Archived = r.Archived
 		repoEvent.Private = r.Private
+		repoEvent.KeyValuePairs = r.KeyValuePairs
 	}
 
 	return repoEvent

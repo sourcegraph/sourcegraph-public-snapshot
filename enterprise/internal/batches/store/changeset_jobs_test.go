@@ -9,20 +9,20 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 )
 
-func testStoreChangesetJobs(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
+func testStoreChangesetJobs(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
 	logger := logtest.Scoped(t)
 	repoStore := database.ReposWith(logger, s)
 	esStore := database.ExternalServicesWith(logger, s)
 
-	repo := ct.TestRepo(t, esStore, extsvc.KindGitHub)
-	deletedRepo := ct.TestRepo(t, esStore, extsvc.KindGitHub).With(typestest.Opt.RepoDeletedAt(clock.Now()))
+	repo := bt.TestRepo(t, esStore, extsvc.KindGitHub)
+	deletedRepo := bt.TestRepo(t, esStore, extsvc.KindGitHub).With(typestest.Opt.RepoDeletedAt(clock.Now()))
 
 	if err := repoStore.Create(ctx, repo, deletedRepo); err != nil {
 		t.Fatal(err)
@@ -31,8 +31,8 @@ func testStoreChangesetJobs(t *testing.T, ctx context.Context, s *Store, clock c
 		t.Fatal(err)
 	}
 
-	changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{Repo: repo.ID})
-	changesetWithDeletedRepo := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{Repo: deletedRepo.ID})
+	changeset := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{Repo: repo.ID})
+	changesetWithDeletedRepo := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{Repo: deletedRepo.ID})
 
 	jobs := make([]*btypes.ChangesetJob, 0, 3)
 	for i := 0; i < cap(jobs); i++ {

@@ -10,7 +10,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
@@ -19,9 +18,10 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types/scheduler/config"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -58,7 +58,7 @@ func NewChangesetResolver(store *store.Store, changeset *btypes.Changeset, repo 
 	return &changesetResolver{
 		store:        store,
 		repo:         repo,
-		repoResolver: graphqlbackend.NewRepositoryResolver(store.DatabaseDB(), repo),
+		repoResolver: graphqlbackend.NewRepositoryResolver(store.DatabaseDB(), gitserver.NewClient(store.DatabaseDB()), repo),
 		changeset:    changeset,
 	}
 }
@@ -177,15 +177,15 @@ func (r *changesetResolver) BatchChanges(ctx context.Context, args *graphqlbacke
 		opts.Cursor = cursor
 	}
 
-	authErr := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB())
-	if authErr != nil && authErr != backend.ErrMustBeSiteAdmin {
+	authErr := auth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB())
+	if authErr != nil && authErr != auth.ErrMustBeSiteAdmin {
 		return nil, err
 	}
-	isSiteAdmin := authErr != backend.ErrMustBeSiteAdmin
+	isSiteAdmin := authErr != auth.ErrMustBeSiteAdmin
 	if !isSiteAdmin {
 		if args.ViewerCanAdminister != nil && *args.ViewerCanAdminister {
 			actor := actor.FromContext(ctx)
-			opts.CreatorID = actor.UID
+			opts.OnlyAdministeredByUserID = actor.UID
 		}
 	}
 
@@ -286,33 +286,17 @@ func (r *changesetResolver) Body(ctx context.Context) (*string, error) {
 	return &desc.Body, nil
 }
 
-func (r *changesetResolver) getBranchSpecDescription(ctx context.Context) (*batcheslib.ChangesetSpec, error) {
+func (r *changesetResolver) getBranchSpecDescription(ctx context.Context) (*btypes.ChangesetSpec, error) {
 	spec, err := r.computeSpec(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if spec.Spec.IsImportingExisting() {
+	if spec.Type == btypes.ChangesetSpecTypeExisting {
 		return nil, errors.New("ChangesetSpec imports a changeset")
 	}
 
-	return spec.Spec, nil
-}
-
-func (r *changesetResolver) PublicationState() string {
-	return string(r.changeset.PublicationState)
-}
-
-func (r *changesetResolver) ReconcilerState() string {
-	return string(r.changeset.ReconcilerState)
-}
-
-func (r *changesetResolver) ExternalState() *string {
-	if !r.changeset.Published() {
-		return nil
-	}
-	state := string(r.changeset.ExternalState)
-	return &state
+	return spec, nil
 }
 
 func (r *changesetResolver) State() string {
@@ -461,17 +445,12 @@ func (r *changesetResolver) Diff(ctx context.Context) (graphqlbackend.Repository
 			return nil, err
 		}
 
-		diff, err := desc.Diff()
-		if err != nil {
-			return nil, errors.New("ChangesetSpec has no diff")
-		}
-
 		return graphqlbackend.NewPreviewRepositoryComparisonResolver(
 			ctx,
 			r.store.DatabaseDB(),
 			r.repoResolver,
 			desc.BaseRev,
-			diff,
+			string(desc.Diff),
 		)
 	}
 
@@ -503,7 +482,8 @@ func (r *changesetResolver) Diff(ctx context.Context) (graphqlbackend.Repository
 		}
 	}
 
-	return graphqlbackend.NewRepositoryComparison(ctx, r.store.DatabaseDB(), r.repoResolver, &graphqlbackend.RepositoryComparisonInput{
+	db := r.store.DatabaseDB()
+	return graphqlbackend.NewRepositoryComparison(ctx, db, gitserver.NewClient(db), r.repoResolver, &graphqlbackend.RepositoryComparisonInput{
 		Base:         &base,
 		Head:         &head,
 		FetchMissing: true,

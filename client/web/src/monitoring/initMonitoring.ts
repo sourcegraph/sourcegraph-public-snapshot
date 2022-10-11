@@ -1,3 +1,4 @@
+import { initOpenTelemetry } from './opentelemetry/initOpenTelemetry'
 import { initSentry } from './sentry/initSentry'
 
 window.addEventListener('error', error => {
@@ -17,3 +18,4 @@ window.addEventListener('error', error => {
 })
 
 initSentry()
+initOpenTelemetry()

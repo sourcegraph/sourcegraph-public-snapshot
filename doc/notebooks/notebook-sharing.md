@@ -40,16 +40,16 @@ Notebooks support the following sharing scheme.
 This is the default permissions level for all new notebook. Only the creator can view and edit the notebook.
 
 ### Public Notebooks
-Notebooks can be shared with everyone (public notebooks on [sourcegraph.com](https://sourcegraph.com) are viewable by anyone and don't require a Sourcegraph account), or with your entire Sourcegraph instance.
+Notebooks can be shared with everyone (public notebooks on [Sourcegraph.com](https://sourcegraph.com) are viewable by anyone and don't require a Sourcegraph account), or with your entire Sourcegraph instance.
 
 ## Sourcegraph organization namespace
-Find out more about Sourcegraph organizations and how to create and configure them on the [organizations docs page](../admin/organizations.md). Briefly, Sourcegraph Cloud organizations are groups of users and repositories within Sourcegraph. For on-prem or self-hosted Sourcegraph instances, organizations allow admins to specify shared settings but not repositories.
+Find out more about Sourcegraph organizations and how to create and configure them on the [organizations docs page](../admin/organizations.md).
 
 ### Private organization Notebooks
 Only organization members can view and edit the notebook.
 
 ### Public organization Notebooks
-In self-hosted and managed Sourcegraph instances, everyone who has access to the instance can view the notebook. On [sourcegraph.com](https://sourcegraph.com), anyone can view the Notebook. In both cases, only members of the owning Sourcegraph organization can edit the Notebook.
+In self-hosted and managed Sourcegraph instances, everyone who has access to the instance can view the notebook. On [Sourcegraph.com](https://sourcegraph.com), anyone can view the Notebook. In both cases, only members of the owning Sourcegraph organization can edit the Notebook.
 
 <br>
 

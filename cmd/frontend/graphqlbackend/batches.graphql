@@ -232,24 +232,6 @@ interface Changeset {
     ): BatchChangeConnection!
 
     """
-    The publication state of the changeset.
-    """
-    publicationState: ChangesetPublicationState!
-        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
-
-    """
-    The reconciler state of the changeset.
-    """
-    reconcilerState: ChangesetReconcilerState!
-        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
-
-    """
-    The external state of the changeset, or null when not yet published to the code host.
-    """
-    externalState: ChangesetExternalState
-        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
-
-    """
     The state of the changeset.
     """
     state: ChangesetState!
@@ -304,24 +286,6 @@ type HiddenExternalChangeset implements Node & Changeset {
         """
         viewerCanAdminister: Boolean
     ): BatchChangeConnection!
-
-    """
-    The publication state of the changeset.
-    """
-    publicationState: ChangesetPublicationState!
-        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
-
-    """
-    The reconciler state of the changeset.
-    """
-    reconcilerState: ChangesetReconcilerState!
-        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
-
-    """
-    The external state of the changeset, or null when not yet published to the code host.
-    """
-    externalState: ChangesetExternalState
-        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
 
     """
     The state of the changeset.
@@ -432,24 +396,6 @@ type ExternalChangeset implements Node & Changeset {
     or the changeset has not yet been published.
     """
     author: Person
-
-    """
-    The publication state of the changeset.
-    """
-    publicationState: ChangesetPublicationState!
-        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
-
-    """
-    The reconciler state of the changeset.
-    """
-    reconcilerState: ChangesetReconcilerState!
-        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
-
-    """
-    The external state of the changeset, or null when not yet published to the code host.
-    """
-    externalState: ChangesetExternalState
-        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
 
     """
     The state of the changeset.
@@ -574,6 +520,36 @@ type ChangesetsStats {
 Stats on all the changesets that have been applied to this repository by batch changes.
 """
 type RepoChangesetsStats {
+    """
+    The count of unpublished changesets.
+    """
+    unpublished: Int!
+    """
+    The count of draft changesets.
+    """
+    draft: Int!
+    """
+    The count of open changesets.
+    """
+    open: Int!
+    """
+    The count of merged changesets.
+    """
+    merged: Int!
+    """
+    The count of closed changesets.
+    """
+    closed: Int!
+    """
+    The count of all changesets.
+    """
+    total: Int!
+}
+
+"""
+Stats on all the changesets across the instance.
+"""
+type GlobalChangesetsStats {
     """
     The count of unpublished changesets.
     """
@@ -925,14 +901,6 @@ type GitBranchChangesetDescription {
     For example: "4095572721c6234cd72013fd49dff4fb48f0f8a4"
     """
     baseRev: String!
-
-    """
-    The repository that contains the branch with this changeset's changes.
-    """
-    headRepository: Repository!
-        @deprecated(
-            reason: "Unused. Sourcegraph does not populate a full repository when creating a changeset on a fork. Use VisibleChangesetSpec.fork or ExternalChangeset.forkNamespace instead."
-        )
 
     """
     The full name of the Git ref that holds the changes proposed by this changeset. This ref will
@@ -1833,7 +1801,12 @@ extend type Query {
         The batch changes name.
         """
         name: String!
+
     ): BatchChange
+    """
+    Stats on all the changesets across the instance for Batch Changes.
+    """
+    globalChangesetsStats: GlobalChangesetsStats!
 
     """
     All globally configured code hosts usable with Batch Changes.
@@ -1896,6 +1869,11 @@ extend type Query {
     This endpoint is used in src-cli to resolve workspaces.
     """
     resolveWorkspacesForBatchSpec(batchSpec: String!): [ResolvedBatchSpecWorkspace!]!
+
+    """
+    Returns the max number of changesets are allowed for License that does not have the batch change feature.
+    """
+    maxUnlicensedChangesets: Int!
 }
 
 """
@@ -2598,22 +2576,6 @@ type BatchChange implements Node {
     state: BatchChangeState!
 
     """
-    The user that created the initial spec. In an org, this will be different from the namespace, or null if the user was deleted.
-    """
-    specCreator: User
-        @deprecated(
-            reason: "Unused. This always incorrectly returned the current batch specs creator, not the intial one. This field is deprecated and will be removed in a future release."
-        )
-
-    """
-    The user who created the batch change initially by applying the spec for the first time, or null if the user was deleted.
-
-    This is an alias of BatchChange.creator.
-    """
-    initialApplier: User
-        @deprecated(reason: "Use creator instead. This field is deprecated and will be removed in a future release.")
-
-    """
     The user who created the batch change, or null if the user was deleted.
     """
     creator: User
@@ -2670,27 +2632,6 @@ type BatchChange implements Node {
         Opaque pagination cursor.
         """
         after: String
-        """
-        Only include changesets with any of the given reconciler states.
-        """
-        reconcilerState: [ChangesetReconcilerState!]
-            @deprecated(
-                reason: "Use state instead. This field is deprecated, has no effect, and will be removed in a future release."
-            )
-        """
-        Only include changesets with the given publication state.
-        """
-        publicationState: ChangesetPublicationState
-            @deprecated(
-                reason: "Use state instead. This field is deprecated, has no effect, and will be removed in a future release."
-            )
-        """
-        Only include changesets with the given external state.
-        """
-        externalState: ChangesetExternalState
-            @deprecated(
-                reason: "Use state instead. This field is deprecated, has no effect, and will be removed in a future release."
-            )
         """
         Only include changesets with the given state.
         """
@@ -3012,7 +2953,7 @@ type BatchSpecConnection {
 
 """
 A batch spec is an immutable description of the desired state of a batch change. To create a
-batch spec, use the createBatchSpec mutation.
+batch spec, use the createBatchSpec mutation. For security, a batch spec is only visible to viewers who can administer it.
 """
 type BatchSpec implements Node {
     """
@@ -3242,6 +3183,20 @@ type BatchSpec implements Node {
     server-side execution.
     """
     source: BatchSpecSource!
+
+    """
+    The files that are mounted in the steps of a batch spec.
+    """
+    files(
+        """
+        Returns the first n files from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): BatchSpecWorkspaceFileConnection
 }
 
 """
@@ -3498,4 +3453,106 @@ input ChangesetSpecPublicationStateInput {
     The desired publication state.
     """
     publicationState: PublishedValue!
+}
+
+"""
+A list of BatchSpecMounts.
+"""
+type BatchSpecWorkspaceFileConnection {
+    """
+    The total number of files.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+    """
+    A list of workspace files in a batch spec.
+    """
+    nodes: [BatchSpecWorkspaceFile!]!
+}
+
+"""
+The metadata of a file being used in a batch spec step.
+"""
+type BatchSpecWorkspaceFile implements File2 & Node {
+    """
+    The ID of the file.
+    """
+    id: ID!
+    """
+    When the file was last touched.
+    """
+    modifiedAt: DateTime!
+    """
+    When the file is initially created at.
+    """
+    createdAt: DateTime!
+    """
+    When the file is updated at.
+    """
+    updatedAt: DateTime!
+
+    """
+    The full path (relative to the root) of this file.
+    """
+    path: String!
+    """
+    The base name (i.e., file name only) of this file.
+    """
+    name: String!
+    """
+    False because this is a file, not a directory.
+    """
+    isDirectory: Boolean!
+    """
+    The content of this file.
+    """
+    content: String!
+    """
+    The file size in bytes.
+    """
+    byteSize: Int!
+    """
+    Whether or not it is binary.
+    """
+    binary: Boolean!
+    """
+    The file rendered as rich HTML, or an empty string if it is not a supported
+    rich file type.
+    This HTML string is already escaped and thus is always safe to render.
+    """
+    richHTML: String!
+    """
+    The URL to this file (using the input revision specifier, which may not be immutable).
+    """
+    url: String!
+    """
+    The canonical URL to this file (using an immutable revision specifier).
+    """
+    canonicalURL: String!
+    """
+    The URLs to this file on external services.
+    """
+    externalURLs: [ExternalLink!]!
+    """
+    Highlight the file.
+    """
+    highlight(
+        disableTimeout: Boolean!
+        isLightTheme: Boolean
+            @deprecated(reason: "Not required anymore, highlighting is based on dynamic CSS variables now.")
+        """
+        If highlightLongLines is true, lines which are longer than 2000 bytes are highlighted.
+        2000 bytes is enabled. This may produce a significant amount of HTML
+        which some browsers (such as Chrome, but not Firefox) may have trouble
+        rendering efficiently.
+        """
+        highlightLongLines: Boolean = false
+        """
+        Specifies which format/highlighting technique to use.
+        """
+        format: HighlightResponseFormat = HTML_HIGHLIGHT
+    ): HighlightedFile!
 }

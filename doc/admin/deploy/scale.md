@@ -64,7 +64,7 @@ A list of services that can be externalized. See our docs on [Using external ser
 |                                               |                                                                                                                                                                         |
 | :-------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`codeinsights-db`](scale.md#codeinsights-db) | A PostgreSQL instance for storing code insights data.                                                                                                                   |
-| [`codeintel-db`](scale.md#codeintel-db)       | A PostgreSQL instance for storing large-volume precise code intelligence data.                                                                                          |
+| [`codeintel-db`](scale.md#codeintel-db)       | A PostgreSQL instance for storing large-volume code graph data.                                                                                          |
 | [`jaeger`](scale.md#jeager)                   | A Jaeger instance for end-to-end distributed tracing.                                                                                                                   |
 | [`minio`](scale.md#minio)                     | A MinIO instance that serves as a local S3-compatible object storage to hold user uploads for code-intel before they can be processed.                                  |
 | [`pgsql`](scale.md#pgsql)                     | A PostgreSQL instance for storing long-term information, such as user information when using Sourcegraph’s built-in authentication provider instead of an external one. |
@@ -154,7 +154,7 @@ A PostgreSQL instance for storing code insights data.
 ### codeintel-db
 
 ```
-A PostgreSQL instance for storing large-volume precise code intelligence data.
+A PostgreSQL instance for storing large-volume code graph data.
 ```
 
 | Replica     |                                                         |
@@ -167,14 +167,14 @@ A PostgreSQL instance for storing large-volume precise code intelligence data.
 | :---------- | :------------------------------------------------------------------------------------------------ |
 | `Overview`  | Executes queries                                                                                  |
 | `Factors`   | Number of active users                                                                            |
-|             | Frequency with which the instance runs precise code intelligence queries                          |
+|             | Frequency with which the instance runs precise code navigation queries                          |
 | `Guideline` | The default value should work for all deployments. Please refer to the note below for more detail |
 
 | Memory      |                                                                                                                           |
 | :---------- | :------------------------------------------------------------------------------------------------------------------------ |
 | `Overview`  | Process LSIF indexes                                                                                                      |
 | `Factors`   | Number of active users                                                                                                    |
-|             | Frequency with which the instance runs precise code intelligence queries                                                  |
+|             | Frequency with which the instance runs precise code navigation queries                                                  |
 |             | Total size of repositories indexed by Rockskip                                                                            |
 | `Guideline` | The database must be configured properly to consume resources effectively and efficiently. See note below for more detail |
 |             | The amount of memory each Postgres worker can utilize must be adjusted according to the memory assigned to the database   |
@@ -183,7 +183,7 @@ A PostgreSQL instance for storing large-volume precise code intelligence data.
 | Storage     |                                                                              |
 | :---------- | :--------------------------------------------------------------------------- |
 | `Overview`  | Stores processed upload data                                                 |
-| `Factors`   | Number and size of precise code intelligence uploads                         |
+| `Factors`   | Number and size of precise code graph data uploads                         |
 |             | Indexer used                                                                 |
 | `Guideline` | The index size and processed size are currently based on indexer used        |
 |             | Requires about 4 times of the total size of repositories indexed by Rockskip |
@@ -341,7 +341,7 @@ A Jaeger instance for end-to-end distributed tracing
 
 ```
 A MinIO instance that serves as local S3-compatible object storage.
-It holds index uploads for precise code intelligence before they can be processed.
+It holds index uploads for precise code navigation before they can be processed.
 The data is for temporary storage and content will be automatically deleted once processed.
 ```
 
@@ -417,7 +417,7 @@ Basically anything not related to code-intel.
 ###  precise-code-intel
 
 ```
-Handles conversion of uploaded precise code intelligence bundles.
+Handles conversion of uploaded code graph data bundles.
 It converts LSIF upload file into Postgres data.
 ```
 
@@ -695,8 +695,9 @@ An HTTP server that exposes the Rust Syntect syntax highlighting library to othe
 
 ```
 Runs a collection of background jobs periodically in response to internal requests and external events.
-It is currently janitorial and commit-based.
 ```
+
+> NOTE: See the docs on [Worker services](https://docs.sourcegraph.com/admin/workers#worker-jobs) for a list of worker jobs.
 
 | Replica     |                                                         |
 | :---------- | :------------------------------------------------------ |

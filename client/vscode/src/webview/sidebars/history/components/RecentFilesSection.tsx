@@ -4,7 +4,7 @@ import { mdiChevronDown, mdiChevronLeft } from '@mdi/js'
 import classNames from 'classnames'
 
 import { EventLogResult, fetchRecentFileViews } from '@sourcegraph/search'
-import { Icon, Link, H5, useObservable } from '@sourcegraph/wildcard'
+import { Icon, Link, H5, useObservable, Button } from '@sourcegraph/wildcard'
 
 import { HistorySidebarProps } from '../HistorySidebarView'
 
@@ -54,15 +54,16 @@ export const RecentFilesSection: React.FunctionComponent<React.PropsWithChildren
 
     return (
         <div className={styles.sidebarSection}>
-            <button
-                type="button"
-                className={classNames('btn btn-outline-secondary', styles.sidebarSectionCollapseButton)}
+            <Button
+                variant="secondary"
+                outline={true}
+                className={styles.sidebarSectionCollapseButton}
                 onClick={() => setCollapsed(!collapsed)}
                 aria-label={`${collapsed ? 'Expand' : 'Collapse'} recent files`}
             >
                 <H5 className="flex-grow-1">Recent Files</H5>
                 <Icon aria-hidden={true} className="mr-1" svgPath={collapsed ? mdiChevronLeft : mdiChevronDown} />
-            </button>
+            </Button>
 
             {!collapsed && (
                 <div className={classNames('p-1', styles.sidebarSectionFileList)}>

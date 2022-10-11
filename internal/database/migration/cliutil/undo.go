@@ -16,11 +16,6 @@ func Undo(commandName string, factory RunnerFactory, outFactory OutputFactory, d
 		Usage:    "The target `schema` to modify.",
 		Required: true,
 	}
-	ignoreSingleDirtyLogFlag := &cli.BoolFlag{
-		Name:  "ignore-single-dirty-log",
-		Usage: "Ignore a previously failed attempt if it will be immediately retried by this operation.",
-		Value: development,
-	}
 
 	makeOptions := func(cmd *cli.Context) runner.Options {
 		return runner.Options{
@@ -30,7 +25,8 @@ func Undo(commandName string, factory RunnerFactory, outFactory OutputFactory, d
 					Type:       runner.MigrationOperationTypeRevert,
 				},
 			},
-			IgnoreSingleDirtyLog: ignoreSingleDirtyLogFlag.Get(cmd),
+			IgnoreSingleDirtyLog:   development,
+			IgnoreSinglePendingLog: development,
 		}
 	}
 
@@ -51,7 +47,6 @@ func Undo(commandName string, factory RunnerFactory, outFactory OutputFactory, d
 		Action:      action,
 		Flags: []cli.Flag{
 			schemaNameFlag,
-			ignoreSingleDirtyLogFlag,
 		},
 	}
 }

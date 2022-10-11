@@ -2,6 +2,8 @@ package store
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -10,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -251,15 +254,33 @@ ORDER BY c.commit_bytea
 LIMIT %s
 `
 
+type backfillIncompleteError struct {
+	repositoryID int
+}
+
+func (e backfillIncompleteError) Error() string {
+	return fmt.Sprintf("repository %d has not yet completed its backfill of column committed_at", e.repositoryID)
+}
+
 // GetOldestCommitDate returns the oldest commit date for all uploads for the given repository. If there are no
-// non-nil values, a false-valued flag is returned.
+// non-nil values, a false-valued flag is returned. If there are any null values, the committed_at backfill job
+// has not yet completed and an error is returned to prevent downstream expiration errors being made due to
+// outdated commit graph data.
 func (s *store) GetOldestCommitDate(ctx context.Context, repositoryID int) (_ time.Time, _ bool, err error) {
 	ctx, _, endObservation := s.operations.getOldestCommitDate.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return basestore.ScanFirstTime(s.db.Query(ctx, sqlf.Sprintf(getOldestCommitDateQuery, repositoryID)))
+	t, ok, err := basestore.ScanFirstNullTime(s.db.Query(ctx, sqlf.Sprintf(getOldestCommitDateQuery, repositoryID)))
+	if err != nil || !ok {
+		return time.Time{}, false, err
+	}
+	if t == nil {
+		return time.Time{}, false, &backfillIncompleteError{repositoryID}
+	}
+
+	return *t, true, nil
 }
 
 // Note: we check against '-infinity' here, as the backfill operation will use this sentinel value in the case
@@ -267,5 +288,82 @@ func (s *store) GetOldestCommitDate(ctx context.Context, repositoryID int) (_ ti
 // having pristine database.
 const getOldestCommitDateQuery = `
 -- source: internal/codeintel/uploads/internal/store/store_commits.go:GetOldestCommitDate
-SELECT committed_at FROM lsif_uploads WHERE repository_id = %s AND state = 'completed' AND committed_at IS NOT NULL AND committed_at != '-infinity' ORDER BY committed_at LIMIT 1
+SELECT
+	committed_at
+FROM lsif_uploads
+WHERE
+	repository_id = %s AND
+	state = 'completed' AND
+	(committed_at != '-infinity' OR committed_at IS NULL)
+ORDER BY committed_at NULLS FIRST
+LIMIT 1
 `
+
+// HasCommit determines if the given commit is known for the given repository.
+func (s *store) HasCommit(ctx context.Context, repositoryID int, commit string) (_ bool, err error) {
+	ctx, _, endObservation := s.operations.hasCommit.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+		log.String("commit", commit),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	count, _, err := basestore.ScanFirstInt(s.db.Query(
+		ctx,
+		sqlf.Sprintf(
+			hasCommitQuery,
+			repositoryID, dbutil.CommitBytea(commit),
+			repositoryID, dbutil.CommitBytea(commit),
+		),
+	))
+
+	return count > 0, err
+}
+
+const hasCommitQuery = `
+-- source: internal/codeintel/stores/dbstore/commits.go:HasCommit
+SELECT
+	(SELECT COUNT(*) FROM lsif_nearest_uploads WHERE repository_id = %s AND commit_bytea = %s) +
+	(SELECT COUNT(*) FROM lsif_nearest_uploads_links WHERE repository_id = %s AND commit_bytea = %s)
+`
+
+// CommitGraphMetadata returns whether or not the commit graph for the given repository is stale, along with the date of
+// the most recent commit graph refresh for the given repository.
+func (s *store) GetCommitGraphMetadata(ctx context.Context, repositoryID int) (stale bool, updatedAt *time.Time, err error) {
+	ctx, _, endObservation := s.operations.getCommitGraphMetadata.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	updateToken, dirtyToken, updatedAt, exists, err := scanCommitGraphMetadata(s.db.Query(ctx, sqlf.Sprintf(commitGraphQuery, repositoryID)))
+	if err != nil {
+		return false, nil, err
+	}
+	if !exists {
+		return false, nil, nil
+	}
+
+	return updateToken != dirtyToken, updatedAt, err
+}
+
+const commitGraphQuery = `
+-- source: internal/codeintel/stores/dbstore/commits.go:CommitGraphMetadata
+SELECT update_token, dirty_token, updated_at FROM lsif_dirty_repositories WHERE repository_id = %s LIMIT 1
+`
+
+// scanCommitGraphMetadata scans a a commit graph metadata row from the return value of `*Store.query`.
+func scanCommitGraphMetadata(rows *sql.Rows, queryErr error) (updateToken, dirtyToken int, updatedAt *time.Time, _ bool, err error) {
+	if queryErr != nil {
+		return 0, 0, nil, false, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	if rows.Next() {
+		if err := rows.Scan(&updateToken, &dirtyToken, &updatedAt); err != nil {
+			return 0, 0, nil, false, err
+		}
+
+		return updateToken, dirtyToken, updatedAt, true, nil
+	}
+
+	return 0, 0, nil, false, nil
+}

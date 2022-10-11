@@ -1,8 +1,9 @@
 import { ISavedSearch, Namespace, IOrg, IUser } from '@sourcegraph/shared/src/schema'
 
 import { AuthenticatedUser } from '../../auth'
-import { InvitableCollaborator } from '../../auth/welcome/InviteCollaborators/InviteCollaborators'
 import { EventLogResult } from '../backend'
+
+import { InvitableCollaborator } from './CollaboratorsPanel'
 
 export const authUser: AuthenticatedUser & { namespaceName: string } = {
     __typename: 'User',
@@ -61,12 +62,6 @@ export const org: IOrg = {
     url: '/organizations/test-org',
     settingsURL: '/organizations/test-org/settings',
     namespaceName: 'test-org',
-    repositories: {
-        __typename: 'RepositoryConnection',
-        nodes: [],
-        totalCount: 0,
-        pageInfo: { __typename: 'PageInfo', endCursor: null, hasNextPage: false },
-    },
     batchChanges: {
         __typename: 'BatchChangeConnection',
         nodes: [],

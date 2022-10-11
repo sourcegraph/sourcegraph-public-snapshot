@@ -85,7 +85,7 @@ export const config = subtypeOf<webpack.Configuration>()({
                 use: [getBabelLoader()],
             },
             {
-                // SCSS rule for our own styles and Bootstrap
+                // SCSS rule for our own and third-party styles
                 test: /\.(css|sass|scss)$/,
                 exclude: /\.module\.(sass|scss)$/,
                 use: getCSSLoaders(MiniCssExtractPlugin.loader, getBasicCSSLoader()),

@@ -4,7 +4,7 @@ This guide documents how to spin up and develop Sourcegraph's monitoring stack l
 Sourcegraph employees should also refer to the [handbook's monitoring section](https://handbook.sourcegraph.com/engineering/observability/monitoring) for Sourcegraph-specific documentation.
 The [developing observability page](../background-information/observability/index.md) contains relevant documentation as well, including background about the components listed here.
 
-> NOTE: For how to *use* Sourcegraph's observability and an overview of our observability features, refer to the [observability for site administrators documentation](index.md).
+> NOTE: For how to *use* Sourcegraph's observability and an overview of our observability features, refer to the [observability for site administrators documentation](../../admin/observability/index.md).
 
 ## Running monitoring components
 

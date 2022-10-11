@@ -284,6 +284,8 @@ type BatchChangesResolver interface {
 	BatchChange(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error)
 	BatchChanges(cx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)
 
+	GlobalChangesetsStats(cx context.Context) (GlobalChangesetsStatsResolver, error)
+
 	BatchChangesCodeHosts(ctx context.Context, args *ListBatchChangesCodeHostsArgs) (BatchChangesCodeHostConnectionResolver, error)
 	RepoChangesetsStats(ctx context.Context, repo *graphql.ID) (RepoChangesetsStatsResolver, error)
 	RepoDiffStat(ctx context.Context, repo *graphql.ID) (*DiffStat, error)
@@ -294,6 +296,8 @@ type BatchChangesResolver interface {
 	ResolveWorkspacesForBatchSpec(ctx context.Context, args *ResolveWorkspacesForBatchSpecArgs) ([]ResolvedBatchSpecWorkspaceResolver, error)
 
 	CheckBatchChangesCredential(ctx context.Context, args *CheckBatchChangesCredentialArgs) (*EmptyResponse, error)
+
+	MaxUnlicensedChangesets(ctx context.Context) int32
 
 	NodeResolvers() map[string]NodeByIDFunc
 }
@@ -363,6 +367,8 @@ type BatchSpecResolver interface {
 	ViewerCanRetry(context.Context) (bool, error)
 
 	Source() string
+
+	Files(ctx context.Context, args *ListBatchSpecWorkspaceFilesArgs) (BatchSpecWorkspaceFileConnectionResolver, error)
 }
 
 type BatchChangeDescriptionResolver interface {
@@ -505,7 +511,6 @@ type GitBranchChangesetDescriptionResolver interface {
 	BaseRef() string
 	BaseRev() string
 
-	HeadRepository() *RepositoryResolver
 	HeadRef() string
 
 	Title() string
@@ -592,6 +597,11 @@ type ListBatchSpecArgs struct {
 	IncludeLocallyExecutedSpecs *bool
 }
 
+type ListBatchSpecWorkspaceFilesArgs struct {
+	First int32
+	After *string
+}
+
 type AvailableBulkOperationsArgs struct {
 	BatchChange graphql.ID
 	Changesets  []graphql.ID
@@ -629,11 +639,9 @@ type BatchChangeResolver interface {
 	Name() string
 	Description() *string
 	State() string
-	InitialApplier(ctx context.Context) (*UserResolver, error)
 	Creator(ctx context.Context) (*UserResolver, error)
 	LastApplier(ctx context.Context) (*UserResolver, error)
 	LastAppliedAt() *DateTime
-	SpecCreator(ctx context.Context) (*UserResolver, error)
 	ViewerCanAdminister(ctx context.Context) (bool, error)
 	URL(ctx context.Context) (string, error)
 	Namespace(ctx context.Context) (n NamespaceResolver, err error)
@@ -661,6 +669,35 @@ type BatchSpecConnectionResolver interface {
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
+type BatchSpecWorkspaceFileConnectionResolver interface {
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	Nodes(ctx context.Context) ([]BatchWorkspaceFileResolver, error)
+}
+
+type BatchWorkspaceFileResolver interface {
+	ID() graphql.ID
+	ModifiedAt() DateTime
+	CreatedAt() DateTime
+	UpdatedAt() DateTime
+
+	Path() string
+	Name() string
+	IsDirectory() bool
+	Content(ctx context.Context) (string, error)
+	ByteSize(ctx context.Context) (int32, error)
+	Binary(ctx context.Context) (bool, error)
+	RichHTML(ctx context.Context) (string, error)
+	URL(ctx context.Context) (string, error)
+	CanonicalURL() string
+	ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error)
+	Highlight(ctx context.Context, args *HighlightArgs) (*HighlightedFileResolver, error)
+
+	ToGitBlob() (*GitTreeEntryResolver, bool)
+	ToVirtualFile() (*VirtualFileResolver, bool)
+	ToBatchSpecWorkspaceFile() (BatchWorkspaceFileResolver, bool)
+}
+
 type CommonChangesetsStatsResolver interface {
 	Unpublished() int32
 	Draft() int32
@@ -671,6 +708,10 @@ type CommonChangesetsStatsResolver interface {
 }
 
 type RepoChangesetsStatsResolver interface {
+	CommonChangesetsStatsResolver
+}
+
+type GlobalChangesetsStatsResolver interface {
 	CommonChangesetsStatsResolver
 }
 
@@ -704,12 +745,6 @@ type ChangesetResolver interface {
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
 	NextSyncAt(ctx context.Context) (*DateTime, error)
-	// PublicationState returns a value of type btypes.ChangesetPublicationState.
-	PublicationState() string
-	// ReconcilerState returns a value of type btypes.ReconcilerState.
-	ReconcilerState() string
-	// ExternalState returns a value of type *btypes.ChangesetExternalState.
-	ExternalState() *string
 	// State returns a value of type *btypes.ChangesetState.
 	State() string
 	BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)

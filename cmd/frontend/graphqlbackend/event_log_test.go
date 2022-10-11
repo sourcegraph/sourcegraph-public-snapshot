@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -44,7 +44,7 @@ func TestUserEventLogResolver_URL(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			got := (&userEventLogResolver{
-				event: &types.Event{
+				event: &database.Event{
 					URL: test.url,
 				},
 			}).URL()

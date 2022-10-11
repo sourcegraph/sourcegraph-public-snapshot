@@ -3,7 +3,8 @@ import { EMPTY, fromEvent, merge, Observable } from 'rxjs'
 import { catchError, map, publishReplay, refCount, take } from 'rxjs/operators'
 import * as uuid from 'uuid'
 
-import { isErrorLike, isFirefox } from '@sourcegraph/common'
+import { isErrorLike, isFirefox, logger } from '@sourcegraph/common'
+import { SharedEventLogger } from '@sourcegraph/shared/src/api/sharedEventLogger'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { UTMMarker } from '@sourcegraph/shared/src/tracking/utm'
 
@@ -65,7 +66,7 @@ const browserExtensionMessageReceived: Observable<{ platform?: string; version?:
     refCount()
 )
 
-export class EventLogger implements TelemetryService {
+export class EventLogger implements TelemetryService, SharedEventLogger {
     private hasStrippedQueryParameters = false
 
     private anonymousUserID = ''
@@ -98,7 +99,7 @@ export class EventLogger implements TelemetryService {
             this.log('BrowserExtensionConnectedToServer', args, args)
 
             if (localStorage && localStorage.getItem('eventLogDebug') === 'true') {
-                console.debug('%cBrowser extension detected, sync completed', 'color: #aaa')
+                logger.debug('%cBrowser extension detected, sync completed', 'color: #aaa')
             }
         })
 
@@ -168,7 +169,7 @@ export class EventLogger implements TelemetryService {
 
     private logToConsole(eventLabel: string, eventProperties?: any, publicArgument?: any): void {
         if (localStorage && localStorage.getItem('eventLogDebug') === 'true') {
-            console.debug('%cEVENT %s', 'color: #aaa', eventLabel, eventProperties, publicArgument)
+            logger.debug('%cEVENT %s', 'color: #aaa', eventLabel, eventProperties, publicArgument)
         }
     }
 

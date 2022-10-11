@@ -18,8 +18,13 @@ Administration is usually handled by site administrators are the admins responsi
 
 ## [Upgrade Sourcegraph](updates/index.md)
 
-- [Migrations](migration/index.md)
-- [Upgrading PostgreSQL](postgres.md)
+> NOTE: The Sourcegraph 4.0 [`migrator`](./how-to/manual_database_migrations.md) can now perform upgrades across [multiple versions](updates/index.md#multi-version-upgrades) on any instance 3.20 or later.
+
+- [Upgrade Sourcegraph](updates/index.md)
+  - [Single-minor-version "standard" upgrades](updates/index.md#standard-upgrades)
+  - [Multi-version upgrades](updates/index.md#multi-version-upgrades)
+- [Migration guides](migration/index.md)
+- [Upgrading PostgreSQL](postgres.md#upgrading-postgresql)
 
 ## [Configuration](config/index.md)
 
@@ -44,13 +49,15 @@ For deployment configuration, please refer to the relevant [installation guide](
 - [Monitoring guide](how-to/monitoring-guide.md)
 - [Metrics and dashboards](./observability/metrics.md)
 - [Alerting](./observability/alerting.md)
+- [Tracing](./observability/tracing.md)
+- [Logs](./observability/logs.md)
 
 ## Features
 
-- <span class="badge badge-experimental">Experimental</span> [Admin Analytics](./admin_analytics.md)
+- <span class="badge badge-experimental">Experimental</span> [Analytics](./analytics.md)
 - [Batch Changes](../batch_changes/index.md)
 - [Beta and experimental features](beta_and_experimental_features.md)
-- [Code intelligence and language servers](../code_intelligence/index.md)
+- [Code navigation](../code_navigation/index.md)
 - [Federation](federation/index.md)
 - [Pings](pings.md)
 - [Pricing and subscriptions](subscriptions/index.md)

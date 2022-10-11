@@ -10,11 +10,32 @@
   path: github.com/prometheus/client_golang/api/prometheus/v1
   interfaces:
     - API
-- filename: enterprise/cmd/frontend/internal/codeintel/resolvers/mocks/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers
+- filename: internal/codeintel/shared/resolvers/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers
   interfaces:
-    - QueryResolver
-    - Resolver
+    - UploadsService
+    - AutoIndexingService
+  package: sharedresolvers
+- filename: internal/codeintel/uploads/transport/graphql/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql
+  interfaces:
+    - AutoIndexingService
+    - UploadService
+    - PolicyService
+- filename: internal/codeintel/autoindexing/transport/graphql/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql
+  interfaces:
+    - AutoIndexingService
+    - UploadsService
+    - PolicyService
+- filename: internal/codeintel/codenav/transport/graphql/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql
+  interfaces:
+    - GitBlobResolver
+    - AutoIndexingService
+    - UploadsService
+    - PolicyService
+    - GitserverClient
 - filename: enterprise/cmd/frontend/internal/registry/stores/dbmocks/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry/stores
   interfaces:
@@ -82,6 +103,7 @@
     - UserExternalAccountsStore
     - UserPublicRepoStore
     - UserStore
+    - WebhookStore
     - WebhookLogStore
 - filename: internal/gitserver/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/internal/gitserver
@@ -111,3 +133,8 @@
   path: github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store
   interfaces:
     - Store
+- filename: internal/metrics/store/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/metrics/store
+  interfaces:
+    - Store
+    - DistributedStore

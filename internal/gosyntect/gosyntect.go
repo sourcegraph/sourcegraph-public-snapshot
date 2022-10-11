@@ -14,6 +14,32 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+const (
+	SyntaxEngineSyntect    = "syntect"
+	SyntaxEngineTreesitter = "tree-sitter"
+)
+
+type HighlightResponseType string
+
+// The different response formats supported by the syntax highlighter.
+const (
+	FormatHTMLPlaintext HighlightResponseType = "HTML_PLAINTEXT"
+	FormatHTMLHighlight HighlightResponseType = "HTML_HIGHLIGHT"
+	FormatJSONSCIP      HighlightResponseType = "JSON_SCIP"
+)
+
+// Returns corresponding format type for the request format. Defaults to
+// FormatHTMLHighlight
+func GetResponseFormat(format string) HighlightResponseType {
+	if format == string(FormatHTMLPlaintext) {
+		return FormatHTMLPlaintext
+	}
+	if format == string(FormatJSONSCIP) {
+		return FormatJSONSCIP
+	}
+	return FormatHTMLHighlight
+}
+
 // Query represents a code highlighting query to the syntect_server.
 type Query struct {
 	// Filepath is the file path of the code. It can be the full file path, or
@@ -57,15 +83,15 @@ type Query struct {
 
 	// Tracer, if not nil, will be used to record opentracing spans associated with the query.
 	Tracer opentracing.Tracer
+
+	// Which highlighting engine to use
+	Engine string `json:"engine"`
 }
 
 // Response represents a response to a code highlighting query.
 type Response struct {
 	// Data is the actual highlighted HTML version of Query.Code.
 	Data string
-
-	// LSIF is the base64 encoded byte array of an LSIF Typed payload containing highlighting data.
-	LSIF string
 
 	// Plaintext indicates whether or not a syntax could not be found for the
 	// file and instead it was rendered as plain text.
@@ -94,7 +120,9 @@ var (
 
 type response struct {
 	// Successful response fields.
-	Data      string `json:"data"`
+	Data string `json:"data"`
+	// Used by the /scip endpoint
+	Scip      string `json:"scip"`
 	Plaintext bool   `json:"plaintext"`
 
 	// Error response fields.
@@ -141,11 +169,11 @@ func (c *Client) IsTreesitterSupported(filetype string) bool {
 // automatically do this via the query or something else. It feels a bit goofy
 // to be a separate param. But I need to clean up these other deprecated
 // options later, so it's OK for the first iteration.
-func (c *Client) Highlight(ctx context.Context, q *Query, useTreeSitter bool) (*Response, error) {
+func (c *Client) Highlight(ctx context.Context, q *Query, format HighlightResponseType) (*Response, error) {
 	// Normalize filetype
 	q.Filetype = normalizeFiletype(q.Filetype)
 
-	if useTreeSitter && !c.IsTreesitterSupported(q.Filetype) {
+	if q.Engine == SyntaxEngineTreesitter && !c.IsTreesitterSupported(q.Filetype) {
 		return nil, errors.New("Not a valid treesitter filetype")
 	}
 
@@ -156,7 +184,11 @@ func (c *Client) Highlight(ctx context.Context, q *Query, useTreeSitter bool) (*
 	}
 
 	var url string
-	if useTreeSitter {
+	if format == FormatJSONSCIP {
+		url = "/scip"
+	} else if q.Engine == SyntaxEngineTreesitter {
+		// "Legacy SCIP mode" for the HTML blob view and languages configured to
+		// be processed with tree sitter.
 		url = "/lsif"
 	} else {
 		url = "/"
@@ -221,10 +253,17 @@ func (c *Client) Highlight(ctx context.Context, q *Query, useTreeSitter bool) (*
 		}
 		return nil, errors.Wrap(err, c.syntectServer)
 	}
-	return &Response{
+	response := &Response{
 		Data:      r.Data,
 		Plaintext: r.Plaintext,
-	}, nil
+	}
+
+	// If SCIP is set, prefer it over HTML
+	if r.Scip != "" {
+		response.Data = r.Scip
+	}
+
+	return response, nil
 }
 
 func (c *Client) url(path string) string {

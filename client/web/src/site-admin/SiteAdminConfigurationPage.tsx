@@ -8,11 +8,12 @@ import { Subject, Subscription } from 'rxjs'
 import { delay, mergeMap, retryWhen, tap, timeout } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { logger } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, LoadingSpinner, Link, Alert, Code, H2, Text } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Link, Alert, Code, Text, PageHeader, Container } from '@sourcegraph/wildcard'
 
 import siteSchemaJSON from '../../../../schema/site.schema.json'
 import { PageTitle } from '../components/PageTitle'
@@ -376,37 +377,47 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         return (
             <div>
                 <PageTitle title="Configuration - Admin" />
-                <H2>Site configuration</H2>
-                <Text>
-                    View and edit the Sourcegraph site configuration. See{' '}
-                    <Link to="/help/admin/config/site_config">documentation</Link> for more information.
-                </Text>
-                <div>{alerts}</div>
-                {this.state.loading && <LoadingSpinner />}
-                {this.state.site?.configuration && (
-                    <div>
-                        <DynamicallyImportedMonacoSettingsEditor
-                            value={contents || ''}
-                            jsonSchema={siteSchemaJSON}
-                            canEdit={true}
-                            saving={this.state.saving}
-                            loading={isReloading || this.state.saving}
-                            height={600}
-                            isLightTheme={this.props.isLightTheme}
-                            onSave={this.onSave}
-                            actions={quickConfigureActions}
-                            history={this.props.history}
-                            telemetryService={this.props.telemetryService}
-                        />
-                        <Text className="form-text text-muted">
-                            <small>
-                                Use Ctrl+Space for completion, and hover over JSON properties for documentation. For
-                                more information, see the <Link to="/help/admin/config/site_config">documentation</Link>
-                                .
-                            </small>
-                        </Text>
-                    </div>
-                )}
+                <PageHeader
+                    path={[{ text: 'Site configuration' }]}
+                    headingElement="h2"
+                    description={
+                        <>
+                            View and edit the Sourcegraph site configuration. See{' '}
+                            <Link to="/help/admin/config/site_config">documentation</Link> for more information.
+                        </>
+                    }
+                    className="mb-3"
+                />
+                <Container className="mb-3">
+                    <div>{alerts}</div>
+                    {this.state.loading && <LoadingSpinner />}
+                    {this.state.site?.configuration && (
+                        <div>
+                            <DynamicallyImportedMonacoSettingsEditor
+                                value={contents || ''}
+                                jsonSchema={siteSchemaJSON}
+                                canEdit={true}
+                                saving={this.state.saving}
+                                loading={isReloading || this.state.saving}
+                                height={600}
+                                isLightTheme={this.props.isLightTheme}
+                                onSave={this.onSave}
+                                actions={quickConfigureActions}
+                                history={this.props.history}
+                                telemetryService={this.props.telemetryService}
+                                explanation={
+                                    <Text className="form-text text-muted">
+                                        <small>
+                                            Use Ctrl+Space for completion, and hover over JSON properties for
+                                            documentation. For more information, see the{' '}
+                                            <Link to="/help/admin/config/site_config">documentation</Link>.
+                                        </small>
+                                    </Text>
+                                }
+                            />
+                        </div>
+                    )}
+                </Container>
             </div>
         )
     }
@@ -423,8 +434,15 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         try {
             restartToApply = await updateSiteConfiguration(lastConfigurationID, newContents).toPromise<boolean>()
         } catch (error) {
-            console.error(error)
-            this.setState({ saving: false, error })
+            logger.error(error)
+            this.setState({
+                saving: false,
+                error: new Error(
+                    String(error) +
+                        '\nError occured while attempting to save site configuration. Please backup changes before reloading the page.'
+                ),
+            })
+            throw error
         }
 
         const oldContents = lastConfiguration?.effectiveContents || ''
@@ -447,7 +465,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
             try {
                 await refreshSiteFlags().toPromise()
             } catch (error) {
-                console.error(error)
+                logger.error(error)
             }
         }
         this.setState({ restartToApply })

@@ -2,12 +2,15 @@ package gitserver
 
 import (
 	"context"
+	"io"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/grafana/regexp"
 	"github.com/opentracing/opentracing-go/log"
+
+	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -21,16 +24,28 @@ import (
 
 type Client struct {
 	db         database.DB
-	dbStore    DBStore
+	dbStore    *store
 	operations *operations
 }
 
-func New(db database.DB, dbStore DBStore, observationContext *observation.Context) *Client {
+func New(db database.DB, observationContext *observation.Context) *Client {
 	return &Client{
 		db:         db,
-		dbStore:    dbStore,
+		dbStore:    newWithDB(db),
 		operations: newOperations(observationContext),
 	}
+}
+
+func (c *Client) ArchiveReader(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, options gitserver.ArchiveOptions) (io.ReadCloser, error) {
+	return gitserver.NewClient(c.db).ArchiveReader(ctx, checker, repo, options)
+}
+
+func (c *Client) RequestRepoUpdate(ctx context.Context, name api.RepoName, t time.Duration) (*protocol.RepoUpdateResponse, error) {
+	return gitserver.NewClient(c.db).RequestRepoUpdate(ctx, name, t)
+}
+
+func (c *Client) DiffPath(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, sourceCommit, targetCommit, path string) ([]*diff.Hunk, error) {
+	return gitserver.NewClient(c.db).DiffPath(ctx, checker, repo, sourceCommit, targetCommit, path)
 }
 
 // CommitExists determines if the given commit exists in the given repository.
@@ -173,20 +188,6 @@ func (c *Client) CommitDate(ctx context.Context, repositoryID int, commit string
 	// resolved without error, return the original error as the command had
 	// failed for another reason.
 	return "", time.Time{}, false, errors.Wrap(err, "git.CommitDate")
-}
-
-func (c *Client) RepoInfo(ctx context.Context, repos ...api.RepoName) (_ map[api.RepoName]*protocol.RepoInfo, err error) {
-	ctx, _, endObservation := c.operations.repoInfo.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("numRepos", len(repos)),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	resp, err := gitserver.NewClient(c.db).RepoInfo(ctx, repos...)
-	if resp == nil {
-		return nil, err
-	}
-
-	return resp.Results, err
 }
 
 // CommitGraph returns the commit graph for the given repository as a mapping from a commit
@@ -419,6 +420,10 @@ func (c *Client) ListFiles(ctx context.Context, repositoryID int, commit string,
 		return nil, err
 	}
 
+	return c.ListFilesForRepo(ctx, repo, commit, pattern)
+}
+
+func (c *Client) ListFilesForRepo(ctx context.Context, repo api.RepoName, commit string, pattern *regexp.Regexp) (_ []string, err error) {
 	matching, err := gitserver.NewClient(c.db).ListFiles(ctx, repo, api.CommitID(commit), pattern, authz.DefaultSubRepoPermsChecker)
 	if err == nil {
 		return matching, nil

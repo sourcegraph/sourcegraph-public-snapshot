@@ -30,7 +30,13 @@ type CommitMatch struct {
 
 	// MessagePreview and DiffPreview are mutually exclusive. Only one should be set
 	MessagePreview *MatchedString
-	DiffPreview    *MatchedString
+	// DiffPreview is a string representation of the diff along with the matched
+	// ranges of that diff.
+	DiffPreview *MatchedString
+	// Diff is a parsed and structured representation of the information in DiffPreview.
+	// In time, consumers will be migrated to use the structured representation
+	// and DiffPreview will be removed.
+	Diff []DiffFile
 
 	// ModifiedFiles will include the list of files modified in the commit when
 	// sub-repo permissions filtering has been enabled.
@@ -249,12 +255,8 @@ func (r *CommitMatch) searchResultMarker() {}
 // converted. In time, we should directly create CommitDiffMatch and this helper
 // function should not, ideally, exist.
 func (r *CommitMatch) CommitToDiffMatches() []*CommitDiffMatch {
-	var matches []*CommitDiffMatch
-	fileDiffs, err := ParseDiffString(r.DiffPreview.Content)
-	if err != nil {
-		return nil
-	}
-	for _, diff := range fileDiffs {
+	matches := make([]*CommitDiffMatch, 0, len(r.Diff))
+	for _, diff := range r.Diff {
 		diff := diff
 		matches = append(matches, &CommitDiffMatch{
 			Commit:   r.Commit,

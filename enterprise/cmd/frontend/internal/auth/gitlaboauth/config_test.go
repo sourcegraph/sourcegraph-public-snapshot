@@ -226,7 +226,7 @@ func TestParseConfig(t *testing.T) {
 				envvar.MockSourcegraphDotComMode(old)
 			})
 
-			gotProviders, gotProblems := parseConfig(tt.args.cfg, db)
+			gotProviders, gotProblems := parseConfig(logtest.Scoped(t), tt.args.cfg, db)
 			gotConfigs := make([]oauth2.Config, len(gotProviders))
 			for k, p := range gotProviders {
 				if p, ok := p.Provider.(*oauth.Provider); ok {

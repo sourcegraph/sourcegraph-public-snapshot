@@ -7,8 +7,8 @@ import {
     ChangesetState,
     ExternalServiceKind,
     SharedGraphQlOperations,
+    BatchSpecSource,
 } from '@sourcegraph/shared/src/graphql-operations'
-import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
@@ -121,9 +121,8 @@ const mockDiff: NonNullable<ExternalChangesetFileDiffsFields['diff']> = {
                     },
                 ],
                 stat: {
-                    added: 10,
-                    changed: 3,
-                    deleted: 8,
+                    added: 13,
+                    deleted: 11,
                 },
             },
         ],
@@ -211,7 +210,6 @@ const BatchChangeChangesets: (variables: BatchChangeChangesetsVariables) => Batc
                     diffStat: {
                         __typename: 'DiffStat',
                         added: 100,
-                        changed: 10,
                         deleted: 23,
                     },
                     error: null,
@@ -269,11 +267,13 @@ const BatchChangeBatchSpecs: (variables: BatchChangeBatchSpecsVariables) => Batc
                     __typename: 'BatchSpec',
                     id: 'Execution',
                     state: BatchSpecState.COMPLETED,
-                    finishedAt: null,
+                    finishedAt: '2022-07-06T23:21:45Z',
                     createdAt: '2022-07-06T23:21:45Z',
                     description: {
                         name: 'test-batch-change',
                     },
+                    source: BatchSpecSource.REMOTE,
+                    startedAt: '2022-07-06T23:21:45Z',
                     namespace: {
                         namespaceName: 'alice',
                         url: '/users/alice',
@@ -369,11 +369,24 @@ function mockCommonGraphQLResponses(
                     username: 'alice',
                 },
                 name: 'test-batch-change',
-                namespace: {
-                    id: '1234',
-                    namespaceName: entityType === 'user' ? 'alice' : 'test-org',
-                    url: namespaceURL,
-                },
+                namespace:
+                    entityType === 'user'
+                        ? {
+                              __typename: 'User',
+                              id: '1234',
+                              displayName: null,
+                              namespaceName: 'alice',
+                              url: namespaceURL,
+                              username: 'alice',
+                          }
+                        : {
+                              __typename: 'Org',
+                              id: '1234',
+                              displayName: null,
+                              namespaceName: 'test-org',
+                              url: namespaceURL,
+                              name: 'test-org',
+                          },
                 diffStat: { added: 1000, changed: 2000, deleted: 1000, __typename: 'DiffStat' },
                 url: `${namespaceURL}/batch-changes/test-batch-change`,
                 viewerCanAdminister: true,
@@ -390,6 +403,11 @@ function mockCommonGraphQLResponses(
                     codeHostsWithoutWebhooks: {
                         nodes: [],
                         pageInfo: { hasNextPage: false },
+                        totalCount: 0,
+                    },
+                    viewerBatchChangesCodeHosts: {
+                        __typename: 'BatchChangesCodeHostConnection',
+                        nodes: [],
                         totalCount: 0,
                     },
                 },
@@ -473,6 +491,7 @@ describe('Batches', () => {
             allBatchChanges: {
                 totalCount: 1,
             },
+            maxUnlicensedChangesets: 10,
         }),
     }
     const batchChangesListResults = {
@@ -589,10 +608,12 @@ describe('Batches', () => {
         })
     })
 
-    // Disabled because it's flaky. See: https://github.com/sourcegraph/sourcegraph/issues/37233
-    describe.skip('Batch changes details', () => {
+    // Possibly flaky test. Removing .skip temporarily in order to figure
+    // out the root cause of this as we're unable to reproduce locally.
+    // See https://github.com/sourcegraph/sourcegraph/issues/37233
+    describe('Batch changes details', () => {
         for (const entityType of ['user', 'org'] as const) {
-            it(`displays a single batch change for ${entityType}`, async () => {
+            it.skip(`displays a single batch change for ${entityType}`, async () => {
                 testContext.overrideGraphQL({
                     ...commonWebGraphQlResults,
                     ...batchChangeLicenseGraphQlResults,
@@ -610,6 +631,9 @@ describe('Batches', () => {
                 await driver.page.waitForSelector('.test-batch-change-details-page')
                 await percySnapshotWithVariants(driver.page, `Batch change details page ${entityType}`)
                 await accessibilityAudit(driver.page)
+
+                // we wait for the changesets to be loaded in the browser before proceeding
+                await driver.page.waitForSelector('.test-batches-expand-changeset')
 
                 await driver.page.click('.test-batches-expand-changeset')
                 // Expect one diff to be rendered.
@@ -705,7 +729,6 @@ describe('Batches', () => {
                             diffStat: {
                                 __typename: 'DiffStat',
                                 added: 1000,
-                                changed: 100,
                                 deleted: 182,
                             },
                             expiresAt: addDays(now, 3).toISOString(),
@@ -792,7 +815,6 @@ describe('Batches', () => {
                                                     diffStat: {
                                                         __typename: 'DiffStat',
                                                         added: 10,
-                                                        changed: 2,
                                                         deleted: 9,
                                                     },
                                                     title: 'Changeset title',

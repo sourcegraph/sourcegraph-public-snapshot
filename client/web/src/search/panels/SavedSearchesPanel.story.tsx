@@ -24,7 +24,7 @@ export default config
 
 const props = {
     authenticatedUser: authUser,
-    patternType: SearchPatternType.literal,
+    patternType: SearchPatternType.standard,
     savedSearchesFragment: { savedSearches: savedSearchesPayload() },
     telemetryService: NOOP_TELEMETRY_SERVICE,
 }

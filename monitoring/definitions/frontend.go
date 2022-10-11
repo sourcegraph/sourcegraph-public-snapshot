@@ -333,6 +333,7 @@ func Frontend() *monitoring.Dashboard {
 			shared.Batches.NewDBStoreGroup(containerName),
 			shared.Batches.NewServiceGroup(containerName),
 			shared.Batches.NewWorkspaceExecutionDBWorkerStoreGroup(containerName),
+			shared.Batches.NewBatchesHTTPAPIGroup(containerName),
 
 			// src_oobmigration_total
 			// src_oobmigration_duration_seconds_bucket
@@ -576,7 +577,8 @@ func Frontend() *monitoring.Dashboard {
 							Interpretation: `Account lockouts per minute`,
 						},
 					},
-				}},
+				},
+			},
 			{
 				Title:  "Organisation GraphQL API requests",
 				Hidden: true,
@@ -902,6 +904,7 @@ func Frontend() *monitoring.Dashboard {
 					},
 				},
 			},
+			shared.CodeInsights.NewSearchAggregationsGroup(containerName),
 		},
 	}
 }
@@ -910,11 +913,11 @@ func orgMetricRows(orgMetricSpec []struct {
 	name        string
 	route       string
 	description string
-}) []monitoring.Row {
+},
+) []monitoring.Row {
 	result := []monitoring.Row{}
 	for _, m := range orgMetricSpec {
 		result = append(result, monitoring.Row{
-
 			{
 				Name:           m.name + "_rate",
 				Description:    "rate of " + m.description,

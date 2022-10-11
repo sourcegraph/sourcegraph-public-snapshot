@@ -23,7 +23,7 @@ import {
 } from './lang-stats-insight-creation-form/LangStatsInsightCreationForm'
 import { LangStatsInsightLivePreview } from './live-preview-chart/LangStatsInsightLivePreview'
 
-export const thresholdFieldValidator = createRequiredValidator('Threshold is a required field for code insight.')
+export const THRESHOLD_VALIDATOR = createRequiredValidator('Threshold is a required field for code insight.')
 
 const INITIAL_VALUES: LangStatsCreationFormFields = {
     repository: '',
@@ -75,7 +75,7 @@ export const LangStatsInsightCreationContent: FC<LangStatsInsightCreationContent
     const threshold = useField({
         name: 'threshold',
         formApi: formAPI,
-        validators: { sync: thresholdFieldValidator },
+        validators: { sync: THRESHOLD_VALIDATOR },
     })
 
     // If some fields that needed to run live preview  are invalid

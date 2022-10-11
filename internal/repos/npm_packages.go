@@ -17,9 +17,13 @@ import (
 
 // NewNpmPackagesSource returns a new PackagesSource from the given external
 // service.
-func NewNpmPackagesSource(svc *types.ExternalService, cf *httpcli.Factory) (*PackagesSource, error) {
+func NewNpmPackagesSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*PackagesSource, error) {
+	rawConfig, err := svc.Config.Decrypt(ctx)
+	if err != nil {
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
 	var c schema.NpmPackagesConnection
-	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
 

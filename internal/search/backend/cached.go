@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/zoekt"
-	zoektquery "github.com/google/zoekt/query"
+	"github.com/sourcegraph/zoekt"
+	zoektquery "github.com/sourcegraph/zoekt/query"
 )
 
 // cachedSearcher wraps a zoekt.Searcher with caching of List call results.

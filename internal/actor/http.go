@@ -6,11 +6,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/cookie"
-
-	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/sourcegraph/internal/cookie"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 const (
@@ -102,7 +103,7 @@ func (t *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 // 🚨 SECURITY: This should *never* be called to wrap externally accessible handlers (i.e.
 // only use for internal endpoints), because internal requests can bypass repository
 // permissions checks.
-func HTTPMiddleware(next http.Handler) http.Handler {
+func HTTPMiddleware(logger log.Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
 		uidStr := req.Header.Get(headerKeyActorUID)
@@ -130,9 +131,10 @@ func HTTPMiddleware(next http.Handler) http.Handler {
 		default:
 			uid, err := strconv.Atoi(uidStr)
 			if err != nil {
-				log15.Warn("invalid user ID in request",
-					"error", err,
-					"uid", uidStr)
+				trace.Logger(ctx, logger).
+					Warn("invalid user ID in request",
+						log.Error(err),
+						log.String("uid", uidStr))
 				metricIncomingActors.WithLabelValues(metricActorTypeInvalid, path).Inc()
 
 				// Do not proceed with request

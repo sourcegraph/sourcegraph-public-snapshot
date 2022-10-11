@@ -1,20 +1,11 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
 import * as H from 'history'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
-import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
-import { ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { isErrorLike } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
-import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
-import {
-    CloneInProgressError,
-    isCloneInProgressErrorLike,
-    isRevisionNotFoundErrorLike,
-    isRepoNotFoundErrorLike,
-} from '@sourcegraph/shared/src/backend/errors'
+import { StreamingSearchResultsListProps, CopyPathAction } from '@sourcegraph/search-ui'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -22,27 +13,26 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { Button, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
 import { CodeIntelligenceProps } from '../codeintel'
 import { BreadcrumbSetters } from '../components/Breadcrumbs'
-import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
 import { RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
 import { SearchStreamingProps } from '../search'
+import { eventLogger } from '../tracking/eventLogger'
 import { RouteDescriptor } from '../util/contributions'
+import { parseBrowserRepoURL } from '../util/url'
 
-import { CopyPathAction } from './actions/CopyPathAction'
 import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
 import { ResolvedRevision } from './backend'
 import { RepoRevisionChevronDownIcon, RepoRevisionWrapper } from './components/RepoRevision'
 import { HoverThresholdProps, RepoContainerContext } from './RepoContainer'
 import { RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
-import { EmptyRepositoryPage, RepositoryCloningInProgressPage } from './RepositoryGitDataContainer'
 import { RevisionsPopover } from './RevisionsPopover'
 import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
@@ -59,7 +49,7 @@ export interface RepoRevisionContainerContext
         TelemetryProps,
         HoverThresholdProps,
         ActivationProps,
-        Omit<RepoContainerContext, 'onDidUpdateExternalLinks'>,
+        Omit<RepoContainerContext, 'onDidUpdateExternalLinks' | 'repo' | 'resolvedRevisionOrError'>,
         Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         RevisionSpec,
         BreadcrumbSetters,
@@ -68,8 +58,10 @@ export interface RepoRevisionContainerContext
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         BatchChangesProps,
         CodeInsightsProps {
-    repo: RepositoryFields
-    resolvedRev: ResolvedRevision
+    repo: RepositoryFields | undefined
+    resolvedRevision: ResolvedRevision | undefined
+
+    repoName: string
 
     /** The URL route match for {@link RepoRevisionContainer}. */
     routePrefix: string
@@ -106,15 +98,17 @@ interface RepoRevisionContainerProps
     routes: readonly RepoRevisionContainerRoute[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
-    repo: RepositoryFields
+    repo: RepositoryFields | undefined
     authenticatedUser: AuthenticatedUser | null
     routePrefix: string
 
     /**
-     * The resolved revision or an error if it could not be resolved. This value lives in RepoContainer (this
-     * component's parent) but originates from this component.
+     * The resolved revision or an error if it could not be resolved.
      */
-    resolvedRevisionOrError: ResolvedRevision | ErrorLike | undefined
+    resolvedRevision: ResolvedRevision | undefined
+
+    /** The repoName from the URL */
+    repoName: string
 
     history: H.History
 
@@ -125,15 +119,23 @@ interface RepoRevisionContainerProps
     isSourcegraphDotCom: boolean
 }
 
-interface RepoRevisionBreadcrumbProps extends Pick<RepoRevisionContainerProps, 'repo' | 'revision'> {
-    resolvedRevisionOrError: ResolvedRevision
+interface RepoRevisionBreadcrumbProps extends Pick<RepoRevisionContainerProps, 'repo' | 'revision' | 'repoName'> {
+    resolvedRevision: ResolvedRevision | undefined
 }
 
 const RepoRevisionContainerBreadcrumb: React.FunctionComponent<
     React.PropsWithChildren<RepoRevisionBreadcrumbProps>
-> = ({ revision, resolvedRevisionOrError, repo }) => {
+> = ({ revision, resolvedRevision, repoName, repo }) => {
     const [popoverOpen, setPopoverOpen] = useState(false)
     const togglePopover = useCallback(() => setPopoverOpen(previous => !previous), [])
+
+    const revisionLabel = (revision && revision === resolvedRevision?.commitID
+        ? resolvedRevision?.commitID.slice(0, 7)
+        : revision.slice(0, 7)) ||
+        resolvedRevision?.defaultBranch || <LoadingSpinner />
+
+    const isPopoverContentReady = repo && resolvedRevision
+
     return (
         <Popover isOpen={popoverOpen} onOpenChange={event => setPopoverOpen(event.isOpen)}>
             <PopoverTrigger
@@ -145,12 +147,9 @@ const RepoRevisionContainerBreadcrumb: React.FunctionComponent<
                 outline={true}
                 variant="secondary"
                 size="sm"
+                disabled={!isPopoverContentReady}
             >
-                {(revision && revision === resolvedRevisionOrError.commitID
-                    ? resolvedRevisionOrError.commitID.slice(0, 7)
-                    : revision) ||
-                    resolvedRevisionOrError.defaultBranch ||
-                    'HEAD'}
+                {revisionLabel}
                 <RepoRevisionChevronDownIcon aria-hidden={true} />
             </PopoverTrigger>
             <PopoverContent
@@ -158,15 +157,17 @@ const RepoRevisionContainerBreadcrumb: React.FunctionComponent<
                 className="pt-0 pb-0"
                 aria-labelledby="repo-revision-popover"
             >
-                <RevisionsPopover
-                    repo={repo.id}
-                    repoName={repo.name}
-                    defaultBranch={resolvedRevisionOrError.defaultBranch}
-                    currentRev={revision}
-                    currentCommitID={resolvedRevisionOrError.commitID}
-                    togglePopover={togglePopover}
-                    onSelect={togglePopover}
-                />
+                {isPopoverContentReady && (
+                    <RevisionsPopover
+                        repoId={repo?.id}
+                        repoName={repoName}
+                        defaultBranch={resolvedRevision?.defaultBranch}
+                        currentRev={revision}
+                        currentCommitID={resolvedRevision?.commitID}
+                        togglePopover={togglePopover}
+                        onSelect={togglePopover}
+                    />
+                )}
             </PopoverContent>
         </Popover>
     )
@@ -182,7 +183,7 @@ export const RepoRevisionContainer: React.FunctionComponent<React.PropsWithChild
 }) => {
     const breadcrumbSetters = useBreadcrumb(
         useMemo(() => {
-            if (!props.resolvedRevisionOrError || isErrorLike(props.resolvedRevisionOrError)) {
+            if (isErrorLike(props.resolvedRevision)) {
                 return
             }
 
@@ -191,67 +192,25 @@ export const RepoRevisionContainer: React.FunctionComponent<React.PropsWithChild
                 divider: <span className={styles.divider}>@</span>,
                 element: (
                     <RepoRevisionContainerBreadcrumb
-                        resolvedRevisionOrError={props.resolvedRevisionOrError}
+                        resolvedRevision={props.resolvedRevision}
                         revision={props.revision}
+                        repoName={props.repoName}
                         repo={props.repo}
                     />
                 ),
             }
-        }, [props.resolvedRevisionOrError, props.revision, props.repo])
+        }, [props.resolvedRevision, props.revision, props.repo, props.repoName])
     )
 
-    if (!props.resolvedRevisionOrError) {
-        // Render nothing while loading
-        return null
-    }
-
-    if (isErrorLike(props.resolvedRevisionOrError)) {
-        // Show error page
-        if (isCloneInProgressErrorLike(props.resolvedRevisionOrError)) {
-            return (
-                <RepositoryCloningInProgressPage
-                    repoName={props.repo.name}
-                    progress={(props.resolvedRevisionOrError as CloneInProgressError).progress}
-                />
-            )
-        }
-        if (isRepoNotFoundErrorLike(props.resolvedRevisionOrError)) {
-            return (
-                <HeroPage
-                    icon={MapSearchIcon}
-                    title="404: Not Found"
-                    subtitle="The requested repository was not found."
-                />
-            )
-        }
-        if (isRevisionNotFoundErrorLike(props.resolvedRevisionOrError)) {
-            if (!props.revision) {
-                return <EmptyRepositoryPage />
-            }
-            return (
-                <HeroPage
-                    icon={MapSearchIcon}
-                    title="404: Not Found"
-                    subtitle="The requested revision was not found."
-                />
-            )
-        }
-        return (
-            <HeroPage
-                icon={AlertCircleIcon}
-                title="Error"
-                subtitle={<ErrorMessage error={props.resolvedRevisionOrError} />}
-            />
-        )
-    }
-
-    const context: RepoRevisionContainerContext = {
+    const repoRevisionContainerContext: RepoRevisionContainerContext = {
         ...props,
         ...breadcrumbSetters,
-        resolvedRev: props.resolvedRevisionOrError,
+        resolvedRevision: props.resolvedRevision,
     }
 
-    const resolvedRevisionOrError = props.resolvedRevisionOrError
+    const resolvedRevision = props.resolvedRevision
+
+    const { repoName, filePath } = parseBrowserRepoURL(location.pathname)
 
     return (
         <>
@@ -259,14 +218,14 @@ export const RepoRevisionContainer: React.FunctionComponent<React.PropsWithChild
                 <Switch>
                     {props.routes.map(
                         ({ path, render, exact, condition = () => true }) =>
-                            condition(context) && (
+                            condition(repoRevisionContainerContext) && (
                                 <Route
                                     path={props.routePrefix + path}
                                     key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                     exact={exact}
                                     render={routeComponentProps =>
                                         render({
-                                            ...context,
+                                            ...repoRevisionContainerContext,
                                             ...routeComponentProps,
                                         })
                                     }
@@ -279,26 +238,34 @@ export const RepoRevisionContainer: React.FunctionComponent<React.PropsWithChild
                     id="copy-path"
                     repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
                 >
-                    {() => <CopyPathAction key="copy-path" />}
-                </RepoHeaderContributionPortal>
-                <RepoHeaderContributionPortal
-                    position="right"
-                    priority={3}
-                    id="go-to-permalink"
-                    repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
-                >
-                    {context => (
-                        <GoToPermalinkAction
-                            key="go-to-permalink"
-                            telemetryService={props.telemetryService}
-                            revision={props.revision}
-                            commitID={resolvedRevisionOrError.commitID}
-                            location={props.location}
-                            history={props.history}
-                            {...context}
+                    {() => (
+                        <CopyPathAction
+                            telemetryService={eventLogger}
+                            filePath={filePath || repoName}
+                            key="copy-path"
                         />
                     )}
                 </RepoHeaderContributionPortal>
+                {resolvedRevision && (
+                    <RepoHeaderContributionPortal
+                        position="right"
+                        priority={3}
+                        id="go-to-permalink"
+                        repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
+                    >
+                        {context => (
+                            <GoToPermalinkAction
+                                key="go-to-permalink"
+                                telemetryService={props.telemetryService}
+                                revision={props.revision}
+                                commitID={resolvedRevision.commitID}
+                                location={props.location}
+                                history={props.history}
+                                {...context}
+                            />
+                        )}
+                    </RepoHeaderContributionPortal>
+                )}
             </RepoRevisionWrapper>
         </>
     )

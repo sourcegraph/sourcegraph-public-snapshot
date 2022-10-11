@@ -1,7 +1,7 @@
 # sourcegraph/grafana - learn more about this image in https://docs.sourcegraph.com/dev/background-information/observability/grafana
 
 # Build monitoring definitions
-FROM sourcegraph/alpine-3.14:159028_2022-07-07_1f3b17ce1db8@sha256:25d682b5fd069c716c2b29dcf757c0dc0ce29810a07f91e1347901920272b4a7 AS monitoring_builder
+FROM sourcegraph/alpine-3.14:174825_2022-09-28_291dca5d9725@sha256:0bfed82a206a1f313b7276521375dc4d27caa45c324f99e7da0453cecbd31980 AS monitoring_builder
 RUN mkdir -p '/generated/grafana'
 COPY ./.bin/monitoring-generator /bin/monitoring-generator
 RUN GRAFANA_DIR='/generated/grafana' PROMETHEUS_DIR='' DOCS_DIR='' NO_PRUNE=true /bin/monitoring-generator
@@ -27,8 +27,7 @@ LABEL org.opencontainers.image.documentation=https://docs.sourcegraph.com/
 
 # hadolint ignore=DL3020
 ADD config /sg_config_grafana
-COPY home.json /usr/share/grafana/public/dashboards/home.json
-
+COPY --from=monitoring_builder /generated/grafana/home.json /usr/share/grafana/public/dashboards/home.json
 COPY --from=monitoring_builder /generated/grafana/* /sg_config_grafana/provisioning/dashboards/sourcegraph/
 
 # hadolint ignore=DL3020
@@ -50,7 +49,8 @@ RUN apk add --upgrade --no-cache \
     'openssl>=1.1.1l' \
     'busybox>=1.32.1' \
     'ncurses-libs>=6.2_p20210109-r1' \
-    'ncurses-terminfo-base>=6.2_p20210109-r1'
+    'ncurses-terminfo-base>=6.2_p20210109-r1' \
+    'libtirpc>=1.3.1-r1'
 
 EXPOSE 3370
 USER grafana

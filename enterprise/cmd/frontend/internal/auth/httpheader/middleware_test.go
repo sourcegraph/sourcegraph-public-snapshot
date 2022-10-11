@@ -10,9 +10,9 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -39,8 +39,15 @@ func TestMiddleware(t *testing.T) {
 
 	const headerName = "x-sso-user-header"
 	const emailHeaderName = "x-sso-email-header"
-	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{AuthProviders: []schema.AuthProviders{{HttpHeader: &schema.HTTPHeaderAuthProvider{UsernameHeader: headerName, EmailHeader: emailHeaderName}}}}})
-	defer conf.Mock(nil)
+	providers.Update(pkgName, []providers.Provider{
+		&provider{
+			c: &schema.HTTPHeaderAuthProvider{
+				EmailHeader:    emailHeaderName,
+				UsernameHeader: headerName,
+			},
+		},
+	})
+	defer func() { providers.Update(pkgName, nil) }()
 
 	t.Run("not sent", func(t *testing.T) {
 		rr := httptest.NewRecorder()
@@ -97,7 +104,7 @@ func TestMiddleware(t *testing.T) {
 	t.Run("sent, with un-normalized username", func(t *testing.T) {
 		rr := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/", nil)
-		req.Header.Set(headerName, "alice_zhao")
+		req.Header.Set(headerName, "alice%zhao")
 		const wantNormalizedUsername = "alice-zhao"
 		var calledMock bool
 		auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
@@ -105,7 +112,7 @@ func TestMiddleware(t *testing.T) {
 			if op.UserProps.Username != wantNormalizedUsername {
 				t.Errorf("got %q, want %q", op.UserProps.Username, wantNormalizedUsername)
 			}
-			if op.ExternalAccount.ServiceType == "http-header" && op.ExternalAccount.ServiceID == "" && op.ExternalAccount.ClientID == "" && op.ExternalAccount.AccountID == "alice_zhao" {
+			if op.ExternalAccount.ServiceType == "http-header" && op.ExternalAccount.ServiceID == "" && op.ExternalAccount.ClientID == "" && op.ExternalAccount.AccountID == "alice%zhao" {
 				return 1, "", nil
 			}
 			return 0, "safeErr", errors.Errorf("account %v not found in mock", op.ExternalAccount)
@@ -202,17 +209,15 @@ func TestMiddleware_stripPrefix(t *testing.T) {
 	}))
 
 	const headerName = "x-sso-user-header"
-	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-		AuthProviders: []schema.AuthProviders{
-			{
-				HttpHeader: &schema.HTTPHeaderAuthProvider{
-					UsernameHeader:            headerName,
-					StripUsernameHeaderPrefix: "accounts.google.com:",
-				},
+	providers.Update(pkgName, []providers.Provider{
+		&provider{
+			c: &schema.HTTPHeaderAuthProvider{
+				UsernameHeader:            headerName,
+				StripUsernameHeaderPrefix: "accounts.google.com:",
 			},
 		},
-	}})
-	defer conf.Mock(nil)
+	})
+	defer func() { providers.Update(pkgName, nil) }()
 
 	t.Run("sent, user", func(t *testing.T) {
 		rr := httptest.NewRecorder()

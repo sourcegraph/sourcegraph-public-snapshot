@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
-// readMigrations reads migrations from a locally available git revision for the given schema, and
+// ReadMigrations reads migrations from a locally available git revision for the given schema, and
 // rewrites old versions and explicit edge cases so that they can be more easily composed by the
 // migration stitch utilities.
 //
@@ -31,7 +31,7 @@ import (
 // stitch these relations back together, as it can't be done easily pre-composition across versions.
 //
 // See the method `linkVirtualPrivilegedMigrations`.
-func readMigrations(schemaName, root, rev string) (fs.FS, error) {
+func ReadMigrations(schemaName, root, rev string) (fs.FS, error) {
 	migrations, err := readRawMigrations(schemaName, root, rev)
 	if err != nil {
 		return nil, err
@@ -100,14 +100,37 @@ func linkVirtualPrivilegedMigrations(definitionMap map[int]definition.Definition
 // Additional files/migrations may be added to the contents map will not be reflected in this slice for
 // subsequent rewriters.
 var rewriters = []func(schemaName string, version oobmigration.Version, migrationIDs []int, contents map[string]string){
+	rewriteInitialCodeIntelMigration,
 	rewriteInitialCodeinsightsMigration,
+	rewriteCodeinsightsTimescaleDBMigrations,
 	ensureParentMetadataExists,
 	extractPrivilegedQueriesFromSquashedMigrations,
 
 	rewriteUnmarkedPrivilegedMigrations,
 	rewriteUnmarkedConcurrentIndexCreationMigrations,
 	rewriteConcurrentIndexCreationDownMigrations,
+	rewriteRepoStarsProcedure,
+	rewriteCodeinsightsDowngrades,
 	reorderMigrations,
+}
+
+var codeintelSchemaMigrationsCommentPattern = lazyregexp.New(`COMMENT ON (TABLE|COLUMN) codeintel_schema_migrations(\.[a-z_]+)? IS '[^']+';`)
+
+// rewriteInitialCodeIntelMigration renames the initial codeintel migration file to include the expected
+// title of "squashed migration".
+func rewriteInitialCodeIntelMigration(schemaName string, _ oobmigration.Version, _ []int, contents map[string]string) {
+	if schemaName != "codeintel" {
+		return
+	}
+
+	mapContents(contents, migrationFilename(1000000000, "metadata.yaml"), func(oldMetadata string) string {
+		return fmt.Sprintf("name: %s", squashedMigrationPrefix)
+	})
+
+	// Replace comments on possibly missing table in init migrations
+	mapContents(contents, migrationFilename(1000000004, "up.sql"), func(old string) string {
+		return codeintelSchemaMigrationsCommentPattern.ReplaceAllString(old, "-- Comments removed")
+	})
 }
 
 // rewriteInitialCodeinsightsMigration renames the initial codeinsights migration file to include the expected
@@ -120,6 +143,23 @@ func rewriteInitialCodeinsightsMigration(schemaName string, _ oobmigration.Versi
 	mapContents(contents, migrationFilename(1000000000, "metadata.yaml"), func(oldMetadata string) string {
 		return fmt.Sprintf("name: %s", squashedMigrationPrefix)
 	})
+}
+
+// rewriteCodeinsightsTimescaleDBMigrations (safely) removes references to TimescaleDB and PG catalog alterations
+// that do not make sense on the upgrade path to a version that has migrated away from TimescaleDB.
+func rewriteCodeinsightsTimescaleDBMigrations(schemaName string, _ oobmigration.Version, _ []int, contents map[string]string) {
+	if schemaName != "codeinsights" {
+		return
+	}
+
+	for _, id := range []int{1000000002, 1000000004} {
+		mapContents(contents, migrationFilename(id, "up.sql"), func(oldQuery string) string {
+			return filterLinesContaining(oldQuery, []string{
+				`ALTER SYSTEM SET timescaledb.`,
+				`codeinsights_schema_migrations`,
+			})
+		})
+	}
 }
 
 // ensureParentMetadataExists adds parent information to the metadata file of each migration, prior to 3.37,
@@ -165,8 +205,8 @@ func extractPrivilegedQueriesFromSquashedMigrations(_ string, version oobmigrati
 }
 
 var unmarkedPrivilegedMigrationsMap = map[string][]int{
-	"frontend":     {1528395953},
-	"codeintel":    {1000000020},
+	"frontend":     {1528395717, 1528395764, 1528395953},
+	"codeintel":    {1000000003, 1000000020},
 	"codeinsights": {1000000001, 1000000027},
 }
 
@@ -181,7 +221,7 @@ func rewriteUnmarkedPrivilegedMigrations(schemaName string, _ oobmigration.Versi
 }
 
 var unmarkedConcurrentIndexCreationMigrationsMap = map[string][]int{
-	"frontend":     {1528395797, 1528395877, 1528395878, 1528395886, 1528395887, 1528395888, 1528395893, 1528395894, 1528395896, 1528395897, 1528395899, 1528395900, 1528395935, 1528395936, 1528395954},
+	"frontend":     {1528395696, 1528395707, 1528395708, 1528395736, 1528395797, 1528395877, 1528395878, 1528395886, 1528395887, 1528395888, 1528395893, 1528395894, 1528395896, 1528395897, 1528395899, 1528395900, 1528395935, 1528395936, 1528395954},
 	"codeintel":    {1000000009, 1000000010, 1000000011},
 	"codeinsights": {},
 }
@@ -211,37 +251,103 @@ func rewriteConcurrentIndexCreationDownMigrations(schemaName string, _ oobmigrat
 	}
 }
 
+// rewriteRepoStarsProcedure rewrites a migration that calls the procedure `set_repo_stars_null_to_zero`,
+// defined in migration 1528395950. This procedure is written in a way that was meant to minimize the
+// affect on the dotcom instance, but does so by breaking out of the parent commit periodically to flush
+// its work in case the migration gets interrupted.
+//
+// Instead of calling this procedure, we are going to issue an equivalent update. Within the migrator
+// we do not care to flush work like this, as we're meant to be a long-running process with exclusive
+// access to the databases.
+//
+// See https://github.com/sourcegraph/sourcegraph/pull/28624.
+func rewriteRepoStarsProcedure(schemaName string, version oobmigration.Version, _ []int, contents map[string]string) {
+	if schemaName != "frontend" {
+		return
+	}
+
+	mapContents(contents, migrationFilename(1528395950, "up.sql"), func(_ string) string {
+		return `
+			WITH locked AS (
+				SELECT id FROM repo
+				WHERE stars IS NULL
+				FOR UPDATE
+			)
+			UPDATE repo SET stars = 0
+			FROM locked s WHERE repo.id = s.id
+		`
+	})
+}
+
+// rewriteCodeinsightsDowngrades rewrites a few historic codeinsights migrations to ensure downgrades work
+// as expected.
+//
+// See https://github.com/sourcegraph/sourcegraph/pull/25707.
+// See https://github.com/sourcegraph/sourcegraph/pull/26313.
+func rewriteCodeinsightsDowngrades(schemaName string, version oobmigration.Version, _ []int, contents map[string]string) {
+	if schemaName != "codeinsights" {
+		return
+	}
+
+	// Ensure we drop dashboard last as insight views have a dependency on it
+	mapContents(contents, migrationFilename(1000000014, "down.sql"), func(_ string) string {
+		return `
+			DROP TABLE IF EXISTS dashboard_grants;
+			DROP TABLE IF EXISTS dashboard_insight_view;
+			DROP TABLE IF EXISTS dashboard;
+		`
+	})
+
+	// Drop type created in up migration to allow idempotent up -> down -> up
+	mapContents(contents, migrationFilename(1000000017, "down.sql"), func(s string) string {
+		return strings.Replace(
+			s,
+			`COMMIT;`,
+			`DROP TYPE IF EXISTS time_unit; COMMIT;`,
+			1,
+		)
+	})
+}
+
 // reorderMigrations reproduces an explicit (historic) reodering of several migration files. For versions where
 // these files exist and haven't yet been renamed, we do the renaming at this time to make it match later versions.
 //
 // See https://github.com/sourcegraph/sourcegraph/pull/29395.
 func reorderMigrations(schemaName string, version oobmigration.Version, _ []int, contents map[string]string) {
-	if schemaName != "frontend" || !(version.Major == 3 && version.Minor < 36) {
+	if schemaName != "frontend" || !(version.Major == 3 && version.Minor == 35) {
 		// Rename occurred at v3.36
 		return
 	}
 
-	for oldID, newID := range map[int]int{
-		1528395945: 1528395961,
-		1528395946: 1528395962,
-		1528395947: 1528395963,
-		1528395948: 1528395964,
+	for _, p := range []struct{ oldID, newID int }{
+		{1528395945, 1528395961},
+		{1528395946, 1528395962},
+		{1528395947, 1528395963},
+		{1528395948, 1528395964},
 	} {
-		if _, ok := contents[migrationFilename(oldID, "metadata.yaml")]; !ok {
+		if _, ok := contents[migrationFilename(p.oldID, "metadata.yaml")]; !ok {
 			// File doesn't exist at this verson (nothing to rewrite)
 			continue
 		}
 
 		// Move new contents and replace previous contents
 		noopContents := "-- NO-OP to fix out of sequence migrations"
-		contents[migrationFilename(newID, "up.sql")] = contents[migrationFilename(oldID, "up.sql")]
-		contents[migrationFilename(newID, "down.sql")] = contents[migrationFilename(oldID, "down.sql")]
-		contents[migrationFilename(oldID, "up.sql")] = noopContents
-		contents[migrationFilename(oldID, "down.sql")] = noopContents
+		contents[migrationFilename(p.newID, "up.sql")] = contents[migrationFilename(p.oldID, "up.sql")]
+		contents[migrationFilename(p.newID, "down.sql")] = contents[migrationFilename(p.oldID, "down.sql")]
+		contents[migrationFilename(p.oldID, "up.sql")] = noopContents
+		contents[migrationFilename(p.oldID, "down.sql")] = noopContents
+
+		// Determine parent, which changes depending on the exact migration
+		// version. This check guarantees that we don't refer to a missing
+		// migration `1528395960`.
+		parent := p.newID - 1
+		if _, ok := contents[migrationFilename(parent, "metadata.yaml")]; !ok {
+			parent = p.oldID - 1
+		}
 
 		// Write new metadata
-		oldMetadata := contents[migrationFilename(oldID, "metadata.yaml")]
-		contents[migrationFilename(newID, "metadata.yaml")] = replaceParents(oldMetadata, newID-1)
+		oldMetadata := contents[migrationFilename(p.oldID, "metadata.yaml")]
+		contents[migrationFilename(p.newID, "metadata.yaml")] = replaceParents(oldMetadata, parent)
 	}
 }
 
@@ -307,4 +413,30 @@ func partitionPrivilegedQueries(query string) (privileged string, unprivileged s
 	}
 
 	return strings.Join(matches, "\n\n"), alterExtensionPattern.ReplaceAllString(query, "")
+}
+
+// filterLinesContaining splits the given text into lines, removes any line containing any of the given substrings,
+// and joins the lines back via newlines.
+func filterLinesContaining(s string, substrings []string) string {
+	lines := strings.Split(s, "\n")
+
+	filtered := lines[:0]
+	for _, line := range lines {
+		if !containsAny(line, substrings) {
+			filtered = append(filtered, line)
+		}
+	}
+
+	return strings.Join(filtered, "\n")
+}
+
+// containsAny returns true if the string contains any of the given substrings.
+func containsAny(s string, substrings []string) bool {
+	for _, needle := range substrings {
+		if strings.Contains(s, needle) {
+			return true
+		}
+	}
+
+	return false
 }

@@ -93,20 +93,30 @@ func TestConcurrentTransactions(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		t.Cleanup(func() {
+			if err := tx.Done(err); err != nil {
+				t.Fatalf("closing transaction failed: %s", err)
+			}
+		})
+
 		capturingLogger, export := logtest.Captured(t)
 		tx.handle.(*txHandle).logger = capturingLogger
 
 		var g errgroup.Group
 		for i := 0; i < 2; i++ {
+			routine := i
 			g.Go(func() (err error) {
-				return tx.Exec(ctx, sqlf.Sprintf(`select pg_sleep(0.1)`))
+				if err := tx.Exec(ctx, sqlf.Sprintf(`SELECT pg_sleep(0.1);`)); err != nil {
+					return err
+				}
+				return tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO store_counts_test VALUES (%s, %s)`, routine, routine))
 			})
 		}
 		err = g.Wait()
 		require.NoError(t, err)
 
 		captured := export()
-		require.Greater(t, len(captured), 0)
+		require.NotEmpty(t, captured)
 		require.Equal(t, "transaction used concurrently", captured[0].Message)
 	})
 }

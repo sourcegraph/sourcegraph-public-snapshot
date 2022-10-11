@@ -36,6 +36,11 @@
         &:global(.selected),
         &:global(.highlighted) {
             background: var(--code-selection-bg);
+
+            > :global(.code) {
+                // override the color set by extension decoration
+                background: var(--code-selection-bg) !important;
+            }
         }
 
         &:first-child td:global(.line) {
@@ -123,4 +128,9 @@
     border: 1px solid var(--border-color);
     background-color: var(--body-bg);
     color: var(--body-color);
+}
+
+.clickable-row:hover {
+    cursor: pointer;
+    background-color: var(--body-bg);
 }

@@ -17,6 +17,7 @@ If you are looking to modify the pipeline, some good rules of thumbs for which c
 - Adding a new check? Try a new [operation](#operations) or additional [step options](#step-options).
 - Adding a set of changes to run when particular files are changed? Start with a new or updated [diff type](#diff-types).
 - Adding an entirely new pipeline type for the `sourcegraph/sourcegraph` repository? Take a look at how [run types](#run-types) are implemented.
+- Does your check or test need a secret? Take a look at [how to manage secrets](#managing-secrets).
 
 > WARNING: Sourcegraph's pipeline generator and its generated output are under the [Sourcegraph Enterprise license](https://github.com/sourcegraph/sourcegraph/blob/main/LICENSE.enterprise).
 
@@ -141,7 +142,7 @@ Will result in a single trace span for the `./dev/check/docsite.sh` script. But 
 ```go
   pipeline.AddStep(fmt.Sprintf(":%s: Puppeteer tests for %s extension", browser, browser),
     // ...
-    bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+    bk.Cmd("yarn --immutable --network-timeout 60000"),
     bk.Cmd("yarn workspace @sourcegraph/browser -s run build"),
     bk.Cmd("yarn run cover-browser-integration"),
     bk.Cmd("yarn nyc report -r json"),
@@ -200,11 +201,20 @@ go run ./enterprise/dev/ci/gen-pipeline.go | buildkite-agent pipeline upload
 
 #### Managing secrets
 
-The term _secret_ refers to authentication credentials like passwords, API keys, tokens, etc. which are used to access a particular service. Our CI pipeline must never leak secrets:
+The term _secret_ refers to authentication credentials like passwords, API keys, tokens, etc. which are used to access a particular service. To add a secret:
 
-- to add a secret, use the Secret Manager on Google Cloud and then inject it at deployment time as an environment variable in the CI agents, which will make it available to every step.
-- use an environment variable name with one of the following suffixes to ensure it gets redacted in the logs: `*_PASSWORD, *_SECRET, *_TOKEN, *_ACCESS_KEY, *_SECRET_KEY, *_CREDENTIALS`
-- while environment variables can be assigned when declaring steps, they should never be used for secrets, because they won't get redacted, even if they match one of the above patterns.
+1. Use Google Cloud Secret manager to add it to [the `sourcegraph-ci` project](https://console.cloud.google.com/security/secret-manager?project=sourcegraph-ci).
+2. Inject it at deployment time as an environment variable in the CI agents via adding it to [the Buildkite GSM configuration](https://github.com/sourcegraph/infrastructure/blob/main/buildkite/kubernetes/gsm-secrets.tf).
+3. Run `terraform apply` in [the `buildkite/kubernetes/` folder](https://github.com/sourcegraph/infrastructure/tree/main/buildkite/kubernetes). It will make it sure the secret is available in the nodes environment.
+4. A Kubernetes Job gets dispatched onto a node, we need to tell Kubernetes to make the variable available to the Job by updating the [Job manifest](https://github.com/sourcegraph/infrastructure/blob/main/buildkite/kubernetes/buildkite-agent-stateless/buildkite-agent.Job.yaml) for the buildkite stateless agent.
+5. Run `kubectl -f apply buildkite-agent-stateless/buildkite-agent.Job.yaml` in the `buildkite/kubernetes` folder.
+
+**Note**: Jobs are created dynamically and it might take a while for the new Job manifest to be picked up.
+
+Our CI pipeline must never leak secrets:
+
+1. Use an environment variable name with one of the following suffixes to ensure it gets redacted in the logs: `*_PASSWORD, *_SECRET, *_TOKEN, *_ACCESS_KEY, *_SECRET_KEY, *_CREDENTIALS`
+2. While environment variables can be assigned when declaring steps, they should never be used for secrets, because they won't get redacted, even if they match one of the above patterns.
 
 #### Creating scheduled builds
 

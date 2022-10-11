@@ -8,19 +8,22 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
+	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/files"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/store"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-// canceledJobsPollInterval denotes the time in between calls to the API to get a
-// list of canceled jobs.
-const canceledJobsPollInterval = 1 * time.Second
 
 type Options struct {
 	// VMPrefix is a unique string used to namespace virtual machines controlled by
@@ -51,8 +54,11 @@ type Options struct {
 	// WorkerOptions configures the worker behavior.
 	WorkerOptions workerutil.WorkerOptions
 
-	// ClientOptions configures the client that interacts with the queue API.
-	ClientOptions apiclient.Options
+	// QueueOptions configures the client that interacts with the queue API.
+	QueueOptions queue.Options
+
+	// FilesOptions configures the client that interacts with the files API.
+	FilesOptions apiclient.BaseClientOptions
 
 	// FirecrackerOptions configures the behavior of Firecracker virtual machine creation.
 	FirecrackerOptions command.FirecrackerOptions
@@ -60,6 +66,14 @@ type Options struct {
 	// ResourceOptions configures the resource limits of docker container and Firecracker
 	// virtual machines running on the executor.
 	ResourceOptions command.ResourceOptions
+
+	// NodeExporterEndpoint is the URL of the local node_exporter endpoint, without
+	// the /metrics path.
+	NodeExporterEndpoint string
+
+	// DockerRegsitryEndpoint is the URL of the intermediary caching docker registry,
+	// for scraping and forwarding metrics.
+	DockerRegistryNodeExporterEndpoint string
 }
 
 // NewWorker creates a worker that polls a remote job queue API for work. The returned
@@ -67,17 +81,26 @@ type Options struct {
 // as a heartbeat routine that will periodically hit the remote API with the work that is
 // currently being performed, which is necessary so the job queue API doesn't hand out jobs
 // it thinks may have been dropped.
-func NewWorker(nameSet *janitor.NameSet, options Options, observationContext *observation.Context) (worker goroutine.WaitableBackgroundRoutine) {
-	queueStore := apiclient.New(options.ClientOptions, observationContext)
-	store := &storeShim{queueName: options.QueueName, queueStore: queueStore}
+func NewWorker(nameSet *janitor.NameSet, options Options, observationContext *observation.Context) (goroutine.WaitableBackgroundRoutine, error) {
+	gatherer := metrics.MakeExecutorMetricsGatherer(log.Scoped("executor-worker.metrics-gatherer", ""), prometheus.DefaultGatherer, options.NodeExporterEndpoint, options.DockerRegistryNodeExporterEndpoint)
+	queueStore, err := queue.New(options.QueueOptions, gatherer, observationContext)
+	if err != nil {
+		return nil, errors.Wrap(err, "building queue store")
+	}
+	filesStore, err := files.New(options.FilesOptions, observationContext)
+	if err != nil {
+		return nil, errors.Wrap(err, "building files store")
+	}
+	shim := &store.QueueShim{Name: options.QueueName, Store: queueStore}
 
 	if !connectToFrontend(queueStore, options) {
 		os.Exit(1)
 	}
 
-	handler := &handler{
+	h := &handler{
 		nameSet:       nameSet,
-		store:         store,
+		store:         shim,
+		filesStore:    filesStore,
 		options:       options,
 		operations:    command.NewOperations(observationContext),
 		runnerFactory: command.NewRunner,
@@ -85,16 +108,16 @@ func NewWorker(nameSet *janitor.NameSet, options Options, observationContext *ob
 
 	ctx := context.Background()
 
-	return workerutil.NewWorker(ctx, store, handler, options.WorkerOptions)
+	return workerutil.NewWorker(ctx, shim, h, options.WorkerOptions), nil
 }
 
 // connectToFrontend will ping the configured Sourcegraph instance until it receives a 200 response.
 // For the first minute, "connection refused" errors will not be emitted. This is to stop log spam
 // in dev environments where the executor may start up before the frontend. This method returns true
 // after a ping is successful and returns false if a user signal is received.
-func connectToFrontend(queueStore *apiclient.Client, options Options) bool {
+func connectToFrontend(queueStore *queue.Client, options Options) bool {
 	start := time.Now()
-	log15.Info("Connecting to Sourcegraph instance", "url", options.ClientOptions.EndpointOptions.URL)
+	log15.Info("Connecting to Sourcegraph instance", "url", options.QueueOptions.BaseClientOptions.EndpointOptions.URL)
 
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()

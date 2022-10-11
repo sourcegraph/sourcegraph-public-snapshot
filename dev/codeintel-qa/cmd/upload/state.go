@@ -20,11 +20,11 @@ import (
 // given repo, as well as the status of each given upload. When there is a change of
 // state for a repository, it is printed. The state changes that can occur are:
 //
-// - An upload fails to process (returns an error)
-// - An upload completes processing
-// - The last upload for a repository completes processing, but the
-//   containing repo has a stale commit graph
-// - A repository with no pending uploads has a fresh commit graph
+//   - An upload fails to process (returns an error)
+//   - An upload completes processing
+//   - The last upload for a repository completes processing, but the
+//     containing repo has a stale commit graph
+//   - A repository with no pending uploads has a fresh commit graph
 func monitor(ctx context.Context, repoNames []string, uploads []uploadMeta) error {
 	var oldState map[string]repoState
 	waitMessageDisplayed := make(map[string]struct{}, len(repoNames))
@@ -114,6 +114,12 @@ func monitor(ctx context.Context, repoNames []string, uploads []uploadMeta) erro
 					containerName := os.Getenv("CONTAINER")
 					fmt.Printf("Running pg_dump in container %s\n", containerName)
 					out, err := exec.Command("docker", "exec", containerName, "sh", "-c", "pg_dump -U postgres -d sourcegraph -a --column-inserts --table='lsif_uploads*'").CombinedOutput()
+					if err != nil {
+						fmt.Printf("Failed to dump: %s\n%s", err.Error(), out)
+					} else {
+						fmt.Printf("DUMP:\n\n%s\n\n\n", out)
+					}
+					out, err = exec.Command("docker", "exec", containerName, "sh", "-c", "pg_dump -U postgres -d sourcegraph -a --column-inserts --table='lsif_configuration_policies'").CombinedOutput()
 					if err != nil {
 						fmt.Printf("Failed to dump: %s\n%s", err.Error(), out)
 					} else {

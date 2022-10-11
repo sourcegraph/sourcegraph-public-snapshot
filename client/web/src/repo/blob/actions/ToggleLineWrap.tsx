@@ -5,7 +5,7 @@ import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
 import { WrapDisabledIcon } from '@sourcegraph/shared/src/components/icons'
-import { DeprecatedTooltipController, Icon, Tooltip } from '@sourcegraph/wildcard'
+import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
 import { RepoHeaderActionButtonLink, RepoHeaderActionMenuItem } from '../../components/RepoHeaderActions'
@@ -52,7 +52,6 @@ export class ToggleLineWrap extends React.PureComponent<
                 ToggleLineWrap.setValue(value)
                 this.setState({ value })
                 this.props.onDidUpdate(value)
-                DeprecatedTooltipController.forceUpdate()
             })
         )
 
@@ -95,7 +94,6 @@ export class ToggleLineWrap extends React.PureComponent<
                 <span>
                     <RepoHeaderActionButtonLink
                         aria-label={this.state.value ? 'Disable' : 'Enable'}
-                        className="btn-icon"
                         file={false}
                         onSelect={this.onClick}
                     >

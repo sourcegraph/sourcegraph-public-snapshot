@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-var customGitFetch = conf.Cached[map[string][]string](func() map[string][]string {
+var customGitFetch = conf.Cached(func() map[string][]string {
 	exp := conf.ExperimentalFeatures()
 	return buildCustomFetchMappings(exp.CustomGitFetch)
 })

@@ -98,7 +98,7 @@ func TestGetObjectService(t *testing.T) {
 			repo:       repoName,
 			objectName: "abc",
 			wantObject: nil,
-			wantError: BadCommitError{
+			wantError: &BadCommitError{
 				Repo:   repoName,
 				Spec:   "abc",
 				Commit: api.CommitID("not_valid_commit"),

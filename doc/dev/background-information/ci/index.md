@@ -28,6 +28,7 @@ Sourcegraph also maintains a variety of tooling on [GitHub Actions](#github-acti
   </a>
 </div>
 
+
 ## Buildkite pipelines
 
 [Tests](../../how-to/testing.md) are automatically run in our [various Buildkite pipelines](https://buildkite.com/sourcegraph) when you push your changes (i.e. when you run `git push`) to the `sourcegraph/sourcegraph` GitHub repository.
@@ -40,7 +41,11 @@ To see what checks will get run against your current branch, use [`sg`](../../se
 sg ci preview
 ```
 
-You can also request builds manually for your builds using `sg ci build`.
+You can also request builds manually for your builds using `sg ci build`. You'll find below a summary video about some useful `sg ci *` commands, to learn how move fast when interacting with the CI:
+
+<div style="position: relative; padding-bottom: 82%; height: 0;">
+  <iframe src="https://www.loom.com/embed/f451d05978b34d97bdc06d411aacc69d" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe>
+</div>
 
 To learn about making changes to our Buildkite pipelines, see [Pipeline development](./development.md).
 
@@ -150,7 +155,6 @@ An example use of `Skip`:
 
 > NOTE: If it's hard to make sure that the flake is fixed, another approach is to monitor the step wihout breaking the build, see [How to allow a CI step to fail without breaking the build and still receive a notification](../../how-to/ci_soft_failure_and_still_notify.md).
 
-
 ##### Assessing flaky client steps
 
 See more information on how to assess flaky client steps [here](../../how-to/testing.md#assessing-flaky-client-steps).
@@ -160,6 +164,22 @@ See more information on how to assess flaky client steps [here](../../how-to/tes
 If the [build or test infrastructure itself is flaky](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/dev-experience#build-pipeline-support), then [open an issue with the `team/devx` label](https://github.com/sourcegraph/sourcegraph/issues/new?labels=team/devx) and notify the [Developer Experience team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/dev-experience#contact).
 
 Also see [Buildkite infrastructure](#buildkite-infrastructure).
+
+##### Flaky linters
+
+Linters are all run through [`sg lint`](../sg/reference.md#sg-lint), with linters defined in [`dev/sg/linters`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/dev/sg/linters).
+If a linter is flaky, you can modify the `dev/sg/linters` package to disable the specific linter (or entire category of linters) with the `Enabled: disabled(...)` helper:
+
+```diff
+  {
+    Name:        "svg",
+    Description: "Check svg assets",
++   Enabled:     disabled("reported as unreliable"),
+    Checks: []*linter{
+      checkSVGCompression(),
+    },
+  },
+```
 
 ### Pipeline development
 

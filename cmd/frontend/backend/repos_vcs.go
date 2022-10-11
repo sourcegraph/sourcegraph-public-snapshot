@@ -3,7 +3,7 @@ package backend
 import (
 	"context"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -33,18 +33,14 @@ func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string) (c
 }
 
 func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (res *gitdomain.Commit, err error) {
-	if Mocks.Repos.GetCommit != nil {
-		return Mocks.Repos.GetCommit(ctx, repo, commitID)
-	}
-
 	ctx, done := trace(ctx, "Repos", "GetCommit", map[string]any{"repo": repo.Name, "commitID": commitID}, &err)
 	defer done()
 
-	log15.Debug("svc.local.repos.GetCommit", "repo", repo.Name, "commitID", commitID)
+	s.logger.Debug("GetCommit", log.String("repo", string(repo.Name)), log.String("commitID", string(commitID)))
 
 	if !gitserver.IsAbsoluteRevision(string(commitID)) {
 		return nil, errors.Errorf("non-absolute CommitID for Repos.GetCommit: %v", commitID)
 	}
 
-	return gitserver.NewClient(s.db).GetCommit(ctx, repo.Name, commitID, gitserver.ResolveRevisionOptions{}, authz.DefaultSubRepoPermsChecker)
+	return s.gitserverClient.GetCommit(ctx, repo.Name, commitID, gitserver.ResolveRevisionOptions{}, authz.DefaultSubRepoPermsChecker)
 }

@@ -2,10 +2,9 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { Tooltip } from '@sourcegraph/wildcard'
-
 import { useWildcardTheme } from '../../hooks/useWildcardTheme'
 import { Link } from '../Link'
+import { Tooltip } from '../Tooltip'
 
 import { BADGE_VARIANTS } from './constants'
 

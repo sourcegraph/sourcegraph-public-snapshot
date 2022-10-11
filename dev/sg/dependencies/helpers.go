@@ -2,7 +2,9 @@ package dependencies
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/url"
 	"os"
 	"os/user"
@@ -81,36 +83,6 @@ func pathExists(path string) (bool, error) {
 		return false, nil
 	}
 	return false, err
-}
-
-func checkInMainRepoOrRepoInDirectory(context.Context) error {
-	_, err := root.RepositoryRoot()
-	if err != nil {
-		ok, err := pathExists("sourcegraph")
-		if !ok || err != nil {
-			return errors.New("'sg setup' is not run in sourcegraph and repository is also not found in current directory")
-		}
-		return nil
-	}
-	return nil
-}
-
-func checkDevPrivateInParentOrInCurrentDirectory(context.Context) error {
-	ok, err := pathExists("dev-private")
-	if ok && err == nil {
-		return nil
-	}
-	wd, err := os.Getwd()
-	if err != nil {
-		return errors.Wrap(err, "failed to check for dev-private repository")
-	}
-
-	p := filepath.Join(wd, "..", "dev-private")
-	ok, err = pathExists(p)
-	if ok && err == nil {
-		return nil
-	}
-	return errors.New("could not find dev-private repository either in current directory or one above")
 }
 
 // checkPostgresConnection succeeds connecting to the default user database works, regardless
@@ -290,6 +262,44 @@ func getToolVersionConstraint(ctx context.Context, tool string) (string, error) 
 	return fmt.Sprintf("~> %s", version), nil
 }
 
+func getPackageManagerConstraint(ctx context.Context, tool string) (string, error) {
+	repoRoot, err := root.RepositoryRoot()
+	if err != nil {
+		return "", errors.Wrap(err, "Failed to determine repository root location")
+	}
+
+	jsonFile, err := os.Open(filepath.Join(repoRoot, "package.json"))
+	if err != nil {
+		return "", errors.Wrap(err, "Open package.json")
+	}
+	defer jsonFile.Close()
+
+	jsonData, err := ioutil.ReadAll(jsonFile)
+	if err != nil {
+		return "", errors.Wrap(err, "Read package.json")
+	}
+
+	data := struct {
+		PackageManager string `json:"packageManager"`
+	}{}
+
+	if err := json.Unmarshal(jsonData, &data); err != nil {
+		return "", errors.Wrap(err, "Unmarshal package.json")
+	}
+
+	var version string
+	parts := strings.Split(data.PackageManager, "@")
+	if parts[0] == tool {
+		version = parts[1]
+	}
+
+	if version == "" {
+		return "", errors.Newf("yarn version is not found in package.json")
+	}
+
+	return fmt.Sprintf("~> %s", version), nil
+}
+
 func checkGoVersion(ctx context.Context, out *std.Output, args CheckArgs) error {
 	if err := check.InPath("go")(ctx); err != nil {
 		return err
@@ -318,7 +328,7 @@ func checkYarnVersion(ctx context.Context, out *std.Output, args CheckArgs) erro
 		return err
 	}
 
-	constraint, err := getToolVersionConstraint(ctx, "yarn")
+	constraint, err := getPackageManagerConstraint(ctx, "yarn")
 	if err != nil {
 		return err
 	}
@@ -356,7 +366,7 @@ func checkNodeVersion(ctx context.Context, out *std.Output, args CheckArgs) erro
 		return errors.Newf("no output from %q", cmd)
 	}
 
-	return check.Version("yarn", trimmed, constraint)
+	return check.Version("nodejs", trimmed, constraint)
 }
 
 func checkRustVersion(ctx context.Context, out *std.Output, args CheckArgs) error {

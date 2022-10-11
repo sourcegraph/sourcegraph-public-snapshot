@@ -2,58 +2,55 @@ package autoindexing
 
 import (
 	"context"
-
-	"github.com/grafana/regexp"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
+	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
+	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
-type DBStore interface {
-	basestore.ShareableStore
-
-	Transact(ctx context.Context) (DBStore, error)
-	Done(err error) error
-
-	RepoName(ctx context.Context, repositoryID int) (string, error)
-	GetIndexesByIDs(ctx context.Context, ids ...int) ([]dbstore.Index, error)
-	DirtyRepositories(ctx context.Context) (map[int]int, error)
-	IsQueued(ctx context.Context, repositoryID int, commit string) (bool, error)
-	InsertIndexes(ctx context.Context, index []dbstore.Index) ([]dbstore.Index, error)
-	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (dbstore.IndexConfiguration, bool, error)
+type DependenciesService interface {
+	UpsertDependencyRepos(ctx context.Context, deps []dependencies.Repo) ([]dependencies.Repo, error)
 }
 
-type DBStoreShim struct {
-	*dbstore.Store
+type PoliciesService interface {
+	GetConfigurationPolicies(ctx context.Context, opts codeinteltypes.GetConfigurationPoliciesOptions) ([]codeinteltypes.ConfigurationPolicy, int, error)
 }
 
-func (db *DBStoreShim) Transact(ctx context.Context) (DBStore, error) {
-	store, err := db.Store.Transact(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &DBStoreShim{store}, nil
+type ReposStore interface {
+	ListMinimalRepos(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error)
 }
 
-var _ DBStore = &DBStoreShim{}
-
-type RepoUpdaterClient interface {
-	EnqueueRepoUpdate(ctx context.Context, repo api.RepoName) (*protocol.RepoUpdateResponse, error)
+type GitserverRepoStore interface {
+	GetByNames(ctx context.Context, names ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error)
 }
 
-type GitserverClient interface {
-	Head(ctx context.Context, repositoryID int) (string, bool, error)
-	CommitExists(ctx context.Context, repositoryID int, commit string) (bool, error)
-	ListFiles(ctx context.Context, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error)
-	FileExists(ctx context.Context, repositoryID int, commit, file string) (bool, error)
-	RawContents(ctx context.Context, repositoryID int, commit, file string) ([]byte, error)
-	ResolveRevision(ctx context.Context, repositoryID int, versionString string) (api.CommitID, error)
+type ExternalServiceStore interface {
+	Upsert(ctx context.Context, svcs ...*types.ExternalService) (err error)
+	List(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error)
 }
 
-type inferenceService interface {
-	InferIndexJobs(ctx context.Context, repo api.RepoName, commit, overrideScript string) ([]config.IndexJob, error)
-	InferIndexJobHints(ctx context.Context, repo api.RepoName, commit, overrideScript string) ([]config.IndexJobHint, error)
+type AutoIndexingServiceForDepScheduling interface {
+	QueueIndexesForPackage(ctx context.Context, pkg precise.Package) error
+	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error)
+}
+
+type PolicyMatcher interface {
+	CommitsDescribedByPolicyInternal(ctx context.Context, repositoryID int, policies []codeinteltypes.ConfigurationPolicy, now time.Time, filterCommits ...string) (map[string][]policies.PolicyMatch, error)
+}
+
+type AutoIndexingServiceForDepSchedulingShim struct {
+	*Service
+}
+
+func (s *AutoIndexingServiceForDepSchedulingShim) QueueIndexesForPackage(ctx context.Context, pkg precise.Package) error {
+	return s.Service.queueIndexesForPackage(ctx, pkg)
+}
+
+func (s *AutoIndexingServiceForDepSchedulingShim) InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error) {
+	return s.Service.insertDependencyIndexingJob(ctx, uploadID, externalServiceKind, syncTime)
 }

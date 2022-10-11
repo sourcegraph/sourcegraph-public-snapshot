@@ -3,34 +3,44 @@ package autoindexing
 import (
 	"fmt"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type operations struct {
-	// Not used yet.
-	delete                      *observation.Operation
-	enqueue                     *observation.Operation
-	get                         *observation.Operation
-	getBatch                    *observation.Operation
-	infer                       *observation.Operation
-	list                        *observation.Operation
-	updateIndexingConfiguration *observation.Operation
-	inferIndexConfiguration     *observation.Operation // temporary
-	queueIndex                  *observation.Operation // temporary
-	queueIndexForPackage        *observation.Operation // temporary
-
-	// Commits
-	getStaleSourcedCommits *observation.Operation
-	updateSourcedCommits   *observation.Operation
-	deleteSourcedCommits   *observation.Operation
-
 	// Indexes
-	deleteIndexesWithoutRepository *observation.Operation
+	getIndexes                    *observation.Operation
+	getIndexByID                  *observation.Operation
+	getIndexesByIDs               *observation.Operation
+	getRecentIndexesSummary       *observation.Operation
+	getLastIndexScanForRepository *observation.Operation
+	deleteIndexByID               *observation.Operation
+	deleteIndexes                 *observation.Operation
+	queueRepoRev                  *observation.Operation
+	queueIndex                    *observation.Operation
+	queueIndexForPackage          *observation.Operation
+
+	// Index Configuration
+	getIndexConfigurationByRepositoryID    *observation.Operation
+	updateIndexConfigurationByRepositoryID *observation.Operation
+	inferIndexConfiguration                *observation.Operation
+	setInferenceScript                     *observation.Operation
+	getInferenceScript                     *observation.Operation
+
+	// Tags
+	getListTags *observation.Operation
+
+	// Language support
+	getLanguagesRequestedBy   *observation.Operation
+	setRequestLanguageSupport *observation.Operation
+
+	handleIndexScheduler *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
-	metrics := metrics.NewREDMetrics(
+	m := metrics.NewREDMetrics(
 		observationContext.Registerer,
 		"codeintel_autoindexing",
 		metrics.WithLabels("op"),
@@ -41,29 +51,49 @@ func newOperations(observationContext *observation.Context) *operations {
 		return observationContext.Operation(observation.Op{
 			Name:              fmt.Sprintf("codeintel.autoindexing.%s", name),
 			MetricLabelValues: []string{name},
-			Metrics:           metrics,
+			Metrics:           m,
 		})
 	}
 
+	handleIndexScheduler := observationContext.Operation(observation.Op{
+		Name:              "codeintel.indexing.HandleIndexSchedule",
+		MetricLabelValues: []string{"HandleIndexSchedule"},
+		Metrics:           m,
+		ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
+			if errors.As(err, &inference.LimitError{}) {
+				return observation.EmitForDefault.Without(observation.EmitForMetrics)
+			}
+			return observation.EmitForDefault
+		},
+	})
+
 	return &operations{
-		// Not used yet.
-		delete:                      op("Delete"),
-		enqueue:                     op("Enqueue"),
-		get:                         op("Get"),
-		getBatch:                    op("GetBatch"),
-		infer:                       op("Infer"),
-		list:                        op("List"),
-		updateIndexingConfiguration: op("UpdateIndexingConfiguration"),
-		inferIndexConfiguration:     op("InferIndexConfiguration"), // temporary
-		queueIndex:                  op("QueueIndex"),              // temporary
-		queueIndexForPackage:        op("QueueIndexForPackage"),    // temporary
-
-		// Commits
-		getStaleSourcedCommits: op("GetStaleSourcedCommits"),
-		updateSourcedCommits:   op("UpdateSourcedCommits"),
-		deleteSourcedCommits:   op("DeleteSourcedCommits"),
-
 		// Indexes
-		deleteIndexesWithoutRepository: op("DeleteIndexesWithoutRepository"),
+		getIndexes:                    op("GetIndexes"),
+		getIndexByID:                  op("GetIndexByID"),
+		getIndexesByIDs:               op("GetIndexesByIDs"),
+		getRecentIndexesSummary:       op("GetRecentIndexesSummary"),
+		getLastIndexScanForRepository: op("GetLastIndexScanForRepository"),
+		deleteIndexByID:               op("DeleteIndexByID"),
+		deleteIndexes:                 op("DeleteIndexes"),
+		queueRepoRev:                  op("QueueRepoRev"),
+		queueIndex:                    op("QueueIndex"),
+		queueIndexForPackage:          op("QueueIndexForPackage"),
+
+		// Index Configuration
+		getIndexConfigurationByRepositoryID:    op("GetIndexConfigurationByRepositoryID"),
+		updateIndexConfigurationByRepositoryID: op("UpdateIndexConfigurationByRepositoryID"),
+		inferIndexConfiguration:                op("InferIndexConfiguration"),
+		getInferenceScript:                     op("GetInferenceScript"),
+		setInferenceScript:                     op("SetInferenceScript"),
+
+		// Tags
+		getListTags: op("GetListTags"),
+
+		// Language support
+		getLanguagesRequestedBy:   op("GetLanguagesRequestedBy"),
+		setRequestLanguageSupport: op("SetRequestLanguageSupport"),
+
+		handleIndexScheduler: handleIndexScheduler,
 	}
 }

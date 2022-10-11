@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // ErrRepoSeeOther indicates that the repo does not exist on this server but might exist on an external Sourcegraph
@@ -46,19 +47,24 @@ func (e ErrRepoSeeOther) Error() string {
 // NOTE: The underlying cache is reused from Repos global variable to actually
 // make cache be useful. This is mostly a workaround for now until we come up a
 // more idiomatic solution.
-func NewRepos(logger log.Logger, db database.DB) *repos {
+func NewRepos(logger log.Logger, db database.DB, client gitserver.Client) *repos {
 	repoStore := db.Repos()
+	logger = logger.Scoped("repos", "provides a repos store for the backend")
 	return &repos{
-		db:    db,
-		store: repoStore,
-		cache: dbcache.NewIndexableReposLister(logger, repoStore),
+		logger:          logger,
+		db:              db,
+		gitserverClient: client,
+		store:           repoStore,
+		cache:           dbcache.NewIndexableReposLister(logger, repoStore),
 	}
 }
 
 type repos struct {
-	db    database.DB
-	store database.RepoStore
-	cache *dbcache.IndexableReposLister
+	logger          log.Logger
+	db              database.DB
+	gitserverClient gitserver.Client
+	store           database.RepoStore
+	cache           *dbcache.IndexableReposLister
 }
 
 func (s *repos) Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err error) {
@@ -145,7 +151,7 @@ func (s *repos) Add(ctx context.Context, name api.RepoName) (addedName api.RepoN
 	}()
 
 	if !codehost.IsPackageHost() {
-		if err := gitserver.NewClient(s.db).IsRepoCloneable(ctx, name); err != nil {
+		if err := s.gitserverClient.IsRepoCloneable(ctx, name); err != nil {
 			if ctx.Err() != nil {
 				status = "timeout"
 			} else {
@@ -174,8 +180,9 @@ func (s *repos) List(ctx context.Context, opt database.ReposListOptions) (repos 
 	ctx, done := trace(ctx, "Repos", "List", opt, &err)
 	defer func() {
 		if err == nil {
-			span := opentracing.SpanFromContext(ctx)
-			span.LogFields(otlog.Int("result.len", len(repos)))
+			if span := opentracing.SpanFromContext(ctx); span != nil {
+				span.LogFields(otlog.Int("result.len", len(repos)))
+			}
 		}
 		done()
 	}()
@@ -183,14 +190,19 @@ func (s *repos) List(ctx context.Context, opt database.ReposListOptions) (repos 
 	return s.store.List(ctx, opt)
 }
 
-// ListIndexable calls database.IndexableRepos.List, with tracing. It lists ALL
-// indexable repos which could include private user added repos.
+// ListIndexable calls database.ListMinimalRepos, with tracing. It lists
+// ALL indexable repos which could include private user added repos.
+// In addition, it only lists cloned repositories.
+//
+// The intended call site for this is the logic which assigns repositories to
+// zoekt shards.
 func (s *repos) ListIndexable(ctx context.Context) (repos []types.MinimalRepo, err error) {
 	ctx, done := trace(ctx, "Repos", "ListIndexable", nil, &err)
 	defer func() {
 		if err == nil {
-			span := opentracing.SpanFromContext(ctx)
-			span.LogFields(otlog.Int("result.len", len(repos)))
+			if span := opentracing.SpanFromContext(ctx); span != nil {
+				span.LogFields(otlog.Int("result.len", len(repos)))
+			}
 		}
 		done()
 	}()
@@ -200,7 +212,10 @@ func (s *repos) ListIndexable(ctx context.Context) (repos []types.MinimalRepo, e
 	}
 
 	trueP := true
-	return s.store.ListMinimalRepos(ctx, database.ReposListOptions{Index: &trueP})
+	return s.store.ListMinimalRepos(ctx, database.ReposListOptions{
+		Index:      &trueP,
+		OnlyCloned: true,
+	})
 }
 
 func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api.CommitID, forceEnhancedLanguageDetection bool) (res *inventory.Inventory, err error) {
@@ -215,12 +230,12 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Minute)
 	defer cancel()
 
-	invCtx, err := InventoryContext(repo.Name, s.db, commitID, forceEnhancedLanguageDetection)
+	invCtx, err := InventoryContext(s.logger, repo.Name, s.gitserverClient, commitID, forceEnhancedLanguageDetection)
 	if err != nil {
 		return nil, err
 	}
 
-	root, err := gitserver.NewClient(s.db).Stat(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, commitID, "")
+	root, err := s.gitserverClient.Stat(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, commitID, "")
 	if err != nil {
 		return nil, err
 	}
@@ -234,4 +249,41 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 		return nil, err
 	}
 	return &inv, nil
+}
+
+func (s *repos) DeleteRepositoryFromDisk(ctx context.Context, repoID api.RepoID) (err error) {
+	if Mocks.Repos.DeleteRepositoryFromDisk != nil {
+		return Mocks.Repos.DeleteRepositoryFromDisk(ctx, repoID)
+	}
+
+	repo, err := s.Get(ctx, repoID)
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("error while fetching repo with ID %d", repoID))
+	}
+
+	ctx, done := trace(ctx, "Repos", "DeleteRepositoryFromDisk", repoID, &err)
+	defer done()
+
+	err = s.gitserverClient.Remove(ctx, repo.Name)
+	return err
+}
+
+func (s *repos) RequestRepositoryClone(ctx context.Context, repoID api.RepoID) (err error) {
+	repo, err := s.Get(ctx, repoID)
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("error while fetching repo with ID %d", repoID))
+	}
+
+	ctx, done := trace(ctx, "Repos", "RequestRepositoryClone", repoID, &err)
+	defer done()
+
+	resp, err := s.gitserverClient.RequestRepoClone(ctx, repo.Name)
+	if err != nil {
+		return err
+	}
+	if resp.Error != "" {
+		return errors.Newf("requesting clone for repo ID %d failed: %s", repoID, resp.Error)
+	}
+
+	return nil
 }

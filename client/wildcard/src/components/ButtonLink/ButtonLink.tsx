@@ -5,8 +5,8 @@ import { Key } from 'ts-key-enum'
 import { useMergeRefs } from 'use-callback-ref'
 
 import { isDefined } from '@sourcegraph/common'
-import { ForwardReferenceComponent } from '@sourcegraph/wildcard'
 
+import { ForwardReferenceComponent } from '../../types'
 import { Button, ButtonProps } from '../Button'
 import { Link, AnchorLink } from '../Link'
 

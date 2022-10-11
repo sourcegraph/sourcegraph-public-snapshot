@@ -147,14 +147,14 @@ type RefDescription struct {
 	CreatedDate     *time.Time
 }
 
-// A PersonCount is a contributor to a repository.
-type PersonCount struct {
+// A ContributorCount is a contributor to a repository.
+type ContributorCount struct {
 	Name  string
 	Email string
 	Count int32
 }
 
-func (p *PersonCount) String() string {
+func (p *ContributorCount) String() string {
 	return fmt.Sprintf("%d %s <%s>", p.Count, p.Name, p.Email)
 }
 

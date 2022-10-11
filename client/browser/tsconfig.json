@@ -20,11 +20,10 @@
     "rootDir": ".",
     "outDir": "out",
   },
-  "include": ["**/*", ".*", "src/**/*.json", "src/types/**/*.d.ts"],
+  "include": ["**/*", ".*", "src/**/*.json", "src/types/**/*.d.ts", "./code-intel-extensions.json"],
   "exclude": [
     "out",
     "node_modules",
-    "code-intel-extensions",
     "../../node_modules",
     "./build/**/*",
     "coverage",

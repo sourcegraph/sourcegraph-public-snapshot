@@ -16,8 +16,11 @@ env:
   SRC_TRACE_LOG: false
   # Set this to true to show an iTerm link to the file:line where the log message came from
   SRC_LOG_SOURCE_LINK: false
-  SRC_GIT_SERVER_1: 127.0.0.1:3178
-  SRC_GIT_SERVERS: 127.0.0.1:3178
+
+  # Use two gitserver instances in local dev
+  SRC_GIT_SERVER_1: 127.0.0.1:3501
+  SRC_GIT_SERVER_2: 127.0.0.1:3502
+  SRC_GIT_SERVERS: 127.0.0.1:3501 127.0.0.1:3502
 
   # Enable sharded indexed search mode:
   INDEXED_SEARCH_SERVERS: localhost:3070 localhost:3071
@@ -46,18 +49,18 @@ env:
   SRC_PROF_SERVICES: |
     [
       { "Name": "oss-frontend", "Host": "127.0.0.1:6063" },
-      { "Name": "enterprise-frontend", "Host": "127.0.0.1:6063" },
       { "Name": "frontend", "Host": "127.0.0.1:6063" },
-      { "Name": "gitserver", "Host": "127.0.0.1:6068" },
+      { "Name": "gitserver-0", "Host": "127.0.0.1:3551" },
+      { "Name": "gitserver-1", "Host": "127.0.0.1:3552" },
       { "Name": "searcher", "Host": "127.0.0.1:6069" },
+      { "Name": "oss-symbols", "Host": "127.0.0.1:6071" },
       { "Name": "symbols", "Host": "127.0.0.1:6071" },
       { "Name": "oss-repo-updater", "Host": "127.0.0.1:6074" },
       { "Name": "repo-updater", "Host": "127.0.0.1:6074" },
       { "Name": "codeintel-worker", "Host": "127.0.0.1:6088" },
       { "Name": "oss-worker", "Host": "127.0.0.1:6089" },
       { "Name": "worker", "Host": "127.0.0.1:6089" },
-      { "Name": "executor-codeintel", "Host": "127.0.0.1:6092" },
-      { "Name": "executor-batches", "Host": "127.0.0.1:6093" },
+      { "Name": "worker-executors", "Host": "127.0.0.1:6996" },
       { "Name": "zoekt-index-0", "Host": "127.0.0.1:6072" },
       { "Name": "zoekt-index-1", "Host": "127.0.0.1:6073" },
       { "Name": "zoekt-web-0", "Host": "127.0.0.1:3070", "DefaultPath": "/debug/requests/" },
@@ -101,7 +104,6 @@ env:
 
   # Disable firecracker inside executor in dev
   EXECUTOR_USE_FIRECRACKER: false
-  EXECUTOR_IMAGE_ARCHIVE_PATH: $HOME/.sourcegraph/images
 
   # Disable auto-indexing the CNCF repo group (this only works in Cloud)
   # This setting will be going away soon
@@ -113,6 +115,10 @@ env:
   DISABLE_CODE_INSIGHTS_HISTORICAL: true
   DISABLE_CODE_INSIGHTS: true
   ENABLE_STREAMING_REPOS_SYNCER: true
+
+  # # OpenTelemetry in dev - use single http/json endpoint
+  # OTEL_EXPORTER_OTLP_ENDPOINT: http://127.0.0.1:4318
+  # OTEL_EXPORTER_OTLP_PROTOCOL: http/json
 
 commands:
   server:
@@ -150,13 +156,13 @@ commands:
       # If EXTSVC_CONFIG_FILE is *unset*, set a default.
       export EXTSVC_CONFIG_FILE=${EXTSVC_CONFIG_FILE-'../dev-private/enterprise/dev/external-services-config.json'}
 
-      .bin/enterprise-frontend
+      .bin/frontend
     install: |
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/enterprise-frontend github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend
-    checkBinary: .bin/enterprise-frontend
+      go build -gcflags="$GCFLAGS" -o .bin/frontend github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend
+    checkBinary: .bin/frontend
     env:
       CONFIGURATION_MODE: server
       USE_ENHANCED_LANGUAGE_DETECTION: false
@@ -172,7 +178,7 @@ commands:
       - enterprise/internal
       - enterprise/cmd/frontend
 
-  gitserver:
+  gitserver-template: &gitserver_template
     cmd: .bin/gitserver
     install: |
       if [ -n "$DELVE" ]; then
@@ -180,12 +186,33 @@ commands:
       fi
       go build -gcflags="$GCFLAGS" -o .bin/gitserver github.com/sourcegraph/sourcegraph/cmd/gitserver
     checkBinary: .bin/gitserver
-    env:
+    env: &gitserverenv
       HOSTNAME: 127.0.0.1:3178
     watch:
       - lib
       - internal
       - cmd/gitserver
+
+  # This is only here to stay backwards-compatible with people's custom
+  # `sg.config.overwrite.yaml` files
+  gitserver:
+    <<: *gitserver_template
+
+  gitserver-0:
+    <<: *gitserver_template
+    env:
+      <<: *gitserverenv
+      HOSTNAME: 127.0.0.1:3501
+      GITSERVER_ADDR: 127.0.0.1:3501
+      SRC_REPOS_DIR: $HOME/.sourcegraph/repos_1
+
+  gitserver-1:
+    <<: *gitserver_template
+    env:
+      <<: *gitserverenv
+      HOSTNAME: 127.0.0.1:3502
+      GITSERVER_ADDR: 127.0.0.1:3502
+      SRC_REPOS_DIR: $HOME/.sourcegraph/repos_2
 
   github-proxy:
     cmd: .bin/github-proxy
@@ -244,13 +271,15 @@ commands:
       - cmd/repo-updater
 
   repo-updater:
-    cmd: .bin/enterprise-repo-updater
+    cmd: |
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
+      .bin/repo-updater
     install: |
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/enterprise-repo-updater github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater
-    checkBinary: .bin/enterprise-repo-updater
+      go build -gcflags="$GCFLAGS" -o .bin/repo-updater github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater
+    checkBinary: .bin/repo-updater
     env:
       HOSTNAME: $SRC_GIT_SERVER_1
       ENTERPRISE: 1
@@ -280,15 +309,15 @@ commands:
       - cmd/symbols
 
   symbols:
-    cmd: .bin/enterprise-symbols
+    cmd: .bin/symbols
     install: |
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
 
       ./cmd/symbols/build-ctags.sh &&
-      go build -gcflags="$GCFLAGS" -o .bin/enterprise-symbols github.com/sourcegraph/sourcegraph/enterprise/cmd/symbols
-    checkBinary: .bin/enterprise-symbols
+      go build -gcflags="$GCFLAGS" -o .bin/symbols github.com/sourcegraph/sourcegraph/enterprise/cmd/symbols
+    checkBinary: .bin/symbols
     env:
       CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
       CTAGS_PROCESSES: 2
@@ -324,20 +353,21 @@ commands:
   oss-web:
     description: Open source version of the web app
     cmd: ./node_modules/.bin/gulp --color dev
-    install: yarn --no-progress
+    install: yarn
 
   web:
     description: Enterprise version of the web app
     cmd: ./node_modules/.bin/gulp --color dev
-    install: yarn --no-progress
+    install: yarn
     env:
       ENTERPRISE: 1
+      ENABLE_OPEN_TELEMETRY: true
 
   web-standalone-http:
     description: Standalone web frontend (dev) with API proxy to a configurable URL
     cmd: yarn workspace @sourcegraph/web serve:dev --color
     install: |
-      yarn --no-progress
+      yarn
       yarn generate
     env:
       WEBPACK_SERVE_INDEX: true
@@ -351,6 +381,13 @@ commands:
       NODE_ENV: production
       WEBPACK_SERVE_INDEX: true
       SOURCEGRAPH_API_URL: https://k8s.sgdev.org
+
+  web-integration-build:
+    description: Build web application for integration tests
+    cmd: yarn workspace @sourcegraph/web run build
+    env:
+      ENTERPRISE: 1
+      INTEGRATION_TESTS: true
 
   docsite:
     description: Docsite instance serving the docs
@@ -385,9 +422,9 @@ commands:
     install: |
       mkdir -p .bin
       export GOBIN="${PWD}/.bin"
-      go install github.com/google/zoekt/cmd/zoekt-archive-index
-      go install github.com/google/zoekt/cmd/zoekt-git-index
-      go install github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver
+      go install github.com/sourcegraph/zoekt/cmd/zoekt-archive-index
+      go install github.com/sourcegraph/zoekt/cmd/zoekt-git-index
+      go install github.com/sourcegraph/zoekt/cmd/zoekt-sourcegraph-indexserver
     checkBinary: .bin/zoekt-sourcegraph-indexserver
     env: &zoektenv
       CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
@@ -411,10 +448,11 @@ commands:
   zoekt-web-template: &zoekt_webserver_template
     install: |
       mkdir -p .bin
-      env GOBIN="${PWD}/.bin" go install github.com/google/zoekt/cmd/zoekt-webserver
+      env GOBIN="${PWD}/.bin" go install github.com/sourcegraph/zoekt/cmd/zoekt-webserver
     checkBinary: .bin/zoekt-webserver
     env:
-      JAEGER_DISABLED: false
+      JAEGER_DISABLED: true
+      OPENTELEMETRY_DISABLED: false
       GOGC: 25
 
   zoekt-web-0:
@@ -426,13 +464,15 @@ commands:
     cmd: env PATH="${PWD}/.bin:$PATH" .bin/zoekt-webserver -index "$HOME/.sourcegraph/zoekt/index-1" -pprof -rpc -listen "127.0.0.1:3071"
 
   codeintel-worker:
-    cmd: .bin/precise-code-intel-worker
+    cmd: |
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
+      .bin/codeintel-worker
     install: |
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/precise-code-intel-worker github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker
-    checkBinary: .bin/precise-code-intel-worker
+      go build -gcflags="$GCFLAGS" -o .bin/codeintel-worker github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker
+    checkBinary: .bin/codeintel-worker
     watch:
       - lib
       - internal
@@ -448,8 +488,7 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/executor github.com/sourcegraph/sourcegraph/enterprise/cmd/executor &&
-      mkdir -p $EXECUTOR_IMAGE_ARCHIVE_PATH
+      go build -gcflags="$GCFLAGS" -o .bin/executor github.com/sourcegraph/sourcegraph/enterprise/cmd/executor
     checkBinary: .bin/executor
     env:
       EXECUTOR_QUEUE_NAME: TEMPLATE
@@ -465,7 +504,18 @@ commands:
       env TMPDIR="$HOME/.sourcegraph/indexer-temp" .bin/executor
     env:
       EXECUTOR_QUEUE_NAME: codeintel
-      SRC_PROF_HTTP: ':6092'
+
+  # If you want to use this, either start it with `sg run batches-executor-firecracker` or
+  # modify the `commandsets.batches` in your local `sg.config.overwrite.yaml`
+  codeintel-executor-firecracker:
+    <<: *executor_template
+    cmd: |
+      env TMPDIR="$HOME/.sourcegraph/codeintel-executor-temp" \
+        sudo --preserve-env=TMPDIR,EXECUTOR_QUEUE_NAME,EXECUTOR_FRONTEND_URL,EXECUTOR_FRONTEND_PASSWORD,EXECUTOR_USE_FIRECRACKER \
+          .bin/executor
+    env:
+      EXECUTOR_USE_FIRECRACKER: true
+      EXECUTOR_QUEUE_NAME: codeintel
 
   batches-executor:
     <<: *executor_template
@@ -474,7 +524,6 @@ commands:
     env:
       EXECUTOR_QUEUE_NAME: batches
       EXECUTOR_MAXIMUM_NUM_JOBS: 8
-      SRC_PROF_HTTP: ':6093'
 
   # If you want to use this, either start it with `sg run batches-executor-firecracker` or
   # modify the `commandsets.batches` in your local `sg.config.overwrite.yaml`
@@ -482,12 +531,11 @@ commands:
     <<: *executor_template
     cmd: |
       env TMPDIR="$HOME/.sourcegraph/batches-executor-temp" \
-        sudo --preserve-env=TMPDIR,EXECUTOR_QUEUE_NAME,SRC_PROF_HTTP,EXECUTOR_FRONTEND_URL,EXECUTOR_FRONTEND_PASSWORD,EXECUTOR_USE_FIRECRACKER,EXECUTOR_IMAGE_ARCHIVE_PATH \
+        sudo --preserve-env=TMPDIR,EXECUTOR_QUEUE_NAME,EXECUTOR_FRONTEND_URL,EXECUTOR_FRONTEND_PASSWORD,EXECUTOR_USE_FIRECRACKER \
           .bin/executor
     env:
       EXECUTOR_USE_FIRECRACKER: true
       EXECUTOR_QUEUE_NAME: batches
-      SRC_PROF_HTTP: ':6093'
 
   minio:
     cmd: |
@@ -540,7 +588,7 @@ commands:
 
   grafana:
     cmd: |
-      if [[ "$OSTYPE" == "linux-gnu" ]]; then
+      if [[ $(uname) == "Linux" ]]; then
         # Linux needs an extra arg to support host.internal.docker, which is how grafana connects
         # to the prometheus backend.
         ADD_HOST_FLAG="--add-host=host.docker.internal:host-gateway"
@@ -562,12 +610,11 @@ commands:
         -p 0.0.0.0:3370:3370 ${ADD_HOST_FLAG} \
         -v "${GRAFANA_DISK}":/var/lib/grafana \
         -v "$(pwd)"/dev/grafana/all:/sg_config_grafana/provisioning/datasources \
-        -v "$(pwd)"/docker-images/grafana/config/provisioning/dashboards:/sg_grafana_additional_dashboards \
         sourcegraph/grafana:dev >"${GRAFANA_LOG_FILE}" 2>&1
     install: |
       mkdir -p "${GRAFANA_DISK}"
       mkdir -p "$(dirname ${GRAFANA_LOG_FILE})"
-
+      export CACHE=true
       docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
       ./docker-images/grafana/build.sh
     env:
@@ -587,12 +634,10 @@ commands:
       DOCKER_USER: ''
       ADD_HOST_FLAG: ''
       CACHE: false
-    watch:
-      - monitoring
 
   prometheus:
     cmd: |
-      if [[ "$OSTYPE" == "linux-gnu" ]]; then
+      if [[ $(uname) == "Linux" ]]; then
         DOCKER_USER="--user=$UID"
 
         # Frontend generally runs outside of Docker, so to access it we need to be
@@ -621,7 +666,7 @@ commands:
 
       docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
 
-      if [[ "$OSTYPE" == "linux-gnu" ]]; then
+      if [[ $(uname) == "Linux" ]]; then
         PROM_TARGETS="dev/prometheus/linux/prometheus_targets.yml"
       fi
 
@@ -674,7 +719,7 @@ commands:
     description: OpenTelemetry collector
     cmd: |
       JAEGER_HOST='host.docker.internal'
-      if [[ "$OSTYPE" == "linux-gnu" ]]; then
+      if [[ $(uname) == "Linux" ]]; then
         # Jaeger generally runs outside of Docker, so to access it we need to be
         # able to access ports on the host, because the Docker host only exists on
         # MacOS. --net=host is a very dirty way of enabling this.
@@ -684,7 +729,7 @@ commands:
 
       docker container rm otel-collector
       docker run --rm --name=otel-collector $DOCKER_NET $DOCKER_ARGS \
-        -p 4317:4317 -p 55679:55679 \
+        -p 4317:4317 -p 4318:4318 -p 55679:55679 \
         -e JAEGER_HOST=$JAEGER_HOST \
         -e HONEYCOMB_API_KEY=$HONEYCOMB_API_KEY \
         -e HONEYCOMB_DATASET=$HONEYCOMB_DATASET \
@@ -726,7 +771,8 @@ commandsets:
       - oss-worker
       - oss-repo-updater
       - oss-symbols
-      - gitserver
+      - gitserver-0
+      - gitserver-1
       - searcher
       - web
       - caddy
@@ -750,7 +796,8 @@ commandsets:
       - worker
       - repo-updater
       - web
-      - gitserver
+      - gitserver-0
+      - gitserver-1
       - searcher
       - symbols
       - caddy
@@ -786,7 +833,8 @@ commandsets:
       - worker
       - repo-updater
       - web
-      - gitserver
+      - gitserver-0
+      - gitserver-1
       - searcher
       - symbols
       - caddy
@@ -800,6 +848,7 @@ commandsets:
       - minio
       - codeintel-worker
       - codeintel-executor
+      - otel-collector
       - jaeger
       - grafana
       - prometheus
@@ -819,7 +868,8 @@ commandsets:
       - worker
       - repo-updater
       - web
-      - gitserver
+      - gitserver-0
+      - gitserver-1
       - searcher
       - symbols
       - caddy
@@ -845,7 +895,8 @@ commandsets:
       - frontend
       - worker
       - repo-updater
-      - gitserver
+      - gitserver-0
+      - gitserver-1
       - searcher
       - symbols
       - github-proxy
@@ -866,7 +917,8 @@ commandsets:
       - worker
       - repo-updater
       - web
-      - gitserver
+      - gitserver-0
+      - gitserver-1
       - searcher
       - symbols
       - caddy
@@ -890,7 +942,8 @@ commandsets:
       - frontend
       - repo-updater
       - web
-      - gitserver
+      - gitserver-0
+      - gitserver-1
       - caddy
       - github-proxy
 
@@ -899,6 +952,7 @@ commandsets:
       - docker
     commands:
       - jaeger
+      - otel-collector
       - prometheus
       - grafana
       - postgres_exporter
@@ -966,9 +1020,6 @@ tests:
       EMAIL: 'joe@sourcegraph.com'
       PASSWORD: '12345'
 
-  web-integration:
-    cmd: yarn test-integration
-
   bext:
     cmd: yarn workspace @sourcegraph/browser test
 
@@ -983,30 +1034,21 @@ tests:
     env:
       SOURCEGRAPH_BASE_URL: https://sourcegraph.com
 
-  frontend:
+  client:
     cmd: yarn run jest --testPathIgnorePatterns end-to-end regression integration storybook
 
-  frontend-e2e:
+  docsite:
+    cmd: .bin/docsite_${DOCSITE_VERSION} check ./doc
+    env:
+      DOCSITE_VERSION: v1.8.7 # Update DOCSITE_VERSION everywhere in all places (including outside this repo)
+
+  web-e2e:
     preamble: |
       A Sourcegraph isntance must be already running for these tests to work, most
-      commonly with:
+      commonly with: `sg start enterprise-e2e`
 
-        sg start enterprise-e2e
-
-      You can also run tests against an existing server image (note that this test must
-      be run with SOURCEGRAPH_BASE_URL='http://127.0.0.1:7080' for the following to work):
-
-        TAG=insiders sg run server
-
-      If you run into authentication issues, you can run the following commands to fix them:
-
-        sg db reset-pg --db=all && sg db add-user --username 'test' --password 'supersecurepassword'
-
-      The above command resets the database and creates a user like so:
-
-        👉 User test (test@sourcegraph.com) has been created and its password is supersecurepassword .
-    cmd: |
-      yarn run test-e2e
+      See more details: https://docs.sourcegraph.com/dev/how-to/testing#running-end-to-end-tests
+    cmd: yarn run test-e2e
     env:
       TEST_USER_EMAIL: test@sourcegraph.com
       TEST_USER_PASSWORD: supersecurepassword
@@ -1018,7 +1060,34 @@ tests:
         project: 'sourcegraph-ci'
         name: 'BUILDKITE_GITHUBDOTCOM_TOKEN'
 
-  docsite:
-    cmd: .bin/docsite_${DOCSITE_VERSION} check ./doc
+  web-regression:
+    preamble: |
+      A Sourcegraph instance must be already running for these tests to work, most
+      commonly with: `sg start enterprise-e2e`
+
+      See more details: https://docs.sourcegraph.com/dev/how-to/testing#running-regression-tests
+
+    cmd: yarn run test-regression
     env:
-      DOCSITE_VERSION: v1.8.7 # Update DOCSITE_VERSION everywhere in all places (including outside this repo)
+      SOURCEGRAPH_SUDO_USER: test
+      SOURCEGRAPH_BASE_URL: https://sourcegraph.test:3443
+      TEST_USER_PASSWORD: supersecurepassword
+      BROWSER: chrome
+
+  web-integration:
+    preamble: |
+      A web application should be built for these tests to work, most
+      commonly with: `sg run web-integration-build`
+
+      See more details: https://docs.sourcegraph.com/dev/how-to/testing#running-integration-tests
+
+    cmd: yarn run test-integration
+
+  web-integration:debug:
+    preamble: |
+      A Sourcegraph instance must be already running for these tests to work, most
+      commonly with: `sg start web-standalone`
+
+      See more details: https://docs.sourcegraph.com/dev/how-to/testing#running-integration-tests
+
+    cmd: yarn run test-integration:debug

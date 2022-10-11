@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/rewirer"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -54,6 +54,8 @@ func (s *Service) ApplyBatchChange(
 	ctx, _, endObservation := s.operations.applyBatchChange.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
+	// TODO move license check logic from resolver to here
+
 	batchSpec, err := s.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{
 		RandID: opts.BatchSpecRandID,
 	})
@@ -62,7 +64,7 @@ func (s *Service) ApplyBatchChange(
 	}
 
 	// 🚨 SECURITY: Only site-admins or the creator of batchSpec can apply it.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), batchSpec.UserID); err != nil {
+	if err := auth.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), batchSpec.UserID); err != nil {
 		return nil, err
 	}
 

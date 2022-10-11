@@ -195,7 +195,13 @@ export const fileLineContainerResolver: ViewResolver<CodeView> = {
             // this is not a single-file code view
             return null
         }
-        const repositoryContent = fileLineContainer.closest('.repository-content')
+        /**
+         * The element matching the latter selector replaces the one matching the former selector
+         * on GitHub when navigating through the repo tree using the client-side navigation.
+         * GitHub Enterprise always uses the former one.
+         */
+        const repositoryContent =
+            fileLineContainer.closest('.repository-content') || fileLineContainer.closest('#repo-content-turbo-frame')
         if (!repositoryContent) {
             throw new Error('Could not find repository content element')
         }
@@ -719,9 +725,9 @@ export const githubCodeHost: GithubCodeHost = {
     notificationClassNames,
     commandPaletteClassProps: {
         buttonClassName: 'Header-link d-flex flex-items-baseline',
-        popoverClassName: 'Box',
+        popoverClassName: classNames('Box', styles.commandPalettePopover),
         formClassName: 'p-1',
-        inputClassName: 'form-control input-sm header-search-input jump-to-field',
+        inputClassName: 'form-control input-sm header-search-input jump-to-field-active',
         listClassName: 'p-0 m-0 js-navigation-container jump-to-suggestions-results-container',
         selectedListItemClassName: 'navigation-focus',
         listItemClassName:

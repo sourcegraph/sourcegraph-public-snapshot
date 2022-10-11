@@ -40,15 +40,18 @@ func (j *syncingJob) Routines(_ context.Context, logger log.Logger) ([]goroutine
 		return nil, nil
 	}
 
-	db, err := workerdb.Init()
+	db, err := workerdb.InitDBWithLogger(logger)
 	if err != nil {
 		return nil, err
 	}
 
-	cf := httpcli.ExternalClientFactory
-	sourcer := repos.NewSourcer(logger.Scoped("repos.Sourcer", ""), database.NewDB(logger, db), cf)
+	sourcerLogger := logger.Scoped("repos.Sourcer", "repository source for syncing")
+	sourcerCF := httpcli.NewExternalClientFactory(
+		httpcli.NewLoggingMiddleware(sourcerLogger),
+	)
+	sourcer := repos.NewSourcer(sourcerLogger, db, sourcerCF)
 
-	store := database.NewDB(logger, db).ExternalServices()
+	store := db.ExternalServices()
 	handler := goroutine.NewHandlerWithErrorMessage("sync versions of external services", func(ctx context.Context) error {
 		versions, err := loadVersions(ctx, logger, store, sourcer)
 		if err != nil {
@@ -75,7 +78,7 @@ func loadVersions(ctx context.Context, logger log.Logger, store database.Externa
 	// we don't send >1 requests to the same instance.
 	unique := make(map[string]*types.ExternalService)
 	for _, svc := range es {
-		ident, err := extsvc.UniqueCodeHostIdentifier(svc.Kind, svc.Config)
+		ident, err := extsvc.UniqueEncryptableCodeHostIdentifier(ctx, svc.Kind, svc.Config)
 		if err != nil {
 			return versions, err
 		}
@@ -110,6 +113,7 @@ func loadVersions(ctx context.Context, logger log.Logger, store database.Externa
 		versions = append(versions, &Version{
 			ExternalServiceKind: svc.Kind,
 			Version:             v,
+			Key:                 svc.URN(),
 		})
 	}
 

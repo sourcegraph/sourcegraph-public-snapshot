@@ -17,8 +17,8 @@ import (
 	"github.com/sourcegraph/go-ctags"
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -114,7 +114,7 @@ func TestIndex(t *testing.T) {
 
 	createParser := func() (ctags.Parser, error) { return mockParser{}, nil }
 
-	service, err := NewService(db, git, createParser, 1, 1, false, 1, 1, 1)
+	service, err := NewService(db, git, newMockRepositoryFetcher(git), createParser, 1, 1, false, 1, 1, 1)
 	fatalIfError(err, "NewService")
 
 	verifyBlobs := func() {
@@ -232,7 +232,7 @@ func (g SubprocessGit) Close() error {
 	return g.catFileCmd.Wait()
 }
 
-func (g SubprocessGit) LogReverseEach(repo string, db database.DB, givenCommit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) (returnError error) {
+func (g SubprocessGit) LogReverseEach(ctx context.Context, repo string, givenCommit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) (returnError error) {
 	log := exec.Command("git", gitdomain.LogReverseArgs(n, givenCommit)...)
 	log.Dir = g.gitDir
 	output, err := log.StdoutPipe()
@@ -254,7 +254,7 @@ func (g SubprocessGit) LogReverseEach(repo string, db database.DB, givenCommit s
 	return gitdomain.ParseLogReverseEach(output, onLogEntry)
 }
 
-func (g SubprocessGit) RevListEach(repo string, db database.DB, givenCommit string, onCommit func(commit string) (shouldContinue bool, err error)) (returnError error) {
+func (g SubprocessGit) RevList(ctx context.Context, repo string, givenCommit string, onCommit func(commit string) (shouldContinue bool, err error)) (returnError error) {
 	revList := exec.Command("git", gitserver.RevListArgs(givenCommit)...)
 	revList.Dir = g.gitDir
 	output, err := revList.StdoutPipe()
@@ -273,48 +273,83 @@ func (g SubprocessGit) RevListEach(repo string, db database.DB, givenCommit stri
 		}
 	}()
 
-	return gitserver.NewClient(db).RevListEach(output, onCommit)
+	return gitdomain.RevListEach(output, onCommit)
 }
 
-func (g SubprocessGit) ArchiveEach(repo string, commit string, paths []string, onFile func(path string, contents []byte) error) error {
-	for _, path := range paths {
-		_, err := g.catFileStdin.Write([]byte(fmt.Sprintf("%s:%s\n", commit, path)))
-		if err != nil {
-			return errors.Wrap(err, "writing to cat-file stdin")
+func newMockRepositoryFetcher(git *SubprocessGit) fetcher.RepositoryFetcher {
+	return &mockRepositoryFetcher{git: git}
+}
+
+type mockRepositoryFetcher struct{ git *SubprocessGit }
+
+func (f *mockRepositoryFetcher) FetchRepositoryArchive(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) <-chan fetcher.ParseRequestOrError {
+	ch := make(chan fetcher.ParseRequestOrError)
+
+	go func() {
+		for _, path := range paths {
+			_, err := f.git.catFileStdin.Write([]byte(fmt.Sprintf("%s:%s\n", commit, path)))
+			if err != nil {
+				ch <- fetcher.ParseRequestOrError{
+					Err: errors.Wrap(err, "writing to cat-file stdin"),
+				}
+				return
+			}
+
+			line, err := f.git.catFileStdout.ReadString('\n')
+			if err != nil {
+				ch <- fetcher.ParseRequestOrError{
+					Err: errors.Wrap(err, "read newline"),
+				}
+				return
+			}
+			line = line[:len(line)-1] // Drop the trailing newline
+			parts := strings.Split(line, " ")
+			if len(parts) != 3 {
+				ch <- fetcher.ParseRequestOrError{
+					Err: errors.Newf("unexpected cat-file output: %q", line),
+				}
+				return
+			}
+			size, err := strconv.ParseInt(parts[2], 10, 64)
+			if err != nil {
+				ch <- fetcher.ParseRequestOrError{
+					Err: errors.Wrap(err, "parse size"),
+				}
+				return
+			}
+
+			fileContents, err := io.ReadAll(io.LimitReader(&f.git.catFileStdout, size))
+			if err != nil {
+				ch <- fetcher.ParseRequestOrError{
+					Err: errors.Wrap(err, "read contents"),
+				}
+				return
+			}
+
+			discarded, err := f.git.catFileStdout.Discard(1) // Discard the trailing newline
+			if err != nil {
+				ch <- fetcher.ParseRequestOrError{
+					Err: errors.Wrap(err, "discard newline"),
+				}
+				return
+			}
+			if discarded != 1 {
+				ch <- fetcher.ParseRequestOrError{
+					Err: errors.Newf("expected to discard 1 byte, but discarded %d", discarded),
+				}
+				return
+			}
+
+			ch <- fetcher.ParseRequestOrError{
+				ParseRequest: fetcher.ParseRequest{
+					Path: path,
+					Data: fileContents,
+				},
+			}
 		}
 
-		line, err := g.catFileStdout.ReadString('\n')
-		if err != nil {
-			return errors.Wrap(err, "read newline")
-		}
-		line = line[:len(line)-1] // Drop the trailing newline
-		parts := strings.Split(line, " ")
-		if len(parts) != 3 {
-			return errors.Newf("unexpected cat-file output: %q", line)
-		}
-		size, err := strconv.ParseInt(parts[2], 10, 64)
-		if err != nil {
-			return errors.Wrap(err, "parse size")
-		}
+		close(ch)
+	}()
 
-		fileContents, err := io.ReadAll(io.LimitReader(&g.catFileStdout, size))
-		if err != nil {
-			return errors.Wrap(err, "read contents")
-		}
-
-		discarded, err := g.catFileStdout.Discard(1) // Discard the trailing newline
-		if err != nil {
-			return errors.Wrap(err, "discard newline")
-		}
-		if discarded != 1 {
-			return errors.Newf("expected to discard 1 byte, but discarded %d", discarded)
-		}
-
-		err = onFile(path, fileContents)
-		if err != nil {
-			return errors.Wrap(err, "onFile")
-		}
-	}
-
-	return nil
+	return ch
 }

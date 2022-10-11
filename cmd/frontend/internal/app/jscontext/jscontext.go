@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
@@ -64,21 +65,21 @@ type JSContext struct {
 
 	IsAuthenticatedUser bool `json:"isAuthenticatedUser"`
 
-	SentryDSN     *string `json:"sentryDSN"`
-	SiteID        string  `json:"siteID"`
-	SiteGQLID     string  `json:"siteGQLID"`
-	Debug         bool    `json:"debug"`
-	NeedsSiteInit bool    `json:"needsSiteInit"`
-	EmailEnabled  bool    `json:"emailEnabled"`
+	SentryDSN     *string               `json:"sentryDSN"`
+	OpenTelemetry *schema.OpenTelemetry `json:"openTelemetry"`
+
+	SiteID        string `json:"siteID"`
+	SiteGQLID     string `json:"siteGQLID"`
+	Debug         bool   `json:"debug"`
+	NeedsSiteInit bool   `json:"needsSiteInit"`
+	EmailEnabled  bool   `json:"emailEnabled"`
 
 	Site              schema.SiteConfiguration `json:"site"` // public subset of site configuration
 	LikelyDockerOnMac bool                     `json:"likelyDockerOnMac"`
 	NeedServerRestart bool                     `json:"needServerRestart"`
 	DeployType        string                   `json:"deployType"`
 
-	SourcegraphDotComMode  bool   `json:"sourcegraphDotComMode"`
-	GitHubAppCloudSlug     string `json:"githubAppCloudSlug"`
-	GitHubAppCloudClientID string `json:"githubAppCloudClientID"`
+	SourcegraphDotComMode bool `json:"sourcegraphDotComMode"`
 
 	BillingPublishableKey string `json:"billingPublishableKey,omitempty"`
 
@@ -104,15 +105,16 @@ type JSContext struct {
 	ExecutorsEnabled                         bool `json:"executorsEnabled"`
 	CodeIntelAutoIndexingEnabled             bool `json:"codeIntelAutoIndexingEnabled"`
 	CodeIntelAutoIndexingAllowGlobalPolicies bool `json:"codeIntelAutoIndexingAllowGlobalPolicies"`
-	CodeIntelLockfileIndexingEnabled         bool `json:"codeIntelLockfileIndexingEnabled"`
-
-	CodeInsightsGQLApiEnabled bool `json:"codeInsightsGqlApiEnabled"`
 
 	RedirectUnsupportedBrowser bool `json:"RedirectUnsupportedBrowser"`
 
 	ProductResearchPageEnabled bool `json:"productResearchPageEnabled"`
 
 	ExperimentalFeatures schema.ExperimentalFeatures `json:"experimentalFeatures"`
+
+	EnableLegacyExtensions bool `json:"enableLegacyExtensions"`
+
+	LicenseInfo *hooks.LicenseInfo `json:"licenseInfo"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -169,11 +171,18 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		sentryDSN = &siteConfig.Log.Sentry.Dsn
 	}
 
-	var githubAppCloudSlug string
-	var githubAppCloudClientID string
-	if envvar.SourcegraphDotComMode() && siteConfig.Dotcom != nil && siteConfig.Dotcom.GithubAppCloud != nil {
-		githubAppCloudSlug = siteConfig.Dotcom.GithubAppCloud.Slug
-		githubAppCloudClientID = siteConfig.Dotcom.GithubAppCloud.ClientID
+	var openTelemetry *schema.OpenTelemetry
+	if clientObservability := siteConfig.ObservabilityClient; clientObservability != nil {
+		openTelemetry = clientObservability.OpenTelemetry
+	}
+
+	var licenseInfo *hooks.LicenseInfo
+	if !actor.IsAuthenticated() {
+		licenseInfo = hooks.GetLicenseInfo(false)
+	} else {
+		// Ignore err as we don't care if user does not exist
+		user, _ := actor.User(req.Context(), db.Users())
+		licenseInfo = hooks.GetLicenseInfo(user != nil && user.SiteAdmin)
 	}
 
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
@@ -189,6 +198,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		Version:                    version.Version(),
 		IsAuthenticatedUser:        actor.IsAuthenticated(),
 		SentryDSN:                  sentryDSN,
+		OpenTelemetry:              openTelemetry,
 		RedirectUnsupportedBrowser: siteConfig.RedirectUnsupportedBrowser,
 		Debug:                      env.InsecureDev,
 		SiteID:                     siteID,
@@ -202,9 +212,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		NeedServerRestart: globals.ConfigurationServerFrontendOnly.NeedServerRestart(),
 		DeployType:        deploy.Type(),
 
-		SourcegraphDotComMode:  envvar.SourcegraphDotComMode(),
-		GitHubAppCloudSlug:     githubAppCloudSlug,
-		GitHubAppCloudClientID: githubAppCloudClientID,
+		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 
 		BillingPublishableKey: BillingPublishableKey,
 
@@ -232,13 +240,14 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		ExecutorsEnabled:                         conf.ExecutorsEnabled(),
 		CodeIntelAutoIndexingEnabled:             conf.CodeIntelAutoIndexingEnabled(),
 		CodeIntelAutoIndexingAllowGlobalPolicies: conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
-		CodeIntelLockfileIndexingEnabled:         conf.CodeIntelLockfileIndexingEnabled(),
-
-		CodeInsightsGQLApiEnabled: conf.CodeInsightsGQLApiEnabled(),
 
 		ProductResearchPageEnabled: conf.ProductResearchPageEnabled(),
 
 		ExperimentalFeatures: conf.ExperimentalFeatures(),
+
+		EnableLegacyExtensions: *conf.ExperimentalFeatures().EnableLegacyExtensions,
+
+		LicenseInfo: licenseInfo,
 	}
 }
 

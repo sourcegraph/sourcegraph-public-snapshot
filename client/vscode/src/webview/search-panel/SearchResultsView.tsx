@@ -232,7 +232,6 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
     // Submit new search on change
     const setPatternType = useCallback(
         (patternType: SearchPatternType) => {
-            console.log({ patternType })
             onSubmit({ patternType })
         },
         [onSubmit]
@@ -403,7 +402,6 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                             showSearchContext={true}
                             platformContext={platformContext}
                             results={context.searchResults ?? undefined}
-                            authenticatedUser={authenticatedUser}
                             fetchHighlightedFileLineRanges={fetchHighlightedFileLineRangesWithContext}
                             executedQuery={context.submittedSearchQueryState.queryState.query}
                             resultClassName="mr-0"

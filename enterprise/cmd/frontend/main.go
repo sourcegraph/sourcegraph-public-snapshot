@@ -10,8 +10,8 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/log"
 
@@ -21,18 +21,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel"
+	codeintelinit "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/compute"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dependencies"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom"
 	executor "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue"
 	licensing "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/init"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/notebooks"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/orgrepos"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -48,74 +47,50 @@ func init() {
 	oobmigration.ReturnEnterpriseMigrations = true
 }
 
-type EnterpriseInitializer = func(context.Context, database.DB, conftypes.UnifiedWatchable, *enterprise.Services, *observation.Context) error
+type EnterpriseInitializer = func(context.Context, database.DB, codeintel.Services, conftypes.UnifiedWatchable, *enterprise.Services, *observation.Context) error
 
 var initFunctions = map[string]EnterpriseInitializer{
+	"app":            app.Init,
 	"authz":          authz.Init,
-	"licensing":      licensing.Init,
-	"insights":       insights.Init,
 	"batches":        batches.Init,
+	"codeintel":      codeintelinit.Init,
 	"codemonitors":   codemonitors.Init,
-	"dotcom":         dotcom.Init,
-	"searchcontexts": searchcontexts.Init,
-	"enterprise":     orgrepos.Init,
-	"notebooks":      notebooks.Init,
 	"compute":        compute.Init,
-	"dependencies":   dependencies.Init,
+	"dotcom":         dotcom.Init,
+	"insights":       insights.Init,
+	"licensing":      licensing.Init,
+	"notebooks":      notebooks.Init,
+	"searchcontexts": searchcontexts.Init,
 }
 
-var codeIntelConfig = &codeintel.Config{}
-
-func init() {
-	codeIntelConfig.Load()
-}
-
-func enterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterprise.Services {
+func enterpriseSetupHook(db database.DB, codeIntelServices codeintel.Services, conf conftypes.UnifiedWatchable) enterprise.Services {
 	logger := log.Scoped("enterprise", "frontend enterprise edition")
 	debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
 	if debug {
 		logger.Debug("enterprise edition")
 	}
 
-	auth.Init(db)
+	auth.Init(logger, db)
 
 	ctx := context.Background()
 	enterpriseServices := enterprise.DefaultServices()
 
 	observationContext := &observation.Context{
 		Logger:     logger,
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	if err := codeIntelConfig.Validate(); err != nil {
-		logger.Fatal("failed to load codeintel config", log.Error(err))
-	}
-
-	services, err := codeintel.NewServices(ctx, codeIntelConfig, conf, db)
-	if err != nil {
-		logger.Fatal(err.Error())
-	}
-
-	if err := codeintel.Init(ctx, db, codeIntelConfig, &enterpriseServices, observationContext, services); err != nil {
-		logger.Fatal("failed to initialize codeintel", log.Error(err))
-	}
-
-	// Initialize executor-specific services with the code-intel services.
-	if err := executor.Init(ctx, db, conf, &enterpriseServices, observationContext, services.InternalUploadHandler); err != nil {
-		logger.Fatal("failed to initialize executor", log.Error(err))
-	}
-
-	if err := app.Init(db, conf, &enterpriseServices); err != nil {
-		logger.Fatal("failed to initialize app", log.Error(err))
-	}
-
-	// Initialize all the enterprise-specific services that do not need the codeintel-specific services.
 	for name, fn := range initFunctions {
-		initLogger := logger.Scoped(name, "")
-		if err := fn(ctx, db, conf, &enterpriseServices, observationContext); err != nil {
-			initLogger.Fatal("failed to initialize", log.Error(err))
+		if err := fn(ctx, db, codeIntelServices, conf, &enterpriseServices, observationContext); err != nil {
+			logger.Fatal("failed to initialize", log.String("name", name), log.Error(err))
 		}
+	}
+
+	// Inititalize executor last, as we require code intel and batch changes services to be
+	// already populated on the enterpriseServices object.
+	if err := executor.Init(ctx, db, conf, &enterpriseServices, observationContext); err != nil {
+		logger.Fatal("failed to initialize executor", log.Error(err))
 	}
 
 	return enterpriseServices

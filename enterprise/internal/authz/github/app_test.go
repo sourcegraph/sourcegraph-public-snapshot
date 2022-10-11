@@ -78,7 +78,7 @@ func TestNewAppProvider(t *testing.T) {
 		svc := &types.ExternalService{
 			ID:     1,
 			Kind:   extsvc.KindGitHub,
-			Config: string(config),
+			Config: extsvc.NewUnencryptedConfig(string(config)),
 		}
 
 		provider, err := newAppProvider(database.NewMockExternalServiceStore(), svc, "", baseURL, "1234", bogusKey, 1234, doer)

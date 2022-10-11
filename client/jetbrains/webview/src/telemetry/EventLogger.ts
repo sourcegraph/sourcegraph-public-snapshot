@@ -5,13 +5,7 @@ import { gql } from '@sourcegraph/http-client'
 import { EventSource } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import {
-    Event,
-    LogEventsResult,
-    LogEventsVariables,
-    LogLegacySearchUserEventResult,
-    LogLegacySearchUserEventVariables,
-} from '../graphql-operations'
+import { Event, LogEventsResult, LogEventsVariables } from '../graphql-operations'
 import { requestGraphQL } from '../search/lib/requestGraphQl'
 
 // Log events in batches.
@@ -22,22 +16,6 @@ events
         bufferTime(1000),
         concatMap(events => {
             if (events.length > 0) {
-                // For every IDESearchSubmitted, we also fire a legacy logUserEvent event. This is
-                // necessary since we only look at the latter to calculate some activity usage
-                // numbers.
-                //
-                // See sourcegraph/sourcegraph#35178
-                events
-                    .filter(event => event.event === 'IDESearchSubmitted')
-                    .map(event =>
-                        requestGraphQL<LogLegacySearchUserEventResult, LogLegacySearchUserEventVariables>(
-                            logLegacySearchUserEventMutation,
-                            {
-                                userCookieID: event.deviceID ?? '',
-                            }
-                        )
-                    )
-
                 return requestGraphQL<LogEventsResult, LogEventsVariables>(logEventsMutation, {
                     events,
                 })
@@ -55,14 +33,6 @@ events
 const logEventsMutation = gql`
     mutation LogEvents($events: [Event!]) {
         logEvents(events: $events) {
-            alwaysNil
-        }
-    }
-`
-
-const logLegacySearchUserEventMutation = gql`
-    mutation LogLegacySearchUserEvent($userCookieID: String!) {
-        logUserEvent(event: SEARCHQUERY, userCookieID: $userCookieID) {
             alwaysNil
         }
     }

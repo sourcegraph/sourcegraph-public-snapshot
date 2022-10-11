@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/derision-test/glock"
-	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/log"
 
@@ -534,9 +533,9 @@ func TestWorkerCancelJobs(t *testing.T) {
 		return ctx.Err()
 	}
 
-	var canceledJobsCalled bool
+	canceledJobsCalled := make(chan struct{})
 	store.CanceledJobsFunc.SetDefaultHook(func(c context.Context, i []int) ([]int, error) {
-		canceledJobsCalled = true
+		close(canceledJobsCalled)
 		// Cancel all jobs.
 		return i, nil
 	})
@@ -552,18 +551,25 @@ func TestWorkerCancelJobs(t *testing.T) {
 	})
 
 	// Wait until a job has been dequeued.
-	<-dequeued
+	select {
+	case <-dequeued:
+	case <-time.After(1 * time.Second):
+		t.Fatal("timeout waiting for Dequeue call")
+	}
 	// Trigger a fetchCanceledJobs call.
-	cancelClock.Advance(time.Second)
-
+	cancelClock.BlockingAdvance(time.Second)
+	// Wait for cancelled jobs to be called.
+	select {
+	case <-canceledJobsCalled:
+	case <-time.After(1 * time.Second):
+		t.Fatal("timeout waiting for CanceledJobs call")
+	}
 	// Expect that markFailed is called eventually.
 	select {
 	case <-markedFailedCalled:
 	case <-time.After(5 * time.Second):
 		t.Fatal("timeout waiting for markFailed call")
 	}
-
-	assert.True(t, canceledJobsCalled, "CanceledJobs not called")
 }
 
 func TestWorkerDeadline(t *testing.T) {

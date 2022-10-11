@@ -3,7 +3,6 @@ import React, { useCallback, useState } from 'react'
 import { useMutation } from '@apollo/client'
 import { mdiClose } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
-import classNames from 'classnames'
 import { debounce } from 'lodash'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -76,7 +75,7 @@ export const AddMemberToOrgModal: React.FunctionComponent<
                 <Modal className={styles.modal} onDismiss={onCloseAddUserModal} position="center" aria-label={title}>
                     <div className="d-flex flex-row align-items-end">
                         <H3>{title}</H3>
-                        <Button className={classNames('btn-icon', styles.closeButton)} onClick={onCloseAddUserModal}>
+                        <Button variant="icon" className={styles.closeButton} onClick={onCloseAddUserModal}>
                             <VisuallyHidden>Close</VisuallyHidden>
                             <Icon svgPath={mdiClose} inline={false} aria-hidden={true} />
                         </Button>

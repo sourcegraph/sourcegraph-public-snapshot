@@ -4,27 +4,36 @@ import { mdiAlertCircle } from '@mdi/js'
 import classNames from 'classnames'
 import { range } from 'lodash'
 import VisibilitySensor from 'react-visibility-sensor'
-import { of, Observable, Subscription, BehaviorSubject } from 'rxjs'
+import { Observable, Subscription, BehaviorSubject, of } from 'rxjs'
 import { catchError, filter } from 'rxjs/operators'
 
 import { HoverMerged } from '@sourcegraph/client-api'
 import { DOMFunctions, findPositionsFromEvents, Hoverifier } from '@sourcegraph/codeintellify'
-import { asError, ErrorLike, isDefined, isErrorLike, highlightNode } from '@sourcegraph/common'
+import { asError, ErrorLike, isDefined, isErrorLike, highlightNodeMultiline } from '@sourcegraph/common'
+import { HighlightLineRange } from '@sourcegraph/search'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
+import { HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { Repo } from '@sourcegraph/shared/src/util/url'
 import { Icon, Code } from '@sourcegraph/wildcard'
 
 import styles from './CodeExcerpt.module.scss'
+
+export interface Shape {
+    top?: number
+    left?: number
+    bottom?: number
+    right?: number
+}
 
 export interface FetchFileParameters {
     repoName: string
     commitID: string
     filePath: string
     disableTimeout?: boolean
-    ranges: GQL.IHighlightLineRange[]
+    ranges: HighlightLineRange[]
+    format?: HighlightResponseFormat
 }
 
 interface Props extends Repo {
@@ -39,26 +48,34 @@ interface Props extends Repo {
     /** A function to fetch the range of lines this code excerpt will display. It will be provided
      * the same start and end lines properties that were provided as component props */
     fetchHighlightedFileRangeLines: (startLine: number, endLine: number) => Observable<string[]>
+    /** A function to fetch the range of lines this code excerpt will display. It will be provided
+     * the same start and end lines properties that were provided as component props */
+    fetchPlainTextFileRangeLines?: (startLine: number, endLine: number) => Observable<string[]>
     blobLines?: string[]
 
     viewerUpdates?: Observable<{ viewerId: ViewerId } & HoverContext>
     hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
+    visibilityOffset?: Shape
     onCopy?: () => void
 }
 
 export interface HighlightRange {
     /**
-     * The 0-based line number that this highlight appears in
+     * The 0-based line number where this highlight range begins
      */
-    line: number
+    startLine: number
     /**
-     * The 0-based character offset to start highlighting at
+     * The 0-based character offset from the beginning of startLine where this highlight range begins
      */
-    character: number
+    startCharacter: number
     /**
-     * The number of characters to highlight
+     * The 0-based line number where this highlight range ends
      */
-    highlightLength: number
+    endLine: number
+    /**
+     * The 0-based character offset from the beginning of endLine where this highlight range ends
+     */
+    endCharacter: number
 }
 
 const domFunctions: DOMFunctions = {
@@ -94,7 +111,7 @@ const domFunctions: DOMFunctions = {
 }
 
 const makeTableHTML = (blobLines: string[]): string => '<table>' + blobLines.join('') + '</table>'
-const visibilitySensorOffset = { bottom: -500 }
+const DEFAULT_VISIBILITY_OFFSET: Shape = { bottom: -500 }
 
 /**
  * A code excerpt that displays syntax highlighting and match range highlighting.
@@ -102,16 +119,23 @@ const visibilitySensorOffset = { bottom: -500 }
 export const CodeExcerpt: React.FunctionComponent<Props> = ({
     blobLines,
     fetchHighlightedFileRangeLines,
+    fetchPlainTextFileRangeLines,
     startLine,
     endLine,
     highlightRanges,
     viewerUpdates,
     hoverifier,
+    visibilityOffset = DEFAULT_VISIBILITY_OFFSET,
     className,
     onCopy,
 }) => {
-    const [blobLinesOrError, setBlobLinesOrError] = useState<string[] | ErrorLike | null>(null)
+    const [plainTextBlobLinesOrError, setPlainTextBlobLinesOrError] = useState<string[] | ErrorLike | null>(null)
+    const [highlightedBlobLinesOrError, setHighlightedBlobLinesOrError] = useState<string[] | ErrorLike | null>(null)
     const [isVisible, setIsVisible] = useState(false)
+
+    const blobLinesOrError = fetchPlainTextFileRangeLines
+        ? highlightedBlobLinesOrError || plainTextBlobLinesOrError
+        : highlightedBlobLinesOrError
 
     // Both the behavior subject and the React state are needed here. The behavior subject is
     // used for hoverified events while the React state is used for match highlighting.
@@ -126,13 +150,24 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
         [tableContainerElements]
     )
 
+    // Get the plain text (unhighlighted) blob lines
+    useEffect(() => {
+        let subscription: Subscription | undefined
+        if (isVisible && fetchPlainTextFileRangeLines) {
+            subscription = fetchPlainTextFileRangeLines(startLine, endLine).subscribe(blobLinesOrError => {
+                setPlainTextBlobLinesOrError(blobLinesOrError)
+            })
+        }
+        return () => subscription?.unsubscribe()
+    }, [blobLines, endLine, fetchPlainTextFileRangeLines, isVisible, startLine])
+
     // Get the syntax highlighted blob lines
     useEffect(() => {
         let subscription: Subscription | undefined
         if (isVisible) {
             const observable = blobLines ? of(blobLines) : fetchHighlightedFileRangeLines(startLine, endLine)
             subscription = observable.pipe(catchError(error => [asError(error)])).subscribe(blobLinesOrError => {
-                setBlobLinesOrError(blobLinesOrError)
+                setHighlightedBlobLinesOrError(blobLinesOrError)
             })
         }
         return () => subscription?.unsubscribe()
@@ -141,21 +176,32 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
     // Highlight the search matches
     useLayoutEffect(() => {
         if (tableContainerElement) {
-            const visibleRows = tableContainerElement.querySelectorAll('table tr')
+            const visibleRows = tableContainerElement.querySelectorAll<HTMLTableRowElement>('table tr')
             for (const highlight of highlightRanges) {
-                // Select the HTML row in the excerpt that corresponds to the line to be highlighted.
-                // highlight.line is the 0-indexed line number in the code file, and startLine is the 0-indexed
+                // Select the HTML rows in the excerpt that correspond to the first and last line to be highlighted.
+                // highlight.startLine is the 0-indexed line number in the code file, and startLine is the 0-indexed
                 // line number of the first visible line in the excerpt. So, subtract startLine
-                // from highlight.line to get the correct 0-based index in visibleRows that holds the HTML row.
-                const tableRow = visibleRows[highlight.line - startLine]
-                if (tableRow) {
-                    // Take the lastChild of the row to select the code portion of the table row (each table row consists of the line number and code).
-                    const code = tableRow.lastChild as HTMLTableCellElement
-                    highlightNode(code, highlight.character, highlight.highlightLength)
+                // from highlight.startLine to get the correct 0-based index in visibleRows that holds the HTML row
+                // where highlighting should begin. Subtract startLine from highlight.endLine to get the correct 0-based
+                // index in visibleRows that holds the HTML row where highlighting should end.
+                const startRowIndex = highlight.startLine - startLine
+                const endRowIndex = highlight.endLine - startLine
+                const startRow = visibleRows[startRowIndex]
+                const endRow = visibleRows[endRowIndex]
+                if (startRow && endRow) {
+                    highlightNodeMultiline(
+                        visibleRows,
+                        startRow,
+                        endRow,
+                        startRowIndex,
+                        endRowIndex,
+                        highlight.startCharacter,
+                        highlight.endCharacter
+                    )
                 }
             }
         }
-    }, [highlightRanges, startLine, tableContainerElement])
+    }, [highlightRanges, startLine, endLine, tableContainerElement, blobLinesOrError])
 
     // Hook up the hover tooltips
     useEffect(() => {
@@ -185,7 +231,7 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
     }, [hoverifier, tableContainerElements, viewerUpdates])
 
     return (
-        <VisibilitySensor onChange={setIsVisible} partialVisibility={true} offset={visibilitySensorOffset}>
+        <VisibilitySensor onChange={setIsVisible} partialVisibility={true} offset={visibilityOffset}>
             <Code
                 data-testid="code-excerpt"
                 onCopy={onCopy}

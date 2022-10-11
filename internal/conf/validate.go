@@ -73,14 +73,6 @@ func NewSiteProblem(msg string) *Problem {
 	}
 }
 
-// NewExternalServiceProblem creates a new external service config problem with given message.
-func NewExternalServiceProblem(msg string) *Problem {
-	return &Problem{
-		kind:        problemExternalService,
-		description: msg,
-	}
-}
-
 // IsSite returns true if the problem is about site config.
 func (p Problem) IsSite() bool {
 	return p.kind == problemSite
@@ -173,14 +165,16 @@ func (ps Problems) ExternalService() (problems Problems) {
 // Validate validates the configuration against the JSON Schema and other
 // custom validation checks.
 func Validate(input conftypes.RawUnified) (problems Problems, err error) {
-	siteProblems, err := doValidate(input.Site, schema.SiteSchemaJSON)
+	siteJSON, err := jsonc.Parse(input.Site)
 	if err != nil {
 		return nil, err
 	}
+
+	siteProblems := doValidate(siteJSON, schema.SiteSchemaJSON)
 	problems = append(problems, NewSiteProblems(siteProblems...)...)
 
 	customProblems, err := validateCustomRaw(conftypes.RawUnified{
-		Site: string(jsonc.Normalize(input.Site)),
+		Site: string(siteJSON),
 	})
 	if err != nil {
 		return nil, err
@@ -212,12 +206,17 @@ var siteConfigSecrets = []struct {
 	editPaths []string
 }{
 	{readPath: `executors\.accessToken`, editPaths: []string{"executors.accessToken"}},
+	{readPath: `email\.smtp.username`, editPaths: []string{"email.smtp", "username"}},
 	{readPath: `email\.smtp.password`, editPaths: []string{"email.smtp", "password"}},
 	{readPath: `organizationInvitations.signingKey`, editPaths: []string{"organizationInvitations", "signingKey"}},
 	{readPath: `githubClientSecret`, editPaths: []string{"githubClientSecret"}},
 	{readPath: `dotcom.githubApp\.cloud.clientSecret`, editPaths: []string{"dotcom", "githubApp.cloud", "clientSecret"}},
 	{readPath: `dotcom.githubApp\.cloud.privateKey`, editPaths: []string{"dotcom", "githubApp.cloud", "privateKey"}},
+	{readPath: `gitHubApp.privateKey`, editPaths: []string{"gitHubApp", "privateKey"}},
+	{readPath: `gitHubApp.clientSecret`, editPaths: []string{"gitHubApp", "clientSecret"}},
 	{readPath: `auth\.unlockAccountLinkSigningKey`, editPaths: []string{"auth.unlockAccountLinkSigningKey"}},
+	{readPath: `dotcom.srcCliVersionCache.github.token`, editPaths: []string{"dotcom", "srcCliVersionCache", "github", "token"}},
+	{readPath: `dotcom.srcCliVersionCache.github.webhookSecret`, editPaths: []string{"dotcom", "srcCliVersionCache", "github", "webhookSecret"}},
 }
 
 // UnredactSecrets unredacts unchanged secrets back to their original value for
@@ -276,7 +275,13 @@ func UnredactSecrets(input string, raw conftypes.RawUnified) (string, error) {
 			return input, errors.Wrapf(err, `unredact %q`, strings.Join(secret.editPaths, " > "))
 		}
 	}
-	return unredactedSite, err
+
+	formattedSite, err := jsonc.Format(unredactedSite, &jsonc.DefaultFormatOptions)
+	if err != nil {
+		return input, errors.Wrapf(err, "JSON formatting")
+	}
+
+	return formattedSite, err
 }
 
 // RedactSecrets redacts defined list of secrets from the given configuration. It
@@ -301,9 +306,12 @@ func RedactSecrets(raw conftypes.RawUnified) (empty conftypes.RawUnified, err er
 			ap.Gitlab.ClientSecret = redactedSecret
 		}
 	}
-	redactedSite, err := jsonc.Edit(raw.Site, cfg.AuthProviders, "auth.providers")
-	if err != nil {
-		return empty, errors.Wrap(err, `redact "auth.providers"`)
+	redactedSite := raw.Site
+	if len(cfg.AuthProviders) > 0 {
+		redactedSite, err = jsonc.Edit(raw.Site, cfg.AuthProviders, "auth.providers")
+		if err != nil {
+			return empty, errors.Wrap(err, `redact "auth.providers"`)
+		}
 	}
 
 	for _, secret := range siteConfigSecrets {
@@ -318,21 +326,33 @@ func RedactSecrets(raw conftypes.RawUnified) (empty conftypes.RawUnified, err er
 		}
 	}
 
+	formattedSite, err := jsonc.Format(redactedSite, &jsonc.DefaultFormatOptions)
+	if err != nil {
+		return empty, errors.Wrapf(err, "JSON formatting")
+	}
+
 	return conftypes.RawUnified{
-		Site: redactedSite,
+		Site: formattedSite,
 	}, err
 }
 
-func ValidateSetting(input string) (problems []string, err error) {
-	return doValidate(input, schema.SettingsSchemaJSON)
+// ValidateSettings validates the JSONC input against the settings JSON Schema, returning a list of
+// problems (if any).
+func ValidateSettings(jsoncInput string) (problems []string) {
+	jsonInput, err := jsonc.Parse(jsoncInput)
+	if err != nil {
+		return []string{err.Error()}
+	}
+
+	return doValidate(jsonInput, schema.SettingsSchemaJSON)
 }
 
-func doValidate(inputStr, schema string) (messages []string, err error) {
-	input := jsonc.Normalize(inputStr)
-
+func doValidate(input []byte, schema string) (messages []string) {
 	res, err := validate([]byte(schema), input)
 	if err != nil {
-		return nil, err
+		// We can't return more detailed problems because the input completely failed to parse, so
+		// just return the parse error as the problem.
+		return []string{err.Error()}
 	}
 	messages = make([]string, 0, len(res.Errors()))
 	for _, e := range res.Errors() {
@@ -347,9 +367,17 @@ func doValidate(inputStr, schema string) (messages []string, err error) {
 			keyPath = e.Field()
 		}
 
+		// Use an easier-to-understand description for the common case when the root is not an
+		// object (which can happen when the input is derived from JSONC that is entirely commented
+		// out, for example).
+		if e, ok := e.(*gojsonschema.InvalidTypeError); ok && e.Field() == "(root)" && strings.HasPrefix(e.Description(), "Invalid type. Expected: object, given: ") {
+			messages = append(messages, "must be a JSON object (use {} for empty)")
+			continue
+		}
+
 		messages = append(messages, fmt.Sprintf("%s: %s", keyPath, e.Description()))
 	}
-	return messages, nil
+	return messages
 }
 
 func validate(schema, input []byte) (*gojsonschema.Result, error) {

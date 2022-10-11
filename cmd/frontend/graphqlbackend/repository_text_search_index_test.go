@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/zoekt"
+	"github.com/sourcegraph/zoekt"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -29,14 +29,13 @@ func TestRetrievingAndDeduplicatingIndexedRefs(t *testing.T) {
 		}
 		return api.CommitID("deadbeef"), nil
 	}
-	gitserver.Mocks.ExecSafe = func(params []string) (stdout, stderr []byte, exitCode int, err error) {
-		// Mock default branch lookup in (*RepsitoryResolver).DefaultBranch.
-		return []byte(defaultBranchRef), nil, 0, nil
-	}
+	gsClient := gitserver.NewMockClient()
+	gsClient.GetDefaultBranchFunc.SetDefaultReturn(defaultBranchRef, "", nil)
+
 	defer gitserver.ResetMocks()
 
 	repoIndexResolver := &repositoryTextSearchIndexResolver{
-		repo: NewRepositoryResolver(db, &types.Repo{Name: "alice/repo"}),
+		repo: NewRepositoryResolver(db, gsClient, &types.Repo{Name: "alice/repo"}),
 		client: &backend.FakeSearcher{Repos: []*zoekt.RepoListEntry{{
 			Repository: zoekt.Repository{
 				Name: string("alice/repo"),

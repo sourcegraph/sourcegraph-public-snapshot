@@ -46,13 +46,6 @@
     min-width: 12rem;
 }
 
-.dropdown-item {
-    &:hover {
-        background-color: var(--link-color);
-        color: var(--light-text);
-    }
-}
-
 .dropdown-header {
     font-size: 0.75rem;
 }

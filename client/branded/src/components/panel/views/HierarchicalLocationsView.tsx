@@ -16,6 +16,8 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { parseRepoURI } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner, Alert, Panel } from '@sourcegraph/wildcard'
 
+import { hierarchicalLocationViewHasResultContext } from '../TabbedPanelContent'
+
 import { FileLocations, FileLocationsError, FileLocationsNotFound } from './FileLocations'
 import { HierarchicalLocationsViewButton } from './HierarchicalLocationsViewButton'
 import { groupLocations } from './locations'
@@ -127,15 +129,19 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                             }),
                             tap(({ result }) => {
                                 const hasResults = !isErrorLike(result) && result.locations.length > 0
-                                this.props.extensionsController.extHostAPI
-                                    .then(extensionHostAPI =>
-                                        extensionHostAPI.updateContext({
-                                            'panel.locations.hasResults': hasResults,
+                                const { extensionsController } = this.props
+                                if (extensionsController !== null) {
+                                    extensionsController.extHostAPI
+                                        .then(extensionHostAPI =>
+                                            extensionHostAPI.updateContext({
+                                                'panel.locations.hasResults': hasResults,
+                                            })
+                                        )
+                                        .catch(() => {
+                                            // noop
                                         })
-                                    )
-                                    .catch(() => {
-                                        // noop
-                                    })
+                                }
+                                hierarchicalLocationViewHasResultContext.next(hasResults)
                             }),
                             endWith({ isLoading: false })
                         )

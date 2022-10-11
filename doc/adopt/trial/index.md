@@ -1,6 +1,6 @@
 # Running a Sourcegraph trial/POC
 
-If you're still fuzzy (all the code intelligence puns intended) on how Sourcegraph can help your team [please reach out](https://about.sourcegraph.com/contact) — we love talking to prospective users, and we can share how some of the world's leading software companies use Sourcegraph internally.
+If you're still fuzzy (all the code navigation puns intended) on how Sourcegraph can help your team [please reach out](https://about.sourcegraph.com/contact) — we love talking to prospective users, and we can share how some of the world's leading software companies use Sourcegraph internally.
 
 However, if you already know deep down in your bones that Sourcegraph will greatly benefit your teams and you want to verify your hunch, or perhaps you need to prove out the ROI value to your manager; either way, one great way of accomplishing either is by running a Sourcegraph trial or POC (proof of concept) within your team.
 
@@ -72,15 +72,17 @@ A typical message to the team looks like:
 
 ## 4. Deploy integrations
 
-Sourcegraph is most useful when it's at your fingertips. Our [integrations](../../integration/index.md), including our [Chrome and Firefox extensions](../../integration/browser_extension.md) which provide code intelligence in GitHub, GitLab, Bitbucket, Phabricator, and more, and also provide a search shortcut from the browser URL bar:
+Sourcegraph is most useful when it's at your fingertips. Our [integrations](../../integration/index.md), including our [Chrome and Firefox extensions](../../integration/browser_extension.md) which provide code navigation in GitHub, GitLab, Bitbucket, Phabricator, and more, and also provide a search shortcut from the browser URL bar:
 
 ![Sourcegraph browser extension](https://sourcegraphstatic.com/BrowserExtension.gif)
 
-For short trials, however, companies often choose to only set up our search shortcut (or "omnibox") integration (though it provides less functionality, it may require fewer internal approvals). See [our guide for setting up search shortcuts](../../integration/browser_search_engine.md).
+For short trials, however, companies often choose to only set up our search shortcut (or "omnibox") integration (though it provides less functionality, it may require fewer internal approvals). See [our guide for setting up search shortcuts](../../integration/browser_extension/how-tos/browser_search_engine.md).
 
 ## 5. Measure success
 
-Like step 1, this looks different for every company. If you've defined success as a 60% net promoter score (NPS), or 50%+ of your trial team using Sourcegraph every week, this is the time to measure!
+This looks different for every company. If you've defined success as a 60% net promoter score (NPS), or 50%+ of your trial team using Sourcegraph every week, this is the time to measure! 
+
+Sourcegraph has built-in analytics that are provided to site-admins to help understand and measure the value developers are seeing. Analytics is a free-feature for all instances. [Learn more about our analytics](../../admin/analytics.md).
 
 How did it go? Any feedback for us? [Tweet at us](https://twitter.com/@sourcegraph), and we'll send you some Sourcegraph swag!
 

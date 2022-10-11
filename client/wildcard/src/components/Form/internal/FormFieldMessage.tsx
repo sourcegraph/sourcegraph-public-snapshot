@@ -5,7 +5,7 @@ export interface FormFieldMessageProps {
 }
 
 /**
- * Returns the Bootstrap specific styles to apply to the message element based on associated validity.
+ * Returns the global CSS classes to apply to the message element based on associated validity.
  */
 export const getMessageStyle = ({ isValid }: FormFieldMessageProps): string => {
     if (isValid === undefined) {

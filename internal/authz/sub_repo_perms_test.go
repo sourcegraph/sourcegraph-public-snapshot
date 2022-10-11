@@ -2,7 +2,9 @@ package authz
 
 import (
 	"context"
+	"fmt"
 	"io/fs"
+	"sort"
 	"testing"
 	"time"
 
@@ -59,8 +61,7 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 				getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]SubRepoPermissions, error) {
 					return map[api.RepoName]SubRepoPermissions{
 						"sample": {
-							PathIncludes: []string{},
-							PathExcludes: []string{},
+							Paths: []string{},
 						},
 					}, nil
 				})
@@ -80,8 +81,7 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 				getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]SubRepoPermissions, error) {
 					return map[api.RepoName]SubRepoPermissions{
 						"sample": {
-							PathIncludes: []string{},
-							PathExcludes: []string{"/dev/*"},
+							Paths: []string{"-/dev/*"},
 						},
 					}, nil
 				})
@@ -101,7 +101,7 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 				getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]SubRepoPermissions, error) {
 					return map[api.RepoName]SubRepoPermissions{
 						"sample": {
-							PathIncludes: []string{"*"},
+							Paths: []string{"/*"},
 						},
 					}, nil
 				})
@@ -110,7 +110,7 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 			want: None,
 		},
 		{
-			name:   "Exclude takes precedence",
+			name:   "Last rule takes precedence (exclude)",
 			userID: 1,
 			content: RepoContent{
 				Repo: "sample",
@@ -121,14 +121,33 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 				getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]SubRepoPermissions, error) {
 					return map[api.RepoName]SubRepoPermissions{
 						"sample": {
-							PathIncludes: []string{"*"},
-							PathExcludes: []string{"/dev/*"},
+							Paths: []string{"/**", "-/dev/*"},
 						},
 					}, nil
 				})
 				return NewSubRepoPermsClient(getter)
 			},
 			want: None,
+		},
+		{
+			name:   "Last rule takes precedence (include)",
+			userID: 1,
+			content: RepoContent{
+				Repo: "sample",
+				Path: "/dev/thing",
+			},
+			clientFn: func() (*SubRepoPermsClient, error) {
+				getter := NewMockSubRepoPermissionsGetter()
+				getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]SubRepoPermissions, error) {
+					return map[api.RepoName]SubRepoPermissions{
+						"sample": {
+							Paths: []string{"-/dev/*", "/**"},
+						},
+					}, nil
+				})
+				return NewSubRepoPermsClient(getter)
+			},
+			want: Read,
 		},
 	}
 
@@ -162,11 +181,13 @@ func TestFilterActorPaths(t *testing.T) {
 	checker.EnabledFunc.SetDefaultHook(func() bool {
 		return true
 	})
-	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content RepoContent) (Perms, error) {
-		if content.Path == "file1" {
-			return Read, nil
-		}
-		return None, nil
+	checker.FilePermissionsFuncFunc.SetDefaultHook(func(context.Context, int32, api.RepoName) (FilePermissionFunc, error) {
+		return func(path string) (Perms, error) {
+			if path == "file1" {
+				return Read, nil
+			}
+			return None, nil
+		}, nil
 	})
 
 	filtered, err := FilterActorPaths(ctx, checker, a, repo, testPaths)
@@ -178,6 +199,98 @@ func TestFilterActorPaths(t *testing.T) {
 	if diff := cmp.Diff(want, filtered); diff != "" {
 		t.Fatal(diff)
 	}
+}
+
+func BenchmarkFilterActorPaths(b *testing.B) {
+	// This benchmark is simulating the code path taken by a monorepo with sub
+	// repo permissions. Our goal is to support repos with millions of files.
+	// For now we target a lower number since large numbers don't give enough
+	// runs of the benchmark to be useful.
+	const pathCount = 5_000
+	pathPatterns := []string{
+		"base/%d/foo.go",
+		"%d/stuff/baz",
+		"frontend/%d/stuff/baz/bam",
+		"subdir/sub/sub/sub/%d",
+		"%d/foo/README.md",
+		"subdir/remove/me/please/%d",
+		"subdir/%d/also-remove/me/please",
+		"a/deep/path/%d/.secrets.env",
+		"%d/does/not/match/anything",
+		"does/%d/not/match/anything",
+		"does/not/%d/match/anything",
+		"does/not/match/%d/anything",
+		"does/not/match/anything/%d",
+	}
+	paths := []string{
+		"config.yaml",
+		"dir.yaml",
+	}
+	for i := 0; len(paths) < pathCount; i++ {
+		for _, pat := range pathPatterns {
+			paths = append(paths, fmt.Sprintf(pat, i))
+		}
+	}
+	paths = paths[:pathCount]
+	sort.Strings(paths)
+
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExperimentalFeatures: &schema.ExperimentalFeatures{
+				SubRepoPermissions: &schema.SubRepoPermissions{
+					Enabled: true,
+				},
+			},
+		},
+	})
+	defer conf.Mock(nil)
+	repo := api.RepoName("repo")
+
+	getter := NewMockSubRepoPermissionsGetter()
+	getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]SubRepoPermissions, error) {
+		return map[api.RepoName]SubRepoPermissions{
+			repo: {
+				Paths: []string{
+					"/base/**",
+					"/*/stuff/**",
+					"/frontend/**/stuff/*",
+					"/config.yaml",
+					"/subdir/**",
+					"/**/README.md",
+					"/dir.yaml",
+					"-/subdir/remove/",
+					"-/subdir/*/also-remove/**",
+					"-/**/.secrets.env",
+				},
+			},
+		}, nil
+	})
+	checker, err := NewSubRepoPermsClient(getter)
+	if err != nil {
+		b.Fatal(err)
+	}
+	a := &actor.Actor{
+		UID: 1,
+	}
+	ctx := actor.WithActor(context.Background(), a)
+
+	b.ResetTimer()
+	start := time.Now()
+
+	for n := 0; n <= b.N; n++ {
+		filtered, err := FilterActorPaths(ctx, checker, a, repo, paths)
+		if err != nil {
+			b.Fatal(err)
+		}
+		if len(filtered) == 0 {
+			b.Fatal("expected paths to be returned")
+		}
+		if len(filtered) == len(paths) {
+			b.Fatal("expected to filter out some paths")
+		}
+	}
+
+	b.ReportMetric(float64(len(paths))*float64(b.N)/time.Since(start).Seconds(), "paths/s")
 }
 
 func TestCanReadAllPaths(t *testing.T) {
@@ -193,13 +306,15 @@ func TestCanReadAllPaths(t *testing.T) {
 	checker.EnabledFunc.SetDefaultHook(func() bool {
 		return true
 	})
-	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content RepoContent) (Perms, error) {
-		switch content.Path {
-		case "file1", "file2", "file3":
-			return Read, nil
-		default:
-			return None, nil
-		}
+	checker.FilePermissionsFuncFunc.SetDefaultHook(func(context.Context, int32, api.RepoName) (FilePermissionFunc, error) {
+		return func(path string) (Perms, error) {
+			switch path {
+			case "file1", "file2", "file3":
+				return Read, nil
+			default:
+				return None, nil
+			}
+		}, nil
 	})
 
 	ok, err := CanReadAllPaths(ctx, checker, repo, testPaths)
@@ -250,37 +365,53 @@ func TestSubRepoPermissionsCanReadDirectoriesInPath(t *testing.T) {
 	repoName := api.RepoName("repo")
 
 	testCases := []struct {
-		pathIncludes  []string
+		paths         []string
 		canReadAll    []string
 		cannotReadAny []string
 	}{
 		{
-			pathIncludes:  []string{"foo/bar/thing.txt"},
+			paths:         []string{"foo/bar/thing.txt"},
 			canReadAll:    []string{"foo/", "foo/bar/"},
 			cannotReadAny: []string{"foo/thing.txt", "foo/bar/other.txt"},
 		},
 		{
-			pathIncludes: []string{"foo/bar/**"},
-			canReadAll:   []string{"foo/", "foo/bar/", "foo/bar/baz/", "foo/bar/baz/fox/"},
+			paths:      []string{"foo/bar/**"},
+			canReadAll: []string{"foo/", "foo/bar/", "foo/bar/baz/", "foo/bar/baz/fox/"},
 		},
 		{
-			pathIncludes:  []string{"foo/bar/"},
+			paths:         []string{"foo/bar/"},
 			canReadAll:    []string{"foo/", "foo/bar/"},
 			cannotReadAny: []string{"foo/thing.txt", "foo/bar/thing.txt"},
 		},
 		{
-			pathIncludes:  []string{"baz/*/foo/bar/thing.txt"},
+			paths:         []string{"baz/*/foo/bar/thing.txt"},
 			canReadAll:    []string{"baz/", "baz/x/", "baz/x/foo/bar/"},
 			cannotReadAny: []string{"baz/thing.txt"},
 		},
 		// We can't support rules that start with a wildcard, see comment in expandDirs
 		{
-			pathIncludes:  []string{"**/foo/bar/thing.txt"},
+			paths:         []string{"**/foo/bar/thing.txt"},
 			cannotReadAny: []string{"foo/", "foo/bar/"},
 		},
 		{
-			pathIncludes:  []string{"*/foo/bar/thing.txt"},
+			paths:         []string{"*/foo/bar/thing.txt"},
 			cannotReadAny: []string{"foo/", "foo/bar/"},
+		},
+		{
+			paths:         []string{"/**/foo/bar/thing.txt"},
+			cannotReadAny: []string{"foo/", "foo/bar/"},
+		},
+		{
+			paths:         []string{"/*/foo/bar/thing.txt"},
+			cannotReadAny: []string{"foo/", "foo/bar/"},
+		},
+		{
+			paths:      []string{"-/**", "/storage/redis/**"},
+			canReadAll: []string{"storage/", "/storage/", "/storage/redis/"},
+		},
+		{
+			paths:      []string{"-/**", "-/storage/**", "/storage/redis/**"},
+			canReadAll: []string{"storage/", "/storage/", "/storage/redis/"},
 		},
 	}
 
@@ -290,7 +421,7 @@ func TestSubRepoPermissionsCanReadDirectoriesInPath(t *testing.T) {
 			getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]SubRepoPermissions, error) {
 				return map[api.RepoName]SubRepoPermissions{
 					repoName: {
-						PathIncludes: tc.pathIncludes,
+						Paths: tc.paths,
 					},
 				}, nil
 			})
@@ -411,29 +542,18 @@ func TestSubRepoEnabled(t *testing.T) {
 	})
 }
 
-func TestRepoContentFromFileInfo(t *testing.T) {
-	repo := api.RepoName("my-repo")
+func TestFileInfoPath(t *testing.T) {
 	t.Run("adding trailing slash to directory", func(t *testing.T) {
 		fi := &fileutil.FileInfo{
 			Name_: "app",
 			Mode_: fs.ModeDir,
 		}
-		rc := repoContentFromFileInfo(repo, fi)
-		expected := RepoContent{
-			Repo: repo,
-			Path: "app/",
-		}
-		assert.Equal(t, expected, rc)
+		assert.Equal(t, "app/", fileInfoPath(fi))
 	})
 	t.Run("doesn't add trailing slash if not directory", func(t *testing.T) {
 		fi := &fileutil.FileInfo{
 			Name_: "my-file.txt",
 		}
-		rc := repoContentFromFileInfo(repo, fi)
-		expected := RepoContent{
-			Repo: repo,
-			Path: "my-file.txt",
-		}
-		assert.Equal(t, expected, rc)
+		assert.Equal(t, "my-file.txt", fileInfoPath(fi))
 	})
 }

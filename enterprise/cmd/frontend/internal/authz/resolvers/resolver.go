@@ -8,13 +8,13 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -34,14 +34,10 @@ type Resolver struct {
 	}
 }
 
-// checkLicense returns a user-facing error if the ACLs feature is not purchased
+// checkLicense returns a user-facing error if the provided feature is not purchased
 // with the current license or any error occurred while validating the licence.
-func (r *Resolver) checkLicense() error {
-	if !licensing.EnforceTiers {
-		return nil
-	}
-
-	err := licensing.Check(licensing.FeatureACLs)
+func (r *Resolver) checkLicense(feature licensing.Feature) error {
+	err := licensing.Check(feature)
 	if err != nil {
 		if licensing.IsFeatureNotActivated(err) {
 			return err
@@ -65,12 +61,12 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 		return nil, errDisabledSourcegraphDotCom
 	}
 
-	if err := r.checkLicense(); err != nil {
+	if err := r.checkLicense(licensing.FeatureExplicitPermissionsAPI); err != nil {
 		return nil, err
 	}
 
 	// 🚨 SECURITY: Only site admins can mutate repository permissions.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -136,11 +132,12 @@ func (r *Resolver) SetRepositoryPermissionsUnrestricted(ctx context.Context, arg
 	if envvar.SourcegraphDotComMode() {
 		return nil, errDisabledSourcegraphDotCom
 	}
-	if err := r.checkLicense(); err != nil {
+
+	if err := r.checkLicense(licensing.FeatureExplicitPermissionsAPI); err != nil {
 		return nil, err
 	}
 	// 🚨 SECURITY: Only site admins can mutate repository permissions.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -161,12 +158,12 @@ func (r *Resolver) SetRepositoryPermissionsUnrestricted(ctx context.Context, arg
 }
 
 func (r *Resolver) ScheduleRepositoryPermissionsSync(ctx context.Context, args *graphqlbackend.RepositoryIDArgs) (*graphqlbackend.EmptyResponse, error) {
-	if err := r.checkLicense(); err != nil {
+	if err := r.checkLicense(licensing.FeatureACLs); err != nil {
 		return nil, err
 	}
 
 	// 🚨 SECURITY: Only site admins can query repository permissions.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -185,12 +182,12 @@ func (r *Resolver) ScheduleRepositoryPermissionsSync(ctx context.Context, args *
 }
 
 func (r *Resolver) ScheduleUserPermissionsSync(ctx context.Context, args *graphqlbackend.UserPermissionsSyncArgs) (*graphqlbackend.EmptyResponse, error) {
-	if err := r.checkLicense(); err != nil {
+	if err := r.checkLicense(licensing.FeatureACLs); err != nil {
 		return nil, err
 	}
 
 	// 🚨 SECURITY: Only site admins can query repository permissions.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -213,16 +210,15 @@ func (r *Resolver) ScheduleUserPermissionsSync(ctx context.Context, args *graphq
 }
 
 func (r *Resolver) SetSubRepositoryPermissionsForUsers(ctx context.Context, args *graphqlbackend.SubRepoPermsArgs) (*graphqlbackend.EmptyResponse, error) {
+	if err := r.checkLicense(licensing.FeatureExplicitPermissionsAPI); err != nil {
+		return nil, err
+	}
 	if envvar.SourcegraphDotComMode() {
 		return nil, errDisabledSourcegraphDotCom
 	}
 
-	if err := r.checkLicense(); err != nil {
-		return nil, err
-	}
-
 	// 🚨 SECURITY: Only site admins can mutate repository permissions.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -253,14 +249,50 @@ func (r *Resolver) SetSubRepositoryPermissionsForUsers(ctx context.Context, args
 	}
 
 	for _, perm := range args.UserPermissions {
+		if (perm.PathIncludes == nil || perm.PathExcludes == nil) && perm.Paths == nil {
+			return nil, errors.New("either both pathIncludes and pathExcludes needs to be set, or paths needs to be set")
+		}
+	}
+
+	for _, perm := range args.UserPermissions {
 		userID, ok := mapping[perm.BindID]
 		if !ok {
 			return nil, errors.Errorf("user %q not found", perm.BindID)
 		}
 
+		var paths []string
+		if perm.Paths == nil {
+			paths = make([]string, 0, len(*perm.PathIncludes)+len(*perm.PathExcludes))
+			for _, include := range *perm.PathIncludes {
+				if !strings.HasPrefix(include, "/") { // ensure leading slash
+					include = "/" + include
+				}
+				paths = append(paths, include)
+			}
+			for _, exclude := range *perm.PathExcludes {
+				if !strings.HasPrefix(exclude, "/") { // ensure leading slash
+					exclude = "/" + exclude
+				}
+				paths = append(paths, "-"+exclude) // excludes start with a minus (-)
+			}
+		} else {
+			paths = make([]string, 0, len(*perm.Paths))
+			for _, path := range *perm.Paths {
+				if strings.HasPrefix(path, "-") {
+					if !strings.HasPrefix(path, "-/") {
+						path = "-/" + strings.TrimPrefix(path, "-")
+					}
+				} else {
+					if !strings.HasPrefix(path, "/") {
+						path = "/" + path
+					}
+				}
+				paths = append(paths, path)
+			}
+		}
+
 		if err := db.SubRepoPerms().Upsert(ctx, userID, repoID, authz.SubRepoPermissions{
-			PathIncludes: perm.PathIncludes,
-			PathExcludes: perm.PathExcludes,
+			Paths: paths,
 		}); err != nil {
 			return nil, errors.Wrap(err, "upserting sub-repo permissions")
 		}
@@ -276,11 +308,11 @@ func (r *Resolver) SetRepositoryPermissionsForBitbucketProject(
 		return nil, errDisabledSourcegraphDotCom
 	}
 
-	if err := r.checkLicense(); err != nil {
+	if err := r.checkLicense(licensing.FeatureExplicitPermissionsAPI); err != nil {
 		return nil, err
 	}
 
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -320,7 +352,7 @@ func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphql
 	}
 
 	// 🚨 SECURITY: Only site admins can query repository permissions.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -381,7 +413,7 @@ func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphql
 
 func (r *Resolver) UsersWithPendingPermissions(ctx context.Context) ([]string, error) {
 	// 🚨 SECURITY: Only site admins can query repository permissions.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -390,7 +422,7 @@ func (r *Resolver) UsersWithPendingPermissions(ctx context.Context) ([]string, e
 
 func (r *Resolver) AuthorizedUsers(ctx context.Context, args *graphqlbackend.RepoAuthorizedUserArgs) (graphqlbackend.UserConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins can query repository permissions.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -438,7 +470,7 @@ func (r *Resolver) BitbucketProjectPermissionJobs(ctx context.Context, args *gra
 		return nil, errDisabledSourcegraphDotCom
 	}
 	// 🚨 SECURITY: Only site admins can query repository permissions.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 	loweredAndTrimmedStatus := strings.ToLower(strings.TrimSpace(getOrDefault(args.Status)))
@@ -505,7 +537,7 @@ func (r *permissionsInfoResolver) Unrestricted() bool {
 
 func (r *Resolver) RepositoryPermissionsInfo(ctx context.Context, id graphql.ID) (graphqlbackend.PermissionsInfoResolver, error) {
 	// 🚨 SECURITY: Only site admins can query repository permissions.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -541,7 +573,7 @@ func (r *Resolver) RepositoryPermissionsInfo(ctx context.Context, id graphql.ID)
 
 func (r *Resolver) UserPermissionsInfo(ctx context.Context, id graphql.ID) (graphqlbackend.PermissionsInfoResolver, error) {
 	// 🚨 SECURITY: Only site admins can query user permissions.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 

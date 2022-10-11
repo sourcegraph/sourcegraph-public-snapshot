@@ -9,7 +9,7 @@ import { QueryState } from '@sourcegraph/search'
 import { fetchTreeEntries } from '@sourcegraph/shared/src/backend/repo'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
-import { Icon, PageHeader, useObservable, H4, Text } from '@sourcegraph/wildcard'
+import { Icon, PageHeader, useObservable, H4, Text, Button } from '@sourcegraph/wildcard'
 
 import { WebviewPageProps } from '../platform/context'
 
@@ -78,23 +78,21 @@ export const RepoView: React.FunctionComponent<React.PropsWithChildren<RepoViewP
 
     return (
         <section className="mb-3 p-2">
-            <button
-                type="button"
+            <Button
+                variant="link"
+                outline={true}
+                size="sm"
                 onClick={onBackToSearchResults}
-                className="test-back-to-search-view-btn btn btn-sm btn-link btn-outline-secondary text-decoration-none border-0"
+                className="test-back-to-search-view-btn shadow-none"
             >
                 <Icon aria-hidden={true} className="mr-1" svgPath={mdiArrowLeft} />
                 Back to search view
-            </button>
+            </Button>
             {directoryStack.length > 0 && (
-                <button
-                    type="button"
-                    onClick={onPreviousDirectory}
-                    className="btn btn-sm btn-link btn-outline-secondary text-decoration-none border-0"
-                >
+                <Button variant="link" outline={true} size="sm" onClick={onPreviousDirectory} className="shadow-none">
                     <Icon aria-hidden={true} className="mr-1" svgPath={mdiArrowLeft} />
                     Back to previous directory
-                </button>
+                </Button>
             )}
             <PageHeader
                 path={[{ icon: mdiSourceRepository, text: displayRepoName(repositoryMatch.repository) }]}
@@ -108,12 +106,12 @@ export const RepoView: React.FunctionComponent<React.PropsWithChildren<RepoViewP
                 ) : (
                     <div className={classNames('pr-2', styles.treeEntriesSectionColumns)}>
                         {treeEntries.entries.map(entry => (
-                            <button
-                                type="button"
+                            <Button
+                                variant="link"
+                                size="sm"
                                 key={entry.name}
                                 className={classNames(
-                                    'btn btn-sm btn-link',
-                                    'test-page-file-decorable',
+                                    'test-page-file-decorable shadow-none',
                                     styles.treeEntry,
                                     entry.isDirectory && 'font-weight-bold',
                                     `test-tree-entry-${entry.isDirectory ? 'directory' : 'file'}`,
@@ -138,7 +136,7 @@ export const RepoView: React.FunctionComponent<React.PropsWithChildren<RepoViewP
                                         {entry.isDirectory && '/'}
                                     </span>
                                 </div>
-                            </button>
+                            </Button>
                         ))}
                     </div>
                 )}

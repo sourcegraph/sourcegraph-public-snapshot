@@ -17,7 +17,7 @@ export function initSentry(): void {
     if (
         typeof Sentry !== 'undefined' &&
         window.context.sentryDSN &&
-        (process.env.NODE_ENV === 'production' || process.env.ENABLE_MONITORING)
+        (process.env.NODE_ENV === 'production' || process.env.ENABLE_SENTRY)
     ) {
         const { sentryDSN, version } = window.context
 

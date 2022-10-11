@@ -13,20 +13,32 @@ export NAMESPACE="cluster-ci-$BUILDKITE_BUILD_NUMBER-$BUILDKITE_JOB_ID"
 
 # Capture information about the state of the test cluster
 function cluster_capture_state() {
+  # Get some more verbobe information about what is running.
+  set -x
+
   echo "--- dump diagnostics"
+  # The reason have the grep here and filter out the otel-agents in Pending state is due to how otel-agents
+  # are scheduled. The otel agent is deployed using a DaemonSet, which means on every node, k8s will schedule a
+  # otel-agent, even if the node isn't running anything else. For this QA scenario we don't want to run anything
+  # more than what we want, so if you look in deploy-sourcegraph/overlays/otel-agent-patch.yaml you'll see
+  # the otel-agent DaemonSet is patched with a podAffinity. PodAffinity ensures that a Pod will only be scheduled
+  # that matches a certain condition, if the Pod doesn't match it's status will be PENDING - hence we filter them
+  # out
   # Get overview of all pods
-  kubectl get pods
+  kubectl get pods | grep -v -e "otel-agent-.*Pending"
 
   # Get specifics of pods
   kubectl describe pods >"$root_dir/describe_pods.log" 2>&1
 
   # Get logs for some deployments
   kubectl logs deployment/sourcegraph-frontend --all-containers >"$root_dir/frontend_logs.log" 2>&1
+
+  set +x
 }
 
 # Cleanup the cluster
 function cluster_cleanup() {
-  cluster_capture_state
+  cluster_capture_state || true
   kubectl delete namespace "$NAMESPACE"
 }
 

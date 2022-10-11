@@ -12,8 +12,9 @@ import (
 )
 
 type gitCommitConnectionResolver struct {
-	db            database.DB
-	revisionRange string
+	db              database.DB
+	gitserverClient gitserver.Client
+	revisionRange   string
 
 	first  *int32
 	query  *string
@@ -52,7 +53,7 @@ func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*gitdomain
 		if r.after != nil {
 			after = *r.after
 		}
-		return gitserver.NewClient(r.db).Commits(ctx, r.repo.RepoName(), gitserver.CommitsOptions{
+		return r.gitserverClient.Commits(ctx, r.repo.RepoName(), gitserver.CommitsOptions{
 			Range:        r.revisionRange,
 			N:            uint(n),
 			MessageQuery: query,
@@ -79,7 +80,7 @@ func (r *gitCommitConnectionResolver) Nodes(ctx context.Context) ([]*GitCommitRe
 
 	resolvers := make([]*GitCommitResolver, len(commits))
 	for i, commit := range commits {
-		resolvers[i] = NewGitCommitResolver(r.db, r.repo, commit.ID, commit)
+		resolvers[i] = NewGitCommitResolver(r.db, gitserver.NewClient(r.db), r.repo, commit.ID, commit)
 	}
 
 	return resolvers, nil

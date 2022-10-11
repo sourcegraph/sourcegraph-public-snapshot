@@ -5,13 +5,14 @@ import { noop, random } from 'lodash'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../../../components/WebStory'
+import { useCodeInsightsState } from '../../../../../../stores'
 import { CodeInsightsBackendStoryMock } from '../../../../CodeInsightsBackendStoryMock'
 import { SERIES_MOCK_CHART } from '../../../../components'
 
 import { ComputeInsightCreationPage as ComputeInsightCreationPageComponent } from './ComputeInsightCreationPage'
 
 const defaultStory: Meta = {
-    title: 'web/insights/creation-ui/ComputeInsightCreationPage',
+    title: 'web/insights/creation-ui/compute/ComputeInsightCreationPage',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
     parameters: {
         chromatic: {
@@ -54,13 +55,17 @@ const codeInsightsBackend = {
     ],
 }
 
-export const ComputeInsightCreationPage: Story = () => (
-    <CodeInsightsBackendStoryMock mocks={codeInsightsBackend}>
-        <ComputeInsightCreationPageComponent
-            telemetryService={NOOP_TELEMETRY_SERVICE}
-            onInsightCreateRequest={fakeAPIRequest}
-            onSuccessfulCreation={noop}
-            onCancel={noop}
-        />
-    </CodeInsightsBackendStoryMock>
-)
+export const ComputeInsightCreationPage: Story = () => {
+    useCodeInsightsState.setState({ licensed: true, insightsLimit: null })
+
+    return (
+        <CodeInsightsBackendStoryMock mocks={codeInsightsBackend}>
+            <ComputeInsightCreationPageComponent
+                telemetryService={NOOP_TELEMETRY_SERVICE}
+                onInsightCreateRequest={fakeAPIRequest}
+                onSuccessfulCreation={noop}
+                onCancel={noop}
+            />
+        </CodeInsightsBackendStoryMock>
+    )
+}

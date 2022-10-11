@@ -23,6 +23,8 @@ func TestGetCommits(t *testing.T) {
 		UID: 1,
 	})
 	db := database.NewMockDB()
+	gr := database.NewMockGitserverRepoStore()
+	db.GitserverReposFunc.SetDefaultReturn(gr)
 
 	repo1 := MakeGitRepository(t, getGitCommandsWithFiles("file1", "file2")...)
 	repo2 := MakeGitRepository(t, getGitCommandsWithFiles("file3", "file4")...)

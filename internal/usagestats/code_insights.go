@@ -31,9 +31,14 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types
 		COUNT(distinct user_id) FILTER (WHERE name = 'StandaloneInsightPageEditClick')  AS weekly_standalone_insight_unique_edit_clicks,
 		COUNT(distinct user_id) FILTER (WHERE name = 'InsightAddition')					AS weekly_insight_creators,
 		COUNT(*) FILTER (WHERE name = 'InsightConfigureClick') 							AS weekly_insight_configure_click,
-		COUNT(*) FILTER (WHERE name = 'InsightAddMoreClick') 							AS weekly_insight_add_more_click
+		COUNT(*) FILTER (WHERE name = 'InsightAddMoreClick') 							AS weekly_insight_add_more_click,
+		COUNT(*) FILTER (WHERE name = 'GroupResultsOpenSection') 						AS weekly_group_results_open_section,
+		COUNT(*) FILTER (WHERE name = 'GroupResultsCollapseSection') 					AS weekly_group_results_collapse_section,
+		COUNT(*) FILTER (WHERE name = 'GroupResultsInfoIconHover') 						AS weekly_group_results_info_icon_hover
 	FROM event_logs
-	WHERE name in ('ViewInsights', 'StandaloneInsightPageViewed', 'StandaloneInsightDashboardClick', 'StandaloneInsightPageEditClick', 'ViewInsightsGetStartedPage', 'InsightAddition', 'InsightConfigureClick', 'InsightAddMoreClick')
+	WHERE name in ('ViewInsights', 'StandaloneInsightPageViewed', 'StandaloneInsightDashboardClick', 'StandaloneInsightPageEditClick',
+			'ViewInsightsGetStartedPage', 'InsightAddition', 'InsightConfigureClick', 'InsightAddMoreClick', 'GroupResultsOpenSection',
+			'GroupResultsCollapseSection', 'GroupResultsInfoIconHover')
 		AND timestamp > DATE_TRUNC('week', $1::timestamp);
 	`
 
@@ -51,6 +56,9 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types
 		&stats.WeeklyInsightCreators,
 		&stats.WeeklyInsightConfigureClick,
 		&stats.WeeklyInsightAddMoreClick,
+		&stats.WeeklyGroupResultsOpenSection,
+		&stats.WeeklyGroupResultsCollapseSection,
+		&stats.WeeklyGroupResultsInfoIconHover,
 	); err != nil {
 		return nil, err
 	}
@@ -182,6 +190,48 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types
 		return nil, errors.Wrap(err, "GetInsightsPerDashboard")
 	}
 	stats.InsightsPerDashboard = insightsPerDashboard
+
+	weeklyGroupResultsAggregationModeClicked, err := GetGroupResultsPing(ctx, db, "GroupAggregationModeClicked")
+	if err != nil {
+		return nil, errors.Wrap(err, "WeeklyGroupResultsAggregationModeClicked")
+	}
+	stats.WeeklyGroupResultsAggregationModeClicked = weeklyGroupResultsAggregationModeClicked
+
+	weeklyGroupResultsAggregationModeDisabledHover, err := GetGroupResultsPing(ctx, db, "GroupAggregationModeDisabledHover")
+	if err != nil {
+		return nil, errors.Wrap(err, "WeeklyGroupResultsAggregationModeDisabledHover")
+	}
+	stats.WeeklyGroupResultsAggregationModeDisabledHover = weeklyGroupResultsAggregationModeDisabledHover
+
+	weeklyGroupResultsChartBarClick, err := GetGroupResultsPing(ctx, db, "GroupResultsChartBarClick")
+	if err != nil {
+		return nil, errors.Wrap(err, "GroupResultsChartBarClick")
+	}
+	stats.WeeklyGroupResultsChartBarClick = weeklyGroupResultsChartBarClick
+
+	weeklyGroupResultsChartBarHover, err := GetGroupResultsPing(ctx, db, "GroupResultsChartBarHover")
+	if err != nil {
+		return nil, errors.Wrap(err, "GroupResultsChartBarHover")
+	}
+	stats.WeeklyGroupResultsChartBarHover = weeklyGroupResultsChartBarHover
+
+	weeklyGroupResultsExpandedViewOpen, err := GetGroupResultsExpandedViewPing(ctx, db, "GroupResultsExpandedViewOpen")
+	if err != nil {
+		return nil, errors.Wrap(err, "WeeklyGroupResultsExpandedViewOpen")
+	}
+	stats.WeeklyGroupResultsExpandedViewOpen = weeklyGroupResultsExpandedViewOpen
+
+	weeklyGroupResultsExpandedViewCollapse, err := GetGroupResultsExpandedViewPing(ctx, db, "GroupResultsExpandedViewCollapse")
+	if err != nil {
+		return nil, errors.Wrap(err, "WeeklyGroupResultsExpandedViewCollapse")
+	}
+	stats.WeeklyGroupResultsExpandedViewCollapse = weeklyGroupResultsExpandedViewCollapse
+
+	backfillTime, err := GetBackfillTimePing(ctx, db)
+	if err != nil {
+		return nil, errors.Wrap(err, "GetBackfillTimePing")
+	}
+	stats.WeeklySeriesBackfillTime = backfillTime
 
 	return &stats, nil
 }
@@ -341,6 +391,82 @@ func GetInsightsPerDashboard(ctx context.Context, db database.DB) (types.Insight
 	return insightsPerDashboardStats, nil
 }
 
+func GetGroupResultsPing(ctx context.Context, db database.DB, pingName string) ([]types.GroupResultPing, error) {
+	groupResultsPings := []types.GroupResultPing{}
+	rows, err := db.QueryContext(ctx, getGroupResultsSql, pingName, timeNow())
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		groupResultsPing := types.GroupResultPing{}
+		if err := rows.Scan(
+			&groupResultsPing.Count,
+			&groupResultsPing.AggregationMode,
+			&groupResultsPing.UIMode,
+			&groupResultsPing.BarIndex,
+		); err != nil {
+			return nil, err
+		}
+
+		groupResultsPings = append(groupResultsPings, groupResultsPing)
+	}
+	return groupResultsPings, nil
+}
+
+func GetGroupResultsExpandedViewPing(ctx context.Context, db database.DB, pingName string) ([]types.GroupResultExpandedViewPing, error) {
+	groupResultsExpandedViewPings := []types.GroupResultExpandedViewPing{}
+	rows, err := db.QueryContext(ctx, getGroupResultsSql, pingName, timeNow())
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var noop *string
+	for rows.Next() {
+		groupResultsExpandedViewPing := types.GroupResultExpandedViewPing{}
+		if err := rows.Scan(
+			&groupResultsExpandedViewPing.Count,
+			&groupResultsExpandedViewPing.AggregationMode,
+			&noop,
+			&noop,
+		); err != nil {
+			return nil, err
+		}
+
+		groupResultsExpandedViewPings = append(groupResultsExpandedViewPings, groupResultsExpandedViewPing)
+	}
+	return groupResultsExpandedViewPings, nil
+}
+
+func GetBackfillTimePing(ctx context.Context, db database.DB) ([]types.InsightsBackfillTimePing, error) {
+	store := db.EventLogs()
+	name := InsightsBackfillTimePingName
+	all, err := store.ListAll(ctx, database.EventLogsListOptions{
+		LimitOffset: &database.LimitOffset{
+			Limit:  1,
+			Offset: 0,
+		},
+		EventName: &name,
+	})
+	if err != nil {
+		return []types.InsightsBackfillTimePing{}, err
+	} else if len(all) == 0 {
+		return []types.InsightsBackfillTimePing{}, nil
+	}
+
+	latest := all[0]
+	var backfillTimePing []types.InsightsBackfillTimePing
+	err = json.Unmarshal([]byte(latest.Argument), &backfillTimePing)
+	if err != nil {
+		return []types.InsightsBackfillTimePing{}, errors.Wrap(err, "Unmarshal")
+	}
+	return backfillTimePing, nil
+}
+
 // WithAll adds multiple pings by name to this builder
 func (b *PingQueryBuilder) WithAll(pings []types.PingName) *PingQueryBuilder {
 	for _, p := range pings {
@@ -451,6 +577,12 @@ WHERE name = 'InsightsGetStartedTabMoreClick' AND timestamp > DATE_TRUNC('week',
 GROUP BY argument;
 `
 
+const getGroupResultsSql = `
+SELECT COUNT(*), argument::json->>'aggregationMode' as aggregationMode, argument::json->>'uiMode' as uiMode, argument::json->>'index' as bar_index FROM event_logs
+WHERE name = $1::TEXT AND timestamp > DATE_TRUNC('week', $2::TIMESTAMP)
+GROUP BY argument;
+`
+
 const InsightsTotalCountPingName = `INSIGHT_TOTAL_COUNTS`
 const InsightsTotalCountCriticalPingName = `INSIGHT_TOTAL_COUNT_CRITICAL`
 const InsightsIntervalCountsPingName = `INSIGHT_TIME_INTERVALS`
@@ -458,3 +590,4 @@ const InsightsOrgVisibleInsightsPingName = `INSIGHT_ORG_VISIBLE_INSIGHTS`
 const InsightsTotalOrgsWithDashboardPingName = `INSIGHT_TOTAL_ORGS_WITH_DASHBOARD`
 const InsightsDashboardTotalCountPingName = `INSIGHT_DASHBOARD_TOTAL_COUNT`
 const InsightsPerDashboardPingName = `INSIGHTS_PER_DASHBORD_STATS`
+const InsightsBackfillTimePingName = `INSIGHTS_BACKFILL_TIME`

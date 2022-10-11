@@ -2,7 +2,7 @@ Your Sourcegraph code monitor, My test monitor, detected 6 new results.
 
 - Diff match: https://www.sourcegraph.com/github.com/test/test/-/commit/7815187511872asbasdfgasd?utm_source=code-monitoring-email from github.com/test/test@7815187
 file1.go file2.go
-@ -97,5 +97,5 @ func Test() {
+@@ -97,5 +97,5 @@ func Test() {
  leading context
 +matched added
 -matched removed
@@ -25,7 +25,7 @@ ten
 
 - Diff match: https://www.sourcegraph.com/github.com/test/test/-/commit/7815187511872asbasdfgasd?utm_source=code-monitoring-email from github.com/test/test@7815187
 file1.go file2.go
-@ -97,5 +97,5 @ func Test() {
+@@ -97,5 +97,5 @@ func Test() {
  leading context
 +matched added
 -matched removed

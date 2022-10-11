@@ -24,10 +24,14 @@ func Zoekt() *monitoring.Dashboard {
 		NoSourcegraphDebugServer: true,
 		Variables: []monitoring.ContainerVariable{
 			{
-				Label:        "Instance",
-				Name:         "instance",
-				OptionsQuery: "label_values(index_num_assigned, instance)",
-				Multi:        true,
+				Label: "Instance",
+				Name:  "instance",
+				OptionsLabelValues: monitoring.ContainerVariableOptionsLabelValues{
+					Query:         "index_num_assigned",
+					LabelName:     "instance",
+					ExampleOption: "zoekt-indexserver-0:6072",
+				},
+				Multi: true,
 			},
 		},
 		Groups: []monitoring.Group{
@@ -182,13 +186,68 @@ func Zoekt() *monitoring.Dashboard {
 							NextSteps:   "none",
 						},
 					},
+					{
+						{
+							Name:        "zoekt_shards_sched",
+							Description: "current number of zoekt scheduler processes in a state",
+							Query:       "sum by (type, state) (zoekt_shards_sched)",
+							NoAlert:     true,
+							Panel: monitoring.Panel().With(
+								monitoring.PanelOptions.LegendOnRight(),
+								func(o monitoring.Observable, p *sdk.Panel) {
+									p.GraphPanel.Targets = []sdk.Target{{
+										Expr:         o.Query,
+										LegendFormat: "{{type}} {{state}}",
+									}}
+									p.GraphPanel.Legend.Current = true
+									p.GraphPanel.Tooltip.Shared = true
+								}).MinAuto(),
+							Owner: monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								Each ongoing search request starts its life as an interactive query. If it
+								takes too long it becomes a batch query. Between state transitions it can be queued.
+
+								If you have a high number of batch queries it is a sign there is a large load
+								of slow queries. Alternatively your systems are underprovisioned and normal
+								search queries are taking too long.
+
+								For a full explanation of the states see https://github.com/sourcegraph/zoekt/blob/930cd1c28917e64c87f0ce354a0fd040877cbba1/shards/sched.go#L311-L340
+							`,
+						},
+						{
+							Name:        "zoekt_shards_sched_total",
+							Description: "rate of zoekt scheduler process state transitions in the last 5m",
+							Query:       "sum by (type, state) (rate(zoekt_shards_sched[5m]))",
+							NoAlert:     true,
+							Panel: monitoring.Panel().With(
+								monitoring.PanelOptions.LegendOnRight(),
+								func(o monitoring.Observable, p *sdk.Panel) {
+									p.GraphPanel.Targets = []sdk.Target{{
+										Expr:         o.Query,
+										LegendFormat: "{{type}} {{state}}",
+									}}
+									p.GraphPanel.Legend.Current = true
+									p.GraphPanel.Tooltip.Shared = true
+								}).MinAuto(),
+							Owner: monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								Each ongoing search request starts its life as an interactive query. If it
+								takes too long it becomes a batch query. Between state transitions it can be queued.
+
+								If you have a high number of batch queries it is a sign there is a large load
+								of slow queries. Alternatively your systems are underprovisioned and normal
+								search queries are taking too long.
+
+								For a full explanation of the states see https://github.com/sourcegraph/zoekt/blob/930cd1c28917e64c87f0ce354a0fd040877cbba1/shards/sched.go#L311-L340
+							`,
+						},
+					},
 				},
 			},
 			{
 				Title: "Git fetch durations",
 				Rows: []monitoring.Row{
 					{
-
 						{
 							Name:        "90th_percentile_successful_git_fetch_durations_5m",
 							Description: "90th percentile successful git fetch durations over 5m",
@@ -606,6 +665,45 @@ func Zoekt() *monitoring.Dashboard {
 								- resource saturation
 								- each Zoekt replica has too many jobs for it to be able to process all of them promptly. In this scenario, consider adding additional Zoekt replicas to distribute the work better.
 						`,
+						},
+					},
+				},
+			},
+			{
+				Title: "Virtual Memory Statistics",
+				Rows: []monitoring.Row{
+					{
+						{
+							Name:        "memory_map_areas_percentage_used",
+							Description: "process memory map areas percentage used (per instance)",
+							Query:       fmt.Sprintf("(proc_metrics_memory_map_current_count{%s} / proc_metrics_memory_map_max_limit{%s}) * 100", "instance=~`${instance:regex}`", "instance=~`${instance:regex}`"),
+							Panel: monitoring.Panel().LegendFormat("{{instance}}").
+								Unit(monitoring.Percentage).
+								With(monitoring.PanelOptions.LegendOnRight()),
+							Warning:  monitoring.Alert().GreaterOrEqual(70),
+							Critical: monitoring.Alert().GreaterOrEqual(90),
+							Owner:    monitoring.ObservableOwnerSearchCore,
+
+							Interpretation: `
+								Processes have a limited about of memory map areas that they can use. In Zoekt, memory map areas
+								are mainly used for loading shards into memory for queries (via mmap). However, memory map areas
+								are also used for loading shared libraries, etc.
+
+								_See https://en.wikipedia.org/wiki/Memory-mapped_file and the related articles for more information about memory maps._
+
+								Once the memory map limit is reached, the Linux kernel will prevent the process from creating any
+								additional memory map areas. This could cause the process to crash.
+							`,
+							NextSteps: `
+								If you are running out of memory map areas, you could resolve this by:
+
+								    - Creating additional Zoekt replicas: This spreads all the shards out amongst more replicas, which
+								means that each _individual_ replica will have fewer shards. This, in turn, decreases the
+								amount of memory map areas that a _single_ replica can create (in order to load the shards into memory).
+								    - Increase the virtual memory subsystem's 'max_map_count' parameter which defines the upper limit of memory areas
+								a process can use. The exact instructions for tuning this parameter can differ depending on your environment.
+								See https://kernel.org/doc/Documentation/sysctl/vm.txt for more information.
+							`,
 						},
 					},
 				},

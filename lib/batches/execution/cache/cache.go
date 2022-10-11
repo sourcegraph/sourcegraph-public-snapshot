@@ -135,7 +135,7 @@ func (key CacheKey) Slug() string {
 	return SlugForRepo(key.Repository.Name, key.Repository.BaseRev)
 }
 
-func KeyForWorkspace(batchChangeAttributes *template.BatchChangeAttributes, r batches.Repository, path string, onlyFetchWorkspace bool, steps []batches.Step, stepIndex int) Keyer {
+func KeyForWorkspace(batchChangeAttributes *template.BatchChangeAttributes, r batches.Repository, path string, onlyFetchWorkspace bool, steps []batches.Step, stepIndex int, retriever MetadataRetriever) Keyer {
 	sort.Strings(r.FileMatches)
 
 	return CacheKey{
@@ -145,6 +145,7 @@ func KeyForWorkspace(batchChangeAttributes *template.BatchChangeAttributes, r ba
 		Steps:                 steps,
 		BatchChangeAttributes: batchChangeAttributes,
 		StepIndex:             stepIndex,
+		MetadataRetriever:     retriever,
 	}
 }
 
@@ -168,8 +169,5 @@ func ChangesetSpecsFromCache(spec *batches.BatchSpec, r batches.Repository, resu
 		Path:             path,
 	}
 
-	return batches.BuildChangesetSpecs(input, batches.ChangesetSpecFeatureFlags{
-		IncludeAutoAuthorDetails: true,
-		AllowOptionalPublished:   true,
-	})
+	return batches.BuildChangesetSpecs(input)
 }

@@ -8,17 +8,22 @@ import (
 )
 
 type operations struct {
-	codeIntelligenceConfiogurationPolicies    *observation.Operation
-	configurationPolicyByID                   *observation.Operation
-	createCodeIntelligenceConfigurationPolicy *observation.Operation
-	deleteCodeIntelligenceConfigurationPolicy *observation.Operation
-	previewGitObjectFilter                    *observation.Operation
-	previewRepositoryFilter                   *observation.Operation
-	updateCodeIntelligenceConfigurationPolicy *observation.Operation
+	// Configurations
+	createConfigurationPolicy *observation.Operation
+	configurationPolicies     *observation.Operation
+	configurationPolicyByID   *observation.Operation
+	updateConfigurationPolicy *observation.Operation
+	deleteConfigurationPolicy *observation.Operation
+
+	// Retention
+	previewGitObjectFilter *observation.Operation
+
+	// Repository
+	previewRepoFilter *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
-	metrics := metrics.NewREDMetrics(
+	m := metrics.NewREDMetrics(
 		observationContext.Registerer,
 		"codeintel_policies_transport_graphql",
 		metrics.WithLabels("op"),
@@ -29,17 +34,22 @@ func newOperations(observationContext *observation.Context) *operations {
 		return observationContext.Operation(observation.Op{
 			Name:              fmt.Sprintf("codeintel.policies.transport.graphql.%s", name),
 			MetricLabelValues: []string{name},
-			Metrics:           metrics,
+			Metrics:           m,
 		})
 	}
 
 	return &operations{
-		codeIntelligenceConfiogurationPolicies:    op("CodeIntelligenceConfiogurationPolicies"),
-		configurationPolicyByID:                   op("ConfigurationPolicyByID"),
-		createCodeIntelligenceConfigurationPolicy: op("CreateCodeIntelligenceConfigurationPolicy"),
-		deleteCodeIntelligenceConfigurationPolicy: op("DeleteCodeIntelligenceConfigurationPolicy"),
-		previewGitObjectFilter:                    op("PreviewGitObjectFilter"),
-		previewRepositoryFilter:                   op("PreviewRepositoryFilter"),
-		updateCodeIntelligenceConfigurationPolicy: op("UpdateCodeIntelligenceConfigurationPolicy"),
+		// Configurations
+		createConfigurationPolicy: op("CreateConfigurationPolicy"),
+		configurationPolicies:     op("ConfigurationPolicies"),
+		configurationPolicyByID:   op("ConfigurationPolicyByID"),
+		updateConfigurationPolicy: op("UpdateConfigurationPolicy"),
+		deleteConfigurationPolicy: op("DeleteConfigurationPolicy"),
+
+		// Retention
+		previewGitObjectFilter: op("PreviewGitObjectFilter"),
+
+		// Repository
+		previewRepoFilter: op("PreviewRepoFilter"),
 	}
 }

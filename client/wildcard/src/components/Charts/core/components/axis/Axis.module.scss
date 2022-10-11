@@ -1,0 +1,29 @@
+// We are not able to add our own classnames for visx grid/axis elements
+// Because of that we have to use nested CSS selectors to override default
+// styles of these elements.
+
+.grid-line {
+    line {
+        stroke: var(--border-color-2);
+        stroke-width: 1;
+    }
+}
+
+.axis-line {
+    stroke: var(--border-color-2);
+    stroke-width: 1;
+
+    &--vertical {
+        // Hide line axis visually and hide from voice over
+        stroke-width: 0;
+        display: none;
+    }
+}
+
+.axis-tick {
+    // small tick line
+    line {
+        stroke: var(--border-color-2);
+        stroke-width: 1;
+    }
+}

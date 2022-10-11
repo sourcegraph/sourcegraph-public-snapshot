@@ -20,7 +20,7 @@ export interface PopoverContentProps extends Omit<FloatingPanelProps, 'target' |
     targetElement?: HTMLElement | null
 }
 
-export const PopoverContent = forwardRef((props, reference) => {
+export const PopoverContent = forwardRef(function PopoverContent(props, reference) {
     const {
         isOpen,
         children,
@@ -29,14 +29,15 @@ export const PopoverContent = forwardRef((props, reference) => {
         autoFocus = true,
         as: Component = 'div',
         role = 'dialog',
-        'aria-modal': ariaModel = true,
+        'aria-modal': ariaModal = true,
         ...otherProps
     } = props
+
+    const { renderRoot } = useContext(PopoverRoot)
 
     const { isOpen: isOpenContext, targetElement: contextTargetElement, tailElement, anchor, setOpen } = useContext(
         PopoverContext
     )
-    const { renderRoot } = useContext(PopoverRoot)
 
     const targetElement = contextTargetElement ?? propertyTargetElement
     const [focusLock, setFocusLock] = useState(false)
@@ -54,7 +55,13 @@ export const PopoverContent = forwardRef((props, reference) => {
     })
 
     // Close popover on escape
-    useKeyboard({ detectKeys: ['Escape'] }, () => setOpen({ isOpen: false, reason: PopoverOpenEventReason.Esc }))
+    useKeyboard({ detectKeys: ['Escape'] }, () => {
+        // Only fire if we can be sure that the popover is open.
+        // Both for controlled and uncontrolled popovers.
+        if (isOpen || isOpenContext) {
+            setOpen({ isOpen: false, reason: PopoverOpenEventReason.Esc })
+        }
+    })
 
     // Native behavior of browsers about focus elements says - if element that gets focus
     // is in outside the visible viewport then browser should scroll to this element automatically.
@@ -84,7 +91,7 @@ export const PopoverContent = forwardRef((props, reference) => {
             target={anchor?.current ?? targetElement}
             marker={tailElement}
             role={role}
-            aria-modal={ariaModel}
+            aria-modal={ariaModal}
             rootRender={renderRoot}
             className={classNames(styles.popover, otherProps.className)}
         >

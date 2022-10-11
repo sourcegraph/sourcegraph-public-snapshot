@@ -438,6 +438,25 @@ Some proxies add a prefix to the username header value. For example, Google IAP 
 }
 ```
 
+## Linking a Sourcegraph account to an auth provider
+
+In most cases, the link between a Sourcegraph account and an authentication provider account happens via email.
+
+Consequently, you can only sign in via an auth provider if your email on Sourcegraph matches the one configured in the auth provider.
+
+Let's say the email field in your Sourcegraph account was kept blank when a site admin created the account for you, but the username matches your username on GitHub or GitLab. Will this work? If you try to sign in to SG with GitHub or GitLab, it won't work, and you will see an error informing you that a verified email is missing.
+
+Exceptions to this rule are [HTTP Proxies](#http-authentication-proxies), where there's an option to make the link via username only.
+For [Bitbucket](../config/authorization_and_authentication.md#bitbucket-server-bitbucket-data-center-authorization), we don't support OAuth. Still, the match between the chosen auth provider used with Bitbucket and a user's Bitbucket account happens via username.
+
+Using only a username to match a Sourcegraph account to an auth provider account is not recommended, as you can see [here](../repo/permissions.md#username), for example.
+Usernames in Sourcegraph are mutable, so a malicious user could change a username, elevating their privileges.
+
+## Linking accounts from multiple auth providers
+Sourcegraph will automatically link accounts from multiple external auth providers, resulting in a single user account on Sourcegraph. That way a user can login with multiple auth methods and end up being logged in with the same Sourcegraph account. In general, to link accounts, the following condition needs to be met:
+
+At the time of signing in with the new account, any of the email addresses configured on the user account on the auth provider must match any of the **verified** email addresses on the user account on the Sourcegraph side. If there is a match, the accounts are linked, [otherwise a new user account is created if auth provider is configured to support user sign ups](#how-to-control-user-sign-up).
+
 ## Username normalization
 
 Usernames on Sourcegraph are normalized according to the following rules.

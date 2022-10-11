@@ -24,12 +24,9 @@ export enum PageRoutes {
     Notebooks = '/notebooks',
     RepoContainer = '/:repoRevAndRest+',
     InstallGitHubAppSuccess = '/install-github-app-success',
-    InstallGitHubAppSelectOrg = '/install-github-app-select-org',
 }
 
 export enum EnterprisePageRoutes {
-    SubscriptionsNew = '/subscriptions/new',
-    OldSubscriptionsNew = '/user/subscriptions/new',
     BatchChanges = '/batch-changes',
     Stats = '/stats',
     CodeMonitoring = '/code-monitoring',

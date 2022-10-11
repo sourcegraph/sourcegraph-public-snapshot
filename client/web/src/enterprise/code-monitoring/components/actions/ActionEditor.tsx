@@ -5,7 +5,7 @@ import classNames from 'classnames'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { isErrorLike } from '@sourcegraph/common'
-import { Button, Card, H4 } from '@sourcegraph/wildcard'
+import { Alert, Button, Card, H4 } from '@sourcegraph/wildcard'
 
 import styles from '../CodeMonitorForm.module.scss'
 
@@ -29,6 +29,8 @@ export interface ActionEditorProps {
 
     canDelete: boolean
     onDelete: React.FormEventHandler
+
+    warningMessage?: React.ReactNode
 
     // Test action
     testState: 'called' | 'loading' | Error | undefined
@@ -58,6 +60,7 @@ export const ActionEditor: React.FunctionComponent<React.PropsWithChildren<Actio
     onCancel,
     canDelete,
     onDelete,
+    warningMessage,
     testState,
     testButtonDisabledReason,
     testButtonText,
@@ -119,6 +122,12 @@ export const ActionEditor: React.FunctionComponent<React.PropsWithChildren<Actio
                 <Card className={classNames(styles.card, 'p-3')}>
                     <H4 className="mb-0 font-weight-bold">{title}</H4>
                     <span className="text-muted">{subtitle}</span>
+
+                    {warningMessage && (
+                        <Alert variant="warning" className={classNames('mb-0 mt-3', styles.alert)}>
+                            {warningMessage}
+                        </Alert>
+                    )}
 
                     {children}
 
@@ -273,6 +282,11 @@ export const ActionEditor: React.FunctionComponent<React.PropsWithChildren<Actio
                             </div>
                         )}
                     </div>
+                    {warningMessage && (
+                        <Alert variant="warning" className={classNames('mb-0 mt-3', styles.alert)}>
+                            {warningMessage}
+                        </Alert>
+                    )}
                 </Card>
             )}
         </>

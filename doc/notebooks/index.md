@@ -32,7 +32,7 @@ body.theme-dark .markdown-body ul li:before {
 </style>
 
 # Notebooks
-Notebooks enable powerful live–and persistent–documentation, shareable with your organization or the world. As of release 3.39, Notebooks are Generally Available (GA) on Sourcegraph Cloud and in Sourcegraph enterprise installs. You can explore all the public notebooks on Sourcegraph.com without an account, or create a [Sourcegraph Cloud](https://about.sourcegraph.com/get-started/cloud) account to start creating your own Notebooks. If you're a Sourcegraph enterprise user and are on version 3.39 or later, you'll find Notebooks in the header navigation, or by going to `https://<your-internal-sourcegraph-url>/notebooks`.
+Notebooks enable powerful live–and persistent–documentation, shareable with your organization or the world. As of release 3.39, Notebooks are Generally Available (GA). If you're a Sourcegraph enterprise user and are on version 3.39 or later, you'll find Notebooks in the header navigation, or by going to `https://<your-internal-sourcegraph-url>/notebooks`. You can also explore [public notebooks on Sourcegraph.com](https://sourcegraph.com/notebooks).
 
 Inspired by Jupyter Notebooks and powered by Markdown and Sourcegraph's code search, Notebooks let you and your team create living documentation that interacts directly with your code. You can leverage Notebooks to onboard a new teammate, document [known vulnerabilities](https://sourcegraph.com/notebooks/Tm90ZWJvb2s6MQ==), a [common pattern](https://sourcegraph.com/notebooks/Tm90ZWJvb2s6OTI=) in your codebase, or [useful Sourcegraph queries](https://sourcegraph.com/notebooks/Tm90ZWJvb2s6MTU=).
 

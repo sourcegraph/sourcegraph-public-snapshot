@@ -40,7 +40,7 @@ interface NotebookSymbolBlockProps
     extends BlockProps<SymbolBlock>,
         ThemeProps,
         TelemetryProps,
-        PlatformContextProps<'requestGraphQL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'>,
+        PlatformContextProps<'requestGraphQL' | 'urlToFile' | 'settings'>,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
     hoverifier: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
     isSourcegraphDotCom: boolean

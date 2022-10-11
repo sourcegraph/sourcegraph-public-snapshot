@@ -50,7 +50,11 @@ func TestBitbucketServerSource_MakeRepo(t *testing.T) {
 		},
 	}
 
-	svc := types.ExternalService{ID: 1, Kind: extsvc.KindBitbucketServer}
+	svc := types.ExternalService{
+		ID:     1,
+		Kind:   extsvc.KindBitbucketServer,
+		Config: extsvc.NewEmptyConfig(),
+	}
 
 	for name, config := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -123,7 +127,11 @@ func TestBitbucketServerSource_Exclude(t *testing.T) {
 		},
 	}
 
-	svc := types.ExternalService{ID: 1, Kind: extsvc.KindBitbucketServer}
+	svc := types.ExternalService{
+		ID:     1,
+		Kind:   extsvc.KindBitbucketServer,
+		Config: extsvc.NewEmptyConfig(),
+	}
 
 	for name, config := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -158,13 +166,14 @@ func TestBitbucketServerSource_Exclude(t *testing.T) {
 func TestBitbucketServerSource_WithAuthenticator(t *testing.T) {
 	svc := &types.ExternalService{
 		Kind: extsvc.KindBitbucketServer,
-		Config: marshalJSON(t, &schema.BitbucketServerConnection{
+		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.BitbucketServerConnection{
 			Url:   "https://bitbucket.sgdev.org",
 			Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
-		}),
+		})),
 	}
 
-	bbsSrc, err := NewBitbucketServerSource(logtest.Scoped(t), svc, nil)
+	ctx := context.Background()
+	bbsSrc, err := NewBitbucketServerSource(ctx, logtest.Scoped(t), svc, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -508,7 +517,11 @@ func GetConfig(t *testing.T, serverUrl string, token string) (map[string]*schema
 		},
 	}
 
-	svc := types.ExternalService{ID: 1, Kind: extsvc.KindBitbucketServer}
+	svc := types.ExternalService{
+		ID:     1,
+		Kind:   extsvc.KindBitbucketServer,
+		Config: extsvc.NewEmptyConfig(),
+	}
 
 	return cases, svc
 }

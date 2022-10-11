@@ -48,6 +48,14 @@ func SignUp(baseURL, email, username, password string) (*Client, error) {
 	})
 }
 
+func SignUpOrSignIn(baseURL, email, username, password string) (*Client, error) {
+	client, err := SignUp(baseURL, email, username, password)
+	if err != nil {
+		return SignIn(baseURL, email, password)
+	}
+	return client, err
+}
+
 // SignIn performs the sign in with given user credentials.
 // It returns an authenticated client as the user for doing testing.
 func SignIn(baseURL, email, password string) (*Client, error) {

@@ -8,7 +8,8 @@ import (
 
 // Check can be defined for Runner to execute as part of a Category.
 type Check[Args any] struct {
-	// Name is used to identify this Check.
+	// Name is used to identify this Check. It must be unique across categories when used
+	// with Runner, otherwise duplicate Checks are set to be skipped.
 	Name string
 	// Description can be used to provide additional context and manual fix instructions.
 	Description string

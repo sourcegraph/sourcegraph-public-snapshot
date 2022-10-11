@@ -4,8 +4,7 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascadeProps, SettingsSubjectCommonFields } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
@@ -40,7 +39,7 @@ export interface ExtensionsAreaRouteContext
     authenticatedUser: AuthenticatedUser | null
 
     /** The subject whose extensions and configuration to display. */
-    subject: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'>
+    subject: SettingsSubjectCommonFields
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
     isSourcegraphDotCom: boolean
@@ -52,16 +51,16 @@ interface ExtensionsAreaProps
         PlatformContextProps,
         ThemeProps,
         TelemetryProps {
-    routes: readonly ExtensionsAreaRoute[]
+    routes?: readonly ExtensionsAreaRoute[]
 
     /**
      * The currently authenticated user.
      */
     authenticatedUser: AuthenticatedUser | null
 
-    viewerSubject: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'>
+    viewerSubject: SettingsSubjectCommonFields
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
-    extensionsAreaHeaderActionButtons: readonly ExtensionsAreaHeaderActionButton[]
+    extensionsAreaHeaderActionButtons?: readonly ExtensionsAreaHeaderActionButton[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
     isSourcegraphDotCom: boolean
 }
@@ -91,24 +90,28 @@ export const ExtensionsArea: React.FunctionComponent<React.PropsWithChildren<Ext
 
     return (
         <Page className={styles.extensionsArea}>
-            <ExtensionsAreaHeader
-                {...props}
-                {...context}
-                actionButtons={props.extensionsAreaHeaderActionButtons}
-                isPrimaryHeader={props.location.pathname === props.match.path}
-            />
+            {props.extensionsAreaHeaderActionButtons ? (
+                <ExtensionsAreaHeader
+                    {...props}
+                    {...context}
+                    actionButtons={props.extensionsAreaHeaderActionButtons}
+                    isPrimaryHeader={props.location.pathname === props.match.path}
+                />
+            ) : null}
             <Switch>
-                {props.routes.map(
-                    ({ path, exact, condition = () => true, render }) =>
-                        condition(context) && (
-                            <Route
-                                key="hardcoded-key"
-                                path={props.match.url + path}
-                                exact={exact}
-                                render={routeComponentProps => render({ ...context, ...routeComponentProps })}
-                            />
-                        )
-                )}
+                {props.routes
+                    ? props.routes.map(
+                          ({ path, exact, condition = () => true, render }) =>
+                              condition(context) && (
+                                  <Route
+                                      key="hardcoded-key"
+                                      path={props.match.url + path}
+                                      exact={exact}
+                                      render={routeComponentProps => render({ ...context, ...routeComponentProps })}
+                                  />
+                              )
+                      )
+                    : null}
                 <Route key="hardcoded-key" component={NotFoundPage} />
             </Switch>
         </Page>

@@ -3,9 +3,17 @@ import React, { forwardRef, HTMLAttributes, ReactNode } from 'react'
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
 
-import { Card, ForwardReferenceComponent, H2, H4, LoadingSpinner } from '@sourcegraph/wildcard'
+import {
+    Card,
+    ForwardReferenceComponent,
+    H2,
+    H4,
+    LoadingSpinner,
+    LegendItem,
+    LegendList,
+    Series,
+} from '@sourcegraph/wildcard'
 
-import { getLineColor, LegendItem, LegendList, Series } from '../../../../../charts'
 import { ErrorBoundary } from '../../../../../components/ErrorBoundary'
 
 import styles from './InsightCard.module.scss'
@@ -91,7 +99,7 @@ const InsightCardLegend: React.FunctionComponent<React.PropsWithChildren<Insight
     return (
         <LegendList {...attributes}>
             {series.map(series => (
-                <LegendItem key={series.id} color={getLineColor(series)} name={series.name} />
+                <LegendItem key={series.id} color={series.color} name={series.name} />
             ))}
         </LegendList>
     )

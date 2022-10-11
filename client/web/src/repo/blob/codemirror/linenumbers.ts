@@ -1,5 +1,25 @@
-import { Extension, RangeSetBuilder, StateEffect, StateField } from '@codemirror/state'
-import { EditorView, Decoration, lineNumbers } from '@codemirror/view'
+import {
+    Annotation,
+    Extension,
+    RangeSet,
+    Range,
+    RangeSetBuilder,
+    StateEffect,
+    StateField,
+    EditorState,
+} from '@codemirror/state'
+import {
+    EditorView,
+    Decoration,
+    lineNumbers,
+    ViewPlugin,
+    PluginValue,
+    ViewUpdate,
+    GutterMarker,
+    gutterLineClass,
+} from '@codemirror/view'
+
+import { isValidLineRange, preciseOffsetAtCoords } from './utils'
 
 /**
  * Represents the currently selected line range. null means no lines are
@@ -8,7 +28,10 @@ import { EditorView, Decoration, lineNumbers } from '@codemirror/view'
  */
 export type SelectedLineRange = { line: number; endLine?: number } | null
 
-const highlighedLineDecoration = Decoration.line({ class: 'selected-line' })
+const selectedLineDecoration = Decoration.line({ class: 'selected-line' })
+const selectedLineGutterMarker = new (class extends GutterMarker {
+    public elementClass = 'selected-line'
+})()
 const setSelectedLines = StateEffect.define<SelectedLineRange>()
 const setEndLine = StateEffect.define<number>()
 
@@ -16,7 +39,7 @@ const setEndLine = StateEffect.define<number>()
  * This field stores the selected line range and provides the corresponding line
  * decorations.
  */
-const selectedLines = StateField.define<SelectedLineRange>({
+export const selectedLines = StateField.define<SelectedLineRange>({
     create() {
         return null
     },
@@ -46,19 +69,183 @@ const selectedLines = StateField.define<SelectedLineRange>({
 
             const endLine = range.endLine ?? range.line
             const from = Math.min(range.line, endLine)
-            const to = from === endLine ? range.line : endLine
+            const to = Math.min(state.doc.lines, from === endLine ? range.line : endLine)
 
             const builder = new RangeSetBuilder<Decoration>()
 
-            for (let line = from; line <= to; line++) {
-                const from = state.doc.line(line).from
-                builder.add(from, from, highlighedLineDecoration)
+            for (let lineNumber = from; lineNumber <= to; lineNumber++) {
+                const from = state.doc.line(lineNumber).from
+                builder.add(from, from, selectedLineDecoration)
             }
 
             return builder.finish()
         }),
+        gutterLineClass.compute([field], state => {
+            const range = state.field(field)
+            const marks: Range<GutterMarker>[] = []
+
+            if (range) {
+                const endLine = range.endLine ?? range.line
+                const from = Math.min(range.line, endLine)
+                const to = Math.min(state.doc.lines, from === endLine ? range.line : endLine)
+
+                for (let lineNumber = from; lineNumber <= to; lineNumber++) {
+                    marks.push(selectedLineGutterMarker.range(state.doc.line(lineNumber).from))
+                }
+            }
+
+            return RangeSet.of(marks)
+        }),
     ],
 })
+
+/**
+ * An annotation to indicate where a line selection is comming from.
+ * Transactions that set selected lines without this annotion are assumed to be
+ * "external" (e.g. from syncing with the URL).
+ */
+const lineSelectionSource = Annotation.define<'gutter'>()
+
+/**
+ * View plugin resonsible for scrolling the selected line(s) into view if/when
+ * necessary.
+ */
+const scrollIntoView = ViewPlugin.fromClass(
+    class implements PluginValue {
+        private lastSelectedLines: SelectedLineRange | null = null
+        constructor(private readonly view: EditorView) {}
+
+        public update(update: ViewUpdate): void {
+            const currentSelectedLines = update.state.field(selectedLines)
+            if (
+                this.lastSelectedLines !== currentSelectedLines &&
+                update.transactions.some(transaction => transaction.annotation(lineSelectionSource) !== 'gutter')
+            ) {
+                // Only scroll selected lines into view when the user isn't
+                // currently selecting lines themselves (as indicated by the
+                // presence of the "gutter" annotation). Otherwise the scroll
+                // position might change while the user is selecting lines.
+                this.lastSelectedLines = currentSelectedLines
+                this.scrollIntoView(currentSelectedLines)
+            }
+        }
+
+        public scrollIntoView(selection: SelectedLineRange): void {
+            if (selection && shouldScrollIntoView(this.view, selection)) {
+                window.requestAnimationFrame(() => {
+                    this.view.dispatch({
+                        effects: EditorView.scrollIntoView(this.view.state.doc.line(selection.line).from, {
+                            y: 'center',
+                        }),
+                    })
+                })
+            }
+        }
+    }
+)
+
+/**
+ * This plugin handles selecting lines by clicking on the end empty after them.
+ * What makes this complex is handling text selection properly, and not such
+ * figuring out that a user is selecting text (that's easy) but to prevent text
+ * selection from being rendered if the user actually want to select multiple
+ * lines by shift clicking.
+ *
+ * Desired behavior:
+ * - Drag to select text
+ * - Click to select line
+ * - Shift click to select text when there is already other selected text
+ * - Shift click to select line range if there is no selected text
+ */
+function selectOnClick({ onSelection }: SelectableLineNumbersConfig): Extension {
+    // Maybe it would be better to use state fields for this (I don't know). It
+    // works though.
+    let maybeSelectLine = false
+    let preventTextSelection = false
+
+    return [
+        EditorState.transactionFilter.of(transaction => {
+            // If the user tries to select a text range (and doesn't just click
+            // somewhere)
+            if (
+                transaction.isUserEvent('select') &&
+                transaction.selection &&
+                transaction.selection.main.from !== transaction.selection.main.to
+            ) {
+                if (preventTextSelection) {
+                    return []
+                }
+                // If we are selecting a text range and not already prevent text
+                // selection then we don't want to select a line.
+                maybeSelectLine = false
+            }
+            return transaction
+        }),
+        EditorView.domEventHandlers({
+            mousedown(event, view) {
+                maybeSelectLine = true
+                preventTextSelection = false
+
+                if (event.shiftKey) {
+                    // Selecting text via shift click is only supported when
+                    // there is already other selected text.
+                    if (hasTextSelection(view.state)) {
+                        maybeSelectLine = false
+                    } else {
+                        // Otherwise we need to prevent CodeMirror/the browser
+                        // from applying text selection
+                        preventTextSelection = true
+                    }
+                }
+            },
+            mouseup(event, view) {
+                preventTextSelection = false
+
+                if (!maybeSelectLine) {
+                    return
+                }
+
+                maybeSelectLine = false
+
+                // IMPORTANT: This gives the offset of the character *closest*
+                // to the clicked position, not *at* the clicked position.
+                const offset = view.posAtCoords(event)
+                // Ignore clicks outside the document
+                if (offset === null) {
+                    return
+                }
+
+                let selectedLine: number | null = null
+
+                const clickedLine = view.state.doc.lineAt(offset)
+                if (offset === clickedLine.to) {
+                    // If the offset is the same value as the end position of
+                    // the line then click happend after the last charcater.
+                    selectedLine = clickedLine.number
+                } else if (offset === clickedLine.from && preciseOffsetAtCoords(view, event) === null) {
+                    // `preciseOffsetAtCoords(...) === null` allows us to recognize clicks before the actual text content
+                    // while `offset === clickedLine.from` ensures that we ignore clicks between lines
+                    selectedLine = clickedLine.number
+                }
+
+                if (selectedLine !== null) {
+                    view.dispatch({
+                        effects: event.shiftKey
+                            ? setEndLine.of(selectedLine)
+                            : setSelectedLines.of({ line: selectedLine }),
+                    })
+                    onSelection(normalizeLineRange(view.state.field(selectedLines)))
+                }
+            },
+        }),
+    ]
+}
+
+interface SelectableLineNumbersConfig {
+    onSelection: (range: SelectedLineRange) => void
+    initialSelection: SelectedLineRange | null
+    navigateToLineOnAnyClick: boolean
+}
 
 /**
  * This extension provides a line gutter that allows selecting (ranges of) lines
@@ -71,64 +258,67 @@ const selectedLines = StateField.define<SelectedLineRange>({
  * NOTE: Dragging to select on the gutter won't automatically scroll the
  * document.
  */
-export function selectableLineNumbers(config: { onSelection: (range: SelectedLineRange) => void }): Extension {
+export function selectableLineNumbers(config: SelectableLineNumbersConfig): Extension {
     let dragging = false
 
     return [
+        scrollIntoView,
+        selectedLines.init(() => config.initialSelection),
         lineNumbers({
             domEventHandlers: {
                 mousedown(view, block, event) {
                     const line = view.state.doc.lineAt(block.from).number
-                    const range = view.state.field(selectedLines)
-
-                    view.dispatch({
-                        effects: (event as MouseEvent).shiftKey
-                            ? setEndLine.of(line)
-                            : setSelectedLines.of(isSingleLine(range) && range?.line === line ? null : { line }),
-                    })
+                    if (config.navigateToLineOnAnyClick) {
+                        // Only support single line selection when navigateToLineOnAnyClick is true.
+                        view.dispatch({
+                            effects: setSelectedLines.of({ line }),
+                            annotations: lineSelectionSource.of('gutter'),
+                        })
+                    } else {
+                        const range = view.state.field(selectedLines)
+                        view.dispatch({
+                            effects: (event as MouseEvent).shiftKey
+                                ? setEndLine.of(line)
+                                : setSelectedLines.of(isSingleLine(range) && range?.line === line ? null : { line }),
+                            annotations: lineSelectionSource.of('gutter'),
+                            // Collapse/reset text selection
+                            selection: { anchor: view.state.selection.main.anchor },
+                        })
+                    }
 
                     dragging = true
 
                     function onmouseup(): void {
                         dragging = false
                         window.removeEventListener('mouseup', onmouseup)
+                        window.removeEventListener('mousemove', onmousemove)
+                        config.onSelection(normalizeLineRange(view.state.field(selectedLines)))
+                    }
 
-                        let range = view.state.field(selectedLines)
-                        if (range) {
-                            // Order line and endLine
-                            if (range.endLine && range.line > range.endLine) {
-                                range = {
-                                    line: range.endLine,
-                                    endLine: range.line,
-                                }
-                            } else if (range.line === range.endLine) {
-                                range = { line: range.line }
-                            } else {
-                                range = { ...range }
+                    function onmousemove(event: MouseEvent): void {
+                        if (dragging) {
+                            const newEndline = view.state.doc.lineAt(view.posAtCoords(event, false)).number
+                            if (view.state.field(selectedLines)?.endLine !== newEndline) {
+                                view.dispatch({
+                                    effects: setEndLine.of(newEndline),
+                                    annotations: lineSelectionSource.of('gutter'),
+                                })
                             }
+                            event.preventDefault()
                         }
-                        config.onSelection(range)
                     }
+
                     window.addEventListener('mouseup', onmouseup)
+                    window.addEventListener('mousemove', onmousemove)
                     return true
-                },
-                mousemove(view, line) {
-                    if (dragging) {
-                        const newEndline = view.state.doc.lineAt(line.from).number
-                        const { endLine } = view.state.field(selectedLines) ?? {}
-                        if (endLine !== newEndline) {
-                            view.dispatch({ effects: setEndLine.of(newEndline) })
-                        }
-                        return true
-                    }
-                    return false
                 },
             },
         }),
-        selectedLines,
+        selectOnClick(config),
         EditorView.theme({
             '.cm-lineNumbers': {
                 cursor: 'pointer',
+                color: 'var(--line-number-color)',
             },
             '.cm-lineNumbers .cm-gutterElement:hover': {
                 textDecoration: 'underline',
@@ -138,23 +328,29 @@ export function selectableLineNumbers(config: { onSelection: (range: SelectedLin
 }
 
 /**
- * Set selected lines (e.g. from the URL). The function won't trigger an update
- * if the same lines are already selected.
+ * Set selected lines (e.g. from the URL).
  */
 export function selectLines(view: EditorView, newRange: SelectedLineRange): void {
-    const currentRange = view.state.field(selectedLines)
+    view.dispatch({
+        effects: setSelectedLines.of(newRange && isValidLineRange(newRange, view.state.doc) ? newRange : null),
+    })
+}
 
-    if (currentRange?.line === newRange?.line && currentRange?.endLine === newRange?.endLine) {
-        return
+function normalizeLineRange(range: SelectedLineRange): SelectedLineRange {
+    if (range) {
+        // Order line and endLine
+        if (range.endLine && range.line > range.endLine) {
+            range = {
+                line: range.endLine,
+                endLine: range.line,
+            }
+        } else if (range.line === range.endLine) {
+            range = { line: range.line }
+        } else {
+            range = { ...range }
+        }
     }
-
-    const effects: StateEffect<unknown>[] = [setSelectedLines.of(newRange)]
-
-    if (newRange && shouldScrollIntoView(view, newRange)) {
-        effects.push(EditorView.scrollIntoView(view.state.doc.line(newRange.line).from, { y: 'center' }))
-    }
-
-    view.dispatch({ effects })
+    return range
 }
 
 /**
@@ -182,4 +378,15 @@ function shouldScrollIntoView(view: EditorView, range: SelectedLineRange): boole
 
 function isSingleLine(range: SelectedLineRange): boolean {
     return !!range && (!range.endLine || range.line === range.endLine)
+}
+
+/**
+ * Helper function that returns true if the user has selected any text in the
+ * document. A CodeMirror always has a "selection", which determines the cursor
+ * position but only if its start and end are different it actually represents
+ * selected text.
+ */
+function hasTextSelection(state: EditorState): boolean {
+    const range = state.selection.asSingle().main
+    return range.from !== range.to
 }

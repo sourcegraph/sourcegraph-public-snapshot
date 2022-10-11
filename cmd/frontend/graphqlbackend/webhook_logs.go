@@ -12,8 +12,8 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -115,7 +115,7 @@ func newWebhookLogConnectionResolver(
 	ctx context.Context, db database.DB, args *webhookLogsArgs,
 	externalServiceID webhookLogsExternalServiceID,
 ) (*webhookLogConnectionResolver, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
 		return nil, err
 	}
 
@@ -198,7 +198,7 @@ func unmarshalWebhookLogID(id graphql.ID) (logID int64, err error) {
 }
 
 func webhookLogByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*webhookLogResolver, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
 		return nil, err
 	}
 
@@ -235,12 +235,22 @@ func (r *webhookLogResolver) StatusCode() int32 {
 	return int32(r.log.StatusCode)
 }
 
-func (r *webhookLogResolver) Request() *webhookLogRequestResolver {
-	return &webhookLogRequestResolver{webhookLogMessageResolver{message: &r.log.Request}}
+func (r *webhookLogResolver) Request(ctx context.Context) (*webhookLogRequestResolver, error) {
+	message, err := r.log.Request.Decrypt(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &webhookLogRequestResolver{webhookLogMessageResolver{message: &message}}, nil
 }
 
-func (r *webhookLogResolver) Response() *webhookLogMessageResolver {
-	return &webhookLogMessageResolver{message: &r.log.Response}
+func (r *webhookLogResolver) Response(ctx context.Context) (*webhookLogMessageResolver, error) {
+	message, err := r.log.Response.Decrypt(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &webhookLogMessageResolver{message: &message}, nil
 }
 
 type webhookLogMessageResolver struct {

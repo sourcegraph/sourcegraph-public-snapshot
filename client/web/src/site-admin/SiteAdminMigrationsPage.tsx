@@ -10,7 +10,18 @@ import { parse as _parseVersion, SemVer } from 'semver'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, useObservable, Alert, Icon, Code, H2, H3, Text, Tooltip } from '@sourcegraph/wildcard'
+import {
+    LoadingSpinner,
+    useObservable,
+    Alert,
+    Container,
+    Icon,
+    Code,
+    H3,
+    Text,
+    Tooltip,
+    PageHeader,
+} from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../components/Collapsible'
 import { FilteredConnection, FilteredConnectionFilter, Connection } from '../components/FilteredConnection'
@@ -127,20 +138,26 @@ export const SiteAdminMigrationsPage: React.FunctionComponent<
             ) : (
                 <>
                     <PageTitle title="Out of band migrations - Admin" />
-                    <H2>Out-of-band migrations</H2>
-
-                    <Text>
-                        Out-of-band migrations run in the background of the Sourcegraph instance convert data from an
-                        old format into a new format. Consult this page prior to upgrading your Sourcegraph instance to
-                        ensure that all expected migrations have completed.
-                    </Text>
+                    <PageHeader
+                        path={[{ text: 'Out-of-band migrations' }]}
+                        headingElement="h2"
+                        description={
+                            <>
+                                Out-of-band migrations run in the background of the Sourcegraph instance convert data
+                                from an old format into a new format. Consult this page prior to upgrading your
+                                Sourcegraph instance to ensure that all expected migrations have completed.
+                            </>
+                        }
+                        className="mb-3"
+                    />
 
                     <MigrationBanners migrations={migrationsOrError} fetchSiteUpdateCheck={fetchSiteUpdateCheck} />
 
-                    <div className="list-group">
+                    <Container className="mb-3">
                         <FilteredConnection<OutOfBandMigrationFields, Omit<MigrationNodeProps, 'node'>>
+                            className="mb-0"
                             listComponent="div"
-                            listClassName={classNames('mb-3', styles.migrationsGrid)}
+                            listClassName={classNames('list-group mb-3', styles.migrationsGrid)}
                             noun="migration"
                             pluralNoun="migrations"
                             queryConnection={queryMigrations}
@@ -150,7 +167,7 @@ export const SiteAdminMigrationsPage: React.FunctionComponent<
                             location={props.location}
                             filters={filters}
                         />
-                    </div>
+                    </Container>
                 </>
             )}
         </div>
@@ -175,8 +192,14 @@ const MigrationBanners: React.FunctionComponent<React.PropsWithChildren<Migratio
         return <></>
     }
 
-    const nextVersion = parseVersion(`${productVersion.major}.${productVersion.minor + UPGRADE_RANGE}.0`)
-    const previousVersion = parseVersion(`${productVersion.major}.${productVersion.minor - DOWNGRADE_RANGE}.0`)
+    const nextVersion =
+        productVersion.major === 3 && productVersion.minor === 43
+            ? parseVersion('4.0.0')
+            : parseVersion(`${productVersion.major}.${productVersion.minor + UPGRADE_RANGE}.0`)
+    const previousVersion =
+        productVersion.major === 4 && productVersion.minor === 0
+            ? parseVersion('3.43.0')
+            : parseVersion(`${productVersion.major}.${productVersion.minor - DOWNGRADE_RANGE}.0`)
 
     const invalidMigrations = migrationsInvalidForVersion(migrations, productVersion)
     const invalidMigrationsAfterUpgrade = migrationsInvalidForVersion(migrations, nextVersion)

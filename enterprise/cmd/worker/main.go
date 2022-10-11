@@ -13,22 +13,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches"
-	batchesmigrations "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches/migrations"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel"
-	freshcodeintel "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/fresh"
-	codeintelmigrations "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/migrations"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executors"
 	workerinsights "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/insights"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/permissions"
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
@@ -53,22 +50,26 @@ func main() {
 		"batches-bulk-processor":        batches.NewBulkOperationProcessorJob(),
 		"batches-workspace-resolver":    batches.NewWorkspaceResolverJob(),
 		"executors-janitor":             executors.NewJanitorJob(),
+		"executors-metricsserver":       executors.NewMetricsServerJob(),
 		"codemonitors-job":              codemonitors.NewCodeMonitorJob(),
 		"bitbucket-project-permissions": permissions.NewBitbucketProjectPermissionsJob(),
 		"export-usage-telemetry":        telemetry.NewTelemetryJob(),
+		"webhook-build-job":             repos.NewWebhookBuildJob(),
 
-		// fresh
-		"codeintel-upload-janitor":         freshcodeintel.NewUploadJanitorJob(),
-		"codeintel-upload-expirer":         freshcodeintel.NewUploadExpirerJob(),
-		"codeintel-commitgraph-updater":    freshcodeintel.NewCommitGraphUpdaterJob(),
-		"codeintel-autoindexing-scheduler": freshcodeintel.NewAutoindexingSchedulerJob(),
+		"codeintel-upload-janitor":                    codeintel.NewUploadJanitorJob(),
+		"codeintel-upload-expirer":                    codeintel.NewUploadExpirerJob(),
+		"codeintel-commitgraph-updater":               codeintel.NewCommitGraphUpdaterJob(),
+		"codeintel-upload-backfiller":                 codeintel.NewUploadBackfillerJob(),
+		"codeintel-autoindexing-scheduler":            codeintel.NewAutoindexingSchedulerJob(),
+		"codeintel-autoindexing-dependency-scheduler": codeintel.NewAutoindexingDependencySchedulerJob(),
+		"codeintel-autoindexing-janitor":              codeintel.NewAutoindexingJanitorJob(),
+		"codeintel-metrics-reporter":                  codeintel.NewMetricsReporterJob(),
 
-		// temporary
-		"codeintel-janitor":       codeintel.NewJanitorJob(),
-		"codeintel-auto-indexing": codeintel.NewIndexingJob(),
+		// Note: experimental (not documented)
+		"codeintel-ranking-indexer": codeintel.NewRankingIndexerJob(),
 	}
 
-	if err := shared.Start(logger, additionalJobs, registerEnterpriseMigrations); err != nil {
+	if err := shared.Start(logger, additionalJobs, migrations.RegisterEnterpriseMigrators); err != nil {
 		logger.Fatal(err.Error())
 	}
 }
@@ -83,7 +84,7 @@ func init() {
 // the jobs configured in this service. This also enables repository update operations to fetch
 // permissions from code hosts.
 func setAuthzProviders(logger log.Logger) {
-	sqlDB, err := workerdb.Init()
+	db, err := workerdb.InitDBWithLogger(logger)
 	if err != nil {
 		return
 	}
@@ -92,26 +93,9 @@ func setAuthzProviders(logger log.Logger) {
 	globals.WatchPermissionsUserMapping()
 
 	ctx := context.Background()
-	db := database.NewDB(logger, sqlDB)
 
 	for range time.NewTicker(eiauthz.RefreshInterval()).C {
-		allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices(), db)
+		allowAccessByDefault, authzProviders, _, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices(), db)
 		authz.SetProviders(allowAccessByDefault, authzProviders)
 	}
-}
-
-func registerEnterpriseMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
-	if err := batchesmigrations.RegisterMigrations(db, outOfBandMigrationRunner); err != nil {
-		return err
-	}
-
-	if err := codeintelmigrations.RegisterMigrations(db, outOfBandMigrationRunner); err != nil {
-		return err
-	}
-
-	if err := insights.RegisterMigrations(db, outOfBandMigrationRunner); err != nil {
-		return err
-	}
-
-	return nil
 }

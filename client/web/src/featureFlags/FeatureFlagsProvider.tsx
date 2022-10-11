@@ -2,6 +2,8 @@ import React, { createContext, useEffect, useMemo } from 'react'
 
 import { Observable, of, throwError } from 'rxjs'
 
+import { logger } from '@sourcegraph/common'
+
 import { requestGraphQL } from '../backend/graphql'
 
 import { FeatureFlagName } from './featureFlags'
@@ -36,13 +38,13 @@ const FeatureFlagsLocalOverrideAgent = React.memo(() => {
                 } else if ([0, 'false'].includes(value)) {
                     setFeatureFlagOverride(flagName, false)
                 } else {
-                    console.warn(
+                    logger.warn(
                         `[FeatureFlagsLocalOverrideAgent]: can not override feature flag "${flagName}" with value "${value}". Only boolean values are supported.`
                     )
                 }
             }
         } catch (error) {
-            console.error(error)
+            logger.error(error)
         }
     }, [])
     return null
@@ -72,8 +74,7 @@ interface MockedFeatureFlagsProviderProps {
  * Provides mocked feature flag value for testing purposes.
  *
  * @example
- * const overrides = new Map([['my-feature-flag', true]]);
- * return (<MockedFeatureFlagsProvider overrides={overrides}>
+ * return (<MockedFeatureFlagsProvider overrides={{'my-feature-flag': true}}>
  *              <ComponentUsingFeatureFlag />
  *         </MockedFeatureFlagsProvider>)
  */

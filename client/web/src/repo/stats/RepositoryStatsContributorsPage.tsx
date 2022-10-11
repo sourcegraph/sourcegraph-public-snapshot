@@ -100,7 +100,7 @@ const RepositoryContributorNode: React.FunctionComponent<React.PropsWithChildren
                         placement="left"
                     >
                         <Link
-                            to={`/search?${buildSearchURLQuery(query, SearchPatternType.literal, false)}`}
+                            to={`/search?${buildSearchURLQuery(query, SearchPatternType.standard, false)}`}
                             className="font-weight-bold"
                         >
                             {numberWithCommas(node.count)} {pluralize('commit', node.count)}

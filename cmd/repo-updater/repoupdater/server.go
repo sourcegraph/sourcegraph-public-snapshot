@@ -15,7 +15,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/batches"
-	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -23,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -141,7 +143,7 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 	}
 	result, status, err := s.enqueueRepoUpdate(r.Context(), &req)
 	if err != nil {
-		s.Logger.Error("enqueueRepoUpdate failed", log.String("req", fmt.Sprint(req)), log.Error(err))
+		s.Logger.Warn("enqueueRepoUpdate failed", log.String("req", fmt.Sprint(req)), log.Error(err))
 		s.respond(w, status, err)
 		return
 	}
@@ -190,72 +192,67 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	logger := s.Logger.With(log.Object("ExternalService",
-		log.Int64("id", req.ExternalService.ID), log.String("kind", req.ExternalService.Kind)),
-	)
+	logger := s.Logger.With(log.Int64("ExternalServiceID", req.ExternalServiceID))
 
-	var sourcer repos.Sourcer
-	if sourcer = s.Sourcer; sourcer == nil {
-		db := database.NewDBWith(logger, s)
-		depsSvc := livedependencies.GetService(db, nil)
-		sourcer = repos.NewSourcer(s.Logger.Scoped("repos.Sourcer", ""), db, httpcli.ExternalClientFactory, repos.WithDependenciesService(depsSvc))
+	// We use the generic sourcer that doesn't have observability attached to it here because the way externalServiceValidate is set up,
+	// using the regular sourcer will cause a large dump of errors to be logged when it exits ListRepos prematurely.
+	var genericSourcer repos.Sourcer
+	sourcerLogger := logger.Scoped("repos.Sourcer", "repositories source")
+	db := database.NewDBWith(sourcerLogger.Scoped("db", "sourcer database"), s)
+	services, err := codeintel.GetServices(codeintel.Databases{
+		DB:          db,
+		CodeIntelDB: stores.NoopDB,
+	})
+	if err != nil {
+		logger.Error("failed to initialize codeintel services", log.Error(err))
+		http.Error(w, "failed to initialize dependencies", http.StatusInternalServerError)
+		return
 	}
+	cf := httpcli.NewExternalClientFactory(httpcli.NewLoggingMiddleware(sourcerLogger))
+	genericSourcer = repos.NewSourcer(sourcerLogger, db, cf, repos.WithDependenciesService(services.DependenciesService))
 
 	externalServiceID := req.ExternalServiceID
-	if externalServiceID == 0 {
-		externalServiceID = req.ExternalService.ID
-	}
 
-	es, err := s.ExternalServiceStore().GetByID(ctx, externalServiceID)
+	// We want to get soft-deleted external services as well, since we do a final
+	// sync when an external service gets deleted.
+	es, err := s.ExternalServiceStore().List(ctx, database.ExternalServicesListOptions{
+		IDs:            []int64{externalServiceID},
+		IncludeDeleted: true,
+	})
 	if err != nil {
-		if errcode.IsNotFound(err) {
-			s.respond(w, http.StatusNotFound, err)
-			return
-		}
 		s.respond(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	src, err := sourcer(ctx, es)
+	if len(es) != 1 {
+		s.respond(w, http.StatusNotFound, errors.Newf("external service %d not found", externalServiceID))
+		return
+	}
 
+	genericSrc, err := genericSourcer(ctx, es[0])
 	if err != nil {
 		logger.Error("server.external-service-sync", log.Error(err))
 		return
 	}
 
-	err = externalServiceValidate(ctx, req, src)
-	if err == github.ErrIncompleteResults {
-		logger.Info("server.external-service-sync", log.Error(err))
-		syncResult := &protocol.ExternalServiceSyncResult{
-			Error: err.Error(),
-		}
-		s.respond(w, http.StatusOK, syncResult)
+	statusCode, resp := handleExternalServiceValidate(ctx, logger, es[0], genericSrc)
+	if statusCode > 0 {
+		s.respond(w, statusCode, resp)
 		return
-	} else if ctx.Err() != nil {
+	}
+	if statusCode == 0 {
 		// client is gone
-		return
-	} else if err != nil {
-		logger.Error("server.external-service-sync", log.Error(err))
-		if errcode.IsUnauthorized(err) {
-			s.respond(w, http.StatusUnauthorized, err)
-			return
-		}
-		if errcode.IsForbidden(err) {
-			s.respond(w, http.StatusForbidden, err)
-			return
-		}
-		s.respond(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	if s.RateLimitSyncer != nil {
-		err = s.RateLimitSyncer.SyncRateLimiters(ctx, req.ExternalService.ID)
+		err = s.RateLimitSyncer.SyncRateLimiters(ctx, req.ExternalServiceID)
 		if err != nil {
 			logger.Warn("Handling rate limiter sync", log.Error(err))
 		}
 	}
 
-	if err := s.Syncer.TriggerExternalServiceSync(ctx, req.ExternalService.ID); err != nil {
+	if err := s.Syncer.TriggerExternalServiceSync(ctx, req.ExternalServiceID); err != nil {
 		logger.Warn("Enqueueing external service sync job", log.Error(err))
 	}
 
@@ -263,8 +260,34 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 	s.respond(w, http.StatusOK, &protocol.ExternalServiceSyncResult{})
 }
 
-func externalServiceValidate(ctx context.Context, req protocol.ExternalServiceSyncRequest, src repos.Source) error {
-	if !req.ExternalService.DeletedAt.IsZero() {
+func handleExternalServiceValidate(ctx context.Context, logger log.Logger, es *types.ExternalService, src repos.Source) (int, any) {
+	err := externalServiceValidate(ctx, es, src)
+	if err == github.ErrIncompleteResults {
+		logger.Info("server.external-service-sync", log.Error(err))
+		syncResult := &protocol.ExternalServiceSyncResult{
+			Error: err.Error(),
+		}
+		return http.StatusOK, syncResult
+	}
+	if ctx.Err() != nil {
+		// client is gone
+		return 0, nil
+	}
+	if err != nil {
+		logger.Error("server.external-service-sync", log.Error(err))
+		if errcode.IsUnauthorized(err) {
+			return http.StatusUnauthorized, err
+		}
+		if errcode.IsForbidden(err) {
+			return http.StatusForbidden, err
+		}
+		return http.StatusInternalServerError, err
+	}
+	return -1, nil
+}
+
+func externalServiceValidate(ctx context.Context, es *types.ExternalService, src repos.Source) error {
+	if !es.DeletedAt.IsZero() {
 		// We don't need to check deleted services.
 		return nil
 	}

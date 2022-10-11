@@ -8,7 +8,7 @@ import (
 )
 
 type operations struct {
-	todo *observation.Operation
+	authMiddleware *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -28,6 +28,6 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
-		todo: op("Todo"),
+		authMiddleware: op("authMiddleware"),
 	}
 }

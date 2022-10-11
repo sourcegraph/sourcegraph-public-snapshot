@@ -12,13 +12,13 @@ import (
 
 	"github.com/sourcegraph/go-diff/diff"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/lib/batches"
@@ -210,14 +210,13 @@ func (r *batchChangeDescriptionResolver) Description() string {
 }
 
 func (r *batchSpecResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
-	added, changed, deleted, err := r.store.GetBatchSpecDiffStat(ctx, r.batchSpec.ID)
+	added, deleted, err := r.store.GetBatchSpecDiffStat(ctx, r.batchSpec.ID)
 	if err != nil {
 		return nil, err
 	}
 
 	return graphqlbackend.NewDiffStat(diff.Stat{
 		Added:   int32(added),
-		Changed: int32(changed),
 		Deleted: int32(deleted),
 	}), nil
 }
@@ -279,7 +278,7 @@ func (r *batchSpecResolver) SupersedingBatchSpec(ctx context.Context) (graphqlba
 func (r *batchSpecResolver) ViewerBatchChangesCodeHosts(ctx context.Context, args *graphqlbackend.ListViewerBatchChangesCodeHostsArgs) (graphqlbackend.BatchChangesCodeHostConnectionResolver, error) {
 	actor := actor.FromContext(ctx)
 	if !actor.IsAuthenticated() {
-		return nil, backend.ErrNotAuthenticated
+		return nil, auth.ErrNotAuthenticated
 	}
 
 	repoIDs, err := r.store.ListBatchSpecRepoIDs(ctx, r.batchSpec.ID)
@@ -608,9 +607,31 @@ func (r *batchSpecResolver) computeState(ctx context.Context) (btypes.BatchSpecS
 }
 
 func (r *batchSpecResolver) computeCanAdminister(ctx context.Context) (bool, error) {
-	// TODO: This should only check namespace access.
 	r.canAdministerOnce.Do(func() {
-		r.canAdminister, r.canAdministerErr = checkSiteAdminOrSameUser(ctx, r.store.DatabaseDB(), r.batchSpec.UserID)
+		svc := service.New(r.store)
+		r.canAdminister, r.canAdministerErr = svc.CanAdministerInNamespace(ctx, r.batchSpec.NamespaceUserID, r.batchSpec.NamespaceOrgID)
 	})
 	return r.canAdminister, r.canAdministerErr
+}
+
+func (r *batchSpecResolver) Files(ctx context.Context, args *graphqlbackend.ListBatchSpecWorkspaceFilesArgs) (_ graphqlbackend.BatchSpecWorkspaceFileConnectionResolver, err error) {
+	if err := validateFirstParamDefaults(args.First); err != nil {
+		return nil, err
+	}
+	opts := store.ListBatchSpecWorkspaceFileOpts{
+		LimitOpts: store.LimitOpts{
+			Limit: int(args.First),
+		},
+		BatchSpecRandID: r.batchSpec.RandID,
+	}
+
+	if args.After != nil {
+		id, err := strconv.Atoi(*args.After)
+		if err != nil {
+			return nil, err
+		}
+		opts.Cursor = int64(id)
+	}
+
+	return &batchSpecWorkspaceFileConnectionResolver{store: r.store, opts: opts}, nil
 }

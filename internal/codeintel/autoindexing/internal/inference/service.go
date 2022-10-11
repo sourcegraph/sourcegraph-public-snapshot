@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"strings"
 	"time"
@@ -51,6 +52,14 @@ type invocationFunctionTable struct {
 	scanLuaValue func(value baselua.LValue) ([]indexJobOrHint, error)
 }
 
+type LimitError struct {
+	description string
+}
+
+func (e LimitError) Error() string {
+	return e.description
+}
+
 func newService(
 	sandboxService SandboxService,
 	gitService GitService,
@@ -74,7 +83,10 @@ func newService(
 // will overwrite them (to disable or change default behavior). Each recognizer's generate function
 // is invoked and the resulting index jobs are combined into a flattened list.
 func (s *Service) InferIndexJobs(ctx context.Context, repo api.RepoName, commit, overrideScript string) (_ []config.IndexJob, err error) {
-	ctx, _, endObservation := s.operations.inferIndexJobs.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.inferIndexJobs.With(ctx, &err, observation.Args{LogFields: []otelog.Field{
+		otelog.String("repo", string(repo)),
+		otelog.String("commit", commit),
+	}})
 	defer endObservation(1, observation.Args{})
 
 	functionTable := invocationFunctionTable{
@@ -118,7 +130,10 @@ func (s *Service) InferIndexJobs(ctx context.Context, repo api.RepoName, commit,
 // will overwrite them (to disable or change default behavior). Each recognizer's hints function is
 // invoked and the resulting index job hints are combined into a flattened list.
 func (s *Service) InferIndexJobHints(ctx context.Context, repo api.RepoName, commit, overrideScript string) (_ []config.IndexJobHint, err error) {
-	ctx, _, endObservation := s.operations.inferIndexJobHints.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.inferIndexJobHints.With(ctx, &err, observation.Args{LogFields: []otelog.Field{
+		otelog.String("repo", string(repo)),
+		otelog.String("commit", commit),
+	}})
 	defer endObservation(1, observation.Args{})
 
 	functionTable := invocationFunctionTable{
@@ -195,8 +210,14 @@ func (s *Service) createSandbox(ctx context.Context) (_ *luasandbox.Sandbox, err
 	ctx, _, endObservation := s.operations.createSandbox.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
+	luaModules, err := luasandbox.LuaModulesFromFS(lua.Scripts, ".", "sg.autoindex")
+	if err != nil {
+		return nil, err
+	}
+
 	opts := luasandbox.CreateOptions{
-		Modules: defaultModules,
+		GoModules:  defaultModules,
+		LuaModules: luaModules,
 	}
 	sandbox, err := s.sandboxService.CreateSandbox(ctx, opts)
 	if err != nil {
@@ -355,7 +376,7 @@ func (s *Service) resolveFileContents(
 	}
 	opts := gitserver.ArchiveOptions{
 		Treeish:   invocationContext.commit,
-		Format:    "tar",
+		Format:    gitserver.ArchiveFormatTar,
 		Pathspecs: pathspecs,
 	}
 	rc, err := invocationContext.gitService.Archive(ctx, invocationContext.repo, opts)
@@ -378,10 +399,22 @@ func (s *Service) resolveFileContents(
 		}
 
 		if len(contentsByPath) >= s.maximumFilesWithContentCount {
-			return nil, errors.Newf("inference limit: requested content for more than %d files", s.maximumFilesWithContentCount)
+			return nil, LimitError{
+				description: fmt.Sprintf(
+					"inference limit: requested content for more than %d (%d) files",
+					s.maximumFilesWithContentCount,
+					len(contentsByPath),
+				),
+			}
 		}
 		if int(header.Size) > s.maximumFileWithContentSizeBytes {
-			return nil, errors.Newf("inference limit: requested content for a file larger than %d bytes", s.maximumFileWithContentSizeBytes)
+			return nil, LimitError{
+				description: fmt.Sprintf(
+					"inference limit: requested content for a file larger than %d (%d) bytes",
+					s.maximumFileWithContentSizeBytes,
+					int(header.Size),
+				),
+			}
 		}
 
 		var buf bytes.Buffer

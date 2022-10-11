@@ -1,9 +1,16 @@
 # Go dependencies
 
+<aside class="experimental">
+<p>
+<span class="badge badge-experimental">Experimental</span> This feature is experimental and might change or be removed in the future. We've released it as an experimental feature to provide a preview of functionality we're working on.
+</p>
+</aside>
+
 Site admins can sync Go modules from any from any Go module proxy, including open source code from proxy.golang.org or a private proxy such as [Athens](https://github.com/gomods/athens), to their Sourcegraph instance so that users can search and navigate the repositories.
 
 To add Go dependencies to Sourcegraph you need to setup a Go dependencies code host:
 
+1. As *site admin*: go to **Site admin > Global settings** and enable the experimental feature by adding: `{"experimentalFeatures": {"goPackages": "enabled"} }`
 1. As *site admin*: go to **Site admin > Manage code hosts**
 1. Select **JVM Dependencies**.
 1. Configure the connection by following the instructions above the text field. Additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
@@ -13,7 +20,6 @@ To add Go dependencies to Sourcegraph you need to setup a Go dependencies code h
 
 There are currently two ways to sync Go dependency repositories.
 
-* **Dependencies search**: Sourcegraph automatically syncs Go dependency repos that are found in `go.mod` files during a [dependencies search](../../code_search/how-to/dependencies_search.md).
 * **Code host configuration**: manually list dependencies in the `"dependencies"` section of the JSON configuration when creating the Go dependency code host. This method can be useful to verify that the credentials are picked up correctly without having to run a dependencies search.
 
 Sourcegraph tries to find each dependency repository in all configured `"urls"` until it's found. This means you can configure a public proxy first and fallback to a private one second (e.g. `"urls": ["https://proxy.golang.org", "https://admin:foobar@athens.yourcorp.com"]`).

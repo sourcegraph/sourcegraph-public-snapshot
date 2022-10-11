@@ -15,9 +15,10 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -28,7 +29,7 @@ func editorRev(ctx context.Context, logger log.Logger, db database.DB, repoName 
 	if rev == "HEAD" {
 		return ""
 	}
-	repos := backend.NewRepos(logger, db)
+	repos := backend.NewRepos(logger, db, gitserver.NewClient(db))
 	repo, err := repos.GetByName(ctx, repoName)
 	if err != nil {
 		// We weren't able to fetch the repo. This means it either doesn't
@@ -225,6 +226,7 @@ func parseEditorRequest(db database.DB, q url.Values) (*editorRequest, error) {
 		version:           q.Get("version"),
 		utmProductName:    q.Get("utm_product_name"),
 		utmProductVersion: q.Get("utm_product_name"),
+		logger:            log.Scoped("editor", "requests from editors."),
 	}
 	if v.editor == "" {
 		return nil, errors.New("expected URL parameter missing: editor=$EDITOR_NAME")

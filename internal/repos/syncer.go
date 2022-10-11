@@ -16,9 +16,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/repos/webhookworker"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -104,7 +108,7 @@ func (s *Syncer) Run(ctx context.Context, store Store, opts RunOptions) error {
 				s.Logger.Error("enqueuing sync jobs", log.Error(err))
 			}
 		}
-		sleep(ctx, opts.EnqueueInterval())
+		timeutil.SleepWithContext(ctx, opts.EnqueueInterval())
 	}
 
 	return ctx.Err()
@@ -123,14 +127,6 @@ func (s *syncHandler) Handle(ctx context.Context, logger log.Logger, record work
 	}
 
 	return s.syncer.SyncExternalService(ctx, sj.ExternalServiceID, s.minSyncInterval())
-}
-
-// sleep is a context aware time.Sleep
-func sleep(ctx context.Context, d time.Duration) {
-	select {
-	case <-ctx.Done():
-	case <-time.After(d):
-	}
 }
 
 // TriggerExternalServiceSync will enqueue a sync job for the supplied external
@@ -283,11 +279,11 @@ func (rm ReposModified) ReposModified(modified types.RepoModified) types.Repos {
 //
 // It works for repos from:
 //
-// 1. Public "cloud_default" code hosts since we don't sync them in the background
-//    (which would delete lazy synced repos).
-// 2. Any package hosts (i.e. npm, Maven, etc) since callers are expected to store
-//    repos in the `lsif_dependency_repos` table which is used as the source of truth
-//    for the next full sync, so lazy added repos don't get wiped.
+//  1. Public "cloud_default" code hosts since we don't sync them in the background
+//     (which would delete lazy synced repos).
+//  2. Any package hosts (i.e. npm, Maven, etc) since callers are expected to store
+//     repos in the `lsif_dependency_repos` table which is used as the source of truth
+//     for the next full sync, so lazy added repos don't get wiped.
 //
 // The "background" boolean flag indicates that we should run this
 // sync in the background vs block and call s.syncRepo synchronously.
@@ -529,6 +525,37 @@ func (s *Syncer) SyncExternalService(
 		return errors.Wrap(err, "fetching external services")
 	}
 
+	// We take an advisory lock here and also when deleting an external service to
+	// ensure that they can't happen at the same time.
+	lock := locker.NewWith(s.Store, "external_service")
+
+	var locked bool
+	var unlock locker.UnlockFunc
+	// We need both code paths here since our production code doesn't use a
+	// transaction but most of our tests DO run in transactions in order to make
+	// rolling back test state easier.
+	if s.Store.Handle().InTransaction() {
+		locked, err = lock.LockInTransaction(ctx, locker.StringKey(fmt.Sprintf("%d", svc.ID)), false)
+		if err != nil {
+			return errors.Wrap(err, "getting advisory lock")
+		}
+		if !locked {
+			return errors.Errorf("could not get advisory lock for service %d", svc.ID)
+		}
+	} else {
+		// We're NOT in a transaction
+		locked, unlock, err = lock.Lock(ctx, locker.StringKey(fmt.Sprintf("%d", svc.ID)), false)
+		if err != nil {
+			return errors.Wrap(err, "getting advisory lock")
+		}
+		if !locked {
+			return errors.Errorf("could not get advisory lock for service %d", svc.ID)
+		}
+		defer func() {
+			err = unlock(err)
+		}()
+	}
+
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -542,8 +569,10 @@ func (s *Syncer) SyncExternalService(
 		svc.NextSyncAt = now.Add(interval)
 		svc.LastSyncAt = now
 
-		// We only want to log this error, not return it
-		if err := s.Store.ExternalServiceStore().Upsert(ctx, svc); err != nil {
+		// We use context.Background() here because we want this update to
+		// succeed even if the job has been canceled.
+		if err := s.Store.ExternalServiceStore().Upsert(context.Background(), svc); err != nil {
+			// We only want to log this error, not return it
 			logger.Error("upserting external service", log.Error(err))
 		}
 
@@ -578,7 +607,6 @@ func (s *Syncer) SyncExternalService(
 	}
 
 	results := make(chan SourceResult)
-
 	go func() {
 		src.ListRepos(ctx, results)
 		close(results)
@@ -587,6 +615,11 @@ func (s *Syncer) SyncExternalService(
 	seen := make(map[api.RepoID]struct{})
 	var errs error
 	fatal := func(err error) bool {
+		// If the error is just a warning, then it is not fatal.
+		if errors.IsWarning(err) && !errcode.IsAccountSuspended(err) {
+			return false
+		}
+
 		return errcode.IsUnauthorized(err) ||
 			errcode.IsForbidden(err) ||
 			errcode.IsAccountSuspended(err)
@@ -600,9 +633,9 @@ func (s *Syncer) SyncExternalService(
 			logger.Error("error from codehost", log.Int("seen", len(seen)), log.Error(err))
 
 			errs = errors.Append(errs, errors.Wrapf(err, "fetching from code host %s", svc.DisplayName))
-
 			if fatal(err) {
 				// Delete all external service repos of this external service
+				logger.Error("stopping external service sync due to fatal error from codehost", log.Error(err))
 				seen = map[api.RepoID]struct{}{}
 				break
 			}
@@ -629,16 +662,32 @@ func (s *Syncer) SyncExternalService(
 
 			continue
 		}
-
 		for _, r := range diff.Repos() {
 			seen[r.ID] = struct{}{}
 		}
 
 		modified = modified || len(diff.Modified)+len(diff.Added) > 0
+
+		if conf.Get().ExperimentalFeatures != nil && conf.Get().ExperimentalFeatures.EnableWebhookRepoSync {
+			job := &webhookworker.Job{
+				RepoID:     int32(sourced.ID),
+				RepoName:   string(sourced.Name),
+				Org:        getOrgFromRepoName(sourced.Name),
+				ExtSvcID:   svc.ID,
+				ExtSvcKind: svc.Kind,
+			}
+
+			id, err := webhookworker.EnqueueJob(ctx, basestore.NewWithHandle(s.Store.Handle()), job)
+			if err != nil {
+				logger.Error("enqueueing webhook build job", log.Error(err))
+			} else {
+				logger.Info("enqueued webhook build job", log.Int("ID", id))
+			}
+		}
 	}
 
 	// We don't delete any repos of site-level external services if there were any
-	// errors during a sync.
+	// non-warning errors during a sync.
 	//
 	// Only user or organization external services will delete
 	// repos in a sync run with fatal errors.
@@ -646,14 +695,38 @@ func (s *Syncer) SyncExternalService(
 	// Site-level external services can own lots of repos and are managed by site admins.
 	// It's preferable to have them fix any invalidated token manually rather than deleting the repos automatically.
 	deleted := 0
-	if errs == nil || (!svc.IsSiteOwned() && fatal(errs)) {
+
+	// If all of our errors are warnings and either Forbidden or Unauthorized,
+	// we want to proceed with the deletion. This is to be able to properly sync
+	// repos (by removing ones if code-host permissions have changed).
+	abortDeletion := false
+	if errs != nil {
+		var ref errors.MultiError
+		if errors.As(errs, &ref) {
+			for _, e := range ref.Errors() {
+				if errors.IsWarning(e) {
+					baseError := errors.Unwrap(e)
+					if !errcode.IsForbidden(baseError) && !errcode.IsUnauthorized(baseError) {
+						abortDeletion = true
+						break
+					}
+					continue
+				}
+				abortDeletion = true
+				break
+			}
+		}
+	}
+
+	if !abortDeletion || (!svc.IsSiteOwned() && fatal(errs)) {
 		// Remove associations and any repos that are no longer associated with any
 		// external service.
 		//
 		// We don't want to delete all repos that weren't seen if we had a lot of
 		// spurious errors since that could cause lots of repos to be deleted, only to be
-		// added the next sync. We delete only if we had no errors or we had one of the
-		// fatal errors.
+		// added the next sync. We delete only if we had no errors,
+		// or all of our errors are warnings and either Forbidden or Unauthorized,
+		// or we had one of the fatal errors and the service is not site owned.
 		var deletedErr error
 		deleted, deletedErr = s.delete(ctx, svc, seen)
 		if deletedErr != nil {
@@ -911,4 +984,12 @@ func syncErrorReason(err error) string {
 	default:
 		return "unknown"
 	}
+}
+
+func getOrgFromRepoName(repoName api.RepoName) string {
+	parts := strings.Split(string(repoName), "/")
+	if len(parts) == 1 {
+		return string(repoName)
+	}
+	return parts[1]
 }

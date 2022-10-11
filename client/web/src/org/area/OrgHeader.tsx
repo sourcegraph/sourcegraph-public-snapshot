@@ -26,7 +26,6 @@ interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {
 
 export interface OrgSummary {
     membersSummary: { membersCount: number; invitesCount: number }
-    repoCount: { total: { totalCount: number } }
     extServices: { totalCount: number }
 }
 
@@ -45,13 +44,6 @@ const GET_STARTED_INFO_QUERY = gql`
         membersSummary: orgMembersSummary(organization: $organization) {
             membersCount
             invitesCount
-        }
-        repoCount: node(id: $organization) {
-            ... on Org {
-                total: repositories(cloned: true, notCloned: true) {
-                    totalCount(precise: true)
-                }
-            }
         }
         extServices: externalServices(namespace: $organization) {
             totalCount

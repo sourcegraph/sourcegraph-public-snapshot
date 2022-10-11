@@ -66,7 +66,7 @@ func newSudoProvider(op SudoProviderOp, cli httpcli.Doer) *SudoProvider {
 		sudoToken: op.SudoToken,
 
 		urn:               op.URN,
-		clientProvider:    gitlab.NewClientProvider(op.URN, op.BaseURL, cli),
+		clientProvider:    gitlab.NewClientProvider(op.URN, op.BaseURL, cli, nil),
 		clientURL:         op.BaseURL,
 		codeHost:          extsvc.NewCodeHost(op.BaseURL, extsvc.TypeGitLab),
 		authnConfigID:     op.AuthnConfigID,
@@ -137,7 +137,9 @@ func (p *SudoProvider) FetchAccount(ctx context.Context, user *types.User, curre
 	}
 
 	var accountData extsvc.AccountData
-	gitlab.SetExternalAccountData(&accountData, glUser, nil)
+	if err := gitlab.SetExternalAccountData(&accountData, glUser, nil); err != nil {
+		return nil, err
+	}
 
 	glExternalAccount := extsvc.Account{
 		UserID: user.ID,
@@ -202,7 +204,7 @@ func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.Accou
 			account.AccountSpec.ServiceID, p.codeHost.ServiceID)
 	}
 
-	user, _, err := gitlab.GetExternalAccountData(&account.AccountData)
+	user, _, err := gitlab.GetExternalAccountData(ctx, &account.AccountData)
 	if err != nil {
 		return nil, errors.Wrap(err, "get external account data")
 	}
@@ -224,32 +226,37 @@ func (p *SudoProvider) FetchUserPermsByToken(ctx context.Context, token string, 
 // whether to discard.
 func listProjects(ctx context.Context, client *gitlab.Client) (*authz.ExternalUserPermissions, error) {
 	q := make(url.Values)
-	q.Add("visibility", "private")  // This method is meant to return only private projects
 	q.Add("min_access_level", "20") // 20 => Reporter access (i.e. have access to project code)
 	q.Add("per_page", "100")        // 100 is the maximum page size
-
-	// The next URL to request for projects, and it is reused in the succeeding for loop.
-	nextURL := "projects?" + q.Encode()
 
 	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
 	// when appending the first 100 results to the slice.
 	projectIDs := make([]extsvc.RepoID, 0, 100)
-	for {
-		projects, next, err := client.ListProjects(ctx, nextURL)
-		if err != nil {
-			return &authz.ExternalUserPermissions{
-				Exacts: projectIDs,
-			}, err
-		}
 
-		for _, p := range projects {
-			projectIDs = append(projectIDs, extsvc.RepoID(strconv.Itoa(p.ID)))
-		}
+	// This method is meant to return only private or internal projects
+	for _, visibility := range []string{"private", "internal"} {
+		q.Set("visibility", visibility)
 
-		if next == nil {
-			break
+		// The next URL to request for projects, and it is reused in the succeeding for loop.
+		nextURL := "projects?" + q.Encode()
+
+		for {
+			projects, next, err := client.ListProjects(ctx, nextURL)
+			if err != nil {
+				return &authz.ExternalUserPermissions{
+					Exacts: projectIDs,
+				}, err
+			}
+
+			for _, p := range projects {
+				projectIDs = append(projectIDs, extsvc.RepoID(strconv.Itoa(p.ID)))
+			}
+
+			if next == nil {
+				break
+			}
+			nextURL = *next
 		}
-		nextURL = *next
 	}
 
 	return &authz.ExternalUserPermissions{

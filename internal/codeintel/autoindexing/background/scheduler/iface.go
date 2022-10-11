@@ -1,18 +1,21 @@
 package scheduler
 
 import (
-	"context"
 	"time"
 
-	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
-type DBStore interface {
-	GetConfigurationPolicies(ctx context.Context, opts dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error)
-	SelectRepositoriesForIndexScan(ctx context.Context, table, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int) ([]int, error)
-}
+type AutoIndexingService interface {
+	NewScheduler(
+		interval time.Duration,
+		repositoryProcessDelay time.Duration,
+		repositoryBatchSize int,
+		policyBatchSize int,
+	) goroutine.BackgroundRoutine
 
-type PolicyMatcher interface {
-	CommitsDescribedByPolicy(ctx context.Context, repositoryID int, policies []dbstore.ConfigurationPolicy, now time.Time, filterCommits ...string) (map[string][]policies.PolicyMatch, error)
+	NewOnDemandScheduler(
+		interval time.Duration,
+		batchSize int,
+	) goroutine.BackgroundRoutine
 }

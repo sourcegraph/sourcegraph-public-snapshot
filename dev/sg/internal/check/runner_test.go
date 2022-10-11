@@ -112,6 +112,38 @@ func TestRunnerCheck(t *testing.T) {
 		err := runner.Check(context.Background(), nil)
 		assert.NoError(t, err)
 	})
+
+	t.Run("deduplicate checks", func(t *testing.T) {
+		runner := check.NewRunner(nil, getOutput(io.Discard), []check.Category[any]{
+			{
+				Name: "category",
+				Checks: []*check.Check[any]{
+					{
+						Name:  "check",
+						Check: func(ctx context.Context, out *std.Output, args any) error { return nil },
+					},
+					{
+						// This will get skipped
+						Name:  "check",
+						Check: func(ctx context.Context, out *std.Output, args any) error { return errors.New("should not fail") },
+					},
+				},
+			},
+			{
+				Name: "category2",
+				Checks: []*check.Check[any]{
+					{
+						// This will get skipped
+						Name:  "check",
+						Check: func(ctx context.Context, out *std.Output, args any) error { return errors.New("should not fail") },
+					},
+				},
+			},
+		})
+
+		err := runner.Check(context.Background(), nil)
+		assert.NoError(t, err)
+	})
 }
 
 func TestRunnerFix(t *testing.T) {

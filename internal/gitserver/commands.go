@@ -1,13 +1,14 @@
 package gitserver
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/fs"
+	"net/http"
 	"net/mail"
 	"os"
 	stdlibpath "path"
@@ -21,6 +22,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/format/config"
 	"github.com/golang/groupcache/lru"
 	"github.com/grafana/regexp"
+	"github.com/opentracing/opentracing-go/ext"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -140,14 +142,14 @@ func (i *DiffFileIterator) Next() (*diff.FileDiff, error) {
 	return fd, err
 }
 
-// ShortLogOptions contains options for (Repository).ShortLog.
-type ShortLogOptions struct {
+// ContributorOptions contains options for filtering contributor commit counts
+type ContributorOptions struct {
 	Range string // the range for which stats will be fetched
 	After string // the date after which to collect commits
 	Path  string // compute stats for commits that touch this path
 }
 
-func (c *clientImplementor) ShortLog(ctx context.Context, repo api.RepoName, opt ShortLogOptions) ([]*gitdomain.PersonCount, error) {
+func (c *clientImplementor) ContributorCount(ctx context.Context, repo api.RepoName, opt ContributorOptions) ([]*gitdomain.ContributorCount, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: ShortLog")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
@@ -201,13 +203,13 @@ func (c *clientImplementor) execReader(ctx context.Context, repo api.RepoName, a
 // -sne` command.
 var logEntryPattern = lazyregexp.New(`^\s*([0-9]+)\s+(.*)$`)
 
-func parseShortLog(out []byte) ([]*gitdomain.PersonCount, error) {
+func parseShortLog(out []byte) ([]*gitdomain.ContributorCount, error) {
 	out = bytes.TrimSpace(out)
 	if len(out) == 0 {
 		return nil, nil
 	}
 	lines := bytes.Split(out, []byte{'\n'})
-	results := make([]*gitdomain.PersonCount, len(lines))
+	results := make([]*gitdomain.ContributorCount, len(lines))
 	for i, line := range lines {
 		// example line: "1125\tJane Doe <jane@sourcegraph.com>"
 		match := logEntryPattern.FindSubmatch(line)
@@ -223,7 +225,7 @@ func parseShortLog(out []byte) ([]*gitdomain.PersonCount, error) {
 		if err != nil || addr == nil {
 			addr = &mail.Address{Name: string(match[2])}
 		}
-		results[i] = &gitdomain.PersonCount{
+		results[i] = &gitdomain.ContributorCount{
 			Count: int32(count),
 			Name:  addr.Name,
 			Email: addr.Address,
@@ -236,12 +238,11 @@ func parseShortLog(out []byte) ([]*gitdomain.PersonCount, error) {
 // the following somewhat-common malformed syntax where a user has misconfigured
 // their email address as their name:
 //
-// 	foo@gmail.com <foo@gmail.com>
+//	foo@gmail.com <foo@gmail.com>
 //
 // As a valid name, whereas mail.ParseAddress would return an error:
 //
-// 	mail: expected single address, got "<foo@gmail.com>"
-//
+//	mail: expected single address, got "<foo@gmail.com>"
 func lenientParseAddress(address string) (*mail.Address, error) {
 	addr, err := mail.ParseAddress(address)
 	if err != nil && strings.Contains(err.Error(), "expected single address") {
@@ -364,10 +365,6 @@ func (c *clientImplementor) DiffSymbols(ctx context.Context, repo api.RepoName, 
 
 // ReadDir reads the contents of the named directory at commit.
 func (c *clientImplementor) ReadDir(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error) {
-	if Mocks.ReadDir != nil {
-		return Mocks.ReadDir(commit, path, recurse)
-	}
-
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: ReadDir")
 	span.SetTag("Commit", commit)
 	span.SetTag("Path", path)
@@ -652,8 +649,8 @@ func decodeOID(sha string) (gitdomain.OID, error) {
 	return oid, nil
 }
 
-func (c *clientImplementor) LogReverseEach(repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error {
-	ctx, cancel := context.WithCancel(context.Background())
+func (c *clientImplementor) LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error {
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	command := c.gitCommand(api.RepoName(repo), gitdomain.LogReverseArgs(n, commit)...)
@@ -673,7 +670,6 @@ func (c *clientImplementor) LogReverseEach(repo string, commit string, n int, on
 // BlameOptions configures a blame.
 type BlameOptions struct {
 	NewestCommit api.CommitID `json:",omitempty" url:",omitempty"`
-	OldestCommit api.CommitID `json:",omitempty" url:",omitempty"` // or "" for the root commit
 
 	StartLine int `json:",omitempty" url:",omitempty"` // 1-indexed start byte (or 0 for beginning of file)
 	EndLine   int `json:",omitempty" url:",omitempty"` // 1-indexed end byte (or 0 for end of file)
@@ -709,13 +705,7 @@ func blameFileCmd(ctx context.Context, command gitCommandFunc, path string, opt 
 	if opt == nil {
 		opt = &BlameOptions{}
 	}
-	if opt.OldestCommit != "" {
-		return nil, errors.Errorf("OldestCommit not implemented")
-	}
 	if err := checkSpecArgSafety(string(opt.NewestCommit)); err != nil {
-		return nil, err
-	}
-	if err := checkSpecArgSafety(string(opt.OldestCommit)); err != nil {
 		return nil, err
 	}
 
@@ -943,16 +933,13 @@ func runRevParse(ctx context.Context, cmd GitCommand, spec string) (api.CommitID
 			// repository.
 			return "", &gitdomain.RevisionNotFoundError{Repo: cmd.Repo(), Spec: spec}
 		}
-		return "", gitdomain.BadCommitError{Spec: spec, Commit: commit, Repo: cmd.Repo()}
+		return "", &gitdomain.BadCommitError{Spec: spec, Commit: commit, Repo: cmd.Repo()}
 	}
 	return commit, nil
 }
 
 // LsFiles returns the output of `git ls-files`.
 func (c *clientImplementor) LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pathspecs ...gitdomain.Pathspec) ([]string, error) {
-	if Mocks.LsFiles != nil {
-		return Mocks.LsFiles(repo, commit)
-	}
 	args := []string{
 		"ls-files",
 		"-z",
@@ -1047,8 +1034,8 @@ func (c *clientImplementor) ListDirectoryChildren(
 // cleanDirectoriesForLsTree sanitizes the input dirnames to a git ls-tree command. There are a
 // few peculiarities handled here:
 //
-//   1. The root of the tree must be indicated with `.`, and
-//   2. In order for git ls-tree to return a directory's contents, the name must end in a slash.
+//  1. The root of the tree must be indicated with `.`, and
+//  2. In order for git ls-tree to return a directory's contents, the name must end in a slash.
 func cleanDirectoriesForLsTree(dirnames []string) []string {
 	var args []string
 	for _, dir := range dirnames {
@@ -1158,41 +1145,22 @@ func parseTags(in []byte) ([]*gitdomain.Tag, error) {
 }
 
 // GetDefaultBranch returns the name of the default branch and the commit it's
-// currently at from the given repository.
+// currently at from the given repository. If short is true, then `main` instead
+// of `refs/heads/main` would be returned.
 //
 // If the repository is empty or currently being cloned, empty values and no
 // error are returned.
-func (c *clientImplementor) GetDefaultBranch(ctx context.Context, repo api.RepoName) (refName string, commit api.CommitID, err error) {
-	if Mocks.GetDefaultBranch != nil {
-		return Mocks.GetDefaultBranch(repo)
-	}
-	return c.getDefaultBranch(ctx, repo, false)
-}
-
-// GetDefaultBranchShort returns the short name of the default branch for the
-// given repository and the commit it's currently at. A short name would return
-// something like `main` instead of `refs/heads/main`.
-//
-// If the repository is empty or currently being cloned, empty values and no
-// error are returned.
-func (c *clientImplementor) GetDefaultBranchShort(ctx context.Context, repo api.RepoName) (refName string, commit api.CommitID, err error) {
-	if Mocks.GetDefaultBranchShort != nil {
-		return Mocks.GetDefaultBranchShort(repo)
-	}
-	return c.getDefaultBranch(ctx, repo, true)
-}
-
-// getDefaultBranch returns the name of the default branch and the commit it's
-// currently at from the given repository.
-//
-// If the repository is empty or currently being cloned, empty values and no
-// error are returned.
-func (c *clientImplementor) getDefaultBranch(ctx context.Context, repo api.RepoName, short bool) (refName string, commit api.CommitID, err error) {
+func (c *clientImplementor) GetDefaultBranch(ctx context.Context, repo api.RepoName, short bool) (refName string, commit api.CommitID, err error) {
 	args := []string{"symbolic-ref", "HEAD"}
 	if short {
 		args = append(args, "--short")
 	}
-	refBytes, _, exitCode, err := c.execSafe(ctx, repo, args)
+	cmd := c.gitCommand(repo, args...)
+	refBytes, _, err := cmd.DividedOutput(ctx)
+	exitCode := cmd.ExitStatus()
+	if exitCode != 0 && err != nil {
+		err = nil // the error must just indicate that the exit code was nonzero
+	}
 	refName = string(bytes.TrimSpace(refBytes))
 
 	if err == nil && exitCode == 0 {
@@ -1209,40 +1177,6 @@ func (c *clientImplementor) getDefaultBranch(ctx context.Context, repo api.RepoN
 	}
 
 	return refName, commit, nil
-}
-
-// execSafe executes a Git subcommand iff it is allowed according to a allowlist.
-//
-// An error is only returned when there is a failure unrelated to the actual
-// command being executed. If the executed command exits with a nonzero exit
-// code, err == nil. This is similar to how http.Get returns a nil error for HTTP
-// non-2xx responses.
-//
-// execSafe should NOT be exported. We want to limit direct git calls to this
-// package.
-func (c *clientImplementor) execSafe(ctx context.Context, repo api.RepoName, params []string) (stdout, stderr []byte, exitCode int, err error) {
-	if Mocks.ExecSafe != nil {
-		return Mocks.ExecSafe(params)
-	}
-
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: execSafe")
-	defer span.Finish()
-
-	if len(params) == 0 {
-		return nil, nil, 0, errors.New("at least one argument required")
-	}
-
-	if !gitdomain.IsAllowedGitCmd(c.logger, params) {
-		return nil, nil, 0, errors.Errorf("command failed: %q is not a allowed git command", params)
-	}
-
-	cmd := c.gitCommand(repo, params...)
-	stdout, stderr, err = cmd.DividedOutput(ctx)
-	exitCode = cmd.ExitStatus()
-	if exitCode != 0 && err != nil {
-		err = nil // the error must just indicate that the exit code was nonzero
-	}
-	return stdout, stderr, exitCode, err
 }
 
 // MergeBase returns the merge base commit for the specified commits.
@@ -1264,8 +1198,8 @@ func (c *clientImplementor) MergeBase(ctx context.Context, repo api.RepoName, a,
 }
 
 // RevList makes a git rev-list call and iterates through the resulting commits, calling the provided onCommit function for each.
-func (c *clientImplementor) RevList(repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error {
-	ctx, cancel := context.WithCancel(context.Background())
+func (c *clientImplementor) RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error {
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	command := c.gitCommand(api.RepoName(repo), RevListArgs(commit)...)
@@ -1276,31 +1210,11 @@ func (c *clientImplementor) RevList(repo string, commit string, onCommit func(co
 	}
 	defer stdout.Close()
 
-	return c.RevListEach(stdout, onCommit)
+	return gitdomain.RevListEach(stdout, onCommit)
 }
 
 func RevListArgs(givenCommit string) []string {
 	return []string{"rev-list", "--first-parent", givenCommit}
-}
-
-func (c *clientImplementor) RevListEach(stdout io.Reader, onCommit func(commit string) (shouldContinue bool, err error)) error {
-	reader := bufio.NewReader(stdout)
-
-	for {
-		commit, err := reader.ReadString('\n')
-		if err == io.EOF {
-			break
-		} else if err != nil {
-			return err
-		}
-		commit = commit[:len(commit)-1] // Drop the trailing newline
-		shouldContinue, err := onCommit(commit)
-		if !shouldContinue {
-			return err
-		}
-	}
-
-	return nil
 }
 
 // GetBehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
@@ -1361,9 +1275,6 @@ func (c *clientImplementor) ReadFile(ctx context.Context, repo api.RepoName, com
 // NewFileReader returns an io.ReadCloser reading from the named file at commit.
 // The caller should always close the reader after use
 func (c *clientImplementor) NewFileReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string, checker authz.SubRepoPermissionChecker) (io.ReadCloser, error) {
-	if Mocks.NewFileReader != nil {
-		return Mocks.NewFileReader(commit, name)
-	}
 	a := actor.FromContext(ctx)
 	if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, name); err != nil {
 		return nil, err
@@ -1456,10 +1367,6 @@ func (br *blobReader) convertError(err error) error {
 
 // Stat returns a FileInfo describing the named file at commit.
 func (c *clientImplementor) Stat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
-	if Mocks.Stat != nil {
-		return Mocks.Stat(commit, path)
-	}
-
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: Stat")
 	span.SetTag("Commit", commit)
 	span.SetTag("Path", path)
@@ -1508,10 +1415,6 @@ var recordGetCommitQueries = os.Getenv("RECORD_GET_COMMIT_QUERIES") == "1"
 
 // getCommit returns the commit with the given id.
 func (c *clientImplementor) getCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions, checker authz.SubRepoPermissionChecker) (_ *gitdomain.Commit, err error) {
-	if Mocks.GetCommit != nil {
-		return Mocks.GetCommit(id)
-	}
-
 	if honey.Enabled() && recordGetCommitQueries {
 		defer func() {
 			ev := honey.NewEvent("getCommit")
@@ -1574,10 +1477,7 @@ func (c *clientImplementor) GetCommit(ctx context.Context, repo api.RepoName, id
 
 // Commits returns all commits matching the options.
 func (c *clientImplementor) Commits(ctx context.Context, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error) {
-	if Mocks.Commits != nil {
-		return Mocks.Commits(repo, opt)
-	}
-
+	opt = addNameOnly(opt, checker)
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: Commits")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
@@ -1585,7 +1485,6 @@ func (c *clientImplementor) Commits(ctx context.Context, repo api.RepoName, opt 
 	if err := checkSpecArgSafety(opt.Range); err != nil {
 		return nil, err
 	}
-	opt = addNameOnly(opt, checker)
 	return c.commitLog(ctx, repo, opt, checker)
 }
 
@@ -2417,12 +2316,14 @@ func (c *clientImplementor) CommitDate(ctx context.Context, repo api.RepoName, c
 	return parts[0], duration, true, nil
 }
 
+type ArchiveFormat string
+
 const (
 	// ArchiveFormatZip indicates a zip archive is desired.
-	ArchiveFormatZip = "zip"
+	ArchiveFormatZip ArchiveFormat = "zip"
 
 	// ArchiveFormatTar indicates a tar archive is desired.
-	ArchiveFormatTar = "tar"
+	ArchiveFormatTar ArchiveFormat = "tar"
 )
 
 // ArchiveReader streams back the file contents of an archived git repo.
@@ -2431,7 +2332,7 @@ func (c *clientImplementor) ArchiveReader(
 	checker authz.SubRepoPermissionChecker,
 	repo api.RepoName,
 	options ArchiveOptions,
-) (io.ReadCloser, error) {
+) (_ io.ReadCloser, err error) {
 	if authz.SubRepoEnabled(checker) {
 		if enabled, err := authz.SubRepoEnabledForRepo(ctx, checker, repo); err != nil {
 			return nil, errors.Wrap(err, "sub-repo permissions check:")
@@ -2439,7 +2340,65 @@ func (c *clientImplementor) ArchiveReader(
 			return nil, errors.New("archiveReader invoked for a repo with sub-repo permissions")
 		}
 	}
-	return c.Archive(ctx, repo, options)
+
+	if ClientMocks.Archive != nil {
+		return ClientMocks.Archive(ctx, repo, options)
+	}
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: Archive")
+	span.SetTag("Repo", repo)
+	span.SetTag("Treeish", options.Treeish)
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.LogFields(log.Error(err))
+		}
+		span.Finish()
+	}()
+
+	// Check that ctx is not expired.
+	if err := ctx.Err(); err != nil {
+		deadlineExceededCounter.Inc()
+		return nil, err
+	}
+
+	u, err := c.archiveURL(ctx, repo, options)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.do(ctx, repo, "POST", u.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+		return &archiveReader{
+			base: &cmdReader{
+				rc:      resp.Body,
+				trailer: resp.Trailer,
+			},
+			repo: repo,
+			spec: options.Treeish,
+		}, nil
+	case http.StatusNotFound:
+		var payload protocol.NotFoundPayload
+		if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+			resp.Body.Close()
+			return nil, err
+		}
+		resp.Body.Close()
+		return nil, &badRequestError{
+			error: &gitdomain.RepoNotExistError{
+				Repo:            repo,
+				CloneInProgress: payload.CloneInProgress,
+				CloneProgress:   payload.CloneProgress,
+			},
+		}
+	default:
+		resp.Body.Close()
+		return nil, errors.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
 }
 
 func addNameOnly(opt CommitsOptions, checker authz.SubRepoPermissionChecker) CommitsOptions {
