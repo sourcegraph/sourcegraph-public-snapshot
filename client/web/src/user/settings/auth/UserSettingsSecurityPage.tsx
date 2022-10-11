@@ -129,23 +129,25 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
         }
     }
 
+    const handleError = (error: ErrorLike): [] => {
+        setError(error)
+        setSaved(false)
+        return []
+    }
+
     const [updatePassword] = useMutation<UpdatePasswordResult, UpdatePasswordVariables>(UPDATE_PASSWORD, {
         variables: {
             oldPassword,
             newPassword,
         },
-        onError: error => {
-            handleError(error)
-        },
+        onError: handleError,
     })
 
     const [createPassword] = useMutation<CreatePasswordResult, CreatePasswordVariables>(CREATE_PASSWORD, {
         variables: {
             newPassword,
         },
-        onError: error => {
-            handleError(error)
-        },
+        onError: handleError,
     })
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
@@ -156,12 +158,6 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
             createPassword().catch(error => handleError(error))
         }
         setSaved(true)
-    }
-
-    const handleError = (error: ErrorLike): [] => {
-        setError(error)
-        setSaved(false)
-        return []
     }
 
     return (
