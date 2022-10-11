@@ -6,6 +6,7 @@ import (
 	"io"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -14,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 func (s *Service) buildFileReferenceGraph(ctx context.Context, repoName api.RepoName) (streamingGraph, error) {
@@ -25,21 +27,17 @@ func (s *Service) buildFileReferenceGraph(ctx context.Context, repoName api.Repo
 	ch := make(chan streamedEdge)
 
 	type searchTermAndPath struct {
-		Pattern string
+		Pattern *lazyregexp.Regexp
 		Paths   []string
 	}
-
-	//
-	// Current focus: Rotate shit around until it's fast
-	//
 
 	searchTermsAndPathsByTerm := map[string]*searchTermAndPath{}
 	for path, symbols := range symbolsByPath {
 		for _, symbol := range symbols {
 			searchTermAndPaths, ok := searchTermsAndPathsByTerm[symbol]
 			if !ok {
-				pattern := symbol
-				searchTermAndPaths = &searchTermAndPath{Pattern: pattern}
+				pattern := regexp.QuoteMeta(symbol)
+				searchTermAndPaths = &searchTermAndPath{Pattern: lazyregexp.New(`(^|\b)` + pattern + `($|\b)`)}
 				searchTermsAndPathsByTerm[symbol] = searchTermAndPaths
 			}
 
@@ -47,7 +45,7 @@ func (s *Service) buildFileReferenceGraph(ctx context.Context, repoName api.Repo
 		}
 	}
 
-	searchTermsByPathByExtension := map[string]map[string][]string{}
+	searchTermsAndPathsByExtension := map[string][]*searchTermAndPath{}
 	for _, searchTermAndPaths := range searchTermsAndPathsByTerm {
 		pathsByExtension := map[string][]string{}
 		for _, path := range searchTermAndPaths.Paths {
@@ -61,46 +59,64 @@ func (s *Service) buildFileReferenceGraph(ctx context.Context, repoName api.Repo
 		}
 
 		for extension, paths := range pathsByExtension {
-			if _, ok := searchTermsByPathByExtension[extension]; !ok {
-				searchTermsByPathByExtension[extension] = map[string][]string{}
+			if _, ok := searchTermsAndPathsByExtension[extension]; !ok {
+				searchTermsAndPathsByExtension[extension] = nil
 			}
 
-			for _, path := range paths {
-				if _, ok := searchTermsByPathByExtension[extension][path]; !ok {
-					searchTermsByPathByExtension[extension][path] = nil
-				}
-
-				searchTermsByPathByExtension[extension][path] = append(searchTermsByPathByExtension[extension][path], searchTermAndPaths.Pattern)
-			}
+			searchTermsAndPathsByExtension[extension] = append(searchTermsAndPathsByExtension[extension], &searchTermAndPath{
+				Pattern: searchTermAndPaths.Pattern,
+				Paths:   paths,
+			})
 		}
 	}
 
-	pathBySearchTermsByExtension := map[string]map[string]*lazyregexp.Regexp{}
-	for extension, searchTermsByPath := range searchTermsByPathByExtension {
-		pathBySearchTermsByExtension[extension] = map[string]*lazyregexp.Regexp{}
-
-		for path, searchTerms := range searchTermsByPath {
-			quotedSearchTerms := make([]string, 0, len(searchTerms))
-			for _, searchTerm := range searchTerms {
-				quotedSearchTerms = append(quotedSearchTerms, `(`+regexp.QuoteMeta(searchTerm)+`)`)
-			}
-
-			pathBySearchTermsByExtension[extension][path] = lazyregexp.New(`(^|\b)` + strings.Join(quotedSearchTerms, `|`) + `($|\b)`)
-		}
-	}
-
-	extensions := make([]string, 0, len(searchTermsByPathByExtension))
-	for extension := range searchTermsByPathByExtension {
+	extensions := make([]string, 0, len(searchTermsAndPathsByExtension))
+	for extension := range searchTermsAndPathsByExtension {
 		extensions = append(extensions, extension)
 	}
 
 	extractGraphEdges := func(h *tar.Header, content []byte) error {
 		extension := filepath.Ext(h.Name)
-		pathBySearchTerms := pathBySearchTermsByExtension[extension]
+		searchTermsAndPaths := searchTermsAndPathsByExtension[extension]
+
+		n := len(searchTermsAndPaths)
+		g := group.New().WithContext(ctx)
+		out := make(chan []string, n)
+
+		in := make(chan *searchTermAndPath, n)
+		for _, searchTermAndPaths := range searchTermsAndPaths {
+			in <- searchTermAndPaths
+		}
+		close(in)
+
+		searcher := func(ctx context.Context) error {
+			for searchTermAndPaths := range in {
+				if !searchTermAndPaths.Pattern.Match(content) {
+					continue
+				}
+
+				select {
+				case out <- searchTermAndPaths.Paths:
+				case <-ctx.Done():
+					return ctx.Err()
+				}
+			}
+
+			return nil
+		}
+
+		for i := 0; i < runtime.GOMAXPROCS(0); i++ {
+			g.Go(searcher)
+		}
+
+		if err := g.Wait(); err != nil {
+			return err
+		}
+		close(out)
 
 		toSet := map[string]struct{}{}
-		for path, pattern := range pathBySearchTerms {
-			if pattern.Match(content) {
+		for paths := range out {
+			for _, path := range paths {
 				toSet[path] = struct{}{}
 			}
 		}
@@ -133,6 +149,9 @@ func (s *Service) buildFileReferenceGraph(ctx context.Context, repoName api.Repo
 
 func (s *Service) extractSymbols(ctx context.Context, repoName api.RepoName) (map[string][]string, error) {
 	headCommit, ok, err := s.gitserverClient.HeadFromName(ctx, repoName)
+	if err != nil {
+		return nil, err
+	}
 	if !ok {
 		return nil, nil
 	}
