@@ -36,10 +36,30 @@ func makeTestJobGenerator(numJobs int) SearchJobGenerator {
 	}
 }
 
-func testSearchRunner(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.SearchJob, err error) (context.Context, *requestContext, []store.RecordSeriesPointArgs, error) {
+func testSearchHandlerConstValue(ctx context.Context, job *queryrunner.SearchJob, series *types.InsightSeries, recordTime time.Time) ([]store.RecordSeriesPointArgs, error) {
+	return []store.RecordSeriesPointArgs{{Point: store.SeriesPoint{Value: 10, Time: *job.RecordTime}}}, nil
+}
+
+func makeTestSearchHandlerErr(err error, errorAfterNumReq int) func(ctx context.Context, job *queryrunner.SearchJob, series *types.InsightSeries, recordTime time.Time) ([]store.RecordSeriesPointArgs, error) {
+	var called *int
+	called = new(int)
+	var mu sync.Mutex
+	return func(ctx context.Context, job *queryrunner.SearchJob, series *types.InsightSeries, recordTime time.Time) ([]store.RecordSeriesPointArgs, error) {
+		mu.Lock()
+		defer mu.Unlock()
+		if *called >= errorAfterNumReq {
+			return nil, err
+		}
+		*called++
+		return []store.RecordSeriesPointArgs{{Point: store.SeriesPoint{Value: 10, Time: *job.RecordTime}}}, nil
+	}
+}
+
+func testSearchRunnerStep(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.SearchJob, err error) (context.Context, *requestContext, []store.RecordSeriesPointArgs, error) {
 	points := make([]store.RecordSeriesPointArgs, 0, len(jobs))
-	for range jobs {
-		points = append(points, store.RecordSeriesPointArgs{Point: store.SeriesPoint{Value: 10}})
+	for _, job := range jobs {
+		newPoints, _ := testSearchHandlerConstValue(ctx, job, reqContext.backfillRequest.Series, *job.RecordTime)
+		points = append(points, newPoints...)
 	}
 	return ctx, reqContext, points, nil
 }
@@ -71,7 +91,7 @@ func TestBackfillStepsConnected(t *testing.T) {
 				return reqContext, nil
 			}
 
-			backfiller := NewBackfiller(makeTestJobGenerator(tc.numJobs), testSearchRunner, countingPersister)
+			backfiller := NewBackfiller(makeTestJobGenerator(tc.numJobs), testSearchRunnerStep, countingPersister)
 			got.err = backfiller.Run(context.Background(), BackfillRequest{Series: &types.InsightSeries{SeriesID: "1"}})
 			tc.want.Equal(t, got)
 		})
@@ -196,6 +216,135 @@ func TestMakeSearchJobs(t *testing.T) {
 			})
 			for _, j := range jobs {
 				got = append(got, fmt.Sprintf("job recordtime:%s query:%s", j.RecordTime.Format(time.RFC3339Nano), j.SearchQuery))
+			}
+			got = append(got, fmt.Sprintf("error occured: %v", err != nil))
+			tc.want.Equal(t, got)
+		})
+	}
+}
+
+func TestMakeRunSearch(t *testing.T) {
+	// Setup
+	createdDate := time.Date(2022, time.April, 1, 1, 0, 0, 0, time.UTC)
+
+	backfillReq := &BackfillRequest{
+		Series: &types.InsightSeries{
+			ID:                  1,
+			SeriesID:            "abc",
+			Query:               "test query",
+			CreatedAt:           createdDate,
+			SampleIntervalUnit:  string(types.Week),
+			SampleIntervalValue: 1,
+			GenerationMethod:    types.Search,
+		},
+		Repo: &itypes.MinimalRepo{ID: api.RepoID(1), Name: api.RepoName("testrepo")},
+	}
+
+	// testSearchHandlerConstValue returns 10 for every point
+	// testSearchHandlerErr always errors
+	defaultHandlers := map[types.GenerationMethod]queryrunner.InsightsHandler{
+		types.Search: testSearchHandlerConstValue,
+	}
+	recordTime1 := time.Date(2022, time.April, 21, 0, 0, 0, 0, time.UTC)
+	recordTime2 := time.Date(2022, time.April, 14, 0, 0, 0, 0, time.UTC)
+	recordTime3 := time.Date(2022, time.April, 7, 0, 0, 0, 0, time.UTC)
+	recordTime4 := time.Date(2022, time.April, 1, 0, 0, 0, 0, time.UTC)
+
+	jobs := []*queryrunner.SearchJob{{RecordTime: &recordTime1}, {RecordTime: &recordTime2}, {RecordTime: &recordTime3}, {RecordTime: &recordTime4}}
+
+	testCases := []struct {
+		backfillReq *BackfillRequest
+		workers     int
+		cancled     bool
+		handlers    map[types.GenerationMethod]queryrunner.InsightsHandler
+		incomingErr error
+		jobs        []*queryrunner.SearchJob
+		want        autogold.Value
+	}{
+		{
+			backfillReq: backfillReq,
+			workers:     1,
+			handlers:    defaultHandlers,
+			jobs:        jobs,
+			want: autogold.Want("base case single worker", []string{
+				"point pointtime:2022-04-21T00:00:00Z value:10",
+				"point pointtime:2022-04-14T00:00:00Z value:10",
+				"point pointtime:2022-04-07T00:00:00Z value:10",
+				"point pointtime:2022-04-01T00:00:00Z value:10",
+				"error occured: false",
+			}),
+		},
+		{
+			backfillReq: backfillReq,
+			workers:     2,
+			handlers:    defaultHandlers,
+			jobs:        jobs,
+			want: autogold.Want("base case multiple worker", []string{
+				"point pointtime:2022-04-21T00:00:00Z value:10",
+				"point pointtime:2022-04-14T00:00:00Z value:10",
+				"point pointtime:2022-04-07T00:00:00Z value:10",
+				"point pointtime:2022-04-01T00:00:00Z value:10",
+				"error occured: false",
+			}),
+		},
+		{
+			backfillReq: backfillReq,
+			workers:     1,
+			handlers:    defaultHandlers,
+			cancled:     true,
+			jobs:        jobs,
+			want:        autogold.Want("cancled context", []string{"error occured: false"}),
+		},
+		{
+			backfillReq: backfillReq,
+			workers:     1,
+			handlers:    defaultHandlers,
+			incomingErr: errors.New("earlier error"),
+			jobs:        jobs,
+			want:        autogold.Want("incoming error", []string{"error occured: true"}),
+		},
+		{
+			backfillReq: backfillReq,
+			workers:     1,
+			handlers:    defaultHandlers,
+			incomingErr: errors.New("earlier error"),
+			jobs:        jobs,
+			want:        autogold.Want("incoming error", nil),
+		},
+		{
+			backfillReq: backfillReq,
+			workers:     1,
+			handlers:    map[types.GenerationMethod]queryrunner.InsightsHandler{types.Search: makeTestSearchHandlerErr(errors.New("search error"), 2)},
+			jobs:        jobs,
+			want:        autogold.Want("some search fail single worker", []string{"error occured: true"}),
+		},
+		{
+			backfillReq: backfillReq,
+			workers:     2,
+			handlers:    map[types.GenerationMethod]queryrunner.InsightsHandler{types.Search: makeTestSearchHandlerErr(errors.New("search error"), 2)},
+			jobs:        jobs,
+			want:        autogold.Want("some search fail multiple worker", []string{"error occured: true"}),
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.want.Name(), func(t *testing.T) {
+			testCtx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			if tc.cancled {
+				cancel()
+			}
+			searchFunc := makeRunSearchFunc(logtest.NoOp(t), tc.handlers, tc.workers)
+
+			_, _, points, err := searchFunc(testCtx, &requestContext{backfillRequest: backfillReq}, tc.jobs, tc.incomingErr)
+
+			got := []string{}
+			// sorted points to make test stable
+			sort.SliceStable(points, func(i, j int) bool {
+				return points[i].Point.Time.After(points[j].Point.Time)
+			})
+			for _, p := range points {
+				got = append(got, fmt.Sprintf("point pointtime:%s value:%d", p.Point.Time.Format(time.RFC3339Nano), int(p.Point.Value)))
 			}
 			got = append(got, fmt.Sprintf("error occured: %v", err != nil))
 			tc.want.Equal(t, got)
