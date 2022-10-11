@@ -34,5 +34,5 @@ func (j *autoindexingDependencyScheduler) Routines(startupCtx context.Context, l
 		return nil, err
 	}
 
-	return bkgdependencies.NewSchedulers(services.AutoIndexingService), nil
+	return bkgdependencies.NewSchedulers(services.AutoIndexingService.GetBackgroundJobs()), nil
 }

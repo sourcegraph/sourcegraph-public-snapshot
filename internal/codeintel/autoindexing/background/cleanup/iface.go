@@ -6,7 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 )
 
-type AutoIndexingService interface {
+type AutoIndexingServiceBackgroundJobs interface {
 	NewIndexResetter(interval time.Duration) *dbworker.Resetter
 	NewDependencyIndexResetter(interval time.Duration) *dbworker.Resetter
 }

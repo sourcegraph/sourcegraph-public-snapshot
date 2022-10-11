@@ -10,8 +10,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
+	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -20,11 +23,11 @@ import (
 )
 
 type dependencySyncSchedulerHandler struct {
-	uploadsSvc      shared.UploadService
-	depsSvc         DependenciesService
-	autoindexingSvc AutoIndexingServiceForDepScheduling
-	workerStore     dbworkerstore.Store
-	extsvcStore     ExternalServiceStore
+	uploadsSvc    shared.UploadService
+	depsSvc       DependenciesService
+	backgroundJob BackgroundJob
+	workerStore   dbworkerstore.Store
+	extsvcStore   ExternalServiceStore
 }
 
 // NewDependencySyncScheduler returns a new worker instance that processes
@@ -34,11 +37,11 @@ func (b *backgroundJob) NewDependencySyncScheduler(pollInterval time.Duration) *
 	workerStore := b.dependencySyncStore
 
 	handler := &dependencySyncSchedulerHandler{
-		uploadsSvc:      b.uploadSvc,
-		depsSvc:         b.depsSvc,
-		autoindexingSvc: &AutoIndexingServiceForDepSchedulingShim{s},
-		workerStore:     workerStore,
-		extsvcStore:     b.externalServiceStore,
+		uploadsSvc:    b.uploadSvc,
+		depsSvc:       b.depsSvc,
+		backgroundJob: b,
+		workerStore:   workerStore,
+		extsvcStore:   b.externalServiceStore,
 	}
 
 	return dbworker.NewWorker(rootContext, workerStore, handler, workerutil.WorkerOptions{
@@ -46,8 +49,18 @@ func (b *backgroundJob) NewDependencySyncScheduler(pollInterval time.Duration) *
 		NumHandlers:       1,
 		Interval:          pollInterval,
 		HeartbeatInterval: 1 * time.Second,
-		Metrics:           s.depencencySyncMetrics,
+		Metrics:           b.depencencySyncMetrics,
 	})
+}
+
+// For mocking in tests
+var autoIndexingEnabled = conf.CodeIntelAutoIndexingEnabled
+
+var schemeToExternalService = map[string]string{
+	dependencies.JVMPackagesScheme:    extsvc.KindJVMPackages,
+	dependencies.NpmPackagesScheme:    extsvc.KindNpmPackages,
+	dependencies.RustPackagesScheme:   extsvc.KindRustPackages,
+	dependencies.PythonPackagesScheme: extsvc.KindPythonPackages,
 }
 
 func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
@@ -157,7 +170,7 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.
 	if shouldIndex {
 		// If we saw a kind that's not in schemeToExternalService, then kinds contains an empty string key
 		for kind := range kinds {
-			if _, err := h.autoindexingSvc.InsertDependencyIndexingJob(ctx, job.UploadID, kind, nextSync); err != nil {
+			if _, err := h.backgroundJob.InsertDependencyIndexingJob(ctx, job.UploadID, kind, nextSync); err != nil {
 				errs = append(errs, errors.Wrap(err, "dbstore.InsertDependencyIndexingJob"))
 			}
 		}
@@ -242,4 +255,3 @@ func kindsToArray(k map[string]struct{}) (s []string) {
 	}
 	return
 }
-

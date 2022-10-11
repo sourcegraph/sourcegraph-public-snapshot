@@ -34,5 +34,5 @@ func (j *autoindexingJanitorJob) Routines(startupCtx context.Context, logger log
 		return nil, err
 	}
 
-	return cleanup.NewResetters(services.AutoIndexingService), nil
+	return cleanup.NewResetters(services.AutoIndexingService.GetBackgroundJobs()), nil
 }

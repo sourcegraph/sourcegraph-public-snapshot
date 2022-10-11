@@ -34,5 +34,5 @@ func (j *autoindexingScheduler) Routines(startupCtx context.Context, logger log.
 		return nil, err
 	}
 
-	return scheduler.NewSchedulers(services.AutoIndexingService), nil
+	return scheduler.NewSchedulers(services.AutoIndexingService.GetBackgroundJobs()), nil
 }

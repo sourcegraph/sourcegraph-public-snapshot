@@ -1,4 +1,4 @@
-package autoindexing
+package background
 
 import (
 	"context"
@@ -34,32 +34,32 @@ var disableIndexScheduler, _ = strconv.ParseBool(os.Getenv("CODEINTEL_DEPENDENCY
 
 // NewDependencyIndexingScheduler returns a new worker instance that processes
 // records from lsif_dependency_indexing_jobs.
-func (s *Service) NewDependencyIndexingScheduler(pollInterval time.Duration, numHandlers int) *workerutil.Worker {
+func (b *backgroundJob) NewDependencyIndexingScheduler(pollInterval time.Duration, numHandlers int) *workerutil.Worker {
 	rootContext := actor.WithInternalActor(context.Background())
 
 	handler := &dependencyIndexingSchedulerHandler{
-		uploadsSvc:         s.uploadSvc,
-		repoStore:          s.repoStore,
-		extsvcStore:        s.externalServiceStore,
-		gitserverRepoStore: s.gitserverRepoStore,
-		indexEnqueuer:      &AutoIndexingServiceForDepSchedulingShim{s},
-		workerStore:        s.dependencyIndexingStore,
-		repoUpdater:        s.repoUpdater,
+		uploadsSvc:         b.uploadSvc,
+		repoStore:          b.repoStore,
+		extsvcStore:        b.externalServiceStore,
+		gitserverRepoStore: b.gitserverRepoStore,
+		indexEnqueuer:      b,
+		workerStore:        b.dependencyIndexingStore,
+		repoUpdater:        b.repoUpdater,
 	}
 
-	return dbworker.NewWorker(rootContext, s.dependencyIndexingStore, handler, workerutil.WorkerOptions{
+	return dbworker.NewWorker(rootContext, b.dependencyIndexingStore, handler, workerutil.WorkerOptions{
 		Name:              "precise_code_intel_dependency_indexing_scheduler_worker",
 		NumHandlers:       numHandlers,
 		Interval:          pollInterval,
-		Metrics:           s.depencencyIndexMetrics,
+		Metrics:           b.depencencyIndexMetrics,
 		HeartbeatInterval: 1 * time.Second,
 	})
 }
 
 // QueueIndexesForPackage enqueues index jobs for a dependency of a recently-processed precise code
 // intelligence index.
-func (s *Service) queueIndexesForPackage(ctx context.Context, pkg precise.Package) (err error) {
-	ctx, trace, endObservation := s.operations.queueIndexForPackage.With(ctx, &err, observation.Args{
+func (b backgroundJob) queueIndexesForPackage(ctx context.Context, pkg precise.Package) (err error) {
+	ctx, trace, endObservation := b.operations.queueIndexForPackage.With(ctx, &err, observation.Args{
 		LogFields: []otlog.Field{
 			otlog.String("scheme", pkg.Scheme),
 			otlog.String("name", pkg.Name),
@@ -75,7 +75,7 @@ func (s *Service) queueIndexesForPackage(ctx context.Context, pkg precise.Packag
 	trace.Log(otlog.String("repoName", string(repoName)))
 	trace.Log(otlog.String("revision", revision))
 
-	resp, err := s.repoUpdater.EnqueueRepoUpdate(ctx, repoName)
+	resp, err := b.repoUpdater.EnqueueRepoUpdate(ctx, repoName)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return nil
@@ -84,7 +84,7 @@ func (s *Service) queueIndexesForPackage(ctx context.Context, pkg precise.Packag
 		return errors.Wrap(err, "repoUpdater.EnqueueRepoUpdate")
 	}
 
-	commit, err := s.gitserverClient.ResolveRevision(ctx, int(resp.ID), revision)
+	commit, err := b.gitserverClient.ResolveRevision(ctx, int(resp.ID), revision)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return nil
@@ -93,18 +93,18 @@ func (s *Service) queueIndexesForPackage(ctx context.Context, pkg precise.Packag
 		return errors.Wrap(err, "gitserverClient.ResolveRevision")
 	}
 
-	_, err = s.queueIndexForRepositoryAndCommit(ctx, int(resp.ID), string(commit), "", false, false, nil) // trace)
+	_, err = b.queueIndexForRepositoryAndCommit(ctx, int(resp.ID), string(commit), "", false, false, nil) // trace)
 	return err
 }
 
-func (s *Service) insertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error) {
-	return s.store.InsertDependencyIndexingJob(ctx, uploadID, externalServiceKind, syncTime)
+func (b *backgroundJob) insertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error) {
+	return b.store.InsertDependencyIndexingJob(ctx, uploadID, externalServiceKind, syncTime)
 }
 
 type dependencyIndexingSchedulerHandler struct {
 	uploadsSvc         shared.UploadService
 	repoStore          ReposStore
-	indexEnqueuer      AutoIndexingServiceForDepScheduling
+	indexEnqueuer      BackgroundJob
 	extsvcStore        ExternalServiceStore
 	gitserverRepoStore GitserverRepoStore
 	workerStore        dbworkerstore.Store

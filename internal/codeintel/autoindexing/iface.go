@@ -43,14 +43,14 @@ type PolicyMatcher interface {
 	CommitsDescribedByPolicyInternal(ctx context.Context, repositoryID int, policies []codeinteltypes.ConfigurationPolicy, now time.Time, filterCommits ...string) (map[string][]policies.PolicyMatch, error)
 }
 
-type AutoIndexingServiceForDepSchedulingShim struct {
-	*Service
-}
+// type AutoIndexingServiceForDepSchedulingShim struct {
+// 	*Service
+// }
 
-func (s *AutoIndexingServiceForDepSchedulingShim) QueueIndexesForPackage(ctx context.Context, pkg precise.Package) error {
-	return s.Service.queueIndexesForPackage(ctx, pkg)
-}
+// func (s *AutoIndexingServiceForDepSchedulingShim) QueueIndexesForPackage(ctx context.Context, pkg precise.Package) error {
+// 	return s.Service.queueIndexesForPackage(ctx, pkg)
+// }
 
-func (s *AutoIndexingServiceForDepSchedulingShim) InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error) {
-	return s.Service.insertDependencyIndexingJob(ctx, uploadID, externalServiceKind, syncTime)
-}
+// func (s *AutoIndexingServiceForDepSchedulingShim) InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error) {
+// 	return s.Service.insertDependencyIndexingJob(ctx, uploadID, externalServiceKind, syncTime)
+// }

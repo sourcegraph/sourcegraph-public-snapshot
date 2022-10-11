@@ -1,6 +1,7 @@
 package autoindexing
 
 import (
+	backgroundjobs "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/background"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
@@ -44,29 +45,15 @@ type serviceDependencies struct {
 }
 
 var initServiceMemo = memo.NewMemoizedConstructorWithArg(func(deps serviceDependencies) (*Service, error) {
+	scopedCtx := scopedContext("service")
+
 	store := store.New(deps.db, scopedContext("store"))
-	repoStore := deps.db.Repos()
-	gitserverRepoStore := deps.db.GitserverRepos()
-	externalServiceStore := deps.db.ExternalServices()
 	policyMatcher := policiesEnterprise.NewMatcher(deps.gitserver, policiesEnterprise.IndexingExtractor, false, true)
 	symbolsClient := symbols.DefaultClient
 	inferenceSvc := inference.NewService(deps.db)
+	backgroundJobs := backgroundjobs.New(deps.db, store, deps.gitserver, deps.uploadSvc, policyMatcher, inferenceSvc, deps.repoUpdater, scopedCtx)
 
-	return newService(
-		store,
-		deps.uploadSvc,
-		deps.depsSvc,
-		deps.policiesSvc,
-		repoStore,
-		gitserverRepoStore,
-		externalServiceStore,
-		policyMatcher,
-		deps.gitserver,
-		symbolsClient,
-		deps.repoUpdater,
-		inferenceSvc,
-		scopedContext("service"),
-	), nil
+	return newService(store, deps.gitserver, symbolsClient, backgroundJobs, scopedCtx), nil
 })
 
 func scopedContext(component string) *observation.Context {
