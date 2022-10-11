@@ -82,6 +82,10 @@ export interface FuzzyState {
     repoRevision: FuzzyRepoRevision
     tabs: FuzzyTabs
     onClickItem: () => void
+    isGlobalFiles: boolean
+    toggleGlobalFiles: () => void
+    isGlobalSymbols: boolean
+    toggleGlobalSymbols: () => void
 }
 
 export function fuzzyIsActive(activeTab: FuzzyTabKey, repoRevision: FuzzyRepoRevision, tab: FuzzyTabKey): boolean {
@@ -155,6 +159,10 @@ export function defaultFuzzyState(): FuzzyState {
     return {
         query,
         onClickItem: () => {},
+        isGlobalFiles: false,
+        toggleGlobalFiles: () => {},
+        isGlobalSymbols: false,
+        toggleGlobalSymbols: () => {},
         setQuery: newQuery => {
             if (typeof newQuery === 'function') {
                 query = newQuery(query)
@@ -211,11 +219,31 @@ export function useFuzzyState(props: FuzzyTabsProps, onClickItem: () => void): F
         fuzzyFinderSymbols,
     } = getFuzzyFinderFeatureFlags(props.settingsCascade.final)
 
+    const [globalFilesToggleCount, setGlobalFilesToggleCount] = useState(0)
+    const toggleGlobalFiles = useMemo(() => () => setGlobalFilesToggleCount(old => old + 1), [
+        setGlobalFilesToggleCount,
+    ])
+    const isGlobalFilesRef = useRef(false)
+    isGlobalFilesRef.current = globalFilesToggleCount % 2 === 1
+    const [isGlobalSymbols, setGlobalSymbols] = useState(false)
+    const toggleGlobalSymbols = useMemo(() => () => setGlobalSymbols(old => !old), [setGlobalSymbols])
+    const isGlobalSymbolsRef = useRef(isGlobalSymbols)
+    isGlobalSymbolsRef.current = isGlobalSymbols
+    const localFilesRef = useRef<FuzzyFSM | null>(null)
+
     // NOTE: the query is cached in session storage to mimic the file pickers in
     // IntelliJ (by default) and VS Code (when "Workbench > Quick Open >
     // Preserve Input" is enabled).
     const [query, setQuery] = useSessionStorage(`fuzzy-modal.query.${repoName}`, props.initialQuery || '')
+    const queryRef = useRef(query)
+    queryRef.current = query
     const [activeTab, setActiveTab] = useState<FuzzyTabKey>('all')
+
+    useEffect(() => {
+        setGlobalSymbols(false)
+        setGlobalFilesToggleCount(0)
+    }, [isVisible, activeTab, setGlobalFilesToggleCount, setGlobalSymbols])
+
     const fuzzyState: Omit<FuzzyState, 'tabs'> = useMemo(
         () => ({
             onClickItem,
@@ -224,8 +252,22 @@ export function useFuzzyState(props: FuzzyTabsProps, onClickItem: () => void): F
             activeTab,
             setActiveTab,
             repoRevision,
+            isGlobalFiles: globalFilesToggleCount % 2 === 1,
+            isGlobalSymbols,
+            toggleGlobalFiles,
+            toggleGlobalSymbols,
         }),
-        [onClickItem, query, setQuery, activeTab, repoRevision]
+        [
+            onClickItem,
+            query,
+            setQuery,
+            activeTab,
+            repoRevision,
+            globalFilesToggleCount,
+            isGlobalSymbols,
+            toggleGlobalFiles,
+            toggleGlobalSymbols,
+        ]
     )
     const fuzzyStateRef = useRef(fuzzyState)
     fuzzyStateRef.current = fuzzyState
@@ -255,7 +297,8 @@ export function useFuzzyState(props: FuzzyTabsProps, onClickItem: () => void): F
         globalFilesRef.current = new FuzzyFiles(
             apolloClient,
             () => setGlobalFilesNameChangeCount(oldCount => oldCount + 1),
-            repoRevisionRef
+            repoRevisionRef,
+            isGlobalFilesRef
         )
     }
 
@@ -281,7 +324,8 @@ export function useFuzzyState(props: FuzzyTabsProps, onClickItem: () => void): F
         symbolsRef.current = new FuzzySymbols(
             apolloClient,
             () => setSymbolNameCount(oldCount => oldCount + 1),
-            repoRevisionRef
+            repoRevisionRef,
+            isGlobalSymbolsRef
         )
     }
 
@@ -323,7 +367,7 @@ export function useFuzzyState(props: FuzzyTabsProps, onClickItem: () => void): F
                 symbols: tabsRef.current.underlying.symbols.withFSM(symbols.fuzzyFSM(query)),
             })
         )
-    }, [isVisible, activeTab, repoRevision, query, symbolsNameCount, fuzzyFinderSymbols])
+    }, [isGlobalSymbols, isVisible, activeTab, repoRevision, query, symbolsNameCount, fuzzyFinderSymbols])
 
     useEffect(() => {
         if (!isVisible) {
@@ -377,10 +421,13 @@ export function useFuzzyState(props: FuzzyTabsProps, onClickItem: () => void): F
         }
         setFilesFSM({ key: 'downloading' })
         loadFilesFSM(apolloClient, repoRevision, createURL).then(
-            fsm => setFilesFSM(fsm),
+            fsm => {
+                setFilesFSM(fsm)
+                localFilesRef.current = fsm
+            },
             () => {}
         )
-    }, [isVisible, query, repoRevision, apolloClient, createURL, setFilesFSM, globalFilesNameChangeCount])
+    }, [isVisible, repoRevision, apolloClient, createURL, setFilesFSM])
 
     useEffect(() => {
         if (!isVisible) {
@@ -389,12 +436,22 @@ export function useFuzzyState(props: FuzzyTabsProps, onClickItem: () => void): F
         if (repoRevision.repositoryName) {
             return
         }
-        const globalFiles = globalFilesRef.current
-        if (!globalFiles) {
+        if (!globalFilesRef.current) {
             return
         }
-        setFilesFSM(globalFiles.fuzzyFSM(query))
-    }, [query, isVisible, repoRevision, setFilesFSM])
+        setFilesFSM(globalFilesRef.current.fuzzyFSM(query))
+    }, [query, globalFilesNameChangeCount, isVisible, repoRevision, setFilesFSM])
+
+    useEffect(() => {
+        if (globalFilesToggleCount === 0) {
+            return
+        }
+        if (isGlobalFilesRef.current && globalFilesRef.current) {
+            setFilesFSM(globalFilesRef.current.fuzzyFSM(queryRef.current))
+        } else if (!isGlobalFilesRef.current && localFilesRef.current && repoRevisionRef.current.repositoryName) {
+            setFilesFSM(localFilesRef.current)
+        }
+    }, [globalFilesToggleCount, setFilesFSM])
 
     return { ...fuzzyState, tabs }
 }

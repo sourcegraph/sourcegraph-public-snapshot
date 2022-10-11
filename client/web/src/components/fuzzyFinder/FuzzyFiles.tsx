@@ -99,7 +99,8 @@ export class FuzzyFiles extends FuzzyQuery {
     constructor(
         private readonly client: ApolloClient<object> | undefined,
         onNamesChanged: () => void,
-        private readonly repoRevision: React.MutableRefObject<FuzzyRepoRevision>
+        private readonly repoRevision: React.MutableRefObject<FuzzyRepoRevision>,
+        private readonly isGlobalFilesRef: React.MutableRefObject<boolean>
     ) {
         // Symbol results should not be cached because stale symbol data is complicated to evict/invalidate.
         super(onNamesChanged, emptyFuzzyCache)
@@ -114,7 +115,8 @@ export class FuzzyFiles extends FuzzyQuery {
     }
 
     /* override */ protected rawQuery(query: string): string {
-        return `${fuzzyRepoRevisionSearchFilter(this.repoRevision.current)}type:path count:100 ${query}`
+        const repoFilter = this.isGlobalFilesRef.current ? '' : fuzzyRepoRevisionSearchFilter(this.repoRevision.current)
+        return `${repoFilter}type:path count:100 ${query}`
     }
 
     /* override */ protected async handleRawQueryPromise(query: string): Promise<PersistableQueryResult[]> {
