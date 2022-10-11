@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/grafana/regexp"
+	"github.com/grafana/regexp/syntax"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -142,7 +143,7 @@ func (f *RepoContainsFilePredicate) parseNode(n Node) error {
 			if f.Path != "" {
 				return errors.New("cannot specify path multiple times")
 			}
-			if _, err := regexp.Compile(v.Value); err != nil {
+			if _, err := syntax.Parse(v.Value, syntax.Perl); err != nil {
 				return errors.Errorf("`contains.file` predicate has invalid `path` argument: %w", err)
 			}
 			f.Path = v.Value
@@ -150,7 +151,7 @@ func (f *RepoContainsFilePredicate) parseNode(n Node) error {
 			if f.Content != "" {
 				return errors.New("cannot specify content multiple times")
 			}
-			if _, err := regexp.Compile(v.Value); err != nil {
+			if _, err := syntax.Parse(v.Value, syntax.Perl); err != nil {
 				return errors.Errorf("`contains.file` predicate has invalid `content` argument: %w", err)
 			}
 			f.Content = v.Value
@@ -185,7 +186,7 @@ type RepoContainsContentPredicate struct {
 }
 
 func (f *RepoContainsContentPredicate) Unmarshal(params string, negated bool) error {
-	if _, err := regexp.Compile(params); err != nil {
+	if _, err := syntax.Parse(params, syntax.Perl); err != nil {
 		return errors.Errorf("contains.content argument: %w", err)
 	}
 	if params == "" {
@@ -207,7 +208,7 @@ type RepoContainsPathPredicate struct {
 }
 
 func (f *RepoContainsPathPredicate) Unmarshal(params string, negated bool) error {
-	if _, err := regexp.Compile(params); err != nil {
+	if _, err := syntax.Parse(params, syntax.Perl); err != nil {
 		return errors.Errorf("contains.path argument: %w", err)
 	}
 	if params == "" {
@@ -250,7 +251,7 @@ func (f *RepoHasDescriptionPredicate) Unmarshal(params string, negated bool) (er
 		return &NegatedPredicateError{f.Field() + ":" + f.Name()}
 	}
 
-	if _, err := regexp.Compile(params); err != nil {
+	if _, err := syntax.Parse(params, syntax.Perl); err != nil {
 		return errors.Errorf("invalid repo:has.description() argument: %w", err)
 	}
 	if len(params) == 0 {
@@ -311,7 +312,7 @@ func (f *FileContainsContentPredicate) Unmarshal(params string, negated bool) er
 		return &NegatedPredicateError{f.Field() + ":" + f.Name()}
 	}
 
-	if _, err := regexp.Compile(params); err != nil {
+	if _, err := syntax.Parse(params, syntax.Perl); err != nil {
 		return errors.Errorf("file:contains.content argument: %w", err)
 	}
 	if params == "" {
