@@ -246,7 +246,7 @@ func filterLSIFUnauthorizedError(out *output.Output, err error) error {
 			)
 		} else {
 			actionableHints = append(actionableHints,
-				fmt.Sprintf("Please retry your request with a -github-token=XXX with with collaborator access to %s.", codeintelUploadFlags.repo),
+				fmt.Sprintf("Please retry your request with a -github-token=XXX with collaborator access to %s.", codeintelUploadFlags.repo),
 				"This token will be used to check with the code host that the uploading user has write access to the target repository.",
 			)
 		}
@@ -258,7 +258,7 @@ func filterLSIFUnauthorizedError(out *output.Output, err error) error {
 			)
 		} else {
 			actionableHints = append(actionableHints,
-				fmt.Sprintf("Please retry your request with a -gitlab-token=XXX with with write access to %s.", codeintelUploadFlags.repo),
+				fmt.Sprintf("Please retry your request with a -gitlab-token=XXX with write access to %s.", codeintelUploadFlags.repo),
 				"This token will be used to check with the code host that the uploading user has write access to the target repository.",
 			)
 		}
