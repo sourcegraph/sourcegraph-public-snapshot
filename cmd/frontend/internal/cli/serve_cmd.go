@@ -22,7 +22,7 @@ import (
 
 	oce "github.com/sourcegraph/sourcegraph/cmd/frontend/oneclickexport"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
+	stores "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
 
 	sglog "github.com/sourcegraph/log"
 

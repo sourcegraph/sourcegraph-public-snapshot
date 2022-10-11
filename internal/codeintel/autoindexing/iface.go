@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
-	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"

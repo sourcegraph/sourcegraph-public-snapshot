@@ -11,7 +11,7 @@ import (
 	"sync"
 
 	api "github.com/sourcegraph/sourcegraph/internal/api"
-	types "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	types "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
 	gitdomain "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )

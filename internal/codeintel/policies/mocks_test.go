@@ -12,7 +12,7 @@ import (
 	"time"
 
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/internal/store"
-	types "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	types "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
 	gitdomain "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
