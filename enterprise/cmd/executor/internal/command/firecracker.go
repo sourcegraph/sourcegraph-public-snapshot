@@ -123,8 +123,8 @@ type dockerDaemonConfig struct {
 // for the optional docker daemon config file.
 const dockerDaemonConfigFilename = "docker-daemon.json"
 
-func newDockerDaemonConfig(tmpDir, mirrorAddress string) (_ string, err error) {
-	c, err := json.Marshal(&dockerDaemonConfig{RegistryMirrors: []string{mirrorAddress}})
+func newDockerDaemonConfig(tmpDir string, mirrorAddresses []string) (_ string, err error) {
+	c, err := json.Marshal(&dockerDaemonConfig{RegistryMirrors: mirrorAddresses})
 	if err != nil {
 		return "", errors.Wrap(err, "marshalling docker daemon config")
 	}
@@ -139,9 +139,9 @@ func newDockerDaemonConfig(tmpDir, mirrorAddress string) (_ string, err error) {
 // it will be mounted into the new virtual machine instance and executed.
 func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, name, workspaceDevice, tmpDir string, options Options, operations *Operations) error {
 	var daemonConfigFile string
-	if options.FirecrackerOptions.DockerRegistryMirrorURL != "" {
+	if len(options.FirecrackerOptions.DockerRegistryMirrorURLs) > 0 {
 		var err error
-		daemonConfigFile, err = newDockerDaemonConfig(tmpDir, options.FirecrackerOptions.DockerRegistryMirrorURL)
+		daemonConfigFile, err = newDockerDaemonConfig(tmpDir, options.FirecrackerOptions.DockerRegistryMirrorURLs)
 		if err != nil {
 			return err
 		}
