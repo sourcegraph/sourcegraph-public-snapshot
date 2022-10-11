@@ -26,10 +26,12 @@ import (
 func makeTestJobGenerator(numJobs int) SearchJobGenerator {
 	return func(ctx context.Context, req requestContext) (context.Context, *requestContext, []*queryrunner.SearchJob, error) {
 		jobs := make([]*queryrunner.SearchJob, 0, numJobs)
+		recordDate := time.Date(2022, time.April, 1, 0, 0, 0, 0, time.UTC)
 		for i := 0; i < numJobs; i++ {
 			jobs = append(jobs, &queryrunner.SearchJob{
 				SeriesID:    req.backfillRequest.Series.SeriesID,
 				SearchQuery: "test search",
+				RecordTime:  &recordDate,
 			})
 		}
 		return ctx, &req, jobs, nil
@@ -302,14 +304,6 @@ func TestMakeRunSearch(t *testing.T) {
 			incomingErr: errors.New("earlier error"),
 			jobs:        jobs,
 			want:        autogold.Want("incoming error", []string{"error occured: true"}),
-		},
-		{
-			backfillReq: backfillReq,
-			workers:     1,
-			handlers:    defaultHandlers,
-			incomingErr: errors.New("earlier error"),
-			jobs:        jobs,
-			want:        autogold.Want("incoming error", nil),
 		},
 		{
 			backfillReq: backfillReq,
