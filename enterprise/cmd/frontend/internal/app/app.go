@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -41,6 +42,7 @@ import (
 func Init(
 	ctx context.Context,
 	db database.DB,
+	codeIntelServices codeintel.Services,
 	conf conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
 	observationContext *observation.Context,
