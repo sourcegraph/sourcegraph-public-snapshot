@@ -1,6 +1,7 @@
 import { once } from 'lodash'
 import gql from 'tagged-template-noop'
 
+import { searchContext } from '../../searchContext'
 import * as sourcegraph from '../api'
 import { cache } from '../util'
 
@@ -524,8 +525,8 @@ export class API {
      * @param fileLocal Set to false to not request this field, which is absent in older versions of Sourcegraph.
      */
     public async search(searchQuery: string, fileLocal = true): Promise<SearchResult[]> {
-        const searchContext = sourcegraph.searchContext()
-        const query = searchContext ? `context:${searchContext} ${searchQuery}` : searchQuery
+        const context = searchContext()
+        const query = context ? `context:${context} ${searchQuery}` : searchQuery
 
         interface Response {
             search: {

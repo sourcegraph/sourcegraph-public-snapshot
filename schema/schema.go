@@ -1862,8 +1862,18 @@ type SettingsExperimentalFeatures struct {
 	EnableSmartQuery *bool `json:"enableSmartQuery,omitempty"`
 	// FuzzyFinder description: Enables fuzzy finder with the keyboard shortcut `Cmd+K` on macOS and `Ctrl+K` on Linux/Windows.
 	FuzzyFinder *bool `json:"fuzzyFinder,omitempty"`
+	// FuzzyFinderActions description: Enables the 'Actions' tab of the fuzzy finder
+	FuzzyFinderActions *bool `json:"fuzzyFinderActions,omitempty"`
+	// FuzzyFinderAll description: Enables the 'All' tab of the fuzzy finder
+	FuzzyFinderAll *bool `json:"fuzzyFinderAll,omitempty"`
 	// FuzzyFinderCaseInsensitiveFileCountThreshold description: The maximum number of files a repo can have to use case-insensitive fuzzy finding
 	FuzzyFinderCaseInsensitiveFileCountThreshold *float64 `json:"fuzzyFinderCaseInsensitiveFileCountThreshold,omitempty"`
+	// FuzzyFinderNavbar description: Enables the 'Fuzzy finder' action in the global navigation bar
+	FuzzyFinderNavbar *bool `json:"fuzzyFinderNavbar,omitempty"`
+	// FuzzyFinderRepositories description: Enables the 'Repositories' tab of the fuzzy finder
+	FuzzyFinderRepositories *bool `json:"fuzzyFinderRepositories,omitempty"`
+	// FuzzyFinderSymbols description: Enables the 'Symbols' tab of the fuzzy finder
+	FuzzyFinderSymbols *bool `json:"fuzzyFinderSymbols,omitempty"`
 	// GoCodeCheckerTemplates description: Shows a panel with code insights templates for go code checker results.
 	GoCodeCheckerTemplates *bool `json:"goCodeCheckerTemplates,omitempty"`
 	// HomePanelsComputeSuggestions description: Enable the home panels compute suggestions feature.

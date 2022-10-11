@@ -272,14 +272,14 @@ var metricGetVersion = promauto.NewCounter(prometheus.CounterOpts{
 })
 
 func (h *searchIndexerServer) serveRepoRank(w http.ResponseWriter, r *http.Request) error {
-	return serveRank[float64](h.codeIntelServices.RankingService.GetRepoRank, w, r)
+	return serveRank(h.codeIntelServices.RankingService.GetRepoRank, w, r)
 }
 
 func (h *searchIndexerServer) serveDocumentRanks(w http.ResponseWriter, r *http.Request) error {
-	return serveRank[map[string]float64](h.codeIntelServices.RankingService.GetDocumentRanks, w, r)
+	return serveRank(h.codeIntelServices.RankingService.GetDocumentRanks, w, r)
 }
 
-func serveRank[T map[string]float64 | float64](
+func serveRank[T []float64 | map[string][]float64](
 	f func(ctx context.Context, name api.RepoName) (r T, err error),
 	w http.ResponseWriter,
 	r *http.Request,

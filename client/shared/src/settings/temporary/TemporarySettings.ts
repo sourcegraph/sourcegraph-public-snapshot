@@ -47,6 +47,8 @@ export interface TemporarySettingsSchema {
     // TODO #41002: Remove this temporary setting.
     // This temporary setting is now turned on by default with no UI to toggle it off.
     'coreWorkflowImprovements.enabled_deprecated': boolean
+    'batches.minSavedPerChangeset': number
+    'search.notebooks.minSavedPerView': number
 }
 
 /**

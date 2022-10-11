@@ -420,6 +420,10 @@ func (c *Client) ListFiles(ctx context.Context, repositoryID int, commit string,
 		return nil, err
 	}
 
+	return c.ListFilesForRepo(ctx, repo, commit, pattern)
+}
+
+func (c *Client) ListFilesForRepo(ctx context.Context, repo api.RepoName, commit string, pattern *regexp.Regexp) (_ []string, err error) {
 	matching, err := gitserver.NewClient(c.db).ListFiles(ctx, repo, api.CommitID(commit), pattern, authz.DefaultSubRepoPermsChecker)
 	if err == nil {
 		return matching, nil

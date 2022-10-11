@@ -220,3 +220,22 @@ func EncodeCursor(val *string) *PageInfo {
 
 	return HasNextPage(false)
 }
+
+// makeDeleteIndexesOptions translates the given GraphQL arguments into options defined by the
+// store.DeleteIndexes operations.
+func makeDeleteIndexesOptions(args *DeleteLSIFIndexesArgs) (types.DeleteIndexesOptions, error) {
+	var repository int
+	if args.Repository != nil {
+		var err error
+		repository, err = resolveRepositoryID(*args.Repository)
+		if err != nil {
+			return types.DeleteIndexesOptions{}, err
+		}
+	}
+
+	return types.DeleteIndexesOptions{
+		State:        strings.ToLower(derefString(args.State, "")),
+		Term:         derefString(args.Query, ""),
+		RepositoryID: repository,
+	}, nil
+}

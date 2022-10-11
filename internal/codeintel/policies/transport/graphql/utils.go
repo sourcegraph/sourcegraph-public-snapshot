@@ -84,7 +84,7 @@ func validateConfigurationPolicy(policy CodeIntelConfigurationPolicy) error {
 	if policy.RetentionDurationHours != nil && *policy.RetentionDurationHours <= 0 {
 		return errors.Errorf("illegal retention duration '%d'", *policy.RetentionDurationHours)
 	}
-	if policy.IndexCommitMaxAgeHours != nil && *policy.IndexCommitMaxAgeHours <= 0 {
+	if policy.IndexingEnabled && policy.IndexCommitMaxAgeHours != nil && *policy.IndexCommitMaxAgeHours <= 0 {
 		return errors.Errorf("illegal index commit max age '%d'", *policy.IndexCommitMaxAgeHours)
 	}
 
