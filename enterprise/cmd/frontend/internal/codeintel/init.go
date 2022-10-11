@@ -2,61 +2,84 @@ package codeintel
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/prometheus/client_golang/prometheus"
-	logger "github.com/sourcegraph/log"
+	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	autoindexinggraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql"
 	codenavgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql"
 	policiesgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/lsifuploadstore"
 	uploadgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
+	uploadshttp "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/http"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	executorgraphql "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-func Init(ctx context.Context, db database.DB, config *Config, enterpriseServices *enterprise.Services, services *FrontendServices) error {
-	oc := func(name string) *observation.Context {
-		return &observation.Context{
-			Logger:     logger.Scoped(name+".transport.graphql", "codeintel "+name+" graphql transport"),
-			Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-			Registerer: prometheus.DefaultRegisterer,
-		}
+func init() {
+	ConfigInst.Load()
+}
+
+func Init(
+	ctx context.Context,
+	db database.DB,
+	codeIntelServices codeintel.Services,
+	conf conftypes.UnifiedWatchable,
+	enterpriseServices *enterprise.Services,
+	observationContext *observation.Context,
+) error {
+	if err := ConfigInst.Validate(); err != nil {
+		return err
 	}
+
+	uploadStore, err := lsifuploadstore.New(context.Background(), ConfigInst.LSIFUploadStoreConfig, observationContext)
+	if err != nil {
+		return err
+	}
+
+	gitserverClient := gitserver.New(db, &observation.TestContext)
+	newUploadHandler := func(withCodeHostAuth bool) http.Handler {
+		return uploadshttp.GetHandler(codeIntelServices.UploadsService, db, uploadStore, withCodeHostAuth)
+	}
+
+	autoindexingRootResolver := autoindexinggraphql.NewRootResolver(
+		codeIntelServices.AutoIndexingService,
+		codeIntelServices.UploadsService,
+		codeIntelServices.PoliciesService,
+		scopedContext("autoindexing"),
+	)
+
+	codenavRootResolver := codenavgraphql.NewRootResolver(
+		codeIntelServices.CodenavService,
+		codeIntelServices.AutoIndexingService,
+		codeIntelServices.UploadsService,
+		codeIntelServices.PoliciesService,
+		gitserverClient,
+		ConfigInst.MaximumIndexesPerMonikerSearch,
+		ConfigInst.HunkCacheSize,
+		scopedContext("codenav"),
+	)
 
 	executorResolver := executorgraphql.New(db)
 
-	codenavRootResolver := codenavgraphql.NewRootResolver(
-		services.CodenavService,
-		services.AutoIndexingService,
-		services.UploadsService,
-		services.PoliciesService,
-		services.gitserverClient,
-		config.MaximumIndexesPerMonikerSearch,
-		config.HunkCacheSize,
-		oc("codenav"),
-	)
-
 	policyRootResolver := policiesgraphql.NewRootResolver(
-		services.PoliciesService,
-		oc("policies"),
-	)
-
-	autoindexingRootResolver := autoindexinggraphql.NewRootResolver(
-		services.AutoIndexingService,
-		services.UploadsService,
-		services.PoliciesService,
-		oc("autoindexing"),
+		codeIntelServices.PoliciesService,
+		scopedContext("policies"),
 	)
 
 	uploadRootResolver := uploadgraphql.NewRootResolver(
-		services.UploadsService,
-		services.AutoIndexingService,
-		services.PoliciesService,
-		oc("upload"),
+		codeIntelServices.UploadsService,
+		codeIntelServices.AutoIndexingService,
+		codeIntelServices.PoliciesService,
+		scopedContext("upload"),
 	)
 
 	enterpriseServices.CodeIntelResolver = newResolver(
@@ -66,6 +89,15 @@ func Init(ctx context.Context, db database.DB, config *Config, enterpriseService
 		policyRootResolver,
 		uploadRootResolver,
 	)
-	enterpriseServices.NewCodeIntelUploadHandler = services.NewUploadHandler
+	enterpriseServices.NewCodeIntelUploadHandler = newUploadHandler
+	enterpriseServices.CodeIntelAutoIndexingService = codeIntelServices.AutoIndexingService
 	return nil
+}
+
+func scopedContext(name string) *observation.Context {
+	return &observation.Context{
+		Logger:     log.Scoped(name+".transport.graphql", "codeintel "+name+" graphql transport"),
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
+		Registerer: prometheus.DefaultRegisterer,
+	}
 }

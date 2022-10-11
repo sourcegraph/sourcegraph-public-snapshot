@@ -451,15 +451,22 @@ func calcEndDate(startDate time.Time, periodType PeriodType, periods int) (time.
 	return time.Time{}, false
 }
 
+// CommonUsageOptions provides a set of options that are common across different usage calculations.
+type CommonUsageOptions struct {
+	// Exclude backend system users.
+	ExcludeSystemUsers bool
+	// Exclude events that don't meet the criteria of "active" usage of Sourcegraph. These
+	// are mostly actions taken by signed-out users.
+	ExcludeNonActiveUsers bool
+	// Exclude Sourcegraph (employee) admins.
+	ExcludeSourcegraphAdmins bool
+}
+
 // CountUniqueUsersOptions provides options for counting unique users.
 type CountUniqueUsersOptions struct {
+	CommonUsageOptions
 	// If set, adds additional restrictions on the event types.
 	EventFilters *EventFilterOptions
-	// If set, excludes backend system users
-	ExcludeSystemUsers bool
-	// If set, excludes events that don't meet the criteria of "active" usage of Sourcegraph.
-	// These are mostly actions taken by signed-out users.
-	ExcludeNonActiveUsers bool
 }
 
 // EventFilterOptions provides options for filtering events.
@@ -502,15 +509,11 @@ func jsonSettingFragment(setting string, value any) string {
 	return string(raw)
 }
 
-func createCountUniqueUserConds(opt *CountUniqueUsersOptions) []*sqlf.Query {
+func buildCountUniqueUserConds(opt *CountUniqueUsersOptions) []*sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt != nil {
-		if opt.ExcludeSystemUsers {
-			conds = append(conds, sqlf.Sprintf("user_id > 0 OR anonymous_user_id <> 'backend'"))
-		}
-		if opt.ExcludeNonActiveUsers {
-			conds = append(conds, sqlf.Sprintf("name NOT IN ('"+strings.Join(eventlogger.NonActiveUserEvents, "','")+"')"))
-		}
+		conds = buildCommonUsageConds(&opt.CommonUsageOptions, conds)
+
 		if opt.EventFilters != nil {
 			if opt.EventFilters.ByEventNamePrefix != "" {
 				conds = append(conds, sqlf.Sprintf("name LIKE %s", opt.EventFilters.ByEventNamePrefix+"%"))
@@ -533,6 +536,52 @@ func createCountUniqueUserConds(opt *CountUniqueUsersOptions) []*sqlf.Query {
 	return conds
 }
 
+func buildCommonUsageConds(opt *CommonUsageOptions, conds []*sqlf.Query) []*sqlf.Query {
+	if opt != nil {
+		if opt.ExcludeSystemUsers {
+			conds = append(conds, sqlf.Sprintf("event_logs.user_id > 0 OR event_logs.anonymous_user_id <> 'backend'"))
+		}
+		if opt.ExcludeNonActiveUsers {
+			conds = append(conds, sqlf.Sprintf("event_logs.name NOT IN ('"+strings.Join(eventlogger.NonActiveUserEvents, "','")+"')"))
+		}
+
+		// NOTE: This is a hack which should be replaced when we have proper user types.
+		// However, for billing purposes and more accurate ping data, we need a way to
+		// exclude Sourcegraph (employee) admins when counting users. The following
+		// username patterns, in conjunction with the presence of a corresponding
+		// "@sourcegraph.com" email address, are used to filter out Sourcegraph admins:
+		//
+		// - managed-*
+		// - sourcegraph-management-*
+		// - sourcegraph-admin
+		//
+		// This method of filtering is imperfect and may still incur false positives, but
+		// the two together should help prevent that in the majority of cases, and we
+		// acknowledge this risk as we would prefer to undercount rather than overcount.
+		if opt.ExcludeSourcegraphAdmins {
+			conds = append(conds, sqlf.Sprintf(`
+-- No matching user exists
+users.username IS NULL
+-- Or, the user does not...
+OR NOT(
+	-- ...have a known Sourcegraph admin username pattern
+	(users.username ILIKE 'managed-%%'
+		OR users.username ILIKE 'sourcegraph-management-%%'
+		OR users.username = 'sourcegraph-admin')
+	-- ...and have a matching sourcegraph email address
+	AND EXISTS (
+		SELECT
+			1 FROM user_emails
+		WHERE
+			user_emails.user_id = users.id
+			AND user_emails.email ILIKE '%%@sourcegraph.com')
+)
+`))
+		}
+	}
+	return conds
+}
+
 func (l *eventLogStore) SiteUsageMultiplePeriods(ctx context.Context, now time.Time, dayPeriods int, weekPeriods int, monthPeriods int, opt *CountUniqueUsersOptions) (*types.SiteUsageStatistics, error) {
 	startDateDays, _ := calcStartDate(now, Daily, dayPeriods)
 	endDateDays, _ := calcEndDate(startDateDays, Daily, dayPeriods)
@@ -541,7 +590,7 @@ func (l *eventLogStore) SiteUsageMultiplePeriods(ctx context.Context, now time.T
 	startDateMonths, _ := calcStartDate(now, Monthly, monthPeriods)
 	endDateMonths, _ := calcEndDate(startDateMonths, Monthly, monthPeriods)
 
-	conds := createCountUniqueUserConds(opt)
+	conds := buildCountUniqueUserConds(opt)
 
 	return l.siteUsageMultiplePeriodsBySQL(ctx, startDateDays, endDateDays, startDateWeeks, endDateWeeks, startDateMonths, endDateMonths, conds)
 }
@@ -618,9 +667,10 @@ unique_users_by_dwm AS (
     ` + makeDateTruncExpression("day", "timestamp") + ` AS day_period,
 	` + makeDateTruncExpression("week", "timestamp") + ` AS week_period,
 	` + makeDateTruncExpression("month", "timestamp") + ` AS month_period,
-	user_id > 0 AS registered,
+	event_logs.user_id > 0 AS registered,
 	` + aggregatedUserIDQueryFragment + ` as aggregated_user_id
   FROM event_logs
+  LEFT OUTER JOIN users ON users.id = event_logs.user_id
   WHERE (%s)
   GROUP BY day_period, week_period, month_period, aggregated_user_id, registered
 ),
@@ -673,7 +723,7 @@ ORDER BY period DESC
 `
 
 func (l *eventLogStore) CountUniqueUsersAll(ctx context.Context, startDate, endDate time.Time, opt *CountUniqueUsersOptions) (int, error) {
-	conds := createCountUniqueUserConds(opt)
+	conds := buildCountUniqueUserConds(opt)
 
 	return l.countUniqueUsersBySQL(ctx, startDate, endDate, conds)
 }
@@ -700,6 +750,7 @@ func (l *eventLogStore) countUniqueUsersBySQL(ctx context.Context, startDate, en
 	}
 	q := sqlf.Sprintf(`SELECT COUNT(DISTINCT `+userIDQueryFragment+`)
 		FROM event_logs
+		LEFT OUTER JOIN users ON users.id = event_logs.user_id
 		WHERE (DATE(TIMEZONE('UTC'::text, timestamp)) >= %s) AND (DATE(TIMEZONE('UTC'::text, timestamp)) <= %s) AND (%s)`, startDate, endDate, sqlf.Join(conds, ") AND ("))
 	r := l.QueryRow(ctx, q)
 	var count int
@@ -776,28 +827,23 @@ ORDER BY 1 DESC, 2 ASC;
 
 // SiteUsageOptions specifies the options for Site Usage calculations.
 type SiteUsageOptions struct {
-	// Exclude backend system users.
-	ExcludeSystemUsers bool
-	// Exclude events that don't meet the criteria of "active" usage of Sourcegraph. These are mostly actions taken by signed-out users.
-	ExcludeNonActiveUsers bool
+	CommonUsageOptions
 }
 
 func (l *eventLogStore) SiteUsageCurrentPeriods(ctx context.Context) (types.SiteUsageSummary, error) {
 	return l.siteUsageCurrentPeriods(ctx, time.Now().UTC(), &SiteUsageOptions{
-		ExcludeSystemUsers:    true,
-		ExcludeNonActiveUsers: true,
+		CommonUsageOptions{
+			ExcludeSystemUsers:       true,
+			ExcludeNonActiveUsers:    true,
+			ExcludeSourcegraphAdmins: true,
+		},
 	})
 }
 
 func (l *eventLogStore) siteUsageCurrentPeriods(ctx context.Context, now time.Time, opt *SiteUsageOptions) (summary types.SiteUsageSummary, err error) {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt != nil {
-		if opt.ExcludeSystemUsers {
-			conds = append(conds, sqlf.Sprintf("user_id > 0 OR anonymous_user_id <> 'backend'"))
-		}
-		if opt.ExcludeNonActiveUsers {
-			conds = append(conds, sqlf.Sprintf("name NOT IN ('"+strings.Join(eventlogger.NonActiveUserEvents, "','")+"')"))
-		}
+		conds = buildCommonUsageConds(&opt.CommonUsageOptions, conds)
 	}
 
 	query := sqlf.Sprintf(siteUsageCurrentPeriodsQuery, now, now, now, now, sqlf.Join(conds, ") AND ("))
@@ -852,6 +898,7 @@ FROM (
     ` + makeDateTruncExpression("week", "%s::timestamp") + ` as current_week,
     ` + makeDateTruncExpression("day", "%s::timestamp") + ` as current_day
   FROM event_logs
+  LEFT OUTER JOIN users ON users.id = event_logs.user_id
   WHERE (timestamp >= ` + makeDateTruncExpression("month", "%s::timestamp") + `) AND (%s)
 ) events
 

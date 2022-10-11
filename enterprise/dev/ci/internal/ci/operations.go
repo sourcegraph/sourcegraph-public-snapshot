@@ -415,8 +415,8 @@ func buildGoTests(f func(description, testSuffix string)) {
 	// This is a bandage solution to speed up the go tests by running the slowest ones
 	// concurrently. As a results, the PR time affecting only Go code is divided by two.
 	slowGoTestPackages := []string{
-		"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore",                  // 224s
-		"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore",                // 122s
+		"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/dbstore",                  // 224s
+		"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/lsifstore",                // 122s
 		"github.com/sourcegraph/sourcegraph/enterprise/internal/insights",                       // 82+162s
 		"github.com/sourcegraph/sourcegraph/internal/database",                                  // 253s
 		"github.com/sourcegraph/sourcegraph/internal/repos",                                     // 106s
@@ -842,6 +842,7 @@ func buildExecutor(c Config, skipHashCompare bool) operations.Operation {
 			bk.Key(candidateImageStepKey("executor.vm-image")),
 			bk.Env("VERSION", c.Version),
 			bk.Env("IMAGE_FAMILY", imageFamily),
+			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
 		}
 		if !skipHashCompare {
 			compareHashScript := "./enterprise/dev/ci/scripts/compare-hash.sh"
@@ -865,6 +866,7 @@ func publishExecutor(c Config, skipHashCompare bool) operations.Operation {
 			bk.DependsOn(candidateBuildStep),
 			bk.Env("VERSION", c.Version),
 			bk.Env("IMAGE_FAMILY", imageFamily),
+			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
 		}
 		if !skipHashCompare {
 			// Publish iff not soft-failed on previous step
@@ -904,6 +906,7 @@ func buildExecutorDockerMirror(c Config) operations.Operation {
 			bk.Key(candidateImageStepKey("executor-docker-miror.vm-image")),
 			bk.Env("VERSION", c.Version),
 			bk.Env("IMAGE_FAMILY", imageFamily),
+			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
 		}
 		stepOpts = append(stepOpts,
 			bk.Cmd("./enterprise/cmd/executor/docker-mirror/build.sh"))
@@ -920,6 +923,7 @@ func publishExecutorDockerMirror(c Config) operations.Operation {
 			bk.DependsOn(candidateBuildStep),
 			bk.Env("VERSION", c.Version),
 			bk.Env("IMAGE_FAMILY", imageFamily),
+			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
 		}
 		stepOpts = append(stepOpts,
 			bk.Cmd("./enterprise/cmd/executor/docker-mirror/release.sh"))

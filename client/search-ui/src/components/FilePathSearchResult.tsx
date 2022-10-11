@@ -3,7 +3,9 @@ import React from 'react'
 import classNames from 'classnames'
 
 import { getFileMatchUrl, getRepositoryUrl, getRevision, PathMatch } from '@sourcegraph/shared/src/search/stream'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
+import { CopyPathAction } from './CopyPathAction'
 import { LastSyncedIcon } from './LastSyncedIcon'
 import { RepoFileLink } from './RepoFileLink'
 import { ResultContainer } from './ResultContainer'
@@ -18,30 +20,34 @@ export interface FilePathSearchResult {
     index: number
 }
 
-export const FilePathSearchResult: React.FunctionComponent<FilePathSearchResult> = ({
+export const FilePathSearchResult: React.FunctionComponent<FilePathSearchResult & TelemetryProps> = ({
     result,
     repoDisplayName,
     onSelect,
     containerClassName,
     index,
+    telemetryService,
 }) => {
     const repoAtRevisionURL = getRepositoryUrl(result.repository, result.branches)
     const revisionDisplayName = getRevision(result.branches, result.commit)
 
     const title = (
-        <RepoFileLink
-            repoName={result.repository}
-            repoURL={repoAtRevisionURL}
-            filePath={result.path}
-            pathMatchRanges={result.pathMatches ?? []}
-            fileURL={getFileMatchUrl(result)}
-            repoDisplayName={
-                repoDisplayName
-                    ? `${repoDisplayName}${revisionDisplayName ? `@${revisionDisplayName}` : ''}`
-                    : undefined
-            }
-            className={classNames(styles.titleInner, styles.mutedRepoFileLink)}
-        />
+        <span>
+            <RepoFileLink
+                repoName={result.repository}
+                repoURL={repoAtRevisionURL}
+                filePath={result.path}
+                pathMatchRanges={result.pathMatches ?? []}
+                fileURL={getFileMatchUrl(result)}
+                repoDisplayName={
+                    repoDisplayName
+                        ? `${repoDisplayName}${revisionDisplayName ? `@${revisionDisplayName}` : ''}`
+                        : undefined
+                }
+                className={classNames(styles.titleInner, styles.mutedRepoFileLink)}
+            />
+            <CopyPathAction filePath={result.path} className={styles.copyButton} telemetryService={telemetryService} />
+        </span>
     )
 
     return (
@@ -52,7 +58,7 @@ export const FilePathSearchResult: React.FunctionComponent<FilePathSearchResult>
             onResultClicked={onSelect}
             repoName={result.repository}
             repoStars={result.repoStars}
-            className={containerClassName}
+            className={classNames(styles.copyButtonContainer, containerClassName)}
         >
             <div className={classNames(styles.searchResultMatch, 'p-2')}>
                 {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}

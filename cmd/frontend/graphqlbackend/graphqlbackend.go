@@ -558,6 +558,9 @@ func newSchemaResolver(db database.DB, gitserverClient gitserver.Client) *schema
 		"WebhookLog": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return webhookLogByID(ctx, db, id)
 		},
+		"Webhook": func(ctx context.Context, id graphql.ID) (Node, error) {
+			return webhookByID(ctx, db, id)
+		},
 		"Executor": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return executorByID(ctx, db, id, r)
 		},

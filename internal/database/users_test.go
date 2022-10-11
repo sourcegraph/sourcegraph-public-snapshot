@@ -292,6 +292,41 @@ func TestUsers_ListCount(t *testing.T) {
 	} else if want := 0; count != want {
 		t.Errorf("got %d, want %d", count, want)
 	}
+
+	// Create three users with common Sourcegraph admin username patterns.
+	for _, admin := range []struct {
+		username string
+		email    string
+	}{
+		{"sourcegraph-admin", "admin@sourcegraph.com"},
+		{"sourcegraph-management-abc", "support@sourcegraph.com"},
+		{"managed-abc", "abc-support@sourcegraph.com"},
+	} {
+		user, err := db.Users().Create(ctx, NewUser{Username: admin.username})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := db.UserEmails().Add(ctx, user.ID, admin.email, nil); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if count, err := db.Users().Count(ctx, &UsersListOptions{ExcludeSourcegraphAdmins: false}); err != nil {
+		t.Fatal(err)
+	} else if want := 3; count != want {
+		t.Errorf("got %d, want %d", count, want)
+	}
+
+	if count, err := db.Users().Count(ctx, &UsersListOptions{ExcludeSourcegraphAdmins: true}); err != nil {
+		t.Fatal(err)
+	} else if want := 0; count != want {
+		t.Errorf("got %d, want %d", count, want)
+	}
+	if users, err := db.Users().List(ctx, &UsersListOptions{ExcludeSourcegraphAdmins: true}); err != nil {
+		t.Fatal(err)
+	} else if len(users) > 0 {
+		t.Errorf("got %d, want empty", len(users))
+	}
 }
 
 func TestUsers_Update(t *testing.T) {

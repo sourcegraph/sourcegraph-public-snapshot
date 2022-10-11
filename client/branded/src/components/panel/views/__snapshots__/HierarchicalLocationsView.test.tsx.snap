@@ -12,7 +12,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
       >
         <div>
           <div
-            class="test-search-result resultContainer resultContainer"
+            class="test-search-result resultContainer copyButtonContainer resultContainer"
             data-result-type="content"
             data-testid="result-container"
           >
@@ -41,28 +41,52 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                   class="headerTitle"
                   data-testid="result-container-header"
                 >
-                  <div
-                    class="titleInner mutedRepoFileLink"
-                  >
-                    <a
-                      class="anchorLink"
-                      href="/github.com/foo/bar"
-                    >
-                      foo/bar
-                    </a>
+                  <span>
                     <span
-                      aria-hidden="true"
+                      class="titleInner mutedRepoFileLink"
                     >
-                       ›
+                      <span>
+                        <a
+                          class="anchorLink"
+                          href="/github.com/foo/bar"
+                        >
+                          foo/bar
+                        </a>
+                        <span
+                          aria-hidden="true"
+                        >
+                           ›
+                        </span>
+                         
+                        <a
+                          class="anchorLink"
+                          href="/github.com/foo/bar/-/blob/?subtree=true"
+                        >
+                          <strong />
+                        </a>
+                      </span>
                     </span>
-                     
-                    <a
-                      class="anchorLink"
-                      href="/github.com/foo/bar/-/blob/?subtree=true"
+                    <button
+                      aria-label="Copy path to clipboard"
+                      class="btn btnIcon btnSm button copyButton"
+                      data-state="closed"
+                      type="button"
                     >
-                      <strong />
-                    </a>
-                  </div>
+                      <svg
+                        aria-hidden="true"
+                        class="mdi-icon iconInline copyIcon"
+                        fill="currentColor"
+                        height="24"
+                        role="img"
+                        viewBox="0 0 24 24"
+                        width="24"
+                      >
+                        <path
+                          d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"
+                        />
+                      </svg>
+                    </button>
+                  </span>
                   <span
                     class="ml-2 headerDescription"
                   />
@@ -235,7 +259,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
       >
         <div>
           <div
-            class="test-search-result resultContainer resultContainer"
+            class="test-search-result resultContainer copyButtonContainer resultContainer"
             data-result-type="content"
             data-testid="result-container"
           >
@@ -264,30 +288,54 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                   class="headerTitle"
                   data-testid="result-container-header"
                 >
-                  <div
-                    class="titleInner mutedRepoFileLink"
-                  >
-                    <a
-                      class="anchorLink"
-                      href="/github.com/foo/bar"
-                    >
-                      foo/bar
-                    </a>
+                  <span>
                     <span
-                      aria-hidden="true"
+                      class="titleInner mutedRepoFileLink"
                     >
-                       ›
+                      <span>
+                        <a
+                          class="anchorLink"
+                          href="/github.com/foo/bar"
+                        >
+                          foo/bar
+                        </a>
+                        <span
+                          aria-hidden="true"
+                        >
+                           ›
+                        </span>
+                         
+                        <a
+                          class="anchorLink"
+                          href="/github.com/foo/bar/-/blob/file1.txt?subtree=true"
+                        >
+                          <strong>
+                            file1.txt
+                          </strong>
+                        </a>
+                      </span>
                     </span>
-                     
-                    <a
-                      class="anchorLink"
-                      href="/github.com/foo/bar/-/blob/file1.txt?subtree=true"
+                    <button
+                      aria-label="Copy path to clipboard"
+                      class="btn btnIcon btnSm button copyButton"
+                      data-state="closed"
+                      type="button"
                     >
-                      <strong>
-                        file1.txt
-                      </strong>
-                    </a>
-                  </div>
+                      <svg
+                        aria-hidden="true"
+                        class="mdi-icon iconInline copyIcon"
+                        fill="currentColor"
+                        height="24"
+                        role="img"
+                        viewBox="0 0 24 24"
+                        width="24"
+                      >
+                        <path
+                          d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"
+                        />
+                      </svg>
+                    </button>
+                  </span>
                   <span
                     class="ml-2 headerDescription"
                   />
@@ -406,7 +454,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
       >
         <div>
           <div
-            class="test-search-result resultContainer resultContainer"
+            class="test-search-result resultContainer copyButtonContainer resultContainer"
             data-result-type="content"
             data-testid="result-container"
           >
@@ -435,28 +483,52 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                   class="headerTitle"
                   data-testid="result-container-header"
                 >
-                  <div
-                    class="titleInner mutedRepoFileLink"
-                  >
-                    <a
-                      class="anchorLink"
-                      href="/github.com/foo/bar"
-                    >
-                      foo/bar
-                    </a>
+                  <span>
                     <span
-                      aria-hidden="true"
+                      class="titleInner mutedRepoFileLink"
                     >
-                       ›
+                      <span>
+                        <a
+                          class="anchorLink"
+                          href="/github.com/foo/bar"
+                        >
+                          foo/bar
+                        </a>
+                        <span
+                          aria-hidden="true"
+                        >
+                           ›
+                        </span>
+                         
+                        <a
+                          class="anchorLink"
+                          href="/github.com/foo/bar/-/blob/?subtree=true"
+                        >
+                          <strong />
+                        </a>
+                      </span>
                     </span>
-                     
-                    <a
-                      class="anchorLink"
-                      href="/github.com/foo/bar/-/blob/?subtree=true"
+                    <button
+                      aria-label="Copy path to clipboard"
+                      class="btn btnIcon btnSm button copyButton"
+                      data-state="closed"
+                      type="button"
                     >
-                      <strong />
-                    </a>
-                  </div>
+                      <svg
+                        aria-hidden="true"
+                        class="mdi-icon iconInline copyIcon"
+                        fill="currentColor"
+                        height="24"
+                        role="img"
+                        viewBox="0 0 24 24"
+                        width="24"
+                      >
+                        <path
+                          d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"
+                        />
+                      </svg>
+                    </button>
+                  </span>
                   <span
                     class="ml-2 headerDescription"
                   />
