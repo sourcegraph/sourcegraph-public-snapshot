@@ -79,7 +79,7 @@ func checkLicense() error {
 // maxUnlicensedChangesets is the maximum number of changesets that can be
 // attached to a batch change when Sourcegraph is unlicensed or the Batch
 // Changes feature is disabled.
-const maxUnlicensedChangesets = 10
+const maxUnlicensedChangesets = 5
 
 type batchSpecCreatedArg struct {
 	ChangesetSpecsCount int `json:"changeset_specs_count"`
@@ -808,6 +808,19 @@ func (r *Resolver) RepoChangesetsStats(ctx context.Context, repo *graphql.ID) (g
 		return nil, err
 	}
 	return &repoChangesetsStatsResolver{stats: *stats}, nil
+}
+
+func (r *Resolver) GlobalChangesetsStats(
+	ctx context.Context,
+) (graphqlbackend.GlobalChangesetsStatsResolver, error) {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+		return nil, err
+	}
+	stats, err := r.store.GetGlobalChangesetsStats(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &globalChangesetsStatsResolver{stats: *stats}, nil
 }
 
 func (r *Resolver) RepoDiffStat(ctx context.Context, repo *graphql.ID) (*graphqlbackend.DiffStat, error) {

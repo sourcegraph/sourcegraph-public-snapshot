@@ -98,6 +98,9 @@ Available commands in `sg.config.yaml`:
 * frontend: Enterprise frontend
 * github-proxy
 * gitserver
+* gitserver-0
+* gitserver-1
+* gitserver-template
 * grafana
 * jaeger
 * loki

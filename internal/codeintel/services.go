@@ -46,7 +46,7 @@ var initServicesMemo = memo.NewMemoizedConstructorWithArg(func(dbs Databases) (S
 	policiesSvc := policies.GetService(db, uploadsSvc, gitserverClient)
 	autoIndexingSvc := autoindexing.GetService(db, uploadsSvc, dependenciesSvc, policiesSvc, gitserverClient, repoUpdaterClient)
 	codenavSvc := codenav.GetService(db, codeIntelDB, uploadsSvc, gitserverClient)
-	rankingSvc := ranking.GetService(uploadsSvc)
+	rankingSvc := ranking.GetService(db, uploadsSvc, gitserverClient)
 
 	return Services{
 		AutoIndexingService: autoIndexingSvc,

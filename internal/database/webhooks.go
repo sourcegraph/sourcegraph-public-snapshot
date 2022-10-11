@@ -2,7 +2,9 @@ package database
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
 
@@ -19,7 +21,7 @@ type WebhookStore interface {
 	Create(ctx context.Context, kind, urn string, secret *types.EncryptableSecret) (*types.Webhook, error)
 	GetByID(ctx context.Context, id int32) (*types.Webhook, error)
 	GetByRandomID(ctx context.Context, id string) (*types.Webhook, error)
-	Delete(ctx context.Context, id int32) error
+	Delete(ctx context.Context, id uuid.UUID) error
 	Update(ctx context.Context, newWebhook *types.Webhook) (*types.Webhook, error)
 	List(ctx context.Context) ([]*types.Webhook, error)
 }
@@ -101,7 +103,7 @@ INSERT INTO
 
 var webhookColumns = []*sqlf.Query{
 	sqlf.Sprintf("id"),
-	sqlf.Sprintf("rand_id"),
+	sqlf.Sprintf("uuid"),
 	sqlf.Sprintf("code_host_kind"),
 	sqlf.Sprintf("code_host_urn"),
 	sqlf.Sprintf("secret"),
@@ -118,10 +120,42 @@ func (s *webhookStore) GetByRandomID(ctx context.Context, id string) (*types.Web
 	panic("Implement this method")
 }
 
-// Delete the webhook
-func (s *webhookStore) Delete(ctx context.Context, id int32) error {
-	// TODO(sashaostrikov) implement this method
-	panic("implement this method")
+const webhookDeleteQueryFmtstr = `
+-- source: internal/database/webhooks.go:Delete
+DELETE FROM webhooks
+WHERE uuid = %s
+`
+
+// Delete the webhook. Error is returned when provided UUID is invalid, the
+// webhook is not found or something went wrong during an SQL query.
+func (s *webhookStore) Delete(ctx context.Context, id uuid.UUID) error {
+	q := sqlf.Sprintf(webhookDeleteQueryFmtstr, id)
+	result, err := s.ExecResult(ctx, q)
+	if err != nil {
+		return errors.Wrap(err, "running delete SQL query")
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return errors.Wrap(err, "checking rows affected after deletion")
+	}
+
+	if rowsAffected == 0 {
+		return errors.Wrap(&WebhookNotFoundError{ID: id}, "failed to delete webhook")
+	}
+	return nil
+}
+
+// WebhookNotFoundError occurs when a webhook is not found.
+type WebhookNotFoundError struct {
+	ID uuid.UUID
+}
+
+func (w *WebhookNotFoundError) Error() string {
+	return fmt.Sprintf("webhook with UUID %s not found", w.ID)
+}
+
+func (w *WebhookNotFoundError) NotFound() bool {
+	return true
 }
 
 // Update the webhook
@@ -137,13 +171,15 @@ func (s *webhookStore) List(ctx context.Context) ([]*types.Webhook, error) {
 }
 
 func scanWebhook(sc dbutil.Scanner, key encryption.Key) (*types.Webhook, error) {
-	var hook types.Webhook
-	var keyID string
-	var rawSecret string
+	var (
+		hook      types.Webhook
+		keyID     string
+		rawSecret string
+	)
 
 	if err := sc.Scan(
 		&hook.ID,
-		&hook.RandomID,
+		&hook.UUID,
 		&hook.CodeHostKind,
 		&hook.CodeHostURN,
 		&rawSecret,

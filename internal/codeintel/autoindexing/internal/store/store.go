@@ -33,6 +33,7 @@ type Store interface {
 	GetRecentIndexesSummary(ctx context.Context, repositoryID int) (summaries []shared.IndexesWithRepositoryNamespace, err error)
 	GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error)
 	DeleteIndexByID(ctx context.Context, id int) (_ bool, err error)
+	DeleteIndexes(ctx context.Context, opts types.DeleteIndexesOptions) (err error)
 	DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error)
 	IsQueued(ctx context.Context, repositoryID int, commit string) (_ bool, err error)
 	QueueRepoRev(ctx context.Context, repositoryID int, commit string) error
@@ -42,6 +43,8 @@ type Store interface {
 	// Index configurations
 	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (_ shared.IndexConfiguration, _ bool, err error)
 	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, data []byte) (err error)
+	GetInferenceScript(ctx context.Context) (script string, err error)
+	SetInferenceScript(ctx context.Context, script string) (err error)
 
 	// Language support
 	GetLanguagesRequestedBy(ctx context.Context, userID int) (_ []string, err error)

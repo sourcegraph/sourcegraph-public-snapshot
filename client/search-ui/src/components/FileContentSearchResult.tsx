@@ -21,6 +21,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { Icon, Badge } from '@sourcegraph/wildcard'
 
 import { FetchFileParameters } from './CodeExcerpt'
+import { CopyPathAction } from './CopyPathAction'
 import { FileMatchChildren } from './FileMatchChildren'
 import { RepoFileLink } from './RepoFileLink'
 import { ResultContainer } from './ResultContainer'
@@ -194,19 +195,26 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
 
     const title = (
         <>
-            <RepoFileLink
-                repoName={result.repository}
-                repoURL={repoAtRevisionURL}
-                filePath={result.path}
-                pathMatchRanges={result.pathMatches ?? []}
-                fileURL={getFileMatchUrl(result)}
-                repoDisplayName={
-                    repoDisplayName
-                        ? `${repoDisplayName}${revisionDisplayName ? `@${revisionDisplayName}` : ''}`
-                        : undefined
-                }
-                className={classNames(styles.titleInner, styles.mutedRepoFileLink)}
-            />
+            <span>
+                <RepoFileLink
+                    repoName={result.repository}
+                    repoURL={repoAtRevisionURL}
+                    filePath={result.path}
+                    pathMatchRanges={result.pathMatches ?? []}
+                    fileURL={getFileMatchUrl(result)}
+                    repoDisplayName={
+                        repoDisplayName
+                            ? `${repoDisplayName}${revisionDisplayName ? `@${revisionDisplayName}` : ''}`
+                            : undefined
+                    }
+                    className={classNames(styles.titleInner, styles.mutedRepoFileLink)}
+                />
+                <CopyPathAction
+                    className={styles.copyButton}
+                    filePath={result.path}
+                    telemetryService={telemetryService}
+                />
+            </span>
             {description && <span className={classNames('ml-2', styles.headerDescription)}>{description}</span>}
         </>
     )
@@ -219,7 +227,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
             onResultClicked={onSelect}
             repoName={result.repository}
             repoStars={result.repoStars}
-            className={containerClassName}
+            className={classNames(styles.copyButtonContainer, containerClassName)}
             ref={rootRef}
         >
             <div data-testid="file-search-result" data-expanded={expanded}>

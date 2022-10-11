@@ -2,10 +2,12 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/stretchr/testify/assert"
 
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
@@ -34,7 +36,7 @@ func TestWebhookCreateUnencrypted(t *testing.T) {
 
 	// Check that the calculated fields were correctly calculated.
 	assert.NotZero(t, created.ID)
-	_, err = uuid.Parse(created.RandomID)
+	assert.NotZero(t, created.UUID)
 	assert.NoError(t, err)
 	assert.Equal(t, kind, created.CodeHostKind)
 	assert.Equal(t, urn, created.CodeHostURN)
@@ -71,7 +73,7 @@ func TestWebhookCreateEncrypted(t *testing.T) {
 
 	// Check that the calculated fields were correctly calculated.
 	assert.NotZero(t, created.ID)
-	_, err = uuid.Parse(created.RandomID)
+	assert.NotZero(t, created.UUID)
 	assert.NoError(t, err)
 	assert.Equal(t, kind, created.CodeHostKind)
 	assert.Equal(t, urn, created.CodeHostURN)
@@ -107,7 +109,7 @@ func TestWebhookCreateNoSecret(t *testing.T) {
 
 	// Check that the calculated fields were correctly calculated.
 	assert.NotZero(t, created.ID)
-	_, err = uuid.Parse(created.RandomID)
+	assert.NotZero(t, created.UUID)
 	assert.NoError(t, err)
 	assert.Equal(t, kind, created.CodeHostKind)
 	assert.Equal(t, urn, created.CodeHostURN)
@@ -134,4 +136,31 @@ func TestWebhookCreateWithBadKey(t *testing.T) {
 	_, err := store.Create(ctx, extsvc.KindGitHub, "https://github.com", types.NewUnencryptedSecret("very secret (not)"))
 	assert.Error(t, err)
 	assert.Equal(t, "encrypting secret: some error occurred, sorry", err.Error())
+}
+
+func TestWebhookDelete(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	store := db.Webhooks(nil)
+
+	// Test that delete with wrong ID returns an error
+	nonExistentUUID := uuid.New()
+	err := store.Delete(ctx, nonExistentUUID)
+	if !errors.HasType(err, &WebhookNotFoundError{}) {
+		t.Fatalf("want WebhookNotFoundError, got: %s", err)
+	}
+	assert.EqualError(t, err, fmt.Sprintf("failed to delete webhook: webhook with UUID %s not found", nonExistentUUID))
+
+	// Test that delete with right ID deletes the webhook
+	createdWebhook, err := store.Create(ctx, extsvc.KindGitHub, "https://github.com", types.NewUnencryptedSecret("very secret (not)"))
+	assert.NoError(t, err)
+	err = store.Delete(ctx, createdWebhook.UUID)
+	assert.NoError(t, err)
+
+	exists, _, err := basestore.ScanFirstBool(db.QueryContext(ctx, "SELECT EXISTS(SELECT 1 FROM webhooks WHERE uuid=$1)", createdWebhook.UUID))
+	assert.NoError(t, err)
+	assert.False(t, exists)
 }

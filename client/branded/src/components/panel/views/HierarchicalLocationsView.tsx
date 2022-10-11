@@ -16,6 +16,8 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { parseRepoURI } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner, Alert, Panel } from '@sourcegraph/wildcard'
 
+import { hierarchicalLocationViewHasResultContext } from '../TabbedPanelContent'
+
 import { FileLocations, FileLocationsError, FileLocationsNotFound } from './FileLocations'
 import { HierarchicalLocationsViewButton } from './HierarchicalLocationsViewButton'
 import { groupLocations } from './locations'
@@ -139,6 +141,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                                             // noop
                                         })
                                 }
+                                hierarchicalLocationViewHasResultContext.next(hasResults)
                             }),
                             endWith({ isLoading: false })
                         )

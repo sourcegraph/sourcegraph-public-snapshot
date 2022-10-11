@@ -572,6 +572,30 @@ func TestDeleteIndexByID(t *testing.T) {
 	}
 }
 
+func TestDeleteIndexes(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	insertIndexes(t, db, types.Index{ID: 1, State: "completed"})
+	insertIndexes(t, db, types.Index{ID: 2, State: "errored"})
+
+	if err := store.DeleteIndexes(context.Background(), types.DeleteIndexesOptions{
+		State:        "errored",
+		Term:         "",
+		RepositoryID: 0,
+	}); err != nil {
+		t.Fatalf("unexpected error deleting indexes: %s", err)
+	}
+
+	// Index no longer exists
+	if _, exists, err := store.GetIndexByID(context.Background(), 2); err != nil {
+		t.Fatalf("unexpected error getting index: %s", err)
+	} else if exists {
+		t.Fatal("unexpected record")
+	}
+}
+
 func TestDeleteIndexByIDMissingRow(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))

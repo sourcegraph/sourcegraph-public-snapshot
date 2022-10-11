@@ -127,6 +127,12 @@ type DeleteUploadsOptions struct {
 	RepositoryID int
 }
 
+type DeleteIndexesOptions struct {
+	State        string
+	Term         string
+	RepositoryID int
+}
+
 type GetConfigurationPoliciesOptions struct {
 	// RepositoryID indicates that only configuration policies that apply to the
 	// specified repository (directly or via pattern) should be returned. This value

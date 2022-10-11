@@ -1466,6 +1466,13 @@ CREATE SEQUENCE codeintel_autoindex_queue_id_seq
 
 ALTER SEQUENCE codeintel_autoindex_queue_id_seq OWNED BY codeintel_autoindex_queue.id;
 
+CREATE TABLE codeintel_inference_scripts (
+    insert_timestamp timestamp with time zone DEFAULT now() NOT NULL,
+    script text NOT NULL
+);
+
+COMMENT ON TABLE codeintel_inference_scripts IS 'Contains auto-index job inference Lua scripts as an alternative to setting via environment variables.';
+
 CREATE TABLE codeintel_langugage_support_requests (
     id integer NOT NULL,
     user_id integer NOT NULL,
@@ -3522,18 +3529,16 @@ ALTER SEQUENCE webhook_logs_id_seq OWNED BY webhook_logs.id;
 
 CREATE TABLE webhooks (
     id integer NOT NULL,
-    rand_id uuid DEFAULT gen_random_uuid() NOT NULL,
     code_host_kind text NOT NULL,
     code_host_urn text NOT NULL,
     secret text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    encryption_key_id text
+    encryption_key_id text,
+    uuid uuid DEFAULT gen_random_uuid() NOT NULL
 );
 
 COMMENT ON TABLE webhooks IS 'Webhooks registered in Sourcegraph instance.';
-
-COMMENT ON COLUMN webhooks.rand_id IS 'rand_id will be the user facing ID';
 
 COMMENT ON COLUMN webhooks.code_host_kind IS 'Kind of an external service for which webhooks are registered.';
 
@@ -4041,6 +4046,9 @@ ALTER TABLE ONLY webhook_logs
 
 ALTER TABLE ONLY webhooks
     ADD CONSTRAINT webhooks_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY webhooks
+    ADD CONSTRAINT webhooks_uuid_key UNIQUE (uuid);
 
 CREATE INDEX access_tokens_lookup ON access_tokens USING hash (value_sha256) WHERE (deleted_at IS NULL);
 
