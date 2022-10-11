@@ -57,7 +57,8 @@
     }
 
     &:not(:disabled):not(:global(.disabled)) {
-        &:hover:not(:global(.focus)):not(:focus), &:active,
+        &:hover:not(:global(.focus)):not(:focus),
+        &:active,
         &:global(.active) {
             text-decoration: underline;
             color: var(--link-hover-color);
