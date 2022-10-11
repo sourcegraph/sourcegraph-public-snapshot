@@ -22,7 +22,7 @@ import {
 import { AuthProvider, SourcegraphContext } from '../../../jscontext'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { getPasswordRequirements } from '../../../util/security'
-import { CREATE_PASSWORD, MIN_EXTERNAL_ACCOUNTS, UPDATE_PASSWORD } from '../backend'
+import { CREATE_PASSWORD, USER_EXTERNAL_ACCOUNTS, UPDATE_PASSWORD } from '../backend'
 
 import { ExternalAccountsSignIn } from './ExternalAccountsSignIn'
 
@@ -66,7 +66,7 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
     const [error, setError] = useState<ErrorLike>()
 
     const { data, loading } = useQuery<UserExternalAccountsResult, MinExternalAccountsVariables>(
-        MIN_EXTERNAL_ACCOUNTS,
+        USER_EXTERNAL_ACCOUNTS,
         {
             variables: { username: props.user.username },
             onError: (error): void => {

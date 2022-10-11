@@ -33,7 +33,7 @@ export const CREATE_PASSWORD = gql`
     }
 `
 
-export const MIN_EXTERNAL_ACCOUNTS = gql`
+export const USER_EXTERNAL_ACCOUNTS = gql`
     query MinExternalAccounts($username: String!) {
         user(username: $username) {
             externalAccounts {
