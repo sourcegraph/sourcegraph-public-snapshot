@@ -835,7 +835,7 @@ func executorImageFamilyForConfig(c Config) string {
 }
 
 // ~15m (building executor base VM)
-func buildExecutor(c Config, skipHashCompare bool) operations.Operation {
+func buildExecutorVM(c Config, skipHashCompare bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		imageFamily := executorImageFamilyForConfig(c)
 		stepOpts := []bk.StepOpt{
@@ -858,7 +858,21 @@ func buildExecutor(c Config, skipHashCompare bool) operations.Operation {
 	}
 }
 
-func publishExecutor(c Config, skipHashCompare bool) operations.Operation {
+func buildExecutorBinary(c Config) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		stepOpts := []bk.StepOpt{
+			bk.Key(candidateImageStepKey("executor.binary")),
+			bk.Env("VERSION", c.Version),
+			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
+		}
+		stepOpts = append(stepOpts,
+			bk.Cmd("./enterprise/cmd/executor/build_binary.sh"))
+
+		pipeline.AddStep(":construction: Build executor binary", stepOpts...)
+	}
+}
+
+func publishExecutorVM(c Config, skipHashCompare bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		candidateBuildStep := candidateImageStepKey("executor.vm-image")
 		imageFamily := executorImageFamilyForConfig(c)
@@ -880,6 +894,21 @@ func publishExecutor(c Config, skipHashCompare bool) operations.Operation {
 			bk.Cmd("./enterprise/cmd/executor/vm-image/release.sh"))
 
 		pipeline.AddStep(":packer: :white_check_mark: Publish executor image", stepOpts...)
+	}
+}
+
+func publishExecutorBinary(c Config) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		candidateBuildStep := candidateImageStepKey("executor.binary")
+		stepOpts := []bk.StepOpt{
+			bk.DependsOn(candidateBuildStep),
+			bk.Env("VERSION", c.Version),
+			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
+		}
+		stepOpts = append(stepOpts,
+			bk.Cmd("./enterprise/cmd/executor/release_binary.sh"))
+
+		pipeline.AddStep(":white_check_mark: Publish executor binary", stepOpts...)
 	}
 }
 
