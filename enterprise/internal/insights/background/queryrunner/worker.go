@@ -381,17 +381,21 @@ order by series_id;
 // table.
 //
 // See internal/workerutil/dbworker for more information about dbworkers.
+
+type SearchJob struct {
+	SeriesID        string
+	SearchQuery     string
+	RecordTime      *time.Time
+	PersistMode     string
+	DependentFrames []time.Time
+}
+
 type Job struct {
 	// Query runner fields.
-	SeriesID    string
-	SearchQuery string
-	RecordTime  *time.Time // If non-nil, record results at this time instead of the time at which search results were found.
-	Cost        int
-	Priority    int
-	PersistMode string
+	SearchJob
 
-	DependentFrames []time.Time // This field isn't part of the job table, but maps to a table one-many on this job.
-
+	Cost     int
+	Priority int
 	// Standard/required dbworker fields. If enqueuing a job, these may all be zero values except State.
 	//
 	// See https://sourcegraph.com/github.com/sourcegraph/sourcegraph@cd0b3904c674ee3568eb2ef5d7953395b6432d20/-/blob/internal/workerutil/dbworker/store/store.go#L114-134
@@ -484,13 +488,15 @@ var jobsColumns = []*sqlf.Query{
 // ToQueueJob converts the query execution into a queueable job with it's relevant dependent times.
 func ToQueueJob(q *compression.QueryExecution, seriesID string, query string, cost priority.Cost, jobPriority priority.Priority) *Job {
 	return &Job{
-		SeriesID:        seriesID,
-		SearchQuery:     query,
-		RecordTime:      &q.RecordingTime,
-		Cost:            int(cost),
-		Priority:        int(jobPriority),
-		DependentFrames: q.SharedRecordings,
-		State:           "queued",
-		PersistMode:     string(store.RecordMode),
+		SearchJob: SearchJob{
+			SeriesID:        seriesID,
+			SearchQuery:     query,
+			RecordTime:      &q.RecordingTime,
+			PersistMode:     string(store.RecordMode),
+			DependentFrames: q.SharedRecordings,
+		},
+		Cost:     int(cost),
+		Priority: int(jobPriority),
+		State:    "queued",
 	}
 }
