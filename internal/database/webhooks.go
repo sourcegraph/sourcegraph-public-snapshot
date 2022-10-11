@@ -204,9 +204,46 @@ func (w *WebhookNotFoundError) NotFound() bool {
 
 // Update the webhook
 func (s *webhookStore) Update(ctx context.Context, newWebhook *types.Webhook) (*types.Webhook, error) {
-	// TODO(sashaostrikov) implement this method
-	panic("implement this method")
+	var (
+		err             error
+		encryptedSecret string
+		keyID           string
+	)
+	if newWebhook.Secret != nil {
+		encryptedSecret, keyID, err = newWebhook.Secret.Encrypt(ctx, s.key)
+		if err != nil || (encryptedSecret == "" && keyID == "") {
+			return nil, errors.Wrap(err, "encrypting secret")
+		}
+	}
+
+	q := sqlf.Sprintf(webhookUpdateQueryFmtstr,
+		newWebhook.CodeHostURN, encryptedSecret, keyID, newWebhook.ID,
+		sqlf.Join(webhookColumns, ", "))
+
+	updated, err := scanWebhook(s.QueryRow(ctx, q), s.key)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, &WebhookNotFoundError{ID: newWebhook.ID, UUID: newWebhook.UUID}
+		}
+		return nil, errors.Wrap(err, "scanning webhook")
+	}
+
+	return updated, nil
 }
+
+const webhookUpdateQueryFmtstr = `
+-- source: internal/database/webhooks.go:Update
+UPDATE webhooks
+SET
+	code_host_urn = %s,
+	secret = %s,
+	encryption_key_id = %s,
+	updated_at = NOW()
+WHERE
+	id = %s
+RETURNING
+	%s
+`
 
 // List the webhooks
 func (s *webhookStore) List(ctx context.Context) ([]*types.Webhook, error) {
