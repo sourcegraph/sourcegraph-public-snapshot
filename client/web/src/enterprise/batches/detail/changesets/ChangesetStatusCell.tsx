@@ -64,7 +64,7 @@ interface ChangesetStatusIconProps extends React.HTMLAttributes<HTMLDivElement> 
 }
 
 export const ChangesetStatusUnpublished: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
-    label,
+    label = <span>Unpublished</span>,
     className,
     ...props
 }) => (
@@ -74,7 +74,7 @@ export const ChangesetStatusUnpublished: React.FunctionComponent<React.PropsWith
     </div>
 )
 export const ChangesetStatusClosed: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
-    label,
+    label = <span>Closed</span>,
     className,
     ...props
 }) => (
@@ -84,7 +84,7 @@ export const ChangesetStatusClosed: React.FunctionComponent<React.PropsWithChild
     </div>
 )
 export const ChangesetStatusMerged: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
-    label,
+    label = <span>Merged</span>,
     className,
     ...props
 }) => (
@@ -94,7 +94,7 @@ export const ChangesetStatusMerged: React.FunctionComponent<React.PropsWithChild
     </div>
 )
 export const ChangesetStatusOpen: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
-    label,
+    label = <span>Open</span>,
     className,
     ...props
 }) => (
@@ -104,7 +104,7 @@ export const ChangesetStatusOpen: React.FunctionComponent<React.PropsWithChildre
     </div>
 )
 export const ChangesetStatusDraft: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
-    label,
+    label = <span>Draft</span>,
     className,
     ...props
 }) => (
@@ -114,7 +114,7 @@ export const ChangesetStatusDraft: React.FunctionComponent<React.PropsWithChildr
     </div>
 )
 export const ChangesetStatusDeleted: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
-    label,
+    label = <span>Deleted</span>,
     className,
     ...props
 }) => (
@@ -124,7 +124,7 @@ export const ChangesetStatusDeleted: React.FunctionComponent<React.PropsWithChil
     </div>
 )
 export const ChangesetStatusError: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
-    label,
+    label = <span className="text-danger">Failed</span>,
     className,
     ...props
 }) => (
@@ -134,7 +134,7 @@ export const ChangesetStatusError: React.FunctionComponent<React.PropsWithChildr
     </div>
 )
 export const ChangesetStatusRetrying: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
-    label,
+    label = <span>Retrying</span>,
     className,
     ...props
 }) => (
@@ -145,7 +145,7 @@ export const ChangesetStatusRetrying: React.FunctionComponent<React.PropsWithChi
 )
 
 export const ChangesetStatusProcessing: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
-    label,
+    label = <span>Processing</span>,
     className,
     ...props
 }) => (
@@ -156,7 +156,7 @@ export const ChangesetStatusProcessing: React.FunctionComponent<React.PropsWithC
 )
 
 export const ChangesetStatusArchived: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
-    label,
+    label = <span>Archived</span>,
     className,
     ...props
 }) => (
@@ -167,7 +167,7 @@ export const ChangesetStatusArchived: React.FunctionComponent<React.PropsWithChi
 )
 
 export const ChangesetStatusReadOnly: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
-    label,
+    label = <span>Read-only</span>,
     className,
     ...props
 }) => (
