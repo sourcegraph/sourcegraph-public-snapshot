@@ -85,9 +85,6 @@ func queryContentCost(o QueryObject) int {
 func queryScopeCost(o QueryObject) int {
 	var scopeCost int
 
-	// this heuristic doesn't assert on whether a query is repo-scoped because of how insights are designed.
-	// we either run a global query or a single repo query.
-
 	parameters := querybuilder.ParametersFromQueryPlan(o.query)
 	if parameters.Exists(query.FieldFile) {
 		scopeCost -= 100
@@ -97,12 +94,20 @@ func queryScopeCost(o QueryObject) int {
 	}
 
 	archived := parameters.Archived()
-	if archived != nil && (*archived == query.Yes || *archived == query.Only) {
-		scopeCost += 50
+	if archived != nil {
+		if *archived == query.Yes {
+			scopeCost += 50
+		} else if *archived == query.Only {
+			scopeCost -= 50
+		}
 	}
 	fork := parameters.Fork()
 	if fork != nil && (*fork == query.Yes || *fork == query.Only) {
-		scopeCost += 50
+		if *fork == query.Yes {
+			scopeCost += 50
+		} else if *fork == query.Only {
+			scopeCost -= 50
+		}
 	}
 
 	var diffOrCommit bool
