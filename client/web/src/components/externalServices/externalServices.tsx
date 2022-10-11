@@ -9,6 +9,7 @@ import GitLabIcon from 'mdi-react/GitlabIcon'
 import LanguageGoIcon from 'mdi-react/LanguageGoIcon'
 import LanguageJavaIcon from 'mdi-react/LanguageJavaIcon'
 import LanguagePythonIcon from 'mdi-react/LanguagePythonIcon'
+import LanguageRubyIcon from 'mdi-react/LanguageRubyIcon'
 import LanguageRustIcon from 'mdi-react/LanguageRustIcon'
 import NpmIcon from 'mdi-react/NpmIcon'
 
@@ -30,6 +31,7 @@ import pagureSchemaJSON from '../../../../../schema/pagure.schema.json'
 import perforceSchemaJSON from '../../../../../schema/perforce.schema.json'
 import phabricatorSchemaJSON from '../../../../../schema/phabricator.schema.json'
 import pythonPackagesJSON from '../../../../../schema/python-packages.schema.json'
+import rubyPackagesSchemaJSON from '../../../../../schema/ruby-packages.schema.json'
 import rustPackagesJSON from '../../../../../schema/rust-packages.schema.json'
 import { ExternalRepositoryFields, ExternalServiceKind } from '../../graphql-operations'
 import { EditorAction } from '../../settings/EditorActionsGroup'
@@ -1399,6 +1401,44 @@ const RUST_PACKAGES = {
     editorActions: [],
 }
 
+const RUBY_PACKAGES: AddExternalServiceOptions = {
+    kind: ExternalServiceKind.RUBYPACKAGES,
+    title: 'Ruby Dependencies',
+    icon: LanguageRubyIcon,
+    jsonSchema: rubyPackagesSchemaJSON,
+    defaultDisplayName: 'Ruby Dependencies',
+    defaultConfig: `{
+  "repository": "https://rubygems.org/",
+  "dependencies": ["shopify_api@12.0.0"]
+}`,
+    instructions: (
+        <div>
+            <ol>
+                <li>
+                    The URL https://rubygems.org/ is used if the field
+                    <Code>"repository"</Code> is empty.
+                </li>
+                <li>
+                    Use the syntax <Code>"GEM_NAME@GEM_VERSION"</Code> to list a dependency for the{' '}
+                    <Code>"dependencies"</Code> field.
+                </li>
+                <li>
+                    The field <Code>"repository"</Code> is redacted because it can include <Code>admin:password</Code>{' '}
+                    credentials.
+                </li>
+                <li>
+                    See the{' '}
+                    <Link to="https://www.jfrog.com/confluence/display/JFROG/RubyGems+Repositories">
+                        Artifactory documentation for RubyGem repositories
+                    </Link>{' '}
+                    for details on how to configure an internal Artifactory repository.
+                </li>
+            </ol>
+        </div>
+    ),
+    editorActions: [],
+}
+
 export const codeHostExternalServices: Record<string, AddExternalServiceOptions> = {
     github: GITHUB_DOTCOM,
     ghe: GITHUB_ENTERPRISE,
@@ -1412,6 +1452,7 @@ export const codeHostExternalServices: Record<string, AddExternalServiceOptions>
     git: GENERIC_GIT,
     ...(window.context?.experimentalFeatures?.pythonPackages === 'enabled' ? { pythonPackages: PYTHON_PACKAGES } : {}),
     ...(window.context?.experimentalFeatures?.rustPackages === 'enabled' ? { rustPackages: RUST_PACKAGES } : {}),
+    ...(window.context?.experimentalFeatures?.rubyPackages === 'enabled' ? { rubyPackages: RUBY_PACKAGES } : {}),
     ...(window.context?.experimentalFeatures?.goPackages === 'enabled' ? { goModules: GO_MODULES } : {}),
     ...(window.context?.experimentalFeatures?.jvmPackages === 'enabled' ? { jvmPackages: JVM_PACKAGES } : {}),
     ...(window.context?.experimentalFeatures?.npmPackages === 'enabled' ? { npmPackages: NPM_PACKAGES } : {}),
@@ -1446,6 +1487,7 @@ export const defaultExternalServices: Record<ExternalServiceKind, AddExternalSer
     [ExternalServiceKind.NPMPACKAGES]: NPM_PACKAGES,
     [ExternalServiceKind.PYTHONPACKAGES]: PYTHON_PACKAGES,
     [ExternalServiceKind.RUSTPACKAGES]: RUST_PACKAGES,
+    [ExternalServiceKind.RUBYPACKAGES]: RUBY_PACKAGES,
 }
 
 export const externalRepoIcon = (

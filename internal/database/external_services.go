@@ -219,6 +219,7 @@ var ExternalServiceKinds = map[string]ExternalServiceKind{
 	extsvc.KindPhabricator:     {CodeHost: true, JSONSchema: schema.PhabricatorSchemaJSON},
 	extsvc.KindPythonPackages:  {CodeHost: true, JSONSchema: schema.PythonPackagesSchemaJSON},
 	extsvc.KindRustPackages:    {CodeHost: true, JSONSchema: schema.RustPackagesSchemaJSON},
+	extsvc.KindRubyPackages:    {CodeHost: true, JSONSchema: schema.RubyPackagesSchemaJSON},
 }
 
 // ExternalServiceKind describes a kind of external service.

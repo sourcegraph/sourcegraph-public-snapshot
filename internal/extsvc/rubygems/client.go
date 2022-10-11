@@ -1,4 +1,4 @@
-package crates
+package rubygems
 
 import (
 	"context"
@@ -33,7 +33,7 @@ func (c *Client) Get(ctx context.Context, url string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Add("User-Agent", "sourcegraph-crates-syncer (sourcegraph.com)")
+	req.Header.Add("User-Agent", "sourcegraph-rubygems-syncer (sourcegraph.com)")
 
 	b, err := c.do(req)
 	if err != nil {
