@@ -162,10 +162,6 @@ export interface EditorAPI {
      * Triggers application of the specified suggestion.
      */
     selectSuggestion: (label: string) => Promise<void>
-    /**
-     * Move cursor to 1-based position.
-     */
-    moveCursorTo: (line: number, character?: number) => Promise<void>
 }
 
 const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAPI> = {
@@ -219,9 +215,6 @@ const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAP
                     selector: completionLabelSelector,
                     wait: { timeout: 5000 },
                 })
-            },
-            moveCursorTo() {
-                throw new Error('moveCursorTo is not implemented for Monaco')
             },
         }
         return api
@@ -305,20 +298,6 @@ const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAP
                     selector: completionLabelSelector,
                     wait: { timeout: 5000 },
                 })
-            },
-            async moveCursorTo(line: number, character: number = 1): Promise<void> {
-                return driver.page.evaluate(
-                    (editor: EditorView | undefined, lineNumber: number, character: number) => {
-                        if (!editor) {
-                            throw new Error('editor is not defined')
-                        }
-                        const line = editor.state.doc.line(lineNumber)
-                        editor.dispatch({ selection: { anchor: line.from + character - 1 } }) // -1 because 1-based
-                    },
-                    await getEditorHandler(),
-                    line,
-                    character
-                )
             },
         }
         return api

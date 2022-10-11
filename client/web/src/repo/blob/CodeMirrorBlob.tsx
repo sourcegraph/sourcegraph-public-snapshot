@@ -275,7 +275,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 aria-label={ariaLabel}
                 role={role}
                 data-testid={dataTestId}
-                className={`${className} overflow-hidden`}
+                className={`${className} overflow-hidden test-editor`}
                 data-editor="codemirror6"
             />
             {overrideBrowserSearchKeybinding && (
