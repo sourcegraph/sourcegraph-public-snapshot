@@ -61,7 +61,7 @@ Common language agnostic starting points:
 
 ### Why can't I run steps with different user IDs in the same batch change?
 
-This is an artefact of [how Batch Changes executes batch specs](../explanations/how_src_executes_a_batch_spec.md). Consider this partial spec:
+This is an artifact of [how Batch Changes executes batch specs](../explanations/how_src_executes_a_batch_spec.md). Consider this partial spec:
 
 ```yaml
 steps:
