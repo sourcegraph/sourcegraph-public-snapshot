@@ -9,9 +9,9 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
+	autoindexingshared "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
-	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -39,7 +39,7 @@ func TestDependencySyncSchedulerJVM(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	job := codeinteltypes.DependencySyncingJob{
+	job := autoindexingshared.DependencySyncingJob{
 		UploadID: 42,
 	}
 	if err := handler.Handle(context.Background(), logger, job); err != nil {
@@ -91,7 +91,7 @@ func TestDependencySyncSchedulerGomod(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	job := codeinteltypes.DependencySyncingJob{
+	job := autoindexingshared.DependencySyncingJob{
 		UploadID: 42,
 	}
 	if err := handler.Handle(context.Background(), logger, job); err != nil {

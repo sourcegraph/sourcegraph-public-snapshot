@@ -8,10 +8,6 @@ import (
 )
 
 type operations struct {
-	// Not used yet.
-	commitsMatchingIndexingPolicies  *observation.Operation
-	commitsMatchingRetentionPolicies *observation.Operation
-
 	// Configurations
 	getConfigurationPolicies      *observation.Operation
 	getConfigurationPoliciesByID  *observation.Operation
@@ -46,10 +42,6 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
-		// Not used yet.
-		commitsMatchingIndexingPolicies:  op("CommitsMatchingIndexingPolicies"),
-		commitsMatchingRetentionPolicies: op("CommitsMatchingRetentionPolicies"),
-
 		// Configurations
 		getConfigurationPolicies:      op("GetConfigurationPolicies"),
 		getConfigurationPoliciesByID:  op("GetConfigurationPoliciesByID"),

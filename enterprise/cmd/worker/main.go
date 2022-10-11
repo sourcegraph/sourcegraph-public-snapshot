@@ -56,7 +56,6 @@ func main() {
 		"export-usage-telemetry":        telemetry.NewTelemetryJob(),
 		"webhook-build-job":             repos.NewWebhookBuildJob(),
 
-		// fresh
 		"codeintel-upload-janitor":                    codeintel.NewUploadJanitorJob(),
 		"codeintel-upload-expirer":                    codeintel.NewUploadExpirerJob(),
 		"codeintel-commitgraph-updater":               codeintel.NewCommitGraphUpdaterJob(),
@@ -65,6 +64,9 @@ func main() {
 		"codeintel-autoindexing-dependency-scheduler": codeintel.NewAutoindexingDependencySchedulerJob(),
 		"codeintel-autoindexing-janitor":              codeintel.NewAutoindexingJanitorJob(),
 		"codeintel-metrics-reporter":                  codeintel.NewMetricsReporterJob(),
+
+		// Note: experimental (not documented)
+		"codeintel-ranking-indexer": codeintel.NewRankingIndexerJob(),
 	}
 
 	if err := shared.Start(logger, additionalJobs, migrations.RegisterEnterpriseMigrators); err != nil {

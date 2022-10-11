@@ -103,7 +103,12 @@ WHERE %s ORDER BY %s LIMIT %d OFFSET %d
 const uploadRankQueryFragment = `
 SELECT
 	r.id,
-	ROW_NUMBER() OVER (ORDER BY COALESCE(r.process_after, r.uploaded_at), r.id) as rank
+	ROW_NUMBER() OVER (ORDER BY
+		-- Note: this should be kept in-sync with the order given to workerutil
+		r.associated_index_id IS NULL DESC,
+		COALESCE(r.process_after, r.uploaded_at),
+		r.id
+	) as rank
 FROM lsif_uploads_with_repository_name r
 WHERE r.state = 'queued'
 `

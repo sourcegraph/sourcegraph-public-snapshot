@@ -868,6 +868,15 @@
       "MaximumValue": 9223372036854775807,
       "Increment": 1,
       "CycleOption": "NO"
+    },
+    {
+      "Name": "webhooks_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
+      "Increment": 1,
+      "CycleOption": "NO"
     }
   ],
   "Tables": [
@@ -6266,6 +6275,41 @@
           "ConstraintDefinition": ""
         }
       ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
+      "Name": "codeintel_inference_scripts",
+      "Comment": "Contains auto-index job inference Lua scripts as an alternative to setting via environment variables.",
+      "Columns": [
+        {
+          "Name": "insert_timestamp",
+          "Index": 1,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "script",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [],
       "Constraints": null,
       "Triggers": []
     },
@@ -19371,7 +19415,7 @@
       "Columns": [
         {
           "Name": "code_host_kind",
-          "Index": 2,
+          "Index": 3,
           "TypeName": "text",
           "IsNullable": false,
           "Default": "",
@@ -19384,7 +19428,7 @@
         },
         {
           "Name": "code_host_urn",
-          "Index": 3,
+          "Index": 4,
           "TypeName": "text",
           "IsNullable": false,
           "Default": "",
@@ -19397,7 +19441,7 @@
         },
         {
           "Name": "created_at",
-          "Index": 5,
+          "Index": 6,
           "TypeName": "timestamp with time zone",
           "IsNullable": false,
           "Default": "now()",
@@ -19410,10 +19454,10 @@
         },
         {
           "Name": "encryption_key_id",
-          "Index": 7,
+          "Index": 8,
           "TypeName": "text",
-          "IsNullable": false,
-          "Default": "''::text",
+          "IsNullable": true,
+          "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -19424,9 +19468,9 @@
         {
           "Name": "id",
           "Index": 1,
-          "TypeName": "uuid",
+          "TypeName": "integer",
           "IsNullable": false,
-          "Default": "",
+          "Default": "nextval('webhooks_id_seq'::regclass)",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -19436,7 +19480,7 @@
         },
         {
           "Name": "secret",
-          "Index": 4,
+          "Index": 5,
           "TypeName": "text",
           "IsNullable": true,
           "Default": "",
@@ -19449,7 +19493,7 @@
         },
         {
           "Name": "updated_at",
-          "Index": 6,
+          "Index": 7,
           "TypeName": "timestamp with time zone",
           "IsNullable": false,
           "Default": "now()",
@@ -19459,9 +19503,43 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
+        },
+        {
+          "Name": "uuid",
+          "Index": 9,
+          "TypeName": "uuid",
+          "IsNullable": false,
+          "Default": "gen_random_uuid()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
         }
       ],
-      "Indexes": [],
+      "Indexes": [
+        {
+          "Name": "webhooks_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX webhooks_pkey ON webhooks USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "webhooks_uuid_key",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX webhooks_uuid_key ON webhooks USING btree (uuid)",
+          "ConstraintType": "u",
+          "ConstraintDefinition": "UNIQUE (uuid)"
+        }
+      ],
       "Constraints": null,
       "Triggers": []
     }

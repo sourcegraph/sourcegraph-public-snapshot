@@ -32,5 +32,5 @@ func (j *cratesSyncerJob) Routines(startupCtx context.Context, logger log.Logger
 		return nil, err
 	}
 
-	return cratesyncer.NewSyncers(services.DependenciesService), nil
+	return cratesyncer.NewCrateSyncer(services.DependenciesService), nil
 }

@@ -8,11 +8,13 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	internalcodeintel "github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -74,6 +76,8 @@ type searchIndexerServer struct {
 	// MinLastChangedDisabled is a feature flag for disabling more efficient
 	// polling by zoekt. This can be removed after v3.34 is cut (Dec 2021).
 	MinLastChangedDisabled bool
+
+	codeIntelServices internalcodeintel.Services
 }
 
 // serveConfiguration is _only_ used by the zoekt index server. Zoekt does
@@ -266,3 +270,38 @@ var metricGetVersion = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "src_search_get_version_total",
 	Help: "The total number of times we poll gitserver for the version of a indexable branch.",
 })
+
+func (h *searchIndexerServer) serveRepoRank(w http.ResponseWriter, r *http.Request) error {
+	return serveRank[float64](h.codeIntelServices.RankingService.GetRepoRank, w, r)
+}
+
+func (h *searchIndexerServer) serveDocumentRanks(w http.ResponseWriter, r *http.Request) error {
+	return serveRank[map[string]float64](h.codeIntelServices.RankingService.GetDocumentRanks, w, r)
+}
+
+func serveRank[T map[string]float64 | float64](
+	f func(ctx context.Context, name api.RepoName) (r T, err error),
+	w http.ResponseWriter,
+	r *http.Request,
+) error {
+	ctx := r.Context()
+
+	repoName := api.RepoName(mux.Vars(r)["RepoName"])
+
+	rank, err := f(ctx, repoName)
+	if err != nil {
+		if errcode.IsNotFound(err) {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return nil
+		}
+		return err
+	}
+
+	b, err := json.Marshal(rank)
+	if err != nil {
+		return err
+	}
+
+	_, _ = w.Write(b)
+	return nil
+}

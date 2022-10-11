@@ -27,7 +27,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/batches"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -141,8 +142,14 @@ func Main(enterpriseInit EnterpriseInit) {
 		m := repos.NewSourceMetrics()
 		m.MustRegister(prometheus.DefaultRegisterer)
 
-		depsSvc := dependencies.GetService(db, nil)
-		src = repos.NewSourcer(sourcerLogger, db, cf, repos.WithDependenciesService(depsSvc), repos.ObservedSource(sourcerLogger, m))
+		services, err := codeintel.GetServices(codeintel.Databases{
+			DB:          db,
+			CodeIntelDB: stores.NoopDB,
+		})
+		if err != nil {
+			logger.Fatal("failed to initialize codeintelservices", log.Error(err))
+		}
+		src = repos.NewSourcer(sourcerLogger, db, cf, repos.WithDependenciesService(services.DependenciesService), repos.ObservedSource(sourcerLogger, m))
 	}
 
 	updateScheduler := repos.NewUpdateScheduler(logger, db)
