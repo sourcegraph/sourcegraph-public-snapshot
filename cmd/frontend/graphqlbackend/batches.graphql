@@ -1801,7 +1801,6 @@ extend type Query {
         The batch changes name.
         """
         name: String!
-
     ): BatchChange
     """
     Stats on all the changesets across the instance for Batch Changes.
