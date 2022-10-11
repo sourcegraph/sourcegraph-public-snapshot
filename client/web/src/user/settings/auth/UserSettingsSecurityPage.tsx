@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { ErrorLike } from '@sourcegraph/common'
-import { gql, useQuery } from '@sourcegraph/http-client'
+import { useMutation, useQuery } from '@sourcegraph/http-client'
 import { Container, PageHeader, LoadingSpinner, Button, Link, Alert, H3, Input, Label } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
@@ -14,12 +14,15 @@ import {
     ExternalServiceKind,
     ExternalAccountFields,
     MinExternalAccountsVariables,
-    MinExternalAccountsResult,
+    UpdatePasswordVariables,
+    UpdatePasswordResult,
+    CreatePasswordVariables,
+    CreatePasswordResult,
 } from '../../../graphql-operations'
 import { AuthProvider, SourcegraphContext } from '../../../jscontext'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { getPasswordRequirements } from '../../../util/security'
-import { updatePassword, createPassword } from '../backend'
+import { CREATE_PASSWORD, MIN_EXTERNAL_ACCOUNTS, UPDATE_PASSWORD } from '../backend'
 
 import { ExternalAccountsSignIn } from './ExternalAccountsSignIn'
 
@@ -62,21 +65,8 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
     const [saved, setSaved] = useState<boolean>(false)
     const [error, setError] = useState<ErrorLike>()
 
-    const { data, loading } = useQuery<MinExternalAccountsResult, MinExternalAccountsVariables>(
-        gql`
-            query MinExternalAccounts($username: String!) {
-                user(username: $username) {
-                    externalAccounts {
-                        nodes {
-                            id
-                            serviceID
-                            serviceType
-                            accountData
-                        }
-                    }
-                }
-            }
-        `,
+    const { data, loading } = useQuery<UserExternalAccountsResult, MinExternalAccountsVariables>(
+        MIN_EXTERNAL_ACCOUNTS,
         {
             variables: { username: props.user.username },
             onError: (error): void => {
@@ -139,16 +129,32 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
         }
     }
 
+    const [updatePassword, {}] = useMutation<UpdatePasswordResult, UpdatePasswordVariables>(UPDATE_PASSWORD, {
+        variables: {
+            oldPassword,
+            newPassword,
+        },
+        onError: error => {
+            handleError(error)
+        },
+    })
+
+    const [createPassword, {}] = useMutation<CreatePasswordResult, CreatePasswordVariables>(CREATE_PASSWORD, {
+        variables: {
+            newPassword,
+        },
+        onError: error => {
+            handleError(error)
+        },
+    })
+
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
-        shouldShowOldPasswordInput()
-            ? updatePassword({
-                  oldPassword: oldPassword,
-                  newPassword: newPassword,
-              })
-            : createPassword({
-                  newPassword: newPassword,
-              })
+        if (shouldShowOldPasswordInput()) {
+            updatePassword()
+        } else {
+            createPassword()
+        }
         setSaved(true)
     }
 
