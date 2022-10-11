@@ -194,7 +194,7 @@ func (w *WebhookNotFoundError) Error() string {
 	if w.UUID != uuid.Nil {
 		return fmt.Sprintf("webhook with UUID %s not found", w.UUID)
 	} else {
-		return fmt.Sprintf("webhook with ID=\"%d\" not found", w.ID)
+		return fmt.Sprintf("webhook with ID %d not found", w.ID)
 	}
 }
 

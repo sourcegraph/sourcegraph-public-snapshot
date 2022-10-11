@@ -176,7 +176,7 @@ func TestGetByID(t *testing.T) {
 	// Test that non-existent webhook cannot be found
 	webhook, err := store.GetByID(ctx, 1)
 	assert.Error(t, err)
-	assert.EqualError(t, err, "webhook with ID=\"1\" not found")
+	assert.EqualError(t, err, "webhook with ID 1 not found")
 	assert.Nil(t, webhook)
 
 	// Test that existent webhook cannot be found
