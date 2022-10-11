@@ -1,4 +1,4 @@
-import React, { Suspense, useCallback, useState } from 'react'
+import React, { Suspense, useCallback, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
@@ -54,7 +54,7 @@ import { parseSearchURLQuery, HomePanelsProps, SearchStreamingProps } from './se
 import { NotepadContainer } from './search/Notepad'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
-import { useThemeProps } from './theme'
+import { useTheme, useThemeProps } from './theme'
 import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
@@ -134,6 +134,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
         // settings.schema.json.
         fuzzyFinder = true
     }
+    const [isFuzzyFinderVisible, setFuzzyFinderVisible] = useState(false)
 
     const communitySearchContextPaths = communitySearchContextsRoutes.map(route => route.path)
     const isCommunitySearchContextPage = communitySearchContextPaths.includes(props.location.pathname)
@@ -154,6 +155,9 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
     const isSearchAutoFocusRequired = routeMatch === PageRoutes.Survey || routeMatch === EnterprisePageRoutes.Insights
 
     const themeProps = useThemeProps()
+    const themeState = useTheme()
+    const themeStateRef = useRef(themeState)
+    themeStateRef.current = themeState
     const [enableContrastCompliantSyntaxHighlighting] = useFeatureFlag('contrast-compliant-syntax-highlighting')
 
     const breadcrumbProps = useBreadcrumbs()
@@ -214,6 +218,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                         !isSearchConsolePage &&
                         !isSearchNotebooksPage
                     }
+                    setFuzzyFinderIsVisible={setFuzzyFinderVisible}
                     isSearchAutoFocusRequired={!isSearchAutoFocusRequired}
                     isRepositoryRelatedPage={isRepositoryRelatedPage}
                     showKeyboardShortcutsHelp={showKeyboardShortcutsHelp}
@@ -277,8 +282,16 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
             {(isSearchNotebookListPage || (isSearchRelatedPage && !isSearchHomepage)) && (
                 <NotepadContainer onCreateNotebook={props.onCreateNotebookFromNotepad} />
             )}
-            {isRepositoryRelatedPage && fuzzyFinder && (
-                <FuzzyFinderContainer telemetryService={props.telemetryService} location={props.location} />
+            {fuzzyFinder && (
+                <FuzzyFinderContainer
+                    isVisible={isFuzzyFinderVisible}
+                    setIsVisible={setFuzzyFinderVisible}
+                    themeState={themeStateRef}
+                    isRepositoryRelatedPage={isRepositoryRelatedPage}
+                    settingsCascade={props.settingsCascade}
+                    telemetryService={props.telemetryService}
+                    location={props.location}
+                />
             )}
         </div>
     )
