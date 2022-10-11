@@ -214,7 +214,7 @@ func Main(enterpriseSetupHook func(db database.DB, codeIntelServices codeintel.S
 	if err != nil {
 		return errors.Wrap(err, "Failed to create sub-repo client")
 	}
-	ui.InitRouter(db, enterprise.CodeIntelResolver)
+	ui.InitRouter(db)
 
 	if len(os.Args) >= 2 {
 		switch os.Args[1] {
