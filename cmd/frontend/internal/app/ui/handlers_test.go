@@ -42,7 +42,7 @@ func TestRedirects(t *testing.T) {
 		db := database.NewMockDB()
 		db.GlobalStateFunc.SetDefaultReturn(gss)
 
-		InitRouter(db, nil)
+		InitRouter(db)
 		rw := httptest.NewRecorder()
 		req, err := http.NewRequest("GET", path, nil)
 		if err != nil {
