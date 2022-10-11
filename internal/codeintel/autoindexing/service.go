@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/derision-test/glock"
 	"github.com/grafana/regexp"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
@@ -43,9 +44,11 @@ type Service struct {
 	inferenceService        shared.InferenceService
 	logger                  log.Logger
 	operations              *operations
+	janitorMetrics          *janitorMetrics
 	metrics                 *resetterMetrics
 	depencencySyncMetrics   workerutil.WorkerMetrics
 	depencencyIndexMetrics  workerutil.WorkerMetrics
+	clock                   glock.Clock
 }
 
 func newService(
@@ -81,9 +84,11 @@ func newService(
 		inferenceService:        inferenceSvc,
 		logger:                  observationContext.Logger,
 		operations:              newOperations(observationContext),
+		janitorMetrics:          newJanitorMetrics(observationContext),
 		metrics:                 newMetrics(observationContext),
 		depencencySyncMetrics:   workerutil.NewMetrics(observationContext, "codeintel_dependency_index_processor"),
 		depencencyIndexMetrics:  workerutil.NewMetrics(observationContext, "codeintel_dependency_index_queueing"),
+		clock:                   glock.NewRealClock(),
 	}
 }
 
@@ -139,28 +144,6 @@ func (s *Service) DeleteIndexes(ctx context.Context, opts types.DeleteIndexesOpt
 
 	return s.store.DeleteIndexes(ctx, opts)
 }
-
-//
-// Used by upload janitor, we need our own version of that janitor
-
-func (s *Service) DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error) {
-	return s.store.DeleteIndexesWithoutRepository(ctx, now)
-}
-
-func (s *Service) GetStaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []shared.SourcedCommits, err error) {
-	return s.store.GetStaleSourcedCommits(ctx, minimumTimeSinceLastCheck, limit, now)
-}
-
-func (s *Service) UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (indexesUpdated int, err error) {
-	return s.store.UpdateSourcedCommits(ctx, repositoryID, commit, now)
-}
-
-func (s *Service) DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (indexesDeleted int, err error) {
-	return s.store.DeleteSourcedCommits(ctx, repositoryID, commit, maximumCommitLag)
-}
-
-//
-//
 
 func (s *Service) GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (_ shared.IndexConfiguration, _ bool, err error) {
 	ctx, _, endObservation := s.operations.getIndexConfigurationByRepositoryID.With(ctx, &err, observation.Args{})

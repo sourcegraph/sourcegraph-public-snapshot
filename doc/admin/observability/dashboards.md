@@ -20639,7 +20639,7 @@ Query: `sum(increase(src_codeintel_background_audit_log_records_expired_total{jo
 
 <p class="subtitle">Cleanup task operation errors every 5m</p>
 
-Number of code intelligence cleanup task errors every 5m
+Number of code intelligence uploads cleanup task errors every 5m
 
 This panel has no related alerts.
 
@@ -20651,6 +20651,27 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <summary>Technical details</summary>
 
 Query: `sum(increase(src_codeintel_uploads_background_cleanup_errors_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_autoindexing_background_cleanup_errors_total
+
+<p class="subtitle">Cleanup task operation errors every 5m</p>
+
+Number of code intelligence autoindexing cleanup task errors every 5m
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100411` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_autoindexing_background_cleanup_errors_total{job=~"^.*"}[5m]))`
 
 </details>
 

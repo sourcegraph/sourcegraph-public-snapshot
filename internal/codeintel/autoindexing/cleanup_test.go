@@ -1,4 +1,4 @@
-package uploads
+package autoindexing
 
 import (
 	"context"
@@ -9,11 +9,10 @@ import (
 
 	"github.com/derision-test/glock"
 	"github.com/google/go-cmp/cmp"
-
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -99,11 +98,9 @@ func testUnknownCommitsJanitor(t *testing.T, resolveRevisionFunc func(commit str
 	})
 
 	store := NewMockStore()
-	lsifStore := NewMockLsifStore()
 	store.GetStaleSourcedCommitsFunc.SetDefaultReturn(testSourcedCommits, nil)
 	janitor := &Service{
 		store:           store,
-		lsifstore:       lsifStore,
 		gitserverClient: gitserverClient,
 		clock:           glock.NewRealClock(),
 		logger:          logtest.Scoped(t),
@@ -115,9 +112,7 @@ func testUnknownCommitsJanitor(t *testing.T, resolveRevisionFunc func(commit str
 		context.Background(), janitorConfig{
 			minimumTimeSinceLastCheck:      1 * time.Hour,
 			commitResolverBatchSize:        10,
-			auditLogMaxAge:                 1 * time.Hour,
 			commitResolverMaximumCommitLag: 1 * time.Hour,
-			uploadTimeout:                  1 * time.Hour,
 		}); err != nil {
 		t.Fatalf("unexpected error running janitor: %s", err)
 	}
