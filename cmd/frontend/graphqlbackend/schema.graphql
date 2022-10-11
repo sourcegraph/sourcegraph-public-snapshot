@@ -1652,7 +1652,7 @@ type Query {
     ): OrgMembersSummary!
 
     """
-    Lists webhooks.
+    Lists webhooks. Only available to site admins.
     If no kind is given, it returns all webhooks.
     If first is omitted, 20 items are returned
     """
@@ -7740,7 +7740,7 @@ type Webhook implements Node {
     """
     codeHostURN: String!
     """
-    Optional secret. Only site admins can view this field as it contains sensitive information.
+    Optional secret.
     """
     secret: String
     """
