@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "graphqlutil",
+    srcs = [
+        "connection.go",
+        "cursors.go",
+        "doc.go",
+        "offset.go",
+        "page_info.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil",
+    visibility = ["//visibility:public"],
+    deps = ["//internal/database"],
+)

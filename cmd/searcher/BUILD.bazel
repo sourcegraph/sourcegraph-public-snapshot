@@ -1,0 +1,43 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "searcher_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/searcher",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//cmd/searcher/internal/search",
+        "//internal/actor",
+        "//internal/api",
+        "//internal/conf",
+        "//internal/conf/conftypes",
+        "//internal/database",
+        "//internal/database/connections/live",
+        "//internal/debugserver",
+        "//internal/env",
+        "//internal/gitserver",
+        "//internal/gitserver/gitdomain",
+        "//internal/goroutine",
+        "//internal/hostname",
+        "//internal/instrumentation",
+        "//internal/logging",
+        "//internal/observation",
+        "//internal/profiler",
+        "//internal/trace",
+        "//internal/tracer",
+        "//internal/version",
+        "//lib/errors",
+        "@com_github_getsentry_sentry_go//:sentry-go",
+        "@com_github_keegancsmith_tmpfriend//:tmpfriend",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//:otel",
+        "@org_golang_x_sync//errgroup",
+    ],
+)
+
+go_binary(
+    name = "searcher",
+    embed = [":searcher_lib"],
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,43 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "auth",
+    srcs = [
+        "config.go",
+        "forbid_all.go",
+        "override.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/auth",
+        "//cmd/frontend/internal/session",
+        "//internal/actor",
+        "//internal/conf",
+        "//internal/conf/conftypes",
+        "//internal/database",
+        "//internal/env",
+        "//internal/extsvc",
+        "@com_github_inconshreveable_log15//:log15",
+    ],
+)
+
+go_test(
+    name = "auth_test",
+    srcs = [
+        "config_test.go",
+        "forbid_all_test.go",
+        "override_test.go",
+    ],
+    embed = [":auth"],
+    deps = [
+        "//cmd/frontend/auth",
+        "//cmd/frontend/internal/session",
+        "//internal/actor",
+        "//internal/conf",
+        "//internal/database",
+        "//internal/types",
+        "//lib/errors",
+        "//schema",
+    ],
+)

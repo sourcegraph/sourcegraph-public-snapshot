@@ -1,0 +1,40 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "webhookworker",
+    srcs = [
+        "cleaner.go",
+        "job.go",
+        "worker.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/repos/webhookworker",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/database/basestore",
+        "//internal/database/dbutil",
+        "//internal/goroutine",
+        "//internal/metrics",
+        "//internal/observation",
+        "//internal/workerutil",
+        "//internal/workerutil/dbworker",
+        "//internal/workerutil/dbworker/store",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_lib_pq//:pq",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "webhookworker_test",
+    srcs = ["worker_test.go"],
+    embed = [":webhookworker"],
+    deps = [
+        "//internal/database",
+        "//internal/database/basestore",
+        "//internal/database/dbtest",
+        "//internal/extsvc",
+        "//lib/errors",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_sourcegraph_log//logtest",
+    ],
+)

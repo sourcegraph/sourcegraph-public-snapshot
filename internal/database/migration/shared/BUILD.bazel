@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "shared",
+    srcs = [
+        "embed.go",
+        "types.go",
+    ],
+    embedsrcs = ["upgradedata/stitched-migration-graph.json"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/database/migration/shared",
+    visibility = ["//:__subpackages__"],
+    deps = ["//internal/database/migration/definition"],
+)

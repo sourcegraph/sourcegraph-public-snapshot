@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "bkstats_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/bkstats",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//lib/errors",
+        "@com_github_buildkite_go_buildkite_v3//buildkite",
+    ],
+)
+
+go_binary(
+    name = "bkstats",
+    embed = [":bkstats_lib"],
+    visibility = ["//visibility:public"],
+)

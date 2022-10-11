@@ -1,0 +1,57 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "lsifstore",
+    srcs = [
+        "lsifstore.go",
+        "lsifstore_diagnostics.go",
+        "lsifstore_exists.go",
+        "lsifstore_hover.go",
+        "lsifstore_locations.go",
+        "lsifstore_monikers.go",
+        "lsifstore_packages.go",
+        "lsifstore_ranges.go",
+        "lsifstore_stencil.go",
+        "observability.go",
+        "scan.go",
+        "serializer.go",
+        "types.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/codeintel/codenav/shared",
+        "//internal/codeintel/stores",
+        "//internal/codeintel/types",
+        "//internal/database/basestore",
+        "//internal/metrics",
+        "//internal/observation",
+        "//lib/codeintel/precise",
+        "//lib/errors",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_opentracing_opentracing_go//log",
+    ],
+)
+
+go_test(
+    name = "lsifstore_test",
+    srcs = [
+        "lsifstore_exists_test.go",
+        "lsifstore_hover_test.go",
+        "lsifstore_locations_test.go",
+        "lsifstore_monikers_test.go",
+        "lsifstore_packages_test.go",
+        "lsifstore_stencil_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":lsifstore"],
+    deps = [
+        "//internal/codeintel/codenav/shared",
+        "//internal/codeintel/stores",
+        "//internal/database/dbtest",
+        "//internal/observation",
+        "//lib/codeintel/precise",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_sourcegraph_log//logtest",
+    ],
+)

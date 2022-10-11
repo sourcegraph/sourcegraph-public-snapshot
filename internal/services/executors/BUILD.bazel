@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "executors",
+    srcs = ["service.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/services/executors",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/database",
+        "//internal/services/executors/store",
+        "//internal/services/executors/store/db",
+        "//internal/types",
+    ],
+)

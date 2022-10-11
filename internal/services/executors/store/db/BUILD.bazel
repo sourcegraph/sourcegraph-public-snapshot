@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "db",
+    srcs = [
+        "db.go",
+        "db_executors.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/services/executors/store/db",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/database",
+        "//internal/database/basestore",
+        "//internal/services/executors/store",
+        "//internal/timeutil",
+        "//internal/types",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+    ],
+)
+
+go_test(
+    name = "db_test",
+    srcs = ["db_executors_test.go"],
+    embed = [":db"],
+    deps = [
+        "//internal/database",
+        "//internal/database/dbtest",
+        "//internal/services/executors/store",
+        "//internal/types",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_sourcegraph_log//logtest",
+    ],
+)

@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "shared",
+    srcs = [
+        "config.go",
+        "main.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/shared",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cmd/worker/internal/codeintel",
+        "//cmd/worker/internal/encryption",
+        "//cmd/worker/internal/gitserver",
+        "//cmd/worker/internal/migrations",
+        "//cmd/worker/internal/repostatistics",
+        "//cmd/worker/internal/webhooks",
+        "//cmd/worker/job",
+        "//internal/conf",
+        "//internal/debugserver",
+        "//internal/encryption/keyring",
+        "//internal/env",
+        "//internal/goroutine",
+        "//internal/httpserver",
+        "//internal/logging",
+        "//internal/oobmigration",
+        "//internal/oobmigration/migrations",
+        "//internal/profiler",
+        "//internal/tracer",
+        "//lib/errors",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "featureflag",
+    srcs = [
+        "cache.go",
+        "featureflag.go",
+        "flagset.go",
+        "middleware.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/featureflag",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/actor",
+        "//internal/redispool",
+        "@com_github_gomodule_redigo//redis",
+    ],
+)
+
+go_test(
+    name = "featureflag_test",
+    srcs = [
+        "middleware_test.go",
+        "mocks_test.go",
+    ],
+    embed = [":featureflag"],
+    deps = [
+        "//internal/actor",
+        "@com_github_derision_test_go_mockgen//testutil/require",
+        "@com_github_gomodule_redigo//redis",
+        "@com_github_rafaeljusto_redigomock//:redigomock",
+        "@com_github_stretchr_testify//require",
+    ],
+)

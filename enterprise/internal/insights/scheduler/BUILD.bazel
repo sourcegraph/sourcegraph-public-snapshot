@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "scheduler",
+    srcs = ["scheduler.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler",
+    visibility = ["//enterprise:__subpackages__"],
+    deps = [
+        "//enterprise/internal/database",
+        "//internal/database/basestore",
+        "//internal/database/dbutil",
+        "//internal/goroutine",
+        "//internal/observation",
+        "//internal/workerutil",
+        "//internal/workerutil/dbworker",
+        "//internal/workerutil/dbworker/store",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_lib_pq//:pq",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "scheduler_test",
+    srcs = ["scheduler_test.go"],
+    embed = [":scheduler"],
+    deps = [
+        "//enterprise/internal/database",
+        "//internal/database/dbtest",
+        "//internal/goroutine",
+        "//internal/observation",
+        "@com_github_sourcegraph_log//logtest",
+    ],
+)

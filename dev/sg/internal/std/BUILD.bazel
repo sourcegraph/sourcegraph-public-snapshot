@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "std",
+    srcs = ["output.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/std",
+    visibility = ["//dev/sg:__subpackages__"],
+    deps = ["//lib/output"],
+)

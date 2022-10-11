@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "batches",
+    srcs = [
+        "background.go",
+        "doc.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/batches",
+    visibility = ["//enterprise:__subpackages__"],
+    deps = [
+        "//enterprise/internal/batches/store",
+        "//enterprise/internal/batches/syncer",
+        "//internal/actor",
+        "//internal/batches",
+        "//internal/database",
+        "//internal/encryption",
+        "//internal/goroutine",
+        "//internal/httpcli",
+        "//internal/observation",
+        "//internal/trace",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//:otel",
+    ],
+)

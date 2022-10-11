@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "protocol",
+    srcs = ["searcher.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/searcher/protocol",
+    visibility = ["//visibility:public"],
+    deps = ["//internal/api"],
+)

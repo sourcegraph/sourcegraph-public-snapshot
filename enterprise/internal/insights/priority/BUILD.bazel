@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "priority",
+    srcs = [
+        "cost.go",
+        "priority.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/priority",
+    visibility = ["//enterprise:__subpackages__"],
+)
+
+go_test(
+    name = "priority_test",
+    srcs = ["priority_test.go"],
+    embed = [":priority"],
+)

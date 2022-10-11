@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "store",
+    srcs = [
+        "observability.go",
+        "store.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/store",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api",
+        "//internal/database",
+        "//internal/database/basestore",
+        "//internal/metrics",
+        "//internal/observation",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "store_test",
+    srcs = ["store_test.go"],
+    embed = [":store"],
+    deps = [
+        "//internal/api",
+        "//internal/database",
+        "//internal/database/dbtest",
+        "//internal/observation",
+        "@com_github_sourcegraph_log//logtest",
+    ],
+)

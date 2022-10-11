@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "repoupdater",
+    srcs = [
+        "client.go",
+        "observability.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/repoupdater",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api",
+        "//internal/metrics",
+        "//internal/observation",
+        "//internal/repoupdater",
+        "//internal/repoupdater/protocol",
+        "@com_github_opentracing_opentracing_go//log",
+    ],
+)

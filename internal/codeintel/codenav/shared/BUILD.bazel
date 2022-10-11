@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "shared",
+    srcs = [
+        "iface.go",
+        "types.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api",
+        "//internal/authz",
+        "//internal/codeintel/stores/gitserver",
+        "//internal/codeintel/types",
+        "//lib/codeintel/precise",
+        "@com_github_sourcegraph_go_diff//diff",
+    ],
+)

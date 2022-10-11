@@ -1,0 +1,60 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "discovery",
+    srcs = [
+        "all_repos_iterator.go",
+        "discovery.go",
+        "first_commit.go",
+        "mocks_temp.go",
+        "scoped_repo_iterator.go",
+        "series_id.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery",
+    visibility = ["//enterprise:__subpackages__"],
+    deps = [
+        "//enterprise/internal/database",
+        "//enterprise/internal/insights/store",
+        "//enterprise/internal/insights/types",
+        "//internal/actor",
+        "//internal/api",
+        "//internal/authz",
+        "//internal/database",
+        "//internal/database/dbutil",
+        "//internal/gitserver",
+        "//internal/gitserver/gitdomain",
+        "//internal/goroutine",
+        "//internal/insights",
+        "//internal/jsonc",
+        "//internal/types",
+        "//lib/errors",
+        "//schema",
+        "@com_github_inconshreveable_log15//:log15",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@com_github_segmentio_ksuid//:ksuid",
+    ],
+)
+
+go_test(
+    name = "discovery_test",
+    srcs = [
+        "all_repos_iterator_test.go",
+        "discovery_test.go",
+        "first_commit_test.go",
+        "scoped_repo_iterator_test.go",
+        "series_id_test.go",
+    ],
+    embed = [":discovery"],
+    deps = [
+        "//internal/api",
+        "//internal/database",
+        "//internal/insights",
+        "//internal/types",
+        "//lib/errors",
+        "//schema",
+        "@com_github_hexops_autogold//:autogold",
+        "@com_github_hexops_valast//:valast",
+        "@com_github_prometheus_client_golang//prometheus",
+    ],
+)

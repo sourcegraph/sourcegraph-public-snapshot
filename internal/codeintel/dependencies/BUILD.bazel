@@ -1,0 +1,46 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "dependencies",
+    srcs = [
+        "consts.go",
+        "cratesyncer.go",
+        "iface.go",
+        "init.go",
+        "observability.go",
+        "service.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api",
+        "//internal/authz",
+        "//internal/codeintel/dependencies/internal/store",
+        "//internal/codeintel/dependencies/shared",
+        "//internal/conf/reposource",
+        "//internal/database",
+        "//internal/extsvc",
+        "//internal/gitserver",
+        "//internal/gitserver/gitdomain",
+        "//internal/gitserver/protocol",
+        "//internal/goroutine",
+        "//internal/jsonc",
+        "//internal/memo",
+        "//internal/metrics",
+        "//internal/observation",
+        "//internal/types",
+        "//lib/errors",
+        "//schema",
+        "@com_github_json_iterator_go//:go",
+    ],
+)
+
+go_test(
+    name = "dependencies_test",
+    srcs = ["mocks_test.go"],
+    embed = [":dependencies"],
+    deps = [
+        "//internal/codeintel/dependencies/internal/store",
+        "//internal/codeintel/dependencies/shared",
+    ],
+)

@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "codeintel",
+    srcs = [
+        "queue.go",
+        "transform.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/queues/codeintel",
+    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
+    deps = [
+        "//enterprise/cmd/frontend/internal/executorqueue/handler",
+        "//enterprise/internal/executor",
+        "//internal/codeintel/autoindexing",
+        "//internal/codeintel/types",
+        "//internal/conf",
+        "//internal/observation",
+        "//internal/workerutil",
+    ],
+)
+
+go_test(
+    name = "codeintel_test",
+    srcs = ["transform_test.go"],
+    embed = [":codeintel"],
+    deps = [
+        "//enterprise/internal/executor",
+        "//internal/codeintel/types",
+        "//internal/conf",
+        "//schema",
+        "@com_github_google_go_cmp//cmp",
+    ],
+)

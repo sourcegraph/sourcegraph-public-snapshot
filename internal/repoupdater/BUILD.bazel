@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "repoupdater",
+    srcs = [
+        "client.go",
+        "errors.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/repoupdater",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api",
+        "//internal/env",
+        "//internal/httpcli",
+        "//internal/repoupdater/protocol",
+        "//internal/trace/ot",
+        "//lib/errors",
+        "@com_github_opentracing_contrib_go_stdlib//nethttp",
+        "@com_github_opentracing_opentracing_go//ext",
+    ],
+)
+
+go_test(
+    name = "repoupdater_test",
+    srcs = ["client_test.go"],
+    embed = [":repoupdater"],
+)

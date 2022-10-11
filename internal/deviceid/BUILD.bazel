@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "deviceid",
+    srcs = ["middleware.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/deviceid",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//cmd/frontend/globals",
+        "//internal/cookie",
+        "@com_github_google_uuid//:uuid",
+    ],
+)

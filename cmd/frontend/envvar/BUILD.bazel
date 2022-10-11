@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "envvar",
+    srcs = ["envvar.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/envvar",
+    visibility = ["//visibility:public"],
+    deps = ["//internal/env"],
+)

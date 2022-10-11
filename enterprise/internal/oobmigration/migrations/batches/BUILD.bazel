@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "batches",
+    srcs = ["ssh_migrator.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/batches",
+    visibility = ["//enterprise:__subpackages__"],
+    deps = [
+        "//internal/database/basestore",
+        "//internal/encryption",
+        "//internal/oobmigration",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "batches_test",
+    srcs = ["ssh_migrator_test.go"],
+    embed = [":batches"],
+    deps = [
+        "//internal/actor",
+        "//internal/database",
+        "//internal/database/basestore",
+        "//internal/database/dbtest",
+        "//internal/database/dbutil",
+        "//internal/encryption",
+        "//internal/encryption/testing",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_sourcegraph_log//logtest",
+    ],
+)

@@ -1,0 +1,36 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "codeintel",
+    srcs = [
+        "autoindexing_dependency_scheduler_job.go",
+        "autoindexing_janitor.go",
+        "autoindexing_scheduler_job.go",
+        "commitgraph_updater_job.go",
+        "metrics_reporter.go",
+        "ranking_indexer.go",
+        "upload_backfiller.go",
+        "upload_expirer.go",
+        "upload_janitor.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel",
+    visibility = ["//enterprise/cmd/worker:__subpackages__"],
+    deps = [
+        "//cmd/worker/job",
+        "//cmd/worker/shared/init/codeintel",
+        "//enterprise/cmd/worker/internal/executorqueue",
+        "//internal/codeintel/autoindexing/background/cleanup",
+        "//internal/codeintel/autoindexing/background/dependencies",
+        "//internal/codeintel/autoindexing/background/scheduler",
+        "//internal/codeintel/ranking/background/indexer",
+        "//internal/codeintel/uploads/background/backfill",
+        "//internal/codeintel/uploads/background/cleanup",
+        "//internal/codeintel/uploads/background/commitgraph",
+        "//internal/codeintel/uploads/background/expiration",
+        "//internal/env",
+        "//internal/goroutine",
+        "//internal/observation",
+        "//internal/workerutil/dbworker",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

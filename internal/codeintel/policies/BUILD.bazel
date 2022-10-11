@@ -1,0 +1,48 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "policies",
+    srcs = [
+        "iface.go",
+        "init.go",
+        "metrics.go",
+        "observability.go",
+        "repomatcher.go",
+        "service.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/policies",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/codeintel/policies/enterprise",
+        "//internal/codeintel/policies/internal/store",
+        "//internal/codeintel/types",
+        "//internal/conf",
+        "//internal/database",
+        "//internal/gitserver/gitdomain",
+        "//internal/goroutine",
+        "//internal/memo",
+        "//internal/metrics",
+        "//internal/observation",
+        "//internal/timeutil",
+        "//lib/errors",
+        "@com_github_prometheus_client_golang//prometheus",
+    ],
+)
+
+go_test(
+    name = "policies_test",
+    srcs = [
+        "mocks_test.go",
+        "service_test.go",
+    ],
+    embed = [":policies"],
+    deps = [
+        "//internal/codeintel/policies/internal/store",
+        "//internal/codeintel/types",
+        "//internal/database",
+        "//internal/gitserver/gitdomain",
+        "//internal/observation",
+        "@com_github_derision_test_glock//:glock",
+        "@com_github_google_go_cmp//cmp",
+    ],
+)

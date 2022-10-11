@@ -1,0 +1,47 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "precise-code-intel-worker_lib",
+    srcs = [
+        "config.go",
+        "main.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//enterprise/internal/authz",
+        "//internal/authz",
+        "//internal/codeintel",
+        "//internal/codeintel/stores",
+        "//internal/codeintel/stores/lsifuploadstore",
+        "//internal/conf",
+        "//internal/conf/conftypes",
+        "//internal/database",
+        "//internal/database/connections/live",
+        "//internal/debugserver",
+        "//internal/encryption/keyring",
+        "//internal/env",
+        "//internal/goroutine",
+        "//internal/honey",
+        "//internal/hostname",
+        "//internal/httpserver",
+        "//internal/logging",
+        "//internal/observation",
+        "//internal/profiler",
+        "//internal/trace",
+        "//internal/tracer",
+        "//internal/uploadstore",
+        "//internal/version",
+        "//lib/errors",
+        "@com_github_aws_smithy_go//transport/http",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//:otel",
+    ],
+)
+
+go_binary(
+    name = "precise-code-intel-worker",
+    embed = [":precise-code-intel-worker_lib"],
+    visibility = ["//visibility:public"],
+)

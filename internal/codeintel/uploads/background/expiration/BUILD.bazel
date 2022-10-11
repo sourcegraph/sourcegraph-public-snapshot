@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "expiration",
+    srcs = [
+        "config.go",
+        "iface.go",
+        "init.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/background/expiration",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/env",
+        "//internal/goroutine",
+    ],
+)

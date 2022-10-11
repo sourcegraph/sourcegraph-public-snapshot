@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "corrupt-archives_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/corrupt-archives",
+    visibility = ["//visibility:private"],
+    deps = ["//lib/errors"],
+)
+
+go_binary(
+    name = "corrupt-archives",
+    embed = [":corrupt-archives_lib"],
+    visibility = ["//visibility:public"],
+)

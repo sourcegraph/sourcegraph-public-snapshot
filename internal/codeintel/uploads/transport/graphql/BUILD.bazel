@@ -1,0 +1,49 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "graphql",
+    srcs = [
+        "commitgraph_resolver.go",
+        "iface.go",
+        "mocks_temp.go",
+        "observability.go",
+        "root_resolver.go",
+        "utils.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api",
+        "//internal/auth",
+        "//internal/codeintel/shared/resolvers",
+        "//internal/codeintel/types",
+        "//internal/database",
+        "//internal/gitserver/gitdomain",
+        "//internal/metrics",
+        "//internal/observation",
+        "//lib/errors",
+        "@com_github_graph_gophers_graphql_go//:graphql-go",
+        "@com_github_graph_gophers_graphql_go//relay",
+        "@com_github_opentracing_opentracing_go//log",
+    ],
+)
+
+go_test(
+    name = "graphql_test",
+    srcs = [
+        "root_resolver_test.go",
+        "utils_test.go",
+    ],
+    embed = [":graphql"],
+    deps = [
+        "//cmd/frontend/graphqlbackend/graphqlutil",
+        "//internal/auth",
+        "//internal/codeintel/types",
+        "//internal/database",
+        "//internal/observation",
+        "//internal/types",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_graph_gophers_graphql_go//:graphql-go",
+        "@com_github_sourcegraph_log//logtest",
+    ],
+)

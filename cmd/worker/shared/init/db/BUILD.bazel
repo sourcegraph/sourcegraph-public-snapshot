@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "db",
+    srcs = ["db.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/authz",
+        "//internal/conf",
+        "//internal/conf/conftypes",
+        "//internal/database",
+        "//internal/database/connections/live",
+        "//internal/memo",
+        "//internal/observation",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

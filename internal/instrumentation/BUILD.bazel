@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "instrumentation",
+    srcs = ["http.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/instrumentation",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/trace/policy",
+        "@io_opentelemetry_go_contrib_instrumentation_net_http_otelhttp//:otelhttp",
+    ],
+)

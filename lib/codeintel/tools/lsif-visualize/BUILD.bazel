@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "lsif-visualize_lib",
+    srcs = [
+        "args.go",
+        "main.go",
+        "visualize.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/codeintel/tools/lsif-visualize",
+    visibility = ["//visibility:private"],
+    deps = ["//lib/codeintel/tools/lsif-visualize/internal/visualization"],
+)
+
+go_binary(
+    name = "lsif-visualize",
+    embed = [":lsif-visualize_lib"],
+    visibility = ["//visibility:public"],
+)

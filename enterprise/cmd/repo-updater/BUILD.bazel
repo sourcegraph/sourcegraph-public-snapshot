@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "repo-updater_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//cmd/frontend/envvar",
+        "//cmd/frontend/globals",
+        "//cmd/repo-updater/repoupdater",
+        "//cmd/repo-updater/shared",
+        "//enterprise/cmd/repo-updater/internal/authz",
+        "//enterprise/internal/authz",
+        "//enterprise/internal/batches",
+        "//enterprise/internal/database",
+        "//internal/actor",
+        "//internal/authz",
+        "//internal/conf",
+        "//internal/database",
+        "//internal/debugserver",
+        "//internal/encryption/keyring",
+        "//internal/httpcli",
+        "//internal/ratelimit",
+        "//internal/repos",
+        "//internal/timeutil",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_binary(
+    name = "repo-updater",
+    embed = [":repo-updater_lib"],
+    visibility = ["//visibility:public"],
+)

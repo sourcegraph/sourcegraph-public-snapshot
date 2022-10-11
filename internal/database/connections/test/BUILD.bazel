@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "test",
+    srcs = [
+        "connect.go",
+        "store.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/database/connections/test",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/database/dbconn",
+        "//internal/database/migration/definition",
+        "//internal/database/migration/runner",
+        "//internal/database/migration/schemas",
+        "//internal/database/migration/shared",
+        "//lib/errors",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_sourcegraph_log//logtest",
+    ],
+)

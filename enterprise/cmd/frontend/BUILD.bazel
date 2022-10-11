@@ -1,0 +1,40 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "frontend_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//cmd/frontend/enterprise",
+        "//cmd/frontend/shared",
+        "//enterprise/cmd/frontend/internal/app",
+        "//enterprise/cmd/frontend/internal/auth",
+        "//enterprise/cmd/frontend/internal/authz",
+        "//enterprise/cmd/frontend/internal/batches",
+        "//enterprise/cmd/frontend/internal/codeintel",
+        "//enterprise/cmd/frontend/internal/codemonitors",
+        "//enterprise/cmd/frontend/internal/compute",
+        "//enterprise/cmd/frontend/internal/dotcom",
+        "//enterprise/cmd/frontend/internal/executorqueue",
+        "//enterprise/cmd/frontend/internal/licensing/init",
+        "//enterprise/cmd/frontend/internal/notebooks",
+        "//enterprise/cmd/frontend/internal/registry",
+        "//enterprise/cmd/frontend/internal/searchcontexts",
+        "//enterprise/internal/insights",
+        "//internal/conf/conftypes",
+        "//internal/database",
+        "//internal/observation",
+        "//internal/oobmigration",
+        "//internal/trace",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//:otel",
+    ],
+)
+
+go_binary(
+    name = "frontend",
+    embed = [":frontend_lib"],
+    visibility = ["//visibility:public"],
+)

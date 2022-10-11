@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "integration_tests",
+    srcs = ["doc.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/gitserver/integration_tests",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "integration_tests_test",
+    srcs = [
+        "commits_test.go",
+        "main_test.go",
+        "object_test.go",
+        "tree_test.go",
+    ],
+    embed = [":integration_tests"],
+    deps = [
+        "//cmd/gitserver/server",
+        "//internal/actor",
+        "//internal/api",
+        "//internal/authz",
+        "//internal/conf",
+        "//internal/database",
+        "//internal/gitserver",
+        "//internal/gitserver/gitdomain",
+        "//internal/httpcli",
+        "//schema",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_sourcegraph_log//logtest",
+        "@org_golang_x_sync//semaphore",
+    ],
+)

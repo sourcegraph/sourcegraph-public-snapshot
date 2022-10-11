@@ -1,0 +1,47 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "lucky",
+    srcs = [
+        "feeling_lucky_search_job.go",
+        "generator.go",
+        "rules.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/search/lucky",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/search",
+        "//internal/search/alert",
+        "//internal/search/job",
+        "//internal/search/limits",
+        "//internal/search/query",
+        "//internal/search/streaming",
+        "//lib/errors",
+        "@com_github_go_enry_go_enry_v2//:go-enry",
+        "@com_github_opentracing_opentracing_go//log",
+        "@org_gonum_v1_gonum//stat/combin",
+    ],
+)
+
+go_test(
+    name = "lucky_test",
+    srcs = [
+        "feeling_lucky_search_job_test.go",
+        "generator_test.go",
+        "rules_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":lucky"],
+    deps = [
+        "//internal/search",
+        "//internal/search/alert",
+        "//internal/search/job",
+        "//internal/search/job/mockjob",
+        "//internal/search/limits",
+        "//internal/search/query",
+        "//internal/search/result",
+        "//internal/search/streaming",
+        "@com_github_hexops_autogold//:autogold",
+        "@com_github_stretchr_testify//require",
+    ],
+)

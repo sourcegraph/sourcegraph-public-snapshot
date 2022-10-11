@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "symbols_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/symbols",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//cmd/symbols/fetcher",
+        "//cmd/symbols/gitserver",
+        "//cmd/symbols/parser",
+        "//cmd/symbols/shared",
+        "//cmd/symbols/types",
+        "//enterprise/internal/rockskip",
+        "//internal/conf",
+        "//internal/conf/conftypes",
+        "//internal/database",
+        "//internal/database/connections/live",
+        "//internal/env",
+        "//internal/goroutine",
+        "//internal/observation",
+        "//internal/search",
+        "//internal/search/result",
+        "@com_github_sourcegraph_go_ctags//:go-ctags",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_binary(
+    name = "symbols",
+    embed = [":symbols_lib"],
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "txemail",
+    srcs = [
+        "template.go",
+        "txemail.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/txemail",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/conf",
+        "//internal/txemail/txtypes",
+        "//lib/errors",
+        "@com_github_jordan_wright_email//:email",
+        "@com_github_microcosm_cc_bluemonday//:bluemonday",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@com_github_shurcool_github_flavored_markdown//:github_flavored_markdown",
+    ],
+)
+
+go_test(
+    name = "txemail_test",
+    srcs = [
+        "template_test.go",
+        "txemail_test.go",
+    ],
+    embed = [":txemail"],
+    deps = [
+        "//internal/txemail/txtypes",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_jordan_wright_email//:email",
+    ],
+)

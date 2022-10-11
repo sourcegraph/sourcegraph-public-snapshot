@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "shared",
+    srcs = [
+        "iface.go",
+        "types.go",
+        "workerutil.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api",
+        "//internal/codeintel/types",
+        "//internal/codeintel/uploads/shared",
+        "//internal/gitserver/gitdomain",
+        "//internal/repoupdater/protocol",
+        "//lib/codeintel/autoindex/config",
+        "@com_github_grafana_regexp//:regexp",
+    ],
+)

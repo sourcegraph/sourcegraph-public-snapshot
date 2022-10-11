@@ -1,0 +1,55 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "endpoint",
+    srcs = [
+        "consistenthash.go",
+        "endpoint.go",
+        "k8s.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/endpoint",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//lib/errors",
+        "@com_github_cespare_xxhash_v2//:xxhash",
+        "@com_github_inconshreveable_log15//:log15",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@com_github_sourcegraph_go_rendezvous//:go-rendezvous",
+        "@io_k8s_api//apps/v1:apps",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_client_go//informers",
+        "@io_k8s_client_go//kubernetes",
+        "@io_k8s_client_go//rest",
+        "@io_k8s_client_go//tools/cache",
+    ],
+)
+
+go_test(
+    name = "endpoint_test",
+    srcs = [
+        "consistenthash_test.go",
+        "endpoint_test.go",
+        "k8s_test.go",
+        "main_test.go",
+    ],
+    embed = [":endpoint"],
+    deps = [
+        "//lib/errors",
+        "@com_github_cespare_xxhash//:xxhash",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_google_go_cmp//cmp/cmpopts",
+        "@com_github_montanaflynn_stats//:stats",
+        "@com_github_segmentio_fasthash//fnv1",
+        "@com_github_segmentio_fasthash//fnv1a",
+        "@com_github_sourcegraph_go_rendezvous//:go-rendezvous",
+        "@io_k8s_api//apps/v1:apps",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_client_go//kubernetes",
+        "@io_k8s_client_go//plugin/pkg/client/auth/gcp",
+        "@io_k8s_client_go//tools/clientcmd",
+        "@io_k8s_client_go//util/homedir",
+    ],
+)

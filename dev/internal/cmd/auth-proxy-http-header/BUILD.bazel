@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "auth-proxy-http-header_lib",
+    srcs = ["auth-proxy-http-header.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/internal/cmd/auth-proxy-http-header",
+    visibility = ["//visibility:private"],
+)
+
+go_binary(
+    name = "auth-proxy-http-header",
+    embed = [":auth-proxy-http-header_lib"],
+    visibility = ["//dev:__subpackages__"],
+)

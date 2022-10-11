@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "graphql",
+    srcs = [
+        "executor_paginated_connection_resolver.go",
+        "executor_resolver.go",
+        "resolver.go",
+        "types.go",
+        "validation.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//cmd/frontend/graphqlbackend/graphqlutil",
+        "//internal/database",
+        "//internal/services/executors",
+        "//internal/types",
+        "//internal/version",
+        "//lib/errors",
+        "@com_github_graph_gophers_graphql_go//:graphql-go",
+        "@com_github_graph_gophers_graphql_go//relay",
+        "@com_github_masterminds_semver//:semver",
+    ],
+)
+
+go_test(
+    name = "graphql_test",
+    srcs = ["executor_resolver_test.go"],
+    embed = [":graphql"],
+    deps = [
+        "//internal/version",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

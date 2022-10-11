@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "codeintel",
+    srcs = [
+        "crates_syncer.go",
+        "policies_repomatcher_job.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/codeintel",
+    visibility = ["//cmd/worker:__subpackages__"],
+    deps = [
+        "//cmd/worker/job",
+        "//cmd/worker/shared/init/codeintel",
+        "//internal/codeintel/dependencies/background/cratesyncer",
+        "//internal/codeintel/policies/background/repomatcher",
+        "//internal/env",
+        "//internal/goroutine",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

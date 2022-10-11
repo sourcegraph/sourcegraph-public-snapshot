@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "npmtest",
+    srcs = ["npmtest.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/extsvc/npm/npmtest",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/conf/reposource",
+        "//internal/extsvc/npm",
+        "//lib/errors",
+    ],
+)

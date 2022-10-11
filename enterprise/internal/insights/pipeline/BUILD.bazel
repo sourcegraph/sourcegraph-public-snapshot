@@ -1,0 +1,37 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "pipeline",
+    srcs = ["backfill.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/pipeline",
+    visibility = ["//enterprise:__subpackages__"],
+    deps = [
+        "//enterprise/internal/insights/background/queryrunner",
+        "//enterprise/internal/insights/compression",
+        "//enterprise/internal/insights/discovery",
+        "//enterprise/internal/insights/priority",
+        "//enterprise/internal/insights/query/querybuilder",
+        "//enterprise/internal/insights/query/streaming",
+        "//enterprise/internal/insights/store",
+        "//enterprise/internal/insights/timeseries",
+        "//enterprise/internal/insights/types",
+        "//internal/api",
+        "//internal/gitserver/gitdomain",
+        "//internal/goroutine",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "pipeline_test",
+    srcs = ["backfill_test.go"],
+    embed = [":pipeline"],
+    deps = [
+        "//enterprise/internal/insights/background/queryrunner",
+        "//enterprise/internal/insights/types",
+        "//internal/goroutine",
+        "@com_github_hexops_autogold//:autogold",
+    ],
+)
