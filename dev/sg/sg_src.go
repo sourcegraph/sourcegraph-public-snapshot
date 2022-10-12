@@ -50,9 +50,8 @@ var srcCommand = &cli.Command{
 			UsageText: "todo",
 			Subcommands: []*cli.Command{
 				{
-					Name:    "register",
-					Usage:   "",
-					Aliases: []string{"update"},
+					Name:  "register",
+					Usage: "Register (or edit an existing) Sourcegraph instance to target with src-cli",
 					Flags: []cli.Flag{
 						&cli.StringFlag{
 							Name:     "name",
