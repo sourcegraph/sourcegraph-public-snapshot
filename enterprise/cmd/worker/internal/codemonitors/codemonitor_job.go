@@ -19,12 +19,7 @@ type codeMonitorJob struct {
 }
 
 func NewCodeMonitorJob(observationContext *observation.Context) job.Job {
-	return &codeMonitorJob{observationContext: &observation.Context{
-		Logger:       log.NoOp(),
-		Tracer:       observationContext.Tracer,
-		Registerer:   observationContext.Registerer,
-		HoneyDataset: observationContext.HoneyDataset,
-	}}
+	return &codeMonitorJob{observation.ContextWithLogger(log.NoOp(), observationContext)}
 }
 
 func (j *codeMonitorJob) Description() string {

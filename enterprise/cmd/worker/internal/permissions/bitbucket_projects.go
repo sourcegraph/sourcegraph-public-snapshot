@@ -51,12 +51,7 @@ type bitbucketProjectPermissionsJob struct {
 // NewBitbucketProjectPermissionsJob creates a new job for applying explicit permissions
 // to all the repositories of a Bitbucket Project.
 func NewBitbucketProjectPermissionsJob(observationContext *observation.Context) job.Job {
-	return &bitbucketProjectPermissionsJob{observationContext: &observation.Context{
-		Logger:       log.NoOp(),
-		Tracer:       observationContext.Tracer,
-		Registerer:   observationContext.Registerer,
-		HoneyDataset: observationContext.HoneyDataset,
-	}}
+	return &bitbucketProjectPermissionsJob{observation.ContextWithLogger(log.NoOp(), observationContext)}
 }
 
 func (j *bitbucketProjectPermissionsJob) Description() string {

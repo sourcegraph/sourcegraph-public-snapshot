@@ -18,12 +18,7 @@ type recordEncrypterJob struct {
 }
 
 func NewRecordEncrypterJob(observationContext *observation.Context) job.Job {
-	return &recordEncrypterJob{observationContext: &observation.Context{
-		Logger:       log.NoOp(),
-		Tracer:       observationContext.Tracer,
-		Registerer:   observationContext.Registerer,
-		HoneyDataset: observationContext.HoneyDataset,
-	}}
+	return &recordEncrypterJob{observation.ContextWithLogger(log.NoOp(), observationContext)}
 }
 
 func (j *recordEncrypterJob) Description() string {

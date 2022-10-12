@@ -19,12 +19,7 @@ type uploadBackfillerJob struct {
 }
 
 func NewUploadBackfillerJob(observationContext *observation.Context) job.Job {
-	return &uploadBackfillerJob{observationContext: &observation.Context{
-		Logger:       log.NoOp(),
-		Tracer:       observationContext.Tracer,
-		Registerer:   observationContext.Registerer,
-		HoneyDataset: observationContext.HoneyDataset,
-	}}
+	return &uploadBackfillerJob{observation.ContextWithLogger(log.NoOp(), observationContext)}
 }
 
 func (j *uploadBackfillerJob) Description() string {

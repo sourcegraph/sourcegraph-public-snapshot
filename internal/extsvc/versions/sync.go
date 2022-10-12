@@ -22,12 +22,7 @@ import (
 const syncInterval = 24 * time.Hour
 
 func NewSyncingJob(observationContext *observation.Context) job.Job {
-	return &syncingJob{observationContext: &observation.Context{
-		Logger:       log.NoOp(),
-		Tracer:       observationContext.Tracer,
-		Registerer:   observationContext.Registerer,
-		HoneyDataset: observationContext.HoneyDataset,
-	}}
+	return &syncingJob{observation.ContextWithLogger(log.NoOp(), observationContext)}
 }
 
 type syncingJob struct {

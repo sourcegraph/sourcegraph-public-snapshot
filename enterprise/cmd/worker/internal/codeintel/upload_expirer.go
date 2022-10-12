@@ -19,12 +19,7 @@ type uploadExpirerJob struct {
 }
 
 func NewUploadExpirerJob(observationContext *observation.Context) job.Job {
-	return &uploadExpirerJob{observationContext: &observation.Context{
-		Logger:       log.NoOp(),
-		Tracer:       observationContext.Tracer,
-		Registerer:   observationContext.Registerer,
-		HoneyDataset: observationContext.HoneyDataset,
-	}}
+	return &uploadExpirerJob{observation.ContextWithLogger(log.NoOp(), observationContext)}
 }
 
 func (j *uploadExpirerJob) Description() string {

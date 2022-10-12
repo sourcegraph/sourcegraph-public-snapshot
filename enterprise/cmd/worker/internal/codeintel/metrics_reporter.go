@@ -24,12 +24,7 @@ type metricsReporterJob struct {
 }
 
 func NewMetricsReporterJob(observationContext *observation.Context) job.Job {
-	return &metricsReporterJob{observationContext: &observation.Context{
-		Logger:       log.NoOp(),
-		Tracer:       observationContext.Tracer,
-		Registerer:   observationContext.Registerer,
-		HoneyDataset: observationContext.HoneyDataset,
-	}}
+	return &metricsReporterJob{observation.ContextWithLogger(log.NoOp(), observationContext)}
 }
 
 func (j *metricsReporterJob) Description() string {

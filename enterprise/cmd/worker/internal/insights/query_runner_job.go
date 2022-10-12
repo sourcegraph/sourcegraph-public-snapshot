@@ -67,10 +67,5 @@ func (s *insightsQueryRunnerJob) Routines(startupCtx context.Context, logger log
 }
 
 func NewInsightsQueryRunnerJob(observationContext *observation.Context) job.Job {
-	return &insightsQueryRunnerJob{observationContext: &observation.Context{
-		Logger:       log.NoOp(),
-		Tracer:       observationContext.Tracer,
-		Registerer:   observationContext.Registerer,
-		HoneyDataset: observationContext.HoneyDataset,
-	}}
+	return &insightsQueryRunnerJob{observationContext: observation.ContextWithLogger(log.NoOp(), observationContext)}
 }

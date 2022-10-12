@@ -54,10 +54,5 @@ func (s *insightsJob) Routines(startupCtx context.Context, logger log.Logger) ([
 }
 
 func NewInsightsJob(observationContext *observation.Context) job.Job {
-	return &insightsJob{observationContext: &observation.Context{
-		Logger:       log.NoOp(),
-		Tracer:       observationContext.Tracer,
-		Registerer:   observationContext.Registerer,
-		HoneyDataset: observationContext.HoneyDataset,
-	}}
+	return &insightsJob{observation.ContextWithLogger(log.NoOp(), observationContext)}
 }

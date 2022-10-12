@@ -19,12 +19,7 @@ type cratesSyncerJob struct {
 }
 
 func NewCratesSyncerJob(observationContext *observation.Context) job.Job {
-	return &cratesSyncerJob{observationContext: &observation.Context{
-		Logger:       log.NoOp(),
-		Tracer:       observationContext.Tracer,
-		Registerer:   observationContext.Registerer,
-		HoneyDataset: observationContext.HoneyDataset,
-	}}
+	return &cratesSyncerJob{observation.ContextWithLogger(log.NoOp(), observationContext)}
 }
 
 func (j *cratesSyncerJob) Description() string {

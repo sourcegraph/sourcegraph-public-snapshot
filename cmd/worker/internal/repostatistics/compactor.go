@@ -22,12 +22,7 @@ type compactor struct {
 var _ job.Job = &compactor{}
 
 func NewCompactor(observationContext *observation.Context) job.Job {
-	return &compactor{observationContext: &observation.Context{
-		Logger:       log.NoOp(),
-		Tracer:       observationContext.Tracer,
-		Registerer:   observationContext.Registerer,
-		HoneyDataset: observationContext.HoneyDataset,
-	}}
+	return &compactor{observation.ContextWithLogger(log.NoOp(), observationContext)}
 }
 
 func (j *compactor) Description() string {

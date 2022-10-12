@@ -20,12 +20,7 @@ type autoindexingJanitorJob struct {
 }
 
 func NewAutoindexingJanitorJob(observationContext *observation.Context) job.Job {
-	return &autoindexingJanitorJob{observationContext: &observation.Context{
-		Logger:       log.NoOp(),
-		Tracer:       observationContext.Tracer,
-		Registerer:   observationContext.Registerer,
-		HoneyDataset: observationContext.HoneyDataset,
-	}}
+	return &autoindexingJanitorJob{observation.ContextWithLogger(log.NoOp(), observationContext)}
 }
 
 func (j *autoindexingJanitorJob) Description() string {

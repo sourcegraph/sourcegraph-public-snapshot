@@ -23,12 +23,7 @@ type janitor struct {
 var _ job.Job = &janitor{}
 
 func NewJanitor(observationContext *observation.Context) job.Job {
-	return &janitor{observationContext: &observation.Context{
-		Logger:       log.NoOp(),
-		Tracer:       observationContext.Tracer,
-		Registerer:   observationContext.Registerer,
-		HoneyDataset: observationContext.HoneyDataset,
-	}}
+	return &janitor{observation.ContextWithLogger(log.NoOp(), observationContext)}
 }
 
 func (j *janitor) Description() string {

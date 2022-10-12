@@ -18,12 +18,7 @@ type policiesRepositoryMatcherJob struct {
 }
 
 func NewPoliciesRepositoryMatcherJob(observationContext *observation.Context) job.Job {
-	return &policiesRepositoryMatcherJob{observationContext: &observation.Context{
-		Logger:       log.NoOp(),
-		Tracer:       observationContext.Tracer,
-		Registerer:   observationContext.Registerer,
-		HoneyDataset: observationContext.HoneyDataset,
-	}}
+	return &policiesRepositoryMatcherJob{observation.ContextWithLogger(log.NoOp(), observationContext)}
 }
 
 func (j *policiesRepositoryMatcherJob) Description() string {

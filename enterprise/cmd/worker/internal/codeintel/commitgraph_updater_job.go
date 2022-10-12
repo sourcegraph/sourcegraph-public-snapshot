@@ -18,12 +18,7 @@ type commitGraphUpdaterJob struct {
 }
 
 func NewCommitGraphUpdaterJob(observationContext *observation.Context) job.Job {
-	return &commitGraphUpdaterJob{observationContext: &observation.Context{
-		Logger:       log.NoOp(),
-		Tracer:       observationContext.Tracer,
-		Registerer:   observationContext.Registerer,
-		HoneyDataset: observationContext.HoneyDataset,
-	}}
+	return &commitGraphUpdaterJob{observation.ContextWithLogger(log.NoOp(), observationContext)}
 }
 
 func (j *commitGraphUpdaterJob) Description() string {

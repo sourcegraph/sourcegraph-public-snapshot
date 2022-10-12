@@ -20,12 +20,7 @@ type uploadJanitorJob struct {
 }
 
 func NewUploadJanitorJob(observationContext *observation.Context) job.Job {
-	return &uploadJanitorJob{observationContext: &observation.Context{
-		Logger:       log.NoOp(),
-		Tracer:       observationContext.Tracer,
-		Registerer:   observationContext.Registerer,
-		HoneyDataset: observationContext.HoneyDataset,
-	}}
+	return &uploadJanitorJob{observation.ContextWithLogger(log.NoOp(), observationContext)}
 }
 
 func (j *uploadJanitorJob) Description() string {

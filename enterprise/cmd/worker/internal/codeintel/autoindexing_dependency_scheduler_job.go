@@ -21,12 +21,7 @@ type autoindexingDependencyScheduler struct {
 }
 
 func NewAutoindexingDependencySchedulerJob(observationContext *observation.Context) job.Job {
-	return &autoindexingDependencyScheduler{observationContext: &observation.Context{
-		Logger:       log.NoOp(),
-		Tracer:       observationContext.Tracer,
-		Registerer:   observationContext.Registerer,
-		HoneyDataset: observationContext.HoneyDataset,
-	}}
+	return &autoindexingDependencyScheduler{observation.ContextWithLogger(log.NoOp(), observationContext)}
 }
 
 func (j *autoindexingDependencyScheduler) Description() string {

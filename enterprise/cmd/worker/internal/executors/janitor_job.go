@@ -17,12 +17,7 @@ type janitorJob struct {
 }
 
 func NewJanitorJob(observationContext *observation.Context) job.Job {
-	return &janitorJob{observationContext: &observation.Context{
-		Logger:       log.NoOp(),
-		Tracer:       observationContext.Tracer,
-		Registerer:   observationContext.Registerer,
-		HoneyDataset: observationContext.HoneyDataset,
-	}}
+	return &janitorJob{observation.ContextWithLogger(log.NoOp(), observationContext)}
 }
 
 func (j *janitorJob) Description() string {
