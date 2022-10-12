@@ -499,11 +499,9 @@ func (h *historicalEnqueuer) buildFrames(ctx context.Context, definitions []ityp
 			RecordingTimes: timeseries.GetRecordingTimesFromFrames(frames),
 		})
 	}
-	fmt.Println("$$$ SetInsightSeriesRecordingTimes - start")
 	if err := h.insightsStore.SetInsightSeriesRecordingTimes(ctx, seriesRecordingTimes); err != nil {
 		return errors.Wrap(err, "SetInsightSeriesRecordingTimes")
 	}
-	fmt.Println("$$$ SetInsightSeriesRecordingTimes - end")
 
 	if multi != nil {
 		log15.Error("historical_enqueuer.buildFrames - multierror", "err", multi)
