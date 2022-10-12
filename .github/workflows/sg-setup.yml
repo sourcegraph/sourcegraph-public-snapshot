@@ -29,5 +29,5 @@ jobs:
 
       - name: Test dependencies (${{ matrix.os }})
         run: |
-          go test -timeout=30m -v \
+          PATH=$PATH:$HOME/.asdf/bin go test -timeout=30m -v \
             ./dev/sg/dependencies/... -sg-setup=${{ matrix.os }}
