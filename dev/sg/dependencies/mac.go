@@ -252,11 +252,12 @@ YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
 	{
 		Name:      "Internal tooling",
 		DependsOn: []string{depsHomebrew},
+		Enabled:   enableForTeammatesOnly(),
 		Checks: []*dependency{
 			{
 				Name:  "src",
-				Check: checkAction(check.InPath("src")),
-				Fix:   cmdFix(`brew install sourcegraph/src-cli/src-cli`),
+				Check: checkAction(check.Combine(check.InPath("src"), checkSrcCliVersion(">= 4.0.2"))),
+				Fix:   cmdFix(`brew upgrade sourcegraph/src-cli/src-cli || brew install sourcegraph/src-cli/src-cli`),
 			},
 		},
 	},
