@@ -10,7 +10,7 @@ import { SearchValue } from '../../fuzzyFinder/FuzzySearch'
 
 import { emptyFuzzyCache, PersistableQueryResult } from './FuzzyLocalCache'
 import { FuzzyQuery } from './FuzzyQuery'
-import { FuzzyRepoRevision } from './FuzzyRepoRevision'
+import { FuzzyRepoRevision, fuzzyRepoRevisionSearchFilter } from './FuzzyRepoRevision'
 
 export const FUZZY_SYMBOLS_QUERY = gql`
     fragment FileMatchFields on FileMatch {
@@ -47,25 +47,16 @@ export class FuzzySymbols extends FuzzyQuery {
     constructor(
         private readonly client: ApolloClient<object> | undefined,
         onNamesChanged: () => void,
-        private readonly repoRevision: React.MutableRefObject<FuzzyRepoRevision>
+        private readonly repoRevision: React.MutableRefObject<FuzzyRepoRevision>,
+        private readonly isGlobalSymbolsRef: React.MutableRefObject<boolean>
     ) {
         // Symbol results should not be cached because stale symbol data is complicated to evict/invalidate.
         super(onNamesChanged, emptyFuzzyCache)
     }
-    private repoFilter(): string {
-        const { repositoryName, revision } = this.repoRevision.current
-        if (repositoryName && revision) {
-            return `repo:${repositoryName}@${revision} `
-        }
-        if (repositoryName) {
-            return `repo:${repositoryName} `
-        }
-        return ''
-    }
 
     /* override */ protected searchValues(): SearchValue[] {
         const repositoryName = this.repoRevision.current.repositoryName
-        const repositoryFilter = repositoryName ? '/' + repositoryName : ''
+        const repositoryFilter = repositoryName && !this.isGlobalSymbolsRef.current ? '/' + repositoryName : ''
         let values = [...this.queryResults.values()]
         if (repositoryFilter) {
             values = values.filter(({ url }) => url?.startsWith(repositoryFilter))
@@ -80,7 +71,10 @@ export class FuzzySymbols extends FuzzyQuery {
     }
 
     /* override */ protected rawQuery(query: string): string {
-        return `${this.repoFilter()}type:symbol count:10 ${query}`
+        const repoFilter = this.isGlobalSymbolsRef.current
+            ? ''
+            : fuzzyRepoRevisionSearchFilter(this.repoRevision.current)
+        return `${repoFilter}type:symbol count:10 ${query}`
     }
 
     /* override */ protected async handleRawQueryPromise(query: string): Promise<PersistableQueryResult[]> {

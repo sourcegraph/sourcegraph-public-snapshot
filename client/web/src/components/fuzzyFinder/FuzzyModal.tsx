@@ -5,11 +5,14 @@ import classNames from 'classnames'
 import * as H from 'history'
 
 import { pluralize } from '@sourcegraph/common'
-import { Button, Modal, Icon, H3, Text, Input, useSessionStorage } from '@sourcegraph/wildcard'
+import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
+import { KEYBOARD_SHORTCUTS } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
+import { Button, Modal, Icon, H3, Text, Input, useSessionStorage, Code, Link, Checkbox } from '@sourcegraph/wildcard'
 
 import { AggregateFuzzySearch } from '../../fuzzyFinder/AggregateFuzzySearch'
 import { FuzzySearch, FuzzySearchResult } from '../../fuzzyFinder/FuzzySearch'
 import { mergedHandler } from '../../fuzzyFinder/WordSensitiveFuzzySearch'
+import { Keybindings } from '../KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 
 import { FuzzyRepoRevision } from './FuzzyRepoRevision'
 import { fuzzyErrors, FuzzyState, fuzzyIsActive, FuzzyTabs, FuzzyTabKey } from './FuzzyTabs'
@@ -141,6 +144,7 @@ function emptyResults(element: JSX.Element): QueryResult {
  */
 export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyModalProps>> = props => {
     const {
+        onClose,
         onClickItem,
         query,
         setQuery,
@@ -212,7 +216,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
         (event: KeyboardEvent<HTMLInputElement>): void => {
             switch (true) {
                 case event.key === 'Escape':
-                    props.onClose()
+                    onClose()
                     break
                 case event.key === 'n' && event.ctrlKey:
                     event.preventDefault()
@@ -253,11 +257,11 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                 default:
             }
         },
-        [activeTab, setActiveTab, props, queryResult, focusIndex, setRoundedFocusIndex]
+        [activeTab, setActiveTab, props, onClose, queryResult, focusIndex, setRoundedFocusIndex]
     )
 
     return (
-        <Modal position="center" className={styles.modal} onDismiss={() => props.onClose()} aria-label="Fuzzy finder">
+        <Modal position="center" className={styles.modal} onDismiss={() => onClose()} aria-label="Fuzzy finder">
             <div className={styles.content}>
                 <div className={styles.header} data-testid="fuzzy-modal-header">
                     {props.tabs.entries().map(([key, tab]) => (
@@ -289,7 +293,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                             </H3>
                         </div>
                     ))}
-                    <Button variant="icon" onClick={() => props.onClose()} aria-label="Close">
+                    <Button variant="icon" onClick={() => onClose()} aria-label="Close">
                         <Icon className={styles.closeIcon} aria-hidden={true} svgPath={mdiClose} />
                     </Button>
                 </div>
@@ -317,6 +321,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                 <div className={styles.summary}>
                     <FuzzyResultsSummary tabs={props.tabs} queryResult={queryResult} />
                 </div>
+                {!props.tabs.isOnlyFilesEnabled() && <div className={styles.summary}>{searchQuery(props)}</div>}
                 {queryResult.jsxElement}
                 {!queryResult.isComplete && (
                     <Button
@@ -335,6 +340,77 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
 function plural(what: string, count: number, isComplete: boolean): string {
     return `${count.toLocaleString()}${isComplete ? '' : '+'} ${pluralize(what, count)}`
 }
+
+function searchQueryLink(
+    what: string,
+    query: string,
+    onClick: () => void,
+    shortcut?: KeyboardShortcut,
+    isToggleEnabled?: boolean,
+    isToggleDisabled?: boolean,
+    onClickToggle?: () => void
+): JSX.Element {
+    const searchParams = new URLSearchParams()
+    searchParams.set('q', query)
+    const url = `/search?${searchParams.toString()}`
+    return (
+        <span className={styles.searchQuery}>
+            <Code>
+                <Link to={url} onClick={onClick}>
+                    {query}
+                </Link>{' '}
+            </Code>
+            {what && (
+                <Checkbox
+                    id={`fuzzy-query-${what}`}
+                    checked={isToggleEnabled}
+                    disabled={isToggleDisabled}
+                    label="Search everywhere"
+                    onClick={onClickToggle}
+                />
+            )}
+            {what && shortcut?.keybindings && (
+                <Keybindings uppercaseOrdered={true} keybindings={shortcut.keybindings} />
+            )}
+        </span>
+    )
+}
+
+function repoFilter(state: FuzzyState): string {
+    const isGlobal = !state.repoRevision.repositoryName
+    const revision = state.repoRevision.revision ? `@${state.repoRevision.revision}` : ''
+    return isGlobal ? '' : `repo:${state.repoRevision.repositoryName}${revision} `
+}
+
+function searchQuery(state: FuzzyState): JSX.Element {
+    switch (state.activeTab) {
+        case 'symbols':
+            return searchQueryLink(
+                'symbols',
+                `${state.isGlobalSymbols ? '' : repoFilter(state)}type:symbol ${state.query}`,
+                state.onClickItem,
+                KEYBOARD_SHORTCUTS.fuzzyFinderSymbols,
+                !state.repoRevision.repositoryName || state.isGlobalSymbols,
+                !state.repoRevision.repositoryName,
+                state.toggleGlobalSymbols
+            )
+        case 'files':
+            return searchQueryLink(
+                'files',
+                `${state.isGlobalFiles ? '' : repoFilter(state)}type:path ${state.query}`,
+                state.onClickItem,
+                KEYBOARD_SHORTCUTS.fuzzyFinderFiles,
+                !state.repoRevision.repositoryName || state.isGlobalFiles,
+                !state.repoRevision.repositoryName,
+                state.toggleGlobalFiles
+            )
+        case 'repos':
+            return searchQueryLink('', `type:repo ${state.query}`, state.onClickItem)
+        default:
+            return <></>
+    }
+}
+
 interface FuzzyResultsSummaryProps {
     tabs: FuzzyTabs
     queryResult: QueryResult
