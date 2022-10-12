@@ -28,6 +28,7 @@ jobs:
 
       - name: Install asdf plugins
         uses: asdf-vm/actions/install@v1
+        if: ${{ runner.os == 'Linux' }}
 
       - name: Test dependencies (${{ matrix.os }})
         # We add the path since the bash environment does not properly get sourced due to the env not being interactive
