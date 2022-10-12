@@ -20,6 +20,7 @@ type Service struct {
 	store           store.Store
 	uploadSvc       *uploads.Service
 	gitserverClient GitserverClient
+	symbolsClient   SymbolsClient
 	getConf         conftypes.SiteConfigQuerier
 	operations      *operations
 	logger          log.Logger
@@ -29,6 +30,7 @@ func newService(
 	store store.Store,
 	uploadSvc *uploads.Service,
 	gitserverClient GitserverClient,
+	symbolsClient SymbolsClient,
 	getConf conftypes.SiteConfigQuerier,
 	observationContext *observation.Context,
 ) *Service {
@@ -36,6 +38,7 @@ func newService(
 		store:           store,
 		uploadSvc:       uploadSvc,
 		gitserverClient: gitserverClient,
+		symbolsClient:   symbolsClient,
 		getConf:         getConf,
 		operations:      newOperations(observationContext),
 		logger:          observationContext.Logger,
@@ -91,6 +94,14 @@ var allPathsPattern = lazyregexp.New(".*")
 func (s *Service) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ map[string][]float64, err error) {
 	_, _, endObservation := s.operations.getDocumentRanks.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
+
+	documentRanks, ok, err := s.store.GetDocumentRanks(ctx, repoName)
+	if err != nil {
+		return nil, err
+	}
+	if ok {
+		return documentRanks, nil
+	}
 
 	paths, err := s.gitserverClient.ListFilesForRepo(ctx, repoName, "HEAD", allPathsPattern.Re())
 	if err != nil {

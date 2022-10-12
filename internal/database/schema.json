@@ -6746,6 +6746,52 @@
       "Triggers": []
     },
     {
+      "Name": "codeintel_path_ranks",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "payload",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "repository_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "codeintel_path_ranks_repository_id_key",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_path_ranks_repository_id_key ON codeintel_path_ranks USING btree (repository_id)",
+          "ConstraintType": "u",
+          "ConstraintDefinition": "UNIQUE (repository_id)"
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
       "Name": "configuration_policies_audit_logs",
       "Comment": "",
       "Columns": [

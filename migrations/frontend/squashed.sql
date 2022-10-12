@@ -1576,6 +1576,11 @@ CREATE SEQUENCE codeintel_lockfiles_id_seq
 
 ALTER SEQUENCE codeintel_lockfiles_id_seq OWNED BY codeintel_lockfiles.id;
 
+CREATE TABLE codeintel_path_ranks (
+    repository_id integer NOT NULL,
+    payload text NOT NULL
+);
+
 CREATE TABLE configuration_policies_audit_logs (
     log_timestamp timestamp with time zone DEFAULT clock_timestamp(),
     record_deleted_at timestamp with time zone,
@@ -3804,6 +3809,9 @@ ALTER TABLE ONLY codeintel_lockfile_references
 
 ALTER TABLE ONLY codeintel_lockfiles
     ADD CONSTRAINT codeintel_lockfiles_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY codeintel_path_ranks
+    ADD CONSTRAINT codeintel_path_ranks_repository_id_key UNIQUE (repository_id);
 
 ALTER TABLE ONLY critical_and_site_config
     ADD CONSTRAINT critical_and_site_config_pkey PRIMARY KEY (id);
