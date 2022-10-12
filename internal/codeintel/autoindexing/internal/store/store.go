@@ -51,9 +51,6 @@ type Store interface {
 
 	GetUnsafeDB() database.DB
 
-	// WorkerutilStore(observationContext *observation.Context) dbworkerstore.Store
-	// WorkerutilDependencySyncStore(observationContext *observation.Context) dbworkerstore.Store
-	// WorkerutilDependencyIndexStore(observationContext *observation.Context) dbworkerstore.Store
 	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error)
 }
 

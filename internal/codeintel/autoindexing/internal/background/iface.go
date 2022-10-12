@@ -36,19 +36,3 @@ type PolicyMatcher interface {
 type PoliciesService interface {
 	GetConfigurationPolicies(ctx context.Context, opts codeinteltypes.GetConfigurationPoliciesOptions) ([]codeinteltypes.ConfigurationPolicy, int, error)
 }
-
-// type BackgroundJobForDepScheduling struct {
-// 	BackgroundJob
-// }
-
-// // type AutoIndexingServiceForDepSchedulingShim struct {
-// // 	*Service
-// // }
-
-// func (s *BackgroundJobForDepScheduling) QueueIndexesForPackage(ctx context.Context, pkg precise.Package) error {
-// 	return s.BackgroundJob.QueueIndexesForPackage(ctx, pkg)
-// }
-
-// func (s *BackgroundJobForDepScheduling) InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error) {
-// 	return s.BackgroundJob.InsertDependencyIndexingJob(ctx, uploadID, externalServiceKind, syncTime)
-// }

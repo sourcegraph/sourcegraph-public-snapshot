@@ -186,7 +186,7 @@ func (codeIntelligence) NewIndexSchedulerGroup(containerName string) monitoring.
 			Hidden:          true,
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "codeintel_autoindexing", // TODO: check if its broken
+				MetricNameRoot:        "codeintel_autoindexing",
 				Filters:               []string{"op='HandleIndexSchedule'"},
 				MetricDescriptionRoot: "auto-indexing job scheduler",
 				RangeWindow:           model.Duration(time.Minute) * 10,
