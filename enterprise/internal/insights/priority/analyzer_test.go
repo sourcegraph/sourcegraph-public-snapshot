@@ -3,93 +3,62 @@ package priority
 import (
 	"testing"
 
-	"github.com/hexops/autogold"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 )
 
 func TestQueryAnalyzerCost(t *testing.T) {
-	testCases := []struct {
-		query    string
-		handlers []CostHeuristic
-		want     autogold.Value
-	}{
-		{
-			"Type:diff author:someone insights",
-			DefaultCostHandlers,
-			autogold.Want("cost with default handlers", 1000*1-100*2),
-		},
-		{
-			"type:diff author:someone insights",
-			[]CostHeuristic{{queryContentCost, 1}, {queryScopeCost, 0}},
-			autogold.Want("nullify cost associated with heuristic", 1000*1),
-		},
-		{
-			"query file:mine lang:go",
-			DefaultCostHandlers,
-			autogold.Want("negative cost defaults to 0", 0),
-		},
-	}
-	for _, tc := range testCases {
-		t.Run(tc.want.Name(), func(t *testing.T) {
-			queryAnalyzer := NewQueryAnalyzer(tc.handlers)
-			queryPlan, err := querybuilder.ParseQuery(tc.query, "literal")
-			if err != nil {
-				t.Fatal(err)
-			}
-			tc.want.Equal(t, queryAnalyzer.Cost(QueryObject{queryPlan}))
-		})
-	}
-}
+	defaultHandlers := []CostHeuristic{QueryCost}
 
-func Test_queryContentCost(t *testing.T) {
 	testCases := []struct {
-		query string
-		want  autogold.Value
+		name        string
+		query       string
+		handlers    []CostHeuristic
+		higherThan  float64
+		smallerThan float64
 	}{
 		{
-			"[a] patterntype:structural",
-			autogold.Want("structural query cost", 1000),
+			name:        "literal diff query should be magnitudes higher",
+			query:       "Type:diff insights",
+			handlers:    defaultHandlers,
+			higherThan:  Long,
+			smallerThan: Long * 1000,
 		},
 		{
-			"(type:diff newResolver) or (type:commit #)",
-			autogold.Want("multiple queries get costed correctly", 1000+800),
+			name:        "literal diff query with author should reduce complexity",
+			query:       "type:diff author:someone insights",
+			handlers:    defaultHandlers,
+			higherThan:  Slow,
+			smallerThan: Long,
+		},
+		{
+			name:        "regexp query with reduced complexity not slow",
+			query:       "patterntype:regexp [0-9]+ lang:go",
+			handlers:    defaultHandlers,
+			higherThan:  Simple,
+			smallerThan: Slow,
+		},
+		{
+			name:        "very specific query super speedy",
+			query:       "file:insights lang:go DashboardResolver",
+			handlers:    defaultHandlers,
+			higherThan:  0.0,
+			smallerThan: Simple,
 		},
 	}
 	for _, tc := range testCases {
-		t.Run(tc.want.Name(), func(t *testing.T) {
+		t.Run(tc.name, func(t *testing.T) {
+			queryAnalyzer := NewQueryAnalyzer(tc.handlers...)
 			queryPlan, err := querybuilder.ParseQuery(tc.query, "literal")
 			if err != nil {
 				t.Fatal(err)
 			}
-			cost := queryContentCost(QueryObject{queryPlan})
-			tc.want.Equal(t, cost)
-		})
-	}
-}
-
-func Test_queryScopeCost(t *testing.T) {
-	testCases := []struct {
-		query string
-		want  autogold.Value
-	}{
-		{
-			"[a] patterntype:structural file:test",
-			autogold.Want("file scoped cost", -100),
-		},
-		{
-			"archived:yes fork:only search",
-			autogold.Want("archives and forks", 0),
-		},
-	}
-	for _, tc := range testCases {
-		t.Run(tc.want.Name(), func(t *testing.T) {
-			queryPlan, err := querybuilder.ParseQuery(tc.query, "literal")
-			if err != nil {
-				t.Fatal(err)
+			cost := queryAnalyzer.Cost(QueryObject{queryPlan})
+			if cost < tc.higherThan {
+				t.Errorf("expected cost to be higher than %f, got %f", tc.higherThan, cost)
 			}
-			cost := queryScopeCost(QueryObject{queryPlan})
-			tc.want.Equal(t, cost)
+			if cost > tc.smallerThan {
+				t.Errorf("expected cost to be smaller than %f, got %f", tc.smallerThan, cost)
+			}
 		})
 	}
 }

@@ -17,26 +17,18 @@ type QueryObject struct {
 	// the object can be augmented with repository information, or anything else of value.
 }
 
-type CostHeuristic struct {
-	Func   func(QueryObject) int
-	Weight int
-}
+type CostHeuristic func(QueryObject) float64
 
-var DefaultCostHandlers = []CostHeuristic{
-	{queryContentCost, 1},
-	{queryScopeCost, 2},
-}
-
-func NewQueryAnalyzer(handlers []CostHeuristic) *QueryAnalyzer {
+func NewQueryAnalyzer(handlers ...CostHeuristic) *QueryAnalyzer {
 	return &QueryAnalyzer{
 		costHandlers: handlers,
 	}
 }
 
-func (a *QueryAnalyzer) Cost(o QueryObject) int {
-	totalCost := 0
+func (a *QueryAnalyzer) Cost(o QueryObject) float64 {
+	var totalCost float64
 	for _, handler := range a.costHandlers {
-		totalCost += handler.Func(o) * handler.Weight
+		totalCost += handler(o)
 	}
 	if totalCost < 0 {
 		return 0
@@ -44,15 +36,15 @@ func (a *QueryAnalyzer) Cost(o QueryObject) int {
 	return totalCost
 }
 
-// queryContentCost will derive a cost based on the kind of content a query would match.
-func queryContentCost(o QueryObject) int {
-	var contentCost int
+func QueryCost(o QueryObject) float64 {
+	var cost float64
 	for _, basic := range o.Query {
 		if basic.IsStructural() {
-			contentCost += 1000
-		}
-		if basic.IsRegexp() {
-			contentCost += 800
+			cost += StructuralCost
+		} else if basic.IsRegexp() {
+			cost += RegexpCost
+		} else {
+			cost += LiteralCost
 		}
 	}
 
@@ -67,62 +59,41 @@ func queryContentCost(o QueryObject) int {
 		}
 	})
 	if diff {
-		contentCost += 1000
+		cost *= DiffMultiplier
 	}
 	if commit {
-		contentCost += 800
+		cost *= CommitMultiplier
 	}
 
 	parameters := querybuilder.ParametersFromQueryPlan(o.Query)
 	if parameters.Index() == query.No {
-		contentCost += 1000
+		cost *= UnindexedMultiplier
 	}
-
-	return contentCost
-}
-
-// queryScopeCost will derive a cost based on how precise a query is (e.g. a commit query with an author field).
-func queryScopeCost(o QueryObject) int {
-	var scopeCost int
-
-	parameters := querybuilder.ParametersFromQueryPlan(o.Query)
+	if parameters.Exists(query.FieldAuthor) {
+		cost *= AuthorMultiplier
+	}
 	if parameters.Exists(query.FieldFile) {
-		scopeCost -= 100
+		cost *= FileMultiplier
 	}
 	if parameters.Exists(query.FieldLang) {
-		scopeCost -= 50
+		cost *= LangMultiplier
 	}
 
 	archived := parameters.Archived()
 	if archived != nil {
 		if *archived == query.Yes {
-			scopeCost += 50
+			cost *= YesMultiplier
 		} else if *archived == query.Only {
-			scopeCost -= 50
+			cost *= OnlyMultiplier
 		}
 	}
 	fork := parameters.Fork()
 	if fork != nil && (*fork == query.Yes || *fork == query.Only) {
 		if *fork == query.Yes {
-			scopeCost += 50
+			cost *= YesMultiplier
 		} else if *fork == query.Only {
-			scopeCost -= 50
+			cost *= OnlyMultiplier
 		}
 	}
-
-	var diffOrCommit bool
-	query.VisitParameter(o.Query.ToQ(), func(field, value string, negated bool, annotation query.Annotation) {
-		if field == "type" {
-			if value == "diff" {
-				diffOrCommit = true
-			} else if value == "commit" {
-				diffOrCommit = true
-			}
-		}
-	})
-	if diffOrCommit && parameters.Exists(query.FieldAuthor) {
-		scopeCost -= 100
-	}
-
-	return scopeCost
+	return cost
 }
