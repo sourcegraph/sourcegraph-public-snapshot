@@ -5,9 +5,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"strings"
-
 	saml2 "github.com/russellhaering/gosaml2"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -22,6 +21,7 @@ type authnResponseInfo struct {
 	unnormalizedUsername string
 	groups               map[string]bool
 	accountData          any
+	expirationTime       string
 }
 
 func readAuthnResponse(p *provider, encodedResp string) (*authnResponseInfo, error) {
@@ -38,6 +38,16 @@ func readAuthnResponse(p *provider, encodedResp string) (*authnResponseInfo, err
 	if wi := assertions.WarningInfo; wi.InvalidTime || wi.NotInAudience {
 		return nil, errors.Errorf("invalid SAML AuthnResponse: %+v", wi)
 	}
+
+	// Conditions.NotOnOrAfter will determine when a SAML assertion expires.
+	// Users can set a custom value for this field in their Identity Provider
+	// or rely on the default value which will vary depending on the IDP.
+	var notOnOrAfter string
+	decodedResponse, err := p.samlSP.ValidateEncodedResponse(encodedResp)
+	if err != nil {
+		return nil, errors.Errorf("parsing SAML encoded response: %+v", err)
+	}
+	notOnOrAfter = decodedResponse.Assertions[0].Conditions.NotOnOrAfter
 
 	pi, err := p.getCachedInfoAndError()
 	if err != nil {
@@ -76,6 +86,7 @@ func readAuthnResponse(p *provider, encodedResp string) (*authnResponseInfo, err
 		displayName:          firstNonempty(attr.Get("displayName"), attr.Get("givenName")+" "+attr.Get("surname"), attr.Get("http://schemas.xmlsoap.org/claims/CommonName"), attr.Get("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname")),
 		groups:               attr.GetMap(groupsAttr),
 		accountData:          assertions,
+		expirationTime:       notOnOrAfter,
 	}
 	if assertions.NameID == "" {
 		return nil, errors.New("the SAML response did not contain a valid NameID")

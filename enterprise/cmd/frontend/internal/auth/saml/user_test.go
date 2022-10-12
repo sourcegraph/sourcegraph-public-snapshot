@@ -42,6 +42,7 @@ func TestReadAuthnResponse(t *testing.T) {
 		email:                "bob@example.com",
 		unnormalizedUsername: "bob@example.com",
 		displayName:          "Bob Yang",
+		expirationTime:       "2018-05-20T17:13:04.795Z",
 	}); !reflect.DeepEqual(info, want) {
 		t.Errorf("got != want\n got %+v\nwant %+v", info, want)
 	}

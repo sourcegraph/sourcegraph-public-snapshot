@@ -162,16 +162,16 @@ func samlSPHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) 
 			}
 
 			var exp time.Duration
-			// 🚨 SECURITY: TODO(sqs): We *should* uncomment the line below to make our own sessions
-			// only last for as long as the IdP said the authn grant is active for. Unfortunately,
-			// until we support refreshing SAML authn in the background
-			// (https://github.com/sourcegraph/sourcegraph/issues/11340), this provides a bad user
-			// experience because users need to re-authenticate via SAML every minute or so
-			// (assuming their SAML IdP, like many, has a 1-minute access token validity period).
-			//
-			// if info.SessionNotOnOrAfter != nil {
-			// 	exp = time.Until(*info.SessionNotOnOrAfter)
-			// }
+			t, err := time.Parse(time.RFC3339, info.expirationTime)
+			if err != nil {
+				log15.Error("Error parsing expiration time for the asse.", "error", err)
+				http.Error(w, "Failed to retrieve user: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
+			if info.expirationTime != "" {
+				exp = time.Until(t)
+			}
+
 			if err := session.SetActor(w, r, actor, exp, user.CreatedAt); err != nil {
 				log15.Error("Error setting SAML-authenticated actor in session.", "err", err)
 				http.Error(w, "Error starting SAML-authenticated session. Try signing in again.", http.StatusInternalServerError)
