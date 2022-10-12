@@ -181,7 +181,7 @@ func TestParseConfig(t *testing.T) {
 				},
 			},
 			wantProblems: []string{
-				"cannot have more than one auth provider with url 'https://github.com/', only the first one will be used",
+				`Cannot have more than one auth provider with url "https://github.com/", only the first one will be used`,
 			},
 		},
 	}
