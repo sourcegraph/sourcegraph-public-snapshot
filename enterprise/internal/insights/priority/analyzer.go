@@ -1,6 +1,8 @@
 package priority
 
 import (
+	"sort"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 )
@@ -15,6 +17,7 @@ type QueryAnalyzer struct {
 type QueryObject struct {
 	Query                query.Plan
 	NumberOfRepositories int64
+	RepositoryByteSizes  []int64 // size of repositories in bytes, if known
 
 	Cost float64
 }
@@ -97,6 +100,11 @@ func QueryCost(o *QueryObject) {
 	}
 }
 
+var (
+	megarepoSizeThresold  int64 = 2147483648                // 2GB
+	gigarepoSizethreshold int64 = megarepoSizeThresold * 10 // 20GB
+)
+
 func RepositoriesCost(o *QueryObject) {
 	if o.Cost <= 0.0 {
 		o.Cost = 1 // if this handler is called on its own we still want it to impact the cost.
@@ -104,5 +112,24 @@ func RepositoriesCost(o *QueryObject) {
 
 	if o.NumberOfRepositories > 10000 {
 		o.Cost *= ManyRepositoriesMultiplier
+	}
+
+	if len(o.RepositoryByteSizes) > 0 {
+		sort.Slice(o.RepositoryByteSizes, func(i, j int) bool {
+			// sort in descending order
+			return o.RepositoryByteSizes[i] > o.RepositoryByteSizes[j]
+		})
+		i := 0
+		for o.RepositoryByteSizes[i] >= megarepoSizeThresold {
+			if o.RepositoryByteSizes[i] >= gigarepoSizethreshold {
+				o.Cost *= GigarepoMultiplier
+				break
+			}
+			if o.RepositoryByteSizes[i] >= megarepoSizeThresold {
+				o.Cost *= MegarepoMultiplier
+				break
+			}
+			i++
+		}
 	}
 }

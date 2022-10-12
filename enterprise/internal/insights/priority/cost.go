@@ -10,13 +10,7 @@ const (
 )
 
 const (
-	Simple float64 = 50
-	Slow   float64 = 500
-	Long   float64 = 5000
-) // values that could associate a speed to a floating point
-
-const (
-	LiteralCost    float64 = 50
+	LiteralCost    float64 = 10
 	RegexpCost     float64 = 500
 	StructuralCost float64 = 5000
 
@@ -25,7 +19,7 @@ const (
 
 	AuthorMultiplier float64 = 0.1
 
-	UnindexedMultiplier float64 = 100
+	UnindexedMultiplier float64 = 5
 	YesMultiplier       float64 = 1.5
 	OnlyMultiplier      float64 = 0.5
 
@@ -33,4 +27,6 @@ const (
 	LangMultiplier float64 = 0.5
 
 	ManyRepositoriesMultiplier float64 = 10
+	MegarepoMultiplier         float64 = 100
+	GigarepoMultiplier         float64 = 500
 )

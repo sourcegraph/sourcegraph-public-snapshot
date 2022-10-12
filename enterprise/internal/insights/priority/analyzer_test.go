@@ -6,6 +6,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 )
 
+const (
+	Simple        float64 = 50
+	Slow          float64 = 500
+	Long          float64 = 5000
+	LikelyTimeout float64 = 10000
+) // values that could associate a speed to a floating point
+
 func TestQueryAnalyzerCost(t *testing.T) {
 	defaultHandlers := []CostHeuristic{QueryCost, RepositoriesCost}
 
@@ -13,6 +20,7 @@ func TestQueryAnalyzerCost(t *testing.T) {
 		name                 string
 		query                string
 		numberOfRepositories int64
+		repositoryByteSizes  []int64
 		handlers             []CostHeuristic
 		higherThan           float64
 		smallerThan          float64
@@ -53,6 +61,23 @@ func TestQueryAnalyzerCost(t *testing.T) {
 			higherThan:           Slow,
 			smallerThan:          Long,
 		},
+		{
+			name:                "literal query on gigarepo is long but will complete",
+			query:               "patterntype:literal context.Context",
+			repositoryByteSizes: []int64{gigarepoSizethreshold},
+			handlers:            defaultHandlers,
+			higherThan:          Long,
+			smallerThan:         LikelyTimeout,
+		},
+		{
+			name:                 "total annihilation query",
+			query:                "patterntype:structural [a] archive:yes fork:yes index:no",
+			numberOfRepositories: 3,
+			repositoryByteSizes:  []int64{100, megarepoSizeThresold, gigarepoSizethreshold * 2},
+			handlers:             defaultHandlers,
+			higherThan:           LikelyTimeout * 1000,
+			smallerThan:          LikelyTimeout * 5000,
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -61,7 +86,11 @@ func TestQueryAnalyzerCost(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cost := queryAnalyzer.Cost(&QueryObject{Query: queryPlan, NumberOfRepositories: tc.numberOfRepositories})
+			cost := queryAnalyzer.Cost(&QueryObject{
+				Query:                queryPlan,
+				NumberOfRepositories: tc.numberOfRepositories,
+				RepositoryByteSizes:  tc.repositoryByteSizes,
+			})
 			if cost < tc.higherThan {
 				t.Errorf("expected cost to be higher than %f, got %f", tc.higherThan, cost)
 			}
