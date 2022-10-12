@@ -1296,19 +1296,19 @@ $ todo
 
 #### sg src instance register
 
+Register (or edit an existing) Sourcegraph instance to target with src-cli.
 
-
+```sh
+$ sg src instance register [name] [endpoint] [access_token]
+```
 
 Flags:
 
-* `--access-token="<value>"`: AccessToken for the new instance
-* `--endpoint="<value>"`: Endpoint for the new instance (ex: https://sourcegraph.sourcegraph.com)
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
-* `--name="<value>"`: Name for the new instance (ex: s2)
 
 #### sg src instance list
 
-
+List registered instances for src-cli.
 
 
 Flags:
