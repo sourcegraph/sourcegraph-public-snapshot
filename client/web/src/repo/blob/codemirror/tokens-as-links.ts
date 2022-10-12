@@ -235,7 +235,7 @@ function tokenLinksToRangeSet(ranges: TokenLink[]): DecorationSet {
             builder.add(from, to, decoration)
         }
     } catch (error) {
-        logger.error('Failed to compute decorations from SCIP occurrences', error)
+        logger.error('Failed to compute decorations', error)
     }
 
     return builder.finish()

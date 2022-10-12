@@ -22,7 +22,7 @@ import { FetchFileParameters, StreamingSearchResultsListProps } from '@sourcegra
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { HighlightResponseFormat, Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
@@ -107,6 +107,9 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
     const enableLazyBlobSyntaxHighlighting = useExperimentalFeatures(
         features => features.enableLazyBlobSyntaxHighlighting ?? false
     )
+    const enableKeyboardNavigation =
+        isSettingsValid(props.settingsCascade) &&
+        props.settingsCascade.final['codeIntel.keyboardNavigation'] === 'token'
 
     const lineOrRange = useMemo(() => parseQueryAndHash(props.location.search, props.location.hash), [
         props.location.search,
@@ -176,7 +179,13 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                 reactManualTracer,
                 { name: 'formattedBlobInfoOrError', parentSpan: span },
                 fetchSpan =>
-                    fetchBlob({ repoName, revision, filePath, format: HighlightResponseFormat.HTML_PLAINTEXT }).pipe(
+                    fetchBlob({
+                        repoName,
+                        revision,
+                        filePath,
+                        stencil: enableKeyboardNavigation,
+                        format: HighlightResponseFormat.HTML_PLAINTEXT,
+                    }).pipe(
                         map(({ blob, stencil }) => {
                             if (blob === null) {
                                 return blob
@@ -201,7 +210,16 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                         })
                     )
             )
-        }, [enableCodeMirror, enableLazyBlobSyntaxHighlighting, filePath, mode, repoName, revision, span])
+        }, [
+            enableCodeMirror,
+            enableKeyboardNavigation,
+            enableLazyBlobSyntaxHighlighting,
+            filePath,
+            mode,
+            repoName,
+            revision,
+            span,
+        ])
     )
 
     // Bundle latest blob with all other file info to pass to `Blob`
@@ -223,6 +241,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                             revision,
                             filePath,
                             disableTimeout,
+                            stencil: enableKeyboardNavigation,
                             format: enableCodeMirror
                                 ? HighlightResponseFormat.JSON_SCIP
                                 : HighlightResponseFormat.HTML_HIGHLIGHT,
@@ -258,7 +277,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                     }),
                     catchError((error): [ErrorLike] => [asError(error)])
                 ),
-            [repoName, revision, filePath, mode, enableCodeMirror]
+            [repoName, revision, filePath, enableKeyboardNavigation, enableCodeMirror, mode]
         )
     )
 

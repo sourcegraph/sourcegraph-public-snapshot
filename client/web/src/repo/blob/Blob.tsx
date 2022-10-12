@@ -150,7 +150,7 @@ export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
     /** LSIF syntax-highlighting data */
     lsif?: string
 
-    stencil?: BlobStencilFields['stencil']
+    stencil?: BlobStencilFields[]
 }
 
 const domFunctions = {
