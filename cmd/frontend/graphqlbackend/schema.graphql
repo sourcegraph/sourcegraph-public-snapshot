@@ -6361,14 +6361,14 @@ type AnalyticsUsersFrequencyItem {
 Monthly active users
 """
 type AnalyticsMonthlyActiveUsers {
-  """
-  year-month for which the total active users are calculated
-  """
-  date: String!
-  """
-  total count of active users
-  """
-  count: Float!
+    """
+    year-month for which the total active users are calculated
+    """
+    date: String!
+    """
+    total count of active users
+    """
+    count: Float!
 }
 
 """

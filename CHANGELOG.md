@@ -44,6 +44,7 @@ All notable changes to Sourcegraph are documented in this file.
 ## 4.0.1
 
 ### Fixed
+
 - Fixed a panic that can be caused by some tracing configurations. [#42027](https://github.com/sourcegraph/sourcegraph/pull/42027)
 - Fixed broken code navigation for Javascript. [#42055](https://github.com/sourcegraph/sourcegraph/pull/42055)
 - Fixed issue with empty code navigation popovers. [#41958](https://github.com/sourcegraph/sourcegraph/pull/41958)
