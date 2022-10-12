@@ -31,17 +31,17 @@ type Service struct {
 	workerutilStore         dbworkerstore.Store
 	dependencySyncStore     dbworkerstore.Store
 	dependencyIndexingStore dbworkerstore.Store
-	uploadSvc               shared.UploadService
+	uploadSvc               UploadService
 	depsSvc                 DependenciesService
 	policiesSvc             PoliciesService
 	repoStore               ReposStore
 	gitserverRepoStore      GitserverRepoStore
 	externalServiceStore    ExternalServiceStore
 	policyMatcher           PolicyMatcher
-	gitserverClient         shared.GitserverClient
+	gitserverClient         GitserverClient
 	symbolsClient           *symbols.Client
-	repoUpdater             shared.RepoUpdaterClient
-	inferenceService        shared.InferenceService
+	repoUpdater             RepoUpdaterClient
+	inferenceService        InferenceService
 	logger                  log.Logger
 	operations              *operations
 	janitorMetrics          *janitorMetrics
@@ -53,17 +53,17 @@ type Service struct {
 
 func newService(
 	store store.Store,
-	uploadSvc shared.UploadService,
+	uploadSvc UploadService,
 	dependenciesSvc DependenciesService,
 	policiesSvc PoliciesService,
 	repoStore ReposStore,
 	gitserverRepoStore GitserverRepoStore,
 	externalServiceStore ExternalServiceStore,
 	policyMatcher PolicyMatcher,
-	gitserver shared.GitserverClient,
+	gitserver GitserverClient,
 	symbolsClient *symbols.Client,
-	repoUpdater shared.RepoUpdaterClient,
-	inferenceSvc shared.InferenceService,
+	repoUpdater RepoUpdaterClient,
+	inferenceSvc InferenceService,
 	observationContext *observation.Context,
 ) *Service {
 	return &Service{
@@ -96,7 +96,7 @@ func (s *Service) WorkerutilStore() dbworkerstore.Store         { return s.worke
 func (s *Service) DependencySyncStore() dbworkerstore.Store     { return s.dependencySyncStore }
 func (s *Service) DependencyIndexingStore() dbworkerstore.Store { return s.dependencyIndexingStore }
 
-func (s *Service) GetIndexes(ctx context.Context, opts types.GetIndexesOptions) (_ []types.Index, _ int, err error) {
+func (s *Service) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (_ []types.Index, _ int, err error) {
 	ctx, _, endObservation := s.operations.getIndexes.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -138,7 +138,7 @@ func (s *Service) DeleteIndexByID(ctx context.Context, id int) (_ bool, err erro
 	return s.store.DeleteIndexByID(ctx, id)
 }
 
-func (s *Service) DeleteIndexes(ctx context.Context, opts types.DeleteIndexesOptions) (err error) {
+func (s *Service) DeleteIndexes(ctx context.Context, opts shared.DeleteIndexesOptions) (err error) {
 	ctx, _, endObservation := s.operations.deleteIndexes.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 

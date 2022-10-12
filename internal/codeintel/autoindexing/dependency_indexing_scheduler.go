@@ -103,13 +103,13 @@ func (s *Service) insertDependencyIndexingJob(ctx context.Context, uploadID int,
 }
 
 type dependencyIndexingSchedulerHandler struct {
-	uploadsSvc         shared.UploadService
+	uploadsSvc         UploadService
 	repoStore          ReposStore
 	indexEnqueuer      AutoIndexingServiceForDepScheduling
 	extsvcStore        ExternalServiceStore
 	gitserverRepoStore GitserverRepoStore
 	workerStore        dbworkerstore.Store
-	repoUpdater        shared.RepoUpdaterClient
+	repoUpdater        RepoUpdaterClient
 }
 
 var _ workerutil.Handler = &dependencyIndexingSchedulerHandler{}

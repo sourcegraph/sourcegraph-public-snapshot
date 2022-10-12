@@ -76,12 +76,6 @@
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/store
       interfaces:
         - Store
-    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared
-      interfaces:
-        - RepoUpdaterClient
-        - GitServerClient
-        - InferenceService
-        - UploadService
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing
       interfaces:
         - DependenciesService
@@ -90,6 +84,10 @@
         - GitserverRepoStore
         - AutoIndexingServiceForDepScheduling
         - PolicyMatcher
+        - RepoUpdaterClient
+        - GitServerClient
+        - InferenceService
+        - UploadService
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared
       interfaces:
         - PackageReferenceScanner
