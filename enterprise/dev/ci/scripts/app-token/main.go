@@ -30,7 +30,10 @@ func main() {
 		os.Exit(0)
 	}
 
-	jwt := genJwtToken(*appID, *keyPath)
+	jwt, err := genJwtToken(*appID, *keyPath)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(
@@ -78,7 +81,7 @@ func getInstallAccessToken(ctx context.Context, ghc *github.Client) *string {
 	}
 	orgID := orgInstallation.ID
 
-	// Create new installation token with 60 minute duraction with default read contents permissions
+	// Create new installation token with 60 minute duraction with default read repo contents permissions
 	token, _, err := ghc.Apps.CreateInstallationToken(ctx, *orgID, &github.InstallationTokenOptions{
 		Repositories: []string{"sourcegraph"},
 	})
