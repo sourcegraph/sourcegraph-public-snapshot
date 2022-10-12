@@ -29,5 +29,5 @@ jobs:
       - name: Test dependencies (${{ matrix.os }})
         # We add the path since the bash environment does not properly get sourced due to the env not being interactive
         run: |
-            ASDF_DIR=$HOME/.asdf/ PATH=$HOME/.asdf/bin:$PATH go test -timeout=30m -v \
+            ASDF_DIR=$HOME/.asdf/ PATH=$HOME/.asdf/shims:$PATH go test -timeout=30m -v \
             ./dev/sg/dependencies/... -sg-setup=${{ matrix.os }}
