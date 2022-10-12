@@ -3,8 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"net/http"
-	"net/url"
 	"os"
 	"path"
 	"sort"
@@ -404,20 +402,8 @@ func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Contex
 
 const internalSearchClientUserAgent = "Batch Changes repository resolver"
 
-func newSearchRequest(baseURL, query string) (*http.Request, error) {
-	// We explicitly add the version here because `streaminghttp.NewRequest` gets bumped to the latest
-	// version when there's a new one. We want to manually update our version of Search when the time comes.
-	u := fmt.Sprintf("%s/search/stream?v=%s&q=%s", baseURL, searchAPIVersion, url.QueryEscape(query))
-	req, err := http.NewRequest("GET", u, nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Accept", "text/event-stream")
-	return req, nil
-}
-
 func (wr *workspaceResolver) runSearch(ctx context.Context, query string, onMatches func(matches []streamhttp.EventMatch)) (err error) {
-	req, err := newSearchRequest(wr.frontendInternalURL, query)
+	req, err := streamhttp.NewRequestWithVersion(wr.frontendInternalURL, query, searchAPIVersion)
 	if err != nil {
 		return err
 	}
