@@ -52,7 +52,7 @@ func TestQueryAnalyzerCost(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cost := queryAnalyzer.Cost(QueryObject{Query: queryPlan})
+			cost := queryAnalyzer.Cost(&QueryObject{Query: queryPlan})
 			if cost < tc.higherThan {
 				t.Errorf("expected cost to be higher than %f, got %f", tc.higherThan, cost)
 			}

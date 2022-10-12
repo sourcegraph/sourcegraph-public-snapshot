@@ -18,7 +18,7 @@ type QueryObject struct {
 	Cost float64
 }
 
-type CostHeuristic func(QueryObject)
+type CostHeuristic func(*QueryObject)
 
 func NewQueryAnalyzer(handlers ...CostHeuristic) *QueryAnalyzer {
 	return &QueryAnalyzer{
@@ -26,7 +26,7 @@ func NewQueryAnalyzer(handlers ...CostHeuristic) *QueryAnalyzer {
 	}
 }
 
-func (a *QueryAnalyzer) Cost(o QueryObject) float64 {
+func (a *QueryAnalyzer) Cost(o *QueryObject) float64 {
 	for _, handler := range a.costHandlers {
 		handler(o)
 	}
@@ -36,7 +36,7 @@ func (a *QueryAnalyzer) Cost(o QueryObject) float64 {
 	return o.Cost
 }
 
-func QueryCost(o QueryObject) {
+func QueryCost(o *QueryObject) {
 	for _, basic := range o.Query {
 		if basic.IsStructural() {
 			o.Cost += StructuralCost
