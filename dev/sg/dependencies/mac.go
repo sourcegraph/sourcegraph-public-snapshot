@@ -17,7 +17,6 @@ const (
 	depsCloneRepo     = "Clone repositories"
 )
 
-// nothing
 // Mac declares Mac dependencies.
 var Mac = []category{
 	{
