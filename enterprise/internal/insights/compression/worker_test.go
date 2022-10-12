@@ -354,7 +354,7 @@ func TestCommitIndexer_windowing(t *testing.T) {
 func Test_IsEmptyRepoError(t *testing.T) {
 	t.Parallel()
 
-	defaultDate := time.Date(2022, 0o7, 0o1, 12, 12, 12, 10, time.UTC)
+	defaultDate := time.Date(2022, 7, 1, 12, 12, 12, 10, time.UTC)
 	defaultError := errors.New(generateEmptyRepoErrorMessagePrefix(defaultDate, nil) + emptyRepoErrMessageSuffix)
 
 	testCases := []struct {
