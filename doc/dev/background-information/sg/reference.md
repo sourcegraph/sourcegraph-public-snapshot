@@ -1288,10 +1288,10 @@ Flags:
 
 ### sg src instance
 
-
+Interact with Sourcegraph instances that src-cli will use.
 
 ```sh
-$ todo
+$ sg src instance [command]
 ```
 
 #### sg src instance register
