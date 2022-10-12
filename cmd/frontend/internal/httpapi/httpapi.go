@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -28,7 +29,9 @@ import (
 	frontendsearch "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
 	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	internalcodeintel "github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -116,14 +119,14 @@ func NewHandler(
 
 	m.Get(apirouter.GraphQL).Handler(trace.Route(handler(serveGraphQL(logger, schema, rateLimiter, false))))
 
-	m.Get(apirouter.SearchStream).Handler(trace.Route(frontendsearch.StreamHandler(db)))
+	m.Get(apirouter.SearchStream).Handler(trace.Route(restTokenScopesMiddleware([]string{"search-stream:read"}, frontendsearch.StreamHandler(db))))
 
 	// Return the minimum src-cli version that's compatible with this instance
-	m.Get(apirouter.SrcCli).Handler(trace.Route(newSrcCliVersionHandler(logger)))
+	m.Get(apirouter.SrcCli).Handler(trace.Route(restTokenScopesMiddleware([]string{"src-cli:read"}, newSrcCliVersionHandler(logger))))
 
 	// Set up the src-cli version cache handler (this will effectively be a
 	// no-op anywhere other than dot-com).
-	m.Get(apirouter.SrcCliVersionCache).Handler(trace.Route(releasecache.NewHandler(logger)))
+	m.Get(apirouter.SrcCliVersionCache).Handler(trace.Route(restTokenScopesMiddleware([]string{"src-cli:read"}, releasecache.NewHandler(logger))))
 
 	m.Get(apirouter.Registry).Handler(trace.Route(handler(registry.HandleRegistry(db))))
 
@@ -268,4 +271,28 @@ func jsonMiddleware(errorHandler *errorHandler) func(func(http.ResponseWriter, *
 			Error: errorHandler.Handle,
 		}
 	}
+}
+
+func restTokenScopesMiddleware(scopes []string, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if len(scopes) > 0 {
+			a := actor.FromContext(r.Context())
+			// only care about token based auth and non-internal tokens for now
+			isUserAll := a.Scopes[authz.ScopeUserAll]
+			isSiteAdminSudo := a.Scopes[authz.ScopeSiteAdminSudo]
+			if a.FromToken && !a.Internal && !(isUserAll || isSiteAdminSudo) {
+				// for now all scopes are required, but this can be changed in the future
+				// to be more flexible
+				for _, scope := range scopes {
+					if ok := a.Scopes[scope]; !ok {
+						http.Error(w, fmt.Sprintf("forbidden, missing token scope: %s", scope), http.StatusForbidden)
+						return
+					}
+				}
+			}
+		}
+
+		next.ServeHTTP(w, r)
+		return
+	})
 }
