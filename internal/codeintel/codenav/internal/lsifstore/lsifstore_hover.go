@@ -40,7 +40,6 @@ func (s *store) GetHover(ctx context.Context, bundleID int, path string, line, c
 }
 
 const hoverDocumentQuery = `
--- source: internal/codeintel/stores/lsifstore/hover.go:Hover
 SELECT
 	dump_id,
 	path,

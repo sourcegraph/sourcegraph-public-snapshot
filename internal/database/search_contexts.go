@@ -473,7 +473,6 @@ func scanSearchContexts(rows *sql.Rows) ([]*types.SearchContext, error) {
 }
 
 var getSearchContextRepositoryRevisionsFmtStr = `
--- source:internal/database/search_contexts.go:GetSearchContextRepositoryRevisions
 SELECT
 	sc.repo_id,
 	sc.revision,
@@ -547,7 +546,6 @@ func (s *searchContextsStore) GetSearchContextRepositoryRevisions(ctx context.Co
 }
 
 var getAllRevisionsForReposFmtStr = `
--- source:internal/database/search_contexts.go:GetAllRevisionsForRepos
 SELECT DISTINCT
 	scr.repo_id,
 	scr.revision

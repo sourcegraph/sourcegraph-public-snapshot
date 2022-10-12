@@ -49,7 +49,6 @@ func (m *insightsMigrator) getSettingsForUser(ctx context.Context, tx *basestore
 }
 
 const insightsMigratorGetSettingsForUserSelectSettingsQuery = `
--- source: enterprise/internal/oobmigration/migrations/insights/settings.go:getSettingsForUser
 SELECT s.id, s.org_id, s.user_id, s.contents
 FROM settings s
 LEFT JOIN users ON users.id = s.author_user_id
@@ -63,7 +62,6 @@ LIMIT 1
 `
 
 const insightsMigratorGetSettingsForUserSelectUserQuery = `
--- source: enterprise/internal/oobmigration/migrations/insights/settings.go:getSettingsForUser
 SELECT u.username, u.display_name
 FROM users u
 WHERE id = %s AND deleted_at IS NULL
@@ -95,7 +93,6 @@ func (m *insightsMigrator) getSettingsForOrg(ctx context.Context, tx *basestore.
 }
 
 const insightsMigratorGetSettingsForOrgSelectSettingsQuery = `
--- source: enterprise/internal/oobmigration/migrations/insights/settings.go:getSettingsForOrg
 SELECT s.id, s.org_id, s.user_id, s.contents
 FROM settings s
 LEFT JOIN users ON users.id = s.author_user_id
@@ -105,7 +102,6 @@ LIMIT 1
 `
 
 const insightsMigratorGetSettingsForOrgSelectOrgQuery = `
--- source: enterprise/internal/oobmigration/migrations/insights/settings.go:getSettingsForOrg
 SELECT name, display_name
 FROM orgs
 WHERE id = %s AND deleted_at IS NULL
@@ -123,7 +119,6 @@ func (m *insightsMigrator) getGlobalSettings(ctx context.Context, tx *basestore.
 }
 
 const insightsMigratorGetGlobalSettingsQuery = `
--- source: enterprise/internal/oobmigration/migrations/insights/settings.go:getGlobalSettings
 SELECT s.id, s.org_id, s.user_id, s.contents
 FROM settings s
 LEFT JOIN users ON users.id = s.author_user_id

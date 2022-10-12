@@ -198,12 +198,10 @@ func insertDependencies(ctx context.Context, workerBaseStore *basestore.Store, j
 }
 
 const getJobDependencies = `
--- source: enterprise/internal/insights/background/queryrunner/worker.go:getDependencies
 select recording_time from insights_query_runner_jobs_dependencies where job_id = %s;
 `
 
 const insertJobDependencies = `
--- source: enterprise/internal/insights/background/queryrunner/worker.go:insertDependencies
 INSERT INTO insights_query_runner_jobs_dependencies (job_id, recording_time) VALUES %s;`
 
 // EnqueueJob enqueues a job for the query runner worker to execute later.
@@ -239,7 +237,6 @@ func EnqueueJob(ctx context.Context, workerBaseStore *basestore.Store, job *Job)
 }
 
 const enqueueJobFmtStr = `
--- source: enterprise/internal/insights/background/queryrunner/worker.go:EnqueueJob
 INSERT INTO insights_query_runner_jobs (
 	series_id,
 	search_query,
@@ -267,7 +264,6 @@ func PurgeJobsForSeries(ctx context.Context, workerBaseStore *basestore.Store, s
 }
 
 const purgeJobsForSeriesFmtStr = `
--- source: enterprise/internal/insights/background/queryrunner/worker.go:purgeJobsForSeriesFmtStr
 DELETE FROM insights_query_runner_jobs
 WHERE series_id = %s
 `
@@ -302,7 +298,6 @@ func dequeueJob(ctx context.Context, workerBaseStore *basestore.Store, recordID 
 }
 
 const dequeueJobFmtStr = `
--- source: enterprise/internal/insights/background/queryrunner/worker.go:dequeueJob
 SELECT
 	series_id,
 	search_query,
@@ -355,7 +350,6 @@ func QueryJobsStatus(ctx context.Context, workerBaseStore *basestore.Store, seri
 }
 
 const queryJobsStatusFmtStr = `
--- source: enterprise/internal/insights/background/queryrunner/worker.go:JobsStatus
 SELECT COUNT(*) FROM insights_query_runner_jobs WHERE series_id=%s AND state=%s
 `
 
