@@ -1,10 +1,12 @@
 import { authentication } from 'vscode'
 
 import { asError } from '@sourcegraph/common'
-import { checkOk, GraphQLResult, GRAPHQL_URI, isHTTPAuthError } from '@sourcegraph/http-client'
+import { GraphQLResult, GRAPHQL_URI, isHTTPAuthError } from '@sourcegraph/http-client'
 
 import { handleAccessTokenError } from '../settings/accessTokenSetting'
 import { endpointSetting, endpointRequestHeadersSetting } from '../settings/endpointSetting'
+
+import { fetch, Headers, getProxyAgent, HeadersInit } from './fetch'
 
 let invalidated = false
 /**
@@ -42,21 +44,26 @@ export const requestGraphQLFromVSCode = async <R, V = object>(
         const url = new URL(apiURL, sourcegraphURL).href
         // Debt: intercepted requests in integration tests
         // have 0 status codes, so don't check in test environment.
-        const checkFunction = process.env.IS_TEST ? <T>(value: T): T => value : checkOk
-        const response = checkFunction(
-            await fetch(url, {
-                body: JSON.stringify({
-                    query: request,
-                    variables,
-                }),
-                method: 'POST',
-                headers,
-            })
-        )
+        // const checkFunction = process.env.IS_TEST ? <T>(value: T): T => value : checkOk
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const opts: any = {
+            agent: getProxyAgent(),
+            body: JSON.stringify({
+                query: request,
+                variables,
+            }),
+            method: 'POST',
+            headers,
+        }
+
+        const response = (await fetch(url, opts)) as any
         // TODO request cancellation w/ VS Code cancellation tokens.
-        // eslint-disable-next-line @typescript-eslint/return-await
-        return response.json() as Promise<GraphQLResult<any>>
+        const json = (await response.json()) as GraphQLResult<any>
+        console.log('why return', json)
+        return json
     } catch (error) {
+        console.error(error)
         // If `overrideAccessToken` is set, we're validating the token
         // and errors will be displayed in the UI.
         if (isHTTPAuthError(error) && !overrideAccessToken) {

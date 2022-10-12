@@ -23,3 +23,12 @@ declare module '*.worker.ts' {
  * Set by shared/dev/jest-environment.js
  */
 declare var jsdom: import('jsdom').JSDOM
+
+/**
+ * Needed for proxy support
+ */
+declare global {
+    interface RequestInit {
+        agent?: undefined
+    }
+}

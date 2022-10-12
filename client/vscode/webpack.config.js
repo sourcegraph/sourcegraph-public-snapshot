@@ -73,12 +73,19 @@ function getExtensionCoreConfiguration(targetType) {
           ? {
               process: require.resolve('process/browser'),
               path: require.resolve('path-browserify'),
-              assert: require.resolve('assert'),
+              assert: false,
               util: require.resolve('util'),
               http: require.resolve('stream-http'),
               https: require.resolve('https-browserify'),
+
+              net: false,
+              tls: false,
             }
-          : {},
+          : {
+              net: false,
+              tls: false,
+              assert: false,
+            },
     },
     module: {
       rules: [

@@ -11,9 +11,11 @@ const https = require('https')
 const util = require('util')
 
 let fixedHeaders = {}
+let agent = null
 
-module.exports = function polyfillEventSource(headers) {
+module.exports = function polyfillEventSource(headers, _agent) {
   fixedHeaders = { ...headers }
+  agent = _agent
 
   global.EventSource = EventSource
 
@@ -169,6 +171,10 @@ function EventSource(url, eventSourceInitDict) {
     // Pass this on to the XHR
     if (eventSourceInitDict && eventSourceInitDict.withCredentials !== undefined) {
       options.withCredentials = eventSourceInitDict.withCredentials
+    }
+
+    if (agent) {
+      options.agent = agent
     }
 
     request = (isSecure ? https : http).request(options, res => {
