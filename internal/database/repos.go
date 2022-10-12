@@ -114,9 +114,38 @@ func (s *repoStore) Transact(ctx context.Context) (RepoStore, error) {
 	return &repoStore{logger: s.logger, Store: txBase}, err
 }
 
+func localMock() *types.Repo {
+	// fmt.Println("# localMock")
+	return &types.Repo{
+		ID:   api.RepoID(1776),
+		Name: "local/beyang/scratch",
+		// Description string
+		// Fork bool
+		// Archived bool
+		// Stars int `json:",omitempty"`
+		// Private bool
+		// CreatedAt time.Time
+		// UpdatedAt time.Time
+		// DeletedAt time.Time
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "beyang/scratch",
+			ServiceType: "local",
+			ServiceID:   "",
+		},
+		// Sources map[string]*SourceInfo
+		// Metadata any
+		// Blocked *RepoBlock `json:",omitempty"`
+		// KeyValuePairs map[string]*string `json:",omitempty"`
+	}
+}
+
 // Get finds and returns the repo with the given repository ID from the database.
 // When a repo isn't found or has been blocked, an error is returned.
 func (s *repoStore) Get(ctx context.Context, id api.RepoID) (_ *types.Repo, err error) {
+	if id == api.RepoID(1776) {
+		return localMock(), nil
+	}
+
 	tr, ctx := trace.New(ctx, "repos.Get", "")
 	defer func() {
 		tr.SetError(err)
@@ -197,6 +226,10 @@ func (s *repoStore) GetByName(ctx context.Context, nameOrURI api.RepoName) (_ *t
 		tr.SetError(err)
 		tr.Finish()
 	}()
+
+	if string(nameOrURI) == "local/beyang/scratch" {
+		return localMock(), nil
+	}
 
 	repos, err := s.listRepos(ctx, tr, ReposListOptions{
 		Names:          []string{string(nameOrURI)},

@@ -80,7 +80,7 @@ func (s *repos) Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err er
 
 // GetByName retrieves the repository with the given name. It will lazy sync a repo
 // not yet present in the database under certain conditions. See repos.Syncer.SyncRepo.
-func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo, err error) {
+func (s *repos) GetByName(ctx context.Context, name api.RepoName) (ret *types.Repo, err error) {
 	if Mocks.Repos.GetByName != nil {
 		return Mocks.Repos.GetByName(ctx, name)
 	}

@@ -202,7 +202,6 @@ func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitA
 		}
 		return nil, err
 	}
-
 	return r.CommitFromID(ctx, args, commitID)
 }
 
@@ -356,6 +355,7 @@ func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 
 		var repo *types.Repo
 		repo, r.err = r.db.Repos().Get(ctx, r.IDInt32())
+		// fmt.Printf("########## r.err: %v\n", r.err)
 		if r.err == nil {
 			r.innerRepo = repo
 		}
