@@ -1,4 +1,4 @@
-package autoindexing
+package background
 
 import (
 	"context"
@@ -59,7 +59,7 @@ func TestDependencyIndexingSchedulerHandler(t *testing.T) {
 		},
 	}, nil)
 
-	indexEnqueuer := NewMockAutoIndexingServiceForDepScheduling()
+	indexEnqueuer := NewMockAutoIndexingService()
 
 	envvar.MockSourcegraphDotComMode(true)
 
@@ -160,7 +160,7 @@ func TestDependencyIndexingSchedulerHandlerCustomer(t *testing.T) {
 		},
 	}, nil)
 
-	indexEnqueuer := NewMockAutoIndexingServiceForDepScheduling()
+	indexEnqueuer := NewMockAutoIndexingService()
 
 	envvar.MockSourcegraphDotComMode(false)
 
@@ -254,7 +254,7 @@ func TestDependencyIndexingSchedulerHandlerRequeueNotCloned(t *testing.T) {
 		},
 	}, nil)
 
-	indexEnqueuer := NewMockAutoIndexingServiceForDepScheduling()
+	indexEnqueuer := NewMockAutoIndexingService()
 
 	envvar.MockSourcegraphDotComMode(true)
 
@@ -316,7 +316,7 @@ func TestDependencyIndexingSchedulerHandlerSkipNonExistant(t *testing.T) {
 		},
 	}, nil)
 
-	indexEnqueuer := NewMockAutoIndexingServiceForDepScheduling()
+	indexEnqueuer := NewMockAutoIndexingService()
 
 	envvar.MockSourcegraphDotComMode(true)
 
@@ -363,7 +363,7 @@ func TestDependencyIndexingSchedulerHandlerShouldSkipRepository(t *testing.T) {
 	mockUploadsSvc.GetUploadByIDFunc.SetDefaultReturn(codeinteltypes.Upload{ID: 42, RepositoryID: 51, Indexer: "scip-typescript"}, true, nil)
 	mockUploadsSvc.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
 
-	indexEnqueuer := NewMockAutoIndexingServiceForDepScheduling()
+	indexEnqueuer := NewMockAutoIndexingService()
 
 	envvar.MockSourcegraphDotComMode(true)
 

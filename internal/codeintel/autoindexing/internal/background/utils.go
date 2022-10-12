@@ -1,40 +1,17 @@
-package store
+package background
 
 import (
-	"context"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/opentracing/opentracing-go/log"
+	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
-
-func (s *store) InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error) {
-	ctx, _, endObservation := s.operations.insertDependencyIndexingJob.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("uploadId", uploadID),
-		log.String("extSvcKind", externalServiceKind),
-	}})
-	defer func() {
-		endObservation(1, observation.Args{LogFields: []log.Field{
-			log.Int("id", id),
-		}})
-	}()
-
-	id, _, err = basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(insertDependencyIndexingJobQuery, uploadID, externalServiceKind, syncTime)))
-	return id, err
-}
-
-const insertDependencyIndexingJobQuery = `
--- source: internal/codeintel/stores/dbstore/dependency_index.go:InsertDependencyIndexingJob
-INSERT INTO lsif_dependency_indexing_jobs (upload_id, external_service_kind, external_service_sync)
-VALUES (%s, %s, %s)
-RETURNING id
-`
 
 // StalledIndexMaxAge is the maximum allowable duration between updating the state of an
 // index as "processing" and locking the index row during processing. An unlocked row that
@@ -82,8 +59,37 @@ var indexColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf(`(SELECT MAX(id) FROM lsif_uploads WHERE associated_index_id = u.id) AS associated_upload_id`),
 }
 
-func (s *store) WorkerutilStore(observationContext *observation.Context) dbworkerstore.Store {
-	return dbworkerstore.NewWithMetrics(s.db.Handle(), indexWorkerStoreOptions, observationContext)
+func scanIndex(s dbutil.Scanner) (index types.Index, err error) {
+	var executionLogs []workerutil.ExecutionLogEntry
+	if err := s.Scan(
+		&index.ID,
+		&index.Commit,
+		&index.QueuedAt,
+		&index.State,
+		&index.FailureMessage,
+		&index.StartedAt,
+		&index.FinishedAt,
+		&index.ProcessAfter,
+		&index.NumResets,
+		&index.NumFailures,
+		&index.RepositoryID,
+		&index.RepositoryName,
+		pq.Array(&index.DockerSteps),
+		&index.Root,
+		&index.Indexer,
+		pq.Array(&index.IndexerArgs),
+		&index.Outfile,
+		pq.Array(&executionLogs),
+		&index.Rank,
+		pq.Array(&index.LocalSteps),
+		&index.AssociatedUploadID,
+	); err != nil {
+		return index, err
+	}
+
+	index.ExecutionLogs = append(index.ExecutionLogs, executionLogs...)
+
+	return index, nil
 }
 
 // StalledDependencySyncingJobMaxAge is the maximum allowable duration between updating
@@ -106,10 +112,6 @@ var dependencySyncingJobWorkerStoreOptions = dbworkerstore.Options{
 	OrderByExpression: sqlf.Sprintf("lsif_dependency_syncing_jobs.queued_at, lsif_dependency_syncing_jobs.upload_id"),
 	StalledMaxAge:     StalledDependencySyncingJobMaxAge,
 	MaxNumResets:      DependencySyncingJobMaxNumResets,
-}
-
-func (s *store) WorkerutilDependencySyncStore(observationContext *observation.Context) dbworkerstore.Store {
-	return dbworkerstore.NewWithMetrics(s.db.Handle(), dependencySyncingJobWorkerStoreOptions, observationContext)
 }
 
 var dependencySyncingJobColumns = []*sqlf.Query{
@@ -158,10 +160,6 @@ var dependencyIndexingJobWorkerStoreOptions = dbworkerstore.Options{
 	OrderByExpression: sqlf.Sprintf("lsif_dependency_indexing_jobs.queued_at, lsif_dependency_indexing_jobs.upload_id"),
 	StalledMaxAge:     StalledDependencyIndexingJobMaxAge,
 	MaxNumResets:      DependencyIndexingJobMaxNumResets,
-}
-
-func (s *store) WorkerutilDependencyIndexStore(observationContext *observation.Context) dbworkerstore.Store {
-	return dbworkerstore.NewWithMetrics(s.db.Handle(), dependencyIndexingJobWorkerStoreOptions, observationContext)
 }
 
 var dependencyIndexingJobColumns = []*sqlf.Query{

@@ -71,7 +71,8 @@
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer
   interfaces:
     - SyncStore
-- filename: internal/codeintel/autoindexing/mocks_test.go
+
+- filename: internal/codeintel/autoindexing/internal/background/mocks_test.go
   sources:
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/store
       interfaces:
@@ -80,27 +81,40 @@
       interfaces:
         - RepoUpdaterClient
         - GitServerClient
-        - InferenceService
         - UploadService
-    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/background
       interfaces:
         - DependenciesService
         - ReposStore
         - ExternalServiceStore
         - GitserverRepoStore
-        - AutoIndexingServiceForDepScheduling
-        - PolicyMatcher
+        - AutoIndexingService
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared
       interfaces:
         - PackageReferenceScanner
+
 # TODO - cannot merge with the one above because 'Store' is looked for in multiple packages.
 # This is a deficiency of go-mockgen filed in https://github.com/derision-test/go-mockgen/issues/36.
-- filename: internal/codeintel/autoindexing/mocks2_test.go
+- filename: internal/codeintel/autoindexing/internal/background/mocks_storeworker_test.go
   sources:
     - path: github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store
       interfaces:
         - Store
       prefix: Worker
+
+- filename: internal/codeintel/autoindexing/mocks_test.go
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/store
+      interfaces:
+        - Store
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared
+      interfaces:
+        - GitServerClient
+        - RepoUpdaterClient
+        - InferenceService
+        - UploadService
+
+
 - filename: internal/codeintel/autoindexing/internal/inference/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference
   interfaces:

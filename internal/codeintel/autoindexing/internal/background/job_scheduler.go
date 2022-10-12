@@ -1,4 +1,4 @@
-package autoindexing
+package background
 
 import (
 	"context"
@@ -12,18 +12,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (s *Service) NewScheduler(
+func (b *backgroundJob) NewScheduler(
 	interval time.Duration,
 	repositoryProcessDelay time.Duration,
 	repositoryBatchSize int,
 	policyBatchSize int,
 ) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
-		return s.handleScheduler(ctx, repositoryProcessDelay, repositoryBatchSize, policyBatchSize)
-	}), s.operations.handleIndexScheduler)
+		return b.handleScheduler(ctx, repositoryProcessDelay, repositoryBatchSize, policyBatchSize)
+	}), b.operations.handleIndexScheduler)
 }
 
-func (s *Service) handleScheduler(
+func (b backgroundJob) handleScheduler(
 	ctx context.Context,
 	repositoryProcessDelay time.Duration,
 	repositoryBatchSize int,
@@ -42,7 +42,7 @@ func (s *Service) handleScheduler(
 	// set should contain repositories that have yet to be updated, or that have been updated least recently.
 	// This allows us to update every repository reliably, even if it takes a long time to process through
 	// the backlog.
-	repositories, err := s.uploadSvc.GetRepositoriesForIndexScan(
+	repositories, err := b.uploadSvc.GetRepositoriesForIndexScan(
 		ctx,
 		"lsif_last_index_scan",
 		"last_index_scan_at",
@@ -63,7 +63,7 @@ func (s *Service) handleScheduler(
 	now := timeutil.Now()
 
 	for _, repositoryID := range repositories {
-		if repositoryErr := s.handleRepository(ctx, repositoryID, policyBatchSize, now); repositoryErr != nil {
+		if repositoryErr := b.handleRepository(ctx, repositoryID, policyBatchSize, now); repositoryErr != nil {
 			if err == nil {
 				err = repositoryErr
 			} else {
@@ -75,12 +75,12 @@ func (s *Service) handleScheduler(
 	return err
 }
 
-func (s *Service) handleRepository(ctx context.Context, repositoryID, policyBatchSize int, now time.Time) error {
+func (b backgroundJob) handleRepository(ctx context.Context, repositoryID, policyBatchSize int, now time.Time) error {
 	offset := 0
 
 	for {
 		// Retrieve the set of configuration policies that affect indexing for this repository.
-		policies, totalCount, err := s.policiesSvc.GetConfigurationPolicies(ctx, types.GetConfigurationPoliciesOptions{
+		policies, totalCount, err := b.policiesSvc.GetConfigurationPolicies(ctx, types.GetConfigurationPoliciesOptions{
 			RepositoryID: repositoryID,
 			ForIndexing:  true,
 			Limit:        policyBatchSize,
@@ -92,7 +92,7 @@ func (s *Service) handleRepository(ctx context.Context, repositoryID, policyBatc
 		offset += len(policies)
 
 		// Get the set of commits within this repository that match an indexing policy
-		commitMap, err := s.policyMatcher.CommitsDescribedByPolicyInternal(ctx, repositoryID, policies, now)
+		commitMap, err := b.policyMatcher.CommitsDescribedByPolicyInternal(ctx, repositoryID, policies, now)
 		if err != nil {
 			return errors.Wrap(err, "policies.CommitsDescribedByPolicy")
 		}
@@ -103,7 +103,7 @@ func (s *Service) handleRepository(ctx context.Context, repositoryID, policyBatc
 			}
 
 			// Attempt to queue an index if one does not exist for each of the matching commits
-			if _, err := s.QueueIndexes(ctx, repositoryID, commit, "", false, false); err != nil {
+			if _, err := b.autoindexingSvc.QueueIndexes(ctx, repositoryID, commit, "", false, false); err != nil {
 				if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 					continue
 				}
@@ -118,18 +118,18 @@ func (s *Service) handleRepository(ctx context.Context, repositoryID, policyBatc
 	}
 }
 
-func (s *Service) NewOnDemandScheduler(interval time.Duration, batchSize int) goroutine.BackgroundRoutine {
+func (b backgroundJob) NewOnDemandScheduler(interval time.Duration, batchSize int) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
 		if !autoIndexingEnabled() {
 			return nil
 		}
 
-		return s.processRepoRevs(ctx, batchSize)
+		return b.processRepoRevs(ctx, batchSize)
 	}))
 }
 
-func (s *Service) processRepoRevs(ctx context.Context, batchSize int) (err error) {
-	tx, err := s.store.Transact(ctx)
+func (b backgroundJob) processRepoRevs(ctx context.Context, batchSize int) (err error) {
+	tx, err := b.store.Transact(ctx)
 	if err != nil {
 		return err
 	}
@@ -142,7 +142,7 @@ func (s *Service) processRepoRevs(ctx context.Context, batchSize int) (err error
 
 	ids := make([]int, 0, len(repoRevs))
 	for _, repoRev := range repoRevs {
-		if _, err := s.QueueIndexes(ctx, repoRev.RepositoryID, repoRev.Rev, "", false, false); err != nil {
+		if _, err := b.autoindexingSvc.QueueIndexes(ctx, repoRev.RepositoryID, repoRev.Rev, "", false, false); err != nil {
 			return err
 		}
 

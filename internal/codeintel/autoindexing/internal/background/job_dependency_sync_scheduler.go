@@ -1,4 +1,4 @@
-package autoindexing
+package background
 
 import (
 	"context"
@@ -22,6 +22,37 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// NewDependencySyncScheduler returns a new worker instance that processes
+// records from lsif_dependency_syncing_jobs.
+func (b *backgroundJob) NewDependencySyncScheduler(pollInterval time.Duration) *workerutil.Worker {
+	rootContext := actor.WithInternalActor(context.Background())
+	workerStore := b.dependencySyncStore
+
+	handler := &dependencySyncSchedulerHandler{
+		uploadsSvc:      b.uploadSvc,
+		depsSvc:         b.depsSvc,
+		autoindexingSvc: b.autoindexingSvc,
+		workerStore:     workerStore,
+		extsvcStore:     b.externalServiceStore,
+	}
+
+	return dbworker.NewWorker(rootContext, workerStore, handler, workerutil.WorkerOptions{
+		Name:              "precise_code_intel_dependency_sync_scheduler_worker",
+		NumHandlers:       1,
+		Interval:          pollInterval,
+		HeartbeatInterval: 1 * time.Second,
+		Metrics:           b.depencencySyncMetrics,
+	})
+}
+
+type dependencySyncSchedulerHandler struct {
+	uploadsSvc      shared.UploadService
+	depsSvc         DependenciesService
+	autoindexingSvc AutoIndexingService
+	workerStore     dbworkerstore.Store
+	extsvcStore     ExternalServiceStore
+}
+
 // For mocking in tests
 var autoIndexingEnabled = conf.CodeIntelAutoIndexingEnabled
 
@@ -30,37 +61,6 @@ var schemeToExternalService = map[string]string{
 	dependencies.NpmPackagesScheme:    extsvc.KindNpmPackages,
 	dependencies.RustPackagesScheme:   extsvc.KindRustPackages,
 	dependencies.PythonPackagesScheme: extsvc.KindPythonPackages,
-}
-
-// NewDependencySyncScheduler returns a new worker instance that processes
-// records from lsif_dependency_syncing_jobs.
-func (s *Service) NewDependencySyncScheduler(pollInterval time.Duration) *workerutil.Worker {
-	rootContext := actor.WithInternalActor(context.Background())
-	workerStore := s.dependencySyncStore
-
-	handler := &dependencySyncSchedulerHandler{
-		uploadsSvc:      s.uploadSvc,
-		depsSvc:         s.depsSvc,
-		autoindexingSvc: &AutoIndexingServiceForDepSchedulingShim{s},
-		workerStore:     workerStore,
-		extsvcStore:     s.externalServiceStore,
-	}
-
-	return dbworker.NewWorker(rootContext, workerStore, handler, workerutil.WorkerOptions{
-		Name:              "precise_code_intel_dependency_sync_scheduler_worker",
-		NumHandlers:       1,
-		Interval:          pollInterval,
-		HeartbeatInterval: 1 * time.Second,
-		Metrics:           s.depencencySyncMetrics,
-	})
-}
-
-type dependencySyncSchedulerHandler struct {
-	uploadsSvc      shared.UploadService
-	depsSvc         DependenciesService
-	autoindexingSvc AutoIndexingServiceForDepScheduling
-	workerStore     dbworkerstore.Store
-	extsvcStore     ExternalServiceStore
 }
 
 func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
