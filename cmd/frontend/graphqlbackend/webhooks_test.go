@@ -25,20 +25,10 @@ func TestCreateWebhook(t *testing.T) {
 	}
 	webhookStore.CreateFunc.SetDefaultReturn(&expectedWebhook, nil)
 
-	//authz := database.NewMockAuthzStore()
-	//authz.GrantPendingPermissionsFunc.SetDefaultReturn(nil)
-
 	db := database.NewMockDB()
 	db.WebhooksFunc.SetDefaultReturn(webhookStore)
-	//db.UsersFunc.SetDefaultReturn(users)
-	//db.AuthzFunc.SetDefaultReturn(authz)
-	queryStrNoSecret := `mutation CreateWebhook($codeHostKind: String!, $codeHostURN: String!) {
-				createWebhook(codeHostKind: $codeHostKind, codeHostURN: $codeHostURN) {
-					id
-					uuid
-				}
-			}`
-	queryStrWithSecret := `mutation CreateWebhook($codeHostKind: String!, $codeHostURN: String!, $secret: String) {
+	db.UsersFunc.SetDefaultReturn(users)
+	queryStr := `mutation CreateWebhook($codeHostKind: String!, $codeHostURN: String!, $secret: String) {
 				createWebhook(codeHostKind: $codeHostKind, codeHostURN: $codeHostURN, secret: $secret) {
 					id
 					uuid
@@ -50,7 +40,7 @@ func TestCreateWebhook(t *testing.T) {
 		{
 			Label:  "basic",
 			Schema: schema,
-			Query:  queryStrNoSecret,
+			Query:  queryStr,
 			ExpectedResult: fmt.Sprintf(`
 				{
 					"createWebhook": {
@@ -68,7 +58,7 @@ func TestCreateWebhook(t *testing.T) {
 		{
 			Label:          "invalid code host",
 			Schema:         schema,
-			Query:          queryStrNoSecret,
+			Query:          queryStr,
 			ExpectedResult: "null",
 			ExpectedErrors: []*errors.QueryError{
 				{
@@ -85,7 +75,7 @@ func TestCreateWebhook(t *testing.T) {
 		{
 			Label:          "secrets not supported for code host",
 			Schema:         schema,
-			Query:          queryStrWithSecret,
+			Query:          queryStr,
 			ExpectedResult: "null",
 			ExpectedErrors: []*errors.QueryError{
 				{

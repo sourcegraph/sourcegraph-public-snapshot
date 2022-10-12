@@ -120,6 +120,9 @@ func (r *schemaResolver) CreateWebhook(ctx context.Context, args *struct {
 	CodeHostURN  string
 	Secret       *string
 }) (*webhookResolver, error) {
+	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
+		return nil, auth.ErrMustBeSiteAdmin
+	}
 	err := validateCodeHostKindAndSecret(args.CodeHostKind, args.Secret)
 	if err != nil {
 		return nil, err
