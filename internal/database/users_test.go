@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -611,6 +612,12 @@ func TestUsers_Delete(t *testing.T) {
 				t.Fatal(err)
 			}
 
+			// Create and update a webhook
+			webhook, err := db.Webhooks(nil).Create(ctx, extsvc.KindGitHub, testURN, user.ID, types.NewUnencryptedSecret("testSecret"))
+			if err != nil {
+				t.Fatal(err)
+			}
+
 			if hard {
 				// Hard delete user.
 				if err := db.Users().HardDelete(ctx, user.ID); err != nil {
@@ -684,6 +691,13 @@ func TestUsers_Delete(t *testing.T) {
 				if len(eventLog.AnonymousUserID) == 0 {
 					t.Error("After hard anonymous user id should not be blank")
 				}
+				// Webhooks `created_by_user_id` and `updated_by_user_id` should be NULL
+				webhook, err = db.Webhooks(nil).GetByID(ctx, webhook.ID)
+				if err != nil {
+					t.Fatal(err)
+				}
+				assert.Equal(t, int32(0), webhook.CreatedByUserID)
+				assert.Equal(t, int32(0), webhook.UpdatedByUserID)
 			} else {
 				// Event logs are unchanged
 				if int32(eventLog.UserID) != user.ID {
@@ -692,6 +706,13 @@ func TestUsers_Delete(t *testing.T) {
 				if len(eventLog.AnonymousUserID) != 0 {
 					t.Error("After soft delete anonymous user id should be blank")
 				}
+				// Webhooks `created_by_user_id` and `updated_by_user_id` are unchanged
+				webhook, err = db.Webhooks(nil).GetByID(ctx, webhook.ID)
+				if err != nil {
+					t.Fatal(err)
+				}
+				assert.Equal(t, user.ID, webhook.CreatedByUserID)
+				assert.Equal(t, user.ID, webhook.UpdatedByUserID)
 			}
 		})
 	}

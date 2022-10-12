@@ -62,11 +62,10 @@ func (s *webhookStore) Create(ctx context.Context, kind, urn string, actorUID in
 	if secret != nil {
 		encryptedSecret, keyID, err = secret.Encrypt(ctx, s.key)
 		if err != nil || (encryptedSecret == "" && keyID == "") {
-			if err != nil {
-				return nil, errors.Wrap(err, "encrypting secret")
-			} else {
-				return nil, errors.New("empty secret or key provided")
-			}
+			return nil, errors.Wrap(err, "encrypting secret")
+		}
+		if encryptedSecret == "" && keyID == "" {
+			return nil, errors.New("empty secret and key provided")
 		}
 	}
 
@@ -220,11 +219,10 @@ func (s *webhookStore) Update(ctx context.Context, actorUID int32, newWebhook *t
 	if newWebhook.Secret != nil {
 		encryptedSecret, keyID, err = newWebhook.Secret.Encrypt(ctx, s.key)
 		if err != nil || (encryptedSecret == "" && keyID == "") {
-			if err != nil {
-				return nil, errors.Wrap(err, "encrypting secret")
-			} else {
-				return nil, errors.New("empty secret or key provided")
-			}
+			return nil, errors.Wrap(err, "encrypting secret")
+		}
+		if encryptedSecret == "" && keyID == "" {
+			return nil, errors.New("empty secret and key provided")
 		}
 	}
 

@@ -3549,9 +3549,9 @@ COMMENT ON COLUMN webhooks.code_host_urn IS 'URN of a code host. This column map
 
 COMMENT ON COLUMN webhooks.secret IS 'Secret used to decrypt webhook payload (if supported by the code host).';
 
-COMMENT ON COLUMN webhooks.created_by_user_id IS 'ID of a user, who created the webhook. If equals to zero, then the user does not exist (never existed or was deleted).';
+COMMENT ON COLUMN webhooks.created_by_user_id IS 'ID of a user, who created the webhook. If NULL, then the user does not exist (never existed or was deleted).';
 
-COMMENT ON COLUMN webhooks.updated_by_user_id IS 'ID of a user, who updated the webhook. If equals to zero, then the user does not exist (never existed or was deleted).';
+COMMENT ON COLUMN webhooks.updated_by_user_id IS 'ID of a user, who updated the webhook. If NULL, then the user does not exist (never existed or was deleted).';
 
 CREATE SEQUENCE webhooks_id_seq
     AS integer

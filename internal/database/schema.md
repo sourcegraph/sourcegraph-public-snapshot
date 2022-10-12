@@ -3087,11 +3087,11 @@ Webhooks registered in Sourcegraph instance.
 
 **code_host_urn**: URN of a code host. This column maps to external_service_id column of repo table.
 
-**created_by_user_id**: ID of a user, who created the webhook. If equals to zero, then the user does not exist (never existed or was deleted).
+**created_by_user_id**: ID of a user, who created the webhook. If NULL, then the user does not exist (never existed or was deleted).
 
 **secret**: Secret used to decrypt webhook payload (if supported by the code host).
 
-**updated_by_user_id**: ID of a user, who updated the webhook. If equals to zero, then the user does not exist (never existed or was deleted).
+**updated_by_user_id**: ID of a user, who updated the webhook. If NULL, then the user does not exist (never existed or was deleted).
 
 # View "public.batch_spec_workspace_execution_jobs_with_rank"
 

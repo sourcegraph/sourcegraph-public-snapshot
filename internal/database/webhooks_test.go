@@ -125,31 +125,6 @@ func TestWebhookCreate(t *testing.T) {
 		webhook1, err = webhooksStore.Update(ctx, UID2, webhook1)
 		assert.NoError(t, err)
 		assert.Equal(t, UID2, webhook1.UpdatedByUserID)
-
-		// Soft deleting user1 should reset created_by_user_id and keep the
-		// updated_by_user_id
-		err = usersStore.Delete(ctx, UID1)
-		assert.NoError(t, err)
-
-		webhook1, err = webhooksStore.GetByID(ctx, webhook1.ID)
-		assert.NoError(t, err)
-		assert.Equal(t, int32(0), webhook1.CreatedByUserID)
-		assert.Equal(t, UID2, webhook1.UpdatedByUserID)
-
-		// Hard deleting user2 should reset created_by_user_id in webhook2 and
-		// updated_by_user_id in webhook1
-		err = usersStore.Delete(ctx, UID2)
-		assert.NoError(t, err)
-
-		webhook1, err = webhooksStore.GetByID(ctx, webhook1.ID)
-		assert.NoError(t, err)
-		assert.Equal(t, int32(0), webhook1.CreatedByUserID)
-		assert.Equal(t, int32(0), webhook1.UpdatedByUserID)
-
-		webhook2, err = webhooksStore.GetByID(ctx, webhook2.ID)
-		assert.NoError(t, err)
-		assert.Equal(t, int32(0), webhook2.CreatedByUserID)
-		assert.Equal(t, int32(0), webhook2.UpdatedByUserID)
 	})
 	t.Run("with bad key", func(t *testing.T) {
 		store := db.Webhooks(&et.BadKey{Err: errors.New("some error occurred, sorry")})

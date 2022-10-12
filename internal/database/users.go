@@ -555,11 +555,6 @@ func (u *userStore) DeleteList(ctx context.Context, ids []int32) (err error) {
 	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE registry_extensions SET deleted_at=now() WHERE deleted_at IS NULL AND publisher_user_id IN (%s)", idsCond)); err != nil {
 		return err
 	}
-	if err := tx.Exec(ctx, sqlf.Sprintf(`UPDATE webhooks
-SET created_by_user_id = CASE WHEN webhooks.created_by_user_id IN (%s) THEN NULL ELSE webhooks.created_by_user_id END,
-updated_by_user_id = CASE WHEN webhooks.updated_by_user_id IN (%s) THEN NULL ELSE webhooks.updated_by_user_id END;`, idsCond, idsCond)); err != nil {
-		return err
-	}
 
 	logUserDeletionEvents(ctx, NewDBWith(u.logger, u), ids, SecurityEventNameAccountDeleted)
 
