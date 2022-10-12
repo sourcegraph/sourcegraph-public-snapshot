@@ -4,7 +4,18 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { ErrorLike } from '@sourcegraph/common'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
-import { Container, PageHeader, LoadingSpinner, Button, Link, Alert, H3, Input, Label } from '@sourcegraph/wildcard'
+import {
+    Container,
+    PageHeader,
+    LoadingSpinner,
+    Button,
+    Link,
+    Alert,
+    H3,
+    Input,
+    Label,
+    Text,
+} from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { PasswordInput } from '../../../auth/SignInSignUpCommon'
@@ -203,6 +214,11 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
                 <>
                     <hr className="my-4" />
                     <H3 className="mb-3">{props.user.builtinAuth ? 'Update ' : 'Create '}Password</H3>
+                    {props.user.builtinAuth ? (
+                        <Text>Change your account password.</Text>
+                    ) : (
+                        <Text>Create a password to enable sign-in using a username/password combination.</Text>
+                    )}
                     <Container>
                         <Form onSubmit={handleSubmit}>
                             {/* Include a username field as a hint for password managers to update the saved password. */}
