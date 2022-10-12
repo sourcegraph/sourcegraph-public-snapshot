@@ -7,8 +7,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute/client"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	streamapi "github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
+	itypes "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type StreamDecoderEvents struct {
@@ -31,7 +33,7 @@ type TabulationResult struct {
 
 type SelectRepoResult struct {
 	StreamDecoderEvents
-	Repos []string
+	Repos []itypes.MinimalRepo
 }
 
 // TabulationDecoder will tabulate the result counts per repository.
@@ -262,7 +264,7 @@ func ComputeTextDecoder() (client.ComputeTextExtraStreamDecoder, *ComputeTabulat
 
 func SelectRepoDecoder() (streamhttp.FrontendStreamDecoder, *SelectRepoResult) {
 	repoResult := &SelectRepoResult{
-		Repos: []string{},
+		Repos: []itypes.MinimalRepo{},
 	}
 
 	return streamhttp.FrontendStreamDecoder{
@@ -287,7 +289,7 @@ func SelectRepoDecoder() (streamhttp.FrontendStreamDecoder, *SelectRepoResult) {
 			for _, match := range matches {
 				switch match := match.(type) {
 				case *streamhttp.EventRepoMatch:
-					repoResult.Repos = append(repoResult.Repos, match.Repository)
+					repoResult.Repos = append(repoResult.Repos, itypes.MinimalRepo{ID: api.RepoID(match.RepositoryID), Name: api.RepoName(match.Repository)})
 				}
 			}
 		},

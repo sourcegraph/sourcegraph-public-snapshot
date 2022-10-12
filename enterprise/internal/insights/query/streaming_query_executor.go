@@ -17,6 +17,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+
+	itypes "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type StreamingQueryExecutor struct {
@@ -34,7 +36,7 @@ func NewStreamingExecutor(postgres database.DB, clock func() time.Time) *Streami
 	}
 }
 
-func (c *StreamingQueryExecutor) ExecuteRepoList(ctx context.Context, query string) ([]string, error) {
+func (c *StreamingQueryExecutor) ExecuteRepoList(ctx context.Context, query string) ([]itypes.MinimalRepo, error) {
 	modified, err := querybuilder.SelectRepoQuery(querybuilder.BasicQuery(query), querybuilder.CodeInsightsQueryDefaults(false))
 
 	decoder, selectRepoResult := streaming.SelectRepoDecoder()
