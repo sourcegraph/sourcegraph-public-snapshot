@@ -42,7 +42,8 @@ func TestTransformRecord(t *testing.T) {
 		ID:                  42,
 		Commit:              "deadbeef",
 		RepositoryName:      "linux",
-		FetchTags:           true,
+		ShallowClone:        true,
+		FetchTags:           false,
 		VirtualMachineFiles: nil,
 		DockerSteps: []apiclient.DockerStep{
 			{
@@ -121,7 +122,8 @@ func TestTransformRecordWithoutIndexer(t *testing.T) {
 		ID:                  42,
 		Commit:              "deadbeef",
 		RepositoryName:      "linux",
-		FetchTags:           true,
+		ShallowClone:        true,
+		FetchTags:           false,
 		VirtualMachineFiles: nil,
 		DockerSteps: []apiclient.DockerStep{
 			{
