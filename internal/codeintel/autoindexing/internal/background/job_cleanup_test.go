@@ -1,4 +1,4 @@
-package autoindexing
+package background
 
 import (
 	"context"
@@ -99,7 +99,7 @@ func testUnknownCommitsJanitor(t *testing.T, resolveRevisionFunc func(commit str
 
 	store := NewMockStore()
 	store.GetStaleSourcedCommitsFunc.SetDefaultReturn(testSourcedCommits, nil)
-	janitor := &Service{
+	janitor := &backgroundJob{
 		store:           store,
 		gitserverClient: gitserverClient,
 		clock:           glock.NewRealClock(),

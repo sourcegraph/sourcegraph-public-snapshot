@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/derision-test/glock"
 	"github.com/grafana/regexp"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
@@ -32,9 +31,6 @@ type Service struct {
 
 	logger     log.Logger
 	operations *operations
-
-	janitorMetrics *janitorMetrics
-	clock          glock.Clock
 }
 
 func newService(
@@ -53,10 +49,6 @@ func newService(
 
 		logger:     observationContext.Logger,
 		operations: newOperations(observationContext),
-
-		janitorMetrics: newJanitorMetrics(observationContext),
-
-		clock: glock.NewRealClock(),
 	}
 }
 

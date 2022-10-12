@@ -6088,6 +6088,9 @@ type MockBackgroundJob struct {
 	// NewIndexResetterFunc is an instance of a mock function object
 	// controlling the behavior of the method NewIndexResetter.
 	NewIndexResetterFunc *BackgroundJobNewIndexResetterFunc
+	// NewJanitorFunc is an instance of a mock function object controlling
+	// the behavior of the method NewJanitor.
+	NewJanitorFunc *BackgroundJobNewJanitorFunc
 	// NewOnDemandSchedulerFunc is an instance of a mock function object
 	// controlling the behavior of the method NewOnDemandScheduler.
 	NewOnDemandSchedulerFunc *BackgroundJobNewOnDemandSchedulerFunc
@@ -6151,6 +6154,11 @@ func NewMockBackgroundJob() *MockBackgroundJob {
 		},
 		NewIndexResetterFunc: &BackgroundJobNewIndexResetterFunc{
 			defaultHook: func(time.Duration) (r0 *dbworker.Resetter) {
+				return
+			},
+		},
+		NewJanitorFunc: &BackgroundJobNewJanitorFunc{
+			defaultHook: func(time.Duration, time.Duration, int, time.Duration) (r0 goroutine.BackgroundRoutine) {
 				return
 			},
 		},
@@ -6231,6 +6239,11 @@ func NewStrictMockBackgroundJob() *MockBackgroundJob {
 				panic("unexpected invocation of MockBackgroundJob.NewIndexResetter")
 			},
 		},
+		NewJanitorFunc: &BackgroundJobNewJanitorFunc{
+			defaultHook: func(time.Duration, time.Duration, int, time.Duration) goroutine.BackgroundRoutine {
+				panic("unexpected invocation of MockBackgroundJob.NewJanitor")
+			},
+		},
 		NewOnDemandSchedulerFunc: &BackgroundJobNewOnDemandSchedulerFunc{
 			defaultHook: func(time.Duration, int) goroutine.BackgroundRoutine {
 				panic("unexpected invocation of MockBackgroundJob.NewOnDemandScheduler")
@@ -6290,6 +6303,9 @@ func NewMockBackgroundJobFrom(i BackgroundJob) *MockBackgroundJob {
 		},
 		NewIndexResetterFunc: &BackgroundJobNewIndexResetterFunc{
 			defaultHook: i.NewIndexResetter,
+		},
+		NewJanitorFunc: &BackgroundJobNewJanitorFunc{
+			defaultHook: i.NewJanitor,
 		},
 		NewOnDemandSchedulerFunc: &BackgroundJobNewOnDemandSchedulerFunc{
 			defaultHook: i.NewOnDemandScheduler,
@@ -7291,6 +7307,117 @@ func (c BackgroundJobNewIndexResetterFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c BackgroundJobNewIndexResetterFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// BackgroundJobNewJanitorFunc describes the behavior when the NewJanitor
+// method of the parent MockBackgroundJob instance is invoked.
+type BackgroundJobNewJanitorFunc struct {
+	defaultHook func(time.Duration, time.Duration, int, time.Duration) goroutine.BackgroundRoutine
+	hooks       []func(time.Duration, time.Duration, int, time.Duration) goroutine.BackgroundRoutine
+	history     []BackgroundJobNewJanitorFuncCall
+	mutex       sync.Mutex
+}
+
+// NewJanitor delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockBackgroundJob) NewJanitor(v0 time.Duration, v1 time.Duration, v2 int, v3 time.Duration) goroutine.BackgroundRoutine {
+	r0 := m.NewJanitorFunc.nextHook()(v0, v1, v2, v3)
+	m.NewJanitorFunc.appendCall(BackgroundJobNewJanitorFuncCall{v0, v1, v2, v3, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the NewJanitor method of
+// the parent MockBackgroundJob instance is invoked and the hook queue is
+// empty.
+func (f *BackgroundJobNewJanitorFunc) SetDefaultHook(hook func(time.Duration, time.Duration, int, time.Duration) goroutine.BackgroundRoutine) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// NewJanitor method of the parent MockBackgroundJob instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *BackgroundJobNewJanitorFunc) PushHook(hook func(time.Duration, time.Duration, int, time.Duration) goroutine.BackgroundRoutine) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *BackgroundJobNewJanitorFunc) SetDefaultReturn(r0 goroutine.BackgroundRoutine) {
+	f.SetDefaultHook(func(time.Duration, time.Duration, int, time.Duration) goroutine.BackgroundRoutine {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *BackgroundJobNewJanitorFunc) PushReturn(r0 goroutine.BackgroundRoutine) {
+	f.PushHook(func(time.Duration, time.Duration, int, time.Duration) goroutine.BackgroundRoutine {
+		return r0
+	})
+}
+
+func (f *BackgroundJobNewJanitorFunc) nextHook() func(time.Duration, time.Duration, int, time.Duration) goroutine.BackgroundRoutine {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *BackgroundJobNewJanitorFunc) appendCall(r0 BackgroundJobNewJanitorFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of BackgroundJobNewJanitorFuncCall objects
+// describing the invocations of this function.
+func (f *BackgroundJobNewJanitorFunc) History() []BackgroundJobNewJanitorFuncCall {
+	f.mutex.Lock()
+	history := make([]BackgroundJobNewJanitorFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// BackgroundJobNewJanitorFuncCall is an object that describes an invocation
+// of method NewJanitor on an instance of MockBackgroundJob.
+type BackgroundJobNewJanitorFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 time.Duration
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 time.Duration
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 time.Duration
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 goroutine.BackgroundRoutine
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c BackgroundJobNewJanitorFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c BackgroundJobNewJanitorFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

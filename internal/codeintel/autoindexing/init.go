@@ -50,7 +50,18 @@ var initServiceMemo = memo.NewMemoizedConstructorWithArg(func(deps serviceDepend
 	symbolsClient := symbols.DefaultClient
 	repoUpdater := repoupdater.DefaultClient
 	inferenceSvc := inference.NewService(deps.db)
-	backgroundJobs := backgroundjobs.New(deps.db, store, deps.gitserver, deps.uploadSvc, policyMatcher, inferenceSvc, repoUpdater, scopedCtx)
+	backgroundJobs := backgroundjobs.New(
+		deps.db,
+		store,
+		deps.uploadSvc,
+		deps.depsSvc,
+		deps.policiesSvc,
+		inferenceSvc,
+		policyMatcher,
+		deps.gitserver,
+		repoUpdater,
+		scopedCtx,
+	)
 
 	return newService(store, deps.gitserver, symbolsClient, backgroundJobs, scopedCtx), nil
 })

@@ -2,9 +2,9 @@ package cleanup
 
 import "github.com/sourcegraph/sourcegraph/internal/goroutine"
 
-func NewJanitor(autoIndeingSvc AutoIndexingService) []goroutine.BackgroundRoutine {
+func NewJanitor(backgroundJobs AutoIndexingServiceBackgroundJobs) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
-		autoIndeingSvc.NewJanitor(
+		backgroundJobs.NewJanitor(
 			ConfigInst.Interval,
 			ConfigInst.MinimumTimeSinceLastCheck,
 			ConfigInst.CommitResolverBatchSize,

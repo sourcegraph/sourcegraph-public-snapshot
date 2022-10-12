@@ -1,4 +1,4 @@
-package background
+package backgroundjob
 
 import (
 	"time"
@@ -7,7 +7,7 @@ import (
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"

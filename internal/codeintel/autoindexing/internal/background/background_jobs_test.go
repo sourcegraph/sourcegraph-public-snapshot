@@ -65,6 +65,7 @@ func TestQueueIndexesExplicit(t *testing.T) {
 	mockGitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, rev string) (api.CommitID, error) {
 		return api.CommitID(fmt.Sprintf("c%d", repositoryID)), nil
 	})
+	mockDependenciesSvc := NewMockDependenciesService()
 	mockUploadSvc := NewMockUploadService()
 	inferenceService := NewMockInferenceService()
 
@@ -74,10 +75,12 @@ func TestQueueIndexesExplicit(t *testing.T) {
 	backgroundJob := New(
 		db,
 		mockDBStore,
-		mockGitserverClient,
 		mockUploadSvc,
-		nil, // policyMatcher
+		mockDependenciesSvc,
+		nil,
 		inferenceService,
+		nil, // policyMatcher
+		mockGitserverClient,
 		nil, // repoUpdater
 		&observation.TestContext,
 	)
@@ -189,16 +192,19 @@ func TestQueueIndexesInDatabase(t *testing.T) {
 	})
 	mockUploadSvc := NewMockUploadService()
 	inferenceService := NewMockInferenceService()
+	mockDependenciesSvc := NewMockDependenciesService()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	backgroundJob := New(
 		db,
 		mockDBStore,
-		mockGitserverClient,
 		mockUploadSvc,
-		nil, // policyMatcher
+		mockDependenciesSvc,
+		nil,
 		inferenceService,
+		nil, // policyMatcher
+		mockGitserverClient,
 		nil, // repoUpdater
 		&observation.TestContext,
 	)
@@ -315,6 +321,7 @@ func TestQueueIndexesInRepository(t *testing.T) {
 	mockGitserverClient.RawContentsFunc.SetDefaultReturn(yamlIndexConfiguration, nil)
 	mockUploadSvc := NewMockUploadService()
 	inferenceService := NewMockInferenceService()
+	mockDependenciesSvc := NewMockDependenciesService()
 
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
@@ -322,10 +329,12 @@ func TestQueueIndexesInRepository(t *testing.T) {
 	backgroundJob := New(
 		db,
 		mockDBStore,
-		mockGitserverClient,
 		mockUploadSvc,
-		nil, // policyMatcher
+		mockDependenciesSvc,
+		nil,
 		inferenceService,
+		nil, // policyMatcher
+		mockGitserverClient,
 		nil, // repoUpdater
 		&observation.TestContext,
 	)
@@ -412,6 +421,7 @@ func TestQueueIndexesInferred(t *testing.T) {
 			return nil, nil
 		}
 	})
+	mockDependenciesSvc := NewMockDependenciesService()
 	mockUploadSvc := NewMockUploadService()
 	mockUploadSvc.GetRepoNameFunc.SetDefaultHook(func(ctx context.Context, i int) (string, error) { return fmt.Sprintf("%d", i), nil })
 	inferenceService := NewMockInferenceService()
@@ -432,10 +442,12 @@ func TestQueueIndexesInferred(t *testing.T) {
 	backgroundJob := New(
 		db,
 		mockDBStore,
-		mockGitserverClient,
 		mockUploadSvc,
-		nil, // policyMatcher
+		mockDependenciesSvc,
+		nil,
 		inferenceService,
+		nil, // policyMatcher
+		mockGitserverClient,
 		nil, // repoUpdater
 		&observation.TestContext,
 	)
@@ -498,6 +510,7 @@ func TestQueueIndexesInferredTooLarge(t *testing.T) {
 	})
 	mockUploadSvc := NewMockUploadService()
 	inferenceService := NewMockInferenceService()
+	mockDependenciesSvc := NewMockDependenciesService()
 
 	maximumIndexJobsPerInferredConfiguration = 20
 
@@ -507,10 +520,12 @@ func TestQueueIndexesInferredTooLarge(t *testing.T) {
 	backgroundJob := New(
 		db,
 		mockDBStore,
-		mockGitserverClient,
 		mockUploadSvc,
-		nil, // policyMatcher
+		mockDependenciesSvc,
+		nil,
 		inferenceService,
+		nil, // policyMatcher
+		mockGitserverClient,
 		nil, // repoUpdater
 		&observation.TestContext,
 	)
@@ -545,7 +560,7 @@ func TestQueueIndexesForPackage(t *testing.T) {
 		}
 		return &protocol.RepoUpdateResponse{ID: 42}, nil
 	})
-
+	mockDependenciesSvc := NewMockDependenciesService()
 	mockUploadSvc := NewMockUploadService()
 	mockUploadSvc.GetRepoNameFunc.SetDefaultHook(func(ctx context.Context, i int) (string, error) { return fmt.Sprintf("%d", i), nil })
 
@@ -572,10 +587,12 @@ func TestQueueIndexesForPackage(t *testing.T) {
 	backgroundJob := New(
 		db,
 		mockDBStore,
-		mockGitserverClient,
 		mockUploadSvc,
-		nil, // policyMatcher
+		mockDependenciesSvc,
+		nil,
 		inferenceService,
+		nil, // policyMatcher
+		mockGitserverClient,
 		mockRepoUpdater, // repoUpdater
 		&observation.TestContext,
 	)

@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/derision-test/glock"
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/log"
@@ -12,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -33,6 +34,12 @@ type BackgroundJob interface {
 	NewIndexResetter(interval time.Duration) *dbworker.Resetter
 	NewOnDemandScheduler(interval time.Duration, batchSize int) goroutine.BackgroundRoutine
 	NewScheduler(interval time.Duration, repositoryProcessDelay time.Duration, repositoryBatchSize int, policyBatchSize int) goroutine.BackgroundRoutine
+	NewJanitor(
+		interval time.Duration,
+		minimumTimeSinceLastCheck time.Duration,
+		commitResolverBatchSize int,
+		commitResolverMaximumCommitLag time.Duration,
+	) goroutine.BackgroundRoutine
 
 	QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force, bypassLimit bool) (_ []types.Index, err error)
 	QueueIndexesForPackage(ctx context.Context, pkg precise.Package) (err error)
@@ -59,15 +66,17 @@ type backgroundJob struct {
 	store                   store.Store
 	repoStore               ReposStore
 	workerutilStore         dbworkerstore.Store
-	dependencySyncStore     dbworkerstore.Store
-	dependencyIndexingStore dbworkerstore.Store
-	externalServiceStore    ExternalServiceStore
 	gitserverRepoStore      GitserverRepoStore
+	dependencySyncStore     dbworkerstore.Store
+	externalServiceStore    ExternalServiceStore
+	dependencyIndexingStore dbworkerstore.Store
 
 	operations *operations
+	clock      glock.Clock
 	logger     log.Logger
 
 	metrics                *resetterMetrics
+	janitorMetrics         *janitorMetrics
 	depencencySyncMetrics  workerutil.WorkerMetrics
 	depencencyIndexMetrics workerutil.WorkerMetrics
 }
@@ -75,10 +84,12 @@ type backgroundJob struct {
 func New(
 	db database.DB,
 	store store.Store,
-	gitserverClient shared.GitserverClient,
 	uploadSvc shared.UploadService,
-	policyMatcher PolicyMatcher,
+	depsSvc DependenciesService,
+	policiesSvc PoliciesService,
 	inferenceSvc shared.InferenceService,
+	policyMatcher PolicyMatcher,
+	gitserverClient shared.GitserverClient,
 	repoUpdater shared.RepoUpdaterClient,
 	observationContext *observation.Context,
 ) BackgroundJob {
@@ -91,7 +102,9 @@ func New(
 
 	return &backgroundJob{
 		uploadSvc:    uploadSvc,
+		depsSvc:      depsSvc,
 		inferenceSvc: inferenceSvc,
+		policiesSvc:  policiesSvc,
 
 		policyMatcher:   policyMatcher,
 		repoUpdater:     repoUpdater,
@@ -106,9 +119,11 @@ func New(
 		dependencyIndexingStore: dependencyIndexingStore,
 
 		operations: newOperations(observationContext),
+		clock:      glock.NewRealClock(),
 		logger:     observationContext.Logger,
 
-		metrics:                newMetrics(observationContext),
+		metrics:                newResetterMetrics(observationContext),
+		janitorMetrics:         newJanitorMetrics(observationContext),
 		depencencySyncMetrics:  workerutil.NewMetrics(observationContext, "codeintel_dependency_index_processor"),
 		depencencyIndexMetrics: workerutil.NewMetrics(observationContext, "codeintel_dependency_index_queueing"),
 	}
