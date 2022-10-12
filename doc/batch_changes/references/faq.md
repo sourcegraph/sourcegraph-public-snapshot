@@ -59,7 +59,7 @@ Common language agnostic starting points:
 - `sed`, [`yq`](https://github.com/mikefarah/yq), `awk` are common utilities for changing text
 - [comby](https://comby.dev/docs/overview) is a language-aware structural code search and replace tool. It can match expressions and function blocks, and is great for more complex changes.
 
-### Why can't I run steps with different user IDs in the same batch change?
+### Why can't I run steps with different container user IDs in the same batch change?
 
 This is an artifact of [how Batch Changes executes batch specs](../explanations/how_src_executes_a_batch_spec.md). Consider this partial spec:
 
