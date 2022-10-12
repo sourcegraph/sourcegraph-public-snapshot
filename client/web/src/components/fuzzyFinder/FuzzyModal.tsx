@@ -198,7 +198,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
             const index = newNumber % queryResult.resultCount
             const nextIndex = index < 0 ? queryResult.resultCount + index : index
             setFocusIndex(nextIndex)
-            document.querySelector(`#fuzzy-modal-result-${nextIndex}`)?.scrollIntoView(false)
+            document.querySelector(`#fuzzy-modal-result-${nextIndex}`)?.scrollIntoView({ block: 'center' })
         },
         [focusIndex, setFocusIndex, queryResult]
     )
