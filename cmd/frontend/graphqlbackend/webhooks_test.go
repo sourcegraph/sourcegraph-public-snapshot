@@ -69,7 +69,6 @@ func TestCreateWebhook(t *testing.T) {
 			Variables: map[string]any{
 				"codeHostKind": "InvalidKind",
 				"codeHostURN":  "https://github.com",
-				//"secret": "mysupersecret", // TODO: secret should not be required
 			},
 		},
 		{
@@ -91,4 +90,23 @@ func TestCreateWebhook(t *testing.T) {
 		},
 	})
 
+	// validate error if not site admin
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: false}, nil)
+	RunTest(t, &Test{
+		Label:          "only site admin can create webhook",
+		Schema:         schema,
+		Query:          queryStr,
+		ExpectedResult: "null",
+		ExpectedErrors: []*errors.QueryError{
+			{
+				Message: "must be site admin",
+				Path:    []any{"createWebhook"},
+			},
+		},
+		Variables: map[string]any{
+			"codeHostKind": "GITHUB",
+			"codeHostURN":  "https://github.com",
+			"secret":       "mysupersecret",
+		},
+	})
 }
