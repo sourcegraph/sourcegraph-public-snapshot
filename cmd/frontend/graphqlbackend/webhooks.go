@@ -131,12 +131,12 @@ func (r *schemaResolver) CreateWebhook(ctx context.Context, args *struct {
 	if args.Secret != nil {
 		secretStr = *args.Secret
 	}
-	secret := types.NewUnencryptedSecret(secretStr) // TODO actually handle this
+	secret := types.NewUnencryptedSecret(secretStr)
 	webhook, err := r.db.Webhooks(keyring.Default().WebhookKey).Create(ctx, args.CodeHostKind, args.CodeHostURN, secret)
 	if err != nil {
 		return nil, err
 	}
-	return &webhookResolver{hook: webhook}, nil
+	return &webhookResolver{hook: webhook, db: r.db}, nil
 }
 
 func validateCodeHostKindAndSecret(codeHostKind string, secret *string) error {
