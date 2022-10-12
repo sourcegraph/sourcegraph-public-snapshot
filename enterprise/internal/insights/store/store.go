@@ -255,6 +255,10 @@ func (s *Store) Delete(ctx context.Context, seriesId string) (err error) {
 	if err != nil {
 		return errors.Wrap(err, "DeleteForSeriesSnapshots")
 	}
+	err = tx.Exec(ctx, sqlf.Sprintf(deleteRecordingTimes, seriesId))
+	if err != nil {
+		return errors.Wrap(err, "DeleteRecordingTimes")
+	}
 
 	return nil
 }
@@ -267,6 +271,10 @@ DELETE FROM series_points where series_id = %s;
 const deleteForSeriesSnapshots = `
 -- source: enterprise/internal/insights/store/store.go:Delete
 DELETE FROM series_points_snapshots where series_id = %s;
+`
+
+const deleteRecordingTimes = `
+DELETE FROM insight_series_recording_times WHERE series_id = %s;
 `
 
 // Note: the inner query could return duplicate points on its own if we merely did a SUM(value) over
