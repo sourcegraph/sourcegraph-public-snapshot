@@ -1,19 +1,17 @@
 import React from 'react'
 
 import classNames from 'classnames'
+import { AuthProvider } from 'src/jscontext'
 
 import { ErrorLike } from '@sourcegraph/common'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
-import { AuthProvider } from '../../../jscontext'
 
 import { ExternalAccount } from './ExternalAccount'
-import { ExternalAccountsByType, AuthProvidersByType } from './UserSettingsSecurityPage'
+import { AccountByServiceID, UserExternalAccount } from './UserSettingsSecurityPage'
 
 import styles from './ExternalAccountsSignIn.module.scss'
-
-type ServiceType = AuthProvider['serviceType']
 
 interface GitHubExternalData {
     name: string
@@ -40,18 +38,19 @@ export interface NormalizedMinAccount {
 }
 
 interface Props {
-    supported: ExternalServiceKind[]
-    accounts: ExternalAccountsByType
-    authProviders: AuthProvidersByType
+    accounts: AccountByServiceID
+    authProviders: AuthProvider[]
     onDidRemove: (id: string, name: string) => void
     onDidError: (error: ErrorLike) => void
 }
 
-const getNormalizedAccount = (accounts: ExternalAccountsByType, kind: ExternalServiceKind): NormalizedMinAccount => {
+const getNormalizedAccount = (
+    accounts: Partial<Record<string, UserExternalAccount>>,
+    authProvider: AuthProvider
+): NormalizedMinAccount => {
     // kind and type match except for the casing
-    const type = kind.toLocaleLowerCase() as ServiceType
-
-    const account = accounts[type]
+    const kind = authProvider.serviceType.toLocaleUpperCase() as ExternalServiceKind
+    const account = accounts[authProvider.serviceID]
     const accountExternalData = account?.accountData
 
     // get external service icon and name as they will match external account
@@ -64,8 +63,8 @@ const getNormalizedAccount = (accounts: ExternalAccountsByType, kind: ExternalSe
 
     // if external account exists - add user specific data to normalizedAccount
     if (account && accountExternalData) {
-        switch (type) {
-            case 'github':
+        switch (kind) {
+            case 'GITHUB':
                 {
                     const githubExternalData = accountExternalData as GitHubExternalData
                     normalizedAccount = {
@@ -80,7 +79,7 @@ const getNormalizedAccount = (accounts: ExternalAccountsByType, kind: ExternalSe
                     }
                 }
                 break
-            case 'gitlab':
+            case 'GITLAB':
                 {
                     const gitlabExternalData = accountExternalData as GitLabExternalData
                     normalizedAccount = {
@@ -102,28 +101,27 @@ const getNormalizedAccount = (accounts: ExternalAccountsByType, kind: ExternalSe
 }
 
 export const ExternalAccountsSignIn: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    supported,
     accounts,
     authProviders,
     onDidRemove,
     onDidError,
 }) => (
     <>
-        {accounts && (
+        {authProviders && (
             <ul className="list-group">
-                {supported.map(kind => {
-                    const type = kind.toLocaleLowerCase() as ServiceType
-                    const authProvider = authProviders[type]
-
+                {authProviders.map(authProvider => {
                     // if auth provider for this account doesn't exist -
                     // don't display the account as an option
-                    if (authProvider) {
-                        const account = getNormalizedAccount(accounts, kind)
+                    if (authProvider && authProvider.serviceType !== 'builtin') {
+                        const normAccount = getNormalizedAccount(accounts, authProvider)
 
                         return (
-                            <li key={kind} className={classNames('list-group-item', styles.externalAccount)}>
+                            <li
+                                key={authProvider.serviceID}
+                                className={classNames('list-group-item', styles.externalAccount)}
+                            >
                                 <ExternalAccount
-                                    account={account}
+                                    account={normAccount}
                                     authProvider={authProvider}
                                     onDidRemove={onDidRemove}
                                     onDidError={onDidError}

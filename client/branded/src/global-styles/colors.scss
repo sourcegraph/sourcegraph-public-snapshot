@@ -102,6 +102,7 @@ $theme-colors: (
     --merged-2: #c6b6f6;
     --merged-3: #6b47d6;
     --light-text: var(--white);
+    --light-text-disabled: rgba(255, 255, 255, 0.6);
     --dark-text: var(--gray-08);
     --line-number-color: var(--gray-06);
     --header-icon-color: var(--gray-05);

@@ -507,10 +507,10 @@ func (s *Server) Handler() http.Handler {
 
 // Janitor does clean up tasks over s.ReposDir and is expected to run in a
 // background goroutine.
-func (s *Server) Janitor(interval time.Duration) {
+func (s *Server) Janitor(ctx context.Context, interval time.Duration) {
 	for {
 		gitserverAddrs := currentGitserverAddresses()
-		s.cleanupRepos(gitserverAddrs)
+		s.cleanupRepos(actor.WithInternalActor(ctx), gitserverAddrs)
 		time.Sleep(interval)
 	}
 }
