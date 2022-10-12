@@ -546,6 +546,11 @@
           "description": "Use an in-memory strategy of loading Code Insights. Should only be used for benchmarking on large instances, not for customer use currently.",
           "type": "boolean",
           "default": false
+        },
+        "hideSourcegraphOperatorLogin": {
+          "description": "Enables hiding Sourcegraph operator auth provider on login page.",
+          "type": "boolean",
+          "default": false
         }
       },
       "examples": [
@@ -1705,6 +1710,9 @@
           "$ref": "#/definitions/EncryptionKey"
         },
         "webhookLogKey": {
+          "$ref": "#/definitions/EncryptionKey"
+        },
+        "webhookKey": {
           "$ref": "#/definitions/EncryptionKey"
         }
       }

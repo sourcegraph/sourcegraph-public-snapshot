@@ -98,6 +98,9 @@ Available commands in `sg.config.yaml`:
 * frontend: Enterprise frontend
 * github-proxy
 * gitserver
+* gitserver-0
+* gitserver-1
+* gitserver-template
 * grafana
 * jaeger
 * loki
@@ -977,6 +980,8 @@ Flags:
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--grafana.creds="<value>"`: Credentials for the Grafana instance to reload (default: admin:admin)
 * `--grafana.dir="<value>"`: Output directory for generated Grafana assets (default: $SG_ROOT/docker-images/grafana/config/provisioning/dashboards/sourcegraph/)
+* `--grafana.folder="<value>"`: Folder on Grafana instance to put generated dashboards in
+* `--grafana.headers="<value>"`: Additional headers for HTTP requests to the Grafana instance
 * `--grafana.url="<value>"`: Address for the Grafana instance to reload (default: http://127.0.0.1:3370)
 * `--inject-label-matcher="<value>"`: Labels to inject into all selectors in Prometheus expressions: observable queries, dashboard template variables, etc.
 * `--no-prune`: Toggles pruning of dangling generated assets through simple heuristic - should be disabled during builds.
@@ -1096,19 +1101,29 @@ Flags:
 List, search, and open Sourcegraph RFCs.
 
 ```sh
-# List all RFCs
+# List all Public RFCs
 $ sg rfc list
 
-# Search for an RFC
+# List all Private RFCs
+$ sg rfc --private list
+
+# Search for a Public RFC
 $ sg rfc search "search terms"
 
-# Open a specific RFC
+# Search for a Private RFC
+$ sg rfc --private search "search terms"
+
+# Open a specific Public RFC
 $ sg rfc open 420
+
+# Open a specific private RFC
+$ sg rfc --private open 420
 ```
 
 Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--private`: perform the rfc action on the private RFC drive
 
 ## sg adr
 

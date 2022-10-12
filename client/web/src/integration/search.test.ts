@@ -334,9 +334,11 @@ describe('Search', () => {
     describe('Search button', () => {
         test('Clicking search button executes search', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
+            const editor = await createEditorAPI(driver, queryInputSelector)
+            await editor.focus()
+            await driver.page.keyboard.type(' hello')
+
             await driver.page.waitForSelector('.test-search-button', { visible: true })
-            // Note: Delay added because this test has been intermittently failing without it. Monaco search bar may drop events if it gets too many too fast.
-            await driver.page.keyboard.type(' hello', { delay: 500 })
             await driver.page.click('.test-search-button')
             await driver.assertWindowLocation('/search?q=context:global+test+hello&patternType=regexp')
         })
@@ -380,7 +382,7 @@ describe('Search', () => {
             await driver.page.waitForSelector('.test-search-result', { visible: true })
 
             const results = await driver.page.evaluate(() =>
-                [...document.querySelectorAll('.test-search-result-label')].map(label =>
+                [...document.querySelectorAll('[data-testid="result-container-header"]')].map(label =>
                     (label.textContent || '').trim()
                 )
             )
@@ -482,7 +484,7 @@ describe('Search', () => {
             testContext.overrideSearchStreamEvents(symbolSearchStreamEvents)
 
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
-            await driver.page.waitForSelector('.test-file-match-children-item', {
+            await driver.page.waitForSelector('[data-testid="symbol-search-result"]', {
                 visible: true,
             })
 

@@ -11,8 +11,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	sharedIndexes "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
-	codeintelgitserver "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
-	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	codeintelgitserver "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/gitserver"
+	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	sharedUploads "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -99,4 +99,8 @@ type AutoIndexingService interface {
 	UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (int, error)
 
 	DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error)
+}
+
+type RepoUpdaterClient interface {
+	EnqueueRepoUpdate(ctx context.Context, repo api.RepoName) (*protocol.RepoUpdateResponse, error)
 }

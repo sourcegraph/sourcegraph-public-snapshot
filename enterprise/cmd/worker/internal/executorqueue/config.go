@@ -5,8 +5,8 @@ import (
 	"os"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/memo"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/memo"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 

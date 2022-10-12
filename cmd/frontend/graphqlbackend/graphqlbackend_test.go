@@ -25,6 +25,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -449,7 +450,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 				{
 					Path:          []any{"affiliatedRepositories"},
 					Message:       "must be authenticated as user with id 1",
-					ResolverError: &backend.InsufficientAuthorizationError{Message: fmt.Sprintf("must be authenticated as user with id %d", 1)},
+					ResolverError: &auth.InsufficientAuthorizationError{Message: fmt.Sprintf("must be authenticated as user with id %d", 1)},
 				},
 			},
 		},

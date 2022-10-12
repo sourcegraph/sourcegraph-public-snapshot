@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -306,7 +305,7 @@ func (s *userExternalAccountsStore) TouchExpired(ctx context.Context, ids ...int
 	_, err := s.Handle().ExecContext(ctx, fmt.Sprintf(`
 UPDATE user_external_accounts
 SET expired_at = now()
-WHERE id IN (%s) 
+WHERE id IN (%s)
 `, strings.Join(idStrings, ", ")))
 	return err
 }
@@ -508,9 +507,4 @@ func (s *userExternalAccountsStore) listSQL(opt ExternalAccountsListOptions) (co
 	}
 
 	return conds
-}
-
-func rawMessagePtr(s string) *json.RawMessage {
-	msg := json.RawMessage(s)
-	return &msg
 }

@@ -1,6 +1,8 @@
 package githuboauth
 
 import (
+	"fmt"
+
 	"github.com/dghubble/gologin"
 	"github.com/sourcegraph/log"
 
@@ -57,6 +59,16 @@ func parseConfig(logger log.Logger, cfg conftypes.SiteConfigQuerier, db database
 		provider, providerProblems := parseProvider(logger, pr.Github, db, pr)
 		problems = append(problems, conf.NewSiteProblems(providerProblems...)...)
 		if provider != nil {
+			alreadyExists := false
+			for _, p := range ps {
+				if p.CachedInfo().ServiceID == provider.ServiceID {
+					problems = append(problems, conf.NewSiteProblems(fmt.Sprintf(`Cannot have more than one auth provider with url %q, only the first one will be used`, provider.ServiceID))...)
+					alreadyExists = true
+				}
+			}
+			if alreadyExists {
+				continue
+			}
 			ps = append(ps, Provider{
 				GitHubAuthProvider: pr.Github,
 				Provider:           provider,

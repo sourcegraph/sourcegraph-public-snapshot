@@ -393,18 +393,30 @@ func (p Parameters) FileContainsContent() (include []string) {
 	return include
 }
 
-func (p Parameters) RepoContainsCommitAfter() (value string) {
-	nodes := toNodes(p)
+type RepoHasCommitAfterArgs struct {
+	TimeRef string
+	Negated bool
+}
 
+func (p Parameters) RepoContainsCommitAfter() (res *RepoHasCommitAfterArgs) {
 	// Look for values of repohascommitafter:
-	value = p.FindValue(FieldRepoHasCommitAfter)
-
-	// Look for values of repo:contains.commit.after()
-	VisitTypedPredicate(nodes, func(pred *RepoContainsCommitAfterPredicate) {
-		value = pred.TimeRef
+	p.FindParameter(FieldRepoHasCommitAfter, func(value string, negated bool, annotation Annotation) {
+		res = &RepoHasCommitAfterArgs{
+			TimeRef: value,
+			Negated: negated,
+		}
 	})
 
-	return value
+	// Look for values of repo:contains.commit.after()
+	nodes := toNodes(p)
+	VisitTypedPredicate(nodes, func(pred *RepoContainsCommitAfterPredicate) {
+		res = &RepoHasCommitAfterArgs{
+			TimeRef: pred.TimeRef,
+			Negated: pred.Negated,
+		}
+	})
+
+	return res
 }
 
 type RepoKVPFilter struct {

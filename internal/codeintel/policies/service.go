@@ -7,37 +7,13 @@ import (
 
 	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/internal/store"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-var _ service = (*Service)(nil)
-
-type service interface {
-	// Configurations
-	GetConfigurationPolicies(ctx context.Context, opts types.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error)
-	GetConfigurationPolicyByID(ctx context.Context, id int) (_ types.ConfigurationPolicy, _ bool, err error)
-	CreateConfigurationPolicy(ctx context.Context, configurationPolicy types.ConfigurationPolicy) (types.ConfigurationPolicy, error)
-	UpdateConfigurationPolicy(ctx context.Context, policy types.ConfigurationPolicy) (err error)
-	DeleteConfigurationPolicyByID(ctx context.Context, id int) (err error)
-
-	// Retention Policy
-	GetRetentionPolicyOverview(ctx context.Context, upload types.Upload, matchesOnly bool, first int, after int64, query string, now time.Time) (matches []types.RetentionPolicyMatchCandidate, totalCount int, err error)
-
-	// Repository
-	GetPreviewRepositoryFilter(ctx context.Context, patterns []string, limit, offset int) (_ []int, totalCount int, repositoryMatchLimit *int, _ error)
-	GetPreviewGitObjectFilter(ctx context.Context, repositoryID int, gitObjectType types.GitObjectType, pattern string) (map[string][]string, error)
-	SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context, batchSize int) (configurationPolicies []types.ConfigurationPolicy, err error)
-	UpdateReposMatchingPatterns(ctx context.Context, patterns []string, policyID int, repositoryMatchLimit *int) (err error)
-
-	// GetUnsafeDB returns the underlying database handle. This is used by the
-	// resolvers that have the old convention of using the database handle directly.
-	GetUnsafeDB() database.DB
-}
 
 type Service struct {
 	store          store.Store
@@ -242,25 +218,6 @@ func (s *Service) GetUnsafeDB() database.DB {
 	return s.store.GetUnsafeDB()
 }
 
-func (s *Service) SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context, batchSize int) (configurationPolicies []types.ConfigurationPolicy, err error) {
-	ctx, _, endObservation := s.operations.selectPoliciesForRepositoryMembershipUpdate.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	configurationPolicies, err = s.store.SelectPoliciesForRepositoryMembershipUpdate(ctx, batchSize)
-	if err != nil {
-		return nil, err
-	}
-
-	return configurationPolicies, nil
-}
-
-func (s *Service) UpdateReposMatchingPatterns(ctx context.Context, patterns []string, policyID int, repositoryMatchLimit *int) (err error) {
-	ctx, _, endObservation := s.operations.updateReposMatchingPatterns.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	return s.store.UpdateReposMatchingPatterns(ctx, patterns, policyID, repositoryMatchLimit)
-}
-
 func (s *Service) getCommitsVisibleToUpload(ctx context.Context, upload types.Upload) (commits []string, err error) {
 	var token *string
 	for first := true; first || token != nil; first = false {
@@ -347,10 +304,12 @@ func policyByID(policies []types.ConfigurationPolicy, id int) *types.Configurati
 	if id == -1 {
 		return nil
 	}
+
 	for _, policy := range policies {
 		if policy.ID == id {
 			return &policy
 		}
 	}
+
 	return nil
 }
