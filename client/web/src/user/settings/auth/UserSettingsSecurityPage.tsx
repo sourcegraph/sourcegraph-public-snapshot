@@ -78,7 +78,7 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
         newPasswordConfirmationField = element
     }
 
-    // auth providers by service type
+    // auth providers by service ID
     const accountByServiceID = accounts.fetched?.reduce((accumulator: AccountByServiceID, account) => {
         accumulator[account.serviceID] = account
         return accumulator
@@ -198,79 +198,86 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
                 </Container>
             )}
 
-            <hr className="my-4" />
-            <H3 className="mb-3">Password</H3>
-            <Container>
-                <Form onSubmit={handleSubmit}>
-                    {/* Include a username field as a hint for password managers to update the saved password. */}
-                    <Input
-                        value={props.user.username}
-                        name="username"
-                        autoComplete="username"
-                        readOnly={true}
-                        hidden={true}
-                    />
-                    {props.user.builtinAuth && (
-                        <div className="form-group">
-                            <Label htmlFor="oldPassword">Old password</Label>
-                            <PasswordInput
-                                value={oldPassword}
-                                onChange={onOldPasswordFieldChange}
-                                disabled={loading}
-                                id="oldPassword"
-                                name="oldPassword"
-                                aria-label="old password"
-                                placeholder=" "
-                                autoComplete="current-password"
+            {/* Only display password creation/update if builtin auth is enabled */}
+            {props.context.authProviders.some(provider => provider.isBuiltin) && (
+                <>
+                    <hr className="my-4" />
+                    <H3 className="mb-3">{props.user.builtinAuth ? 'Update ' : 'Create '}Password</H3>
+                    <Container>
+                        <Form onSubmit={handleSubmit}>
+                            {/* Include a username field as a hint for password managers to update the saved password. */}
+                            <Input
+                                value={props.user.username}
+                                name="username"
+                                autoComplete="username"
+                                readOnly={true}
+                                hidden={true}
                             />
-                        </div>
-                    )}
+                            {props.user.builtinAuth && (
+                                <div className="form-group">
+                                    <Label htmlFor="oldPassword">Old password</Label>
+                                    <PasswordInput
+                                        value={oldPassword}
+                                        onChange={onOldPasswordFieldChange}
+                                        disabled={loading}
+                                        id="oldPassword"
+                                        name="oldPassword"
+                                        aria-label="old password"
+                                        placeholder=" "
+                                        autoComplete="current-password"
+                                    />
+                                </div>
+                            )}
 
-                    <div className="form-group">
-                        <Label htmlFor="newPassword">New password</Label>
-                        <PasswordInput
-                            value={newPassword}
-                            onChange={onNewPasswordFieldChange}
-                            disabled={loading}
-                            id="newPassword"
-                            name="newPassword"
-                            aria-label="new password"
-                            minLength={window.context.authMinPasswordLength}
-                            placeholder=" "
-                            autoComplete="new-password"
-                        />
-                        <small className="form-help text-muted">{getPasswordRequirements(window.context)}</small>
-                    </div>
-                    <div className="form-group">
-                        <Label htmlFor="newPasswordConfirmation">Confirm new password</Label>
-                        <PasswordInput
-                            value={newPasswordConfirmation}
-                            onChange={onNewPasswordConfirmationFieldChange}
-                            disabled={loading}
-                            id="newPasswordConfirmation"
-                            name="newPasswordConfirmation"
-                            aria-label="new password confirmation"
-                            placeholder=" "
-                            minLength={window.context.authMinPasswordLength}
-                            inputRef={setNewPasswordConfirmationField}
-                            autoComplete="new-password"
-                        />
-                    </div>
-                    <Button
-                        className="user-settings-password-page__button"
-                        type="submit"
-                        disabled={loading}
-                        variant="primary"
-                    >
-                        {loading && (
-                            <>
-                                <LoadingSpinner />{' '}
-                            </>
-                        )}
-                        {props.user.builtinAuth ? 'Update password' : 'Set password'}
-                    </Button>
-                </Form>
-            </Container>
+                            <div className="form-group">
+                                <Label htmlFor="newPassword">New password</Label>
+                                <PasswordInput
+                                    value={newPassword}
+                                    onChange={onNewPasswordFieldChange}
+                                    disabled={loading}
+                                    id="newPassword"
+                                    name="newPassword"
+                                    aria-label="new password"
+                                    minLength={window.context.authMinPasswordLength}
+                                    placeholder=" "
+                                    autoComplete="new-password"
+                                />
+                                <small className="form-help text-muted">
+                                    {getPasswordRequirements(window.context)}
+                                </small>
+                            </div>
+                            <div className="form-group">
+                                <Label htmlFor="newPasswordConfirmation">Confirm new password</Label>
+                                <PasswordInput
+                                    value={newPasswordConfirmation}
+                                    onChange={onNewPasswordConfirmationFieldChange}
+                                    disabled={loading}
+                                    id="newPasswordConfirmation"
+                                    name="newPasswordConfirmation"
+                                    aria-label="new password confirmation"
+                                    placeholder=" "
+                                    minLength={window.context.authMinPasswordLength}
+                                    inputRef={setNewPasswordConfirmationField}
+                                    autoComplete="new-password"
+                                />
+                            </div>
+                            <Button
+                                className="user-settings-password-page__button"
+                                type="submit"
+                                disabled={loading}
+                                variant="primary"
+                            >
+                                {loading && (
+                                    <>
+                                        <LoadingSpinner />{' '}
+                                    </>
+                                )}
+                                {props.user.builtinAuth ? 'Update password' : 'Create password'}
+                            </Button>
+                        </Form>
+                    </Container>
+                </>
+            )}
         </>
     )
 }
