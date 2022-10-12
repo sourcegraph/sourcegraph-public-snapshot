@@ -44,7 +44,6 @@ export const FuzzyFinderContainer: React.FunctionComponent<FuzzyFinderContainerP
 
     const openFuzzyFinder = useCallback(
         (tab: FuzzyTabKey): void => {
-            console.log({ repositoryName: repositoryName.current, isOnlyFiles: tabsRef.current.isOnlyFilesEnabled() })
             if (tabsRef.current.isOnlyFilesEnabled() && !repositoryName.current) {
                 return // Legacy mode: only activate inside a repository
             }
