@@ -5,8 +5,8 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -89,7 +89,7 @@ func AccessTokenAuthMiddleware(db database.DB, next http.Handler) http.Handler {
 			} else {
 				// 🚨 SECURITY: Confirm that the sudo token's subject is still a site admin, to
 				// prevent users from retaining site admin privileges after being demoted.
-				if err := backend.CheckUserIsSiteAdmin(r.Context(), db, subjectUserID); err != nil {
+				if err := auth.CheckUserIsSiteAdmin(r.Context(), db, subjectUserID); err != nil {
 					log15.Error("Sudo access token's subject is not a site admin.", "subjectUserID", subjectUserID, "err", err)
 					http.Error(w, "The subject user of a sudo access token must be a site admin.", http.StatusForbidden)
 					return

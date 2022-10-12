@@ -3,7 +3,9 @@
 Sourcegraph can sync repositories from code hosts and other similar services. We designate code hosts between Tier 1 and Tier 2 based on Sourcegraph's capabilities when used with those code hosts. 
 
 ## Tier 1 code hosts
+
 Tier 1 code hosts are our highest level of support for code hosts. When leveraging a Tier 1 code host, you can expect:
+
 - Scalable repository syncing - Sourcegraph is able to reliably sync repositories from this code host up to 100k repositories. (SLA TBD)
 - Scalable permissions syncing - Sourcegraph is able to reliably sync permissions from this code host for up to 10k users. (SLA TBD)
 - Authentication - Sourcegraph is able to leverage authentication from this code host (i.e. Login with GitHub). 
@@ -108,7 +110,9 @@ Tier 1 code hosts are our highest level of support for code hosts. When leveragi
 </table>
 
 #### Status definitions
+
 An code host status is:
+
 - 🟢 _Generally Available:_ Available as a normal product feature up to 100k repositories.
 - 🟡 _Partially available:_ Available, but may be limited in some significant ways (either missing or buggy functionality). If you plan to leverage this, please contact your Customer Engineer. 
 - 🔴 _Not available:_ This functionality is not available within Sourcegraph
@@ -145,11 +149,13 @@ We recognize there are other code hosts including CVS, Azure Dev Ops, SVN, and m
 
 
 ## Rate limits
+
 Sourcegraph makes our best effort to use the least amount of calls to your code host. However, it is possible for Sourcegraph 
 to encounter rate limits in some scenarios. Please see the specific code host documentation for more information and how to 
 mitigate these issues. 
 
 ### Rate limit syncing
+
 Sourcegraph has a mechanism of syncing code host rate limits. When Sourcegraph is started, code host configurations of all
 external services are checked for rate limits and these rate limits are stored and used.
 
@@ -157,6 +163,7 @@ When any of code host configurations is edited, rate limits are synchronized and
 knows how many requests to which code host can be sent at a given point of time.
 
 ### Current rate limit settings
+
 Current rate limit settings can be viewed by site admins on the following page: `Site Admin -> Instrumentation -> Repo Updater -> Rate Limiter State`.
 This page includes rate limit settings for all external services configured in Sourcegraph. 
 
@@ -173,6 +180,7 @@ maximum allowed requests per second and whether the limiter is infinite (there i
 ```
 
 ### Increasing code host rate limits
+
 Customers should avoid creating additional **free** accounts for the purpose of circumventing code-host rate limits. 
 Some code hosts have higher rate limits for **paid** accounts and allow the creation of additional **paid** accounts which 
 Sourcegraph can leverage.

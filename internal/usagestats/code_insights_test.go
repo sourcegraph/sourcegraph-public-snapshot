@@ -127,6 +127,7 @@ func TestCodeInsightsUsageStatistics(t *testing.T) {
 	want.WeeklyGroupResultsAggregationModeClicked = []types.GroupResultPing{}
 	want.WeeklyGroupResultsAggregationModeDisabledHover = []types.GroupResultPing{}
 	want.WeeklyGroupResultsSearches = []types.GroupResultSearchPing{}
+	want.WeeklySeriesBackfillTime = []types.InsightsBackfillTimePing{}
 
 	if diff := cmp.Diff(want, have); diff != "" {
 		t.Fatal(diff)

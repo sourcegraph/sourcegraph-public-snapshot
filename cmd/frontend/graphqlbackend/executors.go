@@ -5,11 +5,16 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	gql "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 )
+
+type ExecutorResolver interface {
+	ExecutorResolver() executor.Resolver
+}
 
 func (r *schemaResolver) Executors(ctx context.Context, args *struct {
 	Query  *string
@@ -18,11 +23,11 @@ func (r *schemaResolver) Executors(ctx context.Context, args *struct {
 	After  *string
 }) (*gql.ExecutorPaginatedResolver, error) {
 	// 🚨 SECURITY: Only site-admins may view executor details
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	executors, err := r.CodeIntelResolver.ExecutorResolver().Executors(ctx, args.Query, args.Active, args.First, args.After)
+	executors, err := r.ExecutorResolver.ExecutorResolver().Executors(ctx, args.Query, args.Active, args.First, args.After)
 	if err != nil {
 		return nil, err
 	}
@@ -35,11 +40,11 @@ func (r *schemaResolver) AreExecutorsConfigured() bool {
 }
 
 func executorByID(ctx context.Context, db database.DB, gqlID graphql.ID, r *schemaResolver) (*gql.ExecutorResolver, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
 		return nil, err
 	}
 
-	executor, err := r.CodeIntelResolver.ExecutorResolver().Executor(ctx, gqlID)
+	executor, err := r.ExecutorResolver.ExecutorResolver().Executor(ctx, gqlID)
 	if err != nil {
 		return nil, err
 	}

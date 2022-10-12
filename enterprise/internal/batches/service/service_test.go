@@ -14,7 +14,6 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	stesting "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/testing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -22,11 +21,12 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	extsvcauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
@@ -538,7 +538,7 @@ func TestService(t *testing.T) {
 			}
 
 			_, err := svc.CreateBatchSpec(userCtx, opts)
-			if have, want := err, backend.ErrNotAnOrgMember; have != want {
+			if have, want := err, auth.ErrNotAnOrgMember; have != want {
 				t.Fatalf("expected %s error but got %s", want, have)
 			}
 
@@ -774,7 +774,7 @@ index e5af166..d44c3fc 100644
 			opts := MoveBatchChangeOpts{BatchChangeID: batchChange.ID, NewNamespaceOrgID: orgID}
 
 			_, err := svc.MoveBatchChange(userCtx, opts)
-			if have, want := err, backend.ErrNotAnOrgMember; !errors.Is(have, want) {
+			if have, want := err, auth.ErrNotAnOrgMember; !errors.Is(have, want) {
 				t.Fatalf("expected %s error but got %s", want, have)
 			}
 		})
@@ -904,7 +904,7 @@ index e5af166..d44c3fc 100644
 				ctx,
 				"https://github.com/",
 				extsvc.TypeGitHub,
-				&auth.OAuthBearerToken{Token: "test123"},
+				&extsvcauth.OAuthBearerToken{Token: "test123"},
 			); err != nil {
 				t.Fatal(err)
 			}
@@ -919,7 +919,7 @@ index e5af166..d44c3fc 100644
 				ctx,
 				"https://github.com/",
 				extsvc.TypeGitHub,
-				&auth.OAuthBearerToken{Token: "test123"},
+				&extsvcauth.OAuthBearerToken{Token: "test123"},
 			); err == nil {
 				t.Fatal("unexpected nil-error returned from ValidateAuthenticator")
 			}
@@ -1638,7 +1638,7 @@ changesetTemplate:
 			assertNoChangesetSpecs(t, spec.ID)
 		})
 
-		t.Run("mount error", func(t *testing.T) {
+		t.Run("has mount", func(t *testing.T) {
 			spec := createBatchSpecWithWorkspacesAndChangesetSpecs(t)
 
 			_, err := svc.ReplaceBatchSpecInput(adminCtx, ReplaceBatchSpecInputOpts{
@@ -1660,7 +1660,7 @@ changesetTemplate:
     message: Test
 `,
 			})
-			assert.Equal(t, "mounts are not allowed for server-side processing", err.Error())
+			assert.NoError(t, err)
 		})
 	})
 
@@ -1770,7 +1770,7 @@ changesetTemplate:
 			}
 		})
 
-		t.Run("mount error", func(t *testing.T) {
+		t.Run("has mount", func(t *testing.T) {
 			_, err := svc.CreateBatchSpecFromRaw(adminCtx, CreateBatchSpecFromRawOpts{
 				RawSpec: `
 name: test-spec
@@ -1790,7 +1790,7 @@ changesetTemplate:
 `,
 				NamespaceUserID: admin.ID,
 			})
-			assert.Equal(t, "mounts are not allowed for server-side processing", err.Error())
+			assert.NoError(t, err)
 		})
 	})
 
@@ -1836,7 +1836,7 @@ changesetTemplate:
 			assert.Equal(t, store.ErrNoResults, err)
 		})
 
-		t.Run("mount error", func(t *testing.T) {
+		t.Run("has mount", func(t *testing.T) {
 			_, err := svc.UpsertBatchSpecInput(adminCtx, UpsertBatchSpecInputOpts{
 				RawSpec: `
 name: test-spec
@@ -1856,7 +1856,7 @@ changesetTemplate:
 `,
 				NamespaceUserID: admin.ID,
 			})
-			assert.Equal(t, "mounts are not allowed for server-side processing", err.Error())
+			assert.NoError(t, err)
 		})
 	})
 
@@ -3004,7 +3004,7 @@ func assertAuthError(t *testing.T, err error) {
 		t.Fatalf("expected error. got none")
 	}
 	if err != nil {
-		if !errors.HasType(err, &backend.InsufficientAuthorizationError{}) {
+		if !errors.HasType(err, &auth.InsufficientAuthorizationError{}) {
 			t.Fatalf("wrong error: %s (%T)", err, err)
 		}
 	}
@@ -3014,7 +3014,7 @@ func assertNoAuthError(t *testing.T, err error) {
 	t.Helper()
 
 	// Ignore other errors, we only want to check whether it's an auth error
-	if errors.HasType(err, &backend.InsufficientAuthorizationError{}) {
+	if errors.HasType(err, &auth.InsufficientAuthorizationError{}) {
 		t.Fatalf("got auth error")
 	}
 }

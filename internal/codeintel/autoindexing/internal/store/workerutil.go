@@ -7,7 +7,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -124,7 +124,7 @@ var dependencySyncingJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("lsif_dependency_syncing_jobs.upload_id"),
 }
 
-func scanDependencySyncingJob(s dbutil.Scanner) (job types.DependencySyncingJob, err error) {
+func scanDependencySyncingJob(s dbutil.Scanner) (job shared.DependencySyncingJob, err error) {
 	return job, s.Scan(
 		&job.ID,
 		&job.State,
@@ -178,7 +178,7 @@ var dependencyIndexingJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("lsif_dependency_indexing_jobs.external_service_sync"),
 }
 
-func scanDependencyIndexingJob(s dbutil.Scanner) (job types.DependencyIndexingJob, err error) {
+func scanDependencyIndexingJob(s dbutil.Scanner) (job shared.DependencyIndexingJob, err error) {
 	return job, s.Scan(
 		&job.ID,
 		&job.State,

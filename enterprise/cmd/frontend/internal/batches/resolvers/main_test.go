@@ -24,7 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -119,8 +119,14 @@ func parseJSONTime(t testing.TB, ts string) time.Time {
 	return timestamp
 }
 
+type mockExecutorResolver struct{}
+
+func (mockExecutorResolver) ExecutorResolver() executor.Resolver {
+	return nil
+}
+
 func newSchema(db database.DB, r graphqlbackend.BatchChangesResolver) (*graphql.Schema, error) {
-	return graphqlbackend.NewSchemaWithBatchChangesResolver(db, r)
+	return graphqlbackend.NewSchemaWithBatchChangesResolver(db, r, mockExecutorResolver{})
 }
 
 func newGitHubExternalService(t *testing.T, store database.ExternalServiceStore) *types.ExternalService {
@@ -178,14 +184,6 @@ func mockBackendCommits(t *testing.T, revs ...api.CommitID) {
 		return api.CommitID(rev), nil
 	}
 	t.Cleanup(func() { backend.Mocks.Repos.ResolveRev = nil })
-
-	backend.Mocks.Repos.GetCommit = func(_ context.Context, _ *types.Repo, id api.CommitID) (*gitdomain.Commit, error) {
-		if _, ok := byRev[id]; !ok {
-			t.Fatalf("GetCommit received unexpected ID: %s", id)
-		}
-		return &gitdomain.Commit{ID: id}, nil
-	}
-	t.Cleanup(func() { backend.Mocks.Repos.GetCommit = nil })
 }
 
 func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
@@ -199,7 +197,6 @@ func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
 		}
 		return api.CommitID(spec), nil
 	}
-	t.Cleanup(func() { gitserver.Mocks.GetCommit = nil })
 
 	gitserver.Mocks.ExecReader = func(args []string) (io.ReadCloser, error) {
 		if len(args) < 1 && args[0] != "diff" {

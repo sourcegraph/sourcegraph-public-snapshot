@@ -200,14 +200,12 @@ func TestRepository_DefaultBranch(t *testing.T) {
 	}
 	for _, tt := range ts {
 		t.Run(tt.name, func(t *testing.T) {
-			gitserver.Mocks.GetDefaultBranch = func(repo api.RepoName) (refName string, commit api.CommitID, err error) {
-				return tt.getDefaultBranchRefName, "", tt.getDefaultBranchErr
-			}
+			gsClient := gitserver.NewMockClient()
+			gsClient.GetDefaultBranchFunc.SetDefaultReturn(tt.getDefaultBranchRefName, "", tt.getDefaultBranchErr)
 			t.Cleanup(func() {
 				gitserver.Mocks.ResolveRevision = nil
 			})
 
-			gsClient := gitserver.NewClient(database.NewMockDB())
 			res := &RepositoryResolver{RepoMatch: result.RepoMatch{Name: "repo"}, logger: logtest.Scoped(t), gitserverClient: gsClient}
 			branch, err := res.DefaultBranch(ctx)
 			if tt.wantErr != nil && err != nil {
@@ -245,7 +243,7 @@ func TestRepository_KVPs(t *testing.T) {
 	repo, err := db.Repos().GetByName(ctx, "testrepo")
 	require.NoError(t, err)
 
-	schema := newSchemaResolver(db)
+	schema := newSchemaResolver(db, gitserver.NewClient(db))
 	gqlID := MarshalRepositoryID(repo.ID)
 
 	strPtr := func(s string) *string { return &s }

@@ -10,7 +10,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
@@ -1448,6 +1450,7 @@ type CodeInsightsUsageStatistics struct {
 	WeeklyGroupResultsAggregationModeClicked       []GroupResultPing
 	WeeklyGroupResultsAggregationModeDisabledHover []GroupResultPing
 	WeeklyGroupResultsSearches                     []GroupResultSearchPing
+	WeeklySeriesBackfillTime                       []InsightsBackfillTimePing
 }
 
 type GroupResultPing struct {
@@ -1536,6 +1539,14 @@ type InsightsPerDashboardPing struct {
 	Min    int
 	StdDev float32
 	Median float32
+}
+
+type InsightsBackfillTimePing struct {
+	AllRepos   bool
+	P99Seconds int
+	P90Seconds int
+	P50Seconds int
+	Count      int
 }
 
 type CodeMonitoringUsageStatistics struct {
@@ -1646,4 +1657,32 @@ type SearchContext struct {
 type SearchContextRepositoryRevisions struct {
 	Repo      MinimalRepo
 	Revisions []string
+}
+
+type EncryptableSecret = encryption.Encryptable
+
+func NewEmptySecret() *EncryptableSecret {
+	return NewUnencryptedSecret("")
+}
+
+func NewUnencryptedSecret(value string) *EncryptableSecret {
+	return encryption.NewUnencrypted(value)
+}
+
+func NewEncryptedSecret(cipher, keyID string, key encryption.Key) *EncryptableSecret {
+	return encryption.NewEncrypted(cipher, keyID, key)
+}
+
+// Webhook defines the information we need to handle incoming webhooks from a
+// code host
+type Webhook struct {
+	// The primary key, used for sorting and pagination
+	ID int32
+	// UUID is the ID we display externally and will appear in the webhook URL
+	UUID         uuid.UUID
+	CodeHostKind string
+	CodeHostURN  string
+	Secret       *EncryptableSecret
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
 }

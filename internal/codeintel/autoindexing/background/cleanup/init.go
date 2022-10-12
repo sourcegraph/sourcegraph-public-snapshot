@@ -1,17 +1,21 @@
 package cleanup
 
-import (
-	"github.com/sourcegraph/log"
+import "github.com/sourcegraph/sourcegraph/internal/goroutine"
 
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-)
-
-func NewResetters(autoindexSvc AutoIndexingService, logger log.Logger, observationContext *observation.Context) []goroutine.BackgroundRoutine {
-	metrics := newMetrics(observationContext)
-
+func NewJanitor(autoIndeingSvc AutoIndexingService) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
-		NewIndexResetter(logger.Scoped("janitor.IndexResetter", ""), autoindexSvc.WorkerutilStore(), ConfigInst.Interval, metrics),
-		NewDependencyIndexResetter(logger.Scoped("janitor.DependencyIndexResetter", ""), autoindexSvc.DependencyIndexingStore(), ConfigInst.Interval, metrics),
+		autoIndeingSvc.NewJanitor(
+			ConfigInst.Interval,
+			ConfigInst.MinimumTimeSinceLastCheck,
+			ConfigInst.CommitResolverBatchSize,
+			ConfigInst.CommitResolverMaximumCommitLag,
+		),
+	}
+}
+
+func NewResetters(autoIndexingSvc AutoIndexingService) []goroutine.BackgroundRoutine {
+	return []goroutine.BackgroundRoutine{
+		autoIndexingSvc.NewIndexResetter(ConfigInst.Interval),
+		autoIndexingSvc.NewDependencyIndexResetter(ConfigInst.Interval),
 	}
 }
