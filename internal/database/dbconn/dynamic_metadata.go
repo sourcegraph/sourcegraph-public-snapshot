@@ -112,8 +112,8 @@ frameLoop:
 
 		// If we match a function that was explicitly tagged as not the true
 		// source of the query, skip
-		for _, prefix := range getFunctionsSkippedForQuerySource(ctx) {
-			if frame.Function == prefix {
+		for _, function := range getFunctionsSkippedForQuerySource(ctx) {
+			if frame.Function == function {
 				continue frameLoop
 			}
 		}
