@@ -178,7 +178,12 @@ func (s *Service) extractSymbols(ctx context.Context, repoName api.RepoName) (ma
 	return symbolsByPath, nil
 }
 
-// NOTE: we only look at files under 10,000 characters for demo
+const maxFileSize = int64(10e4)
+
+// forEachFileInArchive invokes the given callback with a tar header and a byte buffer representing
+// that file's contents for each file in the repository with one of the given extensions. The byte
+// buffer is re-used on each invocation of the callback, so the use of the buffer must be finished
+// prior to the callback's return to ensure a stable read.
 func (s *Service) forEachFileInArchive(ctx context.Context, repoName api.RepoName, extensions []string, callback func(h *tar.Header, content []byte) error) error {
 	pathspecs := make([]gitdomain.Pathspec, 0, len(extensions))
 	for _, extension := range extensions {
@@ -195,8 +200,7 @@ func (s *Service) forEachFileInArchive(ctx context.Context, repoName api.RepoNam
 	}
 	defer func() { _ = r.Close() }()
 
-	cap := int64(10e4)
-	buf := make([]byte, cap)
+	buf := make([]byte, maxFileSize)
 
 	tr := tar.NewReader(r)
 	for {
@@ -208,7 +212,7 @@ func (s *Service) forEachFileInArchive(ctx context.Context, repoName api.RepoNam
 
 			return err
 		}
-		if h.FileInfo().IsDir() || strings.Contains(h.Name, "vendor") || h.Size >= cap {
+		if h.FileInfo().IsDir() || strings.Contains(h.Name, "vendor") || h.Size >= maxFileSize {
 			continue
 		}
 
