@@ -1,6 +1,6 @@
 name: sg-setup
 on:
-  push:
+  pull_request:
     paths:
       - '.github/workflows/sg-setup.yml'
       - 'dev/sg/dependencies/**.go'
