@@ -278,6 +278,7 @@ var sg = &cli.App{
 		auditCommand,
 		pageCommand,
 		srcCommand,
+		srcCtxCommand,
 
 		// Util
 		helpCommand,
