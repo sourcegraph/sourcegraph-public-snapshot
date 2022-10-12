@@ -271,7 +271,7 @@ func (s *webhookStore) List(ctx context.Context, opt WebhookListOptions) ([]*typ
 		return []*types.Webhook{}, errors.Wrap(err, "error running query")
 	}
 	defer rows.Close()
-	res := make([]*types.Webhook, 0, 10)
+	res := make([]*types.Webhook, 0, 20)
 	for rows.Next() {
 		webhook, err := scanWebhook(rows, s.key)
 		if err != nil {
@@ -288,7 +288,6 @@ type WebhookListOptions struct {
 }
 
 const webhookListQueryFmtstr = `
--- source: internal/database/webhooks.go:List
 SELECT
 	%s
 FROM webhooks
