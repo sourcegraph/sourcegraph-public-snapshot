@@ -264,16 +264,15 @@ func (r *workHandler) persistRecordings(ctx context.Context, job *Job, series *t
 
 func updateSeriesRecordingTimes(recordingTimes []time.Time, newTime time.Time) (toAdd []time.Time, toDelete []time.Time) {
 	aYearAgo := newTime.AddDate(-1, 0, 0)
-	if len(recordingTimes) < 12 {
+	if len(recordingTimes) < 12 || recordingTimes[0].After(aYearAgo) {
+		// Either the insight has no recordings or they are over less than a year ago, so we can just append to the list.
 		toAdd = append(toAdd, newTime)
-	} else if len(recordingTimes) >= 12 && recordingTimes[0].Before(aYearAgo) {
+	} else if recordingTimes[0].Before(aYearAgo) {
 		// We replace the first recording time (shift left).
 		toAdd = append(toAdd, newTime)
 		toDelete = append(toDelete, recordingTimes[0])
-	} else if len(recordingTimes) >= 12 && recordingTimes[0].After(aYearAgo) {
-		// This is an insight over less than a year ago, so we can just append to the list.
-		toAdd = append(toAdd, newTime)
 	}
+	return toAdd, toDelete
 }
 
 func filterRecordingsBySeriesRepos(ctx context.Context, repoStore discovery.RepoStore, series *types.InsightSeries, recordings []store.RecordSeriesPointArgs) ([]store.RecordSeriesPointArgs, error) {
