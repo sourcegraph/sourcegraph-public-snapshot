@@ -509,7 +509,7 @@ func (u *userStore) Delete(ctx context.Context, id int32) (err error) {
 	return u.DeleteList(ctx, []int32{id})
 }
 
-// Bulk "Delete" action.
+// DeleteList performs a bulk "Delete" action.
 func (u *userStore) DeleteList(ctx context.Context, ids []int32) (err error) {
 	tx, err := u.Transact(ctx)
 	if err != nil {
@@ -555,6 +555,11 @@ func (u *userStore) DeleteList(ctx context.Context, ids []int32) (err error) {
 	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE registry_extensions SET deleted_at=now() WHERE deleted_at IS NULL AND publisher_user_id IN (%s)", idsCond)); err != nil {
 		return err
 	}
+	if err := tx.Exec(ctx, sqlf.Sprintf(`UPDATE webhooks
+SET created_by_user_id = CASE WHEN webhooks.created_by_user_id IN (%s) THEN NULL ELSE webhooks.created_by_user_id END,
+updated_by_user_id = CASE WHEN webhooks.updated_by_user_id IN (%s) THEN NULL ELSE webhooks.updated_by_user_id END;`, idsCond, idsCond)); err != nil {
+		return err
+	}
 
 	logUserDeletionEvents(ctx, NewDBWith(u.logger, u), ids, SecurityEventNameAccountDeleted)
 
@@ -566,7 +571,7 @@ func (u *userStore) HardDelete(ctx context.Context, id int32) (err error) {
 	return u.HardDeleteList(ctx, []int32{id})
 }
 
-// Bulk "HardDelete" action.
+// HardDeleteList performs a bulk "HardDelete" action.
 func (u *userStore) HardDeleteList(ctx context.Context, ids []int32) (err error) {
 	// Wrap in transaction because we delete from multiple tables.
 	tx, err := u.Transact(ctx)

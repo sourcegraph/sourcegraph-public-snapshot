@@ -22,7 +22,7 @@ type WebhookStore interface {
 	GetByID(ctx context.Context, id int32) (*types.Webhook, error)
 	GetByUUID(ctx context.Context, id uuid.UUID) (*types.Webhook, error)
 	Delete(ctx context.Context, id uuid.UUID) error
-	Update(ctx context.Context, newWebhook *types.Webhook) (*types.Webhook, error)
+	Update(ctx context.Context, actorUID int32, newWebhook *types.Webhook) (*types.Webhook, error)
 	List(ctx context.Context) ([]*types.Webhook, error)
 }
 
@@ -62,7 +62,11 @@ func (s *webhookStore) Create(ctx context.Context, kind, urn string, actorUID in
 	if secret != nil {
 		encryptedSecret, keyID, err = secret.Encrypt(ctx, s.key)
 		if err != nil || (encryptedSecret == "" && keyID == "") {
-			return nil, errors.Wrap(err, "encrypting secret")
+			if err != nil {
+				return nil, errors.Wrap(err, "encrypting secret")
+			} else {
+				return nil, errors.New("empty secret or key provided")
+			}
 		}
 	}
 
@@ -71,7 +75,7 @@ func (s *webhookStore) Create(ctx context.Context, kind, urn string, actorUID in
 		urn,
 		encryptedSecret,
 		keyID,
-		actorUID,
+		nullInt32Column(actorUID),
 		// Returning
 		sqlf.Join(webhookColumns, ", "),
 	)
@@ -99,7 +103,7 @@ INSERT INTO
 		%s,
 		%s,
 		%s,
-		%d
+		%s
 	)
 	RETURNING %s
 `
@@ -207,7 +211,7 @@ func (w *WebhookNotFoundError) NotFound() bool {
 }
 
 // Update the webhook
-func (s *webhookStore) Update(ctx context.Context, newWebhook *types.Webhook) (*types.Webhook, error) {
+func (s *webhookStore) Update(ctx context.Context, actorUID int32, newWebhook *types.Webhook) (*types.Webhook, error) {
 	var (
 		err             error
 		encryptedSecret string
@@ -216,12 +220,16 @@ func (s *webhookStore) Update(ctx context.Context, newWebhook *types.Webhook) (*
 	if newWebhook.Secret != nil {
 		encryptedSecret, keyID, err = newWebhook.Secret.Encrypt(ctx, s.key)
 		if err != nil || (encryptedSecret == "" && keyID == "") {
-			return nil, errors.Wrap(err, "encrypting secret")
+			if err != nil {
+				return nil, errors.Wrap(err, "encrypting secret")
+			} else {
+				return nil, errors.New("empty secret or key provided")
+			}
 		}
 	}
 
 	q := sqlf.Sprintf(webhookUpdateQueryFmtstr,
-		newWebhook.CodeHostURN, encryptedSecret, keyID, newWebhook.ID,
+		newWebhook.CodeHostURN, encryptedSecret, keyID, nullInt32Column(actorUID), newWebhook.ID,
 		sqlf.Join(webhookColumns, ", "))
 
 	updated, err := scanWebhook(s.QueryRow(ctx, q), s.key)
@@ -242,7 +250,8 @@ SET
 	code_host_urn = %s,
 	secret = %s,
 	encryption_key_id = %s,
-	updated_at = NOW()
+	updated_at = NOW(),
+	updated_by_user_id = %s
 WHERE
 	id = %s
 RETURNING

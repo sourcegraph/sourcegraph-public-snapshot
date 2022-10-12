@@ -19476,7 +19476,7 @@
           "IdentityGeneration": "",
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
-          "Comment": "ID of a user, who created the webhook. If equals to zero, then the webhook is updated programmatically."
+          "Comment": "ID of a user, who created the webhook. If equals to zero, then the user does not exist (never existed or was deleted)."
         },
         {
           "Name": "encryption_key_id",
@@ -19541,7 +19541,7 @@
           "IdentityGeneration": "",
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
-          "Comment": "ID of a user, who updated the webhook. If equals to zero, then the webhook is updated programmatically."
+          "Comment": "ID of a user, who updated the webhook. If equals to zero, then the user does not exist (never existed or was deleted)."
         },
         {
           "Name": "uuid",
@@ -19579,7 +19579,22 @@
           "ConstraintDefinition": "UNIQUE (uuid)"
         }
       ],
-      "Constraints": null,
+      "Constraints": [
+        {
+          "Name": "webhooks_created_by_user_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE SET NULL"
+        },
+        {
+          "Name": "webhooks_updated_by_user_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (updated_by_user_id) REFERENCES users(id) ON DELETE SET NULL"
+        }
+      ],
       "Triggers": []
     }
   ],
