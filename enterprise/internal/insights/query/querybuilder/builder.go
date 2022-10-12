@@ -331,6 +331,9 @@ func SetCaseSensitivity(query BasicQuery, sensitive bool) (BasicQuery, error) {
 
 func SelectRepoQuery(query BasicQuery, defaultParams searchquery.Parameters) (BasicQuery, error) {
 	insightsQuery, err := withDefaults(query, defaultParams)
+	if err != nil {
+		return "", errors.Wrap(err, "withDefaults")
+	}
 	plan, err := searchquery.Pipeline(searchquery.Init(string(insightsQuery), searchquery.SearchTypeLiteral))
 	if err != nil {
 		return "", errors.Wrap(err, "Pipeline")
