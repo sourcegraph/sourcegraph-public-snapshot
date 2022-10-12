@@ -1276,25 +1276,26 @@ Flags:
 
 ## sg src
 
-Run src-cli on a given instance.
+Run src-cli on a given instance defined with 'sg src-ctx'.
 
 ```sh
-$ sg src [instance] [src-cli args]
+$ sg src [src-cli args]
+$ sg src help # get src-cli help
 ```
 
 Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 
-### sg src instance
+## sg src-ctx
 
-Interact with Sourcegraph instances that src-cli will use.
+Interact with Sourcegraph instances that 'sg src' will use.
 
 ```sh
-$ sg src instance [command]
+$ sg src-ctx [command]
 ```
 
-#### sg src instance register
+### sg src-ctx register
 
 Register (or edit an existing) Sourcegraph instance to target with src-cli.
 
@@ -1306,7 +1307,16 @@ Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 
-#### sg src instance list
+### sg src-ctx use
+
+Set current src-cli instance to use with 'sg src'.
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
+### sg src-ctx list
 
 List registered instances for src-cli.
 
