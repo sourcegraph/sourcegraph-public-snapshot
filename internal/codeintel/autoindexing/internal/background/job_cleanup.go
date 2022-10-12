@@ -17,6 +17,7 @@ type janitorConfig struct {
 	minimumTimeSinceLastCheck      time.Duration
 	commitResolverBatchSize        int
 	commitResolverMaximumCommitLag time.Duration
+	failedIndexMaxAge              time.Duration
 }
 
 func (b backgroundJob) NewJanitor(
@@ -24,12 +25,14 @@ func (b backgroundJob) NewJanitor(
 	minimumTimeSinceLastCheck time.Duration,
 	commitResolverBatchSize int,
 	commitResolverMaximumCommitLag time.Duration,
+	failedIndexMaxAge time.Duration,
 ) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
 		return b.handleCleanup(ctx, janitorConfig{
 			minimumTimeSinceLastCheck:      minimumTimeSinceLastCheck,
 			commitResolverBatchSize:        commitResolverBatchSize,
 			commitResolverMaximumCommitLag: commitResolverMaximumCommitLag,
+			failedIndexMaxAge:              failedIndexMaxAge,
 		})
 	}))
 }
@@ -40,6 +43,11 @@ func (b backgroundJob) handleCleanup(ctx context.Context, cfg janitorConfig) (er
 		errs = errors.Append(errs, err)
 	}
 	if err := b.handleUnknownCommit(ctx, cfg); err != nil {
+		errs = errors.Append(errs, err)
+	}
+
+	// Expiration
+	if err := b.handleExpiredRecords(ctx, cfg); err != nil {
 		errs = errors.Append(errs, err)
 	}
 
@@ -157,4 +165,8 @@ func (b backgroundJob) handleCommit(ctx context.Context, repositoryID int, repos
 	}
 
 	return nil
+}
+
+func (b backgroundJob) handleExpiredRecords(ctx context.Context, cfg janitorConfig) error {
+	return b.store.ExpireFailedRecords(ctx, cfg.failedIndexMaxAge, b.clock.Now())
 }
