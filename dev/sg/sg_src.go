@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"net/url"
 	"os"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
@@ -50,51 +51,51 @@ var srcCommand = &cli.Command{
 			UsageText: "todo",
 			Subcommands: []*cli.Command{
 				{
-					Name:  "register",
-					Usage: "Register (or edit an existing) Sourcegraph instance to target with src-cli",
-					Flags: []cli.Flag{
-						&cli.StringFlag{
-							Name:     "name",
-							Usage:    "Name for the new instance (ex: s2)",
-							Required: true,
-						},
-						&cli.StringFlag{
-							Name:     "endpoint",
-							Usage:    "Endpoint for the new instance (ex: https://sourcegraph.sourcegraph.com)",
-							Required: true,
-						},
-						&cli.StringFlag{
-							Name:     "access-token",
-							Usage:    "AccessToken for the new instance",
-							Required: true,
-						},
-					},
+					Name:      "register",
+					Usage:     "Register (or edit an existing) Sourcegraph instance to target with src-cli",
+					UsageText: "sg src instance register [name] [endpoint] [access_token]",
 					Action: func(cmd *cli.Context) error {
 						store, sc, err := getSrcSecret(cmd.Context, std.Out)
 						if err != nil {
-							return err
+							return errors.Wrap(err, "failed to read existing instances")
 						}
-						sc.Instances[cmd.String("name")] = srcInstance{
-							Endpoint:    cmd.String("endpoint"),
-							AccessToken: cmd.String("access-token"),
+						if cmd.Args().Len() < 3 {
+							return errors.Newf("not enough arguments, want %d got %d", 3, cmd.Args().Len())
+						}
+
+						name := cmd.Args().First()
+						endpoint := cmd.Args().Slice()[1]
+						endpointUrl, err := url.Parse(endpoint)
+						if err != nil {
+							return errors.Wrapf(err, "cannot parse [endpoint]")
+						}
+						if endpointUrl.Scheme != "http" && endpointUrl.Scheme != "https" {
+							return errors.New("cannot parse [endpoint], scheme must be http or https")
+						}
+
+						accessToken := cmd.Args().Slice()[2]
+
+						sc.Instances[name] = srcInstance{
+							Endpoint:    endpoint,
+							AccessToken: accessToken,
 						}
 						if err := store.PutAndSave("src", sc); err != nil {
-							return err
+							return errors.Wrap(err, "failed to save instance")
 						}
 						return nil
 					},
 				},
 				{
 					Name:  "list",
-					Usage: "",
+					Usage: "List registered instances for src-cli",
 					Action: func(cmd *cli.Context) error {
 						_, sc, err := getSrcSecret(cmd.Context, std.Out)
 						if err != nil {
 							return err
 						}
+						std.Out.WriteLine(output.Linef("", output.StyleBold, "| %-16s| %-32s|", "Name", "Endpoint"))
 						for name, instance := range sc.Instances {
-							std.Out.WriteLine(output.Linef("", output.StyleBold, "|%-16s|%-32s|", "Name", "Endpoint"))
-							std.Out.WriteLine(output.Linef("", output.StyleReset, "|%-16s|%-32s|", name, instance.Endpoint))
+							std.Out.WriteLine(output.Linef("", output.StyleReset, "| %-16s| %-32s|", name, instance.Endpoint))
 						}
 						return nil
 					},
