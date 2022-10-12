@@ -35,9 +35,7 @@ body,
     text-decoration: inherit;
 
     &:focus {
-        background-color: rgba(174, 203, 250, 0.33);
-        box-shadow: 0 0 0 2px #aecbfa;
-        outline-style: none;
+        background-color: rgba($blue, 0.1);
     }
 }
 
