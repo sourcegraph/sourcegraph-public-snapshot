@@ -1,7 +1,7 @@
 package assetsutil
 
 import (
-	"log"
+	"fmt"
 	"net/url"
 	"path"
 
@@ -20,7 +20,7 @@ func init() {
 	var err error
 	baseURL, err = url.Parse(assetsRoot)
 	if err != nil {
-		log.Fatalln("Parsing ASSETS_ROOT failed:", err)
+		panic(fmt.Sprintf("Parsing ASSETS_ROOT failed: %s", err))
 	}
 }
 
