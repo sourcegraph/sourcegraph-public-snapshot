@@ -112,3 +112,16 @@ func unmarshalWebhookID(id graphql.ID) (hookID int32, err error) {
 	err = relay.UnmarshalSpec(id, &hookID)
 	return
 }
+
+func (r *schemaResolver) CreateWebhook(ctx context.Context, args *struct {
+	CodeHostKind string
+	CodeHostURN  string
+	Secret       string
+}) (*webhookResolver, error) {
+	secret := types.NewUnencryptedSecret(args.Secret) // TODO actually handle this
+	webhook, err := r.db.Webhooks(keyring.Default().WebhookKey).Create(ctx, args.CodeHostKind, args.CodeHostURN, secret)
+	if err != nil {
+		return nil, err
+	}
+	return &webhookResolver{hook: webhook}, nil
+}
