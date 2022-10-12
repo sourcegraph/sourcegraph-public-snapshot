@@ -724,6 +724,9 @@ func TestInsightSeriesRecordingTimes(t *testing.T) {
 	}
 
 	got, err = timeseriesStore.GetInsightSeriesRecordingTimes(ctx, "series2")
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(got.RecordingTimes) != 1 {
 		t.Fatalf("got %d recording times, expected 1", len(got.RecordingTimes))
 	}
