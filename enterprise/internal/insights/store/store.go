@@ -28,6 +28,7 @@ type Interface interface {
 	CountData(ctx context.Context, opts CountDataOpts) (int, error)
 	SetInsightSeriesRecordingTimes(ctx context.Context, recordingTimes []types.InsightSeriesRecordingTimes) error
 	GetInsightSeriesRecordingTimes(ctx context.Context, seriesID string) (types.InsightSeriesRecordingTimes, error)
+	DeleteInsightSeriesRecordingTimes(ctx context.Context, seriesRecordingTimes types.InsightSeriesRecordingTimes) error
 }
 
 var _ Interface = &Store{}
