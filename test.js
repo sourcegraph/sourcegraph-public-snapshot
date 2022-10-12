@@ -3,8 +3,7 @@ const fetch = require('node-fetch')
 
 const agent = new HttpsProxyAgent({
   protocol: 'http',
-  host: '192.168.0.220',
-  port: '9090',
+  path: '/Users/philipp/dev/domain-socket-proxy/unix.socket',
 })
 
 fetch('https://sourcegraph.com', { agent })
