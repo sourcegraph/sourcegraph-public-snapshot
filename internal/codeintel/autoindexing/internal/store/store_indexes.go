@@ -210,7 +210,6 @@ func (s *store) DeleteIndexes(ctx context.Context, opts types.DeleteIndexesOptio
 }
 
 const deleteIndexesQuery = `
--- source: internal/codeintel/stores/dbstore/indexes.go:DeleteIndexes
 DELETE FROM lsif_indexes u
 USING repo
 WHERE u.repository_id = repo.id AND %s

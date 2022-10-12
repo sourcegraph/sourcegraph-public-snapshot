@@ -1451,7 +1451,6 @@ FROM (
 `
 
 const getGlobalChangesetsStatsFmtstr = `
--- source: enterprise/internal/batches/store/changesets.go:GetGlobalChangesetsStats
 SELECT
 	COUNT(*) AS total,
 	COUNT(*) FILTER (WHERE computed_state = 'UNPUBLISHED') AS unpublished,
@@ -1465,7 +1464,7 @@ FROM (
 		changesets.computed_state
 	FROM
 		changesets
-	INNER JOIN repo ON repo.id = changesets.repo_id 
+	INNER JOIN repo ON repo.id = changesets.repo_id
 	WHERE
 		-- where the changeset is not archived on at least one batch change
 		jsonb_path_exists (batch_change_ids, '$.* ? ((!exists(@.isArchived) || @.isArchived == false) && (!exists(@.archive) || @.archive == false))')
