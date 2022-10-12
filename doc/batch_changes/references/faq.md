@@ -59,6 +59,28 @@ Common language agnostic starting points:
 - `sed`, [`yq`](https://github.com/mikefarah/yq), `awk` are common utilities for changing text
 - [comby](https://comby.dev/docs/overview) is a language-aware structural code search and replace tool. It can match expressions and function blocks, and is great for more complex changes.
 
+### Why can't I run steps with different container user IDs in the same batch change?
+
+This is an artifact of [how Batch Changes executes batch specs](../explanations/how_src_executes_a_batch_spec.md). Consider this partial spec:
+
+```yaml
+steps:
+  - run: /do-it.sh
+    container: my-alpine-running-as-root
+
+  - run: /do-it.sh
+    container: my-alpine-running-as-uid-1000
+
+  - run: /do-it.sh
+    container: my-alpine-running-as-uid-500
+```
+
+Files created by the first step will be owned by UID 0 and (by default) have 0644 permissions, which means that the subsequent steps will be unable to modify or delete those files, as they are running as different, unprivileged users.
+
+Even if the first step is replaced by one that runs as UID 1000, the same scenario will occur when the final step runs as UID 500: files created by the previous steps cannot be modified or deleted.
+
+In theory, it's possible to run the first _n_ steps in a batch spec as an unprivileged user, and then run the last _n_ steps as root, but we don't recommend this due to the likelihood that later changes may cause issues. We strongly recommend only using containers that run as the same user in a single batch spec.
+
 ### How can I use [GitHub expression syntax](https://docs.github.com/en/actions/reference/context-and-expression-syntax-for-github-actions) (`${{ }}` literally) in my batch spec?
 
 To tell Sourcegraph not to evaluate `${{ }}` like a normal [template delimiter](batch_spec_templating.md), you can quote it and wrap it in a second set of `${{ }}` like so:
