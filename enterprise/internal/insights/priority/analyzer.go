@@ -14,10 +14,11 @@ type QueryAnalyzer struct {
 
 type QueryObject struct {
 	Query query.Plan
-	// the object can be augmented with repository information, or anything else of value.
+
+	Cost float64
 }
 
-type CostHeuristic func(QueryObject) float64
+type CostHeuristic func(QueryObject)
 
 func NewQueryAnalyzer(handlers ...CostHeuristic) *QueryAnalyzer {
 	return &QueryAnalyzer{
@@ -26,25 +27,23 @@ func NewQueryAnalyzer(handlers ...CostHeuristic) *QueryAnalyzer {
 }
 
 func (a *QueryAnalyzer) Cost(o QueryObject) float64 {
-	var totalCost float64
 	for _, handler := range a.costHandlers {
-		totalCost += handler(o)
+		handler(o)
 	}
-	if totalCost < 0 {
-		return 0
+	if o.Cost < 0.0 {
+		return 0.0
 	}
-	return totalCost
+	return o.Cost
 }
 
-func QueryCost(o QueryObject) float64 {
-	var cost float64
+func QueryCost(o QueryObject) {
 	for _, basic := range o.Query {
 		if basic.IsStructural() {
-			cost += StructuralCost
+			o.Cost += StructuralCost
 		} else if basic.IsRegexp() {
-			cost += RegexpCost
+			o.Cost += RegexpCost
 		} else {
-			cost += LiteralCost
+			o.Cost += LiteralCost
 		}
 	}
 
@@ -59,41 +58,40 @@ func QueryCost(o QueryObject) float64 {
 		}
 	})
 	if diff {
-		cost *= DiffMultiplier
+		o.Cost *= DiffMultiplier
 	}
 	if commit {
-		cost *= CommitMultiplier
+		o.Cost *= CommitMultiplier
 	}
 
 	parameters := querybuilder.ParametersFromQueryPlan(o.Query)
 	if parameters.Index() == query.No {
-		cost *= UnindexedMultiplier
+		o.Cost *= UnindexedMultiplier
 	}
 	if parameters.Exists(query.FieldAuthor) {
-		cost *= AuthorMultiplier
+		o.Cost *= AuthorMultiplier
 	}
 	if parameters.Exists(query.FieldFile) {
-		cost *= FileMultiplier
+		o.Cost *= FileMultiplier
 	}
 	if parameters.Exists(query.FieldLang) {
-		cost *= LangMultiplier
+		o.Cost *= LangMultiplier
 	}
 
 	archived := parameters.Archived()
 	if archived != nil {
 		if *archived == query.Yes {
-			cost *= YesMultiplier
+			o.Cost *= YesMultiplier
 		} else if *archived == query.Only {
-			cost *= OnlyMultiplier
+			o.Cost *= OnlyMultiplier
 		}
 	}
 	fork := parameters.Fork()
 	if fork != nil && (*fork == query.Yes || *fork == query.Only) {
 		if *fork == query.Yes {
-			cost *= YesMultiplier
+			o.Cost *= YesMultiplier
 		} else if *fork == query.Only {
-			cost *= OnlyMultiplier
+			o.Cost *= OnlyMultiplier
 		}
 	}
-	return cost
 }
