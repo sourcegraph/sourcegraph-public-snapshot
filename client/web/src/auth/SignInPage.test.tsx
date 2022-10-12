@@ -86,6 +86,7 @@ describe('SignInPage', () => {
                     isBuiltin: false,
                     serviceType: 'openidconnect',
                     authenticationURL: '',
+                    serviceID: '',
                 },
             ]
 
