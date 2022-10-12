@@ -48,7 +48,8 @@ var srcCommand = &cli.Command{
 	Subcommands: []*cli.Command{
 		{
 			Name:      "instance",
-			UsageText: "todo",
+			Usage:     "Interact with Sourcegraph instances that src-cli will use",
+			UsageText: "sg src instance [command]",
 			Subcommands: []*cli.Command{
 				{
 					Name:      "register",
