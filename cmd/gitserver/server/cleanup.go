@@ -67,12 +67,12 @@ var gitGCMode = func() int {
 	// EnableGCAuto is a temporary flag that allows us to control whether or not
 	// `git gc --auto` is invoked during janitorial activities. This flag will
 	// likely evolve into some form of site config value in the future.
-	enableGCAuto, _ := strconv.ParseBool(env.Get("SRC_ENABLE_GC_AUTO", "false", "Use git-gc during janitorial cleanup phases"))
+	enableGCAuto, _ := strconv.ParseBool(env.Get("SRC_ENABLE_GC_AUTO", "true", "Use git-gc during janitorial cleanup phases"))
 
 	// sg maintenance and git gc must not be enabled at the same time. However, both
 	// might be disabled at the same time, hence we need both SRC_ENABLE_GC_AUTO and
 	// SRC_ENABLE_SG_MAINTENANCE.
-	enableSGMaintenance, _ := strconv.ParseBool(env.Get("SRC_ENABLE_SG_MAINTENANCE", "true", "Use sg maintenance during janitorial cleanup phases"))
+	enableSGMaintenance, _ := strconv.ParseBool(env.Get("SRC_ENABLE_SG_MAINTENANCE", "false", "Use sg maintenance during janitorial cleanup phases"))
 
 	if enableGCAuto && !enableSGMaintenance {
 		return gitGCModeJanitorAutoGC
