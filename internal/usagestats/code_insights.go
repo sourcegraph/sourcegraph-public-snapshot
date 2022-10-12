@@ -490,7 +490,7 @@ func GetGroupResultsSearchesPings(ctx context.Context, db database.DB, pingNames
 	}
 	return pings, nil
 }
-  
+
 func GetBackfillTimePing(ctx context.Context, db database.DB) ([]types.InsightsBackfillTimePing, error) {
 	store := db.EventLogs()
 	name := InsightsBackfillTimePingName
