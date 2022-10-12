@@ -117,9 +117,9 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.Changeset
 			if err := inserter.Insert(
 				ctx,
 				c.RandID,
-				nullInt64Column(c.BatchSpecID),
+				dbutil.NullInt64Column(c.BatchSpecID),
 				c.BaseRepoID,
-				nullInt32Column(c.UserID),
+				dbutil.NullInt32Column(c.UserID),
 				c.DiffStatAdded,
 				c.DiffStatDeleted,
 				c.CreatedAt,
