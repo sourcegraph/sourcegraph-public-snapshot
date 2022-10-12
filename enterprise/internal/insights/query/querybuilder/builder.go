@@ -328,3 +328,37 @@ func SetCaseSensitivity(query BasicQuery, sensitive bool) (BasicQuery, error) {
 	})
 	return BasicQuery(searchquery.StringHuman(mutatedQuery.ToQ())), nil
 }
+
+func SelectRepoQuery(query BasicQuery, defaultParams searchquery.Parameters) (BasicQuery, error) {
+	insightsQuery, err := withDefaults(query, defaultParams)
+	plan, err := searchquery.Pipeline(searchquery.Init(string(insightsQuery), searchquery.SearchTypeLiteral))
+	if err != nil {
+		return "", errors.Wrap(err, "Pipeline")
+	}
+	modified := make(searchquery.Plan, 0, len(plan))
+
+	// Only add a select:repo parameter if it doesn't already exist
+	upsertParams := searchquery.Parameters{
+		{
+			Field:      searchquery.FieldSelect,
+			Value:      "repo",
+			Negated:    false,
+			Annotation: searchquery.Annotation{},
+		},
+	}
+
+	for _, basic := range plan {
+		p := make(searchquery.Parameters, 0, len(basic.Parameters)+1)
+		for _, param := range basic.Parameters {
+			if upsertParams.Exists(param.Field) {
+				continue
+			}
+			p = append(p, param)
+		}
+
+		p = append(p, upsertParams...)
+		modified = append(modified, basic.MapParameters(p))
+	}
+
+	return BasicQuery(searchquery.StringHuman(modified.ToQ())), nil
+}

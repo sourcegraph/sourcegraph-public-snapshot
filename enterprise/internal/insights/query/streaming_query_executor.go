@@ -34,6 +34,29 @@ func NewStreamingExecutor(postgres database.DB, clock func() time.Time) *Streami
 	}
 }
 
+func (c *StreamingQueryExecutor) ExecuteRepoList(ctx context.Context, query string) ([]string, error) {
+	modified, err := querybuilder.SelectRepoQuery(querybuilder.BasicQuery(query), querybuilder.CodeInsightsQueryDefaults(false))
+
+	decoder, selectRepoResult := streaming.SelectRepoDecoder()
+	err = streaming.Search(ctx, modified.String(), nil, decoder)
+	if err != nil {
+		return nil, errors.Wrap(err, "streaming.Search")
+	}
+
+	repoResult := *selectRepoResult
+	if len(repoResult.SkippedReasons) > 0 {
+		log15.Error("insights query issue", "reasons", repoResult.SkippedReasons, "query", query)
+	}
+	if len(repoResult.Errors) > 0 {
+		return nil, errors.Errorf("streaming search: errors: %v", repoResult.Errors)
+	}
+	if len(repoResult.Alerts) > 0 {
+		return nil, errors.Errorf("streaming search: alerts: %v", repoResult.Alerts)
+	}
+
+	return repoResult.Repos, nil
+}
+
 func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seriesLabel string, seriesID string, repositories []string, interval timeseries.TimeInterval) ([]GeneratedTimeSeries, error) {
 	repoIds := make(map[string]api.RepoID)
 	for _, repository := range repositories {
@@ -120,5 +143,4 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 		Points:   timeDataPoints,
 	}}
 	return generated, nil
-
 }

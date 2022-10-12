@@ -29,6 +29,11 @@ type TabulationResult struct {
 	TotalCount int
 }
 
+type SelectRepoResult struct {
+	StreamDecoderEvents
+	Repos []string
+}
+
 // TabulationDecoder will tabulate the result counts per repository.
 func TabulationDecoder() (streamhttp.FrontendStreamDecoder, *TabulationResult) {
 	tr := &TabulationResult{
@@ -253,4 +258,49 @@ func ComputeTextDecoder() (client.ComputeTextExtraStreamDecoder, *ComputeTabulat
 			ctr.Errors = append(ctr.Errors, eventError.Message)
 		},
 	}, ctr
+}
+
+func SelectRepoDecoder() (streamhttp.FrontendStreamDecoder, *SelectRepoResult) {
+	repoResult := &SelectRepoResult{
+		Repos: []string{},
+	}
+
+	return streamhttp.FrontendStreamDecoder{
+		OnProgress: func(progress *streamapi.Progress) {
+			if !progress.Done {
+				return
+			}
+			// Skipped elements are built progressively for a Progress update until it is Done, so
+			// we want to register its contents only once it is done.
+			for _, skipped := range progress.Skipped {
+				// ShardTimeout is a specific skipped event that we want to retry on. Currently
+				// we only retry on Alert events so this is why we add it there. This behaviour will
+				// be uniformised eventually.
+				if skipped.Reason == streamapi.ShardTimeout {
+					repoResult.Alerts = append(repoResult.Alerts, fmt.Sprintf("%s: %s", skipped.Reason, skipped.Message))
+				} else {
+					repoResult.SkippedReasons = append(repoResult.SkippedReasons, fmt.Sprintf("%s: %s", skipped.Reason, skipped.Message))
+				}
+			}
+		},
+		OnMatches: func(matches []streamhttp.EventMatch) {
+			for _, match := range matches {
+				switch match := match.(type) {
+				case *streamhttp.EventRepoMatch:
+					repoResult.Repos = append(repoResult.Repos, match.Repository)
+				}
+			}
+		},
+		OnAlert: func(ea *streamhttp.EventAlert) {
+			if ea.Title == "No repositories found" {
+				// If we hit a case where we don't find a repository we don't want to error, just
+				// complete our search.
+			} else {
+				repoResult.Alerts = append(repoResult.Alerts, fmt.Sprintf("%s: %s", ea.Title, ea.Description))
+			}
+		},
+		OnError: func(eventError *streamhttp.EventError) {
+			repoResult.Errors = append(repoResult.Errors, eventError.Message)
+		},
+	}, repoResult
 }
