@@ -26,9 +26,9 @@ interface FilteredDefinitionResponse {
 }
 
 class TokensAsLinks implements PluginValue {
-    private subscription: Subscription
-    private visiblePositionRange = new Subject<{ from: number; to: number }>()
     private stencilRanges: TokenLink[]
+    private subscription: Subscription | undefined
+    private visiblePositionRange: Subject<{ from: number; to: number }> | undefined
 
     constructor(private view: EditorView, private setTokenLinkRanges: StateEffectType<TokenLink[]>) {
         this.stencilRanges = this.buildBasicLinksFromStencilRange(view)
@@ -38,24 +38,27 @@ class TokensAsLinks implements PluginValue {
             })
         })
 
-        this.subscription = this.visiblePositionRange
-            .pipe(concatMap(({ from, to }) => this.getDefinitionsLinksWithinRange(view, from, to)))
-            .subscribe(definitions => {
-                const mergedRanges = this.mergeRanges(this.stencilRanges, definitions)
-                requestAnimationFrame(() => {
-                    this.view.dispatch({
-                        effects: this.setTokenLinkRanges.of(mergedRanges),
+        if (view.state.facet(tokensAsLinks).preloadGoToDefinition) {
+            this.visiblePositionRange = new Subject()
+            this.subscription = this.visiblePositionRange
+                .pipe(concatMap(({ from, to }) => this.getDefinitionsLinksWithinRange(view, from, to)))
+                .subscribe(definitions => {
+                    const mergedRanges = this.mergeRanges(this.stencilRanges, definitions)
+                    requestAnimationFrame(() => {
+                        this.view.dispatch({
+                            effects: this.setTokenLinkRanges.of(mergedRanges),
+                        })
                     })
                 })
-            })
 
-        // Trigger first update
-        this.visiblePositionRange.next({ from: view.viewport.from, to: view.viewport.to })
+            // Trigger first update
+            this.visiblePositionRange.next({ from: view.viewport.from, to: view.viewport.to })
+        }
     }
 
     public update(update: ViewUpdate): void {
         if (update.viewportChanged) {
-            this.visiblePositionRange.next({ from: update.view.viewport.from, to: update.view.viewport.to })
+            this.visiblePositionRange?.next({ from: update.view.viewport.from, to: update.view.viewport.to })
         }
     }
 
@@ -283,6 +286,7 @@ function tokenLinks(): Extension {
 interface TokensAsLinksFacet {
     blobInfo: BlobInfo
     history: History
+    preloadGoToDefinition: boolean
 }
 
 /**
