@@ -3,10 +3,19 @@ import { map } from 'rxjs/operators'
 
 import { memoizeObservable } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
+import { makeRepoURI, UIPosition } from '@sourcegraph/shared/src/util/url'
 
 import { requestGraphQL } from '../../backend/graphql'
-import { BlobFileFields, BlobResult, BlobVariables, HighlightResponseFormat } from '../../graphql-operations'
+import {
+    BlobFileFields,
+    BlobResult,
+    BlobStencilFields,
+    BlobVariables,
+    HighlightResponseFormat,
+    DefinitionFields,
+    DefinitionResult,
+    DefinitionVariables,
+} from '../../graphql-operations'
 import { useExperimentalFeatures } from '../../stores'
 
 /**
@@ -36,7 +45,12 @@ interface FetchBlobOptions {
     format?: HighlightResponseFormat
 }
 
-export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observable<BlobFileFields | null> => {
+interface FetchBlobResponse {
+    blob: BlobFileFields | null
+    stencil?: BlobStencilFields['stencil']
+}
+
+export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observable<FetchBlobResponse> => {
     const { repoName, revision, filePath, disableTimeout, format } = applyDefaultValuesToFetchBlobOptions(options)
 
     // We only want to include HTML data if explicitly requested. We always
@@ -57,6 +71,11 @@ export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observab
             ) {
                 repository(name: $repoName) {
                     commit(rev: $revision) {
+                        blob(path: $filePath) {
+                            lsif {
+                                ...BlobStencilFields
+                            }
+                        }
                         file(path: $filePath) {
                             ...BlobFileFields
                         }
@@ -73,6 +92,19 @@ export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observab
                     lsif
                 }
             }
+
+            fragment BlobStencilFields on GitBlobLSIFData {
+                stencil {
+                    start {
+                        line
+                        character
+                    }
+                    end {
+                        line
+                        character
+                    }
+                }
+            }
         `,
         { repoName, revision, filePath, disableTimeout, format, html }
     ).pipe(
@@ -81,7 +113,11 @@ export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observab
             if (!data.repository?.commit) {
                 throw new Error('Commit not found')
             }
-            return data.repository.commit.file
+
+            return {
+                blob: data.repository.commit.file,
+                stencil: data.repository.commit.blob?.lsif?.stencil,
+            }
         })
     )
 }, fetchBlobCacheKey)
@@ -119,3 +155,88 @@ export const usePrefetchBlobFormat = (): HighlightResponseFormat => {
      */
     return HighlightResponseFormat.HTML_HIGHLIGHT
 }
+
+interface FetchDefinitionOptions {
+    repoName: string
+    revision: string
+    filePath: string
+    position: UIPosition
+}
+
+export const fetchDefinition = memoizeObservable(
+    (options: FetchDefinitionOptions): Observable<DefinitionFields | null> => {
+        const { repoName, revision, filePath, position } = options
+
+        const result = requestGraphQL<DefinitionResult, DefinitionVariables>(
+            gql`
+                query Definition(
+                    $repoName: String!
+                    $revision: String!
+                    $filePath: String!
+                    $line: Int!
+                    $character: Int!
+                ) {
+                    repository(name: $repoName) {
+                        commit(rev: $revision) {
+                            blob(path: $filePath) {
+                                lsif {
+                                    definitions(line: $line, character: $character) {
+                                        nodes {
+                                            ...DefinitionFields
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                fragment DefinitionFields on Location {
+                    resource {
+                        path
+                        repository {
+                            name
+                        }
+                        commit {
+                            oid
+                        }
+                    }
+                    range {
+                        start {
+                            line
+                            character
+                        }
+                        end {
+                            line
+                            character
+                        }
+                    }
+                }
+            `,
+            {
+                repoName,
+                revision,
+                filePath,
+                line: position.line,
+                character: position.character,
+            }
+        ).pipe(
+            map(dataOrThrowErrors),
+            map(data => {
+                if (!data.repository?.commit) {
+                    throw new Error('Commit not found')
+                }
+
+                if (!data.repository.commit.blob?.lsif) {
+                    return null
+                }
+
+                // If we have multiple definitions we just return the first one.
+                return data.repository.commit.blob.lsif.definitions.nodes[0]
+            })
+        )
+
+        return result
+    },
+    makeRepoURI
+)

@@ -29,6 +29,18 @@ body,
     background-color: var(--secondary);
 }
 
+.sourcegraph-document-focus {
+    // Remove link styles
+    color: inherit;
+    text-decoration: inherit;
+
+    &:focus {
+        background-color: rgba(174, 203, 250, 0.33);
+        box-shadow: 0 0 0 2px #aecbfa;
+        outline-style: none;
+    }
+}
+
 // Selection highlight is the background color for matched/highlighted tokens,
 // e.g. for search results, for identifying the token currently being hovered over,
 // or identifying the token the references panel is toggled for.

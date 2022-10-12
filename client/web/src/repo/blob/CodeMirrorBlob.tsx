@@ -27,6 +27,7 @@ import { hovercardRanges } from './codemirror/hovercard'
 import { selectLines, selectableLineNumbers, SelectedLineRange } from './codemirror/linenumbers'
 import { search } from './codemirror/search'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
+import { tokensAsLinks } from './codemirror/tokens-as-links'
 import { isValidLineRange, offsetToUIPosition, uiPositionToOffset } from './codemirror/utils'
 
 const staticExtensions: Extension = [
@@ -58,6 +59,9 @@ const staticExtensions: Extension = [
         '.selected-line': {
             backgroundColor: 'var(--code-selection-bg)',
         },
+        '.selected-line:focus': {
+            boxShadow: 'none',
+        },
         '.highlighted-line': {
             backgroundColor: 'var(--code-selection-bg)',
         },
@@ -88,6 +92,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         location,
         history,
         blameHunks,
+        settingsCascade,
 
         // Reference panel specific props
         disableStatusBar,
@@ -103,7 +108,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     // same file are opened inside the reference panel.
     const blobInfo = useDistinctBlob(props.blobInfo)
     const position = useMemo(() => parseQueryAndHash(location.search, location.hash), [location.search, location.hash])
-    // const position = parseQueryAndHash(location.search, location.hash)
     const hasPin = useMemo(() => urlIsPinned(location.search), [location.search])
 
     const blobProps = useMemo(() => blobPropsFacet.of(props), [props])
@@ -114,6 +118,10 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     )
 
     const blameDecorations = useMemo(() => (blameHunks ? [showGitBlameDecorations.of(blameHunks)] : []), [blameHunks])
+
+    // const enableCodeIntelKeyboardNavigation =
+    // isSettingsValid(settingsCascade) && settingsCascade.final['codeIntel.keyboardNavigation'] === 'token'
+    const enableCodeIntelKeyboardNavigation = true
 
     // Keep history and location in a ref so that we can use the latest value in
     // the onSelection callback without having to recreate it and having to
@@ -163,6 +171,8 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 initialSelection: position.line !== undefined ? position : null,
                 navigateToLineOnAnyClick: navigateToLineOnAnyClick ?? false,
             }),
+            // TODO: Add experimental feature flag for advanced keyboard navigation
+            enableCodeIntelKeyboardNavigation ? tokensAsLinks.of({ blobInfo, history }) : [],
             syntaxHighlight.of(blobInfo),
             pinnedRangeField.init(() => (hasPin ? position : null)),
             extensionsController !== null && !navigateToLineOnAnyClick
