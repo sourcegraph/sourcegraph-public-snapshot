@@ -22,26 +22,26 @@ import (
 var PublicDrive = DriveSpec{
 	DisplayName: "Public",
 	DriveID:     "0AIPqhxqhpBETUk9PVA", // EXT - Sourcegraph RFC drive
-	ParentID:    "1zP3FxdDlcSQGC1qvM9lHZRaHH4I9Jwwa",
+	FolderID:    "1zP3FxdDlcSQGC1qvM9lHZRaHH4I9Jwwa",
 	OrderBy:     "createdTime,name",
 }
 
 var PrivateDrive = DriveSpec{
 	DisplayName: "Private",
 	DriveID:     "0AK4DcztHds_pUk9PVA", // Sourcegraph DriveID
-	ParentID:    "1KCq4tMLnVlC0a1rwGuU5OSCw6mdDxLuv",
+	FolderID:    "1KCq4tMLnVlC0a1rwGuU5OSCw6mdDxLuv",
 	OrderBy:     "createdTime,name",
 }
 
 type DriveSpec struct {
 	DisplayName string
 	DriveID     string
-	ParentID    string
+	FolderID    string
 	OrderBy     string
 }
 
 func (d *DriveSpec) Query(q string) string {
-	return fmt.Sprintf("%s and parents in '%s'", q, d.ParentID)
+	return fmt.Sprintf("%s and parents in '%s'", q, d.FolderID)
 }
 
 // Retrieve a token, saves the token, then returns the generated client.
@@ -154,7 +154,19 @@ func Open(ctx context.Context, number string, driveSpec DriveSpec, out *std.Outp
 	}, out)
 }
 
-var rfcTitleRegex = regexp.MustCompile(`RFC\s(\d+):*\s(\w+):\s(.*)$`)
+// RFCs should have the following format:
+//
+//    RFC 123: WIP: Foobar
+//        ^^^  ^^^  ^^^^^^
+//         |    |       |
+//         | matches[2] |
+//     matches[1]     matches[3]
+//
+// Variations supported:
+//
+//    RFC 123 WIP: Foobar
+//    RFC 123 PRIVATE WIP: Foobar
+var rfcTitleRegex = regexp.MustCompile(`RFC\s(\d+):*\s([\w\s]+):\s(.*)$`)
 
 func rfcTitlesPrinter(out *std.Output) func(r *drive.FileList) error {
 	return func(r *drive.FileList) error {
@@ -162,30 +174,41 @@ func rfcTitlesPrinter(out *std.Output) func(r *drive.FileList) error {
 			return nil
 		}
 
-		for _, i := range r.Files {
-			matches := rfcTitleRegex.FindStringSubmatch(i.Name)
+		for _, f := range r.Files {
+			matches := rfcTitleRegex.FindStringSubmatch(f.Name)
 			if len(matches) == 4 {
 				number := matches[1]
-				status := strings.ToUpper(matches[2])
+				statuses := strings.Split(strings.ToUpper(matches[2]), " ")
 				name := matches[3]
 
-				var statusColor output.Style
-				switch strings.ToUpper(status) {
-				case "WIP":
-					statusColor = output.StylePending
-				case "REVIEW":
-					statusColor = output.Fg256Color(208)
-				case "IMPLEMENTED", "APPROVED":
-					statusColor = output.StyleSuccess
-				case "ABANDONED", "PAUSED":
-					statusColor = output.StyleSearchAlertTitle
+				var statusColor output.Style = output.StyleItalic
+				for _, s := range statuses {
+					switch strings.ToUpper(s) {
+					case "WIP":
+						statusColor = output.StylePending
+					case "REVIEW":
+						statusColor = output.Fg256Color(208)
+					case "IMPLEMENTED", "APPROVED", "DONE":
+						statusColor = output.StyleSuccess
+					case "ABANDONED", "PAUSED":
+						statusColor = output.StyleSearchAlertTitle
+					}
+				}
+
+				// Modifiers should combine existing styles, applied after the first iteration
+				for _, s := range statuses {
+					switch strings.ToUpper(s) {
+					case "PRIVATE":
+						statusColor = output.CombineStyles(statusColor, output.StyleUnderline)
+					}
 				}
 
 				numberColor := output.Fg256Color(8)
 
-				out.Writef("RFC %s%s %s%s%s %s", numberColor, number, statusColor, status, output.StyleReset, name)
+				out.Writef("RFC %s%s %s%s%s %s",
+					numberColor, number, statusColor, strings.Join(statuses, " "), output.StyleReset, name)
 			} else {
-				out.Writef("%s%s", i.Name, output.StyleReset)
+				out.Writef("%s%s", f.Name, output.StyleReset)
 			}
 		}
 
