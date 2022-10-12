@@ -24,7 +24,7 @@ func main() {
 
 	logger := log.Scoped("worker", "worker enterprise edition")
 	observationContext := &observation.Context{
-		Logger:     logger,
+		Logger:     log.NoOp(),
 		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
