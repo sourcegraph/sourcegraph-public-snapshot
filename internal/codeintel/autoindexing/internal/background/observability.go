@@ -20,7 +20,7 @@ type operations struct {
 func newOperations(observationContext *observation.Context) *operations {
 	m := metrics.NewREDMetrics(
 		observationContext.Registerer,
-		"codeintel_autoindexing_background", // TODO: need to do this one.
+		"codeintel_autoindexing_background",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of method invocations."),
 	)

@@ -103,7 +103,7 @@ func (b backgroundJob) handleRepository(ctx context.Context, repositoryID, polic
 			}
 
 			// Attempt to queue an index if one does not exist for each of the matching commits
-			if _, err := b.QueueIndexes(ctx, repositoryID, commit, "", false, false); err != nil {
+			if _, err := b.autoindexingSvc.QueueIndexes(ctx, repositoryID, commit, "", false, false); err != nil {
 				if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 					continue
 				}
@@ -142,7 +142,7 @@ func (b backgroundJob) processRepoRevs(ctx context.Context, batchSize int) (err 
 
 	ids := make([]int, 0, len(repoRevs))
 	for _, repoRev := range repoRevs {
-		if _, err := b.QueueIndexes(ctx, repoRev.RepositoryID, repoRev.Rev, "", false, false); err != nil {
+		if _, err := b.autoindexingSvc.QueueIndexes(ctx, repoRev.RepositoryID, repoRev.Rev, "", false, false); err != nil {
 			return err
 		}
 

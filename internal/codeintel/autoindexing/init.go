@@ -56,14 +56,16 @@ var initServiceMemo = memo.NewMemoizedConstructorWithArg(func(deps serviceDepend
 		deps.uploadSvc,
 		deps.depsSvc,
 		deps.policiesSvc,
-		inferenceSvc,
 		policyMatcher,
 		deps.gitserver,
 		repoUpdater,
 		scopedCtx,
 	)
 
-	return newService(store, deps.gitserver, symbolsClient, backgroundJobs, scopedCtx), nil
+	svc := newService(store, deps.uploadSvc, inferenceSvc, repoUpdater, deps.gitserver, symbolsClient, backgroundJobs, scopedCtx)
+	backgroundJobs.SetService(svc)
+
+	return svc, nil
 })
 
 func scopedContext(component string) *observation.Context {

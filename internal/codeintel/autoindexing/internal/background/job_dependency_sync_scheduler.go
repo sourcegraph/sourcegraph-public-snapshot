@@ -29,11 +29,11 @@ func (b *backgroundJob) NewDependencySyncScheduler(pollInterval time.Duration) *
 	workerStore := b.dependencySyncStore
 
 	handler := &dependencySyncSchedulerHandler{
-		uploadsSvc:    b.uploadSvc,
-		depsSvc:       b.depsSvc,
-		backgroundJob: b,
-		workerStore:   workerStore,
-		extsvcStore:   b.externalServiceStore,
+		uploadsSvc:      b.uploadSvc,
+		depsSvc:         b.depsSvc,
+		autoindexingSvc: b.autoindexingSvc,
+		workerStore:     workerStore,
+		extsvcStore:     b.externalServiceStore,
 	}
 
 	return dbworker.NewWorker(rootContext, workerStore, handler, workerutil.WorkerOptions{
@@ -46,11 +46,11 @@ func (b *backgroundJob) NewDependencySyncScheduler(pollInterval time.Duration) *
 }
 
 type dependencySyncSchedulerHandler struct {
-	uploadsSvc    shared.UploadService
-	depsSvc       DependenciesService
-	backgroundJob BackgroundJob
-	workerStore   dbworkerstore.Store
-	extsvcStore   ExternalServiceStore
+	uploadsSvc      shared.UploadService
+	depsSvc         DependenciesService
+	autoindexingSvc AutoIndexingService
+	workerStore     dbworkerstore.Store
+	extsvcStore     ExternalServiceStore
 }
 
 // For mocking in tests
@@ -170,7 +170,7 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.
 	if shouldIndex {
 		// If we saw a kind that's not in schemeToExternalService, then kinds contains an empty string key
 		for kind := range kinds {
-			if _, err := h.backgroundJob.InsertDependencyIndexingJob(ctx, job.UploadID, kind, nextSync); err != nil {
+			if _, err := h.autoindexingSvc.InsertDependencyIndexingJob(ctx, job.UploadID, kind, nextSync); err != nil {
 				errs = append(errs, errors.Wrap(err, "dbstore.InsertDependencyIndexingJob"))
 			}
 		}

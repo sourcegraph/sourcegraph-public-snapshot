@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -36,7 +37,7 @@ func (b *backgroundJob) NewDependencyIndexingScheduler(pollInterval time.Duratio
 		repoStore:          b.repoStore,
 		extsvcStore:        b.externalServiceStore,
 		gitserverRepoStore: b.gitserverRepoStore,
-		indexEnqueuer:      b,
+		indexEnqueuer:      b.autoindexingSvc,
 		workerStore:        b.dependencyIndexingStore,
 		repoUpdater:        b.repoUpdater,
 	}
@@ -53,7 +54,7 @@ func (b *backgroundJob) NewDependencyIndexingScheduler(pollInterval time.Duratio
 type dependencyIndexingSchedulerHandler struct {
 	uploadsSvc         shared.UploadService
 	repoStore          ReposStore
-	indexEnqueuer      BackgroundJob
+	indexEnqueuer      AutoIndexingService
 	extsvcStore        ExternalServiceStore
 	gitserverRepoStore GitserverRepoStore
 	workerStore        dbworkerstore.Store
@@ -136,7 +137,7 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, logger 
 			Version: packageReference.Package.Version,
 		}
 
-		repoName, _, ok := InferRepositoryAndRevision(pkg)
+		repoName, _, ok := inference.InferRepositoryAndRevision(pkg)
 		if !ok {
 			continue
 		}

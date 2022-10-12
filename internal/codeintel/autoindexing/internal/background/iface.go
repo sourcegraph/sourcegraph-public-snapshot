@@ -10,6 +10,7 @@ import (
 	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 type DependenciesService interface {
@@ -35,4 +36,10 @@ type PolicyMatcher interface {
 
 type PoliciesService interface {
 	GetConfigurationPolicies(ctx context.Context, opts codeinteltypes.GetConfigurationPoliciesOptions) ([]codeinteltypes.ConfigurationPolicy, int, error)
+}
+
+type AutoIndexingService interface {
+	QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force, bypassLimit bool) (_ []codeinteltypes.Index, err error)
+	QueueIndexesForPackage(ctx context.Context, pkg precise.Package) (err error)
+	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error)
 }

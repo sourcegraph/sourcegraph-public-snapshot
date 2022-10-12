@@ -81,7 +81,6 @@
       interfaces:
         - RepoUpdaterClient
         - GitServerClient
-        - InferenceService
         - UploadService
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/background
       interfaces:
@@ -89,8 +88,7 @@
         - ReposStore
         - ExternalServiceStore
         - GitserverRepoStore
-        - BackgroundJob
-        - PolicyMatcher
+        - AutoIndexingService
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared
       interfaces:
         - PackageReferenceScanner
@@ -103,6 +101,20 @@
       interfaces:
         - Store
       prefix: Worker
+
+- filename: internal/codeintel/autoindexing/mocks_test.go
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/store
+      interfaces:
+        - Store
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared
+      interfaces:
+        - GitServerClient
+        - RepoUpdaterClient
+        - InferenceService
+        - UploadService
+
+
 - filename: internal/codeintel/autoindexing/internal/inference/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference
   interfaces:
