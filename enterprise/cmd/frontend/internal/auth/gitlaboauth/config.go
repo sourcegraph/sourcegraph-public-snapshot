@@ -76,7 +76,7 @@ func parseConfig(logger log.Logger, cfg conftypes.SiteConfigQuerier, db database
 			alreadyExists := false
 			for _, p := range ps {
 				if p.CachedInfo().ServiceID == provider.ServiceID {
-					problems = append(problems, conf.NewSiteProblems(fmt.Sprintf("cannot have more than one auth provider with url '%s', only the first one will be used", provider.ServiceID))...)
+					problems = append(problems, conf.NewSiteProblems(fmt.Sprintf(`Cannot have more than one auth provider with url %q, only the first one will be used`, provider.ServiceID))...)
 					alreadyExists = true
 				}
 			}
