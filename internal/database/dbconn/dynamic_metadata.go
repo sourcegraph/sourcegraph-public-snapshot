@@ -7,6 +7,9 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // instrumentQuery modifies the query text to include front-loaded metadata that is
@@ -35,7 +38,10 @@ func instrumentQuery(ctx context.Context, query string, numArguments int) (conte
 		metadataLines = append(metadataLines, "-- (could not infer source)")
 	}
 
-	fmt.Printf("> %s\n\n\n\n", strings.Join(metadataLines, "\n"))
+	// Set the hash on the span.
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(attribute.Int64("db.statement.checksum", int64(hash)))
+
 	return ctx, strings.Join(append(metadataLines, query), "\n")
 }
 
