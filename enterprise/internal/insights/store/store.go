@@ -615,6 +615,21 @@ func (s *Store) GetInsightSeriesRecordingTimes(ctx context.Context, seriesID str
 	}, nil
 }
 
+func (s *Store) DeleteInsightSeriesRecordingTimes(ctx context.Context, seriesRecordingTimes types.InsightSeriesRecordingTimes) error {
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	times := make([]*sqlf.Query, len(seriesRecordingTimes.RecordingTimes))
+	for i := range seriesRecordingTimes.RecordingTimes {
+		times[i] = sqlf.Sprintf("%s", seriesRecordingTimes.RecordingTimes[i])
+	}
+
+	return s.Exec(ctx, sqlf.Sprintf(deleteInsightSeriesRecordingTimesByTimeStr, seriesRecordingTimes.SeriesID, sqlf.Join(times, ", ")))
+}
+
 const upsertRepoNameFmtStr = `
 -- source: enterprise/internal/insights/store/store.go:RecordSeriesPoint
 WITH e AS(
@@ -633,6 +648,11 @@ const getInsightSeriesRecordingTimesStr = `
 SELECT recording_time FROM insight_series_recording_times
 WHERE series_id = %s
 ORDER BY recording_time ASC;
+`
+
+const deleteInsightSeriesRecordingTimesByTimeStr = `
+DELETE FROM insight_series_recording_times
+WHERE series_id = %s AND recording_time IN (%s)
 `
 
 func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
