@@ -88,7 +88,7 @@ func NewSyncWorker(ctx context.Context, logger log.Logger, dbHandle basestore.Tr
 	return worker, resetter
 }
 
-func newWorkerMetrics(r prometheus.Registerer) workerutil.WorkerMetrics {
+func newWorkerMetrics(r prometheus.Registerer) workerutil.WorkerObservability {
 	var observationContext *observation.Context
 
 	if r == nil {

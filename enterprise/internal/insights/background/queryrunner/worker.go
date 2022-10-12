@@ -37,7 +37,7 @@ import (
 
 // NewWorker returns a worker that will execute search queries and insert information about the
 // results into the code insights database.
-func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore.Store, insightsStore *store.Store, repoStore discovery.RepoStore, metrics workerutil.WorkerMetrics) *workerutil.Worker {
+func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore.Store, insightsStore *store.Store, repoStore discovery.RepoStore, metrics workerutil.WorkerObservability) *workerutil.Worker {
 	numHandlers := conf.Get().InsightsQueryWorkerConcurrency
 	if numHandlers <= 0 {
 		// Default concurrency is set to 5.
@@ -235,7 +235,6 @@ func PurgeJobsForSeries(ctx context.Context, workerBaseStore *basestore.Store, s
 
 	err = tx.Exec(ctx, sqlf.Sprintf(purgeJobsForSeriesFmtStr, seriesID))
 	return err
-
 }
 
 const purgeJobsForSeriesFmtStr = `
@@ -333,6 +332,7 @@ func QueryAllSeriesStatus(ctx context.Context, workerBaseStore *basestore.Store)
 	query, err := workerBaseStore.Query(ctx, q)
 	return scanAllSeriesStatusRows(query, err)
 }
+
 func scanAllSeriesStatusRows(rows *sql.Rows, queryErr error) (_ []types.InsightSeriesStatus, err error) {
 	if queryErr != nil {
 		return nil, queryErr

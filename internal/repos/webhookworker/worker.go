@@ -16,7 +16,7 @@ import (
 	workerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-func NewWorker(ctx context.Context, handler workerutil.Handler, workerStore workerstore.Store, metrics workerutil.WorkerMetrics) *workerutil.Worker {
+func NewWorker(ctx context.Context, handler workerutil.Handler, workerStore workerstore.Store, metrics workerutil.WorkerObservability) *workerutil.Worker {
 	options := workerutil.WorkerOptions{
 		Name:              "webhook_build_worker",
 		NumHandlers:       3,
