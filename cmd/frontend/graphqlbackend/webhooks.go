@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
@@ -123,6 +124,10 @@ func (r *schemaResolver) CreateWebhook(ctx context.Context, args *struct {
 	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
 		return nil, auth.ErrMustBeSiteAdmin
 	}
+	a := actor.FromContext(ctx)
+	if !a.IsAuthenticated() {
+		return nil, errors.New("no current user")
+	}
 	err := validateCodeHostKindAndSecret(args.CodeHostKind, args.Secret)
 	if err != nil {
 		return nil, err
@@ -132,7 +137,7 @@ func (r *schemaResolver) CreateWebhook(ctx context.Context, args *struct {
 		secretStr = *args.Secret
 	}
 	secret := types.NewUnencryptedSecret(secretStr)
-	webhook, err := r.db.Webhooks(keyring.Default().WebhookKey).Create(ctx, args.CodeHostKind, args.CodeHostURN, secret)
+	webhook, err := r.db.Webhooks(keyring.Default().WebhookKey).Create(ctx, args.CodeHostKind, args.CodeHostURN, a.UID, secret)
 	if err != nil {
 		return nil, err
 	}

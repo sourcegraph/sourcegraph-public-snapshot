@@ -1,6 +1,7 @@
 package graphqlbackend
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -17,6 +19,7 @@ func TestCreateWebhook(t *testing.T) {
 	users := database.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
+	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 	webhookStore := database.NewMockWebhookStore()
 	whUUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
@@ -38,9 +41,10 @@ func TestCreateWebhook(t *testing.T) {
 
 	RunTests(t, []*Test{
 		{
-			Label:  "basic",
-			Schema: schema,
-			Query:  queryStr,
+			Label:   "basic",
+			Context: ctx,
+			Schema:  schema,
+			Query:   queryStr,
 			ExpectedResult: fmt.Sprintf(`
 				{
 					"createWebhook": {
@@ -52,11 +56,11 @@ func TestCreateWebhook(t *testing.T) {
 			Variables: map[string]any{
 				"codeHostKind": "GITHUB",
 				"codeHostURN":  "https://github.com",
-				//"secret": "mysupersecret", // TODO: secret should not be required
 			},
 		},
 		{
 			Label:          "invalid code host",
+			Context:        ctx,
 			Schema:         schema,
 			Query:          queryStr,
 			ExpectedResult: "null",
@@ -73,6 +77,7 @@ func TestCreateWebhook(t *testing.T) {
 		},
 		{
 			Label:          "secrets not supported for code host",
+			Context:        ctx,
 			Schema:         schema,
 			Query:          queryStr,
 			ExpectedResult: "null",
@@ -94,6 +99,7 @@ func TestCreateWebhook(t *testing.T) {
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: false}, nil)
 	RunTest(t, &Test{
 		Label:          "only site admin can create webhook",
+		Context:        ctx,
 		Schema:         schema,
 		Query:          queryStr,
 		ExpectedResult: "null",
