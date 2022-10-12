@@ -3,6 +3,7 @@ package ui
 import (
 	"context"
 	"fmt"
+	"math"
 	"os/exec"
 
 	"github.com/neelance/parallel"
@@ -97,6 +98,7 @@ func (ui *TUI) DeterminingWorkspaceCreatorTypeSuccess(wt workspace.CreatorType) 
 func (ui *TUI) DeterminingWorkspaces() {
 	ui.pending = batchCreatePending(ui.Out, "Determining workspaces")
 }
+
 func (ui *TUI) DeterminingWorkspacesSuccess(workspacesCount, reposCount int, unsupported batches.UnsupportedRepoSet, ignored batches.IgnoredRepoSet) {
 	batchCompletePending(ui.pending, fmt.Sprintf("Resolved %d workspaces from %d repositories", workspacesCount, reposCount))
 
@@ -111,6 +113,31 @@ func (ui *TUI) DeterminingWorkspacesSuccess(workspacesCount, reposCount int, uns
 		for repo := range ignored {
 			block.Write(repo.Name)
 		}
+		block.Close()
+	}
+
+	ui.maybeWorkspaceCountWarning(workspacesCount, 500)
+}
+
+func (ui *TUI) maybeWorkspaceCountWarning(count, limit int) {
+	if count > limit {
+		block := ui.Out.Block(output.Linef(
+			"⚠️", output.StyleWarning,
+			"Batch changes with more than %d workspaces may be unwieldy to manage.",
+			limit,
+		))
+
+		for _, line := range []string{
+			"We're working on providing more filtering options, and you can continue with",
+			fmt.Sprintf(
+				"this batch change if you want, but you may want to break it into %d or more",
+				int(math.Ceil(float64(count)/float64(limit))),
+			),
+			"batch changes if you can.",
+		} {
+			block.WriteLine(output.Line("", output.StyleSuggestion, line))
+		}
+
 		block.Close()
 	}
 }
@@ -244,8 +271,9 @@ func (ui *TUI) ResolvingWorkspaces() {
 	ui.pending = batchCreatePending(ui.Out, "Resolving workspaces")
 }
 
-func (ui *TUI) ResolvingWorkspacesSuccess() {
+func (ui *TUI) ResolvingWorkspacesSuccess(workspacesCount int) {
 	batchCompletePending(ui.pending, "Resolving workspaces")
+	ui.maybeWorkspaceCountWarning(workspacesCount, 2000)
 }
 
 func (ui *TUI) ExecutingBatchSpec() {

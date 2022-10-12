@@ -119,8 +119,9 @@ Examples:
 		ui.ResolvingWorkspaces()
 		ticker := time.NewTicker(1 * time.Second)
 		defer ticker.Stop()
+		var res *service.BatchSpecWorkspaceResolution
 		for range ticker.C {
-			res, err := svc.GetBatchSpecWorkspaceResolution(ctx, batchSpecID)
+			res, err = svc.GetBatchSpecWorkspaceResolution(ctx, batchSpecID)
 			if err != nil {
 				return err
 			}
@@ -131,7 +132,7 @@ Examples:
 				break
 			}
 		}
-		ui.ResolvingWorkspacesSuccess()
+		ui.ResolvingWorkspacesSuccess(res.Workspaces.TotalCount)
 
 		// We have to enqueue this for execution with a separate operation.
 		//

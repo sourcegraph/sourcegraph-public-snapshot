@@ -275,6 +275,9 @@ query BatchSpecWorkspaceResolution($batchSpec: ID!) {
             workspaceResolution {
                 failureMessage
                 state
+				workspaces {
+					totalCount
+				}
             }
         }
     }
@@ -284,6 +287,9 @@ query BatchSpecWorkspaceResolution($batchSpec: ID!) {
 type BatchSpecWorkspaceResolution struct {
 	FailureMessage string `json:"failureMessage"`
 	State          string `json:"state"`
+	Workspaces     struct {
+		TotalCount int `json:"totalCount"`
+	} `json:"workspaces"`
 }
 
 func (svc *Service) GetBatchSpecWorkspaceResolution(ctx context.Context, id string) (*BatchSpecWorkspaceResolution, error) {
