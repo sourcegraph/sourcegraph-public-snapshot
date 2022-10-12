@@ -1325,6 +1325,7 @@ Indexes:
  last_fetched    | timestamp with time zone |           | not null | now()
  last_changed    | timestamp with time zone |           | not null | now()
  repo_size_bytes | bigint                   |           |          | 
+ repo_status     | text                     |           |          | 
 Indexes:
     "gitserver_repos_pkey" PRIMARY KEY, btree (repo_id)
     "gitserver_repos_cloned_status_idx" btree (repo_id) WHERE clone_status = 'cloned'::text

@@ -9808,6 +9808,19 @@
           "Comment": ""
         },
         {
+          "Name": "repo_status",
+          "Index": 9,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "shard_id",
           "Index": 3,
           "TypeName": "text",
