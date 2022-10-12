@@ -17,7 +17,6 @@ import {
 } from '@sourcegraph/common'
 import { createUpdateableField, editorHeight, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
-import { isSettingsValid } from '@sourcegraph/shared/src/settings/settings'
 import { parseQueryAndHash, UIPositionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { useExperimentalFeatures } from '../../stores'
@@ -95,7 +94,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         location,
         history,
         blameHunks,
-        settingsCascade,
+        keyboardNavigation,
 
         // Reference panel specific props
         disableStatusBar,
@@ -122,8 +121,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
 
     const blameDecorations = useMemo(() => (blameHunks ? [showGitBlameDecorations.of(blameHunks)] : []), [blameHunks])
 
-    const enableCodeIntelKeyboardNavigation =
-        isSettingsValid(settingsCascade) && settingsCascade.final['codeIntel.keyboardNavigation'] === 'token'
     const preloadGoToDefinition = useExperimentalFeatures(features => features.preloadGoToDefinition ?? false)
 
     // Keep history and location in a ref so that we can use the latest value in
@@ -174,7 +171,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 initialSelection: position.line !== undefined ? position : null,
                 navigateToLineOnAnyClick: navigateToLineOnAnyClick ?? false,
             }),
-            enableCodeIntelKeyboardNavigation ? tokensAsLinks.of({ blobInfo, history, preloadGoToDefinition }) : [],
+            keyboardNavigation ? tokensAsLinks.of({ blobInfo, history, preloadGoToDefinition }) : [],
             syntaxHighlight.of(blobInfo),
             pinnedRangeField.init(() => (hasPin ? position : null)),
             extensionsController !== null && !navigateToLineOnAnyClick

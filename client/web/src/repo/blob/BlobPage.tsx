@@ -507,6 +507,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                         isBlameVisible={isBlameVisible}
                         blameHunks={blameDecorations}
                         overrideBrowserSearchKeybinding={true}
+                        keyboardNavigation={enableKeyboardNavigation}
                     />
                 </TraceSpanProvider>
             )}
