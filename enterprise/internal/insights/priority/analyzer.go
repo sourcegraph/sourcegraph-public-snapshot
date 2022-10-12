@@ -13,7 +13,8 @@ type QueryAnalyzer struct {
 }
 
 type QueryObject struct {
-	Query query.Plan
+	Query                query.Plan
+	NumberOfRepositories int64
 
 	Cost float64
 }
@@ -93,5 +94,15 @@ func QueryCost(o *QueryObject) {
 		} else if *fork == query.Only {
 			o.Cost *= OnlyMultiplier
 		}
+	}
+}
+
+func RepositoriesCost(o *QueryObject) {
+	if o.Cost <= 0.0 {
+		o.Cost = 1 // if this handler is called on its own we still want it to impact the cost.
+	}
+
+	if o.NumberOfRepositories > 10000 {
+		o.Cost *= ManyRepositoriesMultiplier
 	}
 }

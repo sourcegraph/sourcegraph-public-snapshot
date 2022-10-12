@@ -16,9 +16,9 @@ const (
 ) // values that could associate a speed to a floating point
 
 const (
-	LiteralCost    float64 = 10
+	LiteralCost    float64 = 50
 	RegexpCost     float64 = 500
-	StructuralCost float64 = 1000
+	StructuralCost float64 = 5000
 
 	DiffMultiplier   float64 = 1000
 	CommitMultiplier float64 = 800
@@ -31,4 +31,6 @@ const (
 
 	FileMultiplier float64 = 0.1
 	LangMultiplier float64 = 0.5
+
+	ManyRepositoriesMultiplier float64 = 10
 )

@@ -7,14 +7,15 @@ import (
 )
 
 func TestQueryAnalyzerCost(t *testing.T) {
-	defaultHandlers := []CostHeuristic{QueryCost}
+	defaultHandlers := []CostHeuristic{QueryCost, RepositoriesCost}
 
 	testCases := []struct {
-		name        string
-		query       string
-		handlers    []CostHeuristic
-		higherThan  float64
-		smallerThan float64
+		name                 string
+		query                string
+		numberOfRepositories int64
+		handlers             []CostHeuristic
+		higherThan           float64
+		smallerThan          float64
 	}{
 		{
 			name:        "literal diff query should be magnitudes higher",
@@ -44,6 +45,14 @@ func TestQueryAnalyzerCost(t *testing.T) {
 			higherThan:  0.0,
 			smallerThan: Simple,
 		},
+		{
+			name:                 "regexp query with reduced complexity but many repos slow",
+			query:                "patterntype:regexp [0-9]+ lang:go",
+			numberOfRepositories: 30000,
+			handlers:             defaultHandlers,
+			higherThan:           Slow,
+			smallerThan:          Long,
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -52,7 +61,7 @@ func TestQueryAnalyzerCost(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cost := queryAnalyzer.Cost(&QueryObject{Query: queryPlan})
+			cost := queryAnalyzer.Cost(&QueryObject{Query: queryPlan, NumberOfRepositories: tc.numberOfRepositories})
 			if cost < tc.higherThan {
 				t.Errorf("expected cost to be higher than %f, got %f", tc.higherThan, cost)
 			}
