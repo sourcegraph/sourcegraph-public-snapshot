@@ -11,7 +11,6 @@ import { PasswordInput } from '../../../auth/SignInSignUpCommon'
 import { PageTitle } from '../../../components/PageTitle'
 import {
     UserAreaUserFields,
-    ExternalServiceKind,
     ExternalAccountFields,
     MinExternalAccountsVariables,
     UpdatePasswordVariables,
@@ -28,11 +27,12 @@ import { ExternalAccountsSignIn } from './ExternalAccountsSignIn'
 
 // pick only the fields we need
 type MinExternalAccount = Pick<ExternalAccountFields, 'id' | 'serviceID' | 'serviceType' | 'accountData'>
-type UserExternalAccount = UserExternalAccountsResult['user']['externalAccounts']['nodes'][0]
+export type UserExternalAccount = UserExternalAccountsResult['user']['externalAccounts']['nodes'][0]
 type ServiceType = AuthProvider['serviceType']
 
 export type ExternalAccountsByType = Partial<Record<ServiceType, UserExternalAccount>>
-export type AuthProvidersByType = Partial<Record<ServiceType, AuthProvider>>
+export type AuthProvidersByBaseURL = Partial<Record<string, AuthProvider>>
+export type AccountByServiceID = Partial<Record<string, UserExternalAccount>>
 
 interface UserExternalAccountsResult {
     user: {
@@ -48,12 +48,6 @@ interface Props {
     context: Pick<SourcegraphContext, 'authProviders'>
 }
 
-const accountsByType = (accounts: MinExternalAccount[]): ExternalAccountsByType =>
-    accounts.reduce((accumulator: ExternalAccountsByType, account) => {
-        accumulator[account.serviceType as ServiceType] = account
-        return accumulator
-    }, {})
-
 export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
     const [oldPassword, setOldPassword] = useState<string>('')
     const [newPassword, setNewPassword] = useState<string>('')
@@ -65,13 +59,17 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
     const [saved, setSaved] = useState<boolean>(false)
     const [error, setError] = useState<ErrorLike>()
 
+    const handleError = (error: ErrorLike): [] => {
+        setError(error)
+        setSaved(false)
+        return []
+    }
+
     const { data, loading } = useQuery<UserExternalAccountsResult, MinExternalAccountsVariables>(
         USER_EXTERNAL_ACCOUNTS,
         {
             variables: { username: props.user.username },
-            onError: (error): void => {
-                handleError(error)
-            },
+            onError: handleError,
         }
     )
 
@@ -81,18 +79,10 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
     }
 
     // auth providers by service type
-    const authProvidersByType = props.context.authProviders.reduce((accumulator: AuthProvidersByType, provider) => {
-        accumulator[provider.serviceType] = provider
+    const accountByServiceID = accounts.fetched?.reduce((accumulator: AccountByServiceID, account) => {
+        accumulator[account.serviceID] = account
         return accumulator
     }, {})
-
-    const shouldShowOldPasswordInput = (): boolean =>
-        /**
-         * Show old password form only when all items are true
-         * 1. user has a password set
-         * 2. user doesn't have external accounts
-         */
-        props.user.builtinAuth && accounts.fetched?.length === 0
 
     useEffect(() => {
         eventLogger.logPageView('UserSettingsPassword')
@@ -129,12 +119,6 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
         }
     }
 
-    const handleError = (error: ErrorLike): [] => {
-        setError(error)
-        setSaved(false)
-        return []
-    }
-
     const [updatePassword] = useMutation<UpdatePasswordResult, UpdatePasswordVariables>(UPDATE_PASSWORD, {
         variables: {
             oldPassword,
@@ -152,10 +136,10 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
-        if (shouldShowOldPasswordInput()) {
-            updatePassword().catch(error => handleError(error))
+        if (props.user.builtinAuth) {
+            updatePassword().catch(handleError)
         } else {
-            createPassword().catch(error => handleError(error))
+            createPassword().catch(handleError)
         }
         setSaved(true)
     }
@@ -203,98 +187,90 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
             )}
 
             {/* fetched external accounts */}
-            {accounts.fetched && (
+            {accountByServiceID && (
                 <Container>
                     <ExternalAccountsSignIn
-                        supported={[ExternalServiceKind.GITHUB, ExternalServiceKind.GITLAB]}
-                        accounts={accountsByType(accounts.fetched)}
-                        authProviders={authProvidersByType}
+                        accounts={accountByServiceID}
+                        authProviders={props.context.authProviders}
                         onDidError={handleError}
                         onDidRemove={onAccountRemoval}
                     />
                 </Container>
             )}
 
-            {/* fetched external accounts but user doesn't have any */}
-            {accounts.fetched?.length === 0 && (
-                <>
-                    <hr className="my-4" />
-                    <H3 className="mb-3">Password</H3>
-                    <Container>
-                        <Form onSubmit={handleSubmit}>
-                            {/* Include a username field as a hint for password managers to update the saved password. */}
-                            <Input
-                                value={props.user.username}
-                                name="username"
-                                autoComplete="username"
-                                readOnly={true}
-                                hidden={true}
-                            />
-                            {shouldShowOldPasswordInput() && (
-                                <div className="form-group">
-                                    <Label htmlFor="oldPassword">Old password</Label>
-                                    <PasswordInput
-                                        value={oldPassword}
-                                        onChange={onOldPasswordFieldChange}
-                                        disabled={loading}
-                                        id="oldPassword"
-                                        name="oldPassword"
-                                        aria-label="old password"
-                                        placeholder=" "
-                                        autoComplete="current-password"
-                                    />
-                                </div>
-                            )}
-
-                            <div className="form-group">
-                                <Label htmlFor="newPassword">New password</Label>
-                                <PasswordInput
-                                    value={newPassword}
-                                    onChange={onNewPasswordFieldChange}
-                                    disabled={loading}
-                                    id="newPassword"
-                                    name="newPassword"
-                                    aria-label="new password"
-                                    minLength={window.context.authMinPasswordLength}
-                                    placeholder=" "
-                                    autoComplete="new-password"
-                                />
-                                <small className="form-help text-muted">
-                                    {getPasswordRequirements(window.context)}
-                                </small>
-                            </div>
-                            <div className="form-group">
-                                <Label htmlFor="newPasswordConfirmation">Confirm new password</Label>
-                                <PasswordInput
-                                    value={newPasswordConfirmation}
-                                    onChange={onNewPasswordConfirmationFieldChange}
-                                    disabled={loading}
-                                    id="newPasswordConfirmation"
-                                    name="newPasswordConfirmation"
-                                    aria-label="new password confirmation"
-                                    placeholder=" "
-                                    minLength={window.context.authMinPasswordLength}
-                                    inputRef={setNewPasswordConfirmationField}
-                                    autoComplete="new-password"
-                                />
-                            </div>
-                            <Button
-                                className="user-settings-password-page__button"
-                                type="submit"
+            <hr className="my-4" />
+            <H3 className="mb-3">Password</H3>
+            <Container>
+                <Form onSubmit={handleSubmit}>
+                    {/* Include a username field as a hint for password managers to update the saved password. */}
+                    <Input
+                        value={props.user.username}
+                        name="username"
+                        autoComplete="username"
+                        readOnly={true}
+                        hidden={true}
+                    />
+                    {props.user.builtinAuth && (
+                        <div className="form-group">
+                            <Label htmlFor="oldPassword">Old password</Label>
+                            <PasswordInput
+                                value={oldPassword}
+                                onChange={onOldPasswordFieldChange}
                                 disabled={loading}
-                                variant="primary"
-                            >
-                                {loading && (
-                                    <>
-                                        <LoadingSpinner />{' '}
-                                    </>
-                                )}
-                                {shouldShowOldPasswordInput() ? 'Update password' : 'Set password'}
-                            </Button>
-                        </Form>
-                    </Container>
-                </>
-            )}
+                                id="oldPassword"
+                                name="oldPassword"
+                                aria-label="old password"
+                                placeholder=" "
+                                autoComplete="current-password"
+                            />
+                        </div>
+                    )}
+
+                    <div className="form-group">
+                        <Label htmlFor="newPassword">New password</Label>
+                        <PasswordInput
+                            value={newPassword}
+                            onChange={onNewPasswordFieldChange}
+                            disabled={loading}
+                            id="newPassword"
+                            name="newPassword"
+                            aria-label="new password"
+                            minLength={window.context.authMinPasswordLength}
+                            placeholder=" "
+                            autoComplete="new-password"
+                        />
+                        <small className="form-help text-muted">{getPasswordRequirements(window.context)}</small>
+                    </div>
+                    <div className="form-group">
+                        <Label htmlFor="newPasswordConfirmation">Confirm new password</Label>
+                        <PasswordInput
+                            value={newPasswordConfirmation}
+                            onChange={onNewPasswordConfirmationFieldChange}
+                            disabled={loading}
+                            id="newPasswordConfirmation"
+                            name="newPasswordConfirmation"
+                            aria-label="new password confirmation"
+                            placeholder=" "
+                            minLength={window.context.authMinPasswordLength}
+                            inputRef={setNewPasswordConfirmationField}
+                            autoComplete="new-password"
+                        />
+                    </div>
+                    <Button
+                        className="user-settings-password-page__button"
+                        type="submit"
+                        disabled={loading}
+                        variant="primary"
+                    >
+                        {loading && (
+                            <>
+                                <LoadingSpinner />{' '}
+                            </>
+                        )}
+                        {props.user.builtinAuth ? 'Update password' : 'Set password'}
+                    </Button>
+                </Form>
+            </Container>
         </>
     )
 }
