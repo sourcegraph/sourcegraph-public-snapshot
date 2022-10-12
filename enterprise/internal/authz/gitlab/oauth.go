@@ -112,13 +112,6 @@ func (p *OAuthProvider) FetchUserPerms(ctx context.Context, account *extsvc.Acco
 	return listProjects(ctx, client)
 }
 
-// FetchUserPermsByToken is the same as FetchUserPerms, but it only requires a
-// token.
-func (p *OAuthProvider) FetchUserPermsByToken(ctx context.Context, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
-	client := p.clientProvider.GetOAuthClient(token)
-	return listProjects(ctx, client)
-}
-
 // FetchRepoPerms returns a list of user IDs (on code host) who have read access to
 // the given project on the code host. The user ID has the same value as it would
 // be used as extsvc.Account.AccountID. The returned list includes both direct access
