@@ -32,8 +32,14 @@ func TestCreateWebhook(t *testing.T) {
 	db.WebhooksFunc.SetDefaultReturn(webhookStore)
 	//db.UsersFunc.SetDefaultReturn(users)
 	//db.AuthzFunc.SetDefaultReturn(authz)
-	queryStr := `mutation CreateWebhook($codeHostKind: String!, $codeHostURN: String!) {
+	queryStrNoSecret := `mutation CreateWebhook($codeHostKind: String!, $codeHostURN: String!) {
 				createWebhook(codeHostKind: $codeHostKind, codeHostURN: $codeHostURN) {
+					id
+					uuid
+				}
+			}`
+	queryStrWithSecret := `mutation CreateWebhook($codeHostKind: String!, $codeHostURN: String!, $secret: String) {
+				createWebhook(codeHostKind: $codeHostKind, codeHostURN: $codeHostURN, secret: $secret) {
 					id
 					uuid
 				}
@@ -42,8 +48,9 @@ func TestCreateWebhook(t *testing.T) {
 
 	RunTests(t, []*Test{
 		{
+			Label:  "basic",
 			Schema: schema,
-			Query:  queryStr,
+			Query:  queryStrNoSecret,
 			ExpectedResult: fmt.Sprintf(`
 				{
 					"createWebhook": {
@@ -59,8 +66,9 @@ func TestCreateWebhook(t *testing.T) {
 			},
 		},
 		{
+			Label:          "invalid code host",
 			Schema:         schema,
-			Query:          queryStr,
+			Query:          queryStrNoSecret,
 			ExpectedResult: "null",
 			ExpectedErrors: []*errors.QueryError{
 				{
@@ -72,6 +80,23 @@ func TestCreateWebhook(t *testing.T) {
 				"codeHostKind": "InvalidKind",
 				"codeHostURN":  "https://github.com",
 				//"secret": "mysupersecret", // TODO: secret should not be required
+			},
+		},
+		{
+			Label:          "secrets not supported for code host",
+			Schema:         schema,
+			Query:          queryStrWithSecret,
+			ExpectedResult: "null",
+			ExpectedErrors: []*errors.QueryError{
+				{
+					Message: "webhooks do not support secrets for code host kind BITBUCKETCLOUD",
+					Path:    []any{"createWebhook"},
+				},
+			},
+			Variables: map[string]any{
+				"codeHostKind": "BITBUCKETCLOUD",
+				"codeHostURN":  "https://bitbucket.com",
+				"secret":       "mysupersecret",
 			},
 		},
 	})

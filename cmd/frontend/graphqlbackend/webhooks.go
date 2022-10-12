@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -119,16 +118,17 @@ func unmarshalWebhookID(id graphql.ID) (hookID int32, err error) {
 func (r *schemaResolver) CreateWebhook(ctx context.Context, args *struct {
 	CodeHostKind string
 	CodeHostURN  string
-	Secret       string
+	Secret       *string
 }) (*webhookResolver, error) {
-	fmt.Printf("Creating webhook with CodeHostKind %s, CodeHostURN %s, Secret %s\n",
-		args.CodeHostKind, args.CodeHostURN, args.Secret)
-	// TODO: validate code host kind
-	err := validateCodeHostKind(args.CodeHostKind)
+	err := validateCodeHostKindAndSecret(args.CodeHostKind, args.Secret)
 	if err != nil {
 		return nil, err
 	}
-	secret := types.NewUnencryptedSecret(args.Secret) // TODO actually handle this
+	var secretStr string
+	if args.Secret != nil {
+		secretStr = *args.Secret
+	}
+	secret := types.NewUnencryptedSecret(secretStr) // TODO actually handle this
 	webhook, err := r.db.Webhooks(keyring.Default().WebhookKey).Create(ctx, args.CodeHostKind, args.CodeHostURN, secret)
 	if err != nil {
 		return nil, err
@@ -136,18 +136,16 @@ func (r *schemaResolver) CreateWebhook(ctx context.Context, args *struct {
 	return &webhookResolver{hook: webhook}, nil
 }
 
-func validateCodeHostKind(codeHostKind string) error {
+func validateCodeHostKindAndSecret(codeHostKind string, secret *string) error {
 	switch codeHostKind {
-	case extsvc.KindGitHub:
-		fmt.Println("GITHUB")
-	case extsvc.KindGitLab:
-		fmt.Println("GITLAB")
-	case extsvc.KindBitbucketCloud:
-		fmt.Println("BB CLOUD")
-	case extsvc.KindBitbucketServer:
-		fmt.Println("BB Server")
+	case extsvc.KindGitHub, extsvc.KindGitLab:
+		return nil
+	case extsvc.KindBitbucketCloud, extsvc.KindBitbucketServer:
+		if secret != nil {
+			return errors.Newf("webhooks do not support secrets for code host kind %s", codeHostKind)
+		}
+		return nil
 	default:
 		return errors.Newf("Webhooks are not supported for code host kind %s", codeHostKind)
 	}
-	return nil
 }

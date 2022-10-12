@@ -105,7 +105,7 @@ type Mutation {
 
     """TODO: add comment, add optional secret
     """
-    createWebhook(codeHostKind: String!, codeHostURN: String!): Webhook!
+    createWebhook(codeHostKind: String!, codeHostURN: String!, secret: String): Webhook!
 
     """
     Adds a external service. Only site admins may perform this mutation.
