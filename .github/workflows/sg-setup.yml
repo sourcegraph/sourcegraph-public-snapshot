@@ -5,12 +5,6 @@ on:
       - '.github/workflows/sg-setup.yml'
       - 'dev/sg/dependencies/**.go'
       - 'dev/sg/internal/check/**.go'
-  pull_request:
-    paths:
-      - '.github/workflows/sg-setup.yml'
-      - 'dev/sg/dependencies/**.go'
-      - 'dev/sg/internal/check/**.go'
-
 jobs:
   test:
     strategy:
