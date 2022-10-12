@@ -29,6 +29,7 @@ type BackgroundJob interface {
 		minimumTimeSinceLastCheck time.Duration,
 		commitResolverBatchSize int,
 		commitResolverMaximumCommitLag time.Duration,
+		failedIndexMaxAge time.Duration,
 	) goroutine.BackgroundRoutine
 
 	SetService(service AutoIndexingService)
