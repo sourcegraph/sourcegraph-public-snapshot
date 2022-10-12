@@ -227,6 +227,21 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types
 	}
 	stats.WeeklyGroupResultsExpandedViewCollapse = weeklyGroupResultsExpandedViewCollapse
 
+	weeklyGroupResultsSearches, err := GetGroupResultsSearchesPings(
+		ctx,
+		db,
+		[]types.PingName{
+			"ProactiveLimitHit",
+			"ProactiveLimitSuccess",
+			"ExplicitLimitHit",
+			"ExplicitLimitSuccess",
+		},
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "WeeklyGroupResultsSearches")
+	}
+	stats.WeeklyGroupResultsSearches = weeklyGroupResultsSearches
+
 	backfillTime, err := GetBackfillTimePing(ctx, db)
 	if err != nil {
 		return nil, errors.Wrap(err, "GetBackfillTimePing")
@@ -440,6 +455,40 @@ func GetGroupResultsExpandedViewPing(ctx context.Context, db database.DB, pingNa
 		groupResultsExpandedViewPings = append(groupResultsExpandedViewPings, groupResultsExpandedViewPing)
 	}
 	return groupResultsExpandedViewPings, nil
+}
+
+func GetGroupResultsSearchesPings(ctx context.Context, db database.DB, pingNames []types.PingName) ([]types.GroupResultSearchPing, error) {
+	pings := []types.GroupResultSearchPing{}
+
+	for _, name := range pingNames {
+		rows, err := db.QueryContext(ctx, getGroupResultsSql, string(name), timeNow())
+		if err != nil {
+			return nil, err
+		}
+		err = func() error {
+			defer rows.Close()
+			var noop *string
+			for rows.Next() {
+				ping := types.GroupResultSearchPing{
+					Name: name,
+				}
+				if err := rows.Scan(
+					&ping.Count,
+					&ping.AggregationMode,
+					&noop,
+					&noop,
+				); err != nil {
+					return err
+				}
+				pings = append(pings, ping)
+			}
+			return nil
+		}()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return pings, nil
 }
 
 func GetBackfillTimePing(ctx context.Context, db database.DB) ([]types.InsightsBackfillTimePing, error) {

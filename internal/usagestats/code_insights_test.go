@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -126,6 +125,7 @@ func TestCodeInsightsUsageStatistics(t *testing.T) {
 	want.WeeklyGroupResultsChartBarClick = []types.GroupResultPing{}
 	want.WeeklyGroupResultsAggregationModeClicked = []types.GroupResultPing{}
 	want.WeeklyGroupResultsAggregationModeDisabledHover = []types.GroupResultPing{}
+	want.WeeklyGroupResultsSearches = []types.GroupResultSearchPing{}
 	want.WeeklySeriesBackfillTime = []types.InsightsBackfillTimePing{}
 
 	if diff := cmp.Diff(want, have); diff != "" {
