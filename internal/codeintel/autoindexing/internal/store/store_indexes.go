@@ -72,7 +72,6 @@ func (s *store) InsertIndexes(ctx context.Context, indexes []types.Index) (_ []t
 }
 
 const insertIndexQuery = `
--- source: internal/codeintel/stores/dbstore/indexes.go:InsertIndex
 INSERT INTO lsif_indexes (
 	state,
 	commit,
@@ -136,7 +135,6 @@ func (s *store) GetIndexes(ctx context.Context, opts types.GetIndexesOptions) (_
 }
 
 const getIndexesQuery = `
--- source: internal/codeintel/stores/dbstore/indexes.go:GetIndexes
 SELECT
 	u.id,
 	u.commit,
@@ -234,7 +232,6 @@ WHERE r.state = 'queued'
 `
 
 const getIndexByIDQuery = `
--- source: internal/codeintel/stores/dbstore/indexes.go:GetIndexByID
 SELECT
 	u.id,
 	u.commit,
@@ -290,7 +287,6 @@ func (s *store) GetIndexesByIDs(ctx context.Context, ids ...int) (_ []types.Inde
 }
 
 const getIndexesByIDsQuery = `
--- source: internal/codeintel/stores/dbstore/indexes.go:GetIndexesByIDs
 SELECT
 	u.id,
 	u.commit,
@@ -338,7 +334,6 @@ func (s *store) GetLastIndexScanForRepository(ctx context.Context, repositoryID 
 }
 
 const lastIndexScanForRepositoryQuery = `
--- source: internal/codeintel/stores/dbstore/indexes.go:LastIndexScanForRepository
 SELECT last_index_scan_at FROM lsif_last_index_scan WHERE repository_id = %s
 `
 
@@ -360,7 +355,6 @@ func (s *store) DeleteIndexByID(ctx context.Context, id int) (_ bool, err error)
 }
 
 const deleteIndexByIDQuery = `
--- source: internal/codeintel/stores/dbstore/indexes.go:DeleteIndexByID
 DELETE FROM lsif_indexes WHERE id = %s RETURNING repository_id
 `
 
@@ -401,7 +395,6 @@ func (s *store) DeleteIndexesWithoutRepository(ctx context.Context, now time.Tim
 }
 
 const deleteIndexesWithoutRepositoryQuery = `
--- source: internal/codeintel/autoindexing/internal/store/store_indexes.go:DeleteIndexesWithoutRepository
 WITH
 candidates AS (
 	SELECT u.id
@@ -434,7 +427,6 @@ func (s *store) IsQueued(ctx context.Context, repositoryID int, commit string) (
 }
 
 const isQueuedQuery = `
--- source: internal/codeintel/stores/dbstore/indexes.go:IsQueued
 SELECT COUNT(*) WHERE EXISTS (
 	SELECT id FROM lsif_uploads_with_repository_name WHERE repository_id = %s AND commit = %s AND state NOT IN ('deleted', 'deleting')
 	UNION
@@ -469,7 +461,6 @@ func (s *store) QueueRepoRev(ctx context.Context, repositoryID int, rev string) 
 }
 
 const queueRepoRevQuery = `
--- source: internal/codeintel/stores/dbstore/indexes.go:QueuedRepoRev
 INSERT INTO codeintel_autoindex_queue (repository_id, rev)
 VALUES (%s, %s)
 ON CONFLICT DO NOTHING
@@ -494,7 +485,6 @@ func (s *store) GetQueuedRepoRev(ctx context.Context, batchSize int) (_ []RepoRe
 }
 
 const getQueuedRepoRevQuery = `
--- source: internal/codeintel/stores/dbstore/indexes.go:GetQueuedRepoRev
 SELECT id, repository_id, rev
 FROM codeintel_autoindex_queue
 WHERE processed_at IS NULL
@@ -514,7 +504,6 @@ func (s *store) MarkRepoRevsAsProcessed(ctx context.Context, ids []int) (err err
 }
 
 const markRepoRevsAsProcessedQuery = `
--- source: internal/codeintel/stores/dbstore/indexes.go:MarkRepoRevsAsProcessed
 UPDATE codeintel_autoindex_queue
 SET processed_at = NOW()
 WHERE id = ANY(%s)
@@ -553,7 +542,6 @@ func (s *store) GetRecentIndexesSummary(ctx context.Context, repositoryID int) (
 }
 
 const recentIndexesSummaryQuery = `
--- source: internal/codeintel/stores/dbstore/indexes.go:RecentIndexesSummary
 WITH ranked_completed AS (
 	SELECT
 		u.id,

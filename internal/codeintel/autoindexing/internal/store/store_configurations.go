@@ -22,7 +22,6 @@ func (s *store) GetIndexConfigurationByRepositoryID(ctx context.Context, reposit
 }
 
 const getIndexConfigurationByRepositoryIDQuery = `
--- source: internal/codeintel/stores/dbstore/configuration.go:GetIndexConfigurationByRepositoryID
 SELECT
 	c.id,
 	c.repository_id,
@@ -41,7 +40,6 @@ func (s *store) UpdateIndexConfigurationByRepositoryID(ctx context.Context, repo
 }
 
 const updateIndexConfigurationByRepositoryIDQuery = `
--- source: internal/codeintel/stores/dbstore/configuration.go:UpdateIndexConfigurationByRepositoryID
 INSERT INTO lsif_index_configuration (repository_id, data) VALUES (%s, %s)
 	ON CONFLICT (repository_id) DO UPDATE SET data = %s
 `

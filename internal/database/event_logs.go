@@ -782,7 +782,6 @@ func (l *eventLogStore) UsersUsageCounts(ctx context.Context) (counts []types.Us
 }
 
 const usersUsageCountsQuery = `
--- source: internal/database/event_logs.go:UsersUsageCounts
 SELECT
   DATE(timestamp),
   user_id,
@@ -953,7 +952,6 @@ func (l *eventLogStore) codeIntelligenceWeeklyUsersCount(ctx context.Context, ev
 }
 
 var codeIntelWeeklyUsersQuery = `
--- source: internal/database/event_logs.go:codeIntelligenceWeeklyUsersCount
 SELECT COUNT(DISTINCT ` + userIDQueryFragment + `)
 FROM event_logs
 WHERE
@@ -997,7 +995,6 @@ func (l *eventLogStore) CodeIntelligenceRepositoryCounts(ctx context.Context) (c
 }
 
 var codeIntelligenceRepositoryCountsQuery = `
--- source: internal/database/event_logs.go:CodeIntelligenceRepositoryCounts
 SELECT
 	(SELECT COUNT(*) FROM repo r WHERE r.deleted_at IS NULL)
 		AS num_repositories,
@@ -1070,7 +1067,6 @@ func safeDerefIntPtr(v *int) int {
 }
 
 var codeIntelligenceRepositoryCountsByLanguageQuery = `
--- source: internal/database/event_logs.go:CodeIntelligenceRepositoryCountsByLanguage
 SELECT
 	-- Clean up indexer by removing sourcegraph/ docker image prefix for auto-index
 	-- records, as well as any trailing git tag. This should make all of the in-house
@@ -1126,7 +1122,6 @@ func (l *eventLogStore) codeIntelligenceSettingsPageViewCount(ctx context.Contex
 }
 
 var codeIntelligenceSettingsPageViewCountQuery = `
--- source: internal/database/event_logs.go:CodeIntelligenceSettingsPageViewCount
 SELECT COUNT(*) FROM event_logs WHERE name IN (%s) AND timestamp >= ` + makeDateTruncExpression("week", "%s::timestamp")
 
 func (l *eventLogStore) AggregatedCodeIntelEvents(ctx context.Context) ([]types.CodeIntelAggregatedEvent, error) {
@@ -1180,7 +1175,6 @@ func (l *eventLogStore) aggregatedCodeIntelEvents(ctx context.Context, now time.
 }
 
 var aggregatedCodeIntelEventsQuery = `
--- source: internal/database/event_logs.go:aggregatedCodeIntelEvents
 WITH events AS (
   SELECT
     name,
@@ -1246,7 +1240,6 @@ func (l *eventLogStore) aggregatedCodeIntelInvestigationEvents(ctx context.Conte
 }
 
 var aggregatedCodeIntelInvestigationEventsQuery = `
--- source: internal/database/event_logs.go:aggregatedCodeIntelInvestigationEvents
 WITH events AS (
   SELECT
     name,
@@ -1332,7 +1325,6 @@ var searchLatencyEventNames = []string{
 }
 
 var aggregatedSearchLatencyEventsQuery = `
--- source: internal/database/event_logs.go:aggregatedSearchLatencyEvents
 WITH events AS (
   SELECT
     name,
@@ -1368,7 +1360,6 @@ FROM events GROUP BY name, current_month, current_week, current_day
 `
 
 var aggregatedSearchUsageEventsQuery = `
--- source: internal/database/event_logs.go:aggregatedSearchUsageEvents
 WITH events AS (
   SELECT
     json.key::text,
@@ -1481,7 +1472,6 @@ func (l *eventLogStore) RequestsByLanguage(ctx context.Context) (_ map[string]in
 }
 
 var requestsByLanguageQuery = `
--- source: internal/database/event_logs.go:RequestsByLanguage
 SELECT
 	language_id,
 	COUNT(*) as count

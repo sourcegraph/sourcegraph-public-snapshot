@@ -52,7 +52,6 @@ func (s *store) UpdateReposMatchingPatterns(ctx context.Context, patterns []stri
 }
 
 const updateReposMatchingPatternsQuery = `
--- source: internal/codeintel/policies/internal/store/store_repos.go:UpdateReposMatchingPatterns
 WITH
 matching_repositories AS (
 	SELECT id AS repo_id
@@ -150,7 +149,6 @@ func (s *store) GetRepoIDsByGlobPatterns(ctx context.Context, patterns []string,
 }
 
 const repoIDsByGlobPatternsCountQuery = `
--- source: internal/codeintel/policies/internal/store/store_repos.go:RepoIDsByGlobPatterns
 SELECT COUNT(*)
 FROM repo
 WHERE
@@ -161,7 +159,6 @@ WHERE
 `
 
 const repoIDsByGlobPatternsQuery = `
--- source: internal/codeintel/policies/internal/store/store_repos.go:RepoIDsByGlobPatterns
 SELECT id
 FROM repo
 WHERE
@@ -189,7 +186,6 @@ func (s *store) SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context,
 }
 
 const selectPoliciesForRepositoryMembershipUpdate = `
--- source: internal/codeintel/policies/internal/store/store_repos.go:SelectPoliciesForRepositoryMembershipUpdate
 WITH
 candidate_policies AS (
 	SELECT p.id

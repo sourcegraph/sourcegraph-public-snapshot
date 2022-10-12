@@ -188,7 +188,6 @@ func TestListJobsQuery(t *testing.T) {
 		gotString := got.Query(sqlf.PostgresBindVar)
 
 		want := `
--- source: internal/database/bitbucket_project_permissions.go:BitbucketProjectPermissionsStore.listWorkerJobsQuery
 SELECT id, state, failure_message, queued_at, started_at, finished_at, process_after, num_resets, num_failures, last_heartbeat_at, execution_logs, worker_hostname, project_key, external_service_id, permissions, unrestricted
 FROM explicit_permissions_bitbucket_projects_jobs
 
@@ -207,7 +206,6 @@ LIMIT 100
 
 		gotString := got.Query(sqlf.PostgresBindVar)
 		want := `
--- source: internal/database/bitbucket_project_permissions.go:BitbucketProjectPermissionsStore.listWorkerJobsQuery
 SELECT id, state, failure_message, queued_at, started_at, finished_at, process_after, num_resets, num_failures, last_heartbeat_at, execution_logs, worker_hostname, project_key, external_service_id, permissions, unrestricted
 FROM explicit_permissions_bitbucket_projects_jobs
 WHERE project_key IN ($1 , $2 , $3 , $4) AND state = $5

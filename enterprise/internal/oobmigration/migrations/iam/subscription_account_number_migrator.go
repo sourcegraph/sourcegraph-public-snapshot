@@ -33,7 +33,6 @@ func (m *subscriptionAccountNumberMigrator) Progress(ctx context.Context, _ bool
 }
 
 const subscriptionAccountNumberMigratorProgressQuery = `
--- source: enterprise/internal/productsubscription/subscription_account_number_migrator.go:Progress
 SELECT
 	CASE c2.count WHEN 0 THEN 1 ELSE
 		cast(c1.count as float) / cast(c2.count as float)
@@ -48,7 +47,6 @@ func (m *subscriptionAccountNumberMigrator) Up(ctx context.Context) (err error) 
 }
 
 const subscriptionAccountNumberMigratorUpQuery = `
--- source: enterprise/internal/productsubscription/subscription_account_number_migrator.go:Up
 WITH candidates AS (
 	SELECT
 		product_subscriptions.id::uuid AS subscription_id,
