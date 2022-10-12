@@ -510,7 +510,7 @@ func (s *Server) Handler() http.Handler {
 func (s *Server) Janitor(interval time.Duration) {
 	for {
 		gitserverAddrs := currentGitserverAddresses()
-		s.cleanupRepos(gitserverAddrs)
+		s.cleanupRepos(actor.WithInternalActor(context.Background()), gitserverAddrs)
 		time.Sleep(interval)
 	}
 }

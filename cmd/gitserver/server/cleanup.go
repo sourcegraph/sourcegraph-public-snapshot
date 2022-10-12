@@ -23,7 +23,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -173,7 +172,7 @@ const reposStatsName = "repos-stats.json"
 // 10. Perform sg-maintenance
 // 11. Git prune
 // 12. Only during first run: Set sizes of repos which don't have it in a database.
-func (s *Server) cleanupRepos(gitServerAddrs gitserver.GitServerAddresses) {
+func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.GitServerAddresses) {
 	janitorRunning.Set(1)
 	janitorStart := time.Now()
 	defer func() {
@@ -548,7 +547,7 @@ func (s *Server) cleanupRepos(gitServerAddrs gitserver.GitServerAddresses) {
 		logger.Error("failed to write periodic stats", log.Error(err))
 	}
 
-	err = s.setRepoSizes(actor.WithInternalActor(context.Background()), repoToSize)
+	err = s.setRepoSizes(ctx, repoToSize)
 	if err != nil {
 		logger.Error("setting repo sizes", log.Error(err))
 	}
