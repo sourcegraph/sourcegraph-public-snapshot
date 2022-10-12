@@ -206,6 +206,11 @@ CREATE SEQUENCE insight_series_id_seq
 
 ALTER SEQUENCE insight_series_id_seq OWNED BY insight_series.id;
 
+CREATE TABLE insight_series_recording_times (
+    series_id text,
+    recording_time timestamp with time zone
+);
+
 CREATE TABLE insight_view (
     id integer NOT NULL,
     title text,
@@ -438,6 +443,9 @@ ALTER TABLE ONLY insight_dirty_queries
 
 ALTER TABLE ONLY insight_series
     ADD CONSTRAINT insight_series_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY insight_series_recording_times
+    ADD CONSTRAINT insight_series_recording_times_series_id_recording_time_key UNIQUE (series_id, recording_time);
 
 ALTER TABLE ONLY insight_view_grants
     ADD CONSTRAINT insight_view_grants_pk PRIMARY KEY (id);

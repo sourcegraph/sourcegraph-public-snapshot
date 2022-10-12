@@ -191,6 +191,17 @@ Data series that comprise code insights.
 
 **series_id**: Timestamp that this series completed a full repository iteration for backfill. This flag has limited semantic value, and only means it tried to queue up queries for each repository. It does not guarantee success on those queries.
 
+# Table "public.insight_series_recording_times"
+```
+     Column     |           Type           | Collation | Nullable | Default 
+----------------+--------------------------+-----------+----------+---------
+ series_id      | text                     |           |          | 
+ recording_time | timestamp with time zone |           |          | 
+Indexes:
+    "insight_series_recording_times_series_id_recording_time_key" UNIQUE CONSTRAINT, btree (series_id, recording_time)
+
+```
+
 # Table "public.insight_view"
 ```
               Column               |            Type            | Collation | Nullable |                 Default                  
