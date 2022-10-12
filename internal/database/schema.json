@@ -19466,6 +19466,19 @@
           "Comment": ""
         },
         {
+          "Name": "created_by_user_id",
+          "Index": 10,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "ID of a user, who created the webhook. If NULL, then the user does not exist (never existed or was deleted)."
+        },
+        {
           "Name": "encryption_key_id",
           "Index": 8,
           "TypeName": "text",
@@ -19518,6 +19531,19 @@
           "Comment": ""
         },
         {
+          "Name": "updated_by_user_id",
+          "Index": 11,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "ID of a user, who updated the webhook. If NULL, then the user does not exist (never existed or was deleted)."
+        },
+        {
           "Name": "uuid",
           "Index": 9,
           "TypeName": "uuid",
@@ -19553,7 +19579,22 @@
           "ConstraintDefinition": "UNIQUE (uuid)"
         }
       ],
-      "Constraints": null,
+      "Constraints": [
+        {
+          "Name": "webhooks_created_by_user_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE SET NULL"
+        },
+        {
+          "Name": "webhooks_updated_by_user_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (updated_by_user_id) REFERENCES users(id) ON DELETE SET NULL"
+        }
+      ],
       "Triggers": []
     }
   ],
