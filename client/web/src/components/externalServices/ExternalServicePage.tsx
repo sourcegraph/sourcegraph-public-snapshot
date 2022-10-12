@@ -318,7 +318,7 @@ const ExternalServiceSyncJobNode: React.FunctionComponent<ExternalServiceSyncJob
                 <div className="flex-shrink-0 flex-grow-1 mr-2">
                     {node.startedAt && (
                         <>
-                            {node.finishedAt === null && <>Running since </>}
+                            {node.finishedAt === null && <>Running for </>}
                             {node.finishedAt !== null && <>Ran for </>}
                             <Duration
                                 start={node.startedAt}

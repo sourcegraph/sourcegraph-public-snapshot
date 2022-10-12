@@ -222,7 +222,7 @@ func addWebEnterpriseBuild(pipeline *bk.Pipeline, opts CoreTestOperationsOptions
 		cmds = append(cmds,
 			// Emit a stats.json file for bundle size diffs
 			bk.Env("WEBPACK_EXPORT_STATS_FILENAME", "stats-"+commit+".json"),
-			withBundleSizeCache())
+			withBundleSizeCache(commit))
 	}
 
 	if opts.CreateBundleSizeDiff {
