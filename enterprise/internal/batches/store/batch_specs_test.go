@@ -128,6 +128,31 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock bt.C
 				t.Fatalf("have count: %d, want: %d", have, want)
 			}
 		})
+		t.Run("IncludeEmptySpecs", func(t *testing.T) {
+			count, err := s.CountBatchSpecs(ctx, CountBatchSpecsOpts{
+				IncludeLocallyExecutedSpecs: true,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if have, want := count, len(batchSpecs); have != want {
+				t.Fatalf("have count: %d, want: %d", have, want)
+			}
+		})
+
+		t.Run("ExcludeEmptySpecs", func(t *testing.T) {
+			count, err := s.CountBatchSpecs(ctx, CountBatchSpecsOpts{
+				ExcludeEmptySpecs:           true,
+				IncludeLocallyExecutedSpecs: true,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := count, len(batchSpecs)-1; have != want {
+				t.Fatalf("have count: %d, want: %d", have, want)
+			}
+		})
 
 		t.Run("ExcludeCreatedFromRawNotOwnedByUser", func(t *testing.T) {
 			for _, spec := range batchSpecs {
