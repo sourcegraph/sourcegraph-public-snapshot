@@ -104,6 +104,7 @@ var srcCommand = &cli.Command{
 	},
 }
 
+// getSrcSecret retrieves src-cli secrets from the context secrets store
 func getSrcSecret(ctx context.Context, out *std.Output) (*secrets.Store, *srcSecrets, error) {
 	sec, err := secrets.FromContext(ctx)
 	if err != nil {
