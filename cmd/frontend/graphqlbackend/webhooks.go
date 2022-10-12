@@ -131,11 +131,10 @@ func (r *schemaResolver) CreateWebhook(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
-	var secretStr string
+	var secret *types.EncryptableSecret
 	if args.Secret != nil {
-		secretStr = *args.Secret
+		secret = types.NewUnencryptedSecret(*args.Secret)
 	}
-	secret := types.NewUnencryptedSecret(secretStr)
 	webhook, err := r.db.Webhooks(keyring.Default().WebhookKey).Create(ctx, args.CodeHostKind, args.CodeHostURN, a.UID, secret)
 	if err != nil {
 		return nil, err
