@@ -100,7 +100,7 @@ export function useNotebookEventHandlers({
             const target = event.target as HTMLElement
 
             // Don't handle keydown events if the alt/option key is pressed.
-            // This allows using Opt+Arrow to page up/down on macOS.
+            // This allows using Opt+Arrow keys to page up/down on macOS.
             if (event.altKey) {
                 return
             }
@@ -150,9 +150,12 @@ export function useNotebookEventHandlers({
                     event.preventDefault()
                 } else {
                     // If the block is not visible in the direction we're moving, scroll the window. Otherwise, move the selection.
+                    // Also allow scrolling beyond the selected block if it is the first/last block.
                     if (
                         (event.key === 'ArrowUp' && !isTopOfBlockVisible(selectedBlockId)) ||
-                        (event.key === 'ArrowDown' && !isBottomOfBlockVisible(selectedBlockId))
+                        (event.key === 'ArrowDown' && !isBottomOfBlockVisible(selectedBlockId)) ||
+                        (event.key === 'ArrowUp' && selectedBlockId === notebook.getFirstBlockId()) ||
+                        (event.key === 'ArrowDown' && selectedBlockId === notebook.getLastBlockId())
                     ) {
                         return
                     }
