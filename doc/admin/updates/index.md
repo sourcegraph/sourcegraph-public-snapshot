@@ -7,7 +7,7 @@ For product update notes, please refer to the [changelog](../../CHANGELOG.md).
 A new version of Sourcegraph is released every month (with patch releases in between, released as needed). Check the [Sourcegraph blog](https://about.sourcegraph.com/blog) or the site admin updates page to learn about updates. We actively maintain the two most recent monthly releases of Sourcegraph.
 
 ## Choosing the Correct Upgrade Path
-We support two upgrade paths: moving minor version ahead, i.e. `3.42` to `3.43` (standard upgrade), moving to many minor versions ahead, i.e `3.36` to `3.43` (multi-version upgrades). It is vital that you choose the correct upgrade path when upgrading your instance. If you attempt to upgrade multiple versions using the standard upgrade process, it will fail. 
+We support two upgrade paths: moving one minor version ahead, i.e. `3.42` to `3.43` (standard upgrade), moving many minor versions ahead, i.e `3.36` to `3.43` (multi-version upgrades). It is vital that you choose the correct upgrade path when upgrading your instance. If you attempt to upgrade multiple versions using the standard upgrade process, it will fail. 
 
 ### Standard upgrades
 
