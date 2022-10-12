@@ -103,7 +103,8 @@ type Mutation {
     """
     deleteOrganization(organization: ID!, hard: Boolean): EmptyResponse
 
-    """TODO: add comment, add optional secret
+    """
+    Creates a webhook for the specified code host. Only site admins may perform this mutation.
     """
     createWebhook(codeHostKind: String!, codeHostURN: String!, secret: String): Webhook!
 
