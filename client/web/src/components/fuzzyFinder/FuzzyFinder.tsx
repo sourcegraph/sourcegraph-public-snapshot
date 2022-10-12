@@ -1,4 +1,4 @@
-import React, { useEffect, Dispatch, SetStateAction, useCallback } from 'react'
+import React, { useEffect, Dispatch, SetStateAction, useCallback, useRef } from 'react'
 
 import * as H from 'history'
 
@@ -27,23 +27,51 @@ export interface FuzzyFinderContainerProps
  */
 export const FuzzyFinderContainer: React.FunctionComponent<FuzzyFinderContainerProps> = props => {
     const { isVisible, setIsVisible } = props
+    const isVisibleRef = useRef(isVisible)
+    isVisibleRef.current = isVisible
     const state = useFuzzyState(props, () => setIsVisible(false))
-    const { tabs, activeTab, setActiveTab, repoRevision } = state
-    const shortcuts = useFuzzyShortcuts(props.settingsCascade.final)
+    const { tabs, activeTab, setActiveTab, repoRevision, toggleGlobalFiles, toggleGlobalSymbols } = state
+
+    // We need useRef to access the latest state inside `openFuzzyFinder` below.
+    // The keyboard shortcut does not pick up changes to the callback even if we
+    // declare them as dependencies of `openFuzzyFinder`.
+    const tabsRef = useRef(tabs)
+    tabsRef.current = tabs
+    const repositoryName = useRef('')
+    repositoryName.current = repoRevision.repositoryName
+    const activeTabRef = useRef(activeTab)
+    activeTabRef.current = activeTab
 
     const openFuzzyFinder = useCallback(
         (tab: FuzzyTabKey): void => {
-            const newTab = tabs.focusNamedTab(tab)
-            if (newTab) {
-                setActiveTab(newTab)
+            if (tabsRef.current.isOnlyFilesEnabled() && !repositoryName.current) {
+                return // Legacy mode: only activate inside a repository
             }
-            if (isVisible) {
-                return
+            const activeTab = activeTabRef.current
+            const isVisible = isVisibleRef.current
+            if (!isVisible) {
+                setIsVisible(true)
             }
-            setIsVisible(true)
+            if (isVisible && tab === activeTab) {
+                switch (tab) {
+                    case 'files':
+                        toggleGlobalFiles()
+                        break
+                    case 'symbols':
+                        toggleGlobalSymbols()
+                        break
+                }
+            } else {
+                const newTab = tabsRef.current.focusNamedTab(tab)
+                if (newTab) {
+                    setActiveTab(newTab)
+                }
+            }
         },
-        [tabs, setActiveTab, isVisible, setIsVisible]
+        [setActiveTab, setIsVisible, toggleGlobalFiles, toggleGlobalSymbols]
     )
+
+    const shortcuts = useFuzzyShortcuts(props.settingsCascade.final)
 
     useEffect(() => {
         if (isVisible) {

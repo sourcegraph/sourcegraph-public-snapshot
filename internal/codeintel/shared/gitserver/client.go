@@ -154,6 +154,10 @@ func (c *Client) Head(ctx context.Context, repositoryID int) (_ string, revision
 	return c.gitserverClient.Head(ctx, repo, authz.DefaultSubRepoPermsChecker)
 }
 
+func (c *Client) HeadFromName(ctx context.Context, repo api.RepoName) (_ string, revisionExists bool, err error) {
+	return c.gitserverClient.Head(ctx, repo, authz.DefaultSubRepoPermsChecker)
+}
+
 // CommitDate returns the time that the given commit was committed. If the given revision does not exist,
 // a false-valued flag is returned along with a nil error and zero-valued time.
 func (c *Client) CommitDate(ctx context.Context, repositoryID int, commit string) (_ string, _ time.Time, revisionExists bool, err error) {

@@ -16,7 +16,7 @@ func TestGetRepoRank(t *testing.T) {
 	ctx := context.Background()
 	mockStore := NewMockStore()
 	gitserverClient := NewMockGitserverClient()
-	svc := newService(mockStore, nil, gitserverClient, siteConfigQuerier{}, &observation.TestContext)
+	svc := newService(mockStore, nil, gitserverClient, nil, siteConfigQuerier{}, &observation.TestContext)
 
 	mockStore.GetStarRankFunc.SetDefaultReturn(0.6, nil)
 
@@ -38,7 +38,7 @@ func TestGetRepoRankWithUserBoostedScores(t *testing.T) {
 	mockStore := NewMockStore()
 	gitserverClient := NewMockGitserverClient()
 	mockConfigQuerier := NewMockSiteConfigQuerier()
-	svc := newService(mockStore, nil, gitserverClient, mockConfigQuerier, &observation.TestContext)
+	svc := newService(mockStore, nil, gitserverClient, nil, mockConfigQuerier, &observation.TestContext)
 
 	mockStore.GetStarRankFunc.SetDefaultReturn(0.6, nil)
 	mockConfigQuerier.SiteConfigFunc.SetDefaultReturn(schema.SiteConfiguration{
@@ -70,7 +70,7 @@ func TestGetDocumentRanks(t *testing.T) {
 	ctx := context.Background()
 	mockStore := NewMockStore()
 	gitserverClient := NewMockGitserverClient()
-	svc := newService(mockStore, nil, gitserverClient, siteConfigQuerier{}, &observation.TestContext)
+	svc := newService(mockStore, nil, gitserverClient, nil, siteConfigQuerier{}, &observation.TestContext)
 
 	gitserverClient.ListFilesForRepoFunc.SetDefaultReturn([]string{
 		"main.go",

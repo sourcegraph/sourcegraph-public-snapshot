@@ -1,4 +1,4 @@
-package autoindexing
+package background
 
 import (
 	"context"
@@ -18,12 +18,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
+func init() {
+	autoIndexingEnabled = func() bool { return true }
+}
+
 func TestDependencySyncSchedulerJVM(t *testing.T) {
 	newOperations(&observation.TestContext)
 	mockWorkerStore := NewMockWorkerStore()
 	mockUploadsSvc := NewMockUploadService()
 	mockDepedenciesSvc := NewMockDependenciesService()
-	mockAutoindexingSvc := NewMockAutoIndexingServiceForDepScheduling()
+	mockAutoindexingSvc := NewMockAutoIndexingService()
 	mockExtsvcStore := NewMockExternalServiceStore()
 	mockScanner := NewMockPackageReferenceScanner()
 	mockUploadsSvc.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
@@ -75,7 +79,7 @@ func TestDependencySyncSchedulerGomod(t *testing.T) {
 	mockWorkerStore := NewMockWorkerStore()
 	mockUploadsSvc := NewMockUploadService()
 	mockDepedenciesSvc := NewMockDependenciesService()
-	mockAutoindexingSvc := NewMockAutoIndexingServiceForDepScheduling()
+	mockAutoindexingSvc := NewMockAutoIndexingService()
 	mockExtsvcStore := NewMockExternalServiceStore()
 	mockScanner := NewMockPackageReferenceScanner()
 	mockUploadsSvc.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)

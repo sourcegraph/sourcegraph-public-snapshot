@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 )
 
-type AutoIndexingService interface {
+type AutoIndexingServiceBackgroundJobs interface {
 	NewJanitor(
 		interval time.Duration,
 		minimumTimeSinceLastCheck time.Duration,

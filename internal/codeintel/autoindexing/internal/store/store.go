@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 // Store provides the interface for autoindexing storage.
@@ -52,9 +51,6 @@ type Store interface {
 
 	GetUnsafeDB() database.DB
 
-	WorkerutilStore(observationContext *observation.Context) dbworkerstore.Store
-	WorkerutilDependencySyncStore(observationContext *observation.Context) dbworkerstore.Store
-	WorkerutilDependencyIndexStore(observationContext *observation.Context) dbworkerstore.Store
 	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error)
 }
 

@@ -259,8 +259,6 @@ func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *Queu
 		configuration = *args.Configuration
 	}
 
-	// autoindexingResolver := r.resolver.AutoIndexingResolver()
-	// indexes, err := r.autoindexSvc.QueueAutoIndexJobsForRepo(ctx, int(repositoryID), rev, configuration)
 	indexes, err := r.autoindexSvc.QueueIndexes(ctx, int(repositoryID), rev, configuration, true, true)
 	if err != nil {
 		return nil, err
@@ -272,7 +270,6 @@ func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *Queu
 
 	lsifIndexResolvers := make([]sharedresolvers.LSIFIndexResolver, 0, len(indexes))
 	for i := range indexes {
-		// index := convertSharedIndexToDBStoreIndex(indexes[i])
 		lsifIndexResolvers = append(lsifIndexResolvers, sharedresolvers.NewIndexResolver(r.autoindexSvc, r.uploadSvc, r.policySvc, indexes[i], prefetcher, traceErrs))
 	}
 
