@@ -115,7 +115,7 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
         const legends: ValueLegendListProps['items'] = [
             {
                 value:
-                    referenceClicks.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalRegisteredUsers'],
+                    referenceClicks.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalUniqueUsers'],
                 description: aggregation.selected === 'count' ? 'References' : 'Users using references',
                 color: 'var(--cyan)',
                 tooltip:
@@ -125,7 +125,7 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
             },
             {
                 value:
-                    definitionClicks.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalRegisteredUsers'],
+                    definitionClicks.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalUniqueUsers'],
                 description: aggregation.selected === 'count' ? 'Definitions' : 'Users using definitions',
                 color: 'var(--orange)',
                 tooltip:
