@@ -175,7 +175,9 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 				Key:      "batch-exec",
 				Commands: commands,
 				Dir:      ".",
-				Env:      []string{},
+				Env: []string{
+					"GH_TOKEN=asdf",
+				},
 			},
 		},
 		// TODO: Create a map of all secret values we pass down:
