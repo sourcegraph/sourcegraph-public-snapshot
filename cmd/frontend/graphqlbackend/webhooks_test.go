@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/graph-gophers/graphql-go/errors"
+
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
@@ -30,16 +32,18 @@ func TestCreateWebhook(t *testing.T) {
 	db.WebhooksFunc.SetDefaultReturn(webhookStore)
 	//db.UsersFunc.SetDefaultReturn(users)
 	//db.AuthzFunc.SetDefaultReturn(authz)
-
-	RunTests(t, []*Test{
-		{
-			Schema: mustParseGraphQLSchema(t, db),
-			Query: `mutation CreateWebhook($codeHostKind: String!, $codeHostURN: String!) {
+	queryStr := `mutation CreateWebhook($codeHostKind: String!, $codeHostURN: String!) {
 				createWebhook(codeHostKind: $codeHostKind, codeHostURN: $codeHostURN) {
 					id
 					uuid
 				}
-			}`,
+			}`
+	schema := mustParseGraphQLSchema(t, db)
+
+	RunTests(t, []*Test{
+		{
+			Schema: schema,
+			Query:  queryStr,
 			ExpectedResult: fmt.Sprintf(`
 				{
 					"createWebhook": {
@@ -50,6 +54,22 @@ func TestCreateWebhook(t *testing.T) {
 			`, whUUID),
 			Variables: map[string]any{
 				"codeHostKind": "GITHUB",
+				"codeHostURN":  "https://github.com",
+				//"secret": "mysupersecret", // TODO: secret should not be required
+			},
+		},
+		{
+			Schema:         schema,
+			Query:          queryStr,
+			ExpectedResult: "null",
+			ExpectedErrors: []*errors.QueryError{
+				{
+					Message: "Webhooks are not supported for code host kind InvalidKind",
+					Path:    []any{"createWebhook"},
+				},
+			},
+			Variables: map[string]any{
+				"codeHostKind": "InvalidKind",
 				"codeHostURN":  "https://github.com",
 				//"secret": "mysupersecret", // TODO: secret should not be required
 			},

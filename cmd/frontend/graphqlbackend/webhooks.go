@@ -2,9 +2,12 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -118,10 +121,33 @@ func (r *schemaResolver) CreateWebhook(ctx context.Context, args *struct {
 	CodeHostURN  string
 	Secret       string
 }) (*webhookResolver, error) {
+	fmt.Printf("Creating webhook with CodeHostKind %s, CodeHostURN %s, Secret %s\n",
+		args.CodeHostKind, args.CodeHostURN, args.Secret)
+	// TODO: validate code host kind
+	err := validateCodeHostKind(args.CodeHostKind)
+	if err != nil {
+		return nil, err
+	}
 	secret := types.NewUnencryptedSecret(args.Secret) // TODO actually handle this
 	webhook, err := r.db.Webhooks(keyring.Default().WebhookKey).Create(ctx, args.CodeHostKind, args.CodeHostURN, secret)
 	if err != nil {
 		return nil, err
 	}
 	return &webhookResolver{hook: webhook}, nil
+}
+
+func validateCodeHostKind(codeHostKind string) error {
+	switch codeHostKind {
+	case extsvc.KindGitHub:
+		fmt.Println("GITHUB")
+	case extsvc.KindGitLab:
+		fmt.Println("GITLAB")
+	case extsvc.KindBitbucketCloud:
+		fmt.Println("BB CLOUD")
+	case extsvc.KindBitbucketServer:
+		fmt.Println("BB Server")
+	default:
+		return errors.Newf("Webhooks are not supported for code host kind %s", codeHostKind)
+	}
+	return nil
 }
