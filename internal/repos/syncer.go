@@ -671,7 +671,7 @@ func (s *Syncer) SyncExternalService(
 		// Record the final progress state
 		defer func() {
 			if err := progressRecorder(ctx, syncProgress, true); err != nil {
-				logger.Error("recording sync progress", log.Error(err))
+				logger.Error("recording final sync progress", log.Error(err))
 			}
 		}()
 	}
@@ -681,7 +681,7 @@ func (s *Syncer) SyncExternalService(
 	for res := range results {
 		if progressRecorder != nil {
 			if err := progressRecorder(ctx, syncProgress, false); err != nil {
-				logger.Error("recording sync progress", log.Error(err))
+				logger.Warn("recording sync progress", log.Error(err))
 			}
 		}
 
