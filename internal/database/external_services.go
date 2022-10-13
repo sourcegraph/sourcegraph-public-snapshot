@@ -1089,7 +1089,14 @@ SELECT
 	num_resets,
 	external_service_id,
 	num_failures,
-	cancel
+	cancel,
+	repos_synced,
+	repo_sync_errors,
+	repos_added,
+	repos_removed,
+	repos_modified,
+	repos_unmodified,
+	repos_deleted
 FROM
 	external_service_sync_jobs
 WHERE %s
@@ -1193,6 +1200,13 @@ func scanExternalServiceSyncJob(sc dbutil.Scanner, job *types.ExternalServiceSyn
 		&dbutil.NullInt64{N: &job.ExternalServiceID},
 		&job.NumFailures,
 		&job.Cancel,
+		&job.ReposSynced,
+		&job.RepoSyncErrors,
+		&job.ReposAdded,
+		&job.ReposRemoved,
+		&job.ReposModified,
+		&job.ReposUnmodified,
+		&job.ReposDeleted,
 	)
 }
 

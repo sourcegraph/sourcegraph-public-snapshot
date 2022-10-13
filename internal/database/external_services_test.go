@@ -2259,7 +2259,10 @@ func TestExternalServiceStore_GetSyncJobByID(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = db.Handle().ExecContext(ctx, "INSERT INTO external_service_sync_jobs (id, external_service_id) VALUES (1, $1)", es.ID)
+	_, err = db.Handle().ExecContext(ctx,
+		`INSERT INTO external_service_sync_jobs
+               (id, external_service_id, repos_synced, repo_sync_errors, repos_added, repos_removed, repos_modified, repos_unmodified, repos_deleted)
+               VALUES (1, $1, 1, 2, 3, 4, 5, 6, 7)`, es.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2273,6 +2276,13 @@ func TestExternalServiceStore_GetSyncJobByID(t *testing.T) {
 		ID:                1,
 		State:             "queued",
 		ExternalServiceID: es.ID,
+		ReposSynced:       1,
+		RepoSyncErrors:    2,
+		ReposAdded:        3,
+		ReposRemoved:      4,
+		ReposModified:     5,
+		ReposUnmodified:   6,
+		ReposDeleted:      7,
 	}
 	if diff := cmp.Diff(want, have, cmpopts.IgnoreFields(types.ExternalServiceSyncJob{}, "ID", "QueuedAt")); diff != "" {
 		t.Fatal(diff)
