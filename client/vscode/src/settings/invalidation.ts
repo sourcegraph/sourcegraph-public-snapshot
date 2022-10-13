@@ -19,22 +19,19 @@ export function invalidateContextOnSettingsChange({
             subscription.dispose()
         }
     }
-
-    context.subscriptions.push(
-        vscode.workspace.onDidChangeConfiguration(config => {
-            if (config.affectsConfiguration('sourcegraph.url')) {
-                invalidateClient()
-                disposeAllResources()
-                stateMachine.emit({ type: 'sourcegraph_url_change' })
-                // Swallow errors since if `showInformationMessage` fails, we assume that something is wrong
-                // with the VS Code extension host and don't retry.
-                vscode.window
-                    .showInformationMessage('Restart VS Code to use the Sourcegraph extension after URL change.')
-                    .then(
-                        () => {},
-                        () => {}
-                    )
-            }
-        })
-    )
+    context.secrets.onDidChange(event => {
+        if (event.key === 'SOURCEGRAPH_URL') {
+            invalidateClient()
+            disposeAllResources()
+            stateMachine.emit({ type: 'sourcegraph_url_change' })
+            // Swallow errors since if `showInformationMessage` fails, we assume that something is wrong
+            // with the VS Code extension host and don't retry.
+            vscode.window
+                .showInformationMessage('Restart VS Code to use the Sourcegraph extension after URL change.')
+                .then(
+                    () => {},
+                    () => {}
+                )
+        }
+    })
 }

@@ -20,10 +20,11 @@ import { openSourcegraphUriCommand } from './file-system/commands'
 import { initializeSourcegraphFileSystem } from './file-system/initialize'
 import { SourcegraphUri } from './file-system/SourcegraphUri'
 import { Event } from './graphql-operations'
-import { accessTokenSetting, updateAccessTokenSetting } from './settings/accessTokenSetting'
-import { endpointRequestHeadersSetting, endpointSetting, updateEndpointSetting } from './settings/endpointSetting'
+import { setAccessTokenSetting } from './settings/accessTokenSetting'
+import { endpointRequestHeadersSetting, setEndpointSetting } from './settings/endpointSetting'
 import { invalidateContextOnSettingsChange } from './settings/invalidation'
 import { LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY } from './settings/LocalStorageService'
+import { SecretStorage } from './settings/SecretStorage'
 import { watchUninstall } from './settings/uninstall'
 import { createVSCEStateMachine, VSCEQueryState } from './state'
 import { focusSearchPanel, registerWebviews } from './webview/commands'
@@ -37,8 +38,11 @@ export function activate(context: vscode.ExtensionContext): void {
     initializeSearchContexts({ localStorageService, stateMachine, context })
     const sourcegraphSettings = initializeSourcegraphSettings({ context })
     const authenticatedUser = observeAuthenticatedUser({ context })
-    const initialInstanceURL = endpointSetting()
-    const initialAccessToken = accessTokenSetting()
+    const secretStorage = new SecretStorage(context.secrets)
+    const initialInstanceURL = secretStorage.getURL()
+    setEndpointSetting(initialInstanceURL)
+    const initialAccessToken = secretStorage.getToken()
+    setAccessTokenSetting(initialAccessToken)
     const editorTheme = vscode.ColorThemeKind[vscode.window.activeColorTheme.kind]
     const eventSourceType = initializeInstanceVersionNumber(localStorageService, initialInstanceURL, initialAccessToken)
     // Sets global `EventSource` for Node, which is required for streaming search.
@@ -47,20 +51,15 @@ export function activate(context: vscode.ExtensionContext): void {
     const customHeaders = endpointRequestHeadersSetting()
     polyfillEventSource(initialAccessToken ? { Authorization: `token ${initialAccessToken}`, ...customHeaders } : {})
     // Update `EventSource` Authorization header on access token / headers change.
-    context.subscriptions.push(
-        vscode.workspace.onDidChangeConfiguration(config => {
-            if (
-                config.affectsConfiguration('sourcegraph.accessToken') ||
-                config.affectsConfiguration('sourcegraph.requestHeaders')
-            ) {
-                const newAccessToken = accessTokenSetting()
-                const newCustomHeaders = endpointRequestHeadersSetting()
-                polyfillEventSource(
-                    newAccessToken ? { Authorization: `token ${newAccessToken}`, ...newCustomHeaders } : {}
-                )
-            }
-        })
-    )
+    context.secrets.onDidChange(() => {
+        // update accessToken
+        const newAccessToken = secretStorage.getToken()
+        const newEndpointURL = secretStorage.getURL()
+        const newCustomHeaders = endpointRequestHeadersSetting()
+        setAccessTokenSetting(newAccessToken)
+        setEndpointSetting(newEndpointURL)
+        polyfillEventSource(newAccessToken ? { Authorization: `token ${newAccessToken}`, ...newCustomHeaders } : {})
+    })
     // For search panel webview to signal that it is ready for messages.
     // Replay subject with large buffer size just in case panels are opened in quick succession.
     const initializedPanelIDs = new ReplaySubject<string>(7)
@@ -86,9 +85,9 @@ export function activate(context: vscode.ExtensionContext): void {
         openLink: (uri: string) => vscode.env.openExternal(vscode.Uri.parse(uri)),
         copyLink: (uri: string) =>
             env.clipboard.writeText(uri).then(() => vscode.window.showInformationMessage('Link Copied!')),
-        getAccessToken: accessTokenSetting(),
-        setAccessToken: accessToken => updateAccessTokenSetting(accessToken),
-        setEndpointUri: (uri, accessToken) => updateEndpointSetting(uri, accessToken),
+        getAccessToken: secretStorage.getToken(),
+        setAccessToken: accessToken => secretStorage.storeToken(accessToken),
+        setEndpointUri: (uri, accessToken) => secretStorage.storeSecrets(uri, accessToken),
         reloadWindow: () => vscode.commands.executeCommand('workbench.action.reloadWindow'),
         focusSearchPanel,
         streamSearch,

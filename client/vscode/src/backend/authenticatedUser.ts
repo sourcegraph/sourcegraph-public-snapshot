@@ -33,12 +33,12 @@ const currentAuthStateQuery = gql`
                 }
             }
             session {
-                canSignOut
-            }
-            viewerCanAdminister
-            tags
-        }
-    }
+canSignOut
+}
+viewerCanAdminister
+tags
+}
+}
 `
 
 // Update authenticatedUser on accessToken changes
@@ -51,27 +51,23 @@ export function observeAuthenticatedUser({
 
     function updateAuthenticatedUser(): void {
         requestGraphQLFromVSCode<CurrentAuthStateResult, CurrentAuthStateVariables>(currentAuthStateQuery, {})
-            .then(authenticatedUserResult => {
-                authenticatedUsers.next(authenticatedUserResult.data ? authenticatedUserResult.data.currentUser : null)
-            })
-            .catch(error => {
-                console.log('core auth error', error)
-                // TODO surface error?
-                authenticatedUsers.next(null)
-            })
+        .then(authenticatedUserResult => {
+            authenticatedUsers.next(authenticatedUserResult.data ? authenticatedUserResult.data.currentUser : null)
+        })
+        .catch(error => {
+            console.log('core auth error', error)
+            // TODO surface error?
+            authenticatedUsers.next(null)
+        })
     }
 
     // Initial authenticated user
     updateAuthenticatedUser()
 
     // Update authenticated user on access token changes
-    context.subscriptions.push(
-        vscode.workspace.onDidChangeConfiguration(config => {
-            if (config.affectsConfiguration('sourcegraph.accessToken')) {
-                updateAuthenticatedUser()
-            }
-        })
-    )
+    context.secrets.onDidChange(() => {
+        updateAuthenticatedUser()
+    })
 
     return authenticatedUsers
 }

@@ -3,17 +3,22 @@ import * as vscode from 'vscode'
 import { isOlderThan, observeInstanceVersionNumber } from '../backend/instanceVersion'
 
 import { endpointHostnameSetting, endpointProtocolSetting } from './endpointSetting'
-import { readConfiguration } from './readConfiguration'
+
+export let accessToken = ''
 
 export function accessTokenSetting(): string | undefined {
-    return readConfiguration().get<string>('accessToken')
+    return accessToken
+}
+
+export function setAccessTokenSetting(token: string): void {
+    accessToken = token
 }
 
 // Ensure that only one access token error message is shown at a time.
 let showingAccessTokenErrorMessage = false
 
 export async function handleAccessTokenError(badToken?: string, endpointURL?: string): Promise<void> {
-    const currentValue = readConfiguration().get<string>('accessToken')
+    const currentValue = accessTokenSetting()
 
     if (currentValue === badToken && !showingAccessTokenErrorMessage) {
         showingAccessTokenErrorMessage = true
@@ -42,15 +47,5 @@ export async function handleAccessTokenError(badToken?: string, endpointURL?: st
             )
         }
         showingAccessTokenErrorMessage = false
-    }
-}
-
-export async function updateAccessTokenSetting(newToken: string): Promise<boolean> {
-    // TODO: STORE TOKEN IN KEYCHAIN AND REMOVE FROM USER CONFIG
-    try {
-        await readConfiguration().update('accessToken', newToken, vscode.ConfigurationTarget.Global)
-        return true
-    } catch {
-        return false
     }
 }

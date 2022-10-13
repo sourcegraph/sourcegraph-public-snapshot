@@ -1,5 +1,7 @@
 import vscode, { env } from 'vscode'
 
+import { endpointSetting } from '../settings/endpointSetting'
+
 import { generateSourcegraphBlobLink } from './initialize'
 
 /**
@@ -12,7 +14,7 @@ export async function browserActions(action: string, logRedirectEvent: (uri: str
         throw new Error('No active editor')
     }
     const uri = editor.document.uri
-    const instanceUrl = vscode.workspace.getConfiguration('sourcegraph').get('url')
+    const instanceUrl = endpointSetting()
     let sourcegraphUrl = String()
     // check if the current file is a remote file or not
     if (uri.scheme === 'sourcegraph') {

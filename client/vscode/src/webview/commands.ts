@@ -41,12 +41,8 @@ export function registerWebviews({
     const handleUri = async (uri: vscode.Uri): Promise<void> => {
         const token = new URLSearchParams(uri.query).get('code')
         // const returnedNonce = new URLSearchParams(uri.query).get('nonce')
-        // TODO: Decrypt token
-        // TODO: Match returnedNonce to stored nonce
         if (token && token.length > 8) {
-            await vscode.workspace
-                .getConfiguration('sourcegraph')
-                .update('accessToken', token, vscode.ConfigurationTarget.Global)
+            await context.secrets.get('SOURCEGRAPH_TOKEN')
             await vscode.window.showInformationMessage('Token has been retreived and updated successfully')
         }
     }

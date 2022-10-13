@@ -26,8 +26,8 @@ export interface ExtensionCoreAPI {
     /** Endpoint settings */
     getInstanceURL: () => ProxySubscribable<string>
     getAccessToken: string | undefined
-    setAccessToken: (accessToken: string) => void
-    setEndpointUri: (uri: string, accessToken?: string) => void
+    setAccessToken: (accessToken: string) => Promise<void>
+    setEndpointUri: (uri: string, accessToken?: string) => Promise<void>
     /**
      * Observe search box query state.
      * Used to send current query from panel to sidebar.
