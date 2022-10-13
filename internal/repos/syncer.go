@@ -781,7 +781,7 @@ func (s *Syncer) SyncExternalService(
 		if deletedErr != nil {
 			logger.Warn("failed to delete some repos",
 				log.Int("seen", len(seen)),
-				log.Int("deteled", deleted),
+				log.Int("deleted", deleted),
 				log.Error(deletedErr),
 			)
 
