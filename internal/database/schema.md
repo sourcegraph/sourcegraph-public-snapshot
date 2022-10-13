@@ -1192,6 +1192,20 @@ Foreign-key constraints:
 
 ```
 
+**repo_sync_errors**: The number of times an error occurred syncing a repo during this sync job.
+
+**repos_added**: The number of new repos discovered during this sync job.
+
+**repos_deleted**: The number of repos deleted as a result of this sync job.
+
+**repos_modified**: The number of existing repos whose metadata has changed during this sync job.
+
+**repos_removed**: The number of repos no longer associated with this external service.
+
+**repos_synced**: The number of repos synced during this sync job.
+
+**repos_unmodified**: The number of existing repos whose metadata did not change during this sync job.
+
 # Table "public.external_services"
 ```
       Column       |           Type           | Collation | Nullable |                    Default                    
