@@ -102,7 +102,7 @@ type scheduler struct {
 
 func NewScheduler(ctx context.Context, db edb.InsightsDB, obsContext *observation.Context) *scheduler {
 	workerStore := makeStore(db.Handle(), obsContext)
-	worker := makeWorker(ctx, workerStore, obsContext)
+	worker := makeWorker(ctx, workerStore, db, obsContext)
 	resetter := makeResetter(workerStore, obsContext)
 
 	return &scheduler{
@@ -133,10 +133,10 @@ func makeStore(db basestore.TransactableHandle, obsContext *observation.Context)
 
 const jobName = "insights_background_job_scheduler"
 
-func makeWorker(ctx context.Context, store dbworkerstore.Store, obsContext *observation.Context) *workerutil.Worker {
-	task := &handler{}
+func makeWorker(ctx context.Context, workerStore dbworkerstore.Store, edb edb.InsightsDB, obsContext *observation.Context) *workerutil.Worker {
+	task := &handler{backfillStore: newBackfillStore(edb), workerStore: workerStore}
 	name := fmt.Sprintf("%s_worker", jobName)
-	return dbworker.NewWorker(ctx, store, task, workerutil.WorkerOptions{
+	return dbworker.NewWorker(ctx, workerStore, task, workerutil.WorkerOptions{
 		Name:        name,
 		NumHandlers: 1,
 		Interval:    5 * time.Second,
@@ -154,23 +154,23 @@ func makeResetter(store dbworkerstore.Store, obsContext *observation.Context) *d
 }
 
 type handler struct {
-	store dbworkerstore.Store
+	workerStore   dbworkerstore.Store
+	backfillStore *backfillStore
 }
 
 var _ workerutil.Handler = &handler{}
 
 func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
 	logger.Info("handler called", log.String("job", jobName), log.Int("recordId", record.RecordID()))
-	store := basestore.NewWithHandle(h.store.Handle())
 
 	job := record.(*BaseJob)
 
-	backfill, err := loadBackfill(ctx, store, job.backfillId)
+	backfill, err := loadBackfill(ctx, h.backfillStore, job.backfillId)
 	if err != nil {
 		return errors.Wrap(err, "loadBackfill")
 	}
 
-	itr, err := backfill.repoIterator(ctx, store)
+	itr, err := backfill.repoIterator(ctx, h.backfillStore)
 	if err != nil {
 		return errors.Wrap(err, "repoIterator")
 	}
@@ -184,7 +184,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 		// do work
 		logger.Info("doing iteration work", log.String("job", jobName), log.Int("repo_id", int(repoId)))
 
-		err = finish(ctx, store, nil)
+		err = finish(ctx, h.backfillStore.Store, nil)
 		if err != nil {
 			return err
 		}
