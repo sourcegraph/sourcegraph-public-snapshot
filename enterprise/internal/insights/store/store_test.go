@@ -724,7 +724,7 @@ func TestInsightSeriesRecordingTimes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	newTime := time.Now().UTC()
+	newTime := now.AddDate(5, 5, 5)
 	err = timeseriesStore.UpdateInsightSeriesRecordingTimes(ctx, "series2", newTime)
 	if err != nil {
 		t.Fatal(err)
