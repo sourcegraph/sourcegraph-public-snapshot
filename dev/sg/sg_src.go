@@ -23,9 +23,9 @@ type srcSecrets struct {
 	Instances map[string]srcInstance `json:"instances"`
 }
 
-var srcCtxCommand = &cli.Command{
-	Name:      "src-ctx",
-	UsageText: "sg src-ctx [command]",
+var srcInstanceCommand = &cli.Command{
+	Name:      "src-instance",
+	UsageText: "sg src-instance [command]",
 	Usage:     "Interact with Sourcegraph instances that 'sg src' will use",
 	Category:  CategoryDev,
 	Subcommands: []*cli.Command{
@@ -67,7 +67,7 @@ var srcCtxCommand = &cli.Command{
 					return errors.Wrap(err, "failed to save instance")
 				}
 				std.Out.WriteSuccessf("src instance %s added", name)
-				std.Out.WriteSuggestionf("Run 'sg src-ctx use %s' to switch to that instance for 'sg src'", name)
+				std.Out.WriteSuggestionf("Run 'sg src-instance use %s' to switch to that instance for 'sg src'", name)
 				return nil
 			},
 		},
@@ -118,7 +118,7 @@ var srcCtxCommand = &cli.Command{
 var srcCommand = &cli.Command{
 	Name:      "src",
 	UsageText: "sg src [src-cli args]\nsg src help # get src-cli help",
-	Usage:     "Run src-cli on a given instance defined with 'sg src-ctx'",
+	Usage:     "Run src-cli on a given instance defined with 'sg src-instance'",
 	Category:  CategoryDev,
 	Action: func(cmd *cli.Context) error {
 		_, sc, err := getSrcInstances(cmd.Context, std.Out)
@@ -128,7 +128,7 @@ var srcCommand = &cli.Command{
 		instanceName := sc.Current
 		if instanceName == "" {
 			std.Out.WriteFailuref("Instance not found, register one with 'sg src register-instance'")
-			return errors.New("set an instance with sg src-ctx use [instance-name]")
+			return errors.New("set an instance with sg src-instance use [instance-name]")
 		}
 		instance, ok := sc.Instances[instanceName]
 		if !ok {

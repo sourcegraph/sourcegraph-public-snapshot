@@ -269,7 +269,7 @@ var sg = &cli.App{
 		secretCommand,
 		setupCommand,
 		srcCommand,
-		srcCtxCommand,
+		srcInstanceCommand,
 
 		// Company
 		teammateCommand,

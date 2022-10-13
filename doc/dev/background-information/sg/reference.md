@@ -1054,6 +1054,57 @@ Flags:
 * `--fix, -f`: Fix all checks
 * `--oss`: Omit Sourcegraph-teammate-specific setup
 
+## sg src
+
+Run src-cli on a given instance defined with 'sg src-instance'.
+
+```sh
+$ sg src [src-cli args]
+$ sg src help # get src-cli help
+```
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
+## sg src-instance
+
+Interact with Sourcegraph instances that 'sg src' will use.
+
+```sh
+$ sg src-instance [command]
+```
+
+### sg src-instance register
+
+Register (or edit an existing) Sourcegraph instance to target with src-cli.
+
+```sh
+$ sg src instance register [name] [endpoint]
+```
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
+### sg src-instance use
+
+Set current src-cli instance to use with 'sg src'.
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
+### sg src-instance list
+
+List registered instances for src-cli.
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
 ## sg teammate
 
 Get information about Sourcegraph teammates.
@@ -1273,57 +1324,6 @@ Flags:
 * `--opsgenie.token="<value>"`: OpsGenie token
 * `--priority, -p="<value>"`: Alert priority, importance decreases from P1 (critical) to P5 (lowest), defaults to P5 (default: P5)
 * `--url="<value>"`: URL field for alert details (optional)
-
-## sg src
-
-Run src-cli on a given instance defined with 'sg src-ctx'.
-
-```sh
-$ sg src [src-cli args]
-$ sg src help # get src-cli help
-```
-
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a GitHub discussion
-
-## sg src-ctx
-
-Interact with Sourcegraph instances that 'sg src' will use.
-
-```sh
-$ sg src-ctx [command]
-```
-
-### sg src-ctx register
-
-Register (or edit an existing) Sourcegraph instance to target with src-cli.
-
-```sh
-$ sg src instance register [name] [endpoint] [access_token]
-```
-
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a GitHub discussion
-
-### sg src-ctx use
-
-Set current src-cli instance to use with 'sg src'.
-
-
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a GitHub discussion
-
-### sg src-ctx list
-
-List registered instances for src-cli.
-
-
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a GitHub discussion
 
 ## sg help
 
