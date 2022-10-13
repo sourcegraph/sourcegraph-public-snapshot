@@ -1,20 +1,70 @@
-# Sourcegraph Cloud (managed instances)
+<style>
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1em;
+    margin-bottom: 1em;
+  }
+  .app-btn {
+    font-size: 0.85rem;
+    cursor: pointer;
+    text-decoration: none;
+    padding-top: 1.5rem !important;
+    width: 100%;
+    border-radius: 1em;
+    border: 2px solid var(--input-focus-border);
+    color: var(--text-color);
+    background-color: var(--sidebar-bg);
+    text-align: center;
+    font-weight: 500;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
+  }
+  .app-btn:hover {
+    box-shadow: 0 0 10px var(--link-hover-color);
+  }
+  .app-btn > img {
+    height: 4em;
+  }
+  .app-btn > p {
+    margin-bottom: 0 !important;
+  }
+  .app-btn > h3 {
+    font-size: 1.5em;
+    font-weight: 400;
+    margin-top: .2em;
+    margin-bottom: 1em;
+  }
+</style>
 
-Sourcegraph Cloud is a single-tenant cloud (formerly known as managed instances). Cloud instances are private, dedicated Sourcegraph instances provisioned and managed by Sourcegraph.
+# Sourcegraph Cloud
 
-Sourcegraph provisions each instance in a completely isolated and secure cloud infrastructure. Access is restricted to only your organization through your SSO provider of choice. Enterprise VPN is available upon request.
+Sourcegraph Cloud is a single-tenant cloud solution. Cloud instances are private, dedicated instances provisioned and managed by Sourcegraph. Sourcegraph Cloud was formerly known as managed instances.
 
-To get started with a cloud trial, just [signup](https://signup.sourcegraph.com) or [contact us](https://about.sourcegraph.com/contact/sales) if you have specific requirements (VPN) or either more than 500 users, more than 1,000 repos or monorepos larger than 5 GB.
+Sourcegraph provisions each instance in an isolated and secure cloud environment. Access is restricted to only your organization through your SSO provider of choice. Enterprise VPN is available upon request.
 
-## Trials
+## Start a Sourcegraph Cloud trial
 
-After you request a trial, we will look into your request. We currently have limited capacity to provision cloud instances, so we prioritise companies with more than a 100 developers. You should receive an email indicating the status of your request shortly after signing up.
+<div class="grid">
+  <!-- Sourcegraph Cloud -->
+  <a class="app-btn btn" href="http://signup.sourcegraph.com">
+			<img alt="sourcegraph-logo" src="https://handbook.sourcegraph.com/departments/engineering/design/brand_guidelines/logo/versions/Sourcegraph_Logomark_Color.svg"/>
+			<h3>Sourcegraph Cloud</h3>
+		  <p>Sign up for a trial</p>
+  </a>
+</div>
 
-If you're not eligible for a cloud instance for now, we recommend trying [Sourcegraph self-hosted](https://docs.sourcegraph.com/#self-hosted).
+Use the button above to sign up for a free 30-day trial of Sourcegraph Cloud. Please [contact us](https://about.sourcegraph.com/contact/sales) if you have specific VPN requirements or you require a large deployment with >500 users, >1,000 repos, or monorepos >5 GB.
 
-If you're eligible for a cloud instance, you will receive a link to the instance URL once it's provisioned. This normally takes less than one hour during business hours. From there, follow the [onboarding checklist](../getting-started/cloud-instance.md).
+## Trial limitations
 
-Trials last 30 days. When the end of the trial approaches, Sourcegraph's customer success team will check-in with you to either help you setup a Cloud subscription or terminate your instance.
+We currently have a limited capacity of single-tenant cloud instances and are prioritizing organizations with more than 100 developers. When you request a trial, you will receive an email indicating the status of your request.
+
+If your organization has fewer than 100 developers, we recommend trying [Sourcegraph self-hosted](https://docs.sourcegraph.com/#self-hosted).
+
+If you're eligible for a cloud instance, you will receive a link to the instance URL once it's provisioned. This normally takes less than one hour during business hours. From there, we recommend using the [onboarding checklist](../getting-started/cloud-instance.md) to set up your instance quickly.
+
+Trials last 30 days. When the end of the trial approaches, Sourcegraph's Customer Support team will check in with you to either help you set up a Cloud subscription or end your trial.
 
 # Cloud subscription
 
@@ -45,7 +95,7 @@ As part of this service you will receive a number of benefits from our team, inc
 ## Health monitoring, support, and SLAs
 
 - Instance performance and health [monitored](../admin/observability/index.md) by our team's on-call engineers.
-- [Responding to support requests and maintaining SLAs](https://handbook.sourcegraph.com/support#for-customers-with-managed-instances)
+- [Support and SLAs](https://handbook.sourcegraph.com/support#for-customers-with-managed-instances).
 
 ## Backup and restore
 
@@ -73,26 +123,26 @@ As with any Sourcegraph enterprise customer, you will also receive support from 
 
 ### Business
 
-- A dedicated project manager point of contact for the rollout process
-- A mutual non-disclosure agreement, and any additional approvals or special status required to allow Sourcegraph to manage infrastructure access tokens (listed below)
-- Acceptance of our [Terms of Service for private instances](https://about.sourcegraph.com/terms-private) or an enterprise contract
+- A dedicated project manager who serves as the point of contact for the rollout process.
+- A mutual non-disclosure agreement and any additional approvals or special status required to allow Sourcegraph to manage infrastructure access tokens (listed below).
+- Acceptance of our [Terms of Service for private instances](https://about.sourcegraph.com/terms-private) or an enterprise contract.
 
 ### Technical
 
 - A dedicated technical point of contact for the installation process.
-- [Tokens with read access to your code hosts](../admin/external_service/index.md) (we will direct you on how to enter them)
+- [Tokens with read access to your code hosts](../admin/external_service/index.md) (we will direct you on how to enter them).
 - [Keys, access tokens, or any other setup required to integrate your SSO (single sign-on) provider with Sourcegraph](../admin/auth/index.md), as well as support from a member of your team with administrator access to your SSO provider to help set up and test the integration.
 - If you desire VPN/IP-restricted access, we will need to know the IP/CIDR source ranges of your enterprise VPN to allow access to the instance.
 
 ## Security
 
-Your managed instance will be accessible over HTTPS/TLS, provide storage volumes that are encrypted at rest, and would have access restricted to only your team through your enterprise VPN and/or internal [SSO (single sign-on provider)](../admin/auth/index.md) of choice.
+Your managed instance will be accessible over HTTPS/TLS, provide storage volumes that are encrypted at rest, and have access restricted to only your team through your enterprise VPN and/or internal [SSO (single sign-on provider)](../admin/auth/index.md) of choice.
 
-If you decide for your manged instance to be public, we will provide security capabilities from Cloudflare such as WAF and rate-limiting. We will also provide a firewall to protect your instance from malicious traffic.
+If you would like your managed instance to be public, we will provide security capabilities from Cloudflare such as WAF and rate-limiting. We will also provide a firewall to protect your instance from malicious traffic.
 
-It will be hosted in completely isolated Google Cloud infrastructure, with minimal access even within the Sourcegraph team, both for security and billing purposes. See our [employee handbook](https://handbook.sourcegraph.com/departments/cloud/technical-docs/) to learn more about the cloud architecture we use. Both your team and limited Sourcegraph personnel will have application-level administrator access to the instance.
+Your instance will be hosted in isolated Google Cloud infrastructure. See our [employee handbook](https://handbook.sourcegraph.com/departments/cloud/technical-docs/) to learn more about the cloud architecture we use. Both your team and limited Sourcegraph personnel will have application-level administrator access to the instance.
 
-Only essential Sourcegraph personnel will have access to the instance, server, code, and any other sensitive materials, such as tokens or keys. The employees or contractors with access would be bound by the same terms as Sourcegraph itself. Learn more in our [network security policies for Sourcegraph Cloud](https://about.sourcegraph.com/security) or [contact us](https://about.sourcegraph.com/contact/sales) with any questions/concerns.
+Only essential Sourcegraph personnel will have access to the instance, server, code, and any other sensitive materials, such as tokens or keys. The employees or contractors with access are bound by the same terms as Sourcegraph itself. Learn more in our [network security policies for Sourcegraph Cloud](https://about.sourcegraph.com/security) or [contact us](https://about.sourcegraph.com/contact/sales) with any questions or concerns.
 
 ## Accommodating special requirements
 

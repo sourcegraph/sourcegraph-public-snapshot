@@ -1,11 +1,12 @@
 import { applyEdits, JSONPath, modify } from 'jsonc-parser'
 import { describe, before, after, test } from 'mocha'
 
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
 import { Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
+
+import { ExternalServiceKind } from '../graphql-operations'
 
 import { ensureTestExternalService, getUser, setTosAccepted, setUserSiteAdmin } from './util/api'
 import { GraphQLClient } from './util/GraphQlClient'
@@ -29,12 +30,12 @@ describe('Code graph regression test suite', () => {
         'testUserPassword'
     )
     const testExternalServiceInfo = {
-        kind: GQL.ExternalServiceKind.GITHUB,
+        kind: ExternalServiceKind.GITHUB,
         uniqueDisplayName: '[TEST] GitHub (codeintel.test.ts)',
     }
 
     const testRepoSlugs = [
-        'sourcegraph/sourcegraph',
+        'sourcegraph/run',
         'sourcegraph-testing/prometheus-common',
         'sourcegraph-testing/prometheus-client-golang',
         'sourcegraph-testing/prometheus-redefinitions',

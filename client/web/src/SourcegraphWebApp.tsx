@@ -11,6 +11,7 @@ import { combineLatest, from, Subscription, fromEvent, of, Subject, Observable }
 import { distinctUntilChanged, first, map, startWith, switchMap } from 'rxjs/operators'
 import * as uuid from 'uuid'
 
+import { logger } from '@sourcegraph/common'
 import { GraphQLClient, HTTPStatusError } from '@sourcegraph/http-client'
 import {
     fetchAutoDefinedSearchContexts,
@@ -31,7 +32,7 @@ import { getEnabledExtensions } from '@sourcegraph/shared/src/api/client/enabled
 import { preloadExtensions } from '@sourcegraph/shared/src/api/client/preload'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
-import { setCodeIntelSearchContext } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
+import { setCodeIntelSearchContext } from '@sourcegraph/shared/src/codeintel/searchContext'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { createController as createExtensionsController } from '@sourcegraph/shared/src/extensions/createLazyLoadedController'
 import { createNoopController } from '@sourcegraph/shared/src/extensions/createNoopLoadedController'
@@ -238,7 +239,7 @@ export class SourcegraphWebApp extends React.Component<
                 })
             })
             .catch(error => {
-                console.error('Error initializing GraphQL client', error)
+                logger.error('Error initializing GraphQL client', error)
             })
 
         this.subscriptions.add(
@@ -295,7 +296,7 @@ export class SourcegraphWebApp extends React.Component<
         }
 
         this.setWorkspaceSearchContext(this.state.selectedSearchContextSpec).catch(error => {
-            console.error('Error sending search context to extensions!', error)
+            logger.error('Error sending search context to extensions!', error)
         })
 
         // Update search query state whenever the URL changes
@@ -484,7 +485,7 @@ export class SourcegraphWebApp extends React.Component<
                 localStorage.setItem(LAST_SEARCH_CONTEXT_KEY, availableSearchContextSpecOrDefault)
 
                 this.setWorkspaceSearchContext(availableSearchContextSpecOrDefault).catch(error => {
-                    console.error('Error sending search context to extensions', error)
+                    logger.error('Error sending search context to extensions', error)
                 })
             })
         )

@@ -430,11 +430,11 @@ function Actions<T>({ children, actions, disabled, selection, className }: Actio
                         .filter(({ condition }) => !condition || condition(selection))
                         .map(({ key, label, icon, iconColor, labelColor, onClick }) => (
                             <Button
-                                className="d-flex cursor-pointer"
+                                className={styles.actionItem}
                                 key={key}
                                 variant="link"
                                 as="li"
-                                outline={true}
+                                outline={false}
                                 onClick={() => {
                                     onClick?.(selection)
                                     setIsOpen(false)

@@ -9,7 +9,6 @@ import { MaybeLink } from '../../core'
 import { CategoricalLikeChart } from '../../types'
 
 import { PieArc } from './components/PieArc'
-import { distributePieArcs } from './distribute-pie-data'
 
 import styles from './PieChart.module.scss'
 
@@ -53,7 +52,10 @@ export function PieChart<Datum>(props: PieChartProps<Datum>): ReactElement | nul
     // hovered arc last in arcs array. By that we sort of change z-index (ordering) of svg element
     // and put hovered label and arc over other arc elements
     const [hoveredArc, setHoveredArc] = useState<PieArcDatum<Datum> | null>(null)
-    const sortedData = useMemo(() => distributePieArcs(data, getDatumValue), [data, getDatumValue])
+    const sortedData = useMemo(() => [...data].sort((first, second) => getDatumValue(second) - getDatumValue(first)), [
+        data,
+        getDatumValue,
+    ])
 
     const innerWidth = width - padding.left - padding.right
     const innerHeight = height - padding.top - padding.bottom

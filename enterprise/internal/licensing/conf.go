@@ -11,7 +11,7 @@ func init() {
 			info, _, err := ParseProductLicenseKeyWithBuiltinOrGenerationKey(cfg.SiteConfig().LicenseKey)
 			if err != nil {
 				return conf.NewSiteProblems("should provide a valid license key")
-			} else if err = info.hasUnknownPlan(); EnforceTiers && err != nil {
+			} else if err = info.hasUnknownPlan(); err != nil {
 				return conf.NewSiteProblems(err.Error())
 			}
 		}

@@ -4,6 +4,7 @@ import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
+import { logger } from '@sourcegraph/common'
 import { Button, Modal, Link, Code, Label, Text, Input } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
@@ -119,7 +120,7 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
                     afterCreate()
                 }
             } catch (error) {
-                console.error(error)
+                logger.error(error)
             }
         },
         [

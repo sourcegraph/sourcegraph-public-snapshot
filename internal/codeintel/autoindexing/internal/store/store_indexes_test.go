@@ -16,11 +16,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -48,7 +49,7 @@ func TestInsertIndexes(t *testing.T) {
 			Indexer:     "sourcegraph/scip-typescript:latest",
 			IndexerArgs: []string{"index", "--yarn-workspaces"},
 			Outfile:     "dump.lsif",
-			ExecutionLogs: []types.ExecutionLogEntry{
+			ExecutionLogs: []workerutil.ExecutionLogEntry{
 				{Command: []string{"op", "1"}, Out: "Indexing\nUploading\nDone with 1.\n"},
 				{Command: []string{"op", "2"}, Out: "Indexing\nUploading\nDone with 2.\n"},
 			},
@@ -68,7 +69,7 @@ func TestInsertIndexes(t *testing.T) {
 			Indexer:     "sourcegraph/lsif-rust:15",
 			IndexerArgs: []string{"-v"},
 			Outfile:     "dump.lsif",
-			ExecutionLogs: []types.ExecutionLogEntry{
+			ExecutionLogs: []workerutil.ExecutionLogEntry{
 				{Command: []string{"op", "1"}, Out: "Done with 1.\n"},
 				{Command: []string{"op", "2"}, Out: "Done with 2.\n"},
 			},
@@ -105,7 +106,7 @@ func TestInsertIndexes(t *testing.T) {
 			Indexer:     "sourcegraph/scip-typescript:latest",
 			IndexerArgs: []string{"index", "--yarn-workspaces"},
 			Outfile:     "dump.lsif",
-			ExecutionLogs: []types.ExecutionLogEntry{
+			ExecutionLogs: []workerutil.ExecutionLogEntry{
 				{Command: []string{"op", "1"}, Out: "Indexing\nUploading\nDone with 1.\n"},
 				{Command: []string{"op", "2"}, Out: "Indexing\nUploading\nDone with 2.\n"},
 			},
@@ -132,7 +133,7 @@ func TestInsertIndexes(t *testing.T) {
 			Indexer:     "sourcegraph/lsif-rust:15",
 			IndexerArgs: []string{"-v"},
 			Outfile:     "dump.lsif",
-			ExecutionLogs: []types.ExecutionLogEntry{
+			ExecutionLogs: []workerutil.ExecutionLogEntry{
 				{Command: []string{"op", "1"}, Out: "Done with 1.\n"},
 				{Command: []string{"op", "2"}, Out: "Done with 2.\n"},
 			},
@@ -222,7 +223,7 @@ func TestGetIndexes(t *testing.T) {
 			)
 
 			t.Run(name, func(t *testing.T) {
-				indexes, totalCount, err := store.GetIndexes(ctx, types.GetIndexesOptions{
+				indexes, totalCount, err := store.GetIndexes(ctx, shared.GetIndexesOptions{
 					RepositoryID: testCase.repositoryID,
 					State:        testCase.state,
 					Term:         testCase.term,
@@ -257,7 +258,7 @@ func TestGetIndexes(t *testing.T) {
 		defer globals.SetPermissionsUserMapping(before)
 
 		indexes, totalCount, err := store.GetIndexes(ctx,
-			types.GetIndexesOptions{
+			shared.GetIndexesOptions{
 				Limit: 1,
 			},
 		)
@@ -307,7 +308,7 @@ func TestGetIndexByID(t *testing.T) {
 		Indexer:     "sourcegraph/scip-typescript:latest",
 		IndexerArgs: []string{"index", "--yarn-workspaces"},
 		Outfile:     "dump.lsif",
-		ExecutionLogs: []types.ExecutionLogEntry{
+		ExecutionLogs: []workerutil.ExecutionLogEntry{
 			{Command: []string{"op", "1"}, Out: "Indexing\nUploading\nDone with 1.\n"},
 			{Command: []string{"op", "2"}, Out: "Indexing\nUploading\nDone with 2.\n"},
 		},
@@ -565,6 +566,30 @@ func TestDeleteIndexByID(t *testing.T) {
 
 	// Index no longer exists
 	if _, exists, err := store.GetIndexByID(context.Background(), 1); err != nil {
+		t.Fatalf("unexpected error getting index: %s", err)
+	} else if exists {
+		t.Fatal("unexpected record")
+	}
+}
+
+func TestDeleteIndexes(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	insertIndexes(t, db, types.Index{ID: 1, State: "completed"})
+	insertIndexes(t, db, types.Index{ID: 2, State: "errored"})
+
+	if err := store.DeleteIndexes(context.Background(), shared.DeleteIndexesOptions{
+		State:        "errored",
+		Term:         "",
+		RepositoryID: 0,
+	}); err != nil {
+		t.Fatalf("unexpected error deleting indexes: %s", err)
+	}
+
+	// Index no longer exists
+	if _, exists, err := store.GetIndexByID(context.Background(), 2); err != nil {
 		t.Fatalf("unexpected error getting index: %s", err)
 	} else if exists {
 		t.Fatal("unexpected record")

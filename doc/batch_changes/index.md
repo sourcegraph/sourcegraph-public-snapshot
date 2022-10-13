@@ -74,7 +74,7 @@ Create a batch change by specifying a search query to get a list of repositories
 - [Batch Changes design](explanations/batch_changes_design.md)
 - [How `src` executes a batch spec](explanations/how_src_executes_a_batch_spec.md)
 - [Re-executing batch specs multiple times](explanations/reexecuting_batch_specs_multiple_times.md)
-- <span class="badge badge-experimental">Experimental</span> [Running batch changes server-side](explanations/server_side.md)
+- <span class="badge badge-beta">Beta</span> [Running batch changes server-side](explanations/server_side.md)
 
 ## How-tos
 

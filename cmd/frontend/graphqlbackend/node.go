@@ -7,7 +7,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	policiesgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/sharedresolvers"
+	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
 	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -273,6 +273,11 @@ func (r *NodeResolver) ToInsightView() (InsightViewResolver, bool) {
 
 func (r *NodeResolver) ToWebhookLog() (*webhookLogResolver, bool) {
 	n, ok := r.Node.(*webhookLogResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToWebhook() (*webhookResolver, bool) {
+	n, ok := r.Node.(*webhookResolver)
 	return n, ok
 }
 

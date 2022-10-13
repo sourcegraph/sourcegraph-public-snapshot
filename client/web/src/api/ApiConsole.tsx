@@ -6,7 +6,7 @@ import { from as fromPromise, Subject, Subscription } from 'rxjs'
 import { catchError, debounceTime } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { LoadingSpinner, Button, Alert, Link } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
@@ -104,7 +104,7 @@ export class ApiConsole extends React.PureComponent<Props, State> {
             fromPromise(import('graphiql'))
                 .pipe(
                     catchError(error => {
-                        console.error(error)
+                        logger.error(error)
                         return [asError(error)]
                     })
                 )

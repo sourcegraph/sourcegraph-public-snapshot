@@ -1,18 +1,26 @@
-import React, { useContext, useMemo } from 'react'
+import { FC, useContext, useMemo } from 'react'
 
+import { useQuery } from '@apollo/client'
 import { mdiClose } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError } from '@sourcegraph/common'
-import { Button, LoadingSpinner, useObservable, Modal, H2, Icon } from '@sourcegraph/wildcard'
+import { Button, Modal, H2, Icon, LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { FORM_ERROR, SubmissionErrors } from '../../../../../components/form/hooks/useForm'
+import {
+    AccessibleInsight,
+    GetDashboardAccessibleInsightsResult,
+    GetDashboardAccessibleInsightsVariables,
+} from '../../../../../../../graphql-operations'
+import { FORM_ERROR, SubmissionErrors } from '../../../../../components'
 import { CodeInsightsBackendContext, CustomInsightDashboard } from '../../../../../core'
 
 import {
     AddInsightFormValues,
     AddInsightModalContent,
 } from './components/add-insight-modal-content/AddInsightModalContent'
+import { GET_ACCESSIBLE_INSIGHTS_LIST } from './query'
 
 import styles from './AddInsightModal.module.scss'
 
@@ -21,18 +29,26 @@ export interface AddInsightModalProps {
     onClose: () => void
 }
 
-export const AddInsightModal: React.FunctionComponent<React.PropsWithChildren<AddInsightModalProps>> = props => {
+export const AddInsightModal: FC<AddInsightModalProps> = props => {
     const { dashboard, onClose } = props
-    const { getAccessibleInsightsList, assignInsightsToDashboard } = useContext(CodeInsightsBackendContext)
+    const { assignInsightsToDashboard } = useContext(CodeInsightsBackendContext)
 
-    const insights = useObservable(useMemo(() => getAccessibleInsightsList(), [getAccessibleInsightsList]))
+    const { data, loading, error } = useQuery<
+        GetDashboardAccessibleInsightsResult,
+        GetDashboardAccessibleInsightsVariables
+    >(GET_ACCESSIBLE_INSIGHTS_LIST, {
+        variables: { id: dashboard.id },
+    })
+
+    const insights = getAvailableInsights(data)
+    const dashboardInsightIds = getDashboardInsightIds(data)
 
     const initialValues = useMemo<AddInsightFormValues>(
         () => ({
             searchInput: '',
-            insightIds: dashboard.insightIds ?? [],
+            insightIds: dashboardInsightIds,
         }),
-        [dashboard]
+        [dashboardInsightIds]
     )
 
     const handleSubmit = async (values: AddInsightFormValues): Promise<void | SubmissionErrors> => {
@@ -41,7 +57,7 @@ export const AddInsightModal: React.FunctionComponent<React.PropsWithChildren<Ad
 
             await assignInsightsToDashboard({
                 id: dashboard.id,
-                prevInsightIds: dashboard.insightIds ?? [],
+                prevInsightIds: dashboardInsightIds,
                 nextInsightIds: insightIds,
             }).toPromise()
 
@@ -51,14 +67,6 @@ export const AddInsightModal: React.FunctionComponent<React.PropsWithChildren<Ad
         }
     }
 
-    if (insights === undefined) {
-        return (
-            <Modal className={styles.modal} aria-label="Add insights to dashboard modal">
-                <LoadingSpinner inline={false} />
-            </Modal>
-        )
-    }
-
     return (
         <Modal className={styles.modal} onDismiss={onClose} aria-label="Add insights to dashboard modal">
             <Button variant="icon" className={styles.closeButton} onClick={onClose}>
@@ -66,21 +74,39 @@ export const AddInsightModal: React.FunctionComponent<React.PropsWithChildren<Ad
                 <Icon svgPath={mdiClose} inline={false} aria-hidden={true} />
             </Button>
 
-            <H2 className="mb-3">
-                Add insight to <q>{dashboard.title}</q>
-            </H2>
+            {loading && !data && <LoadingSpinner inline={false} />}
+            {error && <ErrorAlert error={error} />}
+            {data && (
+                <>
+                    <H2 className="mb-3">
+                        Add insight to <q>{dashboard.title}</q>
+                    </H2>
 
-            {!insights.length && <span>There are no insights for this dashboard.</span>}
+                    {!insights.length && <span>There are no insights for this dashboard.</span>}
 
-            {insights.length > 0 && (
-                <AddInsightModalContent
-                    initialValues={initialValues}
-                    insights={insights}
-                    dashboardID={dashboard.id}
-                    onCancel={onClose}
-                    onSubmit={handleSubmit}
-                />
+                    {insights.length > 0 && (
+                        <AddInsightModalContent
+                            initialValues={initialValues}
+                            insights={insights}
+                            dashboardID={dashboard.id}
+                            onCancel={onClose}
+                            onSubmit={handleSubmit}
+                        />
+                    )}
+                </>
             )}
         </Modal>
     )
+}
+
+function getDashboardInsightIds(data?: GetDashboardAccessibleInsightsResult): string[] {
+    if (!data || !data.dashboardInsightsIds.nodes[0].views) {
+        return []
+    }
+
+    return data.dashboardInsightsIds.nodes[0].views.nodes.map(view => view.id)
+}
+
+function getAvailableInsights(data?: GetDashboardAccessibleInsightsResult): AccessibleInsight[] {
+    return data?.accessibleInsights?.nodes ?? []
 }

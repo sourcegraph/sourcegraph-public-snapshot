@@ -28,7 +28,7 @@ type operations struct {
 func newOperations(observationContext *observation.Context) *operations {
 	m := metrics.NewREDMetrics(
 		observationContext.Registerer,
-		"codeintel_symbols_transport_graphql",
+		"codeintel_codenav_transport_graphql",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of method invocations."),
 	)

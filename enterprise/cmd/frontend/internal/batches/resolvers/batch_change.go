@@ -10,12 +10,13 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -35,6 +36,10 @@ type batchChangeResolver struct {
 	batchSpecOnce sync.Once
 	batchSpec     *btypes.BatchSpec
 	batchSpecErr  error
+
+	canAdministerOnce sync.Once
+	canAdminister     bool
+	canAdministerErr  error
 }
 
 const batchChangeIDKind = "BatchChange"
@@ -106,7 +111,11 @@ func (r *batchChangeResolver) LastAppliedAt() *graphqlbackend.DateTime {
 }
 
 func (r *batchChangeResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	return checkSiteAdminOrSameUser(ctx, r.store.DatabaseDB(), r.batchChange.CreatorID)
+	r.canAdministerOnce.Do(func() {
+		svc := service.New(r.store)
+		r.canAdminister, r.canAdministerErr = svc.CanAdministerInNamespace(ctx, r.batchChange.NamespaceUserID, r.batchChange.NamespaceOrgID)
+	})
+	return r.canAdminister, r.canAdministerErr
 }
 
 func (r *batchChangeResolver) URL(ctx context.Context) (string, error) {
@@ -324,7 +333,7 @@ func (r *batchChangeResolver) BatchSpecs(
 		opts.IncludeLocallyExecutedSpecs = *args.IncludeLocallyExecutedSpecs
 	}
 
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
 		opts.ExcludeCreatedFromRawNotOwnedByUser = actor.FromContext(ctx).UID
 	}
 

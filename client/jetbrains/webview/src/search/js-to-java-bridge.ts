@@ -66,7 +66,7 @@ interface GetThemeRequest {
 
 interface IndicateSearchError {
     action: 'indicateSearchError'
-    arguments: { errorMessage: string, timeAsISOString: string }
+    arguments: { errorMessage: string; timeAsISOString: string }
 }
 
 export interface SaveLastSearchRequest {
@@ -289,11 +289,11 @@ async function createPreviewContentForContentMatch(
 ): Promise<PreviewContent> {
     const fileName = splitPath(match.path)[1]
     const content = convertCarriageReturnLineFeedToLineFeed(await loadContent(match))
-    const characterCountUntilLine = getCharacterCountUntilLine(content, match.lineMatches[lineMatchIndex].lineNumber)
+    const characterCountUntilLine = getCharacterCountUntilLine(content, match.lineMatches![lineMatchIndex].lineNumber)
     const absoluteOffsetAndLengths = getAbsoluteOffsetAndLengths(
         content,
-        match.lineMatches[lineMatchIndex].lineNumber,
-        match.lineMatches[lineMatchIndex].offsetAndLengths,
+        match.lineMatches![lineMatchIndex].lineNumber,
+        match.lineMatches![lineMatchIndex].offsetAndLengths,
         characterCountUntilLine
     )
 
@@ -305,7 +305,7 @@ async function createPreviewContentForContentMatch(
         commit: match.commit,
         path: match.path,
         content: encodeContent(content),
-        lineNumber: match.lineMatches[lineMatchIndex].lineNumber,
+        lineNumber: match.lineMatches![lineMatchIndex].lineNumber,
         absoluteOffsetAndLengths,
     }
 }

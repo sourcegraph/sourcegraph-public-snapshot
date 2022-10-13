@@ -15,7 +15,7 @@ type operations struct {
 func newOperations(observationContext *observation.Context) *operations {
 	metrics := metrics.NewREDMetrics(
 		observationContext.Registerer,
-		"codeintel_symbols_store",
+		"codeintel_codenav_store",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of method invocations."),
 	)

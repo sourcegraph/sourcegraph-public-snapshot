@@ -50,7 +50,7 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
                 <AccountIcon className="mb-0 mr-2" />
             </div>
             <div className="flex-1 flex-column">
-                <H3 className="m-0">{account.name}</H3>
+                <H3 className="m-0">{authProvider.displayName}</H3>
                 <div className="text-muted">
                     {account.external ? (
                         <>

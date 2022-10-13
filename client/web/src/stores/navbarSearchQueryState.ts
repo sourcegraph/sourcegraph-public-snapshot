@@ -11,8 +11,8 @@ import {
     SearchQueryState,
     updateQuery,
     InitialParametersSource,
+    SearchPatternType,
 } from '@sourcegraph/search'
-import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 

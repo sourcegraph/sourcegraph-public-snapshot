@@ -6,12 +6,13 @@ import (
 
 	logger "github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
@@ -42,7 +43,7 @@ type Store interface {
 	HasRepository(ctx context.Context, repositoryID int) (_ bool, err error)
 
 	// Uploads
-	GetUploads(ctx context.Context, opts types.GetUploadsOptions) (_ []types.Upload, _ int, err error)
+	GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (_ []types.Upload, _ int, err error)
 	GetUploadByID(ctx context.Context, id int) (_ types.Upload, _ bool, err error)
 	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []types.Upload, err error)
 	GetUploadIDsWithReferences(ctx context.Context, orderedMonikers []precise.QualifiedMonikerData, ignoreIDs []int, repositoryID int, commit string, limit int, offset int, trace observation.TraceLogger) (ids []int, recordsScanned int, totalCount int, err error)
@@ -60,6 +61,7 @@ type Store interface {
 	DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_ int, err error)
 	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error)
 	DeleteUploadByID(ctx context.Context, id int) (_ bool, err error)
+	DeleteUploads(ctx context.Context, opts shared.DeleteUploadsOptions) (err error)
 
 	// Uploads (uploading)
 	InsertUpload(ctx context.Context, upload types.Upload) (int, error)
@@ -72,16 +74,24 @@ type Store interface {
 	FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, commitGraph *gitdomain.CommitGraph) (_ []types.Dump, err error)
 	GetDumpsWithDefinitionsForMonikers(ctx context.Context, monikers []precise.QualifiedMonikerData) (_ []types.Dump, err error)
 	GetDumpsByIDs(ctx context.Context, ids []int) (_ []types.Dump, err error)
+	DeleteOverlappingDumps(ctx context.Context, repositoryID int, commit, root, indexer string) error
 
 	// Packages
 	UpdatePackages(ctx context.Context, dumpID int, packages []precise.Package) (err error)
 
 	// References
 	UpdatePackageReferences(ctx context.Context, dumpID int, references []precise.PackageReference) (err error)
+	ReferencesForUpload(ctx context.Context, uploadID int) (_ shared.PackageReferenceScanner, err error)
 
 	// Audit Logs
 	GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []types.UploadLog, err error)
 	DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (count int, err error)
+
+	// Dependencies
+	InsertDependencySyncingJob(ctx context.Context, uploadID int) (jobID int, err error)
+
+	// Workerutil
+	WorkerutilStore(observationContext *observation.Context) dbworkerstore.Store
 }
 
 // store manages the database operations for uploads.

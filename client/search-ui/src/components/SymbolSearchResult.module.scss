@@ -1,0 +1,34 @@
+.symbols-override {
+    border: none !important;
+    padding: 0 !important;
+}
+
+.symbols {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--body-bg) !important;
+    padding: 0.25rem 0;
+}
+
+.symbol {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    background-color: var(--color-bg-2);
+    padding: 0.25rem;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+
+    &:not(:last-child) {
+        margin-bottom: 0.5rem;
+    }
+
+    &-code-excerpt {
+        :global(.code) {
+            white-space: pre-line !important;
+            padding-left: 1rem !important;
+            overflow-wrap: anywhere;
+        }
+    }
+}

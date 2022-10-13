@@ -227,6 +227,43 @@ open user alice * -//Sourcegraph/*/Handbook/...                      ## sub-matc
 				},
 			},
 		},
+		{
+			name: "include and exclude, then include again",
+			response: `
+read user alice * //Sourcegraph/Security/...
+read user alice * //Sourcegraph/Engineering/...
+owner user alice * //Sourcegraph/Engineering/Backend/...
+open user alice * //Sourcegraph/Engineering/Frontend/...
+review user alice * //Sourcegraph/Handbook/...
+open user alice * //Sourcegraph/Engineering/.../Frontend/...
+open user alice * //Sourcegraph/.../Handbook/...  ## wildcard A
+
+list user alice * -//Sourcegraph/Security/...                        ## "list" can revoke read access
+=read user alice * -//Sourcegraph/Engineering/Frontend/...           ## exact match of a previous include
+open user alice * -//Sourcegraph/Engineering/Backend/Credentials/... ## sub-match of a previous include
+open user alice * -//Sourcegraph/Engineering/*/Frontend/Folder/...   ## sub-match of a previous include
+open user alice * -//Sourcegraph/*/Handbook/...                      ## sub-match of wildcard A include
+
+read user alice * //Sourcegraph/Security/... 						 ## give access to alice again after revoking
+`,
+			wantPerms: &authz.ExternalUserPermissions{
+				IncludeContains: []extsvc.RepoID{
+					"//Sourcegraph/Engineering/%",
+					"//Sourcegraph/Engineering/Backend/%",
+					"//Sourcegraph/Engineering/Frontend/%",
+					"//Sourcegraph/Handbook/%",
+					"//Sourcegraph/Engineering/%/Frontend/%",
+					"//Sourcegraph/%/Handbook/%",
+					"//Sourcegraph/Security/%",
+				},
+				ExcludeContains: []extsvc.RepoID{
+					"//Sourcegraph/Engineering/Frontend/%",
+					"//Sourcegraph/Engineering/Backend/Credentials/%",
+					"//Sourcegraph/Engineering/[^/]+/Frontend/Folder/%",
+					"//Sourcegraph/[^/]+/Handbook/%",
+				},
+			},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -290,11 +327,9 @@ read user alice * -//Sourcegraph/Security/...
 			Exacts: []extsvc.RepoID{"//Sourcegraph/"},
 			SubRepoPermissions: map[extsvc.RepoID]*authz.SubRepoPermissions{
 				"//Sourcegraph/": {
-					PathIncludes: []string{
-						mustGlobPattern(t, "Engineering/..."),
-					},
-					PathExcludes: []string{
-						mustGlobPattern(t, "Security/..."),
+					Paths: []string{
+						mustGlobPattern(t, "/Engineering/..."),
+						mustGlobPattern(t, "-/Security/..."),
 					},
 				},
 			},

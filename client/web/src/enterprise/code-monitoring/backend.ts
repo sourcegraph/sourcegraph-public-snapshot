@@ -1,6 +1,7 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
+import { logger } from '@sourcegraph/common'
 import { createInvalidGraphQLMutationResponseError, dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
 import { requestGraphQL } from '../../backend/graphql'
@@ -291,7 +292,7 @@ export const sendTestEmail = (id: Scalars['ID']): Observable<void> => {
         map(dataOrThrowErrors),
         map(data => {
             if (!data.resetTriggerQueryTimestamps) {
-                console.log('DATA', data)
+                logger.log('DATA', data)
                 throw createInvalidGraphQLMutationResponseError('ResetTriggerQueryTimestamps')
             }
         })

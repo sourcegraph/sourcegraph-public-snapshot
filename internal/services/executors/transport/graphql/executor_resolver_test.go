@@ -98,19 +98,27 @@ func TestExecutorResolver(t *testing.T) {
 			},
 			// The executor is outdated if the sourcegraph version is greater than the executor version (insiders).
 			{
-				executorVersion:    "executor-patch-notest-es-ignite-debug_168065_2022-08-20_e94e18c4ebcc_patch",
-				sourcegraphVersion: "169135_2022-08-25_a2b623dce148",
+				executorVersion:    "executor-patch-notest-es-ignite-debug_168065_2022-06-10_e94e18c4ebcc_patch",
+				sourcegraphVersion: "169135_2022-07-25_a2b623dce148",
 				isActive:           true,
 				expected:           ExecutorCompatibilityOutdated.ToGraphQL(),
-				description:        "executor version is less than the Sourcegraph instance (insiders)",
+				description:        "executor version is less than the Sourcegraph build date - one release cycle  (insiders)",
 			},
-			// The executor is too new if the executor version is greater than the sourcegraph version (insiders)
+			// The executor is too new if the executor version is greater than the one release cycle + sourcegraph build date (insiders)
+			{
+				executorVersion:    "executor-patch-notest-es-ignite-debug_168065_2022-10-30_e94e18c4ebcc_patch",
+				sourcegraphVersion: "169135_2022-09-15_a2b623dce148",
+				isActive:           true,
+				expected:           ExecutorCompatibilityVersionAhead.ToGraphQL(),
+				description:        "executor version is greater than the one release cycle + Sourcegraph build date (insiders)",
+			},
+			// The executor is up to date if the build date isn't greater than one release cycle + sourcegraph build date (insiders)
 			{
 				executorVersion:    "executor-patch-notest-es-ignite-debug_168065_2022-08-20_e94e18c4ebcc_patch",
 				sourcegraphVersion: "169135_2022-08-15_a2b623dce148",
 				isActive:           true,
-				expected:           ExecutorCompatibilityVersionAhead.ToGraphQL(),
-				description:        "executor version is greater than the Sourcegraph instance (insiders)",
+				expected:           ExecutorCompatibilityUpToDate.ToGraphQL(),
+				description:        "executor version is a few days ahead of the Sourcegraph instance (insiders)",
 			},
 			// version mismatch
 			{

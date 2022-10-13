@@ -56,21 +56,27 @@ type operations struct {
 	addUploadPart                     *observation.Operation
 	markQueued                        *observation.Operation
 	markFailed                        *observation.Operation
+	deleteUploads                     *observation.Operation
 
 	// Dumps
 	findClosestDumps                   *observation.Operation
 	findClosestDumpsFromGraphFragment  *observation.Operation
 	getDumpsWithDefinitionsForMonikers *observation.Operation
 	getDumpsByIDs                      *observation.Operation
+	deleteOverlappingDumps             *observation.Operation
 
 	// Packages
 	updatePackages *observation.Operation
 
 	// References
 	updatePackageReferences *observation.Operation
+	referencesForUpload     *observation.Operation
 
 	// Audit logs
 	deleteOldAuditLogs *observation.Operation
+
+	// Dependencies
+	insertDependencySyncingJob *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -134,6 +140,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		addUploadPart:                     op("AddUploadPart"),
 		markQueued:                        op("MarkQueued"),
 		markFailed:                        op("MarkFailed"),
+		deleteUploads:                     op("DeleteUploads"),
 
 		writeVisibleUploads:        op("writeVisibleUploads"),
 		persistNearestUploads:      op("persistNearestUploads"),
@@ -145,14 +152,19 @@ func newOperations(observationContext *observation.Context) *operations {
 		findClosestDumpsFromGraphFragment:  op("FindClosestDumpsFromGraphFragment"),
 		getDumpsWithDefinitionsForMonikers: op("GetUploadsWithDefinitionsForMonikers"),
 		getDumpsByIDs:                      op("GetDumpsByIDs"),
+		deleteOverlappingDumps:             op("DeleteOverlappingDumps"),
 
 		// Packages
 		updatePackages: op("UpdatePackages"),
 
 		// References
 		updatePackageReferences: op("UpdatePackageReferences"),
+		referencesForUpload:     op("ReferencesForUpload"),
 
 		// Audit logs
 		deleteOldAuditLogs: op("DeleteOldAuditLogs"),
+
+		// Dependencies
+		insertDependencySyncingJob: op("InsertDependencySyncingJob"),
 	}
 }

@@ -213,45 +213,43 @@ func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.Accou
 	return listProjects(ctx, client)
 }
 
-// FetchUserPermsByToken is the same as FetchUserPerms, but it only requires a
-// token.
-func (p *SudoProvider) FetchUserPermsByToken(ctx context.Context, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
-	client := p.clientProvider.GetOAuthClient(token)
-	return listProjects(ctx, client)
-}
-
 // listProjects is a helper function to request for all private projects that are accessible
 // (access level: 20 => Reporter access) by the authenticated or impersonated user in the client.
 // It may return partial but valid results in case of error, and it is up to callers to decide
 // whether to discard.
 func listProjects(ctx context.Context, client *gitlab.Client) (*authz.ExternalUserPermissions, error) {
 	q := make(url.Values)
-	q.Add("visibility", "private")  // This method is meant to return only private projects
 	q.Add("min_access_level", "20") // 20 => Reporter access (i.e. have access to project code)
 	q.Add("per_page", "100")        // 100 is the maximum page size
-
-	// The next URL to request for projects, and it is reused in the succeeding for loop.
-	nextURL := "projects?" + q.Encode()
 
 	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
 	// when appending the first 100 results to the slice.
 	projectIDs := make([]extsvc.RepoID, 0, 100)
-	for {
-		projects, next, err := client.ListProjects(ctx, nextURL)
-		if err != nil {
-			return &authz.ExternalUserPermissions{
-				Exacts: projectIDs,
-			}, err
-		}
 
-		for _, p := range projects {
-			projectIDs = append(projectIDs, extsvc.RepoID(strconv.Itoa(p.ID)))
-		}
+	// This method is meant to return only private or internal projects
+	for _, visibility := range []string{"private", "internal"} {
+		q.Set("visibility", visibility)
 
-		if next == nil {
-			break
+		// The next URL to request for projects, and it is reused in the succeeding for loop.
+		nextURL := "projects?" + q.Encode()
+
+		for {
+			projects, next, err := client.ListProjects(ctx, nextURL)
+			if err != nil {
+				return &authz.ExternalUserPermissions{
+					Exacts: projectIDs,
+				}, err
+			}
+
+			for _, p := range projects {
+				projectIDs = append(projectIDs, extsvc.RepoID(strconv.Itoa(p.ID)))
+			}
+
+			if next == nil {
+				break
+			}
+			nextURL = *next
 		}
-		nextURL = *next
 	}
 
 	return &authz.ExternalUserPermissions{

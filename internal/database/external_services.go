@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -618,8 +619,8 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 			keyID,
 			es.CreatedAt,
 			es.UpdatedAt,
-			nullInt32Column(es.NamespaceUserID),
-			nullInt32Column(es.NamespaceOrgID),
+			dbutil.NullInt32Column(es.NamespaceUserID),
+			dbutil.NullInt32Column(es.NamespaceOrgID),
 			es.Unrestricted,
 			es.CloudDefault,
 			es.HasWebhooks,
@@ -770,11 +771,11 @@ func (e *externalServiceStore) upsertExternalServicesQuery(ctx context.Context, 
 			keyID,
 			s.CreatedAt.UTC(),
 			s.UpdatedAt.UTC(),
-			nullTimeColumn(s.DeletedAt),
-			nullTimeColumn(s.LastSyncAt),
-			nullTimeColumn(s.NextSyncAt),
-			nullInt32Column(s.NamespaceUserID),
-			nullInt32Column(s.NamespaceOrgID),
+			dbutil.NullTimeColumn(s.DeletedAt),
+			dbutil.NullTimeColumn(s.LastSyncAt),
+			dbutil.NullTimeColumn(s.NextSyncAt),
+			dbutil.NullInt32Column(s.NamespaceUserID),
+			dbutil.NullInt32Column(s.NamespaceOrgID),
 			s.Unrestricted,
 			s.CloudDefault,
 			s.HasWebhooks,
@@ -792,7 +793,6 @@ const upsertExternalServicesQueryValueFmtstr = `
 `
 
 const upsertExternalServicesQueryFmtstr = `
--- source: internal/database/external_services.go:ExternalServiceStore.Upsert
 INSERT INTO external_services (
   id,
   kind,
@@ -982,6 +982,17 @@ func (e *externalServiceStore) Delete(ctx context.Context, id int64) (err error)
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
+
+	// We take an advisory lock here and also when syncing an external service to
+	// ensure that they can't happen at the same time.
+	lock := locker.NewWith(tx, "external_service")
+	locked, err := lock.LockInTransaction(ctx, locker.StringKey(fmt.Sprintf("%d", id)), false)
+	if err != nil {
+		return errors.Wrap(err, "getting advisory lock")
+	}
+	if !locked {
+		return errors.Errorf("could not get advisory lock for service %d", id)
+	}
 
 	// Create a temporary table where we'll store repos affected by the deletion of
 	// the external service

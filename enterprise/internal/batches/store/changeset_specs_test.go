@@ -9,12 +9,15 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -636,6 +639,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 	t.Run("GetRewirerMappings", func(t *testing.T) {
 		// Create some test data
 		user := bt.CreateTestUser(t, s.DatabaseDB(), true)
+		ctx = actor.WithInternalActor(ctx)
 		batchSpec := bt.CreateBatchSpec(t, ctx, s, "get-rewirer-mappings", user.ID, 0)
 		var mappings = make(btypes.RewirerMappings, 3)
 		changesetSpecIDs := make([]int64, 0, cap(mappings))
@@ -956,6 +960,7 @@ func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *S
 
 	// Create a user.
 	user := bt.CreateTestUser(t, s.DatabaseDB(), false)
+	ctx = actor.WithInternalActor(ctx)
 
 	// Next, we need old and new batch specs.
 	oldBatchSpec := bt.CreateBatchSpec(t, ctx, s, "old", user.ID, 0)
@@ -1054,6 +1059,7 @@ func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.
 
 	// Create a user.
 	user := bt.CreateTestUser(t, s.DatabaseDB(), false)
+	ctx = actor.WithInternalActor(ctx)
 
 	// Next, we need old and new batch specs.
 	oldBatchSpec := bt.CreateBatchSpec(t, ctx, s, "old", user.ID, 0)
@@ -1229,6 +1235,7 @@ func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Sto
 
 	// Create a user.
 	user := bt.CreateTestUser(t, s.DatabaseDB(), false)
+	ctx = actor.WithInternalActor(ctx)
 
 	// Next, we need a batch spec.
 	oldBatchSpec := bt.CreateBatchSpec(t, ctx, s, "text", user.ID, 0)
@@ -1506,4 +1513,120 @@ func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Sto
 			})
 		})
 	}
+}
+
+func testStoreChangesetSpecsPublishedValues(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
+	logger := logtest.Scoped(t)
+	repoStore := database.ReposWith(logger, s)
+	esStore := database.ExternalServicesWith(logger, s)
+
+	repo := bt.TestRepo(t, esStore, extsvc.KindGitHub)
+
+	err := repoStore.Create(ctx, repo)
+	require.NoError(t, err)
+
+	t.Run("NULL", func(t *testing.T) {
+		c := &btypes.ChangesetSpec{
+			UserID:      int32(1234),
+			BatchSpecID: int64(910),
+			BaseRepoID:  repo.ID,
+			Published:   batcheslib.PublishedValue{},
+		}
+
+		err := s.CreateChangesetSpec(ctx, c)
+		require.NoError(t, err)
+		t.Cleanup(func() {
+			s.DeleteChangesetSpec(ctx, c.ID)
+		})
+
+		val, _, err := basestore.ScanFirstNullString(s.Query(ctx, sqlf.Sprintf("SELECT published FROM changeset_specs WHERE id = %d", c.ID)))
+		require.NoError(t, err)
+		assert.Empty(t, val)
+
+		actual, err := s.GetChangesetSpec(ctx, GetChangesetSpecOpts{ID: c.ID})
+		require.NoError(t, err)
+		assert.True(t, actual.Published.Nil())
+	})
+
+	t.Run("True", func(t *testing.T) {
+		c := &btypes.ChangesetSpec{
+			UserID:      int32(1234),
+			BatchSpecID: int64(910),
+			BaseRepoID:  repo.ID,
+			Published:   batcheslib.PublishedValue{Val: true},
+		}
+
+		err := s.CreateChangesetSpec(ctx, c)
+		require.NoError(t, err)
+		t.Cleanup(func() {
+			s.DeleteChangesetSpec(ctx, c.ID)
+		})
+
+		val, _, err := basestore.ScanFirstBool(s.Query(ctx, sqlf.Sprintf("SELECT published FROM changeset_specs WHERE id = %d", c.ID)))
+		require.NoError(t, err)
+		assert.True(t, val)
+
+		actual, err := s.GetChangesetSpec(ctx, GetChangesetSpecOpts{ID: c.ID})
+		require.NoError(t, err)
+		assert.True(t, actual.Published.True())
+	})
+
+	t.Run("False", func(t *testing.T) {
+		c := &btypes.ChangesetSpec{
+			UserID:      int32(1234),
+			BatchSpecID: int64(910),
+			BaseRepoID:  repo.ID,
+			Published:   batcheslib.PublishedValue{Val: false},
+		}
+
+		err := s.CreateChangesetSpec(ctx, c)
+		require.NoError(t, err)
+		t.Cleanup(func() {
+			s.DeleteChangesetSpec(ctx, c.ID)
+		})
+
+		val, _, err := basestore.ScanFirstBool(s.Query(ctx, sqlf.Sprintf("SELECT published FROM changeset_specs WHERE id = %d", c.ID)))
+		require.NoError(t, err)
+		assert.False(t, val)
+
+		actual, err := s.GetChangesetSpec(ctx, GetChangesetSpecOpts{ID: c.ID})
+		require.NoError(t, err)
+		assert.True(t, actual.Published.False())
+	})
+
+	t.Run("Draft", func(t *testing.T) {
+		c := &btypes.ChangesetSpec{
+			UserID:      int32(1234),
+			BatchSpecID: int64(910),
+			BaseRepoID:  repo.ID,
+			Published:   batcheslib.PublishedValue{Val: "draft"},
+		}
+
+		err := s.CreateChangesetSpec(ctx, c)
+		require.NoError(t, err)
+		t.Cleanup(func() {
+			s.DeleteChangesetSpec(ctx, c.ID)
+		})
+
+		val, _, err := basestore.ScanFirstNullString(s.Query(ctx, sqlf.Sprintf("SELECT published FROM changeset_specs WHERE id = %d", c.ID)))
+		require.NoError(t, err)
+		assert.Equal(t, `"draft"`, val)
+
+		actual, err := s.GetChangesetSpec(ctx, GetChangesetSpecOpts{ID: c.ID})
+		require.NoError(t, err)
+		assert.True(t, actual.Published.Draft())
+	})
+
+	t.Run("Invalid", func(t *testing.T) {
+		c := &btypes.ChangesetSpec{
+			UserID:      int32(1234),
+			BatchSpecID: int64(910),
+			BaseRepoID:  repo.ID,
+			Published:   batcheslib.PublishedValue{Val: "foo-bar"},
+		}
+
+		err := s.CreateChangesetSpec(ctx, c)
+		assert.Error(t, err)
+		assert.Equal(t, "json: error calling MarshalJSON for type batches.PublishedValue: invalid PublishedValue: foo-bar (string)", err.Error())
+	})
 }

@@ -11,7 +11,7 @@ import stringScore from 'string-score'
 import { Key } from 'ts-key-enum'
 
 import { ContributableMenu, Contributions, Evaluated } from '@sourcegraph/client-api'
-import { memoizeObservable } from '@sourcegraph/common'
+import { memoizeObservable, logger } from '@sourcegraph/common'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import {
     ButtonProps,
@@ -122,7 +122,7 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
             }
             return null
         } catch (error) {
-            console.error('Error reading recent actions:', error)
+            logger.error('Error reading recent actions:', error)
         }
         CommandList.writeRecentActions(null)
         return null
@@ -137,7 +137,7 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
                 localStorage.setItem(CommandList.RECENT_ACTIONS_STORAGE_KEY, value)
             }
         } catch (error) {
-            console.error('Error writing recent actions:', error)
+            logger.error('Error writing recent actions:', error)
         }
     }
 

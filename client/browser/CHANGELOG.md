@@ -13,6 +13,11 @@ All notable changes to Sourcegraph [Browser Extensions](./README.md) are documen
 
 ## Unreleased
 
+- Updated the info text when accessing an unindexed repository [pull/42509](https://github.com/sourcegraph/sourcegraph/pull/42509)
+- Fix an issue that caused the native code host integration to not work on gitlab.com [pull/42748](https://github.com/sourcegraph/sourcegraph/pull/42748)
+
+## Chrome & Firefox v22.9.27.1330, Safari v1.16
+
 - Remove tracking parameters from all shareable URLs [pull/42022](https://github.com/sourcegraph/sourcegraph/pull/42022)
 
 ## Chrome v22.9.14.1335, Firefox v22.9.14.1616, Safari v1.15

@@ -1,41 +1,52 @@
 package codenav
 
 import (
-	"sync"
-
-	"github.com/prometheus/client_golang/prometheus"
-	"go.opentelemetry.io/otel"
-
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/store"
+	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/memo"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-var (
-	svc     *Service
-	svcOnce sync.Once
-)
-
-// GetService creates or returns an already-initialized symbols service. If the service is
-// new, it will use the given database handle.
-func GetService(db, codeIntelDB database.DB, uploadSvc UploadService, gitserver GitserverClient) *Service {
-	svcOnce.Do(func() {
-		oc := func(name string) *observation.Context {
-			return &observation.Context{
-				Logger:     log.Scoped("symbols."+name, "codeintel symbols "+name),
-				Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-				Registerer: prometheus.DefaultRegisterer,
-			}
-		}
-
-		store := store.New(db, oc("store"))
-		lsifstore := lsifstore.New(codeIntelDB, oc("lsifstore"))
-		svc = newService(store, lsifstore, uploadSvc, gitserver, oc("service"))
+// GetService creates or returns an already-initialized symbols service.
+// If the service is not yet initialized, it will use the provided dependencies.
+func GetService(
+	db database.DB,
+	codeIntelDB codeintelshared.CodeIntelDB,
+	uploadSvc UploadService,
+	gitserver GitserverClient,
+) *Service {
+	svc, _ := initServiceMemo.Init(serviceDependencies{
+		db,
+		codeIntelDB,
+		uploadSvc,
+		gitserver,
 	})
 
 	return svc
+}
+
+type serviceDependencies struct {
+	db          database.DB
+	codeIntelDB codeintelshared.CodeIntelDB
+	uploadSvc   UploadService
+	gitserver   GitserverClient
+}
+
+var initServiceMemo = memo.NewMemoizedConstructorWithArg(func(deps serviceDependencies) (*Service, error) {
+	store := store.New(deps.db, scopedContext("store"))
+	lsifStore := lsifstore.New(deps.codeIntelDB, scopedContext("lsifstore"))
+
+	return newService(
+		store,
+		lsifStore,
+		deps.uploadSvc,
+		deps.gitserver,
+		scopedContext("service"),
+	), nil
+})
+
+func scopedContext(component string) *observation.Context {
+	return observation.ScopedContext("codeintel", "codenav", component)
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -51,7 +52,6 @@ func (s *store) UpdatePackageReferences(ctx context.Context, dumpID int, referen
 }
 
 const updateReferencesTemporaryTableQuery = `
--- source: internal/codeintel/uploads/internal/store/store_references.go:UpdatePackageReferences
 CREATE TEMPORARY TABLE t_lsif_references (
 	scheme text NOT NULL,
 	name text NOT NULL,
@@ -60,7 +60,6 @@ CREATE TEMPORARY TABLE t_lsif_references (
 `
 
 const updateReferencesInsertQuery = `
--- source: internal/codeintel/uploads/internal/store/store_references.go:UpdatePackageReferences
 INSERT INTO lsif_references (dump_id, scheme, name, version)
 SELECT %s, source.scheme, source.name, source.version
 FROM t_lsif_references source
@@ -79,3 +78,25 @@ func loadReferencesChannel(references []precise.PackageReference) <-chan []any {
 
 	return ch
 }
+
+// ReferencesForUpload returns the set of import monikers attached to the given upload identifier.
+func (s *store) ReferencesForUpload(ctx context.Context, uploadID int) (_ shared.PackageReferenceScanner, err error) {
+	ctx, _, endObservation := s.operations.referencesForUpload.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("uploadID", uploadID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(referencesForUploadQuery, uploadID))
+	if err != nil {
+		return nil, err
+	}
+
+	return shared.PackageReferenceScannerFromRows(rows), nil
+}
+
+const referencesForUploadQuery = `
+SELECT r.dump_id, r.scheme, r.name, r.version
+FROM lsif_references r
+WHERE dump_id = %s
+ORDER BY r.scheme, r.name, r.version
+`

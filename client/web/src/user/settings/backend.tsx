@@ -11,13 +11,42 @@ import {
     SetUserEmailVerifiedVariables,
     UpdatePasswordResult,
     UpdatePasswordVariables,
-    CreatePasswordResult,
-    CreatePasswordVariables,
     LogEventsResult,
     LogEventsVariables,
     Event,
 } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
+
+export const UPDATE_PASSWORD = gql`
+    mutation UpdatePassword($oldPassword: String!, $newPassword: String!) {
+        updatePassword(oldPassword: $oldPassword, newPassword: $newPassword) {
+            alwaysNil
+        }
+    }
+`
+
+export const CREATE_PASSWORD = gql`
+    mutation CreatePassword($newPassword: String!) {
+        createPassword(newPassword: $newPassword) {
+            alwaysNil
+        }
+    }
+`
+
+export const USER_EXTERNAL_ACCOUNTS = gql`
+    query MinExternalAccounts($username: String!) {
+        user(username: $username) {
+            externalAccounts {
+                nodes {
+                    id
+                    serviceID
+                    serviceType
+                    accountData
+                }
+            }
+        }
+    }
+`
 
 export function updatePassword(args: UpdatePasswordVariables): Observable<void> {
     return requestGraphQL<UpdatePasswordResult, UpdatePasswordVariables>(
@@ -36,27 +65,6 @@ export function updatePassword(args: UpdatePasswordVariables): Observable<void> 
                 throw createAggregateError(errors)
             }
             eventLogger.log('PasswordUpdated')
-        })
-    )
-}
-
-export function createPassword(args: CreatePasswordVariables): Observable<void> {
-    return requestGraphQL<CreatePasswordResult, CreatePasswordVariables>(
-        gql`
-            mutation CreatePassword($newPassword: String!) {
-                createPassword(newPassword: $newPassword) {
-                    alwaysNil
-                }
-            }
-        `,
-        args
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.createPassword) {
-                eventLogger.log('CreatePasswordFailed')
-                throw createAggregateError(errors)
-            }
-            eventLogger.log('PasswordCreated')
         })
     )
 }

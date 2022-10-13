@@ -14,6 +14,7 @@ import classNames from 'classnames'
 import { formatDistanceToNowStrict, startOfDay, endOfDay } from 'date-fns'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { logger } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import {
     H2,
@@ -153,7 +154,7 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
         (error?: any) => {
             if (!error) {
                 // reload data
-                refetch(variables).catch(console.error)
+                refetch(variables).catch(logger.error)
                 onActionEnd?.()
             }
         },

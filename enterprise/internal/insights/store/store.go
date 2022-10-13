@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -257,12 +258,10 @@ func (s *Store) Delete(ctx context.Context, seriesId string) (err error) {
 }
 
 const deleteForSeries = `
--- source: enterprise/internal/insights/store/store.go:Delete
 DELETE FROM series_points where series_id = %s;
 `
 
 const deleteForSeriesSnapshots = `
--- source: enterprise/internal/insights/store/store.go:Delete
 DELETE FROM series_points_snapshots where series_id = %s;
 `
 
@@ -271,7 +270,6 @@ DELETE FROM series_points_snapshots where series_id = %s;
 // eliminating duplicate points that might have been recorded in a given interval for a given repository)
 // and then SUM the result for each repository, giving us our final total number.
 const fullVectorSeriesAggregation = `
--- source: enterprise/internal/insights/store/store.go:SeriesPoints
 SELECT sub.series_id, sub.interval_time, SUM(sub.value) as value, sub.capture FROM (
 	SELECT sp.repo_name_id, sp.series_id, date_trunc('seconds', sp.time) AS interval_time, MAX(value) as value, capture
 	FROM (  select * from series_points
@@ -303,12 +301,23 @@ func seriesPointsQuery(baseQuery string, opts SeriesPointsOpts) *sqlf.Query {
 	if opts.Limit > 0 {
 		limitClause = fmt.Sprintf("LIMIT %d", opts.Limit)
 	}
-	repoFilterJoinClause := " "
+	joinClause := " "
 	if len(opts.IncludeRepoRegex) > 0 || len(opts.ExcludeRepoRegex) > 0 {
-		repoFilterJoinClause = ` JOIN repo_names rn ON sp.repo_name_id = rn.id `
+		joinClause = ` JOIN repo_names rn ON sp.repo_name_id = rn.id `
+	}
+	if len(opts.Excluded) > 0 {
+		excludedStrings := []string{}
+		for _, id := range opts.Excluded {
+			excludedStrings = append(excludedStrings, strconv.Itoa(int(id)))
+		}
+
+		excludeReposJoin := ` LEFT JOIN ( select unnest('{%s}'::_int4) as excluded_repo ) perm
+			ON sp.repo_id = perm.excluded_repo `
+
+		joinClause = joinClause + fmt.Sprintf(excludeReposJoin, strings.Join(excludedStrings, ","))
 	}
 
-	queryWithJoin := fmt.Sprintf(baseQuery, repoFilterJoinClause, `%s`) // this is a little janky
+	queryWithJoin := fmt.Sprintf(baseQuery, joinClause, `%s`) // this is a little janky
 	return sqlf.Sprintf(
 		queryWithJoin+limitClause,
 		sqlf.Join(preds, "\n AND "),
@@ -336,8 +345,7 @@ func seriesPointsPredicates(opts SeriesPointsOpts) []*sqlf.Query {
 		preds = append(preds, sqlf.Sprintf(s))
 	}
 	if len(opts.Excluded) > 0 {
-		s := fmt.Sprintf("repo_id != all(%v)", values(opts.Excluded))
-		preds = append(preds, sqlf.Sprintf(s))
+		preds = append(preds, sqlf.Sprintf("perm.excluded_repo IS NULL"))
 	}
 	if len(opts.IncludeRepoRegex) > 0 {
 		for _, regex := range opts.IncludeRepoRegex {
@@ -443,8 +451,7 @@ func (s *Store) DeleteSnapshots(ctx context.Context, series *types.InsightSeries
 }
 
 const deleteSnapshotsSql = `
--- source: enterprise/internal/insights/store/store.go:DeleteSnapshots
-delete from %s where series_id = %s;
+DELETE FROM %s WHERE series_id = %s;
 `
 
 type PersistMode string
@@ -538,7 +545,6 @@ func (s *Store) RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointA
 }
 
 const upsertRepoNameFmtStr = `
--- source: enterprise/internal/insights/store/store.go:RecordSeriesPoint
 WITH e AS(
 	INSERT INTO repo_names(name)
 	VALUES (%s)
@@ -548,18 +554,6 @@ WITH e AS(
 SELECT * FROM e
 UNION
 	SELECT id FROM repo_names WHERE name = %s;
-`
-
-const recordSeriesPointFmtstr = `
--- source: enterprise/internal/insights/store/store.go:RecordSeriesPoint
-INSERT INTO %s (
-	series_id,
-	time,
-	value,
-	repo_id,
-	repo_name_id,
-	original_repo_name_id, capture)
-VALUES (%s, %s, %s, %s, %s, %s, %s);
 `
 
 func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scanFunc) error {

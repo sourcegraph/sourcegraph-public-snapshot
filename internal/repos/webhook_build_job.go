@@ -9,7 +9,6 @@ import (
 	"go.opentelemetry.io/otel"
 
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -24,8 +23,7 @@ import (
 
 // webhookBuildJob implements the Job interface
 // from package job
-type webhookBuildJob struct {
-}
+type webhookBuildJob struct{}
 
 func NewWebhookBuildJob() *webhookBuildJob {
 	return &webhookBuildJob{}
@@ -48,12 +46,11 @@ func (w *webhookBuildJob) Routines(_ context.Context, logger log.Logger) ([]goro
 
 	webhookBuildWorkerMetrics, webhookBuildResetterMetrics := newWebhookBuildWorkerMetrics(observationContext, "webhook_build_worker")
 
-	mainAppDB, err := workerdb.Init()
+	db, err := workerdb.InitDBWithLogger(logger)
 	if err != nil {
 		return nil, err
 	}
 
-	db := database.NewDB(logger, mainAppDB)
 	store := NewStore(logger, db)
 	baseStore := basestore.NewWithHandle(store.Handle())
 	workerStore := webhookworker.CreateWorkerStore(logger.Scoped("webhookworker.WorkerStore", ""), store.Handle())
@@ -71,7 +68,7 @@ func (w *webhookBuildJob) Routines(_ context.Context, logger log.Logger) ([]goro
 	}, nil
 }
 
-func newWebhookBuildWorkerMetrics(observationContext *observation.Context, workerName string) (workerutil.WorkerMetrics, dbworker.ResetterMetrics) {
+func newWebhookBuildWorkerMetrics(observationContext *observation.Context, workerName string) (workerutil.WorkerObservability, dbworker.ResetterMetrics) {
 	workerMetrics := workerutil.NewMetrics(observationContext, fmt.Sprintf("%s_processor", workerName))
 	resetterMetrics := dbworker.NewMetrics(observationContext, workerName)
 	return workerMetrics, *resetterMetrics

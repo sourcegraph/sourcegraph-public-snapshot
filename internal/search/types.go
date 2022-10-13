@@ -24,6 +24,7 @@ type Inputs struct {
 	Plan                query.Plan // the comprehensive query plan
 	Query               query.Q    // the current basic query being evaluated, one part of query.Plan
 	OriginalQuery       string     // the raw string of the original search query
+	SearchMode          Mode
 	PatternType         query.SearchType
 	UserSettings        *schema.Settings
 	OnSourcegraphDotCom bool
@@ -43,6 +44,13 @@ func (inputs Inputs) DefaultLimit() int {
 	}
 	return limits.DefaultMaxSearchResultsStreaming
 }
+
+type Mode int
+
+const (
+	Precise     Mode = 0
+	SmartSearch      = 1 << iota
+)
 
 type Protocol int
 
@@ -356,7 +364,7 @@ type RepoOptions struct {
 	CaseSensitiveRepoFilters bool
 	SearchContextSpec        string
 
-	CommitAfter string
+	CommitAfter *query.RepoHasCommitAfterArgs
 	Visibility  query.RepoVisibility
 	Limit       int
 	Cursors     []*types.Cursor
@@ -402,8 +410,9 @@ func (op *RepoOptions) Tags() []otlog.Field {
 	if op.SearchContextSpec != "" {
 		add(otlog.String("searchContextSpec", op.SearchContextSpec))
 	}
-	if op.CommitAfter != "" {
-		add(otlog.String("commitAfter", op.CommitAfter))
+	if op.CommitAfter != nil {
+		add(otlog.String("commitAfter.time", op.CommitAfter.TimeRef))
+		add(otlog.Bool("commitAfter.negated", op.CommitAfter.Negated))
 	}
 	if op.Visibility != query.Any {
 		add(otlog.String("visibility", string(op.Visibility)))
@@ -489,7 +498,9 @@ func (op *RepoOptions) String() string {
 		fmt.Fprintf(&b, "DescriptionPatterns: %q\n", op.DescriptionPatterns)
 	}
 
-	fmt.Fprintf(&b, "CommitAfter: %s\n", op.CommitAfter)
+	if op.CommitAfter != nil {
+		fmt.Fprintf(&b, "CommitAfter: %s\n", op.CommitAfter.TimeRef)
+	}
 	fmt.Fprintf(&b, "Visibility: %s\n", string(op.Visibility))
 
 	if op.UseIndex != query.Yes {

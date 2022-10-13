@@ -745,6 +745,27 @@ test('returns repo:has.commit.after hovers', () => {
     `)
 })
 
+test('returns repo:has.tag hovers', () => {
+    const input = 'repo:has.tag(tag)'
+    const scannedQuery = toSuccess(scanSearchQuery(input, false, SearchPatternType.standard))
+
+    expect(getHoverResult(scannedQuery, new Position(1, 8), editor.createModel(input))).toMatchInlineSnapshot(`
+        {
+          "contents": [
+            {
+              "value": "**Built-in predicate**. Search only inside repositories that are tagged with the given tag"
+            }
+          ],
+          "range": {
+            "startLineNumber": 1,
+            "endLineNumber": 1,
+            "startColumn": 6,
+            "endColumn": 18
+          }
+        }
+    `)
+})
+
 test('returns multiline hovers', () => {
     const input = `repo:contains.file(
       path:foo
