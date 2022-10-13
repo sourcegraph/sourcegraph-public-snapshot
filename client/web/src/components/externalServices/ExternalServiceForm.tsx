@@ -27,6 +27,8 @@ interface Props extends Pick<AddExternalServiceOptions, 'jsonSchema' | 'editorAc
     onSubmit: (event?: React.FormEvent<HTMLFormElement>) => void
     onChange: (change: AddExternalServiceInput) => void
     autoFocus?: boolean
+    fromConfigFile?: boolean
+    allowEditsWithConfigFile?: boolean
 }
 
 /**
