@@ -455,6 +455,7 @@ ON
 	}
 
 	if opts.ExcludeEmptySpecs {
+		// An empty batch spec's YAML only contains the name, so we filter to batch specs that have at least one key other than "name"
 		preds = append(preds, sqlf.Sprintf("(EXISTS (SELECT * FROM jsonb_object_keys(batch_specs.spec) AS t (k) WHERE t.k NOT LIKE 'name'))"))
 	}
 
