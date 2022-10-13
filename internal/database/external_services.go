@@ -99,7 +99,7 @@ type ExternalServiceStore interface {
 	// found or not in processing or queued state.
 	CancelSyncJob(ctx context.Context, id int64) error
 
-	// UpdateSyncJobCounters persists only the sync job counters for the supplied job
+	// UpdateSyncJobCounters persists only the sync job counters for the supplied job.
 	UpdateSyncJobCounters(ctx context.Context, job *types.ExternalServiceSyncJob) error
 
 	// List returns external services under given namespace.
@@ -1190,7 +1190,7 @@ func (e *externalServiceStore) GetSyncJobByID(ctx context.Context, id int64) (*t
 	return &job, nil
 }
 
-// UpdateSyncJobCounters persists only the sync job counters for the supplied job
+// UpdateSyncJobCounters persists only the sync job counters for the supplied job.
 func (e *externalServiceStore) UpdateSyncJobCounters(ctx context.Context, job *types.ExternalServiceSyncJob) error {
 	q := sqlf.Sprintf(updateSyncJobQueryFmtstr, job.ReposSynced, job.RepoSyncErrors, job.ReposAdded, job.ReposRemoved, job.ReposModified, job.ReposUnmodified, job.ReposDeleted, job.ID)
 	result, err := e.ExecResult(ctx, q)

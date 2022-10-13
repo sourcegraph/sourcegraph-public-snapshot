@@ -667,7 +667,6 @@ func (s *Syncer) SyncExternalService(
 	logger = s.Logger.With(log.Object("svc", log.String("name", svc.DisplayName), log.Int64("id", svc.ID)))
 
 	var syncProgress SyncProgress
-
 	if progressRecorder != nil {
 		// Record the final progress state
 		defer func() {
