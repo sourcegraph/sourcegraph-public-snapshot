@@ -17,23 +17,29 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type localGitserverClient struct {
+type gitserverClientWrapper struct {
+	Client GitserverClient
 }
 
-func (c *localGitserverClient) FetchTar(context.Context, api.RepoName, api.CommitID, []string) (io.ReadCloser, error) {
-	panic("FetchTar")
+func (c *gitserverClientWrapper) FetchTar(ctx context.Context, name api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
+	fmt.Println("# FetchTar")
+	return c.Client.FetchTar(ctx, name, commit, paths)
 }
-func (c *localGitserverClient) GitDiff(context.Context, api.RepoName, api.CommitID, api.CommitID) (Changes, error) {
-	panic("GitDiff")
+func (c *gitserverClientWrapper) GitDiff(ctx context.Context, name api.RepoName, c1 api.CommitID, c2 api.CommitID) (Changes, error) {
+	fmt.Println("# GitDiff")
+	return c.Client.GitDiff(ctx, name, c1, c2)
 }
-func (c *localGitserverClient) ReadFile(ctx context.Context, repoCommitPath types.RepoCommitPath) ([]byte, error) {
-	panic("ReadFile")
+func (c *gitserverClientWrapper) ReadFile(ctx context.Context, repoCommitPath types.RepoCommitPath) ([]byte, error) {
+	fmt.Println("# ReadFile")
+	return c.Client.ReadFile(ctx, repoCommitPath)
 }
-func (c *localGitserverClient) LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error {
-	panic("LogReverseEach")
+func (c *gitserverClientWrapper) LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error {
+	fmt.Println("# LogReverseEach")
+	return c.Client.LogReverseEach(ctx, repo, commit, n, onLogEntry)
 }
-func (c *localGitserverClient) RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error {
-	panic("RevList")
+func (c *gitserverClientWrapper) RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error {
+	fmt.Println("# RevList")
+	return c.Client.RevList(ctx, repo, commit, onCommit)
 }
 
 // MOE
@@ -70,10 +76,11 @@ type gitserverClient struct {
 }
 
 func NewClient(db database.DB, observationContext *observation.Context) GitserverClient {
-	fmt.Printf("### NewClient\n")
-	return &gitserverClient{
-		innerClient: gitserver.NewClient(db),
-		operations:  newOperations(observationContext),
+	return &gitserverClientWrapper{
+		Client: &gitserverClient{
+			innerClient: gitserver.NewClient(db),
+			operations:  newOperations(observationContext),
+		},
 	}
 }
 

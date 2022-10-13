@@ -560,6 +560,7 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, _ htt
 			return nil, nil, err
 		}
 		resp.Body.Close()
+		// fmt.Printf("############# %v\n", resp)
 		return nil, nil, &gitdomain.RepoNotExistError{Repo: repoName, CloneInProgress: payload.CloneInProgress, CloneProgress: payload.CloneProgress}
 
 	default:
@@ -1124,6 +1125,8 @@ func (c *clientImplementor) RemoveFrom(ctx context.Context, repo api.RepoName, f
 // to which the HTTP POST request is sent. To use the rendezvous hashing scheme, see
 // httpPostWithURI.
 func (c *clientImplementor) httpPost(ctx context.Context, repo api.RepoName, op string, payload any) (resp *http.Response, err error) {
+	// fmt.Printf("#### httpPost %s\n", repo)
+	// debug.PrintStack()
 	b, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
