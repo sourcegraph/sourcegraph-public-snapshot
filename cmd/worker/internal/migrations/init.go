@@ -23,11 +23,8 @@ type migrator struct {
 
 var _ job.Job = &migrator{}
 
-func NewMigrator(registerMigrators oobmigration.RegisterMigratorsFunc) job.Job {
-	return &migrator{
-		registerMigrators:  registerMigrators,
-		observationContext: &observation.TestContext,
-	}
+func NewMigrator(registerMigrators oobmigration.RegisterMigratorsFunc, observationContext *observation.Context) job.Job {
+	return &migrator{registerMigrators, observationContext}
 }
 
 func (m *migrator) Description() string {
