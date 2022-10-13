@@ -46,7 +46,7 @@ func TestListWebhooks(t *testing.T) {
 	}
 	webhookStore.ListFunc.SetDefaultHook(func(ctx2 context.Context, options database.WebhookListOptions) ([]*types.Webhook, error) {
 		if options.Kind == extsvc.KindGitHub {
-			return append([]*types.Webhook{webhooks[0]}, webhooks[1:3]...), nil
+			return append([]*types.Webhook{webhooks[0]}, webhooks[2:4]...), nil
 		}
 		if options.LimitOffset != nil {
 			return webhooks[options.Offset:options.Limit], nil
@@ -107,6 +107,32 @@ func TestListWebhooks(t *testing.T) {
 				}}`,
 			Variables: map[string]any{
 				"first": 2,
+			},
+		},
+		{
+			Label:   "specify kind",
+			Context: ctx,
+			Schema:  schema,
+			Query: `query Webhooks($kind: ExternalServiceKind) {
+						webhooks(kind: $kind) {
+							nodes { id }
+							totalCount
+							pageInfo { hasNextPage }
+						}
+					}
+			`,
+			ExpectedResult: `{"webhooks":
+				{
+					"nodes":[
+						{"id":"V2ViaG9vazox"},
+						{"id":"V2ViaG9vazoz"},
+						{"id":"V2ViaG9vazo0"}
+					],
+					"totalCount":3,
+					"pageInfo":{"hasNextPage":false}
+				}}`,
+			Variables: map[string]any{
+				"kind": extsvc.KindGitHub,
 			},
 		},
 	})
