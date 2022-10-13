@@ -161,6 +161,7 @@ func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, definitions []ity
 	var repositories []string
 	uniques := make(map[string]any)
 	stats := make(statistics)
+	seriesRecordingTimes := make([]itypes.InsightSeriesRecordingTimes, 0, len(definitions))
 
 	// build a unique set of repositories - this will be useful to construct an inverted index of repo -> series
 	for _, definition := range definitions {
@@ -171,6 +172,14 @@ func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, definitions []ity
 				uniques[repository] = struct{}{}
 			}
 		}
+		frames := timeseries.BuildFrames(12, timeseries.TimeInterval{
+			Unit:  itypes.IntervalUnit(definition.SampleIntervalUnit),
+			Value: definition.SampleIntervalValue,
+		}, definition.CreatedAt.Truncate(time.Hour*24))
+		seriesRecordingTimes = append(seriesRecordingTimes, itypes.InsightSeriesRecordingTimes{
+			SeriesID:       definition.SeriesID,
+			RecordingTimes: timeseries.GetRecordingTimesFromFrames(frames),
+		})
 	}
 
 	frontend := database.NewDBWith(s.logger, s.workerBaseStore)
@@ -202,6 +211,10 @@ func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, definitions []ity
 	})
 	if err != nil {
 		return err
+	}
+
+	if err := s.insightsStore.SetInsightSeriesRecordingTimes(ctx, seriesRecordingTimes); err != nil {
+		return errors.Wrap(err, "SetInsightSeriesRecordingTimes")
 	}
 
 	for _, job := range totalJobs {
