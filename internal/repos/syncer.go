@@ -685,7 +685,6 @@ func (s *Syncer) SyncExternalService(
 			}
 		}
 
-		syncProgress.Synced++
 		if err := res.Err; err != nil {
 			syncProgress.Errors++
 			logger.Error("error from codehost", log.Int("seen", len(seen)), log.Error(err))
@@ -730,6 +729,7 @@ func (s *Syncer) SyncExternalService(
 		for _, r := range diff.Repos() {
 			seen[r.ID] = struct{}{}
 		}
+		syncProgress.Synced = int32(len(seen))
 
 		modified = modified || len(diff.Modified)+len(diff.Added) > 0
 
