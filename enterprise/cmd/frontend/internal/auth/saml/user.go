@@ -47,7 +47,9 @@ func readAuthnResponse(p *provider, encodedResp string) (*authnResponseInfo, err
 	if err != nil {
 		return nil, errors.Errorf("parsing SAML encoded response: %+v", err)
 	}
-	notOnOrAfter = decodedResponse.Assertions[0].Conditions.NotOnOrAfter
+	if decodedResponse.Assertions[0].Conditions != nil && decodedResponse.Assertions[0].Conditions.NotOnOrAfter != "" {
+		notOnOrAfter = decodedResponse.Assertions[0].Conditions.NotOnOrAfter
+	}
 
 	pi, err := p.getCachedInfoAndError()
 	if err != nil {
