@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useState } from 'react'
+import React, { useMemo, useEffect, useState, useCallback } from 'react'
 
 import { mdiOpenInNew } from '@mdi/js'
 import { differenceInHours, formatISO, parseISO } from 'date-fns'
@@ -66,13 +66,42 @@ function getRepoFilterExamples(repositoryName: string): { singleRepoExample: str
     }
 }
 
-export function useQueryExamples(): QueryExample[][] {
+export function useQueryExamples(selectedSearchContextSpec: string): QueryExample[][] {
     const [queryExamplesContent, setQueryExamplesContent] = useState<QueryExamplesContent>()
     const [
         cachedQueryExamplesContent,
         setCachedQueryExamplesContent,
         cachedQueryExamplesContentLoadStatus,
     ] = useTemporarySetting('search.homepage.queryExamplesContent')
+
+    const loadQueryExamples = useCallback(
+        (selectedSearchContextSpec: string) =>
+            // We are using `,|` as the separator so we can "safely" split the compute output.
+            streamComputeQuery(
+                `context:${selectedSearchContextSpec} type:diff count:1 content:output((.|\n)* -> $repo,|$author,|$path)`
+            ).subscribe(
+                results => {
+                    const firstComputeOutput = results
+                        .flatMap(result => JSON.parse(result) as ComputeResult)
+                        .find(result => result.kind === 'output')
+
+                    const queryExamplesContent = firstComputeOutput
+                        ? getQueryExamplesContentFromComputeOutput(firstComputeOutput.value)
+                        : defaultQueryExamplesContent
+
+                    setQueryExamplesContent(queryExamplesContent)
+                    setCachedQueryExamplesContent({
+                        ...queryExamplesContent,
+                        lastCachedTimestamp: formatISO(Date.now()),
+                    })
+                },
+                () => {
+                    // In case of an error set default content.
+                    setQueryExamplesContent(defaultQueryExamplesContent)
+                }
+            ),
+        [setQueryExamplesContent, setCachedQueryExamplesContent]
+    )
 
     useEffect(() => {
         if (queryExamplesContent || cachedQueryExamplesContentLoadStatus === 'initial') {
@@ -88,38 +117,26 @@ export function useQueryExamples(): QueryExample[][] {
             return
         }
 
-        // We are using `,|` as the separator so we can "safely" split the compute output.
-        const subscription = streamComputeQuery(
-            'type:diff count:1 content:output((.|\n)* -> $repo,|$author,|$path)'
-        ).subscribe(
-            results => {
-                const firstComputeOutput = results
-                    .flatMap(result => JSON.parse(result) as ComputeResult)
-                    .find(result => result.kind === 'output')
-
-                const queryExamplesContent = firstComputeOutput
-                    ? getQueryExamplesContentFromComputeOutput(firstComputeOutput.value)
-                    : defaultQueryExamplesContent
-
-                setQueryExamplesContent(queryExamplesContent)
-                setCachedQueryExamplesContent({
-                    ...queryExamplesContent,
-                    lastCachedTimestamp: formatISO(Date.now()),
-                })
-            },
-            () => {
-                // In case of an error set default content.
-                setQueryExamplesContent(defaultQueryExamplesContent)
-            }
-        )
-
+        const subscription = loadQueryExamples(selectedSearchContextSpec)
         return () => subscription.unsubscribe()
     }, [
+        selectedSearchContextSpec,
         queryExamplesContent,
         cachedQueryExamplesContent,
         setCachedQueryExamplesContent,
         cachedQueryExamplesContentLoadStatus,
+        loadQueryExamples,
     ])
+
+    useEffect(() => {
+        if (!queryExamplesContent) {
+            return
+        }
+        const subscription = loadQueryExamples(selectedSearchContextSpec)
+        return () => subscription.unsubscribe()
+        // Only re-run this hook if the search context changes
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedSearchContextSpec])
 
     return useMemo(() => {
         if (!queryExamplesContent) {

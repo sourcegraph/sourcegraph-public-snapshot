@@ -85,6 +85,7 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
 
                 {!showEnterpriseHomePanels && !props.isSourcegraphDotCom && (
                     <QueryExamplesHomepage
+                        selectedSearchContextSpec={props.selectedSearchContextSpec}
                         telemetryService={props.telemetryService}
                         queryState={queryState}
                         setQueryState={setQueryState}
