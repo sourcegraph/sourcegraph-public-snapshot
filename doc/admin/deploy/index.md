@@ -1,16 +1,27 @@
 # Deployment Overview
 
-Sourcegraph supports two main deployment types: [Docker Compose](docker-compose/index.md) and [Kubernetes](kubernetes/index.md). Each deployment type will require a different level of investment and technical understanding. What works best depends on the needs and desired outcomes for your business.
+Sourcegraph supports different deployment methods for different purposes. Each deployment type requires different levels of investment and technical understanding. What works best for you and your team depends on the needs and desired outcomes for your business.
 
 If you aren't currently working with our Customer Engineering team, this overview will provide a high-level view of what's available and needed depending on the deployment type you choose.
 
-Sourcegraph provides a [resource estimator](resource_estimator.md) to help predict and plan the required resource for your deployment. This tool ensures you provision appropriate resources to scale your instance.
+In general:
 
-If you are short on time and looking for a quick way to test Sourcegraph locally, consider running Sourcegraph via our [Docker Single Container](docker-single-container/index.md).
+- For most customers, we recommend Sourcegraph Cloud, managed entirely by Sourcegraph.
+- For customers who want to self-host, we recommend one of the single-node deployment options.
+- For enterprise customers that require a multi-node, self-hosted deployment, we offer a Kubernetes option. We strongly encourage you to get in touch by [emails](sales@sourcegraph.com) if you pursue this option.
+- If you are short on time and looking for a quick way to test Sourcegraph locally, consider running Sourcegraph via our [Docker Single Container](docker-single-container/index.md).
 
 ## Deployment types
 
-Each of the deployment types listed below provides a different level of capability. As mentioned previously, base your deployment type on the needs of your business. However, you should also consider the technical expertise available for your deployment. The sections below provide more detailed recommendations for each deployment type.
+To start, you will need to decide your on deployment method, including Kubernetes with or without Helm, as they are noninterchangeable it. In short, you **cannot** change your deployment type of a running instance.
+
+Each of the deployment types listed below provides a different level of capability. As mentioned previously, you shall pick a deployment type based on the needs of your business. However, you should also consider the technical expertise available for your deployment. The sections below provide more detailed recommendations for each deployment type.
+
+Sourcegraph provides a [resource estimator](resource_estimator.md) to help predict and plan the required resource for your deployment. This tool ensures you provision appropriate resources to scale your instance.
+
+### [Custom Images](images/index.md)
+
+<span class="badge badge-note">RECOMMENDED</span> Custom image allows you to spin up a preconfigured and customized Sourcegraph instance with just a few clicks, all in less than 5 minutes!
 
 ### [Docker Compose](docker-compose/index.md)
 
@@ -30,13 +41,14 @@ Helm provides a simple mechanism for deployment customizations, as well as a muc
 
 If you are unable to use Helm to deploy, but still want to use Kubernetes, follow our [Kubernetes deployment documentation](kubernetes/index.md). This path will require advanced knowledge of Kubernetes. For teams without the ability to support this, please speak to your Sourcegraph contact about using Docker Compose instead.
 
+---
+
 ## Reference repositories
 
 Sourcegraph provides reference repositories with branches corresponding to the version of Sourcegraph you wish to deploy. The reference repository contains everything you need to spin up and configure your instance depending on your deployment type, which also assists in your upgrade process going forward.
 
-Before starting, you will need to decide your deployment type, including if you would like to use Kubernetes with Helm (vs. a more manual customization path). In the case of Kubernetes once you choose Helm (or not), it **can't be changed afterwards**.
-
-For more information, follow the install and configuration docs for your specific deployment type: [Docker Compose](docker-compose/index.md), [Kubernetes with Helm](kubernetes/helm.md), or [Kubernetes without Helm](kubernetes/index.md).
+For more information, follow the install and configuration docs for your specific deployment type.
+---
 
 ## External services
 

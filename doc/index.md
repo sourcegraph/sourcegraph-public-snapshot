@@ -66,14 +66,21 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
 
 <div class="grid">
   <!-- AWS AMI-->
-  <a class="app-btn btn" href="/admin/deploy/aws-ami">
+  <a class="app-btn btn" href="/admin/deploy/images/aws">
     <img alt="aws-logo" src="/assets/other-logos/aws-light.svg" class="theme-light-only" />
     <img alt="aws-logo" src="/assets/other-logos/aws-dark.svg" class="theme-dark-only" />
     <h3>AWS</h3>
     <p>Launch a pre-configured Sourcegraph instance from an AWS AMI</p>
   </a>
 </div>
-
+<div class="grid">
+  <!-- GCE Images-->
+  <a class="app-btn btn" href="/admin/deploy/images/gce">
+    <img alt="aws-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/googlecloud.png" />
+    <h3>Goole Compute Engine</h3>
+    <p>Launch a pre-configured Sourcegraph instance from a GCE Image</p>
+  </a>
+</div>
 <div class="grid">
   <!-- Azure -->
   <a class="app-btn btn" href="/admin/deploy/docker-compose/azure">
@@ -100,12 +107,6 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
     <img alt="docker-compose-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/Docker.png"/>
     <h3>Docker Compose</h3>
     <p>Deploy with Docker Compose</p>
-  </a>
-  <!-- GCP -->
-  <a class="app-btn btn" href="/admin/deploy/docker-compose/google_cloud">
-    <img alt="gcp-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/googlecloud.png"/>
-    <h3>Google Cloud</h3>
-    <p>Deploy onto Google Cloud (GCP)</p>
   </a>
   <!-- Others -->
   <a class="app-btn btn" href="/admin/deploy">
