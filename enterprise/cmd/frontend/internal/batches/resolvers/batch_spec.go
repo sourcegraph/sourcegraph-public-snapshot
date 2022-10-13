@@ -9,6 +9,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 
 	"github.com/sourcegraph/go-diff/diff"
 
@@ -40,7 +41,8 @@ func unmarshalBatchSpecID(id graphql.ID) (batchSpecRandID string, err error) {
 var _ graphqlbackend.BatchSpecResolver = &batchSpecResolver{}
 
 type batchSpecResolver struct {
-	store *store.Store
+	store           *store.Store
+	gitserverClient gitserver.Client
 
 	batchSpec          *btypes.BatchSpec
 	preloadedNamespace *graphqlbackend.NamespaceResolver
@@ -147,6 +149,7 @@ func (r *batchSpecResolver) ApplyPreview(ctx context.Context, args *graphqlbacke
 
 	return &changesetApplyPreviewConnectionResolver{
 		store:             r.store,
+		gitserverClient:   r.gitserverClient,
 		opts:              opts,
 		action:            (*btypes.ReconcilerOperation)(args.Action),
 		batchSpecID:       r.batchSpec.ID,
@@ -233,8 +236,9 @@ func (r *batchSpecResolver) AppliesToBatchChange(ctx context.Context) (graphqlba
 	}
 
 	return &batchChangeResolver{
-		store:       r.store,
-		batchChange: batchChange,
+		store:           r.store,
+		gitserverClient: r.gitserverClient,
+		batchChange:     batchChange,
 	}, nil
 }
 

@@ -1181,9 +1181,6 @@ func (c *clientImplementor) GetDefaultBranch(ctx context.Context, repo api.RepoN
 
 // MergeBase returns the merge base commit for the specified commits.
 func (c *clientImplementor) MergeBase(ctx context.Context, repo api.RepoName, a, b api.CommitID) (api.CommitID, error) {
-	if Mocks.MergeBase != nil {
-		return Mocks.MergeBase(repo, a, b)
-	}
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: MergeBase")
 	span.SetTag("A", a)
 	span.SetTag("B", b)
@@ -1250,10 +1247,6 @@ func (c *clientImplementor) GetBehindAhead(ctx context.Context, repo api.RepoNam
 // ReadFile returns the first maxBytes of the named file at commit. If maxBytes <= 0, the entire
 // file is read. (If you just need to check a file's existence, use Stat, not ReadFile.)
 func (c *clientImplementor) ReadFile(ctx context.Context, repo api.RepoName, commit api.CommitID, name string, checker authz.SubRepoPermissionChecker) ([]byte, error) {
-	if Mocks.ReadFile != nil {
-		return Mocks.ReadFile(commit, name)
-	}
-
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: ReadFile")
 	span.SetTag("Name", name)
 	defer span.Finish()
