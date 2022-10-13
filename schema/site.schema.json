@@ -1215,10 +1215,10 @@
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "securityEvents": {
-              "description": "Capture security events as part of the audit log.",
+            "backgroundJobs": {
+              "description": "Capture security events performed by the background jobs (adds significant noise).",
               "type": "boolean",
-              "default": true
+              "default": false
             },
             "graphQL": {
               "description": "Capture GraphQL requests and responses as part of the audit log.",
