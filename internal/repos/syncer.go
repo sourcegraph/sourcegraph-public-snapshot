@@ -9,10 +9,9 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/log"
 	"golang.org/x/sync/singleflight"
 	"golang.org/x/time/rate"
-
-	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -127,17 +126,23 @@ func (s *syncHandler) Handle(ctx context.Context, logger log.Logger, record work
 		return errors.Errorf("expected repos.SyncJob, got %T", record)
 	}
 
-	progressRecorder := func(ctx context.Context, progress syncProgress) error {
-		return s.store.ExternalServiceStore().UpdateSyncJobCounters(ctx, &types.ExternalServiceSyncJob{
-			ID:              int64(sj.ID),
-			ReposSynced:     progress.Synced,
-			RepoSyncErrors:  progress.Errors,
-			ReposAdded:      progress.Added,
-			ReposRemoved:    progress.Removed,
-			ReposModified:   progress.Modified,
-			ReposUnmodified: progress.Unmodified,
-			ReposDeleted:    progress.Deleted,
-		})
+	// Limit calls to progressRecorder as it will most likely hit the database
+	progressLimiter := rate.NewLimiter(rate.Limit(1.0), 1)
+
+	progressRecorder := func(ctx context.Context, progress syncProgress, final bool) error {
+		if final || progressLimiter.Allow() {
+			return s.store.ExternalServiceStore().UpdateSyncJobCounters(ctx, &types.ExternalServiceSyncJob{
+				ID:              int64(sj.ID),
+				ReposSynced:     progress.Synced,
+				RepoSyncErrors:  progress.Errors,
+				ReposAdded:      progress.Added,
+				ReposRemoved:    progress.Removed,
+				ReposModified:   progress.Modified,
+				ReposUnmodified: progress.Unmodified,
+				ReposDeleted:    progress.Deleted,
+			})
+		}
+		return nil
 	}
 
 	return s.syncer.SyncExternalService(ctx, sj.ExternalServiceID, s.minSyncInterval(), progressRecorder)
@@ -528,7 +533,10 @@ type syncProgress struct {
 	Deleted int32 `json:"deleted,omitempty"`
 }
 
-type progressRecorderFunc func(ctx context.Context, progress syncProgress) error
+// progressRecorderFunc is a function that implements persisting sync progress.
+// The final param represents whether this is the final call. This allows the
+// function to decide whether to drop some intermediate calls.
+type progressRecorderFunc func(ctx context.Context, progress syncProgress, final bool) error
 
 // SyncExternalService syncs repos using the supplied external service in a streaming fashion, rather than batch.
 // This allows very large sync jobs (i.e. that source potentially millions of repos) to incrementally persist changes.
@@ -659,13 +667,11 @@ func (s *Syncer) SyncExternalService(
 	logger = s.Logger.With(log.Object("svc", log.String("name", svc.DisplayName), log.Int64("id", svc.ID)))
 
 	var syncProgress syncProgress
-	// Limit calls to progressRecorder as it will most likely hit the database
-	progressLimiter := rate.NewLimiter(rate.Limit(1.0), 1)
 
 	if progressRecorder != nil {
 		// Record the final progress state
 		defer func() {
-			if err := progressRecorder(ctx, syncProgress); err != nil {
+			if err := progressRecorder(ctx, syncProgress, true); err != nil {
 				logger.Error("recording sync progress", log.Error(err))
 			}
 		}()
@@ -674,8 +680,8 @@ func (s *Syncer) SyncExternalService(
 	// Insert or update repos as they are sourced. Keep track of what was seen so we
 	// can remove anything else at the end.
 	for res := range results {
-		if progressRecorder != nil && progressLimiter.Allow() {
-			if err := progressRecorder(ctx, syncProgress); err != nil {
+		if progressRecorder != nil {
+			if err := progressRecorder(ctx, syncProgress, false); err != nil {
 				logger.Error("recording sync progress", log.Error(err))
 			}
 		}
