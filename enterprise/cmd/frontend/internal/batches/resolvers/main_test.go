@@ -209,7 +209,7 @@ func mockRepoComparison(t *testing.T, gitserverClient gitserver.MockClient, base
 	}
 	t.Cleanup(func() { gitserver.Mocks.ExecReader = nil })
 
-	gitserverClient.MergeBaseFunc.SetDefaultHook(func(ctx context.Context, name api.RepoName, a api.CommitID, b api.CommitID) (api.CommitID, error) {
+	gitserverClient.MergeBaseFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, a api.CommitID, b api.CommitID) (api.CommitID, error) {
 		if string(a) != baseRev && string(b) != headRev {
 			t.Fatalf("git.Mocks.MergeBase received unknown commit ids: %s %s", a, b)
 		}
