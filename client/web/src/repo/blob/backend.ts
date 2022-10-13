@@ -248,25 +248,7 @@ export const fetchDefinitionsFromRanges = memoizeObservable((options: FetchDefin
                                     range.start.character
                                 }) {
                                     nodes {
-                                        resource {
-                                            path
-                                            repository {
-                                                name
-                                            }
-                                            commit {
-                                                oid
-                                            }
-                                        }
-                                        range {
-                                            start {
-                                                line
-                                                character
-                                            }
-                                            end {
-                                                line
-                                                character
-                                            }
-                                        }
+                                        ...DefinitionFields
                                     }
                                 }`
                             )}
@@ -275,6 +257,8 @@ export const fetchDefinitionsFromRanges = memoizeObservable((options: FetchDefin
                 }
             }
         }
+
+        ${DefinitionFieldsFragment}
     `,
         {
             repoName,

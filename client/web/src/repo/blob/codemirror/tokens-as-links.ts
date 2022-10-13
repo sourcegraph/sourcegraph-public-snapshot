@@ -124,7 +124,7 @@ class TokensAsLinks implements PluginValue {
         lineTo: number
     ): Observable<TokenLink[]> {
         const {
-            blobInfo: { stencil, repoName, revision, filePath },
+            blobInfo: { stencil, repoName, revision, filePath, commitID },
         } = view.state.facet(tokensAsLinks)
 
         if (!stencil) {
@@ -146,21 +146,31 @@ class TokensAsLinks implements PluginValue {
             map(results =>
                 results
                     .filter((result): result is DeepNonNullable<DefinitionResponse> => Boolean(result.definition))
-                    .map(({ range, definition }) => ({
-                        range,
-                        url: toPrettyBlobURL({
-                            repoName: definition.resource.repository.name,
-                            filePath: definition.resource.path,
-                            revision,
-                            commitID: definition.resource.commit.oid,
-                            position: definition.range
-                                ? {
-                                      line: definition.range.start.line + 1,
-                                      character: definition.range.start.character,
-                                  }
-                                : undefined,
-                        }),
-                    }))
+                    .map(({ range, definition }) => {
+                        // Preserve the users current revision (e.g., a Git branch name instead of a Git commit SHA)
+                        // This avoids navigating the user from (e.g.) a URL with a nice Git
+                        // branch name to a URL with a full Git commit SHA.
+                        const targetRevision =
+                            definition.resource.repository.name === repoName &&
+                            definition.resource.commit.oid === commitID
+                                ? revision
+                                : definition.resource.commit.oid
+
+                        return {
+                            range,
+                            url: toPrettyBlobURL({
+                                repoName: definition.resource.repository.name,
+                                filePath: definition.resource.path,
+                                revision: targetRevision,
+                                position: definition.range
+                                    ? {
+                                          line: definition.range.start.line + 1,
+                                          character: definition.range.start.character,
+                                      }
+                                    : undefined,
+                            }),
+                        }
+                    })
             )
         )
     }
