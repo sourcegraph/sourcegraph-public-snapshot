@@ -74,7 +74,7 @@ func (s *webhookStore) Create(ctx context.Context, kind, urn string, actorUID in
 		urn,
 		encryptedSecret,
 		keyID,
-		nullInt32Column(actorUID),
+		dbutil.NullInt32Column(actorUID),
 		// Returning
 		sqlf.Join(webhookColumns, ", "),
 	)
@@ -227,7 +227,7 @@ func (s *webhookStore) Update(ctx context.Context, actorUID int32, newWebhook *t
 	}
 
 	q := sqlf.Sprintf(webhookUpdateQueryFmtstr,
-		newWebhook.CodeHostURN, encryptedSecret, keyID, nullInt32Column(actorUID), newWebhook.ID,
+		newWebhook.CodeHostURN, encryptedSecret, keyID, dbutil.NullInt32Column(actorUID), newWebhook.ID,
 		sqlf.Join(webhookColumns, ", "))
 
 	updated, err := scanWebhook(s.QueryRow(ctx, q), s.key)

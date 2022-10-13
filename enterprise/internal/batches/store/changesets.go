@@ -160,34 +160,34 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *btypes.Changese
 		c.UpdatedAt,
 		metadata,
 		batchChanges,
-		nullTimeColumn(c.DetachedAt),
-		nullStringColumn(c.ExternalID),
+		dbutil.NullTimeColumn(c.DetachedAt),
+		dbutil.NullStringColumn(c.ExternalID),
 		c.ExternalServiceType,
-		nullStringColumn(c.ExternalBranch),
-		nullStringColumn(c.ExternalForkNamespace),
-		nullTimeColumn(c.ExternalDeletedAt),
-		nullTimeColumn(c.ExternalUpdatedAt),
-		nullStringColumn(string(c.ExternalState)),
-		nullStringColumn(string(c.ExternalReviewState)),
-		nullStringColumn(string(c.ExternalCheckState)),
+		dbutil.NullStringColumn(c.ExternalBranch),
+		dbutil.NullStringColumn(c.ExternalForkNamespace),
+		dbutil.NullTimeColumn(c.ExternalDeletedAt),
+		dbutil.NullTimeColumn(c.ExternalUpdatedAt),
+		dbutil.NullStringColumn(string(c.ExternalState)),
+		dbutil.NullStringColumn(string(c.ExternalReviewState)),
+		dbutil.NullStringColumn(string(c.ExternalCheckState)),
 		c.DiffStatAdded,
 		c.DiffStatDeleted,
 		syncState,
-		nullInt64Column(c.OwnedByBatchChangeID),
-		nullInt64Column(c.CurrentSpecID),
-		nullInt64Column(c.PreviousSpecID),
+		dbutil.NullInt64Column(c.OwnedByBatchChangeID),
+		dbutil.NullInt64Column(c.CurrentSpecID),
+		dbutil.NullInt64Column(c.PreviousSpecID),
 		c.PublicationState,
 		uiPublicationState,
 		c.ReconcilerState.ToDB(),
 		c.FailureMessage,
-		nullTimeColumn(c.StartedAt),
-		nullTimeColumn(c.FinishedAt),
-		nullTimeColumn(c.ProcessAfter),
+		dbutil.NullTimeColumn(c.StartedAt),
+		dbutil.NullTimeColumn(c.FinishedAt),
+		dbutil.NullTimeColumn(c.ProcessAfter),
 		c.NumResets,
 		c.NumFailures,
 		c.Closing,
 		c.SyncErrorMessage,
-		nullStringColumn(title),
+		dbutil.NullStringColumn(title),
 	}
 
 	if includeID {
@@ -844,18 +844,18 @@ func updateChangesetCodeHostStateQuery(c *btypes.Changeset) (*sqlf.Query, error)
 		sqlf.Join(changesetCodeHostStateInsertColumns, ", "),
 		c.UpdatedAt,
 		metadata,
-		nullStringColumn(c.ExternalBranch),
-		nullStringColumn(c.ExternalForkNamespace),
-		nullTimeColumn(c.ExternalDeletedAt),
-		nullTimeColumn(c.ExternalUpdatedAt),
-		nullStringColumn(string(c.ExternalState)),
-		nullStringColumn(string(c.ExternalReviewState)),
-		nullStringColumn(string(c.ExternalCheckState)),
+		dbutil.NullStringColumn(c.ExternalBranch),
+		dbutil.NullStringColumn(c.ExternalForkNamespace),
+		dbutil.NullTimeColumn(c.ExternalDeletedAt),
+		dbutil.NullTimeColumn(c.ExternalUpdatedAt),
+		dbutil.NullStringColumn(string(c.ExternalState)),
+		dbutil.NullStringColumn(string(c.ExternalReviewState)),
+		dbutil.NullStringColumn(string(c.ExternalCheckState)),
 		c.DiffStatAdded,
 		c.DiffStatDeleted,
 		syncState,
 		c.SyncErrorMessage,
-		nullStringColumn(title),
+		dbutil.NullStringColumn(title),
 		c.ID,
 		sqlf.Join(changesetColumns, ", "),
 	}
@@ -1481,7 +1481,7 @@ FROM (
 		changesets.computed_state
 	FROM
 		changesets
-	INNER JOIN repo ON repo.id = changesets.repo_id 
+	INNER JOIN repo ON repo.id = changesets.repo_id
 	WHERE
 		-- where the changeset is not archived on at least one batch change
 		jsonb_path_exists (batch_change_ids, '$.* ? ((!exists(@.isArchived) || @.isArchived == false) && (!exists(@.archive) || @.archive == false))')
@@ -1503,7 +1503,7 @@ func batchChangesColumn(c *btypes.Changeset) ([]byte, error) {
 func uiPublicationStateColumn(c *btypes.Changeset) *string {
 	var uiPublicationState *string
 	if state := c.UiPublicationState; state != nil {
-		uiPublicationState = nullStringColumn(string(*state))
+		uiPublicationState = dbutil.NullStringColumn(string(*state))
 	}
 	return uiPublicationState
 }
