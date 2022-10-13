@@ -26,9 +26,7 @@ type Interface interface {
 	SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]SeriesPoint, error)
 	RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointArgs) error
 	CountData(ctx context.Context, opts CountDataOpts) (int, error)
-	SetInsightSeriesRecordingTimes(ctx context.Context, recordingTimes []types.InsightSeriesRecordingTimes) error
-	GetInsightSeriesRecordingTimes(ctx context.Context, seriesID string) (types.InsightSeriesRecordingTimes, error)
-	DeleteInsightSeriesRecordingTimes(ctx context.Context, seriesRecordingTimes types.InsightSeriesRecordingTimes) error
+	UpdateInsightSeriesRecordingTimes(ctx context.Context, seriesID string, newRecordTime time.Time) error
 }
 
 var _ Interface = &Store{}
@@ -555,26 +553,46 @@ func (s *Store) RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointA
 			return errors.Wrap(err, "Flush")
 		}
 	}
-
 	return nil
 }
 
-func (s *Store) SetInsightSeriesRecordingTimes(ctx context.Context, seriesRecordingTimes []types.InsightSeriesRecordingTimes) (err error) {
+func (s *Store) UpdateInsightSeriesRecordingTimes(ctx context.Context, seriesID string, newRecordTime time.Time) error {
 	tx, err := s.Transact(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	inserter := batch.NewInserterWithConflict(ctx, tx.Handle(), "insight_series_recording_times", batch.MaxNumPostgresParameters, "ON CONFLICT DO NOTHING", "series_id", "recording_time")
+	// This will fetch insight series recording times even for jobs for a backfill when we should just append,
+	// as we don't have a way of determining whether this is a backfill.
+	seriesRecordingTimes, err := tx.GetInsightSeriesRecordingTimes(ctx, seriesID)
+	if err != nil {
+		return errors.Wrap(err, "GetInsightSeriesRecordingTimes")
+	}
+	toAdd, toDelete := updateSeriesRecordingTimes(seriesRecordingTimes.RecordingTimes, newRecordTime)
+	if len(toDelete) > 0 {
+		if err := tx.DeleteInsightSeriesRecordingTimes(ctx, types.InsightSeriesRecordingTimes{seriesID, toDelete}); err != nil {
+			return errors.Wrap(err, "DeleteInsightSeriesRecordingTimes")
+		}
+	}
+	if len(toAdd) > 0 {
+		if err := tx.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{{seriesID, toAdd}}); err != nil {
+			return errors.Wrap(err, "SetInsightSeriesRecordingTimes")
+		}
+	}
+	return nil
+}
+
+func (s *Store) SetInsightSeriesRecordingTimes(ctx context.Context, seriesRecordingTimes []types.InsightSeriesRecordingTimes) (err error) {
+	inserter := batch.NewInserterWithConflict(ctx, s.Handle(), "insight_series_recording_times", batch.MaxNumPostgresParameters, "ON CONFLICT DO NOTHING", "series_id", "recording_time")
 
 	for _, series := range seriesRecordingTimes {
 		seriesID := series.SeriesID
 		for _, recordTime := range series.RecordingTimes {
 			if err := inserter.Insert(
 				ctx,
-				seriesID,   // series_id
-				recordTime, // recording_time
+				seriesID,         // series_id
+				recordTime.UTC(), // recording_time
 			); err != nil {
 				return errors.Wrap(err, "Insert")
 			}
@@ -584,17 +602,10 @@ func (s *Store) SetInsightSeriesRecordingTimes(ctx context.Context, seriesRecord
 	if err := inserter.Flush(ctx); err != nil {
 		return errors.Wrap(err, "Flush")
 	}
-
 	return nil
 }
 
 func (s *Store) GetInsightSeriesRecordingTimes(ctx context.Context, seriesID string) (_ types.InsightSeriesRecordingTimes, err error) {
-	tx, err := s.Transact(ctx)
-	if err != nil {
-		return types.InsightSeriesRecordingTimes{}, err
-	}
-	defer func() { err = tx.Done(err) }()
-
 	recordingTimes := []time.Time{}
 	err = s.query(ctx, sqlf.Sprintf(getInsightSeriesRecordingTimesStr, seriesID), func(sc scanner) (err error) {
 		var recordingTime time.Time
@@ -617,18 +628,24 @@ func (s *Store) GetInsightSeriesRecordingTimes(ctx context.Context, seriesID str
 }
 
 func (s *Store) DeleteInsightSeriesRecordingTimes(ctx context.Context, seriesRecordingTimes types.InsightSeriesRecordingTimes) error {
-	tx, err := s.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
-
 	times := make([]*sqlf.Query, len(seriesRecordingTimes.RecordingTimes))
 	for i := range seriesRecordingTimes.RecordingTimes {
 		times[i] = sqlf.Sprintf("%s", seriesRecordingTimes.RecordingTimes[i])
 	}
-
 	return s.Exec(ctx, sqlf.Sprintf(deleteInsightSeriesRecordingTimesByTimeStr, seriesRecordingTimes.SeriesID, sqlf.Join(times, ", ")))
+}
+
+func updateSeriesRecordingTimes(recordingTimes []time.Time, newTime time.Time) (toAdd []time.Time, toDelete []time.Time) {
+	aYearAgo := newTime.AddDate(-1, 0, 0)
+	if len(recordingTimes) < 12 || recordingTimes[0].After(aYearAgo) {
+		// Either the insight has no recordings or they are over less than a year ago, so we can just append to the list.
+		toAdd = append(toAdd, newTime)
+	} else if recordingTimes[0].Before(aYearAgo) {
+		// We replace the first recording time (shift left).
+		toAdd = append(toAdd, newTime)
+		toDelete = append(toDelete, recordingTimes[0])
+	}
+	return toAdd, toDelete
 }
 
 const upsertRepoNameFmtStr = `

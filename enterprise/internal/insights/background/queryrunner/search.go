@@ -227,25 +227,11 @@ func (r *workHandler) persistRecordings(ctx context.Context, job *Job, series *t
 		if err := tx.DeleteSnapshots(ctx, series); err != nil {
 			return errors.Wrap(err, "DeleteSnapshots")
 		}
+	} else {
 		// We don't save the last snapshot time in insight_series_recording_times because of the added complexity it
 		// represents, and the ease of accessing the value of the last snapshot point when fetching series data.
-	} else {
-		// This will fetch insight series recording times even for jobs for a backfill when setting recording times
-		// isn't necessary, as we don't have a way of determining whether this is a backfill record job.
-		seriesRecordingTimes, err := tx.GetInsightSeriesRecordingTimes(ctx, series.SeriesID)
-		if err != nil {
-			return errors.Wrap(err, "GetInsightSeriesRecordingTimes")
-		}
-		toAdd, toDelete := updateSeriesRecordingTimes(seriesRecordingTimes.RecordingTimes, recordTime)
-		if len(toDelete) > 0 {
-			if err := tx.DeleteInsightSeriesRecordingTimes(ctx, types.InsightSeriesRecordingTimes{series.SeriesID, toDelete}); err != nil {
-				return errors.Wrap(err, "DeleteInsightSeriesRecordingTimes")
-			}
-		}
-		if len(toAdd) > 0 {
-			if err := tx.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{{series.SeriesID, toAdd}}); err != nil {
-				return errors.Wrap(err, "SetInsightSeriesRecordingTimes")
-			}
+		if err := tx.UpdateInsightSeriesRecordingTimes(ctx, series.SeriesID, recordTime); err != nil {
+			return errors.Wrap(err, "UpdateInsightSeriesRecordingTimes")
 		}
 	}
 
@@ -260,19 +246,6 @@ func (r *workHandler) persistRecordings(ctx context.Context, job *Job, series *t
 		err = errors.Append(err, errors.Wrap(recordErr, "RecordSeriesPointsCapture"))
 	}
 	return err
-}
-
-func updateSeriesRecordingTimes(recordingTimes []time.Time, newTime time.Time) (toAdd []time.Time, toDelete []time.Time) {
-	aYearAgo := newTime.AddDate(-1, 0, 0)
-	if len(recordingTimes) < 12 || recordingTimes[0].After(aYearAgo) {
-		// Either the insight has no recordings or they are over less than a year ago, so we can just append to the list.
-		toAdd = append(toAdd, newTime)
-	} else if recordingTimes[0].Before(aYearAgo) {
-		// We replace the first recording time (shift left).
-		toAdd = append(toAdd, newTime)
-		toDelete = append(toDelete, recordingTimes[0])
-	}
-	return toAdd, toDelete
 }
 
 func filterRecordingsBySeriesRepos(ctx context.Context, repoStore discovery.RepoStore, series *types.InsightSeries, recordings []store.RecordSeriesPointArgs) ([]store.RecordSeriesPointArgs, error) {
