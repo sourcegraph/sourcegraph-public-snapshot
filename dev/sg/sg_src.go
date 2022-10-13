@@ -34,7 +34,7 @@ var srcCtxCommand = &cli.Command{
 			Usage:     "Register (or edit an existing) Sourcegraph instance to target with src-cli",
 			UsageText: "sg src instance register [name] [endpoint]",
 			Action: func(cmd *cli.Context) error {
-				store, sc, err := getSrcSecret(cmd.Context, std.Out)
+				store, sc, err := getSrcInstances(cmd.Context, std.Out)
 				if err != nil {
 					return errors.Wrap(err, "failed to read existing instances")
 				}
@@ -75,7 +75,7 @@ var srcCtxCommand = &cli.Command{
 			Name:  "use",
 			Usage: "Set current src-cli instance to use with 'sg src'",
 			Action: func(cmd *cli.Context) error {
-				store, sc, err := getSrcSecret(cmd.Context, std.Out)
+				store, sc, err := getSrcInstances(cmd.Context, std.Out)
 				if err != nil {
 					return err
 				}
@@ -97,7 +97,7 @@ var srcCtxCommand = &cli.Command{
 			Name:  "list",
 			Usage: "List registered instances for src-cli",
 			Action: func(cmd *cli.Context) error {
-				_, sc, err := getSrcSecret(cmd.Context, std.Out)
+				_, sc, err := getSrcInstances(cmd.Context, std.Out)
 				if err != nil {
 					return err
 				}
@@ -121,7 +121,7 @@ var srcCommand = &cli.Command{
 	Usage:     "Run src-cli on a given instance defined with 'sg src-ctx'",
 	Category:  CategoryCompany,
 	Action: func(cmd *cli.Context) error {
-		_, sc, err := getSrcSecret(cmd.Context, std.Out)
+		_, sc, err := getSrcInstances(cmd.Context, std.Out)
 		if err != nil {
 			return err
 		}
@@ -145,8 +145,8 @@ var srcCommand = &cli.Command{
 	},
 }
 
-// getSrcSecret retrieves src-cli secrets from the context secrets store
-func getSrcSecret(ctx context.Context, out *std.Output) (*secrets.Store, *srcSecrets, error) {
+// getSrcInstances retrieves src instances configuration from the secrets store
+func getSrcInstances(ctx context.Context, out *std.Output) (*secrets.Store, *srcSecrets, error) {
 	sec, err := secrets.FromContext(ctx)
 	if err != nil {
 		return nil, nil, err
