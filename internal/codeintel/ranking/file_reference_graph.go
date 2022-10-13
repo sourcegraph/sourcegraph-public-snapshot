@@ -5,17 +5,13 @@ import (
 	"context"
 	"io"
 	"path/filepath"
-	"regexp"
-	"runtime"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 func (s *Service) buildFileReferenceGraph(ctx context.Context, repoName api.RepoName) (streamingGraph, error) {
@@ -27,8 +23,8 @@ func (s *Service) buildFileReferenceGraph(ctx context.Context, repoName api.Repo
 	ch := make(chan streamedEdge)
 
 	type searchTermAndPath struct {
-		Pattern *lazyregexp.Regexp
-		Paths   []string
+		symbol string
+		paths  []string
 	}
 
 	searchTermsAndPathsByTerm := map[string]*searchTermAndPath{}
@@ -36,19 +32,18 @@ func (s *Service) buildFileReferenceGraph(ctx context.Context, repoName api.Repo
 		for _, symbol := range symbols {
 			searchTermAndPaths, ok := searchTermsAndPathsByTerm[symbol]
 			if !ok {
-				pattern := regexp.QuoteMeta(symbol)
-				searchTermAndPaths = &searchTermAndPath{Pattern: lazyregexp.New(`(^|\b)` + pattern + `($|\b)`)}
+				searchTermAndPaths = &searchTermAndPath{symbol: symbol}
 				searchTermsAndPathsByTerm[symbol] = searchTermAndPaths
 			}
 
-			searchTermAndPaths.Paths = append(searchTermAndPaths.Paths, path)
+			searchTermAndPaths.paths = append(searchTermAndPaths.paths, path)
 		}
 	}
 
 	searchTermsAndPathsByExtension := map[string][]*searchTermAndPath{}
 	for _, searchTermAndPaths := range searchTermsAndPathsByTerm {
 		pathsByExtension := map[string][]string{}
-		for _, path := range searchTermAndPaths.Paths {
+		for _, path := range searchTermAndPaths.paths {
 			if extension := filepath.Ext(path); extension != "" {
 				if _, ok := pathsByExtension[extension]; !ok {
 					pathsByExtension[extension] = nil
@@ -64,8 +59,8 @@ func (s *Service) buildFileReferenceGraph(ctx context.Context, repoName api.Repo
 			}
 
 			searchTermsAndPathsByExtension[extension] = append(searchTermsAndPathsByExtension[extension], &searchTermAndPath{
-				Pattern: searchTermAndPaths.Pattern,
-				Paths:   paths,
+				symbol: searchTermAndPaths.symbol,
+				paths:  paths,
 			})
 		}
 	}
@@ -79,66 +74,79 @@ func (s *Service) buildFileReferenceGraph(ctx context.Context, repoName api.Repo
 		extension := filepath.Ext(h.Name)
 		searchTermsAndPaths := searchTermsAndPathsByExtension[extension]
 
-		n := len(searchTermsAndPaths)
-		g := group.New().WithContext(ctx)
-		out := make(chan []string, n)
-
-		in := make(chan *searchTermAndPath, n)
-		for _, searchTermAndPaths := range searchTermsAndPaths {
-			in <- searchTermAndPaths
+		isSymbolCharacter := func(r byte) bool {
+			return ('a' <= r && r <= 'z') || ('A' <= r && r <= 'Z') || ('0' <= r && r <= '9') || (r == '_')
 		}
-		close(in)
 
-		searcher := func(ctx context.Context) error {
-			for searchTermAndPaths := range in {
-				if !searchTermAndPaths.Pattern.Match(content) {
+		// Build a list of index pairs indicating `[start, end)` ranges of words
+		// that appear in the given content.
+		indexes := []int{}
+
+		for cursor := 0; cursor < len(content); {
+			// Advance past non-symbol characters
+			if !isSymbolCharacter(content[cursor]) {
+				cursor++
+				continue
+			}
+
+			// Here, the cursor points to the first symbol character in a word.
+			// Mark this index (inclusive) as the start of the word. We'll add
+			// the end index below.
+			indexes = append(indexes, cursor)
+
+			// Advance through all the symbol characters
+			for cursor++; cursor < len(content); {
+				if !isSymbolCharacter(content[cursor]) {
+					break
+				}
+
+				cursor++
+			}
+
+			// Here, the cursor points to the first non-symbol character after the
+			// previous word. Close the range started above by marking this index
+			// (exclusive) as the end of the word.
+			indexes = append(indexes, cursor)
+
+			// Skip useless predicate re-check at the head of the loop
+			cursor++
+		}
+
+		// Search for each target symbol in the document by comparing it to each of
+		// the words we've identified above. Once we find a match we can emit edges
+		// relating to all of the associated paths and move on to the next symbol.
+
+		emitted := map[string]struct{}{}
+		for _, searchTermAndPaths := range searchTermsAndPaths {
+			symbol := searchTermAndPaths.symbol
+			n := len(symbol)
+
+			for i := 0; i < len(indexes); i += 2 {
+				lo := indexes[i]
+				hi := indexes[i+1]
+
+				if hi-lo != n || string(content[lo:hi]) == symbol {
 					continue
 				}
 
-				select {
-				case out <- searchTermAndPaths.Paths:
-				case <-ctx.Done():
-					return ctx.Err()
-				}
-			}
-
-			return nil
-		}
-
-		for i := 0; i < runtime.GOMAXPROCS(0); i++ {
-			g.Go(searcher)
-		}
-
-		// Another group which will wait on the workers and sending out.
-		gOut := group.New().WithContext(ctx)
-
-		gOut.Go(func(ctx context.Context) error {
-			if err := g.Wait(); err != nil {
-				return err
-			}
-			close(out)
-			return nil
-		})
-
-		gOut.Go(func(ctx context.Context) error {
-			toSet := map[string]struct{}{}
-			for paths := range out {
-				for _, path := range paths {
-					if _, ok := toSet[path]; ok {
+				for _, path := range searchTermAndPaths.paths {
+					if _, ok := emitted[path]; ok {
 						continue
 					}
-					toSet[path] = struct{}{}
+					emitted[path] = struct{}{}
+
 					select {
 					case ch <- streamedEdge{from: h.Name, to: path}:
 					case <-ctx.Done():
 						return ctx.Err()
 					}
 				}
-			}
-			return nil
-		})
 
-		return gOut.Wait()
+				break
+			}
+		}
+
+		return nil
 	}
 
 	go func() {
@@ -177,6 +185,10 @@ func (s *Service) extractSymbols(ctx context.Context, repoName api.RepoName) (ma
 
 	symbolsByPath := map[string][]string{}
 	for _, result := range results {
+		if result.Name == "_" {
+			continue
+		}
+
 		if _, ok := symbolsByPath[result.Path]; !ok {
 			symbolsByPath[result.Path] = nil
 		}
