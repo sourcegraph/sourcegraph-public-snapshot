@@ -18,13 +18,19 @@ func Log(ctx context.Context, logger log.Logger, record Record) {
 	var fields []log.Field
 
 	client := requestclient.FromContext(ctx)
-	auditId := uuid.New().String()
+	act := actor.FromContext(ctx)
 
+	//TODO make this configurable
+	if act.Internal {
+		return
+	}
+
+	auditId := uuid.New().String()
 	fields = append(fields, log.Object("audit",
 		log.String("auditId", auditId),
 		log.String("entity", record.Entity),
 		log.Object("actor",
-			log.String("actorUID", actorId(actor.FromContext(ctx))),
+			log.String("actorUID", actorId(act)),
 			log.String("ip", ip(client)),
 			log.String("X-Forwarded-For", forwardedFor(client)))))
 	fields = append(fields, record.Fields...)

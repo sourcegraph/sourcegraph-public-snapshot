@@ -10,9 +10,9 @@ type PartialNamespace =
 const getNamespaceDisplayName = (namespace: PartialNamespace): string => {
     switch (namespace.__typename) {
         case 'User':
-            return namespace.displayName ?? namespace.username
+            return namespace.displayName ? namespace.displayName : namespace.username
         case 'Org':
-            return namespace.displayName ?? namespace.name
+            return namespace.displayName ? namespace.displayName : namespace.name
     }
 }
 

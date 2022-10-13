@@ -9,7 +9,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -156,8 +156,8 @@ func (r *UploadResolver) RetentionPolicyOverview(ctx context.Context, args *LSIF
 
 func (r *UploadResolver) Indexer() types.CodeIntelIndexerResolver {
 	for _, indexer := range types.AllIndexers {
-		if indexer.Name() == r.upload.Indexer {
-			return indexer
+		if indexer.Name == r.upload.Indexer {
+			return types.NewCodeIntelIndexerResolverFrom(indexer)
 		}
 	}
 

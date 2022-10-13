@@ -121,10 +121,6 @@ type Provider interface {
 	// to decide whether to discard.
 	FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, opts FetchPermsOptions) ([]extsvc.AccountID, error)
 
-	// FetchUserPermsByToken is similar to FetchUserPerms but only requires a token
-	// in order to communicate with the code host.
-	FetchUserPermsByToken(ctx context.Context, token string, opts FetchPermsOptions) (*ExternalUserPermissions, error)
-
 	// ServiceType returns the service type (e.g., "gitlab") of this authz provider.
 	ServiceType() string
 

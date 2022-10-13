@@ -19,7 +19,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
@@ -119,9 +118,9 @@ func Router() *mux.Router {
 // InitRouter create the router that serves pages for our web app
 // and assigns it to uirouter.Router.
 // The router can be accessed by calling Router().
-func InitRouter(db database.DB, codeIntelResolver graphqlbackend.CodeIntelResolver) {
+func InitRouter(db database.DB) {
 	router := newRouter()
-	initRouter(db, router, codeIntelResolver)
+	initRouter(db, router)
 }
 
 var mockServeRepo func(w http.ResponseWriter, r *http.Request)
@@ -224,7 +223,7 @@ func brandNameSubtitle(titles ...string) string {
 	return strings.Join(append(titles, globals.Branding().BrandName), " - ")
 }
 
-func initRouter(db database.DB, router *mux.Router, codeIntelResolver graphqlbackend.CodeIntelResolver) {
+func initRouter(db database.DB, router *mux.Router) {
 	uirouter.Router = router // make accessible to other packages
 
 	brandedIndex := func(titles string) http.Handler {

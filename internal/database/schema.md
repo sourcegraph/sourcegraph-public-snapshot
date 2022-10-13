@@ -860,6 +860,17 @@ Associates a repository-commit pair with the set of repository-level dependencie
 
 **updated_at**: Time when lockfile index was updated
 
+# Table "public.codeintel_path_ranks"
+```
+    Column     |  Type   | Collation | Nullable | Default 
+---------------+---------+-----------+----------+---------
+ repository_id | integer |           | not null | 
+ payload       | text    |           | not null | 
+Indexes:
+    "codeintel_path_ranks_repository_id_key" UNIQUE CONSTRAINT, btree (repository_id)
+
+```
+
 # Table "public.configuration_policies_audit_logs"
 ```
        Column       |           Type           | Collation | Nullable |                          Default                           
@@ -1325,6 +1336,7 @@ Indexes:
  last_fetched    | timestamp with time zone |           | not null | now()
  last_changed    | timestamp with time zone |           | not null | now()
  repo_size_bytes | bigint                   |           |          | 
+ repo_status     | text                     |           |          | 
 Indexes:
     "gitserver_repos_pkey" PRIMARY KEY, btree (repo_id)
     "gitserver_repos_cloned_status_idx" btree (repo_id) WHERE clone_status = 'cloned'::text
@@ -2987,6 +2999,8 @@ Referenced by:
     TABLE "user_emails" CONSTRAINT "user_emails_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "user_external_accounts" CONSTRAINT "user_external_accounts_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "user_public_repos" CONSTRAINT "user_public_repos_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    TABLE "webhooks" CONSTRAINT "webhooks_created_by_user_id_fkey" FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE SET NULL
+    TABLE "webhooks" CONSTRAINT "webhooks_updated_by_user_id_fkey" FOREIGN KEY (updated_by_user_id) REFERENCES users(id) ON DELETE SET NULL
 Triggers:
     trig_invalidate_session_on_password_change BEFORE UPDATE OF passwd ON users FOR EACH ROW EXECUTE FUNCTION invalidate_session_for_userid_on_password_change()
     trig_soft_delete_user_reference_on_external_service AFTER UPDATE OF deleted_at ON users FOR EACH ROW EXECUTE FUNCTION soft_delete_user_reference_on_external_service()
@@ -3057,19 +3071,24 @@ Foreign-key constraints:
 
 # Table "public.webhooks"
 ```
-      Column       |           Type           | Collation | Nullable |               Default                
--------------------+--------------------------+-----------+----------+--------------------------------------
- id                | integer                  |           | not null | nextval('webhooks_id_seq'::regclass)
- code_host_kind    | text                     |           | not null | 
- code_host_urn     | text                     |           | not null | 
- secret            | text                     |           |          | 
- created_at        | timestamp with time zone |           | not null | now()
- updated_at        | timestamp with time zone |           | not null | now()
- encryption_key_id | text                     |           |          | 
- uuid              | uuid                     |           | not null | gen_random_uuid()
+       Column       |           Type           | Collation | Nullable |               Default                
+--------------------+--------------------------+-----------+----------+--------------------------------------
+ id                 | integer                  |           | not null | nextval('webhooks_id_seq'::regclass)
+ code_host_kind     | text                     |           | not null | 
+ code_host_urn      | text                     |           | not null | 
+ secret             | text                     |           |          | 
+ created_at         | timestamp with time zone |           | not null | now()
+ updated_at         | timestamp with time zone |           | not null | now()
+ encryption_key_id  | text                     |           |          | 
+ uuid               | uuid                     |           | not null | gen_random_uuid()
+ created_by_user_id | integer                  |           |          | 
+ updated_by_user_id | integer                  |           |          | 
 Indexes:
     "webhooks_pkey" PRIMARY KEY, btree (id)
     "webhooks_uuid_key" UNIQUE CONSTRAINT, btree (uuid)
+Foreign-key constraints:
+    "webhooks_created_by_user_id_fkey" FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE SET NULL
+    "webhooks_updated_by_user_id_fkey" FOREIGN KEY (updated_by_user_id) REFERENCES users(id) ON DELETE SET NULL
 
 ```
 
@@ -3079,7 +3098,11 @@ Webhooks registered in Sourcegraph instance.
 
 **code_host_urn**: URN of a code host. This column maps to external_service_id column of repo table.
 
+**created_by_user_id**: ID of a user, who created the webhook. If NULL, then the user does not exist (never existed or was deleted).
+
 **secret**: Secret used to decrypt webhook payload (if supported by the code host).
+
+**updated_by_user_id**: ID of a user, who updated the webhook. If NULL, then the user does not exist (never existed or was deleted).
 
 # View "public.batch_spec_workspace_execution_jobs_with_rank"
 

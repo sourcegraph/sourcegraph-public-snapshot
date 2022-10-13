@@ -408,7 +408,6 @@ func (r *repoKVPs) Scan(value any) error {
 }
 
 const listReposQueryFmtstr = `
--- source: internal/database/repos.go:list
 %%s -- Populates "queryPrefix", i.e. CTEs
 SELECT %s
 FROM repo
@@ -1260,7 +1259,6 @@ func (s *repoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableRe
 }
 
 const listIndexableReposQuery = `
--- source: internal/database/repos.go:ListIndexableRepos
 SELECT
 	repo.id, repo.name, repo.stars
 FROM repo
@@ -1376,14 +1374,14 @@ func newRepoRecord(r *types.Repo) (*repoRecord, error) {
 	return &repoRecord{
 		ID:                  r.ID,
 		Name:                string(r.Name),
-		URI:                 nullStringColumn(r.URI),
+		URI:                 dbutil.NullStringColumn(r.URI),
 		Description:         r.Description,
 		CreatedAt:           r.CreatedAt.UTC(),
-		UpdatedAt:           nullTimeColumn(r.UpdatedAt),
-		DeletedAt:           nullTimeColumn(r.DeletedAt),
-		ExternalServiceType: nullStringColumn(r.ExternalRepo.ServiceType),
-		ExternalServiceID:   nullStringColumn(r.ExternalRepo.ServiceID),
-		ExternalID:          nullStringColumn(r.ExternalRepo.ID),
+		UpdatedAt:           dbutil.NullTimeColumn(r.UpdatedAt),
+		DeletedAt:           dbutil.NullTimeColumn(r.DeletedAt),
+		ExternalServiceType: dbutil.NullStringColumn(r.ExternalRepo.ServiceType),
+		ExternalServiceID:   dbutil.NullStringColumn(r.ExternalRepo.ServiceID),
+		ExternalID:          dbutil.NullStringColumn(r.ExternalRepo.ID),
 		Archived:            r.Archived,
 		Fork:                r.Fork,
 		Stars:               r.Stars,
@@ -1391,27 +1389,6 @@ func newRepoRecord(r *types.Repo) (*repoRecord, error) {
 		Metadata:            metadata,
 		Sources:             sources,
 	}, nil
-}
-
-func nullTimeColumn(t time.Time) *time.Time {
-	if t.IsZero() {
-		return nil
-	}
-	return &t
-}
-
-func nullInt32Column(n int32) *int32 {
-	if n == 0 {
-		return nil
-	}
-	return &n
-}
-
-func nullStringColumn(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
 }
 
 func metadataColumn(metadata any) (msg json.RawMessage, err error) {
@@ -1597,7 +1574,6 @@ AND repo.id = repo_ids.id::int
 `
 
 const getFirstRepoNamesByCloneURLQueryFmtstr = `
--- source:internal/database/repos.go:GetFirstRepoNameByCloneURL
 SELECT
 	name
 FROM

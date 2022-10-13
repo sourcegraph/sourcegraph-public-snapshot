@@ -578,9 +578,7 @@ cc @${config.captainGitHubUsername}
                         title: defaultPRMessage,
                         edits: [`tools/update-docker-tags.sh ${release.version}`],
                         ...prBodyAndDraftState([
-                            `Follow the [release guide](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/RELEASING.md#releasing-pure-docker) to complete this PR ${
-                                notPatchRelease ? '' : '(note: `pure-docker` release is optional for patch releases)'
-                            }`,
+                            'Follow the [release guide](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/RELEASING.md#releasing-pure-docker) to complete this PR',
                         ]),
                     },
                     {

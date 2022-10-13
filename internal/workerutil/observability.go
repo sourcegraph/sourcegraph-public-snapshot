@@ -2,6 +2,7 @@ package workerutil
 
 import (
 	"fmt"
+	"math/rand"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -12,10 +13,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type WorkerMetrics struct {
+type WorkerObservability struct {
 	// logger is the root logger provided for observability. Prefer to use a more granular
 	// logger provided by operations where relevant.
 	logger log.Logger
+
+	// temporary solution to have configurable trace ahead-of-time sample for worker jobs
+	// to avoid swamping sinks with traces.
+	traceSampler func(job Record) bool
 
 	operations *operations
 	numJobs    Gauge
@@ -32,19 +37,26 @@ type operations struct {
 	preHandle  *observation.Operation
 }
 
-type metricOptions struct {
+type observabilityOptions struct {
 	labels          map[string]string
 	durationBuckets []float64
+	// temporary solution to have configurable trace ahead-of-time sample for worker jobs
+	// to avoid swamping sinks with traces.
+	traceSampler func(job Record) bool
 }
 
-type MetricOption func(o *metricOptions)
+type ObservabilityOption func(o *observabilityOptions)
 
-func WithLabels(labels map[string]string) MetricOption {
-	return func(o *metricOptions) { o.labels = labels }
+func WithSampler(fn func(job Record) bool) func(*observabilityOptions) {
+	return func(o *observabilityOptions) { o.traceSampler = fn }
 }
 
-func WithDurationBuckets(buckets []float64) MetricOption {
-	return func(o *metricOptions) { o.durationBuckets = buckets }
+func WithLabels(labels map[string]string) ObservabilityOption {
+	return func(o *observabilityOptions) { o.labels = labels }
+}
+
+func WithDurationBuckets(buckets []float64) ObservabilityOption {
+	return func(o *observabilityOptions) { o.durationBuckets = buckets }
 }
 
 // NewMetrics creates and registers the following metrics for a generic worker instance.
@@ -54,10 +66,14 @@ func WithDurationBuckets(buckets []float64) MetricOption {
 //   - {prefix}_error_total: number of handler operations resulting in an error
 //   - {prefix}_handlers: the number of active handler routines
 //
-// The given labels are emitted on each metric.
-func NewMetrics(observationContext *observation.Context, prefix string, opts ...MetricOption) WorkerMetrics {
-	options := &metricOptions{
+// The given labels are emitted on each metric. If WithSampler option is not passed,
+// traces will have a 1 in 2 probability of being sampled.
+func NewMetrics(observationContext *observation.Context, prefix string, opts ...ObservabilityOption) WorkerObservability {
+	options := &observabilityOptions{
 		durationBuckets: prometheus.DefBuckets,
+		traceSampler: func(job Record) bool {
+			return rand.Int31()%2 == 0
+		},
 	}
 
 	for _, fn := range opts {
@@ -86,10 +102,11 @@ func NewMetrics(observationContext *observation.Context, prefix string, opts ...
 		"The number of active handlers.",
 	)
 
-	return WorkerMetrics{
-		logger:     observationContext.Logger,
-		operations: newOperations(observationContext, prefix, keys, values, options.durationBuckets),
-		numJobs:    newLenientConcurrencyGauge(numJobs, time.Second*5),
+	return WorkerObservability{
+		logger:       observationContext.Logger,
+		traceSampler: options.traceSampler,
+		operations:   newOperations(observationContext, prefix, keys, values, options.durationBuckets),
+		numJobs:      newLenientConcurrencyGauge(numJobs, time.Second*5),
 	}
 }
 
