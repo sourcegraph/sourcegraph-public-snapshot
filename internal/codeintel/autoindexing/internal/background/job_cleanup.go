@@ -17,6 +17,7 @@ type janitorConfig struct {
 	minimumTimeSinceLastCheck      time.Duration
 	commitResolverBatchSize        int
 	commitResolverMaximumCommitLag time.Duration
+	failedIndexBatchSize           int
 	failedIndexMaxAge              time.Duration
 }
 
@@ -25,6 +26,7 @@ func (b backgroundJob) NewJanitor(
 	minimumTimeSinceLastCheck time.Duration,
 	commitResolverBatchSize int,
 	commitResolverMaximumCommitLag time.Duration,
+	failedIndexBatchSize int,
 	failedIndexMaxAge time.Duration,
 ) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
@@ -32,6 +34,7 @@ func (b backgroundJob) NewJanitor(
 			minimumTimeSinceLastCheck:      minimumTimeSinceLastCheck,
 			commitResolverBatchSize:        commitResolverBatchSize,
 			commitResolverMaximumCommitLag: commitResolverMaximumCommitLag,
+			failedIndexBatchSize:           failedIndexBatchSize,
 			failedIndexMaxAge:              failedIndexMaxAge,
 		})
 	}))
@@ -168,5 +171,5 @@ func (b backgroundJob) handleCommit(ctx context.Context, repositoryID int, repos
 }
 
 func (b backgroundJob) handleExpiredRecords(ctx context.Context, cfg janitorConfig) error {
-	return b.store.ExpireFailedRecords(ctx, cfg.failedIndexMaxAge, b.clock.Now())
+	return b.store.ExpireFailedRecords(ctx, cfg.failedIndexBatchSize, cfg.failedIndexMaxAge, b.clock.Now())
 }

@@ -9,11 +9,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func (s *store) ExpireFailedRecords(ctx context.Context, failedIndexMaxAge time.Duration, now time.Time) (err error) {
+// ExpireFailedRecords removes autoindexing job records that meet the following conditions:
+//
+//   - The record is in the "failed" state
+//   - The time between the job finishing and the current timestamp exceeds the given max age
+//   - It is not the most recent-to-finish failure for the same repo, root, and indexer values
+//     **unless** there is a more recent success.
+func (s *store) ExpireFailedRecords(ctx context.Context, batchSize int, failedIndexMaxAge time.Duration, now time.Time) (err error) {
 	ctx, _, endObservation := s.operations.expireFailedRecords.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return (s.db.Exec(ctx, sqlf.Sprintf(expireFailedRecordsQuery, now, int(failedIndexMaxAge/time.Second))))
+	return (s.db.Exec(ctx, sqlf.Sprintf(expireFailedRecordsQuery, now, int(failedIndexMaxAge/time.Second), batchSize)))
 }
 
 const expireFailedRecordsQuery = `
@@ -28,11 +34,22 @@ ranked_indexes AS (
 		%s - u.finished_at >= %s * interval '1 second'
 ),
 locked_indexes AS (
-	SELECT id
-	FROM ranked_indexes
-	WHERE rank != 1
-	ORDER BY id
+	SELECT i.id
+	FROM lsif_indexes i
+	JOIN ranked_indexes ri ON ri.id = i.id
+	WHERE ri.rank != 1 OR EXISTS (
+		SELECT 1
+		FROM lsif_indexes i2
+		WHERE
+			i2.state = 'completed' AND
+			i2.finished_at > i.finished_at AND
+			i2.repository_id = i.repository_id AND
+			i2.root = i.root AND
+			i2.indexer = i.indexer
+	)
+	ORDER BY i.id
 	FOR UPDATE SKIP LOCKED
+	LIMIT %d
 )
 DELETE FROM lsif_indexes
 WHERE id IN (SELECT id FROM locked_indexes)
