@@ -724,15 +724,22 @@ func TestInsightSeriesRecordingTimes(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	newTime := time.Now().UTC()
+	err = timeseriesStore.UpdateInsightSeriesRecordingTimes(ctx, "series2", newTime)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	got, err = timeseriesStore.GetInsightSeriesRecordingTimes(ctx, "series2")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got.RecordingTimes) != 1 {
-		t.Fatalf("got %d recording times, expected 1", len(got.RecordingTimes))
+	if len(got.RecordingTimes) != 2 {
+		t.Fatalf("got %d recording times, expected 2", len(got.RecordingTimes))
 	}
-	if got.RecordingTimes[0] != now.AddDate(0, 1, 0) {
-		t.Errorf("unexpected date, got %v want %v", got.RecordingTimes[0], now.AddDate(0, 1, 0))
+	want := []time.Time{now.AddDate(0, 1, 0), newTime}
+	if stringifyTimes(got.RecordingTimes) != stringifyTimes(want) {
+		t.Errorf("unexpected times, got %v want %v", got.RecordingTimes, want)
 	}
 }
 
