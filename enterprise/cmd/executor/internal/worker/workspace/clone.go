@@ -211,6 +211,7 @@ func newGitProxyServer(endpointURL, gitServicePath, repositoryName, accessToken 
 		// clone tokens. This is mostly a gate to finding when we accidentally
 		// would access another repo.
 		if !strings.HasPrefix(r.URL.Path, "/"+repositoryName+"/") {
+			fmt.Printf("INVALID REQUEST: %q %q\n", r.URL.Path, repositoryName)
 			w.WriteHeader(http.StatusForbidden)
 			return
 		}
