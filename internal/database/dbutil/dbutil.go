@@ -44,6 +44,7 @@ func (nt NullTime) Value() (driver.Value, error) {
 	return *nt.Time, nil
 }
 
+// NullTimeColumn represents a timestamp that should be inserted/updated as NULL when t.IsZero() is true.
 func NullTimeColumn(t time.Time) *time.Time {
 	if t.IsZero() {
 		return nil
@@ -118,6 +119,7 @@ func (n NullInt32) Value() (driver.Value, error) {
 	return *n.N, nil
 }
 
+// NullInt32Column represents an int32 that should be inserted/updated as NULL when the value is 0.
 func NullInt32Column(n int32) *int32 {
 	if n == 0 {
 		return nil
@@ -161,6 +163,7 @@ func (n NullInt64) Value() (driver.Value, error) {
 	return *n.N, nil
 }
 
+// NullInt64Column represents an int64 that should be inserted/updated as NULL when the value is 0.
 func NullInt64Column(n int64) *int64 {
 	if n == 0 {
 		return nil
