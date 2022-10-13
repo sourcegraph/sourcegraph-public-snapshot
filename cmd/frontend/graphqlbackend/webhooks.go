@@ -71,28 +71,92 @@ func (r *webhookResolver) UpdatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: r.hook.UpdatedAt}
 }
 
-func (r *schemaResolver) Webhooks(ctx context.Context, args *struct {
-	First *int    // Default to 20
-	After *string // Default to first item
-	Kind  *string // Default to no filtering
-}) *webhookConnectionResolver {
-	// TODO: Use the fields above to fetch the list of desired hooks
-	return &webhookConnectionResolver{}
+func (r *schemaResolver) Webhooks(ctx context.Context, args *webhookArgs) (*webhookConnectionResolver, error) {
+	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
+		return nil, auth.ErrMustBeSiteAdmin
+	}
+	opts, err := args.toWebhookListOptions()
+	if err != nil {
+		return nil, err
+	}
+	return &webhookConnectionResolver{
+		db:  r.db,
+		opt: opts,
+	}, nil
+}
+
+type webhookArgs struct {
+	graphqlutil.ConnectionArgs
+	After *string
+	Kind  *string
+}
+
+func (args *webhookArgs) toWebhookListOptions() (database.WebhookListOptions, error) {
+	opt := database.WebhookListOptions{}
+	if args.Kind != nil {
+		opt.Kind = *args.Kind
+	}
+	if args.After != nil {
+		cursor, err := UnmarshalWebhookCursor(args.After)
+		if err != nil {
+			return opt, err
+		}
+		opt.Cursor = cursor
+	} else {
+		opt.Cursor = &types.Cursor{
+			Column:    "id",
+			Direction: "next",
+		}
+	}
+	args.Set(&opt.LimitOffset)
+	return opt, nil
 }
 
 type webhookConnectionResolver struct {
+	db  database.DB
+	opt database.WebhookListOptions
 }
 
-func (r *webhookConnectionResolver) Nodes() ([]*webhookResolver, error) {
-	return nil, errors.New("TODO: Nodes")
+func (r *webhookConnectionResolver) Nodes(ctx context.Context) ([]*webhookResolver, error) {
+	webhooks, err := r.db.Webhooks(keyring.Default().WebhookKey).List(ctx, r.opt)
+	if err != nil {
+		return nil, err
+	}
+	resolvers := make([]*webhookResolver, 0, len(webhooks))
+	for _, wh := range webhooks {
+		resolvers = append(resolvers, &webhookResolver{
+			hook: wh,
+		})
+	}
+	return resolvers, nil
 }
 
-func (r *webhookConnectionResolver) TotalCount() (int32, error) {
-	return 0, errors.New("TODO: TotalCount")
+func (r *webhookConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+	// TODO: implement Count db method?
+	webhooks, err := r.db.Webhooks(keyring.Default().WebhookKey).List(ctx, r.opt)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(webhooks)), nil
 }
 
-func (r *webhookConnectionResolver) PageInfo() (*graphqlutil.PageInfo, error) {
-	return nil, errors.New("TODO: PageInfo")
+func (r *webhookConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	webhooks, err := r.db.Webhooks(keyring.Default().WebhookKey).List(ctx, r.opt)
+	if err != nil {
+		return nil, err
+	}
+	if len(webhooks) == 0 || r.opt.LimitOffset == nil || len(webhooks) <= r.opt.Limit || r.opt.Cursor == nil {
+		return graphqlutil.HasNextPage(false), nil
+	}
+
+	value := webhooks[len(webhooks)-1].ID
+	return graphqlutil.NextPageCursor(MarshalWebhookCursor(
+		&types.Cursor{
+			Column:    r.opt.Cursor.Column,
+			Value:     string(value),
+			Direction: r.opt.Cursor.Direction,
+		},
+	)), nil
 }
 
 func webhookByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*webhookResolver, error) {
@@ -105,7 +169,7 @@ func webhookByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*webhoo
 		return nil, err
 	}
 
-	hook, err := db.Webhooks(keyring.Default().WebhookLogKey).GetByID(ctx, id)
+	hook, err := db.Webhooks(keyring.Default().WebhookKey).GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -136,4 +200,24 @@ func (r *schemaResolver) CreateWebhook(ctx context.Context, args *struct {
 		return nil, err
 	}
 	return &webhookResolver{hook: webhook, db: r.db}, nil
+}
+
+const webhookCursorKind = "WebhookCursor"
+
+func MarshalWebhookCursor(cursor *types.Cursor) string {
+	return string(relay.MarshalID(webhookCursorKind, cursor))
+}
+
+func UnmarshalWebhookCursor(cursor *string) (*types.Cursor, error) {
+	if cursor == nil {
+		return nil, nil
+	}
+	if kind := relay.UnmarshalKind(graphql.ID(*cursor)); kind != webhookCursorKind {
+		return nil, errors.Errorf("cannot unmarshal repository cursor type: %q", kind)
+	}
+	var spec *types.Cursor
+	if err := relay.UnmarshalSpec(graphql.ID(*cursor), &spec); err != nil {
+		return nil, err
+	}
+	return spec, nil
 }

@@ -278,7 +278,8 @@ func (s *webhookStore) List(ctx context.Context, opt WebhookListOptions) ([]*typ
 }
 
 type WebhookListOptions struct {
-	Kind string
+	Kind   string
+	Cursor *types.Cursor // TODO: incorporate into DB query
 	*LimitOffset
 }
 

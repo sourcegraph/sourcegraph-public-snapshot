@@ -14,9 +14,103 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+func TestListWebhooks(t *testing.T) {
+	users := database.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+	webhookStore := database.NewMockWebhookStore()
+	//webhookStore.ListFunc.SetDefaultReturn(expectedWebhooks, nil)
+	webhooks := []*types.Webhook{
+		{
+			ID:           1,
+			CodeHostKind: extsvc.KindGitHub,
+		},
+		{
+			ID:           2,
+			CodeHostKind: extsvc.KindGitLab,
+		},
+		{
+			ID:           3,
+			CodeHostKind: extsvc.KindGitHub,
+		},
+		{
+			ID:           4,
+			CodeHostKind: extsvc.KindGitHub,
+		},
+	}
+	webhookStore.ListFunc.SetDefaultHook(func(ctx2 context.Context, options database.WebhookListOptions) ([]*types.Webhook, error) {
+		if options.Kind == extsvc.KindGitHub {
+			return append([]*types.Webhook{webhooks[0]}, webhooks[1:3]...), nil
+		}
+		if options.LimitOffset != nil {
+			return webhooks[options.Offset:options.Limit], nil
+		}
+		return webhooks, nil
+	})
+
+	db := database.NewMockDB()
+	db.WebhooksFunc.SetDefaultReturn(webhookStore)
+	db.UsersFunc.SetDefaultReturn(users)
+	schema := mustParseGraphQLSchema(t, db)
+	RunTests(t, []*Test{
+		{
+			Label:   "basic",
+			Context: ctx,
+			Schema:  schema,
+			Query: `
+				{
+					webhooks {
+						nodes { id }
+						totalCount
+						pageInfo { hasNextPage }
+					}
+				}
+			`,
+			ExpectedResult: `{"webhooks":
+				{
+					"nodes":[
+						{"id":"V2ViaG9vazox"},
+						{"id":"V2ViaG9vazoy"},
+						{"id":"V2ViaG9vazoz"},
+						{"id":"V2ViaG9vazo0"}
+					],
+					"totalCount":4,
+					"pageInfo":{"hasNextPage":false}
+				}}`,
+		},
+		{
+			Label:   "specify first",
+			Context: ctx,
+			Schema:  schema,
+			Query: `query Webhooks($first: Int!) {
+						webhooks(first: $first) {
+							nodes { id }
+							totalCount
+							pageInfo { hasNextPage }
+						}
+					}
+			`,
+			ExpectedResult: `{"webhooks":
+				{
+					"nodes":[
+						{"id":"V2ViaG9vazox"},
+						{"id":"V2ViaG9vazoy"}
+					],
+					"totalCount":2,
+					"pageInfo":{"hasNextPage":false}
+				}}`,
+			Variables: map[string]any{
+				"first": 2,
+			},
+		},
+	})
+}
 
 func TestCreateWebhook(t *testing.T) {
 	users := database.NewMockUserStore()

@@ -46,6 +46,7 @@ type Test struct {
 	ExpectedResult string
 	ExpectedErrors []*gqlerrors.QueryError
 	Label          string
+	Focus          bool
 }
 
 // RunTests runs the given GraphQL test cases as subtests.
@@ -55,6 +56,16 @@ func RunTests(t *testing.T, tests []*Test) {
 	if len(tests) == 1 {
 		RunTest(t, tests[0])
 		return
+	}
+
+	focused := make([]*Test, 0, len(tests))
+	for _, test := range tests {
+		if test.Focus {
+			focused = append(focused, test)
+		}
+	}
+	if len(focused) != 0 {
+		tests = focused
 	}
 
 	for i, test := range tests {
