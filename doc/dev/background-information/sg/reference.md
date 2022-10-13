@@ -37,6 +37,7 @@ Available comamndsets in `sg.config.yaml`:
 * enterprise-codeinsights
 * enterprise-codeintel 🧠
 * enterprise-e2e
+* enterprise-single-gitserver
 * iam
 * monitoring
 * monitoring-alerts
