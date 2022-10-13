@@ -66,7 +66,6 @@ func (s *store) FindClosestDumps(ctx context.Context, repositoryID int, commit, 
 }
 
 const findClosestDumpsQuery = `
--- source: internal/codeintel/uploads/internal/store/store_dumps.go:FindClosestDumps
 WITH
 visible_uploads AS (%s)
 SELECT
@@ -150,7 +149,6 @@ func (s *store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositor
 }
 
 const findClosestDumpsFromGraphFragmentCommitGraphQuery = `
--- source: internal/codeintel/uploads/internal/store/store_dumps.go:FindClosestDumpsFromGraphFragment
 WITH
 visible_uploads AS (%s)
 SELECT
@@ -163,7 +161,6 @@ JOIN lsif_uploads u ON u.id = vu.upload_id
 `
 
 const findClosestDumpsFromGraphFragmentQuery = `
--- source: internal/codeintel/uploads/internal/store/store_dumps.go:FindClosestDumpsFromGraphFragment
 SELECT
 	u.id,
 	u.commit,
@@ -222,7 +219,6 @@ func (s *store) GetDumpsWithDefinitionsForMonikers(ctx context.Context, monikers
 }
 
 const definitionDumpsQuery = `
--- source: internal/codeintel/stores/dbstore/xrepo.go:DefinitionDumps
 WITH
 ranked_uploads AS (
 	SELECT
@@ -297,7 +293,6 @@ func (s *store) GetDumpsByIDs(ctx context.Context, ids []int) (_ []types.Dump, e
 }
 
 const getDumpsByIDsQuery = `
--- source: internal/codeintel/stores/dbstore/dumps.go:GetDumpsByIDs
 SELECT
 	u.id,
 	u.commit,
@@ -343,7 +338,6 @@ func (s *store) DeleteOverlappingDumps(ctx context.Context, repositoryID int, co
 }
 
 const deleteOverlappingDumpsQuery = `
--- source: internal/codeintel/stores/dbstore/dumps.go:DeleteOverlappingDumps
 WITH
 candidates AS (
 	SELECT u.id
@@ -400,7 +394,6 @@ func makeVisibleUploadsQuery(repositoryID int, commit string) *sqlf.Query {
 }
 
 const visibleUploadsQuery = `
--- source: internal/codeintel/uploads/internal/store/store_dumps.go:makeVisibleUploadsQuery
 SELECT
 	t.upload_id
 FROM (
@@ -433,7 +426,6 @@ func makeVisibleUploadCandidatesQuery(repositoryID int, commits ...string) *sqlf
 }
 
 const visibleUploadCandidatesQuery = `
--- source: internal/codeintel/uploads/internal/store/store_dumps.go:makeVisibleUploadCandidatesQuery
 SELECT
 	nu.repository_id,
 	upload_id::integer,

@@ -4,7 +4,6 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	sgTypes "github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -28,7 +27,7 @@ type RequestState struct {
 func NewRequestState(
 	uploads []types.Dump,
 	authChecker authz.SubRepoPermissionChecker,
-	gitclient shared.GitserverClient, repo *sgTypes.Repo, commit, path string,
+	gitclient GitserverClient, repo *sgTypes.Repo, commit, path string,
 	maxIndexes int,
 	hunkCacheSize int,
 ) RequestState {
@@ -65,7 +64,7 @@ func (r *RequestState) SetUploadsDataLoader(uploads []types.Dump) {
 	}
 }
 
-func (r *RequestState) SetLocalGitTreeTranslator(client shared.GitserverClient, repo *sgTypes.Repo, commit, path string, hunkCacheSize int) error {
+func (r *RequestState) SetLocalGitTreeTranslator(client GitserverClient, repo *sgTypes.Repo, commit, path string, hunkCacheSize int) error {
 	hunkCache, err := NewHunkCache(hunkCacheSize)
 	if err != nil {
 		return err
@@ -82,7 +81,7 @@ func (r *RequestState) SetLocalGitTreeTranslator(client shared.GitserverClient, 
 	return nil
 }
 
-func (r *RequestState) SetLocalCommitCache(client shared.GitserverClient) {
+func (r *RequestState) SetLocalCommitCache(client GitserverClient) {
 	r.commitCache = NewCommitCache(client)
 }
 

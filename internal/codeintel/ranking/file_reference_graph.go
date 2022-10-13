@@ -109,27 +109,36 @@ func (s *Service) buildFileReferenceGraph(ctx context.Context, repoName api.Repo
 			g.Go(searcher)
 		}
 
-		if err := g.Wait(); err != nil {
-			return err
-		}
-		close(out)
+		// Another group which will wait on the workers and sending out.
+		gOut := group.New().WithContext(ctx)
 
-		toSet := map[string]struct{}{}
-		for paths := range out {
-			for _, path := range paths {
-				toSet[path] = struct{}{}
+		gOut.Go(func(ctx context.Context) error {
+			if err := g.Wait(); err != nil {
+				return err
 			}
-		}
+			close(out)
+			return nil
+		})
 
-		for to := range toSet {
-			select {
-			case ch <- streamedEdge{from: h.Name, to: to}:
-			case <-ctx.Done():
-				return ctx.Err()
+		gOut.Go(func(ctx context.Context) error {
+			toSet := map[string]struct{}{}
+			for paths := range out {
+				for _, path := range paths {
+					if _, ok := toSet[path]; ok {
+						continue
+					}
+					toSet[path] = struct{}{}
+					select {
+					case ch <- streamedEdge{from: h.Name, to: path}:
+					case <-ctx.Done():
+						return ctx.Err()
+					}
+				}
 			}
-		}
+			return nil
+		})
 
-		return nil
+		return gOut.Wait()
 	}
 
 	go func() {

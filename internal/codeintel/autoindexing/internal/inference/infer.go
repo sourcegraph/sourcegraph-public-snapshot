@@ -1,4 +1,4 @@
-package autoindexing
+package inference
 
 import (
 	"strings"
@@ -64,7 +64,6 @@ func inferNpmRepositoryAndRevision(pkg precise.Package) (api.RepoName, string, b
 
 	logger := log.Scoped("inferNpmRepositoryAndRevision", "")
 	npmPkg, err := reposource.ParseNpmPackageFromPackageSyntax(reposource.PackageName(pkg.Name))
-
 	if err != nil {
 		logger.Error("invalid npm package name in database", log.Error(err))
 		return "", "", false
@@ -94,7 +93,6 @@ func inferPythonRepositoryAndRevision(pkg precise.Package) (api.RepoName, string
 
 	logger := log.Scoped("inferPythonRepositoryAndRevision", "")
 	pythonPkg, err := reposource.ParsePythonPackageFromName(reposource.PackageName(pkg.Name))
-
 	if err != nil {
 		logger.Error("invalid python package name in database", log.Error(err), log.String("pkg", pkg.Name))
 		return "", "", false

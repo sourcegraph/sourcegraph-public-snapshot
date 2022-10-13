@@ -473,34 +473,6 @@ func jsonbColumn(metadata any) (msg json.RawMessage, err error) {
 	return
 }
 
-func nullInt32Column(n int32) *int32 {
-	if n == 0 {
-		return nil
-	}
-	return &n
-}
-
-func nullInt64Column(n int64) *int64 {
-	if n == 0 {
-		return nil
-	}
-	return &n
-}
-
-func nullTimeColumn(t time.Time) *time.Time {
-	if t.IsZero() {
-		return nil
-	}
-	return &t
-}
-
-func nullStringColumn(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
-}
-
 type LimitOpts struct {
 	Limit int
 }

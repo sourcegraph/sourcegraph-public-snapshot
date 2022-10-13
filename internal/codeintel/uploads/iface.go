@@ -11,8 +11,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	sharedIndexes "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
+	policiesshared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	codeintelgitserver "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/gitserver"
 	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	sharedUploads "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -58,7 +60,7 @@ type RepoStore interface {
 
 type UploadServiceForExpiration interface {
 	// Uploads
-	GetUploads(ctx context.Context, opts codeinteltypes.GetUploadsOptions) (uploads []codeinteltypes.Upload, totalCount int, err error)
+	GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (uploads []codeinteltypes.Upload, totalCount int, err error)
 	UpdateUploadRetention(ctx context.Context, protectedIDs, expiredIDs []int) (err error)
 	BackfillReferenceCountBatch(ctx context.Context, batchSize int) error
 
@@ -70,7 +72,7 @@ type UploadServiceForExpiration interface {
 }
 
 type PolicyService interface {
-	GetConfigurationPolicies(ctx context.Context, opts codeinteltypes.GetConfigurationPoliciesOptions) ([]codeinteltypes.ConfigurationPolicy, int, error)
+	GetConfigurationPolicies(ctx context.Context, opts policiesshared.GetConfigurationPoliciesOptions) ([]codeinteltypes.ConfigurationPolicy, int, error)
 }
 
 type PolicyMatcher interface {

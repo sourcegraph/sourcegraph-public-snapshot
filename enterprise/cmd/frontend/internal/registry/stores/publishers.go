@@ -64,7 +64,6 @@ func (s *extensionStore) publishersSQLCTE() *sqlf.Query {
 func (s *extensionStore) listPublishers(ctx context.Context, conds []*sqlf.Query, limitOffset *database.LimitOffset) ([]*Publisher, error) {
 	conds = append(conds, sqlf.Sprintf("TRUE"))
 	q := sqlf.Sprintf(`
--- source: enterprise/cmd/frontend/internal/registry/stores/publishers.go:listPublishers
 %s
 SELECT
 	user_id,
@@ -106,7 +105,6 @@ ORDER BY
 
 func (s *extensionStore) CountPublishers(ctx context.Context, opt PublishersListOptions) (int, error) {
 	q := sqlf.Sprintf(`
--- source: enterprise/cmd/frontend/internal/registry/stores/publishers.go:CountPublishers
 %s
 SELECT COUNT(*) FROM publishers WHERE (%s)`, s.publishersSQLCTE(), sqlf.Join(opt.sqlConditions(), ") AND ("))
 
@@ -122,7 +120,6 @@ func (s *extensionStore) GetPublisher(ctx context.Context, name string) (*Publis
 	var userID, orgID sql.NullInt64
 	var p Publisher
 	q := sqlf.Sprintf(`
--- source: enterprise/cmd/frontend/internal/registry/stores/publishers.go:GetPublisher
 WITH publishers AS (
 	(
 		SELECT

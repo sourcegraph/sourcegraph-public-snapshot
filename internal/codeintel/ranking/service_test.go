@@ -25,10 +25,10 @@ func TestGetRepoRank(t *testing.T) {
 		t.Fatalf("unexpected error getting repo rank: %s", err)
 	}
 
-	if expected := 1.0; !cmpFloat(rank[0], expected) {
+	if expected := 0.0; !cmpFloat(rank[0], expected) {
 		t.Errorf("unexpected rank[0]. want=%.5f have=%.5f", expected, rank[0])
 	}
-	if expected := 0.4; !cmpFloat(rank[1], expected) {
+	if expected := 0.6; !cmpFloat(rank[1], expected) {
 		t.Errorf("unexpected rank[1]. want=%.5f have=%.5f", expected, rank[1])
 	}
 }
@@ -58,10 +58,10 @@ func TestGetRepoRankWithUserBoostedScores(t *testing.T) {
 		t.Fatalf("unexpected error getting repo rank: %s", err)
 	}
 
-	if expected := 1 - (400.0 / 401.0); !cmpFloat(rank[0], expected) {
+	if expected := 400.0 / 401.0; !cmpFloat(rank[0], expected) {
 		t.Errorf("unexpected rank[0]. want=%.5f have=%.5f", expected, rank[0])
 	}
-	if expected := 0.4; !cmpFloat(rank[1], expected) {
+	if expected := 0.6; !cmpFloat(rank[1], expected) {
 		t.Errorf("unexpected rank[1]. want=%.5f have=%.5f", expected, rank[1])
 	}
 }
@@ -94,22 +94,24 @@ func TestGetDocumentRanks(t *testing.T) {
 	}
 
 	expected := map[string][]float64{
-		"code/a.go":           {0, 0, 0, 0.900, 0.00 / 13.0},
-		"code/b.go":           {0, 0, 0, 0.900, 1.00 / 13.0},
-		"code/c.go":           {0, 0, 0, 0.900, 2.00 / 13.0},
-		"code/d.go":           {0, 0, 0, 0.900, 3.00 / 13.0},
-		"main.go":             {0, 0, 0, 0.875, 4.00 / 13.0},
-		"node_modules/bar.js": {0, 1, 0, 0.950, 5.00 / 13.0},
-		"node_modules/baz.js": {0, 1, 0, 0.950, 6.00 / 13.0},
-		"node_modules/foo.js": {0, 1, 0, 0.950, 7.00 / 13.0},
-		"rendered/web/min.js": {1, 0, 0, 0.950, 8.00 / 13.0},
-		"test/a.go":           {0, 0, 1, 0.900, 9.00 / 13.0},
-		"test/b.go":           {0, 0, 1, 0.900, 10.0 / 13.0},
-		"test/c.go":           {0, 0, 1, 0.900, 11.0 / 13.0},
-		"test/d.go":           {0, 0, 1, 0.900, 12.0 / 13.0},
+		"code/a.go":           {1, 1, 1, 0.100, 1 - (0.00 / 13.0)},
+		"code/b.go":           {1, 1, 1, 0.100, 1 - (1.00 / 13.0)},
+		"code/c.go":           {1, 1, 1, 0.100, 1 - (2.00 / 13.0)},
+		"code/d.go":           {1, 1, 1, 0.100, 1 - (3.00 / 13.0)},
+		"main.go":             {1, 1, 1, 0.125, 1 - (4.00 / 13.0)},
+		"node_modules/bar.js": {1, 0, 1, 0.050, 1 - (5.00 / 13.0)},
+		"node_modules/baz.js": {1, 0, 1, 0.050, 1 - (6.00 / 13.0)},
+		"node_modules/foo.js": {1, 0, 1, 0.050, 1 - (7.00 / 13.0)},
+		"rendered/web/min.js": {0, 1, 1, 0.050, 1 - (8.00 / 13.0)},
+		"test/a.go":           {1, 1, 0, 0.100, 1 - (9.00 / 13.0)},
+		"test/b.go":           {1, 1, 0, 0.100, 1 - (10.0 / 13.0)},
+		"test/c.go":           {1, 1, 0, 0.100, 1 - (11.0 / 13.0)},
+		"test/d.go":           {1, 1, 0, 0.100, 1 - (12.0 / 13.0)},
 	}
 
-	if diff := cmp.Diff(expected, ranks); diff != "" {
+	opt := cmp.Comparer(cmpFloat)
+
+	if diff := cmp.Diff(expected, ranks, opt); diff != "" {
 		t.Errorf("unexpected ranks (-want +got):\n%s", diff)
 	}
 }

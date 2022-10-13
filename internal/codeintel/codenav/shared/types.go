@@ -5,10 +5,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
-type Symbol struct {
-	Name string
-}
-
 // Location is an LSP-like location scoped to a dump.
 type Location struct {
 	DumpID int
