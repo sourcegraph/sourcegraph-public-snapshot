@@ -22,7 +22,7 @@ import (
 
 type testFunc func(context.Context, api.RepoID, finishFunc) bool
 
-func testForNextAndFinish(t *testing.T, store *basestore.Store, itr *persistentRepoIterator, seen []api.RepoID, do testFunc) (*persistentRepoIterator, []api.RepoID) {
+func testForNextAndFinish(t *testing.T, store *basestore.Store, itr *PersistentRepoIterator, seen []api.RepoID, do testFunc) (*PersistentRepoIterator, []api.RepoID) {
 	ctx := context.Background()
 
 	for true {
@@ -126,7 +126,7 @@ func TestForNextAndFinish(t *testing.T) {
 		got, seen := testForNextAndFinish(t, store, itr, seen, do)
 
 		require.Equal(t, got.Cursor, 2)
-		reloaded, _ := LoadWithClock(ctx, store, got.id, clock)
+		reloaded, _ := LoadWithClock(ctx, store, got.Id, clock)
 		require.Equal(t, reloaded.Cursor, got.Cursor)
 
 		// now iterate from the starting position _after_ reloading from the db
@@ -149,7 +149,7 @@ func TestNew(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	load, err := Load(ctx, store, itr.id)
+	load, err := Load(ctx, store, itr.Id)
 	if err != nil {
 		return
 	}

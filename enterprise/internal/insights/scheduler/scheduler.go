@@ -7,6 +7,7 @@ import (
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 
 	"github.com/lib/pq"
+
 	log "github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -38,6 +40,7 @@ type BaseJob struct {
 	ExecutionLogs   []workerutil.ExecutionLogEntry
 	WorkerHostname  string
 	Cancel          bool
+	backfillId      int
 }
 
 func (b *BaseJob) RecordID() int {
@@ -58,6 +61,7 @@ var baseJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("insights_background_jobs.execution_logs"),
 	sqlf.Sprintf("insights_background_jobs.worker_hostname"),
 	sqlf.Sprintf("insights_background_jobs.cancel"),
+	sqlf.Sprintf("insights_background_jobs.backfill_id"),
 }
 
 func scanBaseJob(s dbutil.Scanner) (*BaseJob, error) {
@@ -78,6 +82,7 @@ func scanBaseJob(s dbutil.Scanner) (*BaseJob, error) {
 		pq.Array(&executionLogs),
 		&job.WorkerHostname,
 		&job.Cancel,
+		&job.backfillId,
 	); err != nil {
 		return nil, err
 	}
@@ -156,5 +161,36 @@ var _ workerutil.Handler = &handler{}
 
 func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
 	logger.Info("handler called", log.String("job", jobName), log.Int("recordId", record.RecordID()))
+	store := basestore.NewWithHandle(h.store.Handle())
+
+	job := record.(*BaseJob)
+
+	backfill, err := loadBackfill(ctx, store, job.backfillId)
+	if err != nil {
+		return errors.Wrap(err, "loadBackfill")
+	}
+
+	itr, err := backfill.repoIterator(ctx, store)
+	if err != nil {
+		return errors.Wrap(err, "repoIterator")
+	}
+
+	for true {
+		repoId, more, finish := itr.NextWithFinish()
+		if !more {
+			break
+		}
+
+		// do work
+		logger.Info("doing iteration work", log.String("job", jobName), log.Int("repo_id", int(repoId)))
+
+		err = finish(ctx, store, nil)
+		if err != nil {
+			return err
+		}
+	}
+
+	// todo handle errors down here after the main loop https://github.com/sourcegraph/sourcegraph/issues/42724
+
 	return nil
 }

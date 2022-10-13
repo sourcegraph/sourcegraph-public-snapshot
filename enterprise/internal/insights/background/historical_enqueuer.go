@@ -633,7 +633,7 @@ func (a *backfillAnalyzer) analyzeSeries(ctx context.Context, bctx *buildSeriesC
 	// We need a way to find out in that historical timeframe what the total # of results was.
 	// There are only two ways to do that:
 	//
-	// 1. Run `type:diff` searches, this would give us matching lines added/removed/changed over
+	// 1. Run `type:dff` searches, this would give us matching lines added/removed/changed over
 	//    time. To use this, we would need to ensure we *start* looking for historical data at the
 	//    very first commit in the repo, and keep a running tally of added/removed/changed lines -
 	//    this requires a lot of book-keeping.
