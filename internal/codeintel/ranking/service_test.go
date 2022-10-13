@@ -25,10 +25,10 @@ func TestGetRepoRank(t *testing.T) {
 		t.Fatalf("unexpected error getting repo rank: %s", err)
 	}
 
-	if expected := 1.0; !cmpFloat(rank[0], expected) {
+	if expected := 0.0; !cmpFloat(rank[0], expected) {
 		t.Errorf("unexpected rank[0]. want=%.5f have=%.5f", expected, rank[0])
 	}
-	if expected := 0.4; !cmpFloat(rank[1], expected) {
+	if expected := 0.6; !cmpFloat(rank[1], expected) {
 		t.Errorf("unexpected rank[1]. want=%.5f have=%.5f", expected, rank[1])
 	}
 }
@@ -58,10 +58,10 @@ func TestGetRepoRankWithUserBoostedScores(t *testing.T) {
 		t.Fatalf("unexpected error getting repo rank: %s", err)
 	}
 
-	if expected := 1 - (400.0 / 401.0); !cmpFloat(rank[0], expected) {
+	if expected := 400.0 / 401.0; !cmpFloat(rank[0], expected) {
 		t.Errorf("unexpected rank[0]. want=%.5f have=%.5f", expected, rank[0])
 	}
-	if expected := 0.4; !cmpFloat(rank[1], expected) {
+	if expected := 0.6; !cmpFloat(rank[1], expected) {
 		t.Errorf("unexpected rank[1]. want=%.5f have=%.5f", expected, rank[1])
 	}
 }

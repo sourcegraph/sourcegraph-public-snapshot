@@ -59,7 +59,7 @@ func (s *Service) GetRepoRank(ctx context.Context, repoName api.RepoName) (_ []f
 		return nil, err
 	}
 
-	return []float64{1 - squashRange(userRank), 1 - starRank}, nil
+	return []float64{squashRange(userRank), starRank}, nil
 }
 
 // copy pasta
