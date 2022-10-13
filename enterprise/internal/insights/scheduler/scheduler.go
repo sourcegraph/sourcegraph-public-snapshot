@@ -94,7 +94,7 @@ func scanBaseJob(s dbutil.Scanner) (*BaseJob, error) {
 	return &job, nil
 }
 
-type Scheduler struct {
+type BackgroundJobMonitor struct {
 	inProgressWorker   *workerutil.Worker
 	inProgressResetter *dbworker.Resetter
 	inProgressStore    dbworkerstore.Store
@@ -102,20 +102,18 @@ type Scheduler struct {
 	newBackfillWorker   *workerutil.Worker
 	newBackfillResetter *dbworker.Resetter
 	newBackfillStore    dbworkerstore.Store
-
-	store *basestore.Store
 }
 
-func NewScheduler(ctx context.Context, db edb.InsightsDB, obsContext *observation.Context) *Scheduler {
-	scheduler := &Scheduler{store: basestore.NewWithHandle(db.Handle())}
+func NewBackgroundJobMonitor(ctx context.Context, db edb.InsightsDB, obsContext *observation.Context) *BackgroundJobMonitor {
+	monitor := &BackgroundJobMonitor{}
 
-	scheduler.inProgressWorker, scheduler.inProgressResetter, scheduler.inProgressStore = makeInProgressWorker(ctx, db, obsContext)
-	scheduler.newBackfillWorker, scheduler.newBackfillResetter, scheduler.newBackfillStore = makeNewBackfillWorker(ctx, db, obsContext)
+	monitor.inProgressWorker, monitor.inProgressResetter, monitor.inProgressStore = makeInProgressWorker(ctx, db, obsContext)
+	monitor.newBackfillWorker, monitor.newBackfillResetter, monitor.newBackfillStore = makeNewBackfillWorker(ctx, db, obsContext)
 
-	return scheduler
+	return monitor
 }
 
-func (s *Scheduler) Routines() []goroutine.BackgroundRoutine {
+func (s *BackgroundJobMonitor) Routines() []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
 		s.inProgressWorker,
 		s.inProgressResetter,
@@ -263,4 +261,12 @@ func (s *Scheduler) EnqueueBackfill(ctx context.Context, backfill *SeriesBackfil
 		return errors.New("invalid series backfill")
 	}
 	return s.store.Exec(ctx, sqlf.Sprintf("insert into insights_background_jobs (backfill_id) VALUES (%s)", backfill.Id))
+}
+
+type Scheduler struct {
+	store *basestore.Store
+}
+
+func NewScheduler(db edb.InsightsDB, obsContext *observation.Context) *Scheduler {
+	return &Scheduler{store: basestore.NewWithHandle(db.Handle())}
 }
