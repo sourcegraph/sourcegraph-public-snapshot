@@ -274,6 +274,8 @@ var sg = &cli.App{
 		// Dev environment
 		secretCommand,
 		setupCommand,
+		srcCommand,
+		srcInstanceCommand,
 
 		// Company
 		teammateCommand,
