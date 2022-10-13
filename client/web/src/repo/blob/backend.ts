@@ -3,7 +3,7 @@ import { map } from 'rxjs/operators'
 
 import { memoizeObservable } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
+import { makeRepoURI, UIRange } from '@sourcegraph/shared/src/util/url'
 
 import { requestGraphQL } from '../../backend/graphql'
 import {
@@ -12,6 +12,7 @@ import {
     BlobStencilFields,
     BlobVariables,
     HighlightResponseFormat,
+    DefinitionFields,
 } from '../../graphql-operations'
 import { useExperimentalFeatures } from '../../stores'
 
@@ -158,3 +159,153 @@ export const usePrefetchBlobFormat = (): HighlightResponseFormat => {
      */
     return HighlightResponseFormat.HTML_HIGHLIGHT
 }
+
+interface FetchDefinitionsFromRangesOptions {
+    repoName: string
+    revision: string
+    filePath: string
+    ranges: UIRange[]
+}
+
+export interface DefinitionResponse {
+    range: UIRange
+    definition: DefinitionFields | null
+}
+
+const buildRangeKey = (range: UIRange): string => {
+    const { start, end } = range
+    return `L${start.line}C${start.character}L${end.line}C${end.character}`
+}
+
+function fetchDefinitionsCacheKey(options: FetchDefinitionsFromRangesOptions): string {
+    const { repoName, revision, filePath, ranges } = options
+    return `${makeRepoURI({ repoName, revision, filePath })}?start=${ranges[0].start.line}&end=${ranges[0].end.line}`
+}
+
+export const DefinitionFieldsFragment = gql`
+    fragment DefinitionFields on Location {
+        resource {
+            path
+            repository {
+                name
+            }
+            commit {
+                oid
+            }
+        }
+        range {
+            start {
+                line
+                character
+            }
+            end {
+                line
+                character
+            }
+        }
+    }
+`
+
+interface FetchDefinitionsResult {
+    repository: {
+        commit: {
+            blob: {
+                lsif: {
+                    [key: string]: {
+                        nodes: DefinitionFields[]
+                    }
+                }
+            }
+        }
+    }
+}
+
+interface FetchDefinitionsVariables {
+    repoName: string
+    revision: string
+    filePath: string
+}
+
+export const fetchDefinitionsFromRanges = memoizeObservable((options: FetchDefinitionsFromRangesOptions): Observable<
+    DefinitionResponse[]
+> => {
+    const { repoName, revision, filePath, ranges } = options
+
+    const result = requestGraphQL<FetchDefinitionsResult, FetchDefinitionsVariables>(
+        `
+        query Definitions(
+            $repoName: String!
+            $revision: String!
+            $filePath: String!
+        ) {
+            repository(name: $repoName) {
+                commit(rev: $revision) {
+                    blob(path: $filePath) {
+                        lsif {
+                            ${ranges.map(
+                                range => `
+                                ${buildRangeKey(range)}: definitions(line: ${range.start.line}, character: ${
+                                    range.start.character
+                                }) {
+                                    nodes {
+                                        resource {
+                                            path
+                                            repository {
+                                                name
+                                            }
+                                            commit {
+                                                oid
+                                            }
+                                        }
+                                        range {
+                                            start {
+                                                line
+                                                character
+                                            }
+                                            end {
+                                                line
+                                                character
+                                            }
+                                        }
+                                    }
+                                }`
+                            )}
+                        }
+                    }
+                }
+            }
+        }
+    `,
+        {
+            repoName,
+            revision,
+            filePath,
+        }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => {
+            if (!data.repository?.commit) {
+                throw new Error('Commit not found')
+            }
+
+            const lsif = data.repository.commit.blob?.lsif
+
+            if (!lsif) {
+                // TODO: Return null?
+                throw new Error('Lsif not found')
+            }
+
+            const definitions = ranges.map(range => {
+                const key = buildRangeKey(range)
+                return {
+                    range: { start: range.start, end: range.end },
+                    definition: lsif[key]?.nodes[0] ?? null,
+                }
+            })
+
+            return definitions
+        })
+    )
+
+    return result
+}, fetchDefinitionsCacheKey)

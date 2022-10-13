@@ -1,11 +1,15 @@
 import { Extension, Facet, RangeSetBuilder, StateEffectType } from '@codemirror/state'
 import { Decoration, DecorationSet, EditorView, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { History } from 'history'
+import { Observable, of, Subject, Subscription } from 'rxjs'
+import { concatMap, debounceTime, map } from 'rxjs/operators'
+import { DeepNonNullable } from 'utility-types'
 
 import { logger, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
 import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
-import { UIRange } from '@sourcegraph/shared/src/util/url'
+import { toPrettyBlobURL, UIRange } from '@sourcegraph/shared/src/util/url'
 
+import { DefinitionResponse, fetchDefinitionsFromRanges } from '../backend'
 import { BlobInfo } from '../Blob'
 
 import { SelectedLineRange, selectedLines } from './linenumbers'
@@ -16,16 +20,47 @@ interface TokenLink {
 }
 
 class TokensAsLinks implements PluginValue {
+    private referencesLinks: TokenLink[]
+    private subscription: Subscription | undefined
+    private visiblePositionRange: Subject<{ from: number; to: number }> | undefined
+
     constructor(private view: EditorView, private setTokenLinks: StateEffectType<TokenLink[]>) {
-        const referencesLinks = this.buildReferencesLinksFromStencilRange(view)
+        this.referencesLinks = this.buildReferencesLinksFromStencilRange(view)
         requestAnimationFrame(() => {
             this.view.dispatch({
-                effects: this.setTokenLinks.of(referencesLinks),
+                effects: this.setTokenLinks.of(this.referencesLinks),
             })
         })
+
+        if (view.state.facet(tokensAsLinks).preloadGoToDefinition) {
+            this.visiblePositionRange = new Subject()
+            this.subscription = this.visiblePositionRange
+                .pipe(
+                    debounceTime(200),
+                    concatMap(({ from, to }) => this.getDefinitionsLinksWithinRange(view, from, to))
+                )
+                .subscribe(definitionLinks => {
+                    const mergedLinks = this.mergeLinks(this.referencesLinks, definitionLinks)
+                    requestAnimationFrame(() => {
+                        this.view.dispatch({
+                            effects: this.setTokenLinks.of(mergedLinks),
+                        })
+                    })
+                })
+
+            // Trigger first update
+            this.visiblePositionRange.next({ from: view.viewport.from, to: view.viewport.to })
+        }
+    }
+
+    public update(update: ViewUpdate): void {
+        if (update.viewportChanged) {
+            this.visiblePositionRange?.next({ from: update.view.viewport.from, to: update.view.viewport.to })
+        }
     }
 
     public destroy(): void {
+        this.subscription?.unsubscribe()
         requestAnimationFrame(() => {
             this.view.dispatch({
                 effects: this.setTokenLinks.of([]),
@@ -34,7 +69,34 @@ class TokensAsLinks implements PluginValue {
     }
 
     /**
-     * Build a set of TokenLinks from a set of stencil ranges
+     * Merge two sets of TokenLinks, replacing the url of matching ranges.
+     * This is intended to allow us to enhance the basic references links with definitions urls when they are available.
+     */
+    private mergeLinks(baseLinks: TokenLink[], definitionLinks: TokenLink[]): TokenLink[] {
+        const mergedLinks: TokenLink[] = []
+
+        for (const base of baseLinks) {
+            const definition = definitionLinks.find(
+                def =>
+                    def.range.start.line === base.range.start.line &&
+                    def.range.start.character === base.range.start.character &&
+                    def.range.end.line === base.range.end.line &&
+                    def.range.end.character === base.range.end.character
+            )
+
+            if (definition) {
+                mergedLinks.push(definition)
+            } else {
+                mergedLinks.push(base)
+            }
+        }
+
+        return mergedLinks
+    }
+
+    /**
+     * Build a set of TokenLinks from the stencil ranges in the current viewport.
+     * TODO: Do for each update?
      */
     private buildReferencesLinksFromStencilRange(view: EditorView): TokenLink[] {
         const {
@@ -51,6 +113,56 @@ class TokensAsLinks implements PluginValue {
                 position: { line: range.start.line + 1, character: range.start.character + 1 },
             })}#tab=references`,
         }))
+    }
+
+    /**
+     * Fetch definitions for all stencil ranges within the viewport.
+     */
+    private getDefinitionsLinksWithinRange(
+        view: EditorView,
+        lineFrom: number,
+        lineTo: number
+    ): Observable<TokenLink[]> {
+        const {
+            blobInfo: { stencil, repoName, revision, filePath },
+        } = view.state.facet(tokensAsLinks)
+
+        if (!stencil) {
+            return of()
+        }
+
+        const from = view.state.doc.lineAt(lineFrom).number
+        const to = view.state.doc.lineAt(lineTo).number
+
+        // We only want to fetch ranges that are within the current viewport
+        const ranges = stencil.filter(({ start, end }) => start.line + 1 >= from && end.line + 1 <= to)
+
+        /**
+         * Fetch definition information for all known stencil ranges within the viewport
+         * TODO: We should expose an API endpoint that does this rather than batching from the client.
+         * GitHub issue: UPDATEME
+         */
+        return fetchDefinitionsFromRanges({ ranges, repoName, filePath, revision }).pipe(
+            map(results =>
+                results
+                    .filter((result): result is DeepNonNullable<DefinitionResponse> => Boolean(result.definition))
+                    .map(({ range, definition }) => ({
+                        range,
+                        url: toPrettyBlobURL({
+                            repoName: definition.resource.repository.name,
+                            filePath: definition.resource.path,
+                            revision,
+                            commitID: definition.resource.commit.oid,
+                            position: definition.range
+                                ? {
+                                      line: definition.range.start.line + 1,
+                                      character: definition.range.start.character,
+                                  }
+                                : undefined,
+                        }),
+                    }))
+            )
+        )
     }
 }
 
@@ -86,7 +198,7 @@ const focusSelectedLine = ViewPlugin.fromClass(
 )
 
 /**
- * Given a set of ranges, returns a decoration set that adds a link to each range.
+ * Given a set of TokenLinks, returns a decoration set that wraps each specified range in a `<a>` tag.
  */
 function tokenLinksToRangeSet(view: EditorView, links: TokenLink[]): DecorationSet {
     const builder = new RangeSetBuilder<Decoration>()
@@ -113,10 +225,10 @@ function tokenLinksToRangeSet(view: EditorView, links: TokenLink[]): DecorationS
 }
 
 const decorateTokensAsLinks = Facet.define<TokenLink[], TokenLink[]>({
-    combine: ranges => ranges.flat(),
+    combine: links => links.flat(),
     enables: facet =>
         EditorView.decorations.compute([facet], state => {
-            const ranges = state.facet(facet)
+            const links = state.facet(facet)
             let decorations: DecorationSet | null = null
 
             return view => {
@@ -124,7 +236,7 @@ const decorateTokensAsLinks = Facet.define<TokenLink[], TokenLink[]>({
                     return decorations
                 }
 
-                return (decorations = tokenLinksToRangeSet(view, ranges))
+                return (decorations = tokenLinksToRangeSet(view, links))
             }
         }),
 })
@@ -136,8 +248,8 @@ function tokenLinks(): Extension {
 
     return [
         tokenLinksField,
-        ViewPlugin.define(view => new TokensAsLinks(view, setTokenLinks)),
         focusSelectedLine,
+        ViewPlugin.define(view => new TokensAsLinks(view, setTokenLinks)),
         EditorView.domEventHandlers({
             click(event: MouseEvent, view: EditorView) {
                 const target = event.target as HTMLElement
@@ -157,12 +269,14 @@ function tokenLinks(): Extension {
 interface TokensAsLinksFacet {
     blobInfo: BlobInfo
     history: History
+    preloadGoToDefinition: boolean
 }
 
 /**
  * Facet with which we can provide `BlobInfo`, specifically `stencil` ranges.
  *
- * This enables the `tokenLinks` extension which will decorate tokens with links to the references panel
+ * This enables the `tokenLinks` extension which will decorate tokens with links
+ * to either their definition or the references panel.
  */
 export const tokensAsLinks = Facet.define<TokensAsLinksFacet, TokensAsLinksFacet>({
     combine: source => source[0],

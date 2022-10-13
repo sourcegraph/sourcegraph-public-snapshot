@@ -444,6 +444,11 @@
           "description": "Use an in-memory strategy of loading Code Insights. Should only be used for benchmarking on large instances, not for customer use currently.",
           "type": "boolean",
           "default": false
+        },
+        "preloadGoToDefinition": {
+          "description": "Preload definitions for available tokens in the visible viewport.",
+          "type": "boolean",
+          "default": false
         }
       },
       "group": "Experimental"

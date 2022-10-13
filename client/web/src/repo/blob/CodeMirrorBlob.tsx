@@ -19,6 +19,8 @@ import { createUpdateableField, editorHeight, useCodeMirror } from '@sourcegraph
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { parseQueryAndHash, UIPositionSpec } from '@sourcegraph/shared/src/util/url'
 
+import { useExperimentalFeatures } from '../../stores'
+
 import { BlobInfo, BlobProps, updateBrowserHistoryIfChanged } from './Blob'
 import { blobPropsFacet } from './codemirror'
 import { showGitBlameDecorations } from './codemirror/blame-decorations'
@@ -119,6 +121,8 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
 
     const blameDecorations = useMemo(() => (blameHunks ? [showGitBlameDecorations.of(blameHunks)] : []), [blameHunks])
 
+    const preloadGoToDefinition = useExperimentalFeatures(features => features.preloadGoToDefinition ?? false)
+
     // Keep history and location in a ref so that we can use the latest value in
     // the onSelection callback without having to recreate it and having to
     // reconfigure the editor extensions
@@ -167,7 +171,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 initialSelection: position.line !== undefined ? position : null,
                 navigateToLineOnAnyClick: navigateToLineOnAnyClick ?? false,
             }),
-            intelligentKeyboardNavigation ? tokensAsLinks.of({ blobInfo, history }) : [],
+            intelligentKeyboardNavigation ? tokensAsLinks.of({ blobInfo, history, preloadGoToDefinition }) : [],
             syntaxHighlight.of(blobInfo),
             pinnedRangeField.init(() => (hasPin ? position : null)),
             extensionsController !== null && !navigateToLineOnAnyClick
