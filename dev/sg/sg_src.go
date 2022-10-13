@@ -32,14 +32,14 @@ var srcCtxCommand = &cli.Command{
 		{
 			Name:      "register",
 			Usage:     "Register (or edit an existing) Sourcegraph instance to target with src-cli",
-			UsageText: "sg src instance register [name] [endpoint] [access_token]",
+			UsageText: "sg src instance register [name] [endpoint]",
 			Action: func(cmd *cli.Context) error {
 				store, sc, err := getSrcSecret(cmd.Context, std.Out)
 				if err != nil {
 					return errors.Wrap(err, "failed to read existing instances")
 				}
-				if cmd.Args().Len() < 3 {
-					return errors.Newf("not enough arguments, want %d got %d", 3, cmd.Args().Len())
+				if cmd.Args().Len() != 2 {
+					return errors.Newf("not enough arguments, want %d got %d", 2, cmd.Args().Len())
 				}
 
 				name := cmd.Args().First()
@@ -52,7 +52,12 @@ var srcCtxCommand = &cli.Command{
 					return errors.New("cannot parse [endpoint], scheme must be http or https")
 				}
 
-				accessToken := cmd.Args().Slice()[2]
+				accessToken, err := std.Out.PromptPasswordf(
+					os.Stdin,
+					`Please enter the access token for Sourcegraph instance named %s (%s):`,
+					name,
+					endpoint,
+				)
 
 				sc.Instances[name] = srcInstance{
 					Endpoint:    endpoint,
