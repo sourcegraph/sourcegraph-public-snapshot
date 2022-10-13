@@ -832,6 +832,8 @@ commandsets:
       - zoekt-index-1
       - zoekt-web-0
       - zoekt-web-1
+    env:
+      SRC_GIT_SERVERS: 127.0.0.1:3501
 
   enterprise-e2e:
     <<: *enterprise_set
