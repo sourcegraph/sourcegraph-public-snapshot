@@ -62,7 +62,7 @@ func (s *webhookStore) Create(ctx context.Context, kind, urn string, actorUID in
 
 	if secret != nil {
 		encryptedSecret, keyID, err = secret.Encrypt(ctx, s.key)
-		if err != nil || (encryptedSecret == "" && keyID == "") {
+		if err != nil {
 			return nil, errors.Wrap(err, "encrypting secret")
 		}
 		if encryptedSecret == "" && keyID == "" {
