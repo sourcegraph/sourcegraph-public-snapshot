@@ -1,4 +1,4 @@
-package autoindexing
+package inference
 
 import (
 	"testing"

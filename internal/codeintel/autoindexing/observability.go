@@ -3,10 +3,8 @@ package autoindexing
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type operations struct {
@@ -35,8 +33,6 @@ type operations struct {
 	// Language support
 	getLanguagesRequestedBy   *observation.Operation
 	setRequestLanguageSupport *observation.Operation
-
-	handleIndexScheduler *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -54,18 +50,6 @@ func newOperations(observationContext *observation.Context) *operations {
 			Metrics:           m,
 		})
 	}
-
-	handleIndexScheduler := observationContext.Operation(observation.Op{
-		Name:              "codeintel.indexing.HandleIndexSchedule",
-		MetricLabelValues: []string{"HandleIndexSchedule"},
-		Metrics:           m,
-		ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
-			if errors.As(err, &inference.LimitError{}) {
-				return observation.EmitForDefault.Without(observation.EmitForMetrics)
-			}
-			return observation.EmitForDefault
-		},
-	})
 
 	return &operations{
 		// Indexes
@@ -93,7 +77,5 @@ func newOperations(observationContext *observation.Context) *operations {
 		// Language support
 		getLanguagesRequestedBy:   op("GetLanguagesRequestedBy"),
 		setRequestLanguageSupport: op("SetRequestLanguageSupport"),
-
-		handleIndexScheduler: handleIndexScheduler,
 	}
 }

@@ -18,7 +18,7 @@ func QueueOptions(autoIndexingSvc *autoindexing.Service, accessToken func() stri
 
 	return handler.QueueOptions{
 		Name:              "codeintel",
-		Store:             autoIndexingSvc.WorkerutilStore(),
+		Store:             autoindexing.GetWorkerutilStore(autoIndexingSvc),
 		RecordTransformer: recordTransformer,
 	}
 }

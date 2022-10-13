@@ -9,6 +9,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
+	policiesshared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -18,7 +19,7 @@ import (
 // GetConfigurationPolicies retrieves the set of configuration policies matching the the given options.
 // If a repository identifier is supplied (is non-zero), then only the configuration policies that apply
 // to repository are returned. If repository is not supplied, then all policies may be returned.
-func (s *store) GetConfigurationPolicies(ctx context.Context, opts types.GetConfigurationPoliciesOptions) (_ []types.ConfigurationPolicy, totalCount int, err error) {
+func (s *store) GetConfigurationPolicies(ctx context.Context, opts policiesshared.GetConfigurationPoliciesOptions) (_ []types.ConfigurationPolicy, totalCount int, err error) {
 	ctx, trace, endObservation := s.operations.getConfigurationPolicies.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", opts.RepositoryID),
 		log.String("term", opts.Term),

@@ -55,7 +55,7 @@ func (a *accessLogConf) SiteConfig() schema.SiteConfiguration {
 			AuditLog: &schema.AuditLog{
 				GitserverAccess: !a.disabled,
 				GraphQL:         false,
-				SecurityEvents:  false,
+				BackgroundJobs:  false,
 			},
 		},
 	}

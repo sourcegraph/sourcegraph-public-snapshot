@@ -51,7 +51,6 @@
   "eslint.lintTask.enable": false,
   "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": true,
   },
   "eslint.codeActionsOnSave.mode": "problems",
   "eslint.options": { "cache": true },

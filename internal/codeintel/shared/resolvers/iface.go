@@ -7,13 +7,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	autoindexingShared "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	uploadsShared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 type AutoIndexingService interface {
-	GetIndexes(ctx context.Context, opts types.GetIndexesOptions) (_ []types.Index, _ int, err error)
+	GetIndexes(ctx context.Context, opts autoindexingShared.GetIndexesOptions) (_ []types.Index, _ int, err error)
 	GetIndexByID(ctx context.Context, id int) (_ types.Index, _ bool, err error)
 	GetIndexesByIDs(ctx context.Context, ids ...int) (_ []types.Index, err error)
 	GetUnsafeDB() database.DB
@@ -21,7 +22,7 @@ type AutoIndexingService interface {
 }
 
 type UploadsService interface {
-	GetUploads(ctx context.Context, opts types.GetUploadsOptions) (uploads []types.Upload, totalCount int, err error)
+	GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (uploads []types.Upload, totalCount int, err error)
 	GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []types.UploadLog, err error)
 	GetListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) (_ []*gitdomain.Tag, err error)
 	GetUploadDocumentsForPath(ctx context.Context, bundleID int, pathPattern string) ([]string, int, error)

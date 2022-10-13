@@ -1,4 +1,4 @@
-package autoindexing
+package background
 
 import (
 	"context"
@@ -19,14 +19,14 @@ type janitorConfig struct {
 	commitResolverMaximumCommitLag time.Duration
 }
 
-func (s *Service) NewJanitor(
+func (b backgroundJob) NewJanitor(
 	interval time.Duration,
 	minimumTimeSinceLastCheck time.Duration,
 	commitResolverBatchSize int,
 	commitResolverMaximumCommitLag time.Duration,
 ) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
-		return s.handleCleanup(ctx, janitorConfig{
+		return b.handleCleanup(ctx, janitorConfig{
 			minimumTimeSinceLastCheck:      minimumTimeSinceLastCheck,
 			commitResolverBatchSize:        commitResolverBatchSize,
 			commitResolverMaximumCommitLag: commitResolverMaximumCommitLag,
@@ -34,32 +34,32 @@ func (s *Service) NewJanitor(
 	}))
 }
 
-func (s *Service) handleCleanup(ctx context.Context, cfg janitorConfig) (errs error) {
+func (b backgroundJob) handleCleanup(ctx context.Context, cfg janitorConfig) (errs error) {
 	// Reconciliation and denormalization
-	if err := s.handleDeletedRepository(ctx); err != nil {
+	if err := b.handleDeletedRepository(ctx); err != nil {
 		errs = errors.Append(errs, err)
 	}
-	if err := s.handleUnknownCommit(ctx, cfg); err != nil {
+	if err := b.handleUnknownCommit(ctx, cfg); err != nil {
 		errs = errors.Append(errs, err)
 	}
 
 	return errs
 }
 
-func (s *Service) handleDeletedRepository(ctx context.Context) (err error) {
-	indexesCounts, err := s.store.DeleteIndexesWithoutRepository(ctx, time.Now())
+func (b backgroundJob) handleDeletedRepository(ctx context.Context) (err error) {
+	indexesCounts, err := b.store.DeleteIndexesWithoutRepository(ctx, time.Now())
 	if err != nil {
 		return errors.Wrap(err, "indexSvc.DeleteIndexesWithoutRepository")
 	}
 
 	for _, counts := range gatherCounts(indexesCounts) {
-		s.logger.Debug(
+		b.logger.Debug(
 			"Deleted codeintel records with a deleted repository",
 			log.Int("repository_id", counts.repoID),
 			log.Int("indexes_count", counts.indexesCount),
 		)
 
-		s.janitorMetrics.numIndexRecordsRemoved.Add(float64(counts.indexesCount))
+		b.janitorMetrics.numIndexRecordsRemoved.Add(float64(counts.indexesCount))
 	}
 
 	return nil
@@ -93,14 +93,14 @@ func gatherCounts(indexesCounts map[int]int) []recordCount {
 	return recordCounts
 }
 
-func (s *Service) handleUnknownCommit(ctx context.Context, cfg janitorConfig) (err error) {
-	staleIndexes, err := s.store.GetStaleSourcedCommits(ctx, cfg.minimumTimeSinceLastCheck, cfg.commitResolverBatchSize, s.clock.Now())
+func (b backgroundJob) handleUnknownCommit(ctx context.Context, cfg janitorConfig) (err error) {
+	staleIndexes, err := b.store.GetStaleSourcedCommits(ctx, cfg.minimumTimeSinceLastCheck, cfg.commitResolverBatchSize, b.clock.Now())
 	if err != nil {
 		return errors.Wrap(err, "indexSvc.StaleSourcedCommits")
 	}
 
 	for _, sourcedCommits := range staleIndexes {
-		if err := s.handleSourcedCommits(ctx, sourcedCommits, cfg); err != nil {
+		if err := b.handleSourcedCommits(ctx, sourcedCommits, cfg); err != nil {
 			return err
 		}
 	}
@@ -108,9 +108,9 @@ func (s *Service) handleUnknownCommit(ctx context.Context, cfg janitorConfig) (e
 	return nil
 }
 
-func (s *Service) handleSourcedCommits(ctx context.Context, sc shared.SourcedCommits, cfg janitorConfig) error {
+func (b backgroundJob) handleSourcedCommits(ctx context.Context, sc shared.SourcedCommits, cfg janitorConfig) error {
 	for _, commit := range sc.Commits {
-		if err := s.handleCommit(ctx, sc.RepositoryID, sc.RepositoryName, commit, cfg); err != nil {
+		if err := b.handleCommit(ctx, sc.RepositoryID, sc.RepositoryName, commit, cfg); err != nil {
 			return err
 		}
 	}
@@ -118,9 +118,9 @@ func (s *Service) handleSourcedCommits(ctx context.Context, sc shared.SourcedCom
 	return nil
 }
 
-func (s *Service) handleCommit(ctx context.Context, repositoryID int, repositoryName, commit string, cfg janitorConfig) error {
+func (b backgroundJob) handleCommit(ctx context.Context, repositoryID int, repositoryName, commit string, cfg janitorConfig) error {
 	var shouldDelete bool
-	_, err := s.gitserverClient.ResolveRevision(ctx, repositoryID, commit)
+	_, err := b.gitserverClient.ResolveRevision(ctx, repositoryID, commit)
 	if err == nil {
 		// If we have no error then the commit is resolvable and we shouldn't touch it.
 		shouldDelete = false
@@ -140,19 +140,19 @@ func (s *Service) handleCommit(ctx context.Context, repositoryID int, repository
 	}
 
 	if shouldDelete {
-		indexesDeleted, err := s.store.DeleteSourcedCommits(ctx, repositoryID, commit, cfg.commitResolverMaximumCommitLag)
+		indexesDeleted, err := b.store.DeleteSourcedCommits(ctx, repositoryID, commit, cfg.commitResolverMaximumCommitLag)
 		if err != nil {
 			return errors.Wrap(err, "indexSvc.DeleteSourcedCommits")
 		}
 		if indexesDeleted > 0 {
 			// log.Debug("Deleted index records with unresolvable commits", "count", indexesDeleted)
-			s.janitorMetrics.numIndexRecordsRemoved.Add(float64(indexesDeleted))
+			b.janitorMetrics.numIndexRecordsRemoved.Add(float64(indexesDeleted))
 		}
 
 		return nil
 	}
 
-	if _, err := s.store.UpdateSourcedCommits(ctx, repositoryID, commit, s.clock.Now()); err != nil {
+	if _, err := b.store.UpdateSourcedCommits(ctx, repositoryID, commit, b.clock.Now()); err != nil {
 		return errors.Wrap(err, "indexSvc.UpdateSourcedCommits")
 	}
 

@@ -205,15 +205,6 @@ export interface DecorationAttachmentRenderOptions extends ThemableDecorationAtt
     dark?: ThemableDecorationAttachmentStyle
 }
 
-interface TextDocumentDecorationTypeConfig {
-    /**
-     * Defines whether to show decorations inline (default) or in a separate column.
-     * Column display can only be applied if `enableExtensionsDecorationsColumnView`
-     * experimental feature is enabled.
-     */
-    display: 'inline' | 'column'
-}
-
 /**
  * Represents a handle to a set of decorations.
  *
@@ -221,12 +212,8 @@ interface TextDocumentDecorationTypeConfig {
  * {@link sourcegraph.app.createDecorationType}
  */
 export interface TextDocumentDecorationType {
-    readonly extensionID?: string
-
     /** An opaque identifier. */
     readonly key: string
-
-    readonly config: TextDocumentDecorationTypeConfig
 }
 
 /**

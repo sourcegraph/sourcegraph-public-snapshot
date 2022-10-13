@@ -8,7 +8,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 )
 
 func TestMakeGetUploadsOptions(t *testing.T) {
@@ -28,7 +28,7 @@ func TestMakeGetUploadsOptions(t *testing.T) {
 		t.Fatalf("unexpected error making options: %s", err)
 	}
 
-	expected := types.GetUploadsOptions{
+	expected := shared.GetUploadsOptions{
 		RepositoryID: 50,
 		State:        "s",
 		Term:         "q",
@@ -50,7 +50,7 @@ func TestMakeGetUploadsOptionsDefaults(t *testing.T) {
 		t.Fatalf("unexpected error making options: %s", err)
 	}
 
-	expected := types.GetUploadsOptions{
+	expected := shared.GetUploadsOptions{
 		RepositoryID: 0,
 		State:        "",
 		Term:         "",

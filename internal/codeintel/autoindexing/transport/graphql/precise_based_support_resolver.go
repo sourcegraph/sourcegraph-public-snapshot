@@ -25,8 +25,15 @@ type preciseCodeIntelSupportResolver struct {
 }
 
 func NewPreciseCodeIntelSupportResolver(filepath string) PreciseSupportResolver {
+	indexers := types.LanguageToIndexer[path.Ext(filepath)]
+
+	resolvers := make([]types.CodeIntelIndexerResolver, len(indexers))
+	for _, indexer := range indexers {
+		resolvers = append(resolvers, types.NewCodeIntelIndexerResolverFrom(indexer))
+	}
+
 	return &preciseCodeIntelSupportResolver{
-		indexers: types.LanguageToIndexer[path.Ext(filepath)],
+		indexers: resolvers,
 	}
 }
 
