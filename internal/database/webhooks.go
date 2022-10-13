@@ -24,7 +24,7 @@ type WebhookStore interface {
 	GetByUUID(ctx context.Context, id uuid.UUID) (*types.Webhook, error)
 	Delete(ctx context.Context, id uuid.UUID) error
 	Update(ctx context.Context, actorUID int32, newWebhook *types.Webhook) (*types.Webhook, error)
-	List(ctx context.Context) ([]*types.Webhook, error)
+	List(ctx context.Context, opts WebhookListOptions) ([]*types.Webhook, error)
 }
 
 type webhookStore struct {
@@ -253,10 +253,40 @@ RETURNING
 `
 
 // List the webhooks
-func (s *webhookStore) List(ctx context.Context) ([]*types.Webhook, error) {
-	// TODO(sashaostrikov) implement this method
-	panic("implement this method")
+func (s *webhookStore) List(ctx context.Context, opt WebhookListOptions) ([]*types.Webhook, error) {
+	q := sqlf.Sprintf(webhookListQueryFmtstr, sqlf.Join(webhookColumns, ", "))
+	if opt.Kind != "" {
+		q = sqlf.Sprintf("%s\nWHERE code_host_kind = %s", q, opt.Kind)
+	}
+	if opt.LimitOffset != nil {
+		q = sqlf.Sprintf("%s\n%s", q, opt.LimitOffset.SQL())
+	}
+	rows, err := s.Query(ctx, q)
+	if err != nil {
+		return []*types.Webhook{}, errors.Wrap(err, "error running query")
+	}
+	defer rows.Close()
+	res := make([]*types.Webhook, 0, 20)
+	for rows.Next() {
+		webhook, err := scanWebhook(rows, s.key)
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, webhook)
+	}
+	return res, nil
 }
+
+type WebhookListOptions struct {
+	Kind string
+	*LimitOffset
+}
+
+const webhookListQueryFmtstr = `
+SELECT
+	%s
+FROM webhooks
+`
 
 func scanWebhook(sc dbutil.Scanner, key encryption.Key) (*types.Webhook, error) {
 	var (
