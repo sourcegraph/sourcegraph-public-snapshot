@@ -58,6 +58,9 @@ var srcInstanceCommand = &cli.Command{
 					name,
 					endpoint,
 				)
+				if err != nil {
+					return errors.Wrapf(err, "failed to read access token")
+				}
 
 				sc.Instances[name] = srcInstance{
 					Endpoint:    endpoint,
