@@ -203,7 +203,6 @@ func newGitProxyServer(endpointURL, gitServicePath, repositoryName, accessToken 
 			req.Header.Set("Authorization", fmt.Sprintf("%s %s", SchemeExecutorToken, accessToken))
 			req.Header.Set("X-Sourcegraph-Actor-UID", "internal")
 			req.URL.User = url.User("executor")
-			fmt.Printf("Req: %#+v\n", req)
 		},
 	}
 
@@ -212,9 +211,7 @@ func newGitProxyServer(endpointURL, gitServicePath, repositoryName, accessToken 
 		// This is _not_ a security measure, that should be handled by additional
 		// clone tokens. This is mostly a gate to finding when we accidentally
 		// would access another repo.
-		fmt.Printf("Request: %q %q\n", r.URL.Path, repositoryName)
 		if !strings.HasPrefix(r.URL.Path, "/"+repositoryName+"/") {
-			fmt.Printf("INVALID REQUEST: %q %q\n", r.URL.Path, repositoryName)
 			w.WriteHeader(http.StatusForbidden)
 			return
 		}
