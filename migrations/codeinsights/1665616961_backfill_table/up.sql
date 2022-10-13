@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS insight_series_backfill
 );
 
 ALTER TABLE insights_background_jobs
-    ADD COLUMN IF NOT EXISTS backfill_id INT NOT NULL DEFAULT 0; -- the default is really just for safety, there is nothing in this table yet.
+    ADD COLUMN IF NOT EXISTS backfill_id INT REFERENCES insight_series_backfill(id) ON DELETE CASCADE;
 
 CREATE OR REPLACE VIEW insights_jobs_backfill_in_progress AS
 SELECT jobs.*, isb.state AS backfill_state, isb.estimated_cost

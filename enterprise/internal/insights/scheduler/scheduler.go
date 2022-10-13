@@ -48,20 +48,20 @@ func (b *BaseJob) RecordID() int {
 }
 
 var baseJobColumns = []*sqlf.Query{
-	sqlf.Sprintf("insights_background_jobs.id"),
-	sqlf.Sprintf("insights_background_jobs.state"),
-	sqlf.Sprintf("insights_background_jobs.failure_message"),
-	sqlf.Sprintf("insights_background_jobs.queued_at"),
-	sqlf.Sprintf("insights_background_jobs.started_at"),
-	sqlf.Sprintf("insights_background_jobs.finished_at"),
-	sqlf.Sprintf("insights_background_jobs.process_after"),
-	sqlf.Sprintf("insights_background_jobs.num_resets"),
-	sqlf.Sprintf("insights_background_jobs.num_failures"),
-	sqlf.Sprintf("insights_background_jobs.last_heartbeat_at"),
-	sqlf.Sprintf("insights_background_jobs.execution_logs"),
-	sqlf.Sprintf("insights_background_jobs.worker_hostname"),
-	sqlf.Sprintf("insights_background_jobs.cancel"),
-	sqlf.Sprintf("insights_background_jobs.backfill_id"),
+	sqlf.Sprintf("id"),
+	sqlf.Sprintf("state"),
+	sqlf.Sprintf("failure_message"),
+	sqlf.Sprintf("queued_at"),
+	sqlf.Sprintf("started_at"),
+	sqlf.Sprintf("finished_at"),
+	sqlf.Sprintf("process_after"),
+	sqlf.Sprintf("num_resets"),
+	sqlf.Sprintf("num_failures"),
+	sqlf.Sprintf("last_heartbeat_at"),
+	sqlf.Sprintf("execution_logs"),
+	sqlf.Sprintf("worker_hostname"),
+	sqlf.Sprintf("cancel"),
+	sqlf.Sprintf("backfill_id"),
 }
 
 func scanBaseJob(s dbutil.Scanner) (*BaseJob, error) {
@@ -82,7 +82,7 @@ func scanBaseJob(s dbutil.Scanner) (*BaseJob, error) {
 		pq.Array(&executionLogs),
 		&job.WorkerHostname,
 		&job.Cancel,
-		&job.backfillId,
+		&dbutil.NullInt{N: &job.backfillId},
 	); err != nil {
 		return nil, err
 	}
@@ -94,74 +94,121 @@ func scanBaseJob(s dbutil.Scanner) (*BaseJob, error) {
 	return &job, nil
 }
 
-type scheduler struct {
-	workerStore dbworkerstore.Store
-	worker      *workerutil.Worker
-	resetter    *dbworker.Resetter
+type Scheduler struct {
+	inProgressWorker   *workerutil.Worker
+	inProgressResetter *dbworker.Resetter
+
+	newBackfillWorker   *workerutil.Worker
+	newBackfillResetter *dbworker.Resetter
+
+	store *basestore.Store
 }
 
-func NewScheduler(ctx context.Context, db edb.InsightsDB, obsContext *observation.Context) *scheduler {
-	workerStore := makeStore(db.Handle(), obsContext)
-	worker := makeWorker(ctx, workerStore, db, obsContext)
-	resetter := makeResetter(workerStore, obsContext)
+func NewScheduler(ctx context.Context, db edb.InsightsDB, obsContext *observation.Context) *Scheduler {
+	inProgressWorker, inProgressResetter := makeInProgressWorker(ctx, db, obsContext)
+	newBackfillWorker, newBackfillResetter := makeNewBackfillWorker(ctx, db, obsContext)
 
-	return &scheduler{
-		workerStore: workerStore,
-		worker:      worker,
-		resetter:    resetter,
+	return &Scheduler{
+		inProgressWorker:    inProgressWorker,
+		inProgressResetter:  inProgressResetter,
+		newBackfillWorker:   newBackfillWorker,
+		newBackfillResetter: newBackfillResetter,
+		store:               basestore.NewWithHandle(db.Handle()),
 	}
 }
 
-func (s *scheduler) Routines() []goroutine.BackgroundRoutine {
+func (s *Scheduler) Routines() []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
-		s.worker,
-		s.resetter,
+		s.inProgressWorker,
+		s.inProgressResetter,
+		s.newBackfillWorker,
+		s.newBackfillResetter,
 	}
 }
 
-func makeStore(db basestore.TransactableHandle, obsContext *observation.Context) dbworkerstore.Store {
-	return dbworkerstore.NewWithMetrics(db, dbworkerstore.Options{
-		Name:              "insights_background_job_worker_store",
+func makeInProgressWorker(ctx context.Context, db edb.InsightsDB, obsContext *observation.Context) (*workerutil.Worker, *dbworker.Resetter) {
+	backfillStore := newBackfillStore(db)
+
+	name := "backfill_in_progress_worker"
+
+	workerStore := dbworkerstore.NewWithMetrics(db.Handle(), dbworkerstore.Options{
+		Name:              fmt.Sprintf("%s_store", name),
 		TableName:         "insights_background_jobs",
+		ViewName:          "insights_jobs_backfill_in_progress",
 		ColumnExpressions: baseJobColumns,
 		Scan:              dbworkerstore.BuildWorkerScan(scanBaseJob),
-		OrderByExpression: sqlf.Sprintf("insights_background_jobs.id"),
+		OrderByExpression: sqlf.Sprintf("id"), // todo
 		MaxNumResets:      100,
 		StalledMaxAge:     time.Second * 30,
 	}, obsContext)
-}
 
-const jobName = "insights_background_job_scheduler"
+	task := inProgressHandler{
+		workerStore:   workerStore,
+		backfillStore: backfillStore,
+	}
 
-func makeWorker(ctx context.Context, workerStore dbworkerstore.Store, edb edb.InsightsDB, obsContext *observation.Context) *workerutil.Worker {
-	task := &handler{backfillStore: newBackfillStore(edb), workerStore: workerStore}
-	name := fmt.Sprintf("%s_worker", jobName)
-	return dbworker.NewWorker(ctx, workerStore, task, workerutil.WorkerOptions{
+	worker := dbworker.NewWorker(ctx, workerStore, &task, workerutil.WorkerOptions{
 		Name:        name,
 		NumHandlers: 1,
 		Interval:    5 * time.Second,
 		Metrics:     workerutil.NewMetrics(obsContext, name),
 	})
-}
 
-func makeResetter(store dbworkerstore.Store, obsContext *observation.Context) *dbworker.Resetter {
-	name := fmt.Sprintf("%s_resetter", jobName)
-	return dbworker.NewResetter(log.Scoped("", ""), store, dbworker.ResetterOptions{
-		Name:     name,
+	resetter := dbworker.NewResetter(log.Scoped("", ""), workerStore, dbworker.ResetterOptions{
+		Name:     fmt.Sprintf("%s_resetter", name),
 		Interval: time.Second * 20,
 		Metrics:  *dbworker.NewMetrics(obsContext, name),
 	})
+
+	return worker, resetter
 }
 
-type handler struct {
+func makeNewBackfillWorker(ctx context.Context, db edb.InsightsDB, obsContext *observation.Context) (*workerutil.Worker, *dbworker.Resetter) {
+	backfillStore := newBackfillStore(db)
+
+	name := "backfill_new_backfill_worker"
+
+	workerStore := dbworkerstore.NewWithMetrics(db.Handle(), dbworkerstore.Options{
+		Name:              fmt.Sprintf("%s_store", name),
+		TableName:         "insights_background_jobs",
+		ViewName:          "insights_jobs_backfill_new",
+		ColumnExpressions: baseJobColumns,
+		Scan:              dbworkerstore.BuildWorkerScan(scanBaseJob),
+		OrderByExpression: sqlf.Sprintf("id"), // todo
+		MaxNumResets:      100,
+		StalledMaxAge:     time.Second * 30,
+	}, obsContext)
+
+	task := newBackfillHandler{
+		workerStore:   workerStore,
+		backfillStore: backfillStore,
+	}
+
+	worker := dbworker.NewWorker(ctx, workerStore, &task, workerutil.WorkerOptions{
+		Name:        name,
+		NumHandlers: 1,
+		Interval:    5 * time.Second,
+		Metrics:     workerutil.NewMetrics(obsContext, name),
+	})
+
+	resetter := dbworker.NewResetter(log.Scoped("", ""), workerStore, dbworker.ResetterOptions{
+		Name:     fmt.Sprintf("%s_resetter", name),
+		Interval: time.Second * 20,
+		Metrics:  *dbworker.NewMetrics(obsContext, name),
+	})
+
+	return worker, resetter
+}
+
+type inProgressHandler struct {
 	workerStore   dbworkerstore.Store
 	backfillStore *backfillStore
 }
 
-var _ workerutil.Handler = &handler{}
+var _ workerutil.Handler = &inProgressHandler{}
 
-func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
-	logger.Info("handler called", log.String("job", jobName), log.Int("recordId", record.RecordID()))
+func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
+	logger.Info("inProgressHandler called", log.Int("recordId", record.RecordID()))
 
 	job := record.(*BaseJob)
 
@@ -181,8 +228,8 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 			break
 		}
 
-		// do work
-		logger.Info("doing iteration work", log.String("job", jobName), log.Int("repo_id", int(repoId)))
+		// todo do backfilling work
+		logger.Info("doing iteration work", log.Int("repo_id", int(repoId)))
 
 		err = finish(ctx, h.backfillStore.Store, nil)
 		if err != nil {
@@ -193,4 +240,29 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 	// todo handle errors down here after the main loop https://github.com/sourcegraph/sourcegraph/issues/42724
 
 	return nil
+}
+
+type newBackfillHandler struct {
+	workerStore   dbworkerstore.Store
+	backfillStore *backfillStore
+}
+
+var _ workerutil.Handler = &newBackfillHandler{}
+
+func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
+	logger.Info("newBackfillHandler called", log.Int("recordId", record.RecordID()))
+
+	// load repos
+	// estimate cost
+	// update backfill record (implies creating repo iterator)
+	// requeue
+
+	return nil
+}
+
+func (s *Scheduler) EnqueueBackfill(ctx context.Context, backfill *SeriesBackfill) error {
+	if backfill == nil || backfill.Id == 0 {
+		return errors.New("invalid series backfill")
+	}
+	return s.store.Exec(ctx, sqlf.Sprintf("insert into insights_background_jobs (backfill_id) VALUES (%s)", backfill.Id))
 }
