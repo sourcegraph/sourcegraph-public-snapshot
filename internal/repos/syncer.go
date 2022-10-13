@@ -127,9 +127,20 @@ func (s *syncHandler) Handle(ctx context.Context, logger log.Logger, record work
 		return errors.Errorf("expected repos.SyncJob, got %T", record)
 	}
 
-	// TODO: Add a non-nil progressRecorder here that uses s.Store and this specific
-	// job to persist progress.
-	return s.syncer.SyncExternalService(ctx, sj.ExternalServiceID, s.minSyncInterval(), nil)
+	progressRecorder := func(ctx context.Context, progress syncProgress) error {
+		return s.store.ExternalServiceStore().UpdateSyncJobCounters(ctx, &types.ExternalServiceSyncJob{
+			ID:              int64(sj.ID),
+			ReposSynced:     progress.Synced,
+			RepoSyncErrors:  progress.Errors,
+			ReposAdded:      progress.Added,
+			ReposRemoved:    progress.Removed,
+			ReposModified:   progress.Modified,
+			ReposUnmodified: progress.Unmodified,
+			ReposDeleted:    progress.Deleted,
+		})
+	}
+
+	return s.syncer.SyncExternalService(ctx, sj.ExternalServiceID, s.minSyncInterval(), progressRecorder)
 }
 
 // TriggerExternalServiceSync will enqueue a sync job for the supplied external
@@ -505,16 +516,16 @@ var ErrCloudDefaultSync = errors.New("cloud default external services can't be s
 
 // syncProgress represents running counts of an external service sync
 type syncProgress struct {
-	Synced int `json:"synced,omitempty"`
-	Errors int `json:"errors,omitempty"`
+	Synced int32 `json:"synced,omitempty"`
+	Errors int32 `json:"errors,omitempty"`
 
 	// Diff stats
-	Added      int `json:"added,omitempty"`
-	Removed    int `json:"removed,omitempty"`
-	Modified   int `json:"modified,omitempty"`
-	Unmodified int `json:"unmodified,omitempty"`
+	Added      int32 `json:"added,omitempty"`
+	Removed    int32 `json:"removed,omitempty"`
+	Modified   int32 `json:"modified,omitempty"`
+	Unmodified int32 `json:"unmodified,omitempty"`
 
-	Deleted int `json:"deleted,omitempty"`
+	Deleted int32 `json:"deleted,omitempty"`
 }
 
 type progressRecorderFunc func(ctx context.Context, progress syncProgress) error
@@ -706,10 +717,10 @@ func (s *Syncer) SyncExternalService(
 			continue
 		}
 
-		syncProgress.Added += diff.Added.Len()
-		syncProgress.Removed += diff.Deleted.Len()
-		syncProgress.Modified += diff.Modified.Repos().Len()
-		syncProgress.Unmodified += diff.Unmodified.Len()
+		syncProgress.Added += int32(diff.Added.Len())
+		syncProgress.Removed += int32(diff.Deleted.Len())
+		syncProgress.Modified += int32(diff.Modified.Repos().Len())
+		syncProgress.Unmodified += int32(diff.Unmodified.Len())
 
 		for _, r := range diff.Repos() {
 			seen[r.ID] = struct{}{}
@@ -789,7 +800,7 @@ func (s *Syncer) SyncExternalService(
 		}
 
 		if deleted > 0 {
-			syncProgress.Deleted += deleted
+			syncProgress.Deleted += int32(deleted)
 			logger.Warn("deleted not seen repos",
 				log.Int("seen", len(seen)),
 				log.Int("deleted", deleted),
