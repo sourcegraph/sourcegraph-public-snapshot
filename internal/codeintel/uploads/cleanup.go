@@ -219,7 +219,7 @@ func (s *Service) handleHardDeleter(ctx context.Context) error {
 
 func (s *Service) hardDeleteExpiredUploads(ctx context.Context) (count int, err error) {
 	const uploadsBatchSize = 100
-	options := types.GetUploadsOptions{
+	options := shared.GetUploadsOptions{
 		State:            "deleted",
 		Limit:            uploadsBatchSize,
 		AllowExpired:     true,

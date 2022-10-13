@@ -1280,7 +1280,6 @@ func testOrphanedRepo(store repos.Store) func(*testing.T) {
 
 		// Sync first service
 		syncer := &repos.Syncer{
-
 			Logger: logtest.Scoped(t),
 			Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(svc1, nil, githubRepo)
@@ -2415,7 +2414,8 @@ func testSyncReposWithLastErrorsHitsRateLimiter(s repos.Store) func(*testing.T) 
 }
 
 func setupSyncErroredTest(ctx context.Context, s repos.Store, t *testing.T,
-	serviceType string, externalSvcError error, config, serviceID string, repoNames ...api.RepoName) (*repos.Syncer, types.Repos) {
+	serviceType string, externalSvcError error, config, serviceID string, repoNames ...api.RepoName,
+) (*repos.Syncer, types.Repos) {
 	t.Helper()
 	now := time.Now()
 	dbRepos := types.Repos{}

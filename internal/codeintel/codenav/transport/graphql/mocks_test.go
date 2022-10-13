@@ -14,9 +14,11 @@ import (
 	diff "github.com/sourcegraph/go-diff/diff"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	authz "github.com/sourcegraph/sourcegraph/internal/authz"
-	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
+	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
+	shared1 "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	gitserver "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/gitserver"
 	types "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
+	shared2 "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
 	gitdomain "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
@@ -57,7 +59,7 @@ func NewMockAutoIndexingService() *MockAutoIndexingService {
 			},
 		},
 		GetIndexesFunc: &AutoIndexingServiceGetIndexesFunc{
-			defaultHook: func(context.Context, types.GetIndexesOptions) (r0 []types.Index, r1 int, r2 error) {
+			defaultHook: func(context.Context, shared.GetIndexesOptions) (r0 []types.Index, r1 int, r2 error) {
 				return
 			},
 		},
@@ -95,7 +97,7 @@ func NewStrictMockAutoIndexingService() *MockAutoIndexingService {
 			},
 		},
 		GetIndexesFunc: &AutoIndexingServiceGetIndexesFunc{
-			defaultHook: func(context.Context, types.GetIndexesOptions) ([]types.Index, int, error) {
+			defaultHook: func(context.Context, shared.GetIndexesOptions) ([]types.Index, int, error) {
 				panic("unexpected invocation of MockAutoIndexingService.GetIndexes")
 			},
 		},
@@ -266,15 +268,15 @@ func (c AutoIndexingServiceGetIndexByIDFuncCall) Results() []interface{} {
 // GetIndexes method of the parent MockAutoIndexingService instance is
 // invoked.
 type AutoIndexingServiceGetIndexesFunc struct {
-	defaultHook func(context.Context, types.GetIndexesOptions) ([]types.Index, int, error)
-	hooks       []func(context.Context, types.GetIndexesOptions) ([]types.Index, int, error)
+	defaultHook func(context.Context, shared.GetIndexesOptions) ([]types.Index, int, error)
+	hooks       []func(context.Context, shared.GetIndexesOptions) ([]types.Index, int, error)
 	history     []AutoIndexingServiceGetIndexesFuncCall
 	mutex       sync.Mutex
 }
 
 // GetIndexes delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockAutoIndexingService) GetIndexes(v0 context.Context, v1 types.GetIndexesOptions) ([]types.Index, int, error) {
+func (m *MockAutoIndexingService) GetIndexes(v0 context.Context, v1 shared.GetIndexesOptions) ([]types.Index, int, error) {
 	r0, r1, r2 := m.GetIndexesFunc.nextHook()(v0, v1)
 	m.GetIndexesFunc.appendCall(AutoIndexingServiceGetIndexesFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
@@ -283,7 +285,7 @@ func (m *MockAutoIndexingService) GetIndexes(v0 context.Context, v1 types.GetInd
 // SetDefaultHook sets function that is called when the GetIndexes method of
 // the parent MockAutoIndexingService instance is invoked and the hook queue
 // is empty.
-func (f *AutoIndexingServiceGetIndexesFunc) SetDefaultHook(hook func(context.Context, types.GetIndexesOptions) ([]types.Index, int, error)) {
+func (f *AutoIndexingServiceGetIndexesFunc) SetDefaultHook(hook func(context.Context, shared.GetIndexesOptions) ([]types.Index, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -291,7 +293,7 @@ func (f *AutoIndexingServiceGetIndexesFunc) SetDefaultHook(hook func(context.Con
 // GetIndexes method of the parent MockAutoIndexingService instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *AutoIndexingServiceGetIndexesFunc) PushHook(hook func(context.Context, types.GetIndexesOptions) ([]types.Index, int, error)) {
+func (f *AutoIndexingServiceGetIndexesFunc) PushHook(hook func(context.Context, shared.GetIndexesOptions) ([]types.Index, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -300,19 +302,19 @@ func (f *AutoIndexingServiceGetIndexesFunc) PushHook(hook func(context.Context, 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *AutoIndexingServiceGetIndexesFunc) SetDefaultReturn(r0 []types.Index, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, types.GetIndexesOptions) ([]types.Index, int, error) {
+	f.SetDefaultHook(func(context.Context, shared.GetIndexesOptions) ([]types.Index, int, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *AutoIndexingServiceGetIndexesFunc) PushReturn(r0 []types.Index, r1 int, r2 error) {
-	f.PushHook(func(context.Context, types.GetIndexesOptions) ([]types.Index, int, error) {
+	f.PushHook(func(context.Context, shared.GetIndexesOptions) ([]types.Index, int, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *AutoIndexingServiceGetIndexesFunc) nextHook() func(context.Context, types.GetIndexesOptions) ([]types.Index, int, error) {
+func (f *AutoIndexingServiceGetIndexesFunc) nextHook() func(context.Context, shared.GetIndexesOptions) ([]types.Index, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -351,7 +353,7 @@ type AutoIndexingServiceGetIndexesFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 types.GetIndexesOptions
+	Arg1 shared.GetIndexesOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []types.Index
@@ -867,7 +869,7 @@ func NewMockGitBlobResolver() *MockGitBlobResolver {
 			},
 		},
 		DiagnosticsFunc: &GitBlobResolverDiagnosticsFunc{
-			defaultHook: func(context.Context, int) (r0 []shared.DiagnosticAtUpload, r1 int, r2 error) {
+			defaultHook: func(context.Context, int) (r0 []shared1.DiagnosticAtUpload, r1 int, r2 error) {
 				return
 			},
 		},
@@ -887,7 +889,7 @@ func NewMockGitBlobResolver() *MockGitBlobResolver {
 			},
 		},
 		RangesFunc: &GitBlobResolverRangesFunc{
-			defaultHook: func(context.Context, int, int) (r0 []shared.AdjustedCodeIntelligenceRange, r1 error) {
+			defaultHook: func(context.Context, int, int) (r0 []shared1.AdjustedCodeIntelligenceRange, r1 error) {
 				return
 			},
 		},
@@ -914,7 +916,7 @@ func NewStrictMockGitBlobResolver() *MockGitBlobResolver {
 			},
 		},
 		DiagnosticsFunc: &GitBlobResolverDiagnosticsFunc{
-			defaultHook: func(context.Context, int) ([]shared.DiagnosticAtUpload, int, error) {
+			defaultHook: func(context.Context, int) ([]shared1.DiagnosticAtUpload, int, error) {
 				panic("unexpected invocation of MockGitBlobResolver.Diagnostics")
 			},
 		},
@@ -934,7 +936,7 @@ func NewStrictMockGitBlobResolver() *MockGitBlobResolver {
 			},
 		},
 		RangesFunc: &GitBlobResolverRangesFunc{
-			defaultHook: func(context.Context, int, int) ([]shared.AdjustedCodeIntelligenceRange, error) {
+			defaultHook: func(context.Context, int, int) ([]shared1.AdjustedCodeIntelligenceRange, error) {
 				panic("unexpected invocation of MockGitBlobResolver.Ranges")
 			},
 		},
@@ -1097,15 +1099,15 @@ func (c GitBlobResolverDefinitionsFuncCall) Results() []interface{} {
 // GitBlobResolverDiagnosticsFunc describes the behavior when the
 // Diagnostics method of the parent MockGitBlobResolver instance is invoked.
 type GitBlobResolverDiagnosticsFunc struct {
-	defaultHook func(context.Context, int) ([]shared.DiagnosticAtUpload, int, error)
-	hooks       []func(context.Context, int) ([]shared.DiagnosticAtUpload, int, error)
+	defaultHook func(context.Context, int) ([]shared1.DiagnosticAtUpload, int, error)
+	hooks       []func(context.Context, int) ([]shared1.DiagnosticAtUpload, int, error)
 	history     []GitBlobResolverDiagnosticsFuncCall
 	mutex       sync.Mutex
 }
 
 // Diagnostics delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockGitBlobResolver) Diagnostics(v0 context.Context, v1 int) ([]shared.DiagnosticAtUpload, int, error) {
+func (m *MockGitBlobResolver) Diagnostics(v0 context.Context, v1 int) ([]shared1.DiagnosticAtUpload, int, error) {
 	r0, r1, r2 := m.DiagnosticsFunc.nextHook()(v0, v1)
 	m.DiagnosticsFunc.appendCall(GitBlobResolverDiagnosticsFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
@@ -1114,7 +1116,7 @@ func (m *MockGitBlobResolver) Diagnostics(v0 context.Context, v1 int) ([]shared.
 // SetDefaultHook sets function that is called when the Diagnostics method
 // of the parent MockGitBlobResolver instance is invoked and the hook queue
 // is empty.
-func (f *GitBlobResolverDiagnosticsFunc) SetDefaultHook(hook func(context.Context, int) ([]shared.DiagnosticAtUpload, int, error)) {
+func (f *GitBlobResolverDiagnosticsFunc) SetDefaultHook(hook func(context.Context, int) ([]shared1.DiagnosticAtUpload, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -1122,7 +1124,7 @@ func (f *GitBlobResolverDiagnosticsFunc) SetDefaultHook(hook func(context.Contex
 // Diagnostics method of the parent MockGitBlobResolver instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *GitBlobResolverDiagnosticsFunc) PushHook(hook func(context.Context, int) ([]shared.DiagnosticAtUpload, int, error)) {
+func (f *GitBlobResolverDiagnosticsFunc) PushHook(hook func(context.Context, int) ([]shared1.DiagnosticAtUpload, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1130,20 +1132,20 @@ func (f *GitBlobResolverDiagnosticsFunc) PushHook(hook func(context.Context, int
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitBlobResolverDiagnosticsFunc) SetDefaultReturn(r0 []shared.DiagnosticAtUpload, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, int) ([]shared.DiagnosticAtUpload, int, error) {
+func (f *GitBlobResolverDiagnosticsFunc) SetDefaultReturn(r0 []shared1.DiagnosticAtUpload, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, int) ([]shared1.DiagnosticAtUpload, int, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitBlobResolverDiagnosticsFunc) PushReturn(r0 []shared.DiagnosticAtUpload, r1 int, r2 error) {
-	f.PushHook(func(context.Context, int) ([]shared.DiagnosticAtUpload, int, error) {
+func (f *GitBlobResolverDiagnosticsFunc) PushReturn(r0 []shared1.DiagnosticAtUpload, r1 int, r2 error) {
+	f.PushHook(func(context.Context, int) ([]shared1.DiagnosticAtUpload, int, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *GitBlobResolverDiagnosticsFunc) nextHook() func(context.Context, int) ([]shared.DiagnosticAtUpload, int, error) {
+func (f *GitBlobResolverDiagnosticsFunc) nextHook() func(context.Context, int) ([]shared1.DiagnosticAtUpload, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1184,7 +1186,7 @@ type GitBlobResolverDiagnosticsFuncCall struct {
 	Arg1 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []shared.DiagnosticAtUpload
+	Result0 []shared1.DiagnosticAtUpload
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 int
@@ -1552,15 +1554,15 @@ func (c GitBlobResolverLSIFUploadsFuncCall) Results() []interface{} {
 // GitBlobResolverRangesFunc describes the behavior when the Ranges method
 // of the parent MockGitBlobResolver instance is invoked.
 type GitBlobResolverRangesFunc struct {
-	defaultHook func(context.Context, int, int) ([]shared.AdjustedCodeIntelligenceRange, error)
-	hooks       []func(context.Context, int, int) ([]shared.AdjustedCodeIntelligenceRange, error)
+	defaultHook func(context.Context, int, int) ([]shared1.AdjustedCodeIntelligenceRange, error)
+	hooks       []func(context.Context, int, int) ([]shared1.AdjustedCodeIntelligenceRange, error)
 	history     []GitBlobResolverRangesFuncCall
 	mutex       sync.Mutex
 }
 
 // Ranges delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockGitBlobResolver) Ranges(v0 context.Context, v1 int, v2 int) ([]shared.AdjustedCodeIntelligenceRange, error) {
+func (m *MockGitBlobResolver) Ranges(v0 context.Context, v1 int, v2 int) ([]shared1.AdjustedCodeIntelligenceRange, error) {
 	r0, r1 := m.RangesFunc.nextHook()(v0, v1, v2)
 	m.RangesFunc.appendCall(GitBlobResolverRangesFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
@@ -1569,7 +1571,7 @@ func (m *MockGitBlobResolver) Ranges(v0 context.Context, v1 int, v2 int) ([]shar
 // SetDefaultHook sets function that is called when the Ranges method of the
 // parent MockGitBlobResolver instance is invoked and the hook queue is
 // empty.
-func (f *GitBlobResolverRangesFunc) SetDefaultHook(hook func(context.Context, int, int) ([]shared.AdjustedCodeIntelligenceRange, error)) {
+func (f *GitBlobResolverRangesFunc) SetDefaultHook(hook func(context.Context, int, int) ([]shared1.AdjustedCodeIntelligenceRange, error)) {
 	f.defaultHook = hook
 }
 
@@ -1577,7 +1579,7 @@ func (f *GitBlobResolverRangesFunc) SetDefaultHook(hook func(context.Context, in
 // Ranges method of the parent MockGitBlobResolver instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *GitBlobResolverRangesFunc) PushHook(hook func(context.Context, int, int) ([]shared.AdjustedCodeIntelligenceRange, error)) {
+func (f *GitBlobResolverRangesFunc) PushHook(hook func(context.Context, int, int) ([]shared1.AdjustedCodeIntelligenceRange, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1585,20 +1587,20 @@ func (f *GitBlobResolverRangesFunc) PushHook(hook func(context.Context, int, int
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitBlobResolverRangesFunc) SetDefaultReturn(r0 []shared.AdjustedCodeIntelligenceRange, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, int) ([]shared.AdjustedCodeIntelligenceRange, error) {
+func (f *GitBlobResolverRangesFunc) SetDefaultReturn(r0 []shared1.AdjustedCodeIntelligenceRange, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, int) ([]shared1.AdjustedCodeIntelligenceRange, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitBlobResolverRangesFunc) PushReturn(r0 []shared.AdjustedCodeIntelligenceRange, r1 error) {
-	f.PushHook(func(context.Context, int, int) ([]shared.AdjustedCodeIntelligenceRange, error) {
+func (f *GitBlobResolverRangesFunc) PushReturn(r0 []shared1.AdjustedCodeIntelligenceRange, r1 error) {
+	f.PushHook(func(context.Context, int, int) ([]shared1.AdjustedCodeIntelligenceRange, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitBlobResolverRangesFunc) nextHook() func(context.Context, int, int) ([]shared.AdjustedCodeIntelligenceRange, error) {
+func (f *GitBlobResolverRangesFunc) nextHook() func(context.Context, int, int) ([]shared1.AdjustedCodeIntelligenceRange, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1642,7 +1644,7 @@ type GitBlobResolverRangesFuncCall struct {
 	Arg2 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []shared.AdjustedCodeIntelligenceRange
+	Result0 []shared1.AdjustedCodeIntelligenceRange
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -2395,7 +2397,7 @@ func NewMockUploadsService() *MockUploadsService {
 			},
 		},
 		GetUploadsFunc: &UploadsServiceGetUploadsFunc{
-			defaultHook: func(context.Context, types.GetUploadsOptions) (r0 []types.Upload, r1 int, r2 error) {
+			defaultHook: func(context.Context, shared2.GetUploadsOptions) (r0 []types.Upload, r1 int, r2 error) {
 				return
 			},
 		},
@@ -2427,7 +2429,7 @@ func NewStrictMockUploadsService() *MockUploadsService {
 			},
 		},
 		GetUploadsFunc: &UploadsServiceGetUploadsFunc{
-			defaultHook: func(context.Context, types.GetUploadsOptions) ([]types.Upload, int, error) {
+			defaultHook: func(context.Context, shared2.GetUploadsOptions) ([]types.Upload, int, error) {
 				panic("unexpected invocation of MockUploadsService.GetUploads")
 			},
 		},
@@ -2812,15 +2814,15 @@ func (c UploadsServiceGetUploadDocumentsForPathFuncCall) Results() []interface{}
 // UploadsServiceGetUploadsFunc describes the behavior when the GetUploads
 // method of the parent MockUploadsService instance is invoked.
 type UploadsServiceGetUploadsFunc struct {
-	defaultHook func(context.Context, types.GetUploadsOptions) ([]types.Upload, int, error)
-	hooks       []func(context.Context, types.GetUploadsOptions) ([]types.Upload, int, error)
+	defaultHook func(context.Context, shared2.GetUploadsOptions) ([]types.Upload, int, error)
+	hooks       []func(context.Context, shared2.GetUploadsOptions) ([]types.Upload, int, error)
 	history     []UploadsServiceGetUploadsFuncCall
 	mutex       sync.Mutex
 }
 
 // GetUploads delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockUploadsService) GetUploads(v0 context.Context, v1 types.GetUploadsOptions) ([]types.Upload, int, error) {
+func (m *MockUploadsService) GetUploads(v0 context.Context, v1 shared2.GetUploadsOptions) ([]types.Upload, int, error) {
 	r0, r1, r2 := m.GetUploadsFunc.nextHook()(v0, v1)
 	m.GetUploadsFunc.appendCall(UploadsServiceGetUploadsFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
@@ -2829,7 +2831,7 @@ func (m *MockUploadsService) GetUploads(v0 context.Context, v1 types.GetUploadsO
 // SetDefaultHook sets function that is called when the GetUploads method of
 // the parent MockUploadsService instance is invoked and the hook queue is
 // empty.
-func (f *UploadsServiceGetUploadsFunc) SetDefaultHook(hook func(context.Context, types.GetUploadsOptions) ([]types.Upload, int, error)) {
+func (f *UploadsServiceGetUploadsFunc) SetDefaultHook(hook func(context.Context, shared2.GetUploadsOptions) ([]types.Upload, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -2837,7 +2839,7 @@ func (f *UploadsServiceGetUploadsFunc) SetDefaultHook(hook func(context.Context,
 // GetUploads method of the parent MockUploadsService instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *UploadsServiceGetUploadsFunc) PushHook(hook func(context.Context, types.GetUploadsOptions) ([]types.Upload, int, error)) {
+func (f *UploadsServiceGetUploadsFunc) PushHook(hook func(context.Context, shared2.GetUploadsOptions) ([]types.Upload, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2846,19 +2848,19 @@ func (f *UploadsServiceGetUploadsFunc) PushHook(hook func(context.Context, types
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *UploadsServiceGetUploadsFunc) SetDefaultReturn(r0 []types.Upload, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, types.GetUploadsOptions) ([]types.Upload, int, error) {
+	f.SetDefaultHook(func(context.Context, shared2.GetUploadsOptions) ([]types.Upload, int, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *UploadsServiceGetUploadsFunc) PushReturn(r0 []types.Upload, r1 int, r2 error) {
-	f.PushHook(func(context.Context, types.GetUploadsOptions) ([]types.Upload, int, error) {
+	f.PushHook(func(context.Context, shared2.GetUploadsOptions) ([]types.Upload, int, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *UploadsServiceGetUploadsFunc) nextHook() func(context.Context, types.GetUploadsOptions) ([]types.Upload, int, error) {
+func (f *UploadsServiceGetUploadsFunc) nextHook() func(context.Context, shared2.GetUploadsOptions) ([]types.Upload, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2896,7 +2898,7 @@ type UploadsServiceGetUploadsFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 types.GetUploadsOptions
+	Arg1 shared2.GetUploadsOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []types.Upload

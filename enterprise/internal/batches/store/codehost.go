@@ -37,7 +37,6 @@ func (s *Store) ListCodeHosts(ctx context.Context, opts ListCodeHostsOpts) (cs [
 }
 
 var listCodeHostsQueryFmtstr = `
--- source: enterprise/internal/batches/store/codehost.go:ListCodeHosts
 WITH
 	-- esr_with_ssh includes all external_service_repos records where the
 	-- external service is cloned over SSH.
@@ -182,7 +181,6 @@ func (s *Store) GetExternalServiceIDs(ctx context.Context, opts GetExternalServi
 }
 
 const getExternalServiceIDsQueryFmtstr = `
--- source: enterprise/internal/batches/store/codehost.go:GetExternalServiceIDs
 SELECT
 	external_services.id
 FROM external_services

@@ -99,7 +99,7 @@ export const UnlockAccountPage: React.FunctionComponent<React.PropsWithChildren<
                 lessPadding={true}
                 title={
                     props.context.sourcegraphDotComMode
-                        ? 'Unlock your Sourcegraph Cloud account'
+                        ? 'Unlock your Sourcegraph.com account'
                         : 'Unlock your Sourcegraph Server account'
                 }
                 body={body}

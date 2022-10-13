@@ -127,7 +127,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		DeleteIndexesFunc: &StoreDeleteIndexesFunc{
-			defaultHook: func(context.Context, types.DeleteIndexesOptions) (r0 error) {
+			defaultHook: func(context.Context, shared.DeleteIndexesOptions) (r0 error) {
 				return
 			},
 		},
@@ -162,7 +162,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		GetIndexesFunc: &StoreGetIndexesFunc{
-			defaultHook: func(context.Context, types.GetIndexesOptions) (r0 []types.Index, r1 int, r2 error) {
+			defaultHook: func(context.Context, shared.GetIndexesOptions) (r0 []types.Index, r1 int, r2 error) {
 				return
 			},
 		},
@@ -269,7 +269,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		DeleteIndexesFunc: &StoreDeleteIndexesFunc{
-			defaultHook: func(context.Context, types.DeleteIndexesOptions) error {
+			defaultHook: func(context.Context, shared.DeleteIndexesOptions) error {
 				panic("unexpected invocation of MockStore.DeleteIndexes")
 			},
 		},
@@ -304,7 +304,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		GetIndexesFunc: &StoreGetIndexesFunc{
-			defaultHook: func(context.Context, types.GetIndexesOptions) ([]types.Index, int, error) {
+			defaultHook: func(context.Context, shared.GetIndexesOptions) ([]types.Index, int, error) {
 				panic("unexpected invocation of MockStore.GetIndexes")
 			},
 		},
@@ -600,15 +600,15 @@ func (c StoreDeleteIndexByIDFuncCall) Results() []interface{} {
 // StoreDeleteIndexesFunc describes the behavior when the DeleteIndexes
 // method of the parent MockStore instance is invoked.
 type StoreDeleteIndexesFunc struct {
-	defaultHook func(context.Context, types.DeleteIndexesOptions) error
-	hooks       []func(context.Context, types.DeleteIndexesOptions) error
+	defaultHook func(context.Context, shared.DeleteIndexesOptions) error
+	hooks       []func(context.Context, shared.DeleteIndexesOptions) error
 	history     []StoreDeleteIndexesFuncCall
 	mutex       sync.Mutex
 }
 
 // DeleteIndexes delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockStore) DeleteIndexes(v0 context.Context, v1 types.DeleteIndexesOptions) error {
+func (m *MockStore) DeleteIndexes(v0 context.Context, v1 shared.DeleteIndexesOptions) error {
 	r0 := m.DeleteIndexesFunc.nextHook()(v0, v1)
 	m.DeleteIndexesFunc.appendCall(StoreDeleteIndexesFuncCall{v0, v1, r0})
 	return r0
@@ -616,7 +616,7 @@ func (m *MockStore) DeleteIndexes(v0 context.Context, v1 types.DeleteIndexesOpti
 
 // SetDefaultHook sets function that is called when the DeleteIndexes method
 // of the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreDeleteIndexesFunc) SetDefaultHook(hook func(context.Context, types.DeleteIndexesOptions) error) {
+func (f *StoreDeleteIndexesFunc) SetDefaultHook(hook func(context.Context, shared.DeleteIndexesOptions) error) {
 	f.defaultHook = hook
 }
 
@@ -624,7 +624,7 @@ func (f *StoreDeleteIndexesFunc) SetDefaultHook(hook func(context.Context, types
 // DeleteIndexes method of the parent MockStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreDeleteIndexesFunc) PushHook(hook func(context.Context, types.DeleteIndexesOptions) error) {
+func (f *StoreDeleteIndexesFunc) PushHook(hook func(context.Context, shared.DeleteIndexesOptions) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -633,19 +633,19 @@ func (f *StoreDeleteIndexesFunc) PushHook(hook func(context.Context, types.Delet
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *StoreDeleteIndexesFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, types.DeleteIndexesOptions) error {
+	f.SetDefaultHook(func(context.Context, shared.DeleteIndexesOptions) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *StoreDeleteIndexesFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, types.DeleteIndexesOptions) error {
+	f.PushHook(func(context.Context, shared.DeleteIndexesOptions) error {
 		return r0
 	})
 }
 
-func (f *StoreDeleteIndexesFunc) nextHook() func(context.Context, types.DeleteIndexesOptions) error {
+func (f *StoreDeleteIndexesFunc) nextHook() func(context.Context, shared.DeleteIndexesOptions) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -683,7 +683,7 @@ type StoreDeleteIndexesFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 types.DeleteIndexesOptions
+	Arg1 shared.DeleteIndexesOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -1364,15 +1364,15 @@ func (c StoreGetIndexConfigurationByRepositoryIDFuncCall) Results() []interface{
 // StoreGetIndexesFunc describes the behavior when the GetIndexes method of
 // the parent MockStore instance is invoked.
 type StoreGetIndexesFunc struct {
-	defaultHook func(context.Context, types.GetIndexesOptions) ([]types.Index, int, error)
-	hooks       []func(context.Context, types.GetIndexesOptions) ([]types.Index, int, error)
+	defaultHook func(context.Context, shared.GetIndexesOptions) ([]types.Index, int, error)
+	hooks       []func(context.Context, shared.GetIndexesOptions) ([]types.Index, int, error)
 	history     []StoreGetIndexesFuncCall
 	mutex       sync.Mutex
 }
 
 // GetIndexes delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockStore) GetIndexes(v0 context.Context, v1 types.GetIndexesOptions) ([]types.Index, int, error) {
+func (m *MockStore) GetIndexes(v0 context.Context, v1 shared.GetIndexesOptions) ([]types.Index, int, error) {
 	r0, r1, r2 := m.GetIndexesFunc.nextHook()(v0, v1)
 	m.GetIndexesFunc.appendCall(StoreGetIndexesFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
@@ -1380,7 +1380,7 @@ func (m *MockStore) GetIndexes(v0 context.Context, v1 types.GetIndexesOptions) (
 
 // SetDefaultHook sets function that is called when the GetIndexes method of
 // the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreGetIndexesFunc) SetDefaultHook(hook func(context.Context, types.GetIndexesOptions) ([]types.Index, int, error)) {
+func (f *StoreGetIndexesFunc) SetDefaultHook(hook func(context.Context, shared.GetIndexesOptions) ([]types.Index, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -1388,7 +1388,7 @@ func (f *StoreGetIndexesFunc) SetDefaultHook(hook func(context.Context, types.Ge
 // GetIndexes method of the parent MockStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreGetIndexesFunc) PushHook(hook func(context.Context, types.GetIndexesOptions) ([]types.Index, int, error)) {
+func (f *StoreGetIndexesFunc) PushHook(hook func(context.Context, shared.GetIndexesOptions) ([]types.Index, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1397,19 +1397,19 @@ func (f *StoreGetIndexesFunc) PushHook(hook func(context.Context, types.GetIndex
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *StoreGetIndexesFunc) SetDefaultReturn(r0 []types.Index, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, types.GetIndexesOptions) ([]types.Index, int, error) {
+	f.SetDefaultHook(func(context.Context, shared.GetIndexesOptions) ([]types.Index, int, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *StoreGetIndexesFunc) PushReturn(r0 []types.Index, r1 int, r2 error) {
-	f.PushHook(func(context.Context, types.GetIndexesOptions) ([]types.Index, int, error) {
+	f.PushHook(func(context.Context, shared.GetIndexesOptions) ([]types.Index, int, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *StoreGetIndexesFunc) nextHook() func(context.Context, types.GetIndexesOptions) ([]types.Index, int, error) {
+func (f *StoreGetIndexesFunc) nextHook() func(context.Context, shared.GetIndexesOptions) ([]types.Index, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1447,7 +1447,7 @@ type StoreGetIndexesFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 types.GetIndexesOptions
+	Arg1 shared.GetIndexesOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []types.Index
@@ -3436,8 +3436,8 @@ func (c StoreUpdateSourcedCommitsFuncCall) Results() []interface{} {
 
 // MockGitserverClient is a mock implementation of the GitserverClient
 // interface (from the package
-// github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared)
-// used for unit testing.
+// github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing) used
+// for unit testing.
 type MockGitserverClient struct {
 	// CommitDateFunc is an instance of a mock function object controlling
 	// the behavior of the method CommitDate.
@@ -3589,7 +3589,7 @@ func NewStrictMockGitserverClient() *MockGitserverClient {
 // NewMockGitserverClientFrom creates a new mock of the MockGitserverClient
 // interface. All methods delegate to the given implementation, unless
 // overwritten.
-func NewMockGitserverClientFrom(i shared.GitserverClient) *MockGitserverClient {
+func NewMockGitserverClientFrom(i GitserverClient) *MockGitserverClient {
 	return &MockGitserverClient{
 		CommitDateFunc: &GitserverClientCommitDateFunc{
 			defaultHook: i.CommitDate,
@@ -4780,8 +4780,8 @@ func (c GitserverClientResolveRevisionFuncCall) Results() []interface{} {
 
 // MockInferenceService is a mock implementation of the InferenceService
 // interface (from the package
-// github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared)
-// used for unit testing.
+// github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing) used
+// for unit testing.
 type MockInferenceService struct {
 	// InferIndexJobHintsFunc is an instance of a mock function object
 	// controlling the behavior of the method InferIndexJobHints.
@@ -4829,7 +4829,7 @@ func NewStrictMockInferenceService() *MockInferenceService {
 // NewMockInferenceServiceFrom creates a new mock of the
 // MockInferenceService interface. All methods delegate to the given
 // implementation, unless overwritten.
-func NewMockInferenceServiceFrom(i shared.InferenceService) *MockInferenceService {
+func NewMockInferenceServiceFrom(i InferenceService) *MockInferenceService {
 	return &MockInferenceService{
 		InferIndexJobHintsFunc: &InferenceServiceInferIndexJobHintsFunc{
 			defaultHook: i.InferIndexJobHints,
@@ -5075,8 +5075,8 @@ func (c InferenceServiceInferIndexJobsFuncCall) Results() []interface{} {
 
 // MockRepoUpdaterClient is a mock implementation of the RepoUpdaterClient
 // interface (from the package
-// github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared)
-// used for unit testing.
+// github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing) used
+// for unit testing.
 type MockRepoUpdaterClient struct {
 	// EnqueueRepoUpdateFunc is an instance of a mock function object
 	// controlling the behavior of the method EnqueueRepoUpdate.
@@ -5125,7 +5125,7 @@ func NewStrictMockRepoUpdaterClient() *MockRepoUpdaterClient {
 // NewMockRepoUpdaterClientFrom creates a new mock of the
 // MockRepoUpdaterClient interface. All methods delegate to the given
 // implementation, unless overwritten.
-func NewMockRepoUpdaterClientFrom(i shared.RepoUpdaterClient) *MockRepoUpdaterClient {
+func NewMockRepoUpdaterClientFrom(i RepoUpdaterClient) *MockRepoUpdaterClient {
 	return &MockRepoUpdaterClient{
 		EnqueueRepoUpdateFunc: &RepoUpdaterClientEnqueueRepoUpdateFunc{
 			defaultHook: i.EnqueueRepoUpdate,
@@ -5358,8 +5358,8 @@ func (c RepoUpdaterClientRepoLookupFuncCall) Results() []interface{} {
 
 // MockUploadService is a mock implementation of the UploadService interface
 // (from the package
-// github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared)
-// used for unit testing.
+// github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing) used
+// for unit testing.
 type MockUploadService struct {
 	// GetDirtyRepositoriesFunc is an instance of a mock function object
 	// controlling the behavior of the method GetDirtyRepositories.
@@ -5459,7 +5459,7 @@ func NewStrictMockUploadService() *MockUploadService {
 // NewMockUploadServiceFrom creates a new mock of the MockUploadService
 // interface. All methods delegate to the given implementation, unless
 // overwritten.
-func NewMockUploadServiceFrom(i shared.UploadService) *MockUploadService {
+func NewMockUploadServiceFrom(i UploadService) *MockUploadService {
 	return &MockUploadService{
 		GetDirtyRepositoriesFunc: &UploadServiceGetDirtyRepositoriesFunc{
 			defaultHook: i.GetDirtyRepositories,

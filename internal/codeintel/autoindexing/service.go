@@ -31,10 +31,10 @@ import (
 type Service struct {
 	store store.Store
 
-	uploadSvc       shared.UploadService
-	inferenceSvc    shared.InferenceService
-	repoUpdater     shared.RepoUpdaterClient
-	gitserverClient shared.GitserverClient
+	uploadSvc       UploadService
+	inferenceSvc    InferenceService
+	repoUpdater     RepoUpdaterClient
+	gitserverClient GitserverClient
 	symbolsClient   *symbols.Client
 	backgroundJobs  background.BackgroundJob
 
@@ -44,10 +44,10 @@ type Service struct {
 
 func newService(
 	store store.Store,
-	uploadSvc shared.UploadService,
-	inferenceSvc shared.InferenceService,
-	repoUpdater shared.RepoUpdaterClient,
-	gitserver shared.GitserverClient,
+	uploadSvc UploadService,
+	inferenceSvc InferenceService,
+	repoUpdater RepoUpdaterClient,
+	gitserver GitserverClient,
 	symbolsClient *symbols.Client,
 	backgroundJobs background.BackgroundJob,
 	observationContext *observation.Context,
@@ -77,7 +77,7 @@ func GetDependencyIndexingStore(s *Service) dbworkerstore.Store {
 	return s.backgroundJobs.DependencyIndexingStore()
 }
 
-func (s *Service) GetIndexes(ctx context.Context, opts types.GetIndexesOptions) (_ []types.Index, _ int, err error) {
+func (s *Service) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (_ []types.Index, _ int, err error) {
 	ctx, _, endObservation := s.operations.getIndexes.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -119,7 +119,7 @@ func (s *Service) DeleteIndexByID(ctx context.Context, id int) (_ bool, err erro
 	return s.store.DeleteIndexByID(ctx, id)
 }
 
-func (s *Service) DeleteIndexes(ctx context.Context, opts types.DeleteIndexesOptions) (err error) {
+func (s *Service) DeleteIndexes(ctx context.Context, opts shared.DeleteIndexesOptions) (err error) {
 	ctx, _, endObservation := s.operations.deleteIndexes.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 

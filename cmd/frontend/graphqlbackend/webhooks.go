@@ -7,9 +7,11 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -111,4 +113,41 @@ func marshalWebhookID(id int32) graphql.ID {
 func unmarshalWebhookID(id graphql.ID) (hookID int32, err error) {
 	err = relay.UnmarshalSpec(id, &hookID)
 	return
+}
+
+func (r *schemaResolver) CreateWebhook(ctx context.Context, args *struct {
+	CodeHostKind string
+	CodeHostURN  string
+	Secret       *string
+}) (*webhookResolver, error) {
+	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
+		return nil, auth.ErrMustBeSiteAdmin
+	}
+	err := validateCodeHostKindAndSecret(args.CodeHostKind, args.Secret)
+	if err != nil {
+		return nil, err
+	}
+	var secret *types.EncryptableSecret
+	if args.Secret != nil {
+		secret = types.NewUnencryptedSecret(*args.Secret)
+	}
+	webhook, err := r.db.Webhooks(keyring.Default().WebhookKey).Create(ctx, args.CodeHostKind, args.CodeHostURN, actor.FromContext(ctx).UID, secret)
+	if err != nil {
+		return nil, err
+	}
+	return &webhookResolver{hook: webhook, db: r.db}, nil
+}
+
+func validateCodeHostKindAndSecret(codeHostKind string, secret *string) error {
+	switch codeHostKind {
+	case extsvc.KindGitHub, extsvc.KindGitLab:
+		return nil
+	case extsvc.KindBitbucketCloud, extsvc.KindBitbucketServer:
+		if secret != nil {
+			return errors.Newf("webhooks do not support secrets for code host kind %s", codeHostKind)
+		}
+		return nil
+	default:
+		return errors.Newf("webhooks are not supported for code host kind %s", codeHostKind)
+	}
 }

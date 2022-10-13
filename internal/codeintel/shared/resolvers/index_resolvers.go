@@ -120,7 +120,7 @@ func (r *indexResolver) ProjectRoot(ctx context.Context) (_ *GitTreeEntryResolve
 func (r *indexResolver) Indexer() types.CodeIntelIndexerResolver {
 	// drop the tag if it exists
 	if idx, ok := types.ImageToIndexer[strings.Split(r.index.Indexer, ":")[0]]; ok {
-		return idx
+		return types.NewCodeIntelIndexerResolverFrom(idx)
 	}
 
 	return types.NewCodeIntelIndexerResolver(r.index.Indexer)

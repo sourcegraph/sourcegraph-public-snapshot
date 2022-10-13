@@ -111,7 +111,7 @@ export const AllOptionsPages: Story = (args = {}) => (
             <H2 className="mt-5 text-center">Not synced repository</H2>
             <div className="d-flex justify-content-center mb-3">
                 <div className="mx-4">
-                    <H3 className="text-center">Sourcegraph Cloud</H3>
+                    <H3 className="text-center">Sourcegraph.com</H3>
                     <OptionsPageWrapper
                         sourcegraphUrl="https://sourcegraph.com"
                         currentUser={{ settingsURL: '/users/john-doe/settings', siteAdmin: false }}

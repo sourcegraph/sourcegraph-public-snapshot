@@ -46,7 +46,7 @@ func (b *backgroundJob) NewDependencySyncScheduler(pollInterval time.Duration) *
 }
 
 type dependencySyncSchedulerHandler struct {
-	uploadsSvc      shared.UploadService
+	uploadsSvc      UploadService
 	depsSvc         DependenciesService
 	autoindexingSvc AutoIndexingService
 	workerStore     dbworkerstore.Store
@@ -231,7 +231,7 @@ func (h *dependencySyncSchedulerHandler) insertDependencyRepo(ctx context.Contex
 // shouldIndexDependencies returns true if the given upload should undergo dependency
 // indexing. Currently, we're only enabling dependency indexing for a repositories that
 // were indexed via lsif-go, scip-java, lsif-tsc and scip-typescript.
-func (h *dependencySyncSchedulerHandler) shouldIndexDependencies(ctx context.Context, store shared.UploadService, uploadID int) (bool, error) {
+func (h *dependencySyncSchedulerHandler) shouldIndexDependencies(ctx context.Context, store UploadService, uploadID int) (bool, error) {
 	upload, _, err := store.GetUploadByID(ctx, uploadID)
 	if err != nil {
 		return false, errors.Wrap(err, "dbstore.GetUploadByID")

@@ -77,17 +77,17 @@
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/store
       interfaces:
         - Store
-    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared
-      interfaces:
-        - RepoUpdaterClient
-        - GitServerClient
-        - UploadService
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/background
       interfaces:
         - DependenciesService
         - ReposStore
         - ExternalServiceStore
         - GitserverRepoStore
+        - PolicyMatcher
+        - RepoUpdaterClient
+        - GitserverClient
+        - InferenceService
+        - UploadService
         - AutoIndexingService
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared
       interfaces:
@@ -107,13 +107,12 @@
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/store
       interfaces:
         - Store
-    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing
       interfaces:
-        - GitServerClient
+        - GitserverClient
         - RepoUpdaterClient
         - InferenceService
         - UploadService
-
 
 - filename: internal/codeintel/autoindexing/internal/inference/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference

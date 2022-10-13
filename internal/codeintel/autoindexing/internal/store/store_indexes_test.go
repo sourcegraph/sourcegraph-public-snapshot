@@ -223,7 +223,7 @@ func TestGetIndexes(t *testing.T) {
 			)
 
 			t.Run(name, func(t *testing.T) {
-				indexes, totalCount, err := store.GetIndexes(ctx, types.GetIndexesOptions{
+				indexes, totalCount, err := store.GetIndexes(ctx, shared.GetIndexesOptions{
 					RepositoryID: testCase.repositoryID,
 					State:        testCase.state,
 					Term:         testCase.term,
@@ -258,7 +258,7 @@ func TestGetIndexes(t *testing.T) {
 		defer globals.SetPermissionsUserMapping(before)
 
 		indexes, totalCount, err := store.GetIndexes(ctx,
-			types.GetIndexesOptions{
+			shared.GetIndexesOptions{
 				Limit: 1,
 			},
 		)
@@ -580,7 +580,7 @@ func TestDeleteIndexes(t *testing.T) {
 	insertIndexes(t, db, types.Index{ID: 1, State: "completed"})
 	insertIndexes(t, db, types.Index{ID: 2, State: "errored"})
 
-	if err := store.DeleteIndexes(context.Background(), types.DeleteIndexesOptions{
+	if err := store.DeleteIndexes(context.Background(), shared.DeleteIndexesOptions{
 		State:        "errored",
 		Term:         "",
 		RepositoryID: 0,
