@@ -123,10 +123,6 @@ func (r *schemaResolver) CreateWebhook(ctx context.Context, args *struct {
 	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
 		return nil, auth.ErrMustBeSiteAdmin
 	}
-	a := actor.FromContext(ctx)
-	if !a.IsAuthenticated() {
-		return nil, errors.New("no current user")
-	}
 	err := validateCodeHostKindAndSecret(args.CodeHostKind, args.Secret)
 	if err != nil {
 		return nil, err
@@ -135,7 +131,7 @@ func (r *schemaResolver) CreateWebhook(ctx context.Context, args *struct {
 	if args.Secret != nil {
 		secret = types.NewUnencryptedSecret(*args.Secret)
 	}
-	webhook, err := r.db.Webhooks(keyring.Default().WebhookKey).Create(ctx, args.CodeHostKind, args.CodeHostURN, a.UID, secret)
+	webhook, err := r.db.Webhooks(keyring.Default().WebhookKey).Create(ctx, args.CodeHostKind, args.CodeHostURN, actor.FromContext(ctx).UID, secret)
 	if err != nil {
 		return nil, err
 	}
@@ -152,6 +148,6 @@ func validateCodeHostKindAndSecret(codeHostKind string, secret *string) error {
 		}
 		return nil
 	default:
-		return errors.Newf("Webhooks are not supported for code host kind %s", codeHostKind)
+		return errors.Newf("webhooks are not supported for code host kind %s", codeHostKind)
 	}
 }

@@ -66,7 +66,7 @@ func TestCreateWebhook(t *testing.T) {
 			ExpectedResult: "null",
 			ExpectedErrors: []*errors.QueryError{
 				{
-					Message: "Webhooks are not supported for code host kind InvalidKind",
+					Message: "webhooks are not supported for code host kind InvalidKind",
 					Path:    []any{"createWebhook"},
 				},
 			},
