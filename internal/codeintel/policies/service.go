@@ -6,6 +6,7 @@ import (
 	"time"
 
 	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/internal/background"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/internal/store"
 	policiesshared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
@@ -17,26 +18,31 @@ import (
 )
 
 type Service struct {
-	store          store.Store
-	uploadSvc      UploadService
-	gitserver      GitserverClient
-	operations     *operations
-	matcherMetrics *matcherMetrics
+	store         store.Store
+	uploadSvc     UploadService
+	gitserver     GitserverClient
+	backgroundJob background.BackgroundJob
+	operations    *operations
 }
 
 func newService(
 	policiesStore store.Store,
 	uploadSvc UploadService,
 	gitserver GitserverClient,
+	backgroundJob background.BackgroundJob,
 	observationContext *observation.Context,
 ) *Service {
 	return &Service{
-		store:          policiesStore,
-		uploadSvc:      uploadSvc,
-		gitserver:      gitserver,
-		operations:     newOperations(observationContext),
-		matcherMetrics: newMetrics(observationContext),
+		store:         policiesStore,
+		uploadSvc:     uploadSvc,
+		gitserver:     gitserver,
+		backgroundJob: backgroundJob,
+		operations:    newOperations(observationContext),
 	}
+}
+
+func GetBackgroundJobs(s *Service) background.BackgroundJob {
+	return s.backgroundJob
 }
 
 func (s *Service) getPolicyMatcherFromFactory(gitserver GitserverClient, extractor policies.Extractor, includeTipOfDefaultBranch bool, filterByCreatedDate bool) *policies.Matcher {
