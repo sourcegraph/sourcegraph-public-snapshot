@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/grafana/regexp"
 	"golang.org/x/oauth2"
@@ -128,7 +129,7 @@ func queryRFCs(ctx context.Context, query string, driveSpec DriveSpec, pager fun
 		SupportsAllDrives(true).
 		PageSize(100).
 		Q(q).
-		Fields("nextPageToken, files(id, name, parents)")
+		Fields("nextPageToken, files(id, name, parents, description, modifiedTime)")
 
 	if driveSpec.OrderBy != "" {
 		list = list.OrderBy(driveSpec.OrderBy)
@@ -142,7 +143,7 @@ func List(ctx context.Context, driveSpec DriveSpec, out *std.Output) error {
 }
 
 func Search(ctx context.Context, query string, driveSpec DriveSpec, out *std.Output) error {
-	return queryRFCs(ctx, fmt.Sprintf("(name contains '%s' or fullText contains '%s')", query, query), driveSpec, rfcTitlesPrinter(out), out)
+	return queryRFCs(ctx, fmt.Sprintf("(name contains '%[1]s' or fullText contains '%[1]s')", query), driveSpec, rfcTitlesPrinter(out), out)
 }
 
 func Open(ctx context.Context, number string, driveSpec DriveSpec, out *std.Output) error {
@@ -175,6 +176,12 @@ func rfcTitlesPrinter(out *std.Output) func(r *drive.FileList) error {
 		}
 
 		for _, f := range r.Files {
+			modified, err := time.Parse("2006-01-02T15:04:05.000Z", f.ModifiedTime)
+			if err != nil {
+				// if this errors then we are handling the Google API wrong, return an error
+				return errors.Wrap(err, "ModifiedTime")
+			}
+
 			matches := rfcTitleRegex.FindStringSubmatch(f.Name)
 			if len(matches) == 4 {
 				number := matches[1]
@@ -205,8 +212,12 @@ func rfcTitlesPrinter(out *std.Output) func(r *drive.FileList) error {
 
 				numberColor := output.Fg256Color(8)
 
-				out.Writef("RFC %s%s %s%s%s %s",
-					numberColor, number, statusColor, strings.Join(statuses, " "), output.StyleReset, name)
+				out.Writef("RFC %s%s %s%s%s %s %s%s %s%s",
+					numberColor, number,
+					statusColor, strings.Join(statuses, " "),
+					output.StyleReset, name,
+					output.StyleSuggestion, modified.Format("2006-01-02"), f.Description,
+					output.StyleReset)
 			} else {
 				out.Writef("%s%s", f.Name, output.StyleReset)
 			}
