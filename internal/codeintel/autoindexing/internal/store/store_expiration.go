@@ -27,7 +27,14 @@ WITH
 ranked_indexes AS (
 	SELECT
 		u.*,
-		RANK() OVER (PARTITION BY repository_id, root, indexer ORDER BY finished_at DESC) AS rank
+		RANK() OVER (
+			PARTITION BY
+				repository_id,
+				root,
+				indexer
+			ORDER BY
+				finished_at DESC
+		) AS rank
 	FROM lsif_indexes u
 	WHERE
 		u.state = 'failed' AND
