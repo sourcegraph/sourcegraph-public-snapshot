@@ -122,7 +122,6 @@ func newResetterMetrics(r prometheus.Registerer) dbworker.ResetterMetrics {
 }
 
 const cleanSyncJobsQueryFmtstr = `
--- source: internal/repos/sync_worker.go:runJobCleaner
 DELETE FROM external_service_sync_jobs
 WHERE
 	finished_at < NOW() - INTERVAL '1 day'

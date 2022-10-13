@@ -408,7 +408,6 @@ func (r *repoKVPs) Scan(value any) error {
 }
 
 const listReposQueryFmtstr = `
--- source: internal/database/repos.go:list
 %%s -- Populates "queryPrefix", i.e. CTEs
 SELECT %s
 FROM repo
@@ -1260,7 +1259,6 @@ func (s *repoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableRe
 }
 
 const listIndexableReposQuery = `
--- source: internal/database/repos.go:ListIndexableRepos
 SELECT
 	repo.id, repo.name, repo.stars
 FROM repo
@@ -1576,7 +1574,6 @@ AND repo.id = repo_ids.id::int
 `
 
 const getFirstRepoNamesByCloneURLQueryFmtstr = `
--- source:internal/database/repos.go:GetFirstRepoNameByCloneURL
 SELECT
 	name
 FROM

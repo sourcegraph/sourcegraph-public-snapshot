@@ -229,7 +229,6 @@ func (s *Store) CreateChangeset(ctx context.Context, c *btypes.Changeset) (err e
 }
 
 var createChangesetQueryFmtstr = `
--- source: enterprise/internal/batches/store/changesets.go:CreateChangeset
 INSERT INTO changesets (%s)
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING %s
@@ -246,7 +245,6 @@ func (s *Store) DeleteChangeset(ctx context.Context, id int64) (err error) {
 }
 
 var deleteChangesetQueryFmtstr = `
--- source: enterprise/internal/batches/store/changesets.go:DeleteChangeset
 DELETE FROM changesets WHERE id = %s
 `
 
@@ -281,7 +279,6 @@ func (s *Store) CountChangesets(ctx context.Context, opts CountChangesetsOpts) (
 }
 
 var countChangesetsQueryFmtstr = `
--- source: enterprise/internal/batches/store/changesets.go:CountChangesets
 SELECT COUNT(changesets.id)
 FROM changesets
 INNER JOIN repo ON repo.id = changesets.repo_id
@@ -395,7 +392,6 @@ func (s *Store) GetChangeset(ctx context.Context, opts GetChangesetOpts) (ch *bt
 }
 
 var getChangesetsQueryFmtstr = `
--- source: enterprise/internal/batches/store/changesets.go:GetChangeset
 SELECT %s FROM changesets
 INNER JOIN repo ON repo.id = changesets.repo_id
 WHERE %s
@@ -477,7 +473,6 @@ func scanChangesetSyncData(h *btypes.ChangesetSyncData, s dbutil.Scanner) error 
 }
 
 const listChangesetSyncDataQueryFmtstr = `
--- source: enterprise/internal/batches/store_changesets.go:ListChangesetSyncData
 SELECT changesets.id,
 	changesets.updated_at,
 	max(ce.updated_at) AS latest_event,
@@ -564,7 +559,6 @@ func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs
 }
 
 var listChangesetsQueryFmtstr = `
--- source: enterprise/internal/batches/store/changesets.go:ListChangesets
 SELECT %s FROM changesets
 INNER JOIN repo ON repo.id = changesets.repo_id
 %s -- optional LEFT JOIN to changeset_specs if required
@@ -688,7 +682,6 @@ func (s *Store) EnqueueChangeset(ctx context.Context, cs *btypes.Changeset, rese
 }
 
 var enqueueChangesetQueryFmtstr = `
--- source: enterprise/internal/batches/store/changesets.go:EnqueueChangeset
 UPDATE changesets
 SET
 	reconciler_state = %s,
@@ -740,7 +733,6 @@ func (s *Store) UpdateChangeset(ctx context.Context, cs *btypes.Changeset) (err 
 }
 
 var updateChangesetQueryFmtstr = `
--- source: enterprise/internal/batches/store_changesets.go:UpdateChangeset
 UPDATE changesets
 SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
@@ -797,7 +789,6 @@ func (s *Store) updateChangesetColumn(ctx context.Context, cs *btypes.Changeset,
 }
 
 var updateChangesetColumnQueryFmtstr = `
--- source: enterprise/internal/batches/store/changesets.go:updateChangesetColumn
 UPDATE changesets
 SET (updated_at, %s) = (%s, %s)
 WHERE id = %s
@@ -864,7 +855,6 @@ func updateChangesetCodeHostStateQuery(c *btypes.Changeset) (*sqlf.Query, error)
 }
 
 var updateChangesetCodeHostStateQueryFmtstr = `
--- source: enterprise/internal/batches/store/changesets.go:UpdateChangesetCodeHostState
 UPDATE changesets
 SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
@@ -955,7 +945,6 @@ func (s *Store) CancelQueuedBatchChangeChangesets(ctx context.Context, batchChan
 }
 
 const cancelQueuedBatchChangeChangesetsFmtstr = `
--- source: enterprise/internal/batches/store/changesets.go:CancelQueuedBatchChangeChangesets
 WITH changeset_ids AS (
   SELECT id FROM changesets
   WHERE
@@ -1029,7 +1018,6 @@ func (s *Store) EnqueueChangesetsToClose(ctx context.Context, batchChangeID int6
 }
 
 const enqueueChangesetsToCloseFmtstr = `
--- source: enterprise/internal/batches/store_changesets.go:EnqueueChangesetsToClose
 WITH all_matching AS (
 	SELECT
 		id, reconciler_state
@@ -1232,7 +1220,6 @@ func (s *Store) GetChangesetsStats(ctx context.Context, batchChangeID int64) (st
 }
 
 const getChangesetStatsFmtstr = `
--- source: enterprise/internal/batches/store_changesets.go:GetChangesetsStats
 SELECT
 	COUNT(*) AS total,
 	COUNT(*) FILTER (WHERE NOT %s AND changesets.computed_state = 'RETRYING') AS retrying,
@@ -1336,7 +1323,6 @@ func (s *Store) EnqueueNextScheduledChangeset(ctx context.Context) (ch *btypes.C
 }
 
 const enqueueNextScheduledChangesetFmtstr = `
--- source: enterprise/internal/batches/store/changesets.go:EnqueueNextScheduledChangeset
 WITH c AS (
 	SELECT *
 	FROM changesets
@@ -1376,7 +1362,6 @@ func (s *Store) GetChangesetPlaceInSchedulerQueue(ctx context.Context, id int64)
 }
 
 const getChangesetPlaceInSchedulerQueueFmtstr = `
--- source: enterprise/internal/batches/store/changesets.go:GetChangesetPlaceInSchedulerQueue
 SELECT
 	row_number
 FROM (
@@ -1442,7 +1427,6 @@ func getRepoChangesetsStatsQuery(repoID int64, authzConds *sqlf.Query) *sqlf.Que
 }
 
 const getRepoChangesetsStatsFmtstr = `
--- source: enterprise/internal/batches/store/changesets.go:GetRepoChangesetsStats
 SELECT
 	COUNT(*) AS total,
 	COUNT(*) FILTER (WHERE computed_state = 'UNPUBLISHED') AS unpublished,
@@ -1467,7 +1451,6 @@ FROM (
 `
 
 const getGlobalChangesetsStatsFmtstr = `
--- source: enterprise/internal/batches/store/changesets.go:GetGlobalChangesetsStats
 SELECT
 	COUNT(*) AS total,
 	COUNT(*) FILTER (WHERE computed_state = 'UNPUBLISHED') AS unpublished,
@@ -1519,6 +1502,5 @@ func (s *Store) CleanDetachedChangesets(ctx context.Context, retention time.Dura
 }
 
 const cleanDetachedChangesetsFmtstr = `
--- source: enterprise/internal/batches/store/changesets.go:CleanDetachedChangesets
 DELETE FROM changesets WHERE detached_at < (NOW() - (%s * interval '1 second'));
 `

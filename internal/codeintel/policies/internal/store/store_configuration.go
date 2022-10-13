@@ -85,7 +85,6 @@ func (s *store) GetConfigurationPolicies(ctx context.Context, opts policiesshare
 }
 
 const getConfigurationPoliciesCountQuery = `
--- source: internal/codeintel/policies/internal/store/store_configuration.go:GetConfigurationPolicies
 SELECT COUNT(*)
 FROM lsif_configuration_policies p
 LEFT JOIN repo ON repo.id = p.repository_id
@@ -93,7 +92,6 @@ WHERE %s
 `
 
 const getConfigurationPoliciesUnlimitedQuery = `
--- source: internal/codeintel/policies/internal/store/store_configuration.go:GetConfigurationPolicies
 SELECT
 	p.id,
 	p.repository_id,
@@ -134,7 +132,6 @@ func (s *store) GetConfigurationPolicyByID(ctx context.Context, id int) (_ types
 }
 
 const getConfigurationPolicyByIDQuery = `
--- source: internal/codeintel/stores/dbstore/configuration_policies.go:GetConfigurationPolicyByID
 SELECT
 	p.id,
 	p.repository_id,
@@ -201,7 +198,6 @@ func (s *store) CreateConfigurationPolicy(ctx context.Context, configurationPoli
 }
 
 const createConfigurationPolicyQuery = `
--- source: internal/codeintel/stores/dbstore/configuration_policies.go:CreateConfigurationPolicy
 INSERT INTO lsif_configuration_policies (
 	repository_id,
 	repository_patterns,
@@ -300,7 +296,6 @@ func (s *store) UpdateConfigurationPolicy(ctx context.Context, policy types.Conf
 }
 
 const updateConfigurationPolicySelectQuery = `
--- source: internal/codeintel/stores/dbstore/configuration_policies.go:UpdateConfigurationPolicy
 SELECT
 	id,
 	repository_id,
@@ -321,7 +316,6 @@ FOR UPDATE
 `
 
 const updateConfigurationPolicyQuery = `
--- source: internal/codeintel/stores/dbstore/configuration_policies.go:UpdateConfigurationPolicy
 UPDATE lsif_configuration_policies SET
 	name = %s,
 	repository_patterns = %s,
@@ -358,7 +352,6 @@ func (s *store) DeleteConfigurationPolicyByID(ctx context.Context, id int) (err 
 }
 
 const deleteConfigurationPolicyByIDQuery = `
--- source: internal/codeintel/stores/dbstore/configuration_policies.go:DeleteConfigurationPolicyByID
 WITH
 candidate AS (
 	SELECT id, protected

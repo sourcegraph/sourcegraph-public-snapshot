@@ -63,7 +63,6 @@ func (s *Store) UpsertBatchChange(ctx context.Context, c *btypes.BatchChange) (e
 }
 
 var upsertBatchChangeQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_changes.go:UpsertBatchChange
 INSERT INTO batch_changes (%s)
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 ON CONFLICT (%s) WHERE %s
@@ -139,7 +138,6 @@ func (s *Store) CreateBatchChange(ctx context.Context, c *btypes.BatchChange) (e
 }
 
 var createBatchChangeQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_changes.go:CreateBatchChange
 INSERT INTO batch_changes (%s)
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING %s
@@ -185,7 +183,6 @@ func (s *Store) UpdateBatchChange(ctx context.Context, c *btypes.BatchChange) (e
 }
 
 var updateBatchChangeQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_changes.go:UpdateBatchChange
 UPDATE batch_changes
 SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
@@ -225,7 +222,6 @@ func (s *Store) DeleteBatchChange(ctx context.Context, id int64) (err error) {
 }
 
 var deleteBatchChangeQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_changes.go:DeleteBatchChange
 DELETE FROM batch_changes WHERE id = %s
 `
 
@@ -258,7 +254,6 @@ func (s *Store) CountBatchChanges(ctx context.Context, opts CountBatchChangesOpt
 }
 
 var countBatchChangesQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_changes.go:CountBatchChanges
 SELECT COUNT(batch_changes.id)
 FROM batch_changes
 %s
@@ -402,7 +397,6 @@ func (s *Store) GetBatchChange(ctx context.Context, opts GetBatchChangeOpts) (bc
 }
 
 var getBatchChangesQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_changes.go:GetBatchChange
 SELECT %s FROM batch_changes
 LEFT JOIN users namespace_user ON batch_changes.namespace_user_id = namespace_user.id
 LEFT JOIN orgs  namespace_org  ON batch_changes.namespace_org_id = namespace_org.id
@@ -478,7 +472,6 @@ func (s *Store) GetBatchChangeDiffStat(ctx context.Context, opts GetBatchChangeD
 }
 
 var getBatchChangeDiffStatQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_changes.go:GetBatchChangeDiffStat
 SELECT
 	COALESCE(SUM(diff_stat_added), 0) AS added,
 	COALESCE(SUM(diff_stat_deleted), 0) AS deleted
@@ -520,7 +513,6 @@ func (s *Store) GetRepoDiffStat(ctx context.Context, repoID api.RepoID) (stat *d
 }
 
 var getRepoDiffStatQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_changes.go:GetRepoDiffStat
 SELECT
 	COALESCE(SUM(diff_stat_added), 0) AS added,
 	COALESCE(SUM(diff_stat_deleted), 0) AS deleted
@@ -585,7 +577,6 @@ func (s *Store) ListBatchChanges(ctx context.Context, opts ListBatchChangesOpts)
 }
 
 var listBatchChangesQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_changes.go:ListBatchChanges
 SELECT %s FROM batch_changes
 %s
 WHERE %s

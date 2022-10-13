@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
@@ -88,7 +89,6 @@ func (s *webhookStore) Create(ctx context.Context, kind, urn string, actorUID in
 }
 
 const webhookCreateQueryFmtstr = `
--- source: internal/database/webhooks.go:Create
 INSERT INTO
 	webhooks (
 		code_host_kind,
@@ -121,7 +121,6 @@ var webhookColumns = []*sqlf.Query{
 }
 
 const webhookGetByIDFmtstr = `
--- source: internal/database/webhooks.go:GetByID
 SELECT %s FROM webhooks
 WHERE id = %d
 `
@@ -144,7 +143,6 @@ func (s *webhookStore) GetByID(ctx context.Context, id int32) (*types.Webhook, e
 }
 
 const webhookGetByUUIDFmtstr = `
--- source: internal/database/webhooks.go:GetByUUID
 SELECT %s FROM webhooks
 WHERE uuid = %s
 `
@@ -167,7 +165,6 @@ func (s *webhookStore) GetByUUID(ctx context.Context, id uuid.UUID) (*types.Webh
 }
 
 const webhookDeleteQueryFmtstr = `
--- source: internal/database/webhooks.go:Delete
 DELETE FROM webhooks
 WHERE uuid = %s
 `
@@ -242,7 +239,6 @@ func (s *webhookStore) Update(ctx context.Context, actorUID int32, newWebhook *t
 }
 
 const webhookUpdateQueryFmtstr = `
--- source: internal/database/webhooks.go:Update
 UPDATE webhooks
 SET
 	code_host_urn = %s,

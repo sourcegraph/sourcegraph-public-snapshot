@@ -793,7 +793,6 @@ const upsertExternalServicesQueryValueFmtstr = `
 `
 
 const upsertExternalServicesQueryFmtstr = `
--- source: internal/database/external_services.go:ExternalServiceStore.Upsert
 INSERT INTO external_services (
   id,
   kind,

@@ -214,7 +214,6 @@ var webhookLogColumns = []*sqlf.Query{
 }
 
 const webhookLogCreateQueryFmtstr = `
--- source: internal/database/webhook_logs.go:Create
 INSERT INTO
 	webhook_logs (
 		received_at,
@@ -236,7 +235,6 @@ INSERT INTO
 `
 
 const webhookLogGetByIDQueryFmtstr = `
--- source: internal/database/webhook_logs.go:GetByID
 SELECT
 	%s
 FROM
@@ -246,7 +244,6 @@ WHERE
 `
 
 const webhookLogCountQueryFmtstr = `
--- source: internal/database/webhook_logs.go:Count
 SELECT
 	COUNT(id)
 FROM
@@ -256,7 +253,6 @@ WHERE
 `
 
 const webhookLogListQueryFmtstr = `
--- source: internal/database/webhook_logs.go:List
 SELECT
 	%s
 FROM
@@ -269,7 +265,6 @@ ORDER BY
 `
 
 const webhookLogDeleteStaleQueryFmtstr = `
--- source: internal/database/webhook_logs.go:DeleteStale
 DELETE FROM
 	webhook_logs
 WHERE

@@ -67,7 +67,6 @@ func (s *store) GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (
 }
 
 const getUploadsQuery = `
--- source: internal/codeintel/uploads/internal/store/store_uploads.go:GetUploads
 %s -- Dynamic CTE definitions for use in the WHERE clause
 SELECT
 	u.id,
@@ -213,7 +212,6 @@ func (s *store) GetUploadByID(ctx context.Context, id int) (_ types.Upload, _ bo
 }
 
 const getUploadByIDQuery = `
--- source: internal/codeintel/uploads/internal/stores/store_uploads.go:GetUploadByID
 SELECT
 	u.id,
 	u.commit,
@@ -270,7 +268,6 @@ func (s *store) GetUploadsByIDs(ctx context.Context, ids ...int) (_ []types.Uplo
 }
 
 const getUploadsByIDsQuery = `
--- source: internal/codeintel/uploads/internal/stores/store_uploads.go:GetUploadsByIDs
 SELECT
 	u.id,
 	u.commit,
@@ -334,7 +331,6 @@ func (s *store) GetRecentUploadsSummary(ctx context.Context, repositoryID int) (
 }
 
 const recentUploadsSummaryQuery = `
--- source: internal/codeintel/stores/dbstore/uploads.go:RecentUploadsSummary
 WITH ranked_completed AS (
 	SELECT
 		u.id,
@@ -425,7 +421,6 @@ func (s *store) GetLastUploadRetentionScanForRepository(ctx context.Context, rep
 }
 
 const lastUploadRetentionScanForRepositoryQuery = `
--- source: internal/codeintel/stores/dbstore/uploads.go:LastUploadRetentionScanForRepository
 SELECT last_retention_scan_at FROM lsif_last_retention_scan WHERE repository_id = %s
 `
 
@@ -468,7 +463,6 @@ func (s *store) DeleteUploadsWithoutRepository(ctx context.Context, now time.Tim
 }
 
 const deleteUploadsWithoutRepositoryQuery = `
--- source: internal/codeintel/uploads/internal/store/store_uploads.go:DeleteUploadsWithoutRepository
 WITH
 candidates AS (
 	SELECT u.id
@@ -514,7 +508,6 @@ func (s *store) DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore 
 }
 
 const deleteUploadsStuckUploadingQuery = `
--- source: internal/codeintel/uploads/internal/store/store_uploads.go:DeleteUploadsStuckUploading
 WITH
 candidates AS (
 	SELECT u.id
@@ -578,7 +571,6 @@ func (s *store) SoftDeleteExpiredUploads(ctx context.Context) (count int, err er
 }
 
 const softDeleteExpiredUploadsQuery = `
--- source: internal/codeintel/uploads/internal/store/store_uploads.go:SoftDeleteExpiredUploads
 WITH candidates AS (
 	SELECT u.id
 	FROM lsif_uploads u
@@ -638,7 +630,6 @@ func (s *store) HardDeleteUploadsByIDs(ctx context.Context, ids ...int) (err err
 }
 
 const hardDeleteUploadsByIDsQuery = `
--- source: internal/codeintel/uploads/internal/store/store_uploads.go:HardDeleteUploadsByIDs
 WITH locked_uploads AS (
 	SELECT u.id
 	FROM lsif_uploads u
@@ -680,7 +671,6 @@ func (s *store) DeleteUploadByID(ctx context.Context, id int) (_ bool, err error
 }
 
 const deleteUploadByIDQuery = `
--- source: internal/codeintel/stores/dbstore/uploads.go:DeleteUploadByID
 UPDATE lsif_uploads u SET state = CASE WHEN u.state = 'completed' THEN 'deleting' ELSE 'deleted' END WHERE id = %s RETURNING repository_id
 `
 
@@ -729,7 +719,6 @@ func (s *store) DeleteUploads(ctx context.Context, opts shared.DeleteUploadsOpti
 }
 
 const deleteUploadsQuery = `
--- source: internal/codeintel/stores/dbstore/uploads.go:DeleteUploads
 UPDATE lsif_uploads u
 SET state = CASE WHEN u.state = 'completed' THEN 'deleting' ELSE 'deleted' END
 FROM repo
@@ -788,7 +777,6 @@ func (s *store) UpdateUploadRetention(ctx context.Context, protectedIDs, expired
 }
 
 const updateUploadRetentionQuery = `
--- source: internal/codeintel/uploads/internal/store/store_uploads.go:UpdateUploadRetention
 UPDATE lsif_uploads SET %s WHERE id IN (%s)
 `
 
@@ -817,7 +805,6 @@ func (s *store) BackfillReferenceCountBatch(ctx context.Context, batchSize int) 
 }
 
 const backfillReferenceCountBatchQuery = `
--- source: internal/codeintel/uploads/internal/store/store_uploads.go:BackfillReferenceCountBatch
 SELECT u.id
 FROM lsif_uploads u
 WHERE
@@ -849,7 +836,6 @@ func (s *store) SourcedCommitsWithoutCommittedAt(ctx context.Context, batchSize 
 }
 
 const sourcedCommitsWithoutCommittedAtQuery = `
--- source: internal/codeintel/uploads/internal/store/store_uploads.go:SourcedCommitsWithoutCommittedAt
 SELECT u.repository_id, r.name, u.commit
 FROM lsif_uploads u
 JOIN repo r ON r.id = u.repository_id
@@ -871,7 +857,6 @@ func (s *store) UpdateCommittedAt(ctx context.Context, repositoryID int, commit,
 }
 
 const updateCommittedAtQuery = `
--- source: internal/codeintel/uploads/internal/store/store_uploads.go:UpdateCommittedAt
 UPDATE lsif_uploads SET committed_at = %s WHERE state = 'completed' AND repository_id = %s AND commit = %s AND committed_at IS NULL
 `
 
@@ -936,7 +921,6 @@ func (s *store) UpdateUploadsReferenceCounts(ctx context.Context, ids []int, dep
 }
 
 const updateUploadsReferenceCountsQuery = `
--- source: internal/codeintel/uploads/internal/store/store_uploads.go:UpdateReferenceCounts
 WITH
 -- Select the set of package identifiers provided by the target upload list. This
 -- result set includes non-canonical results.
@@ -1228,17 +1212,14 @@ func (s *store) UpdateUploadsVisibleToCommits(
 }
 
 const calculateVisibleUploadsCommitGraphQuery = `
--- source: internal/codeintel/uploads/internal/store/store_uploads.go:UpdateUploadsVisibleToCommits
 SELECT id, commit, md5(root || ':' || indexer) as token, 0 as distance FROM lsif_uploads WHERE state = 'completed' AND repository_id = %s
 `
 
 const calculateVisibleUploadsDirtyRepositoryQuery = `
--- source: internal/codeintel/uploads/internal/store/store_uploads.go:UpdateUploadsVisibleToCommits
 UPDATE lsif_dirty_repositories SET update_token = GREATEST(update_token, %s), updated_at = %s WHERE repository_id = %s
 `
 
 const calculateVisibleUploadsDeleteUploadsQueuedForDeletionQuery = `
--- source: internal/codeintel/uploads/internal/store/store_uploads.go:UpdateUploadsVisibleToCommits
 WITH
 candidates AS (
 	SELECT u.id
@@ -1377,7 +1358,6 @@ func (s *store) GetVisibleUploadsMatchingMonikers(ctx context.Context, repositor
 }
 
 const referenceIDsCTEDefinitions = `
--- source: internal/codeintel/stores/dbstore/xrepo.go:ReferenceIDs
 WITH
 visible_uploads AS (
 	(%s)
@@ -1639,7 +1619,6 @@ func (s *store) persistNearestUploads(ctx context.Context, repositoryID int, tx 
 }
 
 const nearestUploadsInsertQuery = `
--- source: internal/codeintel/uploads/internal/store/store_uploads.go:persistNearestUploads
 INSERT INTO lsif_nearest_uploads
 SELECT %s, source.commit_bytea, source.uploads
 FROM t_lsif_nearest_uploads source
@@ -1647,7 +1626,6 @@ WHERE source.commit_bytea NOT IN (SELECT nu.commit_bytea FROM lsif_nearest_uploa
 `
 
 const nearestUploadsUpdateQuery = `
--- source: internal/codeintel/uploads/internal/store/store_uploads.go:persistNearestUploads
 UPDATE lsif_nearest_uploads nu
 SET uploads = source.uploads
 FROM t_lsif_nearest_uploads source
@@ -1658,7 +1636,6 @@ WHERE
 `
 
 const nearestUploadsDeleteQuery = `
--- source: internal/codeintel/uploads/internal/store/store_uploads.go:persistNearestUploads
 DELETE FROM lsif_nearest_uploads nu
 WHERE
 	nu.repository_id = %s AND
@@ -1691,7 +1668,6 @@ func (s *store) persistNearestUploadsLinks(ctx context.Context, repositoryID int
 }
 
 const nearestUploadsLinksInsertQuery = `
--- source: internal/codeintel/uploads/internal/store/store_uploads.go:persistNearestUploadsLinks
 INSERT INTO lsif_nearest_uploads_links
 SELECT %s, source.commit_bytea, source.ancestor_commit_bytea, source.distance
 FROM t_lsif_nearest_uploads_links source
@@ -1699,7 +1675,6 @@ WHERE source.commit_bytea NOT IN (SELECT nul.commit_bytea FROM lsif_nearest_uplo
 `
 
 const nearestUploadsLinksUpdateQuery = `
--- source: internal/codeintel/uploads/internal/store/store_uploads.go:persistNearestUploadsLinks
 UPDATE lsif_nearest_uploads_links nul
 SET ancestor_commit_bytea = source.ancestor_commit_bytea, distance = source.distance
 FROM t_lsif_nearest_uploads_links source
@@ -1711,7 +1686,6 @@ WHERE
 `
 
 const nearestUploadsLinksDeleteQuery = `
--- source: internal/codeintel/uploads/internal/store/store_uploads.go:persistNearestUploadsLinks
 DELETE FROM lsif_nearest_uploads_links nul
 WHERE
 	nul.repository_id = %s AND
@@ -1741,7 +1715,6 @@ func (s *store) persistUploadsVisibleAtTip(ctx context.Context, repositoryID int
 }
 
 const uploadsVisibleAtTipInsertQuery = `
--- source: internal/codeintel/uploads/internal/store/store_uploads.go:persistUploadsVisibleAtTip
 INSERT INTO lsif_uploads_visible_at_tip
 SELECT %s, source.upload_id, source.branch_or_tag_name, source.is_default_branch
 FROM t_lsif_uploads_visible_at_tip source
@@ -1757,7 +1730,6 @@ WHERE NOT EXISTS (
 `
 
 const uploadsVisibleAtTipDeleteQuery = `
--- source: internal/codeintel/uploads/internal/store/store_uploads.go:persistUploadsVisibleAtTip
 DELETE FROM lsif_uploads_visible_at_tip vat
 WHERE
 	vat.repository_id = %s AND
@@ -1800,7 +1772,6 @@ func (s *store) bulkTransfer(ctx context.Context, insertQuery, updateQuery, dele
 }
 
 const bulkTransferQuery = `
--- source: internal/codeintel/uploads/internal/store/store_uploads.go:bulkTransfer
 WITH
 	ins AS (%s),
 	upd AS (%s),
@@ -1828,7 +1799,6 @@ func (s *store) createTemporaryNearestUploadsTables(ctx context.Context, tx *bas
 }
 
 const temporaryNearestUploadsTableQuery = `
--- source: internal/codeintel/uploads/internal/store/store_uploads.go:createTemporaryNearestUploadsTables
 CREATE TEMPORARY TABLE t_lsif_nearest_uploads (
 	commit_bytea bytea NOT NULL,
 	uploads      jsonb NOT NULL
@@ -1836,7 +1806,6 @@ CREATE TEMPORARY TABLE t_lsif_nearest_uploads (
 `
 
 const temporaryNearestUploadsLinksTableQuery = `
--- source: internal/codeintel/uploads/internal/store/store_uploads.go:createTemporaryNearestUploadsTables
 CREATE TEMPORARY TABLE t_lsif_nearest_uploads_links (
 	commit_bytea          bytea NOT NULL,
 	ancestor_commit_bytea bytea NOT NULL,
@@ -1845,7 +1814,6 @@ CREATE TEMPORARY TABLE t_lsif_nearest_uploads_links (
 `
 
 const temporaryUploadsVisibleAtTipTableQuery = `
--- source: internal/codeintel/uploads/internal/store/store_uploads.go:createTemporaryNearestUploadsTables
 CREATE TEMPORARY TABLE t_lsif_uploads_visible_at_tip (
 	upload_id integer NOT NULL,
 	branch_or_tag_name text NOT NULL,
@@ -1888,7 +1856,6 @@ func (s *store) InsertUpload(ctx context.Context, upload types.Upload) (id int, 
 }
 
 const insertUploadQuery = `
--- source: internal/codeintel/stores/dbstore/uploads.go:InsertUpload
 INSERT INTO lsif_uploads (
 	commit,
 	root,
@@ -1918,7 +1885,6 @@ func (s *store) AddUploadPart(ctx context.Context, uploadID, partIndex int) (err
 }
 
 const addUploadPartQuery = `
--- source: internal/codeintel/stores/dbstore/uploads.go:AddUploadPart
 UPDATE lsif_uploads SET uploaded_parts = array(SELECT DISTINCT * FROM unnest(array_append(uploaded_parts, %s))) WHERE id = %s
 `
 
@@ -1933,7 +1899,6 @@ func (s *store) MarkQueued(ctx context.Context, id int, uploadSize *int64) (err 
 }
 
 const markQueuedQuery = `
--- source: internal/codeintel/stores/dbstore/uploads.go:MarkQueued
 UPDATE lsif_uploads
 SET
 	state = 'queued',
@@ -1953,7 +1918,6 @@ func (s *store) MarkFailed(ctx context.Context, id int, reason string) (err erro
 }
 
 const markFailedQuery = `
--- source: internal/codeintel/stores/dbstore/uploads.go:MarkFailed
 UPDATE
 	lsif_uploads
 SET
