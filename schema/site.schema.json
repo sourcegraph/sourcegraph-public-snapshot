@@ -1231,10 +1231,10 @@
               "default": false
             }
           },
-          "required": ["securityEvents", "graphQL", "gitserverAccess"],
+          "required": ["backgroundJobs", "graphQL", "gitserverAccess"],
           "examples": [
             {
-              "securityEvents": true,
+              "backgroundJobs": false,
               "graphQL": false,
               "gitserverAccess": false
             }
