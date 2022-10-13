@@ -42,7 +42,7 @@ func Middleware(db database.DB) *auth.Middleware {
 
 // authHandler is the new SAML HTTP auth handler.
 //
-// It uses github.com/russelhaering/gosaml2 and (unlike authHandler1) makes it possible to support
+// It uses github.com/russellhaering/gosaml2 and (unlike authHandler1) makes it possible to support
 // multiple auth providers with SAML and expose more SAML functionality.
 func authHandler(db database.DB, w http.ResponseWriter, r *http.Request, next http.Handler, isAPIRequest bool) {
 	// Delegate to SAML ACS and metadata endpoint handlers.
@@ -164,7 +164,7 @@ func samlSPHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) 
 			var exp time.Duration
 			t, err := time.Parse(time.RFC3339, info.expirationTime)
 			if err != nil {
-				log15.Error("Error parsing expiration time for the asse.", "error", err)
+				log15.Error("Error parsing expiration time.", "error", err)
 				http.Error(w, "Failed to retrieve user: "+err.Error(), http.StatusInternalServerError)
 				return
 			}
