@@ -809,6 +809,30 @@ commandsets:
       - zoekt-web-0
       - zoekt-web-1
 
+  enterprise-single-gitserver: &enterprise_set
+    requiresDevPrivate: true
+    checks:
+      - docker
+      - redis
+      - postgres
+      - git
+    commands:
+      - frontend
+      - worker
+      - repo-updater
+      - web
+      - gitserver-0
+      - searcher
+      - symbols
+      - caddy
+      - docsite
+      - syntax-highlighter
+      - github-proxy
+      - zoekt-index-0
+      - zoekt-index-1
+      - zoekt-web-0
+      - zoekt-web-1
+
   enterprise-e2e:
     <<: *enterprise_set
     env:
