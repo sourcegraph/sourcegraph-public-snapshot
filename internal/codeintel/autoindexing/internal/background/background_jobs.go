@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/store"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -38,14 +37,14 @@ type BackgroundJob interface {
 }
 
 type backgroundJob struct {
-	uploadSvc       shared.UploadService
+	uploadSvc       UploadService
 	depsSvc         DependenciesService
 	policiesSvc     PoliciesService
 	autoindexingSvc AutoIndexingService
 
 	policyMatcher   PolicyMatcher
-	repoUpdater     shared.RepoUpdaterClient
-	gitserverClient shared.GitserverClient
+	repoUpdater     RepoUpdaterClient
+	gitserverClient GitserverClient
 
 	store                   store.Store
 	repoStore               ReposStore
@@ -68,12 +67,12 @@ type backgroundJob struct {
 func New(
 	db database.DB,
 	store store.Store,
-	uploadSvc shared.UploadService,
+	uploadSvc UploadService,
 	depsSvc DependenciesService,
 	policiesSvc PoliciesService,
 	policyMatcher PolicyMatcher,
-	gitserverClient shared.GitserverClient,
-	repoUpdater shared.RepoUpdaterClient,
+	gitserverClient GitserverClient,
+	repoUpdater RepoUpdaterClient,
 	observationContext *observation.Context,
 ) BackgroundJob {
 	repoStore := db.Repos()

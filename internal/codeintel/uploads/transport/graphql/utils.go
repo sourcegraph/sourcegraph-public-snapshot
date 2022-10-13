@@ -11,7 +11,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -79,17 +79,17 @@ const DefaultUploadPageSize = 50
 
 // makeGetUploadsOptions translates the given GraphQL arguments into options defined by the
 // store.GetUploads operations.
-func makeGetUploadsOptions(args *LSIFRepositoryUploadsQueryArgs) (types.GetUploadsOptions, error) {
+func makeGetUploadsOptions(args *LSIFRepositoryUploadsQueryArgs) (shared.GetUploadsOptions, error) {
 	repositoryID, err := resolveRepositoryID(args.RepositoryID)
 	if err != nil {
-		return types.GetUploadsOptions{}, err
+		return shared.GetUploadsOptions{}, err
 	}
 
 	var dependencyOf int64
 	if args.DependencyOf != nil {
 		dependencyOf, err = unmarshalLSIFUploadGQLID(*args.DependencyOf)
 		if err != nil {
-			return types.GetUploadsOptions{}, err
+			return shared.GetUploadsOptions{}, err
 		}
 	}
 
@@ -97,16 +97,16 @@ func makeGetUploadsOptions(args *LSIFRepositoryUploadsQueryArgs) (types.GetUploa
 	if args.DependentOf != nil {
 		dependentOf, err = unmarshalLSIFUploadGQLID(*args.DependentOf)
 		if err != nil {
-			return types.GetUploadsOptions{}, err
+			return shared.GetUploadsOptions{}, err
 		}
 	}
 
 	offset, err := decodeIntCursor(args.After)
 	if err != nil {
-		return types.GetUploadsOptions{}, err
+		return shared.GetUploadsOptions{}, err
 	}
 
-	return types.GetUploadsOptions{
+	return shared.GetUploadsOptions{
 		RepositoryID:       repositoryID,
 		State:              strings.ToLower(derefString(args.State, "")),
 		Term:               derefString(args.Query, ""),
@@ -122,17 +122,17 @@ func makeGetUploadsOptions(args *LSIFRepositoryUploadsQueryArgs) (types.GetUploa
 
 // makeDeleteUploadsOptions translates the given GraphQL arguments into options defined by the
 // store.DeleteUploads operations.
-func makeDeleteUploadsOptions(args *DeleteLSIFUploadsArgs) (types.DeleteUploadsOptions, error) {
+func makeDeleteUploadsOptions(args *DeleteLSIFUploadsArgs) (shared.DeleteUploadsOptions, error) {
 	var repository int
 	if args.Repository != nil {
 		var err error
 		repository, err = resolveRepositoryID(*args.Repository)
 		if err != nil {
-			return types.DeleteUploadsOptions{}, err
+			return shared.DeleteUploadsOptions{}, err
 		}
 	}
 
-	return types.DeleteUploadsOptions{
+	return shared.DeleteUploadsOptions{
 		State:        strings.ToLower(derefString(args.State, "")),
 		Term:         derefString(args.Query, ""),
 		VisibleAtTip: derefBool(args.IsLatestForRepo, false),

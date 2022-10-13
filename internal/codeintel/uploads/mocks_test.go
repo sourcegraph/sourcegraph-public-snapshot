@@ -17,6 +17,7 @@ import (
 	authz "github.com/sourcegraph/sourcegraph/internal/authz"
 	shared1 "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	enterprise "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
+	shared2 "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	types "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	lsifstore "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
@@ -248,7 +249,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		DeleteUploadsFunc: &StoreDeleteUploadsFunc{
-			defaultHook: func(context.Context, types.DeleteUploadsOptions) (r0 error) {
+			defaultHook: func(context.Context, shared.DeleteUploadsOptions) (r0 error) {
 				return
 			},
 		},
@@ -348,7 +349,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		GetUploadsFunc: &StoreGetUploadsFunc{
-			defaultHook: func(context.Context, types.GetUploadsOptions) (r0 []types.Upload, r1 int, r2 error) {
+			defaultHook: func(context.Context, shared.GetUploadsOptions) (r0 []types.Upload, r1 int, r2 error) {
 				return
 			},
 		},
@@ -520,7 +521,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		DeleteUploadsFunc: &StoreDeleteUploadsFunc{
-			defaultHook: func(context.Context, types.DeleteUploadsOptions) error {
+			defaultHook: func(context.Context, shared.DeleteUploadsOptions) error {
 				panic("unexpected invocation of MockStore.DeleteUploads")
 			},
 		},
@@ -620,7 +621,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		GetUploadsFunc: &StoreGetUploadsFunc{
-			defaultHook: func(context.Context, types.GetUploadsOptions) ([]types.Upload, int, error) {
+			defaultHook: func(context.Context, shared.GetUploadsOptions) ([]types.Upload, int, error) {
 				panic("unexpected invocation of MockStore.GetUploads")
 			},
 		},
@@ -1595,15 +1596,15 @@ func (c StoreDeleteUploadByIDFuncCall) Results() []interface{} {
 // StoreDeleteUploadsFunc describes the behavior when the DeleteUploads
 // method of the parent MockStore instance is invoked.
 type StoreDeleteUploadsFunc struct {
-	defaultHook func(context.Context, types.DeleteUploadsOptions) error
-	hooks       []func(context.Context, types.DeleteUploadsOptions) error
+	defaultHook func(context.Context, shared.DeleteUploadsOptions) error
+	hooks       []func(context.Context, shared.DeleteUploadsOptions) error
 	history     []StoreDeleteUploadsFuncCall
 	mutex       sync.Mutex
 }
 
 // DeleteUploads delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockStore) DeleteUploads(v0 context.Context, v1 types.DeleteUploadsOptions) error {
+func (m *MockStore) DeleteUploads(v0 context.Context, v1 shared.DeleteUploadsOptions) error {
 	r0 := m.DeleteUploadsFunc.nextHook()(v0, v1)
 	m.DeleteUploadsFunc.appendCall(StoreDeleteUploadsFuncCall{v0, v1, r0})
 	return r0
@@ -1611,7 +1612,7 @@ func (m *MockStore) DeleteUploads(v0 context.Context, v1 types.DeleteUploadsOpti
 
 // SetDefaultHook sets function that is called when the DeleteUploads method
 // of the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreDeleteUploadsFunc) SetDefaultHook(hook func(context.Context, types.DeleteUploadsOptions) error) {
+func (f *StoreDeleteUploadsFunc) SetDefaultHook(hook func(context.Context, shared.DeleteUploadsOptions) error) {
 	f.defaultHook = hook
 }
 
@@ -1619,7 +1620,7 @@ func (f *StoreDeleteUploadsFunc) SetDefaultHook(hook func(context.Context, types
 // DeleteUploads method of the parent MockStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreDeleteUploadsFunc) PushHook(hook func(context.Context, types.DeleteUploadsOptions) error) {
+func (f *StoreDeleteUploadsFunc) PushHook(hook func(context.Context, shared.DeleteUploadsOptions) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1628,19 +1629,19 @@ func (f *StoreDeleteUploadsFunc) PushHook(hook func(context.Context, types.Delet
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *StoreDeleteUploadsFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, types.DeleteUploadsOptions) error {
+	f.SetDefaultHook(func(context.Context, shared.DeleteUploadsOptions) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *StoreDeleteUploadsFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, types.DeleteUploadsOptions) error {
+	f.PushHook(func(context.Context, shared.DeleteUploadsOptions) error {
 		return r0
 	})
 }
 
-func (f *StoreDeleteUploadsFunc) nextHook() func(context.Context, types.DeleteUploadsOptions) error {
+func (f *StoreDeleteUploadsFunc) nextHook() func(context.Context, shared.DeleteUploadsOptions) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1678,7 +1679,7 @@ type StoreDeleteUploadsFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 types.DeleteUploadsOptions
+	Arg1 shared.DeleteUploadsOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -3862,15 +3863,15 @@ func (c StoreGetUploadIDsWithReferencesFuncCall) Results() []interface{} {
 // StoreGetUploadsFunc describes the behavior when the GetUploads method of
 // the parent MockStore instance is invoked.
 type StoreGetUploadsFunc struct {
-	defaultHook func(context.Context, types.GetUploadsOptions) ([]types.Upload, int, error)
-	hooks       []func(context.Context, types.GetUploadsOptions) ([]types.Upload, int, error)
+	defaultHook func(context.Context, shared.GetUploadsOptions) ([]types.Upload, int, error)
+	hooks       []func(context.Context, shared.GetUploadsOptions) ([]types.Upload, int, error)
 	history     []StoreGetUploadsFuncCall
 	mutex       sync.Mutex
 }
 
 // GetUploads delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockStore) GetUploads(v0 context.Context, v1 types.GetUploadsOptions) ([]types.Upload, int, error) {
+func (m *MockStore) GetUploads(v0 context.Context, v1 shared.GetUploadsOptions) ([]types.Upload, int, error) {
 	r0, r1, r2 := m.GetUploadsFunc.nextHook()(v0, v1)
 	m.GetUploadsFunc.appendCall(StoreGetUploadsFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
@@ -3878,7 +3879,7 @@ func (m *MockStore) GetUploads(v0 context.Context, v1 types.GetUploadsOptions) (
 
 // SetDefaultHook sets function that is called when the GetUploads method of
 // the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreGetUploadsFunc) SetDefaultHook(hook func(context.Context, types.GetUploadsOptions) ([]types.Upload, int, error)) {
+func (f *StoreGetUploadsFunc) SetDefaultHook(hook func(context.Context, shared.GetUploadsOptions) ([]types.Upload, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -3886,7 +3887,7 @@ func (f *StoreGetUploadsFunc) SetDefaultHook(hook func(context.Context, types.Ge
 // GetUploads method of the parent MockStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreGetUploadsFunc) PushHook(hook func(context.Context, types.GetUploadsOptions) ([]types.Upload, int, error)) {
+func (f *StoreGetUploadsFunc) PushHook(hook func(context.Context, shared.GetUploadsOptions) ([]types.Upload, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -3895,19 +3896,19 @@ func (f *StoreGetUploadsFunc) PushHook(hook func(context.Context, types.GetUploa
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *StoreGetUploadsFunc) SetDefaultReturn(r0 []types.Upload, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, types.GetUploadsOptions) ([]types.Upload, int, error) {
+	f.SetDefaultHook(func(context.Context, shared.GetUploadsOptions) ([]types.Upload, int, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *StoreGetUploadsFunc) PushReturn(r0 []types.Upload, r1 int, r2 error) {
-	f.PushHook(func(context.Context, types.GetUploadsOptions) ([]types.Upload, int, error) {
+	f.PushHook(func(context.Context, shared.GetUploadsOptions) ([]types.Upload, int, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *StoreGetUploadsFunc) nextHook() func(context.Context, types.GetUploadsOptions) ([]types.Upload, int, error) {
+func (f *StoreGetUploadsFunc) nextHook() func(context.Context, shared.GetUploadsOptions) ([]types.Upload, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -3945,7 +3946,7 @@ type StoreGetUploadsFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 types.GetUploadsOptions
+	Arg1 shared.GetUploadsOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []types.Upload
@@ -11173,7 +11174,7 @@ type MockPolicyService struct {
 func NewMockPolicyService() *MockPolicyService {
 	return &MockPolicyService{
 		GetConfigurationPoliciesFunc: &PolicyServiceGetConfigurationPoliciesFunc{
-			defaultHook: func(context.Context, types.GetConfigurationPoliciesOptions) (r0 []types.ConfigurationPolicy, r1 int, r2 error) {
+			defaultHook: func(context.Context, shared2.GetConfigurationPoliciesOptions) (r0 []types.ConfigurationPolicy, r1 int, r2 error) {
 				return
 			},
 		},
@@ -11185,7 +11186,7 @@ func NewMockPolicyService() *MockPolicyService {
 func NewStrictMockPolicyService() *MockPolicyService {
 	return &MockPolicyService{
 		GetConfigurationPoliciesFunc: &PolicyServiceGetConfigurationPoliciesFunc{
-			defaultHook: func(context.Context, types.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error) {
+			defaultHook: func(context.Context, shared2.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error) {
 				panic("unexpected invocation of MockPolicyService.GetConfigurationPolicies")
 			},
 		},
@@ -11207,15 +11208,15 @@ func NewMockPolicyServiceFrom(i PolicyService) *MockPolicyService {
 // GetConfigurationPolicies method of the parent MockPolicyService instance
 // is invoked.
 type PolicyServiceGetConfigurationPoliciesFunc struct {
-	defaultHook func(context.Context, types.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error)
-	hooks       []func(context.Context, types.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error)
+	defaultHook func(context.Context, shared2.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error)
+	hooks       []func(context.Context, shared2.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error)
 	history     []PolicyServiceGetConfigurationPoliciesFuncCall
 	mutex       sync.Mutex
 }
 
 // GetConfigurationPolicies delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockPolicyService) GetConfigurationPolicies(v0 context.Context, v1 types.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error) {
+func (m *MockPolicyService) GetConfigurationPolicies(v0 context.Context, v1 shared2.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error) {
 	r0, r1, r2 := m.GetConfigurationPoliciesFunc.nextHook()(v0, v1)
 	m.GetConfigurationPoliciesFunc.appendCall(PolicyServiceGetConfigurationPoliciesFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
@@ -11224,7 +11225,7 @@ func (m *MockPolicyService) GetConfigurationPolicies(v0 context.Context, v1 type
 // SetDefaultHook sets function that is called when the
 // GetConfigurationPolicies method of the parent MockPolicyService instance
 // is invoked and the hook queue is empty.
-func (f *PolicyServiceGetConfigurationPoliciesFunc) SetDefaultHook(hook func(context.Context, types.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error)) {
+func (f *PolicyServiceGetConfigurationPoliciesFunc) SetDefaultHook(hook func(context.Context, shared2.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -11233,7 +11234,7 @@ func (f *PolicyServiceGetConfigurationPoliciesFunc) SetDefaultHook(hook func(con
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *PolicyServiceGetConfigurationPoliciesFunc) PushHook(hook func(context.Context, types.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error)) {
+func (f *PolicyServiceGetConfigurationPoliciesFunc) PushHook(hook func(context.Context, shared2.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -11242,19 +11243,19 @@ func (f *PolicyServiceGetConfigurationPoliciesFunc) PushHook(hook func(context.C
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *PolicyServiceGetConfigurationPoliciesFunc) SetDefaultReturn(r0 []types.ConfigurationPolicy, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, types.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error) {
+	f.SetDefaultHook(func(context.Context, shared2.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *PolicyServiceGetConfigurationPoliciesFunc) PushReturn(r0 []types.ConfigurationPolicy, r1 int, r2 error) {
-	f.PushHook(func(context.Context, types.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error) {
+	f.PushHook(func(context.Context, shared2.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *PolicyServiceGetConfigurationPoliciesFunc) nextHook() func(context.Context, types.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error) {
+func (f *PolicyServiceGetConfigurationPoliciesFunc) nextHook() func(context.Context, shared2.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -11294,7 +11295,7 @@ type PolicyServiceGetConfigurationPoliciesFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 types.GetConfigurationPoliciesOptions
+	Arg1 shared2.GetConfigurationPoliciesOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []types.ConfigurationPolicy
@@ -12559,7 +12560,7 @@ func NewMockUploadServiceForExpiration() *MockUploadServiceForExpiration {
 			},
 		},
 		GetUploadsFunc: &UploadServiceForExpirationGetUploadsFunc{
-			defaultHook: func(context.Context, types.GetUploadsOptions) (r0 []types.Upload, r1 int, r2 error) {
+			defaultHook: func(context.Context, shared.GetUploadsOptions) (r0 []types.Upload, r1 int, r2 error) {
 				return
 			},
 		},
@@ -12592,7 +12593,7 @@ func NewStrictMockUploadServiceForExpiration() *MockUploadServiceForExpiration {
 			},
 		},
 		GetUploadsFunc: &UploadServiceForExpirationGetUploadsFunc{
-			defaultHook: func(context.Context, types.GetUploadsOptions) ([]types.Upload, int, error) {
+			defaultHook: func(context.Context, shared.GetUploadsOptions) ([]types.Upload, int, error) {
 				panic("unexpected invocation of MockUploadServiceForExpiration.GetUploads")
 			},
 		},
@@ -12868,15 +12869,15 @@ func (c UploadServiceForExpirationGetCommitsVisibleToUploadFuncCall) Results() [
 // GetUploads method of the parent MockUploadServiceForExpiration instance
 // is invoked.
 type UploadServiceForExpirationGetUploadsFunc struct {
-	defaultHook func(context.Context, types.GetUploadsOptions) ([]types.Upload, int, error)
-	hooks       []func(context.Context, types.GetUploadsOptions) ([]types.Upload, int, error)
+	defaultHook func(context.Context, shared.GetUploadsOptions) ([]types.Upload, int, error)
+	hooks       []func(context.Context, shared.GetUploadsOptions) ([]types.Upload, int, error)
 	history     []UploadServiceForExpirationGetUploadsFuncCall
 	mutex       sync.Mutex
 }
 
 // GetUploads delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockUploadServiceForExpiration) GetUploads(v0 context.Context, v1 types.GetUploadsOptions) ([]types.Upload, int, error) {
+func (m *MockUploadServiceForExpiration) GetUploads(v0 context.Context, v1 shared.GetUploadsOptions) ([]types.Upload, int, error) {
 	r0, r1, r2 := m.GetUploadsFunc.nextHook()(v0, v1)
 	m.GetUploadsFunc.appendCall(UploadServiceForExpirationGetUploadsFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
@@ -12885,7 +12886,7 @@ func (m *MockUploadServiceForExpiration) GetUploads(v0 context.Context, v1 types
 // SetDefaultHook sets function that is called when the GetUploads method of
 // the parent MockUploadServiceForExpiration instance is invoked and the
 // hook queue is empty.
-func (f *UploadServiceForExpirationGetUploadsFunc) SetDefaultHook(hook func(context.Context, types.GetUploadsOptions) ([]types.Upload, int, error)) {
+func (f *UploadServiceForExpirationGetUploadsFunc) SetDefaultHook(hook func(context.Context, shared.GetUploadsOptions) ([]types.Upload, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -12894,7 +12895,7 @@ func (f *UploadServiceForExpirationGetUploadsFunc) SetDefaultHook(hook func(cont
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *UploadServiceForExpirationGetUploadsFunc) PushHook(hook func(context.Context, types.GetUploadsOptions) ([]types.Upload, int, error)) {
+func (f *UploadServiceForExpirationGetUploadsFunc) PushHook(hook func(context.Context, shared.GetUploadsOptions) ([]types.Upload, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -12903,19 +12904,19 @@ func (f *UploadServiceForExpirationGetUploadsFunc) PushHook(hook func(context.Co
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *UploadServiceForExpirationGetUploadsFunc) SetDefaultReturn(r0 []types.Upload, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, types.GetUploadsOptions) ([]types.Upload, int, error) {
+	f.SetDefaultHook(func(context.Context, shared.GetUploadsOptions) ([]types.Upload, int, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *UploadServiceForExpirationGetUploadsFunc) PushReturn(r0 []types.Upload, r1 int, r2 error) {
-	f.PushHook(func(context.Context, types.GetUploadsOptions) ([]types.Upload, int, error) {
+	f.PushHook(func(context.Context, shared.GetUploadsOptions) ([]types.Upload, int, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *UploadServiceForExpirationGetUploadsFunc) nextHook() func(context.Context, types.GetUploadsOptions) ([]types.Upload, int, error) {
+func (f *UploadServiceForExpirationGetUploadsFunc) nextHook() func(context.Context, shared.GetUploadsOptions) ([]types.Upload, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -12955,7 +12956,7 @@ type UploadServiceForExpirationGetUploadsFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 types.GetUploadsOptions
+	Arg1 shared.GetUploadsOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []types.Upload

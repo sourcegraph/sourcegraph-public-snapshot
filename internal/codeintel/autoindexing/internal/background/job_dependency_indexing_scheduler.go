@@ -52,13 +52,13 @@ func (b *backgroundJob) NewDependencyIndexingScheduler(pollInterval time.Duratio
 }
 
 type dependencyIndexingSchedulerHandler struct {
-	uploadsSvc         shared.UploadService
+	uploadsSvc         UploadService
 	repoStore          ReposStore
 	indexEnqueuer      AutoIndexingService
 	extsvcStore        ExternalServiceStore
 	gitserverRepoStore GitserverRepoStore
 	workerStore        dbworkerstore.Store
-	repoUpdater        shared.RepoUpdaterClient
+	repoUpdater        RepoUpdaterClient
 }
 
 const requeueBackoff = time.Second * 30
