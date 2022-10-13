@@ -9,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/interrupt"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"k8s.io/utils/strings/slices"
 )
 
 type pidFile struct {
@@ -41,7 +40,7 @@ func PidExistsWithArgs(args []string) (int, bool, error) {
 			return 0, false, errors.Wrapf(err, "could not check pidfile %q", match)
 		}
 
-		if slices.Equal(content.Args, args) {
+		if argsEqual(content.Args, args) {
 			// If a pid already exists, let's check if it's still running.
 			alive, err := isPidAlive(int32(content.Pid))
 			if err != nil {
@@ -58,12 +57,24 @@ func PidExistsWithArgs(args []string) (int, bool, error) {
 	return 0, false, nil
 }
 
+func argsEqual(s1, s2 []string) bool {
+	if len(s1) != len(s2) {
+		return false
+	}
+	for i, n := range s1 {
+		if n != s2[i] {
+			return false
+		}
+	}
+	return true
+}
+
 // On Unix systems, os.FindProcess always returns a os.Proc, regardless if the process is running or not. Therefore,
 // we need more work to check if it's alive or not.
 // Reference: https://github.com/shirou/gopsutil/blob/c141152a7b8f59b63e060fa8450f5cd5e7196dfb/process/process_posix.go#L73
 func isPidAlive(pid int32) (bool, error) {
 	if pid <= 0 {
-		return false, fmt.Errorf("invalid pid %v", pid)
+		return false, errors.Newf("invalid pid %v", pid)
 	}
 	proc, err := os.FindProcess(int(pid))
 	if err != nil {
