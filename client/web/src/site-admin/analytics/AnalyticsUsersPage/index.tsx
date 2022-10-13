@@ -1,4 +1,4 @@
-import { useMemo, useEffect, FC } from 'react'
+import { useState, useMemo, useEffect, FC } from 'react'
 
 import classNames from 'classnames'
 import { startCase } from 'lodash'
@@ -22,7 +22,7 @@ import { USERS_STATISTICS } from './queries'
 import styles from './AnalyticsUsersPage.module.scss'
 
 export const AnalyticsUsersPage: FC<RouteComponentProps> = () => {
-    const { dateRange, aggregation, grouping } = useChartFilters({ name: 'Users', aggregation: 'registeredUsers' })
+    const { dateRange, aggregation, grouping } = useChartFilters({ name: 'Users', aggregation: 'uniqueUsers' })
     const { data, error, loading } = useQuery<UsersStatisticsResult, UsersStatisticsVariables>(USERS_STATISTICS, {
         variables: {
             dateRange: dateRange.value,
@@ -32,6 +32,8 @@ export const AnalyticsUsersPage: FC<RouteComponentProps> = () => {
     useEffect(() => {
         eventLogger.logPageView('AdminAnalyticsUsers')
     }, [])
+    const [uniqueOrPercentage, setUniqueOrPercentage] = useState<'unique' | 'percentage'>('unique')
+
     const [frequencies, legends] = useMemo(() => {
         if (!data) {
             return []
@@ -39,10 +41,10 @@ export const AnalyticsUsersPage: FC<RouteComponentProps> = () => {
         const { users } = data.site.analytics
         const legends: ValueLegendListProps['items'] = [
             {
-                value: users.activity.summary.totalRegisteredUsers,
+                value: users.activity.summary.totalUniqueUsers,
                 description: 'Active users',
                 color: 'var(--purple)',
-                tooltip: 'Currently registered users using the application in the selected timeframe.',
+                tooltip: 'The number of users using the application in the selected timeframe including deleted users.',
             },
             {
                 value: data.users.totalCount,
@@ -60,10 +62,10 @@ export const AnalyticsUsersPage: FC<RouteComponentProps> = () => {
             },
         ]
 
-        const frequencies: FrequencyDatum[] = buildFrequencyDatum(users.frequencies, 1, 30)
+        const frequencies: FrequencyDatum[] = buildFrequencyDatum(users.frequencies, uniqueOrPercentage, 30)
 
         return [frequencies, legends]
-    }, [data])
+    }, [data, uniqueOrPercentage])
 
     const activities = useMemo(() => {
         if (!data) {
@@ -89,27 +91,6 @@ export const AnalyticsUsersPage: FC<RouteComponentProps> = () => {
 
         return activities
     }, [data, aggregation.selected, dateRange.value])
-
-    const summary = useMemo(() => {
-        if (!data) {
-            return []
-        }
-        const { avgDAU, avgWAU, avgMAU } = data.site.analytics.users.summary
-        return [
-            {
-                value: avgDAU,
-                label: 'DAU',
-            },
-            {
-                value: avgWAU,
-                label: 'WAU',
-            },
-            {
-                value: avgMAU,
-                label: 'MAU',
-            },
-        ]
-    }, [data])
 
     const isWideScreen = useMatchMedia('(min-width: 992px)', false)
 
@@ -151,20 +132,20 @@ export const AnalyticsUsersPage: FC<RouteComponentProps> = () => {
                     </div>
                 )}
                 <div className={classNames(isWideScreen && 'd-flex')}>
-                    {summary && (
+                    {!!data?.site.analytics.users.monthlyActiveUsers && (
                         <ChartContainer
-                            title="Average user activity by period"
-                            labelX="Average DAU/WAU/MAU"
+                            title="Monthly active users"
+                            labelX="Months"
                             labelY="Unique users"
-                            className={classNames(styles.barChart, 'mb-5')}
+                            className={classNames(styles.barChart)}
                         >
                             {width => (
                                 <BarChart
                                     width={isWideScreen ? 280 : width}
                                     height={300}
-                                    data={summary}
-                                    getDatumName={datum => datum.label}
-                                    getDatumValue={datum => datum.value}
+                                    data={data?.site.analytics.users.monthlyActiveUsers}
+                                    getDatumName={datum => datum.date}
+                                    getDatumValue={datum => datum.count}
                                     getDatumColor={() => 'var(--bar-color)'}
                                     getDatumFadeColor={() => 'var(--bar-fade-color)'}
                                 />
@@ -175,8 +156,8 @@ export const AnalyticsUsersPage: FC<RouteComponentProps> = () => {
                         <ChartContainer
                             title="Frequency of use"
                             labelX="Days used"
-                            labelY="Unique users"
-                            className={classNames(styles.barChart, 'mb-5')}
+                            labelY={uniqueOrPercentage === 'unique' ? 'Unique users' : 'Percentage of active users'}
+                            className={classNames(styles.barChart)}
                         >
                             {width => (
                                 <BarChart
@@ -191,6 +172,28 @@ export const AnalyticsUsersPage: FC<RouteComponentProps> = () => {
                                 />
                             )}
                         </ChartContainer>
+                    )}
+                </div>
+                <div className="d-flex justify-content-end align-items-stretch mb-4 text-nowrap">
+                    {frequencies && (
+                        <ToggleSelect<'unique' | 'percentage'>
+                            className={styles.toggleSelect}
+                            selected={uniqueOrPercentage}
+                            onChange={setUniqueOrPercentage}
+                            items={[
+                                {
+                                    value: 'unique',
+                                    label: 'Total',
+                                    tooltip: 'The number of users who used the platform atleast n days.',
+                                },
+                                {
+                                    value: 'percentage',
+                                    label: 'Percentage',
+                                    tooltip:
+                                        'Percentage of users out of total active users who used the platform atleast n days.',
+                                },
+                            ]}
+                        />
                     )}
                 </div>
             </Card>

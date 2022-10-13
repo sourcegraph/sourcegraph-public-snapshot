@@ -156,8 +156,8 @@ func (r *UploadResolver) RetentionPolicyOverview(ctx context.Context, args *LSIF
 
 func (r *UploadResolver) Indexer() types.CodeIntelIndexerResolver {
 	for _, indexer := range types.AllIndexers {
-		if indexer.Name() == r.upload.Indexer {
-			return indexer
+		if indexer.Name == r.upload.Indexer {
+			return types.NewCodeIntelIndexerResolverFrom(indexer)
 		}
 	}
 

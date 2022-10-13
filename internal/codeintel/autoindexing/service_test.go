@@ -19,7 +19,6 @@ import (
 )
 
 func init() {
-	autoIndexingEnabled = func() bool { return true }
 	maximumIndexJobsPerInferredConfiguration = 50
 }
 
@@ -61,11 +60,21 @@ func TestQueueIndexesExplicit(t *testing.T) {
 	mockGitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, rev string) (api.CommitID, error) {
 		return api.CommitID(fmt.Sprintf("c%d", repositoryID)), nil
 	})
+
 	mockUploadSvc := NewMockUploadService()
 	inferenceService := NewMockInferenceService()
 
-	scheduler := newService(mockDBStore, mockUploadSvc, nil, nil, nil, nil, nil, nil, mockGitserverClient, nil, nil, inferenceService, &observation.TestContext)
-	_, _ = scheduler.QueueIndexes(context.Background(), 42, "HEAD", config, false, false)
+	service := newService(
+		mockDBStore,
+		mockUploadSvc,
+		inferenceService,
+		nil, // repoUpdater
+		mockGitserverClient,
+		nil, // symbolsClient
+		nil, // backgroundJob
+		&observation.TestContext,
+	)
+	_, _ = service.QueueIndexes(context.Background(), 42, "HEAD", config, false, false)
 
 	if len(mockDBStore.IsQueuedFunc.History()) != 1 {
 		t.Errorf("unexpected number of calls to IsQueued. want=%d have=%d", 1, len(mockDBStore.IsQueuedFunc.History()))
@@ -174,8 +183,17 @@ func TestQueueIndexesInDatabase(t *testing.T) {
 	mockUploadSvc := NewMockUploadService()
 	inferenceService := NewMockInferenceService()
 
-	scheduler := newService(mockDBStore, mockUploadSvc, nil, nil, nil, nil, nil, nil, mockGitserverClient, nil, nil, inferenceService, &observation.TestContext)
-	_, _ = scheduler.QueueIndexes(context.Background(), 42, "HEAD", "", false, false)
+	service := newService(
+		mockDBStore,
+		mockUploadSvc,
+		inferenceService,
+		nil, // repoUpdater
+		mockGitserverClient,
+		nil, // symbolsClient
+		nil, // backgroundJob
+		&observation.TestContext,
+	)
+	_, _ = service.QueueIndexes(context.Background(), 42, "HEAD", "", false, false)
 
 	if len(mockDBStore.GetIndexConfigurationByRepositoryIDFunc.History()) != 1 {
 		t.Errorf("unexpected number of calls to GetIndexConfigurationByRepositoryID. want=%d have=%d", 1, len(mockDBStore.GetIndexConfigurationByRepositoryIDFunc.History()))
@@ -289,9 +307,18 @@ func TestQueueIndexesInRepository(t *testing.T) {
 	mockUploadSvc := NewMockUploadService()
 	inferenceService := NewMockInferenceService()
 
-	scheduler := newService(mockDBStore, mockUploadSvc, nil, nil, nil, nil, nil, nil, mockGitserverClient, nil, nil, inferenceService, &observation.TestContext)
+	service := newService(
+		mockDBStore,
+		mockUploadSvc,
+		inferenceService,
+		nil, // repoUpdater
+		mockGitserverClient,
+		nil, // symbolsClient
+		nil, // backgroundJob
+		&observation.TestContext,
+	)
 
-	if _, err := scheduler.QueueIndexes(context.Background(), 42, "HEAD", "", false, false); err != nil {
+	if _, err := service.QueueIndexes(context.Background(), 42, "HEAD", "", false, false); err != nil {
 		t.Fatalf("unexpected error performing update: %s", err)
 	}
 
@@ -387,10 +414,19 @@ func TestQueueIndexesInferred(t *testing.T) {
 		}
 	})
 
-	scheduler := newService(mockDBStore, mockUploadSvc, nil, nil, nil, nil, nil, nil, mockGitserverClient, nil, nil, inferenceService, &observation.TestContext)
+	service := newService(
+		mockDBStore,
+		mockUploadSvc,
+		inferenceService,
+		nil, // repoUpdater
+		mockGitserverClient,
+		nil, // symbolsClient
+		nil, // backgroundJob
+		&observation.TestContext,
+	)
 
 	for _, id := range []int{41, 42, 43, 44} {
-		if _, err := scheduler.QueueIndexes(context.Background(), id, "HEAD", "", false, false); err != nil {
+		if _, err := service.QueueIndexes(context.Background(), id, "HEAD", "", false, false); err != nil {
 			t.Fatalf("unexpected error performing update: %s", err)
 		}
 	}
@@ -426,6 +462,8 @@ func TestQueueIndexesInferred(t *testing.T) {
 }
 
 func TestQueueIndexesInferredTooLarge(t *testing.T) {
+	maximumIndexJobsPerInferredConfiguration = 20
+
 	mockDBStore := NewMockStore()
 	mockDBStore.InsertIndexesFunc.SetDefaultHook(func(ctx context.Context, indexes []types.Index) ([]types.Index, error) { return indexes, nil })
 
@@ -448,10 +486,18 @@ func TestQueueIndexesInferredTooLarge(t *testing.T) {
 	mockUploadSvc := NewMockUploadService()
 	inferenceService := NewMockInferenceService()
 
-	maximumIndexJobsPerInferredConfiguration = 20
-	scheduler := newService(mockDBStore, mockUploadSvc, nil, nil, nil, nil, nil, nil, mockGitserverClient, nil, nil, inferenceService, &observation.TestContext)
+	service := newService(
+		mockDBStore,
+		mockUploadSvc,
+		inferenceService,
+		nil, // repoUpdater
+		mockGitserverClient,
+		nil, //
+		nil, // backgroundJob
+		&observation.TestContext,
+	)
 
-	if _, err := scheduler.QueueIndexes(context.Background(), 42, "HEAD", "", false, false); err != nil {
+	if _, err := service.QueueIndexes(context.Background(), 42, "HEAD", "", false, false); err != nil {
 		t.Fatalf("unexpected error performing update: %s", err)
 	}
 
@@ -502,9 +548,18 @@ func TestQueueIndexesForPackage(t *testing.T) {
 		}, nil
 	})
 
-	scheduler := newService(mockDBStore, mockUploadSvc, nil, nil, nil, nil, nil, nil, mockGitserverClient, nil, mockRepoUpdater, inferenceService, &observation.TestContext)
+	service := newService(
+		mockDBStore,
+		mockUploadSvc,
+		inferenceService,
+		mockRepoUpdater, // repoUpdater
+		mockGitserverClient,
+		nil, //
+		nil, // backgroundJob
+		&observation.TestContext,
+	)
 
-	_ = scheduler.queueIndexesForPackage(context.Background(), precise.Package{
+	_ = service.QueueIndexesForPackage(context.Background(), precise.Package{
 		Scheme:  "gomod",
 		Name:    "https://github.com/sourcegraph/sourcegraph",
 		Version: "v3.26.0-4e7eeb0f8a96",

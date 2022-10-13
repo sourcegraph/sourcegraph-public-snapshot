@@ -12,7 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -77,18 +77,18 @@ const DefaultIndexPageSize = 50
 
 // makeGetIndexesOptions translates the given GraphQL arguments into options defined by the
 // store.GetIndexes operations.
-func makeGetIndexesOptions(args *LSIFRepositoryIndexesQueryArgs) (types.GetIndexesOptions, error) {
+func makeGetIndexesOptions(args *LSIFRepositoryIndexesQueryArgs) (shared.GetIndexesOptions, error) {
 	repositoryID, err := resolveRepositoryID(args.RepositoryID)
 	if err != nil {
-		return types.GetIndexesOptions{}, err
+		return shared.GetIndexesOptions{}, err
 	}
 
 	offset, err := graphqlutil.DecodeIntCursor(args.After)
 	if err != nil {
-		return types.GetIndexesOptions{}, err
+		return shared.GetIndexesOptions{}, err
 	}
 
-	return types.GetIndexesOptions{
+	return shared.GetIndexesOptions{
 		RepositoryID: repositoryID,
 		State:        strings.ToLower(derefString(args.State, "")),
 		Term:         derefString(args.Query, ""),
@@ -223,17 +223,17 @@ func EncodeCursor(val *string) *PageInfo {
 
 // makeDeleteIndexesOptions translates the given GraphQL arguments into options defined by the
 // store.DeleteIndexes operations.
-func makeDeleteIndexesOptions(args *DeleteLSIFIndexesArgs) (types.DeleteIndexesOptions, error) {
+func makeDeleteIndexesOptions(args *DeleteLSIFIndexesArgs) (shared.DeleteIndexesOptions, error) {
 	var repository int
 	if args.Repository != nil {
 		var err error
 		repository, err = resolveRepositoryID(*args.Repository)
 		if err != nil {
-			return types.DeleteIndexesOptions{}, err
+			return shared.DeleteIndexesOptions{}, err
 		}
 	}
 
-	return types.DeleteIndexesOptions{
+	return shared.DeleteIndexesOptions{
 		State:        strings.ToLower(derefString(args.State, "")),
 		Term:         derefString(args.Query, ""),
 		RepositoryID: repository,

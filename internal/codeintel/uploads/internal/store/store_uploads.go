@@ -27,7 +27,7 @@ import (
 )
 
 // GetUploads returns a list of uploads and the total count of records matching the given conditions.
-func (s *store) GetUploads(ctx context.Context, opts types.GetUploadsOptions) (uploads []types.Upload, totalCount int, err error) {
+func (s *store) GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (uploads []types.Upload, totalCount int, err error) {
 	ctx, trace, endObservation := s.operations.getUploads.With(ctx, &err, observation.Args{LogFields: buildGetUploadsLogFields(opts)})
 	defer endObservation(1, observation.Args{})
 
@@ -686,7 +686,7 @@ UPDATE lsif_uploads u SET state = CASE WHEN u.state = 'completed' THEN 'deleting
 
 // DeleteUploads deletes uploads by filter criteria. The associated repositories will be marked as dirty
 // so that their commit graphs will be updated in the background.
-func (s *store) DeleteUploads(ctx context.Context, opts types.DeleteUploadsOptions) (err error) {
+func (s *store) DeleteUploads(ctx context.Context, opts shared.DeleteUploadsOptions) (err error) {
 	ctx, _, endObservation := s.operations.deleteUploads.With(ctx, &err, observation.Args{LogFields: buildDeleteUploadsLogFields(opts)})
 	defer endObservation(1, observation.Args{})
 
@@ -1996,7 +1996,7 @@ func nilTimeToString(t *time.Time) string {
 	return t.String()
 }
 
-func buildGetConditionsAndCte(opts types.GetUploadsOptions) (*sqlf.Query, []*sqlf.Query, []cteDefinition) {
+func buildGetConditionsAndCte(opts shared.GetUploadsOptions) (*sqlf.Query, []*sqlf.Query, []cteDefinition) {
 	conds := make([]*sqlf.Query, 0, 12)
 
 	allowDeletedUploads := (opts.AllowDeletedUpload && opts.State == "") || opts.State == "deleted"
@@ -2112,7 +2112,7 @@ func buildGetConditionsAndCte(opts types.GetUploadsOptions) (*sqlf.Query, []*sql
 	return sourceTableExpr, conds, cteDefinitions
 }
 
-func buildDeleteConditions(opts types.DeleteUploadsOptions) []*sqlf.Query {
+func buildDeleteConditions(opts shared.DeleteUploadsOptions) []*sqlf.Query {
 	conds := []*sqlf.Query{}
 	if opts.RepositoryID != 0 {
 		conds = append(conds, sqlf.Sprintf("u.repository_id = %s", opts.RepositoryID))
@@ -2183,7 +2183,7 @@ func buildCTEPrefix(cteDefinitions []cteDefinition) *sqlf.Query {
 	return sqlf.Sprintf("WITH\n%s", sqlf.Join(cteQueries, ",\n"))
 }
 
-func buildGetUploadsLogFields(opts types.GetUploadsOptions) []log.Field {
+func buildGetUploadsLogFields(opts shared.GetUploadsOptions) []log.Field {
 	return []log.Field{
 		log.Int("repositoryID", opts.RepositoryID),
 		log.String("state", opts.State),
@@ -2202,7 +2202,7 @@ func buildGetUploadsLogFields(opts types.GetUploadsOptions) []log.Field {
 	}
 }
 
-func buildDeleteUploadsLogFields(opts types.DeleteUploadsOptions) []log.Field {
+func buildDeleteUploadsLogFields(opts shared.DeleteUploadsOptions) []log.Field {
 	return []log.Field{
 		log.String("state", opts.State),
 		log.String("term", opts.Term),

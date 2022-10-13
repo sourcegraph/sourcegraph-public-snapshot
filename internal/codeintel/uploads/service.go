@@ -121,7 +121,7 @@ func (s *Service) GetDirtyRepositories(ctx context.Context) (_ map[int]int, err 
 	return s.store.GetDirtyRepositories(ctx)
 }
 
-func (s *Service) GetUploads(ctx context.Context, opts types.GetUploadsOptions) (uploads []types.Upload, totalCount int, err error) {
+func (s *Service) GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (uploads []types.Upload, totalCount int, err error) {
 	ctx, _, endObservation := s.operations.getUploads.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{log.Int("repositoryID", opts.RepositoryID), log.String("state", opts.State), log.String("term", opts.Term)},
 	})
@@ -168,7 +168,7 @@ func (s *Service) DeleteUploadByID(ctx context.Context, id int) (_ bool, err err
 	return s.store.DeleteUploadByID(ctx, id)
 }
 
-func (s *Service) DeleteUploads(ctx context.Context, opts types.DeleteUploadsOptions) (err error) {
+func (s *Service) DeleteUploads(ctx context.Context, opts shared.DeleteUploadsOptions) (err error) {
 	ctx, _, endObservation := s.operations.deleteUploadByID.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 

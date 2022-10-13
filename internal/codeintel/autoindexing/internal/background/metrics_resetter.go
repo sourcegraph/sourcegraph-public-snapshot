@@ -1,4 +1,4 @@
-package autoindexing
+package background
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
@@ -15,7 +15,7 @@ type resetterMetrics struct {
 	numDependencyIndexResetErrors   prometheus.Counter
 }
 
-func newMetrics(observationContext *observation.Context) *resetterMetrics {
+func newResetterMetrics(observationContext *observation.Context) *resetterMetrics {
 	counter := func(name, help string) prometheus.Counter {
 		counter := prometheus.NewCounter(prometheus.CounterOpts{
 			Name: name,
