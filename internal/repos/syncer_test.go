@@ -696,7 +696,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 						t.Fatal(err)
 					}
 
-					err = syncer.SyncExternalService(ctx, svc.ID, time.Millisecond)
+					err = syncer.SyncExternalService(ctx, svc.ID, time.Millisecond, nil)
 					if have, want := fmt.Sprint(err), tc.err; !strings.Contains(have, want) {
 						t.Errorf("error %q doesn't contain %q", have, want)
 					}
@@ -1289,7 +1289,7 @@ func testOrphanedRepo(store repos.Store) func(*testing.T) {
 			Store: store,
 			Now:   time.Now,
 		}
-		if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second); err != nil {
+		if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, nil); err != nil {
 			t.Fatal(err)
 		}
 
@@ -1298,7 +1298,7 @@ func testOrphanedRepo(store repos.Store) func(*testing.T) {
 			s := repos.NewFakeSource(svc2, nil, githubRepo)
 			return s, nil
 		}
-		if err := syncer.SyncExternalService(ctx, svc2.ID, 10*time.Second); err != nil {
+		if err := syncer.SyncExternalService(ctx, svc2.ID, 10*time.Second, nil); err != nil {
 			t.Fatal(err)
 		}
 
@@ -1313,7 +1313,7 @@ func testOrphanedRepo(store repos.Store) func(*testing.T) {
 			s := repos.NewFakeSource(svc1, nil)
 			return s, nil
 		}
-		if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second); err != nil {
+		if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, nil); err != nil {
 			t.Fatal(err)
 		}
 
@@ -1337,7 +1337,7 @@ func testOrphanedRepo(store repos.Store) func(*testing.T) {
 			s := repos.NewFakeSource(svc2, nil)
 			return s, nil
 		}
-		if err := syncer.SyncExternalService(ctx, svc2.ID, 10*time.Second); err != nil {
+		if err := syncer.SyncExternalService(ctx, svc2.ID, 10*time.Second, nil); err != nil {
 			t.Fatal(err)
 		}
 
@@ -1390,7 +1390,7 @@ func testCloudDefaultExternalServicesDontSync(store repos.Store) func(*testing.T
 			Now:   time.Now,
 		}
 
-		have := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second)
+		have := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, nil)
 		want := repos.ErrCloudDefaultSync
 
 		if !errors.Is(have, want) {
@@ -1450,7 +1450,7 @@ func testConflictingSyncers(store repos.Store) func(*testing.T) {
 			Store: store,
 			Now:   time.Now,
 		}
-		if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second); err != nil {
+		if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, nil); err != nil {
 			t.Fatal(err)
 		}
 
@@ -1464,7 +1464,7 @@ func testConflictingSyncers(store repos.Store) func(*testing.T) {
 			Store: store,
 			Now:   time.Now,
 		}
-		if err := syncer.SyncExternalService(ctx, svc2.ID, 10*time.Second); err != nil {
+		if err := syncer.SyncExternalService(ctx, svc2.ID, 10*time.Second, nil); err != nil {
 			t.Fatal(err)
 		}
 
@@ -1509,7 +1509,7 @@ func testConflictingSyncers(store repos.Store) func(*testing.T) {
 			Store: tx1,
 			Now:   time.Now,
 		}
-		if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second); err != nil {
+		if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, nil); err != nil {
 			t.Fatal(err)
 		}
 
@@ -1528,7 +1528,7 @@ func testConflictingSyncers(store repos.Store) func(*testing.T) {
 
 		errChan := make(chan error)
 		go func() {
-			errChan <- syncer2.SyncExternalService(ctx, svc2.ID, 10*time.Second)
+			errChan <- syncer2.SyncExternalService(ctx, svc2.ID, 10*time.Second, nil)
 		}()
 
 		tx1.Done(nil)
@@ -1608,7 +1608,7 @@ func testSyncRepoMaintainsOtherSources(store repos.Store) func(*testing.T) {
 			Store: store,
 			Now:   time.Now,
 		}
-		if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second); err != nil {
+		if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, nil); err != nil {
 			t.Fatal(err)
 		}
 
@@ -1622,7 +1622,7 @@ func testSyncRepoMaintainsOtherSources(store repos.Store) func(*testing.T) {
 			Store: store,
 			Now:   time.Now,
 		}
-		if err := syncer.SyncExternalService(ctx, svc2.ID, 10*time.Second); err != nil {
+		if err := syncer.SyncExternalService(ctx, svc2.ID, 10*time.Second, nil); err != nil {
 			t.Fatal(err)
 		}
 
@@ -1726,7 +1726,7 @@ func testUserAddedRepos(store repos.Store) func(*testing.T) {
 			Store: store,
 			Now:   time.Now,
 		}
-		if err := syncer.SyncExternalService(ctx, adminService.ID, 10*time.Second); err != nil {
+		if err := syncer.SyncExternalService(ctx, adminService.ID, 10*time.Second, nil); err != nil {
 			t.Fatal(err)
 		}
 
@@ -1743,7 +1743,7 @@ func testUserAddedRepos(store repos.Store) func(*testing.T) {
 			Store: store,
 			Now:   time.Now,
 		}
-		if err := syncer.SyncExternalService(ctx, adminService.ID, 10*time.Second); err != nil {
+		if err := syncer.SyncExternalService(ctx, adminService.ID, 10*time.Second, nil); err != nil {
 			t.Fatal(err)
 		}
 
@@ -1760,7 +1760,7 @@ func testUserAddedRepos(store repos.Store) func(*testing.T) {
 			Store: store,
 			Now:   time.Now,
 		}
-		if err := syncer.SyncExternalService(ctx, userService.ID, 10*time.Second); err != nil {
+		if err := syncer.SyncExternalService(ctx, userService.ID, 10*time.Second, nil); err != nil {
 			t.Fatal(err)
 		}
 
@@ -1783,7 +1783,7 @@ func testUserAddedRepos(store repos.Store) func(*testing.T) {
 			Store: store,
 			Now:   time.Now,
 		}
-		if err := syncer.SyncExternalService(ctx, userService.ID, 10*time.Second); err != nil {
+		if err := syncer.SyncExternalService(ctx, userService.ID, 10*time.Second, nil); err != nil {
 			t.Fatal(err)
 		}
 
@@ -1811,7 +1811,7 @@ func testUserAddedRepos(store repos.Store) func(*testing.T) {
 			Store: store,
 			Now:   time.Now,
 		}
-		if err := syncer.SyncExternalService(ctx, userService.ID, 10*time.Second); err != nil {
+		if err := syncer.SyncExternalService(ctx, userService.ID, 10*time.Second, nil); err != nil {
 			t.Fatal(err)
 		}
 
@@ -1834,7 +1834,7 @@ func testUserAddedRepos(store repos.Store) func(*testing.T) {
 			Store:               store,
 			UserReposMaxPerUser: 1,
 		}
-		if err := syncer.SyncExternalService(ctx, userService.ID, 10*time.Second); err == nil {
+		if err := syncer.SyncExternalService(ctx, userService.ID, 10*time.Second, nil); err == nil {
 			t.Fatal("Expected an error, got none")
 		}
 
@@ -1849,7 +1849,7 @@ func testUserAddedRepos(store repos.Store) func(*testing.T) {
 			Store:               store,
 			UserReposMaxPerSite: 1,
 		}
-		if err := syncer.SyncExternalService(ctx, userService.ID, 10*time.Second); err == nil {
+		if err := syncer.SyncExternalService(ctx, userService.ID, 10*time.Second, nil); err == nil {
 			t.Fatal("Expected an error, got none")
 		}
 	}
@@ -1917,7 +1917,7 @@ func testNameOnConflictOnRename(store repos.Store) func(*testing.T) {
 			Store: store,
 			Now:   time.Now,
 		}
-		if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second); err != nil {
+		if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, nil); err != nil {
 			t.Fatal(err)
 		}
 
@@ -1931,7 +1931,7 @@ func testNameOnConflictOnRename(store repos.Store) func(*testing.T) {
 			Store: store,
 			Now:   time.Now,
 		}
-		if err := syncer.SyncExternalService(ctx, svc2.ID, 10*time.Second); err != nil {
+		if err := syncer.SyncExternalService(ctx, svc2.ID, 10*time.Second, nil); err != nil {
 			t.Fatal(err)
 		}
 
@@ -1950,7 +1950,7 @@ func testNameOnConflictOnRename(store repos.Store) func(*testing.T) {
 			Store: store,
 			Now:   time.Now,
 		}
-		if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second); err != nil {
+		if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, nil); err != nil {
 			t.Fatal(err)
 		}
 
@@ -2024,7 +2024,7 @@ func testDeleteExternalService(store repos.Store) func(*testing.T) {
 			Store: store,
 			Now:   time.Now,
 		}
-		if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second); err != nil {
+		if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, nil); err != nil {
 			t.Fatal(err)
 		}
 
@@ -2038,7 +2038,7 @@ func testDeleteExternalService(store repos.Store) func(*testing.T) {
 			Store: store,
 			Now:   time.Now,
 		}
-		if err := syncer.SyncExternalService(ctx, svc2.ID, 10*time.Second); err != nil {
+		if err := syncer.SyncExternalService(ctx, svc2.ID, 10*time.Second, nil); err != nil {
 			t.Fatal(err)
 		}
 
@@ -2154,7 +2154,7 @@ func testAbortSyncWhenThereIsRepoLimitError(store repos.Store) func(*testing.T) 
 				UserReposMaxPerUser: 1,
 			}
 
-			if err := syncer.SyncExternalService(ctx, svc.ID, 10*time.Second); err != nil {
+			if err := syncer.SyncExternalService(ctx, svc.ID, 10*time.Second, nil); err != nil {
 				var me errors.MultiError
 				if !errors.As(err, &me) {
 					t.Fatalf("Expected error.MultiError, got: %T", err)
@@ -2292,7 +2292,7 @@ func testUserAndOrgReposAreCountedCorrectly(store repos.Store) func(*testing.T) 
 				UserReposMaxPerUser: 3,
 			}
 
-			if err := syncer.SyncExternalService(ctx, svc.ID, 10*time.Second); err != nil {
+			if err := syncer.SyncExternalService(ctx, svc.ID, 10*time.Second, nil); err != nil {
 				t.Fatal("Error occurred. Should not happen because neither site nor user/org limit is exceeded.")
 			}
 			repoIdx += 2
@@ -2538,7 +2538,7 @@ func testEnqueueWebhookBuildJob(s repos.Store) func(*testing.T) {
 			Now:     time.Now,
 		}
 
-		if err := syncer.SyncExternalService(ctx, svc.ID, time.Millisecond); err != nil {
+		if err := syncer.SyncExternalService(ctx, svc.ID, time.Millisecond, nil); err != nil {
 			t.Fatal(err)
 		}
 
