@@ -27,6 +27,7 @@ type Interface interface {
 	RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointArgs) error
 	CountData(ctx context.Context, opts CountDataOpts) (int, error)
 	UpdateInsightSeriesRecordingTimes(ctx context.Context, seriesID string, newRecordTime time.Time) error
+	SetInsightSeriesRecordingTimes(ctx context.Context, recordingTimes []types.InsightSeriesRecordingTimes) error
 }
 
 var _ Interface = &Store{}
