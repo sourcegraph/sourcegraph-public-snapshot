@@ -268,6 +268,8 @@ var sg = &cli.App{
 		// Dev environment
 		secretCommand,
 		setupCommand,
+		srcCommand,
+		srcCtxCommand,
 
 		// Company
 		teammateCommand,
@@ -277,8 +279,6 @@ var sg = &cli.App{
 		opsCommand,
 		auditCommand,
 		pageCommand,
-		srcCommand,
-		srcCtxCommand,
 
 		// Util
 		helpCommand,

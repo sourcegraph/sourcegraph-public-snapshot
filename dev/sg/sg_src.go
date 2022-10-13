@@ -27,7 +27,7 @@ var srcCtxCommand = &cli.Command{
 	Name:      "src-ctx",
 	UsageText: "sg src-ctx [command]",
 	Usage:     "Interact with Sourcegraph instances that 'sg src' will use",
-	Category:  CategoryCompany,
+	Category:  CategoryDev,
 	Subcommands: []*cli.Command{
 		{
 			Name:      "register",
@@ -119,7 +119,7 @@ var srcCommand = &cli.Command{
 	Name:      "src",
 	UsageText: "sg src [src-cli args]\nsg src help # get src-cli help",
 	Usage:     "Run src-cli on a given instance defined with 'sg src-ctx'",
-	Category:  CategoryCompany,
+	Category:  CategoryDev,
 	Action: func(cmd *cli.Context) error {
 		_, sc, err := getSrcInstances(cmd.Context, std.Out)
 		if err != nil {
