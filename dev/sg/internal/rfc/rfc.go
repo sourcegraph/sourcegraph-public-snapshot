@@ -94,11 +94,9 @@ func queryRFCs(ctx context.Context, query string, driveSpec DriveSpec, pager fun
 		return err
 	}
 	clientCredentials, err := sec.GetExternal(ctx, secrets.ExternalSecret{
-		Provider: secrets.ExternalProvider1Pass,
-		Project:  "Shared",
+		Project: "sourcegraph-local-dev",
 		// sg Google client credentials
-		Name:  "xyyaeojdvkch3uksxb5yoye7am",
-		Field: "credential",
+		Name: "SG_GOOGLE_CREDS",
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to get google client credentials")
