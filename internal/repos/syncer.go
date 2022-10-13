@@ -129,7 +129,7 @@ func (s *syncHandler) Handle(ctx context.Context, logger log.Logger, record work
 	// Limit calls to progressRecorder as it will most likely hit the database
 	progressLimiter := rate.NewLimiter(rate.Limit(1.0), 1)
 
-	progressRecorder := func(ctx context.Context, progress syncProgress, final bool) error {
+	progressRecorder := func(ctx context.Context, progress SyncProgress, final bool) error {
 		if final || progressLimiter.Allow() {
 			return s.store.ExternalServiceStore().UpdateSyncJobCounters(ctx, &types.ExternalServiceSyncJob{
 				ID:              int64(sj.ID),
@@ -519,8 +519,8 @@ func (s *Syncer) notifyDeleted(ctx context.Context, deleted ...api.RepoID) {
 // the lazy-added repos.
 var ErrCloudDefaultSync = errors.New("cloud default external services can't be synced")
 
-// syncProgress represents running counts of an external service sync
-type syncProgress struct {
+// SyncProgress represents running counts for an external service sync.
+type SyncProgress struct {
 	Synced int32 `json:"synced,omitempty"`
 	Errors int32 `json:"errors,omitempty"`
 
@@ -536,7 +536,7 @@ type syncProgress struct {
 // progressRecorderFunc is a function that implements persisting sync progress.
 // The final param represents whether this is the final call. This allows the
 // function to decide whether to drop some intermediate calls.
-type progressRecorderFunc func(ctx context.Context, progress syncProgress, final bool) error
+type progressRecorderFunc func(ctx context.Context, progress SyncProgress, final bool) error
 
 // SyncExternalService syncs repos using the supplied external service in a streaming fashion, rather than batch.
 // This allows very large sync jobs (i.e. that source potentially millions of repos) to incrementally persist changes.
@@ -666,7 +666,7 @@ func (s *Syncer) SyncExternalService(
 
 	logger = s.Logger.With(log.Object("svc", log.String("name", svc.DisplayName), log.Int64("id", svc.ID)))
 
-	var syncProgress syncProgress
+	var syncProgress SyncProgress
 
 	if progressRecorder != nil {
 		// Record the final progress state

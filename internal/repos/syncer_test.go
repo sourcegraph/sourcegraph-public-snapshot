@@ -16,6 +16,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/otel"
 	"golang.org/x/time/rate"
 
@@ -23,6 +24,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos/webhookworker"
@@ -1280,7 +1282,6 @@ func testOrphanedRepo(store repos.Store) func(*testing.T) {
 
 		// Sync first service
 		syncer := &repos.Syncer{
-
 			Logger: logtest.Scoped(t),
 			Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(svc1, nil, githubRepo)
@@ -1347,6 +1348,68 @@ func testOrphanedRepo(store repos.Store) func(*testing.T) {
 		// We should have one deleted repo
 		assertDeletedRepoCount(ctx, t, store, 1)
 	}
+}
+
+func TestProgressRecorder(t *testing.T) {
+	logger := logtest.Scoped(t)
+	store := repos.NewStore(logtest.Scoped(t), database.NewDB(logger, dbtest.NewDB(logger, t)))
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	now := time.Now()
+
+	svc1 := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "Github - Test1",
+		Config:      extsvc.NewUnencryptedConfig(basicGitHubConfig),
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	// setup services
+	if err := store.ExternalServiceStore().Upsert(ctx, svc1); err != nil {
+		t.Fatal(err)
+	}
+
+	githubRepo := &types.Repo{
+		Name:     "github.com/org/foo",
+		Metadata: &github.Repository{},
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "foo-external-12345",
+			ServiceID:   "https://github.com/",
+			ServiceType: extsvc.TypeGitHub,
+		},
+	}
+
+	// Sync service
+	syncer := &repos.Syncer{
+		Logger: logtest.Scoped(t),
+		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
+			s := repos.NewFakeSource(svc1, nil, githubRepo)
+			return s, nil
+		},
+		Store: store,
+		Now:   time.Now,
+	}
+
+	var recorderCalled int
+	var recordedProgress repos.SyncProgress
+	progressRecorder := func(ctx context.Context, progress repos.SyncProgress, final bool) error {
+		recorderCalled++
+		recordedProgress = progress
+		return nil
+	}
+
+	if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, progressRecorder); err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Positive(t, recorderCalled)
+	assert.Equal(t, repos.SyncProgress{
+		Synced: 1,
+		Added:  1,
+	}, recordedProgress)
 }
 
 func testCloudDefaultExternalServicesDontSync(store repos.Store) func(*testing.T) {
