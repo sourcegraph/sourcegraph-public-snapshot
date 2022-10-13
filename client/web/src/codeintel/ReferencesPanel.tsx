@@ -1017,11 +1017,10 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                                                 repoName={reference.repo}
                                                 highlightRanges={[
                                                     {
-                                                        line: reference.range?.start.line ?? 0,
-                                                        character: reference.range?.start.character ?? 0,
-                                                        highlightLength:
-                                                            (reference.range?.end.character ?? 0) -
-                                                            (reference.range?.start.character ?? 0),
+                                                        startLine: reference.range?.start.line ?? 0,
+                                                        startCharacter: reference.range?.start.character ?? 0,
+                                                        endLine: reference.range?.end.line ?? 0,
+                                                        endCharacter: reference.range?.end.character ?? 0,
                                                     },
                                                 ]}
                                                 startLine={reference.range?.start.line ?? 0}

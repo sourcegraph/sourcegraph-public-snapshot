@@ -106,6 +106,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             patternType: patternType ?? SearchPatternType.standard,
             caseSensitive,
             trace,
+            chunkMatches: true,
         }),
         [caseSensitive, patternType, trace]
     )

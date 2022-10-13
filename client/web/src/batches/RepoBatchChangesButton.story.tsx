@@ -1,9 +1,12 @@
 import { Meta, Story, DecoratorFn } from '@storybook/react'
-import { of } from 'rxjs'
+import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
+
+import { getDocumentNode } from '@sourcegraph/http-client'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../components/WebStory'
 
-import { queryRepoChangesetsStats as _queryRepoChangesetsStats } from './backend'
+import { REPO_CHANGESETS_STATS } from './backend'
 import { RepoBatchChangesButton } from './RepoBatchChangesButton'
 
 const decorator: DecoratorFn = story => <div className="p-3 container web-content">{story()}</div>
@@ -16,13 +19,6 @@ const config: Meta = {
 export default config
 let openValue = 0
 let mergedValue = 0
-const queryRepoChangesetsStats: typeof _queryRepoChangesetsStats = () =>
-    of({
-        changesetsStats: {
-            open: openValue,
-            merged: mergedValue,
-        },
-    })
 
 export const RepoButton: Story = args => (
     <WebStory>
@@ -31,7 +27,29 @@ export const RepoButton: Story = args => (
             mergedValue = args.merged
 
             return (
-                <RepoBatchChangesButton repoName="Awesome Repo" queryRepoChangesetsStats={queryRepoChangesetsStats} />
+                <MockedTestProvider
+                    link={
+                        new WildcardMockLink([
+                            {
+                                request: {
+                                    query: getDocumentNode(REPO_CHANGESETS_STATS),
+                                    variables: MATCH_ANY_PARAMETERS,
+                                },
+                                result: {
+                                    data: {
+                                        repository: {
+                                            __typename: 'Repository',
+                                            changesetsStats: { open: openValue, merged: mergedValue },
+                                        },
+                                    },
+                                },
+                                nMatches: Number.POSITIVE_INFINITY,
+                            },
+                        ])
+                    }
+                >
+                    <RepoBatchChangesButton repoName="Awesome Repo" />
+                </MockedTestProvider>
             )
         }}
     </WebStory>

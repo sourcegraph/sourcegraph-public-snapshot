@@ -29,6 +29,7 @@ export function submitSearch({
     activation,
     source,
     searchParameters,
+    addRecentSearch,
 }: SubmitSearchParameters): void {
     let searchQueryParameter = buildSearchURLQuery(
         query,
@@ -52,14 +53,17 @@ export function submitSearch({
 
     // Go to search results page
     const path = '/search?' + searchQueryParameter
+
+    const queryWithContext = appendContextFilter(query, selectedSearchContextSpec)
     eventLogger.log(
         'SearchSubmitted',
         {
-            query: appendContextFilter(query, selectedSearchContextSpec),
+            query: queryWithContext,
             source,
         },
         { source }
     )
+    addRecentSearch?.(queryWithContext)
     history.push(path, { ...(typeof history.location.state === 'object' ? history.location.state : null), query })
     if (activation) {
         activation.update({ DidSearch: true })

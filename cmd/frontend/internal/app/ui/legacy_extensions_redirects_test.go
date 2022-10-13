@@ -11,7 +11,7 @@ import (
 )
 
 func TestLegacyExtensionsRedirects(t *testing.T) {
-	InitRouter(database.NewMockDB(), nil)
+	InitRouter(database.NewMockDB())
 	router := Router()
 
 	tests := map[string]bool{
@@ -43,7 +43,7 @@ func TestLegacyExtensionsRedirectsWithExtensionsEnabled(t *testing.T) {
 	enableLegacyExtensions()
 	defer conf.Mock(nil)
 
-	InitRouter(database.NewMockDB(), nil)
+	InitRouter(database.NewMockDB())
 	router := Router()
 
 	tests := []string{

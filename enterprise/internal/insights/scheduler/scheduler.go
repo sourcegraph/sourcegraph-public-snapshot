@@ -16,6 +16,7 @@ import (
 
 	"github.com/lib/pq"
 	log "github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 

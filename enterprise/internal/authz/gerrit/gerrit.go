@@ -119,10 +119,6 @@ func (p Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, o
 	return nil, &authz.ErrUnimplemented{Feature: "gerrit.FetchRepoPerms"}
 }
 
-func (p Provider) FetchUserPermsByToken(ctx context.Context, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
-	return nil, &authz.ErrUnimplemented{Feature: "gerrit.FetchUserPermsByToken"}
-}
-
 func (p Provider) ServiceType() string {
 	return p.codeHost.ServiceType
 }

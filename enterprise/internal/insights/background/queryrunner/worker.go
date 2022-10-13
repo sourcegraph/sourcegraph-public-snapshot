@@ -37,7 +37,7 @@ import (
 
 // NewWorker returns a worker that will execute search queries and insert information about the
 // results into the code insights database.
-func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore.Store, insightsStore *store.Store, repoStore discovery.RepoStore, metrics workerutil.WorkerMetrics) *workerutil.Worker {
+func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore.Store, insightsStore *store.Store, repoStore discovery.RepoStore, metrics workerutil.WorkerObservability) *workerutil.Worker {
 	numHandlers := conf.Get().InsightsQueryWorkerConcurrency
 	if numHandlers <= 0 {
 		// Default concurrency is set to 5.
@@ -173,12 +173,10 @@ func insertDependencies(ctx context.Context, workerBaseStore *basestore.Store, j
 }
 
 const getJobDependencies = `
--- source: enterprise/internal/insights/background/queryrunner/worker.go:getDependencies
 select recording_time from insights_query_runner_jobs_dependencies where job_id = %s;
 `
 
 const insertJobDependencies = `
--- source: enterprise/internal/insights/background/queryrunner/worker.go:insertDependencies
 INSERT INTO insights_query_runner_jobs_dependencies (job_id, recording_time) VALUES %s;`
 
 // EnqueueJob enqueues a job for the query runner worker to execute later.
@@ -214,7 +212,6 @@ func EnqueueJob(ctx context.Context, workerBaseStore *basestore.Store, job *Job)
 }
 
 const enqueueJobFmtStr = `
--- source: enterprise/internal/insights/background/queryrunner/worker.go:EnqueueJob
 INSERT INTO insights_query_runner_jobs (
 	series_id,
 	search_query,
@@ -238,11 +235,9 @@ func PurgeJobsForSeries(ctx context.Context, workerBaseStore *basestore.Store, s
 
 	err = tx.Exec(ctx, sqlf.Sprintf(purgeJobsForSeriesFmtStr, seriesID))
 	return err
-
 }
 
 const purgeJobsForSeriesFmtStr = `
--- source: enterprise/internal/insights/background/queryrunner/worker.go:purgeJobsForSeriesFmtStr
 DELETE FROM insights_query_runner_jobs
 WHERE series_id = %s
 `
@@ -277,7 +272,6 @@ func dequeueJob(ctx context.Context, workerBaseStore *basestore.Store, recordID 
 }
 
 const dequeueJobFmtStr = `
--- source: enterprise/internal/insights/background/queryrunner/worker.go:dequeueJob
 SELECT
 	series_id,
 	search_query,
@@ -330,7 +324,6 @@ func QueryJobsStatus(ctx context.Context, workerBaseStore *basestore.Store, seri
 }
 
 const queryJobsStatusFmtStr = `
--- source: enterprise/internal/insights/background/queryrunner/worker.go:JobsStatus
 SELECT COUNT(*) FROM insights_query_runner_jobs WHERE series_id=%s AND state=%s
 `
 
@@ -339,6 +332,7 @@ func QueryAllSeriesStatus(ctx context.Context, workerBaseStore *basestore.Store)
 	query, err := workerBaseStore.Query(ctx, q)
 	return scanAllSeriesStatusRows(query, err)
 }
+
 func scanAllSeriesStatusRows(rows *sql.Rows, queryErr error) (_ []types.InsightSeriesStatus, err error) {
 	if queryErr != nil {
 		return nil, queryErr
@@ -381,17 +375,21 @@ order by series_id;
 // table.
 //
 // See internal/workerutil/dbworker for more information about dbworkers.
+
+type SearchJob struct {
+	SeriesID        string
+	SearchQuery     string
+	RecordTime      *time.Time
+	PersistMode     string
+	DependentFrames []time.Time
+}
+
 type Job struct {
 	// Query runner fields.
-	SeriesID    string
-	SearchQuery string
-	RecordTime  *time.Time // If non-nil, record results at this time instead of the time at which search results were found.
-	Cost        int
-	Priority    int
-	PersistMode string
+	SearchJob
 
-	DependentFrames []time.Time // This field isn't part of the job table, but maps to a table one-many on this job.
-
+	Cost     int
+	Priority int
 	// Standard/required dbworker fields. If enqueuing a job, these may all be zero values except State.
 	//
 	// See https://sourcegraph.com/github.com/sourcegraph/sourcegraph@cd0b3904c674ee3568eb2ef5d7953395b6432d20/-/blob/internal/workerutil/dbworker/store/store.go#L114-134
@@ -484,13 +482,15 @@ var jobsColumns = []*sqlf.Query{
 // ToQueueJob converts the query execution into a queueable job with it's relevant dependent times.
 func ToQueueJob(q *compression.QueryExecution, seriesID string, query string, cost priority.Cost, jobPriority priority.Priority) *Job {
 	return &Job{
-		SeriesID:        seriesID,
-		SearchQuery:     query,
-		RecordTime:      &q.RecordingTime,
-		Cost:            int(cost),
-		Priority:        int(jobPriority),
-		DependentFrames: q.SharedRecordings,
-		State:           "queued",
-		PersistMode:     string(store.RecordMode),
+		SearchJob: SearchJob{
+			SeriesID:        seriesID,
+			SearchQuery:     query,
+			RecordTime:      &q.RecordingTime,
+			PersistMode:     string(store.RecordMode),
+			DependentFrames: q.SharedRecordings,
+		},
+		Cost:     int(cost),
+		Priority: int(jobPriority),
+		State:    "queued",
 	}
 }

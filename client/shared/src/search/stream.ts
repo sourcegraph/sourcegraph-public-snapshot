@@ -51,7 +51,7 @@ export interface ContentMatch {
     repoLastFetched?: string
     branches?: string[]
     commit?: string
-    lineMatches: LineMatch[]
+    lineMatches?: LineMatch[]
     chunkMatches?: ChunkMatch[]
     hunks?: DecoratedHunk[]
 }
@@ -90,6 +90,7 @@ interface ChunkMatch {
     content: string
     contentStart: Location
     ranges: Range[]
+    aggregableBadges?: AggregableBadge[]
 }
 
 export interface SymbolMatch {
@@ -437,6 +438,7 @@ export interface StreamSearchOptions {
     decorationKinds?: string[]
     decorationContextLines?: number
     displayLimit?: number
+    chunkMatches?: boolean
 }
 
 function initiateSearchStream(
@@ -450,6 +452,7 @@ function initiateSearchStream(
         decorationContextLines,
         displayLimit = 1500,
         sourcegraphURL = '',
+        chunkMatches = false,
     }: StreamSearchOptions,
     messageHandlers: MessageHandlers
 ): Observable<SearchEvent> {
@@ -464,6 +467,7 @@ function initiateSearchStream(
             ['dk', (decorationKinds || ['html']).join('|')],
             ['dc', (decorationContextLines || '1').toString()],
             ['display', displayLimit.toString()],
+            ['cm', chunkMatches ? 't' : 'f'],
         ]
         if (trace) {
             parameters.push(['trace', trace])

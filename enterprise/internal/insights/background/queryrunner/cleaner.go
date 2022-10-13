@@ -50,7 +50,6 @@ func cleanJobs(ctx context.Context, workerBaseStore *basestore.Store) (numCleane
 }
 
 const cleanJobsFmtStr = `
--- source: enterprise/internal/insights/background/queryrunner/cleaner.go:cleanJobs
 WITH deleted AS (
 	DELETE FROM insights_query_runner_jobs WHERE state='completed' AND started_at <= %s RETURNING *
 ) SELECT count(*) FROM deleted
