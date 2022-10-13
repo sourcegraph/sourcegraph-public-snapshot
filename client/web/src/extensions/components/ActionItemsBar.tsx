@@ -218,6 +218,9 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
         return <div className={styles.barCollapsed} />
     }
 
+    const perforceCodeHostUrlToSwarmUrlMap =
+        (window.context?.experimentalFeatures?.perforceCodeHostToSwarmMap as { [key: string]: string }) || {}
+
     return (
         <div className={classNames('p-0 mr-2 position-relative d-flex flex-column', styles.bar)} ref={barReference}>
             {/* To be clear to users that this isn't an error reported by extensions about e.g. the code they're viewing. */}
@@ -237,16 +240,18 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
 
                 {source !== 'compare' && source !== 'commit' && (
                     <GoToCodeHostAction
-                        source="actionItemsBar"
-                        repo={props.repo} // We need a revision to generate code host URLs, if revision isn't available, we use the default branch or HEAD.
+                        repo={props.repo}
+                        repoName={repoName}
+                        // We need a revision to generate code host URLs, if revision isn't available, we use the default branch or HEAD.
                         revision={rawRevision || props.repo?.defaultBranch?.displayName || 'HEAD'}
                         filePath={filePath}
                         commitRange={commitRange}
-                        position={position}
                         range={range}
-                        repoName={repoName}
-                        actionType="nav"
+                        position={position}
+                        perforceCodeHostUrlToSwarmUrlMap={perforceCodeHostUrlToSwarmUrlMap}
                         fetchFileExternalLinks={fetchFileExternalLinks}
+                        actionType="nav"
+                        source="actionItemsBar"
                     />
                 )}
 
@@ -381,7 +386,7 @@ export const ActionItemsToggle: React.FunctionComponent<React.PropsWithChildren<
             <li className={classNames('nav-item mr-2', className)}>
                 <div className={classNames(styles.toggleContainer, isOpen && styles.toggleContainerOpen)}>
                     <Tooltip content={`${isOpen ? 'Close' : 'Open'} ${panelName} panel`}>
-                        {/**
+                        {/*
                          * This <ButtonLink> must be wrapped with an additional span, since the tooltip currently has an issue that will
                          * break its onClick handler, and it will no longer prevent the default page reload (with no href).
                          */}

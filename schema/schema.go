@@ -646,6 +646,8 @@ type ExperimentalFeatures struct {
 	PasswordPolicy *PasswordPolicy `json:"passwordPolicy,omitempty"`
 	// Perforce description: Allow adding Perforce code host connections
 	Perforce string `json:"perforce,omitempty"`
+	// PerforceCodeHostToSwarmMap description: Key-value pairs of code host URLs to Swarm URLs. Keys should have no prefix and should not end with a slash, like "perforce.company.com:1666". Values should look like "https://swarm.company.com/", with a slash at the end.
+	PerforceCodeHostToSwarmMap map[string]string `json:"perforceCodeHostToSwarmMap,omitempty"`
 	// PythonPackages description: Allow adding Python package code host connections
 	PythonPackages string `json:"pythonPackages,omitempty"`
 	// Ranking description: Experimental search result ranking options.

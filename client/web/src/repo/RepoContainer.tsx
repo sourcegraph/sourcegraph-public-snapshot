@@ -9,7 +9,7 @@ import { matchPath, Route, RouteComponentProps, Switch } from 'react-router'
 import { NEVER, of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike, encodeURIPathComponent, repeatUntil, logger } from '@sourcegraph/common'
+import { asError, encodeURIPathComponent, ErrorLike, isErrorLike, logger, repeatUntil } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
 import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
 import { isCloneInProgressErrorLike, isRepoSeeOtherErrorLike } from '@sourcegraph/shared/src/backend/errors'
@@ -23,7 +23,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
-import { Icon, Button, useObservable, Link } from '@sourcegraph/wildcard'
+import { Button, Icon, Link, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -353,6 +353,9 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
         return null
     }
 
+    const perforceCodeHostUrlToSwarmUrlMap =
+        (window.context?.experimentalFeatures?.perforceCodeHostToSwarmMap as { [key: string]: string }) || {}
+
     return (
         <div className={classNames('w-100 d-flex flex-column', styles.repoContainer)}>
             <RepoHeader
@@ -379,19 +382,20 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                 >
                     {({ actionType }) => (
                         <GoToCodeHostAction
-                            key="go-to-code-host"
-                            source="repoHeader"
                             repo={repoOrError}
+                            repoName={repoName}
                             // We need a revision to generate code host URLs, if revision isn't available, we use the default branch or HEAD.
                             revision={rawRevision || repoOrError?.defaultBranch?.displayName || 'HEAD'}
                             filePath={filePath}
                             commitRange={commitRange}
-                            position={position}
                             range={range}
-                            externalLinks={externalLinks}
+                            position={position}
+                            perforceCodeHostUrlToSwarmUrlMap={perforceCodeHostUrlToSwarmUrlMap}
                             fetchFileExternalLinks={fetchFileExternalLinks}
                             actionType={actionType}
-                            repoName={repoName}
+                            source="repoHeader"
+                            key="go-to-code-host"
+                            externalLinks={externalLinks}
                         />
                     )}
                 </RepoHeaderContributionPortal>

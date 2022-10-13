@@ -25,10 +25,12 @@ interface Props extends RevisionSpec, Partial<FileSpec> {
     repo?: Pick<RepositoryFields, 'name' | 'defaultBranch' | 'externalURLs' | 'externalRepository'> | null
     filePath?: string
     commitRange?: string
-    position?: Position
     range?: Range
+    position?: Position
 
     externalLinks?: ExternalLinkFields[]
+
+    perforceCodeHostUrlToSwarmUrlMap: {[key: string]: string}
 
     fetchFileExternalLinks: typeof fetchFileExternalLinks
 
@@ -76,11 +78,9 @@ export const GoToCodeHostAction: React.FunctionComponent<
     if (!props.repo || isErrorLike(fileExternalLinksOrError)) {
         return null
     }
-
     const serviceType = props.repo.externalRepository.serviceType
-    const perforceRepoUrlToSwarmUrlMap = {'perforce.company.com:1666': 'https://swarm.company.com/'} // TODO: Make this dynamic
     const [serviceKind, url] = (serviceType === 'perforce')
-        ? getPerforceServiceKindAndSwarmUrl(perforceRepoUrlToSwarmUrlMap, props.repo.externalRepository.serviceID, props.repoName, revision, commitMessage, filePath)
+        ? getPerforceServiceKindAndSwarmUrl(props.perforceCodeHostUrlToSwarmUrlMap, props.repo.externalRepository.serviceID, props.repoName, revision, commitMessage, filePath)
         : getServiceKindAndGitUrl(props.externalLinks, props.repo.externalURLs, fileExternalLinksOrError, revision, defaultBranch, props.commitRange, props.range, props.position)
     if (!serviceKind || !url) {
         return null
@@ -204,7 +204,7 @@ function getGitExternalURLs(
 }
 
 /**
- * @param perforceRepoUrlToSwarmUrlMap Keys should have no prefix and should not end with a slash. Like "perforce.company.com:1666"
+ * @param perforceCodeHostUrlToSwarmUrlMap Keys should have no prefix and should not end with a slash. Like "perforce.company.com:1666"
  * Values should look like "https://swarm.company.com/", with a slash at the end.
  * @param serviceID is the Perforce hostname, like "perforce.company.com:1666"
  * @param repoName is like "some-repo-name", probably always the depot name without the slashes - TODO: Use this once we figure out the URL format
@@ -212,18 +212,18 @@ function getGitExternalURLs(
  * @param commitMessage should be like "Test\n[git-p4: depot-paths = \"//some-depot-path/\": change = 91512]". Only the end is used.
  * @param filePath is like "test/1.js" - TODO: Use this once we figure out the URL format
  */
-function getPerforceServiceKindAndSwarmUrl(perforceRepoUrlToSwarmUrlMap: {[key: string]: string}, serviceID: string, repoName: string, revision: string, commitMessage: string | undefined, filePath: string | undefined): [ExternalServiceKind | null, string | null] {
+function getPerforceServiceKindAndSwarmUrl(perforceCodeHostUrlToSwarmUrlMap: {[key: string]: string}, serviceID: string, repoName: string, revision: string, commitMessage: string | undefined, filePath: string | undefined): [ExternalServiceKind | null, string | null] {
     if (!commitMessage) {
         return [null, null]
     }
-    if (!Object.keys(perforceRepoUrlToSwarmUrlMap).includes(serviceID)) {
+    if (!Object.keys(perforceCodeHostUrlToSwarmUrlMap).includes(serviceID)) {
         return [null, null]
     }
     const changelistNumber = getPerforceChangelistNumberFromCommitMessage(commitMessage)
     if (!changelistNumber) {
         return [null, null]
     }
-    return [ExternalServiceKind.PERFORCE, perforceRepoUrlToSwarmUrlMap[serviceID] + changelistNumber]
+    return [ExternalServiceKind.PERFORCE, perforceCodeHostUrlToSwarmUrlMap[serviceID] + changelistNumber]
 }
 
 function getPerforceChangelistNumberFromCommitMessage(commitMessage: string): string | null {
