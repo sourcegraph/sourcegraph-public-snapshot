@@ -278,7 +278,7 @@ export const NewOrgOpenBetaPage: React.FunctionComponent<React.PropsWithChildren
                             <span className={styles.cbLabel}>
                                 I accept the{' '}
                                 <Link to="https://about.sourcegraph.com/terms-cloud">terms of service</Link> for
-                                participating in the Sourcegraph Cloud for small teams open beta.
+                                participating in the Sourcegraph.com for small teams open beta.
                             </span>
                         }
                     />
