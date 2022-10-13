@@ -17,6 +17,7 @@ type operations struct {
 	deleteIndexByID                *observation.Operation
 	deleteIndexes                  *observation.Operation
 	deleteIndexesWithoutRepository *observation.Operation
+	expireFailedRecords            *observation.Operation
 	queueRepoRev                   *observation.Operation
 	queueIndex                     *observation.Operation
 	queueIndexForPackage           *observation.Operation
@@ -59,16 +60,18 @@ func newOperations(observationContext *observation.Context) *operations {
 
 	return &operations{
 		// Indexes
-		getIndexes:                    op("GetIndexes"),
-		getIndexByID:                  op("GetIndexByID"),
-		getIndexesByIDs:               op("GetIndexesByIDs"),
-		getRecentIndexesSummary:       op("GetRecentIndexesSummary"),
-		getLastIndexScanForRepository: op("GetLastIndexScanForRepository"),
-		deleteIndexByID:               op("DeleteIndexByID"),
-		deleteIndexes:                 op("DeleteIndexes"),
-		queueRepoRev:                  op("QueueRepoRev"),
-		queueIndex:                    op("QueueIndex"),
-		queueIndexForPackage:          op("QueueIndexForPackage"),
+		getIndexes:                     op("GetIndexes"),
+		getIndexByID:                   op("GetIndexByID"),
+		getIndexesByIDs:                op("GetIndexesByIDs"),
+		getRecentIndexesSummary:        op("GetRecentIndexesSummary"),
+		getLastIndexScanForRepository:  op("GetLastIndexScanForRepository"),
+		deleteIndexByID:                op("DeleteIndexByID"),
+		deleteIndexes:                  op("DeleteIndexes"),
+		deleteIndexesWithoutRepository: op("DeleteIndexesWithoutRepository"),
+		expireFailedRecords:            op("ExpireFailedRecords"),
+		queueRepoRev:                   op("QueueRepoRev"),
+		queueIndex:                     op("QueueIndex"),
+		queueIndexForPackage:           op("QueueIndexForPackage"),
 
 		// Commits
 		getStaleSourcedCommits: op("GetStaleSourcedCommits"),

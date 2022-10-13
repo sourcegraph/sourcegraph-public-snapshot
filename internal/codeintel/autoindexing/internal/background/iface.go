@@ -51,6 +51,7 @@ type AutoIndexingService interface {
 	QueueIndexesForPackage(ctx context.Context, pkg precise.Package) (err error)
 	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error)
 	DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error)
+	ExpireFailedRecords(ctx context.Context, batchSize int, maxAge time.Duration, now time.Time) error
 
 	GetStaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []autoindexingshared.SourcedCommits, err error)
 	UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (indexesUpdated int, err error)
