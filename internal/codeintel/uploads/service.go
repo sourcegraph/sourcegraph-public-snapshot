@@ -34,7 +34,7 @@ type Service struct {
 	expirationMetrics *expirationMetrics
 	resetterMetrics   *resetterMetrics
 	janitorMetrics    *janitorMetrics
-	workerMetrics     workerutil.WorkerMetrics
+	workerMetrics     workerutil.WorkerObservability
 	policyMatcher     PolicyMatcher
 	locker            Locker
 	logger            logger.Logger
@@ -67,7 +67,7 @@ func newService(
 		expirationMetrics: newExpirationMetrics(observationContext),
 		resetterMetrics:   newResetterMetrics(observationContext),
 		janitorMetrics:    newJanitorMetrics(observationContext),
-		workerMetrics:     workerutil.NewMetrics(observationContext, "codeintel_upload_processor"),
+		workerMetrics:     workerutil.NewMetrics(observationContext, "codeintel_upload_processor", workerutil.WithSampler(func(job workerutil.Record) bool { return true })),
 		policyMatcher:     policyMatcher,
 		locker:            locker,
 		logger:            observationContext.Logger,

@@ -60,8 +60,8 @@ type backgroundJob struct {
 
 	metrics                *resetterMetrics
 	janitorMetrics         *janitorMetrics
-	depencencySyncMetrics  workerutil.WorkerMetrics
-	depencencyIndexMetrics workerutil.WorkerMetrics
+	depencencySyncMetrics  workerutil.WorkerObservability
+	depencencyIndexMetrics workerutil.WorkerObservability
 }
 
 func New(
