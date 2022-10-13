@@ -3,6 +3,7 @@ package gitserver
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 
 	"github.com/opentracing/opentracing-go/log"
@@ -16,6 +17,26 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+type localGitserverClient struct {
+}
+
+func (c *localGitserverClient) FetchTar(context.Context, api.RepoName, api.CommitID, []string) (io.ReadCloser, error) {
+	panic("FetchTar")
+}
+func (c *localGitserverClient) GitDiff(context.Context, api.RepoName, api.CommitID, api.CommitID) (Changes, error) {
+	panic("GitDiff")
+}
+func (c *localGitserverClient) ReadFile(ctx context.Context, repoCommitPath types.RepoCommitPath) ([]byte, error) {
+	panic("ReadFile")
+}
+func (c *localGitserverClient) LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error {
+	panic("LogReverseEach")
+}
+func (c *localGitserverClient) RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error {
+	panic("RevList")
+}
+
+// MOE
 type GitserverClient interface {
 	// FetchTar returns an io.ReadCloser to a tar archive of a repository at the specified Git
 	// remote URL and commit ID. If the error implements "BadRequest() bool", it will be used to
@@ -49,6 +70,7 @@ type gitserverClient struct {
 }
 
 func NewClient(db database.DB, observationContext *observation.Context) GitserverClient {
+	fmt.Printf("### NewClient\n")
 	return &gitserverClient{
 		innerClient: gitserver.NewClient(db),
 		operations:  newOperations(observationContext),
