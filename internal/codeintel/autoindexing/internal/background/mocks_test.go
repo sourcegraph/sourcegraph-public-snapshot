@@ -151,7 +151,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		ExpireFailedRecordsFunc: &StoreExpireFailedRecordsFunc{
-			defaultHook: func(context.Context, time.Duration, time.Time) (r0 error) {
+			defaultHook: func(context.Context, int, time.Duration, time.Time) (r0 error) {
 				return
 			},
 		},
@@ -293,7 +293,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		ExpireFailedRecordsFunc: &StoreExpireFailedRecordsFunc{
-			defaultHook: func(context.Context, time.Duration, time.Time) error {
+			defaultHook: func(context.Context, int, time.Duration, time.Time) error {
 				panic("unexpected invocation of MockStore.ExpireFailedRecords")
 			},
 		},
@@ -1034,24 +1034,24 @@ func (c StoreDoneFuncCall) Results() []interface{} {
 // StoreExpireFailedRecordsFunc describes the behavior when the
 // ExpireFailedRecords method of the parent MockStore instance is invoked.
 type StoreExpireFailedRecordsFunc struct {
-	defaultHook func(context.Context, time.Duration, time.Time) error
-	hooks       []func(context.Context, time.Duration, time.Time) error
+	defaultHook func(context.Context, int, time.Duration, time.Time) error
+	hooks       []func(context.Context, int, time.Duration, time.Time) error
 	history     []StoreExpireFailedRecordsFuncCall
 	mutex       sync.Mutex
 }
 
 // ExpireFailedRecords delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockStore) ExpireFailedRecords(v0 context.Context, v1 time.Duration, v2 time.Time) error {
-	r0 := m.ExpireFailedRecordsFunc.nextHook()(v0, v1, v2)
-	m.ExpireFailedRecordsFunc.appendCall(StoreExpireFailedRecordsFuncCall{v0, v1, v2, r0})
+func (m *MockStore) ExpireFailedRecords(v0 context.Context, v1 int, v2 time.Duration, v3 time.Time) error {
+	r0 := m.ExpireFailedRecordsFunc.nextHook()(v0, v1, v2, v3)
+	m.ExpireFailedRecordsFunc.appendCall(StoreExpireFailedRecordsFuncCall{v0, v1, v2, v3, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the ExpireFailedRecords
 // method of the parent MockStore instance is invoked and the hook queue is
 // empty.
-func (f *StoreExpireFailedRecordsFunc) SetDefaultHook(hook func(context.Context, time.Duration, time.Time) error) {
+func (f *StoreExpireFailedRecordsFunc) SetDefaultHook(hook func(context.Context, int, time.Duration, time.Time) error) {
 	f.defaultHook = hook
 }
 
@@ -1059,7 +1059,7 @@ func (f *StoreExpireFailedRecordsFunc) SetDefaultHook(hook func(context.Context,
 // ExpireFailedRecords method of the parent MockStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *StoreExpireFailedRecordsFunc) PushHook(hook func(context.Context, time.Duration, time.Time) error) {
+func (f *StoreExpireFailedRecordsFunc) PushHook(hook func(context.Context, int, time.Duration, time.Time) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1068,19 +1068,19 @@ func (f *StoreExpireFailedRecordsFunc) PushHook(hook func(context.Context, time.
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *StoreExpireFailedRecordsFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, time.Duration, time.Time) error {
+	f.SetDefaultHook(func(context.Context, int, time.Duration, time.Time) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *StoreExpireFailedRecordsFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, time.Duration, time.Time) error {
+	f.PushHook(func(context.Context, int, time.Duration, time.Time) error {
 		return r0
 	})
 }
 
-func (f *StoreExpireFailedRecordsFunc) nextHook() func(context.Context, time.Duration, time.Time) error {
+func (f *StoreExpireFailedRecordsFunc) nextHook() func(context.Context, int, time.Duration, time.Time) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1118,10 +1118,13 @@ type StoreExpireFailedRecordsFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 time.Duration
+	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 time.Time
+	Arg2 time.Duration
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 time.Time
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -1130,7 +1133,7 @@ type StoreExpireFailedRecordsFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c StoreExpireFailedRecordsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
