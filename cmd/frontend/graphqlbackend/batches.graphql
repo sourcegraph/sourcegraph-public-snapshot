@@ -2739,7 +2739,7 @@ type BatchChange implements Node {
         """
         includeLocallyExecutedSpecs: Boolean
         """
-        Exclude the empty batch specs that gets initiated with each batch change.
+        Exclude the empty batch specs that are initially created and applied to draft batch changes.
         """
         excludeEmptySpecs: Boolean
     ): BatchSpecConnection!
