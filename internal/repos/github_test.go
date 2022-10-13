@@ -172,10 +172,22 @@ func TestPublicRepos_PaginationTerminatesGracefully(t *testing.T) {
 		close(results)
 	}()
 
+	count := 0
+	countArchived := 0
 	for result := range results {
 		if result.err != nil {
-			t.Error("unexpected error, expected repository instead")
+			t.Errorf("unexpected error: %s, expected repository instead", result.err.Error())
 		}
+		if result.repo.IsArchived {
+			countArchived++
+		}
+		count++
+	}
+	if count != 100 {
+		t.Errorf("unexpected repo count, wanted: 100, but got: %d", count)
+	}
+	if countArchived != 1 {
+		t.Errorf("unexpected archived repo count, wanted: 1, but got: %d", countArchived)
 	}
 }
 

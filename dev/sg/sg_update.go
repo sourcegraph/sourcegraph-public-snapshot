@@ -48,7 +48,7 @@ func updateToPrebuiltSG(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	// We use the RountTripper to make an HTTP request without having to deal
+	// We use the RoundTripper to make an HTTP request without having to deal
 	// with redirections.
 	resp, err := http.DefaultTransport.RoundTrip(req)
 	if err != nil {

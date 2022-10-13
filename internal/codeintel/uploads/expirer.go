@@ -7,7 +7,9 @@ import (
 	"github.com/sourcegraph/log"
 
 	policiesEnterprise "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
+	policiesshared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -112,7 +114,7 @@ func (e *Service) handleRepository(ctx context.Context, repositoryID int, cfg ex
 		// out new uploads that would happen to be visible to no commits since they were never
 		// installed into the commit graph.
 
-		uploads, _, err := e.GetUploads(ctx, types.GetUploadsOptions{
+		uploads, _, err := e.GetUploads(ctx, shared.GetUploadsOptions{
 			State:                   "completed",
 			RepositoryID:            repositoryID,
 			AllowExpired:            false,
@@ -144,7 +146,7 @@ func (e *Service) buildCommitMap(ctx context.Context, repositoryID int, cfg expi
 
 	for {
 		// Retrieve the complete set of configuration policies that affect data retention for this repository
-		policyBatch, totalCount, err := e.policySvc.GetConfigurationPolicies(ctx, types.GetConfigurationPoliciesOptions{
+		policyBatch, totalCount, err := e.policySvc.GetConfigurationPolicies(ctx, policiesshared.GetConfigurationPoliciesOptions{
 			RepositoryID:     repositoryID,
 			ForDataRetention: true,
 			Limit:            cfg.policyBatchSize,

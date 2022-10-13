@@ -42,7 +42,7 @@ func (s *Service) pageRankFromStreamingGraph(ctx context.Context, graph streamin
 
 	ranks := map[string][]float64{}
 	g.Rank(pageRankFollowProbability, pageRankTolerance, func(identifier int, rank float64) {
-		ranks[idsToName[identifier]] = []float64{1 - rank}
+		ranks[idsToName[identifier]] = []float64{rank}
 	})
 
 	return ranks, nil
