@@ -30,7 +30,7 @@ interface Props extends RevisionSpec, Partial<FileSpec> {
 
     externalLinks?: ExternalLinkFields[]
 
-    perforceCodeHostUrlToSwarmUrlMap: {[key: string]: string}
+    perforceCodeHostUrlToSwarmUrlMap: { [key: string]: string }
 
     fetchFileExternalLinks: typeof fetchFileExternalLinks
 
@@ -65,7 +65,9 @@ export const GoToCodeHostAction: React.FunctionComponent<
         }, [repo, revision, filePath])
     )
 
-    const commitMessage = useObservable<string>(fetchCommitMessage({repoName: props.repoName, revision: props.revision}))
+    const commitMessage = useObservable<string>(
+        fetchCommitMessage({ repoName: props.repoName, revision: props.revision })
+    )
 
     const onClick = useCallback(() => eventLogger.log('GoToCodeHostClicked'), [])
 
@@ -79,9 +81,26 @@ export const GoToCodeHostAction: React.FunctionComponent<
         return null
     }
     const serviceType = props.repo.externalRepository.serviceType
-    const [serviceKind, url] = (serviceType === 'perforce')
-        ? getPerforceServiceKindAndSwarmUrl(props.perforceCodeHostUrlToSwarmUrlMap, props.repo.externalRepository.serviceID, props.repoName, revision, commitMessage, filePath)
-        : getServiceKindAndGitUrl(props.externalLinks, props.repo.externalURLs, fileExternalLinksOrError, revision, defaultBranch, props.commitRange, props.range, props.position)
+    const [serviceKind, url] =
+        serviceType === 'perforce'
+            ? getPerforceServiceKindAndSwarmUrl(
+                  props.perforceCodeHostUrlToSwarmUrlMap,
+                  props.repo.externalRepository.serviceID,
+                  props.repoName,
+                  revision,
+                  commitMessage,
+                  filePath
+              )
+            : getServiceKindAndGitUrl(
+                  props.externalLinks,
+                  props.repo.externalURLs,
+                  fileExternalLinksOrError,
+                  revision,
+                  defaultBranch,
+                  props.commitRange,
+                  props.range,
+                  props.position
+              )
     if (!serviceKind || !url) {
         return null
     }
@@ -150,8 +169,8 @@ function getServiceKindAndGitUrl(
     defaultBranch: string,
     commitRange: string | undefined,
     range: Range | undefined,
-    position: Position | undefined): [ExternalServiceKind | null, string | null] {
-
+    position: Position | undefined
+): [ExternalServiceKind | null, string | null] {
     const externalURLs = getGitExternalURLs(externalLinks, repoExternalURLs, fileExternalLinksOrError)
 
     if (!externalURLs || externalURLs.length === 0) {
@@ -185,7 +204,8 @@ function getServiceKindAndGitUrl(
 function getGitExternalURLs(
     externalLinks: ExternalLinkFields[] | undefined,
     repoExternalURLs: RepositoryFields['externalURLs'] | undefined,
-    fileExternalLinksOrError: ExternalLinkFields[] | undefined | null): ExternalLinkFields[] | undefined {
+    fileExternalLinksOrError: ExternalLinkFields[] | undefined | null
+): ExternalLinkFields[] | undefined {
     if (externalLinks && externalLinks.length > 0) {
         return externalLinks
     }
@@ -212,7 +232,14 @@ function getGitExternalURLs(
  * @param commitMessage should be like "Test\n[git-p4: depot-paths = \"//some-depot-path/\": change = 91512]". Only the end is used.
  * @param filePath is like "test/1.js" - TODO: Use this once we figure out the URL format
  */
-function getPerforceServiceKindAndSwarmUrl(perforceCodeHostUrlToSwarmUrlMap: {[key: string]: string}, serviceID: string, repoName: string, revision: string, commitMessage: string | undefined, filePath: string | undefined): [ExternalServiceKind | null, string | null] {
+function getPerforceServiceKindAndSwarmUrl(
+    perforceCodeHostUrlToSwarmUrlMap: { [key: string]: string },
+    serviceID: string,
+    repoName: string,
+    revision: string,
+    commitMessage: string | undefined,
+    filePath: string | undefined
+): [ExternalServiceKind | null, string | null] {
     if (!commitMessage) {
         return [null, null]
     }

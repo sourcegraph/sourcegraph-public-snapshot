@@ -179,20 +179,20 @@ interface FetchCommitMessageResult {
 
 export const fetchCommitMessage = memoizeObservable(
     (context: RepoRevision): Observable<string> =>
-    requestGraphQL<FetchCommitMessageResult, RepoRevision>(
-        gql`
-            query CommitMessage($repoName: String!, $revision: String!) {
-                repository(name: $repoName) {
-                    commit(rev: $revision) {
-                        message
+        requestGraphQL<FetchCommitMessageResult, RepoRevision>(
+            gql`
+                query CommitMessage($repoName: String!, $revision: String!) {
+                    repository(name: $repoName) {
+                        commit(rev: $revision) {
+                            message
+                        }
                     }
                 }
-            }
-        `,
-        context
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.repository.commit.message)
-    ),
+            `,
+            context
+        ).pipe(
+            map(dataOrThrowErrors),
+            map(data => data.repository.commit.message)
+        ),
     makeRepoURI
 )
