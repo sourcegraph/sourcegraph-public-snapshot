@@ -13,6 +13,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -93,8 +94,8 @@ func (r *changesetSpecResolver) Description(ctx context.Context) (graphqlbackend
 	return descriptionResolver, nil
 }
 
-func (r *changesetSpecResolver) ExpiresAt() *graphqlbackend.DateTime {
-	return &graphqlbackend.DateTime{Time: r.changesetSpec.ExpiresAt()}
+func (r *changesetSpecResolver) ExpiresAt() *gqlutil.DateTime {
+	return &gqlutil.DateTime{Time: r.changesetSpec.ExpiresAt()}
 }
 
 func (r *changesetSpecResolver) ForkTarget() graphqlbackend.ForkTargetInterface {
