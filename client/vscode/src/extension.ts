@@ -20,7 +20,7 @@ import { openSourcegraphUriCommand } from './file-system/commands'
 import { initializeSourcegraphFileSystem } from './file-system/initialize'
 import { SourcegraphUri } from './file-system/SourcegraphUri'
 import { Event } from './graphql-operations'
-import { accessTokenSetting, updateAccessTokenSetting } from './settings/accessTokenSetting'
+import { accessTokenSetting, loadAuthToken, updateAccessTokenSetting } from './settings/accessTokenSetting'
 import { endpointRequestHeadersSetting, endpointSetting, updateEndpointSetting } from './settings/endpointSetting'
 import { invalidateContextOnSettingsChange } from './settings/invalidation'
 import { LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY } from './settings/LocalStorageService'
@@ -30,7 +30,9 @@ import { focusSearchPanel, registerWebviews } from './webview/commands'
 /**
  * See CONTRIBUTING docs for the Architecture Diagram
  */
-export function activate(context: vscode.ExtensionContext): void {
+export async function activate(context: vscode.ExtensionContext): Promise<void> {
+    await loadAuthToken(context.secrets)
+
     const localStorageService = new LocalStorageService(context.globalState)
     const stateMachine = createVSCEStateMachine({ localStorageService })
     invalidateContextOnSettingsChange({ context, stateMachine })

@@ -5,8 +5,23 @@ import { isOlderThan, observeInstanceVersionNumber } from '../backend/instanceVe
 import { endpointHostnameSetting, endpointProtocolSetting } from './endpointSetting'
 import { readConfiguration } from './readConfiguration'
 
+let accessToken: string | undefined
+let storage: vscode.SecretStorage
+
+export async function loadAuthToken(_storage: vscode.SecretStorage): Promise<void> {
+    storage = _storage
+    accessToken = await storage.get('accessToken')
+    storage.onDidChange(() => {
+        // update accessToken
+    })
+
+    if (accessToken === undefined) {
+        // Try to migrate old access token from global state to secret storage.
+    }
+}
+
 export function accessTokenSetting(): string | undefined {
-    return readConfiguration().get<string>('accessToken')
+    return accessToken
 }
 
 // Ensure that only one access token error message is shown at a time.
@@ -48,7 +63,8 @@ export async function handleAccessTokenError(badToken?: string, endpointURL?: st
 export async function updateAccessTokenSetting(newToken: string): Promise<boolean> {
     // TODO: STORE TOKEN IN KEYCHAIN AND REMOVE FROM USER CONFIG
     try {
-        await readConfiguration().update('accessToken', newToken, vscode.ConfigurationTarget.Global)
+        await storage.store('accessToken', newToken)
+        // await readConfiguration().update('accessToken', newToken, vscode.ConfigurationTarget.Global)
         return true
     } catch {
         return false
