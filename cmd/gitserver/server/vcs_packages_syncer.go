@@ -275,7 +275,6 @@ func (s *vcsPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 	defer os.RemoveAll(workDir)
 
 	err = s.source.Download(ctx, workDir, dep)
-	// We should not return err when dependency is not found
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			s.logger.With(
