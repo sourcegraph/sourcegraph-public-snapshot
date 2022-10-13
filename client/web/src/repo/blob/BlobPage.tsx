@@ -107,9 +107,9 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
     const enableLazyBlobSyntaxHighlighting = useExperimentalFeatures(
         features => features.enableLazyBlobSyntaxHighlighting ?? false
     )
-    const enableKeyboardNavigation =
+    const enableIntelligentKeyboardNavigation =
         isSettingsValid(props.settingsCascade) &&
-        props.settingsCascade.final['codeIntel.keyboardNavigation'] === 'token'
+        props.settingsCascade.final['codeIntel.intelligentKeyboardNavigation'] === 'token'
 
     const lineOrRange = useMemo(() => parseQueryAndHash(props.location.search, props.location.hash), [
         props.location.search,
@@ -183,7 +183,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                         repoName,
                         revision,
                         filePath,
-                        stencil: enableKeyboardNavigation,
+                        stencil: enableIntelligentKeyboardNavigation,
                         format: HighlightResponseFormat.HTML_PLAINTEXT,
                     }).pipe(
                         map(({ blob, stencil }) => {
@@ -212,7 +212,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
             )
         }, [
             enableCodeMirror,
-            enableKeyboardNavigation,
+            enableIntelligentKeyboardNavigation,
             enableLazyBlobSyntaxHighlighting,
             filePath,
             mode,
@@ -241,7 +241,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                             revision,
                             filePath,
                             disableTimeout,
-                            stencil: enableKeyboardNavigation,
+                            stencil: enableIntelligentKeyboardNavigation,
                             format: enableCodeMirror
                                 ? HighlightResponseFormat.JSON_SCIP
                                 : HighlightResponseFormat.HTML_HIGHLIGHT,
@@ -277,7 +277,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                     }),
                     catchError((error): [ErrorLike] => [asError(error)])
                 ),
-            [repoName, revision, filePath, enableKeyboardNavigation, enableCodeMirror, mode]
+            [repoName, revision, filePath, enableIntelligentKeyboardNavigation, enableCodeMirror, mode]
         )
     )
 
@@ -507,7 +507,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                         isBlameVisible={isBlameVisible}
                         blameHunks={blameDecorations}
                         overrideBrowserSearchKeybinding={true}
-                        keyboardNavigation={enableKeyboardNavigation}
+                        intelligentKeyboardNavigation={enableIntelligentKeyboardNavigation}
                     />
                 </TraceSpanProvider>
             )}

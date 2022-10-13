@@ -1728,8 +1728,8 @@ type Settings struct {
 	CodeIntelDisableRangeQueries bool `json:"codeIntel.disableRangeQueries,omitempty"`
 	// CodeIntelDisableSearchBased description: Never fall back to search-based code intelligence.
 	CodeIntelDisableSearchBased bool `json:"codeIntel.disableSearchBased,omitempty"`
-	// CodeIntelKeyboardNavigation description: Supported methods of keyboard navigation within the file view. Note: `token` navigation is only supported when precise code intelligence is available
-	CodeIntelKeyboardNavigation string `json:"codeIntel.keyboardNavigation,omitempty"`
+	// CodeIntelIntelligentKeyboardNavigation description: Supported methods of intelligent keyboard navigation within the file view. Note: `token` navigation is only supported when precise code intelligence is available
+	CodeIntelIntelligentKeyboardNavigation string `json:"codeIntel.intelligentKeyboardNavigation,omitempty"`
 	// CodeIntelMixPreciseAndSearchBasedReferences description: Whether to supplement precise references with search-based results.
 	CodeIntelMixPreciseAndSearchBasedReferences bool `json:"codeIntel.mixPreciseAndSearchBasedReferences,omitempty"`
 	// CodeIntelReferencesPanel description: What kind of references panel to use for exploring definitions and references. The tabbed panel is deprecated.
