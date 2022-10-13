@@ -99,6 +99,9 @@ type ExternalServiceStore interface {
 	// found or not in processing or queued state.
 	CancelSyncJob(ctx context.Context, id int64) error
 
+	// UpdateSyncJobCounters persists only the sync job counters for the supplied job
+	UpdateSyncJobCounters(ctx context.Context, job *types.ExternalServiceSyncJob) error
+
 	// List returns external services under given namespace.
 	// If no namespace is given, it returns all external services.
 	//
@@ -1186,6 +1189,37 @@ func (e *externalServiceStore) GetSyncJobByID(ctx context.Context, id int64) (*t
 
 	return &job, nil
 }
+
+// UpdateSyncJobCounters persists only the sync job counters for the supplied job
+func (e *externalServiceStore) UpdateSyncJobCounters(ctx context.Context, job *types.ExternalServiceSyncJob) error {
+	q := sqlf.Sprintf(updateSyncJobQueryFmtstr, job.ReposSynced, job.RepoSyncErrors, job.ReposAdded, job.ReposRemoved, job.ReposModified, job.ReposUnmodified, job.ReposDeleted, job.ID)
+	result, err := e.ExecResult(ctx, q)
+	if err != nil {
+		return errors.Wrap(err, "updating sync job counters")
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return errors.Wrap(err, "checking affected rows")
+	}
+	if affected == 0 {
+		return &errSyncJobNotFound{id: job.ID}
+	}
+	return nil
+}
+
+const updateSyncJobQueryFmtstr = `
+UPDATE external_service_sync_jobs
+SET
+	repos_synced = %d,
+	repo_sync_errors = %d,
+	repos_added = %d,
+	repos_removed = %d,
+	repos_modified = %d,
+	repos_unmodified = %d,
+	repos_deleted = %d
+WHERE
+    id = %d
+`
 
 func scanExternalServiceSyncJob(sc dbutil.Scanner, job *types.ExternalServiceSyncJob) error {
 	return sc.Scan(
