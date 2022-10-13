@@ -97,24 +97,22 @@ func scanBaseJob(s dbutil.Scanner) (*BaseJob, error) {
 type Scheduler struct {
 	inProgressWorker   *workerutil.Worker
 	inProgressResetter *dbworker.Resetter
+	inProgressStore    dbworkerstore.Store
 
 	newBackfillWorker   *workerutil.Worker
 	newBackfillResetter *dbworker.Resetter
+	newBackfillStore    dbworkerstore.Store
 
 	store *basestore.Store
 }
 
 func NewScheduler(ctx context.Context, db edb.InsightsDB, obsContext *observation.Context) *Scheduler {
-	inProgressWorker, inProgressResetter := makeInProgressWorker(ctx, db, obsContext)
-	newBackfillWorker, newBackfillResetter := makeNewBackfillWorker(ctx, db, obsContext)
+	scheduler := &Scheduler{store: basestore.NewWithHandle(db.Handle())}
 
-	return &Scheduler{
-		inProgressWorker:    inProgressWorker,
-		inProgressResetter:  inProgressResetter,
-		newBackfillWorker:   newBackfillWorker,
-		newBackfillResetter: newBackfillResetter,
-		store:               basestore.NewWithHandle(db.Handle()),
-	}
+	scheduler.inProgressWorker, scheduler.inProgressResetter, scheduler.inProgressStore = makeInProgressWorker(ctx, db, obsContext)
+	scheduler.newBackfillWorker, scheduler.newBackfillResetter, scheduler.newBackfillStore = makeNewBackfillWorker(ctx, db, obsContext)
+
+	return scheduler
 }
 
 func (s *Scheduler) Routines() []goroutine.BackgroundRoutine {
@@ -126,7 +124,7 @@ func (s *Scheduler) Routines() []goroutine.BackgroundRoutine {
 	}
 }
 
-func makeInProgressWorker(ctx context.Context, db edb.InsightsDB, obsContext *observation.Context) (*workerutil.Worker, *dbworker.Resetter) {
+func makeInProgressWorker(ctx context.Context, db edb.InsightsDB, obsContext *observation.Context) (*workerutil.Worker, *dbworker.Resetter, dbworkerstore.Store) {
 	backfillStore := newBackfillStore(db)
 
 	name := "backfill_in_progress_worker"
@@ -160,10 +158,10 @@ func makeInProgressWorker(ctx context.Context, db edb.InsightsDB, obsContext *ob
 		Metrics:  *dbworker.NewMetrics(obsContext, name),
 	})
 
-	return worker, resetter
+	return worker, resetter, workerStore
 }
 
-func makeNewBackfillWorker(ctx context.Context, db edb.InsightsDB, obsContext *observation.Context) (*workerutil.Worker, *dbworker.Resetter) {
+func makeNewBackfillWorker(ctx context.Context, db edb.InsightsDB, obsContext *observation.Context) (*workerutil.Worker, *dbworker.Resetter, dbworkerstore.Store) {
 	backfillStore := newBackfillStore(db)
 
 	name := "backfill_new_backfill_worker"
@@ -197,12 +195,12 @@ func makeNewBackfillWorker(ctx context.Context, db edb.InsightsDB, obsContext *o
 		Metrics:  *dbworker.NewMetrics(obsContext, name),
 	})
 
-	return worker, resetter
+	return worker, resetter, workerStore
 }
 
 type inProgressHandler struct {
 	workerStore   dbworkerstore.Store
-	backfillStore *backfillStore
+	backfillStore *BackfillStore
 }
 
 var _ workerutil.Handler = &inProgressHandler{}
@@ -212,7 +210,7 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 
 	job := record.(*BaseJob)
 
-	backfill, err := loadBackfill(ctx, h.backfillStore, job.backfillId)
+	backfill, err := h.backfillStore.loadBackfill(ctx, job.backfillId)
 	if err != nil {
 		return errors.Wrap(err, "loadBackfill")
 	}
@@ -244,7 +242,7 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 
 type newBackfillHandler struct {
 	workerStore   dbworkerstore.Store
-	backfillStore *backfillStore
+	backfillStore *BackfillStore
 }
 
 var _ workerutil.Handler = &newBackfillHandler{}

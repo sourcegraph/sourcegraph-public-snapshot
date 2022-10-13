@@ -37,14 +37,14 @@ func Test_NewBackfill(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	backfill, err := NewBackfill(ctx, store, series)
+	backfill, err := store.NewBackfill(ctx, series)
 	require.NoError(t, err)
 
 	autogold.Want("backfill loaded successfully", SeriesBackfill{Id: 1, SeriesId: 1, State: BackfillState("new")}).Equal(t, *backfill)
 
 	var updated *SeriesBackfill
 	t.Run("set scope on newly created backfill", func(t *testing.T) {
-		updated, err = backfill.SetBackfillScope(ctx, store, []int32{1, 3, 6, 8}, 100)
+		updated, err = backfill.SetScope(ctx, store, []int32{1, 3, 6, 8}, 100)
 		require.NoError(t, err)
 
 		autogold.Want("set scope on newly created backfill", &SeriesBackfill{
