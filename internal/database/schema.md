@@ -1178,6 +1178,13 @@ Foreign-key constraints:
  last_heartbeat_at   | timestamp with time zone |           |          | 
  queued_at           | timestamp with time zone |           |          | now()
  cancel              | boolean                  |           | not null | false
+ repos_synced        | integer                  |           | not null | 0
+ repo_sync_errors    | integer                  |           | not null | 0
+ repos_added         | integer                  |           | not null | 0
+ repos_removed       | integer                  |           | not null | 0
+ repos_modified      | integer                  |           | not null | 0
+ repos_unmodified    | integer                  |           | not null | 0
+ repos_deleted       | integer                  |           | not null | 0
 Indexes:
     "external_service_sync_jobs_state_external_service_id" btree (state, external_service_id) INCLUDE (finished_at)
 Foreign-key constraints:

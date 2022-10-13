@@ -1871,7 +1871,14 @@ CREATE TABLE external_service_sync_jobs (
     worker_hostname text DEFAULT ''::text NOT NULL,
     last_heartbeat_at timestamp with time zone,
     queued_at timestamp with time zone DEFAULT now(),
-    cancel boolean DEFAULT false NOT NULL
+    cancel boolean DEFAULT false NOT NULL,
+    repos_synced integer DEFAULT 0 NOT NULL,
+    repo_sync_errors integer DEFAULT 0 NOT NULL,
+    repos_added integer DEFAULT 0 NOT NULL,
+    repos_removed integer DEFAULT 0 NOT NULL,
+    repos_modified integer DEFAULT 0 NOT NULL,
+    repos_unmodified integer DEFAULT 0 NOT NULL,
+    repos_deleted integer DEFAULT 0 NOT NULL
 );
 
 CREATE TABLE external_services (
