@@ -277,65 +277,123 @@ describe('CodeMirror blob view', () => {
             return `${lineAt(line)} [data-testid=line-decoration]`
         }
 
-        it('shows a hover overlay from a hover provider when a token is hovered', async () => {
-            const { graphqlResults: extensionGraphQlResult, intercept, userSettings } = createExtensionData([
-                {
-                    id: 'test',
-                    extensionID: 'test/test',
-                    extensionManifest: {
-                        url: new URL('/-/static/extension/0001-test-test.js?hash--test-test', driver.sourcegraphBaseUrl)
-                            .href,
-                        activationEvents: ['*'],
-                    },
-                    bundle: function extensionBundle(): void {
-                        // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
-                        const sourcegraph = require('sourcegraph') as typeof import('sourcegraph')
+        describe('hovercards', () => {
+            beforeEach(() => {
+                const { graphqlResults: extensionGraphQlResult, intercept, userSettings } = createExtensionData([
+                    {
+                        id: 'test',
+                        extensionID: 'test/test',
+                        extensionManifest: {
+                            url: new URL(
+                                '/-/static/extension/0001-test-test.js?hash--test-test',
+                                driver.sourcegraphBaseUrl
+                            ).href,
+                            activationEvents: ['*'],
+                        },
+                        bundle: function extensionBundle(): void {
+                            // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+                            const sourcegraph = require('sourcegraph') as typeof import('sourcegraph')
 
-                        function activate(context: sourcegraph.ExtensionContext): void {
-                            context.subscriptions.add(
-                                sourcegraph.languages.registerHoverProvider([{ language: 'typescript' }], {
-                                    provideHover: () => ({
-                                        contents: {
-                                            kind: sourcegraph.MarkupKind.Markdown,
-                                            value: 'Test hover content',
-                                        },
-                                    }),
-                                })
-                            )
-                        }
+                            function activate(context: sourcegraph.ExtensionContext): void {
+                                context.subscriptions.add(
+                                    sourcegraph.languages.registerHoverProvider([{ language: 'typescript' }], {
+                                        provideHover: () => ({
+                                            contents: {
+                                                kind: sourcegraph.MarkupKind.Markdown,
+                                                value: 'Test hover content',
+                                            },
+                                        }),
+                                    })
+                                )
+                            }
 
-                        exports.activate = activate
-                    },
-                },
-            ])
-            testContext.overrideGraphQL({
-                ...commonBlobGraphQlResults,
-                ...createViewerSettingsGraphQLOverride({
-                    user: {
-                        ...userSettings,
-                        experimentalFeatures: {
-                            enableCodeMirrorFileView: true,
+                            exports.activate = activate
                         },
                     },
-                }),
-                ...extensionGraphQlResult,
+                ])
+                testContext.overrideGraphQL({
+                    ...commonBlobGraphQlResults,
+                    ...createViewerSettingsGraphQLOverride({
+                        user: {
+                            ...userSettings,
+                            experimentalFeatures: {
+                                enableCodeMirrorFileView: true,
+                            },
+                        },
+                    }),
+                    ...extensionGraphQlResult,
+                })
+
+                // Serve a mock extension bundle with a simple hover provider
+                intercept(testContext, driver)
             })
 
-            // Serve a mock extension bundle with a simple hover provider
-            intercept(testContext, driver)
+            it('shows a hover overlay from a hover provider when a token is hovered', async () => {
+                await driver.page.goto(`${driver.sourcegraphBaseUrl}${filePaths['test.ts']}`)
+                await waitForView()
+                await driver.page.hover(wordSelector)
+                await driver.page.waitForSelector('.cm-code-intel-hovercard')
+                assert.strictEqual(
+                    await driver.page.evaluate(
+                        (): string =>
+                            document.querySelector('[data-testid="hover-overlay-contents"]')?.textContent?.trim() ?? ''
+                    ),
+                    'Test hover content',
+                    'hovercard is visible with correct content'
+                )
 
-            await driver.page.goto(`${driver.sourcegraphBaseUrl}${filePaths['test.ts']}`)
-            await waitForView()
-            await driver.page.hover(wordSelector)
-            await driver.page.waitForSelector('.cm-code-intel-hovercard')
-            assert.strictEqual(
-                await driver.page.evaluate(
-                    (): string =>
-                        document.querySelector('[data-testid="hover-overlay-contents"]')?.textContent?.trim() ?? ''
-                ),
-                'Test hover content',
-                'hovercard has correct content'
-            )
+                await driver.page.hover(lineAt(5))
+                try {
+                    await driver.page.waitForSelector('.cm-code-intel-hovercard', { hidden: true })
+                } catch {
+                    throw new Error('Timeout waiting for hovercard to disappear')
+                }
+            })
+
+            it('pins a hovercard and unpins hovercards', async () => {
+                await driver.page.goto(`${driver.sourcegraphBaseUrl}${filePaths['test.ts']}`)
+                await waitForView()
+                await driver.page.hover(wordSelector)
+                await driver.page.waitForSelector('.cm-code-intel-hovercard [data-testid="hover-copy-link"]')
+
+                await driver.page.click('.cm-code-intel-hovercard [data-testid="hover-copy-link"]')
+
+                // URL gets updated
+                await driver.assertWindowLocation(`${filePaths['test.ts']}?L1:1&popover=pinned`)
+
+                // Close button is visible
+                await driver.page.waitForSelector('.cm-code-intel-hovercard [aria-label="Close"]')
+
+                // Hovercard stay open when moving the mouse away
+                await driver.page.hover(lineAt(5))
+                await driver.page.waitForSelector('.cm-code-intel-hovercard')
+
+                // Closes hovercard when clicking on another line
+                await driver.page.click(lineAt(5))
+                try {
+                    await driver.page.waitForSelector('.cm-code-intel-hovercard', { hidden: true })
+                } catch {
+                    throw new Error('Timeout waiting for hovercard to close after selecting another line')
+                }
+
+                // Opens pinned hovecard when navigating back
+                await driver.page.goBack()
+                await driver.page.waitForSelector('.cm-code-intel-hovercard')
+
+                // Closes hover card when clicking the close button
+                await driver.page.click('.cm-code-intel-hovercard [aria-label="Close"]')
+                try {
+                    await driver.page.waitForSelector('.cm-code-intel-hovercard', { hidden: true })
+                } catch {
+                    throw new Error('Timeout waiting for hovercard to close after clicking close button')
+                }
+            })
+
+            it('opens a pinned hovercard on page load', async () => {
+                await driver.page.goto(`${driver.sourcegraphBaseUrl}${filePaths['test.ts']}?L1:1&popover=pinned`)
+                await waitForView()
+                await driver.page.waitForSelector('.cm-code-intel-hovercard')
+            })
         })
 
         /**
