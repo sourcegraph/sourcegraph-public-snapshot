@@ -37,6 +37,15 @@ locked_indexes AS (
 	SELECT i.id
 	FROM lsif_indexes i
 	JOIN ranked_indexes ri ON ri.id = i.id
+
+	-- We either select ranked indexes that have a rank > 1, meaning
+	-- there's another more recent failure in this "pipeline" that has
+	-- relevant information to debug the failure.
+	--
+	-- If we have rank = 1, but there's a newer SUCCESSFUL record for
+	-- the same "pipeline", then we can say that this failure information
+	-- is no longer relevant.
+
 	WHERE ri.rank != 1 OR EXISTS (
 		SELECT 1
 		FROM lsif_indexes i2

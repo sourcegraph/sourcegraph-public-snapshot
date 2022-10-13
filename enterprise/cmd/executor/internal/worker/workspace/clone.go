@@ -3,6 +3,9 @@ package workspace
 import (
 	"context"
 	"fmt"
+	"net"
+	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -25,7 +28,7 @@ func cloneRepo(
 	commandRunner command.Runner,
 	options CloneOptions,
 	operations *command.Operations,
-) error {
+) (err error) {
 	repoPath := workspaceDir
 	if job.RepositoryDirectory != "" {
 		repoPath = filepath.Join(workspaceDir, job.RepositoryDirectory)
@@ -39,27 +42,23 @@ func cloneRepo(
 		}
 	}
 
-	cloneURL, err := makeRelativeURL(
-		options.EndpointURL,
-		options.GitServicePath,
-		job.RepositoryName,
-	)
+	proxyURL, cleanup, err := newGitProxyServer(options.EndpointURL, options.GitServicePath, job.RepositoryName, options.ExecutorToken)
+	defer func() {
+		err = errors.Append(err, cleanup())
+	}()
+	if err != nil {
+		return errors.Wrap(err, "spawning git proxy server")
+	}
+
+	cloneURL, err := makeRelativeURL(proxyURL, job.RepositoryName)
 	if err != nil {
 		return err
 	}
-
-	authorizationOption := fmt.Sprintf(
-		"http.extraHeader=Authorization: %s %s",
-		SchemeExecutorToken,
-		options.ExecutorToken,
-	)
 
 	fetchCommand := []string{
 		"git",
 		"-C", repoPath,
 		"-c", "protocol.version=2",
-		"-c", authorizationOption,
-		"-c", "http.extraHeader=X-Sourcegraph-Actor-UID: internal",
 		"fetch",
 		"--progress",
 		"--no-recurse-submodules",
@@ -128,7 +127,7 @@ func cloneRepo(
 		checkoutCommand = []string{
 			"git",
 			"-C", repoPath,
-			"-c", "protocol.version=2", "-c", authorizationOption, "-c", "http.extraHeader=X-Sourcegraph-Actor-UID: internal",
+			"-c", "protocol.version=2",
 			"checkout",
 			"--progress",
 			"--force",
@@ -168,6 +167,62 @@ func cloneRepo(
 	return nil
 }
 
+// newGitProxyServer creates a new HTTP proxy to the Sourcegraph instance on a random port.
+// It handles authentication and additional headers required. The cleanup function
+// should be called after the clone operations are done and _before_ the job is started.
+// This is used so that we never have to tell git about the credentials used here.
+//
+// In the future, this will be used to provide different access tokens per job,
+// so that we can tell _which_ job misused the token and also scope it's access
+// to the particular repo in question.
+func newGitProxyServer(endpointURL, gitServicePath, repositoryName, accessToken string) (string, func() error, error) {
+	// Get new random free port.
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		return "", func() error { return nil }, err
+	}
+	cleanupListener := func() error { return listener.Close() }
+
+	upstream, err := makeRelativeURL(
+		endpointURL,
+		gitServicePath,
+	)
+	if err != nil {
+		return "", cleanupListener, err
+	}
+
+	d := httputil.NewSingleHostReverseProxy(upstream).Director
+
+	proxy := &httputil.ReverseProxy{
+		Director: func(req *http.Request) {
+			d(req)
+
+			// Add authentication. We don't add this in the git clone URL directly
+			// to never tell git about the clone secret.
+			req.Header.Set("Authorization", fmt.Sprintf("%s %s", SchemeExecutorToken, accessToken))
+			req.Header.Set("X-Sourcegraph-Actor-UID", "internal")
+			req.URL.User = url.User("executor")
+		},
+	}
+
+	go http.Serve(listener, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Prevent queries for repos other than this jobs repo.
+		// This is _not_ a security measure, that should be handled by additional
+		// clone tokens. This is mostly a gate to finding when we accidentally
+		// would access another repo.
+		if !strings.HasPrefix(r.URL.Path, "/"+repositoryName+"/") {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+
+		// TODO: We might want to limit throughput here to the same level we limit
+		// it _inside_ the firecracker VM.
+		proxy.ServeHTTP(w, r)
+	}))
+
+	return fmt.Sprintf("http://127.0.0.1:%d", listener.Addr().(*net.TCPAddr).Port), cleanupListener, nil
+}
+
 func makeRelativeURL(base string, path ...string) (*url.URL, error) {
 	baseURL, err := url.Parse(base)
 	if err != nil {
@@ -179,6 +234,5 @@ func makeRelativeURL(base string, path ...string) (*url.URL, error) {
 		return nil, err
 	}
 
-	urlx.User = url.User("executor")
 	return urlx, nil
 }

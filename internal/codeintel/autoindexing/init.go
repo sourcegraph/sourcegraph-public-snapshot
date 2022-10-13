@@ -42,8 +42,6 @@ type serviceDependencies struct {
 }
 
 var initServiceMemo = memo.NewMemoizedConstructorWithArg(func(deps serviceDependencies) (*Service, error) {
-	scopedCtx := scopedContext("service")
-
 	store := store.New(deps.db, scopedContext("store"))
 	policyMatcher := policiesEnterprise.NewMatcher(deps.gitserver, policiesEnterprise.IndexingExtractor, false, true)
 	symbolsClient := symbols.DefaultClient
@@ -51,17 +49,16 @@ var initServiceMemo = memo.NewMemoizedConstructorWithArg(func(deps serviceDepend
 	inferenceSvc := inference.NewService(deps.db)
 	backgroundJobs := backgroundjobs.New(
 		deps.db,
-		store,
 		deps.uploadSvc,
 		deps.depsSvc,
 		deps.policiesSvc,
 		policyMatcher,
 		deps.gitserver,
 		repoUpdater,
-		scopedCtx,
+		scopedContext("background"),
 	)
 
-	svc := newService(store, deps.uploadSvc, inferenceSvc, repoUpdater, deps.gitserver, symbolsClient, backgroundJobs, scopedCtx)
+	svc := newService(store, deps.uploadSvc, inferenceSvc, repoUpdater, deps.gitserver, symbolsClient, backgroundJobs, scopedContext("service"))
 	backgroundJobs.SetService(svc)
 
 	return svc, nil

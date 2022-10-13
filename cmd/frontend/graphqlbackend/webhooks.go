@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -56,12 +57,12 @@ func (r *webhookResolver) Secret(ctx context.Context) (*string, error) {
 	return &s, nil
 }
 
-func (r *webhookResolver) CreatedAt() DateTime {
-	return DateTime{Time: r.hook.CreatedAt}
+func (r *webhookResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.hook.CreatedAt}
 }
 
-func (r *webhookResolver) UpdatedAt() DateTime {
-	return DateTime{Time: r.hook.UpdatedAt}
+func (r *webhookResolver) UpdatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.hook.UpdatedAt}
 }
 
 func (r *schemaResolver) Webhooks(ctx context.Context, args *struct {

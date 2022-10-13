@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -520,15 +521,15 @@ func (r *permissionsInfoResolver) Permissions() []string {
 	return strings.Split(strings.ToUpper(r.perms.String()), ",")
 }
 
-func (r *permissionsInfoResolver) SyncedAt() *graphqlbackend.DateTime {
+func (r *permissionsInfoResolver) SyncedAt() *gqlutil.DateTime {
 	if r.syncedAt.IsZero() {
 		return nil
 	}
-	return &graphqlbackend.DateTime{Time: r.syncedAt}
+	return &gqlutil.DateTime{Time: r.syncedAt}
 }
 
-func (r *permissionsInfoResolver) UpdatedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.updatedAt}
+func (r *permissionsInfoResolver) UpdatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.updatedAt}
 }
 
 func (r *permissionsInfoResolver) Unrestricted() bool {
