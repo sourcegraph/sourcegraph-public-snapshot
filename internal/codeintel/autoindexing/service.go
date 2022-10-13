@@ -126,6 +126,34 @@ func (s *Service) DeleteIndexes(ctx context.Context, opts shared.DeleteIndexesOp
 	return s.store.DeleteIndexes(ctx, opts)
 }
 
+func (s *Service) GetStaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []shared.SourcedCommits, err error) {
+	ctx, _, endObservation := s.operations.getStaleSourcedCommits.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.GetStaleSourcedCommits(ctx, minimumTimeSinceLastCheck, limit, now)
+}
+
+func (s *Service) UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (indexesUpdated int, err error) {
+	ctx, _, endObservation := s.operations.updateSourcedCommits.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.UpdateSourcedCommits(ctx, repositoryID, commit, now)
+}
+
+func (s *Service) DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration) (indexesDeleted int, err error) {
+	ctx, _, endObservation := s.operations.deleteSourcedCommits.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.DeleteSourcedCommits(ctx, repositoryID, commit, maximumCommitLag)
+}
+
+func (s *Service) DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error) {
+	ctx, _, endObservation := s.operations.deleteIndexesWithoutRepository.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.DeleteIndexesWithoutRepository(ctx, now)
+}
+
 func (s *Service) GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (_ shared.IndexConfiguration, _ bool, err error) {
 	ctx, _, endObservation := s.operations.getIndexConfigurationByRepositoryID.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
@@ -249,6 +277,30 @@ func (s *Service) QueueRepoRev(ctx context.Context, repositoryID int, rev string
 	defer endObservation(1, observation.Args{})
 
 	return s.store.QueueRepoRev(ctx, repositoryID, rev)
+}
+
+func (s *Service) ProcessRepoRevs(ctx context.Context, batchSize int) (err error) {
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	repoRevs, err := tx.GetQueuedRepoRev(ctx, batchSize)
+	if err != nil {
+		return err
+	}
+
+	ids := make([]int, 0, len(repoRevs))
+	for _, repoRev := range repoRevs {
+		if _, err := s.QueueIndexes(ctx, repoRev.RepositoryID, repoRev.Rev, "", false, false); err != nil {
+			return err
+		}
+
+		ids = append(ids, repoRev.ID)
+	}
+
+	return tx.MarkRepoRevsAsProcessed(ctx, ids)
 }
 
 func (s *Service) SetInferenceScript(ctx context.Context, script string) (err error) {

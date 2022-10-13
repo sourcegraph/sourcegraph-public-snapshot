@@ -47,9 +47,9 @@ func (b backgroundJob) handleCleanup(ctx context.Context, cfg janitorConfig) (er
 }
 
 func (b backgroundJob) handleDeletedRepository(ctx context.Context) (err error) {
-	indexesCounts, err := b.store.DeleteIndexesWithoutRepository(ctx, time.Now())
+	indexesCounts, err := b.autoindexingSvc.DeleteIndexesWithoutRepository(ctx, time.Now())
 	if err != nil {
-		return errors.Wrap(err, "indexSvc.DeleteIndexesWithoutRepository")
+		return errors.Wrap(err, "autoindexingSvc.DeleteIndexesWithoutRepository")
 	}
 
 	for _, counts := range gatherCounts(indexesCounts) {
@@ -94,7 +94,7 @@ func gatherCounts(indexesCounts map[int]int) []recordCount {
 }
 
 func (b backgroundJob) handleUnknownCommit(ctx context.Context, cfg janitorConfig) (err error) {
-	staleIndexes, err := b.store.GetStaleSourcedCommits(ctx, cfg.minimumTimeSinceLastCheck, cfg.commitResolverBatchSize, b.clock.Now())
+	staleIndexes, err := b.autoindexingSvc.GetStaleSourcedCommits(ctx, cfg.minimumTimeSinceLastCheck, cfg.commitResolverBatchSize, b.clock.Now())
 	if err != nil {
 		return errors.Wrap(err, "indexSvc.StaleSourcedCommits")
 	}
@@ -140,7 +140,7 @@ func (b backgroundJob) handleCommit(ctx context.Context, repositoryID int, repos
 	}
 
 	if shouldDelete {
-		indexesDeleted, err := b.store.DeleteSourcedCommits(ctx, repositoryID, commit, cfg.commitResolverMaximumCommitLag)
+		indexesDeleted, err := b.autoindexingSvc.DeleteSourcedCommits(ctx, repositoryID, commit, cfg.commitResolverMaximumCommitLag)
 		if err != nil {
 			return errors.Wrap(err, "indexSvc.DeleteSourcedCommits")
 		}
@@ -152,7 +152,7 @@ func (b backgroundJob) handleCommit(ctx context.Context, repositoryID int, repos
 		return nil
 	}
 
-	if _, err := b.store.UpdateSourcedCommits(ctx, repositoryID, commit, b.clock.Now()); err != nil {
+	if _, err := b.autoindexingSvc.UpdateSourcedCommits(ctx, repositoryID, commit, b.clock.Now()); err != nil {
 		return errors.Wrap(err, "indexSvc.UpdateSourcedCommits")
 	}
 

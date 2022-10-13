@@ -124,30 +124,6 @@ func (b backgroundJob) NewOnDemandScheduler(interval time.Duration, batchSize in
 			return nil
 		}
 
-		return b.processRepoRevs(ctx, batchSize)
+		return b.autoindexingSvc.ProcessRepoRevs(ctx, batchSize)
 	}))
-}
-
-func (b backgroundJob) processRepoRevs(ctx context.Context, batchSize int) (err error) {
-	tx, err := b.store.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	repoRevs, err := tx.GetQueuedRepoRev(ctx, batchSize)
-	if err != nil {
-		return err
-	}
-
-	ids := make([]int, 0, len(repoRevs))
-	for _, repoRev := range repoRevs {
-		if _, err := b.autoindexingSvc.QueueIndexes(ctx, repoRev.RepositoryID, repoRev.Rev, "", false, false); err != nil {
-			return err
-		}
-
-		ids = append(ids, repoRev.ID)
-	}
-
-	return tx.MarkRepoRevsAsProcessed(ctx, ids)
 }
