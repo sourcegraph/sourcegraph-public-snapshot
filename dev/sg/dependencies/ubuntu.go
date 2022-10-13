@@ -128,7 +128,14 @@ var Ubuntu = []category{
 		},
 	},
 	categoryCloneRepositories(),
-	categoryProgrammingLanguagesAndTools(),
+	categoryProgrammingLanguagesAndTools(
+		// src-cli is installed differently on Ubuntu and Mac
+		&dependency{
+			Name:  "src",
+			Check: checkAction(check.Combine(check.InPath("src"), checkSrcCliVersion(">= 4.0.2"))),
+			Fix:   cmdFix(`sudo curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src && sudo chmod +x /usr/local/bin/src`),
+		},
+	),
 	{
 		Name:      "Postgres database",
 		DependsOn: []string{depsBaseUtilities},
@@ -238,18 +245,6 @@ YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
 		Enabled:   enableForTeammatesOnly(),
 		Checks: []*dependency{
 			dependencyGcloud(),
-		},
-	},
-	{
-		Name:      "Internal tooling",
-		DependsOn: []string{depsBaseUtilities},
-		Enabled:   enableForTeammatesOnly(),
-		Checks: []*dependency{
-			{
-				Name:  "src",
-				Check: checkAction(check.Combine(check.InPath("src"), checkSrcCliVersion(">= 4.0.2"))),
-				Fix:   cmdFix(`sudo curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src && sudo chmod +x /usr/local/bin/src`),
-			},
 		},
 	},
 }

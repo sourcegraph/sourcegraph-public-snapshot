@@ -135,7 +135,14 @@ var Mac = []category{
 		},
 	},
 	categoryCloneRepositories(),
-	categoryProgrammingLanguagesAndTools(),
+	categoryProgrammingLanguagesAndTools(
+		// src-cli is installed differently on Ubuntu and Mac
+		&dependency{
+			Name:  "src",
+			Check: checkAction(check.Combine(check.InPath("src"), checkSrcCliVersion(">= 4.0.2"))),
+			Fix:   cmdFix(`brew upgrade sourcegraph/src-cli/src-cli || brew install sourcegraph/src-cli/src-cli`),
+		},
+	),
 	{
 		Name:      "Postgres database",
 		DependsOn: []string{depsHomebrew},
@@ -247,18 +254,6 @@ YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
 		Enabled:   enableForTeammatesOnly(),
 		Checks: []*dependency{
 			dependencyGcloud(),
-		},
-	},
-	{
-		Name:      "Internal tooling",
-		DependsOn: []string{depsHomebrew},
-		Enabled:   enableForTeammatesOnly(),
-		Checks: []*dependency{
-			{
-				Name:  "src",
-				Check: checkAction(check.Combine(check.InPath("src"), checkSrcCliVersion(">= 4.0.2"))),
-				Fix:   cmdFix(`brew upgrade sourcegraph/src-cli/src-cli || brew install sourcegraph/src-cli/src-cli`),
-			},
 		},
 	},
 }
