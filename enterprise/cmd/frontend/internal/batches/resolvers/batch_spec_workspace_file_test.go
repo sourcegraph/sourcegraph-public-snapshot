@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -70,21 +71,21 @@ func TestBatchSpecWorkspaceFileResolver(t *testing.T) {
 			getActual: func() (interface{}, error) {
 				return resolver.ModifiedAt(), nil
 			},
-			expected: graphqlbackend.DateTime{Time: date},
+			expected: gqlutil.DateTime{Time: date},
 		},
 		{
 			name: "CreatedAt",
 			getActual: func() (interface{}, error) {
 				return resolver.CreatedAt(), nil
 			},
-			expected: graphqlbackend.DateTime{Time: date},
+			expected: gqlutil.DateTime{Time: date},
 		},
 		{
 			name: "UpdatedAt",
 			getActual: func() (interface{}, error) {
 				return resolver.UpdatedAt(), nil
 			},
-			expected: graphqlbackend.DateTime{Time: date},
+			expected: gqlutil.DateTime{Time: date},
 		},
 		{
 			name: "IsDirectory",
