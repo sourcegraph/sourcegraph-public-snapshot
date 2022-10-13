@@ -285,6 +285,11 @@ func (r *NodeResolver) ToExecutor() (*ExecutorResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToExecutorSecret() (*executor.ExecutorSecretResolver, bool) {
+	n, ok := r.Node.(*executor.ExecutorSecretResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToExternalServiceSyncJob() (*externalServiceSyncJobResolver, bool) {
 	n, ok := r.Node.(*externalServiceSyncJobResolver)
 	return n, ok

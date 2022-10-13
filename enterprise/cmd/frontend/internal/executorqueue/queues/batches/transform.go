@@ -87,10 +87,6 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 			Name:        batchSpec.Spec.Name,
 			Description: batchSpec.Spec.Description,
 		},
-		// TODO: Pass all secrets loaded above down here.
-		Secrets: map[string]string{
-			"GH_TOKEN": "asdf",
-		},
 	}
 
 	// Check if we have a cache result for the workspace, if so, add it to the execution
@@ -183,7 +179,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 		// TODO: Create a map of all secret values we pass down:
 		// $VALUE: : "${{ secrets.$KEY }}"
 		RedactedValues: map[string]string{
-			"asdf-super-secret-token": "${{ secrets.GH_TOKEN }}",
+			"asdf": "${{ secrets.GH_TOKEN }}",
 		},
 	}, nil
 }

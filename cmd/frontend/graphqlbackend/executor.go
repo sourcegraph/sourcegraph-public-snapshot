@@ -2,12 +2,14 @@ package graphqlbackend
 
 import (
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/Masterminds/semver"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -135,4 +137,30 @@ func calculateExecutorCompatibility(ev string) (*string, error) {
 	}
 
 	return compatibility.ToGraphQL(), nil
+}
+
+type ExecutorSecretResolver struct {
+	secret database.ExecutorSecret
+}
+
+func (e *ExecutorSecretResolver) ID() graphql.ID {
+	return relay.MarshalID("ExecutorSecret", (int64(e.secret.ID)))
+}
+func (e *ExecutorSecretResolver) Key() string   { return e.secret.Key }
+func (e *ExecutorSecretResolver) Scope() string { return strings.ToUpper(e.secret.Scope) }
+func (e *ExecutorSecretResolver) Namespace() bool { // What now. I cannot use graphqlbackend in here. :|
+
+}
+func (e *ExecutorSecretResolver) Os() string              { return e.executor.OS }
+func (e *ExecutorSecretResolver) Architecture() string    { return e.executor.Architecture }
+func (e *ExecutorSecretResolver) DockerVersion() string   { return e.executor.DockerVersion }
+func (e *ExecutorSecretResolver) ExecutorVersion() string { return e.executor.ExecutorVersion }
+func (e *ExecutorSecretResolver) GitVersion() string      { return e.executor.GitVersion }
+func (e *ExecutorSecretResolver) IgniteVersion() string   { return e.executor.IgniteVersion }
+func (e *ExecutorSecretResolver) SrcCliVersion() string   { return e.executor.SrcCliVersion }
+func (e *ExecutorSecretResolver) FirstSeenAt() gqlutil.DateTime {
+	return gqlutil.DateTime{e.executor.FirstSeenAt}
+}
+func (e *ExecutorSecretResolver) LastSeenAt() gqlutil.DateTime {
+	return gqlutil.DateTime{e.executor.LastSeenAt}
 }

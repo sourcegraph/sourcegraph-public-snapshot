@@ -1719,7 +1719,7 @@ extend type User {
     executorSecrets(scope: ExecutorSecretScope!, first: Int, after: String): ExecutorSecretConnection!
 }
 
-extend type Organization {
+extend type Org {
     executorSecrets(scope: ExecutorSecretScope!, first: Int, after: String): ExecutorSecretConnection!
 }
 

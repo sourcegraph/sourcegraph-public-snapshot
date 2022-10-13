@@ -15,7 +15,6 @@ type WorkspacesExecutionInput struct {
 	SearchResultPaths     []string                  `json:"searchResultPaths"`
 	CachedStepResultFound bool                      `json:"cachedStepResultFound"`
 	CachedStepResult      execution.AfterStepResult `json:"cachedStepResult,omitempty"`
-	Secrets               map[string]string         `json:"secrets,omitempty"`
 }
 
 type WorkspaceRepo struct {

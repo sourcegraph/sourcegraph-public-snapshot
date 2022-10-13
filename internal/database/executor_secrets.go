@@ -10,10 +10,12 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // ExecutorSecret represents a row in the `executor_secrets` table.
@@ -106,24 +108,30 @@ func (s *executorSecretsStore) Create(ctx context.Context, scope ExecutorSecretS
 		return err
 	}
 
+	// Set the current actor as the secret creator.
+	if secret.CreatorID == 0 {
+		secret.CreatorID = actor.FromContext(ctx).UID
+	}
+
 	encryptedValue, keyID, err := encryptExecutorSecret(ctx, s.key, value)
 	if err != nil {
 		return err
 	}
 
 	q := sqlf.Sprintf(
-		userCredentialsCreateQueryFmtstr,
-		scope.Domain,
-		scope.UserID,
-		scope.ExternalServiceType,
-		scope.ExternalServiceID,
+		executorSecretCreateQueryFmtstr,
+		scope,
+		secret.Key,
 		encryptedValue, // N.B.: is already a []byte
 		keyID,
+		&dbutil.NullInt32{N: &secret.NamespaceUserID},
+		&dbutil.NullInt32{N: &secret.NamespaceOrgID},
+		secret.CreatorID,
 		sqlf.Join(executorSecretsColumns, ", "),
 	)
 
 	row := s.QueryRow(ctx, q)
-	if err := scanUserCredential(secret, s.key, row); err != nil {
+	if err := scanExecutorSecret(secret, s.key, row); err != nil {
 		return err
 	}
 
@@ -132,35 +140,36 @@ func (s *executorSecretsStore) Create(ctx context.Context, scope ExecutorSecretS
 
 // Update updates a secret in the database. If the secret cannot be found,
 // an error is returned.
-func (s *executorSecretsStore) Update(ctx context.Context, secret *ExecutorSecret) error {
+func (s *executorSecretsStore) Update(ctx context.Context, scope ExecutorSecretScope, secret *ExecutorSecret) error {
 	// SECURITY: check that the current user is authorized to create a secret for the given namespace.
 	if err := ensureActorHasNamespaceAccess(ctx, NewDBWith(s.logger, s), secret); err != nil {
 		return err
 	}
 
 	secret.UpdatedAt = timeutil.Now()
-	encryptedCredential, keyID, err := secret.Credential.Encrypt(ctx, s.key)
+	encryptedValue, keyID, err := secret.EncryptedValue.Encrypt(ctx, s.key)
+	if err != nil {
+		return err
+	}
+
+	authz, err := executorSecretsAuthzQueryConds(ctx)
 	if err != nil {
 		return err
 	}
 
 	q := sqlf.Sprintf(
-		userCredentialsUpdateQueryFmtstr,
-		credential.Domain,
-		credential.UserID,
-		credential.ExternalServiceType,
-		credential.ExternalServiceID,
-		[]byte(encryptedCredential),
+		executorSecretUpdateQueryFmtstr,
+		[]byte(encryptedValue),
 		keyID,
-		credential.UpdatedAt,
-		credential.SSHMigrationApplied,
-		credential.ID,
+		secret.UpdatedAt,
+		secret.ID,
+		scope,
 		authz,
 		sqlf.Join(executorSecretsColumns, ", "),
 	)
 
 	row := s.QueryRow(ctx, q)
-	if err := scanUserCredential(credential, s.key, row); err != nil {
+	if err := scanExecutorSecret(secret, s.key, row); err != nil {
 		return err
 	}
 
@@ -170,13 +179,13 @@ func (s *executorSecretsStore) Update(ctx context.Context, secret *ExecutorSecre
 // Delete deletes the given user credential. Note that there is no concept of a
 // soft delete with user credentials: once deleted, the relevant records are
 // _gone_, so that we don't hold any sensitive data unexpectedly. 💀
-func (s *executorSecretsStore) Delete(ctx context.Context, id int64) error {
+func (s *executorSecretsStore) Delete(ctx context.Context, scope ExecutorSecretScope, id int64) error {
 	authz, err := executorSecretsAuthzQueryConds(ctx)
 	if err != nil {
 		return err
 	}
 
-	q := sqlf.Sprintf("DELETE FROM executor_secrets WHERE id = %s AND %s", id, authz)
+	q := sqlf.Sprintf("DELETE FROM executor_secrets WHERE id = %s AND scope = %s AND %s", id, scope, authz)
 	res, err := s.ExecResult(ctx, q)
 	if err != nil {
 		return err
@@ -193,8 +202,8 @@ func (s *executorSecretsStore) Delete(ctx context.Context, id int64) error {
 
 // GetByID returns the user credential matching the given ID, or
 // UserCredentialNotFoundErr if no such credential exists.
-func (s *executorSecretsStore) GetByID(ctx context.Context, id int64) (*UserCredential, error) {
-	authz, err := userCredentialsAuthzQueryConds(ctx)
+func (s *executorSecretsStore) GetByID(ctx context.Context, scope ExecutorSecretScope, id int64) (*ExecutorSecret, error) {
+	authz, err := executorSecretsAuthzQueryConds(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -206,48 +215,19 @@ func (s *executorSecretsStore) GetByID(ctx context.Context, id int64) (*UserCred
 		authz,
 	)
 
-	cred := UserCredential{}
+	secret := ExecutorSecret{}
 	row := s.QueryRow(ctx, q)
-	if err := scanUserCredential(&cred, s.key, row); err == sql.ErrNoRows {
+	if err := scanExecutorSecret(&secret, s.key, row); err == sql.ErrNoRows {
 		return nil, UserCredentialNotFoundErr{args: []any{id}}
 	} else if err != nil {
 		return nil, err
 	}
 
-	return &cred, nil
-}
-
-// GetByScope returns the user credential matching the given scope, or
-// UserCredentialNotFoundErr if no such credential exists.
-func (s *executorSecretsStore) GetByScope(ctx context.Context, scope UserCredentialScope) (*UserCredential, error) {
-	authz, err := userCredentialsAuthzQueryConds(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	q := sqlf.Sprintf(
-		executorSecretsGetByScopeQueryFmtstr,
-		sqlf.Join(executorSecretsColumns, ", "),
-		scope.Domain,
-		scope.UserID,
-		scope.ExternalServiceType,
-		scope.ExternalServiceID,
-		authz,
-	)
-
-	cred := UserCredential{}
-	row := s.QueryRow(ctx, q)
-	if err := scanUserCredential(&cred, s.key, row); err == sql.ErrNoRows {
-		return nil, UserCredentialNotFoundErr{args: []any{scope}}
-	} else if err != nil {
-		return nil, err
-	}
-
-	return &cred, nil
+	return &secret, nil
 }
 
 // List returns all secrets matching the given options.
-func (s *executorSecretsStore) List(ctx context.Context, opts ExecutorSecretsListOpts) ([]*ExecutorSecret, int, error) {
+func (s *executorSecretsStore) List(ctx context.Context, scope ExecutorSecretScope, opts ExecutorSecretsListOpts) ([]*ExecutorSecret, int, error) {
 	authz, err := executorSecretsAuthzQueryConds(ctx)
 	if err != nil {
 		return nil, 0, err
@@ -329,19 +309,18 @@ ORDER BY key ASC
 %s  -- LIMIT clause
 `
 
-const userCredentialsCreateQueryFmtstr = `
--- source: internal/database/user_credentials.go:Create
+const executorSecretCreateQueryFmtstr = `
 INSERT INTO
-	user_credentials (
-		domain,
-		user_id,
-		external_service_type,
-		external_service_id,
-		credential,
+	executor_secrets (
+		scope,
+		key,
+		value,
 		encryption_key_id,
+		namespace_user_id,
+		namespace_org_id,
+		creator_id,
 		created_at,
-		updated_at,
-		ssh_migration_applied
+		updated_at
 	)
 	VALUES (
 		%s,
@@ -350,27 +329,22 @@ INSERT INTO
 		%s,
 		%s,
 		%s,
+		%s,
 		NOW(),
-		NOW(),
-		TRUE
+		NOW()
 	)
 	RETURNING %s
 `
 
-const userCredentialsUpdateQueryFmtstr = `
--- source: internal/database/user_credentials.go:Update
-UPDATE user_credentials
+const executorSecretUpdateQueryFmtstr = `
+UPDATE executor_secrets
 SET
-	domain = %s,
-	user_id = %s,
-	external_service_type = %s,
-	external_service_id = %s,
-	credential = %s,
+	value = %s,
 	encryption_key_id = %s,
-	updated_at = %s,
-	ssh_migration_applied = %s
+	updated_at = %s
 WHERE
 	id = %s AND
+	scope = %s AND
 	%s -- authz query conds
 RETURNING %s
 `
@@ -409,15 +383,42 @@ func ensureActorHasNamespaceAccess(ctx context.Context, db DB, secret *ExecutorS
 	if a.IsInternal() {
 		return nil
 	}
+	if !a.IsAuthenticated() {
+		return errors.New("not logged in")
+	}
 
-	// TODO: Cannot use auth package at the moment, it depends on this package.
+	// TODO: This should use the helpers from the auth package, but it depends on this package.
 	if secret.NamespaceOrgID != 0 {
-		return auth.CheckOrgAccessOrSiteAdmin(ctx, db, secret.NamespaceOrgID)
+		// Check if the current user is org member.
+		resp, err := db.OrgMembers().GetByOrgIDAndUserID(ctx, secret.NamespaceOrgID, a.UID)
+		if err != nil {
+			if !errcode.IsNotFound(err) {
+				return err
+			}
+			// Not found case: Fall through and eventually end up down at the site-admin
+			// check.
+		}
+		// If membership is found, the user may pass.
+		if resp != nil {
+			return nil
+		}
+	} else if secret.NamespaceUserID != 0 {
+		// If the actor is the same user as the namespace user, pass. Otherwise
+		// fall through and check if they're site-admin.
+		if a.UID == secret.NamespaceUserID {
+			return nil
+		}
 	}
-	if secret.NamespaceUserID != 0 {
-		return auth.CheckSiteAdminOrSameUser(ctx, db, secret.NamespaceUserID)
+
+	// Check user is site admin.
+	user, err := db.Users().GetByID(ctx, a.UID)
+	if err != nil {
+		return err
 	}
-	return auth.CheckSiteAdminOrSameUser(ctx, db, secret.NamespaceUserID)
+	if user == nil || !user.SiteAdmin {
+		return errors.New("not site-admin")
+	}
+	return nil
 }
 
 // executorSecretsAuthzQueryConds generates authz query conditions for checking
