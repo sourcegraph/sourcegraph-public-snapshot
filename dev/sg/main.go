@@ -225,7 +225,13 @@ var sg = &cli.App{
 		}
 
 		// Check for updates, unless we are running update manually.
-		if cmd.Args().First() != "update" {
+		skipBackgroundTasks := map[string]struct{}{
+			"update":   {},
+			"version":  {},
+			"live":     {},
+			"teammate": {},
+		}
+		if _, skipped := skipBackgroundTasks[cmd.Args().First()]; !skipped {
 			background.Run(cmd.Context, func(ctx context.Context, out *std.Output) {
 				err := checkSgVersionAndUpdate(ctx, out, cmd.Bool("skip-auto-update"))
 				if err != nil {
