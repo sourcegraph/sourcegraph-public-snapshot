@@ -59,7 +59,7 @@ func (s *Service) GetRepoRank(ctx context.Context, repoName api.RepoName) (_ []f
 		return nil, err
 	}
 
-	return []float64{1 - squashRange(userRank), 1 - starRank}, nil
+	return []float64{squashRange(userRank), starRank}, nil
 }
 
 // copy pasta
@@ -112,7 +112,7 @@ func (s *Service) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (
 	n := float64(len(paths))
 	ranks := make(map[string][]float64, len(paths))
 	for i, path := range paths {
-		ranks[path] = rank(path, float64(i)/n)
+		ranks[path] = rank(path, 1.0-float64(i)/n)
 	}
 
 	return ranks, nil
@@ -123,22 +123,22 @@ var testPattern = lazyregexp.New("test")
 // copy pasta + modified
 // https://github.com/sourcegraph/zoekt/blob/f89a534103a224663d23b4579959854dd7816942/build/builder.go#L872-L918
 func rank(name string, nameRank float64) []float64 {
-	generated := 0.0
+	generated := 1.0
 	if strings.HasSuffix(name, "min.js") || strings.HasSuffix(name, "js.map") {
-		generated = 1.0
+		generated = 0.0
 	}
 
-	vendor := 0.0
+	vendor := 1.0
 	if strings.Contains(name, "vendor/") || strings.Contains(name, "node_modules/") {
-		vendor = 1.0
+		vendor = 0.0
 	}
 
-	test := 0.0
+	test := 1.0
 	if testPattern.MatchString(name) {
-		test = 1.0
+		test = 0.0
 	}
 
-	// Smaller is earlier (=better).
+	// Bigger is earlier (=better).
 	return []float64{
 		// Prefer docs that are not generated
 		generated,
@@ -150,16 +150,16 @@ func rank(name string, nameRank float64) []float64 {
 		test,
 
 		// With short names
-		squashRange(float64(len(name))),
+		1.0 - squashRange(float64(len(name))),
 
 		// // With many symbols
-		// 1.0 - squashRange(len(d.Symbols)),
+		// squashRange(len(d.Symbols)),
 
 		// // With short content
-		// squashRange(len(d.Content)),
+		// 1.0 - squashRange(len(d.Content)),
 
 		// // That is present is as many branches as possible
-		// 1.0 - squashRange(len(d.Branches)),
+		// squashRange(len(d.Branches)),
 
 		// Preserve original ordering.
 		nameRank,
