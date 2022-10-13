@@ -34,8 +34,6 @@ func Test_MonitorMovesBackfillFromNewToProcessing(t *testing.T) {
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	bfs := newBackfillStore(insightsDB)
 	insightsStore := store.NewInsightStore(insightsDB)
-
-	scheduler := NewScheduler(insightsDB, &observation.TestContext)
 	monitor := NewBackgroundJobMonitor(ctx, insightsDB, &observation.TestContext)
 
 	series, err := insightsStore.CreateSeries(ctx, types.InsightSeries{
@@ -50,7 +48,7 @@ func Test_MonitorMovesBackfillFromNewToProcessing(t *testing.T) {
 	backfill, err := bfs.NewBackfill(ctx, series)
 	require.NoError(t, err)
 
-	err = scheduler.EnqueueBackfill(ctx, backfill)
+	err = enqueueBackfill(ctx, bfs.Handle(), backfill)
 	require.NoError(t, err)
 
 	dequeue, found, err := monitor.newBackfillStore.Dequeue(ctx, "test", nil)
@@ -82,5 +80,34 @@ func Test_MonitorMovesBackfillFromNewToProcessing(t *testing.T) {
 		t.Fatal(errors.New("no queued record found"))
 	}
 	job, _ = dequeue.(*BaseJob)
+	require.Equal(t, backfill.Id, job.backfillId)
+}
+
+func TestScheduler_InitialBackfill(t *testing.T) {
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsStore := store.NewInsightStore(insightsDB)
+	monitor := NewBackgroundJobMonitor(ctx, insightsDB, &observation.TestContext)
+
+	series, err := insightsStore.CreateSeries(ctx, types.InsightSeries{
+		SeriesID:            "series1",
+		Query:               "asdf",
+		SampleIntervalUnit:  string(types.Month),
+		SampleIntervalValue: 1,
+		GenerationMethod:    types.Search,
+	})
+	require.NoError(t, err)
+
+	scheduler := NewScheduler(insightsDB)
+	backfill, err := scheduler.InitialBackfill(ctx, series)
+	require.NoError(t, err)
+
+	dequeue, found, err := monitor.newBackfillStore.Dequeue(ctx, "test", nil)
+	require.NoError(t, err)
+	if !found {
+		t.Fatal(errors.New("no queued record found"))
+	}
+	job, _ := dequeue.(*BaseJob)
 	require.Equal(t, backfill.Id, job.backfillId)
 }

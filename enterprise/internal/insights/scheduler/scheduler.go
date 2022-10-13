@@ -6,6 +6,7 @@ import (
 	"time"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
@@ -256,17 +257,36 @@ func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, reco
 	return nil
 }
 
-func (s *Scheduler) EnqueueBackfill(ctx context.Context, backfill *SeriesBackfill) error {
+type Scheduler struct {
+	backfillStore *BackfillStore
+}
+
+func NewScheduler(db edb.InsightsDB) *Scheduler {
+	return &Scheduler{backfillStore: newBackfillStore(db)}
+}
+
+func enqueueBackfill(ctx context.Context, handle basestore.TransactableHandle, backfill *SeriesBackfill) error {
 	if backfill == nil || backfill.Id == 0 {
 		return errors.New("invalid series backfill")
 	}
-	return s.store.Exec(ctx, sqlf.Sprintf("insert into insights_background_jobs (backfill_id) VALUES (%s)", backfill.Id))
+	return basestore.NewWithHandle(handle).Exec(ctx, sqlf.Sprintf("insert into insights_background_jobs (backfill_id) VALUES (%s)", backfill.Id))
 }
 
-type Scheduler struct {
-	store *basestore.Store
-}
+func (s *Scheduler) InitialBackfill(ctx context.Context, series types.InsightSeries) (_ *SeriesBackfill, err error) {
+	tx, err := s.backfillStore.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
 
-func NewScheduler(db edb.InsightsDB, obsContext *observation.Context) *Scheduler {
-	return &Scheduler{store: basestore.NewWithHandle(db.Handle())}
+	bf, err := tx.NewBackfill(ctx, series)
+	if err != nil {
+		return nil, errors.Wrap(err, "NewBackfill")
+	}
+
+	err = enqueueBackfill(ctx, tx.Handle(), bf)
+	if err != nil {
+		return nil, errors.Wrap(err, "enqueueBackfill")
+	}
+	return bf, nil
 }
