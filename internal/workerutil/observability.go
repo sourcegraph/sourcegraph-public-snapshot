@@ -66,7 +66,8 @@ func WithDurationBuckets(buckets []float64) ObservabilityOption {
 //   - {prefix}_error_total: number of handler operations resulting in an error
 //   - {prefix}_handlers: the number of active handler routines
 //
-// The given labels are emitted on each metric. If traceSampler is unset, traces will have a 1 in 2 probability of being sampled.
+// The given labels are emitted on each metric. If WithSampler option is not passed,
+// traces will have a 1 in 2 probability of being sampled.
 func NewMetrics(observationContext *observation.Context, prefix string, opts ...ObservabilityOption) WorkerObservability {
 	options := &observabilityOptions{
 		durationBuckets: prometheus.DefBuckets,
