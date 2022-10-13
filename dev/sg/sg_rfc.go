@@ -14,7 +14,7 @@ import (
 var rfcCommand = &cli.Command{
 	Name:  "rfc",
 	Usage: `List, search, and open Sourcegraph RFCs`,
-	Description: fmt.Sprintf("List, search, and open Sourcegraph RFCs in the following drives:\n\n%s", func() (out string) {
+	Description: fmt.Sprintf("Sourcegraph RFCs live in the following drives - see flags to configure which drive to query:\n\n%s", func() (out string) {
 		for _, d := range []rfc.DriveSpec{rfc.PublicDrive, rfc.PrivateDrive} {
 			out += fmt.Sprintf("* %s: https://drive.google.com/drive/folders/%s\n", d.DisplayName, d.FolderID)
 		}

@@ -1151,7 +1151,7 @@ Flags:
 
 List, search, and open Sourcegraph RFCs.
 
-List, search, and open Sourcegraph RFCs in the following drives:
+Sourcegraph RFCs live in the following drives - see flags to configure which drive to query:
 
 * Public: https://drive.google.com/drive/folders/1zP3FxdDlcSQGC1qvM9lHZRaHH4I9Jwwa
 * Private: https://drive.google.com/drive/folders/1KCq4tMLnVlC0a1rwGuU5OSCw6mdDxLuv
