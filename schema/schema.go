@@ -69,7 +69,7 @@ type ApiRatelimit struct {
 // AuditLog description: EXPERIMENTAL: Configuration for audit logging (specially formatted log entries for tracking sensitive events)
 type AuditLog struct {
 	// BackgroundJobs description: Capture security events performed by the background jobs (adds significant noise).
-	BackgroundJobs bool `json:"backgroundJobs,omitempty"`
+	BackgroundJobs bool `json:"backgroundJobs"`
 	// GitserverAccess description: Capture gitserver access logs as part of the audit log.
 	GitserverAccess bool `json:"gitserverAccess"`
 	// GraphQL description: Capture GraphQL requests and responses as part of the audit log.
