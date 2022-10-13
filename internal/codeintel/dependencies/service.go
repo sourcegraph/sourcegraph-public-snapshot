@@ -3,6 +3,7 @@ package dependencies
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/background"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -11,24 +12,21 @@ import (
 
 // Service encapsulates the resolution and persistence of dependencies at the repository and package levels.
 type Service struct {
-	dependenciesStore store.Store
-	gitClient         GitserverClient
-	extSvcStore       ExternalServiceStore
-	operations        *operations
+	store         store.Store
+	backgroundJob background.BackgroundJob
+	operations    *operations
 }
 
-func newService(
-	dependenciesStore store.Store,
-	gitClient GitserverClient,
-	extSvcStore ExternalServiceStore,
-	observationContext *observation.Context,
-) *Service {
+func newService(store store.Store, backgroundJob background.BackgroundJob, observationContext *observation.Context) *Service {
 	return &Service{
-		dependenciesStore: dependenciesStore,
-		gitClient:         gitClient,
-		extSvcStore:       extSvcStore,
-		operations:        newOperations(observationContext),
+		store:         store,
+		backgroundJob: backgroundJob,
+		operations:    newOperations(observationContext),
 	}
+}
+
+func GetBackgroundJobs(s *Service) background.BackgroundJob {
+	return s.backgroundJob
 }
 
 type Repo = shared.Repo
@@ -58,19 +56,19 @@ func (s *Service) ListDependencyRepos(ctx context.Context, opts ListDependencyRe
 	ctx, _, endObservation := s.operations.listDependencyRepos.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return s.dependenciesStore.ListDependencyRepos(ctx, store.ListDependencyReposOpts(opts))
+	return s.store.ListDependencyRepos(ctx, store.ListDependencyReposOpts(opts))
 }
 
 func (s *Service) UpsertDependencyRepos(ctx context.Context, deps []Repo) (_ []Repo, err error) {
 	ctx, _, endObservation := s.operations.upsertDependencyRepos.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return s.dependenciesStore.UpsertDependencyRepos(ctx, deps)
+	return s.store.UpsertDependencyRepos(ctx, deps)
 }
 
 func (s *Service) DeleteDependencyReposByID(ctx context.Context, ids ...int) (err error) {
 	ctx, _, endObservation := s.operations.deleteDependencyReposByID.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return s.dependenciesStore.DeleteDependencyReposByID(ctx, ids...)
+	return s.store.DeleteDependencyReposByID(ctx, ids...)
 }
