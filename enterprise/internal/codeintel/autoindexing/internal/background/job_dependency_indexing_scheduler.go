@@ -30,7 +30,7 @@ import (
 // NewDependencyIndexingScheduler returns a new worker instance that processes
 // records from lsif_dependency_indexing_jobs.
 func NewDependencyIndexingScheduler(
-	dependencyIndexingStore dbworkerstore.Store,
+	dependencyIndexingStore dbworkerstore.Store[shared.DependencyIndexingJob],
 	uploadSvc UploadService,
 	repoStore ReposStore,
 	externalServiceStore ExternalServiceStore,
@@ -40,7 +40,7 @@ func NewDependencyIndexingScheduler(
 	metrics workerutil.WorkerObservability,
 	pollInterval time.Duration,
 	numHandlers int,
-) *workerutil.Worker {
+) *workerutil.Worker[shared.DependencyIndexingJob] {
 	rootContext := actor.WithInternalActor(context.Background())
 
 	handler := &dependencyIndexingSchedulerHandler{
@@ -53,7 +53,7 @@ func NewDependencyIndexingScheduler(
 		repoUpdater:        repoUpdater,
 	}
 
-	return dbworker.NewWorker(rootContext, dependencyIndexingStore, handler, workerutil.WorkerOptions{
+	return dbworker.NewWorker[shared.DependencyIndexingJob](rootContext, dependencyIndexingStore, handler, workerutil.WorkerOptions{
 		Name:              "precise_code_intel_dependency_indexing_scheduler_worker",
 		NumHandlers:       numHandlers,
 		Interval:          pollInterval,
@@ -68,7 +68,7 @@ type dependencyIndexingSchedulerHandler struct {
 	indexEnqueuer      IndexEnqueuer
 	extsvcStore        ExternalServiceStore
 	gitserverRepoStore GitserverRepoStore
-	workerStore        dbworkerstore.Store
+	workerStore        dbworkerstore.Store[shared.DependencyIndexingJob]
 	repoUpdater        RepoUpdaterClient
 }
 
@@ -77,18 +77,16 @@ const requeueBackoff = time.Second * 30
 // default is false aka index scheduler is enabled
 var disableIndexScheduler, _ = strconv.ParseBool(os.Getenv("CODEINTEL_DEPENDENCY_INDEX_SCHEDULER_DISABLED"))
 
-var _ workerutil.Handler = &dependencyIndexingSchedulerHandler{}
+var _ workerutil.Handler[shared.DependencyIndexingJob] = &dependencyIndexingSchedulerHandler{}
 
 // Handle iterates all import monikers associated with a given upload that has
 // recently completed processing. Each moniker is interpreted according to its
 // scheme to determine the dependent repository and commit. A set of indexing
 // jobs are enqueued for each repository and commit pair.
-func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
+func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, logger log.Logger, job shared.DependencyIndexingJob) error {
 	if !autoIndexingEnabled() || disableIndexScheduler {
 		return nil
 	}
-
-	job := record.(shared.DependencyIndexingJob)
 
 	if job.ExternalServiceKind != "" {
 		externalServices, err := h.extsvcStore.List(ctx, database.ExternalServicesListOptions{

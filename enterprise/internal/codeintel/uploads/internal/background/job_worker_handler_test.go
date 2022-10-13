@@ -33,7 +33,7 @@ func TestHandle(t *testing.T) {
 		Indexer:      "lsif-go",
 	}
 
-	mockWorkerStore := NewMockWorkerStore()
+	mockWorkerStore := NewMockWorkerStore[codeinteltypes.Upload]()
 	mockDBStore := NewMockStore()
 	mockRepoStore := NewMockRepoStore()
 	mockLSIFStore := NewMockLsifStore()
@@ -159,7 +159,7 @@ func TestHandleError(t *testing.T) {
 		Indexer:      "lsif-go",
 	}
 
-	mockWorkerStore := NewMockWorkerStore()
+	mockWorkerStore := NewMockWorkerStore[codeinteltypes.Upload]()
 	mockDBStore := NewMockStore()
 	mockRepoStore := NewMockRepoStore()
 	mockLSIFStore := NewMockLsifStore()
@@ -219,7 +219,7 @@ func TestHandleCloneInProgress(t *testing.T) {
 		Indexer:      "lsif-go",
 	}
 
-	mockWorkerStore := NewMockWorkerStore()
+	mockWorkerStore := NewMockWorkerStore[codeinteltypes.Upload]()
 	mockDBStore := NewMockStore()
 	mockRepoStore := NewMockRepoStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()
