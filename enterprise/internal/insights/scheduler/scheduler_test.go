@@ -30,8 +30,6 @@ func Test_SchedulerStartsAndStops(t *testing.T) {
 
 func Test_SchedulerMovesBackfillFromNewToProcessing(t *testing.T) {
 	logger := logtest.Scoped(t)
-	// ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
-	// defer cancel()
 	ctx := context.Background()
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	bfs := newBackfillStore(insightsDB)
