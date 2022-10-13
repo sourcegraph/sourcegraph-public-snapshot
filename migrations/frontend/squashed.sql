@@ -4664,9 +4664,6 @@ ALTER TABLE ONLY gitserver_repos
 ALTER TABLE ONLY insights_query_runner_jobs_dependencies
     ADD CONSTRAINT insights_query_runner_jobs_dependencies_fk_job_id FOREIGN KEY (job_id) REFERENCES insights_query_runner_jobs(id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY lsif_uploads_reference_counts
-    ADD CONSTRAINT lsif_data_docs_search_private_repo_name_id_fk FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE;
-
 ALTER TABLE ONLY lsif_dependency_syncing_jobs
     ADD CONSTRAINT lsif_dependency_indexing_jobs_upload_id_fkey FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE;
 
@@ -4684,6 +4681,9 @@ ALTER TABLE ONLY lsif_references
 
 ALTER TABLE ONLY lsif_retention_configuration
     ADD CONSTRAINT lsif_retention_configuration_repository_id_fkey FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY lsif_uploads_reference_counts
+    ADD CONSTRAINT lsif_uploads_reference_counts_upload_id_fk FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY names
     ADD CONSTRAINT names_org_id_fkey FOREIGN KEY (org_id) REFERENCES orgs(id) ON UPDATE CASCADE ON DELETE CASCADE;
