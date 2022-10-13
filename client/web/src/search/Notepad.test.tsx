@@ -44,7 +44,15 @@ describe('Notepad', () => {
 
     const mockEntries: NotepadEntry[] = [
         { id: 0, type: 'search', query: 'TODO', caseSensitive: false, patternType: SearchPatternType.standard },
-        { id: 1, type: 'file', path: 'path/to/file', repo: 'test', revision: 'master', lineRange: null },
+        {
+            id: 1,
+            type: 'file',
+            path: 'path/to/file',
+            repo: 'test',
+            revision: 'master',
+            lineRange: null,
+            annotation: '',
+        },
     ]
 
     describe('closed state', () => {
