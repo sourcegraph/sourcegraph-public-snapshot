@@ -92,15 +92,15 @@ func Wait(ctx context.Context, out *std.Output) {
 				out.Write(jobOutput)
 			}
 			jobs.wg.Done()
-			if jobs.verbose {
-				out.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "Background jobs done!"))
-			}
 		}
 	}()
 	jobs.wg.Wait()
 
 	// Done!
 	close(jobs.output)
+	if jobs.verbose {
+		out.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "Background jobs done!"))
+	}
 	span.Succeeded()
 }
 
