@@ -60,7 +60,7 @@ export const queryPolicies = (
     }: Partial<CodeIntelligenceConfigurationPoliciesVariables>,
     client: ApolloClient<object>
 ): Observable<PolicyConnection> => {
-    const variables = {
+    const variables: CodeIntelligenceConfigurationPoliciesVariables = {
         repository: repository ?? null,
         query: query ?? null,
         forDataRetention: forDataRetention ?? null,

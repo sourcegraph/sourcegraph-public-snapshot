@@ -94,7 +94,7 @@ export const queryUploadRetentionMatches = (
         query,
     }: Partial<LsifUploadRetentionMatchesVariables> & Pick<LsifUploadRetentionMatchesVariables, 'matchesOnly'>
 ): Observable<Connection<NormalizedUploadRetentionMatch>> => {
-    const variables = {
+    const variables: LsifUploadRetentionMatchesVariables = {
         id,
         matchesOnly,
         query: query ?? null,

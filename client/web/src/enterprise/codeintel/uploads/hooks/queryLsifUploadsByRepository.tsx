@@ -71,7 +71,7 @@ export const queryLsifUploadsByRepository = (
     repository: string,
     client: ApolloClient<object>
 ): Observable<LsifUploadConnectionFields> => {
-    const variables = {
+    const variables: LsifUploadsVariables = {
         query: query ?? null,
         state: state ?? null,
         isLatestForRepo: isLatestForRepo ?? null,

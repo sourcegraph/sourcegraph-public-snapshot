@@ -35,7 +35,7 @@ export const queryLsifIndexList = (
     { query, state, first, after }: Partial<LsifIndexesVariables>,
     client: ApolloClient<object>
 ): Observable<IndexConnection> => {
-    const variables = {
+    const variables: LsifIndexesVariables = {
         query: query ?? null,
         state: state ?? null,
         first: first ?? null,
