@@ -18,6 +18,8 @@ import { PageTitle } from '../PageTitle'
 
 import { queryExternalServices as _queryExternalServices } from './backend'
 import { ExternalServiceNodeProps, ExternalServiceNode } from './ExternalServiceNode'
+import { ExternalServiceEditingDisabledAlert } from './ExternalServiceEditingDisabledAlert'
+import { ExternalServiceEditingTemporaryAlert } from './ExternalServiceEditingTemporaryAlert'
 
 interface Props extends ActivationProps, TelemetryProps {
     history: H.History
@@ -84,8 +86,7 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
         }
     }, [])
 
-    const addingDisabled = externalServicesFromFile && !allowEditExternalServicesWithFile
-    console.log('addingDisabled', addingDisabled)
+    const editingDisabled = !!externalServicesFromFile && !allowEditExternalServicesWithFile
 
     const isManagingOtherUser = !!userID && userID !== authenticatedUser.id
 
@@ -101,13 +102,13 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
                 headingElement="h2"
                 actions={
                     <>
-                        {!isManagingOtherUser && (
+                        {!isManagingOtherUser && !editingDisabled && (
                             <Button
                                 className="test-goto-add-external-service-page"
                                 to={`${routingPrefix}/external-services/new`}
                                 variant="primary"
                                 as={Link}
-                                disabled={addingDisabled}
+                                disabled={editingDisabled}
                             >
                                 <Icon aria-hidden={true} svgPath={mdiPlus} /> Add code host
                             </Button>
@@ -116,6 +117,9 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
                 }
                 className="mb-3"
             />
+
+            {editingDisabled && <ExternalServiceEditingDisabledAlert />}
+            {externalServicesFromFile && allowEditExternalServicesWithFile && <ExternalServiceEditingTemporaryAlert />}
 
             <Container className="mb-3">
                 <FilteredConnection<
@@ -136,6 +140,7 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
                         history,
                         routingPrefix,
                         afterDeleteRoute,
+                        editingDisabled,
                     }}
                     hideSearch={true}
                     cursorPaging={true}

@@ -8,11 +8,13 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { ErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, LoadingSpinner, Alert, H4, Code, Text, Input } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Alert, H4, Text, Input } from '@sourcegraph/wildcard'
 
 import { AddExternalServiceInput } from '../../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
 
+import { ExternalServiceEditingDisabledAlert } from './ExternalServiceEditingDisabledAlert'
+import { ExternalServiceEditingTemporaryAlert } from './ExternalServiceEditingTemporaryAlert'
 import { AddExternalServiceOptions } from './externalServices'
 
 interface Props extends Pick<AddExternalServiceOptions, 'jsonSchema' | 'editorActions'>, ThemeProps, TelemetryProps {
@@ -78,29 +80,9 @@ export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildre
                 </Alert>
             )}
 
-            {disabled && (
-                <Alert variant="info">
-                    <H4>Editing through UI disabled</H4>
-                    <Text className="mb-0">
-                        Environment variable <Code>EXTSVC_CONFIG_FILE</Code> is set. You can't create or edit code host
-                        connections when <Code>EXTSVC_CONFIG_FILE</Code> is set. If you also set{' '}
-                        <Code>EXTSVC_CONFIG_ALLOW_EDITS</Code> to <Code>"true"</Code> you can edit code host
-                        connections, but changes will be discarded with the next restart.
-                    </Text>
-                </Alert>
-            )}
+            {disabled && <ExternalServiceEditingDisabledAlert />}
+            {externalServicesFromFile && allowEditExternalServicesWithFile && <ExternalServiceEditingTemporaryAlert />}
 
-            {!disabled && allowEditExternalServicesWithFile && (
-                <Alert variant="warning">
-                    <H4>Edits will be reset when restarting</H4>
-                    <Text className="mb-0">
-                        Environment variable <Code>EXTSVC_CONFIG_ALLOW_EDITS</Code> is set along with{' '}
-                        <Code>EXTSVC_CONFIG_FILE</Code>. Every change made through the UI will be undone with the next
-                        restart and code host connection configuration is reset to the contents of{' '}
-                        <Code>EXTSVC_CONFIG_FILE</Code>.
-                    </Text>
-                </Alert>
-            )}
             {hideDisplayNameField || (
                 <div className="form-group">
                     <Input
