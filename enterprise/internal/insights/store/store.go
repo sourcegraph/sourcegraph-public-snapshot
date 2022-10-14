@@ -575,17 +575,20 @@ func (s *Store) SetInsightSeriesRecordingTimes(ctx context.Context, seriesRecord
 	return nil
 }
 
-func (s *Store) GetInsightSeriesRecordingTimesBetween(ctx context.Context, seriesID string, from, to *time.Time) (series types.InsightSeriesRecordingTimes, err error) {
+func (s *Store) GetInsightSeriesRecordingTimes(ctx context.Context, seriesID string, from, to *time.Time) (series types.InsightSeriesRecordingTimes, err error) {
 	series.SeriesID = seriesID
 
-	preds := []*sqlf.Query{}
+	preds := []*sqlf.Query{
+		sqlf.Sprintf("series_id = %s", seriesID),
+	}
 	if from != nil {
 		preds = append(preds, sqlf.Sprintf("recording_time >= %s", *from))
 	}
 	if to != nil {
 		preds = append(preds, sqlf.Sprintf("recording_time <= %s", *to))
 	}
-	timesQuery := sqlf.Sprintf(getInsightSeriesRecordingTimesStr, sqlf.Join(preds, "\n AND"), seriesID)
+	timesQuery := sqlf.Sprintf(getInsightSeriesRecordingTimesStr, sqlf.Join(preds, "\n AND"))
+	fmt.Println(timesQuery.Query(sqlf.PostgresBindVar))
 
 	recordingTimes := []time.Time{}
 	err = s.query(ctx, timesQuery, func(sc scanner) (err error) {
@@ -659,8 +662,7 @@ UNION
 const getInsightSeriesRecordingTimesStr = `
 -- source: enterprise/internal/insights/store/store.go:GetInsightSeriesRecordingTimes
 SELECT recording_time FROM insight_series_recording_times
-WHERE series_id = %s
-%s
+WHERE %s
 ORDER BY recording_time ASC;
 `
 

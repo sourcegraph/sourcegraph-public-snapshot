@@ -686,23 +686,21 @@ func TestInsightSeriesRecordingTimes(t *testing.T) {
 	permStore := NewInsightPermissionStore(postgres)
 	timeseriesStore := NewWithClock(insightsdb, permStore, clock)
 
-	series1Times := types.InsightSeriesRecordingTimes{
+	series1Times := []time.Time{now, now.AddDate(0, 1, 0)}
+	series2Times := []time.Time{now, now.AddDate(0, 1, 1), now.AddDate(0, -1, 1)}
+	series1 := types.InsightSeriesRecordingTimes{
 		"series1",
-		[]time.Time{now, now.AddDate(0, 1, 0)},
+		series1Times,
+	}
+	series2 := types.InsightSeriesRecordingTimes{
+		"series2",
+		series2Times,
 	}
 
 	err := timeseriesStore.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{
-		series1Times,
-		{
-			"series2",
-			[]time.Time{now, now.AddDate(0, 1, 0)},
-		},
+		series1,
+		series2,
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	got, err := timeseriesStore.GetInsightSeriesRecordingTimes(ctx, "series1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -715,31 +713,56 @@ func TestInsightSeriesRecordingTimes(t *testing.T) {
 		sort.Strings(s)
 		return strings.Join(s, " ")
 	}
-	if got.SeriesID != series1Times.SeriesID || stringifyTimes(got.RecordingTimes) != stringifyTimes(series1Times.RecordingTimes) {
-		t.Errorf("got %v, want %v", got, series1Times)
-	}
 
-	err = timeseriesStore.DeleteInsightSeriesRecordingTimes(ctx, types.InsightSeriesRecordingTimes{"series2", []time.Time{now}})
-	if err != nil {
-		t.Fatal(err)
-	}
+	oldTime := now.AddDate(-1, 1, 1)
+	afterNow := now.AddDate(0, 0, 1)
 
-	newTime := now.AddDate(5, 5, 5)
-	err = timeseriesStore.UpdateInsightSeriesRecordingTimes(ctx, "series2", newTime)
-	if err != nil {
-		t.Fatal(err)
+	testCases := []struct {
+		insert  *types.InsightSeriesRecordingTimes
+		getFor  string
+		getFrom *time.Time
+		getTo   *time.Time
+		want    autogold.Value
+	}{
+		{
+			getFor: "series1",
+			want:   autogold.Want("get all recording times for series1", stringifyTimes(series1Times)),
+		},
+		{
+			insert: &types.InsightSeriesRecordingTimes{"series1", []time.Time{now}},
+			getFor: "series1",
+			want:   autogold.Want("duplicates are not inserted", stringifyTimes(series1Times)),
+		},
+		{
+			getFor:  "series2",
+			getFrom: &now,
+			want:    autogold.Want("gets subset of series 2 recording times", stringifyTimes(series2Times[:2])),
+		},
+		{
+			getFor: "series1",
+			getTo:  &now,
+			want:   autogold.Want("gets subset of series 1 recording times", stringifyTimes(series1Times[:1])),
+		},
+		{
+			getFor:  "series2",
+			getFrom: &oldTime,
+			getTo:   &afterNow,
+			want:    autogold.Want("gets subset from and to", stringifyTimes(append(series2Times[:1], series2Times[2]))),
+		},
 	}
-
-	got, err = timeseriesStore.GetInsightSeriesRecordingTimes(ctx, "series2")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(got.RecordingTimes) != 2 {
-		t.Fatalf("got %d recording times, expected 2", len(got.RecordingTimes))
-	}
-	want := []time.Time{now.AddDate(0, 1, 0), newTime}
-	if stringifyTimes(got.RecordingTimes) != stringifyTimes(want) {
-		t.Errorf("unexpected times, got %v want %v", got.RecordingTimes, want)
+	for _, tc := range testCases {
+		t.Run(tc.want.Name(), func(t *testing.T) {
+			if tc.insert != nil {
+				if err := timeseriesStore.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{*tc.insert}); err != nil {
+					t.Fatal(err)
+				}
+			}
+			got, err := timeseriesStore.GetInsightSeriesRecordingTimes(ctx, tc.getFor, tc.getFrom, tc.getTo)
+			if err != nil {
+				t.Fatal(err)
+			}
+			tc.want.Equal(t, stringifyTimes(got.RecordingTimes))
+		})
 	}
 }
 

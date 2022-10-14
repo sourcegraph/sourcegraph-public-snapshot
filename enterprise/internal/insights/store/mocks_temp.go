@@ -1678,9 +1678,6 @@ func NewMockInterfaceFrom(i Interface) *MockInterface {
 		SeriesPointsFunc: &InterfaceSeriesPointsFunc{
 			defaultHook: i.SeriesPoints,
 		},
-		UpdateInsightSeriesRecordingTimesFunc: &InterfaceUpdateInsightSeriesRecordingTimesFunc{
-			defaultHook: i.UpdateInsightSeriesRecordingTimes,
-		},
 	}
 }
 
