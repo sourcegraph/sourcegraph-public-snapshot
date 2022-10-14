@@ -611,8 +611,8 @@
       "description": "Never fall back to search-based code intelligence.",
       "type": "boolean"
     },
-    "codeIntel.intelligentKeyboardNavigation": {
-      "description": "Supported methods of intelligent keyboard navigation within the file view. Note: `token` navigation is only supported when precise code intelligence is available",
+    "codeIntel.blobKeyboardNavigation": {
+      "description": "Supported methods of keyboard navigation within the file blob. Note: `token` navigation is only supported when precise code intelligence is available",
       "type": "string",
       "enum": ["none", "token"]
     },

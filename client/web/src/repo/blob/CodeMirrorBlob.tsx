@@ -92,7 +92,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         location,
         history,
         blameHunks,
-        intelligentKeyboardNavigation,
+        tokenKeyboardNavigation,
 
         // Reference panel specific props
         disableStatusBar,
@@ -167,7 +167,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 initialSelection: position.line !== undefined ? position : null,
                 navigateToLineOnAnyClick: navigateToLineOnAnyClick ?? false,
             }),
-            intelligentKeyboardNavigation ? tokensAsLinks.of({ blobInfo, history }) : [],
+            tokenKeyboardNavigation ? tokensAsLinks.of({ blobInfo, history }) : [],
             syntaxHighlight.of(blobInfo),
             pinnedRangeField.init(() => (hasPin ? position : null)),
             extensionsController !== null && !navigateToLineOnAnyClick
