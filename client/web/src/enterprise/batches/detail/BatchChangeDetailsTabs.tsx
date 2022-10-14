@@ -106,7 +106,8 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
     )
 
     const isBatchSpecLocallyCreated = batchChange.currentSpec.source === BatchSpecSource.LOCAL
-    const shouldDisplayOldUI = !isExecutionEnabled || isBatchSpecLocallyCreated
+    const shouldDisplayExecutionsTab =
+        isExecutionEnabled && !isBatchSpecLocallyCreated && batchChange.viewerCanAdminister
 
     // We track the current tab in a URL parameter so that tabs are easy to navigate to
     // and share.
@@ -178,12 +179,30 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                         </span>
                     </span>
                 </Tab>
-                <SpecOrExecutionTab
-                    shouldDisplayOldUI={shouldDisplayOldUI}
-                    viewerCanAdminister={batchChange.viewerCanAdminister}
-                    executionsCount={executionsCount}
-                    specsHasNextPage={batchChange.batchSpecs.pageInfo.hasNextPage}
-                />
+                {shouldDisplayExecutionsTab ? (
+                    <Tab>
+                        <span>
+                            <Icon aria-hidden={true} className="text-muted mr-2" svgPath={mdiFileDocument} />
+                            <span className="text-content" data-tab-content="Executions">
+                                Executions
+                            </span>
+                            {executionsCount > 0 && (
+                                <Badge variant="warning" pill={true} className="ml-2">
+                                    {executionsCount} {batchChange.batchSpecs.pageInfo.hasNextPage && <>+</>}
+                                </Badge>
+                            )}
+                        </span>
+                    </Tab>
+                ) : (
+                    <Tab>
+                        <span>
+                            <Icon aria-hidden={true} className="text-muted mr-2" svgPath={mdiFileDocument} />
+                            <span className="text-content" data-tab-content="Spec">
+                                Spec
+                            </span>
+                        </span>
+                    </Tab>
+                )}
                 <Tab>
                     <span>
                         <Icon aria-hidden={true} className="text-muted mr-2" svgPath={mdiArchive} />
@@ -234,13 +253,42 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                         history={history}
                     />
                 </TabPanel>
-                <SpecOrExecutionPanel
-                    shouldDisplayOldUI={shouldDisplayOldUI}
-                    batchChange={batchChange}
-                    isLightTheme={isLightTheme}
-                    history={history}
-                    location={location}
-                />
+                <TabPanel>
+                    {shouldDisplayExecutionsTab ? (
+                        <Container>
+                            <BatchChangeBatchSpecList
+                                history={history}
+                                location={location}
+                                batchChangeID={batchChange.id}
+                                currentSpecID={batchChange.currentSpec.id}
+                                isLightTheme={isLightTheme}
+                            />
+                        </Container>
+                    ) : (
+                        <>
+                            <div className="d-flex flex-wrap justify-content-between align-items-baseline mb-2 test-batches-spec">
+                                <BatchSpecMeta
+                                    createdAt={batchChange.createdAt}
+                                    lastApplier={batchChange.lastApplier}
+                                    lastAppliedAt={batchChange.lastAppliedAt}
+                                />
+                                <BatchSpecDownloadButton
+                                    name={batchChange.name}
+                                    isLightTheme={isLightTheme}
+                                    originalInput={batchChange.currentSpec.originalInput}
+                                />
+                            </div>
+                            <Container>
+                                <BatchSpec
+                                    name={batchChange.name}
+                                    originalInput={batchChange.currentSpec.originalInput}
+                                    isLightTheme={isLightTheme}
+                                    className={styles.batchSpec}
+                                />
+                            </Container>
+                        </>
+                    )}
+                </TabPanel>
                 <TabPanel>
                     <BatchChangeChangesets
                         batchChangeID={batchChange.id}
@@ -265,105 +313,4 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
             </TabPanels>
         </BatchChangeTabs>
     )
-}
-
-interface SpecOrExecutionTabProps {
-    shouldDisplayOldUI: boolean
-    viewerCanAdminister: boolean
-    executionsCount: number
-    specsHasNextPage: boolean
-}
-
-const SpecOrExecutionTab: React.FunctionComponent<SpecOrExecutionTabProps> = props => {
-    if (props.shouldDisplayOldUI) {
-        return (
-            <Tab>
-                <span>
-                    <Icon aria-hidden={true} className="text-muted mr-2" svgPath={mdiFileDocument} />
-                    <span className="text-content" data-tab-content="Spec">
-                        Spec
-                    </span>
-                </span>
-            </Tab>
-        )
-    }
-
-    if (props.viewerCanAdminister) {
-        return (
-            <Tab>
-                <span>
-                    <Icon aria-hidden={true} className="text-muted mr-2" svgPath={mdiFileDocument} />
-                    <span className="text-content" data-tab-content="Executions">
-                        Executions
-                    </span>
-                    {props.executionsCount > 0 && (
-                        <Badge variant="warning" pill={true} className="ml-2">
-                            {props.executionsCount} {props.specsHasNextPage && <>+</>}
-                        </Badge>
-                    )}
-                </span>
-            </Tab>
-        )
-    }
-
-    return null
-}
-
-interface SpecOrExecutionPanelProps {
-    shouldDisplayOldUI: boolean
-    batchChange: BatchChangeFields
-    isLightTheme: boolean
-    history: H.History
-    location: H.Location
-}
-
-const SpecOrExecutionPanel: React.FunctionComponent<SpecOrExecutionPanelProps> = ({
-    shouldDisplayOldUI,
-    batchChange,
-    isLightTheme,
-    history,
-    location,
-}) => {
-    if (shouldDisplayOldUI) {
-        return (
-            <>
-                <div className="d-flex flex-wrap justify-content-between align-items-baseline mb-2 test-batches-spec">
-                    <BatchSpecMeta
-                        createdAt={batchChange.createdAt}
-                        lastApplier={batchChange.lastApplier}
-                        lastAppliedAt={batchChange.lastAppliedAt}
-                    />
-                    <BatchSpecDownloadButton
-                        name={batchChange.name}
-                        isLightTheme={isLightTheme}
-                        originalInput={batchChange.currentSpec.originalInput}
-                    />
-                </div>
-                <Container>
-                    <BatchSpec
-                        name={batchChange.name}
-                        originalInput={batchChange.currentSpec.originalInput}
-                        isLightTheme={isLightTheme}
-                        className={styles.batchSpec}
-                    />
-                </Container>
-            </>
-        )
-    }
-
-    if (batchChange.viewerCanAdminister) {
-        return (
-            <Container>
-                <BatchChangeBatchSpecList
-                    history={history}
-                    location={location}
-                    batchChangeID={batchChange.id}
-                    currentSpecID={batchChange.currentSpec.id}
-                    isLightTheme={isLightTheme}
-                />
-            </Container>
-        )
-    }
-
-    return null
 }
