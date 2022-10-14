@@ -837,7 +837,7 @@ func (s *store) SourcedCommitsWithoutCommittedAt(ctx context.Context, batchSize 
 
 const sourcedCommitsWithoutCommittedAtQuery = `
 SELECT u.repository_id, r.name, u.commit
-FROM lsif_uploads uk
+FROM lsif_uploads u
 JOIN repo r ON r.id = u.repository_id
 LEFT JOIN codeintel_commit_dates cd ON cd.repository_id = u.repository_id AND cd.commit_bytea = decode(u.commit, 'hex')
 WHERE u.state = 'completed' AND cd.committed_at IS NULL
