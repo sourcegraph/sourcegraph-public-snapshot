@@ -34,16 +34,12 @@ type Service struct {
 	lsifstore       lsifstore.LsifStore
 	gitserverClient GitserverClient
 	policySvc       PolicyService
-	// expirationMetrics *expirationMetrics
-	// resetterMetrics   *resetterMetrics
-	// janitorMetrics    *janitorMetrics
-	backgroundJob background.BackgroundJob
-	// workerMetrics workerutil.WorkerObservability
-	policyMatcher PolicyMatcher
-	locker        Locker
-	logger        logger.Logger
-	operations    *operations
-	clock         glock.Clock
+	policyMatcher   PolicyMatcher
+	locker          Locker
+	backgroundJob   background.BackgroundJob
+	logger          logger.Logger
+	operations      *operations
+	clock           glock.Clock
 }
 
 func newService(
@@ -69,16 +65,12 @@ func newService(
 		lsifstore:       lsifstore,
 		gitserverClient: gsc,
 		policySvc:       policySvc,
-		// expirationMetrics: newExpirationMetrics(observationContext),
-		backgroundJob: backgroundJob,
-		// resetterMetrics:   newResetterMetrics(observationContext),
-		// janitorMetrics:    newJanitorMetrics(observationContext),
-		// workerMetrics: workerutil.NewMetrics(observationContext, "codeintel_upload_processor", workerutil.WithSampler(func(job workerutil.Record) bool { return true })),
-		policyMatcher: policyMatcher,
-		locker:        locker,
-		logger:        observationContext.Logger,
-		operations:    newOperations(observationContext),
-		clock:         glock.NewRealClock(),
+		backgroundJob:   backgroundJob,
+		policyMatcher:   policyMatcher,
+		locker:          locker,
+		logger:          observationContext.Logger,
+		operations:      newOperations(observationContext),
+		clock:           glock.NewRealClock(),
 	}
 }
 
@@ -459,7 +451,7 @@ func (s *Service) SoftDeleteExpiredUploads(ctx context.Context) (int, error) {
 	return s.store.SoftDeleteExpiredUploads(ctx)
 }
 
-// backfillCommittedAtBatch calculates the committed_at value for a batch of upload records that do not have
+// BackfillCommittedAtBatch calculates the committed_at value for a batch of upload records that do not have
 // this value set. This method is used to backfill old upload records prior to this value being reliably set
 // during processing.
 func (s *Service) BackfillCommittedAtBatch(ctx context.Context, batchSize int) (err error) {

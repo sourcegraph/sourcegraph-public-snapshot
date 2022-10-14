@@ -32,10 +32,9 @@ func TestUploadExpirer(t *testing.T) {
 		store:         uploadSvc,
 		policySvc:     policySvc,
 		policyMatcher: policyMatcher,
-		// expirationMetrics: newExpirationMetrics(&observation.TestContext),
-		logger:     logtest.Scoped(t),
-		operations: newOperations(&observation.TestContext),
-		clock:      clock,
+		logger:        logtest.Scoped(t),
+		operations:    newOperations(&observation.TestContext),
+		clock:         clock,
 	}
 
 	if err := uploadExpirer.HandleExpiredUploadsBatch(context.Background(), expirationMetrics, background.ExpirerConfig{

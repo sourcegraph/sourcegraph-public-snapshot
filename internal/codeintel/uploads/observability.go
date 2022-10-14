@@ -53,10 +53,6 @@ type operations struct {
 
 	// Tags
 	getListTags *observation.Operation
-
-	// // Worker metrics
-	// uploadProcessor *observation.Operation
-	// uploadSizeGuage prometheus.Gauge
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -136,9 +132,5 @@ func newOperations(observationContext *observation.Context) *operations {
 
 		// Tags
 		getListTags: op("GetListTags"),
-
-		// // Worker metrics
-		// uploadProcessor: uploadProcessor,
-		// uploadSizeGuage: uploadSizeGuage,
 	}
 }

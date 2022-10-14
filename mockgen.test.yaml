@@ -155,12 +155,8 @@
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads
       interfaces:
         - GitserverClient
-        - UploadServiceForExpiration
-        - UploadServiceForCleanup
         - PolicyService
         - PolicyMatcher
-        - AutoIndexingService
-
 - filename: internal/codeintel/uploads/internal/background/mocks_test.go
   sources:
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/background

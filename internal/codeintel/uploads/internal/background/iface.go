@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -24,25 +23,37 @@ import (
 )
 
 type UploadService interface {
-	BackfillCommittedAtBatch(ctx context.Context, batchSize int) (err error)
-	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error)
+	// Commits
 	GetStaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []shared.SourcedCommits, err error)
 	DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (uploadsUpdated int, uploadsDeleted int, err error)
 	UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (uploadsUpdated int, err error)
-	DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_ int, err error)
-	SoftDeleteExpiredUploads(ctx context.Context) (int, error)
+	BackfillCommittedAtBatch(ctx context.Context, batchSize int) (err error)
+
+	// Uploads
 	GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (uploads []types.Upload, totalCount int, err error)
+	SoftDeleteExpiredUploads(ctx context.Context) (int, error)
+	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error)
+	DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_ int, err error)
 	DeleteLsifDataByUploadIds(ctx context.Context, bundleIDs ...int) (err error)
 	HardDeleteUploadsByIDs(ctx context.Context, ids ...int) error
-	DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (count int, err error)
-
-	UpdateAllDirtyCommitGraphs(ctx context.Context, maxAgeForNonStaleBranches time.Duration, maxAgeForNonStaleTags time.Duration) (err error)
 	HandleRawUpload(ctx context.Context, logger log.Logger, upload codeinteltypes.Upload, uploadStore uploadstore.Store, trace observation.TraceLogger) (requeued bool, err error)
-	SetRepositoriesForRetentionScan(ctx context.Context, processDelay time.Duration, limit int) (_ []int, err error)
+	HandleExpiredUploadsBatch(ctx context.Context, metrics *ExpirationMetrics, cfg ExpirerConfig) (err error)
+
+	// Commitgraph
+	UpdateAllDirtyCommitGraphs(ctx context.Context, maxAgeForNonStaleBranches time.Duration, maxAgeForNonStaleTags time.Duration) (err error)
+
+	// Repositories
 	GetDirtyRepositories(ctx context.Context) (_ map[int]int, err error)
 	GetRepositoriesMaxStaleAge(ctx context.Context) (_ time.Duration, err error)
-	HandleExpiredUploadsBatch(ctx context.Context, metrics *ExpirationMetrics, cfg ExpirerConfig) (err error)
+	SetRepositoriesForRetentionScan(ctx context.Context, processDelay time.Duration, limit int) (_ []int, err error)
+
+	// References
 	BackfillReferenceCountBatch(ctx context.Context, batchSize int) error
+
+	// Audit logs
+	DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (count int, err error)
+
+	// Utils
 	GetWorkerutilStore() dbworkerstore.Store
 }
 
@@ -65,8 +76,4 @@ type GitserverClient interface {
 
 	ArchiveReader(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, options gitserver.ArchiveOptions) (io.ReadCloser, error)
 	RequestRepoUpdate(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error)
-}
-
-type Locker interface {
-	Lock(ctx context.Context, key int32, blocking bool) (bool, locker.UnlockFunc, error)
 }

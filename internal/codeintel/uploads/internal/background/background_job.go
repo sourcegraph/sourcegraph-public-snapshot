@@ -60,34 +60,28 @@ type backgroundJob struct {
 	uploadSvc       UploadService
 	gitserverClient GitserverClient
 
-	// workerutilStore dbworkerstore.Store
-
-	clock             glock.Clock
-	logger            logger.Logger
 	janitorMetrics    *janitorMetrics
 	resetterMetrics   *resetterMetrics
 	workerMetrics     workerutil.WorkerObservability
 	expirationMetrics *ExpirationMetrics
-	operations        *operations
+
+	clock      glock.Clock
+	logger     logger.Logger
+	operations *operations
 }
 
 func New(db database.DB, gsc GitserverClient, observationContext *observation.Context) BackgroundJob {
-	// workerutilStore := dbworkerstore.NewWithMetrics(db.Handle(), uploadWorkerStoreOptions, observationContext)
-
-	// // TODO - move this to metric reporter?
-	// dbworker.InitPrometheusMetric(observationContext, workerutilStore, "codeintel", "upload", nil)
-
 	return &backgroundJob{
 		gitserverClient: gsc,
-		// workerutilStore: workerutilStore,
 
-		clock:             glock.NewRealClock(),
-		logger:            observationContext.Logger,
 		janitorMetrics:    newJanitorMetrics(observationContext),
 		resetterMetrics:   newResetterMetrics(observationContext),
 		workerMetrics:     workerutil.NewMetrics(observationContext, "codeintel_upload_processor", workerutil.WithSampler(func(job workerutil.Record) bool { return true })),
 		expirationMetrics: NewExpirationMetrics(observationContext),
-		operations:        newOperations(observationContext),
+
+		clock:      glock.NewRealClock(),
+		logger:     observationContext.Logger,
+		operations: newOperations(observationContext),
 	}
 }
 
