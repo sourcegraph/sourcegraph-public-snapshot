@@ -1,6 +1,7 @@
 package graphqlbackend
 
 import (
+	"context"
 	"regexp"
 	"strings"
 	"time"
@@ -148,19 +149,20 @@ func (e *ExecutorSecretResolver) ID() graphql.ID {
 }
 func (e *ExecutorSecretResolver) Key() string   { return e.secret.Key }
 func (e *ExecutorSecretResolver) Scope() string { return strings.ToUpper(e.secret.Scope) }
-func (e *ExecutorSecretResolver) Namespace() bool { // What now. I cannot use graphqlbackend in here. :|
+func (e *ExecutorSecretResolver) Namespace(ctx context.Context) (*NamespaceResolver, error) {
+	return nil, nil
+}
+func (e *ExecutorSecretResolver) Creator(ctx context.Context) (*UserResolver, error) {
+	// User has been deleted.
+	if e.secret.CreatorID == 0 {
+		return nil, nil
+	}
 
+	return nil, nil
 }
-func (e *ExecutorSecretResolver) Os() string              { return e.executor.OS }
-func (e *ExecutorSecretResolver) Architecture() string    { return e.executor.Architecture }
-func (e *ExecutorSecretResolver) DockerVersion() string   { return e.executor.DockerVersion }
-func (e *ExecutorSecretResolver) ExecutorVersion() string { return e.executor.ExecutorVersion }
-func (e *ExecutorSecretResolver) GitVersion() string      { return e.executor.GitVersion }
-func (e *ExecutorSecretResolver) IgniteVersion() string   { return e.executor.IgniteVersion }
-func (e *ExecutorSecretResolver) SrcCliVersion() string   { return e.executor.SrcCliVersion }
-func (e *ExecutorSecretResolver) FirstSeenAt() gqlutil.DateTime {
-	return gqlutil.DateTime{e.executor.FirstSeenAt}
+func (e *ExecutorSecretResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: e.secret.CreatedAt}
 }
-func (e *ExecutorSecretResolver) LastSeenAt() gqlutil.DateTime {
-	return gqlutil.DateTime{e.executor.LastSeenAt}
+func (e *ExecutorSecretResolver) UpdatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: e.secret.UpdatedAt}
 }
