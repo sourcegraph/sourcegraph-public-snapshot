@@ -61,16 +61,45 @@ func TestHandle(t *testing.T) {
 	expectedCommitDateStr := expectedCommitDate.Format(time.RFC3339)
 	gitserverClient.CommitDateFunc.SetDefaultReturn("deadbeef", expectedCommitDate, true, nil)
 
-	handler := &handler{
-		dbStore:         mockDBStore,
+	// handler := &handler{
+	// 	dbStore:         mockDBStore,
+	// 	repoStore:       mockRepoStore,
+	// 	workerStore:     mockWorkerStore,
+	// 	lsifStore:       mockLSIFStore,
+	// 	uploadStore:     mockUploadStore,
+	// 	gitserverClient: gitserverClient,
+	// }
+
+	// svc := newService(
+	// 	mockDBStore,
+	// 	mockRepoStore,
+	// 	mockLSIFStore,
+	// 	gitserverClient,
+	// 	nil,
+	// 	nil,
+	// 	nil,
+	// 	nil,
+	// 	&observation.TestContext,
+	// )
+
+	// svc := &Service{
+	// 	store:           mockDBStore,
+	// 	repoStore:       mockRepoStore,
+	// 	workerutilStore: mockWorkerStore,
+	// 	lsifstore:       mockLSIFStore,
+	// 	policySvc:       nil,
+	// }
+
+	svc := &Service{
+		store:           mockDBStore,
 		repoStore:       mockRepoStore,
-		workerStore:     mockWorkerStore,
-		lsifStore:       mockLSIFStore,
-		uploadStore:     mockUploadStore,
+		workerutilStore: mockWorkerStore,
+		lsifstore:       mockLSIFStore,
 		gitserverClient: gitserverClient,
+		// lsifstore:       mockLSIFStore,
 	}
 
-	requeued, err := handler.handle(context.Background(), logtest.Scoped(t), upload, observation.TestTraceLogger(logtest.Scoped(t)))
+	requeued, err := svc.HandleRawUpload(context.Background(), logtest.Scoped(t), upload, mockUploadStore, observation.TestTraceLogger(logtest.Scoped(t)))
 	if err != nil {
 		t.Fatalf("unexpected error handling upload: %s", err)
 	} else if requeued {
@@ -194,16 +223,32 @@ func TestHandleError(t *testing.T) {
 	// Set a different tip commit
 	mockDBStore.SetRepositoryAsDirtyFunc.SetDefaultReturn(errors.Errorf("uh-oh!"))
 
-	handler := &handler{
-		dbStore:         mockDBStore,
+	// handler := &handler{
+	// 	dbStore:         mockDBStore,
+	// 	repoStore:       mockRepoStore,
+	// 	workerStore:     mockWorkerStore,
+	// 	lsifStore:       mockLSIFStore,
+	// 	uploadStore:     mockUploadStore,
+	// 	gitserverClient: gitserverClient,
+	// }
+
+	// svc := &Service{
+	// 	store:           mockDBStore,
+	// 	repoStore:       mockRepoStore,
+	// 	workerutilStore: mockWorkerStore,
+	// 	lsifstore:       mockLSIFStore,
+	// }
+
+	svc := &Service{
+		store:           mockDBStore,
 		repoStore:       mockRepoStore,
-		workerStore:     mockWorkerStore,
-		lsifStore:       mockLSIFStore,
-		uploadStore:     mockUploadStore,
+		workerutilStore: mockWorkerStore,
+		lsifstore:       mockLSIFStore,
 		gitserverClient: gitserverClient,
+		// lsifstore:       mockLSIFStore,
 	}
 
-	requeued, err := handler.handle(context.Background(), logtest.Scoped(t), upload, observation.TestTraceLogger(logtest.Scoped(t)))
+	requeued, err := svc.HandleRawUpload(context.Background(), logtest.Scoped(t), upload, mockUploadStore, observation.TestTraceLogger(logtest.Scoped(t)))
 	if err == nil {
 		t.Fatalf("unexpected nil error handling upload")
 	} else if !strings.Contains(err.Error(), "uh-oh!") {
@@ -246,15 +291,23 @@ func TestHandleCloneInProgress(t *testing.T) {
 		return "", &gitdomain.RepoNotExistError{Repo: repo.Name, CloneInProgress: true}
 	})
 
-	handler := &handler{
-		dbStore:         mockDBStore,
+	// handler := &handler{
+	// 	dbStore:         mockDBStore,
+	// 	repoStore:       mockRepoStore,
+	// 	workerStore:     mockWorkerStore,
+	// 	uploadStore:     mockUploadStore,
+	// 	gitserverClient: gitserverClient,
+	// }
+
+	svc := &Service{
+		store:           mockDBStore,
 		repoStore:       mockRepoStore,
-		workerStore:     mockWorkerStore,
-		uploadStore:     mockUploadStore,
+		workerutilStore: mockWorkerStore,
 		gitserverClient: gitserverClient,
+		// lsifstore:       mockLSIFStore,
 	}
 
-	requeued, err := handler.handle(context.Background(), logtest.Scoped(t), upload, observation.TestTraceLogger(logtest.Scoped(t)))
+	requeued, err := svc.HandleRawUpload(context.Background(), logtest.Scoped(t), upload, mockUploadStore, observation.TestTraceLogger(logtest.Scoped(t)))
 	if err != nil {
 		t.Fatalf("unexpected error handling upload: %s", err)
 	} else if !requeued {

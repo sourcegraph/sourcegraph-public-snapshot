@@ -12,7 +12,6 @@ import (
 	sharedIndexes "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
 	policiesshared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
-	codeintelgitserver "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/gitserver"
 	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	sharedUploads "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
@@ -28,9 +27,9 @@ type Locker interface {
 	Lock(ctx context.Context, key int32, blocking bool) (bool, locker.UnlockFunc, error)
 }
 
-type CommitCache interface {
-	ExistsBatch(ctx context.Context, commits []codeintelgitserver.RepositoryCommit) ([]bool, error)
-}
+// type CommitCache interface {
+// 	ExistsBatch(ctx context.Context, commits []codeintelgitserver.RepositoryCommit) ([]bool, error)
+// }
 
 type GitserverClient interface {
 	CommitGraph(ctx context.Context, repositoryID int, opts gitserver.CommitGraphOptions) (_ *gitdomain.CommitGraph, err error)

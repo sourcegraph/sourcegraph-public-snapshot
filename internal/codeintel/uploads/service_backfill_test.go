@@ -16,7 +16,17 @@ func TestBackfillCommittedAtBatch(t *testing.T) {
 	ctx := context.Background()
 	store := NewMockStore()
 	gitserverClient := NewMockGitserverClient()
-	svc := newService(store, nil, nil, gitserverClient, nil, nil, nil, &observation.TestContext)
+	svc := newService(
+		store,
+		nil, // repoStore
+		nil, // lsifstore
+		gitserverClient,
+		nil, // policySvc
+		nil, // policyMatcher
+		nil, // locker
+		nil, // backgroundJobs
+		&observation.TestContext,
+	)
 
 	// Return self for txn
 	store.TransactFunc.SetDefaultReturn(store, nil)
@@ -54,7 +64,7 @@ func TestBackfillCommittedAtBatch(t *testing.T) {
 	}
 
 	for i := 0; i < n/pageSize; i++ {
-		if err := svc.backfillCommittedAtBatch(ctx, pageSize); err != nil {
+		if err := svc.BackfillCommittedAtBatch(ctx, pageSize); err != nil {
 			t.Fatalf("unexpected error: %s", err)
 		}
 	}
@@ -88,7 +98,17 @@ func TestBackfillCommittedAtBatchUnknownCommits(t *testing.T) {
 	ctx := context.Background()
 	store := NewMockStore()
 	gitserverClient := NewMockGitserverClient()
-	svc := newService(store, nil, nil, gitserverClient, nil, nil, nil, &observation.TestContext)
+	svc := newService(
+		store,
+		nil, // repoStore
+		nil, // lsifstore
+		gitserverClient,
+		nil, // policySvc
+		nil, // policyMatcher
+		nil, // locker
+		nil, // backgroundJobs
+		&observation.TestContext,
+	)
 
 	// Return self for txn
 	store.TransactFunc.SetDefaultReturn(store, nil)
@@ -131,7 +151,7 @@ func TestBackfillCommittedAtBatchUnknownCommits(t *testing.T) {
 	}
 
 	for i := 0; i < n/pageSize; i++ {
-		if err := svc.backfillCommittedAtBatch(ctx, pageSize); err != nil {
+		if err := svc.BackfillCommittedAtBatch(ctx, pageSize); err != nil {
 			t.Fatalf("unexpected error: %s", err)
 		}
 	}
