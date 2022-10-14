@@ -120,17 +120,6 @@ func (s *Store) Get(key string, target any) error {
 	return errors.Newf("%w: %s not found", ErrSecretNotFound, key)
 }
 
-func EnvFallback(ctx context.Context, envKey string) FallbackFunc {
-	return func(_ context.Context) (string, error) {
-		val, ok := os.LookupEnv(envKey)
-		if !ok {
-			return "", errors.Newf("failed to get env value for %q", envKey)
-		}
-
-		return val, nil
-	}
-}
-
 func (s *Store) GetExternal(ctx context.Context, secret ExternalSecret, fallbacks ...FallbackFunc) (string, error) {
 	var value externalSecretValue
 
