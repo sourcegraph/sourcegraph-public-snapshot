@@ -2,6 +2,8 @@ package database
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/keegancsmith/sqlf"
 
@@ -76,8 +78,9 @@ func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID
 	)
 )
 `
+
 	const externalServiceUnrestrictedQuery = `
-OR (
+(
     NOT repo.private          -- Happy path of non-private repositories
     OR  EXISTS (              -- Each external service defines if repositories are unrestricted
         SELECT
@@ -92,7 +95,7 @@ OR (
 )
 `
 	const restrictedRepositoriesQuery = `
-OR (                             -- Restricted repositories require checking permissions
+(                             -- Restricted repositories require checking permissions
     SELECT object_ids_ints @> INTSET(repo.id)
     FROM user_permissions
     WHERE
@@ -101,15 +104,14 @@ OR (                             -- Restricted repositories require checking per
     AND object_type = 'repos'
 )
 `
-	queryFmtString := "(" + unrestrictedReposQuery
+	conditions := []string{unrestrictedReposQuery, restrictedRepositoriesQuery}
 
 	// Disregard unrestricted state when permissions user mapping is enabled
 	if !usePermissionsUserMapping {
-		queryFmtString = queryFmtString + externalServiceUnrestrictedQuery
+		conditions = append(conditions, externalServiceUnrestrictedQuery)
 	}
 
-	queryFmtString = queryFmtString + restrictedRepositoriesQuery + ")"
-
+	queryFmtString := fmt.Sprintf("(%s)", strings.Join(conditions, " OR "))
 	return sqlf.Sprintf(queryFmtString,
 		authenticatedUserID,
 		perms.String(),
