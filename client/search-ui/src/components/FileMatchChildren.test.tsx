@@ -6,7 +6,7 @@ import sinon from 'sinon'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import {
-    RESULT,
+    CHUNK_MATCH_RESULT,
     HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,
     NOOP_SETTINGS_CASCADE,
     HIGHLIGHTED_FILE_LINES,
@@ -37,7 +37,7 @@ const defaultProps = {
             endLine: 4,
         },
     ],
-    result: RESULT,
+    result: CHUNK_MATCH_RESULT,
     allMatches: true,
     subsetMatches: 10,
     fetchHighlightedFileLineRanges: HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,
