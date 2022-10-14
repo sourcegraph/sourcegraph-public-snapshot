@@ -1,4 +1,4 @@
-package dependencies
+package background
 
 import (
 	"archive/tar"
@@ -12,6 +12,7 @@ import (
 	jsoniter "github.com/json-iterator/go"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -19,20 +20,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	dbtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func (s *Service) NewCrateSyncer() goroutine.BackgroundRoutine {
-	if s.gitClient == nil {
+func (b *backgroundJob) NewCrateSyncer() goroutine.BackgroundRoutine {
+	if b.gitClient == nil {
 		panic("illegal service construction - NewCrateSyncer called without a registered gitClient")
 	}
 
 	// By default, sync crates every 12h, but the user can customize this interval
 	// through site-admin configuration of the RUSTPACKAGES code host.
 	interval := time.Hour * 12
-	_, externalService, _ := singleRustExternalService(context.Background(), s.extSvcStore)
+	_, externalService, _ := singleRustExternalService(context.Background(), b.extSvcStore)
 	if externalService != nil {
 		config, err := rustPackagesConfig(context.Background(), externalService)
 		if err == nil { // silently ignore config errors.
@@ -44,12 +46,15 @@ func (s *Service) NewCrateSyncer() goroutine.BackgroundRoutine {
 	}
 
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
-		return s.handleCrateSyncer(ctx, interval)
+		return b.handleCrateSyncer(ctx, interval)
 	}))
 }
 
-func (s *Service) handleCrateSyncer(ctx context.Context, interval time.Duration) error {
-	exists, externalService, err := singleRustExternalService(ctx, s.extSvcStore)
+func (b *backgroundJob) handleCrateSyncer(ctx context.Context, interval time.Duration) (err error) {
+	ctx, _, endObservation := b.operations.handleCrateSyncer.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	exists, externalService, err := singleRustExternalService(ctx, b.extSvcStore)
 	if !exists || err != nil {
 		// err can be nil when there is no RUSTPACKAGES code host.
 		return err
@@ -66,14 +71,14 @@ func (s *Service) handleCrateSyncer(ctx context.Context, interval time.Duration)
 	}
 
 	repoName := api.RepoName(config.IndexRepositoryName)
-	update, err := s.gitClient.RequestRepoUpdate(ctx, repoName, interval)
+	update, err := b.gitClient.RequestRepoUpdate(ctx, repoName, interval)
 	if err != nil {
 		return err
 	}
 	if update != nil && update.Error != "" {
 		return errors.Newf("failed to update repo %s, error %s", repoName, update.Error)
 	}
-	reader, err := s.gitClient.ArchiveReader(
+	reader, err := b.gitClient.ArchiveReader(
 		ctx,
 		nil,
 		repoName,
@@ -129,7 +134,7 @@ func (s *Service) handleCrateSyncer(ctx context.Context, interval time.Duration)
 		if err != nil {
 			return err
 		}
-		new, err := s.dependenciesStore.UpsertDependencyRepos(ctx, pkgs)
+		new, err := b.dependenciesSvc.UpsertDependencyRepos(ctx, pkgs)
 		if err != nil {
 			return errors.Wrapf(err, "failed to insert Rust crate")
 		}
@@ -140,7 +145,7 @@ func (s *Service) handleCrateSyncer(ctx context.Context, interval time.Duration)
 		// We picked up new crates so we trigger a new sync for the RUSTPACKAGES code host.
 		nextSync := time.Now()
 		externalService.NextSyncAt = nextSync
-		if err := s.extSvcStore.Upsert(ctx, externalService); err != nil {
+		if err := b.extSvcStore.Upsert(ctx, externalService); err != nil {
 			return err
 		}
 	}
@@ -176,7 +181,6 @@ func singleRustExternalService(ctx context.Context, store ExternalServiceStore) 
 	externalServices, err := store.List(ctx, database.ExternalServicesListOptions{
 		Kinds: []string{kind},
 	})
-
 	if err != nil {
 		return false, nil, errors.Wrapf(err, "failed to list Rust external service types")
 	}
@@ -196,8 +200,8 @@ func singleRustExternalService(ctx context.Context, store ExternalServiceStore) 
 
 // parseCrateInformation parses the newline-delimited JSON file for a crate,
 // assuming the pattern that's used in the github.com/rust-lang/crates.io-index
-func parseCrateInformation(contents string) ([]Repo, error) {
-	var result []Repo
+func parseCrateInformation(contents string) ([]shared.Repo, error) {
+	var result []shared.Repo
 	for _, line := range strings.Split(contents, "\n") {
 		if line == "" {
 			continue
@@ -213,8 +217,8 @@ func parseCrateInformation(contents string) ([]Repo, error) {
 			return nil, err
 		}
 
-		pkg := Repo{
-			Scheme:  RustPackagesScheme,
+		pkg := shared.Repo{
+			Scheme:  shared.RustPackagesScheme,
 			Name:    reposource.PackageName(info.Name),
 			Version: info.Version,
 		}
