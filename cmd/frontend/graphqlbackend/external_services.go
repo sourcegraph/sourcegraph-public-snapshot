@@ -458,7 +458,7 @@ func (r *schemaResolver) CancelExternalServiceSync(ctx context.Context, args *ca
 	if err != nil {
 		return nil, err
 	}
-	es, err := r.db.ExternalServices().GetByID(ctx, esj.ExternalServiceID)
+	_, err = r.db.ExternalServices().GetByID(ctx, esj.ExternalServiceID)
 	if err != nil {
 		return nil, err
 	}
