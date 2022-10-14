@@ -39,16 +39,17 @@ const (
 	ExecutorSecretScopeBatches = "batches"
 )
 
-type ExecutorSecretsStore interface {
+type ExecutorSecretStore interface {
 	basestore.ShareableStore
-	With(basestore.ShareableStore) ExecutorSecretsStore
-	Transact(context.Context) (ExecutorSecretsStore, error)
+	With(basestore.ShareableStore) ExecutorSecretStore
+	Transact(context.Context) (ExecutorSecretStore, error)
 
 	Create(ctx context.Context, scope ExecutorSecretScope, secret *ExecutorSecret, value string) error
-	Update(context.Context, ExecutorSecretScope, *ExecutorSecret) error
+	Update(ctx context.Context, scope ExecutorSecretScope, secret *ExecutorSecret, value string) error
 	Delete(ctx context.Context, scope ExecutorSecretScope, id int64) error
 	GetByID(ctx context.Context, scope ExecutorSecretScope, id int64) (*ExecutorSecret, error)
 	List(context.Context, ExecutorSecretScope, ExecutorSecretsListOpts) ([]*ExecutorSecret, int, error)
+	Count(context.Context, ExecutorSecretScope, ExecutorSecretsListOpts) (int, error)
 }
 
 // ExecutorSecretsListOpts provide the options when listing secrets.
@@ -58,9 +59,27 @@ type ExecutorSecretsListOpts struct {
 	NamespaceOrgID  int32
 }
 
-// sql overrides LimitOffset.SQL() to give a LIMIT clause with one extra value
+func (opts ExecutorSecretsListOpts) sqlConds(ctx context.Context) (*sqlf.Query, error) {
+	authz, err := executorSecretsAuthzQueryConds(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	preds := []*sqlf.Query{authz}
+	if opts.NamespaceOrgID != 0 {
+		preds = append(preds, sqlf.Sprintf("namespace_org_id = %s", opts.NamespaceOrgID))
+	} else if opts.NamespaceUserID != 0 {
+		preds = append(preds, sqlf.Sprintf("namespace_user_id = %s", opts.NamespaceUserID))
+	} else {
+		preds = append(preds, sqlf.Sprintf("namespace_user_id IS NULL AND namespace_org_id IS NULL"))
+	}
+
+	return sqlf.Join(preds, "\n AND "), nil
+}
+
+// limitSQL overrides LimitOffset.SQL() to give a LIMIT clause with one extra value
 // so we can populate the next cursor.
-func (opts *ExecutorSecretsListOpts) sql() *sqlf.Query {
+func (opts *ExecutorSecretsListOpts) limitSQL() *sqlf.Query {
 	if opts.LimitOffset == nil || opts.Limit == 0 {
 		return &sqlf.Query{}
 	}
@@ -68,33 +87,33 @@ func (opts *ExecutorSecretsListOpts) sql() *sqlf.Query {
 	return (&LimitOffset{Limit: opts.Limit + 1, Offset: opts.Offset}).SQL()
 }
 
-// executorSecretsStore provides access to the `executor_secrets` table.
-type executorSecretsStore struct {
+// executorSecretStore provides access to the `executor_secrets` table.
+type executorSecretStore struct {
 	logger log.Logger
 	*basestore.Store
 	key encryption.Key
 }
 
-// ExecutorSecretsWith instantiates and returns a new ExecutorSecretsStore using the other store handle.
-func ExecutorSecretsWith(logger log.Logger, other basestore.ShareableStore, key encryption.Key) ExecutorSecretsStore {
-	return &executorSecretsStore{
+// ExecutorSecretsWith instantiates and returns a new ExecutorSecretStore using the other store handle.
+func ExecutorSecretsWith(logger log.Logger, other basestore.ShareableStore, key encryption.Key) ExecutorSecretStore {
+	return &executorSecretStore{
 		logger: logger,
 		Store:  basestore.NewWithHandle(other.Handle()),
 		key:    key,
 	}
 }
 
-func (s *executorSecretsStore) With(other basestore.ShareableStore) ExecutorSecretsStore {
-	return &executorSecretsStore{
+func (s *executorSecretStore) With(other basestore.ShareableStore) ExecutorSecretStore {
+	return &executorSecretStore{
 		logger: s.logger,
 		Store:  s.Store.With(other),
 		key:    s.key,
 	}
 }
 
-func (s *executorSecretsStore) Transact(ctx context.Context) (ExecutorSecretsStore, error) {
+func (s *executorSecretStore) Transact(ctx context.Context) (ExecutorSecretStore, error) {
 	txBase, err := s.Store.Transact(ctx)
-	return &executorSecretsStore{
+	return &executorSecretStore{
 		logger: s.logger,
 		Store:  txBase,
 		key:    s.key,
@@ -102,7 +121,7 @@ func (s *executorSecretsStore) Transact(ctx context.Context) (ExecutorSecretsSto
 }
 
 // Create inserts the given ExecutorSecret into the database.
-func (s *executorSecretsStore) Create(ctx context.Context, scope ExecutorSecretScope, secret *ExecutorSecret, value string) error {
+func (s *executorSecretStore) Create(ctx context.Context, scope ExecutorSecretScope, secret *ExecutorSecret, value string) error {
 	// SECURITY: check that the current user is authorized to create a secret for the given namespace.
 	if err := ensureActorHasNamespaceAccess(ctx, NewDBWith(s.logger, s), secret); err != nil {
 		return err
@@ -140,14 +159,14 @@ func (s *executorSecretsStore) Create(ctx context.Context, scope ExecutorSecretS
 
 // Update updates a secret in the database. If the secret cannot be found,
 // an error is returned.
-func (s *executorSecretsStore) Update(ctx context.Context, scope ExecutorSecretScope, secret *ExecutorSecret) error {
+func (s *executorSecretStore) Update(ctx context.Context, scope ExecutorSecretScope, secret *ExecutorSecret, value string) error {
 	// SECURITY: check that the current user is authorized to create a secret for the given namespace.
 	if err := ensureActorHasNamespaceAccess(ctx, NewDBWith(s.logger, s), secret); err != nil {
 		return err
 	}
 
 	secret.UpdatedAt = timeutil.Now()
-	encryptedValue, keyID, err := secret.EncryptedValue.Encrypt(ctx, s.key)
+	encryptedValue, keyID, err := encryptExecutorSecret(ctx, s.key, value)
 	if err != nil {
 		return err
 	}
@@ -179,7 +198,7 @@ func (s *executorSecretsStore) Update(ctx context.Context, scope ExecutorSecretS
 // Delete deletes the given user credential. Note that there is no concept of a
 // soft delete with user credentials: once deleted, the relevant records are
 // _gone_, so that we don't hold any sensitive data unexpectedly. 💀
-func (s *executorSecretsStore) Delete(ctx context.Context, scope ExecutorSecretScope, id int64) error {
+func (s *executorSecretStore) Delete(ctx context.Context, scope ExecutorSecretScope, id int64) error {
 	authz, err := executorSecretsAuthzQueryConds(ctx)
 	if err != nil {
 		return err
@@ -202,14 +221,14 @@ func (s *executorSecretsStore) Delete(ctx context.Context, scope ExecutorSecretS
 
 // GetByID returns the user credential matching the given ID, or
 // UserCredentialNotFoundErr if no such credential exists.
-func (s *executorSecretsStore) GetByID(ctx context.Context, scope ExecutorSecretScope, id int64) (*ExecutorSecret, error) {
+func (s *executorSecretStore) GetByID(ctx context.Context, scope ExecutorSecretScope, id int64) (*ExecutorSecret, error) {
 	authz, err := executorSecretsAuthzQueryConds(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	q := sqlf.Sprintf(
-		"SELECT %s FROM user_credentials WHERE id = %s AND %s",
+		"SELECT %s FROM executor_secrets WHERE id = %s AND %s",
 		sqlf.Join(executorSecretsColumns, ", "),
 		id,
 		authz,
@@ -227,26 +246,17 @@ func (s *executorSecretsStore) GetByID(ctx context.Context, scope ExecutorSecret
 }
 
 // List returns all secrets matching the given options.
-func (s *executorSecretsStore) List(ctx context.Context, scope ExecutorSecretScope, opts ExecutorSecretsListOpts) ([]*ExecutorSecret, int, error) {
-	authz, err := executorSecretsAuthzQueryConds(ctx)
+func (s *executorSecretStore) List(ctx context.Context, scope ExecutorSecretScope, opts ExecutorSecretsListOpts) ([]*ExecutorSecret, int, error) {
+	conds, err := opts.sqlConds(ctx)
 	if err != nil {
 		return nil, 0, err
-	}
-
-	preds := []*sqlf.Query{authz}
-	if opts.NamespaceOrgID != 0 {
-		preds = append(preds, sqlf.Sprintf("namespace_org_id = %s", opts.NamespaceOrgID))
-	} else if opts.NamespaceUserID != 0 {
-		preds = append(preds, sqlf.Sprintf("namespace_user_id = %s", opts.NamespaceUserID))
-	} else {
-		preds = append(preds, sqlf.Sprintf("namespace_user_id IS NULL AND namespace_org_id IS NULL"))
 	}
 
 	q := sqlf.Sprintf(
 		executorSecretsListQueryFmtstr,
 		sqlf.Join(executorSecretsColumns, ", "),
-		sqlf.Join(preds, "\n AND "),
-		opts.sql(),
+		conds,
+		opts.limitSQL(),
 	)
 
 	rows, err := s.Query(ctx, q)
@@ -275,13 +285,33 @@ func (s *executorSecretsStore) List(ctx context.Context, scope ExecutorSecretSco
 	return secrets, next, nil
 }
 
+// Count counts all secrets matching the given options.
+func (s *executorSecretStore) Count(ctx context.Context, scope ExecutorSecretScope, opts ExecutorSecretsListOpts) (int, error) {
+	conds, err := opts.sqlConds(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	q := sqlf.Sprintf(
+		executorSecretsCountQueryFmtstr,
+		conds,
+	)
+
+	totalCount, _, err := basestore.ScanFirstInt(s.Query(ctx, q))
+	if err != nil {
+		return 0, err
+	}
+
+	return totalCount, nil
+}
+
 // executorSecretsColumns are the columns that must be selected by
 // executor_secrets queries in order to use scanExecutorSecret().
 var executorSecretsColumns = []*sqlf.Query{
 	sqlf.Sprintf("id"),
+	sqlf.Sprintf("scope"),
 	sqlf.Sprintf("key"),
 	sqlf.Sprintf("value"),
-	sqlf.Sprintf("scope"),
 	sqlf.Sprintf("encryption_key_id"),
 	sqlf.Sprintf("namespace_user_id"),
 	sqlf.Sprintf("namespace_org_id"),
@@ -291,7 +321,6 @@ var executorSecretsColumns = []*sqlf.Query{
 }
 
 const executorSecretsGetByScopeQueryFmtstr = `
--- source: internal/database/executor_secrets.go:GetByScope
 SELECT %s
 FROM executor_secrets
 WHERE
@@ -301,12 +330,20 @@ WHERE
 `
 
 const executorSecretsListQueryFmtstr = `
--- source: internal/database/executor_secrets.go:List
 SELECT %s
 FROM executor_secrets
 WHERE %s
 ORDER BY key ASC
 %s  -- LIMIT clause
+`
+
+const executorSecretsCountQueryFmtstr = `
+SELECT
+	COUNT(*)
+FROM
+	executor_secrets
+WHERE
+	%s
 `
 
 const executorSecretCreateQueryFmtstr = `
@@ -361,13 +398,13 @@ func scanExecutorSecret(secret *ExecutorSecret, key encryption.Key, s interface 
 
 	if err := s.Scan(
 		&secret.ID,
+		&secret.Scope,
 		&secret.Key,
 		&value,
-		&secret.Scope,
-		&keyID,
-		&secret.NamespaceUserID,
-		&secret.NamespaceOrgID,
-		&secret.CreatorID,
+		&dbutil.NullString{S: &keyID},
+		&dbutil.NullInt32{N: &secret.NamespaceUserID},
+		&dbutil.NullInt32{N: &secret.NamespaceOrgID},
+		&dbutil.NullInt32{N: &secret.CreatorID},
 		&secret.CreatedAt,
 		&secret.UpdatedAt,
 	); err != nil {

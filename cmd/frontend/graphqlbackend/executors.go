@@ -2,16 +2,18 @@ package graphqlbackend
 
 import (
 	"context"
-	"strconv"
+	"strings"
+	"sync"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 )
 
 func unmarshalExecutorID(id graphql.ID) (executorID int64, err error) {
@@ -103,20 +105,106 @@ func executorByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*Execu
 	return NewExecutorResolver(executor), nil
 }
 
+type ExecutorSecretScope string
+
+const (
+	ExecutorSecretScopeBatches ExecutorSecretScope = "BATCHES"
+)
+
+func (s ExecutorSecretScope) ToDatabaseScope() database.ExecutorSecretScope {
+	return database.ExecutorSecretScope(strings.ToLower(string(s)))
+}
+
 type CreateExecutorSecretArgs struct {
 	Key       string
 	Value     string
-	Scope     string
+	Scope     ExecutorSecretScope
 	Namespace *graphql.ID
 }
 
 func (r *schemaResolver) CreateExecutorSecret(ctx context.Context, args CreateExecutorSecretArgs) (*ExecutorSecretResolver, error) {
+	var userID, orgID int32
+	if args.Namespace != nil {
+		if err := UnmarshalNamespaceID(*args.Namespace, &userID, &orgID); err != nil {
+			return nil, err
+		}
+	}
+	// TODO: namespace access check.
 
-	return nil, nil
+	a := actor.FromContext(ctx)
+	if !a.IsAuthenticated() {
+		return nil, auth.ErrNotAuthenticated
+	}
+
+	secret := &database.ExecutorSecret{
+		Key:             args.Key,
+		CreatorID:       a.UID,
+		NamespaceUserID: userID,
+		NamespaceOrgID:  orgID,
+	}
+	if err := r.db.ExecutorSecrets(keyring.Default().ExecutorSecretKey).Create(ctx, args.Scope.ToDatabaseScope(), secret, args.Value); err != nil {
+		return nil, err
+	}
+	return &ExecutorSecretResolver{secret: secret}, nil
+}
+
+type UpdateExecutorSecretArgs struct {
+	ID    graphql.ID
+	Scope ExecutorSecretScope
+	Value string
+}
+
+func (r *schemaResolver) UpdateExecutorSecret(ctx context.Context, args UpdateExecutorSecretArgs) (*ExecutorSecretResolver, error) {
+	a := actor.FromContext(ctx)
+	if !a.IsAuthenticated() {
+		return nil, auth.ErrNotAuthenticated
+	}
+
+	id, err := unmarshalExecutorSecretID(args.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	store := r.db.ExecutorSecrets(keyring.Default().ExecutorSecretKey)
+
+	tx, err := store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	secret, err := tx.GetByID(ctx, args.Scope.ToDatabaseScope(), id)
+	if err != nil {
+		return nil, err
+	}
+	if err := store.Update(ctx, args.Scope.ToDatabaseScope(), secret, args.Value); err != nil {
+		return nil, err
+	}
+
+	return &ExecutorSecretResolver{secret: secret}, nil
+}
+
+type DeleteExecutorSecretArgs struct {
+	ID    graphql.ID
+	Scope ExecutorSecretScope
+}
+
+func (r *schemaResolver) DeleteExecutorSecret(ctx context.Context, args DeleteExecutorSecretArgs) (*EmptyResponse, error) {
+	id, err := unmarshalExecutorSecretID(args.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	store := r.db.ExecutorSecrets(keyring.Default().ExecutorSecretKey)
+
+	// Delete handles access of the actor to the secret properly.
+	if err := store.Delete(ctx, args.Scope.ToDatabaseScope(), id); err != nil {
+		return nil, err
+	}
+
+	return &EmptyResponse{}, nil
 }
 
 type ExecutorSecretsListArgs struct {
-	Scope string
+	Scope ExecutorSecretScope
 	First *int32
 	After *string
 }
@@ -127,9 +215,9 @@ func (o ExecutorSecretsListArgs) LimitOffset() (*database.LimitOffset, error) {
 		limit.Limit = int(*o.First)
 	}
 	if o.After != nil {
-		offset, err := strconv.Atoi(*o.After)
+		offset, err := graphqlutil.DecodeIntCursor(o.After)
 		if err != nil {
-			return nil, errors.Wrap(err, "parsing cursor")
+			return nil, err
 		}
 		limit.Offset = offset
 	}
@@ -192,18 +280,53 @@ func (r *OrgResolver) ExecutorSecrets(args ExecutorSecretsListArgs) (*executorSe
 
 type executorSecretConnectionResolver struct {
 	db    database.DB
-	scope string
+	scope ExecutorSecretScope
 	opts  database.ExecutorSecretsListOpts
+
+	computeOnce sync.Once
+	secrets     []*database.ExecutorSecret
+	next        int
+	err         error
 }
 
-func (r *executorSecretConnectionResolver) Nodes() ([]*ExecutorSecretResolver, error) {
-	return nil, nil
+func (r *executorSecretConnectionResolver) Nodes(ctx context.Context) ([]*ExecutorSecretResolver, error) {
+	secrets, _, err := r.compute(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	resolvers := make([]*ExecutorSecretResolver, 0, len(secrets))
+	for _, secret := range secrets {
+		resolvers = append(resolvers, &ExecutorSecretResolver{secret: secret})
+	}
+
+	return resolvers, nil
 }
 
-func (r *executorSecretConnectionResolver) TotalCount() (int32, error) {
-	return 0, nil
+func (r *executorSecretConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+	store := r.db.ExecutorSecrets(keyring.Default().ExecutorSecretKey)
+	totalCount, err := store.Count(ctx, r.scope.ToDatabaseScope(), r.opts)
+	return int32(totalCount), err
 }
 
-func (r *executorSecretConnectionResolver) PageInfo() (*graphqlutil.PageInfo, error) {
+func (r *executorSecretConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	_, next, err := r.compute(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if next != 0 {
+		n := int32(next)
+		return graphqlutil.EncodeIntCursor(&n), nil
+	}
 	return graphqlutil.HasNextPage(false), nil
+}
+
+func (r *executorSecretConnectionResolver) compute(ctx context.Context) ([]*database.ExecutorSecret, int, error) {
+	r.computeOnce.Do(func() {
+		store := r.db.ExecutorSecrets(keyring.Default().ExecutorSecretKey)
+
+		r.secrets, r.next, r.err = store.List(ctx, r.scope.ToDatabaseScope(), r.opts)
+	})
+	return r.secrets, r.next, r.err
 }

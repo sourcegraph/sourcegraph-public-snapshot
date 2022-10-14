@@ -6,8 +6,8 @@ CREATE TABLE IF NOT EXISTS executor_secrets (
     encryption_key_id text,
     namespace_user_id integer REFERENCES users(id) ON DELETE CASCADE,
     namespace_org_id integer REFERENCES orgs(id) ON DELETE CASCADE,
-    created_at text NOT NULL,
-    updated_at text NOT NULL,
+    created_at timestamp with time zone NOT NULL DEFAULT NOW(),
+    updated_at timestamp with time zone NOT NULL DEFAULT NOW(),
     creator_id integer REFERENCES users(id) ON DELETE SET NULL
 );
 

@@ -140,12 +140,21 @@ func calculateExecutorCompatibility(ev string) (*string, error) {
 	return compatibility.ToGraphQL(), nil
 }
 
+func marshalExecutorSecretID(id int64) graphql.ID {
+	return relay.MarshalID("ExecutorSecret", id)
+}
+
+func unmarshalExecutorSecretID(gqlID graphql.ID) (id int64, err error) {
+	err = relay.UnmarshalSpec(gqlID, &id)
+	return
+}
+
 type ExecutorSecretResolver struct {
-	secret database.ExecutorSecret
+	secret *database.ExecutorSecret
 }
 
 func (e *ExecutorSecretResolver) ID() graphql.ID {
-	return relay.MarshalID("ExecutorSecret", (int64(e.secret.ID)))
+	return marshalExecutorSecretID(e.secret.ID)
 }
 func (e *ExecutorSecretResolver) Key() string   { return e.secret.Key }
 func (e *ExecutorSecretResolver) Scope() string { return strings.ToUpper(e.secret.Scope) }

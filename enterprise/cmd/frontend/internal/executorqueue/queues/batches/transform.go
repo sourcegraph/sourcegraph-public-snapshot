@@ -14,6 +14,7 @@ import (
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -46,6 +47,52 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 	batchSpec, err := s.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: workspace.BatchSpecID})
 	if err != nil {
 		return apiclient.Job{}, errors.Wrap(err, "fetching batch spec")
+	}
+
+	// Use a user context here, so that only secrets are returned that the user may see at this point in time.
+	userCtx := actor.WithActor(ctx, actor.FromUser(batchSpec.UserID))
+	esStore := s.DatabaseDB().ExecutorSecrets(keyring.Default().ExecutorSecretKey)
+	secrets, _, err := esStore.List(userCtx, database.ExecutorSecretScopeBatches, database.ExecutorSecretsListOpts{
+		NamespaceUserID: batchSpec.NamespaceUserID,
+		NamespaceOrgID:  batchSpec.NamespaceOrgID,
+	})
+	if err != nil {
+		return apiclient.Job{}, err
+	}
+	globalSecrets, _, err := esStore.List(userCtx, database.ExecutorSecretScopeBatches, database.ExecutorSecretsListOpts{
+		NamespaceUserID: 0,
+		NamespaceOrgID:  0,
+	})
+	if err != nil {
+		return apiclient.Job{}, err
+	}
+
+	fmt.Printf("SECRETS:\n\n%+v\n\n%+v\n\n", secrets, globalSecrets)
+
+	seenKeys := map[string]struct{}{}
+	secretEnvVars := make([]string, len(secrets)+len(globalSecrets))
+	redactedEnvVars := make(map[string]string, len(secrets))
+	for i, secret := range secrets {
+		val, err := secret.EncryptedValue.Decrypt(ctx)
+		if err != nil {
+			return apiclient.Job{}, err
+		}
+		secretEnvVars[i] = fmt.Sprintf("%s=%s", secret.Key, val)
+		redactedEnvVars[val] = fmt.Sprintf("${{ secrets.%s }}", secret.Key)
+		seenKeys[secret.Key] = struct{}{}
+	}
+	for i, secret := range globalSecrets {
+		if _, ok := seenKeys[secret.Key]; ok {
+			// Don't overwrite existing keys.
+			continue
+		}
+
+		val, err := secret.EncryptedValue.Decrypt(ctx)
+		if err != nil {
+			return apiclient.Job{}, err
+		}
+		secretEnvVars[i+len(secrets)] = fmt.Sprintf("%s=%s", secret.Key, val)
+		redactedEnvVars[val] = fmt.Sprintf("${{ secrets.%s }}", secret.Key)
 	}
 
 	// This should never happen. To get some easier debugging when a user sees strange
@@ -156,7 +203,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 		commands = append(commands, "-workspaceFiles", srcWorkspaceFilesDir)
 	}
 
-	return apiclient.Job{
+	j := apiclient.Job{
 		ID:                  int(job.ID),
 		VirtualMachineFiles: files,
 		RepositoryName:      string(repo.Name),
@@ -171,15 +218,14 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 				Key:      "batch-exec",
 				Commands: commands,
 				Dir:      ".",
-				Env: []string{
-					"GH_TOKEN=asdf",
-				},
+				Env:      secretEnvVars,
 			},
 		},
 		// TODO: Create a map of all secret values we pass down:
-		// $VALUE: : "${{ secrets.$KEY }}"
-		RedactedValues: map[string]string{
-			"asdf": "${{ secrets.GH_TOKEN }}",
-		},
-	}, nil
+		RedactedValues: redactedEnvVars,
+	}
+
+	fmt.Printf("Job payload!!!!:\n%+v\n\n", j)
+
+	return j, nil
 }

@@ -1725,8 +1725,8 @@ extend type Org {
 
 extend type Mutation {
     createExecutorSecret(key: String!, value: String!, scope: ExecutorSecretScope!, namespace: ID): ExecutorSecret!
-    deleteExecutorSecret(id: ID!): EmptyResponse
-    updateExecutorSecret(id: ID!, secretValue: String!): ExecutorSecret!
+    updateExecutorSecret(id: ID!, scope: ExecutorSecretScope!, value: String!): ExecutorSecret!
+    deleteExecutorSecret(id: ID!, scope: ExecutorSecretScope!): EmptyResponse
 }
 
 """
