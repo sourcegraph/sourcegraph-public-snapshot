@@ -75,8 +75,12 @@ func Commands(ctx context.Context, parentEnv map[string]string, verbose bool, cm
 
 	cmdNames := make(map[string]struct{}, len(cmds))
 
+	logFile, err := createLogFile()
+	defer logFile.closer()
+
 	for i, cmd := range cmds {
 		cmdNames[cmd.Name] = struct{}{}
+		cmd.w = logFile.w
 
 		wg.Add(1)
 
@@ -107,7 +111,7 @@ func Commands(ctx context.Context, parentEnv map[string]string, verbose bool, cm
 		return err
 	}
 
-	if err := writePid(); err != nil {
+	if err := writePid(logFile.path); err != nil {
 		return err
 	}
 

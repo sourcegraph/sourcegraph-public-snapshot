@@ -32,6 +32,8 @@ type Command struct {
 	ExternalSecrets map[string]secrets.ExternalSecret `yaml:"external_secrets"`
 	Description     string                            `yaml:"description"`
 
+	w io.Writer
+
 	// ATTENTION: If you add a new field here, be sure to also handle that
 	// field in `Merge` (below).
 }
@@ -184,15 +186,15 @@ func startCmd(ctx context.Context, dir string, cmd Command, parentEnv map[string
 	logger := newCmdLogger(commandCtx, cmd.Name, std.Out.Output)
 	if cmd.IgnoreStdout {
 		std.Out.WriteLine(output.Styledf(output.StyleSuggestion, "Ignoring stdout of %s", cmd.Name))
-		stdoutWriter = sc.stdoutBuf
+		stdoutWriter = io.MultiWriter(sc.stdoutBuf, cmd.w)
 	} else {
-		stdoutWriter = io.MultiWriter(logger, sc.stdoutBuf)
+		stdoutWriter = io.MultiWriter(logger, sc.stdoutBuf, cmd.w)
 	}
 	if cmd.IgnoreStderr {
 		std.Out.WriteLine(output.Styledf(output.StyleSuggestion, "Ignoring stderr of %s", cmd.Name))
 		stderrWriter = sc.stderrBuf
 	} else {
-		stderrWriter = io.MultiWriter(logger, sc.stderrBuf)
+		stderrWriter = io.MultiWriter(logger, sc.stderrBuf, cmd.w)
 	}
 
 	if cmd.Preamble != "" {

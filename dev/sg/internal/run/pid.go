@@ -3,6 +3,7 @@ package run
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"syscall"
@@ -12,8 +13,9 @@ import (
 )
 
 type pidFile struct {
-	Args []string `json:"args"`
-	Pid  int      `json:"pid"`
+	Args    []string `json:"args"`
+	Pid     int      `json:"pid"`
+	LogFile string   `json:"logfile"`
 }
 
 func PidExistsWithArgs(args []string) (int, bool, error) {
@@ -100,7 +102,7 @@ func isPidAlive(pid int32) (bool, error) {
 	return false, err
 }
 
-func writePid() error {
+func writePid(logfile string) error {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return err
@@ -110,8 +112,9 @@ func writePid() error {
 	pidFilePath := filepath.Join(homeDir, ".sourcegraph", pidFileName)
 
 	content := pidFile{
-		Args: os.Args[1:],
-		Pid:  os.Getpid(),
+		Args:    os.Args[1:],
+		Pid:     os.Getpid(),
+		LogFile: logfile,
 	}
 
 	b, err := json.Marshal(content)
@@ -126,4 +129,36 @@ func writePid() error {
 	interrupt.Register(func() { os.Remove(pidFilePath) })
 
 	return nil
+}
+
+type logFile struct {
+	w      io.Writer
+	closer func()
+	path   string
+}
+
+func createLogFile() (*logFile, error) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return nil, err
+	}
+
+	err = os.MkdirAll(filepath.Join(homeDir, ".sourcegraph", "logs"), 0755)
+	if err != nil {
+		return nil, err
+	}
+
+	f, err := os.Create(filepath.Join(homeDir, ".sourcegraph", "logs", fmt.Sprintf("sg.pid.%d.log", os.Getpid())))
+	if err != nil {
+		return nil, err
+	}
+	path := filepath.Join(homeDir, ".sourcegraph", "logs", f.Name())
+	closer := func() {
+		f.Close()
+		_ = os.Remove(path)
+	}
+
+	// TODO clean
+	interrupt.Register(func() { os.Remove(f.Name()) })
+	return &logFile{w: f, closer: closer, path: path}, nil
 }
