@@ -673,9 +673,25 @@ func (s *GitHubSource) listPublic(ctx context.Context, results chan *githubResul
 		return
 	}
 
-	if s.excludeArchived {
-		s.listPublicNonArchived(ctx, results)
-		return
+	// The regular Github API endpoint for listing public repos doesn't return whether the repo is archived, so we have to list
+	// all of the public archived repos first so we know if a repo is archived or not.
+	// TODO: Remove querying for archived repos first when https://github.com/orgs/community/discussions/12554 gets resolved
+	archivedReposChan := make(chan *githubResult)
+	archivedRepos := make(map[string]struct{})
+	archivedReposCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	go func() {
+		s.listPublicArchivedRepos(archivedReposCtx, archivedReposChan)
+		close(archivedReposChan)
+	}()
+
+	for res := range archivedReposChan {
+		if res.err != nil {
+			results <- &githubResult{err: errors.Wrap(res.err, "failed to list public archived Github repositories")}
+			return
+		}
+		archivedRepos[res.repo.ID] = struct{}{}
 	}
 
 	var sinceRepoID int64
@@ -695,6 +711,8 @@ func (s *GitHubSource) listPublic(ctx context.Context, results chan *githubResul
 		}
 		s.logger.Debug("github sync public", log.Int("repos", len(repos)), log.Error(err))
 		for _, r := range repos {
+			_, isArchived := archivedRepos[r.ID]
+			r.IsArchived = isArchived
 			if err := ctx.Err(); err != nil {
 				results <- &githubResult{err: err}
 				return
@@ -708,11 +726,11 @@ func (s *GitHubSource) listPublic(ctx context.Context, results chan *githubResul
 	}
 }
 
-// listPublicNonArchived handles the `public` keyword of the `repositoryQuery` config option when achived repos are excluded.
-// It returns the public non-archived repositories listed on the /search/repositories endpoint.
-// TODO: Remove this method when https://github.com/orgs/github-community/discussions/12554 gets resolved and just use listPublic()
-func (s *GitHubSource) listPublicNonArchived(ctx context.Context, results chan *githubResult) {
-	s.listSearch(ctx, "archived:false is:public", results)
+// listPublicArchivedRepos returns all of the public archived repositories listed on the /search/repositories endpoint.
+// NOTE: There is a limitation on the search API that this uses, if there are more than 1000 public archived repos that
+// were created in the same time (to the second), this list will miss any repos that lie outside of the first 1000.
+func (s *GitHubSource) listPublicArchivedRepos(ctx context.Context, results chan *githubResult) {
+	s.listSearch(ctx, "archived:true is:public", results)
 }
 
 // listAffiliated handles the `affiliated` keyword of the `repositoryQuery` config option.
@@ -804,7 +822,10 @@ func (q *repositoryQuery) Do(ctx context.Context, results chan *githubResult) {
 			After: q.Cursor,
 		})
 		if err != nil {
-			results <- &githubResult{err: errors.Wrapf(err, "failed to search GitHub repositories with %q", q)}
+			select {
+			case <-ctx.Done():
+			case results <- &githubResult{err: errors.Wrapf(err, "failed to search GitHub repositories with %q", q)}:
+			}
 			return
 		}
 
@@ -826,13 +847,19 @@ func (q *repositoryQuery) Do(ctx context.Context, results chan *githubResult) {
 				continue
 			}
 
-			results <- &githubResult{err: errors.Errorf("repositoryQuery %q couldn't be refined further, results would be missed", q)}
+			select {
+			case <-ctx.Done():
+			case results <- &githubResult{err: errors.Errorf("repositoryQuery %q couldn't be refined further, results would be missed", q)}:
+			}
 			return
-
 		}
 		q.Logger.Info("repositoryQuery matched", log.String("query", q.String()), log.Int("total", res.TotalCount), log.Int("page", len(res.Repos)))
 		for i := range res.Repos {
-			results <- &githubResult{repo: &res.Repos[i]}
+			select {
+			case <-ctx.Done():
+				return
+			case results <- &githubResult{repo: &res.Repos[i]}:
+			}
 		}
 
 		if res.EndCursor != "" {

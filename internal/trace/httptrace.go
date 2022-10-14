@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"time"
@@ -271,7 +272,7 @@ func loggingRecoverer(logger log.Logger, handler http.Handler) http.Handler {
 		defer func() {
 			if r := recover(); r != nil {
 				err := errors.Errorf("handler panic: %v", redact.Safe(r))
-				logger.Error("handler panic", log.Error(err))
+				logger.Error("handler panic", log.Error(err), log.String("stacktrace", string(debug.Stack())))
 				w.WriteHeader(http.StatusInternalServerError)
 			}
 		}()

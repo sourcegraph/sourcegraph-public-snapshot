@@ -8,7 +8,6 @@ import (
 )
 
 const getHomepagePanelsQuery = `
--- source: internal/usagestats/homepage_panels.go:GetHomePagePanels
 SELECT
   recentFilesPanelFileClicked / recentFilesPanelLoaded                         AS recentFilesClickedPercentage,
   recentSearchesPanelSearchClicked / recentSearchesPanelLoaded                 AS recentSearchClickedPercentage,

@@ -17,6 +17,7 @@ import {
     insightRepositoriesAsyncValidator,
 } from '../../../../../components'
 import { CodeInsightsBackendContext } from '../../../../../core'
+import { useUiFeatures } from '../../../../../hooks'
 import { getQueryPatternTypeFilter } from '../../../../insights/creation/search-insight'
 
 import { DynamicInsightPreview } from './DynamicInsightPreview'
@@ -40,10 +41,8 @@ export const DynamicCodeInsightExample: React.FunctionComponent<
 > = props => {
     const { telemetryService, ...otherProps } = props
 
-    const {
-        getFirstExampleRepository,
-        UIFeatures: { licensed },
-    } = useContext(CodeInsightsBackendContext)
+    const { getFirstExampleRepository } = useContext(CodeInsightsBackendContext)
+    const { licensed } = useUiFeatures()
 
     const form = useForm<CodeInsightExampleFormValues>({
         initialValues: INITIAL_INSIGHT_VALUES,

@@ -3,18 +3,11 @@ package autoindexing
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type operations struct {
-	// Commits
-	getStaleSourcedCommits *observation.Operation
-	updateSourcedCommits   *observation.Operation
-	deleteSourcedCommits   *observation.Operation
-
 	// Indexes
 	getIndexes                     *observation.Operation
 	getIndexByID                   *observation.Operation
@@ -22,18 +15,24 @@ type operations struct {
 	getRecentIndexesSummary        *observation.Operation
 	getLastIndexScanForRepository  *observation.Operation
 	deleteIndexByID                *observation.Operation
+	deleteIndexes                  *observation.Operation
 	deleteIndexesWithoutRepository *observation.Operation
+	expireFailedRecords            *observation.Operation
 	queueRepoRev                   *observation.Operation
 	queueIndex                     *observation.Operation
 	queueIndexForPackage           *observation.Operation
+
+	// Commits
+	getStaleSourcedCommits *observation.Operation
+	updateSourcedCommits   *observation.Operation
+	deleteSourcedCommits   *observation.Operation
 
 	// Index Configuration
 	getIndexConfigurationByRepositoryID    *observation.Operation
 	updateIndexConfigurationByRepositoryID *observation.Operation
 	inferIndexConfiguration                *observation.Operation
-
-	// Auth
-	checkCurrentUserIsSiteAdmin *observation.Operation
+	setInferenceScript                     *observation.Operation
+	getInferenceScript                     *observation.Operation
 
 	// Tags
 	getListTags *observation.Operation
@@ -41,9 +40,6 @@ type operations struct {
 	// Language support
 	getLanguagesRequestedBy   *observation.Operation
 	setRequestLanguageSupport *observation.Operation
-
-	insertDependencyIndexingJob *observation.Operation
-	handleIndexScheduler        *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -62,24 +58,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		})
 	}
 
-	handleIndexScheduler := observationContext.Operation(observation.Op{
-		Name:              "codeintel.indexing.HandleIndexSchedule",
-		MetricLabelValues: []string{"HandleIndexSchedule"},
-		Metrics:           m,
-		ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
-			if errors.As(err, &inference.LimitError{}) {
-				return observation.EmitForDefault.Without(observation.EmitForMetrics)
-			}
-			return observation.EmitForDefault
-		},
-	})
-
 	return &operations{
-		// Commits
-		getStaleSourcedCommits: op("GetStaleSourcedCommits"),
-		updateSourcedCommits:   op("UpdateSourcedCommits"),
-		deleteSourcedCommits:   op("DeleteSourcedCommits"),
-
 		// Indexes
 		getIndexes:                     op("GetIndexes"),
 		getIndexByID:                   op("GetIndexByID"),
@@ -87,18 +66,24 @@ func newOperations(observationContext *observation.Context) *operations {
 		getRecentIndexesSummary:        op("GetRecentIndexesSummary"),
 		getLastIndexScanForRepository:  op("GetLastIndexScanForRepository"),
 		deleteIndexByID:                op("DeleteIndexByID"),
+		deleteIndexes:                  op("DeleteIndexes"),
 		deleteIndexesWithoutRepository: op("DeleteIndexesWithoutRepository"),
+		expireFailedRecords:            op("ExpireFailedRecords"),
 		queueRepoRev:                   op("QueueRepoRev"),
 		queueIndex:                     op("QueueIndex"),
 		queueIndexForPackage:           op("QueueIndexForPackage"),
+
+		// Commits
+		getStaleSourcedCommits: op("GetStaleSourcedCommits"),
+		updateSourcedCommits:   op("UpdateSourcedCommits"),
+		deleteSourcedCommits:   op("DeleteSourcedCommits"),
 
 		// Index Configuration
 		getIndexConfigurationByRepositoryID:    op("GetIndexConfigurationByRepositoryID"),
 		updateIndexConfigurationByRepositoryID: op("UpdateIndexConfigurationByRepositoryID"),
 		inferIndexConfiguration:                op("InferIndexConfiguration"),
-
-		// Auth
-		checkCurrentUserIsSiteAdmin: op("CheckCurrentUserIsSiteAdmin"),
+		getInferenceScript:                     op("GetInferenceScript"),
+		setInferenceScript:                     op("SetInferenceScript"),
 
 		// Tags
 		getListTags: op("GetListTags"),
@@ -106,8 +91,5 @@ func newOperations(observationContext *observation.Context) *operations {
 		// Language support
 		getLanguagesRequestedBy:   op("GetLanguagesRequestedBy"),
 		setRequestLanguageSupport: op("SetRequestLanguageSupport"),
-
-		insertDependencyIndexingJob: op("InsertDependencyIndexingJob"),
-		handleIndexScheduler:        handleIndexScheduler,
 	}
 }

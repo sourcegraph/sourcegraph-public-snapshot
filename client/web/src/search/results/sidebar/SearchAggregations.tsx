@@ -2,7 +2,7 @@ import { FC, useEffect, useState, memo } from 'react'
 
 import { mdiArrowExpand } from '@mdi/js'
 
-import { SearchAggregationMode, SearchPatternType } from '@sourcegraph/shared/src/schema'
+import { SearchAggregationMode, SearchPatternType } from '@sourcegraph/search'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Icon } from '@sourcegraph/wildcard'
 

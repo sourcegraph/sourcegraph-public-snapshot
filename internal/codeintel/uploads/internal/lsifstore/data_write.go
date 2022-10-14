@@ -107,7 +107,6 @@ func (s *store) WriteDocuments(ctx context.Context, bundleID int, documents chan
 }
 
 const writeDocumentsTemporaryTableQuery = `
--- source: internal/codeintel/stores/lsifstore/data_write.go:WriteDocuments
 CREATE TEMPORARY TABLE t_lsif_data_documents (
 	path text NOT NULL,
 	ranges bytea,
@@ -120,7 +119,6 @@ CREATE TEMPORARY TABLE t_lsif_data_documents (
 `
 
 const writeDocumentsInsertQuery = `
--- source: internal/codeintel/stores/lsifstore/data_write.go:WriteDocuments
 INSERT INTO lsif_data_documents (dump_id, schema_version, path, ranges, hovers, monikers, packages, diagnostics, num_diagnostics)
 SELECT %s, %s, source.path, source.ranges, source.hovers, source.monikers, source.packages, source.diagnostics, source.num_diagnostics
 FROM t_lsif_data_documents source
@@ -179,7 +177,6 @@ func (s *store) WriteResultChunks(ctx context.Context, bundleID int, resultChunk
 }
 
 const writeResultChunksTemporaryTableQuery = `
--- source: internal/codeintel/stores/lsifstore/data_write.go:WriteResultChunks
 CREATE TEMPORARY TABLE t_lsif_data_result_chunks (
 	idx integer NOT NULL,
 	data bytea NOT NULL
@@ -187,7 +184,6 @@ CREATE TEMPORARY TABLE t_lsif_data_result_chunks (
 `
 
 const writeResultChunksInsertQuery = `
--- source: internal/codeintel/stores/lsifstore/data_write.go:WriteResultChunks
 INSERT INTO lsif_data_result_chunks (dump_id, idx, data)
 SELECT %s, source.idx, source.data
 FROM t_lsif_data_result_chunks source
@@ -282,7 +278,6 @@ func (s *store) writeMonikers(ctx context.Context, bundleID int, tableName strin
 }
 
 const writeLocationsTemporaryTableQuery = `
--- source: internal/codeintel/stores/lsifstore/data_write.go:writeLocations
 CREATE TEMPORARY TABLE t_%s (
 	scheme text NOT NULL,
 	identifier text NOT NULL,
@@ -292,7 +287,6 @@ CREATE TEMPORARY TABLE t_%s (
 `
 
 const writeLocationsInsertQuery = `
--- source: internal/codeintel/stores/lsifstore/data_write.go:writeLocations
 INSERT INTO %s (dump_id, schema_version, scheme, identifier, data, num_locations)
 SELECT %s, %s, source.scheme, source.identifier, source.data, source.num_locations
 FROM t_%s source

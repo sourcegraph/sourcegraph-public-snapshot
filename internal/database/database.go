@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 )
@@ -49,6 +50,7 @@ type DB interface {
 	UserPublicRepos() UserPublicRepoStore
 	Users() UserStore
 	WebhookLogs(encryption.Key) WebhookLogStore
+	Webhooks(encryption.Key) WebhookStore
 	RepoStatistics() RepoStatisticsStore
 
 	Transact(context.Context) (DB, error)
@@ -73,15 +75,15 @@ type db struct {
 }
 
 func (d *db) QueryContext(ctx context.Context, q string, args ...any) (*sql.Rows, error) {
-	return d.Handle().QueryContext(ctx, q, args...)
+	return d.Handle().QueryContext(dbconn.SkipFrameForQuerySource(ctx), q, args...)
 }
 
 func (d *db) ExecContext(ctx context.Context, q string, args ...any) (sql.Result, error) {
-	return d.Handle().ExecContext(ctx, q, args...)
+	return d.Handle().ExecContext(dbconn.SkipFrameForQuerySource(ctx), q, args...)
 }
 
 func (d *db) QueryRowContext(ctx context.Context, q string, args ...any) *sql.Row {
-	return d.Handle().QueryRowContext(ctx, q, args...)
+	return d.Handle().QueryRowContext(dbconn.SkipFrameForQuerySource(ctx), q, args...)
 }
 
 func (d *db) Transact(ctx context.Context) (DB, error) {
@@ -117,7 +119,7 @@ func (d *db) EventLogs() EventLogStore {
 }
 
 func (d *db) SecurityEventLogs() SecurityEventLogsStore {
-	return SecurityEventLogsWith(d.Store)
+	return SecurityEventLogsWith(d.logger, d.Store)
 }
 
 func (d *db) ExternalServices() ExternalServiceStore {
@@ -214,6 +216,10 @@ func (d *db) Users() UserStore {
 
 func (d *db) WebhookLogs(key encryption.Key) WebhookLogStore {
 	return WebhookLogsWith(d.Store, key)
+}
+
+func (d *db) Webhooks(key encryption.Key) WebhookStore {
+	return WebhooksWith(d.Store, key)
 }
 
 func (d *db) RepoStatistics() RepoStatisticsStore {

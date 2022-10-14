@@ -706,13 +706,13 @@ func TestRepoHasCommitAfter(t *testing.T) {
 	cases := []struct {
 		name        string
 		nameFilter  string
-		commitAfter string
+		commitAfter *query.RepoHasCommitAfterArgs
 		expected    []*search.RepositoryRevisions
 		err         error
 	}{{
 		name:        "no filters",
 		nameFilter:  ".*",
-		commitAfter: "",
+		commitAfter: nil,
 		expected: []*search.RepositoryRevisions{
 			mkHead(repoA),
 			mkHead(repoB),
@@ -721,26 +721,32 @@ func TestRepoHasCommitAfter(t *testing.T) {
 		},
 		err: nil,
 	}, {
-		name:        "commit after",
-		nameFilter:  ".*",
-		commitAfter: "yesterday",
+		name:       "commit after",
+		nameFilter: ".*",
+		commitAfter: &query.RepoHasCommitAfterArgs{
+			TimeRef: "yesterday",
+		},
 		expected: []*search.RepositoryRevisions{
 			mkHead(repoA),
 			mkHead(repoB),
 		},
 		err: nil,
 	}, {
-		name:        "err commit after",
-		nameFilter:  "repoD",
-		commitAfter: "yesterday",
-		expected:    nil,
-		err:         ErrNoResolvedRepos,
+		name:       "err commit after",
+		nameFilter: "repoD",
+		commitAfter: &query.RepoHasCommitAfterArgs{
+			TimeRef: "yesterday",
+		},
+		expected: nil,
+		err:      ErrNoResolvedRepos,
 	}, {
-		name:        "no commit after",
-		nameFilter:  "repoC",
-		commitAfter: "yesterday",
-		expected:    nil,
-		err:         ErrNoResolvedRepos,
+		name:       "no commit after",
+		nameFilter: "repoC",
+		commitAfter: &query.RepoHasCommitAfterArgs{
+			TimeRef: "yesterday",
+		},
+		expected: nil,
+		err:      ErrNoResolvedRepos,
 	}}
 
 	for _, tc := range cases {

@@ -4,13 +4,14 @@ import { fromEvent } from 'rxjs'
 import { filter, map, mapTo, tap } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
-import { LineOrPositionOrRange, subtypeOf } from '@sourcegraph/common'
+import { fetchCache, LineOrPositionOrRange, subtypeOf } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { toAbsoluteBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { background } from '../../../browser-extension/web-extension-api/runtime'
 import { ResolveRepoNameResult, ResolveRepoNameVariables } from '../../../graphql-operations'
+import { isInPage } from '../../context'
 import { CodeHost } from '../shared/codeHost'
 import { CodeView } from '../shared/codeViews'
 import { createNotificationClassNameGetter } from '../shared/getNotificationClassName'
@@ -134,13 +135,30 @@ const notificationClassNames = {
  * @description see https://docs.gitlab.com/ee/api/projects.html#get-single-project
  * @description see rate limit https://docs.gitlab.com/ee/user/admin_area/settings/user_and_ip_rate_limits.html#response-headers
  */
-export const isPrivateRepository = (repoName: string, fetchCache = background.fetchCache): Promise<boolean> => {
+export const isPrivateRepository = (
+    repoName: string,
+    _fetchCache: null | typeof fetchCache = null
+): Promise<boolean> => {
     if (window.location.hostname !== 'gitlab.com' || !repoName) {
         return Promise.resolve(true)
     }
-    return fetchCache({
+
+    const fetchCacheImpl: typeof fetchCache =
+        _fetchCache !== null
+            ? // When a fetchCache argument is supplied, it takes precedence. This is
+              // useful for test code.
+              _fetchCache
+            : isInPage
+            ? // When the script is run via the native integration, we can make
+              // the request from tha main thread.
+              fetchCache
+            : // When the script is run via the browser extension, make the
+              // request via the background thread.
+              background.fetchCache
+
+    return fetchCacheImpl({
         url: `https://gitlab.com/api/v4/projects/${encodeURIComponent(repoName)}`,
-        credentials: 'omit', // it returns different response based on auth state
+        credentials: 'omit', // Make the request as if the user is not logged-in.
         cacheMaxAge: 60 * 60 * 1000, // 1 hour
     })
         .then(response => {

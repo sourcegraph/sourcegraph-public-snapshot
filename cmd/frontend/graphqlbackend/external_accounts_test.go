@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 func TestExternalAccounts_DeleteExternalAccount(t *testing.T) {
@@ -27,7 +28,7 @@ func TestExternalAccounts_DeleteExternalAccount(t *testing.T) {
 		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 		act := actor.Actor{UID: 1}
 		ctx := actor.WithActor(context.Background(), &act)
-		sr := newSchemaResolver(db)
+		sr := newSchemaResolver(db, gitserver.NewClient(db))
 
 		spec := extsvc.AccountSpec{
 			ServiceType: extsvc.TypeGitHub,
@@ -60,7 +61,7 @@ func TestExternalAccounts_DeleteExternalAccount(t *testing.T) {
 		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 		act := actor.Actor{UID: 1}
 		ctx := actor.WithActor(context.Background(), &act)
-		sr := newSchemaResolver(db)
+		sr := newSchemaResolver(db, gitserver.NewClient(db))
 
 		spec := extsvc.AccountSpec{
 			ServiceType: extsvc.TypeGitHub,

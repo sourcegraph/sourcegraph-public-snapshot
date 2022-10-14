@@ -213,13 +213,6 @@ func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.Accou
 	return listProjects(ctx, client)
 }
 
-// FetchUserPermsByToken is the same as FetchUserPerms, but it only requires a
-// token.
-func (p *SudoProvider) FetchUserPermsByToken(ctx context.Context, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
-	client := p.clientProvider.GetOAuthClient(token)
-	return listProjects(ctx, client)
-}
-
 // listProjects is a helper function to request for all private projects that are accessible
 // (access level: 20 => Reporter access) by the authenticated or impersonated user in the client.
 // It may return partial but valid results in case of error, and it is up to callers to decide

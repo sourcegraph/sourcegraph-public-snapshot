@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -364,8 +365,8 @@ func (r *searchContextResolver) Spec() string {
 	return searchcontexts.GetSearchContextSpec(r.sc)
 }
 
-func (r *searchContextResolver) UpdatedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.sc.UpdatedAt}
+func (r *searchContextResolver) UpdatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.sc.UpdatedAt}
 }
 
 func (r *searchContextResolver) Namespace(ctx context.Context) (*graphqlbackend.NamespaceResolver, error) {

@@ -7,5 +7,8 @@ import (
 )
 
 type UploadService interface {
-	NewCommittedAtBackfiller(interval time.Duration, batchSize int) goroutine.BackgroundRoutine
+	NewCommittedAtBackfiller(
+		interval time.Duration,
+		batchSize int,
+	) goroutine.BackgroundRoutine
 }

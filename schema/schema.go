@@ -68,12 +68,12 @@ type ApiRatelimit struct {
 
 // AuditLog description: EXPERIMENTAL: Configuration for audit logging (specially formatted log entries for tracking sensitive events)
 type AuditLog struct {
+	// BackgroundJobs description: Capture security events performed by the background jobs (adds significant noise).
+	BackgroundJobs bool `json:"backgroundJobs"`
 	// GitserverAccess description: Capture gitserver access logs as part of the audit log.
 	GitserverAccess bool `json:"gitserverAccess"`
 	// GraphQL description: Capture GraphQL requests and responses as part of the audit log.
 	GraphQL bool `json:"graphQL"`
-	// SecurityEvents description: Capture security events as part of the audit log.
-	SecurityEvents bool `json:"securityEvents"`
 }
 
 // AuthAccessTokens description: Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.
@@ -536,6 +536,7 @@ type EncryptionKeys struct {
 	EnableCache            bool           `json:"enableCache,omitempty"`
 	ExternalServiceKey     *EncryptionKey `json:"externalServiceKey,omitempty"`
 	UserExternalAccountKey *EncryptionKey `json:"userExternalAccountKey,omitempty"`
+	WebhookKey             *EncryptionKey `json:"webhookKey,omitempty"`
 	WebhookLogKey          *EncryptionKey `json:"webhookLogKey,omitempty"`
 }
 type ExcludedAWSCodeCommitRepo struct {
@@ -607,7 +608,7 @@ type ExperimentalFeatures struct {
 	ApidocsSearchIndexing string `json:"apidocs.search.indexing,omitempty"`
 	// BitbucketServerFastPerm description: DEPRECATED: Configure in Bitbucket Server config.
 	BitbucketServerFastPerm string `json:"bitbucketServerFastPerm,omitempty"`
-	// CustomGitFetch description: JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command.
+	// CustomGitFetch description: JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command. To enable this feature set environment variable `ENABLE_CUSTOM_GIT_FETCH` as `true` on gitserver.
 	CustomGitFetch []*CustomGitFetchMapping `json:"customGitFetch,omitempty"`
 	// DebugLog description: Turns on debug logging for specific debugging scenarios.
 	DebugLog *DebugLog `json:"debug.log,omitempty"`
@@ -631,6 +632,8 @@ type ExperimentalFeatures struct {
 	GitServerPinnedRepos map[string]string `json:"gitServerPinnedRepos,omitempty"`
 	// GoPackages description: Allow adding Go package host connections
 	GoPackages string `json:"goPackages,omitempty"`
+	// HideSourcegraphOperatorLogin description: Enables hiding Sourcegraph operator auth provider on login page.
+	HideSourcegraphOperatorLogin bool `json:"hideSourcegraphOperatorLogin,omitempty"`
 	// InsightsAlternateLoadingStrategy description: Use an in-memory strategy of loading Code Insights. Should only be used for benchmarking on large instances, not for customer use currently.
 	InsightsAlternateLoadingStrategy bool `json:"insightsAlternateLoadingStrategy,omitempty"`
 	// JvmPackages description: Allow adding JVM package host connections
@@ -1861,8 +1864,18 @@ type SettingsExperimentalFeatures struct {
 	EnableSmartQuery *bool `json:"enableSmartQuery,omitempty"`
 	// FuzzyFinder description: Enables fuzzy finder with the keyboard shortcut `Cmd+K` on macOS and `Ctrl+K` on Linux/Windows.
 	FuzzyFinder *bool `json:"fuzzyFinder,omitempty"`
+	// FuzzyFinderActions description: Enables the 'Actions' tab of the fuzzy finder
+	FuzzyFinderActions *bool `json:"fuzzyFinderActions,omitempty"`
+	// FuzzyFinderAll description: Enables the 'All' tab of the fuzzy finder
+	FuzzyFinderAll *bool `json:"fuzzyFinderAll,omitempty"`
 	// FuzzyFinderCaseInsensitiveFileCountThreshold description: The maximum number of files a repo can have to use case-insensitive fuzzy finding
 	FuzzyFinderCaseInsensitiveFileCountThreshold *float64 `json:"fuzzyFinderCaseInsensitiveFileCountThreshold,omitempty"`
+	// FuzzyFinderNavbar description: Enables the 'Fuzzy finder' action in the global navigation bar
+	FuzzyFinderNavbar *bool `json:"fuzzyFinderNavbar,omitempty"`
+	// FuzzyFinderRepositories description: Enables the 'Repositories' tab of the fuzzy finder
+	FuzzyFinderRepositories *bool `json:"fuzzyFinderRepositories,omitempty"`
+	// FuzzyFinderSymbols description: Enables the 'Symbols' tab of the fuzzy finder
+	FuzzyFinderSymbols *bool `json:"fuzzyFinderSymbols,omitempty"`
 	// GoCodeCheckerTemplates description: Shows a panel with code insights templates for go code checker results.
 	GoCodeCheckerTemplates *bool `json:"goCodeCheckerTemplates,omitempty"`
 	// HomePanelsComputeSuggestions description: Enable the home panels compute suggestions feature.

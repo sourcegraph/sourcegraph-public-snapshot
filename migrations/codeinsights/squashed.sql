@@ -335,6 +335,48 @@ CREATE SEQUENCE metadata_id_seq
 
 ALTER SEQUENCE metadata_id_seq OWNED BY metadata.id;
 
+CREATE TABLE repo_iterator (
+    id integer NOT NULL,
+    created_at timestamp without time zone DEFAULT now(),
+    started_at timestamp without time zone,
+    completed_at timestamp without time zone,
+    last_updated_at timestamp without time zone DEFAULT now() NOT NULL,
+    runtime_duration bigint DEFAULT 0 NOT NULL,
+    percent_complete double precision DEFAULT 0 NOT NULL,
+    total_count integer DEFAULT 0 NOT NULL,
+    success_count integer DEFAULT 0 NOT NULL,
+    repos integer[],
+    repo_cursor integer DEFAULT 0
+);
+
+CREATE TABLE repo_iterator_errors (
+    id integer NOT NULL,
+    repo_iterator_id integer NOT NULL,
+    repo_id integer NOT NULL,
+    error_message text[] NOT NULL,
+    failure_count integer DEFAULT 1
+);
+
+CREATE SEQUENCE repo_iterator_errors_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE repo_iterator_errors_id_seq OWNED BY repo_iterator_errors.id;
+
+CREATE SEQUENCE repo_iterator_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE repo_iterator_id_seq OWNED BY repo_iterator.id;
+
 CREATE TABLE repo_names (
     id bigint NOT NULL,
     name citext NOT NULL,
@@ -416,6 +458,10 @@ ALTER TABLE ONLY insights_background_jobs ALTER COLUMN id SET DEFAULT nextval('i
 
 ALTER TABLE ONLY metadata ALTER COLUMN id SET DEFAULT nextval('metadata_id_seq'::regclass);
 
+ALTER TABLE ONLY repo_iterator ALTER COLUMN id SET DEFAULT nextval('repo_iterator_id_seq'::regclass);
+
+ALTER TABLE ONLY repo_iterator_errors ALTER COLUMN id SET DEFAULT nextval('repo_iterator_errors_id_seq'::regclass);
+
 ALTER TABLE ONLY repo_names ALTER COLUMN id SET DEFAULT nextval('repo_names_id_seq'::regclass);
 
 ALTER TABLE ONLY commit_index_metadata
@@ -453,6 +499,12 @@ ALTER TABLE ONLY insights_background_jobs
 
 ALTER TABLE ONLY metadata
     ADD CONSTRAINT metadata_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY repo_iterator_errors
+    ADD CONSTRAINT repo_iterator_errors_pk PRIMARY KEY (id);
+
+ALTER TABLE ONLY repo_iterator
+    ADD CONSTRAINT repo_iterator_pk PRIMARY KEY (id);
 
 ALTER TABLE ONLY repo_names
     ADD CONSTRAINT repo_names_pkey PRIMARY KEY (id);
@@ -498,6 +550,8 @@ CREATE INDEX metadata_metadata_gin ON metadata USING gin (metadata);
 
 CREATE UNIQUE INDEX metadata_metadata_unique_idx ON metadata USING btree (metadata);
 
+CREATE INDEX repo_iterator_errors_fk_idx ON repo_iterator_errors USING btree (repo_iterator_id);
+
 CREATE INDEX repo_names_name_trgm ON repo_names USING gin (lower((name)::text) gin_trgm_ops);
 
 CREATE UNIQUE INDEX repo_names_name_unique_idx ON repo_names USING btree (name);
@@ -542,6 +596,9 @@ ALTER TABLE ONLY insight_view_series
 
 ALTER TABLE ONLY insight_view_series
     ADD CONSTRAINT insight_view_series_insight_view_id_fkey FOREIGN KEY (insight_view_id) REFERENCES insight_view(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY repo_iterator_errors
+    ADD CONSTRAINT repo_iterator_fk FOREIGN KEY (repo_iterator_id) REFERENCES repo_iterator(id);
 
 ALTER TABLE ONLY series_points
     ADD CONSTRAINT series_points_metadata_id_fkey FOREIGN KEY (metadata_id) REFERENCES metadata(id) ON DELETE CASCADE DEFERRABLE;

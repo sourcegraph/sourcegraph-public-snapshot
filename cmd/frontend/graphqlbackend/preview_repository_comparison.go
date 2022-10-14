@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 type PreviewRepositoryComparisonResolver interface {
@@ -17,7 +18,7 @@ type PreviewRepositoryComparisonResolver interface {
 }
 
 // NewPreviewRepositoryComparisonResolver is a convenience function to get a preview diff from a repo, given a base rev and the git patch.
-func NewPreviewRepositoryComparisonResolver(ctx context.Context, db database.DB, repo *RepositoryResolver, baseRev, patch string) (*previewRepositoryComparisonResolver, error) {
+func NewPreviewRepositoryComparisonResolver(ctx context.Context, db database.DB, client gitserver.Client, repo *RepositoryResolver, baseRev, patch string) (*previewRepositoryComparisonResolver, error) {
 	args := &RepositoryCommitArgs{Rev: baseRev}
 	commit, err := repo.Commit(ctx, args)
 	if err != nil {
@@ -25,6 +26,7 @@ func NewPreviewRepositoryComparisonResolver(ctx context.Context, db database.DB,
 	}
 	return &previewRepositoryComparisonResolver{
 		db:     db,
+		client: client,
 		repo:   repo,
 		commit: commit,
 		patch:  patch,
@@ -33,6 +35,7 @@ func NewPreviewRepositoryComparisonResolver(ctx context.Context, db database.DB,
 
 type previewRepositoryComparisonResolver struct {
 	db     database.DB
+	client gitserver.Client
 	repo   *RepositoryResolver
 	commit *GitCommitResolver
 	patch  string
@@ -53,8 +56,8 @@ func (r *previewRepositoryComparisonResolver) BaseRepository() *RepositoryResolv
 	return r.repo
 }
 
-func (r *previewRepositoryComparisonResolver) FileDiffs(ctx context.Context, args *FileDiffsConnectionArgs) (FileDiffConnection, error) {
-	return NewFileDiffConnectionResolver(r.db, r.commit, r.commit, args, fileDiffConnectionCompute(r.patch), previewNewFile), nil
+func (r *previewRepositoryComparisonResolver) FileDiffs(_ context.Context, args *FileDiffsConnectionArgs) (FileDiffConnection, error) {
+	return NewFileDiffConnectionResolver(r.db, r.client, r.commit, r.commit, args, fileDiffConnectionCompute(r.patch), previewNewFile), nil
 }
 
 func fileDiffConnectionCompute(patch string) func(ctx context.Context, args *FileDiffsConnectionArgs) ([]*diff.FileDiff, int32, bool, error) {
