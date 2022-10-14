@@ -9,7 +9,7 @@ import { tap } from 'rxjs/operators'
 import { isErrorLike, ErrorLike } from '@sourcegraph/common'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, Button, Icon, PageHeader, Container } from '@sourcegraph/wildcard'
+import { Link, ButtonLink, Icon, PageHeader, Container } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { ListExternalServiceFields, Scalars, ExternalServicesResult } from '../../graphql-operations'
@@ -17,9 +17,9 @@ import { FilteredConnection, FilteredConnectionQueryArguments } from '../Filtere
 import { PageTitle } from '../PageTitle'
 
 import { queryExternalServices as _queryExternalServices } from './backend'
-import { ExternalServiceNodeProps, ExternalServiceNode } from './ExternalServiceNode'
 import { ExternalServiceEditingDisabledAlert } from './ExternalServiceEditingDisabledAlert'
 import { ExternalServiceEditingTemporaryAlert } from './ExternalServiceEditingTemporaryAlert'
+import { ExternalServiceNodeProps, ExternalServiceNode } from './ExternalServiceNode'
 
 interface Props extends ActivationProps, TelemetryProps {
     history: H.History
@@ -102,8 +102,8 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
                 headingElement="h2"
                 actions={
                     <>
-                        {!isManagingOtherUser && !editingDisabled && (
-                            <Button
+                        {!isManagingOtherUser && (
+                            <ButtonLink
                                 className="test-goto-add-external-service-page"
                                 to={`${routingPrefix}/external-services/new`}
                                 variant="primary"
@@ -111,7 +111,7 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
                                 disabled={editingDisabled}
                             >
                                 <Icon aria-hidden={true} svgPath={mdiPlus} /> Add code host
-                            </Button>
+                            </ButtonLink>
                         )}
                     </>
                 }

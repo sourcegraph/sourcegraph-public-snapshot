@@ -80,7 +80,7 @@ export const SiteAdminExternalServicesArea: React.FunctionComponent<React.PropsW
             />
             <Route path={match.url + '/add'} render={() => <Redirect to="new" />} exact={true} />
             <Route
-                path={match.url + '/new'}
+                path={`${match.url}/new`}
                 render={props => (
                     <AddExternalServicesPage
                         {...outerProps}
@@ -94,9 +94,8 @@ export const SiteAdminExternalServicesArea: React.FunctionComponent<React.PropsW
                 exact={true}
             />
             <Route
-                path={match.url + '/:id'}
-                // TODO: "No overload matches this call" here, but works?
-                render={({ match, ...props }: RouteComponentProps<{ id: Scalars['ID'] }> & Props) => (
+                path={`${match.url}/:id`}
+                render={({ match, ...props }: RouteComponentProps<{ id: Scalars['ID'] }>) => (
                     <ExternalServicePage
                         {...outerProps}
                         {...props}
