@@ -2,10 +2,11 @@ package server
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
 	"fmt"
-	"io"
 	"io/fs"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -85,7 +86,7 @@ func unpackRubyPackage(packageURL string, pkg []byte, workDir string) error {
 		SkipInvalid:    true,
 		SkipDuplicates: true,
 		Filter: func(path string, file fs.FileInfo) bool {
-			return path == "data.tar.gz"
+			return path == "data.tar.gz" || path == "metadata.gz"
 		},
 	}
 
@@ -99,18 +100,29 @@ func unpackRubyPackage(packageURL string, pkg []byte, workDir string) error {
 		return errors.Wrapf(err, "failed to tar downloaded bytes from URL %s", packageURL)
 	}
 
-	dataTarGzPath := filepath.Join(tmpDir, "data.tar.gz")
-	dataTarGzFile, err := os.Open(dataTarGzPath)
+	err = unpackRubyDataTarGz(packageURL, filepath.Join(tmpDir, "data.tar.gz"), workDir)
 	if err != nil {
-		return errors.Wrapf(err, "failed to read file from downloaded URL %s", packageURL)
+		return err
 	}
-	defer dataTarGzFile.Close()
-
-	return unpackRubyDataTarGz(dataTarGzFile, workDir)
+	metadata, err := os.ReadFile(filepath.Join(tmpDir, "metadata.gz"))
+	if err != nil {
+		return err
+	}
+	metadataReader, err := gzip.NewReader(bytes.NewReader(metadata))
+	if err != nil {
+		return err
+	}
+	metadataBytes, err := ioutil.ReadAll(metadataReader)
+	return os.WriteFile(filepath.Join(workDir, "rubygems-metadata.yml"), metadataBytes, 0644)
 }
 
 // unpackRubyDataTarGz unpacks the given `data.tar.gz` from a downloaded RubyGem.
-func unpackRubyDataTarGz(r io.Reader, workDir string) error {
+func unpackRubyDataTarGz(packageURL, path string, workDir string) error {
+	r, err := os.Open(path)
+	if err != nil {
+		return errors.Wrapf(err, "failed to read file from downloaded URL %s", packageURL)
+	}
+	defer r.Close()
 	opts := unpack.Opts{
 		SkipInvalid:    true,
 		SkipDuplicates: true,
