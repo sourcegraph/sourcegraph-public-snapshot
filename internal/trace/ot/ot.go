@@ -12,9 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 )
 
-// samplingRetainKey is the attribute key used to mark as span as to be retained.
-var samplingRetainKey = "sampling.retain"
-
 // Deprecated: Use otel.Tracer(...) from go.opentelemetry.io/otel instead.
 //
 // GetTracer returns the tracer to use for the given context. If ShouldTrace returns true, it
@@ -51,13 +48,4 @@ func getTracer(ctx context.Context, tracer opentracing.Tracer) opentracing.Trace
 		return opentracing.GlobalTracer()
 	}
 	return tracer
-}
-
-// Deprecated: Use otel.Tracer(...).SamplingRetain() from go.opentelemetry.io/otel or trace.New(...)
-// from github.com/sourcegraph/sourcegraph/internal/trace instead.
-//
-// SamplingRetainSpan marks a span as to be retained by the OTEL Collector by adding an
-// attribute which is to be used by the TailSamplingProcessor if enabled.
-func SamplingRetainSpan(span opentracing.Span) opentracing.Span {
-	return span.SetTag(samplingRetainKey, "true")
 }

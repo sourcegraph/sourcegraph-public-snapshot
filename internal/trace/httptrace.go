@@ -127,15 +127,6 @@ func HTTPMiddleware(logger log.Logger, next http.Handler, siteConfig conftypes.S
 		ext.HTTPUrl.Set(span, r.URL.String())
 		ext.HTTPMethod.Set(span, r.Method)
 		span.SetTag("http.referer", r.Header.Get("referer"))
-		if policy.ShouldTrace(ctx) {
-			// Experimental: it order to mitigate the amount of traces sent by components which are
-			// respecting the tracing policy, we can delegate the final decision to the collector,
-			// and merely indicate that when it's selective or all, we want requests to be retained.
-			//
-			// By setting this attribute on the span, a sampling policy will match on the OTEL Collector
-			// and explicitly sample the present trace.
-			ot.SamplingRetainSpan(span)
-		}
 		defer span.Finish()
 
 		// get trace ID
