@@ -382,7 +382,7 @@ describe('Search', () => {
             await driver.page.waitForSelector('.test-search-result', { visible: true })
 
             const results = await driver.page.evaluate(() =>
-                [...document.querySelectorAll('[data-testid="result-container-header"]')].map(label =>
+                [...document.querySelectorAll('.test-search-result-label')].map(label =>
                     (label.textContent || '').trim()
                 )
             )
@@ -484,7 +484,7 @@ describe('Search', () => {
             testContext.overrideSearchStreamEvents(symbolSearchStreamEvents)
 
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
-            await driver.page.waitForSelector('[data-testid="symbol-search-result"]', {
+            await driver.page.waitForSelector('.test-file-match-children-item', {
                 visible: true,
             })
 
