@@ -169,6 +169,7 @@ func (s *Store) GetExternal(ctx context.Context, secret ExternalSecret, fallback
 			} else {
 				value.Value = val
 				// Since we were able to get a secret using the fallback, we set the error to nil
+				// this also ensures that the fallback value is also saved to the store
 				err = nil
 				break
 			}
