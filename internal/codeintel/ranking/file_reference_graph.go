@@ -118,6 +118,17 @@ func (s *Service) buildFileReferenceGraph(ctx context.Context, repoName api.Repo
 
 		emitted := map[string]struct{}{}
 		for _, searchTermAndPaths := range searchTermsAndPaths {
+			allEmitted := true
+			for _, p := range searchTermAndPaths.paths {
+				if _, ok := emitted[p]; !ok {
+					allEmitted = false
+					break
+				}
+			}
+			if allEmitted {
+				continue
+			}
+
 			symbol := searchTermAndPaths.symbol
 			n := len(symbol)
 
