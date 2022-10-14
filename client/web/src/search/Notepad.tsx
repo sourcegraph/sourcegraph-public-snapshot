@@ -24,8 +24,7 @@ import type { LocationDescriptorObject } from 'history'
 
 import { isMacPlatform } from '@sourcegraph/common'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
-import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'
+import { HighlightLineRange, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { appendContextFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
@@ -736,7 +735,7 @@ function fileName(path: string): string {
     return parts[parts.length - 1]
 }
 
-function formatLineRange(lineRange: IHighlightLineRange): string {
+function formatLineRange(lineRange: HighlightLineRange): string {
     if (lineRange.startLine === lineRange.endLine) {
         return `L${lineRange.startLine + 1}`
     }

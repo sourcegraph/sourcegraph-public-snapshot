@@ -3,7 +3,6 @@ import { from, Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { getDocumentNode, gql } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 
 import {
     CodeIntelligenceConfigurationPoliciesResult,
@@ -58,7 +57,7 @@ export const queryPolicies = (
         forDataRetention,
         forIndexing,
         after,
-    }: GQL.ICodeIntelligenceConfigurationPoliciesOnQueryArguments,
+    }: Partial<CodeIntelligenceConfigurationPoliciesVariables>,
     client: ApolloClient<object>
 ): Observable<PolicyConnection> => {
     const variables: CodeIntelligenceConfigurationPoliciesVariables = {

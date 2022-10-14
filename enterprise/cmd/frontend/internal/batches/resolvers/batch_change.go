@@ -9,6 +9,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
@@ -25,7 +26,8 @@ import (
 var _ graphqlbackend.BatchChangeResolver = &batchChangeResolver{}
 
 type batchChangeResolver struct {
-	store *store.Store
+	store           *store.Store
+	gitserverClient gitserver.Client
 
 	batchChange *btypes.BatchChange
 
@@ -198,9 +200,10 @@ func (r *batchChangeResolver) Changesets(
 	}
 	opts.BatchChangeID = r.batchChange.ID
 	return &changesetsConnectionResolver{
-		store:    r.store,
-		opts:     opts,
-		optsSafe: safe,
+		store:           r.store,
+		gitserverClient: r.gitserverClient,
+		opts:            opts,
+		optsSafe:        safe,
 	}, nil
 }
 
@@ -308,9 +311,10 @@ func (r *batchChangeResolver) BulkOperations(
 	}
 
 	return &bulkOperationConnectionResolver{
-		store:         r.store,
-		batchChangeID: r.batchChange.ID,
-		opts:          opts,
+		store:           r.store,
+		gitserverClient: r.gitserverClient,
+		batchChangeID:   r.batchChange.ID,
+		opts:            opts,
 	}, nil
 }
 

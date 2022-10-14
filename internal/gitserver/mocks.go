@@ -18,8 +18,6 @@ import (
 var Mocks, emptyMocks struct {
 	ExecReader      func(args []string) (reader io.ReadCloser, err error)
 	ResolveRevision func(spec string, opt ResolveRevisionOptions) (api.CommitID, error)
-	MergeBase       func(repo api.RepoName, a, b api.CommitID) (api.CommitID, error)
-	ReadFile        func(commit api.CommitID, name string) ([]byte, error)
 }
 
 // ResetMocks clears the mock functions set on Mocks (so that subsequent tests don't inadvertently

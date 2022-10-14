@@ -2,7 +2,7 @@ import { FC, ReactNode, ReactElement, useCallback, useMemo, HTMLAttributes, memo
 
 import { mdiInformationOutline } from '@mdi/js'
 
-import { QueryStateUpdate, QueryUpdate } from '@sourcegraph/search'
+import { QueryStateUpdate, QueryUpdate, SearchPatternType } from '@sourcegraph/search'
 import {
     SearchSidebar,
     SearchSidebarSection,
@@ -14,7 +14,6 @@ import {
     getFiltersOfKind,
     useLastRepoName,
 } from '@sourcegraph/search-ui'
-import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
