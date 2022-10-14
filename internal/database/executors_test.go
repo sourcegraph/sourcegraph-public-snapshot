@@ -1,4 +1,4 @@
-package db
+package database
 
 import (
 	"context"
@@ -12,16 +12,18 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	pgs "github.com/sourcegraph/sourcegraph/internal/services/executors/store"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestExecutorsList(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	store := db.Executors().(*executorStore)
 	ctx := context.Background()
 
 	executors := []types.Executor{
@@ -38,7 +40,7 @@ func TestExecutorsList(t *testing.T) {
 	}
 
 	for _, executor := range executors {
-		store.UpsertHeartbeat(ctx, executor)
+		db.Executors().UpsertHeartbeat(ctx, executor)
 	}
 
 	now := time.Unix(1587396557, 0).UTC()
@@ -58,7 +60,8 @@ func TestExecutorsList(t *testing.T) {
 		10: t2,
 	}
 	for id, lastSeenAt := range lastSeenAtByID {
-		if err := store.db.Exec(ctx, sqlf.Sprintf(`UPDATE executor_heartbeats SET last_seen_at = %s WHERE id = %s`, lastSeenAt, id)); err != nil {
+		q := sqlf.Sprintf(`UPDATE executor_heartbeats SET last_seen_at = %s WHERE id = %s`, lastSeenAt, id)
+		if _, err := db.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 			t.Fatalf("failed to set up executors for test: %s", err)
 		}
 	}
@@ -89,14 +92,19 @@ func TestExecutorsList(t *testing.T) {
 		)
 
 		t.Run(name, func(t *testing.T) {
-			executors, totalCount, err := store.list(ctx, pgs.ExecutorStoreListOptions{
+			opts := ExecutorStoreListOptions{
 				Query:  testCase.query,
 				Active: testCase.active,
 				Limit:  3,
 				Offset: lo,
-			}, now)
+			}
+			executors, err := store.list(ctx, opts, now)
 			if err != nil {
 				t.Fatalf("unexpected error getting executors: %s", err)
+			}
+			totalCount, err := store.count(ctx, opts, now)
+			if err != nil {
+				t.Fatalf("unexpected error counting executors: %s", err)
 			}
 			if totalCount != len(testCase.expectedIDs) {
 				t.Errorf("unexpected total count. want=%d have=%d", len(testCase.expectedIDs), totalCount)
@@ -132,13 +140,17 @@ func TestExecutorsList(t *testing.T) {
 }
 
 func TestExecutorsGetByID(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	store := db.Executors().(*executorStore)
 	ctx := context.Background()
 
 	// Executor does not exist initially
-	if _, exists, err := store.GetByID(ctx, 1); err != nil {
+	if _, exists, err := db.Executors().GetByID(ctx, 1); err != nil {
 		t.Fatalf("unexpected error getting executor: %s", err)
 	} else if exists {
 		t.Fatal("unexpected record")
@@ -192,15 +204,19 @@ func TestExecutorsGetByID(t *testing.T) {
 }
 
 func TestExecutorsGetByHostname(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	store := db.Executors().(*executorStore)
 	ctx := context.Background()
 
 	hostname := "megahost-somuchfast"
 
 	// Executor does not exist initially
-	if _, exists, err := store.GetByHostname(ctx, hostname); err != nil {
+	if _, exists, err := db.Executors().GetByHostname(ctx, hostname); err != nil {
 		t.Fatalf("unexpected error getting executor: %s", err)
 	} else if exists {
 		t.Fatal("unexpected record")
@@ -244,7 +260,7 @@ func TestExecutorsGetByHostname(t *testing.T) {
 		t.Fatalf("unexpected error inserting heartbeat: %s", err)
 	}
 
-	if executor, exists, err := store.GetByHostname(ctx, hostname); err != nil {
+	if executor, exists, err := db.Executors().GetByHostname(ctx, hostname); err != nil {
 		t.Fatalf("unexpected error getting executor: %s", err)
 	} else if !exists {
 		t.Fatal("expected record to exist")
@@ -254,13 +270,17 @@ func TestExecutorsGetByHostname(t *testing.T) {
 }
 
 func TestExecutorsDeleteInactiveHeartbeats(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	store := db.Executors().(*executorStore)
 	ctx := context.Background()
 
 	for i := 0; i < 10; i++ {
-		store.UpsertHeartbeat(ctx, types.Executor{Hostname: fmt.Sprintf("h%02d", i+1)})
+		db.Executors().UpsertHeartbeat(ctx, types.Executor{Hostname: fmt.Sprintf("h%02d", i+1)})
 	}
 
 	now := time.Unix(1587396557, 0).UTC()
@@ -280,7 +300,8 @@ func TestExecutorsDeleteInactiveHeartbeats(t *testing.T) {
 		10: t2,
 	}
 	for id, lastSeenAt := range lastSeenAtByID {
-		if err := store.db.Exec(ctx, sqlf.Sprintf(`UPDATE executor_heartbeats SET last_seen_at = %s WHERE id = %s`, lastSeenAt, id)); err != nil {
+		q := sqlf.Sprintf(`UPDATE executor_heartbeats SET last_seen_at = %s WHERE id = %s`, lastSeenAt, id)
+		if _, err := db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 			t.Fatalf("failed to set up executors for test: %s", err)
 		}
 	}
@@ -289,8 +310,8 @@ func TestExecutorsDeleteInactiveHeartbeats(t *testing.T) {
 		t.Fatalf("unexpected error deleting inactive heartbeats: %s", err)
 	}
 
-	if _, totalCount, err := store.List(ctx, pgs.ExecutorStoreListOptions{}); err != nil {
-		t.Fatalf("unexpected error listing executors: %s", err)
+	if totalCount, err := db.Executors().Count(ctx, ExecutorStoreListOptions{}); err != nil {
+		t.Fatalf("unexpected error counting executors: %s", err)
 	} else if totalCount != 5 {
 		t.Fatalf("unexpected total count. want=%d have=%d", 5, totalCount)
 	}
