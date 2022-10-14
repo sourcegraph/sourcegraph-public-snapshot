@@ -2,6 +2,7 @@ package ranking
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"strconv"
 	"time"
@@ -50,6 +51,9 @@ func (s *Service) indexRepositories(ctx context.Context) (err error) {
 func (s *Service) indexRepository(ctx context.Context, repoName api.RepoName) (err error) {
 	_, _, endObservation := s.operations.indexRepository.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
+
+	start := time.Now()
+	defer func() { fmt.Printf("Finished indexing %s in %s\n", repoName, time.Since(start)) }()
 
 	graph, err := s.buildFileReferenceGraph(ctx, repoName)
 	if err != nil {

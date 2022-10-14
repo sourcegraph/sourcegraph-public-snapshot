@@ -198,6 +198,7 @@ require (
 require github.com/XSAM/otelsql v0.15.0
 
 require (
+	github.com/cloudflare/ahocorasick v0.0.0-20210425175752-730270c3e184 // indirect
 	github.com/cloudflare/circl v1.2.0 // indirect
 	github.com/dennwc/varint v1.0.0 // indirect
 	github.com/emicklei/go-restful v2.16.0+incompatible // indirect
