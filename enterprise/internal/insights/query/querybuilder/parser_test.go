@@ -98,7 +98,7 @@ func TestDetectSearchType(t *testing.T) {
 		searchType    query.SearchType
 	}{
 		{
-			"subitted and query match types",
+			"submitted and query match types",
 			"select:repo test fork:only",
 			"literal",
 			query.SearchTypeLiteral,
@@ -113,6 +113,18 @@ func TestDetectSearchType(t *testing.T) {
 			"submit literal with patterntype",
 			"test patterntype:regexp",
 			"lucky",
+			query.SearchTypeRegex,
+		},
+		{
+			"submit structural with structural patterntype",
+			"[a] patterntype:structural",
+			"structural",
+			query.SearchTypeStructural,
+		},
+		{
+			"submit regexp with structural patterntype",
+			"[a] patterntype:regexp",
+			"structural",
 			query.SearchTypeRegex,
 		},
 	}
