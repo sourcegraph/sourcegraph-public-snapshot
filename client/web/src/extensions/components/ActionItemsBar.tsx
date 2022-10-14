@@ -12,12 +12,12 @@ import { Key } from 'ts-key-enum'
 
 import { ContributableMenu } from '@sourcegraph/client-api'
 import { LocalStorageSubject } from '@sourcegraph/common'
-import { isSettingsValid } from '@sourcegraph/shared/out/src/settings/settings'
 import { ActionItem } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ActionsContainer } from '@sourcegraph/shared/src/actions/ActionsContainer'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { isSettingsValid } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, ButtonLink, Icon, Link, LoadingSpinner, Tooltip, useObservable } from '@sourcegraph/wildcard'
 

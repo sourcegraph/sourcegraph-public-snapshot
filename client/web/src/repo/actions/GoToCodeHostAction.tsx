@@ -49,6 +49,8 @@ export const GoToCodeHostAction: React.FunctionComponent<
 
     const serviceType = props.repo?.externalRepository?.serviceType
 
+    // The external links for the current file/dir, or undefined while loading,
+    // null while not needed (because not viewing a file/dir), or an error.
     const fileExternalLinksOrError = useObservable<ExternalLinkFields[] | null | undefined | ErrorLike>(
         useMemo(() => {
             if (!repo || !filePath || serviceType === 'perforce') {
@@ -63,13 +65,14 @@ export const GoToCodeHostAction: React.FunctionComponent<
         }, [repo, filePath, serviceType, revision])
     )
 
-    /**
-     * The external links for the current file/dir, or undefined while loading, null while not
-     * needed (because not viewing a file/dir), or an error.
-     */
+    // The commit message, or null if not needed, undefined while loading, also null on error.
     const perforceCommitMessage = useObservable<string | null | undefined>(
         useMemo(() => {
-            if (serviceType !== 'perforce') {
+            if (
+                serviceType !== 'perforce' ||
+                !Object.keys(props.perforceCodeHostUrlToSwarmUrlMap).length ||
+                !props.repo
+            ) {
                 return of(null)
             }
             return merge(
@@ -77,11 +80,11 @@ export const GoToCodeHostAction: React.FunctionComponent<
                 fetchCommitMessage({ repoName: props.repoName, revision: props.revision }).pipe(
                     catchError(error => {
                         logger.error('Getting commit message failed', error)
-                        return []
+                        return [null]
                     })
                 )
             )
-        }, [serviceType, props.repoName, props.revision])
+        }, [serviceType, props.perforceCodeHostUrlToSwarmUrlMap, props.repo, props.repoName, props.revision])
     )
 
     const onClick = useCallback(() => eventLogger.log('GoToCodeHostClicked'), [])
