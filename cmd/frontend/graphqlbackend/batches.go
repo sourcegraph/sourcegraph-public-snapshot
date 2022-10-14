@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	gql "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 )
 
 type CreateBatchChangeArgs struct {
@@ -881,7 +880,7 @@ type VisibleBatchSpecWorkspaceResolver interface {
 	Steps() ([]BatchSpecWorkspaceStepResolver, error)
 	SearchResultPaths() []string
 	ChangesetSpecs(ctx context.Context) (*[]VisibleChangesetSpecResolver, error)
-	Executor(ctx context.Context) (*gql.ExecutorResolver, error)
+	Executor(ctx context.Context) (*ExecutorResolver, error)
 }
 
 type ResolvedBatchSpecWorkspaceResolver interface {

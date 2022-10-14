@@ -2,7 +2,6 @@ import { subDays, subHours, subMinutes } from 'date-fns'
 import { MATCH_ANY_PARAMETERS, MockedResponses, WildcardMockedResponse } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
-import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
 
 import {
     BatchSpecWorkspaceResolutionState,
@@ -21,6 +20,7 @@ import {
     BatchSpecWorkspaceStepFields,
     BatchSpecExecutionFields,
     BatchSpecWorkspacesResult,
+    BatchSpecSource,
     ExecutorCompatibility,
 } from '../../../graphql-operations'
 import { EXECUTORS, IMPORTING_CHANGESETS, WORKSPACES, WORKSPACE_RESOLUTION_STATUS } from '../create/backend'

@@ -23,7 +23,6 @@ All notable changes to Sourcegraph are documented in this file.
 - Batch changes run on the server can now be created within organisations. [#36536](https://github.com/sourcegraph/sourcegraph/issues/36536)
 - GraphQL request logs are now compliant with the audit logging format. The old GraphQl logging based on `LOG_ALL_GRAPHQL_REQUESTS` env var is now deprecated and scheduled for removal. [#42550](https://github.com/sourcegraph/sourcegraph/pull/42550)
 - Mounting files now works when running batch changes server side. [#31792](https://github.com/sourcegraph/sourcegraph/issues/31792)
-- A "copy path" button has been added to file content, path, and symbol search results on hover or focus, next to the file path. The button copies the relative path of the file in the repo, in the same way as the "copy path" button in the file and repo pages. [#42721](https://github.com/sourcegraph/sourcegraph/pull/42721)
 
 ### Changed
 
@@ -31,6 +30,7 @@ All notable changes to Sourcegraph are documented in this file.
 - All Perforce rules are now stored together in one column and evaluated on a "last rule takes precedence" basis. [#41785](https://github.com/sourcegraph/sourcegraph/pull/41785)
 - Security events are now a part of the audit log. [#42653](https://github.com/sourcegraph/sourcegraph/pull/42653)
 - "GC AUTO" is now the default garbage collection job. We disable sg maintenance, which had previously replace "GC AUTO", after repeated reports about repo corruption. [#42856](https://github.com/sourcegraph/sourcegraph/pull/42856) 
+- To use the optional `customGitFetch` feature, the `ENABLE_CUSTOM_GIT_FETCH` env var must be set on `gitserver`. [#42704](https://github.com/sourcegraph/sourcegraph/pull/42704)
 
 ### Fixed
 

@@ -157,16 +157,16 @@ func Open(ctx context.Context, number string, driveSpec DriveSpec, out *std.Outp
 
 // RFCs should have the following format:
 //
-//    RFC 123: WIP: Foobar
-//        ^^^  ^^^  ^^^^^^
-//         |    |       |
-//         | matches[2] |
-//     matches[1]     matches[3]
+//	RFC 123: WIP: Foobar
+//	    ^^^  ^^^  ^^^^^^
+//	     |    |       |
+//	     | matches[2] |
+//	 matches[1]     matches[3]
 //
 // Variations supported:
 //
-//    RFC 123 WIP: Foobar
-//    RFC 123 PRIVATE WIP: Foobar
+//	RFC 123 WIP: Foobar
+//	RFC 123 PRIVATE WIP: Foobar
 var rfcTitleRegex = regexp.MustCompile(`RFC\s(\d+):*\s([\w\s]+):\s(.*)$`)
 
 func rfcTitlesPrinter(out *std.Output) func(r *drive.FileList) error {

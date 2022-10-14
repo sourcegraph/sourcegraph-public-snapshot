@@ -64,5 +64,5 @@ func (r *IndexConnectionResolver) PageInfo(ctx context.Context) (_ *PageInfo, er
 	if err := r.indexesResolver.Resolve(ctx); err != nil {
 		return nil, err
 	}
-	return EncodeIntCursor(toInt32(r.indexesResolver.NextOffset)), nil
+	return EncodeIntCursor(r.indexesResolver.NextOffset), nil
 }

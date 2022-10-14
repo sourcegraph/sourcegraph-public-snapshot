@@ -5,6 +5,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -27,8 +28,9 @@ func unmarshalBulkOperationID(id graphql.ID) (bulkOperationID string, err error)
 }
 
 type bulkOperationResolver struct {
-	store         *store.Store
-	bulkOperation *btypes.BulkOperation
+	store           *store.Store
+	bulkOperation   *btypes.BulkOperation
+	gitserverClient gitserver.Client
 }
 
 var _ graphqlbackend.BulkOperationResolver = &bulkOperationResolver{}
@@ -80,7 +82,7 @@ func (r *bulkOperationResolver) Errors(ctx context.Context) ([]graphqlbackend.Ch
 	for _, e := range errors {
 		ch := changesetsByID[e.ChangesetID]
 		repo, accessible := reposByID[ch.RepoID]
-		resolver := &changesetJobErrorResolver{store: r.store, changeset: ch, repo: repo}
+		resolver := &changesetJobErrorResolver{store: r.store, gitserverClient: r.gitserverClient, changeset: ch, repo: repo}
 		if accessible {
 			resolver.error = e.Error
 		}

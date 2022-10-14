@@ -67,7 +67,7 @@ func (b *backfiller) Run(ctx context.Context, req BackfillRequest) error {
 	return err
 }
 
-// Implimentation of steps for Backfill process
+// Implementation of steps for Backfill process
 
 func makeSearchJobsFunc(logger log.Logger, commitClient gitCommitClient, compressionPlan compression.DataFrameFilter, searchJobWorkerLimit int) SearchJobGenerator {
 	return func(ctx context.Context, reqContext requestContext) (context.Context, *requestContext, []*queryrunner.SearchJob, error) {

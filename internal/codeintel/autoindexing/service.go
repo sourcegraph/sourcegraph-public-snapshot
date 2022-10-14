@@ -154,6 +154,13 @@ func (s *Service) DeleteIndexesWithoutRepository(ctx context.Context, now time.T
 	return s.store.DeleteIndexesWithoutRepository(ctx, now)
 }
 
+func (s *Service) ExpireFailedRecords(ctx context.Context, batchSize int, maxAge time.Duration, now time.Time) (err error) {
+	ctx, _, endObservation := s.operations.expireFailedRecords.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.ExpireFailedRecords(ctx, batchSize, maxAge, now)
+}
+
 func (s *Service) GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (_ shared.IndexConfiguration, _ bool, err error) {
 	ctx, _, endObservation := s.operations.getIndexConfigurationByRepositoryID.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})

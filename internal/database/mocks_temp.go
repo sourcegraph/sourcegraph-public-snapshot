@@ -3638,6 +3638,9 @@ type MockDB struct {
 	// ExecContextFunc is an instance of a mock function object controlling
 	// the behavior of the method ExecContext.
 	ExecContextFunc *DBExecContextFunc
+	// ExecutorsFunc is an instance of a mock function object controlling
+	// the behavior of the method Executors.
+	ExecutorsFunc *DBExecutorsFunc
 	// ExternalServicesFunc is an instance of a mock function object
 	// controlling the behavior of the method ExternalServices.
 	ExternalServicesFunc *DBExternalServicesFunc
@@ -3769,6 +3772,11 @@ func NewMockDB() *MockDB {
 		},
 		ExecContextFunc: &DBExecContextFunc{
 			defaultHook: func(context.Context, string, ...interface{}) (r0 sql.Result, r1 error) {
+				return
+			},
+		},
+		ExecutorsFunc: &DBExecutorsFunc{
+			defaultHook: func() (r0 ExecutorStore) {
 				return
 			},
 		},
@@ -3969,6 +3977,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.ExecContext")
 			},
 		},
+		ExecutorsFunc: &DBExecutorsFunc{
+			defaultHook: func() ExecutorStore {
+				panic("unexpected invocation of MockDB.Executors")
+			},
+		},
 		ExternalServicesFunc: &DBExternalServicesFunc{
 			defaultHook: func() ExternalServiceStore {
 				panic("unexpected invocation of MockDB.ExternalServices")
@@ -4151,6 +4164,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		ExecContextFunc: &DBExecContextFunc{
 			defaultHook: i.ExecContext,
+		},
+		ExecutorsFunc: &DBExecutorsFunc{
+			defaultHook: i.Executors,
 		},
 		ExternalServicesFunc: &DBExternalServicesFunc{
 			defaultHook: i.ExternalServices,
@@ -4957,6 +4973,104 @@ func (c DBExecContextFuncCall) Args() []interface{} {
 // invocation.
 func (c DBExecContextFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// DBExecutorsFunc describes the behavior when the Executors method of the
+// parent MockDB instance is invoked.
+type DBExecutorsFunc struct {
+	defaultHook func() ExecutorStore
+	hooks       []func() ExecutorStore
+	history     []DBExecutorsFuncCall
+	mutex       sync.Mutex
+}
+
+// Executors delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockDB) Executors() ExecutorStore {
+	r0 := m.ExecutorsFunc.nextHook()()
+	m.ExecutorsFunc.appendCall(DBExecutorsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Executors method of
+// the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBExecutorsFunc) SetDefaultHook(hook func() ExecutorStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Executors method of the parent MockDB instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBExecutorsFunc) PushHook(hook func() ExecutorStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBExecutorsFunc) SetDefaultReturn(r0 ExecutorStore) {
+	f.SetDefaultHook(func() ExecutorStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBExecutorsFunc) PushReturn(r0 ExecutorStore) {
+	f.PushHook(func() ExecutorStore {
+		return r0
+	})
+}
+
+func (f *DBExecutorsFunc) nextHook() func() ExecutorStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBExecutorsFunc) appendCall(r0 DBExecutorsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBExecutorsFuncCall objects describing the
+// invocations of this function.
+func (f *DBExecutorsFunc) History() []DBExecutorsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBExecutorsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBExecutorsFuncCall is an object that describes an invocation of method
+// Executors on an instance of MockDB.
+type DBExecutorsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 ExecutorStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBExecutorsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBExecutorsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // DBExternalServicesFunc describes the behavior when the ExternalServices
@@ -12780,6 +12894,1259 @@ func (c EventLogStoreWithFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EventLogStoreWithFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// MockExecutorStore is a mock implementation of the ExecutorStore interface
+// (from the package github.com/sourcegraph/sourcegraph/internal/database)
+// used for unit testing.
+type MockExecutorStore struct {
+	// CountFunc is an instance of a mock function object controlling the
+	// behavior of the method Count.
+	CountFunc *ExecutorStoreCountFunc
+	// DeleteInactiveHeartbeatsFunc is an instance of a mock function object
+	// controlling the behavior of the method DeleteInactiveHeartbeats.
+	DeleteInactiveHeartbeatsFunc *ExecutorStoreDeleteInactiveHeartbeatsFunc
+	// DoneFunc is an instance of a mock function object controlling the
+	// behavior of the method Done.
+	DoneFunc *ExecutorStoreDoneFunc
+	// GetByHostnameFunc is an instance of a mock function object
+	// controlling the behavior of the method GetByHostname.
+	GetByHostnameFunc *ExecutorStoreGetByHostnameFunc
+	// GetByIDFunc is an instance of a mock function object controlling the
+	// behavior of the method GetByID.
+	GetByIDFunc *ExecutorStoreGetByIDFunc
+	// ListFunc is an instance of a mock function object controlling the
+	// behavior of the method List.
+	ListFunc *ExecutorStoreListFunc
+	// QueryFunc is an instance of a mock function object controlling the
+	// behavior of the method Query.
+	QueryFunc *ExecutorStoreQueryFunc
+	// TransactFunc is an instance of a mock function object controlling the
+	// behavior of the method Transact.
+	TransactFunc *ExecutorStoreTransactFunc
+	// UpsertHeartbeatFunc is an instance of a mock function object
+	// controlling the behavior of the method UpsertHeartbeat.
+	UpsertHeartbeatFunc *ExecutorStoreUpsertHeartbeatFunc
+	// WithFunc is an instance of a mock function object controlling the
+	// behavior of the method With.
+	WithFunc *ExecutorStoreWithFunc
+}
+
+// NewMockExecutorStore creates a new mock of the ExecutorStore interface.
+// All methods return zero values for all results, unless overwritten.
+func NewMockExecutorStore() *MockExecutorStore {
+	return &MockExecutorStore{
+		CountFunc: &ExecutorStoreCountFunc{
+			defaultHook: func(context.Context, ExecutorStoreListOptions) (r0 int, r1 error) {
+				return
+			},
+		},
+		DeleteInactiveHeartbeatsFunc: &ExecutorStoreDeleteInactiveHeartbeatsFunc{
+			defaultHook: func(context.Context, time.Duration) (r0 error) {
+				return
+			},
+		},
+		DoneFunc: &ExecutorStoreDoneFunc{
+			defaultHook: func(error) (r0 error) {
+				return
+			},
+		},
+		GetByHostnameFunc: &ExecutorStoreGetByHostnameFunc{
+			defaultHook: func(context.Context, string) (r0 types.Executor, r1 bool, r2 error) {
+				return
+			},
+		},
+		GetByIDFunc: &ExecutorStoreGetByIDFunc{
+			defaultHook: func(context.Context, int) (r0 types.Executor, r1 bool, r2 error) {
+				return
+			},
+		},
+		ListFunc: &ExecutorStoreListFunc{
+			defaultHook: func(context.Context, ExecutorStoreListOptions) (r0 []types.Executor, r1 error) {
+				return
+			},
+		},
+		QueryFunc: &ExecutorStoreQueryFunc{
+			defaultHook: func(context.Context, *sqlf.Query) (r0 *sql.Rows, r1 error) {
+				return
+			},
+		},
+		TransactFunc: &ExecutorStoreTransactFunc{
+			defaultHook: func(context.Context) (r0 ExecutorStore, r1 error) {
+				return
+			},
+		},
+		UpsertHeartbeatFunc: &ExecutorStoreUpsertHeartbeatFunc{
+			defaultHook: func(context.Context, types.Executor) (r0 error) {
+				return
+			},
+		},
+		WithFunc: &ExecutorStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) (r0 ExecutorStore) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockExecutorStore creates a new mock of the ExecutorStore
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockExecutorStore() *MockExecutorStore {
+	return &MockExecutorStore{
+		CountFunc: &ExecutorStoreCountFunc{
+			defaultHook: func(context.Context, ExecutorStoreListOptions) (int, error) {
+				panic("unexpected invocation of MockExecutorStore.Count")
+			},
+		},
+		DeleteInactiveHeartbeatsFunc: &ExecutorStoreDeleteInactiveHeartbeatsFunc{
+			defaultHook: func(context.Context, time.Duration) error {
+				panic("unexpected invocation of MockExecutorStore.DeleteInactiveHeartbeats")
+			},
+		},
+		DoneFunc: &ExecutorStoreDoneFunc{
+			defaultHook: func(error) error {
+				panic("unexpected invocation of MockExecutorStore.Done")
+			},
+		},
+		GetByHostnameFunc: &ExecutorStoreGetByHostnameFunc{
+			defaultHook: func(context.Context, string) (types.Executor, bool, error) {
+				panic("unexpected invocation of MockExecutorStore.GetByHostname")
+			},
+		},
+		GetByIDFunc: &ExecutorStoreGetByIDFunc{
+			defaultHook: func(context.Context, int) (types.Executor, bool, error) {
+				panic("unexpected invocation of MockExecutorStore.GetByID")
+			},
+		},
+		ListFunc: &ExecutorStoreListFunc{
+			defaultHook: func(context.Context, ExecutorStoreListOptions) ([]types.Executor, error) {
+				panic("unexpected invocation of MockExecutorStore.List")
+			},
+		},
+		QueryFunc: &ExecutorStoreQueryFunc{
+			defaultHook: func(context.Context, *sqlf.Query) (*sql.Rows, error) {
+				panic("unexpected invocation of MockExecutorStore.Query")
+			},
+		},
+		TransactFunc: &ExecutorStoreTransactFunc{
+			defaultHook: func(context.Context) (ExecutorStore, error) {
+				panic("unexpected invocation of MockExecutorStore.Transact")
+			},
+		},
+		UpsertHeartbeatFunc: &ExecutorStoreUpsertHeartbeatFunc{
+			defaultHook: func(context.Context, types.Executor) error {
+				panic("unexpected invocation of MockExecutorStore.UpsertHeartbeat")
+			},
+		},
+		WithFunc: &ExecutorStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) ExecutorStore {
+				panic("unexpected invocation of MockExecutorStore.With")
+			},
+		},
+	}
+}
+
+// NewMockExecutorStoreFrom creates a new mock of the MockExecutorStore
+// interface. All methods delegate to the given implementation, unless
+// overwritten.
+func NewMockExecutorStoreFrom(i ExecutorStore) *MockExecutorStore {
+	return &MockExecutorStore{
+		CountFunc: &ExecutorStoreCountFunc{
+			defaultHook: i.Count,
+		},
+		DeleteInactiveHeartbeatsFunc: &ExecutorStoreDeleteInactiveHeartbeatsFunc{
+			defaultHook: i.DeleteInactiveHeartbeats,
+		},
+		DoneFunc: &ExecutorStoreDoneFunc{
+			defaultHook: i.Done,
+		},
+		GetByHostnameFunc: &ExecutorStoreGetByHostnameFunc{
+			defaultHook: i.GetByHostname,
+		},
+		GetByIDFunc: &ExecutorStoreGetByIDFunc{
+			defaultHook: i.GetByID,
+		},
+		ListFunc: &ExecutorStoreListFunc{
+			defaultHook: i.List,
+		},
+		QueryFunc: &ExecutorStoreQueryFunc{
+			defaultHook: i.Query,
+		},
+		TransactFunc: &ExecutorStoreTransactFunc{
+			defaultHook: i.Transact,
+		},
+		UpsertHeartbeatFunc: &ExecutorStoreUpsertHeartbeatFunc{
+			defaultHook: i.UpsertHeartbeat,
+		},
+		WithFunc: &ExecutorStoreWithFunc{
+			defaultHook: i.With,
+		},
+	}
+}
+
+// ExecutorStoreCountFunc describes the behavior when the Count method of
+// the parent MockExecutorStore instance is invoked.
+type ExecutorStoreCountFunc struct {
+	defaultHook func(context.Context, ExecutorStoreListOptions) (int, error)
+	hooks       []func(context.Context, ExecutorStoreListOptions) (int, error)
+	history     []ExecutorStoreCountFuncCall
+	mutex       sync.Mutex
+}
+
+// Count delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockExecutorStore) Count(v0 context.Context, v1 ExecutorStoreListOptions) (int, error) {
+	r0, r1 := m.CountFunc.nextHook()(v0, v1)
+	m.CountFunc.appendCall(ExecutorStoreCountFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Count method of the
+// parent MockExecutorStore instance is invoked and the hook queue is empty.
+func (f *ExecutorStoreCountFunc) SetDefaultHook(hook func(context.Context, ExecutorStoreListOptions) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Count method of the parent MockExecutorStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *ExecutorStoreCountFunc) PushHook(hook func(context.Context, ExecutorStoreListOptions) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ExecutorStoreCountFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, ExecutorStoreListOptions) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ExecutorStoreCountFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, ExecutorStoreListOptions) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *ExecutorStoreCountFunc) nextHook() func(context.Context, ExecutorStoreListOptions) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ExecutorStoreCountFunc) appendCall(r0 ExecutorStoreCountFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ExecutorStoreCountFuncCall objects
+// describing the invocations of this function.
+func (f *ExecutorStoreCountFunc) History() []ExecutorStoreCountFuncCall {
+	f.mutex.Lock()
+	history := make([]ExecutorStoreCountFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ExecutorStoreCountFuncCall is an object that describes an invocation of
+// method Count on an instance of MockExecutorStore.
+type ExecutorStoreCountFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 ExecutorStoreListOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ExecutorStoreCountFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ExecutorStoreCountFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ExecutorStoreDeleteInactiveHeartbeatsFunc describes the behavior when the
+// DeleteInactiveHeartbeats method of the parent MockExecutorStore instance
+// is invoked.
+type ExecutorStoreDeleteInactiveHeartbeatsFunc struct {
+	defaultHook func(context.Context, time.Duration) error
+	hooks       []func(context.Context, time.Duration) error
+	history     []ExecutorStoreDeleteInactiveHeartbeatsFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteInactiveHeartbeats delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockExecutorStore) DeleteInactiveHeartbeats(v0 context.Context, v1 time.Duration) error {
+	r0 := m.DeleteInactiveHeartbeatsFunc.nextHook()(v0, v1)
+	m.DeleteInactiveHeartbeatsFunc.appendCall(ExecutorStoreDeleteInactiveHeartbeatsFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// DeleteInactiveHeartbeats method of the parent MockExecutorStore instance
+// is invoked and the hook queue is empty.
+func (f *ExecutorStoreDeleteInactiveHeartbeatsFunc) SetDefaultHook(hook func(context.Context, time.Duration) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteInactiveHeartbeats method of the parent MockExecutorStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ExecutorStoreDeleteInactiveHeartbeatsFunc) PushHook(hook func(context.Context, time.Duration) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ExecutorStoreDeleteInactiveHeartbeatsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, time.Duration) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ExecutorStoreDeleteInactiveHeartbeatsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, time.Duration) error {
+		return r0
+	})
+}
+
+func (f *ExecutorStoreDeleteInactiveHeartbeatsFunc) nextHook() func(context.Context, time.Duration) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ExecutorStoreDeleteInactiveHeartbeatsFunc) appendCall(r0 ExecutorStoreDeleteInactiveHeartbeatsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// ExecutorStoreDeleteInactiveHeartbeatsFuncCall objects describing the
+// invocations of this function.
+func (f *ExecutorStoreDeleteInactiveHeartbeatsFunc) History() []ExecutorStoreDeleteInactiveHeartbeatsFuncCall {
+	f.mutex.Lock()
+	history := make([]ExecutorStoreDeleteInactiveHeartbeatsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ExecutorStoreDeleteInactiveHeartbeatsFuncCall is an object that describes
+// an invocation of method DeleteInactiveHeartbeats on an instance of
+// MockExecutorStore.
+type ExecutorStoreDeleteInactiveHeartbeatsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 time.Duration
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ExecutorStoreDeleteInactiveHeartbeatsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ExecutorStoreDeleteInactiveHeartbeatsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// ExecutorStoreDoneFunc describes the behavior when the Done method of the
+// parent MockExecutorStore instance is invoked.
+type ExecutorStoreDoneFunc struct {
+	defaultHook func(error) error
+	hooks       []func(error) error
+	history     []ExecutorStoreDoneFuncCall
+	mutex       sync.Mutex
+}
+
+// Done delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockExecutorStore) Done(v0 error) error {
+	r0 := m.DoneFunc.nextHook()(v0)
+	m.DoneFunc.appendCall(ExecutorStoreDoneFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Done method of the
+// parent MockExecutorStore instance is invoked and the hook queue is empty.
+func (f *ExecutorStoreDoneFunc) SetDefaultHook(hook func(error) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Done method of the parent MockExecutorStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *ExecutorStoreDoneFunc) PushHook(hook func(error) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ExecutorStoreDoneFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(error) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ExecutorStoreDoneFunc) PushReturn(r0 error) {
+	f.PushHook(func(error) error {
+		return r0
+	})
+}
+
+func (f *ExecutorStoreDoneFunc) nextHook() func(error) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ExecutorStoreDoneFunc) appendCall(r0 ExecutorStoreDoneFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ExecutorStoreDoneFuncCall objects
+// describing the invocations of this function.
+func (f *ExecutorStoreDoneFunc) History() []ExecutorStoreDoneFuncCall {
+	f.mutex.Lock()
+	history := make([]ExecutorStoreDoneFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ExecutorStoreDoneFuncCall is an object that describes an invocation of
+// method Done on an instance of MockExecutorStore.
+type ExecutorStoreDoneFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 error
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ExecutorStoreDoneFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ExecutorStoreDoneFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// ExecutorStoreGetByHostnameFunc describes the behavior when the
+// GetByHostname method of the parent MockExecutorStore instance is invoked.
+type ExecutorStoreGetByHostnameFunc struct {
+	defaultHook func(context.Context, string) (types.Executor, bool, error)
+	hooks       []func(context.Context, string) (types.Executor, bool, error)
+	history     []ExecutorStoreGetByHostnameFuncCall
+	mutex       sync.Mutex
+}
+
+// GetByHostname delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockExecutorStore) GetByHostname(v0 context.Context, v1 string) (types.Executor, bool, error) {
+	r0, r1, r2 := m.GetByHostnameFunc.nextHook()(v0, v1)
+	m.GetByHostnameFunc.appendCall(ExecutorStoreGetByHostnameFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the GetByHostname method
+// of the parent MockExecutorStore instance is invoked and the hook queue is
+// empty.
+func (f *ExecutorStoreGetByHostnameFunc) SetDefaultHook(hook func(context.Context, string) (types.Executor, bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetByHostname method of the parent MockExecutorStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *ExecutorStoreGetByHostnameFunc) PushHook(hook func(context.Context, string) (types.Executor, bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ExecutorStoreGetByHostnameFunc) SetDefaultReturn(r0 types.Executor, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, string) (types.Executor, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ExecutorStoreGetByHostnameFunc) PushReturn(r0 types.Executor, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, string) (types.Executor, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *ExecutorStoreGetByHostnameFunc) nextHook() func(context.Context, string) (types.Executor, bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ExecutorStoreGetByHostnameFunc) appendCall(r0 ExecutorStoreGetByHostnameFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ExecutorStoreGetByHostnameFuncCall objects
+// describing the invocations of this function.
+func (f *ExecutorStoreGetByHostnameFunc) History() []ExecutorStoreGetByHostnameFuncCall {
+	f.mutex.Lock()
+	history := make([]ExecutorStoreGetByHostnameFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ExecutorStoreGetByHostnameFuncCall is an object that describes an
+// invocation of method GetByHostname on an instance of MockExecutorStore.
+type ExecutorStoreGetByHostnameFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 types.Executor
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 bool
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ExecutorStoreGetByHostnameFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ExecutorStoreGetByHostnameFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// ExecutorStoreGetByIDFunc describes the behavior when the GetByID method
+// of the parent MockExecutorStore instance is invoked.
+type ExecutorStoreGetByIDFunc struct {
+	defaultHook func(context.Context, int) (types.Executor, bool, error)
+	hooks       []func(context.Context, int) (types.Executor, bool, error)
+	history     []ExecutorStoreGetByIDFuncCall
+	mutex       sync.Mutex
+}
+
+// GetByID delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockExecutorStore) GetByID(v0 context.Context, v1 int) (types.Executor, bool, error) {
+	r0, r1, r2 := m.GetByIDFunc.nextHook()(v0, v1)
+	m.GetByIDFunc.appendCall(ExecutorStoreGetByIDFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the GetByID method of
+// the parent MockExecutorStore instance is invoked and the hook queue is
+// empty.
+func (f *ExecutorStoreGetByIDFunc) SetDefaultHook(hook func(context.Context, int) (types.Executor, bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetByID method of the parent MockExecutorStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *ExecutorStoreGetByIDFunc) PushHook(hook func(context.Context, int) (types.Executor, bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ExecutorStoreGetByIDFunc) SetDefaultReturn(r0 types.Executor, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, int) (types.Executor, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ExecutorStoreGetByIDFunc) PushReturn(r0 types.Executor, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, int) (types.Executor, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *ExecutorStoreGetByIDFunc) nextHook() func(context.Context, int) (types.Executor, bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ExecutorStoreGetByIDFunc) appendCall(r0 ExecutorStoreGetByIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ExecutorStoreGetByIDFuncCall objects
+// describing the invocations of this function.
+func (f *ExecutorStoreGetByIDFunc) History() []ExecutorStoreGetByIDFuncCall {
+	f.mutex.Lock()
+	history := make([]ExecutorStoreGetByIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ExecutorStoreGetByIDFuncCall is an object that describes an invocation of
+// method GetByID on an instance of MockExecutorStore.
+type ExecutorStoreGetByIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 types.Executor
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 bool
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ExecutorStoreGetByIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ExecutorStoreGetByIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// ExecutorStoreListFunc describes the behavior when the List method of the
+// parent MockExecutorStore instance is invoked.
+type ExecutorStoreListFunc struct {
+	defaultHook func(context.Context, ExecutorStoreListOptions) ([]types.Executor, error)
+	hooks       []func(context.Context, ExecutorStoreListOptions) ([]types.Executor, error)
+	history     []ExecutorStoreListFuncCall
+	mutex       sync.Mutex
+}
+
+// List delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockExecutorStore) List(v0 context.Context, v1 ExecutorStoreListOptions) ([]types.Executor, error) {
+	r0, r1 := m.ListFunc.nextHook()(v0, v1)
+	m.ListFunc.appendCall(ExecutorStoreListFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the List method of the
+// parent MockExecutorStore instance is invoked and the hook queue is empty.
+func (f *ExecutorStoreListFunc) SetDefaultHook(hook func(context.Context, ExecutorStoreListOptions) ([]types.Executor, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// List method of the parent MockExecutorStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *ExecutorStoreListFunc) PushHook(hook func(context.Context, ExecutorStoreListOptions) ([]types.Executor, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ExecutorStoreListFunc) SetDefaultReturn(r0 []types.Executor, r1 error) {
+	f.SetDefaultHook(func(context.Context, ExecutorStoreListOptions) ([]types.Executor, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ExecutorStoreListFunc) PushReturn(r0 []types.Executor, r1 error) {
+	f.PushHook(func(context.Context, ExecutorStoreListOptions) ([]types.Executor, error) {
+		return r0, r1
+	})
+}
+
+func (f *ExecutorStoreListFunc) nextHook() func(context.Context, ExecutorStoreListOptions) ([]types.Executor, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ExecutorStoreListFunc) appendCall(r0 ExecutorStoreListFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ExecutorStoreListFuncCall objects
+// describing the invocations of this function.
+func (f *ExecutorStoreListFunc) History() []ExecutorStoreListFuncCall {
+	f.mutex.Lock()
+	history := make([]ExecutorStoreListFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ExecutorStoreListFuncCall is an object that describes an invocation of
+// method List on an instance of MockExecutorStore.
+type ExecutorStoreListFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 ExecutorStoreListOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []types.Executor
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ExecutorStoreListFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ExecutorStoreListFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ExecutorStoreQueryFunc describes the behavior when the Query method of
+// the parent MockExecutorStore instance is invoked.
+type ExecutorStoreQueryFunc struct {
+	defaultHook func(context.Context, *sqlf.Query) (*sql.Rows, error)
+	hooks       []func(context.Context, *sqlf.Query) (*sql.Rows, error)
+	history     []ExecutorStoreQueryFuncCall
+	mutex       sync.Mutex
+}
+
+// Query delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockExecutorStore) Query(v0 context.Context, v1 *sqlf.Query) (*sql.Rows, error) {
+	r0, r1 := m.QueryFunc.nextHook()(v0, v1)
+	m.QueryFunc.appendCall(ExecutorStoreQueryFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Query method of the
+// parent MockExecutorStore instance is invoked and the hook queue is empty.
+func (f *ExecutorStoreQueryFunc) SetDefaultHook(hook func(context.Context, *sqlf.Query) (*sql.Rows, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Query method of the parent MockExecutorStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *ExecutorStoreQueryFunc) PushHook(hook func(context.Context, *sqlf.Query) (*sql.Rows, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ExecutorStoreQueryFunc) SetDefaultReturn(r0 *sql.Rows, r1 error) {
+	f.SetDefaultHook(func(context.Context, *sqlf.Query) (*sql.Rows, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ExecutorStoreQueryFunc) PushReturn(r0 *sql.Rows, r1 error) {
+	f.PushHook(func(context.Context, *sqlf.Query) (*sql.Rows, error) {
+		return r0, r1
+	})
+}
+
+func (f *ExecutorStoreQueryFunc) nextHook() func(context.Context, *sqlf.Query) (*sql.Rows, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ExecutorStoreQueryFunc) appendCall(r0 ExecutorStoreQueryFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ExecutorStoreQueryFuncCall objects
+// describing the invocations of this function.
+func (f *ExecutorStoreQueryFunc) History() []ExecutorStoreQueryFuncCall {
+	f.mutex.Lock()
+	history := make([]ExecutorStoreQueryFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ExecutorStoreQueryFuncCall is an object that describes an invocation of
+// method Query on an instance of MockExecutorStore.
+type ExecutorStoreQueryFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *sqlf.Query
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *sql.Rows
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ExecutorStoreQueryFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ExecutorStoreQueryFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ExecutorStoreTransactFunc describes the behavior when the Transact method
+// of the parent MockExecutorStore instance is invoked.
+type ExecutorStoreTransactFunc struct {
+	defaultHook func(context.Context) (ExecutorStore, error)
+	hooks       []func(context.Context) (ExecutorStore, error)
+	history     []ExecutorStoreTransactFuncCall
+	mutex       sync.Mutex
+}
+
+// Transact delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockExecutorStore) Transact(v0 context.Context) (ExecutorStore, error) {
+	r0, r1 := m.TransactFunc.nextHook()(v0)
+	m.TransactFunc.appendCall(ExecutorStoreTransactFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Transact method of
+// the parent MockExecutorStore instance is invoked and the hook queue is
+// empty.
+func (f *ExecutorStoreTransactFunc) SetDefaultHook(hook func(context.Context) (ExecutorStore, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Transact method of the parent MockExecutorStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *ExecutorStoreTransactFunc) PushHook(hook func(context.Context) (ExecutorStore, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ExecutorStoreTransactFunc) SetDefaultReturn(r0 ExecutorStore, r1 error) {
+	f.SetDefaultHook(func(context.Context) (ExecutorStore, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ExecutorStoreTransactFunc) PushReturn(r0 ExecutorStore, r1 error) {
+	f.PushHook(func(context.Context) (ExecutorStore, error) {
+		return r0, r1
+	})
+}
+
+func (f *ExecutorStoreTransactFunc) nextHook() func(context.Context) (ExecutorStore, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ExecutorStoreTransactFunc) appendCall(r0 ExecutorStoreTransactFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ExecutorStoreTransactFuncCall objects
+// describing the invocations of this function.
+func (f *ExecutorStoreTransactFunc) History() []ExecutorStoreTransactFuncCall {
+	f.mutex.Lock()
+	history := make([]ExecutorStoreTransactFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ExecutorStoreTransactFuncCall is an object that describes an invocation
+// of method Transact on an instance of MockExecutorStore.
+type ExecutorStoreTransactFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 ExecutorStore
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ExecutorStoreTransactFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ExecutorStoreTransactFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ExecutorStoreUpsertHeartbeatFunc describes the behavior when the
+// UpsertHeartbeat method of the parent MockExecutorStore instance is
+// invoked.
+type ExecutorStoreUpsertHeartbeatFunc struct {
+	defaultHook func(context.Context, types.Executor) error
+	hooks       []func(context.Context, types.Executor) error
+	history     []ExecutorStoreUpsertHeartbeatFuncCall
+	mutex       sync.Mutex
+}
+
+// UpsertHeartbeat delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockExecutorStore) UpsertHeartbeat(v0 context.Context, v1 types.Executor) error {
+	r0 := m.UpsertHeartbeatFunc.nextHook()(v0, v1)
+	m.UpsertHeartbeatFunc.appendCall(ExecutorStoreUpsertHeartbeatFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the UpsertHeartbeat
+// method of the parent MockExecutorStore instance is invoked and the hook
+// queue is empty.
+func (f *ExecutorStoreUpsertHeartbeatFunc) SetDefaultHook(hook func(context.Context, types.Executor) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpsertHeartbeat method of the parent MockExecutorStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *ExecutorStoreUpsertHeartbeatFunc) PushHook(hook func(context.Context, types.Executor) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ExecutorStoreUpsertHeartbeatFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, types.Executor) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ExecutorStoreUpsertHeartbeatFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, types.Executor) error {
+		return r0
+	})
+}
+
+func (f *ExecutorStoreUpsertHeartbeatFunc) nextHook() func(context.Context, types.Executor) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ExecutorStoreUpsertHeartbeatFunc) appendCall(r0 ExecutorStoreUpsertHeartbeatFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ExecutorStoreUpsertHeartbeatFuncCall
+// objects describing the invocations of this function.
+func (f *ExecutorStoreUpsertHeartbeatFunc) History() []ExecutorStoreUpsertHeartbeatFuncCall {
+	f.mutex.Lock()
+	history := make([]ExecutorStoreUpsertHeartbeatFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ExecutorStoreUpsertHeartbeatFuncCall is an object that describes an
+// invocation of method UpsertHeartbeat on an instance of MockExecutorStore.
+type ExecutorStoreUpsertHeartbeatFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 types.Executor
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ExecutorStoreUpsertHeartbeatFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ExecutorStoreUpsertHeartbeatFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// ExecutorStoreWithFunc describes the behavior when the With method of the
+// parent MockExecutorStore instance is invoked.
+type ExecutorStoreWithFunc struct {
+	defaultHook func(basestore.ShareableStore) ExecutorStore
+	hooks       []func(basestore.ShareableStore) ExecutorStore
+	history     []ExecutorStoreWithFuncCall
+	mutex       sync.Mutex
+}
+
+// With delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockExecutorStore) With(v0 basestore.ShareableStore) ExecutorStore {
+	r0 := m.WithFunc.nextHook()(v0)
+	m.WithFunc.appendCall(ExecutorStoreWithFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the With method of the
+// parent MockExecutorStore instance is invoked and the hook queue is empty.
+func (f *ExecutorStoreWithFunc) SetDefaultHook(hook func(basestore.ShareableStore) ExecutorStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// With method of the parent MockExecutorStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *ExecutorStoreWithFunc) PushHook(hook func(basestore.ShareableStore) ExecutorStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ExecutorStoreWithFunc) SetDefaultReturn(r0 ExecutorStore) {
+	f.SetDefaultHook(func(basestore.ShareableStore) ExecutorStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ExecutorStoreWithFunc) PushReturn(r0 ExecutorStore) {
+	f.PushHook(func(basestore.ShareableStore) ExecutorStore {
+		return r0
+	})
+}
+
+func (f *ExecutorStoreWithFunc) nextHook() func(basestore.ShareableStore) ExecutorStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ExecutorStoreWithFunc) appendCall(r0 ExecutorStoreWithFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ExecutorStoreWithFuncCall objects
+// describing the invocations of this function.
+func (f *ExecutorStoreWithFunc) History() []ExecutorStoreWithFuncCall {
+	f.mutex.Lock()
+	history := make([]ExecutorStoreWithFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ExecutorStoreWithFuncCall is an object that describes an invocation of
+// method With on an instance of MockExecutorStore.
+type ExecutorStoreWithFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 basestore.ShareableStore
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 ExecutorStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ExecutorStoreWithFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ExecutorStoreWithFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

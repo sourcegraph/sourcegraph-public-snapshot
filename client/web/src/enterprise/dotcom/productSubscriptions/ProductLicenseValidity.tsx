@@ -4,9 +4,9 @@ import classNames from 'classnames'
 import { parseISO } from 'date-fns'
 import format from 'date-fns/format'
 
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { Alert, Tooltip } from '@sourcegraph/wildcard'
 
+import { ProductLicenseInfoFields } from '../../../graphql-operations'
 import { formatRelativeExpirationDate, isProductLicenseExpired } from '../../../productSubscription/helpers'
 
 /**
@@ -14,7 +14,7 @@ import { formatRelativeExpirationDate, isProductLicenseExpired } from '../../../
  */
 export const ProductLicenseValidity: React.FunctionComponent<
     React.PropsWithChildren<{
-        licenseInfo: GQL.IProductLicenseInfo
+        licenseInfo: ProductLicenseInfoFields
         primary: boolean
         className?: string
     }>
