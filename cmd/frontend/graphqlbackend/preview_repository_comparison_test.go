@@ -8,6 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -99,7 +100,8 @@ index 9bd8209..d2acfa9 100644
 
 	repo := &types.Repo{ID: api.RepoID(1), Name: "github.com/sourcegraph/sourcegraph", CreatedAt: time.Now()}
 
-	previewComparisonResolver, err := NewPreviewRepositoryComparisonResolver(ctx, db, NewRepositoryResolver(db, gitserver.NewClient(db), repo), string(wantHeadRevision), testDiff)
+	gitserverClient := gitserver.NewMockClient()
+	previewComparisonResolver, err := NewPreviewRepositoryComparisonResolver(ctx, db, gitserverClient, NewRepositoryResolver(db, gitserverClient, repo), string(wantHeadRevision), testDiff)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -211,14 +213,12 @@ index 9bd8209..d2acfa9 100644
 		}
 		fileDiff := fileDiffs[0]
 
-		gitserver.Mocks.ReadFile = func(commit api.CommitID, name string) ([]byte, error) {
+		gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, _ api.CommitID, name string, _ authz.SubRepoPermissionChecker) ([]byte, error) {
 			if name != "INSTALL.md" {
 				t.Fatalf("ReadFile received call for wrong file: %s", name)
 			}
-
 			return []byte(testOldFile), nil
-		}
-		defer func() { gitserver.Mocks.ReadFile = nil }()
+		})
 
 		newFile := fileDiff.NewFile()
 		if newFile == nil {

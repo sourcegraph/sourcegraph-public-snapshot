@@ -17,20 +17,21 @@ import (
 	gogithub "github.com/google/go-github/v41/github"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -38,9 +39,12 @@ import (
 
 // Init initializes the app endpoints.
 func Init(
+	ctx context.Context,
 	db database.DB,
+	codeIntelServices codeintel.Services,
 	conf conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
+	observationContext *observation.Context,
 ) error {
 	var privateKey []byte
 	var err error
@@ -297,7 +301,7 @@ func newGitHubAppSetupHandler(db database.DB, apiURL *url.URL, client githubClie
 			return
 		}
 
-		err = backend.CheckOrgAccess(r.Context(), db, orgID)
+		err = auth.CheckOrgAccess(r.Context(), db, orgID)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			_, _ = w.Write([]byte("the authenticated user does not belong to the organization requested"))

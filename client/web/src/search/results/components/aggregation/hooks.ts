@@ -3,10 +3,12 @@ import { useCallback, useLayoutEffect, useMemo, useState } from 'react'
 import { gql, useQuery } from '@apollo/client'
 import { useHistory, useLocation } from 'react-router'
 
-import { SearchAggregationMode } from '@sourcegraph/shared/src/graphql-operations'
-import { SearchPatternType } from '@sourcegraph/shared/src/schema'
-
-import { GetSearchAggregationResult, GetSearchAggregationVariables } from '../../../../graphql-operations'
+import {
+    GetSearchAggregationResult,
+    GetSearchAggregationVariables,
+    SearchAggregationMode,
+    SearchPatternType,
+} from '../../../../graphql-operations'
 
 import { AGGREGATION_MODE_URL_KEY, AGGREGATION_UI_MODE_URL_KEY } from './constants'
 import { AggregationUIMode } from './types'

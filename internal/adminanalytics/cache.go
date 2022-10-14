@@ -16,8 +16,9 @@ import (
 )
 
 var (
-	pool     = redispool.Store
-	scopeKey = "adminanalytics:"
+	pool                = redispool.Store
+	scopeKey            = "adminanalytics:"
+	cacheDisabledInTest = false
 )
 
 func getArrayFromCache[K interface{}](cacheKey string) ([]*K, error) {
@@ -57,6 +58,10 @@ func getItemFromCache[T interface{}](cacheKey string) (*T, error) {
 }
 
 func setDataToCache(key string, data string) (bool, error) {
+	if cacheDisabledInTest {
+		return true, nil
+	}
+
 	rdb := pool.Get()
 	defer rdb.Close()
 

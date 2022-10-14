@@ -1,14 +1,16 @@
 import { gql } from '@sourcegraph/http-client'
 
 const analyticsStatItemFragment = gql`
-    fragment AnalyticsStatItemFragment on AnalyticsStatItem {
+    fragment ExtensionsStatItemFragment on AnalyticsStatItem {
         nodes {
             date
             count
+            uniqueUsers
             registeredUsers
         }
         summary {
             totalCount
+            totalUniqueUsers
             totalRegisteredUsers
         }
     }
@@ -20,13 +22,13 @@ export const EXTENSIONS_STATISTICS = gql`
             analytics {
                 extensions(dateRange: $dateRange, grouping: $grouping) {
                     jetbrains {
-                        ...AnalyticsStatItemFragment
+                        ...ExtensionsStatItemFragment
                     }
                     vscode {
-                        ...AnalyticsStatItemFragment
+                        ...ExtensionsStatItemFragment
                     }
                     browser {
-                        ...AnalyticsStatItemFragment
+                        ...ExtensionsStatItemFragment
                     }
                 }
             }

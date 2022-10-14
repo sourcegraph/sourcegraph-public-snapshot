@@ -1,14 +1,15 @@
 package sharedresolvers
 
 import (
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type CodeIntelRepositorySummaryResolver interface {
 	RecentUploads() []LSIFUploadsWithRepositoryNamespaceResolver
 	RecentIndexes() []LSIFIndexesWithRepositoryNamespaceResolver
-	LastUploadRetentionScan() *DateTime
-	LastIndexScan() *DateTime
+	LastUploadRetentionScan() *gqlutil.DateTime
+	LastIndexScan() *gqlutil.DateTime
 }
 
 type repositorySummaryResolver struct {
@@ -60,10 +61,10 @@ func (r *repositorySummaryResolver) RecentIndexes() []LSIFIndexesWithRepositoryN
 	return resolvers
 }
 
-func (r *repositorySummaryResolver) LastUploadRetentionScan() *DateTime {
-	return DateTimeOrNil(r.summary.LastUploadRetentionScan)
+func (r *repositorySummaryResolver) LastUploadRetentionScan() *gqlutil.DateTime {
+	return gqlutil.DateTimeOrNil(r.summary.LastUploadRetentionScan)
 }
 
-func (r *repositorySummaryResolver) LastIndexScan() *DateTime {
-	return DateTimeOrNil(r.summary.LastIndexScan)
+func (r *repositorySummaryResolver) LastIndexScan() *gqlutil.DateTime {
+	return gqlutil.DateTimeOrNil(r.summary.LastIndexScan)
 }

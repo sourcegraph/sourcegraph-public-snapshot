@@ -1,5 +1,4 @@
 import { SubmitSearchParameters } from '@sourcegraph/search'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { SearchType } from '@sourcegraph/shared/src/search/stream'
@@ -29,6 +28,7 @@ export function submitSearch({
     activation,
     source,
     searchParameters,
+    addRecentSearch,
 }: SubmitSearchParameters): void {
     let searchQueryParameter = buildSearchURLQuery(
         query,
@@ -52,14 +52,17 @@ export function submitSearch({
 
     // Go to search results page
     const path = '/search?' + searchQueryParameter
+
+    const queryWithContext = appendContextFilter(query, selectedSearchContextSpec)
     eventLogger.log(
         'SearchSubmitted',
         {
-            query: appendContextFilter(query, selectedSearchContextSpec),
+            query: queryWithContext,
             source,
         },
         { source }
     )
+    addRecentSearch?.(queryWithContext)
     history.push(path, { ...(typeof history.location.state === 'object' ? history.location.state : null), query })
     if (activation) {
         activation.update({ DidSearch: true })
@@ -156,10 +159,6 @@ export function toggleSearchType(query: string, searchType: SearchType): string 
 
     return query.replace(match[0], searchType ? `type:${searchType}` : '')
 }
-
-/** Returns true if the given value is of the GraphQL SearchResults type */
-export const isSearchResults = (value: any): value is GQL.ISearchResults =>
-    value && typeof value === 'object' && value.__typename === 'SearchResults'
 
 /**
  * Some filters should use an alias just for search so they receive the expected suggestions.

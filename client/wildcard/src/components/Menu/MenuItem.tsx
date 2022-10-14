@@ -18,11 +18,19 @@ export type MenuItemProps = ReachMenuItemProps
  *
  * @see — Docs https://reach.tech/menu-button#menuitem
  */
-export const MenuItem = React.forwardRef(({ children, className, disabled, ...props }, reference) => {
+export const MenuItem = React.forwardRef(function MenuItem({ children, className, disabled, ...props }, reference) {
     const Component = disabled ? MenuDisabledItem : ReachMenuItem
 
     return (
-        <Component ref={reference} {...props} className={classNames(styles.dropdownItem, className)}>
+        <Component
+            ref={reference}
+            {...props}
+            // NOTE: In Safari 16.0+, the onBlur event bubbling up to the MenuButton
+            // prevents the menu from opening properly. We prevent this event from
+            // bubbling up as ReachUI is managing focus state for us internally.
+            onBlur={event => event.stopPropagation()}
+            className={classNames(styles.dropdownItem, className)}
+        >
             {children}
         </Component>
     )

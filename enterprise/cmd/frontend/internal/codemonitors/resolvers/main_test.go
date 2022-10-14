@@ -17,6 +17,7 @@ import (
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -155,7 +156,7 @@ func newResolverWithClock(logger log.Logger, db database.DB, clock func() time.T
 func marshalDateTime(t testing.TB, ts time.Time) string {
 	t.Helper()
 
-	dt := graphqlbackend.DateTime{Time: ts}
+	dt := gqlutil.DateTime{Time: ts}
 
 	bs, err := dt.MarshalJSON()
 	if err != nil {

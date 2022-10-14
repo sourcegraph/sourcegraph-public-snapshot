@@ -6,19 +6,15 @@ import (
 	"testing"
 	"testing/quick"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestNewFilter(t *testing.T) {
-	gitserver.Mocks.ReadFile = func(commit api.CommitID, name string) ([]byte, error) {
-		return []byte("foo/"), nil
-	}
-	defer func() { gitserver.Mocks.ReadFile = nil }()
+	gitserverClient := gitserver.NewMockClient()
+	gitserverClient.ReadFileFunc.SetDefaultReturn([]byte("foo/"), nil)
 
-	ig, err := NewFilter(context.Background(), database.NewMockDB(), "", "")
+	ig, err := NewFilter(context.Background(), gitserverClient, "", "")
 	if err != nil {
 		t.Error(err)
 	}
@@ -54,12 +50,10 @@ func TestNewFilter(t *testing.T) {
 }
 
 func TestMissingIgnoreFile(t *testing.T) {
-	gitserver.Mocks.ReadFile = func(commit api.CommitID, name string) ([]byte, error) {
-		return nil, errors.Errorf("err open .sourcegraph/ignore: file does not exist")
-	}
-	defer func() { gitserver.Mocks.ReadFile = nil }()
+	gitserverClient := gitserver.NewMockClient()
+	gitserverClient.ReadFileFunc.SetDefaultReturn(nil, errors.Errorf("err open .sourcegraph/ignore: file does not exist"))
 
-	ig, err := NewFilter(context.Background(), database.NewMockDB(), "", "")
+	ig, err := NewFilter(context.Background(), gitserverClient, "", "")
 	if err != nil {
 		t.Error(err)
 	}

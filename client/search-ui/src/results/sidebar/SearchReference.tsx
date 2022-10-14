@@ -216,6 +216,21 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         showSuggestions: false,
     },
     {
+        ...createQueryExampleFromString('has.tag({any string})'),
+        field: FilterType.repo,
+        description: 'Search inside repositories that are tagged with the provided string.',
+        examples: ['repo:has.tag(ocaml)', '-repo:has.tag(golang)'],
+        showSuggestions: false,
+    },
+    {
+        ...createQueryExampleFromString('has({key:value})'),
+        field: FilterType.repo,
+        description:
+            'Search inside repositories associated with a key:value pair that matches the provided key:value pair.',
+        examples: ['repo:has(owner:jordan)', '-repo:has(team:search)'],
+        showSuggestions: false,
+    },
+    {
         ...createQueryExampleFromString('{revision}'),
         field: FilterType.rev,
         commonRank: 20,

@@ -16,7 +16,7 @@ import (
 	workerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-func NewWorker(ctx context.Context, handler workerutil.Handler, workerStore workerstore.Store, metrics workerutil.WorkerMetrics) *workerutil.Worker {
+func NewWorker(ctx context.Context, handler workerutil.Handler, workerStore workerstore.Store, metrics workerutil.WorkerObservability) *workerutil.Worker {
 	options := workerutil.WorkerOptions{
 		Name:              "webhook_build_worker",
 		NumHandlers:       3,
@@ -77,7 +77,6 @@ func EnqueueJob(ctx context.Context, workerBaseStore *basestore.Store, job *Job)
 }
 
 const enqueueJobFmtStr = `
--- source: internal/repos/worker/worker.go:EnqueueJob
 INSERT INTO webhook_build_jobs (
 	repo_id,
 	repo_name,

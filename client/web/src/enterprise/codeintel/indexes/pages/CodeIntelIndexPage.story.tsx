@@ -1,10 +1,8 @@
 import { Meta, Story } from '@storybook/react'
 import { of } from 'rxjs'
 
-import { LSIFUploadState } from '@sourcegraph/shared/src/schema'
-
 import { WebStory } from '../../../../components/WebStory'
-import { LsifIndexFields, LSIFIndexState, LsifIndexStepsFields } from '../../../../graphql-operations'
+import { LsifIndexFields, LSIFIndexState, LsifIndexStepsFields, LSIFUploadState } from '../../../../graphql-operations'
 
 import { CodeIntelIndexPage, CodeIntelIndexPageProps } from './CodeIntelIndexPage'
 

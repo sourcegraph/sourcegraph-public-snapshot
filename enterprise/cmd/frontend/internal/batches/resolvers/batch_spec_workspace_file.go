@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -31,16 +32,16 @@ func (r *batchSpecWorkspaceFileResolver) ID() graphql.ID {
 	return marshalWorkspaceFileRandID(r.file.RandID)
 }
 
-func (r *batchSpecWorkspaceFileResolver) ModifiedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.file.ModifiedAt}
+func (r *batchSpecWorkspaceFileResolver) ModifiedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.file.ModifiedAt}
 }
 
-func (r *batchSpecWorkspaceFileResolver) CreatedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.file.CreatedAt}
+func (r *batchSpecWorkspaceFileResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.file.CreatedAt}
 }
 
-func (r *batchSpecWorkspaceFileResolver) UpdatedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.file.UpdatedAt}
+func (r *batchSpecWorkspaceFileResolver) UpdatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.file.UpdatedAt}
 }
 
 func (r *batchSpecWorkspaceFileResolver) Name() string {

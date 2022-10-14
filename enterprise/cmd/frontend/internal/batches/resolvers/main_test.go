@@ -12,7 +12,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
@@ -24,6 +23,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -96,7 +97,7 @@ var testDiffGraphQL = apitest.FileDiffs{
 func marshalDateTime(t testing.TB, ts time.Time) string {
 	t.Helper()
 
-	dt := graphqlbackend.DateTime{Time: ts}
+	dt := gqlutil.DateTime{Time: ts}
 
 	bs, err := dt.MarshalJSON()
 	if err != nil {
@@ -118,8 +119,14 @@ func parseJSONTime(t testing.TB, ts string) time.Time {
 	return timestamp
 }
 
+type mockExecutorResolver struct{}
+
+func (mockExecutorResolver) ExecutorResolver() executor.Resolver {
+	return nil
+}
+
 func newSchema(db database.DB, r graphqlbackend.BatchChangesResolver) (*graphql.Schema, error) {
-	return graphqlbackend.NewSchemaWithBatchChangesResolver(db, r)
+	return graphqlbackend.NewSchemaWithBatchChangesResolver(db, r, mockExecutorResolver{})
 }
 
 func newGitHubExternalService(t *testing.T, store database.ExternalServiceStore) *types.ExternalService {
@@ -179,17 +186,22 @@ func mockBackendCommits(t *testing.T, revs ...api.CommitID) {
 	t.Cleanup(func() { backend.Mocks.Repos.ResolveRev = nil })
 }
 
-func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
+func mockRepoComparison(t *testing.T, gitserverClient gitserver.MockClient, baseRev, headRev, diff string) {
 	t.Helper()
 
 	spec := fmt.Sprintf("%s...%s", baseRev, headRev)
-
 	gitserver.Mocks.ResolveRevision = func(spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		if spec != baseRev && spec != headRev {
 			t.Fatalf("gitserver.Mocks.ResolveRevision received unknown spec: %s", spec)
 		}
 		return api.CommitID(spec), nil
 	}
+	gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+		if spec != baseRev && spec != headRev {
+			t.Fatalf("gitserver.Mocks.ResolveRevision received unknown spec: %s", spec)
+		}
+		return api.CommitID(spec), nil
+	})
 
 	gitserver.Mocks.ExecReader = func(args []string) (io.ReadCloser, error) {
 		if len(args) < 1 && args[0] != "diff" {
@@ -203,13 +215,12 @@ func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
 	}
 	t.Cleanup(func() { gitserver.Mocks.ExecReader = nil })
 
-	gitserver.Mocks.MergeBase = func(repo api.RepoName, a, b api.CommitID) (api.CommitID, error) {
+	gitserverClient.MergeBaseFunc.SetDefaultHook(func(ctx context.Context, name api.RepoName, a api.CommitID, b api.CommitID) (api.CommitID, error) {
 		if string(a) != baseRev && string(b) != headRev {
 			t.Fatalf("git.Mocks.MergeBase received unknown commit ids: %s %s", a, b)
 		}
 		return a, nil
-	}
-	t.Cleanup(func() { gitserver.Mocks.MergeBase = nil })
+	})
 }
 
 func addChangeset(t *testing.T, ctx context.Context, s *store.Store, c *btypes.Changeset, batchChange int64) {
