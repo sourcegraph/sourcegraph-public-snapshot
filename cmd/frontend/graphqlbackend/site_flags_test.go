@@ -21,6 +21,10 @@ func TestFreeUsersExceeded(t *testing.T) {
 		}, nil
 	}
 
+	IsFreePlan = func(*ProductLicenseInfo) bool {
+		return true
+	}
+
 	t.Run("Free users not exceeded", func(t *testing.T) {
 		db := database.NewMockDB()
 		users := database.NewMockUserStore()
