@@ -79,7 +79,7 @@
 
 ### Self-hosted
 
-- [AWS](https://docs.sourcegraph.com/admin/deploy/aws-ami)
+- [AWS](https://docs.sourcegraph.com/admin/deploy/machine-images/aws-ami)
 - [Azure](https://docs.sourcegraph.com/admin/deploy/docker-compose/azure)
 - [DigitalOcean](https://docs.sourcegraph.com/admin/deploy/docker-compose/digitalocean)
 - [Docker Compose](https://docs.sourcegraph.com/admin/deploy/docker-compose)
