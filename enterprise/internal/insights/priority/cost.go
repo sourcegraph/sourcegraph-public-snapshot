@@ -28,5 +28,5 @@ const (
 
 	ManyRepositoriesMultiplier float64 = 10
 	MegarepoMultiplier         float64 = 100
-	GigarepoMultiplier         float64 = 500
+	GigarepoMultiplier         float64 = 1000
 )

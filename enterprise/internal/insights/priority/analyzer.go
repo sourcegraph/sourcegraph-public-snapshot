@@ -1,8 +1,6 @@
 package priority
 
 import (
-	"sort"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 )
@@ -101,8 +99,8 @@ func QueryCost(o *QueryObject) {
 }
 
 var (
-	megarepoSizeThresold  int64 = 2147483648                // 2GB
-	gigarepoSizethreshold int64 = megarepoSizeThresold * 10 // 20GB
+	megarepoSizeThresold  int64 = 5368709120                // 5GB
+	gigarepoSizethreshold int64 = megarepoSizeThresold * 10 // 50GB
 )
 
 func RepositoriesCost(o *QueryObject) {
@@ -114,22 +112,18 @@ func RepositoriesCost(o *QueryObject) {
 		o.Cost *= ManyRepositoriesMultiplier
 	}
 
-	if len(o.RepositoryByteSizes) > 0 {
-		sort.Slice(o.RepositoryByteSizes, func(i, j int) bool {
-			// sort in descending order
-			return o.RepositoryByteSizes[i] > o.RepositoryByteSizes[j]
-		})
-		i := 0
-		for o.RepositoryByteSizes[i] >= megarepoSizeThresold {
-			if o.RepositoryByteSizes[i] >= gigarepoSizethreshold {
-				o.Cost *= GigarepoMultiplier
-				break
-			}
-			if o.RepositoryByteSizes[i] >= megarepoSizeThresold {
-				o.Cost *= MegarepoMultiplier
-				break
-			}
-			i++
+	var megarepo, gigarepo bool
+	for _, byteSize := range o.RepositoryByteSizes {
+		if byteSize >= gigarepoSizethreshold {
+			gigarepo = true
 		}
+		if byteSize >= megarepoSizeThresold {
+			megarepo = true
+		}
+	}
+	if gigarepo {
+		o.Cost *= GigarepoMultiplier
+	} else if megarepo {
+		o.Cost *= MegarepoMultiplier
 	}
 }
