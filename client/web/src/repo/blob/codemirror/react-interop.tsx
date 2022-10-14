@@ -11,9 +11,10 @@ import { WildcardThemeContext } from '@sourcegraph/wildcard'
  * CodeMirror.
  */
 export const Container: React.FunctionComponent<
-    React.PropsWithChildren<{ history: History; onRender?: () => void }>
-> = ({ history, onRender, children }) => {
+    React.PropsWithChildren<{ history: History; onMount?: () => void; onRender?: () => void }>
+> = ({ history, onMount, onRender, children }) => {
     useEffect(() => onRender?.())
+    useEffect(() => onMount?.(), [])
 
     return (
         <WildcardThemeContext.Provider value={{ isBranded: true }}>
