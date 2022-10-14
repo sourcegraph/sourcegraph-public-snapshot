@@ -78,7 +78,6 @@ func SetDerivedState(ctx context.Context, repoStore database.RepoStore, client g
 	// and new states for the duration of this function, although we'll update
 	// c.SyncState as soon as we can.
 	oldState := c.SyncState
-	db := database.NewDBWith(logger, repoStore)
 	newState, err := computeSyncState(ctx, client, c, repo.Name)
 	if err != nil {
 		logger.Warn("Computing sync state", log.Error(err))
@@ -89,7 +88,7 @@ func SetDerivedState(ctx context.Context, repoStore database.RepoStore, client g
 	// Now we can update fields that are invalidated when the sync state
 	// changes.
 	if !oldState.Equals(newState) {
-		if stat, err := computeDiffStat(ctx, db, c, repo.Name); err != nil {
+		if stat, err := computeDiffStat(ctx, client, c, repo.Name); err != nil {
 			logger.Warn("Computing diffstat", log.Error(err))
 		} else {
 			c.SetDiffStat(stat)
@@ -614,8 +613,8 @@ func selectReviewState(states map[btypes.ChangesetReviewState]bool) btypes.Chang
 
 // computeDiffStat computes the up to date diffstat for the changeset, based on
 // the values in c.SyncState.
-func computeDiffStat(ctx context.Context, db database.DB, c *btypes.Changeset, repo api.RepoName) (*diff.Stat, error) {
-	iter, err := gitserver.NewClient(db).Diff(ctx, gitserver.DiffOptions{
+func computeDiffStat(ctx context.Context, client gitserver.Client, c *btypes.Changeset, repo api.RepoName) (*diff.Stat, error) {
+	iter, err := client.Diff(ctx, gitserver.DiffOptions{
 		Repo: repo,
 		Base: c.SyncState.BaseRefOid,
 		Head: c.SyncState.HeadRefOid,
