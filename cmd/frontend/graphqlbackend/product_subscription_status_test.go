@@ -23,6 +23,10 @@ func TestMaximumAllowedUserCount(t *testing.T) {
 				ExpiresAtValue: time.Now().Add(time.Hour * 8600),
 			}, nil
 		}
+
+		IsFreePlan = func(*ProductLicenseInfo) bool {
+			return true
+		}
 		users, err := subscriptionStatus.MaximumAllowedUserCount(context.Background())
 		assert.NoError(t, err)
 		assert.Equal(t, MaxFreeUsers, *users)
@@ -36,6 +40,9 @@ func TestMaximumAllowedUserCount(t *testing.T) {
 				UserCountValue: expectedUsers,
 				ExpiresAtValue: time.Now().Add(time.Hour * 8600),
 			}, nil
+		}
+		IsFreePlan = func(*ProductLicenseInfo) bool {
+			return false
 		}
 		users, err := subscriptionStatus.MaximumAllowedUserCount(context.Background())
 		assert.NoError(t, err)

@@ -54,7 +54,7 @@ func (r *siteResolver) FreeUsersExceeded(ctx context.Context) (bool, error) {
 	}
 
 	// If a license exists, warnings never need to be shown.
-	if info, err := GetConfiguredProductLicenseInfo(); info != nil && !isFreePlan(info) {
+	if info, err := GetConfiguredProductLicenseInfo(); info != nil && IsFreePlan(info) {
 		return false, err
 	}
 	// If OSS, warnings never need to be shown.
