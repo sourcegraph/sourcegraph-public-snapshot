@@ -91,10 +91,6 @@ func (s *Service) buildFileReferenceGraph(ctx context.Context, repoName api.Repo
 			return nil
 		}
 
-		// isSymbolCharacter := func(r rune) bool {
-		// 	return unicode.IsLetter(r) || unicode.IsDigit(r) || r == '_'
-		// }
-
 		emitted := map[string]struct{}{}
 		for _, matchingIndex := range matcher.Match(content) {
 			for _, path := range searchTermsAndPaths[matchingIndex].paths {
@@ -110,85 +106,6 @@ func (s *Service) buildFileReferenceGraph(ctx context.Context, repoName api.Repo
 				}
 			}
 		}
-
-		// // Build a list of index pairs indicating `[start, end)` ranges of words
-		// // that appear in the given content.
-		// indexes := []int{}
-
-		// for cursor := 0; cursor < len(content); {
-		// 	// Advance past non-symbol characters
-		// 	if !isSymbolCharacter(content[cursor]) {
-		// 		cursor++
-		// 		continue
-		// 	}
-
-		// 	// Here, the cursor points to the first symbol character in a word.
-		// 	// Mark this index (inclusive) as the start of the word. We'll add
-		// 	// the end index below.
-		// 	indexes = append(indexes, cursor)
-
-		// 	// Advance through all the symbol characters
-		// 	for cursor++; cursor < len(content); {
-		// 		if !isSymbolCharacter(content[cursor]) {
-		// 			break
-		// 		}
-
-		// 		cursor++
-		// 	}
-
-		// 	// Here, the cursor points to the first non-symbol character after the
-		// 	// previous word. Close the range started above by marking this index
-		// 	// (exclusive) as the end of the word.
-		// 	indexes = append(indexes, cursor)
-
-		// 	// Skip useless predicate re-check at the head of the loop
-		// 	cursor++
-		// }
-
-		// Search for each target symbol in the document by comparing it to each of
-		// the words we've identified above. Once we find a match we can emit edges
-		// relating to all of the associated paths and move on to the next symbol.
-
-		// emitted := map[string]struct{}{}
-		// for _, searchTermAndPaths := range searchTermsAndPaths {
-		// 	allEmitted := true
-		// 	for _, p := range searchTermAndPaths.paths {
-		// 		if _, ok := emitted[p]; !ok {
-		// 			allEmitted = false
-		// 			break
-		// 		}
-		// 	}
-		// 	if allEmitted {
-		// 		continue
-		// 	}
-
-		// 	symbol := searchTermAndPaths.symbol
-		// 	n := len(symbol)
-
-		// 	for i := 0; i < len(indexes); i += 2 {
-		// 		lo := indexes[i]
-		// 		hi := indexes[i+1]
-
-		// 		if hi-lo != n || string(content[lo:hi]) == symbol {
-		// 			continue
-		// 		}
-
-		// 		for _, path := range searchTermAndPaths.paths {
-		// 			if _, ok := emitted[path]; ok {
-		// 				continue
-		// 			}
-		// 			emitted[path] = struct{}{}
-
-		// 			select {
-		// 			case ch <- streamedEdge{from: h.Name, to: path}:
-		// 			case <-ctx.Done():
-		// 				return ctx.Err()
-		// 			}
-		// 		}
-
-		// 		break
-		// 	}
-		// }
 
 		return nil
 	}
