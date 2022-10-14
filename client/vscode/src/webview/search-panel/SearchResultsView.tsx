@@ -147,6 +147,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                     patternType,
                     version: LATEST_VERSION,
                     trace: undefined,
+                    chunkMatches: true,
                 })
                 .then(() => {
                     editorReference.current?.focus()
