@@ -1,3 +1,11 @@
+.input {
+    // Fix line height for the code insight creation UI purpose
+    // stylelint-disable-next-line selector-class-pattern
+    :global(.cm-lineWrapping) {
+        line-height: 1.3125rem; // 21 px
+    }
+}
+
 .regex-button {
     align-self: flex-start;
     background-color: var(--input-disabled-bg);

@@ -35,6 +35,8 @@ func TestCheckFeature(t *testing.T) {
 
 		check(t, FeatureSSO, license(plan(PlanBusiness0)), true)
 		check(t, FeatureSSO, license(plan(PlanEnterprise1)), true)
+
+		check(t, FeatureSSO, license(plan(PlanFree0)), true)
 	})
 
 	t.Run(string(FeatureExplicitPermissionsAPI), func(t *testing.T) {

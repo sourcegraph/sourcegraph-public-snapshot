@@ -85,6 +85,7 @@ func validateExecutorToken(w http.ResponseWriter, r *http.Request, expectedAcces
 	}
 	if token == "" {
 		http.Error(w, "no token value in the HTTP Authorization request header (recommended) or basic auth (deprecated)", http.StatusUnauthorized)
+		return false
 	}
 
 	if token != expectedAccessToken {

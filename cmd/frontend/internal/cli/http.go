@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
@@ -96,7 +97,11 @@ func newExternalHTTPHandler(
 	sm.Handle("/.api/", secureHeadersMiddleware(apiHandler, crossOriginPolicyAPI))
 	sm.Handle("/.executors/", secureHeadersMiddleware(executorProxyHandler, crossOriginPolicyNever))
 	sm.Handle("/", secureHeadersMiddleware(appHandler, crossOriginPolicyNever))
-	assetsutil.Mount(sm)
+	const urlPathPrefix = "/.assets"
+	// The asset handler should be wrapped into a middleware that enables cross-origin requests
+	// to allow the loading of the Phabricator native extension assets.
+	assetHandler := assetsutil.NewAssetHandler(sm)
+	sm.Handle(urlPathPrefix+"/", http.StripPrefix(urlPathPrefix, secureHeadersMiddleware(assetHandler, crossOriginPolicyAssets)))
 
 	var h http.Handler = sm
 
@@ -132,7 +137,14 @@ func healthCheckMiddleware(next http.Handler) http.Handler {
 
 // newInternalHTTPHandler creates and returns the HTTP handler for the internal API (accessible to
 // other internal services).
-func newInternalHTTPHandler(schema *graphql.Schema, db database.DB, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler, newComputeStreamHandler enterprise.NewComputeStreamHandler, rateLimitWatcher graphqlbackend.LimitWatcher, healthCheckHandler http.Handler) http.Handler {
+func newInternalHTTPHandler(
+	schema *graphql.Schema,
+	db database.DB,
+	newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler,
+	newComputeStreamHandler enterprise.NewComputeStreamHandler,
+	rateLimitWatcher graphqlbackend.LimitWatcher,
+	codeIntelServices codeintel.Services,
+) http.Handler {
 	internalMux := http.NewServeMux()
 	logger := log.Scoped("internal", "internal http handlers")
 	internalMux.Handle("/.internal/", gziphandler.GzipHandler(
@@ -146,7 +158,7 @@ func newInternalHTTPHandler(schema *graphql.Schema, db database.DB, newCodeIntel
 					newCodeIntelUploadHandler,
 					newComputeStreamHandler,
 					rateLimitWatcher,
-					healthCheckHandler,
+					codeIntelServices,
 				),
 			),
 		),
@@ -169,7 +181,7 @@ const corsAllowHeader = "X-Requested-With"
 type crossOriginPolicy string
 
 const (
-	// crossOriginPolicyAPI describes that the middleware should handle cross origin requests as a
+	// crossOriginPolicyAPI describes that the middleware should handle cross-origin requests as a
 	// public API. That is, cross-origin requests are allowed from any domain but
 	// cookie/session-based authentication is only allowed if the origin is in the configured
 	// allow-list of origins. Otherwise, only access token authentication is permitted.
@@ -181,7 +193,14 @@ const (
 	// cookie/session-based authentication (which is dangerous to expose to untrusted domains.)
 	crossOriginPolicyAPI crossOriginPolicy = "API"
 
-	// crossOriginPolicyNever describes that the middleware should handle cross origin requests by
+	// crossOriginPolicyAssets describes that the middleware should handle cross-origin requests to
+	// static resources as a public API. That is, cross-origin requests are allowed from any domain.
+	//
+	// This is to be used for static assets served from the /.assets route. For example, using this
+	// route, the Phabricator native extension loads styles via the fetch interface.
+	crossOriginPolicyAssets crossOriginPolicy = "assets"
+
+	// crossOriginPolicyNever describes that the middleware should handle cross-origin requests by
 	// never allowing them. This makes sense for e.g. routes such as e.g. sign out pages, where
 	// cookie based authentication is needed and requests should never come from a domain other than
 	// the Sourcegraph instance itself.
@@ -242,7 +261,17 @@ func handleCORSRequest(w http.ResponseWriter, r *http.Request, policy crossOrigi
 		return false
 	}
 
-	// crossOriginPolicyAPI - handling of API routes.
+	// If the crossOriginPolicyAssets is used and the requested asset is not from the extension folder,
+	// we do not write ANY Access-Control-Allow-* CORS headers, which triggers the browser's default
+	// (and strict) behavior of not allowing cross-origin requests.
+	//
+	// We allow cross-origin requests for assets in the `./ui/assets/extension` folder because they
+	// are required for the native Phabricator extension.
+	if policy == crossOriginPolicyAssets && !strings.HasPrefix(r.URL.Path, "/extension/") {
+		return false
+	}
+
+	// crossOriginPolicyAPI and crossOriginPolicyAssets - handling of API and static assets routes.
 	//
 	// Even if the request was not from a trusted origin, we will allow the browser to send it AND
 	// include credentials even. Traditionally, this would be a CSRF vulnerability! But because we

@@ -7,5 +7,8 @@ import (
 )
 
 type PolicyService interface {
-	NewRepoMatcher(interval time.Duration, configurationPolicyMembershipBatchSize int) goroutine.BackgroundRoutine
+	NewRepositoryMatcher(
+		interval time.Duration,
+		configurationPolicyMembershipBatchSize int,
+	) goroutine.BackgroundRoutine
 }

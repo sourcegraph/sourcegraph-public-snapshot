@@ -3,6 +3,7 @@ package http
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -15,7 +16,14 @@ const maxPayloadSize = 10 * 1024 * 1024 // 10mb
 
 // NewRequest returns an http.Request against the streaming API for query.
 func NewRequest(baseURL string, query string) (*http.Request, error) {
-	u := baseURL + "/search/stream?q=" + url.QueryEscape(query)
+	// when an empty string is passed as version, the route handler defaults to using the
+	// latest supported version.
+	return NewRequestWithVersion(baseURL, query, "")
+}
+
+// NewRequestWithVersion returns an http.Request against the streaming API for query with the specified version.
+func NewRequestWithVersion(baseURL, query, version string) (*http.Request, error) {
+	u := fmt.Sprintf("%s/search/stream?v=%s&q=%s", baseURL, version, url.QueryEscape(query))
 	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
 		return nil, err

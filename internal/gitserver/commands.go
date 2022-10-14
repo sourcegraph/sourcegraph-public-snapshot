@@ -365,10 +365,6 @@ func (c *clientImplementor) DiffSymbols(ctx context.Context, repo api.RepoName, 
 
 // ReadDir reads the contents of the named directory at commit.
 func (c *clientImplementor) ReadDir(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error) {
-	if Mocks.ReadDir != nil {
-		return Mocks.ReadDir(commit, path, recurse)
-	}
-
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: ReadDir")
 	span.SetTag("Commit", commit)
 	span.SetTag("Path", path)
@@ -944,9 +940,6 @@ func runRevParse(ctx context.Context, cmd GitCommand, spec string) (api.CommitID
 
 // LsFiles returns the output of `git ls-files`.
 func (c *clientImplementor) LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pathspecs ...gitdomain.Pathspec) ([]string, error) {
-	if Mocks.LsFiles != nil {
-		return Mocks.LsFiles(repo, commit)
-	}
 	args := []string{
 		"ls-files",
 		"-z",
@@ -1158,9 +1151,6 @@ func parseTags(in []byte) ([]*gitdomain.Tag, error) {
 // If the repository is empty or currently being cloned, empty values and no
 // error are returned.
 func (c *clientImplementor) GetDefaultBranch(ctx context.Context, repo api.RepoName, short bool) (refName string, commit api.CommitID, err error) {
-	if Mocks.GetDefaultBranch != nil {
-		return Mocks.GetDefaultBranch(repo)
-	}
 	args := []string{"symbolic-ref", "HEAD"}
 	if short {
 		args = append(args, "--short")
@@ -1191,9 +1181,6 @@ func (c *clientImplementor) GetDefaultBranch(ctx context.Context, repo api.RepoN
 
 // MergeBase returns the merge base commit for the specified commits.
 func (c *clientImplementor) MergeBase(ctx context.Context, repo api.RepoName, a, b api.CommitID) (api.CommitID, error) {
-	if Mocks.MergeBase != nil {
-		return Mocks.MergeBase(repo, a, b)
-	}
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: MergeBase")
 	span.SetTag("A", a)
 	span.SetTag("B", b)
@@ -1260,10 +1247,6 @@ func (c *clientImplementor) GetBehindAhead(ctx context.Context, repo api.RepoNam
 // ReadFile returns the first maxBytes of the named file at commit. If maxBytes <= 0, the entire
 // file is read. (If you just need to check a file's existence, use Stat, not ReadFile.)
 func (c *clientImplementor) ReadFile(ctx context.Context, repo api.RepoName, commit api.CommitID, name string, checker authz.SubRepoPermissionChecker) ([]byte, error) {
-	if Mocks.ReadFile != nil {
-		return Mocks.ReadFile(commit, name)
-	}
-
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: ReadFile")
 	span.SetTag("Name", name)
 	defer span.Finish()
@@ -1377,10 +1360,6 @@ func (br *blobReader) convertError(err error) error {
 
 // Stat returns a FileInfo describing the named file at commit.
 func (c *clientImplementor) Stat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
-	if Mocks.Stat != nil {
-		return Mocks.Stat(commit, path)
-	}
-
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: Stat")
 	span.SetTag("Commit", commit)
 	span.SetTag("Path", path)

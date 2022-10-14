@@ -90,10 +90,18 @@ type Client struct {
 // the organization assigned to buildkiteOrg.
 // If there is no token assigned yet, it will be asked to the user.
 func NewClient(ctx context.Context, out *std.Output) (*Client, error) {
-	token, err := retrieveToken(ctx, out)
+	store, err := secrets.FromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
+	token, err := store.GetExternal(ctx, secrets.ExternalSecret{
+		Project: "sourcegraph-local-dev",
+		Name:    "SG_BUILDKITE_TOKEN",
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	config, err := buildkite.NewTokenConfig(token, false)
 	if err != nil {
 		return nil, errors.Newf("failed to init buildkite config: %w", err)

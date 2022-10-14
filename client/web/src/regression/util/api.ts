@@ -915,6 +915,7 @@ export function fetchSiteConfiguration({
         request: gql`
             query Site {
                 site {
+                    __typename
                     id
                     canReloadSite
                     configuration {

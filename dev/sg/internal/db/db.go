@@ -46,29 +46,25 @@ var (
 	frontendDatabase = Database{
 		Name:            "frontend",
 		MigrationsTable: "schema_migrations",
-		DataTables: []string{
-			"lsif_configuration_policies",
-		},
-		FS: GetFSForPath("frontend"),
+		FS:              GetFSForPath("frontend"),
+		DataTables:      []string{"lsif_configuration_policies"},
+		CountTables:     nil,
 	}
 
 	codeIntelDatabase = Database{
 		Name:            "codeintel",
 		MigrationsTable: "codeintel_schema_migrations",
-		CountTables: []string{
-			"lsif_data_apidocs_num_dumps",
-			"lsif_data_apidocs_num_dumps_indexed",
-			"lsif_data_apidocs_num_pages",
-			"lsif_data_apidocs_num_search_results_private",
-			"lsif_data_apidocs_num_search_results_public",
-		},
-		FS: GetFSForPath("codeintel"),
+		FS:              GetFSForPath("codeintel"),
+		DataTables:      nil,
+		CountTables:     nil,
 	}
 
 	codeInsightsDatabase = Database{
 		Name:            "codeinsights",
 		MigrationsTable: "codeinsights_schema_migrations",
 		FS:              GetFSForPath("codeinsights"),
+		DataTables:      nil,
+		CountTables:     nil,
 	}
 
 	databases = []Database{

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/sourcegraph/internal/eventlogger"
 )
 
 var (
@@ -51,7 +52,7 @@ var eventLogsNodesQuery = `
 SELECT
 	%s AS date,
 	COUNT(*) AS total_count,
-	COUNT(DISTINCT anonymous_user_id) AS unique_users,
+	COUNT(DISTINCT CASE WHEN user_id = 0 THEN anonymous_user_id ELSE CAST(user_id AS TEXT) END) AS unique_users,
 	COUNT(DISTINCT user_id) FILTER (WHERE user_id != 0) AS registered_users
 FROM
 	event_logs
@@ -62,7 +63,7 @@ GROUP BY date
 var eventLogsSummaryQuery = `
 SELECT
 	COUNT(*) AS total_count,
-	COUNT(DISTINCT anonymous_user_id) AS unique_users,
+	COUNT(DISTINCT CASE WHEN user_id = 0 THEN anonymous_user_id ELSE CAST(user_id AS TEXT) END) AS unique_users,
 	COUNT(DISTINCT user_id) FILTER (WHERE user_id != 0) AS registered_users
 FROM
 	event_logs
@@ -75,8 +76,14 @@ func makeEventLogsQueries(dateRange string, grouping string, events []string, co
 		return nil, nil, err
 	}
 
+	nonActiveUserEvents := []*sqlf.Query{}
+	for _, name := range eventlogger.NonActiveUserEvents {
+		nonActiveUserEvents = append(nonActiveUserEvents, sqlf.Sprintf("%s", name))
+	}
+
 	conds := []*sqlf.Query{
 		sqlf.Sprintf("anonymous_user_id <> 'backend'"),
+		sqlf.Sprintf("name NOT IN (%s)", sqlf.Join(nonActiveUserEvents, ", ")),
 		sqlf.Sprintf("timestamp %s", dateBetweenCond),
 	}
 

@@ -48,10 +48,23 @@ func ParseComputeQuery(q string) (*compute.Query, error) {
 }
 
 // ParametersFromQueryPlan expects a valid query plan and returns all parameters from it, e.g. context:global.
-func ParametersFromQueryPlan(plan query.Plan) []query.Parameter {
+func ParametersFromQueryPlan(plan query.Plan) query.Parameters {
 	var parameters []query.Parameter
 	for _, basic := range plan {
 		parameters = append(parameters, basic.Parameters...)
 	}
 	return parameters
+}
+
+func ContainsField(rawQuery, field string) (bool, error) {
+	plan, err := ParseQuery(rawQuery, "literal")
+	if err != nil {
+		return false, errors.Wrap(err, "ParseQuery")
+	}
+	for _, basic := range plan {
+		if basic.Parameters.Exists(field) {
+			return true, nil
+		}
+	}
+	return false, nil
 }

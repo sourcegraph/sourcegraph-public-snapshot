@@ -131,7 +131,8 @@ func TestEnforcement_AfterCreateUser(t *testing.T) {
 			wantSiteAdmin:         false,
 		},
 		{
-			name:                  "no license sets new user to be site admin",
+			name:                  "free license sets new user to be site admin",
+			license:               &licensing.GetFreeLicenseInfo().Info,
 			wantCalledExecContext: true,
 			wantSiteAdmin:         true,
 		},

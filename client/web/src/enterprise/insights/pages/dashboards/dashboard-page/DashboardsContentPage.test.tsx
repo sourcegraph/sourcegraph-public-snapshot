@@ -17,6 +17,7 @@ import {
     InsightsDashboardsResult,
     InsightSubjectsResult,
 } from '../../../../../graphql-operations'
+import { useCodeInsightsState } from '../../../../../stores'
 import { CodeInsightsBackendContext, CodeInsightsGqlBackend } from '../../../core'
 import {
     GET_DASHBOARD_INSIGHTS_GQL,
@@ -45,6 +46,7 @@ const mockTelemetryService = {
 const Wrapper: React.FunctionComponent<React.PropsWithChildren<unknown>> = ({ children }) => {
     const apolloClient = useApolloClient()
     const api = new CodeInsightsGqlBackend(apolloClient)
+    useCodeInsightsState.setState({ licensed: true, insightsLimit: 2 })
 
     return <CodeInsightsBackendContext.Provider value={api}>{children}</CodeInsightsBackendContext.Provider>
 }

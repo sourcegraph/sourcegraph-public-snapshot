@@ -19,6 +19,11 @@ var batchesSchema string
 //go:embed codeintel.graphql
 var codeIntelSchema string
 
+// executors is the Executors raw graqhql schema.
+//
+//go:embed executors.graphql
+var executorsSchema string
+
 // dotcomSchema is the Dotcom schema extension raw graqhql schema.
 //
 //go:embed dotcom.graphql
