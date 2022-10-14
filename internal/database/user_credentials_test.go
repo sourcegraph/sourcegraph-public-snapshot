@@ -271,7 +271,7 @@ func TestUserCredentials_Delete(t *testing.T) {
 					ExternalServiceType: "github",
 					ExternalServiceID:   "https://github.com",
 				}
-				token := &auth.OAuthBearerToken{AccessToken: "abcdef"}
+				token := &auth.OAuthBearerToken{Token: "abcdef"}
 
 				cred, err := fx.db.Create(fx.internalCtx, scope, token)
 				require.NoError(t, err)
@@ -290,7 +290,7 @@ func TestUserCredentials_Delete(t *testing.T) {
 			ExternalServiceType: "github",
 			ExternalServiceID:   "https://github.com",
 		}
-		token := &auth.OAuthBearerToken{AccessToken: "abcdef"}
+		token := &auth.OAuthBearerToken{Token: "abcdef"}
 
 		cred, err := fx.db.Create(fx.internalCtx, scope, token)
 		require.NoError(t, err)
@@ -325,7 +325,7 @@ func TestUserCredentials_GetByID(t *testing.T) {
 					ExternalServiceType: "github",
 					ExternalServiceID:   "https://github.com",
 				}
-				token := &auth.OAuthBearerToken{AccessToken: "abcdef"}
+				token := &auth.OAuthBearerToken{Token: "abcdef"}
 
 				cred, err := fx.db.Create(fx.internalCtx, scope, token)
 				require.NoError(t, err)
@@ -344,7 +344,7 @@ func TestUserCredentials_GetByID(t *testing.T) {
 			ExternalServiceType: "github",
 			ExternalServiceID:   "https://github.com",
 		}
-		token := &auth.OAuthBearerToken{AccessToken: "abcdef"}
+		token := &auth.OAuthBearerToken{Token: "abcdef"}
 
 		want, err := fx.db.Create(fx.internalCtx, scope, token)
 		require.NoError(t, err)
@@ -366,7 +366,7 @@ func TestUserCredentials_GetByScope(t *testing.T) {
 		ExternalServiceType: "github",
 		ExternalServiceID:   "https://github.com",
 	}
-	token := &auth.OAuthBearerToken{AccessToken: "abcdef"}
+	token := &auth.OAuthBearerToken{Token: "abcdef"}
 
 	t.Run("nonextant", func(t *testing.T) {
 		cred, err := fx.db.GetByScope(fx.internalCtx, scope)
@@ -426,7 +426,7 @@ func TestUserCredentials_List(t *testing.T) {
 		ExternalServiceType: "gitlab",
 		ExternalServiceID:   "https://gitlab.com",
 	}
-	token := &auth.OAuthBearerToken{AccessToken: "abcdef"}
+	token := &auth.OAuthBearerToken{Token: "abcdef"}
 
 	// Unlike the other tests in this file, we'll set up a couple of credentials
 	// right now, and then list from there.
@@ -626,8 +626,8 @@ func createUserCredentialAuths(t *testing.T) map[string]auth.Authenticator {
 		&auth.OAuthClient{Client: createOAuthClient(t, "abc", "def")},
 		&auth.BasicAuth{Username: "foo", Password: "bar"},
 		&auth.BasicAuthWithSSH{BasicAuth: auth.BasicAuth{Username: "foo", Password: "bar"}, PrivateKey: "private", PublicKey: "public", Passphrase: "pass"},
-		&auth.OAuthBearerToken{AccessToken: "abcdef"},
-		&auth.OAuthBearerTokenWithSSH{OAuthBearerToken: auth.OAuthBearerToken{AccessToken: "abcdef"}, PrivateKey: "private", PublicKey: "public", Passphrase: "pass"},
+		&auth.OAuthBearerToken{Token: "abcdef"},
+		&auth.OAuthBearerTokenWithSSH{OAuthBearerToken: auth.OAuthBearerToken{Token: "abcdef"}, PrivateKey: "private", PublicKey: "public", Passphrase: "pass"},
 		&auth.PersonalAccessToken{Token: "abcdef"},
 		&auth.PersonalAccessTokenWithSSH{PersonalAccessToken: auth.PersonalAccessToken{Token: "abcdef"}, PrivateKey: "private", PublicKey: "public", Passphrase: "pass"},
 		&bitbucketserver.SudoableOAuthClient{

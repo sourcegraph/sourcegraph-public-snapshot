@@ -55,7 +55,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	}
 
 	oauthToken := &esauth.OAuthBearerToken{
-		AccessToken: token.AccessToken,
+		Token: token.AccessToken,
 		// Token is possibly not saved yet, so we don't care about a refresh function
 	}
 	ghClient := s.newClient(oauthToken)

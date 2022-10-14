@@ -349,7 +349,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 	}
 
 	oauthToken := &auth.OAuthBearerToken{
-		AccessToken:  tok.AccessToken,
+		Token:        tok.AccessToken,
 		RefreshToken: tok.RefreshToken,
 		Expiry:       tok.Expiry,
 	}
@@ -366,7 +366,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 // FetchUserPermsByToken is the same as FetchUserPerms, but it only requires a
 // token.
 func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
-	return p.fetchUserPermsByToken(ctx, "", &auth.OAuthBearerToken{AccessToken: token}, opts)
+	return p.fetchUserPermsByToken(ctx, "", &auth.OAuthBearerToken{Token: token}, opts)
 }
 
 // FetchRepoPerms returns a list of user IDs (on code host) who have read access to

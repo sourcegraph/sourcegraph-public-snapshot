@@ -113,8 +113,8 @@ func TestClient_doWithBaseURL(t *testing.T) {
 
 	provider := NewClientProvider("Test", baseURL, doer)
 
-	client := provider.getClient(&auth.OAuthBearerToken{AccessToken: "bad token", RefreshToken: "refresh token", RefreshFunc: func(obt *auth.OAuthBearerToken) (string, string, time.Time, error) {
-		obt.AccessToken = "refreshed-token"
+	client := provider.getClient(&auth.OAuthBearerToken{Token: "bad token", RefreshToken: "refresh token", RefreshFunc: func(obt *auth.OAuthBearerToken) (string, string, time.Time, error) {
+		obt.Token = "refreshed-token"
 		obt.RefreshToken = "refresh-now"
 
 		return "refreshed-token", "refresh-now", time.Now().Add(1 * time.Hour), nil

@@ -349,7 +349,7 @@ func TestSourcer_ForChangeset(t *testing.T) {
 	}
 
 	siteToken := &auth.PersonalAccessToken{Token: "site"}
-	userToken := &auth.OAuthBearerToken{AccessToken: "user"}
+	userToken := &auth.OAuthBearerToken{Token: "user"}
 
 	t.Run("created changesets", func(t *testing.T) {
 		bc := &btypes.BatchChange{ID: 1, LastApplierID: 3}
