@@ -16,7 +16,8 @@ export const productSubscriptionFragment = gql`
             username
             displayName
             emails {
-                ...UserEmailFields
+                email
+                verified
             }
         }
         activeLicense {
@@ -31,10 +32,6 @@ export const productSubscriptionFragment = gql`
         createdAt
         isArchived
         url
-    }
-    fragment UserEmailFields on UserEmail {
-        email
-        verified
     }
 `
 
