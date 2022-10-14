@@ -1372,7 +1372,7 @@ func TestProgressRecorder(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	githubRepo := &types.Repo{
+	repo1 := &types.Repo{
 		Name:     "github.com/org/foo",
 		Metadata: &github.Repository{},
 		ExternalRepo: api.ExternalRepoSpec{
@@ -1381,35 +1381,76 @@ func TestProgressRecorder(t *testing.T) {
 			ServiceType: extsvc.TypeGitHub,
 		},
 	}
-
-	// Sync service
-	syncer := &repos.Syncer{
-		Logger: logtest.Scoped(t),
-		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
-			s := repos.NewFakeSource(svc1, nil, githubRepo)
-			return s, nil
+	repo2 := &types.Repo{
+		Name:     "github.com/org/bar",
+		Metadata: &github.Repository{},
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "bar-external-12345",
+			ServiceID:   "https://github.com/",
+			ServiceType: extsvc.TypeGitHub,
 		},
-		Store: store,
-		Now:   time.Now,
 	}
 
-	var recorderCalled int
-	var recordedProgress repos.SyncProgress
-	progressRecorder := func(ctx context.Context, progress repos.SyncProgress, final bool) error {
-		recorderCalled++
-		recordedProgress = progress
-		return nil
+	runSync := func(t *testing.T, sourcedRepos []*types.Repo) repos.SyncProgress {
+		t.Helper()
+
+		syncer := &repos.Syncer{
+			Logger: logtest.Scoped(t),
+			Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
+				s := repos.NewFakeSource(svc1, nil, sourcedRepos...)
+				return s, nil
+			},
+			Store: store,
+			Now:   time.Now,
+		}
+
+		var recordedProgress repos.SyncProgress
+		progressRecorder := func(ctx context.Context, progress repos.SyncProgress, final bool) error {
+			recordedProgress = progress
+			return nil
+		}
+
+		if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, progressRecorder); err != nil {
+			t.Fatal(err)
+		}
+
+		return recordedProgress
 	}
 
-	if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, progressRecorder); err != nil {
-		t.Fatal(err)
-	}
+	// Run a few scenarios. The database persists between runs
+	t.Run("add repos", func(t *testing.T) {
+		recordedProgress := runSync(t, []*types.Repo{repo1})
+		assert.Equal(t, repos.SyncProgress{
+			Synced: 1,
+			Added:  1,
+		}, recordedProgress)
+	})
 
-	assert.Positive(t, recorderCalled)
-	assert.Equal(t, repos.SyncProgress{
-		Synced: 1,
-		Added:  1,
-	}, recordedProgress)
+	t.Run("nothing changed", func(t *testing.T) {
+		recordedProgress := runSync(t, []*types.Repo{repo1})
+		assert.Equal(t, repos.SyncProgress{
+			Synced:     1,
+			Unmodified: 1,
+		}, recordedProgress)
+	})
+
+	t.Run("add second repo", func(t *testing.T) {
+		recordedProgress := runSync(t, []*types.Repo{repo1, repo2})
+		assert.Equal(t, repos.SyncProgress{
+			Synced:     2,
+			Added:      1,
+			Unmodified: 1,
+		}, recordedProgress)
+	})
+
+	t.Run("remove second repo", func(t *testing.T) {
+		recordedProgress := runSync(t, []*types.Repo{repo1})
+		assert.Equal(t, repos.SyncProgress{
+			Synced:     1,
+			Unmodified: 1,
+			Deleted:    1,
+		}, recordedProgress)
+	})
 }
 
 func testCloudDefaultExternalServicesDontSync(store repos.Store) func(*testing.T) {
