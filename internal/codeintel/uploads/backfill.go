@@ -14,9 +14,8 @@ func (s *Service) NewCommittedAtBackfiller(interval time.Duration, batchSize int
 	}))
 }
 
-// backfillCommittedAtBatch calculates the committed_at value for a batch of upload records that do not have
-// this value set. This method is used to backfill old upload records prior to this value being reliably set
-// during processing.
+// backfillCommittedAtBatch calculates the commit dates for a batch of upload records that do not have this value
+// set. This method is used to backfill old upload records prior to this value being reliably set during processing.
 func (s *Service) backfillCommittedAtBatch(ctx context.Context, batchSize int) (err error) {
 	tx, err := s.store.Transact(ctx)
 	defer func() {
