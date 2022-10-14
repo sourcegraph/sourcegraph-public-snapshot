@@ -1417,7 +1417,7 @@ func TestProgressRecorder(t *testing.T) {
 		return recordedProgress
 	}
 
-	// Run a few scenarios. The database persists between runs
+	// Run a few scenarios. The database persists between runs.
 	t.Run("add repos", func(t *testing.T) {
 		recordedProgress := runSync(t, []*types.Repo{repo1})
 		assert.Equal(t, repos.SyncProgress{
@@ -1443,12 +1443,29 @@ func TestProgressRecorder(t *testing.T) {
 		}, recordedProgress)
 	})
 
+	t.Run("nothing changes, again", func(t *testing.T) {
+		recordedProgress := runSync(t, []*types.Repo{repo1, repo2})
+		assert.Equal(t, repos.SyncProgress{
+			Synced:     2,
+			Unmodified: 2,
+		}, recordedProgress)
+	})
+
 	t.Run("remove second repo", func(t *testing.T) {
 		recordedProgress := runSync(t, []*types.Repo{repo1})
 		assert.Equal(t, repos.SyncProgress{
 			Synced:     1,
 			Unmodified: 1,
 			Deleted:    1,
+		}, recordedProgress)
+	})
+
+	repo1.Stars = 1
+	t.Run("modify a repo", func(t *testing.T) {
+		recordedProgress := runSync(t, []*types.Repo{repo1})
+		assert.Equal(t, repos.SyncProgress{
+			Synced:   1,
+			Modified: 1,
 		}, recordedProgress)
 	})
 }
