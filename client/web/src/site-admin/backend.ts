@@ -339,14 +339,14 @@ export function fetchUserUsageStatistics(args: {
                         id
                         username
                         usageStatistics {
-                            ...UsageStatistics
+                            ...UserUsageStatisticsFields
                         }
                     }
                     totalCount
                 }
             }
 
-            fragment UsageStatistics on UserUsageStatistics {
+            fragment UserUsageStatisticsFields on UserUsageStatistics {
                 searchQueries
                 pageViews
                 codeIntelligenceActions
