@@ -638,7 +638,7 @@
               { "type": "number", "minimum": 0, "maximum": 0 },
               {
                 "type": "string",
-                "pattern": "^(unlimited|[0-9]+/(sec|secs|second|seconds|min|mins|minute|minutes|hr|hrs|hour|hours))$"
+                "pattern": "^(unlimited|[0-9]+\\/(sec|secs|second|seconds|min|mins|minute|minutes|hr|hrs|hour|hours))$"
               }
             ]
           },
@@ -710,7 +710,7 @@
       "description": "Required when using any of the native code host integrations for Phabricator, GitLab, or Bitbucket Server. It is a space-separated list of allowed origins for cross-origin HTTP requests which should be the base URL for your Phabricator, GitLab, or Bitbucket Server instance.",
       "type": "string",
       "examples": ["https://my-phabricator.example.com https://my-bitbucket.example.com https://my-gitlab.example.com"],
-      "pattern": "^((https?://[\\w-.]+)( https?://[\\w-.]+)*)|\\*$",
+      "pattern": "^((https?:\\/\\/[\\w-\\.]+)( https?:\\/\\/[\\w-\\.]+)*)|\\*$",
       "group": "Security"
     },
     "lsifEnforceAuth": {
