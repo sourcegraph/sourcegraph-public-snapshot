@@ -546,6 +546,10 @@ func (s *Store) RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointA
 }
 
 func (s *Store) SetInsightSeriesRecordingTimes(ctx context.Context, seriesRecordingTimes []types.InsightSeriesRecordingTimes) (err error) {
+	if len(seriesRecordingTimes) == 0 {
+		return nil
+	}
+
 	inserter := batch.NewInserterWithConflict(ctx, s.Handle(), "insight_series_recording_times", batch.MaxNumPostgresParameters, "ON CONFLICT DO NOTHING", "series_id", "recording_time")
 
 	for _, series := range seriesRecordingTimes {

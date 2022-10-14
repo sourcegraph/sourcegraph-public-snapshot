@@ -157,7 +157,7 @@ func NewScopedBackfiller(workerBaseStore *basestore.Store, insightsStore *store.
 
 }
 
-func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, definitions []itypes.InsightSeries) error {
+func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, definitions []itypes.InsightSeries) ([]itypes.InsightSeriesRecordingTimes, error) {
 	var repositories []string
 	uniques := make(map[string]any)
 	stats := make(statistics)
@@ -185,7 +185,7 @@ func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, definitions []ity
 	frontend := database.NewDBWith(s.logger, s.workerBaseStore)
 	iterator, err := discovery.NewScopedRepoIterator(ctx, repositories, frontend.Repos())
 	if err != nil {
-		return errors.Wrap(err, "NewScopedRepoIterator")
+		return nil, errors.Wrap(err, "NewScopedRepoIterator")
 	}
 
 	// index of repository -> series that include it will help us construct this work
@@ -210,11 +210,7 @@ func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, definitions []ity
 		return nil
 	})
 	if err != nil {
-		return err
-	}
-
-	if err := s.insightsStore.SetInsightSeriesRecordingTimes(ctx, seriesRecordingTimes); err != nil {
-		return errors.Wrap(err, "SetInsightSeriesRecordingTimes")
+		return nil, err
 	}
 
 	for _, job := range totalJobs {
@@ -222,10 +218,10 @@ func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, definitions []ity
 		job.Priority = int(priority.High)
 		err := s.enqueueQueryRunnerJob(ctx, job)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
-	return nil
+	return seriesRecordingTimes, nil
 }
 
 func baseAnalyzer(frontend database.DB, statistics statistics) backfillAnalyzer {
@@ -418,7 +414,6 @@ func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 }
 
 func (h *historicalEnqueuer) convertJustInTimeInsights(ctx context.Context) {
-
 	log15.Debug("fetching scoped search series that need a backfill")
 	foundSeries, err := h.dataSeriesStore.GetScopedSearchSeriesNeedBackfill(ctx)
 	if err != nil {
@@ -426,6 +421,7 @@ func (h *historicalEnqueuer) convertJustInTimeInsights(ctx context.Context) {
 		return
 	}
 
+	var allRecordingTimes []itypes.InsightSeriesRecordingTimes
 	for _, series := range foundSeries {
 		log15.Info("loaded just in time data series for conversion to backfilled", "series_id", series.SeriesID)
 
@@ -440,7 +436,7 @@ func (h *historicalEnqueuer) convertJustInTimeInsights(ctx context.Context) {
 			continue
 		}
 
-		err = h.scopedBackfiller.ScopedBackfill(ctx, []itypes.InsightSeries{series})
+		seriesRecordingTimes, err := h.scopedBackfiller.ScopedBackfill(ctx, []itypes.InsightSeries{series})
 		if err != nil {
 			log15.Error("unable to backfill scoped series", "series_id", series.SeriesID, "error", err)
 			continue
@@ -455,7 +451,10 @@ func (h *historicalEnqueuer) convertJustInTimeInsights(ctx context.Context) {
 		if err != nil {
 			log15.Warn("unable to purge jobs for old seriesID", "seriesId", oldSeriesId, "error", err)
 		}
-
+		allRecordingTimes = append(allRecordingTimes, seriesRecordingTimes...)
+	}
+	if err := h.insightsStore.SetInsightSeriesRecordingTimes(ctx, allRecordingTimes); err != nil {
+		fmt.Println("convert to log - couldn't convert")
 	}
 
 	return
