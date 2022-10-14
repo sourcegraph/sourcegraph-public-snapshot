@@ -1096,7 +1096,6 @@ SELECT
 	repos_synced,
 	repo_sync_errors,
 	repos_added,
-	repos_removed,
 	repos_modified,
 	repos_unmodified,
 	repos_deleted
@@ -1192,7 +1191,7 @@ func (e *externalServiceStore) GetSyncJobByID(ctx context.Context, id int64) (*t
 
 // UpdateSyncJobCounters persists only the sync job counters for the supplied job.
 func (e *externalServiceStore) UpdateSyncJobCounters(ctx context.Context, job *types.ExternalServiceSyncJob) error {
-	q := sqlf.Sprintf(updateSyncJobQueryFmtstr, job.ReposSynced, job.RepoSyncErrors, job.ReposAdded, job.ReposRemoved, job.ReposModified, job.ReposUnmodified, job.ReposDeleted, job.ID)
+	q := sqlf.Sprintf(updateSyncJobQueryFmtstr, job.ReposSynced, job.RepoSyncErrors, job.ReposAdded, job.ReposModified, job.ReposUnmodified, job.ReposDeleted, job.ID)
 	result, err := e.ExecResult(ctx, q)
 	if err != nil {
 		return errors.Wrap(err, "updating sync job counters")
@@ -1213,7 +1212,6 @@ SET
 	repos_synced = %d,
 	repo_sync_errors = %d,
 	repos_added = %d,
-	repos_removed = %d,
 	repos_modified = %d,
 	repos_unmodified = %d,
 	repos_deleted = %d
@@ -1237,7 +1235,6 @@ func scanExternalServiceSyncJob(sc dbutil.Scanner, job *types.ExternalServiceSyn
 		&job.ReposSynced,
 		&job.RepoSyncErrors,
 		&job.ReposAdded,
-		&job.ReposRemoved,
 		&job.ReposModified,
 		&job.ReposUnmodified,
 		&job.ReposDeleted,

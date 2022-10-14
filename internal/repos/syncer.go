@@ -136,10 +136,9 @@ func (s *syncHandler) Handle(ctx context.Context, logger log.Logger, record work
 				ReposSynced:     progress.Synced,
 				RepoSyncErrors:  progress.Errors,
 				ReposAdded:      progress.Added,
-				ReposRemoved:    progress.Removed,
+				ReposDeleted:    progress.Deleted,
 				ReposModified:   progress.Modified,
 				ReposUnmodified: progress.Unmodified,
-				ReposDeleted:    progress.Deleted,
 			})
 		}
 		return nil
