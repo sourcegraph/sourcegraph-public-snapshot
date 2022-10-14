@@ -26,6 +26,7 @@ type Interface interface {
 	SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]SeriesPoint, error)
 	RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointArgs) error
 	CountData(ctx context.Context, opts CountDataOpts) (int, error)
+	RecordSeriesPointsAndRecordingTimes(ctx context.Context, pts []RecordSeriesPointArgs, recordingTimes types.InsightSeriesRecordingTimes) error
 	SetInsightSeriesRecordingTimes(ctx context.Context, recordingTimes []types.InsightSeriesRecordingTimes) error
 }
 
@@ -574,9 +575,20 @@ func (s *Store) SetInsightSeriesRecordingTimes(ctx context.Context, seriesRecord
 	return nil
 }
 
-func (s *Store) GetInsightSeriesRecordingTimes(ctx context.Context, seriesID string) (_ types.InsightSeriesRecordingTimes, err error) {
+func (s *Store) GetInsightSeriesRecordingTimesBetween(ctx context.Context, seriesID string, from, to *time.Time) (series types.InsightSeriesRecordingTimes, err error) {
+	series.SeriesID = seriesID
+
+	preds := []*sqlf.Query{}
+	if from != nil {
+		preds = append(preds, sqlf.Sprintf("recording_time >= %s", *from))
+	}
+	if to != nil {
+		preds = append(preds, sqlf.Sprintf("recording_time <= %s", *to))
+	}
+	timesQuery := sqlf.Sprintf(getInsightSeriesRecordingTimesStr, sqlf.Join(preds, "\n AND"), seriesID)
+
 	recordingTimes := []time.Time{}
-	err = s.query(ctx, sqlf.Sprintf(getInsightSeriesRecordingTimesStr, seriesID), func(sc scanner) (err error) {
+	err = s.query(ctx, timesQuery, func(sc scanner) (err error) {
 		var recordingTime time.Time
 		err = sc.Scan(
 			&recordingTime,
@@ -589,19 +601,12 @@ func (s *Store) GetInsightSeriesRecordingTimes(ctx context.Context, seriesID str
 
 		return nil
 	})
-
-	return types.InsightSeriesRecordingTimes{
-		SeriesID:       seriesID,
-		RecordingTimes: recordingTimes,
-	}, nil
-}
-
-func (s *Store) DeleteInsightSeriesRecordingTimes(ctx context.Context, seriesRecordingTimes types.InsightSeriesRecordingTimes) error {
-	times := make([]*sqlf.Query, len(seriesRecordingTimes.RecordingTimes))
-	for i := range seriesRecordingTimes.RecordingTimes {
-		times[i] = sqlf.Sprintf("%s", seriesRecordingTimes.RecordingTimes[i])
+	if err != nil {
+		return series, err
 	}
-	return s.Exec(ctx, sqlf.Sprintf(deleteInsightSeriesRecordingTimesByTimeStr, seriesRecordingTimes.SeriesID, sqlf.Join(times, ", ")))
+	series.RecordingTimes = recordingTimes
+
+	return series, nil
 }
 
 // RecordSeriesPointsAndRecordingTimes is a wrapper around the RecordSeriesPoints and SetInsightSeriesRecordingTimes
@@ -655,12 +660,8 @@ const getInsightSeriesRecordingTimesStr = `
 -- source: enterprise/internal/insights/store/store.go:GetInsightSeriesRecordingTimes
 SELECT recording_time FROM insight_series_recording_times
 WHERE series_id = %s
+%s
 ORDER BY recording_time ASC;
-`
-
-const deleteInsightSeriesRecordingTimesByTimeStr = `
-DELETE FROM insight_series_recording_times
-WHERE series_id = %s AND recording_time IN (%s)
 `
 
 func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
