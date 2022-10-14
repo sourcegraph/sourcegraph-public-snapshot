@@ -69,7 +69,7 @@ func TestForNextAndFinish(t *testing.T) {
 			return true
 		})
 		jsonify, _ := json.Marshal(got)
-		autogold.Want("iterate with no errors and no interruptions", `{"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"2021-01-01T00:00:05Z","RuntimeDuration":5000000000,"PercentComplete":1,"TotalCount":5,"SuccessCount":5,"Cursor":5}`).Equal(t, string(jsonify))
+		autogold.Want("iterate with no errors and no interruptions", `{"Id":1,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"2021-01-01T00:00:05Z","RuntimeDuration":5000000000,"PercentComplete":1,"TotalCount":5,"SuccessCount":5,"Cursor":5}`).Equal(t, string(jsonify))
 	})
 
 	t.Run("iterate with one error and no interruptions", func(t *testing.T) {
@@ -92,7 +92,7 @@ func TestForNextAndFinish(t *testing.T) {
 			return true
 		})
 		jsonify, _ := json.Marshal(got)
-		autogold.Want("iterate with 1 error and no interruptions", `{"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"2021-01-01T00:00:05Z","RuntimeDuration":5000000000,"PercentComplete":1,"TotalCount":5,"SuccessCount":4,"Cursor":5}`).Equal(t, string(jsonify))
+		autogold.Want("iterate with 1 error and no interruptions", `{"Id":2,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"2021-01-01T00:00:05Z","RuntimeDuration":5000000000,"PercentComplete":1,"TotalCount":5,"SuccessCount":4,"Cursor":5}`).Equal(t, string(jsonify))
 		autogold.Want("iterate with 1 error and no interruptions error check", errorMap{6: &IterationError{
 			id:            1,
 			RepoId:        6,
@@ -132,7 +132,7 @@ func TestForNextAndFinish(t *testing.T) {
 		// now iterate from the starting position _after_ reloading from the db
 		secondItr, _ := testForNextAndFinish(t, store, reloaded, seen, do)
 		jsonify, _ := json.Marshal(secondItr)
-		autogold.Want("iterate with no error and 1 interruptions", `{"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"2021-01-01T00:00:06Z","RuntimeDuration":5000000000,"PercentComplete":1,"TotalCount":5,"SuccessCount":5,"Cursor":5}`).Equal(t, string(jsonify))
+		autogold.Want("iterate with no error and 1 interruptions", `{"Id":3,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"2021-01-01T00:00:06Z","RuntimeDuration":5000000000,"PercentComplete":1,"TotalCount":5,"SuccessCount":5,"Cursor":5}`).Equal(t, string(jsonify))
 	})
 }
 
