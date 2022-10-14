@@ -870,6 +870,12 @@
       "type": "integer",
       "group": "CodeInsights",
       "default": 55
+    },
+    "perforce.codeHostToSwarmMap": {
+      "description": "Key-value pairs of code host URLs to Swarm URLs. Keys should have no prefix and should not end with a slash, like \"perforce.company.com:1666\". Values should look like \"https://swarm.company.com/\", with a slash at the end.",
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "default": {}
     }
   },
   "definitions": {

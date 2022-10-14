@@ -5,13 +5,14 @@ import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 import * as H from 'history'
 import { head, last } from 'lodash'
-import { BehaviorSubject, of } from 'rxjs'
+import { BehaviorSubject, from, of } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 import { focusable, FocusableElement } from 'tabbable'
 import { Key } from 'ts-key-enum'
 
 import { ContributableMenu } from '@sourcegraph/client-api'
 import { LocalStorageSubject } from '@sourcegraph/common'
+import { isSettingsValid } from '@sourcegraph/shared/out/src/settings/settings'
 import { ActionItem } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ActionsContainer } from '@sourcegraph/shared/src/actions/ActionsContainer'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
@@ -214,12 +215,14 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
         )
     )
 
+    const settingsOrError = useObservable(useMemo(() => from(props.platformContext.settings), [props.platformContext.settings]))
+    const settings =
+        settingsOrError !== undefined && isSettingsValid(settingsOrError) ? settingsOrError.final : undefined
+    const perforceCodeHostUrlToSwarmUrlMap = settings?.['perforce.codeHostToSwarmMap'] as ({[codeHost: string]: string} | undefined) || {}
+
     if (!isOpen) {
         return <div className={styles.barCollapsed} />
     }
-
-    const perforceCodeHostUrlToSwarmUrlMap =
-        (window.context?.experimentalFeatures?.perforceCodeHostToSwarmMap as { [key: string]: string }) || {}
 
     return (
         <div className={classNames('p-0 mr-2 position-relative d-flex flex-column', styles.bar)} ref={barReference}>

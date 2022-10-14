@@ -216,12 +216,6 @@
           "enum": ["enabled", "disabled"],
           "default": "enabled"
         },
-        "perforceCodeHostToSwarmMap": {
-          "description": "Key-value pairs of code host URLs to Swarm URLs. Keys should have no prefix and should not end with a slash, like \"perforce.company.com:1666\". Values should look like \"https://swarm.company.com/\", with a slash at the end.",
-          "type": "object",
-          "additionalProperties": { "type": "string" },
-          "default": {}
-        },
         "goPackages": {
           "description": "Allow adding Go package host connections",
           "type": "string",

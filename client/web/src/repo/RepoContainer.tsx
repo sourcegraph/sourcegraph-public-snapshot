@@ -153,7 +153,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
             () =>
                 of(undefined)
                     .pipe(
-                        // Wrap in switchMap so we don't break the observable chain when
+                        // Wrap in switchMap, so we don't break the observable chain when
                         // catchError returns a new observable, so repeatUntil will
                         // properly resubscribe to the outer observable and re-fetch.
                         switchMap(() =>
@@ -354,7 +354,9 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
     }
 
     const perforceCodeHostUrlToSwarmUrlMap =
-        (window.context?.experimentalFeatures?.perforceCodeHostToSwarmMap as { [key: string]: string }) || {}
+        props.settingsCascade.final &&
+        !isErrorLike(props.settingsCascade.final) &&
+        props.settingsCascade.final?.['perforce.codeHostToSwarmMap'] || {}
 
     return (
         <div className={classNames('w-100 d-flex flex-column', styles.repoContainer)}>
