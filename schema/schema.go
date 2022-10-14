@@ -1595,7 +1595,7 @@ type RubyPackagesConnection struct {
 	Dependencies []string `json:"dependencies,omitempty"`
 	// RateLimit description: Rate limit applied when making background API requests to the configured Ruby repository APIs.
 	RateLimit *RubyRateLimit `json:"rateLimit,omitempty"`
-	// Repository description: The url at which the maven repository can be found.
+	// Repository description: The URL at which the maven repository can be found.
 	Repository string `json:"repository,omitempty"`
 }
 

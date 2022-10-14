@@ -113,6 +113,9 @@ func unpackRubyPackage(packageURL string, pkg []byte, workDir string) error {
 		return err
 	}
 	metadataBytes, err := ioutil.ReadAll(metadataReader)
+	if err != nil {
+		return err
+	}
 	return os.WriteFile(filepath.Join(workDir, "rubygems-metadata.yml"), metadataBytes, 0644)
 }
 
