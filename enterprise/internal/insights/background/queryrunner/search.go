@@ -222,7 +222,7 @@ func (r *workHandler) persistRecordings(ctx context.Context, job *SearchJob, ser
 	defer func() { err = tx.Done(err) }()
 
 	seriesRecordingTimes := types.InsightSeriesRecordingTimes{
-		SeriesID: series.SeriesID,
+		SeriesID: series.ID,
 	}
 	if store.PersistMode(job.PersistMode) == store.SnapshotMode {
 		// The purpose of the snapshot is for low fidelity but recently updated data points.
@@ -244,7 +244,7 @@ func (r *workHandler) persistRecordings(ctx context.Context, job *SearchJob, ser
 	}
 
 	if recordErr := tx.RecordSeriesPointsAndRecordingTimes(ctx, filteredRecordings, seriesRecordingTimes); recordErr != nil {
-		err = errors.Append(err, errors.Wrap(recordErr, "RecordSeriesPointsCapture"))
+		err = errors.Append(err, errors.Wrap(recordErr, "RecordSeriesPointsAndRecordingTimes"))
 	}
 	return err
 }
