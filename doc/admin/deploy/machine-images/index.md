@@ -68,6 +68,8 @@ Sourcegraph does not have access to your cluster and data.
 
 #### Network and Security
 
+![diagram-export-10_14_2022, 10_18_46 AM](https://user-images.githubusercontent.com/68532117/195904844-9257c7cd-f9b2-4d15-9c7f-a2d66a42c5df.png)
+
 - K3s exposes the kubelet API to the Kubernetes control plane node through a websocket tunnel in order to eliminate the need to expose extra ports on the worker nodes.
 - No ingress requirements which allow cluster owners to restrict inbound traffic to only traffic within their network
 - Built-in certificate rotation with the expiration date of 12 months (docs)[https://docs.k3s.io/advanced]
