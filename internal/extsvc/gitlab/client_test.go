@@ -19,6 +19,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -113,7 +114,7 @@ func TestClient_doWithBaseURL(t *testing.T) {
 
 	provider := NewClientProvider("Test", baseURL, doer)
 
-	client := provider.getClient(&auth.OAuthBearerToken{Token: "bad token", RefreshToken: "refresh token", RefreshFunc: func(obt *auth.OAuthBearerToken) (string, string, time.Time, error) {
+	client := provider.getClient(&auth.OAuthBearerToken{Token: "bad token", RefreshToken: "refresh token", RefreshFunc: func(ctx context.Context, cli httpcli.Doer, obt *auth.OAuthBearerToken) (string, string, time.Time, error) {
 		obt.Token = "refreshed-token"
 		obt.RefreshToken = "refresh-now"
 

@@ -4,7 +4,10 @@
 package auth
 
 import (
+	"context"
 	"net/http"
+
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
 // Authenticator instances mutate an outbound request to add whatever headers or
@@ -39,7 +42,7 @@ type AuthenticatorWithRefresh interface {
 	// Refresh refreshes the Authenticator. This should be an in-place mutation,
 	// and if any storage updates should happen after refreshing, that is done
 	// here as well.
-	Refresh() error
+	Refresh(context.Context, httpcli.Doer) error
 }
 
 // AuthenticatorWithSSH wraps the Authenticator interface and augments it by

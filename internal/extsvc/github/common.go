@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -1516,7 +1517,7 @@ func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auther a
 		autherWithRefresh, ok = auther.(auth.AuthenticatorWithRefresh)
 		// Check if we should pre-emptively refresh
 		if ok && autherWithRefresh.NeedsRefresh() {
-			autherWithRefresh.Refresh()
+			autherWithRefresh.Refresh(ctx, httpClient)
 		}
 		if err := auther.Authenticate(req); err != nil {
 			return nil, errors.Wrap(err, "authenticating request")
@@ -1537,9 +1538,16 @@ func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auther a
 		span.Finish()
 	}()
 
-	resp, err = httpClient.Do(req.WithContext(ctx))
-	if err != nil {
-		return nil, err
+	if autherWithRefresh != nil {
+		resp, err = oauthutil.DoRequest(ctx, httpClient, req, autherWithRefresh)
+		if err != nil {
+			return nil, errors.Wrap(err, "do request with refresh and retry")
+		}
+	} else {
+		resp, err = httpClient.Do(req.WithContext(ctx))
+		if err != nil {
+			return nil, err
+		}
 	}
 	defer resp.Body.Close()
 
@@ -2022,4 +2030,32 @@ func handlePullRequestError(err error) error {
 // which is used for GitHub App access tokens.
 func IsGitHubAppAccessToken(token string) bool {
 	return strings.HasPrefix(token, "ghu")
+}
+
+var MockGetOAuthContext func() *oauthutil.OAuthContext
+
+func GetOAuthContext(baseURL string) *oauthutil.OAuthContext {
+	if MockGetOAuthContext != nil {
+		return MockGetOAuthContext()
+	}
+
+	for _, authProvider := range conf.SiteConfig().AuthProviders {
+		if authProvider.Github != nil {
+			p := authProvider.Github
+			ghURL := strings.TrimSuffix(p.Url, "/")
+			if !strings.HasPrefix(baseURL, ghURL) {
+				continue
+			}
+
+			return &oauthutil.OAuthContext{
+				ClientID:     p.ClientID,
+				ClientSecret: p.ClientSecret,
+				Endpoint: oauth2.Endpoint{
+					AuthURL:  ghURL + "/login/oauth/authorize",
+					TokenURL: ghURL + "/login/oauth/access_token",
+				},
+			}
+		}
+	}
+	return nil
 }
