@@ -139,7 +139,7 @@ Click **Create subnet** in your VPC subnets dashboard:
 
 ### Securing your instance
 
-[Configure user authentication](../auth/index.md) (SSO, SAML, OpenID Connect, etc.) to give users of your Sourcegraph instance access to it.
+[Configure user authentication](../../../admin/auth/index.md) (SSO, SAML, OpenID Connect, etc.) to give users of your Sourcegraph instance access to it.
 
 Now that your instance is confirmed to be working, and you have HTTPS working through an Amazon load balancer, you may choose to secure your Sourcegraph instance further by modifying the security group/firewall rules to prevent access from the public internet. You can do this by modifying the security group/firewall rules.
 
