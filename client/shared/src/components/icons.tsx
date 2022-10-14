@@ -72,6 +72,19 @@ export const PerforceIcon: React.FunctionComponent<React.PropsWithChildren<IconP
     </svg>
 )
 
+export const HelixSwarmIcon: React.FunctionComponent<React.PropsWithChildren<IconProps>> = props => (
+    <svg viewBox="0 0 38.7 44.4" {...props} width={props.size} height={props.size} className={props.className}>
+        <path
+            d="M.5 10.75c-.3.2-.5.6-.5.9v21.1c0 .3.2.8.5.9l18.3 10.6c.3.2.8.2 1.1 0l18.3-10.6c.3-.2.5-.6.5-.9v-21.1c0-.3-.2-.8-.5-.9L19.9.15c-.3-.2-.8-.2-1.1 0z"
+            fill="#f1f1f2"
+        />
+        <path
+            d="M17.3 24.65c-.3 0-.5-.1-.7-.3l-4.4-3.6 4.3-3.5a1.08 1.08 0 0 1 .7-.3c.3 0 .7.2.9.4s.3.5.3.8-.2.6-.4.8l-2.2 1.8 2.2 1.8c.2.2.4.5.4.8s-.1.6-.3.8c-.1.4-.4.5-.8.5zm4.3 0c-.3 0-.7-.2-.9-.4-.4-.5-.3-1.2.2-1.6l2.2-1.8-2.2-1.8c-.2-.2-.4-.5-.4-.8s.1-.6.3-.8c.2-.3.5-.4.9-.4.3 0 .5.1.7.3l4.3 3.5-4.4 3.6c-.2.2-.5.2-.7.2zm5.8-12.8H11.3a3.8 3.8 0 0 0-3.8 3.8v10a3.8 3.8 0 0 0 3.8 3.8h13.2l-4.5 6.1h3.7l3.7-4.8c.7-1 .9-2 .5-2.9s-1.4-1.4-2.6-1.4h-14c-.4 0-.8-.3-.8-.8v-10c0-.4.3-.8.8-.8h16.1c.4 0 .8.3.8.8v7a1.54 1.54 0 0 0 1.5 1.5 1.54 1.54 0 0 0 1.5-1.5v-7c0-2-1.7-3.8-3.8-3.8z"
+            fill="#63a70a"
+        />
+    </svg>
+)
+
 export const PhabricatorIcon: React.FunctionComponent<React.PropsWithChildren<IconProps>> = props => (
     <svg
         {...props}

@@ -11,7 +11,7 @@ import { catchError } from 'rxjs/operators'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Position, Range } from '@sourcegraph/extension-api-types'
 import { SimpleActionItem } from '@sourcegraph/shared/src/actions/SimpleActionItem'
-import { PerforceIcon, PhabricatorIcon } from '@sourcegraph/shared/src/components/icons' // TODO: Switch mdi icon
+import { HelixSwarmIcon, PhabricatorIcon } from '@sourcegraph/shared/src/components/icons' // TODO: Switch mdi icon
 import { FileSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { ButtonLinkProps, Icon, Link, Tooltip, useObservable } from '@sourcegraph/wildcard'
 
@@ -278,7 +278,7 @@ function serviceKindDisplayNameAndIcon(
         case ExternalServiceKind.BITBUCKETCLOUD:
             return { displayName: 'Bitbucket Cloud', icon: BitbucketIcon }
         case ExternalServiceKind.PERFORCE:
-            return { displayName: 'Perforce', icon: PerforceIcon }
+            return { displayName: 'Swarm', icon: HelixSwarmIcon }
         case ExternalServiceKind.PHABRICATOR:
             return { displayName: 'Phabricator', icon: PhabricatorIcon }
         case ExternalServiceKind.AWSCODECOMMIT:
