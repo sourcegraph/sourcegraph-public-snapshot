@@ -201,7 +201,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                     onSelect={() => logSearchResultClicked(index, 'filePathMatch')}
                                     repoDisplayName={displayRepoName(result.repository)}
                                     containerClassName={resultClassName}
-                                    telemetryService={telemetryService}
                                 />
                             )}
                         </PrefetchableFile>
