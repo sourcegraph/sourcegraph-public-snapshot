@@ -1,4 +1,4 @@
-package graphqlbackend
+package gqlutil
 
 import (
 	"testing"

@@ -2,7 +2,7 @@ import React from 'react'
 
 import VisuallyHidden from '@reach/visually-hidden'
 
-import { SearchResultStyles as styles, LegacyResultContainer, CommitSearchResultMatch } from '@sourcegraph/search-ui'
+import { SearchResultStyles as styles, ResultContainer, CommitSearchResultMatch } from '@sourcegraph/search-ui'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { CommitMatch, getCommitMatchUrl } from '@sourcegraph/shared/src/search/stream'
@@ -94,7 +94,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
     )
 
     return (
-        <LegacyResultContainer
+        <ResultContainer
             as={as}
             index={index}
             icon={icon}

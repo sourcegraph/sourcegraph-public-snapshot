@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/log/logtest"
@@ -1380,6 +1381,7 @@ func TestRepositoryPermissions(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	bstore := store.New(db, &observation.TestContext, nil)
+	gitserverClient := gitserver.NewMockClient()
 	sr := &Resolver{store: bstore}
 	s, err := newSchema(db, sr)
 	if err != nil {
@@ -1412,7 +1414,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		// Create 2 changesets for 2 repositories
 		changesetBaseRefOid := "f00b4r"
 		changesetHeadRefOid := "b4rf00"
-		mockRepoComparison(t, changesetBaseRefOid, changesetHeadRefOid, testDiff)
+		mockRepoComparison(t, *gitserverClient, changesetBaseRefOid, changesetHeadRefOid, testDiff)
 		changesetDiffStat := apitest.DiffStat{Added: 2, Deleted: 2}
 
 		changesets := make([]*btypes.Changeset, 0, len(repos))

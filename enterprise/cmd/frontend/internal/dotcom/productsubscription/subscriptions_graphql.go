@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 // productSubscription implements the GraphQL type ProductSubscription.
@@ -116,8 +117,8 @@ func (r *productSubscription) ProductLicenses(ctx context.Context, args *graphql
 	return &productLicenseConnection{db: r.db, opt: opt}, nil
 }
 
-func (r *productSubscription) CreatedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.v.CreatedAt}
+func (r *productSubscription) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.v.CreatedAt}
 }
 
 func (r *productSubscription) IsArchived() bool { return r.v.ArchivedAt != nil }

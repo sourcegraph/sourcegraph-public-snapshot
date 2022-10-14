@@ -2,6 +2,7 @@ package init
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/sourcegraph/log"
 
@@ -120,6 +121,16 @@ func Init(
 			UserCountValue: info.UserCount,
 			ExpiresAtValue: info.ExpiresAt,
 		}, nil
+	}
+
+	graphqlbackend.IsFreePlan = func(info *graphqlbackend.ProductLicenseInfo) bool {
+		for _, tag := range info.Tags() {
+			if tag == fmt.Sprintf("plan:%s", licensing.PlanFree0) {
+				return true
+			}
+		}
+
+		return false
 	}
 
 	enterpriseServices.LicenseResolver = resolvers.LicenseResolver{}

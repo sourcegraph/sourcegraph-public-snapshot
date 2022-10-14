@@ -23,7 +23,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -676,12 +675,6 @@ type ReposListOptions struct {
 	// OnlyPrivate excludes non-private repositories from the list.
 	OnlyPrivate bool
 
-	// Index when set will only include repositories which should be indexed
-	// if true. If false it will exclude repositories which should be
-	// indexed. An example use case of this is for indexed search only
-	// indexing a subset of repositories.
-	Index *bool
-
 	// List of fields by which to order the return repositories.
 	OrderBy RepoListOrderBy
 
@@ -1062,16 +1055,6 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 
 	if len(opt.URIs) > 0 {
 		where = append(where, sqlf.Sprintf("uri = ANY (%s)", pq.Array(opt.URIs)))
-	}
-
-	if opt.Index != nil {
-		// We don't currently have an index column, but when we want the
-		// indexable repositories to be a subset it will live in the database
-		// layer. So we do the filtering here.
-		indexAll := conf.SearchIndexEnabled()
-		if indexAll != *opt.Index {
-			where = append(where, sqlf.Sprintf("false"))
-		}
 	}
 
 	if (len(opt.ExternalServiceIDs) != 0 && (opt.UserID != 0 || opt.OrgID != 0)) ||

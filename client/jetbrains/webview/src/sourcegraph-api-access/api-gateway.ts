@@ -51,7 +51,8 @@ export interface SiteVersionAndCurrentUser {
 
 export async function getSiteVersionAndAuthenticatedUser(
     instanceURL: string,
-    accessToken: string | null
+    accessToken: string | null,
+    customRequestHeaders: { [name: string]: string } | null
 ): Promise<SiteVersionAndCurrentUser> {
     if (!instanceURL) {
         return { site: null, currentUser: null }
@@ -66,6 +67,7 @@ export async function getSiteVersionAndAuthenticatedUser(
             'Content-Type': 'application/json',
             'X-Sourcegraph-Should-Trace': new URLSearchParams(window.location.search).get('trace') || 'false',
             ...(accessToken && { Authorization: `token ${accessToken}` }),
+            ...customRequestHeaders,
         },
     }).toPromise()
 

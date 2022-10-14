@@ -7,7 +7,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -28,6 +27,8 @@ type BackgroundJob interface {
 		minimumTimeSinceLastCheck time.Duration,
 		commitResolverBatchSize int,
 		commitResolverMaximumCommitLag time.Duration,
+		failedIndexBatchSize int,
+		failedIndexMaxAge time.Duration,
 	) goroutine.BackgroundRoutine
 
 	SetService(service AutoIndexingService)
@@ -46,7 +47,6 @@ type backgroundJob struct {
 	repoUpdater     RepoUpdaterClient
 	gitserverClient GitserverClient
 
-	store                   store.Store
 	repoStore               ReposStore
 	workerutilStore         dbworkerstore.Store
 	gitserverRepoStore      GitserverRepoStore
@@ -66,7 +66,6 @@ type backgroundJob struct {
 
 func New(
 	db database.DB,
-	store store.Store,
 	uploadSvc UploadService,
 	depsSvc DependenciesService,
 	policiesSvc PoliciesService,
@@ -91,7 +90,6 @@ func New(
 		repoUpdater:     repoUpdater,
 		gitserverClient: gitserverClient,
 
-		store:                   store,
 		repoStore:               repoStore,
 		workerutilStore:         workerutilStore,
 		gitserverRepoStore:      gitserverRepoStore,
