@@ -131,7 +131,7 @@ export interface BlobProps
     navigateToLineOnAnyClick?: boolean
 
     // Enables keyboard navigation across precise code intelligence
-    intelligentKeyboardNavigation?: boolean
+    tokenKeyboardNavigation?: boolean
 
     // If set, nav is called when a user clicks on a token highlighted by
     // WebHoverOverlay
