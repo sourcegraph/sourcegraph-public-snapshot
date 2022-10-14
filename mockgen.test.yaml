@@ -48,10 +48,6 @@
   path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/http/auth
   interfaces:
     - GitHubClient
-- filename: enterprise/cmd/frontend/internal/executorqueue/handler/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/internal/services/executors/store
-  interfaces:
-    - Store
 - filename: enterprise/cmd/frontend/internal/executorqueue/queues/batches/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/queues/batches
   interfaces:

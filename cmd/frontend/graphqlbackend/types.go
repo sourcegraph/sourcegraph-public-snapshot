@@ -1,4 +1,4 @@
-package graphql
+package graphqlbackend
 
 import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
