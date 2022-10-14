@@ -8,7 +8,7 @@ import GitlabIcon from 'mdi-react/GitlabIcon'
 import { merge, of } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { Position, Range } from '@sourcegraph/extension-api-types'
 import { SimpleActionItem } from '@sourcegraph/shared/src/actions/SimpleActionItem'
 import { HelixSwarmIcon, PhabricatorIcon } from '@sourcegraph/shared/src/components/icons' // TODO: Switch mdi icon
@@ -47,13 +47,11 @@ export const GoToCodeHostAction: React.FunctionComponent<
 > = props => {
     const { repo, revision, filePath } = props
 
-    /**
-     * The external links for the current file/dir, or undefined while loading, null while not
-     * needed (because not viewing a file/dir), or an error.
-     */
+    const serviceType = props.repo?.externalRepository?.serviceType
+
     const fileExternalLinksOrError = useObservable<ExternalLinkFields[] | null | undefined | ErrorLike>(
         useMemo(() => {
-            if (!repo || !filePath) {
+            if (!repo || !filePath || serviceType === 'perforce') {
                 return of(null)
             }
             return merge(
@@ -62,11 +60,28 @@ export const GoToCodeHostAction: React.FunctionComponent<
                     catchError(error => [asError(error)])
                 )
             )
-        }, [repo, revision, filePath])
+        }, [repo, filePath, serviceType, revision])
     )
 
-    const commitMessage = useObservable<string>(
-        fetchCommitMessage({ repoName: props.repoName, revision: props.revision })
+    /**
+     * The external links for the current file/dir, or undefined while loading, null while not
+     * needed (because not viewing a file/dir), or an error.
+     */
+    const perforceCommitMessage = useObservable<string | null | undefined>(
+        useMemo(() => {
+            if (serviceType !== 'perforce') {
+                return of(null)
+            }
+            return merge(
+                of(undefined),
+                fetchCommitMessage({ repoName: props.repoName, revision: props.revision }).pipe(
+                    catchError(error => {
+                        logger.error('Getting commit message failed', error)
+                        return []
+                    })
+                )
+            )
+        }, [serviceType, props.repoName, props.revision])
     )
 
     const onClick = useCallback(() => eventLogger.log('GoToCodeHostClicked'), [])
@@ -76,11 +91,11 @@ export const GoToCodeHostAction: React.FunctionComponent<
         (!isErrorLike(props.repo) && props.repo && props.repo.defaultBranch && props.repo.defaultBranch.displayName) ||
         'HEAD'
 
-    // If neither repo or file can be loaded, return null, which will hide all code host icons
-    if (!props.repo || isErrorLike(fileExternalLinksOrError)) {
+    // If there's no repo or no file / commit message, return null to hide all code host icons
+    if (!props.repo || (isErrorLike(fileExternalLinksOrError) && !perforceCommitMessage)) {
         return null
     }
-    const serviceType = props.repo.externalRepository.serviceType
+
     const [serviceKind, url] =
         serviceType === 'perforce'
             ? getPerforceServiceKindAndSwarmUrl(
@@ -88,7 +103,7 @@ export const GoToCodeHostAction: React.FunctionComponent<
                   props.repo.externalRepository.serviceID,
                   props.repoName,
                   revision,
-                  commitMessage,
+                  perforceCommitMessage,
                   filePath
               )
             : getServiceKindAndGitUrl(
@@ -164,7 +179,7 @@ export const GoToCodeHostAction: React.FunctionComponent<
 function getServiceKindAndGitUrl(
     externalLinks: ExternalLinkFields[] | undefined,
     repoExternalURLs: RepositoryFields['externalURLs'] | undefined,
-    fileExternalLinksOrError: ExternalLinkFields[] | undefined | null,
+    fileExternalLinksOrError: ExternalLinkFields[] | undefined | null | ErrorLike,
     revision: string,
     defaultBranch: string,
     commitRange: string | undefined,
@@ -204,7 +219,7 @@ function getServiceKindAndGitUrl(
 function getGitExternalURLs(
     externalLinks: ExternalLinkFields[] | undefined,
     repoExternalURLs: RepositoryFields['externalURLs'] | undefined,
-    fileExternalLinksOrError: ExternalLinkFields[] | undefined | null
+    fileExternalLinksOrError: ExternalLinkFields[] | undefined | null | ErrorLike
 ): ExternalLinkFields[] | undefined {
     if (externalLinks && externalLinks.length > 0) {
         return externalLinks
@@ -237,7 +252,7 @@ function getPerforceServiceKindAndSwarmUrl(
     serviceID: string,
     repoName: string,
     revision: string,
-    commitMessage: string | undefined,
+    commitMessage: string | undefined | null,
     filePath: string | undefined
 ): [ExternalServiceKind | null, string | null] {
     if (!commitMessage) {
