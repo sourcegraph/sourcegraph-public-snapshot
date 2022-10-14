@@ -3,7 +3,6 @@ package background
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -110,7 +109,7 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 	getRateLimit := getRateLimit(defaultRateLimit)
 	go conf.Watch(func() {
 		val := getRateLimit()
-		log15.Info(fmt.Sprintf("Updating insights/historical-worker rate limit value=%v", val))
+		observationContext.Logger.Info("Updating insights/historical-worker rate limit", sglog.Int("value", int(val)))
 		enq.analyzer.limiter.SetLimit(val)
 	})
 
@@ -238,6 +237,7 @@ func globalBackfiller(logger sglog.Logger, workerBaseStore *basestore.Store, dat
 	statistics := make(statistics)
 
 	historicalEnqueuer := &historicalEnqueuer{
+		logger:          logger,
 		now:             time.Now,
 		insightsStore:   insightsStore,
 		dataSeriesStore: dataSeriesStore,
@@ -325,6 +325,8 @@ type RepoStore interface {
 //  3. Ensure we perform work slowly, linearly, and with yielding/sleeping between any substantial
 //     work being performed.
 type historicalEnqueuer struct {
+	logger sglog.Logger
+
 	// Required fields used for mocking in tests.
 	now                   func() time.Time
 	insightsStore         store.Interface
@@ -357,6 +359,9 @@ func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 	// is responsible for calculating the work needed to backfill an insight series _without_ a user context. Repository permissions
 	// are filtered at view time of an insight.
 	ctx = actor.WithInternalActor(ctx)
+	if h.logger == nil {
+		h.logger = sglog.Scoped("HistoricalEnqueuer", "")
+	}
 
 	convertJITInsights := true
 	deprecateJITInsights, _ := h.featureFlagStore.GetFeatureFlag(ctx, "code_insights_deprecate_jit")
@@ -369,7 +374,7 @@ func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 	}
 
 	// Discover all global insights on the instance.
-	log15.Debug("Fetching data series for historical")
+	h.logger.Debug("Fetching data series for historical")
 	foundInsights, err := h.dataSeriesStore.GetDataSeries(ctx, store.GetDataSeriesArgs{BackfillNotQueued: true, GlobalOnly: true})
 	if err != nil {
 		return errors.Wrap(err, "Discover")
@@ -381,10 +386,10 @@ func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 
 	var multi error
 	for _, series := range foundInsights {
-		log15.Info("Loaded insight data series for historical processing", "series_id", series.SeriesID)
+		h.logger.Info("Loaded insight data series for historical processing", sglog.String("series_id", series.SeriesID))
 		incrementErr := h.dataSeriesStore.IncrementBackfillAttempts(ctx, series)
 		if incrementErr != nil {
-			log15.Warn("unable to update backfill attempts", "seriesId", series.SeriesID)
+			h.logger.Warn("unable to update backfill attempts", sglog.String("seriesId", series.SeriesID))
 		}
 	}
 
@@ -399,23 +404,22 @@ func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 	}
 
 	for seriesId, backfillStatistics := range h.statistics {
-		log15.Info("backfill statistics", "seriesId", seriesId, "stats", *backfillStatistics)
+		h.logger.Info("backfill statistics", sglog.String("seriesId", seriesId), sglog.String("stats", backfillStatistics.String()))
 	}
 
 	return multi
 }
 
 func (h *historicalEnqueuer) convertJustInTimeInsights(ctx context.Context) {
-
-	log15.Debug("fetching scoped search series that need a backfill")
+	h.logger.Debug("fetching scoped search series that need a backfill")
 	foundSeries, err := h.dataSeriesStore.GetScopedSearchSeriesNeedBackfill(ctx)
 	if err != nil {
-		log15.Error("unable to find series to convert to backfilled", "error", err)
+		h.logger.Error("unable to find series to convert to backfilled", sglog.Error(err))
 		return
 	}
 
 	for _, series := range foundSeries {
-		log15.Info("loaded just in time data series for conversion to backfilled", "series_id", series.SeriesID)
+		h.logger.Info("loaded just in time data series for conversion to backfilled", sglog.String("series_id", series.SeriesID))
 
 		oldSeriesId := series.SeriesID
 		series.SeriesID = ksuid.New().String()
@@ -424,24 +428,24 @@ func (h *historicalEnqueuer) convertJustInTimeInsights(ctx context.Context) {
 		// Update the backfill attempts adjusts created date and inserts the new series_ID
 		incrementErr := h.dataSeriesStore.StartJustInTimeConversionAttempt(ctx, series)
 		if incrementErr != nil {
-			log15.Warn("unable to start jit conversion", "seriesId", oldSeriesId, "error", err)
+			h.logger.Warn("unable to start jit conversion", sglog.String("seriesId", oldSeriesId), sglog.Error(err))
 			continue
 		}
 
 		err = h.scopedBackfiller.ScopedBackfill(ctx, []itypes.InsightSeries{series})
 		if err != nil {
-			log15.Error("unable to backfill scoped series", "series_id", series.SeriesID, "error", err)
+			h.logger.Error("unable to backfill scoped series", sglog.String("series_id", series.SeriesID), sglog.Error(err))
 			continue
 		}
 
 		err = h.dataSeriesStore.CompleteJustInTimeConversionAttempt(ctx, series)
 		if err != nil {
-			log15.Error("unable to complete insight from jit to backfilled", "series_id", series.SeriesID, "error", err)
+			h.logger.Error("unable to complete insight from jit to backfilled", sglog.String("series_id", series.SeriesID), sglog.Error(err))
 		}
 
 		err = queryrunner.PurgeJobsForSeries(ctx, h.scopedBackfiller.workerBaseStore, oldSeriesId)
 		if err != nil {
-			log15.Warn("unable to purge jobs for old seriesID", "seriesId", oldSeriesId, "error", err)
+			h.logger.Warn("unable to purge jobs for old seriesID", sglog.String("seriesId", oldSeriesId), sglog.Error(err))
 		}
 
 	}
@@ -489,7 +493,7 @@ func (h *historicalEnqueuer) buildFrames(ctx context.Context, definitions []ityp
 		return nil
 	})
 	if multi != nil {
-		log15.Error("historical_enqueuer.buildFrames - multierror", "err", multi)
+		h.logger.Error("historical_enqueuer.buildFrames - multierror", sglog.Error(multi))
 	}
 	return hardErr
 }
