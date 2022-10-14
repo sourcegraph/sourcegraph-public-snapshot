@@ -148,7 +148,19 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
                       startLine: match.contentStart.line,
                       endLine: match.ranges[match.ranges.length - 1].end.line,
                       aggregableBadges: match.aggregableBadges,
-                  })) || []
+                  }))
+                || result.lineMatches?.map(match => ({
+                    highlightRanges: match.offsetAndLengths.map(offsetAndLength => ({
+                        startLine: match.lineNumber,
+                        startCharacter: offsetAndLength[0],
+                        endLine: match.lineNumber,
+                        endCharacter: offsetAndLength[0] + offsetAndLength[1],
+                    })),
+                    content: match.line,
+                    startLine: match.lineNumber,
+                    endLine: match.lineNumber,
+                    aggregableBadges: match.aggregableBadges,
+                })) || []
                 : [],
         [result]
     )

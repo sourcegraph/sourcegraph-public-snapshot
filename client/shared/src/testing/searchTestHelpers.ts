@@ -10,7 +10,7 @@ import { Controller } from '../extensions/controller'
 import { PlatformContext } from '../platform/context'
 import { AggregateStreamingSearchResults, ContentMatch, RepositoryMatch } from '../search/stream'
 
-export const RESULT: ContentMatch = {
+export const CHUNK_MATCH_RESULT: ContentMatch = {
     type: 'content',
     path: '.travis.yml',
     repository: 'github.com/golang/oauth2',
@@ -36,6 +36,19 @@ export const RESULT: ContentMatch = {
                     },
                 },
             ],
+        },
+    ],
+}
+
+export const LINE_MATCH_RESULT: ContentMatch = {
+    type: 'content',
+    path: '.travis.yml',
+    repository: 'github.com/golang/oauth2',
+    lineMatches: [
+        {
+            line: '  - go test -v golang.org/x/oauth2/...',
+            lineNumber: 12,
+            offsetAndLengths: [[7, 4]],
         },
     ],
 }
@@ -329,7 +342,7 @@ export const SEARCH_RESULT: AggregateStreamingSearchResults = {
             kind: 'repo',
         },
     ],
-    results: [RESULT],
+    results: [CHUNK_MATCH_RESULT],
 }
 
 export const MULTIPLE_SEARCH_RESULT: AggregateStreamingSearchResults = {
@@ -340,7 +353,7 @@ export const MULTIPLE_SEARCH_RESULT: AggregateStreamingSearchResults = {
         skipped: [],
     },
     results: [
-        RESULT,
+        CHUNK_MATCH_RESULT,
         MULTIPLE_MATCH_RESULT,
         {
             type: 'content',
@@ -385,7 +398,7 @@ export const COLLAPSABLE_SEARCH_RESULT: AggregateStreamingSearchResults = {
         skipped: [],
     },
     results: [
-        RESULT,
+        CHUNK_MATCH_RESULT,
         MULTIPLE_MATCH_RESULT,
         {
             type: 'content',

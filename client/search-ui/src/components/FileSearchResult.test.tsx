@@ -10,7 +10,8 @@ import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import {
     HIGHLIGHTED_FILE_LINES_REQUEST,
     NOOP_SETTINGS_CASCADE,
-    RESULT,
+    CHUNK_MATCH_RESULT,
+    LINE_MATCH_RESULT,
 } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import '@sourcegraph/shared/dev/mockReactVisibilitySensor'
 
@@ -23,7 +24,19 @@ describe('FileSearchResult', () => {
     const defaultProps = {
         index: 0,
         location: history.location,
-        result: RESULT,
+        result: CHUNK_MATCH_RESULT,
+        icon: FileIcon,
+        onSelect: sinon.spy(),
+        expanded: true,
+        showAllMatches: true,
+        fetchHighlightedFileLineRanges: HIGHLIGHTED_FILE_LINES_REQUEST,
+        settingsCascade: NOOP_SETTINGS_CASCADE,
+        telemetryService: NOOP_TELEMETRY_SERVICE,
+    }
+    const lineMatchResultProps = {
+        index: 0,
+        location: history.location,
+        result: LINE_MATCH_RESULT,
         icon: FileIcon,
         onSelect: sinon.spy(),
         expanded: true,
@@ -35,6 +48,12 @@ describe('FileSearchResult', () => {
 
     it('renders one result container', () => {
         const { container } = renderWithBrandedContext(<FileSearchResult {...defaultProps} />)
+        expect(getByTestId(container, 'result-container')).toBeVisible()
+        expect(getAllByTestId(container, 'result-container').length).toBe(1)
+    })
+
+    it('renders one result container with legacy line match format', () => {
+        const { container } = renderWithBrandedContext(<FileSearchResult {...lineMatchResultProps} />)
         expect(getByTestId(container, 'result-container')).toBeVisible()
         expect(getAllByTestId(container, 'result-container').length).toBe(1)
     })
