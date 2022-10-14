@@ -2,7 +2,7 @@
 
 We aim to improve the overall deployment experience for our users through the customized machine images.
 
-All Sourcegraph AMI instances are deployed into a single k3s server cluster, running on a single node with an embedded SQLite Database. It allows us to package all the Sourcegraph services with necessary components into one single launcher image so that you can spin up a Sourcegraph instance with just a few clicks in less than 10 minutes.
+All Sourcegraph image instances are deployed into a single k3s server cluster, running on a single node with an embedded SQLite Database. It allows us to package all the Sourcegraph services with necessary components into one single launcher image so that you can spin up a Sourcegraph instance with just a few clicks in less than 10 minutes.
 
 This deployment method is highly recommended for customers who do not wish to spend too much time on looking for the right configurations and maintenance, while still having full control over their instances. The Sourcegraph image instances also provide high-availability and flexibility in resource usage, with the capability for scaling and making additional customizations easy whenever your needs have changed, by simply adjusting the worker/agent nodes, while still being on a single node environment. See the official k3s docs to learn more about [the architecture of a k3s server](https://docs.k3s.io/architecture). 
 
@@ -17,6 +17,8 @@ All Sourcegraph machine images are free to download, and we strongly encourage y
 All AMI instances are currently pinned with a Sourcegraph version that the instance is launched with to ensure restarting the instance will not cause upgrades accidentally. The version number is saved into a text file on both the root (file path: /home/ec2-user/.sourcegraph-version) and data volumes (file path: /mnt/data/.sourcegraph-version) where it will be read by the [reboot script](https://sourcegraph.com/github.com/sourcegraph/deploy@v4.0.1/-/blob/install/reboot.sh) on each reboot. Upgrades will only happen on reboot if the version numbers from both volumes are different.
 
 Detailed deployment and upgrade instructions can be found in our [AWS AMIs docs](https://docs.sourcegraph.com/admin/deploy/aws-ami). 
+
+Unique AMI IDs can be found in our [release page](https://github.com/sourcegraph/deploy/releases).
 
 ### What is a Sourcegraph AMI Instance?
 
