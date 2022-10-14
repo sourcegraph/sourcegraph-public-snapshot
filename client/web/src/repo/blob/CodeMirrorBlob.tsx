@@ -23,6 +23,7 @@ import { useExperimentalFeatures } from '../../stores'
 
 import { BlobInfo, BlobProps, updateBrowserHistoryIfChanged } from './Blob'
 import { blobPropsFacet } from './codemirror'
+import { arrowKeyNavigation } from './codemirror/arrow-key-navigation'
 import { showGitBlameDecorations } from './codemirror/blame-decorations'
 import { syntaxHighlight } from './codemirror/highlight'
 import { hovercardRanges } from './codemirror/hovercard'
@@ -171,7 +172,8 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 initialSelection: position.line !== undefined ? position : null,
                 navigateToLineOnAnyClick: navigateToLineOnAnyClick ?? false,
             }),
-            tokenKeyboardNavigation ? tokensAsLinks.of({ blobInfo, history, preloadGoToDefinition }) : [],
+            arrowKeyNavigation.of({ onSelection }),
+            tokenKeyboardNavigation ? tokensAsLinks.of({ blobInfo, history, preloadGoToDefinition: true }) : [],
             syntaxHighlight.of(blobInfo),
             pinnedRangeField.init(() => (hasPin ? position : null)),
             extensionsController !== null && !navigateToLineOnAnyClick

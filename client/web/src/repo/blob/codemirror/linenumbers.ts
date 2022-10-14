@@ -28,11 +28,11 @@ import { isValidLineRange, preciseOffsetAtCoords } from './utils'
  */
 export type SelectedLineRange = { line: number; endLine?: number } | null
 
-const selectedLineDecoration = Decoration.line({ class: 'selected-line', attributes: { tabIndex: '-1' } })
+const selectedLineDecoration = Decoration.line({ class: 'selected-line' })
 const selectedLineGutterMarker = new (class extends GutterMarker {
     public elementClass = 'selected-line'
 })()
-const setSelectedLines = StateEffect.define<SelectedLineRange>()
+export const setSelectedLines = StateEffect.define<SelectedLineRange>()
 const setEndLine = StateEffect.define<number>()
 
 /**
