@@ -1,4 +1,4 @@
-import { FC, ReactNode, useCallback } from 'react'
+import { FC, ReactNode } from 'react'
 
 import { noop } from 'lodash'
 
@@ -10,17 +10,14 @@ import {
     FormChangeEvent,
     SubmissionErrors,
     useForm,
-    createRequiredValidator,
-    insightStepValueValidator,
     insightRepositoriesValidator,
     insightRepositoriesAsyncValidator,
-    insightTitleValidator,
 } from '../../../../../components'
 import { LineChartLivePreview } from '../../LineChartLivePreview'
 import { CaptureGroupFormFields } from '../types'
-import { searchQueryValidator } from '../utils/search-query-validator'
 
 import { CaptureGroupCreationForm, RenderPropertyInputs } from './CaptureGoupCreationForm'
+import { QUERY_VALIDATORS, STEP_VALIDATORS, TITLE_VALIDATORS } from './validators'
 
 const INITIAL_VALUES: CaptureGroupFormFields = {
     repositories: '',
@@ -31,8 +28,6 @@ const INITIAL_VALUES: CaptureGroupFormFields = {
     allRepos: false,
     dashboardReferenceCount: 0,
 }
-
-const queryRequiredValidator = createRequiredValidator('Query is a required field.')
 
 interface CaptureGroupCreationContentProps {
     touched: boolean
@@ -47,22 +42,6 @@ interface CaptureGroupCreationContentProps {
 export const CaptureGroupCreationContent: FC<CaptureGroupCreationContentProps> = props => {
     const { touched, className, initialValues = {}, children, onSubmit, onChange = noop } = props
 
-    // Search query validators
-    const validateChecks = useCallback((value: string | undefined) => {
-        if (!value) {
-            return queryRequiredValidator(value)
-        }
-
-        const validatedChecks = searchQueryValidator(value, true)
-        const allChecksPassed = Object.values(validatedChecks).every(Boolean)
-
-        if (!allChecksPassed) {
-            return 'Query is not valid'
-        }
-
-        return queryRequiredValidator(value)
-    }, [])
-
     const form = useForm<CaptureGroupFormFields>({
         initialValues: { ...INITIAL_VALUES, ...initialValues },
         touched,
@@ -73,7 +52,7 @@ export const CaptureGroupCreationContent: FC<CaptureGroupCreationContentProps> =
     const title = useField({
         name: 'title',
         formApi: form.formAPI,
-        validators: { sync: insightTitleValidator },
+        validators: { sync: TITLE_VALIDATORS },
     })
 
     const allReposMode = useField({
@@ -87,23 +66,21 @@ export const CaptureGroupCreationContent: FC<CaptureGroupCreationContentProps> =
         },
     })
 
-    const isAllReposMode = allReposMode.input.value
-
     const repositories = useField({
         name: 'repositories',
         formApi: form.formAPI,
         validators: {
             // Turn off any validations for the repositories' field in we are in all repos mode
-            sync: !isAllReposMode ? insightRepositoriesValidator : undefined,
-            async: !isAllReposMode ? insightRepositoriesAsyncValidator : undefined,
+            sync: !allReposMode.input.value ? insightRepositoriesValidator : undefined,
+            async: !allReposMode.input.value ? insightRepositoriesAsyncValidator : undefined,
         },
-        disabled: isAllReposMode,
+        disabled: allReposMode.input.value,
     })
 
     const query = useField({
         name: 'groupSearchQuery',
         formApi: form.formAPI,
-        validators: { sync: validateChecks },
+        validators: { sync: QUERY_VALIDATORS },
     })
 
     const step = useField({
@@ -114,7 +91,7 @@ export const CaptureGroupCreationContent: FC<CaptureGroupCreationContentProps> =
     const stepValue = useField({
         name: 'stepValue',
         formApi: form.formAPI,
-        validators: { sync: insightStepValueValidator },
+        validators: { sync: STEP_VALIDATORS },
     })
 
     const handleFormReset = (): void => {

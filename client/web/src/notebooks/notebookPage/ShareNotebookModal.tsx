@@ -23,7 +23,7 @@ interface ShareNotebookModalProps extends TelemetryProps {
 
 function getSelectedShareOptionDescription(shareOption: ShareOption, isSourcegraphDotCom: boolean): string {
     if (shareOption.namespaceType === 'User') {
-        const withAccess = isSourcegraphDotCom ? 'on Sourcegraph Cloud' : 'with access to the Sourcegraph instance'
+        const withAccess = isSourcegraphDotCom ? 'on Sourcegraph.com' : 'with access to the Sourcegraph instance'
         return shareOption.isPublic
             ? `Everyone ${withAccess} can view the notebook, but only you can edit it`
             : 'Only you can view and edit the notebook'
@@ -85,7 +85,7 @@ export const ShareNotebookModal: React.FunctionComponent<React.PropsWithChildren
                             })
                         }
                         label={`Everyone ${
-                            isSourcegraphDotCom ? 'on Sourcegraph Cloud' : 'with access to the Sourcegraph instance'
+                            isSourcegraphDotCom ? 'on Sourcegraph.com' : 'with access to the Sourcegraph instance'
                         } can view the notebook`}
                     />
                 )}

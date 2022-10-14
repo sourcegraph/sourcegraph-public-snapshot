@@ -81,8 +81,8 @@ sudo mkdir -p "${DOCKER_DATA_ROOT}"
 sudo mount -o discard,defaults "${PERSISTENT_DISK_DEVICE_NAME}" "${DOCKER_DATA_ROOT}"
 # Mount file system by label on reboot
 sudo echo "LABEL=${PERSISTENT_DISK_LABEL}  ${DOCKER_DATA_ROOT}  ext4  discard,defaults,nofail  0  2" | sudo tee -a /etc/fstab
-umount "${DOCKER_DATA_ROOT}"
-mount -a
+sudo umount "${DOCKER_DATA_ROOT}"
+sudo mount -a
 # Install, configure, and enable Docker
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
 sudo apt-get update -y

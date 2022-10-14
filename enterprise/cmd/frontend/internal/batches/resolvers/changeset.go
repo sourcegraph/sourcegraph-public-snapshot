@@ -10,7 +10,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
@@ -19,8 +18,10 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types/scheduler/config"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -177,11 +178,11 @@ func (r *changesetResolver) BatchChanges(ctx context.Context, args *graphqlbacke
 		opts.Cursor = cursor
 	}
 
-	authErr := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB())
-	if authErr != nil && authErr != backend.ErrMustBeSiteAdmin {
+	authErr := auth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB())
+	if authErr != nil && authErr != auth.ErrMustBeSiteAdmin {
 		return nil, err
 	}
-	isSiteAdmin := authErr != backend.ErrMustBeSiteAdmin
+	isSiteAdmin := authErr != auth.ErrMustBeSiteAdmin
 	if !isSiteAdmin {
 		if args.ViewerCanAdminister != nil && *args.ViewerCanAdminister {
 			actor := actor.FromContext(ctx)
@@ -192,15 +193,15 @@ func (r *changesetResolver) BatchChanges(ctx context.Context, args *graphqlbacke
 	return &batchChangesConnectionResolver{store: r.store, opts: opts}, nil
 }
 
-func (r *changesetResolver) CreatedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.changeset.CreatedAt}
+func (r *changesetResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.changeset.CreatedAt}
 }
 
-func (r *changesetResolver) UpdatedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.changeset.UpdatedAt}
+func (r *changesetResolver) UpdatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.changeset.UpdatedAt}
 }
 
-func (r *changesetResolver) NextSyncAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
+func (r *changesetResolver) NextSyncAt(ctx context.Context) (*gqlutil.DateTime, error) {
 	// If code host syncs are disabled, the syncer is not actively syncing
 	// changesets and the next sync time cannot be determined.
 	if conf.Get().DisableAutoCodeHostSyncs {
@@ -214,7 +215,7 @@ func (r *changesetResolver) NextSyncAt(ctx context.Context) (*graphqlbackend.Dat
 	if nextSyncAt.IsZero() {
 		return nil, nil
 	}
-	return &graphqlbackend.DateTime{Time: nextSyncAt}, nil
+	return &gqlutil.DateTime{Time: nextSyncAt}, nil
 }
 
 func (r *changesetResolver) Title(ctx context.Context) (*string, error) {
@@ -352,7 +353,7 @@ func (r *changesetResolver) Error() *string { return r.changeset.FailureMessage 
 
 func (r *changesetResolver) SyncerError() *string { return r.changeset.SyncErrorMessage }
 
-func (r *changesetResolver) ScheduleEstimateAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
+func (r *changesetResolver) ScheduleEstimateAt(ctx context.Context) (*gqlutil.DateTime, error) {
 	// We need to find out how deep in the queue this changeset is.
 	place, err := r.store.GetChangesetPlaceInSchedulerQueue(ctx, r.changeset.ID)
 	if err == store.ErrNoResults {
@@ -363,7 +364,7 @@ func (r *changesetResolver) ScheduleEstimateAt(ctx context.Context) (*graphqlbac
 
 	// Now we can ask the scheduler to estimate where this item would fall in
 	// the schedule.
-	return graphqlbackend.DateTimeOrNil(config.ActiveWindow().Estimate(r.store.Clock()(), place)), nil
+	return gqlutil.DateTimeOrNil(config.ActiveWindow().Estimate(r.store.Clock()(), place)), nil
 }
 
 func (r *changesetResolver) CurrentSpec(ctx context.Context) (graphqlbackend.VisibleChangesetSpecResolver, error) {

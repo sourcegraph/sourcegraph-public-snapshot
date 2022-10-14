@@ -49,7 +49,6 @@ func (s *Store) GetChangesetEvent(ctx context.Context, opts GetChangesetEventOpt
 }
 
 var getChangesetEventsQueryFmtstr = `
--- source: enterprise/internal/batches/store/changeset_events.go:GetChangesetEvent
 SELECT
     id,
     changeset_id,
@@ -119,7 +118,6 @@ func (s *Store) ListChangesetEvents(ctx context.Context, opts ListChangesetEvent
 }
 
 var listChangesetEventsQueryFmtstr = `
--- source: enterprise/internal/batches/store/changeset_events.go:ListChangesetEvents
 SELECT
     id,
     changeset_id,
@@ -170,7 +168,6 @@ func (s *Store) CountChangesetEvents(ctx context.Context, opts CountChangesetEve
 }
 
 var countChangesetEventsQueryFmtstr = `
--- source: enterprise/internal/batches/store/changeset_events.go:CountChangesetEvents
 SELECT COUNT(id)
 FROM changeset_events
 WHERE %s
@@ -244,7 +241,6 @@ ORDER BY batch.ordinality
 `
 
 var upsertChangesetEventsQueryFmtstr = changesetEventsBatchQueryPrefix + `,
--- source: enterprise/internal/batches/store/changeset_events.go:UpsertChangesetEvents
 changed AS (
   INSERT INTO changeset_events (
     changeset_id,

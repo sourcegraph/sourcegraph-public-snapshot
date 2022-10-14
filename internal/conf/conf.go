@@ -146,10 +146,10 @@ func (c *cachedConfigurationSource) Read(ctx context.Context) (conftypes.RawUnif
 	return *c.entry, nil
 }
 
-func (c *cachedConfigurationSource) Write(ctx context.Context, input conftypes.RawUnified) error {
+func (c *cachedConfigurationSource) Write(ctx context.Context, input conftypes.RawUnified, lastID int32) error {
 	c.entryMu.Lock()
 	defer c.entryMu.Unlock()
-	if err := c.source.Write(ctx, input); err != nil {
+	if err := c.source.Write(ctx, input, lastID); err != nil {
 		return err
 	}
 	c.entry = &input
@@ -211,6 +211,7 @@ func startSiteConfigEscapeHatchWorker(c ConfigurationSource) {
 	var (
 		ctx                                        = context.Background()
 		lastKnownFileContents, lastKnownDBContents string
+		lastKnownConfigID                          int32
 		logger                                     = sglog.Scoped("SiteConfigEscapeHatch", "escape hatch for site config").With(sglog.String("path", siteConfigEscapeHatchPath))
 	)
 	go func() {
@@ -229,6 +230,7 @@ func startSiteConfigEscapeHatchWorker(c ConfigurationSource) {
 			}
 			lastKnownDBContents = config.Site
 			lastKnownFileContents = config.Site
+			lastKnownConfigID = config.ID
 			break
 		}
 
@@ -251,7 +253,7 @@ func startSiteConfigEscapeHatchWorker(c ConfigurationSource) {
 					continue
 				}
 				config.Site = string(newFileContents)
-				err = c.Write(ctx, config)
+				err = c.Write(ctx, config, lastKnownConfigID)
 				if err != nil {
 					logger.Warn("failed to save edit to database, trying again in 1s (write error)", sglog.Error(err))
 					time.Sleep(1 * time.Second)
@@ -277,6 +279,7 @@ func startSiteConfigEscapeHatchWorker(c ConfigurationSource) {
 					continue
 				}
 				lastKnownFileContents = newDBConfig.Site
+				lastKnownConfigID = newDBConfig.ID
 			}
 			time.Sleep(1 * time.Second)
 		}

@@ -198,6 +198,16 @@ export const predicateCompletion = (field: string): Completion[] => {
                 insertText: 'has.description(${1})',
                 asSnippet: true,
             },
+            {
+                label: 'has.tag(...)',
+                insertText: 'has.tag(${1})',
+                asSnippet: true,
+            },
+            {
+                label: 'has(...)',
+                insertText: 'has(${1:key}:${2:value})',
+                asSnippet: true,
+            },
         ]
     }
     return []

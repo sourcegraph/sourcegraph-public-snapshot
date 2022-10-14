@@ -8,6 +8,7 @@ import { createAggregateError, ErrorLike } from '@sourcegraph/common'
 import { Range as ExtensionRange, Position as ExtensionPosition } from '@sourcegraph/extension-api-types'
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
+import { searchContext } from '@sourcegraph/shared/src/codeintel/searchContext'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { getWebGraphQLClient } from '../backend/graphql'
@@ -318,6 +319,11 @@ async function searchAndFilterReferences({
 }
 
 async function executeSearchQuery(terms: string[]): Promise<SearchResult[]> {
+    const context = searchContext()
+    if (context) {
+        terms.push(`context:${context}`)
+    }
+
     interface Response {
         search: {
             results: {
@@ -326,6 +332,7 @@ async function executeSearchQuery(terms: string[]): Promise<SearchResult[]> {
             }
         }
     }
+
     const client = await getWebGraphQLClient()
     const result = await client.query<Response, CodeIntelSearch2Variables>({
         query: getDocumentNode(CODE_INTEL_SEARCH_QUERY),

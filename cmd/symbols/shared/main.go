@@ -74,7 +74,7 @@ func Main(setup SetupFunc) {
 		Registerer: prometheus.DefaultRegisterer,
 		HoneyDataset: &honey.Dataset{
 			Name:       "codeintel-symbols",
-			SampleRate: 5,
+			SampleRate: 20,
 		},
 	}
 

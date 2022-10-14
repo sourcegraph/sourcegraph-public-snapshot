@@ -50,7 +50,6 @@ func (s *store) GetStaleSourcedCommits(ctx context.Context, minimumTimeSinceLast
 }
 
 const staleIndexSourcedCommitsQuery = `
--- source: internal/codeintel/autoindexing/internal/store/store_sourced_commits.go:StaleSourcedCommits
 WITH
 	candidates AS (%s)
 SELECT r.id, r.name, c.commit
@@ -104,7 +103,6 @@ func (s *store) UpdateSourcedCommits(ctx context.Context, repositoryID int, comm
 }
 
 const updateSourcedCommitsQuery = `
--- source: internal/codeintel/autoindexing/internal/store/store_sourced_commits.go:UpdateSourcedCommits
 WITH
 candidate_indexes AS (%s),
 update_indexes AS (
@@ -158,7 +156,6 @@ func (s *store) DeleteSourcedCommits(ctx context.Context, repositoryID int, comm
 }
 
 const deleteSourcedCommitsQuery = `
--- source: internal/codeintel/autoindexing/internal/store/store_sourced_commits.go:DeleteSourcedCommits
 WITH
 candidate_indexes AS (%s),
 delete_indexes AS (

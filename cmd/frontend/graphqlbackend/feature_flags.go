@@ -6,8 +6,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -158,7 +158,7 @@ func (r *schemaResolver) OrganizationFeatureFlagValue(ctx context.Context, args 
 		return false, err
 	}
 	// same behavior as if the flag does not exist
-	if err := backend.CheckOrgAccess(ctx, r.db, org); err != nil {
+	if err := auth.CheckOrgAccess(ctx, r.db, org); err != nil {
 		return false, nil
 	}
 
@@ -187,7 +187,7 @@ func (r *schemaResolver) OrganizationFeatureFlagOverrides(ctx context.Context) (
 func (r *schemaResolver) FeatureFlag(ctx context.Context, args struct {
 	Name string
 }) (*FeatureFlagResolver, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -200,7 +200,7 @@ func (r *schemaResolver) FeatureFlag(ctx context.Context, args struct {
 }
 
 func (r *schemaResolver) FeatureFlags(ctx context.Context) ([]*FeatureFlagResolver, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 	flags, err := r.db.FeatureFlags().GetFeatureFlags(ctx)
@@ -223,7 +223,7 @@ func (r *schemaResolver) CreateFeatureFlag(ctx context.Context, args struct {
 	Value              *bool
 	RolloutBasisPoints *int32
 }) (*FeatureFlagResolver, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -245,7 +245,7 @@ func (r *schemaResolver) CreateFeatureFlag(ctx context.Context, args struct {
 func (r *schemaResolver) DeleteFeatureFlag(ctx context.Context, args struct {
 	Name string
 }) (*EmptyResponse, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, r.db.FeatureFlags().DeleteFeatureFlag(ctx, args.Name)
@@ -256,7 +256,7 @@ func (r *schemaResolver) UpdateFeatureFlag(ctx context.Context, args struct {
 	Value              *bool
 	RolloutBasisPoints *int32
 }) (*FeatureFlagResolver, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 	ff := &featureflag.FeatureFlag{Name: args.Name}
@@ -277,7 +277,7 @@ func (r *schemaResolver) CreateFeatureFlagOverride(ctx context.Context, args str
 	FlagName  string
 	Value     bool
 }) (*FeatureFlagOverrideResolver, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -303,7 +303,7 @@ func (r *schemaResolver) CreateFeatureFlagOverride(ctx context.Context, args str
 func (r *schemaResolver) DeleteFeatureFlagOverride(ctx context.Context, args struct {
 	ID graphql.ID
 }) (*EmptyResponse, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 	spec, err := unmarshalOverrideID(args.ID)
@@ -317,7 +317,7 @@ func (r *schemaResolver) UpdateFeatureFlagOverride(ctx context.Context, args str
 	ID    graphql.ID
 	Value bool
 }) (*FeatureFlagOverrideResolver, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 	spec, err := unmarshalOverrideID(args.ID)

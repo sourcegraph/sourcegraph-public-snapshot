@@ -2,18 +2,15 @@ package graphql
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 )
 
 // strPtr creates a pointer to the given value. If the value is an
@@ -24,39 +21,6 @@ func strPtr(val string) *string {
 	}
 
 	return &val
-}
-
-// DateTime implements the DateTime GraphQL scalar type.
-type DateTime struct{ time.Time }
-
-// DateTimeOrNil is a helper function that returns nil for time == nil and otherwise wraps time in
-// DateTime.
-func DateTimeOrNil(time *time.Time) *DateTime {
-	if time == nil {
-		return nil
-	}
-	return &DateTime{Time: *time}
-}
-
-func (DateTime) ImplementsGraphQLType(name string) bool {
-	return name == "DateTime"
-}
-
-func (v DateTime) MarshalJSON() ([]byte, error) {
-	return json.Marshal(v.Time.Format(time.RFC3339))
-}
-
-func (v *DateTime) UnmarshalGraphQL(input any) error {
-	s, ok := input.(string)
-	if !ok {
-		return errors.Errorf("invalid GraphQL DateTime scalar value input (got %T, expected string)", input)
-	}
-	t, err := time.Parse(time.RFC3339, s)
-	if err != nil {
-		return err
-	}
-	*v = DateTime{Time: t}
-	return nil
 }
 
 func marshalLSIFIndexGQLID(indexID int64) graphql.ID {
@@ -77,18 +41,18 @@ const DefaultIndexPageSize = 50
 
 // makeGetIndexesOptions translates the given GraphQL arguments into options defined by the
 // store.GetIndexes operations.
-func makeGetIndexesOptions(args *LSIFRepositoryIndexesQueryArgs) (types.GetIndexesOptions, error) {
+func makeGetIndexesOptions(args *LSIFRepositoryIndexesQueryArgs) (shared.GetIndexesOptions, error) {
 	repositoryID, err := resolveRepositoryID(args.RepositoryID)
 	if err != nil {
-		return types.GetIndexesOptions{}, err
+		return shared.GetIndexesOptions{}, err
 	}
 
 	offset, err := graphqlutil.DecodeIntCursor(args.After)
 	if err != nil {
-		return types.GetIndexesOptions{}, err
+		return shared.GetIndexesOptions{}, err
 	}
 
-	return types.GetIndexesOptions{
+	return shared.GetIndexesOptions{
 		RepositoryID: repositoryID,
 		State:        strings.ToLower(derefString(args.State, "")),
 		Term:         derefString(args.Query, ""),
@@ -219,4 +183,23 @@ func EncodeCursor(val *string) *PageInfo {
 	}
 
 	return HasNextPage(false)
+}
+
+// makeDeleteIndexesOptions translates the given GraphQL arguments into options defined by the
+// store.DeleteIndexes operations.
+func makeDeleteIndexesOptions(args *DeleteLSIFIndexesArgs) (shared.DeleteIndexesOptions, error) {
+	var repository int
+	if args.Repository != nil {
+		var err error
+		repository, err = resolveRepositoryID(*args.Repository)
+		if err != nil {
+			return shared.DeleteIndexesOptions{}, err
+		}
+	}
+
+	return shared.DeleteIndexesOptions{
+		State:        strings.ToLower(derefString(args.State, "")),
+		Term:         derefString(args.Query, ""),
+		RepositoryID: repository,
+	}, nil
 }

@@ -97,7 +97,7 @@ describe('serialize', () => {
                         start: { line: 1, character: 1 },
                         end: { line: 1, character: 3 },
                     },
-                    highlightSymbolRange: { highlightLength: 2, line: 1, character: 1 },
+                    highlightSymbolRange: { startLine: 1, startCharacter: 1, endLine: 1, endCharacter: 3 },
                     highlightLineRange: { startLine: 0, endLine: 6 },
                     highlightedLines: [],
                 }),
