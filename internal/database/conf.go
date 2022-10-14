@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -28,7 +29,7 @@ type ConfStore interface {
 	//
 	// 🚨 SECURITY: This method does NOT verify the user is an admin. The caller is
 	// responsible for ensuring this or that the response never makes it to a user.
-	SiteCreateIfUpToDate(ctx context.Context, lastID *int32, contents string) (*SiteConfig, error)
+	SiteCreateIfUpToDate(ctx context.Context, lastID *int32, contents string, isOverride bool) (*SiteConfig, error)
 
 	// SiteGetLatest returns the site config that was most recently saved to the database.
 	// This returns nil, nil if there is not yet a site config in the database.
@@ -77,7 +78,7 @@ func (s *confStore) transact(ctx context.Context) (*confStore, error) {
 	return &confStore{Store: txBase}, nil
 }
 
-func (s *confStore) SiteCreateIfUpToDate(ctx context.Context, lastID *int32, contents string) (_ *SiteConfig, err error) {
+func (s *confStore) SiteCreateIfUpToDate(ctx context.Context, lastID *int32, contents string, isOverride bool) (_ *SiteConfig, err error) {
 	tx, err := s.transact(ctx)
 	if err != nil {
 		return nil, err
@@ -91,7 +92,7 @@ func (s *confStore) SiteCreateIfUpToDate(ctx context.Context, lastID *int32, con
 	if newLastID != nil {
 		lastID = newLastID
 	}
-	return tx.createIfUpToDate(ctx, lastID, contents)
+	return tx.createIfUpToDate(ctx, lastID, contents, isOverride)
 }
 
 func (s *confStore) SiteGetLatest(ctx context.Context) (_ *SiteConfig, err error) {
@@ -119,7 +120,7 @@ func (s *confStore) addDefault(ctx context.Context, contents string) (newLastID 
 		return nil, nil
 	}
 
-	latest, err = s.createIfUpToDate(ctx, nil, contents)
+	latest, err = s.createIfUpToDate(ctx, nil, contents, false)
 	if err != nil {
 		return nil, err
 	}
@@ -132,9 +133,18 @@ VALUES ('site', %s)
 RETURNING %s -- siteConfigColumns
 `
 
-func (s *confStore) createIfUpToDate(ctx context.Context, lastID *int32, contents string) (*SiteConfig, error) {
+func (s *confStore) createIfUpToDate(ctx context.Context, lastID *int32, contents string, isOverride bool) (*SiteConfig, error) {
 	// Validate config for syntax and by the JSON Schema.
-	if problems, err := conf.ValidateSite(contents); err != nil {
+	var problems []string
+	var err error
+	if isOverride {
+		var problemStruct conf.Problems
+		problemStruct, err = conf.Validate(conftypes.RawUnified{Site: contents})
+		problems = problemStruct.Messages()
+	} else {
+		problems, err = conf.ValidateSite(contents)
+	}
+	if err != nil {
 		return nil, errors.Errorf("failed to validate site configuration: %w", err)
 	} else if len(problems) > 0 {
 		return nil, errors.Errorf("site configuration is invalid: %s", strings.Join(problems, ","))
