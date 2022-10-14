@@ -369,7 +369,7 @@ func reportExternalServiceDuration(startTime time.Time, mutation ExternalService
 	labels := prometheus.Labels{
 		"mutation":  mutation.String(),
 		"success":   strconv.FormatBool(*err == nil),
-		"namespace": ns, // todo: check if this can be safely removed
+		"namespace": ns,
 	}
 	mutationDuration.With(labels).Observe(duration.Seconds())
 }
