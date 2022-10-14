@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -102,12 +103,12 @@ func (r *batchChangeResolver) LastApplier(ctx context.Context) (*graphqlbackend.
 	return user, err
 }
 
-func (r *batchChangeResolver) LastAppliedAt() *graphqlbackend.DateTime {
+func (r *batchChangeResolver) LastAppliedAt() *gqlutil.DateTime {
 	if r.batchChange.LastAppliedAt.IsZero() {
 		return nil
 	}
 
-	return &graphqlbackend.DateTime{Time: r.batchChange.LastAppliedAt}
+	return &gqlutil.DateTime{Time: r.batchChange.LastAppliedAt}
 }
 
 func (r *batchChangeResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
@@ -164,19 +165,19 @@ func (r *batchChangeResolver) computeBatchSpec(ctx context.Context) (*btypes.Bat
 	return r.batchSpec, r.batchSpecErr
 }
 
-func (r *batchChangeResolver) CreatedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.batchChange.CreatedAt}
+func (r *batchChangeResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.batchChange.CreatedAt}
 }
 
-func (r *batchChangeResolver) UpdatedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.batchChange.UpdatedAt}
+func (r *batchChangeResolver) UpdatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.batchChange.UpdatedAt}
 }
 
-func (r *batchChangeResolver) ClosedAt() *graphqlbackend.DateTime {
+func (r *batchChangeResolver) ClosedAt() *gqlutil.DateTime {
 	if !r.batchChange.Closed() {
 		return nil
 	}
-	return &graphqlbackend.DateTime{Time: r.batchChange.ClosedAt}
+	return &gqlutil.DateTime{Time: r.batchChange.ClosedAt}
 }
 
 func (r *batchChangeResolver) ChangesetsStats(ctx context.Context) (graphqlbackend.ChangesetsStatsResolver, error) {

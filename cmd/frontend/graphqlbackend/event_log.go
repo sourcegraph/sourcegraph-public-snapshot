@@ -5,6 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 type userEventLogResolver struct {
@@ -51,6 +52,6 @@ func (s *userEventLogResolver) Version() string {
 	return s.event.Version
 }
 
-func (s *userEventLogResolver) Timestamp() DateTime {
-	return DateTime{Time: s.event.Timestamp}
+func (s *userEventLogResolver) Timestamp() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: s.event.Timestamp}
 }

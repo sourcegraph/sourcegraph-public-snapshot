@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 )
 
@@ -75,8 +76,8 @@ type repositoryTextSearchIndexStatus struct {
 	entry zoekt.RepoListEntry
 }
 
-func (r *repositoryTextSearchIndexStatus) UpdatedAt() DateTime {
-	return DateTime{Time: r.entry.IndexMetadata.IndexTime}
+func (r *repositoryTextSearchIndexStatus) UpdatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.entry.IndexMetadata.IndexTime}
 }
 
 func (r *repositoryTextSearchIndexStatus) ContentByteSize() BigInt {

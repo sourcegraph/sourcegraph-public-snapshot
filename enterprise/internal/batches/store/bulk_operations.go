@@ -75,7 +75,6 @@ func (s *Store) GetBulkOperation(ctx context.Context, opts GetBulkOperationOpts)
 }
 
 var getBulkOperationQueryFmtstr = `
--- source: enterprise/internal/batches/store/bulk_operations.go:GetBulkOperation
 SELECT
     %s
 FROM changeset_jobs
@@ -136,7 +135,6 @@ func (s *Store) ListBulkOperations(ctx context.Context, opts ListBulkOperationsO
 }
 
 var listBulkOperationsQueryFmtstr = `
--- source: enterprise/internal/batches/store/bulk_operations.go:ListBulkOperations
 SELECT
     %s
 FROM changeset_jobs
@@ -190,7 +188,6 @@ func (s *Store) CountBulkOperations(ctx context.Context, opts CountBulkOperation
 }
 
 var countBulkOperationsQueryFmtstr = `
--- source: enterprise/internal/batches/store/bulk_operations.go:CountBulkOperations
 SELECT
 	COUNT(DISTINCT(changeset_jobs.bulk_group))
 FROM changeset_jobs
@@ -245,7 +242,6 @@ func (s *Store) ListBulkOperationErrors(ctx context.Context, opts ListBulkOperat
 }
 
 var listBulkOperationErrorsQueryFmtstr = `
--- source: enterprise/internal/batches/store/bulk_operations.go:ListBulkOperationErrors
 SELECT
     changeset_jobs.changeset_id AS changeset_id,
     changeset_jobs.failure_message AS error

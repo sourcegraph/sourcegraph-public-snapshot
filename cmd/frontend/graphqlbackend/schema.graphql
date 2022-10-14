@@ -104,6 +104,11 @@ type Mutation {
     deleteOrganization(organization: ID!, hard: Boolean): EmptyResponse
 
     """
+    Creates a webhook for the specified code host. Only site admins may perform this mutation.
+    """
+    createWebhook(codeHostKind: String!, codeHostURN: String!, secret: String): Webhook!
+
+    """
     Adds a external service. Only site admins may perform this mutation.
     """
     addExternalService(input: AddExternalServiceInput!): ExternalService!
@@ -6358,21 +6363,17 @@ type AnalyticsUsersFrequencyItem {
 }
 
 """
-Average DAUs/WAUs/MAUs.
+Monthly active users
 """
-type AnalyticsUsersSummaryResult {
+type AnalyticsMonthlyActiveUsers {
     """
-    Average DAUs
+    year-month for which the total active users are calculated
     """
-    avgDAU: Float!
+    date: String!
     """
-    Average WAUs
+    total count of active users
     """
-    avgWAU: Float!
-    """
-    Average MAUs
-    """
-    avgMAU: Float!
+    count: Float!
 }
 
 """
@@ -6388,9 +6389,9 @@ type AnalyticsUsersResult {
     """
     frequencies: [AnalyticsUsersFrequencyItem!]!
     """
-    Average number of active users summary.
+    Monthly active users for last 3 months.
     """
-    summary: AnalyticsUsersSummaryResult!
+    monthlyActiveUsers: [AnalyticsMonthlyActiveUsers!]!
 }
 
 """

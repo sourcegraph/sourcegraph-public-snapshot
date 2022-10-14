@@ -8,11 +8,12 @@ import (
 
 	"github.com/derision-test/glock"
 	"github.com/google/go-cmp/cmp"
-
 	"github.com/sourcegraph/log/logtest"
 
 	policiesEnterprise "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
+	policiesshared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
+	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
@@ -99,7 +100,7 @@ func setupMockPolicyService() *MockPolicyService {
 		{ID: 5, RepositoryID: intPtr(50)},
 	}
 
-	getConfigurationPolicies := func(ctx context.Context, opts types.GetConfigurationPoliciesOptions) (filtered []types.ConfigurationPolicy, _ int, _ error) {
+	getConfigurationPolicies := func(ctx context.Context, opts policiesshared.GetConfigurationPoliciesOptions) (filtered []types.ConfigurationPolicy, _ int, _ error) {
 		for _, policy := range policies {
 			if policy.RepositoryID == nil || *policy.RepositoryID == opts.RepositoryID {
 				filtered = append(filtered, policy)
@@ -162,7 +163,7 @@ func setupMockUploadService(now time.Time) *MockStore {
 		return scannedIDs, nil
 	}
 
-	getUploads := func(ctx context.Context, opts types.GetUploadsOptions) ([]types.Upload, int, error) {
+	getUploads := func(ctx context.Context, opts uploadsshared.GetUploadsOptions) ([]types.Upload, int, error) {
 		var filtered []types.Upload
 		for _, upload := range uploads {
 			if upload.RepositoryID != opts.RepositoryID {

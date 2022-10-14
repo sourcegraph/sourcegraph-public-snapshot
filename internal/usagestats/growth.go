@@ -11,7 +11,6 @@ import (
 
 func GetGrowthStatistics(ctx context.Context, db database.DB) (*types.GrowthStatistics, error) {
 	const q = `
--- source: internal/usagestats/growth.go:GetGrowthStatistics
 WITH all_usage_by_user_and_month AS (
     SELECT user_id,
            DATE_TRUNC('month', timestamp) AS month_active

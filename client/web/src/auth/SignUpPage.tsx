@@ -119,9 +119,7 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
                 icon={SourcegraphIcon}
                 iconLinkTo={context.sourcegraphDotComMode ? '/search' : undefined}
                 iconClassName="bg-transparent"
-                title={
-                    context.sourcegraphDotComMode ? 'Sign up for Sourcegraph Cloud' : 'Sign up for Sourcegraph Server'
-                }
+                title={context.sourcegraphDotComMode ? 'Sign up for Sourcegraph.com' : 'Sign up for Sourcegraph Server'}
                 lessPadding={true}
                 body={
                     <div className={classNames('pb-5', signInSignUpCommonStyles.signupPageContainer)}>

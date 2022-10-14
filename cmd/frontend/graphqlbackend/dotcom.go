@@ -6,6 +6,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 type DotcomRootResolver interface {
@@ -37,7 +38,7 @@ type ProductSubscription interface {
 	Account(context.Context) (*UserResolver, error)
 	ActiveLicense(context.Context) (ProductLicense, error)
 	ProductLicenses(context.Context, *graphqlutil.ConnectionArgs) (ProductLicenseConnection, error)
-	CreatedAt() DateTime
+	CreatedAt() gqlutil.DateTime
 	IsArchived() bool
 	URL(context.Context) (string, error)
 	URLForSiteAdmin(context.Context) *string
@@ -78,7 +79,7 @@ type ProductLicense interface {
 	Subscription(context.Context) (ProductSubscription, error)
 	Info() (*ProductLicenseInfo, error)
 	LicenseKey() string
-	CreatedAt() DateTime
+	CreatedAt() gqlutil.DateTime
 }
 
 // ProductLicenseInput implements the GraphQL type ProductLicenseInput.

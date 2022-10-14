@@ -1458,7 +1458,6 @@ type CodeInsightsUsageStatistics struct {
 	WeeklyGroupResultsChartBarClick                []GroupResultPing
 	WeeklyGroupResultsAggregationModeClicked       []GroupResultPing
 	WeeklyGroupResultsAggregationModeDisabledHover []GroupResultPing
-	WeeklyGroupResultsSearches                     []GroupResultSearchPing
 	WeeklySeriesBackfillTime                       []InsightsBackfillTimePing
 }
 
@@ -1470,12 +1469,6 @@ type GroupResultPing struct {
 }
 
 type GroupResultExpandedViewPing struct {
-	AggregationMode *string
-	Count           *int32
-}
-
-type GroupResultSearchPing struct {
-	Name            PingName
 	AggregationMode *string
 	Count           *int32
 }
@@ -1688,10 +1681,12 @@ type Webhook struct {
 	// The primary key, used for sorting and pagination
 	ID int32
 	// UUID is the ID we display externally and will appear in the webhook URL
-	UUID         uuid.UUID
-	CodeHostKind string
-	CodeHostURN  string
-	Secret       *EncryptableSecret
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	UUID            uuid.UUID
+	CodeHostKind    string
+	CodeHostURN     string
+	Secret          *EncryptableSecret
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	CreatedByUserID int32
+	UpdatedByUserID int32
 }

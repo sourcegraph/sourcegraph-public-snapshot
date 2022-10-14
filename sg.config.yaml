@@ -1056,7 +1056,6 @@ tests:
       BROWSER: chrome
     external_secrets:
       GH_TOKEN:
-        provider: 'gcloud'
         project: 'sourcegraph-ci'
         name: 'BUILDKITE_GITHUBDOTCOM_TOKEN'
 

@@ -6,97 +6,78 @@ import (
 	"os"
 	"time"
 
-	"github.com/derision-test/glock"
 	"github.com/grafana/regexp"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/background"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Service struct {
-	store                   store.Store
-	workerutilStore         dbworkerstore.Store
-	dependencySyncStore     dbworkerstore.Store
-	dependencyIndexingStore dbworkerstore.Store
-	uploadSvc               shared.UploadService
-	depsSvc                 DependenciesService
-	policiesSvc             PoliciesService
-	repoStore               ReposStore
-	gitserverRepoStore      GitserverRepoStore
-	externalServiceStore    ExternalServiceStore
-	policyMatcher           PolicyMatcher
-	gitserverClient         shared.GitserverClient
-	symbolsClient           *symbols.Client
-	repoUpdater             shared.RepoUpdaterClient
-	inferenceService        shared.InferenceService
-	logger                  log.Logger
-	operations              *operations
-	janitorMetrics          *janitorMetrics
-	metrics                 *resetterMetrics
-	depencencySyncMetrics   workerutil.WorkerMetrics
-	depencencyIndexMetrics  workerutil.WorkerMetrics
-	clock                   glock.Clock
+	store store.Store
+
+	uploadSvc       UploadService
+	inferenceSvc    InferenceService
+	repoUpdater     RepoUpdaterClient
+	gitserverClient GitserverClient
+	symbolsClient   *symbols.Client
+	backgroundJobs  background.BackgroundJob
+
+	logger     log.Logger
+	operations *operations
 }
 
 func newService(
 	store store.Store,
-	uploadSvc shared.UploadService,
-	dependenciesSvc DependenciesService,
-	policiesSvc PoliciesService,
-	repoStore ReposStore,
-	gitserverRepoStore GitserverRepoStore,
-	externalServiceStore ExternalServiceStore,
-	policyMatcher PolicyMatcher,
-	gitserver shared.GitserverClient,
+	uploadSvc UploadService,
+	inferenceSvc InferenceService,
+	repoUpdater RepoUpdaterClient,
+	gitserver GitserverClient,
 	symbolsClient *symbols.Client,
-	repoUpdater shared.RepoUpdaterClient,
-	inferenceSvc shared.InferenceService,
+	backgroundJobs background.BackgroundJob,
 	observationContext *observation.Context,
 ) *Service {
 	return &Service{
-		store:                   store,
-		workerutilStore:         store.WorkerutilStore(observationContext),
-		dependencySyncStore:     store.WorkerutilDependencySyncStore(observationContext),
-		dependencyIndexingStore: store.WorkerutilDependencyIndexStore(observationContext),
-		uploadSvc:               uploadSvc,
-		depsSvc:                 dependenciesSvc,
-		policiesSvc:             policiesSvc,
-		repoStore:               repoStore,
-		gitserverRepoStore:      gitserverRepoStore,
-		externalServiceStore:    externalServiceStore,
-		policyMatcher:           policyMatcher,
-		gitserverClient:         gitserver,
-		symbolsClient:           symbolsClient,
-		repoUpdater:             repoUpdater,
-		inferenceService:        inferenceSvc,
-		logger:                  observationContext.Logger,
-		operations:              newOperations(observationContext),
-		janitorMetrics:          newJanitorMetrics(observationContext),
-		metrics:                 newMetrics(observationContext),
-		depencencySyncMetrics:   workerutil.NewMetrics(observationContext, "codeintel_dependency_index_processor"),
-		depencencyIndexMetrics:  workerutil.NewMetrics(observationContext, "codeintel_dependency_index_queueing"),
-		clock:                   glock.NewRealClock(),
+		store: store,
+
+		uploadSvc:       uploadSvc,
+		inferenceSvc:    inferenceSvc,
+		repoUpdater:     repoUpdater,
+		gitserverClient: gitserver,
+		symbolsClient:   symbolsClient,
+		backgroundJobs:  backgroundJobs,
+
+		logger:     observationContext.Logger,
+		operations: newOperations(observationContext),
 	}
 }
 
-func (s *Service) WorkerutilStore() dbworkerstore.Store         { return s.workerutilStore }
-func (s *Service) DependencySyncStore() dbworkerstore.Store     { return s.dependencySyncStore }
-func (s *Service) DependencyIndexingStore() dbworkerstore.Store { return s.dependencyIndexingStore }
+func GetBackgroundJobs(s *Service) background.BackgroundJob { return s.backgroundJobs }
+func GetWorkerutilStore(s *Service) dbworkerstore.Store     { return s.backgroundJobs.WorkerutilStore() }
+func GetDependencySyncStore(s *Service) dbworkerstore.Store {
+	return s.backgroundJobs.DependencySyncStore()
+}
 
-func (s *Service) GetIndexes(ctx context.Context, opts types.GetIndexesOptions) (_ []types.Index, _ int, err error) {
+func GetDependencyIndexingStore(s *Service) dbworkerstore.Store {
+	return s.backgroundJobs.DependencyIndexingStore()
+}
+
+func (s *Service) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (_ []types.Index, _ int, err error) {
 	ctx, _, endObservation := s.operations.getIndexes.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -138,11 +119,46 @@ func (s *Service) DeleteIndexByID(ctx context.Context, id int) (_ bool, err erro
 	return s.store.DeleteIndexByID(ctx, id)
 }
 
-func (s *Service) DeleteIndexes(ctx context.Context, opts types.DeleteIndexesOptions) (err error) {
+func (s *Service) DeleteIndexes(ctx context.Context, opts shared.DeleteIndexesOptions) (err error) {
 	ctx, _, endObservation := s.operations.deleteIndexes.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	return s.store.DeleteIndexes(ctx, opts)
+}
+
+func (s *Service) GetStaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []shared.SourcedCommits, err error) {
+	ctx, _, endObservation := s.operations.getStaleSourcedCommits.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.GetStaleSourcedCommits(ctx, minimumTimeSinceLastCheck, limit, now)
+}
+
+func (s *Service) UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (indexesUpdated int, err error) {
+	ctx, _, endObservation := s.operations.updateSourcedCommits.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.UpdateSourcedCommits(ctx, repositoryID, commit, now)
+}
+
+func (s *Service) DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration) (indexesDeleted int, err error) {
+	ctx, _, endObservation := s.operations.deleteSourcedCommits.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.DeleteSourcedCommits(ctx, repositoryID, commit, maximumCommitLag)
+}
+
+func (s *Service) DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error) {
+	ctx, _, endObservation := s.operations.deleteIndexesWithoutRepository.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.DeleteIndexesWithoutRepository(ctx, now)
+}
+
+func (s *Service) ExpireFailedRecords(ctx context.Context, batchSize int, maxAge time.Duration, now time.Time) (err error) {
+	ctx, _, endObservation := s.operations.expireFailedRecords.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.ExpireFailedRecords(ctx, batchSize, maxAge, now)
 }
 
 func (s *Service) GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (_ shared.IndexConfiguration, _ bool, err error) {
@@ -180,12 +196,12 @@ func (s *Service) InferIndexConfiguration(ctx context.Context, repositoryID int,
 	}
 	trace.Log(otlog.String("commit", commit))
 
-	indexJobs, err := s.inferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, bypassLimit)
+	indexJobs, err := s.InferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, bypassLimit)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	indexJobHints, err := s.inferIndexJobHintsFromRepositoryStructure(ctx, repositoryID, commit)
+	indexJobHints, err := s.InferIndexJobHintsFromRepositoryStructure(ctx, repositoryID, commit)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -270,6 +286,30 @@ func (s *Service) QueueRepoRev(ctx context.Context, repositoryID int, rev string
 	return s.store.QueueRepoRev(ctx, repositoryID, rev)
 }
 
+func (s *Service) ProcessRepoRevs(ctx context.Context, batchSize int) (err error) {
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	repoRevs, err := tx.GetQueuedRepoRev(ctx, batchSize)
+	if err != nil {
+		return err
+	}
+
+	ids := make([]int, 0, len(repoRevs))
+	for _, repoRev := range repoRevs {
+		if _, err := s.QueueIndexes(ctx, repoRev.RepositoryID, repoRev.Rev, "", false, false); err != nil {
+			return err
+		}
+
+		ids = append(ids, repoRev.ID)
+	}
+
+	return tx.MarkRepoRevsAsProcessed(ctx, ids)
+}
+
 func (s *Service) SetInferenceScript(ctx context.Context, script string) (err error) {
 	ctx, _, endObservation := s.operations.setInferenceScript.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
@@ -282,6 +322,10 @@ func (s *Service) GetInferenceScript(ctx context.Context) (script string, err er
 	defer endObservation(1, observation.Args{})
 
 	return s.store.GetInferenceScript(ctx)
+}
+
+func (s *Service) InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error) {
+	return s.store.InsertDependencyIndexingJob(ctx, uploadID, externalServiceKind, syncTime)
 }
 
 // QueueIndexes enqueues a set of index jobs for the following repository and commit. If a non-empty
@@ -313,12 +357,101 @@ func (s *Service) QueueIndexes(ctx context.Context, repositoryID int, rev, confi
 	return s.queueIndexForRepositoryAndCommit(ctx, repositoryID, commit, configuration, force, bypassLimit, nil) // trace)
 }
 
+// QueueIndexesForPackage enqueues index jobs for a dependency of a recently-processed precise code
+// intelligence index.
+func (s *Service) QueueIndexesForPackage(ctx context.Context, pkg precise.Package) (err error) {
+	ctx, trace, endObservation := s.operations.queueIndexForPackage.With(ctx, &err, observation.Args{
+		LogFields: []otlog.Field{
+			otlog.String("scheme", pkg.Scheme),
+			otlog.String("name", pkg.Name),
+			otlog.String("version", pkg.Version),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
+	repoName, revision, ok := inference.InferRepositoryAndRevision(pkg)
+	if !ok {
+		return nil
+	}
+	trace.Log(otlog.String("repoName", string(repoName)))
+	trace.Log(otlog.String("revision", revision))
+
+	resp, err := s.repoUpdater.EnqueueRepoUpdate(ctx, repoName)
+	if err != nil {
+		if errcode.IsNotFound(err) {
+			return nil
+		}
+
+		return errors.Wrap(err, "repoUpdater.EnqueueRepoUpdate")
+	}
+
+	commit, err := s.gitserverClient.ResolveRevision(ctx, int(resp.ID), revision)
+	if err != nil {
+		if errcode.IsNotFound(err) {
+			return nil
+		}
+
+		return errors.Wrap(err, "gitserverClient.ResolveRevision")
+	}
+
+	_, err = s.queueIndexForRepositoryAndCommit(ctx, int(resp.ID), string(commit), "", false, false, nil) // trace)
+	return err
+}
+
+var (
+	overrideScript                           = os.Getenv("SRC_CODEINTEL_INFERENCE_OVERRIDE_SCRIPT")
+	maximumIndexJobsPerInferredConfiguration = env.MustGetInt("PRECISE_CODE_INTEL_AUTO_INDEX_MAXIMUM_INDEX_JOBS_PER_INFERRED_CONFIGURATION", 25, "Repositories with a number of inferred auto-index jobs exceeding this threshold will not be auto-indexed.")
+)
+
+// InferIndexJobsFromRepositoryStructure collects the result of  InferIndexJobs over all registered recognizers.
+func (s Service) InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]config.IndexJob, error) {
+	repoName, err := s.uploadSvc.GetRepoName(ctx, repositoryID)
+	if err != nil {
+		return nil, err
+	}
+
+	script, err := s.store.GetInferenceScript(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to fetch inference script from database")
+	}
+	if script == "" {
+		script = overrideScript
+	}
+
+	indexes, err := s.inferenceSvc.InferIndexJobs(ctx, api.RepoName(repoName), commit, script)
+	if err != nil {
+		return nil, err
+	}
+
+	if !bypassLimit && len(indexes) > maximumIndexJobsPerInferredConfiguration {
+		s.logger.Info("Too many inferred roots. Scheduling no index jobs for repository.", log.Int("repository_id", repositoryID))
+		return nil, nil
+	}
+
+	return indexes, nil
+}
+
+// inferIndexJobsFromRepositoryStructure collects the result of  InferIndexJobHints over all registered recognizers.
+func (s Service) InferIndexJobHintsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string) ([]config.IndexJobHint, error) {
+	repoName, err := s.uploadSvc.GetRepoName(ctx, repositoryID)
+	if err != nil {
+		return nil, err
+	}
+
+	indexes, err := s.inferenceSvc.InferIndexJobHints(ctx, api.RepoName(repoName), commit, overrideScript)
+	if err != nil {
+		return nil, err
+	}
+
+	return indexes, nil
+}
+
 // queueIndexForRepositoryAndCommit determines a set of index jobs to enqueue for the given repository and commit.
 //
 // If the force flag is false, then the presence of an upload or index record for this given repository and commit
 // will cause this method to no-op. Note that this is NOT a guarantee that there will never be any duplicate records
 // when the flag is false.
-func (s *Service) queueIndexForRepositoryAndCommit(ctx context.Context, repositoryID int, commit, configuration string, force, bypassLimit bool, trace observation.TraceLogger) ([]types.Index, error) {
+func (s Service) queueIndexForRepositoryAndCommit(ctx context.Context, repositoryID int, commit, configuration string, force, bypassLimit bool, trace observation.TraceLogger) ([]types.Index, error) {
 	if !force {
 		isQueued, err := s.store.IsQueued(ctx, repositoryID, commit)
 		if err != nil {
@@ -340,54 +473,6 @@ func (s *Service) queueIndexForRepositoryAndCommit(ctx context.Context, reposito
 	return s.store.InsertIndexes(ctx, indexes)
 }
 
-var (
-	overrideScript                           = os.Getenv("SRC_CODEINTEL_INFERENCE_OVERRIDE_SCRIPT")
-	maximumIndexJobsPerInferredConfiguration = env.MustGetInt("PRECISE_CODE_INTEL_AUTO_INDEX_MAXIMUM_INDEX_JOBS_PER_INFERRED_CONFIGURATION", 25, "Repositories with a number of inferred auto-index jobs exceeding this threshold will not be auto-indexed.")
-)
-
-// inferIndexJobsFromRepositoryStructure collects the result of  InferIndexJobs over all registered recognizers.
-func (s *Service) inferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]config.IndexJob, error) {
-	repoName, err := s.uploadSvc.GetRepoName(ctx, repositoryID)
-	if err != nil {
-		return nil, err
-	}
-
-	script, err := s.store.GetInferenceScript(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to fetch inference script from database")
-	}
-	if script == "" {
-		script = overrideScript
-	}
-
-	indexes, err := s.inferenceService.InferIndexJobs(ctx, api.RepoName(repoName), commit, script)
-	if err != nil {
-		return nil, err
-	}
-
-	if !bypassLimit && len(indexes) > maximumIndexJobsPerInferredConfiguration {
-		s.logger.Info("Too many inferred roots. Scheduling no index jobs for repository.", log.Int("repository_id", repositoryID))
-		return nil, nil
-	}
-
-	return indexes, nil
-}
-
-// inferIndexJobsFromRepositoryStructure collects the result of  InferIndexJobHints over all registered recognizers.
-func (s *Service) inferIndexJobHintsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string) ([]config.IndexJobHint, error) {
-	repoName, err := s.uploadSvc.GetRepoName(ctx, repositoryID)
-	if err != nil {
-		return nil, err
-	}
-
-	indexes, err := s.inferenceService.InferIndexJobHints(ctx, api.RepoName(repoName), commit, overrideScript)
-	if err != nil {
-		return nil, err
-	}
-
-	return indexes, nil
-}
-
 type configurationFactoryFunc func(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]types.Index, bool, error)
 
 // getIndexRecords determines the set of index records that should be enqueued for the given commit.
@@ -397,7 +482,7 @@ type configurationFactoryFunc func(ctx context.Context, repositoryID int, commit
 //   - in the database
 //   - committed to `sourcegraph.yaml` in the repository
 //   - inferred from the repository structure
-func (s *Service) getIndexRecords(ctx context.Context, repositoryID int, commit, configuration string, bypassLimit bool) ([]types.Index, error) {
+func (s Service) getIndexRecords(ctx context.Context, repositoryID int, commit, configuration string, bypassLimit bool) ([]types.Index, error) {
 	fns := []configurationFactoryFunc{
 		makeExplicitConfigurationFactory(configuration),
 		s.getIndexRecordsFromConfigurationInDatabase,
@@ -441,7 +526,7 @@ func makeExplicitConfigurationFactory(configuration string) configurationFactory
 
 // getIndexRecordsFromConfigurationInDatabase returns a set of index jobs configured via the UI for
 // the given repository. If no jobs are configured via the UI then a false valued flag is returned.
-func (s *Service) getIndexRecordsFromConfigurationInDatabase(ctx context.Context, repositoryID int, commit string, _ bool) ([]types.Index, bool, error) {
+func (s Service) getIndexRecordsFromConfigurationInDatabase(ctx context.Context, repositoryID int, commit string, _ bool) ([]types.Index, bool, error) {
 	indexConfigurationRecord, ok, err := s.store.GetIndexConfigurationByRepositoryID(ctx, repositoryID)
 	if err != nil {
 		return nil, false, errors.Wrap(err, "dbstore.GetIndexConfigurationByRepositoryID")
@@ -465,7 +550,7 @@ func (s *Service) getIndexRecordsFromConfigurationInDatabase(ctx context.Context
 // getIndexRecordsFromConfigurationInRepository returns a set of index jobs configured via a committed
 // configuration file at the given commit. If no jobs are configured within the repository then a false
 // valued flag is returned.
-func (s *Service) getIndexRecordsFromConfigurationInRepository(ctx context.Context, repositoryID int, commit string, _ bool) ([]types.Index, bool, error) {
+func (s Service) getIndexRecordsFromConfigurationInRepository(ctx context.Context, repositoryID int, commit string, _ bool) ([]types.Index, bool, error) {
 	isConfigured, err := s.gitserverClient.FileExists(ctx, repositoryID, commit, "sourcegraph.yaml")
 	if err != nil {
 		return nil, false, errors.Wrap(err, "gitserver.FileExists")
@@ -494,8 +579,8 @@ func (s *Service) getIndexRecordsFromConfigurationInRepository(ctx context.Conte
 // inferIndexRecordsFromRepositoryStructure looks at the repository contents at the given commit and
 // determines a set of index jobs that are likely to succeed. If no jobs could be inferred then a
 // false valued flag is returned.
-func (s *Service) inferIndexRecordsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]types.Index, bool, error) {
-	indexJobs, err := s.inferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, bypassLimit)
+func (s Service) inferIndexRecordsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]types.Index, bool, error) {
+	indexJobs, err := s.InferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, bypassLimit)
 	if err != nil || len(indexJobs) == 0 {
 		return nil, false, err
 	}

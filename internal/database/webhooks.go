@@ -19,12 +19,12 @@ import (
 type WebhookStore interface {
 	basestore.ShareableStore
 
-	Create(ctx context.Context, kind, urn string, secret *types.EncryptableSecret) (*types.Webhook, error)
+	Create(ctx context.Context, kind, urn string, actorUID int32, secret *types.EncryptableSecret) (*types.Webhook, error)
 	GetByID(ctx context.Context, id int32) (*types.Webhook, error)
 	GetByUUID(ctx context.Context, id uuid.UUID) (*types.Webhook, error)
 	Delete(ctx context.Context, id uuid.UUID) error
-	Update(ctx context.Context, newWebhook *types.Webhook) (*types.Webhook, error)
-	List(ctx context.Context) ([]*types.Webhook, error)
+	Update(ctx context.Context, actorUID int32, newWebhook *types.Webhook) (*types.Webhook, error)
+	List(ctx context.Context, opts WebhookListOptions) ([]*types.Webhook, error)
 }
 
 type webhookStore struct {
@@ -53,7 +53,7 @@ func WebhooksWith(other basestore.ShareableStore, key encryption.Key) WebhookSto
 // If encryption IS enabled then the encrypted value will be stored in secret and
 // the encryption_key_id field will also be populated so that we can decrypt the
 // value later.
-func (s *webhookStore) Create(ctx context.Context, kind, urn string, secret *types.EncryptableSecret) (*types.Webhook, error) {
+func (s *webhookStore) Create(ctx context.Context, kind, urn string, actorUID int32, secret *types.EncryptableSecret) (*types.Webhook, error) {
 	var (
 		err             error
 		encryptedSecret string
@@ -62,8 +62,11 @@ func (s *webhookStore) Create(ctx context.Context, kind, urn string, secret *typ
 
 	if secret != nil {
 		encryptedSecret, keyID, err = secret.Encrypt(ctx, s.key)
-		if err != nil || (encryptedSecret == "" && keyID == "") {
+		if err != nil {
 			return nil, errors.Wrap(err, "encrypting secret")
+		}
+		if encryptedSecret == "" && keyID == "" {
+			return nil, errors.New("empty secret and key provided")
 		}
 	}
 
@@ -72,6 +75,7 @@ func (s *webhookStore) Create(ctx context.Context, kind, urn string, secret *typ
 		urn,
 		encryptedSecret,
 		keyID,
+		dbutil.NullInt32Column(actorUID),
 		// Returning
 		sqlf.Join(webhookColumns, ", "),
 	)
@@ -85,15 +89,16 @@ func (s *webhookStore) Create(ctx context.Context, kind, urn string, secret *typ
 }
 
 const webhookCreateQueryFmtstr = `
--- source: internal/database/webhooks.go:Create
 INSERT INTO
 	webhooks (
 		code_host_kind,
 		code_host_urn,
 		secret,
-		encryption_key_id
+		encryption_key_id,
+		created_by_user_id
 	)
 	VALUES (
+		%s,
 		%s,
 		%s,
 		%s,
@@ -111,10 +116,11 @@ var webhookColumns = []*sqlf.Query{
 	sqlf.Sprintf("created_at"),
 	sqlf.Sprintf("updated_at"),
 	sqlf.Sprintf("encryption_key_id"),
+	sqlf.Sprintf("created_by_user_id"),
+	sqlf.Sprintf("updated_by_user_id"),
 }
 
 const webhookGetByIDFmtstr = `
--- source: internal/database/webhooks.go:GetByID
 SELECT %s FROM webhooks
 WHERE id = %d
 `
@@ -137,7 +143,6 @@ func (s *webhookStore) GetByID(ctx context.Context, id int32) (*types.Webhook, e
 }
 
 const webhookGetByUUIDFmtstr = `
--- source: internal/database/webhooks.go:GetByUUID
 SELECT %s FROM webhooks
 WHERE uuid = %s
 `
@@ -160,7 +165,6 @@ func (s *webhookStore) GetByUUID(ctx context.Context, id uuid.UUID) (*types.Webh
 }
 
 const webhookDeleteQueryFmtstr = `
--- source: internal/database/webhooks.go:Delete
 DELETE FROM webhooks
 WHERE uuid = %s
 `
@@ -203,7 +207,7 @@ func (w *WebhookNotFoundError) NotFound() bool {
 }
 
 // Update the webhook
-func (s *webhookStore) Update(ctx context.Context, newWebhook *types.Webhook) (*types.Webhook, error) {
+func (s *webhookStore) Update(ctx context.Context, actorUID int32, newWebhook *types.Webhook) (*types.Webhook, error) {
 	var (
 		err             error
 		encryptedSecret string
@@ -214,10 +218,13 @@ func (s *webhookStore) Update(ctx context.Context, newWebhook *types.Webhook) (*
 		if err != nil || (encryptedSecret == "" && keyID == "") {
 			return nil, errors.Wrap(err, "encrypting secret")
 		}
+		if encryptedSecret == "" && keyID == "" {
+			return nil, errors.New("empty secret and key provided")
+		}
 	}
 
 	q := sqlf.Sprintf(webhookUpdateQueryFmtstr,
-		newWebhook.CodeHostURN, encryptedSecret, keyID, newWebhook.ID,
+		newWebhook.CodeHostURN, encryptedSecret, keyID, dbutil.NullInt32Column(actorUID), newWebhook.ID,
 		sqlf.Join(webhookColumns, ", "))
 
 	updated, err := scanWebhook(s.QueryRow(ctx, q), s.key)
@@ -232,13 +239,13 @@ func (s *webhookStore) Update(ctx context.Context, newWebhook *types.Webhook) (*
 }
 
 const webhookUpdateQueryFmtstr = `
--- source: internal/database/webhooks.go:Update
 UPDATE webhooks
 SET
 	code_host_urn = %s,
 	secret = %s,
 	encryption_key_id = %s,
-	updated_at = NOW()
+	updated_at = NOW(),
+	updated_by_user_id = %s
 WHERE
 	id = %s
 RETURNING
@@ -246,10 +253,40 @@ RETURNING
 `
 
 // List the webhooks
-func (s *webhookStore) List(ctx context.Context) ([]*types.Webhook, error) {
-	// TODO(sashaostrikov) implement this method
-	panic("implement this method")
+func (s *webhookStore) List(ctx context.Context, opt WebhookListOptions) ([]*types.Webhook, error) {
+	q := sqlf.Sprintf(webhookListQueryFmtstr, sqlf.Join(webhookColumns, ", "))
+	if opt.Kind != "" {
+		q = sqlf.Sprintf("%s\nWHERE code_host_kind = %s", q, opt.Kind)
+	}
+	if opt.LimitOffset != nil {
+		q = sqlf.Sprintf("%s\n%s", q, opt.LimitOffset.SQL())
+	}
+	rows, err := s.Query(ctx, q)
+	if err != nil {
+		return []*types.Webhook{}, errors.Wrap(err, "error running query")
+	}
+	defer rows.Close()
+	res := make([]*types.Webhook, 0, 20)
+	for rows.Next() {
+		webhook, err := scanWebhook(rows, s.key)
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, webhook)
+	}
+	return res, nil
 }
+
+type WebhookListOptions struct {
+	Kind string
+	*LimitOffset
+}
+
+const webhookListQueryFmtstr = `
+SELECT
+	%s
+FROM webhooks
+`
 
 func scanWebhook(sc dbutil.Scanner, key encryption.Key) (*types.Webhook, error) {
 	var (
@@ -267,6 +304,8 @@ func scanWebhook(sc dbutil.Scanner, key encryption.Key) (*types.Webhook, error) 
 		&hook.CreatedAt,
 		&hook.UpdatedAt,
 		&keyID,
+		&dbutil.NullInt32{N: &hook.CreatedByUserID},
+		&dbutil.NullInt32{N: &hook.UpdatedByUserID},
 	); err != nil {
 		return nil, err
 	}

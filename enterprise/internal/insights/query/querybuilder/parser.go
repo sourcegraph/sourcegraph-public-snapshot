@@ -1,8 +1,6 @@
 package querybuilder
 
 import (
-	"strings"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -50,7 +48,7 @@ func ParseComputeQuery(q string) (*compute.Query, error) {
 }
 
 // ParametersFromQueryPlan expects a valid query plan and returns all parameters from it, e.g. context:global.
-func ParametersFromQueryPlan(plan query.Plan) []query.Parameter {
+func ParametersFromQueryPlan(plan query.Plan) query.Parameters {
 	var parameters []query.Parameter
 	for _, basic := range plan {
 		parameters = append(parameters, basic.Parameters...)
@@ -64,10 +62,8 @@ func ContainsField(rawQuery, field string) (bool, error) {
 		return false, errors.Wrap(err, "ParseQuery")
 	}
 	for _, basic := range plan {
-		for _, param := range basic.Parameters {
-			if strings.EqualFold(field, param.Field) && param.Value != "" {
-				return true, nil
-			}
+		if basic.Parameters.Exists(field) {
+			return true, nil
 		}
 	}
 	return false, nil
