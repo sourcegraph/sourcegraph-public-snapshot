@@ -3,6 +3,7 @@ package bk
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -95,8 +96,14 @@ func NewClient(ctx context.Context, out *std.Output) (*Client, error) {
 		return nil, err
 	}
 	token, err := store.GetExternal(ctx, secrets.ExternalSecret{
-		Project: "sourcegraph-local-dev",
+		Project: "sourcegrap-local-dev",
 		Name:    "SG_BUILDKITE_TOKEN",
+	}, func(_ context.Context) (string, error) {
+		val, ok := os.LookupEnv("BUILDKITE_API_TOKEN")
+		if !ok {
+			return "", fmt.Errorf("failed to get value for env 'BUILDKITE_API_TOKEN'")
+		}
+		return val, nil
 	})
 	if err != nil {
 		return nil, err

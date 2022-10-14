@@ -98,7 +98,7 @@ func queryRFCs(ctx context.Context, query string, driveSpec DriveSpec, pager fun
 		Project: "sourcegraph-local-dev",
 		// sg Google client credentials
 		Name: "SG_GOOGLE_CREDS",
-	})
+	}, nil)
 	if err != nil {
 		return errors.Wrap(err, "failed to get google client credentials")
 	}

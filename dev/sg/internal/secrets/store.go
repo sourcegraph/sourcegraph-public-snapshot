@@ -28,6 +28,8 @@ var (
 	externalSecretTTL = 24 * time.Hour
 )
 
+type FallbackFunc func(context.Context) (string, error)
+
 // Store holds secrets regardless on their form, as long as they are marshallable in JSON.
 type Store struct {
 	filepath string
@@ -118,7 +120,7 @@ func (s *Store) Get(key string, target any) error {
 	return errors.Newf("%w: %s not found", ErrSecretNotFound, key)
 }
 
-func (s *Store) GetExternal(ctx context.Context, secret ExternalSecret) (string, error) {
+func (s *Store) GetExternal(ctx context.Context, secret ExternalSecret, fallback FallbackFunc) (string, error) {
 	var value externalSecretValue
 
 	// Check if we already have this secret
@@ -143,6 +145,18 @@ func (s *Store) GetExternal(ctx context.Context, secret ExternalSecret) (string,
 	})
 	if err == nil {
 		value.Value = string(result.Payload.Data)
+	}
+
+	// Failed to get the secret normally, so lets try getting it with the fallback if it exists
+	if err != nil && fallback != nil {
+		val, fallbackErr := fallback(ctx)
+		if fallbackErr != nil {
+			err = errors.Wrap(err, fallbackErr.Error())
+		} else {
+			value.Value = val
+			// Since we were able to get a secret using the fallback, we set the error to nil
+			err = nil
+		}
 	}
 
 	if err != nil {

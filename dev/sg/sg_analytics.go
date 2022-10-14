@@ -37,7 +37,7 @@ var analyticsCommand = &cli.Command{
 				honeyToken, err := sec.GetExternal(cmd.Context, secrets.ExternalSecret{
 					Project: "sourcegraph-local-dev",
 					Name:    "SG_ANALYTICS_HONEYCOMB_TOKEN",
-				})
+				}, nil)
 				if err != nil {
 					return errors.Wrap(err, "failed to get Honeycomb token from gcloud secrets")
 				}
