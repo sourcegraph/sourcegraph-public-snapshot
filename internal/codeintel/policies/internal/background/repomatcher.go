@@ -1,4 +1,4 @@
-package policies
+package background
 
 import (
 	"context"
@@ -8,14 +8,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
-func (s *Service) NewRepositoryMatcher(interval time.Duration, configurationPolicyMembershipBatchSize int) goroutine.BackgroundRoutine {
+func (b backgroundJob) NewRepositoryMatcher(interval time.Duration, configurationPolicyMembershipBatchSize int) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
-		return s.handleRepositoryMatcherBatch(ctx, configurationPolicyMembershipBatchSize)
+		return b.handleRepositoryMatcherBatch(ctx, configurationPolicyMembershipBatchSize)
 	}))
 }
 
-func (s *Service) handleRepositoryMatcherBatch(ctx context.Context, batchSize int) error {
-	policies, err := s.store.SelectPoliciesForRepositoryMembershipUpdate(ctx, batchSize)
+func (b backgroundJob) handleRepositoryMatcherBatch(ctx context.Context, batchSize int) error {
+	policies, err := b.policySvc.SelectPoliciesForRepositoryMembershipUpdate(ctx, batchSize)
 	if err != nil {
 		return err
 	}
@@ -34,11 +34,11 @@ func (s *Service) handleRepositoryMatcherBatch(ctx context.Context, batchSize in
 		// Always call this even if patterns are not supplied. Otherwise we run into the
 		// situation where we have deleted all of the patterns associated with a policy
 		// but it still has entries in the lookup table.
-		if err := s.store.UpdateReposMatchingPatterns(ctx, patterns, policy.ID, repositoryMatchLimit); err != nil {
+		if err := b.policySvc.UpdateReposMatchingPatterns(ctx, patterns, policy.ID, repositoryMatchLimit); err != nil {
 			return err
 		}
 
-		s.matcherMetrics.numPoliciesUpdated.Inc()
+		b.matcherMetrics.numPoliciesUpdated.Inc()
 	}
 
 	return nil
