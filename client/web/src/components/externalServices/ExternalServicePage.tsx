@@ -49,8 +49,8 @@ interface Props extends TelemetryProps {
     history: H.History
     afterUpdateRoute: string
 
-    externalServicesFromFile?: boolean
-    allowEditExternalServicesWithFile?: boolean
+    externalServicesFromFile: boolean
+    allowEditExternalServicesWithFile: boolean
 
     /** For testing only. */
     queryExternalServiceSyncJobs?: typeof _queryExternalServiceSyncJobs

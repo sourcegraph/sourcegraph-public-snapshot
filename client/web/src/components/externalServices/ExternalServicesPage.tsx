@@ -29,8 +29,8 @@ interface Props extends ActivationProps, TelemetryProps {
     userID?: Scalars['ID']
     authenticatedUser: Pick<AuthenticatedUser, 'id'>
 
-    externalServicesFromFile?: boolean
-    allowEditExternalServicesWithFile?: boolean
+    externalServicesFromFile: boolean
+    allowEditExternalServicesWithFile: boolean
 
     /** For testing only. */
     queryExternalServices?: typeof _queryExternalServices
