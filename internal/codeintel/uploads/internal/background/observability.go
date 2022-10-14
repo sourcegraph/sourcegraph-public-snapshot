@@ -21,7 +21,7 @@ type operations struct {
 func newOperations(observationContext *observation.Context) *operations {
 	m := metrics.NewREDMetrics(
 		observationContext.Registerer,
-		"codeintel_uploads_background", // TODO: still haven't done it! 👀
+		"codeintel_uploads_background",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of method invocations."),
 	)
