@@ -95,8 +95,9 @@ func NewClient(ctx context.Context, out *std.Output) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
+	// Get the secret from gcloud otherwise as fallback try getting it from the environment
 	token, err := store.GetExternal(ctx, secrets.ExternalSecret{
-		Project: "sourcegrap-local-dev",
+		Project: "sourcegraph-local-dev",
 		Name:    "SG_BUILDKITE_TOKEN",
 	}, func(_ context.Context) (string, error) {
 		val, ok := os.LookupEnv("BUILDKITE_API_TOKEN")
