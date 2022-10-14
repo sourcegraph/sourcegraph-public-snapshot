@@ -61,16 +61,6 @@ func (s *store) InsertIndexes(ctx context.Context, indexes []types.Index) (_ []t
 	}
 	defer func() { err = tx.db.Done(err) }()
 
-	// Delete rows that already exist for this repo,commit,root,indexer
-	tuples := []*sqlf.Query{}
-	for _, index := range indexes {
-		tuples = append(tuples, sqlf.Sprintf("(%s, %s, %s, %s)", index.RepositoryID, index.Commit, index.Root, index.Indexer))
-	}
-	err = tx.db.Exec(ctx, sqlf.Sprintf("DELETE FROM lsif_indexes WHERE (repository_id, commit, root, indexer) IN (%s)", sqlf.Join(tuples, ",")))
-	if err != nil {
-		return nil, err
-	}
-
 	ids, err := basestore.ScanInts(tx.db.Query(ctx, sqlf.Sprintf(insertIndexQuery, sqlf.Join(values, ","))))
 	if err != nil {
 		return nil, err
