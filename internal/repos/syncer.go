@@ -666,22 +666,18 @@ func (s *Syncer) SyncExternalService(
 	logger = s.Logger.With(log.Object("svc", log.String("name", svc.DisplayName), log.Int64("id", svc.ID)))
 
 	var syncProgress SyncProgress
-	if progressRecorder != nil {
-		// Record the final progress state
-		defer func() {
-			if err := progressRecorder(ctx, syncProgress, true); err != nil {
-				logger.Error("recording final sync progress", log.Error(err))
-			}
-		}()
-	}
+	// Record the final progress state
+	defer func() {
+		if err := progressRecorder(ctx, syncProgress, true); err != nil {
+			logger.Error("recording final sync progress", log.Error(err))
+		}
+	}()
 
 	// Insert or update repos as they are sourced. Keep track of what was seen so we
 	// can remove anything else at the end.
 	for res := range results {
-		if progressRecorder != nil {
-			if err := progressRecorder(ctx, syncProgress, false); err != nil {
-				logger.Warn("recording sync progress", log.Error(err))
-			}
+		if err := progressRecorder(ctx, syncProgress, false); err != nil {
+			logger.Warn("recording sync progress", log.Error(err))
 		}
 
 		if err := res.Err; err != nil {
