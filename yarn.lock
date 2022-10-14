@@ -34760,11 +34760,12 @@ pvutils@latest:
   linkType: hard
 
 "yargs-parser@npm:^5.0.0":
-  version: 5.0.0
-  resolution: "yargs-parser@npm:5.0.0"
+  version: 5.0.1
+  resolution: "yargs-parser@npm:5.0.1"
   dependencies:
     camelcase: ^3.0.0
-  checksum: 5580caa20c4f012a681269377940d89db37563c24b2abeca08c9e616385eb9d16517fd26f58dd9796a6f12b7bc91e54ec0c46f313eac310ad80fcd12ddb1ec63
+    object.assign: ^4.1.0
+  checksum: 8eff7f3653afc9185cb917ee034d189c1ba4bc0fd5005c9588442e25557e9bf69c7331663a6f9a2bb897cd4c1544ba9675ed3335133e19e660a3086fedc259db
   languageName: node
   linkType: hard
 
