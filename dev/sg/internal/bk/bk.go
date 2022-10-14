@@ -3,7 +3,6 @@ package bk
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -45,26 +44,22 @@ func retrieveToken(ctx context.Context, out *std.Output) (string, error) {
 		return tok, nil
 	}
 
-	sec, err := secrets.FromContext(ctx)
+	store, err := secrets.FromContext(ctx)
 	if err != nil {
 		return "", err
 	}
-	bkSecrets := buildkiteSecrets{}
-	err = sec.Get("buildkite", &bkSecrets)
-	if errors.Is(err, secrets.ErrSecretNotFound) {
-		str, err := getTokenFromUser(out)
-		if err != nil {
-			return "", nil
-		}
-		if err := sec.PutAndSave("buildkite", buildkiteSecrets{Token: str}); err != nil {
-			return "", err
-		}
-		return str, nil
-	}
+
+	token, err := store.GetExternal(ctx, secrets.ExternalSecret{
+		Project: "sourcegraph-local-dev",
+		Name:    "SG_BUILDKITE_TOKEN",
+	}, func(_ context.Context) (string, error) {
+		return getTokenFromUser(out)
+	})
+
 	if err != nil {
 		return "", err
 	}
-	return bkSecrets.Token, nil
+	return token, nil
 }
 
 // getTokenFromUser prompts the user for a slack OAuth token.
@@ -91,21 +86,7 @@ type Client struct {
 // the organization assigned to buildkiteOrg.
 // If there is no token assigned yet, it will be asked to the user.
 func NewClient(ctx context.Context, out *std.Output) (*Client, error) {
-	store, err := secrets.FromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-	// Get the secret from gcloud otherwise as fallback try getting it from the environment
-	token, err := store.GetExternal(ctx, secrets.ExternalSecret{
-		Project: "sourcegraph-local-dev",
-		Name:    "SG_BUILDKITE_TOKEN",
-	}, func(_ context.Context) (string, error) {
-		val, ok := os.LookupEnv("BUILDKITE_API_TOKEN")
-		if !ok {
-			return "", fmt.Errorf("failed to get value for env 'BUILDKITE_API_TOKEN'")
-		}
-		return val, nil
-	})
+	token, err := retrieveToken(ctx, out)
 	if err != nil {
 		return nil, err
 	}

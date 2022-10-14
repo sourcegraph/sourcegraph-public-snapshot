@@ -120,7 +120,18 @@ func (s *Store) Get(key string, target any) error {
 	return errors.Newf("%w: %s not found", ErrSecretNotFound, key)
 }
 
-func (s *Store) GetExternal(ctx context.Context, secret ExternalSecret, fallback FallbackFunc) (string, error) {
+func EnvFallback(ctx context.Context, envKey string) FallbackFunc {
+	return func(_ context.Context) (string, error) {
+		val, ok := os.LookupEnv(envKey)
+		if !ok {
+			return "", errors.Newf("failed to get env value for %q", envKey)
+		}
+
+		return val, nil
+	}
+}
+
+func (s *Store) GetExternal(ctx context.Context, secret ExternalSecret, fallbacks ...FallbackFunc) (string, error) {
 	var value externalSecretValue
 
 	// Check if we already have this secret
@@ -148,14 +159,19 @@ func (s *Store) GetExternal(ctx context.Context, secret ExternalSecret, fallback
 	}
 
 	// Failed to get the secret normally, so lets try getting it with the fallback if it exists
-	if err != nil && fallback != nil {
-		val, fallbackErr := fallback(ctx)
-		if fallbackErr != nil {
-			err = errors.Wrap(err, fallbackErr.Error())
-		} else {
-			value.Value = val
-			// Since we were able to get a secret using the fallback, we set the error to nil
-			err = nil
+	if err != nil && len(fallbacks) > 0 {
+
+		for _, fallback := range fallbacks {
+			val, fallbackErr := fallback(ctx)
+
+			if fallbackErr != nil {
+				err = errors.Wrap(err, fallbackErr.Error())
+			} else {
+				value.Value = val
+				// Since we were able to get a secret using the fallback, we set the error to nil
+				err = nil
+				break
+			}
 		}
 	}
 
