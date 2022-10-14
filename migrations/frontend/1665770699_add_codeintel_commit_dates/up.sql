@@ -12,3 +12,17 @@ COMMENT ON COLUMN codeintel_commit_dates.repository_id IS 'Identifies a row in t
 COMMENT ON COLUMN codeintel_commit_dates.commit_bytea IS 'Identifies the 40-character commit hash.';
 
 COMMENT ON COLUMN codeintel_commit_dates.committed_at IS 'The commit date (may be -infinity if unresolvable).';
+
+INSERT INTO
+    codeintel_commit_dates (repository_id, commit_bytea, committed_at)
+SELECT
+    u.repository_id,
+    decode(u.commit, 'hex'),
+    MIN(u.committed_at)
+FROM
+    lsif_uploads u
+WHERE
+    u.committed_at IS NOT NULL
+GROUP BY
+    u.repository_id,
+    u.commit;
