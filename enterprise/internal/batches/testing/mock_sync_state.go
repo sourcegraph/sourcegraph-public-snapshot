@@ -6,7 +6,6 @@ import (
 
 	"github.com/sourcegraph/go-diff/diff"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -17,9 +16,8 @@ type MockedChangesetSyncState struct {
 	// DiffStat is the diff.Stat of the mocked "git diff" call to gitserver.
 	DiffStat *diff.Stat
 
-	execReader      func([]string) (io.ReadCloser, error)
-	mockRepoLookup  func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)
-	resolveRevision func(string, gitserver.ResolveRevisionOptions) (api.CommitID, error)
+	execReader     func([]string) (io.ReadCloser, error)
+	mockRepoLookup func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)
 }
 
 // MockChangesetSyncState sets up mocks such that invoking SetDerivedState() with
@@ -32,9 +30,8 @@ func MockChangesetSyncState(repo *protocol.RepoInfo) *MockedChangesetSyncState {
 		// This diff.Stat matches the testGitHubDiff below
 		DiffStat: &diff.Stat{Added: 2, Deleted: 4},
 
-		execReader:      gitserver.Mocks.ExecReader,
-		mockRepoLookup:  repoupdater.MockRepoLookup,
-		resolveRevision: gitserver.Mocks.ResolveRevision,
+		execReader:     gitserver.Mocks.ExecReader,
+		mockRepoLookup: repoupdater.MockRepoLookup,
 	}
 
 	repoupdater.MockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
@@ -72,16 +69,11 @@ index 884601b..c4886d5 100644
 		return io.NopCloser(strings.NewReader(testGitHubDiff)), nil
 	}
 
-	gitserver.Mocks.ResolveRevision = func(spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
-		return "mockcommitid", nil
-	}
-
 	return state
 }
 
 // Unmock resets the mocks set up by MockGitHubChangesetSync.
 func (state *MockedChangesetSyncState) Unmock() {
 	gitserver.Mocks.ExecReader = state.execReader
-	gitserver.Mocks.ResolveRevision = state.resolveRevision
 	repoupdater.MockRepoLookup = state.mockRepoLookup
 }

@@ -12,6 +12,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
@@ -190,12 +191,12 @@ func mockRepoComparison(t *testing.T, gitserverClient gitserver.MockClient, base
 	t.Helper()
 
 	spec := fmt.Sprintf("%s...%s", baseRev, headRev)
-	gitserver.Mocks.ResolveRevision = func(spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+	gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(context.Context, api.RepoName, string, gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		if spec != baseRev && spec != headRev {
 			t.Fatalf("gitserver.Mocks.ResolveRevision received unknown spec: %s", spec)
 		}
 		return api.CommitID(spec), nil
-	}
+	})
 	gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		if spec != baseRev && spec != headRev {
 			t.Fatalf("gitserver.Mocks.ResolveRevision received unknown spec: %s", spec)

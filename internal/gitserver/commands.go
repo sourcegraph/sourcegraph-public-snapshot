@@ -869,10 +869,6 @@ var resolveRevisionCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 // * Empty repository: gitdomain.RevisionNotFoundError
 // * Other unexpected errors.
 func (c *clientImplementor) ResolveRevision(ctx context.Context, repo api.RepoName, spec string, opt ResolveRevisionOptions) (api.CommitID, error) {
-	if Mocks.ResolveRevision != nil {
-		return Mocks.ResolveRevision(spec, opt)
-	}
-
 	labelEnsureRevisionValue := "true"
 	if opt.NoEnsureRevision {
 		labelEnsureRevisionValue = "false"
