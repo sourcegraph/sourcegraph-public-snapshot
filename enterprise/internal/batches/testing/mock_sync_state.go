@@ -1,22 +1,25 @@
 package testing
 
 import (
+	"context"
 	"io"
 	"strings"
 
 	"github.com/sourcegraph/go-diff/diff"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type MockedChangesetSyncState struct {
 	// DiffStat is the diff.Stat of the mocked "git diff" call to gitserver.
 	DiffStat *diff.Stat
 
-	execReader     func([]string) (io.ReadCloser, error)
+	MockClient *gitserver.MockClient
+
 	mockRepoLookup func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)
 }
 
@@ -30,7 +33,6 @@ func MockChangesetSyncState(repo *protocol.RepoInfo) *MockedChangesetSyncState {
 		// This diff.Stat matches the testGitHubDiff below
 		DiffStat: &diff.Stat{Added: 2, Deleted: 4},
 
-		execReader:     gitserver.Mocks.ExecReader,
 		mockRepoLookup: repoupdater.MockRepoLookup,
 	}
 
@@ -40,7 +42,8 @@ func MockChangesetSyncState(repo *protocol.RepoInfo) *MockedChangesetSyncState {
 		}, nil
 	}
 
-	gitserver.Mocks.ExecReader = func(args []string) (io.ReadCloser, error) {
+	gitserverClient := gitserver.NewMockClient()
+	gitserverClient.DiffFunc.SetDefaultHook(func(_ context.Context, opts gitserver.DiffOptions, _ authz.SubRepoPermissionChecker) (*gitserver.DiffFileIterator, error) {
 		// This provides a diff that will resolve to 1 added line, 1 changed
 		// line, and 3 deleted lines.
 		const testGitHubDiff = `
@@ -59,21 +62,17 @@ index 884601b..c4886d5 100644
 +    return pow(a, 2)
 
 `
+		return gitserver.NewDiffFileIterator(io.NopCloser(strings.NewReader(testGitHubDiff))), nil
+	})
+	gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(context.Context, api.RepoName, string, gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+		return "mockcommitid", nil
+	})
 
-		if len(args) < 1 && args[0] != "diff" {
-			if state.execReader != nil {
-				return state.execReader(args)
-			}
-			return nil, errors.New("cannot handle non-diff command in mock ExecReader")
-		}
-		return io.NopCloser(strings.NewReader(testGitHubDiff)), nil
-	}
-
+	state.MockClient = gitserverClient
 	return state
 }
 
 // Unmock resets the mocks set up by MockGitHubChangesetSync.
 func (state *MockedChangesetSyncState) Unmock() {
-	gitserver.Mocks.ExecReader = state.execReader
 	repoupdater.MockRepoLookup = state.mockRepoLookup
 }

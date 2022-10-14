@@ -105,6 +105,13 @@ type DiffFileIterator struct {
 	fileFilterFunc diffFileIteratorFilter
 }
 
+func NewDiffFileIterator(rdr io.ReadCloser) *DiffFileIterator {
+	return &DiffFileIterator{
+		rdr:  rdr,
+		mfdr: diff.NewMultiFileDiffReader(rdr),
+	}
+}
+
 type diffFileIteratorFilter func(fileName string) (bool, error)
 
 func getFilterFunc(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) diffFileIteratorFilter {

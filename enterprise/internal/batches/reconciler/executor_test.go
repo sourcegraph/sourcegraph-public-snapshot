@@ -597,8 +597,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 
 			var response string
 			var createCommitFromPatchCalled bool
-			gitserverClient := gitserver.NewMockClient()
-			gitserverClient.CreateCommitFromPatchFunc.SetDefaultHook(func(_ context.Context, req gitprotocol.CreateCommitFromPatchRequest) (string, error) {
+			state.MockClient.CreateCommitFromPatchFunc.SetDefaultHook(func(_ context.Context, req gitprotocol.CreateCommitFromPatchRequest) (string, error) {
 				createCommitFromPatchCalled = true
 				if changesetSpec != nil {
 					response = changesetSpec.HeadRef
@@ -642,7 +641,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			err := executePlan(
 				ctx,
 				logtest.Scoped(t),
-				gitserverClient,
+				state.MockClient,
 				sourcer,
 				// Don't actually sleep for the sake of testing.
 				true,

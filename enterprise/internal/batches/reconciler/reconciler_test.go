@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -130,8 +129,7 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 			}
 			changeset := bt.CreateChangeset(t, ctx, store, changesetOpts)
 
-			gitserverClient := gitserver.NewMockClient()
-			gitserverClient.CreateCommitFromPatchFunc.SetDefaultHook(func(context.Context, gitprotocol.CreateCommitFromPatchRequest) (string, error) {
+			state.MockClient.CreateCommitFromPatchFunc.SetDefaultHook(func(context.Context, gitprotocol.CreateCommitFromPatchRequest) (string, error) {
 				if changesetSpec != nil {
 					return changesetSpec.HeadRef, nil
 				}
@@ -155,7 +153,7 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 			// Run the reconciler
 			rec := Reconciler{
 				noSleepBeforeSync: true,
-				client:            gitserverClient,
+				client:            state.MockClient,
 				sourcer:           sourcer,
 				store:             store,
 			}
