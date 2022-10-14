@@ -27,6 +27,7 @@ let isDarkTheme = false
 let instanceURL = 'https://sourcegraph.com/'
 let isGlobbingEnabled = false
 let accessToken: string | null = null
+let customRequestHeaders: Record<string, string> | null = {}
 let anonymousUserId: string
 let pluginVersion: string
 let initialSearch: Search | null = null
@@ -73,6 +74,7 @@ export function renderReactApp(): void {
             instanceURL={instanceURL}
             isGlobbingEnabled={isGlobbingEnabled}
             accessToken={accessToken}
+            customRequestHeaders={customRequestHeaders}
             initialSearch={initialSearch}
             onOpen={onOpen}
             onPreviewChange={onPreviewChange}
@@ -90,9 +92,30 @@ export function applyConfig(config: PluginConfig): void {
     instanceURL = config.instanceURL
     isGlobbingEnabled = config.isGlobbingEnabled || false
     accessToken = config.accessToken || null
+    customRequestHeaders = parseCustomRequestHeadersString(config.customRequestHeadersAsString)
     anonymousUserId = config.anonymousUserId || 'no-user-id'
     pluginVersion = config.pluginVersion
-    polyfillEventSource(accessToken ? { Authorization: `token ${accessToken}` } : {})
+    polyfillEventSource({...(accessToken ? { Authorization: `token ${accessToken}` } : {}), ...customRequestHeaders})
+}
+
+function parseCustomRequestHeadersString(headersString: string | null): Record<string, string> | null {
+    const result: Record<string, string> = {}
+    if (!headersString) {
+        return null
+    }
+    const headersArray = headersString.split(',')
+    if (headersArray.length % 2 !== 0) {
+        return null
+    }
+    for (let index = 0; index < headersArray.length; index += 2) {
+        const name = headersArray[index].trim()
+        const value = headersArray[index + 1].trim()
+        // Skip invalid keys
+        if (name.match(/^[\w-]+$/)) {
+            result[name] = value
+        }
+    }
+    return result
 }
 
 export function applyTheme(theme: Theme, rootElement: Element = document.documentElement): void {
@@ -140,7 +163,7 @@ export function applyTheme(theme: Theme, rootElement: Element = document.documen
 
 export async function updateVersionAndAuthDataFromServer(): Promise<void> {
     try {
-        const { site, currentUser } = await getSiteVersionAndAuthenticatedUser(instanceURL, accessToken)
+        const { site, currentUser } = await getSiteVersionAndAuthenticatedUser(instanceURL, accessToken, customRequestHeaders)
         authenticatedUser = currentUser
         backendVersion = site?.productVersion || null
         isServerAccessSuccessful = true
@@ -168,6 +191,10 @@ export function getAccessToken(): string | null {
 
 export function getInstanceURL(): string {
     return instanceURL
+}
+
+export function getCustomRequestHeaders(): Record<string, string> | null {
+    return customRequestHeaders
 }
 
 export function wasServerAccessSuccessful(): boolean | null {

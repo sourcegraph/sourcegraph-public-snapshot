@@ -109,10 +109,11 @@ export async function getConfigAlwaysFulfill(): Promise<PluginConfig> {
         console.error(`Failed to get config: ${(error as Error).message}`)
         return {
             instanceURL: 'https://sourcegraph.com/',
-            isGlobbingEnabled: false,
             accessToken: null,
-            anonymousUserId: 'no-user-id',
+            customRequestHeadersAsString: null,
+            isGlobbingEnabled: false,
             pluginVersion: '0.0.0',
+            anonymousUserId: 'no-user-id',
         }
     }
 }
