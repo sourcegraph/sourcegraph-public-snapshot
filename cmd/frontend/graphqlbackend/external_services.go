@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -31,6 +30,15 @@ import (
 
 var extsvcConfigAllowEdits, _ = strconv.ParseBool(env.Get("EXTSVC_CONFIG_ALLOW_EDITS", "false", "When EXTSVC_CONFIG_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))
 
+var extsvcConfigFile = env.Get("EXTSVC_CONFIG_FILE", "", "EXTSVC_CONFIG_FILE can contain configurations for multiple code host connections. See https://docs.sourcegraph.com/admin/config/advanced_config_file for details.")
+
+func externalServicesWritable() error {
+	if extsvcConfigFile != "" && !extsvcConfigAllowEdits {
+		return errors.New("adding external service not allowed when using EXTSVC_CONFIG_FILE")
+	}
+	return nil
+}
+
 const syncExternalServiceTimeout = 15 * time.Second
 
 type addExternalServiceArgs struct {
@@ -50,8 +58,9 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 	var namespaceUserID, namespaceOrgID int32
 	var err error
 	defer reportExternalServiceDuration(start, Add, &err, &namespaceUserID, &namespaceOrgID)
-	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
-		return nil, errors.New("adding external service not allowed when using EXTSVC_CONFIG_FILE")
+
+	if err := externalServicesWritable(); err != nil {
+		return nil, err
 	}
 
 	if args.Input.Namespace != nil {
@@ -96,8 +105,9 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 	var err error
 	var namespaceUserID, namespaceOrgID int32
 	defer reportExternalServiceDuration(start, Update, &err, &namespaceUserID, &namespaceOrgID)
-	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
-		return nil, errors.New("updating external service not allowed when using EXTSVC_CONFIG_FILE")
+
+	if err := externalServicesWritable(); err != nil {
+		return nil, err
 	}
 
 	id, err := UnmarshalExternalServiceID(args.Input.ID)
@@ -167,8 +177,9 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 	var err error
 	var namespaceUserID, namespaceOrgID int32
 	defer reportExternalServiceDuration(start, Delete, &err, &namespaceUserID, &namespaceOrgID)
-	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
-		return nil, errors.New("deleting external service not allowed when using EXTSVC_CONFIG_FILE")
+
+	if err := externalServicesWritable(); err != nil {
+		return nil, err
 	}
 
 	id, err := UnmarshalExternalServiceID(args.ExternalService)

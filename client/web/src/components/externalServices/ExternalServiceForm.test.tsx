@@ -19,6 +19,8 @@ describe('ExternalServiceForm', () => {
         onChange: noop,
         jsonSchema: { $id: 'json-schema-id' },
         editorActions: [],
+        externalServicesFromFile: false,
+        allowEditExternalServicesWithFile: false,
     }
 
     test('create GitHub', () => {

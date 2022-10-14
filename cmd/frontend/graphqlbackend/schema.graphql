@@ -5807,6 +5807,17 @@ type Site implements SettingsSubject {
     """
     needsRepositoryConfiguration: Boolean!
     """
+    Whether the external services haven been created from a configuration file
+    specified in the EXTSVC_CONFIG_FILE.
+    """
+    externalServicesFromFile: Boolean!
+    """
+    Whether the external services can be updated even if `externalServicesFromFile` is
+    true. All changes made while `externalServicesFromFile` is true will be discarded once
+    Sourcegraph restarts.
+    """
+    allowEditExternalServicesWithFile: Boolean!
+    """
     Whether the site is over the limit for free user accounts, and a warning needs to be shown to all users.
     Only applies if the site does not have a valid license.
     """
