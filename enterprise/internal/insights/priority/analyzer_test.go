@@ -75,8 +75,8 @@ func TestQueryAnalyzerCost(t *testing.T) {
 			numberOfRepositories: 3,
 			repositoryByteSizes:  []int64{100, megarepoSizeThresold, gigarepoSizethreshold * 2},
 			handlers:             defaultHandlers,
-			higherThan:           LikelyTimeout * 1000,
-			smallerThan:          LikelyTimeout * 10000,
+			higherThan:           LikelyTimeout * 10000,
+			smallerThan:          LikelyTimeout * 100000,
 		},
 	}
 	for _, tc := range testCases {

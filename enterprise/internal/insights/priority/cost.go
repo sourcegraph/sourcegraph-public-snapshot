@@ -19,7 +19,7 @@ const (
 
 	AuthorMultiplier float64 = 0.1
 
-	UnindexedMultiplier float64 = 10
+	UnindexedMultiplier float64 = 100
 	YesMultiplier       float64 = 1.5
 	OnlyMultiplier      float64 = 0.5
 
