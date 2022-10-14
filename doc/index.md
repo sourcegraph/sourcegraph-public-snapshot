@@ -142,7 +142,7 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
 - [Tour Sourcegraph](getting-started/tour.md)
   - Take a tour of Sourcegraph’s features using real-world examples and use cases
 - [Trial Sourcegraph](adopt/trial/index.md)
-  - Start a Sourcegraph trail at your company
+  - Start a Sourcegraph trial at your company
 
 ## Community
 
