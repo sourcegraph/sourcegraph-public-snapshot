@@ -32,7 +32,7 @@ import styles from './BatchChangeDetailsTabs.module.scss'
 export enum TabName {
     Changesets = 'changesets',
     Chart = 'chart',
-    // Non-SSBC
+    // Non-SSBC or SSBC with viewerCanAdminister=false
     Spec = 'spec',
     // SSBC-only
     Executions = 'executions',
@@ -40,20 +40,19 @@ export enum TabName {
     BulkOperations = 'bulkoperations',
 }
 
-const getTabIndex = (tabName: string, isExecutionEnabled: boolean): number =>
-    ([
+const getTabIndex = (tabName: string, shouldDisplayExecutionsTab: boolean): number => ([
         TabName.Changesets,
         TabName.Chart,
-        isExecutionEnabled ? TabName.Executions : TabName.Spec,
+        shouldDisplayExecutionsTab ? TabName.Executions : TabName.Spec,
         TabName.Archived,
         TabName.BulkOperations,
     ] as string[]).indexOf(tabName)
 
-const getTabName = (tabIndex: number, isExecutionEnabled: boolean): TabName =>
+const getTabName = (tabIndex: number, shouldDisplayExecutionsTab: boolean): TabName => 
     [
         TabName.Changesets,
         TabName.Chart,
-        isExecutionEnabled ? TabName.Executions : TabName.Spec,
+        shouldDisplayExecutionsTab ? TabName.Executions : TabName.Spec,
         TabName.Archived,
         TabName.BulkOperations,
     ][tabIndex]
@@ -114,7 +113,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
     const history = useHistory()
     const location = useLocation()
     const initialURLTab = new URLSearchParams(location.search).get('tab')
-    const defaultTabIndex = getTabIndex(initialURLTab || initialTab, isExecutionEnabled) || 0
+    const defaultTabIndex = getTabIndex(initialURLTab || initialTab, shouldDisplayExecutionsTab) || 0
 
     // The executions tab uses an additional custom short URL, "/executions".
     const [customShortPath, setCustomShortPath] = useState(
@@ -126,7 +125,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
             const urlParameters = new URLSearchParams(location.search)
             resetFilteredConnectionURLQuery(urlParameters)
 
-            const newTabName = getTabName(index, isExecutionEnabled)
+            const newTabName = getTabName(index, shouldDisplayExecutionsTab)
 
             // The executions tab uses a custom short URL.
             if (newTabName === TabName.Executions) {
@@ -142,7 +141,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                 if (index === 0) {
                     urlParameters.delete('tab')
                 } else {
-                    urlParameters.set('tab', getTabName(index, isExecutionEnabled))
+                    urlParameters.set('tab', getTabName(index, shouldDisplayExecutionsTab))
                 }
                 // Make sure to unset the custom short path, if we were previously on a
                 // tab that had one.
@@ -154,7 +153,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                 history.replace({ ...newLocation, search: urlParameters.toString() })
             }
         },
-        [history, location, isExecutionEnabled, customShortPath]
+        [history, location, shouldDisplayExecutionsTab, customShortPath]
     )
 
     return (
