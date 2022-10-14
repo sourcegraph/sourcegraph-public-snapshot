@@ -4,16 +4,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
-func NewSchedulers(autoIndexingSvc AutoIndexingService) []goroutine.BackgroundRoutine {
+func NewSchedulers(backgroundJobs AutoIndexingServiceBackgroundJobs) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
-		autoIndexingSvc.NewScheduler(
+		backgroundJobs.NewScheduler(
 			ConfigInst.SchedulerInterval,
 			ConfigInst.RepositoryProcessDelay,
 			ConfigInst.RepositoryBatchSize,
 			ConfigInst.PolicyBatchSize,
 		),
 
-		autoIndexingSvc.NewOnDemandScheduler(
+		backgroundJobs.NewOnDemandScheduler(
 			ConfigInst.OnDemandSchedulerInterval,
 			ConfigInst.OnDemandBatchsize,
 		),

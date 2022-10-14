@@ -752,6 +752,17 @@ Indexes:
 
 ```
 
+# Table "public.codeintel_inference_scripts"
+```
+      Column      |           Type           | Collation | Nullable | Default 
+------------------+--------------------------+-----------+----------+---------
+ insert_timestamp | timestamp with time zone |           | not null | now()
+ script           | text                     |           | not null | 
+
+```
+
+Contains auto-index job inference Lua scripts as an alternative to setting via environment variables.
+
 # Table "public.codeintel_langugage_support_requests"
 ```
    Column    |  Type   | Collation | Nullable |                             Default                              
@@ -848,6 +859,17 @@ Associates a repository-commit pair with the set of repository-level dependencie
 **lockfile**: Relative path of a lockfile in the given repository and the given commit.
 
 **updated_at**: Time when lockfile index was updated
+
+# Table "public.codeintel_path_ranks"
+```
+    Column     |  Type   | Collation | Nullable | Default 
+---------------+---------+-----------+----------+---------
+ repository_id | integer |           | not null | 
+ payload       | text    |           | not null | 
+Indexes:
+    "codeintel_path_ranks_repository_id_key" UNIQUE CONSTRAINT, btree (repository_id)
+
+```
 
 # Table "public.configuration_policies_audit_logs"
 ```
@@ -1314,6 +1336,7 @@ Indexes:
  last_fetched    | timestamp with time zone |           | not null | now()
  last_changed    | timestamp with time zone |           | not null | now()
  repo_size_bytes | bigint                   |           |          | 
+ repo_status     | text                     |           |          | 
 Indexes:
     "gitserver_repos_pkey" PRIMARY KEY, btree (repo_id)
     "gitserver_repos_cloned_status_idx" btree (repo_id) WHERE clone_status = 'cloned'::text
@@ -1911,11 +1934,11 @@ Indexes:
 Check constraints:
     "lsif_uploads_commit_valid_chars" CHECK (commit ~ '^[a-z0-9]{40}$'::text)
 Referenced by:
-    TABLE "lsif_uploads_reference_counts" CONSTRAINT "lsif_data_docs_search_private_repo_name_id_fk" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_dependency_syncing_jobs" CONSTRAINT "lsif_dependency_indexing_jobs_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_dependency_indexing_jobs" CONSTRAINT "lsif_dependency_indexing_jobs_upload_id_fkey1" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_packages" CONSTRAINT "lsif_packages_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_references" CONSTRAINT "lsif_references_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
+    TABLE "lsif_uploads_reference_counts" CONSTRAINT "lsif_uploads_reference_counts_upload_id_fk" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
 Triggers:
     trigger_lsif_uploads_delete AFTER DELETE ON lsif_uploads REFERENCING OLD TABLE AS old FOR EACH STATEMENT EXECUTE FUNCTION func_lsif_uploads_delete()
     trigger_lsif_uploads_insert AFTER INSERT ON lsif_uploads FOR EACH ROW EXECUTE FUNCTION func_lsif_uploads_insert()
@@ -1991,7 +2014,7 @@ Indexes:
 Indexes:
     "lsif_uploads_reference_counts_upload_id_key" UNIQUE CONSTRAINT, btree (upload_id)
 Foreign-key constraints:
-    "lsif_data_docs_search_private_repo_name_id_fk" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
+    "lsif_uploads_reference_counts_upload_id_fk" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
 
 ```
 
@@ -2976,6 +2999,8 @@ Referenced by:
     TABLE "user_emails" CONSTRAINT "user_emails_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "user_external_accounts" CONSTRAINT "user_external_accounts_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "user_public_repos" CONSTRAINT "user_public_repos_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    TABLE "webhooks" CONSTRAINT "webhooks_created_by_user_id_fkey" FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE SET NULL
+    TABLE "webhooks" CONSTRAINT "webhooks_updated_by_user_id_fkey" FOREIGN KEY (updated_by_user_id) REFERENCES users(id) ON DELETE SET NULL
 Triggers:
     trig_invalidate_session_on_password_change BEFORE UPDATE OF passwd ON users FOR EACH ROW EXECUTE FUNCTION invalidate_session_for_userid_on_password_change()
     trig_soft_delete_user_reference_on_external_service AFTER UPDATE OF deleted_at ON users FOR EACH ROW EXECUTE FUNCTION soft_delete_user_reference_on_external_service()
@@ -3046,17 +3071,24 @@ Foreign-key constraints:
 
 # Table "public.webhooks"
 ```
-      Column       |           Type           | Collation | Nullable |      Default      
--------------------+--------------------------+-----------+----------+-------------------
- id                | uuid                     |           | not null | gen_random_uuid()
- code_host_kind    | text                     |           | not null | 
- code_host_urn     | text                     |           | not null | 
- secret            | text                     |           |          | 
- created_at        | timestamp with time zone |           | not null | now()
- updated_at        | timestamp with time zone |           | not null | now()
- encryption_key_id | text                     |           | not null | ''::text
+       Column       |           Type           | Collation | Nullable |               Default                
+--------------------+--------------------------+-----------+----------+--------------------------------------
+ id                 | integer                  |           | not null | nextval('webhooks_id_seq'::regclass)
+ code_host_kind     | text                     |           | not null | 
+ code_host_urn      | text                     |           | not null | 
+ secret             | text                     |           |          | 
+ created_at         | timestamp with time zone |           | not null | now()
+ updated_at         | timestamp with time zone |           | not null | now()
+ encryption_key_id  | text                     |           |          | 
+ uuid               | uuid                     |           | not null | gen_random_uuid()
+ created_by_user_id | integer                  |           |          | 
+ updated_by_user_id | integer                  |           |          | 
 Indexes:
     "webhooks_pkey" PRIMARY KEY, btree (id)
+    "webhooks_uuid_key" UNIQUE CONSTRAINT, btree (uuid)
+Foreign-key constraints:
+    "webhooks_created_by_user_id_fkey" FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE SET NULL
+    "webhooks_updated_by_user_id_fkey" FOREIGN KEY (updated_by_user_id) REFERENCES users(id) ON DELETE SET NULL
 
 ```
 
@@ -3066,7 +3098,11 @@ Webhooks registered in Sourcegraph instance.
 
 **code_host_urn**: URN of a code host. This column maps to external_service_id column of repo table.
 
+**created_by_user_id**: ID of a user, who created the webhook. If NULL, then the user does not exist (never existed or was deleted).
+
 **secret**: Secret used to decrypt webhook payload (if supported by the code host).
+
+**updated_by_user_id**: ID of a user, who updated the webhook. If NULL, then the user does not exist (never existed or was deleted).
 
 # View "public.batch_spec_workspace_execution_jobs_with_rank"
 

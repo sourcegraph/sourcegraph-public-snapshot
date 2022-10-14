@@ -11,6 +11,7 @@ type operations struct {
 	getRepoRank       *observation.Operation
 	getDocumentRanks  *observation.Operation
 	indexRepositories *observation.Operation
+	indexRepository   *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -33,5 +34,6 @@ func newOperations(observationContext *observation.Context) *operations {
 		getRepoRank:       op("GetRepoRank"),
 		getDocumentRanks:  op("GetDocumentRanks"),
 		indexRepositories: op("IndexRepositories"),
+		indexRepository:   op("indexRepository"),
 	}
 }

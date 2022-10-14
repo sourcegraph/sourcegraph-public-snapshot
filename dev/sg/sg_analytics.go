@@ -3,13 +3,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -26,13 +26,20 @@ var analyticsCommand = &cli.Command{
 			Usage:       "Make sg better by submitting all analytics stored locally!",
 			Description: "Requires HONEYCOMB_ENV_TOKEN or OTEL_EXPORTER_OTLP_ENDPOINT to be set.",
 			Action: func(cmd *cli.Context) error {
-				honeyToken := os.Getenv("HONEYCOMB_ENV_TOKEN")
-				if honeyToken == "" && os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT") == "" {
-					// we leave OTEL_EXPORTER_OTLP_ENDPOINT configuration a bit of a
-					// hidden thing, most users will want to just send to Honeycomb
-					//
-					// TODO: follow up with fetching secrets from somewhere
-					return errors.New("HONEYCOMB_ENV_TOKEN not set")
+				sec, err := secrets.FromContext(cmd.Context)
+				if err != nil {
+					return err
+				}
+
+				// we leave OTEL_EXPORTER_OTLP_ENDPOINT configuration a bit of a
+				// hidden thing, most users will want to just send to Honeycomb
+				//
+				honeyToken, err := sec.GetExternal(cmd.Context, secrets.ExternalSecret{
+					Project: "sourcegraph-local-dev",
+					Name:    "SG_ANALYTICS_HONEYCOMB_TOKEN",
+				})
+				if err != nil {
+					return errors.Wrap(err, "failed to get Honeycomb token from gcloud secrets")
 				}
 
 				pending := std.Out.Pending(output.Line(output.EmojiHourglass, output.StylePending, "Hang tight! We're submitting your analytics"))

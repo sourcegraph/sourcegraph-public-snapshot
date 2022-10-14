@@ -6,6 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 )
@@ -61,18 +62,18 @@ func (r *batchSpecWorkspaceStepResolver) OutputLines(ctx context.Context, args *
 	return &lines, nil
 }
 
-func (r *batchSpecWorkspaceStepResolver) StartedAt() *graphqlbackend.DateTime {
+func (r *batchSpecWorkspaceStepResolver) StartedAt() *gqlutil.DateTime {
 	if r.stepInfo.StartedAt.IsZero() {
 		return nil
 	}
-	return &graphqlbackend.DateTime{Time: r.stepInfo.StartedAt}
+	return &gqlutil.DateTime{Time: r.stepInfo.StartedAt}
 }
 
-func (r *batchSpecWorkspaceStepResolver) FinishedAt() *graphqlbackend.DateTime {
+func (r *batchSpecWorkspaceStepResolver) FinishedAt() *gqlutil.DateTime {
 	if r.stepInfo.FinishedAt.IsZero() {
 		return nil
 	}
-	return &graphqlbackend.DateTime{Time: r.stepInfo.FinishedAt}
+	return &gqlutil.DateTime{Time: r.stepInfo.FinishedAt}
 }
 
 func (r *batchSpecWorkspaceStepResolver) ExitCode() *int32 {

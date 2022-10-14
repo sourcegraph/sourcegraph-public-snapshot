@@ -54,7 +54,6 @@ func (s *store) GetStaleSourcedCommits(ctx context.Context, minimumTimeSinceLast
 }
 
 const staleSourcedCommitsQuery = `
--- source: internal/codeintel/uploads/internal/store/store_commits.go:StaleSourcedCommits
 WITH
 	candidates AS (%s)
 SELECT r.id, r.name, c.commit
@@ -107,7 +106,6 @@ func (s *store) UpdateSourcedCommits(ctx context.Context, repositoryID int, comm
 }
 
 const updateSourcedCommitsQuery = `
--- source: internal/codeintel/uploads/internal/store/store_commits.go:UpdateSourcedCommits
 WITH
 candidate_uploads AS (%s),
 update_uploads AS (
@@ -171,7 +169,6 @@ func (s *store) DeleteSourcedCommits(ctx context.Context, repositoryID int, comm
 }
 
 const deleteSourcedCommitsQuery = `
--- source: internal/codeintel/uploads/internal/store/store_commits.go:DeleteSourcedCommits
 WITH
 candidate_uploads AS (%s),
 tagged_candidate_uploads AS (%s),
@@ -227,7 +224,6 @@ func (s *store) GetCommitsVisibleToUpload(ctx context.Context, uploadID, limit i
 }
 
 const commitsVisibleToUploadQuery = `
--- source: internal/codeintel/uploads/internal/store/store_commits.go:GetCommitsVisibleToUpload
 WITH
 direct_commits AS (
 	SELECT nu.repository_id, nu.commit_bytea
@@ -287,7 +283,6 @@ func (s *store) GetOldestCommitDate(ctx context.Context, repositoryID int) (_ ti
 // that the commit is no longer know by gitserver. This allows the backfill migration to make progress without
 // having pristine database.
 const getOldestCommitDateQuery = `
--- source: internal/codeintel/uploads/internal/store/store_commits.go:GetOldestCommitDate
 SELECT
 	committed_at
 FROM lsif_uploads
@@ -320,7 +315,6 @@ func (s *store) HasCommit(ctx context.Context, repositoryID int, commit string) 
 }
 
 const hasCommitQuery = `
--- source: internal/codeintel/stores/dbstore/commits.go:HasCommit
 SELECT
 	(SELECT COUNT(*) FROM lsif_nearest_uploads WHERE repository_id = %s AND commit_bytea = %s) +
 	(SELECT COUNT(*) FROM lsif_nearest_uploads_links WHERE repository_id = %s AND commit_bytea = %s)
@@ -346,7 +340,6 @@ func (s *store) GetCommitGraphMetadata(ctx context.Context, repositoryID int) (s
 }
 
 const commitGraphQuery = `
--- source: internal/codeintel/stores/dbstore/commits.go:CommitGraphMetadata
 SELECT update_token, dirty_token, updated_at FROM lsif_dirty_repositories WHERE repository_id = %s LIMIT 1
 `
 

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
@@ -64,7 +65,7 @@ func (e emptyInsightStatusResolver) FailedJobs() int32 {
 	return 0
 }
 
-func (e emptyInsightStatusResolver) BackfillQueuedAt() *graphqlbackend.DateTime {
+func (e emptyInsightStatusResolver) BackfillQueuedAt() *gqlutil.DateTime {
 	current := time.Now().AddDate(-1, 0, 0)
-	return graphqlbackend.DateTimeOrNil(&current)
+	return gqlutil.DateTimeOrNil(&current)
 }

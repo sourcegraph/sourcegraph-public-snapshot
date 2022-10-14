@@ -156,12 +156,6 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 	}, err
 }
 
-// FetchUserPermsByToken is the same as FetchUserPerms, but it only requires a
-// token.
-func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
-	return nil, errors.New("not implemented")
-}
-
 // FetchRepoPerms returns a list of user IDs (on code host) who have read access to
 // the given repo on the code host. The user ID has the same value as it would
 // be used as extsvc.Account.AccountID. The returned list includes both direct access

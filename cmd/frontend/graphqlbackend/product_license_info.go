@@ -2,6 +2,8 @@ package graphqlbackend
 
 import (
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 // GetConfiguredProductLicenseInfo is called to obtain the product subscription info when creating
@@ -32,6 +34,6 @@ func (r ProductLicenseInfo) UserCount() int32 {
 	return int32(r.UserCountValue)
 }
 
-func (r ProductLicenseInfo) ExpiresAt() DateTime {
-	return DateTime{Time: r.ExpiresAtValue}
+func (r ProductLicenseInfo) ExpiresAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.ExpiresAtValue}
 }

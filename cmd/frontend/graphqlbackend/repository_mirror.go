@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	repoupdaterprotocol "github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -146,7 +147,7 @@ func (r *repositoryMirrorInfoResolver) LastError(ctx context.Context) (*string, 
 	return strptr(info.LastError), nil
 }
 
-func (r *repositoryMirrorInfoResolver) UpdatedAt(ctx context.Context) (*DateTime, error) {
+func (r *repositoryMirrorInfoResolver) UpdatedAt(ctx context.Context) (*gqlutil.DateTime, error) {
 	info, err := r.computeGitserverRepo(ctx)
 	if err != nil {
 		return nil, err
@@ -156,7 +157,7 @@ func (r *repositoryMirrorInfoResolver) UpdatedAt(ctx context.Context) (*DateTime
 		return nil, nil
 	}
 
-	return &DateTime{Time: info.LastFetched}, nil
+	return &gqlutil.DateTime{Time: info.LastFetched}, nil
 }
 
 func (r *repositoryMirrorInfoResolver) ByteSize(ctx context.Context) (BigInt, error) {
@@ -202,8 +203,8 @@ func (r *updateScheduleResolver) IntervalSeconds() int32 {
 	return int32(r.schedule.IntervalSeconds)
 }
 
-func (r *updateScheduleResolver) Due() DateTime {
-	return DateTime{Time: r.schedule.Due}
+func (r *updateScheduleResolver) Due() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.schedule.Due}
 }
 
 func (r *updateScheduleResolver) Index() int32 {

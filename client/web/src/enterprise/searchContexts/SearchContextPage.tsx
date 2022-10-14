@@ -7,13 +7,12 @@ import { RouteComponentProps } from 'react-router'
 import { catchError, startWith } from 'rxjs/operators'
 
 import { asError, isErrorLike, renderMarkdown, pluralize } from '@sourcegraph/common'
-import { SearchContextProps } from '@sourcegraph/search'
+import { SearchContextProps, SearchContextRepositoryRevisisonsFields } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { Scalars, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/schema'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import {
     Badge,
@@ -43,7 +42,7 @@ const initialRepositoriesToShow = 15
 const incrementalRepositoriesToShow = 10
 
 const SearchContextRepositories: React.FunctionComponent<
-    React.PropsWithChildren<{ repositories: ISearchContextRepositoryRevisions[] }>
+    React.PropsWithChildren<{ repositories: SearchContextRepositoryRevisisonsFields[] }>
 > = ({ repositories }) => {
     const [filterQuery, setFilterQuery] = useState('')
     const debouncedSetFilterQuery = useMemo(() => debounce(value => setFilterQuery(value), 250), [setFilterQuery])
@@ -72,7 +71,7 @@ const SearchContextRepositories: React.FunctionComponent<
     )
 
     const renderRepositoryRevisions = useCallback(
-        (repositoryRevisions: ISearchContextRepositoryRevisions) => (
+        (repositoryRevisions: SearchContextRepositoryRevisisonsFields) => (
             <div
                 key={repositoryRevisions.repository.name}
                 className={classNames(styles.searchContextPageRepoRevsRow, 'd-flex')}
@@ -121,7 +120,7 @@ const SearchContextRepositories: React.FunctionComponent<
                         <div className="w-50">Revisions</div>
                     </div>
                     <hr className="mt-2 mb-0" />
-                    <VirtualList<ISearchContextRepositoryRevisions>
+                    <VirtualList<SearchContextRepositoryRevisisonsFields>
                         className="mt-2"
                         itemsToShow={repositoriesToShow}
                         onShowMoreItems={onBottomHit}
