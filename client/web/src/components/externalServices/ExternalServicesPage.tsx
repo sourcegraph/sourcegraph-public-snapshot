@@ -27,6 +27,9 @@ interface Props extends ActivationProps, TelemetryProps {
     userID?: Scalars['ID']
     authenticatedUser: Pick<AuthenticatedUser, 'id'>
 
+    externalServicesFromFile?: boolean
+    allowEditExternalServicesWithFile?: boolean
+
     /** For testing only. */
     queryExternalServices?: typeof _queryExternalServices
 }
@@ -43,6 +46,8 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
     userID,
     telemetryService,
     authenticatedUser,
+    externalServicesFromFile,
+    allowEditExternalServicesWithFile,
     queryExternalServices = _queryExternalServices,
 }) => {
     useEffect(() => {
@@ -79,6 +84,9 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
         }
     }, [])
 
+    const addingDisabled = externalServicesFromFile && !allowEditExternalServicesWithFile
+    console.log('addingDisabled', addingDisabled)
+
     const isManagingOtherUser = !!userID && userID !== authenticatedUser.id
 
     if (!isManagingOtherUser && noExternalServices) {
@@ -99,6 +107,7 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
                                 to={`${routingPrefix}/external-services/new`}
                                 variant="primary"
                                 as={Link}
+                                disabled={addingDisabled}
                             >
                                 <Icon aria-hidden={true} svgPath={mdiPlus} /> Add code host
                             </Button>

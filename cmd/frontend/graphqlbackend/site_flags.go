@@ -70,5 +70,9 @@ func (r *siteResolver) FreeUsersExceeded(ctx context.Context) (bool, error) {
 	return *NoLicenseWarningUserCount <= int32(userCount), nil
 }
 
-func (r *siteResolver) ExternalServicesFromFile() bool          { return extsvcConfigFile != "" }
-func (r *siteResolver) AllowEditExternalServicesWithFile() bool { return extsvcConfigAllowEdits }
+// func (r *siteResolver) ExternalServicesFromFile() bool          { return extsvcConfigFile != "" }
+// func (r *siteResolver) AllowEditExternalServicesWithFile() bool { return extsvcConfigAllowEdits }
+
+// DEBUG
+func (r *siteResolver) ExternalServicesFromFile() bool          { return true }
+func (r *siteResolver) AllowEditExternalServicesWithFile() bool { return false }
