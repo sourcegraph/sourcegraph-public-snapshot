@@ -338,30 +338,16 @@ func SelectRepoQuery(query BasicQuery, defaultParams searchquery.Parameters) (Ba
 	if err != nil {
 		return "", errors.Wrap(err, "Pipeline")
 	}
-	modified := make(searchquery.Plan, 0, len(plan))
-
-	// Only add a select:repo parameter if it doesn't already exist
-	upsertParams := searchquery.Parameters{
-		{
+	mutatedQuery := searchquery.MapPlan(plan, func(basic searchquery.Basic) searchquery.Basic {
+		modified := make([]searchquery.Parameter, 0, len(basic.Parameters)+1)
+		modified = append(modified, basic.Parameters...)
+		modified = append(modified, searchquery.Parameter{
 			Field:      searchquery.FieldSelect,
 			Value:      "repo",
 			Negated:    false,
 			Annotation: searchquery.Annotation{},
-		},
-	}
-
-	for _, basic := range plan {
-		p := make(searchquery.Parameters, 0, len(basic.Parameters)+1)
-		for _, param := range basic.Parameters {
-			if upsertParams.Exists(param.Field) {
-				continue
-			}
-			p = append(p, param)
-		}
-
-		p = append(p, upsertParams...)
-		modified = append(modified, basic.MapParameters(p))
-	}
-
-	return BasicQuery(searchquery.StringHuman(modified.ToQ())), nil
+		})
+		return basic.MapParameters(modified)
+	})
+	return BasicQuery(searchquery.StringHuman(mutatedQuery.ToQ())), nil
 }
