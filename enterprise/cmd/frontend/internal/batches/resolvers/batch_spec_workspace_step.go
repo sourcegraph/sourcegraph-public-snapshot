@@ -6,6 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
@@ -145,10 +146,10 @@ func (r *batchSpecWorkspaceStepResolver) DiffStat(ctx context.Context) (*graphql
 
 func (r *batchSpecWorkspaceStepResolver) Diff(ctx context.Context) (graphqlbackend.PreviewRepositoryComparisonResolver, error) {
 	if r.CachedResultFound() {
-		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), r.repo, r.baseRev, r.cachedResult.Diff)
+		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), gitserver.NewClient(r.store.DatabaseDB()), r.repo, r.baseRev, r.cachedResult.Diff)
 	}
 	if r.stepInfo.Diff != nil {
-		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), r.repo, r.baseRev, *r.stepInfo.Diff)
+		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), gitserver.NewClient(r.store.DatabaseDB()), r.repo, r.baseRev, *r.stepInfo.Diff)
 	}
 	return nil, nil
 }

@@ -197,6 +197,7 @@ func newGitProxyServer(endpointURL, gitServicePath, repositoryName, accessToken 
 		Director: func(req *http.Request) {
 			d(req)
 
+			req.Host = upstream.Host
 			// Add authentication. We don't add this in the git clone URL directly
 			// to never tell git about the clone secret.
 			req.Header.Set("Authorization", fmt.Sprintf("%s %s", SchemeExecutorToken, accessToken))

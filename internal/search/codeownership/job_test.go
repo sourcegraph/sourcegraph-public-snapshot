@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/hexops/autogold"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
@@ -103,19 +103,18 @@ func Test_applyCodeOwnershipFiltering(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.Background()
-			db := database.NewMockDB()
 			rules := NewRulesCache()
 
-			gitserver.Mocks.ReadFile = func(_ api.CommitID, file string) ([]byte, error) {
+			gitserverClient := gitserver.NewMockClient()
+			gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, _ api.CommitID, file string, _ authz.SubRepoPermissionChecker) ([]byte, error) {
 				content, ok := tt.args.repoContent[file]
 				if !ok {
 					return nil, errors.New("file does not exist")
 				}
 				return []byte(content), nil
-			}
-			t.Cleanup(func() { gitserver.Mocks.ReadFile = nil })
+			})
 
-			matches, _ := applyCodeOwnershipFiltering(ctx, gitserver.NewClient(db), &rules, tt.args.includeOwners, tt.args.excludeOwners, tt.args.matches)
+			matches, _ := applyCodeOwnershipFiltering(ctx, gitserverClient, &rules, tt.args.includeOwners, tt.args.excludeOwners, tt.args.matches)
 
 			tt.want.Equal(t, matches)
 		})

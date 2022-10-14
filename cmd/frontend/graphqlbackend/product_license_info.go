@@ -17,6 +17,10 @@ var GetConfiguredProductLicenseInfo = func() (*ProductLicenseInfo, error) {
 	return nil, nil // OSS builds have no license
 }
 
+var IsFreePlan = func(*ProductLicenseInfo) bool {
+	return true
+}
+
 // ProductLicenseInfo implements the GraphQL type ProductLicenseInfo.
 type ProductLicenseInfo struct {
 	TagsValue      []string
