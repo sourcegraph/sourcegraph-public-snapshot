@@ -244,10 +244,10 @@ type ExternalServicesListOptions struct {
 	// When true, only include external services not under any namespace (i.e. owned
 	// by all site admins), and values of ExcludeNamespaceUser, NamespaceUserID and
 	// NamespaceOrgID are ignored.
-	NoNamespace bool //todo: check if this can be safely removed
+	NoNamespace bool // todo: remove this once the PRs that remove namespaced external services in ghe graphql layer is merged
 	// When true, will exclude external services under any user namespace, and the
 	// value of NamespaceUserID is ignored.
-	ExcludeNamespaceUser bool // todo: check if this can be safely removed
+	ExcludeNamespaceUser bool // todo: remove this once the PRs that remove namespaced external services in ghe graphql layer is merged
 	// When specified, only include external services under given user namespace.
 	NamespaceUserID int32 // todo: remove this once the PRs that remove namespaced external services in ghe graphql layer is merged
 	// When specified, only include external services under given organization namespace.

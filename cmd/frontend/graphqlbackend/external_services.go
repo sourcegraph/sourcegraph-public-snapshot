@@ -49,6 +49,7 @@ type addExternalServiceInput struct {
 	Kind        string
 	DisplayName string
 	Config      string
+	Namespace   *graphql.ID
 }
 
 func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExternalServiceArgs) (*externalServiceResolver, error) {
@@ -224,7 +225,8 @@ func (r *schemaResolver) deleteExternalService(ctx context.Context, id int64, es
 
 type ExternalServicesArgs struct {
 	graphqlutil.ConnectionArgs
-	After *string
+	After     *string
+	Namespace *graphql.ID
 }
 
 func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalServicesArgs) (*externalServiceConnectionResolver, error) {
