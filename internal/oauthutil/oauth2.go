@@ -81,7 +81,7 @@ func DoRequest(ctx context.Context, doer httpcli.Doer, req *http.Request, auther
 		if resp.StatusCode == http.StatusUnauthorized && autherWithRefresh != nil {
 			// If a refresher is present, we can then refresh the token and update the authenticator.
 			// The next request should then succeed.
-			err = autherWithRefresh.Refresh()
+			err = autherWithRefresh.Refresh(ctx, doer)
 			if err != nil {
 				return resp, errors.Wrap(err, "refresh token")
 			}

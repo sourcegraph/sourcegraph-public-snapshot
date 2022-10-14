@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"net/http"
 	"strconv"
 	"time"
 
@@ -101,10 +100,10 @@ func externalServiceTokenRefresher(db DB, externalServiceID int64, refreshToken 
 	}
 }
 
-func GetServiceRefreshAndStoreOAuthTokenFunc(db DB, externalServiceID int64, oauthContext *oauthutil.OAuthContext) func(*auth.OAuthBearerToken) (string, string, time.Time, error) {
-	return func(a *auth.OAuthBearerToken) (string, string, time.Time, error) {
+func GetServiceRefreshAndStoreOAuthTokenFunc(db DB, externalServiceID int64, oauthContext *oauthutil.OAuthContext) func(context.Context, httpcli.Doer, *auth.OAuthBearerToken) (string, string, time.Time, error) {
+	return func(ctx context.Context, cli httpcli.Doer, a *auth.OAuthBearerToken) (string, string, time.Time, error) {
 		tokenRefresher := externalServiceTokenRefresher(db, externalServiceID, a.RefreshToken)
-		token, err := tokenRefresher(context.Background(), http.DefaultClient, *oauthContext)
+		token, err := tokenRefresher(ctx, cli, *oauthContext)
 		if err != nil {
 			return "", "", time.Time{}, err
 		}
@@ -113,10 +112,10 @@ func GetServiceRefreshAndStoreOAuthTokenFunc(db DB, externalServiceID int64, oau
 	}
 }
 
-func GetAccountRefreshAndStoreOAuthTokenFunc(db DB, externalAccountID int32, oauthContext *oauthutil.OAuthContext) func(*auth.OAuthBearerToken) (string, string, time.Time, error) {
-	return func(a *auth.OAuthBearerToken) (string, string, time.Time, error) {
+func GetAccountRefreshAndStoreOAuthTokenFunc(db DB, externalAccountID int32, oauthContext *oauthutil.OAuthContext) func(context.Context, httpcli.Doer, *auth.OAuthBearerToken) (string, string, time.Time, error) {
+	return func(ctx context.Context, cli httpcli.Doer, a *auth.OAuthBearerToken) (string, string, time.Time, error) {
 		tokenRefresher := externalAccountTokenRefresher(db, externalAccountID, a.RefreshToken)
-		token, err := tokenRefresher(context.Background(), http.DefaultClient, *oauthContext)
+		token, err := tokenRefresher(ctx, cli, *oauthContext)
 		if err != nil {
 			return "", "", time.Time{}, err
 		}

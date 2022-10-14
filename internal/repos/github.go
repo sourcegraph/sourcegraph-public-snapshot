@@ -187,18 +187,7 @@ func newGithubSource(
 			return nil, errors.Wrap(err, "parse installation ID")
 		}
 
-		appAuther, err := github.NewGitHubAppAuthenticator(appID, privateKey)
-		if err != nil {
-			return nil, errors.Wrap(err, "new authenticator with GitHub App")
-		}
-
-		apiURL, _ := github.APIRoot(baseURL)
-		appClient := github.NewV3Client(
-			log.Scoped("app", "github client for github app").
-				With(log.String("appID", appID)),
-			urn, apiURL, appAuther, cli)
-
-		installationAuther, err := github.NewGitHubAppInstallationAuthenticator(installationID, c.Token, svc.TokenExpiresAt, database.GetAppInstallationRefreshFunc(externalServicesStore, installationID, svc, appClient))
+		installationAuther, err := database.BuildGitHubAppInstallationAuther(externalServicesStore, appID, privateKey, urn, apiURL, cli, installationID, svc)
 		if err != nil {
 			return nil, errors.Wrap(err, "creating GitHub App installation authenticator")
 		}
@@ -279,7 +268,14 @@ type githubResult struct {
 }
 
 func (s *GitHubSource) ValidateAuthenticator(ctx context.Context) error {
-	_, err := s.v3Client.GetAuthenticatedUser(ctx)
+	var err error
+	if s.config.GithubAppInstallationID != "" {
+		// GitHub App does not have an affiliated user, use another
+		// request instead.
+		_, err = s.v3Client.GetAuthenticatedOAuthScopes(ctx)
+	} else {
+		_, err = s.v3Client.GetAuthenticatedUser(ctx)
+	}
 	return err
 }
 

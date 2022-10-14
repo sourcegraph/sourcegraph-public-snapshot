@@ -354,7 +354,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 		Expiry:       tok.Expiry,
 	}
 
-	if p.db != nil {
+	if p.InstallationID != nil && p.db != nil {
 		// Only used if created by newAppProvider
 		oauthToken.RefreshFunc = database.GetAccountRefreshAndStoreOAuthTokenFunc(p.db, account.ID, github.GetOAuthContext(p.codeHost.BaseURL.String()))
 		oauthToken.NeedsRefreshBuffer = 5

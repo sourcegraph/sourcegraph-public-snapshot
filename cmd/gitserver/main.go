@@ -411,10 +411,8 @@ func editGitHubAppExternalServiceConfigToken(
 		return "", errors.Wrap(err, "new authenticator with GitHub App")
 	}
 
-	appClient := github.NewV3Client(
-		logger.Scoped("app", "github client for github app").
-			With(log.String("appID", appID)),
-		svc.URN(), apiURL, appAuther, cli)
+	scopedLogger := logger.Scoped("app", "github client for github app").With(log.String("appID", appID))
+	appClient := github.NewV3Client(scopedLogger, svc.URN(), apiURL, appAuther, cli)
 
 	token, err := appClient.CreateAppInstallationAccessToken(ctx, installationID)
 	if err != nil {
@@ -428,12 +426,12 @@ func editGitHubAppExternalServiceConfigToken(
 	if err != nil {
 		return "", errors.Wrap(err, "edit token")
 	}
-	externalServiceStore.Update(ctx, conf.Get().AuthProviders, svc.ID,
+	err = externalServiceStore.Update(ctx, conf.Get().AuthProviders, svc.ID,
 		&database.ExternalServiceUpdate{
 			Config:         &config,
 			TokenExpiresAt: token.ExpiresAt,
 		})
-	return config, nil
+	return config, err
 }
 
 func getVCSSyncer(

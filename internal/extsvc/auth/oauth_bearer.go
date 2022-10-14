@@ -1,27 +1,29 @@
 package auth
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"net/http"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // OAuthBearerToken implements OAuth Bearer Token authentication for extsvc
 // clients.
 type OAuthBearerToken struct {
-	Token        string                                                     `json:"token"`
-	TokenType    string                                                     `json:"token_type,omitempty"`
-	RefreshToken string                                                     `json:"refresh_token,omitempty"`
-	Expiry       time.Time                                                  `json:"expiry,omitempty"`
-	RefreshFunc  func(*OAuthBearerToken) (string, string, time.Time, error) `json:"-"`
+	Token        string                                                                                    `json:"token"`
+	TokenType    string                                                                                    `json:"token_type,omitempty"`
+	RefreshToken string                                                                                    `json:"refresh_token,omitempty"`
+	Expiry       time.Time                                                                                 `json:"expiry,omitempty"`
+	RefreshFunc  func(context.Context, httpcli.Doer, *OAuthBearerToken) (string, string, time.Time, error) `json:"-"`
 	// Number of minutes before expiry when token should be refreshed.
 	NeedsRefreshBuffer int `json:"-"`
 }
 
-func (token *OAuthBearerToken) Refresh() error {
+func (token *OAuthBearerToken) Refresh(ctx context.Context, cli httpcli.Doer) error {
 	if token.RefreshToken == "" {
 		return errors.New("no refresh token available")
 	}
@@ -30,7 +32,7 @@ func (token *OAuthBearerToken) Refresh() error {
 		return errors.New("refresh not implemented")
 	}
 
-	newToken, newRefreshToken, newExpiry, err := token.RefreshFunc(token)
+	newToken, newRefreshToken, newExpiry, err := token.RefreshFunc(ctx, cli, token)
 	if err != nil {
 		return err
 	}

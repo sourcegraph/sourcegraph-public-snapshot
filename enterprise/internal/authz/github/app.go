@@ -1,12 +1,8 @@
 package github
 
 import (
-	"context"
 	"encoding/base64"
 	"net/url"
-
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
-	"github.com/sourcegraph/sourcegraph/schema"
 
 	"github.com/sourcegraph/log"
 
@@ -36,29 +32,10 @@ func newAppProvider(
 	}
 
 	apiURL, _ := github.APIRoot(baseURL)
-	var installationAuther auth.Authenticator
-	if svc != nil {
-		rawConfig, err := svc.Config.Decrypt(context.Background())
-		if err != nil {
-			return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
-		}
-		var c schema.GitHubConnection
-		if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
-			return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
-		}
 
-		appAuther, err := github.NewGitHubAppAuthenticator(appID, pkey)
-		if err != nil {
-			return nil, errors.Wrap(err, "new authenticator with GitHub App")
-		}
-
-		apiURL, _ := github.APIRoot(baseURL)
-		appClient := github.NewV3Client(
-			log.Scoped("app", "github client for github app").
-				With(log.String("appID", appID)),
-			urn, apiURL, appAuther, cli)
-
-		installationAuther, err = github.NewGitHubAppInstallationAuthenticator(installationID, c.Token, svc.TokenExpiresAt, database.GetAppInstallationRefreshFunc(db.ExternalServices(), installationID, svc, appClient))
+	var installationAuther auth.AuthenticatorWithRefresh
+	if db != nil { // should only be nil when called by ValidateAuthz
+		installationAuther, err = database.BuildGitHubAppInstallationAuther(db.ExternalServices(), appID, pkey, urn, apiURL, cli, installationID, svc)
 		if err != nil {
 			return nil, errors.Wrap(err, "new GitHub App installation auther")
 		}
