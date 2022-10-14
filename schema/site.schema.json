@@ -303,7 +303,7 @@
           }
         },
         "customGitFetch": {
-          "description": "JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command.",
+          "description": "JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command. To enable this feature set environment variable `ENABLE_CUSTOM_GIT_FETCH` as `true` on gitserver.",
           "type": "array",
           "items": {
             "title": "CustomGitFetchMapping",
