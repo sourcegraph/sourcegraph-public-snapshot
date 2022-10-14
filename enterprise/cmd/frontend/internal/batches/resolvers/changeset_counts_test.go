@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -190,7 +191,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to build source for repo: %s", err)
 		}
-		if err := syncer.SyncChangeset(ctx, bstore, src, githubRepo, c); err != nil {
+		if err := syncer.SyncChangeset(ctx, bstore, gitserver.NewMockClient(), src, githubRepo, c); err != nil {
 			t.Fatal(err)
 		}
 	}
