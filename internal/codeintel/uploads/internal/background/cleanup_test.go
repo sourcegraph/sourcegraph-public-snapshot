@@ -98,19 +98,14 @@ func testUnknownCommitsJanitor(t *testing.T, resolveRevisionFunc func(commit str
 		return api.CommitID(spec), resolveRevisionFunc(spec)
 	})
 
-	// store := NewMockStore()
-	// lsifStore := NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
 	mockUploadSvc.GetStaleSourcedCommitsFunc.SetDefaultReturn(testSourcedCommits, nil)
 	janitor := &backgroundJob{
-		// store:           store,
-		// lsifstore:       lsifStore,
 		uploadSvc:       mockUploadSvc,
 		gitserverClient: gitserverClient,
 		clock:           glock.NewRealClock(),
 		logger:          logtest.Scoped(t),
-		// operations:      newOperations(&observation.TestContext),
-		janitorMetrics: newJanitorMetrics(&observation.TestContext),
+		janitorMetrics:  newJanitorMetrics(&observation.TestContext),
 	}
 
 	if err := janitor.handleCleanup(

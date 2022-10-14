@@ -10,6 +10,8 @@ import (
 	logger "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	policiesEnterprise "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
+	policiesshared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/background"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
@@ -26,13 +28,13 @@ import (
 )
 
 type Service struct {
-	store             store.Store
-	repoStore         RepoStore
-	workerutilStore   dbworkerstore.Store
-	lsifstore         lsifstore.LsifStore
-	gitserverClient   GitserverClient
-	policySvc         PolicyService
-	expirationMetrics *expirationMetrics
+	store           store.Store
+	repoStore       RepoStore
+	workerutilStore dbworkerstore.Store
+	lsifstore       lsifstore.LsifStore
+	gitserverClient GitserverClient
+	policySvc       PolicyService
+	// expirationMetrics *expirationMetrics
 	// resetterMetrics   *resetterMetrics
 	// janitorMetrics    *janitorMetrics
 	backgroundJob background.BackgroundJob
@@ -61,14 +63,14 @@ func newService(
 	dbworker.InitPrometheusMetric(observationContext, workerutilStore, "codeintel", "upload", nil)
 
 	return &Service{
-		store:             store,
-		repoStore:         repoStore,
-		workerutilStore:   workerutilStore,
-		lsifstore:         lsifstore,
-		gitserverClient:   gsc,
-		policySvc:         policySvc,
-		expirationMetrics: newExpirationMetrics(observationContext),
-		backgroundJob:     backgroundJob,
+		store:           store,
+		repoStore:       repoStore,
+		workerutilStore: workerutilStore,
+		lsifstore:       lsifstore,
+		gitserverClient: gsc,
+		policySvc:       policySvc,
+		// expirationMetrics: newExpirationMetrics(observationContext),
+		backgroundJob: backgroundJob,
 		// resetterMetrics:   newResetterMetrics(observationContext),
 		// janitorMetrics:    newJanitorMetrics(observationContext),
 		// workerMetrics: workerutil.NewMetrics(observationContext, "codeintel_upload_processor", workerutil.WithSampler(func(job workerutil.Record) bool { return true })),
@@ -185,6 +187,64 @@ func (s *Service) DeleteUploads(ctx context.Context, opts shared.DeleteUploadsOp
 	defer endObservation(1, observation.Args{})
 
 	return s.store.DeleteUploads(ctx, opts)
+}
+
+func (s *Service) SetRepositoriesForRetentionScan(ctx context.Context, processDelay time.Duration, limit int) (_ []int, err error) {
+	ctx, _, endObservation := s.operations.setRepositoriesForRetentionScan.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{
+			log.Int("processDelayInMs", int(processDelay.Milliseconds())),
+			log.Int("limit", limit),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.SetRepositoriesForRetentionScan(ctx, processDelay, limit)
+}
+
+func (s *Service) GetRepositoriesMaxStaleAge(ctx context.Context) (_ time.Duration, err error) {
+	ctx, _, endObservation := s.operations.getRepositoriesMaxStaleAge.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.GetRepositoriesMaxStaleAge(ctx)
+}
+
+// buildCommitMap will iterate the complete set of configuration policies that apply to a particular
+// repository and build a map from commits to the policies that apply to them.
+func (s *Service) BuildCommitMap(ctx context.Context, repositoryID int, cfg background.ExpirerConfig, now time.Time) (map[string][]policiesEnterprise.PolicyMatch, error) {
+	var (
+		offset   int
+		policies []types.ConfigurationPolicy
+	)
+
+	for {
+		// Retrieve the complete set of configuration policies that affect data retention for this repository
+		policyBatch, totalCount, err := s.policySvc.GetConfigurationPolicies(ctx, policiesshared.GetConfigurationPoliciesOptions{
+			RepositoryID:     repositoryID,
+			ForDataRetention: true,
+			Limit:            cfg.PolicyBatchSize,
+			Offset:           offset,
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "policySvc.GetConfigurationPolicies")
+		}
+
+		offset += len(policyBatch)
+		policies = append(policies, policyBatch...)
+
+		if len(policyBatch) == 0 || offset >= totalCount {
+			break
+		}
+	}
+
+	// Get the set of commits within this repository that match a data retention policy
+	return s.policyMatcher.CommitsDescribedByPolicy(ctx, repositoryID, policies, now)
+}
+
+func (s *Service) BackfillReferenceCountBatch(ctx context.Context, batchSize int) error {
+	ctx, _, endObservation := s.operations.backfillReferenceCountBatch.With(ctx, nil, observation.Args{LogFields: []log.Field{log.Int("batchSize", batchSize)}})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.BackfillReferenceCountBatch(ctx, batchSize)
 }
 
 // numAncestors is the number of ancestors to query from gitserver when trying to find the closest

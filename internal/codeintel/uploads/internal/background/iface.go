@@ -38,6 +38,11 @@ type UploadService interface {
 
 	UpdateAllDirtyCommitGraphs(ctx context.Context, maxAgeForNonStaleBranches time.Duration, maxAgeForNonStaleTags time.Duration) (err error)
 	HandleRawUpload(ctx context.Context, logger log.Logger, upload codeinteltypes.Upload, uploadStore uploadstore.Store, trace observation.TraceLogger) (requeued bool, err error)
+	SetRepositoriesForRetentionScan(ctx context.Context, processDelay time.Duration, limit int) (_ []int, err error)
+	GetDirtyRepositories(ctx context.Context) (_ map[int]int, err error)
+	GetRepositoriesMaxStaleAge(ctx context.Context) (_ time.Duration, err error)
+	HandleExpiredUploadsBatch(ctx context.Context, metrics *ExpirationMetrics, cfg ExpirerConfig) (err error)
+	BackfillReferenceCountBatch(ctx context.Context, batchSize int) error
 	GetWorkerutilStore() dbworkerstore.Store
 }
 

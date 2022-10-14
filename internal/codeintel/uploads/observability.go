@@ -21,6 +21,8 @@ type operations struct {
 	getDirtyRepositories                    *observation.Operation
 	getRecentUploadsSummary                 *observation.Operation
 	getLastUploadRetentionScanForRepository *observation.Operation
+	setRepositoriesForRetentionScan         *observation.Operation
+	getRepositoriesMaxStaleAge              *observation.Operation
 
 	// Uploads
 	getUploads                        *observation.Operation
@@ -42,7 +44,8 @@ type operations struct {
 	getDumpsByIDs                      *observation.Operation
 
 	// References
-	referencesForUpload *observation.Operation
+	referencesForUpload         *observation.Operation
+	backfillReferenceCountBatch *observation.Operation
 
 	// Audit Logs
 	getAuditLogsForUpload *observation.Operation
@@ -101,6 +104,8 @@ func newOperations(observationContext *observation.Context) *operations {
 		getDirtyRepositories:                    op("GetDirtyRepositories"),
 		getRecentUploadsSummary:                 op("GetRecentUploadsSummary"),
 		getLastUploadRetentionScanForRepository: op("GetLastUploadRetentionScanForRepository"),
+		setRepositoriesForRetentionScan:         op("SetRepositoriesForRetentionScan"),
+		getRepositoriesMaxStaleAge:              op("GetRepositoriesMaxStaleAge"),
 
 		// Uploads
 		getUploads:                        op("GetUploads"),
@@ -122,7 +127,8 @@ func newOperations(observationContext *observation.Context) *operations {
 		getDumpsByIDs:                      op("GetDumpsByIDs"),
 
 		// References
-		referencesForUpload: op("ReferencesForUpload"),
+		referencesForUpload:         op("ReferencesForUpload"),
+		backfillReferenceCountBatch: op("BackfillReferenceCountBatch"),
 
 		// Audit Logs
 		getAuditLogsForUpload: op("GetAuditLogsForUpload"),

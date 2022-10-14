@@ -16,6 +16,15 @@ import (
 
 type BackgroundJob interface {
 	NewCommittedAtBackfiller(interval time.Duration, batchSize int) goroutine.BackgroundRoutine
+	NewUploadResetter(interval time.Duration) *dbworker.Resetter
+	NewReferenceCountUpdater(interval time.Duration, batchSize int) goroutine.BackgroundRoutine
+
+	NewCommitGraphUpdater(
+		interval time.Duration,
+		maxAgeForNonStaleBranches time.Duration,
+		maxAgeForNonStaleTags time.Duration,
+	) goroutine.BackgroundRoutine
+
 	NewJanitor(
 		interval time.Duration,
 		uploadTimeout time.Duration,
@@ -24,8 +33,7 @@ type BackgroundJob interface {
 		commitResolverBatchSize int,
 		commitResolverMaximumCommitLag time.Duration,
 	) goroutine.BackgroundRoutine
-	NewUploadResetter(interval time.Duration) *dbworker.Resetter
-	NewCommitGraphUpdater(interval time.Duration, maxAgeForNonStaleBranches time.Duration, maxAgeForNonStaleTags time.Duration) goroutine.BackgroundRoutine
+
 	NewWorker(
 		uploadStore uploadstore.Store,
 		workerConcurrency int,
@@ -34,7 +42,18 @@ type BackgroundJob interface {
 		maximumRuntimePerJob time.Duration,
 	) *workerutil.Worker
 
+	NewUploadExpirer(
+		interval time.Duration,
+		repositoryProcessDelay time.Duration,
+		repositoryBatchSize int,
+		uploadProcessDelay time.Duration,
+		uploadBatchSize int,
+		commitBatchSize int,
+		policyBatchSize int,
+	) goroutine.BackgroundRoutine
+
 	SetUploadsService(s UploadService)
+	SetMetricReporters(observationContext *observation.Context)
 }
 
 type backgroundJob struct {
@@ -43,12 +62,13 @@ type backgroundJob struct {
 
 	// workerutilStore dbworkerstore.Store
 
-	clock           glock.Clock
-	logger          logger.Logger
-	janitorMetrics  *janitorMetrics
-	resetterMetrics *resetterMetrics
-	workerMetrics   workerutil.WorkerObservability
-	operations      *operations
+	clock             glock.Clock
+	logger            logger.Logger
+	janitorMetrics    *janitorMetrics
+	resetterMetrics   *resetterMetrics
+	workerMetrics     workerutil.WorkerObservability
+	expirationMetrics *ExpirationMetrics
+	operations        *operations
 }
 
 func New(db database.DB, gsc GitserverClient, observationContext *observation.Context) BackgroundJob {
@@ -61,12 +81,13 @@ func New(db database.DB, gsc GitserverClient, observationContext *observation.Co
 		gitserverClient: gsc,
 		// workerutilStore: workerutilStore,
 
-		clock:           glock.NewRealClock(),
-		logger:          observationContext.Logger,
-		janitorMetrics:  newJanitorMetrics(observationContext),
-		resetterMetrics: newResetterMetrics(observationContext),
-		workerMetrics:   workerutil.NewMetrics(observationContext, "codeintel_upload_processor", workerutil.WithSampler(func(job workerutil.Record) bool { return true })),
-		operations:      newOperations(observationContext),
+		clock:             glock.NewRealClock(),
+		logger:            observationContext.Logger,
+		janitorMetrics:    newJanitorMetrics(observationContext),
+		resetterMetrics:   newResetterMetrics(observationContext),
+		workerMetrics:     workerutil.NewMetrics(observationContext, "codeintel_upload_processor", workerutil.WithSampler(func(job workerutil.Record) bool { return true })),
+		expirationMetrics: NewExpirationMetrics(observationContext),
+		operations:        newOperations(observationContext),
 	}
 }
 
