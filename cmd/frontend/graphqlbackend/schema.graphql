@@ -104,6 +104,11 @@ type Mutation {
     deleteOrganization(organization: ID!, hard: Boolean): EmptyResponse
 
     """
+    Creates a webhook for the specified code host. Only site admins may perform this mutation.
+    """
+    createWebhook(codeHostKind: String!, codeHostURN: String!, secret: String): Webhook!
+
+    """
     Adds a external service. Only site admins may perform this mutation.
     """
     addExternalService(input: AddExternalServiceInput!): ExternalService!

@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -113,12 +114,12 @@ func (r *organizationMembershipResolver) User(ctx context.Context) (*UserResolve
 	return UserByIDInt32(ctx, r.db, r.membership.UserID)
 }
 
-func (r *organizationMembershipResolver) CreatedAt() DateTime {
-	return DateTime{Time: r.membership.CreatedAt}
+func (r *organizationMembershipResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.membership.CreatedAt}
 }
 
-func (r *organizationMembershipResolver) UpdatedAt() DateTime {
-	return DateTime{Time: r.membership.UpdatedAt}
+func (r *organizationMembershipResolver) UpdatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.membership.UpdatedAt}
 }
 
 type OrgMemberAutocompleteSearchItemResolver struct {

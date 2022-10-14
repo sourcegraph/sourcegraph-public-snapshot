@@ -403,7 +403,7 @@ func createBitbucketProjectPermissionsStore(logger log.Logger, s basestore.Share
 // These are the metrics that are used by the worker and resetter.
 // They are required by the workerutil package for automatic metrics collection.
 type bitbucketProjectPermissionsMetrics struct {
-	workerMetrics workerutil.WorkerMetrics
+	workerMetrics workerutil.WorkerObservability
 	resets        prometheus.Counter
 	resetFailures prometheus.Counter
 	errors        prometheus.Counter

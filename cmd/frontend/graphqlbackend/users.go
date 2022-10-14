@@ -8,8 +8,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -20,7 +20,7 @@ type usersArgs struct {
 	Query         *string
 	Tag           *string
 	ActivePeriod  *string
-	InactiveSince *graphql.DateTime
+	InactiveSince *gqlutil.DateTime
 }
 
 func (r *schemaResolver) Users(args *usersArgs) *userConnectionResolver {

@@ -93,7 +93,6 @@ func (m *insightsMigrator) migrateLanguageStatsInsight(ctx context.Context, insi
 }
 
 const insightsMigratorMigrateLanguageStatsInsightCountInsightsQuery = `
--- source: enterprise/internal/oobmigration/migrations/insights/insights_language_stat.go:migrateLanguageStatsInsight
 SELECT COUNT(*)
 FROM (SELECT * FROM insight_view WHERE unique_id = %s ORDER BY unique_id) iv
 JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
@@ -107,7 +106,6 @@ WHERE i.deleted_at IS NULL
 //   - default_filter_exclude_repo_regex
 //   - default_filter_search_contexts
 const insightsMigratorMigrateLanguageStatsInsightInsertViewQuery = `
--- source: enterprise/internal/oobmigration/migrations/insights/insights_language_stat.go:migrateLanguageStatsInsight
 INSERT INTO insight_view (title, unique_id, other_threshold, presentation_type)
 VALUES (%s, %s, %s, 'PIE')
 RETURNING id
@@ -121,7 +119,6 @@ RETURNING id
 //  - group_by
 
 const insightsMigratorMigrateLanguageStatsInsightInsertSeriesQuery = `
--- source: enterprise/internal/oobmigration/migrations/insights/insights_language_stat.go:migrateLanguageStatsInsight
 INSERT INTO insight_series (
 	series_id,
 	query,
@@ -140,13 +137,11 @@ RETURNING id
 `
 
 const insightsMigratorMigrateLanguageStatsInsightInsertViewSeriesQuery = `
--- source: enterprise/internal/oobmigration/migrations/insights/insights_language_stat.go:migrateLanguageStatsInsight
 INSERT INTO insight_view_series (insight_series_id, insight_view_id, label, stroke)
 VALUES (%s, %s, '', '')
 `
 
 const insightsMigratorMigrateLanguageStatsInsightInsertViewGrantQuery = `
--- source: enterprise/internal/oobmigration/migrations/insights/insights_language_stat.go:migrateLanguageStatsInsight
 INSERT INTO insight_view_grants (insight_view_id, user_id, org_id, global)
 VALUES (%s, %s, %s, %s)
 `

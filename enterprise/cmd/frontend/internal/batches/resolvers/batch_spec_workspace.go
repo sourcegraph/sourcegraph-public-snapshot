@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	gql "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -242,7 +243,7 @@ func (r *batchSpecWorkspaceResolver) Stages() graphqlbackend.BatchSpecWorkspaceS
 	return &batchSpecWorkspaceStagesResolver{store: r.store, execution: r.execution}
 }
 
-func (r *batchSpecWorkspaceResolver) StartedAt() *graphqlbackend.DateTime {
+func (r *batchSpecWorkspaceResolver) StartedAt() *gqlutil.DateTime {
 	if r.workspace.Skipped {
 		return nil
 	}
@@ -252,10 +253,10 @@ func (r *batchSpecWorkspaceResolver) StartedAt() *graphqlbackend.DateTime {
 	if r.execution.StartedAt.IsZero() {
 		return nil
 	}
-	return &graphqlbackend.DateTime{Time: r.execution.StartedAt}
+	return &gqlutil.DateTime{Time: r.execution.StartedAt}
 }
 
-func (r *batchSpecWorkspaceResolver) QueuedAt() *graphqlbackend.DateTime {
+func (r *batchSpecWorkspaceResolver) QueuedAt() *gqlutil.DateTime {
 	if r.workspace.Skipped {
 		return nil
 	}
@@ -265,10 +266,10 @@ func (r *batchSpecWorkspaceResolver) QueuedAt() *graphqlbackend.DateTime {
 	if r.execution.CreatedAt.IsZero() {
 		return nil
 	}
-	return &graphqlbackend.DateTime{Time: r.execution.CreatedAt}
+	return &gqlutil.DateTime{Time: r.execution.CreatedAt}
 }
 
-func (r *batchSpecWorkspaceResolver) FinishedAt() *graphqlbackend.DateTime {
+func (r *batchSpecWorkspaceResolver) FinishedAt() *gqlutil.DateTime {
 	if r.workspace.Skipped {
 		return nil
 	}
@@ -278,7 +279,7 @@ func (r *batchSpecWorkspaceResolver) FinishedAt() *graphqlbackend.DateTime {
 	if r.execution.FinishedAt.IsZero() {
 		return nil
 	}
-	return &graphqlbackend.DateTime{Time: r.execution.FinishedAt}
+	return &gqlutil.DateTime{Time: r.execution.FinishedAt}
 }
 
 func (r *batchSpecWorkspaceResolver) FailureMessage() *string {

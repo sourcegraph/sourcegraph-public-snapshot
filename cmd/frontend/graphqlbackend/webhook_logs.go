@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -219,8 +220,8 @@ func (r *webhookLogResolver) ID() graphql.ID {
 	return marshalWebhookLogID(r.log.ID)
 }
 
-func (r *webhookLogResolver) ReceivedAt() DateTime {
-	return DateTime{Time: r.log.ReceivedAt}
+func (r *webhookLogResolver) ReceivedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.log.ReceivedAt}
 }
 
 func (r *webhookLogResolver) ExternalService(ctx context.Context) (*externalServiceResolver, error) {

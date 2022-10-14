@@ -1,7 +1,6 @@
 package graphql
 
 import (
-	"encoding/json"
 	"regexp"
 	"time"
 
@@ -9,9 +8,9 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const oneReleaseCycle = 35 * 24 * time.Hour
@@ -43,8 +42,12 @@ func (e *ExecutorResolver) ExecutorVersion() string { return e.executor.Executor
 func (e *ExecutorResolver) GitVersion() string      { return e.executor.GitVersion }
 func (e *ExecutorResolver) IgniteVersion() string   { return e.executor.IgniteVersion }
 func (e *ExecutorResolver) SrcCliVersion() string   { return e.executor.SrcCliVersion }
-func (e *ExecutorResolver) FirstSeenAt() DateTime   { return DateTime{e.executor.FirstSeenAt} }
-func (e *ExecutorResolver) LastSeenAt() DateTime    { return DateTime{e.executor.LastSeenAt} }
+func (e *ExecutorResolver) FirstSeenAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: e.executor.FirstSeenAt}
+}
+func (e *ExecutorResolver) LastSeenAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: e.executor.LastSeenAt}
+}
 
 func (e *ExecutorResolver) Compatibility() (*string, error) {
 	ev := e.executor.ExecutorVersion
@@ -132,37 +135,4 @@ func calculateExecutorCompatibility(ev string) (*string, error) {
 	}
 
 	return compatibility.ToGraphQL(), nil
-}
-
-// DateTime implements the DateTime GraphQL scalar type.
-type DateTime struct{ time.Time }
-
-// DateTimeOrNil is a helper function that returns nil for time == nil and otherwise wraps time in
-// DateTime.
-func DateTimeOrNil(time *time.Time) *DateTime {
-	if time == nil {
-		return nil
-	}
-	return &DateTime{Time: *time}
-}
-
-func (DateTime) ImplementsGraphQLType(name string) bool {
-	return name == "DateTime"
-}
-
-func (v DateTime) MarshalJSON() ([]byte, error) {
-	return json.Marshal(v.Time.Format(time.RFC3339))
-}
-
-func (v *DateTime) UnmarshalGraphQL(input any) error {
-	s, ok := input.(string)
-	if !ok {
-		return errors.Errorf("invalid GraphQL DateTime scalar value input (got %T, expected string)", input)
-	}
-	t, err := time.Parse(time.RFC3339, s)
-	if err != nil {
-		return err
-	}
-	*v = DateTime{Time: t}
-	return nil
 }

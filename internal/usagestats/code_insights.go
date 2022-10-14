@@ -557,7 +557,6 @@ const (
 )
 
 const templatePingQueryStr = `
--- source:internal/usagestats/code_insights.go:Sample
 SELECT name, COUNT(*) AS total_count, COUNT(DISTINCT user_id) AS unique_count
 FROM event_logs
 WHERE name = ANY($2)

@@ -180,14 +180,14 @@ func endpointOptions(c *config.Config, pathPrefix string) apiclient.EndpointOpti
 	}
 }
 
-func makeWorkerMetrics(queueName string) workerutil.WorkerMetrics {
+func makeWorkerMetrics(queueName string) workerutil.WorkerObservability {
 	observationContext := &observation.Context{
 		Logger:     log.Scoped("executor_processor", "executor worker processor"),
 		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	return workerutil.NewMetrics(observationContext, "executor_processor",
+	return workerutil.NewMetrics(observationContext, "executor_processor", workerutil.WithSampler(func(job workerutil.Record) bool { return true }),
 		// derived from historic data, ideally we will use spare high-res histograms once they're a reality
 		// 										 30s 1m	 2.5m 5m   7.5m 10m  15m  20m	30m	  45m	1hr
 		workerutil.WithDurationBuckets([]float64{30, 60, 150, 300, 450, 600, 900, 1200, 1800, 2700, 3600}),

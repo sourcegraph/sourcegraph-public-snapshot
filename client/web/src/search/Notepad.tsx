@@ -378,6 +378,7 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
                             return (
                                 <li
                                     key={entry.id}
+                                    data-notepad-entry-index={index}
                                     role="option"
                                     onClick={event => toggleSelectedEntry(index, event)}
                                     onKeyDown={event => {
@@ -396,6 +397,7 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
                                         focus={hasNewEntry && index === 0}
                                         selected={selected}
                                         onDelete={selected ? deleteSelectedEntries : deleteEntry}
+                                        index={index}
                                     />
                                 </li>
                             )
@@ -545,6 +547,7 @@ interface NotepadEntryComponentProps {
     focus: boolean
     selected: boolean
     onDelete: (entry: NotepadEntry) => void
+    index: number
 }
 
 const NotepadEntryComponent: React.FunctionComponent<React.PropsWithChildren<NotepadEntryComponentProps>> = ({
@@ -552,6 +555,7 @@ const NotepadEntryComponent: React.FunctionComponent<React.PropsWithChildren<Not
     focus = false,
     selected,
     onDelete,
+    index,
 }) => {
     const { icon, title, location } = getUIComponentsForEntry(entry)
     const [annotation, setAnnotation] = useState(entry.annotation ?? '')
@@ -564,6 +568,15 @@ const NotepadEntryComponent: React.FunctionComponent<React.PropsWithChildren<Not
             textarea.current?.focus()
         }
     }, [showAnnotationInput])
+
+    // Focus entry when selected.
+    useEffect(() => {
+        if (selected) {
+            const element = document.querySelector(`[data-notepad-entry-index="${index}"]`) as HTMLElement
+            element?.focus()
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selected])
 
     const deletionLabel = selected ? 'Remove all selected notes' : 'Remove note'
 
@@ -753,6 +766,7 @@ function toggleSelection(selection: Selection, position: number, multiple: boole
         newSelection.splice(index, 1)
         return newSelection
     }
+
     return index === -1 || selection.length > 1 ? [position] : []
 }
 

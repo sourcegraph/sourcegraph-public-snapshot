@@ -93,14 +93,12 @@ func (s *ExecutorStore) list(ctx context.Context, opts store.ExecutorStoreListOp
 }
 
 const executorStoreListCountQuery = `
--- source: internal/database/executors.go:List
 SELECT COUNT(*)
 FROM executor_heartbeats h
 WHERE %s
 `
 
 const executorStoreListQuery = `
--- source: internal/database/executors.go:List
 SELECT
 	h.id,
 	h.hostname,
@@ -147,7 +145,6 @@ func (s *ExecutorStore) GetByID(ctx context.Context, id int) (types.Executor, bo
 }
 
 const executorStoreGetByIDQuery = `
--- source: internal/database/executors.go:GetByID
 SELECT
 	h.id,
 	h.hostname,
@@ -170,7 +167,6 @@ func (s *ExecutorStore) GetByHostname(ctx context.Context, hostname string) (typ
 }
 
 const executorStoreGetByHostnameQuery = `
--- source: internal/database/executors.go:GetByHostname
 SELECT
 	h.id,
 	h.hostname,
@@ -223,7 +219,6 @@ func (s *ExecutorStore) upsertHeartbeat(ctx context.Context, executor types.Exec
 }
 
 const executorStoreUpsertHeartbeatQuery = `
--- source: internal/database/executors.go:HeartbeatHeartbeat
 INSERT INTO executor_heartbeats (
 	hostname,
 	queue_name,
@@ -260,7 +255,6 @@ func (s *ExecutorStore) deleteInactiveHeartbeats(ctx context.Context, minAge tim
 }
 
 const executorStoreDeleteInactiveHeartbeatsQuery = `
--- source: internal/database/executors.go:DeleteInactiveHeartbeats
 DELETE FROM executor_heartbeats
 WHERE %s - last_seen_at >= %s * interval '1 second'
 `

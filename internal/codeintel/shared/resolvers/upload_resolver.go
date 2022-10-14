@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -19,11 +20,11 @@ type LSIFUploadResolver interface {
 	Tags(ctx context.Context) ([]string, error)
 	InputRoot() string
 	IsLatestForRepo() bool
-	UploadedAt() DateTime
+	UploadedAt() gqlutil.DateTime
 	State() string
 	Failure() *string
-	StartedAt() *DateTime
-	FinishedAt() *DateTime
+	StartedAt() *gqlutil.DateTime
+	FinishedAt() *gqlutil.DateTime
 	InputIndexer() string
 	Indexer() types.CodeIntelIndexerResolver
 	PlaceInQueue() *int32
@@ -68,12 +69,18 @@ func (r *UploadResolver) ID() graphql.ID        { return marshalLSIFUploadGQLID(
 func (r *UploadResolver) InputCommit() string   { return r.upload.Commit }
 func (r *UploadResolver) InputRoot() string     { return r.upload.Root }
 func (r *UploadResolver) IsLatestForRepo() bool { return r.upload.VisibleAtTip }
-func (r *UploadResolver) UploadedAt() DateTime  { return DateTime{Time: r.upload.UploadedAt} }
-func (r *UploadResolver) Failure() *string      { return r.upload.FailureMessage }
-func (r *UploadResolver) StartedAt() *DateTime  { return DateTimeOrNil(r.upload.StartedAt) }
-func (r *UploadResolver) FinishedAt() *DateTime { return DateTimeOrNil(r.upload.FinishedAt) }
-func (r *UploadResolver) InputIndexer() string  { return r.upload.Indexer }
-func (r *UploadResolver) PlaceInQueue() *int32  { return toInt32(r.upload.Rank) }
+func (r *UploadResolver) UploadedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.upload.UploadedAt}
+}
+func (r *UploadResolver) Failure() *string { return r.upload.FailureMessage }
+func (r *UploadResolver) StartedAt() *gqlutil.DateTime {
+	return gqlutil.DateTimeOrNil(r.upload.StartedAt)
+}
+func (r *UploadResolver) FinishedAt() *gqlutil.DateTime {
+	return gqlutil.DateTimeOrNil(r.upload.FinishedAt)
+}
+func (r *UploadResolver) InputIndexer() string { return r.upload.Indexer }
+func (r *UploadResolver) PlaceInQueue() *int32 { return toInt32(r.upload.Rank) }
 
 func (r *UploadResolver) Tags(ctx context.Context) (tagsNames []string, err error) {
 	tags, err := r.uploadsSvc.GetListTags(ctx, api.RepoName(r.upload.RepositoryName), r.upload.Commit)

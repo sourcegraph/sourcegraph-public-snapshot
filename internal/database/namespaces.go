@@ -119,7 +119,6 @@ func getNamespaceQuery(preds []*sqlf.Query) *sqlf.Query {
 }
 
 var namespaceQueryFmtstr = `
--- source: internal/database/namespaces.go:getNamespace
 SELECT
 	name,
 	COALESCE(user_id, 0) AS user_id,

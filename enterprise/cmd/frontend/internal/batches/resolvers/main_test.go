@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -97,7 +98,7 @@ var testDiffGraphQL = apitest.FileDiffs{
 func marshalDateTime(t testing.TB, ts time.Time) string {
 	t.Helper()
 
-	dt := graphqlbackend.DateTime{Time: ts}
+	dt := gqlutil.DateTime{Time: ts}
 
 	bs, err := dt.MarshalJSON()
 	if err != nil {

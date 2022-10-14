@@ -17,7 +17,6 @@ func (s *store) GetLanguagesRequestedBy(ctx context.Context, userID int) (_ []st
 }
 
 const languagesRequestedByQuery = `
--- source: internal/codeintel/autoindexing/internal/store/store_language_support.go:GetLanguagesRequestedBy
 SELECT language_id
 FROM codeintel_langugage_support_requests
 WHERE user_id = %s
@@ -32,7 +31,6 @@ func (s *store) SetRequestLanguageSupport(ctx context.Context, userID int, langu
 }
 
 const requestLanguageSupportQuery = `
--- source: internal/codeintel/autoindexing/internal/store/store_language_support.go:SetRequestLanguageSupport
 INSERT INTO codeintel_langugage_support_requests (user_id, language_id)
 VALUES (%s, %s)
 ON CONFLICT DO NOTHING

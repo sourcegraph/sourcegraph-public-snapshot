@@ -13432,7 +13432,7 @@
       ],
       "Constraints": [
         {
-          "Name": "lsif_data_docs_search_private_repo_name_id_fk",
+          "Name": "lsif_uploads_reference_counts_upload_id_fk",
           "ConstraintType": "f",
           "RefTableName": "lsif_uploads",
           "IsDeferrable": false,
