@@ -17,11 +17,11 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
@@ -285,7 +285,7 @@ abc.txt
 	}
 
 	s := newStore(t, files)
-	s.FilterTar = func(_ context.Context, _ database.DB, _ api.RepoName, _ api.CommitID) (search.FilterFunc, error) {
+	s.FilterTar = func(_ context.Context, _ gitserver.Client, _ api.RepoName, _ api.CommitID) (search.FilterFunc, error) {
 		return func(hdr *tar.Header) bool {
 			return hdr.Name == "ignore.me"
 		}, nil

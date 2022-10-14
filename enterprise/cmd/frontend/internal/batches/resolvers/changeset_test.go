@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -66,8 +67,9 @@ func TestChangesetResolver(t *testing.T) {
 	baseRev := "53339e93a17b7934abf3bc4aae3565c15a0631a9"
 	headRev := "fa9e174e4847e5f551b31629542377395d6fc95a"
 	// These are needed for preview repository comparisons.
+	gitserverClient := gitserver.NewMockClient()
 	mockBackendCommits(t, api.CommitID(baseRev))
-	mockRepoComparison(t, baseRev, headRev, testDiff)
+	mockRepoComparison(t, *gitserverClient, baseRev, headRev, testDiff)
 
 	unpublishedSpec := bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 		User:          userID,
@@ -240,7 +242,13 @@ func TestChangesetResolver(t *testing.T) {
 	// Associate the changeset with a batch change, so it's considered in syncer logic.
 	addChangeset(t, ctx, bstore, syncedGitHubChangeset, batchChange.ID)
 
-	s, err := newSchema(db, &Resolver{store: bstore})
+	//gitserverClient.MergeBaseFunc.SetDefaultHook(func(ctx context.Context, name api.RepoName, a api.CommitID, b api.CommitID) (api.CommitID, error) {
+	//	if string(a) != baseRev && string(b) != headRev {
+	//		t.Fatalf("git.Mocks.MergeBase received unknown commit ids: %s %s", a, b)
+	//	}
+	//	return a, nil
+	//})
+	s, err := newSchema(db, &Resolver{store: bstore, gitserverClient: gitserverClient})
 	if err != nil {
 		t.Fatal(err)
 	}

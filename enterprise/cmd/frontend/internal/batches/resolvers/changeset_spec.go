@@ -178,7 +178,7 @@ func (r *changesetDescriptionResolver) DiffStat() *graphqlbackend.DiffStat {
 }
 
 func (r *changesetDescriptionResolver) Diff(ctx context.Context) (graphqlbackend.PreviewRepositoryComparisonResolver, error) {
-	return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), r.repoResolver, r.spec.BaseRev, string(r.spec.Diff))
+	return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), gitserver.NewClient(r.store.DatabaseDB()), r.repoResolver, r.spec.BaseRev, string(r.spec.Diff))
 }
 
 func (r *changesetDescriptionResolver) Commits() []graphqlbackend.GitCommitDescriptionResolver {
