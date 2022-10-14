@@ -25,6 +25,10 @@ func TestInsightsMigrator(t *testing.T) {
 		t.Skip()
 	}
 
+	// We can still run this test even if a dev has disabled code insights in
+	// there env.
+	t.Setenv("DISABLE_CODE_INSIGHTS", "")
+
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	frontendDB := database.NewDB(logger, dbtest.NewDB(logger, t))
