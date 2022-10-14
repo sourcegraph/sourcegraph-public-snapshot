@@ -16,7 +16,7 @@ export interface IClient {
 }
 
 /**
- * A subset of the settings JSON Schema type containing the minimum needed by this library.
+ * A JSON Settings Schema type containing properties to prevent its misuse in a place of SettingsCascade.
  */
 export interface Settings extends GeneratedSettingsType {
     [key: string]: any
