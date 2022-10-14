@@ -1,10 +1,11 @@
 import React from 'react'
 
 import { RouteComponentProps, Switch, Route, Redirect } from 'react-router'
+import { SiteExternalServiceConfigResult, SiteExternalServiceConfigVariables } from 'src/graphql-operations'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useQuery } from '@sourcegraph/http-client'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -31,15 +32,14 @@ const AddExternalServicesPage = lazyComponent(
     'AddExternalServicesPage'
 )
 
-const externalServiceRoutes: readonly SiteAdminAreaRoute[] = []
-
-interface Props<RouteProps extends {} = {}>
-    extends RouteComponentProps<RouteProps>,
+interface Props
+    extends RouteComponentProps<{}>,
         ThemeProps,
-        ExtensionsControllerProps,
         TelemetryProps,
         PlatformContextProps,
-        SettingsCascadeProps {}
+        SettingsCascadeProps {
+    authenticatedUser: AuthenticatedUser
+}
 
 export const SiteAdminExternalServicesArea: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     match,
@@ -57,7 +57,10 @@ export const SiteAdminExternalServicesArea: React.FunctionComponent<React.PropsW
     if (loading && !error) {
         return <LoadingSpinner />
     }
-    console.log(data)
+
+    if (!data) {
+        return null
+    }
 
     return (
         <Switch>
@@ -92,15 +95,15 @@ export const SiteAdminExternalServicesArea: React.FunctionComponent<React.PropsW
             />
             <Route
                 path={match.url + '/:id'}
-                render={({
-                    match,
-                    ...props
-                }: RouteComponentProps<{ id: Scalars['ID'] }> & SiteAdminAreaRouteContext) => (
+                // TODO: "No overload matches this call" here, but works?
+                render={({ match, ...props }: RouteComponentProps<{ id: Scalars['ID'] }> & Props) => (
                     <ExternalServicePage
                         {...outerProps}
                         {...props}
                         externalServiceID={match.params.id}
                         afterUpdateRoute="/site-admin/repositories?repositoriesUpdated"
+                        externalServicesFromFile={data?.site?.externalServicesFromFile}
+                        allowEditExternalServicesWithFile={data?.site?.allowEditExternalServicesWithFile}
                     />
                 )}
                 exact={true}
