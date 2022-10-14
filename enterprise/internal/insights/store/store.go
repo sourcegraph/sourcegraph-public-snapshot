@@ -267,10 +267,6 @@ const deleteForSeriesSnapshots = `
 DELETE FROM series_points_snapshots where series_id = %s;
 `
 
-const deleteRecordingTimes = `
-DELETE FROM insight_series_recording_times WHERE series_id = %s;
-`
-
 // Note: the inner query could return duplicate points on its own if we merely did a SUM(value) over
 // all desired repositories. By using the sub-query, we select the per-repository maximum (thus
 // eliminating duplicate points that might have been recorded in a given interval for a given repository)
@@ -571,17 +567,17 @@ func (s *Store) SetInsightSeriesRecordingTimes(ctx context.Context, seriesRecord
 	return nil
 }
 
-func (s *Store) GetInsightSeriesRecordingTimes(ctx context.Context, seriesID string, from, to *time.Time) (series types.InsightSeriesRecordingTimes, err error) {
+func (s *Store) GetInsightSeriesRecordingTimes(ctx context.Context, seriesID int, from, to *time.Time) (series types.InsightSeriesRecordingTimes, err error) {
 	series.SeriesID = seriesID
 
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("series_id = %s", seriesID),
 	}
 	if from != nil {
-		preds = append(preds, sqlf.Sprintf("recording_time >= %s", *from))
+		preds = append(preds, sqlf.Sprintf("recording_time >= %s", from.UTC()))
 	}
 	if to != nil {
-		preds = append(preds, sqlf.Sprintf("recording_time <= %s", *to))
+		preds = append(preds, sqlf.Sprintf("recording_time <= %s", to.UTC()))
 	}
 	timesQuery := sqlf.Sprintf(getInsightSeriesRecordingTimesStr, sqlf.Join(preds, "\n AND"))
 	fmt.Println(timesQuery.Query(sqlf.PostgresBindVar))
@@ -597,7 +593,6 @@ func (s *Store) GetInsightSeriesRecordingTimes(ctx context.Context, seriesID str
 		}
 
 		recordingTimes = append(recordingTimes, recordingTime)
-
 		return nil
 	})
 	if err != nil {
@@ -628,19 +623,6 @@ func (s *Store) RecordSeriesPointsAndRecordingTimes(ctx context.Context, pts []R
 		}
 	}
 	return nil
-}
-
-func updateSeriesRecordingTimes(recordingTimes []time.Time, newTime time.Time) (toAdd []time.Time, toDelete []time.Time) {
-	aYearAgo := newTime.AddDate(-1, 0, 0)
-	if len(recordingTimes) < 12 || recordingTimes[0].After(aYearAgo) {
-		// Either the insight has no recordings or they are over less than a year ago, so we can just append to the list.
-		toAdd = append(toAdd, newTime)
-	} else if recordingTimes[0].Before(aYearAgo) {
-		// We replace the first recording time (shift left).
-		toAdd = append(toAdd, newTime)
-		toDelete = append(toDelete, recordingTimes[0])
-	}
-	return toAdd, toDelete
 }
 
 const upsertRepoNameFmtStr = `

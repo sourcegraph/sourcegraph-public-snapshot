@@ -177,7 +177,7 @@ func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, definitions []ity
 			Value: definition.SampleIntervalValue,
 		}, definition.CreatedAt.Truncate(time.Hour*24))
 		seriesRecordingTimes = append(seriesRecordingTimes, itypes.InsightSeriesRecordingTimes{
-			SeriesID:       definition.SeriesID,
+			SeriesID:       definition.ID,
 			RecordingTimes: timeseries.GetRecordingTimesFromFrames(frames),
 		})
 	}
@@ -508,7 +508,7 @@ func (h *historicalEnqueuer) buildFrames(ctx context.Context, definitions []ityp
 			Value: series.SampleIntervalValue,
 		}, series.CreatedAt.Truncate(time.Hour*24))
 		seriesRecordingTimes = append(seriesRecordingTimes, itypes.InsightSeriesRecordingTimes{
-			SeriesID:       series.SeriesID,
+			SeriesID:       series.ID,
 			RecordingTimes: timeseries.GetRecordingTimesFromFrames(frames),
 		})
 	}

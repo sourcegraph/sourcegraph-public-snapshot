@@ -200,7 +200,7 @@ type SeriesSortOptions struct {
 }
 
 type InsightSeriesRecordingTimes struct {
-	SeriesID       string
+	SeriesID       int // references insight_series(id)
 	RecordingTimes []time.Time
 }
 
