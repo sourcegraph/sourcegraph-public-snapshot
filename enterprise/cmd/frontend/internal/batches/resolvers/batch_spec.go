@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -185,12 +186,12 @@ func (r *batchSpecResolver) ApplyURL(ctx context.Context) (*string, error) {
 	return &url, nil
 }
 
-func (r *batchSpecResolver) CreatedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.batchSpec.CreatedAt}
+func (r *batchSpecResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.batchSpec.CreatedAt}
 }
 
-func (r *batchSpecResolver) ExpiresAt() *graphqlbackend.DateTime {
-	return &graphqlbackend.DateTime{Time: r.batchSpec.ExpiresAt()}
+func (r *batchSpecResolver) ExpiresAt() *gqlutil.DateTime {
+	return &gqlutil.DateTime{Time: r.batchSpec.ExpiresAt()}
 }
 
 func (r *batchSpecResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
@@ -342,7 +343,7 @@ func (r *batchSpecResolver) State(ctx context.Context) (string, error) {
 	return state.ToGraphQL(), nil
 }
 
-func (r *batchSpecResolver) StartedAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
+func (r *batchSpecResolver) StartedAt(ctx context.Context) (*gqlutil.DateTime, error) {
 	if !r.batchSpec.CreatedFromRaw {
 		return nil, nil
 	}
@@ -364,10 +365,10 @@ func (r *batchSpecResolver) StartedAt(ctx context.Context) (*graphqlbackend.Date
 		return nil, nil
 	}
 
-	return &graphqlbackend.DateTime{Time: stats.StartedAt}, nil
+	return &gqlutil.DateTime{Time: stats.StartedAt}, nil
 }
 
-func (r *batchSpecResolver) FinishedAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
+func (r *batchSpecResolver) FinishedAt(ctx context.Context) (*gqlutil.DateTime, error) {
 	if !r.batchSpec.CreatedFromRaw {
 		return nil, nil
 	}
@@ -389,7 +390,7 @@ func (r *batchSpecResolver) FinishedAt(ctx context.Context) (*graphqlbackend.Dat
 		return nil, nil
 	}
 
-	return &graphqlbackend.DateTime{Time: stats.FinishedAt}, nil
+	return &gqlutil.DateTime{Time: stats.FinishedAt}, nil
 }
 
 func (r *batchSpecResolver) FailureMessage(ctx context.Context) (*string, error) {

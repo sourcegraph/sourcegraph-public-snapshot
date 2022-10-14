@@ -216,16 +216,16 @@ function referencesToContentMatch(uri: string, references: Badged<Location>[]): 
             },
             ranges: [
                 {
-                   start: {
-                       line: reference.range.start.line,
-                       offset: 0,
-                       column: reference.range.start.character,
-                   },
-                   end: {
-                       line: reference.range.end.line,
-                       offset: 0,
-                       column: reference.range.end.character,
-                   },
+                    start: {
+                        line: reference.range.start.line,
+                        offset: 0,
+                        column: reference.range.start.character,
+                    },
+                    end: {
+                        line: reference.range.end.line,
+                        offset: 0,
+                        column: reference.range.end.character,
+                    },
                 },
             ],
             aggregableBadges: reference.aggregableBadges,

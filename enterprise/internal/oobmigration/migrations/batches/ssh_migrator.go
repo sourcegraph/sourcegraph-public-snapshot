@@ -43,7 +43,6 @@ func (m *SSHMigrator) Progress(ctx context.Context, _ bool) (float64, error) {
 }
 
 const sshMigratorProgressQuery = `
--- source: enterprise/internal/oobmigration/migrations/batches/ssh_migrator.go:Progress
 SELECT
 	CASE c2.count WHEN 0 THEN 1 ELSE
 		CAST((c2.count - c1.count) AS float) / CAST(c2.count AS float)
@@ -214,7 +213,6 @@ func (m *SSHMigrator) run(ctx context.Context, sshMigrationsApplied bool, f func
 }
 
 const sshMigratorSelectQuery = `
--- source: enterprise/internal/oobmigration/migrations/batches/ssh_migrator.go:run
 SELECT
 	id,
 	credential,
@@ -229,7 +227,6 @@ FOR UPDATE
 `
 
 const sshMigratorUpdateQuery = `
--- source: enterprise/internal/oobmigration/migrations/batches/ssh_migrator.go:run
 UPDATE user_credentials
 SET
 	updated_at = NOW(),
@@ -240,7 +237,6 @@ WHERE id = %s
 `
 
 const sshMigratorUpdateFlagonlyQuery = `
--- source: enterprise/internal/oobmigration/migrations/batches/ssh_migrator.go:run
 UPDATE user_credentials
 SET ssh_migration_applied = %s
 WHERE id = %s

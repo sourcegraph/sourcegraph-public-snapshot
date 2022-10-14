@@ -31,7 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
+	stores "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -197,7 +197,7 @@ func main() {
 
 	go syncRateLimiters(ctx, logger, externalServiceStore, rateLimitSyncerLimitPerSecond)
 	go debugserver.NewServerRoutine(ready).Start()
-	go gitserver.Janitor(janitorInterval)
+	go gitserver.Janitor(actor.WithInternalActor(ctx), janitorInterval)
 	go gitserver.SyncRepoState(syncRepoStateInterval, syncRepoStateBatchSize, syncRepoStateUpdatePerSecond)
 
 	gitserver.StartClonePipeline(ctx)

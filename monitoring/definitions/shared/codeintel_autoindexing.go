@@ -124,6 +124,38 @@ func (codeIntelligence) NewAutoindexingStoreGroup(containerName string) monitori
 	})
 }
 
+// src_codeintel_autoindexing_background_total
+// src_codeintel_autoindexing_background_duration_seconds_bucket
+// src_codeintel_autoindexing_background_errors_total
+func (codeIntelligence) NewAutoindexingBackgroundJobGroup(containerName string) monitoring.Group {
+	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+		GroupConstructorOptions: GroupConstructorOptions{
+			Namespace:       "codeintel",
+			DescriptionRoot: "Autoindexing > Background jobs (internal)",
+			Hidden:          true,
+
+			ObservableConstructorOptions: ObservableConstructorOptions{
+				MetricNameRoot:        "codeintel_autoindexing_background",
+				MetricDescriptionRoot: "background",
+				By:                    []string{"op"},
+			},
+		},
+
+		SharedObservationGroupOptions: SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+		Aggregate: &SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+	})
+}
+
 // src_codeintel_autoindexing_inference_total
 // src_codeintel_autoindexing_inference_duration_seconds_bucket
 // src_codeintel_autoindexing_inference_errors_total

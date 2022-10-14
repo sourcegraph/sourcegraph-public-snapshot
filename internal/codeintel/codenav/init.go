@@ -3,7 +3,7 @@ package codenav
 import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/store"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
+	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/memo"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -13,7 +13,7 @@ import (
 // If the service is not yet initialized, it will use the provided dependencies.
 func GetService(
 	db database.DB,
-	codeIntelDB stores.CodeIntelDB,
+	codeIntelDB codeintelshared.CodeIntelDB,
 	uploadSvc UploadService,
 	gitserver GitserverClient,
 ) *Service {
@@ -29,7 +29,7 @@ func GetService(
 
 type serviceDependencies struct {
 	db          database.DB
-	codeIntelDB stores.CodeIntelDB
+	codeIntelDB codeintelshared.CodeIntelDB
 	uploadSvc   UploadService
 	gitserver   GitserverClient
 }

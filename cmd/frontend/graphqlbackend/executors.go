@@ -8,8 +8,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	gql "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 )
+
+type ExecutorResolver interface {
+	ExecutorResolver() executor.Resolver
+}
 
 func (r *schemaResolver) Executors(ctx context.Context, args *struct {
 	Query  *string
@@ -22,7 +27,7 @@ func (r *schemaResolver) Executors(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	executors, err := r.CodeIntelResolver.ExecutorResolver().Executors(ctx, args.Query, args.Active, args.First, args.After)
+	executors, err := r.ExecutorResolver.ExecutorResolver().Executors(ctx, args.Query, args.Active, args.First, args.After)
 	if err != nil {
 		return nil, err
 	}
@@ -39,7 +44,7 @@ func executorByID(ctx context.Context, db database.DB, gqlID graphql.ID, r *sche
 		return nil, err
 	}
 
-	executor, err := r.CodeIntelResolver.ExecutorResolver().Executor(ctx, gqlID)
+	executor, err := r.ExecutorResolver.ExecutorResolver().Executor(ctx, gqlID)
 	if err != nil {
 		return nil, err
 	}

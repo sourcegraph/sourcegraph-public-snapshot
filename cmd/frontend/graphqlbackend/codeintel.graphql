@@ -103,9 +103,36 @@ extend type Mutation {
     deleteLSIFIndex(id: ID!): EmptyResponse
 
     """
+    Deletes LSIF indexes by filter criteria.
+    """
+    deleteLSIFIndexes(
+        """
+        An (optional) search query that filters the state, repository name,
+        commit, root, and indexer properties.
+        """
+        query: String
+
+        """
+        The upload state.
+        """
+        state: LSIFIndexState
+
+        """
+        The repository.
+        """
+        repository: ID
+    ): EmptyResponse
+
+    """
     Request support for a particular language.
     """
     requestLanguageSupport(language: String!): EmptyResponse
+
+    """
+    Updates the previously set/overrides the default global auto-indexing job inference Lua script
+    with a new override.
+    """
+    updateCodeIntelligenceInferenceScript(script: String!): EmptyResponse
 }
 
 extend type Query {
@@ -269,6 +296,13 @@ extend type Query {
     Return the languages that this user has requested support for.
     """
     requestedLanguageSupport: [String!]!
+
+    """
+    Return the currently set auto-indexing job inference script. Does not return
+    the value stored in the environment variable or the default shipped scripts,
+    only the value set via UI/GraphQL.
+    """
+    codeIntelligenceInferenceScript: String!
 }
 
 """

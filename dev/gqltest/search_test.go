@@ -103,8 +103,8 @@ type searchClient interface {
 	SearchFiles(query string) (*gqltestutil.SearchFileResults, error)
 	SearchAll(query string) ([]*gqltestutil.AnyResult, error)
 
-	UpdateSiteConfiguration(config *schema.SiteConfiguration) error
-	SiteConfiguration() (*schema.SiteConfiguration, error)
+	UpdateSiteConfiguration(config *schema.SiteConfiguration, lastID int32) error
+	SiteConfiguration() (*schema.SiteConfiguration, int32, error)
 
 	OverwriteSettings(subjectID, contents string) error
 	AuthenticatedUserID() string
@@ -1226,9 +1226,19 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts: counts{Repo: 1},
 			},
 			{
+				name:   `repo does not have commit after`,
+				query:  `repo:go-diff -repo:contains.commit.after(10 years ago)`,
+				counts: counts{Repo: 0},
+			},
+			{
 				name:   `repo has commit after no results`,
 				query:  `repo:go-diff repo:contains.commit.after(1 second ago)`,
 				counts: counts{Repo: 0},
+			},
+			{
+				name:   `repo does not has commit after some results`,
+				query:  `repo:go-diff -repo:contains.commit.after(1 second ago)`,
+				counts: counts{Repo: 1},
 			},
 			{
 				name:   `unscoped repo has commit after no results`,

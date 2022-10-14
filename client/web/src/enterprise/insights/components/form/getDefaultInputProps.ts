@@ -1,6 +1,6 @@
 import { InputStatus, InputProps } from '@sourcegraph/wildcard'
 
-import { useFieldAPI } from './hooks/useField'
+import { useFieldAPI } from './hooks'
 
 function getDefaultInputStatus<T>({ meta }: useFieldAPI<T>): InputStatus {
     const isValidated = meta.initialValue || meta.touched

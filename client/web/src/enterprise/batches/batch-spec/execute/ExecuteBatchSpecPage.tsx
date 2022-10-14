@@ -88,6 +88,10 @@ export const AuthenticatedExecuteBatchSpecPage: React.FunctionComponent<
         )
     }
 
+    if (data?.node === null) {
+        return <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+    }
+
     if (!data?.node || data.node.__typename !== 'BatchSpec' || !batchChangeData?.batchChange) {
         if (error || batchChangeError) {
             return <HeroPage icon={AlertCircleIcon} title={String(error || batchChangeError)} />

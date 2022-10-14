@@ -451,7 +451,7 @@ func (r *Resolver) filterHasCommitAfter(
 	error,
 ) {
 	// Early return if HasCommitAfter is not set
-	if op.CommitAfter == "" {
+	if op.CommitAfter == nil {
 		return repoRevs, nil
 	}
 
@@ -468,7 +468,7 @@ func (r *Resolver) filterHasCommitAfter(
 		for _, rev := range allRevs {
 			rev := rev
 			g.Go(func(ctx context.Context) error {
-				if hasCommitAfter, err := r.gitserver.HasCommitAfter(ctx, repoRev.Repo.Name, op.CommitAfter, rev, authz.DefaultSubRepoPermsChecker); err != nil {
+				if hasCommitAfter, err := r.gitserver.HasCommitAfter(ctx, repoRev.Repo.Name, op.CommitAfter.TimeRef, rev, authz.DefaultSubRepoPermsChecker); err != nil {
 					if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) || gitdomain.IsRepoNotExist(err) {
 						// If the revision does not exist or the repo does not exist,
 						// it certainly does not have any commits after some time.
@@ -476,7 +476,9 @@ func (r *Resolver) filterHasCommitAfter(
 						return nil
 					}
 					return err
-				} else if !hasCommitAfter {
+				} else if !op.CommitAfter.Negated && !hasCommitAfter {
+					return nil
+				} else if op.CommitAfter.Negated && hasCommitAfter {
 					return nil
 				}
 

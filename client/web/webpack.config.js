@@ -10,6 +10,7 @@ const mapValues = require('lodash/mapValues')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const webpack = require('webpack')
 const { WebpackManifestPlugin } = require('webpack-manifest-plugin')
+const { StatsWriterPlugin } = require('webpack-stats-plugin')
 
 const {
   ROOT_PATH,
@@ -40,8 +41,9 @@ const {
   ENABLE_SENTRY,
   ENABLE_OPEN_TELEMETRY,
   SOURCEGRAPH_API_URL,
-  WEBPACK_SERVE_INDEX,
   WEBPACK_BUNDLE_ANALYZER,
+  WEBPACK_EXPORT_STATS_FILENAME,
+  WEBPACK_SERVE_INDEX,
   WEBPACK_STATS_NAME,
   WEBPACK_USE_NAMED_CHUNKS,
   SENTRY_UPLOAD_SOURCE_MAPS,
@@ -200,6 +202,25 @@ const config = {
         authToken: SENTRY_DOT_COM_AUTH_TOKEN,
         release: `frontend@${VERSION}`,
         include: path.join(STATIC_ASSETS_PATH, 'scripts', '*.map'),
+      }),
+    WEBPACK_EXPORT_STATS_FILENAME &&
+      new StatsWriterPlugin({
+        filename: WEBPACK_EXPORT_STATS_FILENAME,
+        stats: {
+          all: false, // disable all the stats
+          hash: true, // compilation hash
+          entrypoints: true,
+          chunks: true,
+          chunkModules: true, // modules
+          ids: true, // IDs of modules and chunks (webpack 5)
+          cachedAssets: true, // information about the cached assets (webpack 5)
+          nestedModules: true, // concatenated modules
+          usedExports: true,
+          assets: true,
+          chunkOrigins: true, // chunks origins stats (to find out which modules require a chunk)
+          timings: true, // modules timing information
+          performance: true, // info about oversized assets
+        },
       }),
   ].filter(Boolean),
   resolve: {

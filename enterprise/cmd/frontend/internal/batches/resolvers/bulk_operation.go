@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -96,15 +97,15 @@ func (r *bulkOperationResolver) ChangesetCount() int32 {
 	return r.bulkOperation.ChangesetCount
 }
 
-func (r *bulkOperationResolver) CreatedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.bulkOperation.CreatedAt}
+func (r *bulkOperationResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.bulkOperation.CreatedAt}
 }
 
-func (r *bulkOperationResolver) FinishedAt() *graphqlbackend.DateTime {
+func (r *bulkOperationResolver) FinishedAt() *gqlutil.DateTime {
 	if r.bulkOperation.FinishedAt.IsZero() {
 		return nil
 	}
-	return &graphqlbackend.DateTime{Time: r.bulkOperation.FinishedAt}
+	return &gqlutil.DateTime{Time: r.bulkOperation.FinishedAt}
 }
 
 func changesetJobTypeToBulkOperationType(t btypes.ChangesetJobType) (string, error) {

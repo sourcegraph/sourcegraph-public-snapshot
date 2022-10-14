@@ -51,6 +51,7 @@ const getDefaultProps = (props: ThemeProps): GlobalNavbarProps => ({
     showKeyboardShortcutsHelp: () => undefined,
     showSearchBox: false,
     authenticatedUser: null,
+    setFuzzyFinderIsVisible: () => {},
 })
 
 const allNavItemsProps: Partial<GlobalNavbarProps> = {

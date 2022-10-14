@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos/webhookworker"
@@ -1279,7 +1280,6 @@ func testOrphanedRepo(store repos.Store) func(*testing.T) {
 
 		// Sync first service
 		syncer := &repos.Syncer{
-
 			Logger: logtest.Scoped(t),
 			Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(svc1, nil, githubRepo)
@@ -1660,6 +1660,7 @@ func testUserAddedRepos(store repos.Store) func(*testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		ctx = actor.WithInternalActor(ctx)
 
 		userService := &types.ExternalService{
 			Kind:            extsvc.KindGitHub,
@@ -2413,7 +2414,8 @@ func testSyncReposWithLastErrorsHitsRateLimiter(s repos.Store) func(*testing.T) 
 }
 
 func setupSyncErroredTest(ctx context.Context, s repos.Store, t *testing.T,
-	serviceType string, externalSvcError error, config, serviceID string, repoNames ...api.RepoName) (*repos.Syncer, types.Repos) {
+	serviceType string, externalSvcError error, config, serviceID string, repoNames ...api.RepoName,
+) (*repos.Syncer, types.Repos) {
 	t.Helper()
 	now := time.Now()
 	dbRepos := types.Repos{}

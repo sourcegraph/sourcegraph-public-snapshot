@@ -90,7 +90,7 @@ export const AnalyticsExtensionsPage: React.FunctionComponent<RouteComponentProp
         ]
         const legends: ValueLegendListProps['items'] = [
             {
-                value: jetbrains.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalRegisteredUsers'],
+                value: jetbrains.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalUniqueUsers'],
                 description:
                     aggregation.selected === 'count' ? 'JetBrains\nIDE plugin' : 'Users using\nJetBrains IDE plugin',
                 color: 'var(--cyan)',
@@ -100,7 +100,7 @@ export const AnalyticsExtensionsPage: React.FunctionComponent<RouteComponentProp
                         : 'The number of users searched in JetBrains IDE plugin.',
             },
             {
-                value: vscode.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalRegisteredUsers'],
+                value: vscode.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalUniqueUsers'],
                 description:
                     aggregation.selected === 'count' ? 'VS Code\nIDE extension' : 'Users using\nVS Code IDE extension',
                 color: 'var(--purple)',
@@ -110,7 +110,7 @@ export const AnalyticsExtensionsPage: React.FunctionComponent<RouteComponentProp
                         : 'The number of users searched in IDE extension.',
             },
             {
-                value: browser.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalRegisteredUsers'],
+                value: browser.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalUniqueUsers'],
                 description: aggregation.selected === 'count' ? 'Browser\nextension' : 'Users using\nbrowser extension',
                 color: 'var(--orange)',
                 tooltip:
@@ -156,9 +156,9 @@ export const AnalyticsExtensionsPage: React.FunctionComponent<RouteComponentProp
         const installationStats =
             totalUsersCount > 0
                 ? {
-                      vscode: Math.floor((vscode.summary.totalRegisteredUsers * 100) / totalUsersCount),
-                      jetbrains: Math.floor((jetbrains.summary.totalRegisteredUsers * 100) / totalUsersCount),
-                      browser: Math.floor((browser.summary.totalRegisteredUsers * 100) / totalUsersCount),
+                      vscode: Math.floor((vscode.summary.totalUniqueUsers * 100) / totalUsersCount),
+                      jetbrains: Math.floor((jetbrains.summary.totalUniqueUsers * 100) / totalUsersCount),
+                      browser: Math.floor((browser.summary.totalUniqueUsers * 100) / totalUsersCount),
                   }
                 : undefined
 
