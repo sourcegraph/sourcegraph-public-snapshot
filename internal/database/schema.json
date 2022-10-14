@@ -6298,15 +6298,15 @@
         {
           "Name": "committed_at",
           "Index": 3,
-          "TypeName": "text",
-          "IsNullable": false,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
-          "Comment": "The commit date string (formatted as RFC 3339; may be -infinity if unresolvable)."
+          "Comment": "The commit date (may be -infinity if unresolvable)."
         },
         {
           "Name": "repository_id",

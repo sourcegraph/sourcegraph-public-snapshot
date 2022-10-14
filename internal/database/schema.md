@@ -754,11 +754,11 @@ Indexes:
 
 # Table "public.codeintel_commit_dates"
 ```
-    Column     |  Type   | Collation | Nullable | Default 
----------------+---------+-----------+----------+---------
- repository_id | integer |           | not null | 
- commit_bytea  | bytea   |           | not null | 
- committed_at  | text    |           | not null | 
+    Column     |           Type           | Collation | Nullable | Default 
+---------------+--------------------------+-----------+----------+---------
+ repository_id | integer                  |           | not null | 
+ commit_bytea  | bytea                    |           | not null | 
+ committed_at  | timestamp with time zone |           |          | 
 Indexes:
     "codeintel_commit_dates_pkey" PRIMARY KEY, btree (repository_id, commit_bytea)
 
@@ -768,7 +768,7 @@ Maps commits within a repository to the commit date as reported by gitserver.
 
 **commit_bytea**: Identifies the 40-character commit hash.
 
-**committed_at**: The commit date string (formatted as RFC 3339; may be -infinity if unresolvable).
+**committed_at**: The commit date (may be -infinity if unresolvable).
 
 **repository_id**: Identifies a row in the `repo` table.
 
