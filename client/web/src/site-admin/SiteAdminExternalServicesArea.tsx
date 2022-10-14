@@ -89,6 +89,8 @@ export const SiteAdminExternalServicesArea: React.FunctionComponent<React.PropsW
                         afterCreateRoute="/site-admin/repositories?repositoriesUpdated"
                         codeHostExternalServices={codeHostExternalServices}
                         nonCodeHostExternalServices={nonCodeHostExternalServices}
+                        externalServicesFromFile={data?.site?.externalServicesFromFile}
+                        allowEditExternalServicesWithFile={data?.site?.allowEditExternalServicesWithFile}
                     />
                 )}
                 exact={true}
