@@ -1132,7 +1132,7 @@
         {
           "Name": "series_id",
           "Index": 1,
-          "TypeName": "text",
+          "TypeName": "integer",
           "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
@@ -1155,7 +1155,15 @@
           "ConstraintDefinition": "UNIQUE (series_id, recording_time)"
         }
       ],
-      "Constraints": null,
+      "Constraints": [
+        {
+          "Name": "series_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "insight_series",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE"
+        }
+      ],
       "Triggers": []
     },
     {

@@ -166,6 +166,7 @@ Indexes:
 Referenced by:
     TABLE "insight_dirty_queries" CONSTRAINT "insight_dirty_queries_insight_series_id_fkey" FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE
     TABLE "insight_view_series" CONSTRAINT "insight_view_series_insight_series_id_fkey" FOREIGN KEY (insight_series_id) REFERENCES insight_series(id)
+    TABLE "insight_series_recording_times" CONSTRAINT "series_id_fkey" FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE
 
 ```
 
@@ -195,10 +196,12 @@ Data series that comprise code insights.
 ```
      Column     |           Type           | Collation | Nullable | Default 
 ----------------+--------------------------+-----------+----------+---------
- series_id      | text                     |           |          | 
+ series_id      | integer                  |           |          | 
  recording_time | timestamp with time zone |           |          | 
 Indexes:
     "insight_series_recording_times_series_id_recording_time_key" UNIQUE CONSTRAINT, btree (series_id, recording_time)
+Foreign-key constraints:
+    "series_id_fkey" FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE
 
 ```
 
