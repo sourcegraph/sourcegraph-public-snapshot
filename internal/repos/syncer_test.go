@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"os"
 	"sort"
 	"strings"
 	"testing"
@@ -2510,8 +2509,6 @@ func TestEnqueueWebhookBuildJob(t *testing.T) {
 		},
 	}})
 
-	token := os.Getenv("GITHUB_TOKEN")
-
 	esStore := store.ExternalServiceStore()
 	repoStore := store.RepoStore()
 	workerStore := webhookworker.CreateWorkerStore(logger, store.Handle())
@@ -2526,7 +2523,7 @@ func TestEnqueueWebhookBuildJob(t *testing.T) {
 
 	ghConn := &schema.GitHubConnection{
 		Url:      "https://github.com",
-		Token:    token,
+		Token:    "fake",
 		Repos:    []string{string(repo.Name)},
 		Webhooks: []*schema.GitHubWebhook{{Org: "ghe.sgdev.org", Secret: "secret"}},
 	}
