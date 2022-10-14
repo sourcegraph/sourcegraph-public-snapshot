@@ -4,14 +4,14 @@ import classNames from 'classnames'
 
 import { Link } from '@sourcegraph/wildcard'
 
-import { DotComProductSubscriptionAccountFields } from '../../../graphql-operations'
+import { DotComProductSubscriptionEmailFields } from '../../../graphql-operations'
 
 /**
  * Displays an inline list of email addresses for an account.
  */
 export const AccountEmailAddresses: React.FunctionComponent<
     React.PropsWithChildren<{
-        emails: Pick<DotComProductSubscriptionAccountFields, 'email' | 'verified'>[]
+        emails: DotComProductSubscriptionEmailFields['emails']
     }>
 > = ({ emails }) => (
     <>
