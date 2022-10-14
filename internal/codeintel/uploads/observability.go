@@ -71,21 +71,6 @@ func newOperations(observationContext *observation.Context) *operations {
 		})
 	}
 
-	// honeyObservationContext := *observationContext
-	// honeyObservationContext.HoneyDataset = &honey.Dataset{Name: "codeintel-worker"}
-	// uploadProcessor := honeyObservationContext.Operation(observation.Op{
-	// 	Name: "codeintel.uploadHandler",
-	// 	ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
-	// 		return observation.EmitForTraces | observation.EmitForHoney
-	// 	},
-	// })
-
-	// uploadSizeGuage := prometheus.NewGauge(prometheus.GaugeOpts{
-	// 	Name: "src_codeintel_upload_processor_upload_size",
-	// 	Help: "The combined size of uploads being processed at this instant by this worker.",
-	// })
-	// observationContext.Registerer.MustRegister(uploadSizeGuage)
-
 	return &operations{
 		// Commits
 		getCommitsVisibleToUpload: op("GetCommitsVisibleToUpload"),
