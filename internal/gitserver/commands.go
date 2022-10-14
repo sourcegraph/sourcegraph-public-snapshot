@@ -191,10 +191,6 @@ func (c *clientImplementor) ContributorCount(ctx context.Context, repo api.RepoN
 // execReader should NOT be exported. We want to limit direct git calls to this
 // package.
 func (c *clientImplementor) execReader(ctx context.Context, repo api.RepoName, args []string) (io.ReadCloser, error) {
-	if Mocks.ExecReader != nil {
-		return Mocks.ExecReader(args)
-	}
-
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: ExecReader")
 	span.SetTag("args", args)
 	defer span.Finish()
