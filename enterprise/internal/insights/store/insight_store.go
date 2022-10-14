@@ -1107,7 +1107,7 @@ WHERE i.deleted_at IS NOT NULL
 `
 
 const hardDeleteSeries = `
-DELETE FROM insight_series WHERE series_id = %s;
+DELETE FROM insight_series WHERE series_id = %s ON CASCADE DELETE;
 `
 
 const freezeAllInsightsSql = `

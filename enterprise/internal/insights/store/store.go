@@ -255,10 +255,6 @@ func (s *Store) Delete(ctx context.Context, seriesId string) (err error) {
 	if err != nil {
 		return errors.Wrap(err, "DeleteForSeriesSnapshots")
 	}
-	err = tx.Exec(ctx, sqlf.Sprintf(deleteRecordingTimes, seriesId))
-	if err != nil {
-		return errors.Wrap(err, "DeleteRecordingTimes")
-	}
 
 	return nil
 }
