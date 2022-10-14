@@ -604,8 +604,15 @@ func mkExternalServices(now time.Time) types.ExternalServices {
 	}
 }
 
+// get a test store. When in short mode, the test will be skipped as it accesses
+// the database.
 func getTestRepoStore(t *testing.T) repos.Store {
 	t.Helper()
+
+	if testing.Short() {
+		t.Skip(t)
+	}
+
 	logger := logtest.Scoped(t)
 	store := repos.NewStore(logtest.Scoped(t), database.NewDB(logger, dbtest.NewDB(logger, t)))
 	store.SetMetrics(repos.NewStoreMetrics())
