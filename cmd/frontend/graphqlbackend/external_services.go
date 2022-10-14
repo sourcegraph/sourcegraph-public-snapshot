@@ -49,22 +49,17 @@ type addExternalServiceInput struct {
 	Kind        string
 	DisplayName string
 	Config      string
-	Namespace   *graphql.ID
+	Namespace   *graphql.ID // todo: remove this as we don't support anumore namsepaced extsvcs
 }
 
 func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExternalServiceArgs) (*externalServiceResolver, error) {
 	start := time.Now()
-	// 🚨 SECURITY: Only site admins may add external services if user mode is disabled.
-	var namespaceUserID, namespaceOrgID int32
+	// 🚨 SECURITY: Only site admins may add external services. User's external services are not supported anymore.
 	var err error
-	defer reportExternalServiceDuration(start, Add, &err, &namespaceUserID, &namespaceOrgID)
+	defer reportExternalServiceDuration(start, Add, &err)
 
 	if err := externalServicesWritable(); err != nil {
 		return nil, err
-	}
-
-	if args.Input.Namespace != nil {
-		return nil, errors.New("creating namespaced external services are no longer supported")
 	}
 
 	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
@@ -103,8 +98,7 @@ type updateExternalServiceInput struct {
 func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *updateExternalServiceArgs) (*externalServiceResolver, error) {
 	start := time.Now()
 	var err error
-	var namespaceUserID, namespaceOrgID int32
-	defer reportExternalServiceDuration(start, Update, &err, &namespaceUserID, &namespaceOrgID)
+	defer reportExternalServiceDuration(start, Update, &err)
 
 	if err := externalServicesWritable(); err != nil {
 		return nil, err
@@ -120,7 +114,6 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 		return nil, err
 	}
 
-	namespaceUserID, namespaceOrgID = es.NamespaceUserID, es.NamespaceOrgID
 	oldConfig, err := es.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, err
@@ -175,8 +168,7 @@ type deleteExternalServiceArgs struct {
 func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *deleteExternalServiceArgs) (*EmptyResponse, error) {
 	start := time.Now()
 	var err error
-	var namespaceUserID, namespaceOrgID int32
-	defer reportExternalServiceDuration(start, Delete, &err, &namespaceUserID, &namespaceOrgID)
+	defer reportExternalServiceDuration(start, Delete, &err)
 
 	if err := externalServicesWritable(); err != nil {
 		return nil, err
@@ -191,7 +183,6 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 	if err != nil {
 		return nil, err
 	}
-	namespaceUserID, namespaceOrgID = es.NamespaceUserID, es.NamespaceOrgID
 
 	// 🚨 SECURITY: check external service access
 	if err = backend.CheckExternalServiceAccess(ctx, r.db); err != nil {
@@ -388,21 +379,15 @@ var mutationDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Buckets: trace.UserLatencyBuckets,
 }, []string{"success", "mutation", "namespace"})
 
-func reportExternalServiceDuration(startTime time.Time, mutation ExternalServiceMutationType, err *error, userId, orgId *int32) {
+func reportExternalServiceDuration(startTime time.Time, mutation ExternalServiceMutationType, err *error) {
 	duration := time.Since(startTime)
 	ns := "global"
-	if userId != nil && *userId != 0 {
-		ns = "user"
-	} else if orgId != nil && *orgId != 0 {
-		ns = "org"
-	}
 	labels := prometheus.Labels{
 		"mutation":  mutation.String(),
 		"success":   strconv.FormatBool(*err == nil),
 		"namespace": ns,
 	}
 	mutationDuration.With(labels).Observe(duration.Seconds())
-
 }
 
 type syncExternalServiceArgs struct {
@@ -412,8 +397,7 @@ type syncExternalServiceArgs struct {
 func (r *schemaResolver) SyncExternalService(ctx context.Context, args *syncExternalServiceArgs) (*EmptyResponse, error) {
 	start := time.Now()
 	var err error
-	var namespaceUserID, namespaceOrgID int32
-	defer reportExternalServiceDuration(start, Update, &err, &namespaceUserID, &namespaceOrgID)
+	defer reportExternalServiceDuration(start, Update, &err)
 
 	id, err := UnmarshalExternalServiceID(args.ID)
 	if err != nil {
@@ -446,8 +430,7 @@ type cancelExternalServiceSyncArgs struct {
 func (r *schemaResolver) CancelExternalServiceSync(ctx context.Context, args *cancelExternalServiceSyncArgs) (*EmptyResponse, error) {
 	start := time.Now()
 	var err error
-	var namespaceUserID, namespaceOrgID int32
-	defer reportExternalServiceDuration(start, Update, &err, &namespaceUserID, &namespaceOrgID)
+	defer reportExternalServiceDuration(start, Update, &err)
 
 	id, err := unmarshalExternalServiceSyncJobID(args.ID)
 	if err != nil {
