@@ -49,7 +49,6 @@ type addExternalServiceInput struct {
 	Kind        string
 	DisplayName string
 	Config      string
-	Namespace   *graphql.ID // todo: remove this as we don't support anumore namsepaced extsvcs
 }
 
 func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExternalServiceArgs) (*externalServiceResolver, error) {
@@ -224,21 +223,11 @@ func (r *schemaResolver) deleteExternalService(ctx context.Context, id int64, es
 }
 
 type ExternalServicesArgs struct {
-	Namespace *graphql.ID
 	graphqlutil.ConnectionArgs
 	After *string
 }
 
 func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalServicesArgs) (*externalServiceConnectionResolver, error) {
-	var namespaceUserID int32
-	var namespaceOrgID int32
-	if args.Namespace != nil {
-		err := UnmarshalNamespaceID(*args.Namespace, &namespaceUserID, &namespaceOrgID)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	if err := backend.CheckExternalServiceAccess(ctx, r.db); err != nil {
 		return nil, err
 	}
@@ -253,14 +242,7 @@ func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalSer
 	}
 
 	opt := database.ExternalServicesListOptions{
-		// 🚨 SECURITY: When both `namespaceUserID` and `namespaceOrgID` are not
-		// specified we need to explicitly specify `NoNamespace`, otherwise site
-		// admins will be able to list all user code host connections that are not
-		// accessible when trying to access them individually.
-		NoNamespace:     namespaceUserID == 0 && namespaceOrgID == 0,
-		NamespaceUserID: namespaceUserID,
-		NamespaceOrgID:  namespaceOrgID,
-		AfterID:         afterID,
+		AfterID: afterID,
 	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
 	return &externalServiceConnectionResolver{db: r.db, opt: opt}, nil
@@ -385,7 +367,7 @@ func reportExternalServiceDuration(startTime time.Time, mutation ExternalService
 	labels := prometheus.Labels{
 		"mutation":  mutation.String(),
 		"success":   strconv.FormatBool(*err == nil),
-		"namespace": ns,
+		"namespace": ns, // todo: check if this can be safely removed
 	}
 	mutationDuration.With(labels).Observe(duration.Seconds())
 }
