@@ -173,7 +173,7 @@ rank() OVER (
 		u.repository_id, u.indexer, u.root
 	ORDER BY
 		-- Rank each grouped upload by the associated commit date
-		u.committed_at,
+		(SELECT cd.committed_at FROM codeintel_commit_dates cd WHERE cd.repository_id = u.repository_id AND cd.commit_bytea = decode(u.commit, 'hex')) NULLS LAST,
 		-- Break ties via the unique identifier
 		u.id
 )
@@ -820,7 +820,7 @@ LIMIT %s
 `
 
 // SourcedCommitsWithoutCommittedAt returns the repository and commits of uploads that do not have an
-// associated committed_at value.
+// associated commit date value.
 func (s *store) SourcedCommitsWithoutCommittedAt(ctx context.Context, batchSize int) (_ []shared.SourcedCommits, err error) {
 	ctx, _, endObservation := s.operations.sourcedCommitsWithoutCommittedAt.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("batchSize", batchSize),
@@ -839,7 +839,8 @@ const sourcedCommitsWithoutCommittedAtQuery = `
 SELECT u.repository_id, r.name, u.commit
 FROM lsif_uploads u
 JOIN repo r ON r.id = u.repository_id
-WHERE u.state = 'completed' AND u.committed_at IS NULL
+LEFT JOIN codeintel_commit_dates cd ON cd.repository_id = u.repository_id AND cd.commit_bytea = decode(u.commit, 'hex')
+WHERE u.state = 'completed' AND cd.committed_at IS NULL
 GROUP BY u.repository_id, r.name, u.commit
 ORDER BY repository_id, commit
 LIMIT %s
@@ -853,11 +854,11 @@ func (s *store) UpdateCommittedAt(ctx context.Context, repositoryID int, commit,
 	}})
 	defer func() { endObservation(1, observation.Args{}) }()
 
-	return s.db.Exec(ctx, sqlf.Sprintf(updateCommittedAtQuery, commitDateString, repositoryID, commit))
+	return s.db.Exec(ctx, sqlf.Sprintf(updateCommittedAtQuery, repositoryID, dbutil.CommitBytea(commit), commitDateString))
 }
 
 const updateCommittedAtQuery = `
-UPDATE lsif_uploads SET committed_at = %s WHERE state = 'completed' AND repository_id = %s AND commit = %s AND committed_at IS NULL
+INSERT INTO codeintel_commit_dates(repository_id, commit_bytea, committed_at) VALUES (%s, %s, %s) ON CONFLICT DO NOTHING
 `
 
 var deltaMap = map[shared.DependencyReferenceCountUpdateType]int{

@@ -1466,6 +1466,20 @@ CREATE SEQUENCE codeintel_autoindex_queue_id_seq
 
 ALTER SEQUENCE codeintel_autoindex_queue_id_seq OWNED BY codeintel_autoindex_queue.id;
 
+CREATE TABLE codeintel_commit_dates (
+    repository_id integer NOT NULL,
+    commit_bytea bytea NOT NULL,
+    committed_at timestamp with time zone
+);
+
+COMMENT ON TABLE codeintel_commit_dates IS 'Maps commits within a repository to the commit date as reported by gitserver.';
+
+COMMENT ON COLUMN codeintel_commit_dates.repository_id IS 'Identifies a row in the `repo` table.';
+
+COMMENT ON COLUMN codeintel_commit_dates.commit_bytea IS 'Identifies the 40-character commit hash.';
+
+COMMENT ON COLUMN codeintel_commit_dates.committed_at IS 'The commit date (may be -infinity if unresolvable).';
+
 CREATE TABLE codeintel_inference_scripts (
     insert_timestamp timestamp with time zone DEFAULT now() NOT NULL,
     script text NOT NULL
@@ -3803,6 +3817,9 @@ ALTER TABLE ONLY cm_webhooks
 
 ALTER TABLE ONLY codeintel_autoindex_queue
     ADD CONSTRAINT codeintel_autoindex_queue_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY codeintel_commit_dates
+    ADD CONSTRAINT codeintel_commit_dates_pkey PRIMARY KEY (repository_id, commit_bytea);
 
 ALTER TABLE ONLY codeintel_lockfile_references
     ADD CONSTRAINT codeintel_lockfile_references_pkey PRIMARY KEY (id);
