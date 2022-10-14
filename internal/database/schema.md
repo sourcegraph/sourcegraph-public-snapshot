@@ -1135,6 +1135,33 @@ Tracks the most recent activity of executors attached to this Sourcegraph instan
 
 **src_cli_version**: The version of src-cli used by the executor.
 
+# Table "public.executor_secrets"
+```
+      Column       |           Type           | Collation | Nullable |                   Default                    
+-------------------+--------------------------+-----------+----------+----------------------------------------------
+ id                | integer                  |           | not null | nextval('executor_secrets_id_seq'::regclass)
+ key               | text                     |           | not null | 
+ value             | bytea                    |           | not null | 
+ scope             | text                     |           | not null | 
+ encryption_key_id | text                     |           |          | 
+ namespace_user_id | integer                  |           |          | 
+ namespace_org_id  | integer                  |           |          | 
+ created_at        | timestamp with time zone |           | not null | now()
+ updated_at        | timestamp with time zone |           | not null | now()
+ creator_id        | integer                  |           |          | 
+Indexes:
+    "executor_secrets_pkey" PRIMARY KEY, btree (id)
+    "executor_secrets_unique_key_global" UNIQUE, btree (key, scope) WHERE namespace_user_id IS NULL AND namespace_org_id IS NULL
+    "executor_secrets_unique_key_namespace" UNIQUE, btree (key, namespace_user_id, namespace_org_id, scope)
+Foreign-key constraints:
+    "executor_secrets_creator_id_fkey" FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL
+    "executor_secrets_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
+    "executor_secrets_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE
+
+```
+
+**creator_id**: NULL, if the user has been deleted.
+
 # Table "public.explicit_permissions_bitbucket_projects_jobs"
 ```
        Column        |           Type           | Collation | Nullable |                                 Default                                  
@@ -2266,6 +2293,7 @@ Referenced by:
     TABLE "batch_changes" CONSTRAINT "batch_changes_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
     TABLE "cm_monitors" CONSTRAINT "cm_monitors_org_id_fk" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
     TABLE "cm_recipients" CONSTRAINT "cm_recipients_org_id_fk" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
+    TABLE "executor_secrets" CONSTRAINT "executor_secrets_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
     TABLE "external_service_repos" CONSTRAINT "external_service_repos_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE CASCADE
     TABLE "external_services" CONSTRAINT "external_services_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
     TABLE "feature_flag_overrides" CONSTRAINT "feature_flag_overrides_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
@@ -3018,6 +3046,8 @@ Referenced by:
     TABLE "discussion_comments" CONSTRAINT "discussion_comments_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "discussion_mail_reply_tokens" CONSTRAINT "discussion_mail_reply_tokens_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "discussion_threads" CONSTRAINT "discussion_threads_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
+    TABLE "executor_secrets" CONSTRAINT "executor_secrets_creator_id_fkey" FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL
+    TABLE "executor_secrets" CONSTRAINT "executor_secrets_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "external_service_repos" CONSTRAINT "external_service_repos_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "external_services" CONSTRAINT "external_services_namepspace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "feature_flag_overrides" CONSTRAINT "feature_flag_overrides_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE

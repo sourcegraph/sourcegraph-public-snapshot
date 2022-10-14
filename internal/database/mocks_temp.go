@@ -3641,6 +3641,9 @@ type MockDB struct {
 	// ExecContextFunc is an instance of a mock function object controlling
 	// the behavior of the method ExecContext.
 	ExecContextFunc *DBExecContextFunc
+	// ExecutorSecretsFunc is an instance of a mock function object
+	// controlling the behavior of the method ExecutorSecrets.
+	ExecutorSecretsFunc *DBExecutorSecretsFunc
 	// ExecutorsFunc is an instance of a mock function object controlling
 	// the behavior of the method Executors.
 	ExecutorsFunc *DBExecutorsFunc
@@ -3775,6 +3778,11 @@ func NewMockDB() *MockDB {
 		},
 		ExecContextFunc: &DBExecContextFunc{
 			defaultHook: func(context.Context, string, ...interface{}) (r0 sql.Result, r1 error) {
+				return
+			},
+		},
+		ExecutorSecretsFunc: &DBExecutorSecretsFunc{
+			defaultHook: func(encryption.Key) (r0 ExecutorSecretStore) {
 				return
 			},
 		},
@@ -3980,6 +3988,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.ExecContext")
 			},
 		},
+		ExecutorSecretsFunc: &DBExecutorSecretsFunc{
+			defaultHook: func(encryption.Key) ExecutorSecretStore {
+				panic("unexpected invocation of MockDB.ExecutorSecrets")
+			},
+		},
 		ExecutorsFunc: &DBExecutorsFunc{
 			defaultHook: func() ExecutorStore {
 				panic("unexpected invocation of MockDB.Executors")
@@ -4167,6 +4180,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		ExecContextFunc: &DBExecContextFunc{
 			defaultHook: i.ExecContext,
+		},
+		ExecutorSecretsFunc: &DBExecutorSecretsFunc{
+			defaultHook: i.ExecutorSecrets,
 		},
 		ExecutorsFunc: &DBExecutorsFunc{
 			defaultHook: i.Executors,
@@ -4976,6 +4992,108 @@ func (c DBExecContextFuncCall) Args() []interface{} {
 // invocation.
 func (c DBExecContextFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// DBExecutorSecretsFunc describes the behavior when the ExecutorSecrets
+// method of the parent MockDB instance is invoked.
+type DBExecutorSecretsFunc struct {
+	defaultHook func(encryption.Key) ExecutorSecretStore
+	hooks       []func(encryption.Key) ExecutorSecretStore
+	history     []DBExecutorSecretsFuncCall
+	mutex       sync.Mutex
+}
+
+// ExecutorSecrets delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockDB) ExecutorSecrets(v0 encryption.Key) ExecutorSecretStore {
+	r0 := m.ExecutorSecretsFunc.nextHook()(v0)
+	m.ExecutorSecretsFunc.appendCall(DBExecutorSecretsFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the ExecutorSecrets
+// method of the parent MockDB instance is invoked and the hook queue is
+// empty.
+func (f *DBExecutorSecretsFunc) SetDefaultHook(hook func(encryption.Key) ExecutorSecretStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ExecutorSecrets method of the parent MockDB instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *DBExecutorSecretsFunc) PushHook(hook func(encryption.Key) ExecutorSecretStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBExecutorSecretsFunc) SetDefaultReturn(r0 ExecutorSecretStore) {
+	f.SetDefaultHook(func(encryption.Key) ExecutorSecretStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBExecutorSecretsFunc) PushReturn(r0 ExecutorSecretStore) {
+	f.PushHook(func(encryption.Key) ExecutorSecretStore {
+		return r0
+	})
+}
+
+func (f *DBExecutorSecretsFunc) nextHook() func(encryption.Key) ExecutorSecretStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBExecutorSecretsFunc) appendCall(r0 DBExecutorSecretsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBExecutorSecretsFuncCall objects
+// describing the invocations of this function.
+func (f *DBExecutorSecretsFunc) History() []DBExecutorSecretsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBExecutorSecretsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBExecutorSecretsFuncCall is an object that describes an invocation of
+// method ExecutorSecrets on an instance of MockDB.
+type DBExecutorSecretsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 encryption.Key
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 ExecutorSecretStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBExecutorSecretsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBExecutorSecretsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // DBExecutorsFunc describes the behavior when the Executors method of the
