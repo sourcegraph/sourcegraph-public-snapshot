@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -18,11 +19,11 @@ import (
 type WebhookStore interface {
 	basestore.ShareableStore
 
-	Create(ctx context.Context, kind, urn string, secret *types.EncryptableSecret) (*types.Webhook, error)
+	Create(ctx context.Context, kind, urn string, actorUID int32, secret *types.EncryptableSecret) (*types.Webhook, error)
 	GetByID(ctx context.Context, id int32) (*types.Webhook, error)
-	GetByRandomID(ctx context.Context, id string) (*types.Webhook, error)
+	GetByUUID(ctx context.Context, id uuid.UUID) (*types.Webhook, error)
 	Delete(ctx context.Context, id uuid.UUID) error
-	Update(ctx context.Context, newWebhook *types.Webhook) (*types.Webhook, error)
+	Update(ctx context.Context, actorUID int32, newWebhook *types.Webhook) (*types.Webhook, error)
 	List(ctx context.Context) ([]*types.Webhook, error)
 }
 
@@ -52,7 +53,7 @@ func WebhooksWith(other basestore.ShareableStore, key encryption.Key) WebhookSto
 // If encryption IS enabled then the encrypted value will be stored in secret and
 // the encryption_key_id field will also be populated so that we can decrypt the
 // value later.
-func (s *webhookStore) Create(ctx context.Context, kind, urn string, secret *types.EncryptableSecret) (*types.Webhook, error) {
+func (s *webhookStore) Create(ctx context.Context, kind, urn string, actorUID int32, secret *types.EncryptableSecret) (*types.Webhook, error) {
 	var (
 		err             error
 		encryptedSecret string
@@ -64,6 +65,9 @@ func (s *webhookStore) Create(ctx context.Context, kind, urn string, secret *typ
 		if err != nil || (encryptedSecret == "" && keyID == "") {
 			return nil, errors.Wrap(err, "encrypting secret")
 		}
+		if encryptedSecret == "" && keyID == "" {
+			return nil, errors.New("empty secret and key provided")
+		}
 	}
 
 	q := sqlf.Sprintf(webhookCreateQueryFmtstr,
@@ -71,6 +75,7 @@ func (s *webhookStore) Create(ctx context.Context, kind, urn string, secret *typ
 		urn,
 		encryptedSecret,
 		keyID,
+		dbutil.NullInt32Column(actorUID),
 		// Returning
 		sqlf.Join(webhookColumns, ", "),
 	)
@@ -84,15 +89,16 @@ func (s *webhookStore) Create(ctx context.Context, kind, urn string, secret *typ
 }
 
 const webhookCreateQueryFmtstr = `
--- source: internal/database/webhooks.go:Create
 INSERT INTO
 	webhooks (
 		code_host_kind,
 		code_host_urn,
 		secret,
-		encryption_key_id
+		encryption_key_id,
+		created_by_user_id
 	)
 	VALUES (
+		%s,
 		%s,
 		%s,
 		%s,
@@ -110,18 +116,55 @@ var webhookColumns = []*sqlf.Query{
 	sqlf.Sprintf("created_at"),
 	sqlf.Sprintf("updated_at"),
 	sqlf.Sprintf("encryption_key_id"),
+	sqlf.Sprintf("created_by_user_id"),
+	sqlf.Sprintf("updated_by_user_id"),
 }
+
+const webhookGetByIDFmtstr = `
+SELECT %s FROM webhooks
+WHERE id = %d
+`
 
 func (s *webhookStore) GetByID(ctx context.Context, id int32) (*types.Webhook, error) {
-	panic("Implement this method")
+	q := sqlf.Sprintf(webhookGetByIDFmtstr,
+		sqlf.Join(webhookColumns, ", "),
+		id,
+	)
+
+	webhook, err := scanWebhook(s.QueryRow(ctx, q), s.key)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, &WebhookNotFoundError{ID: id}
+		}
+		return nil, errors.Wrap(err, "scanning webhook")
+	}
+
+	return webhook, nil
 }
 
-func (s *webhookStore) GetByRandomID(ctx context.Context, id string) (*types.Webhook, error) {
-	panic("Implement this method")
+const webhookGetByUUIDFmtstr = `
+SELECT %s FROM webhooks
+WHERE uuid = %s
+`
+
+func (s *webhookStore) GetByUUID(ctx context.Context, id uuid.UUID) (*types.Webhook, error) {
+	q := sqlf.Sprintf(webhookGetByUUIDFmtstr,
+		sqlf.Join(webhookColumns, ", "),
+		id,
+	)
+
+	webhook, err := scanWebhook(s.QueryRow(ctx, q), s.key)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, &WebhookNotFoundError{UUID: id}
+		}
+		return nil, errors.Wrap(err, "scanning webhook")
+	}
+
+	return webhook, nil
 }
 
 const webhookDeleteQueryFmtstr = `
--- source: internal/database/webhooks.go:Delete
 DELETE FROM webhooks
 WHERE uuid = %s
 `
@@ -140,18 +183,23 @@ func (s *webhookStore) Delete(ctx context.Context, id uuid.UUID) error {
 	}
 
 	if rowsAffected == 0 {
-		return errors.Wrap(&WebhookNotFoundError{ID: id}, "failed to delete webhook")
+		return errors.Wrap(&WebhookNotFoundError{UUID: id}, "failed to delete webhook")
 	}
 	return nil
 }
 
 // WebhookNotFoundError occurs when a webhook is not found.
 type WebhookNotFoundError struct {
-	ID uuid.UUID
+	ID   int32
+	UUID uuid.UUID
 }
 
 func (w *WebhookNotFoundError) Error() string {
-	return fmt.Sprintf("webhook with UUID %s not found", w.ID)
+	if w.UUID != uuid.Nil {
+		return fmt.Sprintf("webhook with UUID %s not found", w.UUID)
+	} else {
+		return fmt.Sprintf("webhook with ID %d not found", w.ID)
+	}
 }
 
 func (w *WebhookNotFoundError) NotFound() bool {
@@ -159,10 +207,50 @@ func (w *WebhookNotFoundError) NotFound() bool {
 }
 
 // Update the webhook
-func (s *webhookStore) Update(ctx context.Context, newWebhook *types.Webhook) (*types.Webhook, error) {
-	// TODO(sashaostrikov) implement this method
-	panic("implement this method")
+func (s *webhookStore) Update(ctx context.Context, actorUID int32, newWebhook *types.Webhook) (*types.Webhook, error) {
+	var (
+		err             error
+		encryptedSecret string
+		keyID           string
+	)
+	if newWebhook.Secret != nil {
+		encryptedSecret, keyID, err = newWebhook.Secret.Encrypt(ctx, s.key)
+		if err != nil || (encryptedSecret == "" && keyID == "") {
+			return nil, errors.Wrap(err, "encrypting secret")
+		}
+		if encryptedSecret == "" && keyID == "" {
+			return nil, errors.New("empty secret and key provided")
+		}
+	}
+
+	q := sqlf.Sprintf(webhookUpdateQueryFmtstr,
+		newWebhook.CodeHostURN, encryptedSecret, keyID, dbutil.NullInt32Column(actorUID), newWebhook.ID,
+		sqlf.Join(webhookColumns, ", "))
+
+	updated, err := scanWebhook(s.QueryRow(ctx, q), s.key)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, &WebhookNotFoundError{ID: newWebhook.ID, UUID: newWebhook.UUID}
+		}
+		return nil, errors.Wrap(err, "scanning webhook")
+	}
+
+	return updated, nil
 }
+
+const webhookUpdateQueryFmtstr = `
+UPDATE webhooks
+SET
+	code_host_urn = %s,
+	secret = %s,
+	encryption_key_id = %s,
+	updated_at = NOW(),
+	updated_by_user_id = %s
+WHERE
+	id = %s
+RETURNING
+	%s
+`
 
 // List the webhooks
 func (s *webhookStore) List(ctx context.Context) ([]*types.Webhook, error) {
@@ -186,6 +274,8 @@ func scanWebhook(sc dbutil.Scanner, key encryption.Key) (*types.Webhook, error) 
 		&hook.CreatedAt,
 		&hook.UpdatedAt,
 		&keyID,
+		&dbutil.NullInt32{N: &hook.CreatedByUserID},
+		&dbutil.NullInt32{N: &hook.UpdatedByUserID},
 	); err != nil {
 		return nil, err
 	}

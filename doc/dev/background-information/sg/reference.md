@@ -1101,19 +1101,29 @@ Flags:
 List, search, and open Sourcegraph RFCs.
 
 ```sh
-# List all RFCs
+# List all Public RFCs
 $ sg rfc list
 
-# Search for an RFC
+# List all Private RFCs
+$ sg rfc --private list
+
+# Search for a Public RFC
 $ sg rfc search "search terms"
 
-# Open a specific RFC
+# Search for a Private RFC
+$ sg rfc --private search "search terms"
+
+# Open a specific Public RFC
 $ sg rfc open 420
+
+# Open a specific private RFC
+$ sg rfc --private open 420
 ```
 
 Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--private`: perform the rfc action on the private RFC drive
 
 ## sg adr
 

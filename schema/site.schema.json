@@ -546,6 +546,11 @@
           "description": "Use an in-memory strategy of loading Code Insights. Should only be used for benchmarking on large instances, not for customer use currently.",
           "type": "boolean",
           "default": false
+        },
+        "hideSourcegraphOperatorLogin": {
+          "description": "Enables hiding Sourcegraph operator auth provider on login page.",
+          "type": "boolean",
+          "default": false
         }
       },
       "examples": [
@@ -1210,10 +1215,10 @@
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "securityEvents": {
-              "description": "Capture security events as part of the audit log.",
+            "backgroundJobs": {
+              "description": "Capture security events performed by the background jobs (adds significant noise).",
               "type": "boolean",
-              "default": true
+              "default": false
             },
             "graphQL": {
               "description": "Capture GraphQL requests and responses as part of the audit log.",
@@ -1707,7 +1712,7 @@
         "webhookLogKey": {
           "$ref": "#/definitions/EncryptionKey"
         },
-         "webhookKey": {
+        "webhookKey": {
           "$ref": "#/definitions/EncryptionKey"
         }
       }

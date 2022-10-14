@@ -7,8 +7,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	codeintelgitserver "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	codeintelgitserver "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"

@@ -49,7 +49,7 @@ export function useRecentSearches(): {
     )
 
     useEffect(() => {
-        if (recentSearches) {
+        if (state !== 'success' && recentSearches) {
             if (recentSearches && recentSearches.length > 0) {
                 setState('success')
             } else {
@@ -67,7 +67,7 @@ export function useRecentSearches(): {
                     })
             }
         }
-    }, [recentSearches, loadFromEventLog, setRecentSearches])
+    }, [recentSearches, loadFromEventLog, setRecentSearches, state])
 
     // Adds a new search to the top of the recent searches list.
     // If the search is already in the recent searches list, it moves it to the top.

@@ -2277,10 +2277,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@discoveryjs/json-ext@npm:^0.5.0, @discoveryjs/json-ext@npm:^0.5.3, @discoveryjs/json-ext@npm:^0.5.5":
-  version: 0.5.6
-  resolution: "@discoveryjs/json-ext@npm:0.5.6"
-  checksum: e97df618511fb202dffa2eb0d23e17dfb02943a70e5bc38f6b9603ad1cb1d6b525aa2b07ff9fb00b041abe425b341146ddd9e487f1e35ddadc8c6b8c56358ae0
+"@discoveryjs/json-ext@npm:^0.5.0, @discoveryjs/json-ext@npm:^0.5.3, @discoveryjs/json-ext@npm:^0.5.5, @discoveryjs/json-ext@npm:^0.5.7":
+  version: 0.5.7
+  resolution: "@discoveryjs/json-ext@npm:0.5.7"
+  checksum: 2176d301cc258ea5c2324402997cf8134ebb212469c0d397591636cea8d3c02f2b3cf9fd58dcb748c7a0dade77ebdc1b10284fa63e608c033a1db52fddc69918
+  languageName: node
+  linkType: hard
+
+"@discoveryjs/natural-compare@npm:^1.0.0":
+  version: 1.1.0
+  resolution: "@discoveryjs/natural-compare@npm:1.1.0"
+  checksum: c9a965da2422efc74f6fd6feac5dfb858261a1bf0f54de6b14a3affe80d81d949d475f6959a54ca978fcda965e1933abb78840ddb03e690e59a27e06f77f1f2b
   languageName: node
   linkType: hard
 
@@ -3959,12 +3966,105 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@octokit/app@npm:^13.0.5":
+  version: 13.0.9
+  resolution: "@octokit/app@npm:13.0.9"
+  dependencies:
+    "@octokit/auth-app": ^4.0.0
+    "@octokit/auth-unauthenticated": ^3.0.0
+    "@octokit/core": ^4.0.0
+    "@octokit/oauth-app": ^4.0.7
+    "@octokit/plugin-paginate-rest": ^4.0.0
+    "@octokit/types": ^7.0.0
+    "@octokit/webhooks": ^10.0.0
+  checksum: 85c5203f5741f692d493bf2b69358b0d08480dd00e1d6e36b77efc94f8b3df9f16d40a90db6846acb9082c3a6235f3578096e78415ba9c382622b5697038f822
+  languageName: node
+  linkType: hard
+
+"@octokit/auth-app@npm:^4.0.0":
+  version: 4.0.6
+  resolution: "@octokit/auth-app@npm:4.0.6"
+  dependencies:
+    "@octokit/auth-oauth-app": ^5.0.0
+    "@octokit/auth-oauth-user": ^2.0.0
+    "@octokit/request": ^6.0.0
+    "@octokit/request-error": ^3.0.0
+    "@octokit/types": ^7.0.0
+    "@types/lru-cache": ^5.1.0
+    deprecation: ^2.3.1
+    lru-cache: ^6.0.0
+    universal-github-app-jwt: ^1.0.1
+    universal-user-agent: ^6.0.0
+  checksum: 342fece6db4470ee489e710af8aa14ffd3a89e666815a15fadbabe3a382932a714d5bece24375f0ca39f3310f9d10bd28bc348210282cbc6701d27dd9b2ff7ed
+  languageName: node
+  linkType: hard
+
+"@octokit/auth-oauth-app@npm:^5.0.0":
+  version: 5.0.3
+  resolution: "@octokit/auth-oauth-app@npm:5.0.3"
+  dependencies:
+    "@octokit/auth-oauth-device": ^4.0.0
+    "@octokit/auth-oauth-user": ^2.0.0
+    "@octokit/request": ^6.0.0
+    "@octokit/types": ^7.0.0
+    "@types/btoa-lite": ^1.0.0
+    btoa-lite: ^1.0.0
+    universal-user-agent: ^6.0.0
+  checksum: 7841b7f1ad0552183a7346633f708ac9ce96ff4dbe420a5e0971b3d1de28a5cd3ae4f018ca60d44ab7e921bd50f0e90ddcd3456ca0d0b84adbc52c34caf3df77
+  languageName: node
+  linkType: hard
+
+"@octokit/auth-oauth-device@npm:^4.0.0":
+  version: 4.0.2
+  resolution: "@octokit/auth-oauth-device@npm:4.0.2"
+  dependencies:
+    "@octokit/oauth-methods": ^2.0.0
+    "@octokit/request": ^6.0.0
+    "@octokit/types": ^7.0.0
+    universal-user-agent: ^6.0.0
+  checksum: 49cd76ae8644fa537a6dd0155b85321a46a517d2064a0cb69ee2a9cfa5b081cd70a906958e002ee4e63895e966d942a28b2be9c527490f25b8685e229d17addd
+  languageName: node
+  linkType: hard
+
+"@octokit/auth-oauth-user@npm:^2.0.0":
+  version: 2.0.3
+  resolution: "@octokit/auth-oauth-user@npm:2.0.3"
+  dependencies:
+    "@octokit/auth-oauth-device": ^4.0.0
+    "@octokit/oauth-methods": ^2.0.0
+    "@octokit/request": ^6.0.0
+    "@octokit/types": ^7.0.0
+    btoa-lite: ^1.0.0
+    universal-user-agent: ^6.0.0
+  checksum: a62f85021bf251de3987abdda747079f5b479d37de898f35c92816dda0e538a8837e1487ee639414fa83ab710d786c8bc1ea84c39c6a505f5d47dcc45beb9fb7
+  languageName: node
+  linkType: hard
+
 "@octokit/auth-token@npm:^2.4.4":
   version: 2.5.0
   resolution: "@octokit/auth-token@npm:2.5.0"
   dependencies:
     "@octokit/types": ^6.0.3
   checksum: 45949296c09abcd6beb4c3f69d45b0c1f265f9581d2a9683cf4d1800c4cf8259c2f58d58e44c16c20bffb85a0282a176c0d51f4af300e428b863f27b910e6297
+  languageName: node
+  linkType: hard
+
+"@octokit/auth-token@npm:^3.0.0":
+  version: 3.0.1
+  resolution: "@octokit/auth-token@npm:3.0.1"
+  dependencies:
+    "@octokit/types": ^7.0.0
+  checksum: e94ba5abc2f86cf49e8dc0b86225f2fdda6af451328b13a43d68972117d4e3dccba5cb375fa0c5970a43c9392665bf4e4f0ef1332522f76d4fa4b16c5ad6cc1d
+  languageName: node
+  linkType: hard
+
+"@octokit/auth-unauthenticated@npm:^3.0.0":
+  version: 3.0.2
+  resolution: "@octokit/auth-unauthenticated@npm:3.0.2"
+  dependencies:
+    "@octokit/request-error": ^3.0.0
+    "@octokit/types": ^7.0.0
+  checksum: 974c52134574e9869d05628b10c4e83fdf0538204fd8a50b055215ad2a02319127fa7394572798af28a5ea0ced0b28876fde70fe4637a546c2777b0c4434cabb
   languageName: node
   linkType: hard
 
@@ -3983,6 +4083,21 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@octokit/core@npm:^4.0.0, @octokit/core@npm:^4.0.4":
+  version: 4.0.5
+  resolution: "@octokit/core@npm:4.0.5"
+  dependencies:
+    "@octokit/auth-token": ^3.0.0
+    "@octokit/graphql": ^5.0.0
+    "@octokit/request": ^6.0.0
+    "@octokit/request-error": ^3.0.0
+    "@octokit/types": ^7.0.0
+    before-after-hook: ^2.2.0
+    universal-user-agent: ^6.0.0
+  checksum: 6e4a2161d22b9cb24cd1cf702e6d18200fc48a29dc66db08c37809d65243d29429123652072126d9f161e45aef6a57e72a5d56d7e975829c190e8c3c46b3f1b9
+  languageName: node
+  linkType: hard
+
 "@octokit/endpoint@npm:^6.0.1":
   version: 6.0.9
   resolution: "@octokit/endpoint@npm:6.0.9"
@@ -3991,6 +4106,17 @@ __metadata:
     is-plain-object: ^5.0.0
     universal-user-agent: ^6.0.0
   checksum: d14eaf1f5809a19c0ce89c4788f7e2d0d3c9b819eeb4cbef5932db50dfb45836b0338b77fffa9353f4898c3f6742344488fbd69da60723aea2d48f19a2e68908
+  languageName: node
+  linkType: hard
+
+"@octokit/endpoint@npm:^7.0.0":
+  version: 7.0.2
+  resolution: "@octokit/endpoint@npm:7.0.2"
+  dependencies:
+    "@octokit/types": ^7.0.0
+    is-plain-object: ^5.0.0
+    universal-user-agent: ^6.0.0
+  checksum: 81743b228e903d27e426280a63f1d2c2771b3bda4a2e577f6f25f075a1eb577b6c853b62abed1a6bfa0fa01322dac9b71e2f07c75cd7946d952b1c8f6032d96d
   languageName: node
   linkType: hard
 
@@ -4005,10 +4131,65 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@octokit/graphql@npm:^5.0.0":
+  version: 5.0.1
+  resolution: "@octokit/graphql@npm:5.0.1"
+  dependencies:
+    "@octokit/request": ^6.0.0
+    "@octokit/types": ^7.0.0
+    universal-user-agent: ^6.0.0
+  checksum: 310549c2d7966adb46428e943cd99cb766519819bd4945d8349d3ec0642e4ee39d9194e1b0a87a5404951c04c247fafb4a8456ed4c839c64bfb4042aa4a6812c
+  languageName: node
+  linkType: hard
+
+"@octokit/oauth-app@npm:^4.0.6, @octokit/oauth-app@npm:^4.0.7":
+  version: 4.1.0
+  resolution: "@octokit/oauth-app@npm:4.1.0"
+  dependencies:
+    "@octokit/auth-oauth-app": ^5.0.0
+    "@octokit/auth-oauth-user": ^2.0.0
+    "@octokit/auth-unauthenticated": ^3.0.0
+    "@octokit/core": ^4.0.0
+    "@octokit/oauth-authorization-url": ^5.0.0
+    "@octokit/oauth-methods": ^2.0.0
+    "@types/aws-lambda": ^8.10.83
+    fromentries: ^1.3.1
+    universal-user-agent: ^6.0.0
+  checksum: 031f8480b7ad282e54b2749b4260c0e5bc306c68b1d9b7555a43c4a6c38e8c268e0c7d48674018c0c021efff4722792814aff99d5ec2a2334fffb18f745bab97
+  languageName: node
+  linkType: hard
+
+"@octokit/oauth-authorization-url@npm:^5.0.0":
+  version: 5.0.0
+  resolution: "@octokit/oauth-authorization-url@npm:5.0.0"
+  checksum: bc457c4af9559e9e8f752e643fc9d116247f4e4246e69959d99b9e39196c93d7af53c1c8e3bd946bd0e4fc29f7ba27efe9bced8525ffa41fe45ef56a8281014b
+  languageName: node
+  linkType: hard
+
+"@octokit/oauth-methods@npm:^2.0.0":
+  version: 2.0.3
+  resolution: "@octokit/oauth-methods@npm:2.0.3"
+  dependencies:
+    "@octokit/oauth-authorization-url": ^5.0.0
+    "@octokit/request": ^6.0.0
+    "@octokit/request-error": ^3.0.0
+    "@octokit/types": ^7.0.0
+    btoa-lite: ^1.0.0
+  checksum: 9cc4635128eb665217ed8ba0aaeb245fd14a09c2c4781e58346e1716cfa122482de9ea5b46a5a763526c71068e6700539da3af451bb9bc7059218a9fb7be352f
+  languageName: node
+  linkType: hard
+
 "@octokit/openapi-types@npm:^12.4.0":
   version: 12.4.0
   resolution: "@octokit/openapi-types@npm:12.4.0"
   checksum: 80c45bb8a63acd58c752b366915ed34c79948722eaf8bb018845949b3871ba3eaa7b8f629f4cb0c9e7eb564225a85116ffd6ae470c1cc17683bf707ae361c200
+  languageName: node
+  linkType: hard
+
+"@octokit/openapi-types@npm:^13.11.0":
+  version: 13.13.1
+  resolution: "@octokit/openapi-types@npm:13.13.1"
+  checksum: 7f49a46ada1cc6ed105b19aa839f570643c099488929939d7c690d3f466b6c6e0b54e066a557bd0679e0cc36d706a992c9c763c63c5f1f90afe98a68fcb15186
   languageName: node
   linkType: hard
 
@@ -4023,6 +4204,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@octokit/plugin-paginate-rest@npm:^4.0.0":
+  version: 4.3.1
+  resolution: "@octokit/plugin-paginate-rest@npm:4.3.1"
+  dependencies:
+    "@octokit/types": ^7.5.0
+  peerDependencies:
+    "@octokit/core": ">=4"
+  checksum: 96d420fc9944cd3cb67c41d47781ee00d406e34622ed6a6cc1995ee9602e1ab23b51e30f5a5d3b80d4b62879234e0c21fe6c654b267ccb9550379f2e0051e681
+  languageName: node
+  linkType: hard
+
 "@octokit/plugin-rest-endpoint-methods@npm:^5.13.0":
   version: 5.15.0
   resolution: "@octokit/plugin-rest-endpoint-methods@npm:5.15.0"
@@ -4032,6 +4224,40 @@ __metadata:
   peerDependencies:
     "@octokit/core": ">=3"
   checksum: 1a2a590c9f8c69ffa6fe9b2aea1b7f4443696be7a9c858e40b13e6aab801edd8c3c913bf01ff8128b3d3227d22dd52039d15a292ce2d15abb7c5772d89d37a2e
+  languageName: node
+  linkType: hard
+
+"@octokit/plugin-rest-endpoint-methods@npm:^6.0.0":
+  version: 6.6.2
+  resolution: "@octokit/plugin-rest-endpoint-methods@npm:6.6.2"
+  dependencies:
+    "@octokit/types": ^7.5.0
+    deprecation: ^2.3.1
+  peerDependencies:
+    "@octokit/core": ">=3"
+  checksum: 3c3fe12e6f0463aeb77b6a7ea6da0b1928ed179b27745c778c32ead3796fe4352322dc103095d141d548aa6b0d91bb0196e4a2d5d60cd71fc820c3774e23c1f4
+  languageName: node
+  linkType: hard
+
+"@octokit/plugin-retry@npm:^3.0.9":
+  version: 3.0.9
+  resolution: "@octokit/plugin-retry@npm:3.0.9"
+  dependencies:
+    "@octokit/types": ^6.0.3
+    bottleneck: ^2.15.3
+  checksum: 5744780d308dd2f2b8174264604a9f8ea977374256f5eaf0314e5181c32f96ec53a3cfcee67bf1b48dc7eed401ebefebd2fa744b41cf03103affac92f397a874
+  languageName: node
+  linkType: hard
+
+"@octokit/plugin-throttling@npm:^4.0.1":
+  version: 4.3.0
+  resolution: "@octokit/plugin-throttling@npm:4.3.0"
+  dependencies:
+    "@octokit/types": ^7.0.0
+    bottleneck: ^2.15.3
+  peerDependencies:
+    "@octokit/core": ^4.0.0
+  checksum: f2c23c070c9a1afee80a195a4da66dca568be40be3be5532bb32eabc0e22a53ab591f7109a9499ac9eaebbc873c08cca48c90e4f8af2e2010db5f8bd99e280ae
   languageName: node
   linkType: hard
 
@@ -4057,6 +4283,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@octokit/request-error@npm:^3.0.0":
+  version: 3.0.1
+  resolution: "@octokit/request-error@npm:3.0.1"
+  dependencies:
+    "@octokit/types": ^7.0.0
+    deprecation: ^2.0.0
+    once: ^1.4.0
+  checksum: ae386b5181b3cb66b844047a21d062b683cd7ec4daf70cb9868406c1a51608a72d683955e692c7cc6237d66a09b12c6bcf102a712985da68bcedcc3820117e75
+  languageName: node
+  linkType: hard
+
 "@octokit/request@npm:^5.2.0, @octokit/request@npm:^5.6.0, @octokit/request@npm:^5.6.3":
   version: 5.6.3
   resolution: "@octokit/request@npm:5.6.3"
@@ -4068,6 +4305,20 @@ __metadata:
     node-fetch: ^2.6.7
     universal-user-agent: ^6.0.0
   checksum: c0b4542eb4baaf880d673c758d3e0b5c4a625a4ae30abf40df5548b35f1ff540edaac74625192b1aff42a79ac661e774da4ab7d5505f1cb4ef81239b1e8510c5
+  languageName: node
+  linkType: hard
+
+"@octokit/request@npm:^6.0.0":
+  version: 6.2.1
+  resolution: "@octokit/request@npm:6.2.1"
+  dependencies:
+    "@octokit/endpoint": ^7.0.0
+    "@octokit/request-error": ^3.0.0
+    "@octokit/types": ^7.0.0
+    is-plain-object: ^5.0.0
+    node-fetch: ^2.6.7
+    universal-user-agent: ^6.0.0
+  checksum: f0a3e878de8c2e6930da5af835d9a3750800eff9ba66af02400dc75238475a9b9c2c5473047792c0f37c2c371095a36485c0729c419873bdccb6058bb8637685
   languageName: node
   linkType: hard
 
@@ -4115,6 +4366,41 @@ __metadata:
   dependencies:
     "@octokit/openapi-types": ^12.4.0
   checksum: 7de86fbe0de8c3ec72cdf0b95f6abb1f088d5bc76c8a130ec2d139897470821559726b092399f3dd0a3540d97393dd2088a6c12778411129d0879781f314445d
+  languageName: node
+  linkType: hard
+
+"@octokit/types@npm:^7.0.0, @octokit/types@npm:^7.5.0":
+  version: 7.5.1
+  resolution: "@octokit/types@npm:7.5.1"
+  dependencies:
+    "@octokit/openapi-types": ^13.11.0
+  checksum: eaa9aac2f4760aef5e69e4f663450fce34d4fab5a6a8c26cba49257ce0c4b621fd8f19ddad0ce9764b64cc6b3ef5d6fe631ff518832d3e09affbc96b7432fae5
+  languageName: node
+  linkType: hard
+
+"@octokit/webhooks-methods@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "@octokit/webhooks-methods@npm:3.0.0"
+  checksum: 3d1fdd051acb1e185160e138794b52b168a94dbd0fb05b1267914bfada199ccd615bc62828453b08edc5037557810319198c2684cfe5eba6267686952a9b644d
+  languageName: node
+  linkType: hard
+
+"@octokit/webhooks-types@npm:6.3.6":
+  version: 6.3.6
+  resolution: "@octokit/webhooks-types@npm:6.3.6"
+  checksum: 974db34258cbdb0d02f3bed202595822c1799804cbd46e3375571537e0ba879350f30a3e27b156480a0be4eaa924bbb353a578ae86cb58e495c524478f052f6b
+  languageName: node
+  linkType: hard
+
+"@octokit/webhooks@npm:^10.0.0":
+  version: 10.1.5
+  resolution: "@octokit/webhooks@npm:10.1.5"
+  dependencies:
+    "@octokit/request-error": ^3.0.0
+    "@octokit/webhooks-methods": ^3.0.0
+    "@octokit/webhooks-types": 6.3.6
+    aggregate-error: ^3.1.0
+  checksum: ea34d0e9431550d94cc2421b7afee56515745d8df3a61592cfeba3087ad7541c5b3bd64dba77fe0da554dc34e4e5438061cc94b80ba7e57ee65b74024929792e
   languageName: node
   linkType: hard
 
@@ -5818,6 +6104,40 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@statoscope/cli@npm:^5.24.0":
+  version: 5.24.0
+  resolution: "@statoscope/cli@npm:5.24.0"
+  dependencies:
+    "@discoveryjs/json-ext": ^0.5.7
+    "@statoscope/config": 5.22.0
+    "@statoscope/helpers": 5.24.0
+    "@statoscope/report-writer": 5.22.0
+    "@statoscope/stats-extension-custom-reports": 5.24.0
+    "@statoscope/stats-validator": 5.22.0
+    "@statoscope/stats-validator-reporter-console": 5.22.0
+    "@statoscope/stats-validator-reporter-stats-report": 5.24.0
+    "@statoscope/types": 5.22.0
+    "@statoscope/webpack-model": 5.24.0
+    "@statoscope/webpack-ui": 5.24.0
+    "@types/yargs": ^17.0.10
+    open: ^8.4.0
+    yargs: ^17.5.1
+  bin:
+    statoscope: bin/cli.js
+  checksum: ad7e37dbfe884d5994a2925b7a0a7d0f75e81d75452a7fb38cd28f8fc1a8a1709b035d1da850ad76f2dbefbc41fdff643d7cb73211eefcbc5dc4f598fcd77d5a
+  languageName: node
+  linkType: hard
+
+"@statoscope/config@npm:5.22.0":
+  version: 5.22.0
+  resolution: "@statoscope/config@npm:5.22.0"
+  dependencies:
+    "@statoscope/types": 5.22.0
+    chalk: ^4.1.2
+  checksum: 831bcc6ba915663bbffe0d86a517dc66b6297549f165cbbcba5eee647740d3d623c0168e2e124a0a52b3cf37d8ffb50d74275a86a286ed15656b48cbe8cc72c7
+  languageName: node
+  linkType: hard
+
 "@statoscope/extensions@npm:5.14.1":
   version: 5.14.1
   resolution: "@statoscope/extensions@npm:5.14.1"
@@ -5838,12 +6158,34 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@statoscope/helpers@npm:5.24.0":
+  version: 5.24.0
+  resolution: "@statoscope/helpers@npm:5.24.0"
+  dependencies:
+    "@types/archy": ^0.0.32
+    "@types/semver": ^7.3.10
+    archy: ~1.0.0
+    jora: ^1.0.0-beta.7
+    semver: ^7.3.7
+  checksum: 923477739343a7431292eacd24adf0987760240593f8d0d8d2125f9360ad21fb68cde59773f0a31862f240a52f9385e70848abbc35cb953c6fb149b1830f4a29
+  languageName: node
+  linkType: hard
+
 "@statoscope/report-writer@npm:5.20.0":
   version: 5.20.0
   resolution: "@statoscope/report-writer@npm:5.20.0"
   dependencies:
     "@discoveryjs/json-ext": ^0.5.5
   checksum: 4ed353a218517b78291ce8b449b795906e305c032b1c73ab08f14c2cf2a4902a60dd5d392a13880d7e0888842b966e1f5ca61f468bcdcfceb293cacec41d2fd2
+  languageName: node
+  linkType: hard
+
+"@statoscope/report-writer@npm:5.22.0":
+  version: 5.22.0
+  resolution: "@statoscope/report-writer@npm:5.22.0"
+  dependencies:
+    "@discoveryjs/json-ext": ^0.5.7
+  checksum: ac7b9eff0e1446f65c8089e107b860fe68c98e89e81c2de25b5e806e0f7fef7281d7b69df569e576b4003b12f19ccba5f4e4a179b834cfc67a078e54f17c657b
   languageName: node
   linkType: hard
 
@@ -5854,6 +6196,16 @@ __metadata:
     "@statoscope/helpers": 5.19.0
     gzip-size: ^6.0.0
   checksum: 9b4ac2320460353c530eb29dc41d7a6e60277a7c571dfbbfec2d8da5eb2e9b8ced804801c7adcd7d13f29af45adba91642af80ad976c98176a62ff8d9fc6b7f3
+  languageName: node
+  linkType: hard
+
+"@statoscope/stats-extension-compressed@npm:5.24.0":
+  version: 5.24.0
+  resolution: "@statoscope/stats-extension-compressed@npm:5.24.0"
+  dependencies:
+    "@statoscope/helpers": 5.24.0
+    gzip-size: ^6.0.0
+  checksum: 9d38c27b7e1c6dad48a324190184b61efbd352dd119b9f1c9a60165bbd86c5efce2715cee93cc1c491d99bc91e0c09fab54c95f8c0f7b8120959e934fee840e1
   languageName: node
   linkType: hard
 
@@ -5869,12 +6221,33 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@statoscope/stats-extension-custom-reports@npm:5.24.0":
+  version: 5.24.0
+  resolution: "@statoscope/stats-extension-custom-reports@npm:5.24.0"
+  dependencies:
+    "@statoscope/extensions": 5.14.1
+    "@statoscope/helpers": 5.24.0
+    "@statoscope/stats": 5.14.1
+    "@statoscope/types": 5.22.0
+  checksum: 214b3fcfd3938c402db041748494abb378b32a3c26e447b581713b5ab477806d75f2d856ed62b56c5fe2a2832d7b9493976e8a487fa05dce6ab7ff04f95d0ec7
+  languageName: node
+  linkType: hard
+
 "@statoscope/stats-extension-package-info@npm:5.19.3":
   version: 5.19.3
   resolution: "@statoscope/stats-extension-package-info@npm:5.19.3"
   dependencies:
     "@statoscope/helpers": 5.19.0
   checksum: b10c0e4a7f69130c233e6306862d7f2d636228c6f1baae2ab3ca9cc02a932f64009c10466cf8f8acf5ba54239c56b28dd185916f633343afc570875e6015257e
+  languageName: node
+  linkType: hard
+
+"@statoscope/stats-extension-package-info@npm:5.24.0":
+  version: 5.24.0
+  resolution: "@statoscope/stats-extension-package-info@npm:5.24.0"
+  dependencies:
+    "@statoscope/helpers": 5.24.0
+  checksum: e0c99307b8632de977c54f22440f8252acd7fd1cd23b277fcc14143e9bcceabc1c5c9cce9c201c92eb86da639093193cbfa2d85e1d54dff265ea21a54571537b
   languageName: node
   linkType: hard
 
@@ -5887,6 +6260,56 @@ __metadata:
     "@statoscope/stats": 5.14.1
     "@statoscope/types": 5.14.1
   checksum: d0d5b43811745a93a68f77163a44e9614a0c97e937d029d1d72ab40e0fdc491152f36e001a4f691f82e9bdfb87277b27ea0e242f07e1a62b500da864eb470c03
+  languageName: node
+  linkType: hard
+
+"@statoscope/stats-extension-stats-validation-result@npm:5.24.0":
+  version: 5.24.0
+  resolution: "@statoscope/stats-extension-stats-validation-result@npm:5.24.0"
+  dependencies:
+    "@statoscope/extensions": 5.14.1
+    "@statoscope/helpers": 5.24.0
+    "@statoscope/stats": 5.14.1
+    "@statoscope/types": 5.22.0
+  checksum: d578e4ffd89f60321bc113c9a063ca67f60cc420f6c613eecae31acef8d9ff8c017a3b8029cbe71a6e063fa60e0c94ac288cc8784499d86619f0bce060969a08
+  languageName: node
+  linkType: hard
+
+"@statoscope/stats-validator-reporter-console@npm:5.22.0":
+  version: 5.22.0
+  resolution: "@statoscope/stats-validator-reporter-console@npm:5.22.0"
+  dependencies:
+    "@statoscope/types": 5.22.0
+    chalk: ^4.1.2
+  checksum: 2ea73ab2ec4a9d60973fa020223cb9ef8cf185365da66ea476ce089735583cd9ae10de9ef22ced9a91e611a8623db9dfaf95c65a8ed7ec6755c3935ba6116990
+  languageName: node
+  linkType: hard
+
+"@statoscope/stats-validator-reporter-stats-report@npm:5.24.0":
+  version: 5.24.0
+  resolution: "@statoscope/stats-validator-reporter-stats-report@npm:5.24.0"
+  dependencies:
+    "@discoveryjs/json-ext": ^0.5.7
+    "@statoscope/report-writer": 5.22.0
+    "@statoscope/stats": 5.14.1
+    "@statoscope/stats-extension-stats-validation-result": 5.24.0
+    "@statoscope/types": 5.22.0
+    "@statoscope/webpack-model": 5.24.0
+    "@statoscope/webpack-ui": 5.24.0
+    open: ^8.4.0
+  checksum: 432a647053bc1081319b46b05d0513bc55ec280ab13d8c4c05f185f2c49d829f11ecc58c7b1e0d97269277ea33110982140ebe8f8757d0cc3be4ae67067a59f0
+  languageName: node
+  linkType: hard
+
+"@statoscope/stats-validator@npm:5.22.0":
+  version: 5.22.0
+  resolution: "@statoscope/stats-validator@npm:5.22.0"
+  dependencies:
+    "@discoveryjs/json-ext": ^0.5.7
+    "@statoscope/config": 5.22.0
+    "@statoscope/stats": 5.14.1
+    "@statoscope/types": 5.22.0
+  checksum: 987362035bfe3e73b97148e29a68329d4f737efcaa576882d09fdad5a24072f950aeb955035f937c3086d50a11cb39d375e88f7785dcbb0903518c1d7a2b7b0d
   languageName: node
   linkType: hard
 
@@ -5906,6 +6329,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@statoscope/types@npm:5.22.0":
+  version: 5.22.0
+  resolution: "@statoscope/types@npm:5.22.0"
+  dependencies:
+    "@statoscope/stats": 5.14.1
+  checksum: bee6291952d7c783f1c5379e8c37e95e7e94789a9428e16e8a28d49c7e0873b0ba63801452211ffffa09d9c5dd8393e8120a13f53f2acde822801257260b54ce
+  languageName: node
+  linkType: hard
+
 "@statoscope/webpack-model@npm:5.20.1":
   version: 5.20.1
   resolution: "@statoscope/webpack-model@npm:5.20.1"
@@ -5921,6 +6353,23 @@ __metadata:
     ajv: ^8.6.3
     md5: ^2.3.0
   checksum: 7890a3073bc70af307ffe9a8768b668b85b3b28a281d3cfd655598130321900ee0fd1fff40621b90557574d7586fdd78b0c925ca19a0e9d5bedf98d0099edeb3
+  languageName: node
+  linkType: hard
+
+"@statoscope/webpack-model@npm:5.24.0":
+  version: 5.24.0
+  resolution: "@statoscope/webpack-model@npm:5.24.0"
+  dependencies:
+    "@statoscope/extensions": 5.14.1
+    "@statoscope/helpers": 5.24.0
+    "@statoscope/stats": 5.14.1
+    "@statoscope/stats-extension-compressed": 5.24.0
+    "@statoscope/stats-extension-custom-reports": 5.24.0
+    "@statoscope/stats-extension-package-info": 5.24.0
+    "@statoscope/stats-extension-stats-validation-result": 5.24.0
+    "@statoscope/types": 5.22.0
+    md5: ^2.3.0
+  checksum: 12f8f2824b92fcfb6294af1328d0480365afa829d083a4c1c4410c29292b5f9bd7d5a63167d98b5b72057b6fc309f9b757adecb9757ef3a8c75fe3e385f28dbd
   languageName: node
   linkType: hard
 
@@ -5978,6 +6427,15 @@ __metadata:
     "@statoscope/types": 5.14.1
     highcharts: ^9.2.2
   checksum: ba6b6ccc4d12d50d9826dcc87bcc519a10ae33bc75bbbdf86e77586a147f807ee6bd20b078399c9ffceb9ef3dd1f3628fb46227abb26714e177af8e47a055452
+  languageName: node
+  linkType: hard
+
+"@statoscope/webpack-ui@npm:5.24.0":
+  version: 5.24.0
+  resolution: "@statoscope/webpack-ui@npm:5.24.0"
+  dependencies:
+    "@statoscope/types": 5.22.0
+  checksum: 642bb5ba2925263ed439b45ae4afb9bc8b3e5a31acca836f125e7014a0c188f921ad75cc21c2aa1ba3db83e9ab6138d75e1f335542cffb210c6fbe8181672635
   languageName: node
   linkType: hard
 
@@ -7441,6 +7899,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/aws-lambda@npm:^8.10.83":
+  version: 8.10.106
+  resolution: "@types/aws-lambda@npm:8.10.106"
+  checksum: 989a33a58ffb59bf3997383585d22b3f49b7ff78f7ccd42cd841bd0621dd5a24bec7bdb9b14e9f31f986679d05b8428f36df9b2f057be09f0f91267b3234810d
+  languageName: node
+  linkType: hard
+
 "@types/babel__core@npm:7.1.12":
   version: 7.1.12
   resolution: "@types/babel__core@npm:7.1.12"
@@ -7518,6 +7983,13 @@ __metadata:
   dependencies:
     "@types/node": "*"
   checksum: a04f2eb99ed3b3a8bfc2443dee9c7a7aa904f552e595e9c8459e6cf937ba03599b839197657ebb8ce6be9b93ce4b123092fa19c8bab1d2c84d58f1ef6ad9f571
+  languageName: node
+  linkType: hard
+
+"@types/btoa-lite@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "@types/btoa-lite@npm:1.0.0"
+  checksum: 4d0c3c36cc8aa5669d286d62ca45d925e3ea0db75222ebacb0d9f4fd7822b8e162da8773887e045c11d64c42373807d2ab2ad97a5d8a683d2e1c981e6a05ce33
   languageName: node
   linkType: hard
 
@@ -8125,12 +8597,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/jsonwebtoken@npm:^8.5.0":
-  version: 8.5.0
-  resolution: "@types/jsonwebtoken@npm:8.5.0"
+"@types/jsonwebtoken@npm:^8.3.3, @types/jsonwebtoken@npm:^8.5.0":
+  version: 8.5.9
+  resolution: "@types/jsonwebtoken@npm:8.5.9"
   dependencies:
     "@types/node": "*"
-  checksum: e8f9ab96ec5cf76195c0d31cf555371824b673939064efec698ca99525ce46476af54debd1f66bd732e6079e134848b97163797009c4b47a767448a0c6ddaeda
+  checksum: 33815ab02d1371b423118316b7706d2f2ec03eeee5e1494be72da50425d2384e5e0a09ea193f7a5ab4b4f6a9c5847147305f50e965f3d927a95bdf8adb471b2a
   languageName: node
   linkType: hard
 
@@ -8154,6 +8626,13 @@ __metadata:
   version: 4.14.182
   resolution: "@types/lodash@npm:4.14.182"
   checksum: 7dd137aa9dbabd632408bd37009d984655164fa1ecc3f2b6eb94afe35bf0a5852cbab6183148d883e9c73a958b7fec9a9bcf7c8e45d41195add6a18c34958209
+  languageName: node
+  linkType: hard
+
+"@types/lru-cache@npm:^5.1.0":
+  version: 5.1.1
+  resolution: "@types/lru-cache@npm:5.1.1"
+  checksum: e1d6c0085f61b16ec5b3073ec76ad1be4844ea036561c3f145fc19f71f084b58a6eb600b14128aa95809d057d28f1d147c910186ae51219f58366ffd2ff2e118
   languageName: node
   linkType: hard
 
@@ -8588,10 +9067,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/semver@npm:^7.3.6":
-  version: 7.3.9
-  resolution: "@types/semver@npm:7.3.9"
-  checksum: 60bfcfdfa7f937be2c6f4b37ddb6714fb0f27b05fe4cbdfdd596a97d35ed95d13ee410efdd88e72a66449d0384220bf20055ab7d6b5df10de4990fbd20e5cbe0
+"@types/semver@npm:^7.3.10, @types/semver@npm:^7.3.6":
+  version: 7.3.12
+  resolution: "@types/semver@npm:7.3.12"
+  checksum: 35536b2fc5602904f21cae681f6c9498e177dab3f54ae37c92f9a1b7e43c35f18bcd81e1c98c1cf0d33ee046bb06c771e9928c1c00a401d56a03f56549252a15
   languageName: node
   linkType: hard
 
@@ -8889,6 +9368,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/webpack-stats-plugin@npm:^0.3.2":
+  version: 0.3.2
+  resolution: "@types/webpack-stats-plugin@npm:0.3.2"
+  dependencies:
+    "@types/webpack": ^4
+  checksum: 2236ac444b9d07f4bca9865f01dd3a2389cc3c64ba5722bf1618a89e026a617d325b39c25b4238e46d1307b1e495d034c129aea556d080035767db0ec34e2523
+  languageName: node
+  linkType: hard
+
 "@types/webpack@npm:^4, @types/webpack@npm:^4.41.26, @types/webpack@npm:^4.41.8":
   version: 4.41.27
   resolution: "@types/webpack@npm:4.41.27"
@@ -8955,12 +9443,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/yargs@npm:^17.0.0":
-  version: 17.0.10
-  resolution: "@types/yargs@npm:17.0.10"
+"@types/yargs@npm:^17.0.0, @types/yargs@npm:^17.0.10":
+  version: 17.0.13
+  resolution: "@types/yargs@npm:17.0.13"
   dependencies:
     "@types/yargs-parser": "*"
-  checksum: f0673cbfc08e17239dc58952a88350d6c4db04a027a28a06fbad27d87b670e909f9cd9e66f9c64cebdd5071d1096261e33454a55868395f125297e5c50992ca8
+  checksum: 0ab269abc2da2223cf0a8c16d578850fbe327d40fb85724b5c3f9f6cf38d03656ef699518c05d4df3bc337339ec6d0aad7df01682a9dca4783ad1ccc7336cf12
   languageName: node
   linkType: hard
 
@@ -9794,13 +10282,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"aggregate-error@npm:^3.0.0":
-  version: 3.0.1
-  resolution: "aggregate-error@npm:3.0.1"
+"aggregate-error@npm:^3.0.0, aggregate-error@npm:^3.1.0":
+  version: 3.1.0
+  resolution: "aggregate-error@npm:3.1.0"
   dependencies:
     clean-stack: ^2.0.0
     indent-string: ^4.0.0
-  checksum: 1f922d00cc51cf9f7f6f729c0b925689ed5a464aefc1fac8309924f622000ee3741d314d864b2d776f9627236ea79daf5a83d093f6b72edc52160571160eff82
+  checksum: 1101a33f21baa27a2fa8e04b698271e64616b886795fd43c31068c07533c7b3facfcaf4e9e0cab3624bd88f729a592f1c901a1a229c9e490eafce411a8644b79
   languageName: node
   linkType: hard
 
@@ -11356,6 +11844,13 @@ __metadata:
   version: 1.0.0
   resolution: "boolbase@npm:1.0.0"
   checksum: 3e25c80ef626c3a3487c73dbfc70ac322ec830666c9ad915d11b701142fab25ec1e63eff2c450c74347acfd2de854ccde865cd79ef4db1683f7c7b046ea43bb0
+  languageName: node
+  linkType: hard
+
+"bottleneck@npm:^2.15.3":
+  version: 2.19.5
+  resolution: "bottleneck@npm:2.19.5"
+  checksum: c5eef1bbea12cef1f1405e7306e7d24860568b0f7ac5eeab706a86762b3fc65ef6d1c641c8a166e4db90f412fc5c948fc5ce8008a8cd3d28c7212ef9c3482bda
   languageName: node
   linkType: hard
 
@@ -17689,10 +18184,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"fromentries@npm:^1.2.0":
-  version: 1.2.0
-  resolution: "fromentries@npm:1.2.0"
-  checksum: ff5b279fdad143ff5c6f402c2f452412fbe0b0612f003ae5cdeb05fd32c12ecd2942d0992d880f05a08bb496eece372acc47eef89b33bd22ebb70390b9d0b430
+"fromentries@npm:^1.2.0, fromentries@npm:^1.3.1":
+  version: 1.3.2
+  resolution: "fromentries@npm:1.3.2"
+  checksum: 33729c529ce19f5494f846f0dd4945078f4e37f4e8955f4ae8cc7385c218f600e9d93a7d225d17636c20d1889106fd87061f911550861b7072f53bf891e6b341
   languageName: node
   linkType: hard
 
@@ -21853,10 +22348,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jora@npm:^1.0.0-beta.5":
-  version: 1.0.0-beta.5
-  resolution: "jora@npm:1.0.0-beta.5"
-  checksum: 965b94d5fb047420d5e9a0bf29843e7cc9fff6ea3daa7b285cfcb85587a173f1d1c8cbb32e5be4df973db5621ad6f41729c08aba59105d225b5b552dafec0f4d
+"jora@npm:^1.0.0-beta.5, jora@npm:^1.0.0-beta.7":
+  version: 1.0.0-beta.7
+  resolution: "jora@npm:1.0.0-beta.7"
+  dependencies:
+    "@discoveryjs/natural-compare": ^1.0.0
+  checksum: a3bf5385658d287eee7ee0da3d4ee288ab64f5f656d95a6611f435b6bdc674923faa57dbed7ffe75ce9cb5d1202968b21658625d423362429a801b02b717f7a6
   languageName: node
   linkType: hard
 
@@ -24929,6 +25426,22 @@ __metadata:
   version: 1.1.0
   resolution: "octokit-pagination-methods@npm:1.1.0"
   checksum: 1fb85baa6b7ce2b8e738139a806b863de80f1e9fffe30283f880a2b257cfda144c79000b61ab2b05a742818fdc3a13865a704a29b59f9a86e2498f5a9249f72f
+  languageName: node
+  linkType: hard
+
+"octokit@npm:^2.0.7":
+  version: 2.0.7
+  resolution: "octokit@npm:2.0.7"
+  dependencies:
+    "@octokit/app": ^13.0.5
+    "@octokit/core": ^4.0.4
+    "@octokit/oauth-app": ^4.0.6
+    "@octokit/plugin-paginate-rest": ^4.0.0
+    "@octokit/plugin-rest-endpoint-methods": ^6.0.0
+    "@octokit/plugin-retry": ^3.0.9
+    "@octokit/plugin-throttling": ^4.0.1
+    "@octokit/types": ^7.0.0
+  checksum: 26eeba2b3d0614db4147980f6a9acb2a595f3ea6d78e9db5ef485b2c1b4606724e8a0b4c342a9f264903242ada5c329ee82eccb3fd8df822dff1944aa5bf20db
   languageName: node
   linkType: hard
 
@@ -28798,6 +29311,7 @@ pvutils@latest:
     "@sourcegraph/stylelint-config": ^1.4.0
     "@sourcegraph/stylelint-plugin-sourcegraph": ^1.0.1
     "@sourcegraph/tsconfig": ^4.0.1
+    "@statoscope/cli": ^5.24.0
     "@statoscope/webpack-plugin": ^5.20.1
     "@storybook/addon-a11y": ^6.5.9
     "@storybook/addon-actions": ^6.5.9
@@ -28902,6 +29416,7 @@ pvutils@latest:
     "@types/webpack-bundle-analyzer": 4.4.1
     "@types/webpack-dev-server": 4.0.3
     "@types/webpack-manifest-plugin": 3.0.5
+    "@types/webpack-stats-plugin": ^0.3.2
     "@types/yauzl": ^2.9.2
     "@visx/annotation": ^2.10.0
     "@visx/axis": ^2.11.1
@@ -29029,6 +29544,7 @@ pvutils@latest:
     nice-ticks: ^1.0.1
     node-fetch: ^2.6.7
     nyc: ^15.1.0
+    octokit: ^2.0.7
     open: ^7.0.4
     open-color: ^1.8.0
     ordinal: ^1.0.3
@@ -29114,6 +29630,7 @@ pvutils@latest:
     webpack-cli: ^4.7.2
     webpack-dev-server: ^4.0.0
     webpack-manifest-plugin: ^3.1.0
+    webpack-stats-plugin: ^1.1.0
     wildcard-mock-link: ^2.0.1
     worker-loader: ^3.0.8
     yaml-ast-parser: ^0.0.43
@@ -32489,6 +33006,16 @@ pvutils@latest:
   languageName: node
   linkType: hard
 
+"universal-github-app-jwt@npm:^1.0.1":
+  version: 1.1.0
+  resolution: "universal-github-app-jwt@npm:1.1.0"
+  dependencies:
+    "@types/jsonwebtoken": ^8.3.3
+    jsonwebtoken: ^8.5.1
+  checksum: b6ebbe2533881639701e936ca54c9ec02aae1e9b36bf2495ed66632d5057e06a7d4a118ac38a3d96f63993e19a47ee6e282858e1f4a9c2ceede19a856ca08fcc
+  languageName: node
+  linkType: hard
+
 "universal-user-agent@npm:^4.0.0":
   version: 4.0.0
   resolution: "universal-user-agent@npm:4.0.0"
@@ -33588,6 +34115,13 @@ pvutils@latest:
   languageName: node
   linkType: hard
 
+"webpack-stats-plugin@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "webpack-stats-plugin@npm:1.1.0"
+  checksum: f692f3003813122a1745607c1db78fbcdf51dca570984a591f53f8e6e4a856ebb1490c43837ad4728ca2b62aed9bdadecb79e5e04efc5bff41ff075e5d809c54
+  languageName: node
+  linkType: hard
+
 "webpack-virtual-modules@npm:^0.2.2":
   version: 0.2.2
   resolution: "webpack-virtual-modules@npm:0.2.2"
@@ -34303,7 +34837,7 @@ pvutils@latest:
   languageName: node
   linkType: hard
 
-"yargs@npm:^17.0.0":
+"yargs@npm:^17.0.0, yargs@npm:^17.5.1":
   version: 17.5.1
   resolution: "yargs@npm:17.5.1"
   dependencies:

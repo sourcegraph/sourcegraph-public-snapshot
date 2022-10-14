@@ -3,10 +3,8 @@ package autoindexing
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type operations struct {
@@ -17,6 +15,7 @@ type operations struct {
 	getRecentIndexesSummary       *observation.Operation
 	getLastIndexScanForRepository *observation.Operation
 	deleteIndexByID               *observation.Operation
+	deleteIndexes                 *observation.Operation
 	queueRepoRev                  *observation.Operation
 	queueIndex                    *observation.Operation
 	queueIndexForPackage          *observation.Operation
@@ -34,8 +33,6 @@ type operations struct {
 	// Language support
 	getLanguagesRequestedBy   *observation.Operation
 	setRequestLanguageSupport *observation.Operation
-
-	handleIndexScheduler *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -54,18 +51,6 @@ func newOperations(observationContext *observation.Context) *operations {
 		})
 	}
 
-	handleIndexScheduler := observationContext.Operation(observation.Op{
-		Name:              "codeintel.indexing.HandleIndexSchedule",
-		MetricLabelValues: []string{"HandleIndexSchedule"},
-		Metrics:           m,
-		ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
-			if errors.As(err, &inference.LimitError{}) {
-				return observation.EmitForDefault.Without(observation.EmitForMetrics)
-			}
-			return observation.EmitForDefault
-		},
-	})
-
 	return &operations{
 		// Indexes
 		getIndexes:                    op("GetIndexes"),
@@ -74,6 +59,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		getRecentIndexesSummary:       op("GetRecentIndexesSummary"),
 		getLastIndexScanForRepository: op("GetLastIndexScanForRepository"),
 		deleteIndexByID:               op("DeleteIndexByID"),
+		deleteIndexes:                 op("DeleteIndexes"),
 		queueRepoRev:                  op("QueueRepoRev"),
 		queueIndex:                    op("QueueIndex"),
 		queueIndexForPackage:          op("QueueIndexForPackage"),
@@ -91,7 +77,5 @@ func newOperations(observationContext *observation.Context) *operations {
 		// Language support
 		getLanguagesRequestedBy:   op("GetLanguagesRequestedBy"),
 		setRequestLanguageSupport: op("SetRequestLanguageSupport"),
-
-		handleIndexScheduler: handleIndexScheduler,
 	}
 }

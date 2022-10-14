@@ -140,3 +140,16 @@
         border-color: var(--border-color-2);
     }
 }
+
+.copy-button {
+    visibility: hidden;
+    padding-top: 0;
+    padding-bottom: 0;
+    display: inline-flex;
+    align-items: center;
+
+    .copy-button-container:hover &,
+    .copy-button-container:focus-within & {
+        visibility: visible;
+    }
+}

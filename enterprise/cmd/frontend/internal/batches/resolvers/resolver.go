@@ -810,6 +810,19 @@ func (r *Resolver) RepoChangesetsStats(ctx context.Context, repo *graphql.ID) (g
 	return &repoChangesetsStatsResolver{stats: *stats}, nil
 }
 
+func (r *Resolver) GlobalChangesetsStats(
+	ctx context.Context,
+) (graphqlbackend.GlobalChangesetsStatsResolver, error) {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+		return nil, err
+	}
+	stats, err := r.store.GetGlobalChangesetsStats(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &globalChangesetsStatsResolver{stats: *stats}, nil
+}
+
 func (r *Resolver) RepoDiffStat(ctx context.Context, repo *graphql.ID) (*graphqlbackend.DiffStat, error) {
 	repoID, err := graphqlbackend.UnmarshalRepositoryID(*repo)
 	if err != nil {

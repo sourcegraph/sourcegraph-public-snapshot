@@ -36,6 +36,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+const searchAPIVersion = "V3"
+
 // RepoRevision describes a repository on a branch at a fixed revision.
 type RepoRevision struct {
 	Repo        *types.Repo
@@ -401,7 +403,7 @@ func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Contex
 const internalSearchClientUserAgent = "Batch Changes repository resolver"
 
 func (wr *workspaceResolver) runSearch(ctx context.Context, query string, onMatches func(matches []streamhttp.EventMatch)) (err error) {
-	req, err := streamhttp.NewRequest(wr.frontendInternalURL, query)
+	req, err := streamhttp.NewRequestWithVersion(wr.frontendInternalURL, query, searchAPIVersion)
 	if err != nil {
 		return err
 	}

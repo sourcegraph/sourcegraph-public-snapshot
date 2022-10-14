@@ -6,9 +6,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/ranking"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/repoupdater"
+	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/memo"
@@ -26,7 +25,7 @@ type Services struct {
 
 type Databases struct {
 	DB          database.DB
-	CodeIntelDB stores.CodeIntelDB
+	CodeIntelDB codeintelshared.CodeIntelDB
 }
 
 // GetServices creates or returns an already-initialized codeintel service collection.
@@ -39,14 +38,13 @@ func GetServices(dbs Databases) (Services, error) {
 var initServicesMemo = memo.NewMemoizedConstructorWithArg(func(dbs Databases) (Services, error) {
 	db, codeIntelDB := dbs.DB, dbs.CodeIntelDB
 	gitserverClient := gitserver.New(db, scopedContext("gitserver"))
-	repoUpdaterClient := repoupdater.New(scopedContext("repo-updater"))
 
 	uploadsSvc := uploads.GetService(db, codeIntelDB, gitserverClient)
 	dependenciesSvc := dependencies.GetService(db, gitserverClient)
 	policiesSvc := policies.GetService(db, uploadsSvc, gitserverClient)
-	autoIndexingSvc := autoindexing.GetService(db, uploadsSvc, dependenciesSvc, policiesSvc, gitserverClient, repoUpdaterClient)
+	autoIndexingSvc := autoindexing.GetService(db, uploadsSvc, dependenciesSvc, policiesSvc, gitserverClient)
 	codenavSvc := codenav.GetService(db, codeIntelDB, uploadsSvc, gitserverClient)
-	rankingSvc := ranking.GetService(uploadsSvc)
+	rankingSvc := ranking.GetService(db, uploadsSvc, gitserverClient)
 
 	return Services{
 		AutoIndexingService: autoIndexingSvc,
