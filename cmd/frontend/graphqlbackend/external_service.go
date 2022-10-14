@@ -51,7 +51,7 @@ func externalServiceByID(ctx context.Context, db database.DB, gqlID graphql.ID) 
 		return nil, err
 	}
 
-	if err := backend.CheckExternalServiceAccess(ctx, db, es.NamespaceUserID, es.NamespaceOrgID); err != nil {
+	if err := backend.CheckExternalServiceAccess(ctx, db); err != nil {
 		return nil, err
 	}
 	return &externalServiceResolver{logger: log.Scoped("externalServiceResolver", ""), db: db, externalService: es}, nil

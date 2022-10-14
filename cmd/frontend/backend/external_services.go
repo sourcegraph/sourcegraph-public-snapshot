@@ -6,7 +6,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -16,21 +15,10 @@ import (
 
 var ErrNoAccessExternalService = errors.New("the authenticated user does not have access to this external service")
 
-// CheckExternalServiceAccess checks whether the current user is allowed to
+// CheckExternalServiceAccess checks whether the current user is a siteAdmin as only siteAdmins can
 // access the supplied external service.
-func CheckExternalServiceAccess(ctx context.Context, db database.DB, namespaceUserID, namespaceOrgID int32) error {
-	// Fast path that doesn't need to hit DB as we can get id from context
-	a := actor.FromContext(ctx)
-	if namespaceUserID > 0 && a.IsAuthenticated() && namespaceUserID == a.UID {
-		return nil
-	}
-
-	if namespaceOrgID > 0 && auth.CheckOrgAccess(ctx, db, namespaceOrgID) == nil {
-		return nil
-	}
-
-	// Special case when external service has no owner
-	if namespaceUserID == 0 && namespaceOrgID == 0 && auth.CheckCurrentUserIsSiteAdmin(ctx, db) == nil {
+func CheckExternalServiceAccess(ctx context.Context, db database.DB) error {
+	if auth.CheckCurrentUserIsSiteAdmin(ctx, db) == nil {
 		return nil
 	}
 

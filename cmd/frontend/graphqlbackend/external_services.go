@@ -127,7 +127,7 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 	}
 
 	// 🚨 SECURITY: check access to external service
-	if err = backend.CheckExternalServiceAccess(ctx, r.db, es.NamespaceUserID, es.NamespaceOrgID); err != nil {
+	if err = backend.CheckExternalServiceAccess(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -194,7 +194,7 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 	namespaceUserID, namespaceOrgID = es.NamespaceUserID, es.NamespaceOrgID
 
 	// 🚨 SECURITY: check external service access
-	if err = backend.CheckExternalServiceAccess(ctx, r.db, es.NamespaceUserID, es.NamespaceOrgID); err != nil {
+	if err = backend.CheckExternalServiceAccess(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -248,7 +248,7 @@ func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalSer
 		}
 	}
 
-	if err := backend.CheckExternalServiceAccess(ctx, r.db, namespaceUserID, namespaceOrgID); err != nil {
+	if err := backend.CheckExternalServiceAccess(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -426,7 +426,7 @@ func (r *schemaResolver) SyncExternalService(ctx context.Context, args *syncExte
 	}
 
 	// 🚨 SECURITY: check access to external service.
-	if err = backend.CheckExternalServiceAccess(ctx, r.db, es.NamespaceUserID, es.NamespaceOrgID); err != nil {
+	if err = backend.CheckExternalServiceAccess(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -464,7 +464,7 @@ func (r *schemaResolver) CancelExternalServiceSync(ctx context.Context, args *ca
 	}
 
 	// 🚨 SECURITY: check access to external service.
-	if err = backend.CheckExternalServiceAccess(ctx, r.db, es.NamespaceUserID, es.NamespaceOrgID); err != nil {
+	if err = backend.CheckExternalServiceAccess(ctx, r.db); err != nil {
 		return nil, err
 	}
 

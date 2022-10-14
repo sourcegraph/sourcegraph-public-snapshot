@@ -111,7 +111,7 @@ func TestCheckExternalServiceAccess(t *testing.T) {
 			db.UsersFunc.SetDefaultReturn(users)
 			db.OrgMembersFunc.SetDefaultReturn(orgMembers)
 
-			result := CheckExternalServiceAccess(test.ctx, db, test.namespaceUserID, test.namespaceOrgID)
+			result := CheckExternalServiceAccess(test.ctx, db)
 
 			if test.expectNil != (result == nil) {
 				t.Errorf(test.errMessage)
