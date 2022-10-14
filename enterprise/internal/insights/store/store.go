@@ -26,7 +26,6 @@ type Interface interface {
 	SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]SeriesPoint, error)
 	RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointArgs) error
 	CountData(ctx context.Context, opts CountDataOpts) (int, error)
-	UpdateInsightSeriesRecordingTimes(ctx context.Context, seriesID string, newRecordTime time.Time) error
 	SetInsightSeriesRecordingTimes(ctx context.Context, recordingTimes []types.InsightSeriesRecordingTimes) error
 }
 
@@ -553,33 +552,6 @@ func (s *Store) RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointA
 	return nil
 }
 
-func (s *Store) UpdateInsightSeriesRecordingTimes(ctx context.Context, seriesID string, newRecordTime time.Time) error {
-	tx, err := s.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	// This will fetch insight series recording times even for jobs for a backfill when we should just append,
-	// as we don't have a way of determining whether this is a backfill.
-	seriesRecordingTimes, err := tx.GetInsightSeriesRecordingTimes(ctx, seriesID)
-	if err != nil {
-		return errors.Wrap(err, "GetInsightSeriesRecordingTimes")
-	}
-	toAdd, toDelete := updateSeriesRecordingTimes(seriesRecordingTimes.RecordingTimes, newRecordTime)
-	if len(toDelete) > 0 {
-		if err := tx.DeleteInsightSeriesRecordingTimes(ctx, types.InsightSeriesRecordingTimes{seriesID, toDelete}); err != nil {
-			return errors.Wrap(err, "DeleteInsightSeriesRecordingTimes")
-		}
-	}
-	if len(toAdd) > 0 {
-		if err := tx.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{{seriesID, toAdd}}); err != nil {
-			return errors.Wrap(err, "SetInsightSeriesRecordingTimes")
-		}
-	}
-	return nil
-}
-
 func (s *Store) SetInsightSeriesRecordingTimes(ctx context.Context, seriesRecordingTimes []types.InsightSeriesRecordingTimes) (err error) {
 	inserter := batch.NewInserterWithConflict(ctx, s.Handle(), "insight_series_recording_times", batch.MaxNumPostgresParameters, "ON CONFLICT DO NOTHING", "series_id", "recording_time")
 
@@ -630,6 +602,28 @@ func (s *Store) DeleteInsightSeriesRecordingTimes(ctx context.Context, seriesRec
 		times[i] = sqlf.Sprintf("%s", seriesRecordingTimes.RecordingTimes[i])
 	}
 	return s.Exec(ctx, sqlf.Sprintf(deleteInsightSeriesRecordingTimesByTimeStr, seriesRecordingTimes.SeriesID, sqlf.Join(times, ", ")))
+}
+
+// RecordSeriesPointsAndRecordingTimes is a wrapper around the RecordSeriesPoints and SetInsightSeriesRecordingTimes
+// functions. It makes the assumption that this is called per-series, so all the points will share the same SeriesID.
+func (s *Store) RecordSeriesPointsAndRecordingTimes(ctx context.Context, pts []RecordSeriesPointArgs, recordingTimes types.InsightSeriesRecordingTimes) error {
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	if len(pts) > 0 {
+		if err := tx.RecordSeriesPoints(ctx, pts); err != nil {
+			return err
+		}
+	}
+	if len(recordingTimes.RecordingTimes) > 0 {
+		if err := tx.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{recordingTimes}); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func updateSeriesRecordingTimes(recordingTimes []time.Time, newTime time.Time) (toAdd []time.Time, toDelete []time.Time) {

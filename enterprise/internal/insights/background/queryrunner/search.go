@@ -221,6 +221,9 @@ func (r *workHandler) persistRecordings(ctx context.Context, job *SearchJob, ser
 	}
 	defer func() { err = tx.Done(err) }()
 
+	seriesRecordingTimes := types.InsightSeriesRecordingTimes{
+		SeriesID: series.SeriesID,
+	}
 	if store.PersistMode(job.PersistMode) == store.SnapshotMode {
 		// The purpose of the snapshot is for low fidelity but recently updated data points.
 		// We store one snapshot of an insight at any time, so we prune the table whenever adding a new series.
@@ -230,9 +233,7 @@ func (r *workHandler) persistRecordings(ctx context.Context, job *SearchJob, ser
 	} else {
 		// We don't save the last snapshot time in insight_series_recording_times because of the added complexity it
 		// represents, and the ease of accessing the value of the last snapshot point when fetching series data.
-		if err := tx.UpdateInsightSeriesRecordingTimes(ctx, series.SeriesID, recordTime); err != nil {
-			return errors.Wrap(err, "UpdateInsightSeriesRecordingTimes")
-		}
+		seriesRecordingTimes.RecordingTimes = append(seriesRecordingTimes.RecordingTimes, recordTime)
 	}
 
 	// Newly queued queries should be scoped to correct repos however leaving filtering
@@ -242,7 +243,7 @@ func (r *workHandler) persistRecordings(ctx context.Context, job *SearchJob, ser
 		return errors.Wrap(err, "filterRecordingsBySeriesRepos")
 	}
 
-	if recordErr := tx.RecordSeriesPoints(ctx, filteredRecordings); recordErr != nil {
+	if recordErr := tx.RecordSeriesPointsAndRecordingTimes(ctx, filteredRecordings, seriesRecordingTimes); recordErr != nil {
 		err = errors.Append(err, errors.Wrap(recordErr, "RecordSeriesPointsCapture"))
 	}
 	return err
