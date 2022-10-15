@@ -225,6 +225,13 @@ func (s *Service) GetUnsafeDB() database.DB {
 	return s.store.GetUnsafeDB()
 }
 
+func (s *Service) SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context, batchSize int) (configurationPolicies []types.ConfigurationPolicy, err error) {
+	ctx, _, endObservation := s.operations.selectPoliciesForRepositoryMembershipUpdate.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.SelectPoliciesForRepositoryMembershipUpdate(ctx, batchSize)
+}
+
 func (s *Service) getCommitsVisibleToUpload(ctx context.Context, upload types.Upload) (commits []string, err error) {
 	var token *string
 	for first := true; first || token != nil; first = false {
