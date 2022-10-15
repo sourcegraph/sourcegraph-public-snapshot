@@ -243,6 +243,10 @@ const hovercardState = StateField.define<{ pinned: Hovercard | null; hover: Hove
         }
     },
 
+    compare(previous, next) {
+        return previous.hover === next.hover && previous.pinned === next.pinned
+    },
+
     update(state, transaction) {
         for (const effect of transaction.effects) {
             if (effect.is(setHoverHovercard)) {
@@ -338,11 +342,11 @@ const pinManager = ViewPlugin.fromClass(
                         if (!pin) {
                             return true
                         }
-                        // If we already have hovercard with the same range in the pinned
-                        // state, do nothing. That means the hovercard was just transfered
+                        // If we already have hovercard in the pinned state that contains the new
+                        // pin range, do nothing. That means the hovercard was just transfered
                         // to pinned state.
                         const currentlyPinned = view.state.field(hovercardState).pinned
-                        return currentlyPinned?.from !== pin.from || currentlyPinned?.to !== pin.to
+                        return !currentlyPinned || !isOffsetInHoverRange(pin.from, currentlyPinned)
                     }),
                     // Create hovercard object for token
                     tokenRangeToHovercard(view, true)
@@ -386,25 +390,28 @@ const hoverManager = ViewPlugin.fromClass(
                     // Debounce events so that users can move over tokens without triggering hovercards immediately
                     debounceTime(HOVER_DEBOUNCE_TIME),
 
-                    // Ignore events when hovering over an existing hovercard
-                    filter(
-                        event =>
-                            !(event.target as HTMLElement | null)?.closest(
+                    // Ignore some events
+                    filter(event => {
+                        // Ignore events when hovering over an existing hovercard.
+                        // This causes existing hovercards to stay open.
+                        if (
+                            (event.target as HTMLElement | null)?.closest(
                                 '.cm-code-intel-hovercard:not(.cm-code-intel-hovercard-pinned)'
                             )
-                    ),
+                        ) {
+                            return false
+                        }
 
-                    // Ignore events inside the current hover range. Without this
-                    // hovercards flicker when the active range is wider than the
-                    // word-under-cursor range. For example, hovering over
-                    //
-                    // import ( "io/fs" )
-                    //
-                    // will detect `io` and `fs` as separate words (and would
-                    // therefore trigger two individual word lookups), but the
-                    // hover information returned by the server is for the whole
-                    // `io/fs` range.
-                    filter(event => {
+                        // Ignore events inside the current hover range. Without this
+                        // hovercards flicker when the active range is wider than the
+                        // word-under-cursor range. For example, hovering over
+                        //
+                        // import ( "io/fs" )
+                        //
+                        // will detect `io` and `fs` as separate words (and would
+                        // therefore trigger two individual word lookups), but the
+                        // hover information returned by the server is for the whole
+                        // `io/fs` range.
                         const offset = preciseOffsetAtCoords(view, event)
                         if (offset === null) {
                             return true
@@ -416,32 +423,50 @@ const hoverManager = ViewPlugin.fromClass(
                     // To make it easier to reach the hovercard with the mouse, we determine
                     // in which direction the mouse moves and only hide the hovercard when
                     // the mouse moves away from it.
-                    scan((previous: { x: number; y: number; direction?: 'towards' | 'away' | undefined }, next) => {
-                        const currentTooltip = view.state.field(hovercardState).hover?.tooltip
-                        if (!currentTooltip) {
-                            return next
-                        }
-
-                        const tooltipView = getTooltip(view, currentTooltip)
-                        if (!tooltipView) {
-                            return next
-                        }
-
-                        const direction = this.computeMouseDirection(
-                            tooltipView.dom.getBoundingClientRect(),
-                            previous,
+                    scan(
+                        (
+                            previous: {
+                                x: number
+                                y: number
+                                target: EventTarget | null
+                                direction?: 'towards' | 'away' | undefined
+                            },
                             next
-                        )
-                        return { x: next.x, y: next.y, direction }
-                    }),
+                        ) => {
+                            const currentTooltip = view.state.field(hovercardState).hover?.tooltip
+                            if (!currentTooltip) {
+                                return next
+                            }
+
+                            const tooltipView = getTooltip(view, currentTooltip)
+                            if (!tooltipView) {
+                                return next
+                            }
+
+                            const direction = this.computeMouseDirection(
+                                tooltipView.dom.getBoundingClientRect(),
+                                previous,
+                                next
+                            )
+                            return { x: next.x, y: next.y, target: next.target, direction }
+                        }
+                    ),
 
                     // Determine the precise location of the word under the cursor.
-                    switchMap(position =>
-                        of(preciseWordAtCoords(this.view, position)).pipe(
+                    switchMap(position => {
+                        // Hide any hovercard when the mouse is over an element
+                        // that is not part of the content. This seems necessary
+                        // to make hovercards not appear and hide open
+                        // hovercards when the mouse moves over the editor's
+                        // search panel.
+                        if (!position.target || !this.view.contentDOM.contains(position.target as Node)) {
+                            return of({ hovercard: null, position })
+                        }
+                        return of(preciseWordAtCoords(this.view, position)).pipe(
                             tokenRangeToHovercard(this.view),
                             map(hovercard => ({ position, hovercard }))
                         )
-                    )
+                    })
                 )
                 .subscribe(({ hovercard, position }) => {
                     // We only change the hovercard when
