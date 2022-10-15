@@ -76,20 +76,22 @@ export const RepositoryFileTreePage: React.FunctionComponent<
         return <Redirect to={url + formatHash(hashParameters)} />
     }
 
-    const repoRevisionProps = {
-        commitID: resolvedRevision?.commitID,
-        filePath,
-        globbing,
-    }
-
     return (
         <>
             <RepoRevisionSidebar
-                {...context}
-                {...repoRevisionProps}
+                className="repo-revision-container__sidebar"
+                history={context.history}
+                revision={context.revision}
+                isLightTheme={context.isLightTheme}
+                settingsCascade={context.settingsCascade}
+                telemetryService={context.telemetryService}
+                authenticatedUser={context.authenticatedUser}
+                isSourcegraphDotCom={context.isSourcegraphDotCom}
+                extensionsController={context.extensionsController}
+                commitID={resolvedRevision?.commitID}
+                filePath={filePath}
                 repoID={repo?.id}
                 repoName={repoName}
-                className="repo-revision-container__sidebar"
                 isDir={objectType === 'tree'}
                 defaultBranch={resolvedRevision?.defaultBranch || 'HEAD'}
             />
@@ -103,7 +105,9 @@ export const RepositoryFileTreePage: React.FunctionComponent<
                             <TraceSpanProvider name="BlobPage">
                                 <BlobPage
                                     {...context}
-                                    {...repoRevisionProps}
+                                    commitID={resolvedRevision?.commitID}
+                                    filePath={filePath}
+                                    globbing={globbing}
                                     repoID={repo?.id}
                                     repoName={repoName}
                                     repoUrl={repo?.url}

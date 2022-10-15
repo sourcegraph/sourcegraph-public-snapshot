@@ -15,7 +15,7 @@ import { TreeLayer } from './TreeLayer'
 import { TreeRootProps } from './TreeRoot'
 import { hasSingleChild, NOOP, SingleChildGitTree, TreeEntryInfo } from './util'
 
-interface ChildTreeLayerProps extends Pick<TreeRootProps, Exclude<keyof TreeRootProps, 'sizeKey'>> {
+interface ChildTreeLayerProps extends Omit<TreeRootProps, 'sizeKey'> {
     fileDecorationsByPath: FileDecorationsByPath
 
     entries: TreeEntryInfo[]
@@ -34,7 +34,6 @@ export const ChildTreeLayer: React.FunctionComponent<React.PropsWithChildren<Chi
     props: ChildTreeLayerProps
 ) => {
     const sharedProps = {
-        location: props.location,
         activePath: props.activePath,
         activeNode: props.activeNode,
         depth: props.depth + 1,
@@ -77,7 +76,6 @@ export const ChildTreeLayer: React.FunctionComponent<React.PropsWithChildren<Chi
                                                         isSingleChild: false,
                                                         submodule: null,
                                                     }}
-                                                    location={props.location}
                                                     depth={sharedProps.depth}
                                                     index={0}
                                                     isLightTheme={sharedProps.isLightTheme}

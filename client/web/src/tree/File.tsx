@@ -6,7 +6,7 @@ import { mdiSourceRepository, mdiFileDocumentOutline } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { escapeRegExp, isEqual } from 'lodash'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import { FileDecoration } from 'sourcegraph'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
@@ -53,9 +53,6 @@ interface FileProps extends ThemeProps {
     customIconPath?: string
     enableMergedFileSymbolSidebar: boolean
     isGoUpTreeLink?: boolean
-
-    // For core workflow inline symbols redesign
-    location: H.Location
 }
 
 export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> = props => {
@@ -71,7 +68,6 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
         isLightTheme,
         depth,
         index,
-        location,
         enableMergedFileSymbolSidebar,
         customIconPath,
     } = props
@@ -176,9 +172,7 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
                     )}
                 </TreeLayerCell>
             </TreeRow>
-            {enableMergedFileSymbolSidebar && isActive && (
-                <Symbols activePath={entryInfo.path} location={location} style={offsetStyle} />
-            )}
+            {enableMergedFileSymbolSidebar && isActive && <Symbols activePath={entryInfo.path} style={offsetStyle} />}
         </>
     )
 }
@@ -230,10 +224,11 @@ export const SYMBOLS_QUERY = gql`
 `
 
 interface SymbolsProps
-    extends Pick<TreeLayerProps, 'activePath' | 'location'>,
+    extends Pick<TreeLayerProps, 'activePath'>,
         Pick<React.HTMLAttributes<HTMLDivElement>, 'style'> {}
 
-const Symbols: React.FunctionComponent<SymbolsProps> = ({ activePath, location, style }) => {
+const Symbols: React.FunctionComponent<SymbolsProps> = ({ activePath, style }) => {
+    const location = useLocation()
     const { repoID, revision } = useTreeRootContext()
     const { data, loading, error } = useQuery<InlineSymbolsResult>(SYMBOLS_QUERY, {
         variables: {
