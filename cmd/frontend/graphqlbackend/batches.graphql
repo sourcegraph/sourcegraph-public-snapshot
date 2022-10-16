@@ -2546,7 +2546,7 @@ enum BatchChangeState {
 }
 
 """
-A batch change is a set of related changes to apply to code across one or more repositories.
+A batch change is a set of related changes to apply to code across one or more repositories. For security, a batch change is only visible to viewers who can administer it unless it is in an opened state.
 """
 type BatchChange implements Node {
     """
