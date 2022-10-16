@@ -208,7 +208,19 @@ func (r *Resolver) BatchChange(ctx context.Context, args *graphqlbackend.BatchCh
 		return nil, err
 	}
 
-	return &batchChangeResolver{store: r.store, gitserverClient: r.gitserverClient, batchChange: batchChange}, nil
+	specResolver := &batchChangeResolver{store: r.store, batchChange: batchChange}
+	canAdminister, err := specResolver.ViewerCanAdminister(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if !canAdminister {
+		return nil, nil
+	}
+
+	return specResolver, nil
+
+	// return &batchChangeResolver{store: r.store, gitserverClient: r.gitserverClient, batchChange: batchChange}, nil
 }
 
 func (r *Resolver) ResolveWorkspacesForBatchSpec(ctx context.Context, args *graphqlbackend.ResolveWorkspacesForBatchSpecArgs) ([]graphqlbackend.ResolvedBatchSpecWorkspaceResolver, error) {

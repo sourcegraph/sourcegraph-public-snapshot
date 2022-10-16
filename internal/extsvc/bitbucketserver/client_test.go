@@ -1264,7 +1264,7 @@ func TestClient_CreateFork(t *testing.T) {
 	assert.NotNil(t, have)
 	assert.Equal(t, "go", have.Slug)
 	assert.NotEqual(t, "SGDEMO", have.Project.Key)
-
+	fmt.Printf("fork created: %v", have)
 	checkGolden(t, fixture, have)
 }
 
