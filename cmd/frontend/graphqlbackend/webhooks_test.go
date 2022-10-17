@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -25,7 +26,6 @@ func TestListWebhooks(t *testing.T) {
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 	webhookStore := database.NewMockWebhookStore()
-	//webhookStore.ListFunc.SetDefaultReturn(expectedWebhooks, nil)
 	webhooks := []*types.Webhook{
 		{
 			ID:           1,
@@ -48,10 +48,19 @@ func TestListWebhooks(t *testing.T) {
 		if options.Kind == extsvc.KindGitHub {
 			return append([]*types.Webhook{webhooks[0]}, webhooks[2:4]...), nil
 		}
+		if options.Cursor != nil && options.Cursor.Value != "" {
+			cursorVal, err := strconv.Atoi(options.Cursor.Value)
+			assert.NoError(t, err)
+			return webhooks[cursorVal-1:], nil
+		}
 		if options.LimitOffset != nil {
 			return webhooks[options.Offset:options.Limit], nil
 		}
 		return webhooks, nil
+	})
+	webhookStore.CountFunc.SetDefaultHook(func(ctx context.Context, opts database.WebhookListOptions) (int, error) {
+		whs, err := webhookStore.List(ctx, opts)
+		return len(whs), err
 	})
 
 	db := database.NewMockDB()
@@ -92,7 +101,7 @@ func TestListWebhooks(t *testing.T) {
 						webhooks(first: $first) {
 							nodes { id }
 							totalCount
-							pageInfo { hasNextPage }
+							pageInfo { hasNextPage endCursor }
 						}
 					}
 			`,
@@ -103,7 +112,7 @@ func TestListWebhooks(t *testing.T) {
 						{"id":"V2ViaG9vazoy"}
 					],
 					"totalCount":2,
-					"pageInfo":{"hasNextPage":false}
+					"pageInfo":{"hasNextPage":true, "endCursor": "V2ViaG9va0N1cnNvcjp7IkNvbHVtbiI6ImlkIiwiVmFsdWUiOiIzIiwiRGlyZWN0aW9uIjoibmV4dCJ9"}
 				}}`,
 			Variables: map[string]any{
 				"first": 2,
@@ -133,6 +142,33 @@ func TestListWebhooks(t *testing.T) {
 				}}`,
 			Variables: map[string]any{
 				"kind": extsvc.KindGitHub,
+			},
+		},
+		{
+			Focus:   true,
+			Label:   "specify cursor",
+			Context: ctx,
+			Schema:  schema,
+			Query: `query Webhooks($first: Int!, $after: String!) {
+						webhooks(first: $first, after: $after) {
+							nodes { id }
+							totalCount
+							pageInfo { hasNextPage }
+						}
+					}
+			`,
+			ExpectedResult: `{"webhooks":
+				{
+					"nodes":[
+						{"id":"V2ViaG9vazoz"},
+						{"id":"V2ViaG9vazo0"}
+					],
+					"totalCount":2,
+					"pageInfo":{"hasNextPage":false}
+				}}`,
+			Variables: map[string]any{
+				"first": 2,
+				"after": "V2ViaG9va0N1cnNvcjp7IkNvbHVtbiI6ImlkIiwiVmFsdWUiOiIzIiwiRGlyZWN0aW9uIjoibmV4dCJ9",
 			},
 		},
 	})

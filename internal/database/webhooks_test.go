@@ -308,6 +308,38 @@ func TestWebhookList(t *testing.T) {
 			assert.Equal(t, wh.CodeHostKind, extsvc.KindGitHub)
 		}
 	})
+
+	t.Run("with cursor", func(t *testing.T) {
+		t.Run("with invalid direction", func(t *testing.T) {
+			cursor := types.Cursor{
+				Column:    "id",
+				Direction: "foo",
+				Value:     "2",
+			}
+			_, err := store.List(ctx, WebhookListOptions{Cursor: &cursor})
+			assert.Equal(t, err.Error(), `parsing webhook cursor: missing or invalid cursor direction: "foo"`)
+		})
+		t.Run("with invalid column", func(t *testing.T) {
+			cursor := types.Cursor{
+				Column:    "uuid",
+				Direction: "next",
+				Value:     "2",
+			}
+			_, err := store.List(ctx, WebhookListOptions{Cursor: &cursor})
+			assert.Equal(t, err.Error(), `parsing webhook cursor: missing or invalid cursor: "uuid" "2"`)
+		})
+		t.Run("valid", func(t *testing.T) {
+			cursor := types.Cursor{
+				Column:    "id",
+				Direction: "next",
+				Value:     "4",
+			}
+			webhooks, err := store.List(ctx, WebhookListOptions{Cursor: &cursor})
+			assert.NoError(t, err)
+			assert.Len(t, webhooks, 7)
+			assert.Equal(t, webhooks[0].ID, int32(4))
+		})
+	})
 }
 
 func createWebhook(ctx context.Context, t *testing.T, store WebhookStore) *types.Webhook {

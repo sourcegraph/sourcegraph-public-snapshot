@@ -25,6 +25,7 @@ type WebhookStore interface {
 	Delete(ctx context.Context, id uuid.UUID) error
 	Update(ctx context.Context, actorUID int32, newWebhook *types.Webhook) (*types.Webhook, error)
 	List(ctx context.Context, opts WebhookListOptions) ([]*types.Webhook, error)
+	Count(ctx context.Context, opts WebhookListOptions) (int, error)
 }
 
 type webhookStore struct {
@@ -252,35 +253,87 @@ RETURNING
 	%s
 `
 
-// List the webhooks
-func (s *webhookStore) List(ctx context.Context, opt WebhookListOptions) ([]*types.Webhook, error) {
-	q := sqlf.Sprintf(webhookListQueryFmtstr, sqlf.Join(webhookColumns, ", "))
+func (s *webhookStore) list(ctx context.Context, opt WebhookListOptions, selects *sqlf.Query, scanWebhook func(rows *sql.Rows) error) error {
+	q := sqlf.Sprintf(webhookListQueryFmtstr, selects)
+	wheres := make([]*sqlf.Query, 0, 2)
 	if opt.Kind != "" {
-		q = sqlf.Sprintf("%s\nWHERE code_host_kind = %s", q, opt.Kind)
+		wheres = append(wheres, sqlf.Sprintf("code_host_kind = %s", opt.Kind))
+	}
+	cond, err := parseWebhookCursorCond(opt.Cursor)
+	if err != nil {
+		return errors.Wrap(err, "parsing webhook cursor")
+	}
+	if cond != nil {
+		wheres = append(wheres, cond)
+	}
+	if len(wheres) != 0 {
+		where := sqlf.Join(wheres, "AND")
+		q = sqlf.Sprintf("%s\nWHERE %s", q, where)
 	}
 	if opt.LimitOffset != nil {
 		q = sqlf.Sprintf("%s\n%s", q, opt.LimitOffset.SQL())
 	}
 	rows, err := s.Query(ctx, q)
 	if err != nil {
-		return []*types.Webhook{}, errors.Wrap(err, "error running query")
+		return errors.Wrap(err, "error running query")
 	}
 	defer rows.Close()
-	res := make([]*types.Webhook, 0, 20)
 	for rows.Next() {
+		if err := scanWebhook(rows); err != nil {
+			return err
+		}
+	}
+
+	return rows.Err()
+}
+
+// List the webhooks
+func (s *webhookStore) List(ctx context.Context, opt WebhookListOptions) ([]*types.Webhook, error) {
+	res := make([]*types.Webhook, 0, 20)
+
+	scanFunc := func(rows *sql.Rows) error {
 		webhook, err := scanWebhook(rows, s.key)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		res = append(res, webhook)
+		return nil
 	}
-	return res, nil
+
+	err := s.list(ctx, opt, sqlf.Join(webhookColumns, ", "), scanFunc)
+	return res, err
 }
 
 type WebhookListOptions struct {
 	Kind   string
-	Cursor *types.Cursor // TODO: incorporate into DB query
+	Cursor *types.Cursor
 	*LimitOffset
+}
+
+// parseWebhookCursorCond returns the WHERE conditions for the given cursor
+func parseWebhookCursorCond(cursor *types.Cursor) (cond *sqlf.Query, err error) {
+	var (
+		operator string
+	)
+
+	if cursor == nil || cursor.Column == "" || cursor.Value == "" {
+		return nil, nil
+	}
+
+	switch cursor.Direction {
+	case "next":
+		operator = ">="
+	case "prev":
+		operator = "<="
+	default:
+		return nil, errors.Errorf("missing or invalid cursor direction: %q", cursor.Direction)
+	}
+
+	if cursor.Column != "id" {
+		return nil, errors.Errorf("missing or invalid cursor: %q %q", cursor.Column, cursor.Value)
+	}
+
+	return sqlf.Sprintf(fmt.Sprintf("(%s) %s (%%s)", cursor.Column, operator), cursor.Value), nil
 }
 
 const webhookListQueryFmtstr = `
@@ -288,6 +341,14 @@ SELECT
 	%s
 FROM webhooks
 `
+
+func (s *webhookStore) Count(ctx context.Context, opts WebhookListOptions) (ct int, err error) {
+	opts.LimitOffset = nil
+	err = s.list(ctx, opts, sqlf.Sprintf("COUNT(*)"), func(rows *sql.Rows) error {
+		return rows.Scan(&ct)
+	})
+	return ct, err
+}
 
 func scanWebhook(sc dbutil.Scanner, key encryption.Key) (*types.Webhook, error) {
 	var (

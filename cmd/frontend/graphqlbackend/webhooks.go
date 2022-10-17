@@ -118,7 +118,7 @@ type webhookConnectionResolver struct {
 }
 
 func (r *webhookConnectionResolver) Nodes(ctx context.Context) ([]*webhookResolver, error) {
-	webhooks, err := r.db.Webhooks(keyring.Default().WebhookKey).List(ctx, r.opt)
+	webhooks, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -131,19 +131,43 @@ func (r *webhookConnectionResolver) Nodes(ctx context.Context) ([]*webhookResolv
 	return resolvers, nil
 }
 
+func copyOpts(opts database.WebhookListOptions) database.WebhookListOptions {
+	copied := database.WebhookListOptions{
+		Kind:   opts.Kind,
+		Cursor: opts.Cursor,
+	}
+	limitOffset := database.LimitOffset{
+		Limit:  opts.Limit,
+		Offset: opts.Offset,
+	}
+	copied.LimitOffset = &limitOffset
+	return copied
+}
+
 func (r *webhookConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	// TODO: implement Count db method?
-	webhooks, err := r.db.Webhooks(keyring.Default().WebhookKey).List(ctx, r.opt)
+	count, err := r.db.Webhooks(keyring.Default().WebhookLogKey).Count(ctx, r.opt)
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(webhooks)), nil
+	return int32(count), nil
+}
+
+func (r *webhookConnectionResolver) compute(ctx context.Context) ([]*types.Webhook, error) {
+	webhooks, err := r.db.Webhooks(keyring.Default().WebhookKey).List(ctx, r.opt)
+	return webhooks, err
 }
 
 func (r *webhookConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	webhooks, err := r.db.Webhooks(keyring.Default().WebhookKey).List(ctx, r.opt)
+	opt := copyOpts(r.opt)
+	if r.opt.LimitOffset != nil {
+		opt.Limit++
+	}
+	webhooks, err := r.db.Webhooks(keyring.Default().WebhookKey).List(ctx, opt)
 	if err != nil {
 		return nil, err
+	}
+	if r.opt.LimitOffset != nil {
+		opt.Limit--
 	}
 	if len(webhooks) == 0 || r.opt.LimitOffset == nil || len(webhooks) <= r.opt.Limit || r.opt.Cursor == nil {
 		return graphqlutil.HasNextPage(false), nil
@@ -153,7 +177,7 @@ func (r *webhookConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.
 	return graphqlutil.NextPageCursor(MarshalWebhookCursor(
 		&types.Cursor{
 			Column:    r.opt.Cursor.Column,
-			Value:     string(value),
+			Value:     fmt.Sprintf("%d", value),
 			Direction: r.opt.Cursor.Direction,
 		},
 	)), nil
