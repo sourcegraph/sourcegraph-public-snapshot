@@ -38,7 +38,11 @@ export const SearchButton: React.FunctionComponent<React.PropsWithChildren<Props
             <Icon aria-hidden="true" svgPath={mdiMagnify} />
         </Button>
         {!hideHelpButton && (
-            <SearchHelpDropdownButton isSourcegraphDotCom={isSourcegraphDotCom} telemetryService={telemetryService} />
+            <SearchHelpDropdownButton
+                isSourcegraphDotCom={isSourcegraphDotCom}
+                className={styles.helpButton}
+                telemetryService={telemetryService}
+            />
         )}
     </div>
 )
