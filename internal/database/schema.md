@@ -1192,10 +1192,9 @@ Foreign-key constraints:
  repos_synced        | integer                  |           | not null | 0
  repo_sync_errors    | integer                  |           | not null | 0
  repos_added         | integer                  |           | not null | 0
- repos_removed       | integer                  |           | not null | 0
+ repos_deleted       | integer                  |           | not null | 0
  repos_modified      | integer                  |           | not null | 0
  repos_unmodified    | integer                  |           | not null | 0
- repos_deleted       | integer                  |           | not null | 0
 Indexes:
     "external_service_sync_jobs_state_external_service_id" btree (state, external_service_id) INCLUDE (finished_at)
 Foreign-key constraints:
@@ -1210,8 +1209,6 @@ Foreign-key constraints:
 **repos_deleted**: The number of repos deleted as a result of this sync job.
 
 **repos_modified**: The number of existing repos whose metadata has changed during this sync job.
-
-**repos_removed**: The number of repos no longer associated with this external service.
 
 **repos_synced**: The number of repos synced during this sync job.
 

@@ -8875,7 +8875,7 @@
         },
         {
           "Name": "repos_deleted",
-          "Index": 22,
+          "Index": 19,
           "TypeName": "integer",
           "IsNullable": false,
           "Default": "0",
@@ -8898,19 +8898,6 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": "The number of existing repos whose metadata has changed during this sync job."
-        },
-        {
-          "Name": "repos_removed",
-          "Index": 19,
-          "TypeName": "integer",
-          "IsNullable": false,
-          "Default": "0",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": "The number of repos no longer associated with this external service."
         },
         {
           "Name": "repos_synced",
