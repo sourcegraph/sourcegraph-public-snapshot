@@ -24,6 +24,11 @@ import (
 var patchID uint64
 
 func (s *Server) handleCreateCommitFromPatch(w http.ResponseWriter, r *http.Request) {
+	if err := checkXRequestedWith(r.Header); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	var req protocol.CreateCommitFromPatchRequest
 	var resp protocol.CreateCommitFromPatchResponse
 	var status int

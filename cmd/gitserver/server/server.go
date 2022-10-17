@@ -554,9 +554,9 @@ func (s *Server) addrForRepo(ctx context.Context, repoName api.RepoName, gitServ
 	return gitserver.AddrForRepo(ctx, filepath.Base(os.Args[0]), s.DB, repoName, gitServerAddrs)
 }
 
-func (s *Server) checkXRequestedWith(h http.Header) error {
+func checkXRequestedWith(h http.Header) error {
 	if value := h.Get("X-Requested-With"); value != "Sourcegraph" {
-		return errors.New("incorrect headers")
+		return errors.New("header X-Requested-With is not set or is invalid")
 	}
 
 	return nil
@@ -898,6 +898,11 @@ func (s *Server) ignorePath(path string) bool {
 }
 
 func (s *Server) handleIsRepoCloneable(w http.ResponseWriter, r *http.Request) {
+	if err := checkXRequestedWith(r.Header); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	var req protocol.IsRepoCloneableRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -952,6 +957,11 @@ func (s *Server) handleIsRepoCloneable(w http.ResponseWriter, r *http.Request) {
 // unconditional; we debounce them based on the provided
 // interval, to avoid spam.
 func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
+	if err := checkXRequestedWith(r.Header); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	logger := s.Logger.Scoped("handleRepoUpdate", "synchronous http handler for repo updates")
 	var req protocol.RepoUpdateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -1025,6 +1035,11 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 // time out) call to clone a repository.
 // Asynchronous errors will have to be checked in the gitserver_repos table under last_error.
 func (s *Server) handleRepoClone(w http.ResponseWriter, r *http.Request) {
+	if err := checkXRequestedWith(r.Header); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	logger := s.Logger.Scoped("handleRepoClone", "asynchronous http handler for repo clones")
 	var req protocol.RepoCloneRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -1047,6 +1062,11 @@ func (s *Server) handleRepoClone(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
+	if err := checkXRequestedWith(r.Header); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	var (
 		logger    = s.Logger.Scoped("handleArchive", "http handler for repo archive")
 		q         = r.URL.Query()
@@ -1105,6 +1125,11 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
+	if err := checkXRequestedWith(r.Header); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	logger := s.Logger.Scoped("handleSearch", "http handler for search")
 	tr, ctx := trace.New(r.Context(), "search", "")
 	defer tr.Finish()
@@ -1325,6 +1350,11 @@ func matchCount(cm *protocol.CommitMatch) int {
 }
 
 func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
+	if err := checkXRequestedWith(r.Header); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	// 🚨 SECURITY: Only allow POST requests.
 	if strings.ToUpper(r.Method) != http.MethodPost {
 		http.Error(w, "", http.StatusMethodNotAllowed)
@@ -1469,6 +1499,11 @@ func (s *Server) ensureOperations() *operations {
 }
 
 func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
+	if err := checkXRequestedWith(r.Header); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	// 🚨 SECURITY: Only allow POST requests.
 	// See https://github.com/sourcegraph/security-issues/issues/213.
 	if strings.ToUpper(r.Method) != http.MethodPost {
@@ -1735,6 +1770,11 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 }
 
 func (s *Server) handleP4Exec(w http.ResponseWriter, r *http.Request) {
+	if err := checkXRequestedWith(r.Header); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	var req protocol.P4ExecRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)

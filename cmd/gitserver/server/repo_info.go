@@ -17,6 +17,11 @@ import (
 )
 
 func (s *Server) handleReposStats(w http.ResponseWriter, r *http.Request) {
+	if err := checkXRequestedWith(r.Header); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	b, err := os.ReadFile(filepath.Join(s.ReposDir, reposStatsName))
 	if errors.Is(err, os.ErrNotExist) {
 		// When a gitserver is new this file might not have been computed
@@ -46,6 +51,11 @@ func (s *Server) repoCloneProgress(repo api.RepoName) *protocol.RepoCloneProgres
 }
 
 func (s *Server) handleRepoCloneProgress(w http.ResponseWriter, r *http.Request) {
+	if err := checkXRequestedWith(r.Header); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	var req protocol.RepoCloneProgressRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -67,6 +77,11 @@ func (s *Server) handleRepoCloneProgress(w http.ResponseWriter, r *http.Request)
 }
 
 func (s *Server) handleRepoDelete(w http.ResponseWriter, r *http.Request) {
+	if err := checkXRequestedWith(r.Header); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	var req protocol.RepoDeleteRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)

@@ -13,6 +13,11 @@ import (
 
 func handleGetObject(logger log.Logger, getObject gitdomain.GetObjectFunc) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if err := checkXRequestedWith(r.Header); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
 		var req protocol.GetObjectRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, "decoding body", http.StatusBadRequest)

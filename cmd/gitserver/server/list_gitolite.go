@@ -10,8 +10,7 @@ import (
 )
 
 func (s *Server) handleListGitolite(w http.ResponseWriter, r *http.Request) {
-
-	if err := s.checkXRequestedWith(r.Header); err != nil {
+	if err := checkXRequestedWith(r.Header); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}

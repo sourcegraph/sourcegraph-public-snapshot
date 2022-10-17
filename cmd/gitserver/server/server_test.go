@@ -1610,20 +1610,18 @@ func TestRunCommandGraceful(t *testing.T) {
 }
 
 func TestCheckXRequestedWith(t *testing.T) {
-	s := Server{}
-
 	// No headers.
-	if err := s.checkXRequestedWith(http.Header{}); err == nil {
+	if err := checkXRequestedWith(http.Header{}); err == nil {
 		t.Fatal("expected error but got nil")
 	}
 
-	if err := s.checkXRequestedWith(http.Header{
+	if err := checkXRequestedWith(http.Header{
 		"X-Requested-With": []string{"foo"},
 	}); err == nil {
 		t.Fatal("expected error but got nil")
 	}
 
-	if err := s.checkXRequestedWith(http.Header{
+	if err := checkXRequestedWith(http.Header{
 		"X-Requested-With": []string{"Sourcegraph"},
 	}); err != nil {
 		t.Fatalf("expected nil, but got error: %v", err)
