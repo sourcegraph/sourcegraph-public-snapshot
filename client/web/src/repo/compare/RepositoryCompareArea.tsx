@@ -1,11 +1,11 @@
 import * as React from 'react'
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { Subject } from 'rxjs'
+import { ReplaySubject, Subject } from 'rxjs'
 import { filter, map, withLatestFrom } from 'rxjs/operators'
 
 import { HoverMerged } from '@sourcegraph/client-api'
@@ -84,47 +84,57 @@ export interface RepositoryCompareAreaPageProps extends PlatformContextProps {
  * Renders pages related to a repository comparison.
  */
 export function RepositoryCompareArea(props: RepositoryCompareAreaProps): JSX.Element {
-    const repositoryCompareAreaElements = useMemo(() => new Subject<HTMLElement | null>(), [])
-    const nextRepositoryCompareAreaElement = useMemo(
-        () => repositoryCompareAreaElements.next.bind(repositoryCompareAreaElements),
-        [repositoryCompareAreaElements]
+    const compareAreaElement = useRef<HTMLDivElement | null>(null)
+
+    // Element reference subjects passed to `hoverifier`
+    const compareAreaElements = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
+    useEffect(() => compareAreaElements.next(compareAreaElement.current), [compareAreaElement, compareAreaElements])
+    const hoverOverlayElements = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
+    const nextOverlayElement = useCallback(
+        (overlayElement: HTMLElement | null) => hoverOverlayElements.next(overlayElement),
+        [hoverOverlayElements]
     )
 
-    const hoverOverlayElements = useMemo(() => new Subject<HTMLElement | null>(), [])
-    const nextOverlayElement = useCallback((element: HTMLElement | null): void => hoverOverlayElements.next(element), [
-        hoverOverlayElements,
-    ])
+    // Subject that emits on every render. Source for `hoverOverlayRerenders`, used to
+    // reposition hover overlay if needed when `SearchNotebook` rerenders
+    const rerenders = useMemo(() => new ReplaySubject(1), [])
+    useEffect(() => rerenders.next())
 
-    const componentRerenders = useMemo(() => new Subject<void>(), [])
+    const { extensionsController, platformContext } = props
 
     const hoverifier = useMemo(
         () =>
             createHoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>({
                 hoverOverlayElements,
-                hoverOverlayRerenders: componentRerenders.pipe(
-                    withLatestFrom(hoverOverlayElements, repositoryCompareAreaElements),
-                    map(([, hoverOverlayElement, repositoryCompareAreaElement]) => ({
+                hoverOverlayRerenders: rerenders.pipe(
+                    withLatestFrom(hoverOverlayElements, compareAreaElements),
+                    map(([, hoverOverlayElement, blockElement]) => ({
                         hoverOverlayElement,
-                        // The root component element is guaranteed to be rendered after a componentDidUpdate
-                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                        relativeElement: repositoryCompareAreaElement!,
+                        relativeElement: blockElement,
                     })),
+                    filter(property('relativeElement', isDefined)),
                     // Can't reposition HoverOverlay if it wasn't rendered
                     filter(property('hoverOverlayElement', isDefined))
                 ),
-                getHover: hoveredToken => getHover(getLSPTextDocumentPositionParams(hoveredToken), props),
-                getDocumentHighlights: hoveredToken =>
-                    getDocumentHighlights(getLSPTextDocumentPositionParams(hoveredToken), props),
-                getActions: context => getHoverActions(props, context),
+                getHover: context =>
+                    getHover(getLSPTextDocumentPositionParameters(context, getModeFromPath(context.filePath)), {
+                        extensionsController,
+                    }),
+                getDocumentHighlights: context =>
+                    getDocumentHighlights(
+                        getLSPTextDocumentPositionParameters(context, getModeFromPath(context.filePath)),
+                        { extensionsController }
+                    ),
+                getActions: context => getHoverActions({ extensionsController, platformContext }, context),
             }),
-        [hoverOverlayElements, componentRerenders, repositoryCompareAreaElements, props]
+        [hoverOverlayElements, rerenders, compareAreaElements, extensionsController, platformContext]
     )
-    useEffect(() => () => hoverifier.unsubscribe(), [hoverifier])
 
-    const hoverState = useObservable(useMemo(() => hoverifier.hoverStateUpdates, [hoverifier]))
-    useEffect(() => {
-        componentRerenders.next()
-    }, [componentRerenders, hoverState])
+    // Passed to HoverOverlay
+    const hoverState = useObservable(hoverifier.hoverStateUpdates) || {}
+
+    // Dispose hoverifier or change/unmount.
+    useEffect(() => () => hoverifier.unsubscribe(), [hoverifier])
 
     let spec: { base: string | null; head: string | null } | null | undefined
     if (props.match.params.spec) {
@@ -160,13 +170,6 @@ export function RepositoryCompareArea(props: RepositoryCompareAreaProps): JSX.El
         )
         .useBreadcrumb(useMemo(() => ({ key: 'compare', element: <>Compare</> }), []))
 
-    // TODO(lrhacker): How to replicate this error checking in functional component?
-    // if (this.state.error) {
-    //     return (
-    //         <HeroPage icon={AlertCircleIcon} title="Error" subtitle={<ErrorMessage error={this.state.error} />} />
-    //     )
-    // }
-
     if (!props.repo) {
         return <LoadingSpinner />
     }
@@ -179,10 +182,8 @@ export function RepositoryCompareArea(props: RepositoryCompareAreaProps): JSX.El
         platformContext: props.platformContext,
     }
 
-    const { extensionsController } = props
-
     return (
-        <div className={classNames('container', styles.repositoryCompareArea)} ref={nextRepositoryCompareAreaElement}>
+        <div className={classNames('container', styles.repositoryCompareArea)} ref={compareAreaElement}>
             <RepositoryCompareHeader className="my-3" {...commonProps} />
             {spec === null ? (
                 <Alert variant="danger">Invalid comparison specifier</Alert>
@@ -206,7 +207,7 @@ export function RepositoryCompareArea(props: RepositoryCompareAreaProps): JSX.El
                     <Route key="hardcoded-key" component={NotFoundPage} />
                 </Switch>
             )}
-            {hoverState?.hoverOverlayProps && extensionsController !== null && (
+            {hoverState.hoverOverlayProps && extensionsController !== null && (
                 <WebHoverOverlay
                     {...props}
                     {...hoverState.hoverOverlayProps}
@@ -221,16 +222,17 @@ export function RepositoryCompareArea(props: RepositoryCompareAreaProps): JSX.El
     )
 }
 
-function getLSPTextDocumentPositionParams(
-    hoveredToken: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
+export function getLSPTextDocumentPositionParameters(
+    position: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec,
+    mode: string
 ): RepoSpec & RevisionSpec & ResolvedRevisionSpec & FileSpec & UIPositionSpec & ModeSpec {
     return {
-        repoName: hoveredToken.repoName,
-        revision: hoveredToken.revision,
-        filePath: hoveredToken.filePath,
-        commitID: hoveredToken.commitID,
-        position: hoveredToken,
-        mode: getModeFromPath(hoveredToken.filePath || ''),
+        repoName: position.repoName,
+        filePath: position.filePath,
+        commitID: position.commitID,
+        revision: position.revision,
+        mode,
+        position,
     }
 }
 
