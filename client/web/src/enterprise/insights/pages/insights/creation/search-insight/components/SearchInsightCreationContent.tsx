@@ -75,7 +75,7 @@ export const SearchInsightCreationContent: FC<SearchInsightCreationContentProps>
     return (
         <CreationUiLayout data-testid={dataTestId} className={className}>
             <CreationUIForm
-                aria-label="Search insight creation form"
+                aria-label="Search Insight creation form"
                 as={SearchInsightCreationForm}
                 handleSubmit={handleSubmit}
                 submitErrors={formAPI.submitErrors}
