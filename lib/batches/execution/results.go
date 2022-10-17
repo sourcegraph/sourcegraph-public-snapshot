@@ -8,6 +8,8 @@ import (
 // index in Steps.
 type AfterStepResult struct {
 	// Files are the changes made to Files by the step.
+	// TODO: This should not exist, it is a computed value of .Diff.
+	// This should not clutter the cache.
 	ChangedFiles git.Changes `json:"changedFiles"`
 	// Stdout is the output produced by the step on standard out.
 	Stdout string `json:"stdout"`

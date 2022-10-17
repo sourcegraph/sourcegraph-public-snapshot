@@ -22,6 +22,7 @@ type command struct {
 	Dir       string
 	Env       []string
 	Operation *observation.Operation
+	Cleanup   func(context.Context) error
 }
 
 // runCommand invokes the given command on the host machine. The standard output and
@@ -79,6 +80,11 @@ func runCommand(ctx context.Context, command command, logger Logger) (err error)
 	pipeReaderWaitGroup := readProcessPipes(handle, stdout, stderr)
 	exitCode, err := monitorCommand(ctx, cmd, pipeReaderWaitGroup)
 	handle.Finalize(exitCode)
+	if command.Cleanup != nil {
+		if cleanupErr := command.Cleanup(ctx); cleanupErr != nil {
+			fmt.Fprintf(handle, "failed to clean up comtainer: %s", cleanupErr)
+		}
+	}
 	if err != nil {
 		return err
 	}
@@ -88,7 +94,7 @@ func runCommand(ctx context.Context, command command, logger Logger) (err error)
 			return err
 		}
 
-		return errors.New("command failed")
+		return errors.Newf("command failed with exit code %d", exitCode)
 	}
 	return nil
 }

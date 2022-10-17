@@ -210,19 +210,29 @@ type TaskPreparingStepMetadata struct {
 }
 
 type TaskStepMetadata struct {
+	// Set for the start, progress, finished, failure events.
 	TaskID string `json:"taskID,omitempty"`
-	Step   int    `json:"step,omitempty"`
+	// Set for the start, progress, finished, failure events.
+	Step int `json:"step,omitempty"`
 
-	RunScript string            `json:"runScript,omitempty"`
-	Env       map[string]string `json:"env,omitempty"`
+	// RunScript string `json:"runScript,omitempty"`
+	// Set for the start event.
+	Env map[string]string `json:"env,omitempty"`
 
+	// Set on progress events.
 	Out string `json:"out,omitempty"`
 
-	Diff    string         `json:"diff,omitempty"`
+	// Set on the finished event.
+	// TODO: Read this from the afterstepresult down here instead.
+	Diff string `json:"diff,omitempty"`
+	// Set on the finished event.
+	// TODO: Read this from the afterstepresult down here instead.
 	Outputs map[string]any `json:"outputs,omitempty"`
 
-	ExitCode int    `json:"exitCode,omitempty"`
-	Error    string `json:"error,omitempty"`
+	// Set on the failure event.
+	ExitCode int `json:"exitCode,omitempty"`
+	// Set on the failure event.
+	Error string `json:"error,omitempty"`
 }
 
 type CacheAfterStepResultMetadata struct {
