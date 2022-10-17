@@ -6,16 +6,20 @@ import (
 	"testing"
 	"time"
 
+	"github.com/derision-test/glock"
 	"github.com/stretchr/testify/require"
 
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	itypes "github.com/sourcegraph/sourcegraph/internal/types"
 
 	"github.com/sourcegraph/log/logtest"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func Test_MonitorStartsAndStops(t *testing.T) {
@@ -23,23 +27,28 @@ func Test_MonitorStartsAndStops(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
 	defer cancel()
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
-
-	routines := NewBackgroundJobMonitor(ctx, insightsDB, &observation.TestContext).Routines()
+	repos := database.NewMockRepoStore()
+	routines := NewBackgroundJobMonitor(ctx, insightsDB, repos, &observation.TestContext).Routines()
 	goroutine.MonitorBackgroundRoutines(ctx, routines...)
 }
 
-func Test_MonitorMovesBackfillFromNewToProcessing(t *testing.T) {
+func Test_MovesBackfillFromNewToProcessing(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
-	bfs := newBackfillStore(insightsDB)
+	repos := database.NewMockRepoStore()
+	repos.ListFunc.SetDefaultReturn([]*itypes.Repo{{ID: 1, Name: "repo1"}, {ID: 2, Name: "repo2"}}, nil)
+	now := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
+	clock := glock.NewMockClockAt(now)
+	bfs := newBackfillStoreWithClock(insightsDB, clock)
 	insightsStore := store.NewInsightStore(insightsDB)
-	monitor := NewBackgroundJobMonitor(ctx, insightsDB, &observation.TestContext)
+	monitor := NewBackgroundJobMonitor(ctx, insightsDB, repos, &observation.TestContext)
 
 	series, err := insightsStore.CreateSeries(ctx, types.InsightSeries{
 		SeriesID:            "series1",
 		Query:               "asdf",
 		SampleIntervalUnit:  string(types.Month),
+		Repositories:        []string{"repo1", "repo2"},
 		SampleIntervalValue: 1,
 		GenerationMethod:    types.Search,
 	})
@@ -52,20 +61,14 @@ func Test_MonitorMovesBackfillFromNewToProcessing(t *testing.T) {
 	require.NoError(t, err)
 
 	dequeue, found, err := monitor.newBackfillStore.Dequeue(ctx, "test", nil)
-	require.NoError(t, err)
-	if !found {
-		t.Fatal(errors.New("no queued record found"))
+	handler := newBackfillHandler{
+		workerStore:   monitor.newBackfillStore,
+		backfillStore: bfs,
+		seriesReader:  store.NewInsightStore(insightsDB),
+		repoIterator:  discovery.NewSeriesRepoIterator(nil, repos),
 	}
-	job, _ := dequeue.(*BaseJob)
-	require.Equal(t, backfill.Id, job.backfillId)
-
-	modified, err := backfill.SetScope(ctx, bfs, []int32{1, 5, 7}, 100)
+	err = handler.Handle(ctx, logger, dequeue)
 	require.NoError(t, err)
-	require.Equal(t, 1, modified.repoIteratorId)
-
-	err = monitor.newBackfillStore.Requeue(ctx, dequeue.RecordID(), time.Time{})
-	require.NoError(t, err)
-	// now the record should only show up to the in progress handler
 
 	dequeue, found, err = monitor.newBackfillStore.Dequeue(ctx, "test", nil)
 	require.NoError(t, err)
@@ -79,7 +82,7 @@ func Test_MonitorMovesBackfillFromNewToProcessing(t *testing.T) {
 	if !found {
 		t.Fatal(errors.New("no queued record found"))
 	}
-	job, _ = dequeue.(*BaseJob)
+	job, _ := dequeue.(*BaseJob)
 	require.Equal(t, backfill.Id, job.backfillId)
 }
 
@@ -87,8 +90,9 @@ func TestScheduler_InitialBackfill(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	repos := database.NewMockRepoStore()
 	insightsStore := store.NewInsightStore(insightsDB)
-	monitor := NewBackgroundJobMonitor(ctx, insightsDB, &observation.TestContext)
+	monitor := NewBackgroundJobMonitor(ctx, insightsDB, repos, &observation.TestContext)
 
 	series, err := insightsStore.CreateSeries(ctx, types.InsightSeries{
 		SeriesID:            "series1",

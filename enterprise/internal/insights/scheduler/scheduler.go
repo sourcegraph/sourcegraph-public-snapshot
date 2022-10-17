@@ -5,27 +5,27 @@ import (
 	"fmt"
 	"time"
 
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
-
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-
 	"github.com/lib/pq"
-
-	log "github.com/sourcegraph/log"
-
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 
 	"github.com/keegancsmith/sqlf"
 
+	log "github.com/sourcegraph/log"
+
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/priority"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type BaseJob struct {
@@ -106,11 +106,11 @@ type BackgroundJobMonitor struct {
 	newBackfillStore    dbworkerstore.Store
 }
 
-func NewBackgroundJobMonitor(ctx context.Context, db edb.InsightsDB, obsContext *observation.Context) *BackgroundJobMonitor {
+func NewBackgroundJobMonitor(ctx context.Context, insightsDB edb.InsightsDB, repoStore database.RepoStore, obsContext *observation.Context) *BackgroundJobMonitor {
 	monitor := &BackgroundJobMonitor{}
 
-	monitor.inProgressWorker, monitor.inProgressResetter, monitor.inProgressStore = makeInProgressWorker(ctx, db, obsContext)
-	monitor.newBackfillWorker, monitor.newBackfillResetter, monitor.newBackfillStore = makeNewBackfillWorker(ctx, db, obsContext)
+	monitor.inProgressWorker, monitor.inProgressResetter, monitor.inProgressStore = makeInProgressWorker(ctx, insightsDB, obsContext)
+	monitor.newBackfillWorker, monitor.newBackfillResetter, monitor.newBackfillStore = makeNewBackfillWorker(ctx, insightsDB, repoStore, obsContext)
 
 	return monitor
 }
@@ -161,12 +161,12 @@ func makeInProgressWorker(ctx context.Context, db edb.InsightsDB, obsContext *ob
 	return worker, resetter, workerStore
 }
 
-func makeNewBackfillWorker(ctx context.Context, db edb.InsightsDB, obsContext *observation.Context) (*workerutil.Worker, *dbworker.Resetter, dbworkerstore.Store) {
-	backfillStore := newBackfillStore(db)
+func makeNewBackfillWorker(ctx context.Context, insightsDB edb.InsightsDB, repoStore database.RepoStore, obsContext *observation.Context) (*workerutil.Worker, *dbworker.Resetter, dbworkerstore.Store) {
+	backfillStore := newBackfillStore(insightsDB)
 
 	name := "backfill_new_backfill_worker"
 
-	workerStore := dbworkerstore.NewWithMetrics(db.Handle(), dbworkerstore.Options{
+	workerStore := dbworkerstore.NewWithMetrics(insightsDB.Handle(), dbworkerstore.Options{
 		Name:              fmt.Sprintf("%s_store", name),
 		TableName:         "insights_background_jobs",
 		ViewName:          "insights_jobs_backfill_new",
@@ -180,6 +180,8 @@ func makeNewBackfillWorker(ctx context.Context, db edb.InsightsDB, obsContext *o
 	task := newBackfillHandler{
 		workerStore:   workerStore,
 		backfillStore: backfillStore,
+		seriesReader:  store.NewInsightStore(insightsDB),
+		repoIterator:  discovery.NewSeriesRepoIterator(nil, repoStore), //TODO add in a real all repos iterator
 	}
 
 	worker := dbworker.NewWorker(ctx, workerStore, &task, workerutil.WorkerOptions{
@@ -240,22 +242,81 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 	return nil
 }
 
+type SeriesReader interface {
+	GetDataSeriesByID(ctx context.Context, id int) (*types.InsightSeries, error)
+}
+
+// newBackfillHandler - Handles series that are in the "new" state
+// The new state is the initial state post creation.  This handler is responsible only for determining the work
+// that needs to be completed to backfill this series.  It then queues the record to run the acutal backfill.
 type newBackfillHandler struct {
 	workerStore   dbworkerstore.Store
 	backfillStore *BackfillStore
+	seriesReader  SeriesReader
+	repoIterator  discovery.SeriesRepoIterator
+	costAnalyzer  priority.QueryAnalyzer
 }
 
 var _ workerutil.Handler = &newBackfillHandler{}
 
-func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
+func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
 	logger.Info("newBackfillHandler called", log.Int("recordId", record.RecordID()))
+	job, ok := record.(*BaseJob)
+	if !ok {
+		return errors.New("invalid job received")
+	}
+	// setup transactions
+	queueTx, err := h.workerStore.Handle().Transact(ctx)
+	if err != nil {
+		return err
+	}
+	backfillTx, err := h.backfillStore.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		queueTx.Done(err)
+		backfillTx.Done(err)
+	}()
 
-	// load repos
-	// estimate cost
-	// update backfill record (implies creating repo iterator)
-	// requeue
+	// load backfill and series
+	backfill, err := backfillTx.loadBackfill(ctx, job.backfillId)
+	if err != nil {
+		return errors.Wrap(err, "loadBackfill")
+	}
+	series, err := h.seriesReader.GetDataSeriesByID(ctx, backfill.SeriesId)
+	if err != nil {
+		return errors.Wrap(err, "GetDataSeriesByID")
+	}
 
-	return nil
+	// set backfill repo scope
+	repoIds := []int32{}
+	reposIterator, err := h.repoIterator.SeriesRepoIterator(ctx, series)
+	if err != nil {
+		return errors.Wrap(err, "repoIterator.SeriesRepoIterator")
+	}
+	err = reposIterator.ForEach(ctx, func(repoName string, id api.RepoID) error {
+		repoIds = append(repoIds, int32(id))
+		return nil
+	})
+	if err != nil {
+		return errors.Wrap(err, "reposIterator.ForEach")
+	}
+
+	//TODO: use query costing
+	backfill, err = backfill.SetScope(ctx, backfillTx, repoIds, 0)
+	if err != nil {
+		return errors.Wrap(err, "backfill.SetScope")
+	}
+
+	// update series state
+	err = backfill.setState(ctx, backfillTx, BackfillStateProcessing)
+	if err != nil {
+		return errors.Wrap(err, "backfill.setState")
+	}
+
+	// enqueue backfill for next step in processing
+	return enqueueBackfill(ctx, queueTx, backfill)
 }
 
 type Scheduler struct {

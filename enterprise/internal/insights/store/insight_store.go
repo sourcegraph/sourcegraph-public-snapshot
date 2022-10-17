@@ -341,6 +341,7 @@ group by for_time, reason;
 
 type GetDataSeriesArgs struct {
 	// NextRecordingBefore will filter for results for which the next_recording_after field falls before the specified time.
+	ID                  int
 	NextRecordingBefore time.Time
 	NextSnapshotBefore  time.Time
 	IncludeDeleted      bool
@@ -375,6 +376,9 @@ func (s *InsightStore) GetDataSeries(ctx context.Context, args GetDataSeriesArgs
 	if len(args.SeriesID) > 0 {
 		preds = append(preds, sqlf.Sprintf("series_id = %s", args.SeriesID))
 	}
+	if args.ID != 0 {
+		preds = append(preds, sqlf.Sprintf("id = %d", args.ID))
+	}
 	if args.GlobalOnly {
 		preds = append(preds, sqlf.Sprintf("(repositories IS NULL OR CARDINALITY(repositories) = 0)"))
 	}
@@ -384,6 +388,21 @@ func (s *InsightStore) GetDataSeries(ctx context.Context, args GetDataSeriesArgs
 
 	q := sqlf.Sprintf(getInsightDataSeriesSql, sqlf.Join(preds, "\n AND"))
 	return scanDataSeries(s.Query(ctx, q))
+}
+
+func (s *InsightStore) GetDataSeriesByID(ctx context.Context, id int) (*types.InsightSeries, error) {
+	matchingSeries, err := s.GetDataSeries(ctx, GetDataSeriesArgs{ID: id, IncludeDeleted: false})
+	if err != nil {
+		return nil, err
+	}
+	switch len(matchingSeries) {
+	case 0:
+		return nil, errors.New("series not found")
+	case 1:
+		return &matchingSeries[0], nil
+	default:
+		return nil, errors.New("multiple series match id")
+	}
 }
 
 // GetScopedSearchSeriesNeedBackfill Is a special purpose func to get only just in time series that should
