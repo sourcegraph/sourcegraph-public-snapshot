@@ -247,6 +247,9 @@ SpecFile.argTypes = {
     supersedingBatchSpec: {
         defaultValue: false,
     },
+    viewerCanAdminister: {
+        defaultValue: false,
+    }
 }
 
 export const Archived = Template.bind({})
