@@ -12,16 +12,16 @@ const decorator: DecoratorFn = story => <WebStory>{() => story()}</WebStory>
 const config: Meta = {
     title: 'web/insights/DashboardSelect',
     decorators: [decorator],
-    parameters: {
-        chromatic: {
-            viewports: [576, 1440],
-        },
-    },
 }
 
 export default config
 
 const DASHBOARDS: InsightDashboard[] = [
+    {
+        type: InsightsDashboardType.Virtual,
+        id: 'ALL_INSIGHTS',
+        title: 'All Insights',
+    },
     {
         type: InsightsDashboardType.Custom,
         id: '101',
@@ -44,26 +44,42 @@ const DASHBOARDS: InsightDashboard[] = [
         type: InsightsDashboardType.Custom,
         id: '104',
         title: 'Sourcegraph',
-        owners: [{ id: '104', title: 'Sourcegraph', type: InsightsDashboardOwnerType.Personal }],
+        owners: [{ id: '104', title: 'Sourcegraph', type: InsightsDashboardOwnerType.Organization }],
     },
     {
         type: InsightsDashboardType.Custom,
         id: '105',
-        title: 'Loooong looo0000ong name of dashboard',
-        owners: [{ id: '104', title: 'Sourcegraph', type: InsightsDashboardOwnerType.Personal }],
+        title: 'Loooong looo0000ong name of dashboard 1',
+        owners: [{ id: '104', title: 'Sourcegraph', type: InsightsDashboardOwnerType.Organization }],
     },
     {
         type: InsightsDashboardType.Custom,
         id: '106',
-        title: 'Loooong looo0000ong name of dashboard',
-        owners: [{ id: '104', title: 'Sourcegraph', type: InsightsDashboardOwnerType.Personal }],
+        title: 'Loooong looo0000ong name of dashboard 2',
+        owners: [{ id: '104', title: 'Sourcegraph', type: InsightsDashboardOwnerType.Organization }],
+    },
+    {
+        type: InsightsDashboardType.Custom,
+        id: '107',
+        title: 'Global dashboard',
+        owners: [{ id: '101', title: 'Personal', type: InsightsDashboardOwnerType.Global }],
+    },
+    {
+        type: InsightsDashboardType.Custom,
+        id: '108',
+        title: 'Global FE dashboard',
+        owners: [{ id: '101', title: 'Personal', type: InsightsDashboardOwnerType.Global }],
     },
 ]
 
 export const DashboardSelectStory: Story = () => {
-    const [value, setValue] = useState<string>()
+    const [dashboard, setDashboard] = useState<InsightDashboard | undefined>()
 
-    return <DashboardSelect value={value} dashboards={DASHBOARDS} onSelect={dashboard => setValue(dashboard.id)} />
+    return (
+        <section style={{ margin: '2rem' }}>
+            <DashboardSelect dashboard={dashboard} dashboards={DASHBOARDS} onSelect={setDashboard} />
+        </section>
+    )
 }
 
 DashboardSelectStory.storyName = 'DashboardSelect'
