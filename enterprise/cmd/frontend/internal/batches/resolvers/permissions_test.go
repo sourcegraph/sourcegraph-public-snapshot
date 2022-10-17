@@ -1414,7 +1414,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		// Create 2 changesets for 2 repositories
 		changesetBaseRefOid := "f00b4r"
 		changesetHeadRefOid := "b4rf00"
-		mockRepoComparison(t, *gitserverClient, changesetBaseRefOid, changesetHeadRefOid, testDiff)
+		mockRepoComparison(t, gitserverClient, changesetBaseRefOid, changesetHeadRefOid, testDiff)
 		changesetDiffStat := apitest.DiffStat{Added: 2, Deleted: 2}
 
 		changesets := make([]*btypes.Changeset, 0, len(repos))

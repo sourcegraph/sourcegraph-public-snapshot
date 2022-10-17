@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -50,10 +51,12 @@ func testBitbucketCloudWebhook(db *sql.DB) func(*testing.T) {
 		}
 		esURL := bitbucketCloudExternalServiceURL
 
+		gsClient := gitserver.NewMockClient()
+
 		t.Run("ServeHTTP", func(t *testing.T) {
 			t.Run("missing external service", func(t *testing.T) {
 				store := bitbucketCloudTestSetup(t, db)
-				h := NewBitbucketCloudWebhook(store)
+				h := NewBitbucketCloudWebhook(store, gsClient)
 
 				u, err := extsvc.WebhookURL(extsvc.KindBitbucketCloud, 12345, cfg, esURL)
 				assert.Nil(t, err)
@@ -69,7 +72,7 @@ func testBitbucketCloudWebhook(db *sql.DB) func(*testing.T) {
 
 			t.Run("invalid external service", func(t *testing.T) {
 				store := bitbucketCloudTestSetup(t, db)
-				h := NewBitbucketCloudWebhook(store)
+				h := NewBitbucketCloudWebhook(store, gsClient)
 
 				u, err := extsvc.WebhookURL(extsvc.KindBitbucketCloud, 12345, cfg, esURL)
 				assert.Nil(t, err)
@@ -86,7 +89,7 @@ func testBitbucketCloudWebhook(db *sql.DB) func(*testing.T) {
 
 			t.Run("missing secret", func(t *testing.T) {
 				store := bitbucketCloudTestSetup(t, db)
-				h := NewBitbucketCloudWebhook(store)
+				h := NewBitbucketCloudWebhook(store, gsClient)
 				es := createBitbucketCloudExternalService(t, ctx, store.ExternalServices())
 
 				u, err := extsvc.WebhookURL(extsvc.KindBitbucketCloud, es.ID, cfg, esURL)
@@ -104,7 +107,7 @@ func testBitbucketCloudWebhook(db *sql.DB) func(*testing.T) {
 
 			t.Run("incorrect secret", func(t *testing.T) {
 				store := bitbucketCloudTestSetup(t, db)
-				h := NewBitbucketCloudWebhook(store)
+				h := NewBitbucketCloudWebhook(store, gsClient)
 				es := createBitbucketCloudExternalService(t, ctx, store.ExternalServices())
 
 				u, err := extsvc.WebhookURL(extsvc.KindBitbucketCloud, es.ID, cfg, esURL)
@@ -122,7 +125,7 @@ func testBitbucketCloudWebhook(db *sql.DB) func(*testing.T) {
 
 			t.Run("missing body", func(t *testing.T) {
 				store := bitbucketCloudTestSetup(t, db)
-				h := NewBitbucketCloudWebhook(store)
+				h := NewBitbucketCloudWebhook(store, gsClient)
 
 				u, err := extsvc.WebhookURL(extsvc.KindBitbucketCloud, 12345, cfg, "https://bitbucket.org/")
 				assert.Nil(t, err)
@@ -138,7 +141,7 @@ func testBitbucketCloudWebhook(db *sql.DB) func(*testing.T) {
 
 			t.Run("unreadable body", func(t *testing.T) {
 				store := bitbucketCloudTestSetup(t, db)
-				h := NewBitbucketCloudWebhook(store)
+				h := NewBitbucketCloudWebhook(store, gsClient)
 				es := createBitbucketCloudExternalService(t, ctx, store.ExternalServices())
 
 				u, err := extsvc.WebhookURL(extsvc.KindBitbucketCloud, es.ID, cfg, esURL)
@@ -155,7 +158,7 @@ func testBitbucketCloudWebhook(db *sql.DB) func(*testing.T) {
 
 			t.Run("malformed body", func(t *testing.T) {
 				store := bitbucketCloudTestSetup(t, db)
-				h := NewBitbucketCloudWebhook(store)
+				h := NewBitbucketCloudWebhook(store, gsClient)
 				es := createBitbucketCloudExternalService(t, ctx, store.ExternalServices())
 
 				u, err := extsvc.WebhookURL(extsvc.KindBitbucketCloud, es.ID, cfg, esURL)
@@ -172,7 +175,7 @@ func testBitbucketCloudWebhook(db *sql.DB) func(*testing.T) {
 
 			t.Run("invalid event key", func(t *testing.T) {
 				store := bitbucketCloudTestSetup(t, db)
-				h := NewBitbucketCloudWebhook(store)
+				h := NewBitbucketCloudWebhook(store, gsClient)
 				es := createBitbucketCloudExternalService(t, ctx, store.ExternalServices())
 
 				u, err := extsvc.WebhookURL(extsvc.KindBitbucketCloud, es.ID, cfg, esURL)
@@ -195,7 +198,7 @@ func testBitbucketCloudWebhook(db *sql.DB) func(*testing.T) {
 
 			t.Run("valid events", func(t *testing.T) {
 				store := bitbucketCloudTestSetup(t, db)
-				h := NewBitbucketCloudWebhook(store)
+				h := NewBitbucketCloudWebhook(store, gsClient)
 				es := createBitbucketCloudExternalService(t, ctx, store.ExternalServices())
 				repo := createBitbucketCloudRepo(t, ctx, store.Repos(), es)
 

@@ -884,3 +884,12 @@ export function queryAccessTokens(args: { first?: number }): Observable<SiteAdmi
         map(data => data.site.accessTokens)
     )
 }
+
+export const SITE_EXTERNAL_SERVICE_CONFIG = gql`
+    query SiteExternalServiceConfig {
+        site {
+            externalServicesFromFile
+            allowEditExternalServicesWithFile
+        }
+    }
+`

@@ -5,6 +5,7 @@ import (
 
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -25,13 +26,14 @@ type UploadConnectionResolver struct {
 }
 
 func NewUploadConnectionResolver(uploadsSvc UploadsService, autoindexingSvc AutoIndexingService, policySvc PolicyService, uploadsResolver *UploadsResolver, prefetcher *Prefetcher, traceErrs *observation.ErrCollector) LSIFUploadConnectionResolver {
+	db := autoindexingSvc.GetUnsafeDB()
 	return &UploadConnectionResolver{
 		uploadsSvc:       uploadsSvc,
 		autoindexingSvc:  autoindexingSvc,
 		policySvc:        policySvc,
 		uploadsResolver:  uploadsResolver,
 		prefetcher:       prefetcher,
-		locationResolver: NewCachedLocationResolver(autoindexingSvc.GetUnsafeDB()),
+		locationResolver: NewCachedLocationResolver(db, gitserver.NewClient(db)),
 		traceErrs:        traceErrs,
 	}
 }

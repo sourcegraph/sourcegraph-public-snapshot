@@ -3,6 +3,7 @@ import { cloneDeep, isFunction } from 'lodash'
 import { createAggregateError, ErrorLike, isErrorLike, parseJSONCOrError } from '@sourcegraph/common'
 
 import * as GQL from '../schema'
+import { Settings as GeneratedSettingsType } from '../schema/settings.schema'
 
 /**
  * A dummy type to represent the "subject" for client settings (i.e., settings stored in the client application,
@@ -15,30 +16,9 @@ export interface IClient {
 }
 
 /**
- * A subset of the settings JSON Schema type containing the minimum needed by this library.
+ * A JSON Settings Schema type containing properties to prevent its misuse in a place of SettingsCascade.
  */
-export interface Settings {
-    extensions?: { [extensionID: string]: boolean }
-    'codeIntel.referencesPanel'?: 'tree-view' | 'tabbed'
-    experimentalFeatures?: {
-        batchChangesExecution?: boolean
-        showSearchContext?: boolean
-        showSearchContextManagement?: boolean
-        fuzzyFinder?: boolean
-        fuzzyFinderAll?: boolean
-        fuzzyFinderCaseInsensitiveFileCountThreshold?: number
-        fuzzyFinderActions?: boolean
-        clientSearchResultRanking?: string
-        coolCodeIntel?: boolean
-        codeIntelRepositoryBadge?: {
-            enabled: boolean
-            forNerds?: boolean
-        }
-        enableGoImportsSearchQueryTransform?: boolean
-        enableLegacyExtensions?: boolean
-        enableLazyFileResultSyntaxHighlighting?: boolean
-        enableMergedFileSymbolSidebar?: boolean
-    }
+export interface Settings extends GeneratedSettingsType {
     [key: string]: any
 
     // These properties should never exist on Settings but do exist on SettingsCascade. This makes it so the

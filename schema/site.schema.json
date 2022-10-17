@@ -246,6 +246,12 @@
           "enum": ["enabled", "disabled"],
           "default": "disabled"
         },
+        "rubyPackages": {
+          "description": "Allow adding Ruby package host connections",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
+        },
         "pagure": {
           "description": "Allow adding Pagure code host connections",
           "type": "string",

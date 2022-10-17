@@ -19,9 +19,7 @@ export const siteAdminProductLicenseFragment = gql`
             id
             name
             account {
-                id
-                username
-                displayName
+                ...ProductLicenseSubscriptionAccount
             }
             activeLicense {
                 id
@@ -30,12 +28,22 @@ export const siteAdminProductLicenseFragment = gql`
         }
         licenseKey
         info {
-            productNameWithBrand
-            tags
-            userCount
-            expiresAt
+            ...ProductLicenseInfoFields
         }
         createdAt
+    }
+
+    fragment ProductLicenseInfoFields on ProductLicenseInfo {
+        productNameWithBrand
+        tags
+        userCount
+        expiresAt
+    }
+
+    fragment ProductLicenseSubscriptionAccount on User {
+        id
+        username
+        displayName
     }
 `
 

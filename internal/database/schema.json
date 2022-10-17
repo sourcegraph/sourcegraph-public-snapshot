@@ -6279,6 +6279,65 @@
       "Triggers": []
     },
     {
+      "Name": "codeintel_commit_dates",
+      "Comment": "Maps commits within a repository to the commit date as reported by gitserver.",
+      "Columns": [
+        {
+          "Name": "commit_bytea",
+          "Index": 2,
+          "TypeName": "bytea",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Identifies the 40-character commit hash."
+        },
+        {
+          "Name": "committed_at",
+          "Index": 3,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The commit date (may be -infinity if unresolvable)."
+        },
+        {
+          "Name": "repository_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Identifies a row in the `repo` table."
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "codeintel_commit_dates_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_commit_dates_pkey ON codeintel_commit_dates USING btree (repository_id, commit_bytea)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (repository_id, commit_bytea)"
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
       "Name": "codeintel_inference_scripts",
       "Comment": "Contains auto-index job inference Lua scripts as an alternative to setting via environment variables.",
       "Columns": [
@@ -8846,6 +8905,84 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
+        },
+        {
+          "Name": "repo_sync_errors",
+          "Index": 17,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The number of times an error occurred syncing a repo during this sync job."
+        },
+        {
+          "Name": "repos_added",
+          "Index": 18,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The number of new repos discovered during this sync job."
+        },
+        {
+          "Name": "repos_deleted",
+          "Index": 19,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The number of repos deleted as a result of this sync job."
+        },
+        {
+          "Name": "repos_modified",
+          "Index": 20,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The number of existing repos whose metadata has changed during this sync job."
+        },
+        {
+          "Name": "repos_synced",
+          "Index": 16,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The number of repos synced during this sync job."
+        },
+        {
+          "Name": "repos_unmodified",
+          "Index": 21,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The number of existing repos whose metadata did not change during this sync job."
         },
         {
           "Name": "started_at",

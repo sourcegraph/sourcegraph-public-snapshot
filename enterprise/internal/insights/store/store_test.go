@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestSeriesPoints(t *testing.T) {
@@ -153,7 +152,7 @@ func TestCountData(t *testing.T) {
 	optionalRepoID := func(v api.RepoID) *api.RepoID { return &v }
 
 	// Record some duplicate data points.
-	records := []RecordSeriesPointArgs{
+	for _, record := range []RecordSeriesPointArgs{
 		{
 			SeriesID:    "one",
 			Point:       SeriesPoint{Time: timeValue("2020-03-01T00:00:00Z"), Value: 1.1},
@@ -181,9 +180,10 @@ func TestCountData(t *testing.T) {
 			Point:       SeriesPoint{Time: timeValue("2020-03-03T00:01:00Z"), Value: 3.3},
 			PersistMode: RecordMode,
 		},
-	}
-	if err := store.RecordSeriesPoints(ctx, records); err != nil {
-		t.Fatal(err)
+	} {
+		if err := store.RecordSeriesPoint(ctx, record); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	// How many data points on 02-29?
@@ -230,17 +230,12 @@ func TestRecordSeriesPoints(t *testing.T) {
 	permStore := NewInsightPermissionStore(postgres)
 	store := NewWithClock(insightsDB, permStore, clock)
 
-	// First test it does not error with no records.
-	if err := store.RecordSeriesPoints(ctx, []RecordSeriesPointArgs{}); err != nil {
-		t.Fatal(err)
-	}
-
 	optionalString := func(v string) *string { return &v }
 	optionalRepoID := func(v api.RepoID) *api.RepoID { return &v }
 
 	current := time.Date(2021, time.September, 10, 10, 0, 0, 0, time.UTC)
 
-	records := []RecordSeriesPointArgs{
+	for _, record := range []RecordSeriesPointArgs{
 		{
 			SeriesID:    "one",
 			Point:       SeriesPoint{Time: current, Value: 1.1},
@@ -260,18 +255,19 @@ func TestRecordSeriesPoints(t *testing.T) {
 			Point:       SeriesPoint{Time: current.Add(-time.Hour * 24 * 28), Value: 3.3},
 			RepoName:    optionalString("repo1"),
 			RepoID:      optionalRepoID(3),
-			PersistMode: SnapshotMode,
+			PersistMode: RecordMode,
 		},
 		{
 			SeriesID:    "one",
 			Point:       SeriesPoint{Time: current.Add(-time.Hour * 24 * 42), Value: 3.3},
 			RepoName:    optionalString("repo1"),
 			RepoID:      optionalRepoID(3),
-			PersistMode: SnapshotMode,
+			PersistMode: RecordMode,
 		},
-	}
-	if err := store.RecordSeriesPoints(ctx, records); err != nil {
-		t.Fatal(err)
+	} {
+		if err := store.RecordSeriesPoint(ctx, record); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	want := []SeriesPoint{
@@ -338,7 +334,7 @@ func TestRecordSeriesPointsSnapshotOnly(t *testing.T) {
 
 	current := time.Date(2021, time.September, 10, 10, 0, 0, 0, time.UTC)
 
-	records := []RecordSeriesPointArgs{
+	for _, record := range []RecordSeriesPointArgs{
 		{
 			SeriesID:    "one",
 			Point:       SeriesPoint{Time: current, Value: 1.1},
@@ -346,9 +342,10 @@ func TestRecordSeriesPointsSnapshotOnly(t *testing.T) {
 			RepoID:      optionalRepoID(3),
 			PersistMode: SnapshotMode,
 		},
-	}
-	if err := store.RecordSeriesPoints(ctx, records); err != nil {
-		t.Fatal(err)
+	} {
+		if err := store.RecordSeriesPoint(ctx, record); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	// check snapshots table has a row
@@ -401,7 +398,7 @@ func TestRecordSeriesPointsRecordingOnly(t *testing.T) {
 
 	current := time.Date(2021, time.September, 10, 10, 0, 0, 0, time.UTC)
 
-	records := []RecordSeriesPointArgs{
+	for _, record := range []RecordSeriesPointArgs{
 		{
 			SeriesID:    "one",
 			Point:       SeriesPoint{Time: current, Value: 1.1},
@@ -409,9 +406,10 @@ func TestRecordSeriesPointsRecordingOnly(t *testing.T) {
 			RepoID:      optionalRepoID(3),
 			PersistMode: RecordMode,
 		},
-	}
-	if err := store.RecordSeriesPoints(ctx, records); err != nil {
-		t.Fatal(err)
+	} {
+		if err := store.RecordSeriesPoint(ctx, record); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	// check snapshots table has a row
@@ -465,7 +463,7 @@ func TestDeleteSnapshots(t *testing.T) {
 	current := time.Date(2021, time.September, 10, 10, 0, 0, 0, time.UTC)
 
 	seriesID := "one"
-	records := []RecordSeriesPointArgs{
+	for _, record := range []RecordSeriesPointArgs{
 		{
 			SeriesID:    seriesID,
 			Point:       SeriesPoint{Time: current, Value: 1.1},
@@ -480,9 +478,10 @@ func TestDeleteSnapshots(t *testing.T) {
 			RepoID:      optionalRepoID(3),
 			PersistMode: RecordMode,
 		},
-	}
-	if err := store.RecordSeriesPoints(ctx, records); err != nil {
-		t.Fatal(err)
+	} {
+		if err := store.RecordSeriesPoint(ctx, record); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	// first check that we have one recording and one snapshot
@@ -623,16 +622,5 @@ func TestDelete(t *testing.T) {
 	}
 	if getCountForSeries(ctx, timeseriesStore, SnapshotMode, "series2") != 1 {
 		t.Errorf("expected 1 count for series2 in snapshot table")
-	}
-}
-
-func getTableForPersistMode(mode PersistMode) (string, error) {
-	switch mode {
-	case RecordMode:
-		return recordingTable, nil
-	case SnapshotMode:
-		return snapshotsTable, nil
-	default:
-		return "", errors.Newf("unsupported insights series point persist mode: %v", mode)
 	}
 }

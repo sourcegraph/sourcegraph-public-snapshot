@@ -1,7 +1,9 @@
 import path from 'path'
 
 import * as esbuild from 'esbuild'
+// eslint-disable-next-line no-restricted-imports
 import { EditorFeature, featuresArr } from 'monaco-editor-webpack-plugin/out/features'
+// eslint-disable-next-line no-restricted-imports
 import { EditorLanguage, languagesArr } from 'monaco-editor-webpack-plugin/out/languages'
 
 import { MONACO_LANGUAGES_AND_FEATURES } from '@sourcegraph/build-config'
