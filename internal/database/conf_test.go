@@ -5,8 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -43,9 +41,9 @@ func TestSiteCreate_RejectInvalidJSON(t *testing.T) {
 
 	malformedJSON := "[This is malformed.}"
 
-	_, err := db.Conf().SiteCreateIfUpToDate(ctx, nil, malformedJSON, false)
+	_, err := db.Conf().SiteCreateIfUpToDate(ctx, nil, malformedJSON)
 
-	if err == nil || !strings.Contains(err.Error(), "failed to parse JSON") {
+	if err == nil || !strings.Contains(err.Error(), "invalid settings JSON") {
 		t.Fatalf("expected parse error after creating configuration with malformed JSON, got: %+v", err)
 	}
 }
@@ -82,11 +80,11 @@ func TestSiteCreateIfUpToDate(t *testing.T) {
 				{
 					input{
 						lastID:   0,
-						contents: `{"defaultRateLimit": 0,"auth.providers": []}`,
+						contents: `"This is a test."`,
 					},
 					output{
 						ID:       2,
-						contents: `{"defaultRateLimit": 0,"auth.providers": []}`,
+						contents: `"This is a test."`,
 					},
 				},
 			},
@@ -97,21 +95,21 @@ func TestSiteCreateIfUpToDate(t *testing.T) {
 				{
 					input{
 						lastID:   0,
-						contents: `{"defaultRateLimit": 0,"auth.providers": []}`,
+						contents: `"This is the first one."`,
 					},
 					output{
 						ID:       2,
-						contents: `{"defaultRateLimit": 0,"auth.providers": []}`,
+						contents: `"This is the first one."`,
 					},
 				},
 				{
 					input{
 						lastID:   2,
-						contents: `{"defaultRateLimit": 1,"auth.providers": []}`,
+						contents: `"This is the second one."`,
 					},
 					output{
 						ID:       3,
-						contents: `{"defaultRateLimit": 1,"auth.providers": []}`,
+						contents: `"This is the second one."`,
 					},
 				},
 			},
@@ -122,23 +120,22 @@ func TestSiteCreateIfUpToDate(t *testing.T) {
 				{
 					input{
 						lastID:   0,
-						contents: `{"defaultRateLimit": 0,"auth.providers": []}`,
+						contents: `"This is the first one."`,
 					},
 					output{
 						ID:       2,
-						contents: `{"defaultRateLimit": 0,"auth.providers": []}`,
+						contents: `"This is the first one."`,
 					},
 				},
 				{
 					input{
-						lastID: 0,
-						// This configuration is now behind the first one, so it shouldn't be saved
-						contents: `{"defaultRateLimit": 1,"auth.providers": []}`,
+						lastID:   0,
+						contents: `"This configuration is now behind the first one, so it shouldn't be saved."`,
 					},
 					output{
 						ID:       2,
-						contents: `{"defaultRateLimit": 1,"auth.providers": []}`,
-						err:      errors.Append(ErrNewerEdit),
+						contents: `"This is the first one."`,
+						err:      ErrNewerEdit,
 					},
 				},
 			},
@@ -149,37 +146,32 @@ func TestSiteCreateIfUpToDate(t *testing.T) {
 				{
 					input{
 						lastID: 0,
-						contents: `{"disableBuiltInSearches": true,
+						contents: `{"fieldA": "valueA",
 
 // This is a comment.
-             "defaultRateLimit": 42,
-             "auth.providers": [],
+             "fieldB": "valueB",
 						}`,
 					},
 					output{
 						ID: 2,
-						contents: `{"disableBuiltInSearches": true,
+						contents: `{"fieldA": "valueA",
 
 // This is a comment.
-             "defaultRateLimit": 42,
-             "auth.providers": [],
+             "fieldB": "valueB",
 						}`,
 					},
 				},
 			},
 		},
 	} {
-		// we were running the same test all the time, see this gist for more information
-		// https://gist.github.com/posener/92a55c4cd441fc5e5e85f27bca008721
-		test := test
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 			db := NewDB(logger, dbtest.NewDB(logger, t))
 			ctx := context.Background()
 			for _, p := range test.sequence {
-				output, err := db.Conf().SiteCreateIfUpToDate(ctx, &p.input.lastID, p.input.contents, false)
+				output, err := db.Conf().SiteCreateIfUpToDate(ctx, &p.input.lastID, p.input.contents)
 				if err != nil {
-					if errors.Is(err, p.expected.err) {
+					if err == p.expected.err {
 						continue
 					}
 					t.Fatal(err)
