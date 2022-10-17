@@ -118,5 +118,6 @@ func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID
 		conditions = append(conditions, externalServiceUnrestrictedQuery)
 	}
 
-	return sqlf.Join(conditions, "OR")
+	// Have to manually wrap the result in parenthesis so that they're evaluated together
+	return sqlf.Sprintf("(%s)", sqlf.Join(conditions, "OR"))
 }
