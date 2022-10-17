@@ -1,9 +1,11 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
+import { subDays, subHours } from 'date-fns'
 import { noop } from 'lodash'
 
-import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
+import { ExecutorSecretScope } from '@sourcegraph/shared/src/graphql-operations'
 
 import { WebStory } from '../../../components/WebStory'
+import { ExecutorSecretFields } from '../../../graphql-operations'
 
 import { RemoveSecretModal } from './RemoveSecretModal'
 
@@ -22,53 +24,26 @@ const config: Meta = {
 
 export default config
 
-const credential = {
-    id: '123',
-    isSiteCredential: false,
-    sshPublicKey:
-        'ssh-rsa randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
+const secret: ExecutorSecretFields = {
+    __typename: 'ExecutorSecret',
+    id: 'secret1',
+    creator: {
+        __typename: 'User',
+        username: 'test',
+        displayName: 'Test user',
+        id: 'testID',
+        url: '/users/test',
+    },
+    key: 'SG_TOKEN',
+    scope: ExecutorSecretScope.BATCHES,
+    // Global secret.
+    namespace: null,
+    createdAt: subDays(new Date(), 1).toISOString(),
+    updatedAt: subHours(new Date(), 12).toISOString(),
 }
 
-export const NoSsh: Story = () => (
-    <WebStory>
-        {props => (
-            <RemoveSecretModal
-                {...props}
-                codeHost={{
-                    credential,
-                    requiresSSH: false,
-                    requiresUsername: false,
-                    externalServiceKind: ExternalServiceKind.GITHUB,
-                    externalServiceURL: 'https://github.com/',
-                }}
-                credential={credential}
-                afterDelete={noop}
-                onCancel={noop}
-            />
-        )}
-    </WebStory>
+export const Confirm: Story = () => (
+    <WebStory>{props => <RemoveSecretModal {...props} secret={secret} afterDelete={noop} onCancel={noop} />}</WebStory>
 )
 
-NoSsh.storyName = 'No ssh'
-
-export const RequiresSsh: Story = () => (
-    <WebStory>
-        {props => (
-            <RemoveSecretModal
-                {...props}
-                codeHost={{
-                    credential,
-                    requiresSSH: true,
-                    requiresUsername: false,
-                    externalServiceKind: ExternalServiceKind.GITHUB,
-                    externalServiceURL: 'https://github.com/',
-                }}
-                credential={credential}
-                afterDelete={noop}
-                onCancel={noop}
-            />
-        )}
-    </WebStory>
-)
-
-RequiresSsh.storyName = 'Requires ssh'
+Confirm.storyName = 'Confirm delete'

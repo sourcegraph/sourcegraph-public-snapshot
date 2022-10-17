@@ -1,73 +1,38 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
-
-import { getDocumentNode } from '@sourcegraph/http-client'
-import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+import { subDays, subHours } from 'date-fns'
 
 import { WebStory } from '../../../components/WebStory'
-import {
-    BatchChangesCredentialFields,
-    CheckBatchChangesCredentialResult,
-    ExternalServiceKind,
-} from '../../../graphql-operations'
+import { ExecutorSecretFields, ExecutorSecretScope } from '../../../graphql-operations'
 
-import { CHECK_BATCH_CHANGES_CREDENTIAL } from './backend'
 import { ExecutorSecretNode } from './ExecutorSecretNode'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
-    title: 'web/batches/settings/ExecutorSecretNode',
+    title: 'web/executors/secrets/ExecutorSecretNode',
     decorators: [decorator],
 }
 
 export default config
 
-const checkCredResult = (): CheckBatchChangesCredentialResult => ({
-    checkBatchChangesCredential: {
-        alwaysNil: null,
+const secret: ExecutorSecretFields = {
+    __typename: 'ExecutorSecret',
+    id: 'secret1',
+    creator: {
+        __typename: 'User',
+        username: 'test',
+        displayName: 'Test user',
+        id: 'testID',
+        url: '/users/test',
     },
-})
-
-const sshCredential = (isSiteCredential: boolean): BatchChangesCredentialFields => ({
-    id: '123',
-    isSiteCredential,
-    sshPublicKey:
-        'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
-})
+    key: 'SG_TOKEN',
+    scope: ExecutorSecretScope.BATCHES,
+    // Global secret.
+    namespace: null,
+    createdAt: subDays(new Date(), 1).toISOString(),
+    updatedAt: subHours(new Date(), 12).toISOString(),
+}
 
 export const Overview: Story = () => (
-    <WebStory>
-        {props => (
-            <MockedTestProvider
-                mocks={[
-                    {
-                        request: {
-                            query: getDocumentNode(CHECK_BATCH_CHANGES_CREDENTIAL),
-                            variables: {
-                                id: '123',
-                            },
-                        },
-                        result: {
-                            data: checkCredResult(),
-                        },
-                        // Some sort of delay to see the spinner
-                        delay: 1000,
-                    },
-                ]}
-            >
-                <ExecutorSecretNode
-                    {...props}
-                    node={{
-                        credential: sshCredential(false),
-                        externalServiceKind: ExternalServiceKind.GITHUB,
-                        externalServiceURL: 'https://github.com/',
-                        requiresSSH: false,
-                        requiresUsername: false,
-                    }}
-                    refetchAll={() => {}}
-                    userID="123"
-                />
-            </MockedTestProvider>
-        )}
-    </WebStory>
+    <WebStory>{props => <ExecutorSecretNode {...props} node={secret} refetchAll={() => {}} />}</WebStory>
 )

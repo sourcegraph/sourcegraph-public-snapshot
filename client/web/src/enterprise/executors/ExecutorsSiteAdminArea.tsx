@@ -1,19 +1,24 @@
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React from 'react'
+
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-import { PageHeader } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../components/HeroPage'
-import { PageTitle } from '../../components/PageTitle'
+
 import type { ExecutorsListPageProps } from './instances/ExecutorsListPage'
-import { GlobalExecutorSecretsListPage } from './secrets/ExecutorSecretsListPage'
+import type { GlobalExecutorSecretsListPageProps } from './secrets/ExecutorSecretsListPage'
 
 const ExecutorsListPage = lazyComponent<ExecutorsListPageProps, 'ExecutorsListPage'>(
     () => import('./instances/ExecutorsListPage'),
     'ExecutorsListPage'
 )
+
+const GlobalExecutorSecretsListPage = lazyComponent<
+    GlobalExecutorSecretsListPageProps,
+    'GlobalExecutorSecretsListPage'
+>(() => import('./secrets/ExecutorSecretsListPage'), 'GlobalExecutorSecretsListPage')
 
 export interface ExecutorsSiteAdminAreaProps<RouteProps extends {} = {}> extends RouteComponentProps<RouteProps> {}
 

@@ -1,55 +1,39 @@
 import React, { useCallback, useRef, useState } from 'react'
 
-import { mdiCheckCircleOutline, mdiCheckboxBlankCircleOutline } from '@mdi/js'
 import classNames from 'classnames'
+import LockIcon from 'mdi-react/LockIcon'
 
-import { logger } from '@sourcegraph/common'
-import { useLazyQuery } from '@sourcegraph/http-client'
-import { Badge, Button, Icon, H3, Tooltip } from '@sourcegraph/wildcard'
+import { Badge, Button, Icon, H3 } from '@sourcegraph/wildcard'
 
-import { defaultExternalServices } from '../../../components/externalServices/externalServices'
-import {
-    BatchChangesCodeHostFields,
-    CheckBatchChangesCredentialResult,
-    CheckBatchChangesCredentialVariables,
-    ExecutorSecretFields,
-    Scalars,
-} from '../../../graphql-operations'
+import { ExecutorSecretFields } from '../../../graphql-operations'
 
-import { AddCredentialModal } from './AddSecretModal'
-import { CHECK_BATCH_CHANGES_CREDENTIAL } from './backend'
-import { RemoveCredentialModal } from './RemoveSecretModal'
-import { ViewCredentialModal } from './ViewCredentialModal'
+import { RemoveSecretModal } from './RemoveSecretModal'
+import { UpdateSecretModal } from './UpdateSecretModal'
 
 import styles from './ExecutorSecretNode.module.scss'
-import LockIcon from 'mdi-react/LockIcon'
 
 export interface ExecutorSecretNodeProps {
     node: ExecutorSecretFields
     refetchAll: () => void
-    userID: Scalars['ID'] | null
 }
 
-type OpenModal = 'add' | 'view' | 'delete'
+type OpenModal = 'update' | 'delete'
 
 export const ExecutorSecretNode: React.FunctionComponent<React.PropsWithChildren<ExecutorSecretNodeProps>> = ({
     node,
     refetchAll,
-    userID,
 }) => {
     const buttonReference = useRef<HTMLButtonElement | null>(null)
 
     const [openModal, setOpenModal] = useState<OpenModal | undefined>()
-    const onClickAdd = useCallback(() => {
-        setOpenModal('add')
-    }, [])
+
     const onClickRemove = useCallback<React.MouseEventHandler>(event => {
         event.preventDefault()
         setOpenModal('delete')
     }, [])
-    const onClickView = useCallback<React.MouseEventHandler>(event => {
+    const onClickUpdate = useCallback<React.MouseEventHandler>(event => {
         event.preventDefault()
-        setOpenModal('view')
+        setOpenModal('update')
     }, [])
     const closeModal = useCallback(() => {
         setOpenModal(undefined)
@@ -60,15 +44,6 @@ export const ExecutorSecretNode: React.FunctionComponent<React.PropsWithChildren
         refetchAll()
     }, [refetchAll, buttonReference])
 
-    const isEnabled = true // node.credential !== null && (userID === null || !node.credential.isSiteCredential)
-
-    // const headingAriaLabel = `Sourcegraph ${
-    //     isEnabled ? 'has credentials configured' : 'does not have credentials configured'
-    // } for ${codeHostDisplayName} (${node.externalServiceURL}).${
-    //     !isEnabled && node.credential?.isSiteCredential
-    //         ? ' Changesets on this code host will be created with a global token until a personal access token is added.'
-    //         : ''
-    // }`
     const headingAriaLabel = 'Secret value'
 
     return (
@@ -82,7 +57,7 @@ export const ExecutorSecretNode: React.FunctionComponent<React.PropsWithChildren
                 >
                     <H3 className="text-nowrap mb-0" aria-label={headingAriaLabel}>
                         <Icon className="mx-2" aria-hidden={true} as={LockIcon} /> {node.key}{' '}
-                        {!isEnabled && node.credential?.isSiteCredential && (
+                        {node.namespace === null && (
                             <Badge
                                 variant="secondary"
                                 tooltip="Changesets on this code host will
@@ -95,67 +70,31 @@ export const ExecutorSecretNode: React.FunctionComponent<React.PropsWithChildren
                         )}
                     </H3>
                     <div className="mb-0 d-flex justify-content-end flex-grow-1 align-items-baseline">
-                        {isEnabled ? (
-                            <>
-                                <Button
-                                    // TODO:
-                                    // onClick={onClickRemove}
-                                    variant="link"
-                                    aria-label={`Update secret value for ${node.key}`}
-                                    // ref={buttonReference}
-                                >
-                                    Update
-                                </Button>
-                                <Button
-                                    className="text-danger text-nowrap test-code-host-connection-node-btn-remove"
-                                    onClick={onClickRemove}
-                                    variant="link"
-                                    aria-label={`Remove scret ${node.key}`}
-                                    ref={buttonReference}
-                                >
-                                    Remove
-                                </Button>
-                            </>
-                        ) : (
-                            /*
-                                a11y-ignore
-                                Rule: "color-contrast" (Elements must have sufficient color contrast)
-                                GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
-                            */
-                            <Button
-                                className="a11y-ignore text-nowrap test-code-host-connection-node-btn-add"
-                                onClick={onClickAdd}
-                                aria-label={`Add credentials for ${node.key}`}
-                                variant="success"
-                                ref={buttonReference}
-                            >
-                                Add credentials
-                            </Button>
-                        )}
+                        <Button
+                            onClick={onClickUpdate}
+                            variant="link"
+                            aria-label={`Update secret value for ${node.key}`}
+                            // ref={buttonReference}
+                        >
+                            Update
+                        </Button>
+                        <Button
+                            className="text-danger text-nowrap"
+                            onClick={onClickRemove}
+                            variant="link"
+                            aria-label={`Remove scret ${node.key}`}
+                            ref={buttonReference}
+                        >
+                            Remove
+                        </Button>
                     </div>
                 </div>
             </li>
             {openModal === 'delete' && (
-                <RemoveCredentialModal
-                    onCancel={closeModal}
-                    afterDelete={afterAction}
-                    codeHost={node}
-                    credential={node.credential!}
-                />
+                <RemoveSecretModal onCancel={closeModal} afterDelete={afterAction} secret={node} />
             )}
-            {openModal === 'view' && (
-                <ViewCredentialModal onClose={closeModal} codeHost={node} credential={node.credential!} />
-            )}
-            {openModal === 'add' && (
-                <AddCredentialModal
-                    onCancel={closeModal}
-                    afterCreate={afterAction}
-                    userID={userID}
-                    externalServiceKind={node.externalServiceKind}
-                    externalServiceURL={node.externalServiceURL}
-                    requiresSSH={node.requiresSSH}
-                    requiresUsername={node.requiresUsername}
-                />
+            {openModal === 'update' && (
+                <UpdateSecretModal onCancel={closeModal} afterUpdate={afterAction} secret={node} />
             )}
         </>
     )

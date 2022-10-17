@@ -143,8 +143,8 @@ func (s *executorSecretStore) Create(ctx context.Context, scope ExecutorSecretSc
 		secret.Key,
 		encryptedValue, // N.B.: is already a []byte
 		keyID,
-		&dbutil.NullInt32{N: &secret.NamespaceUserID},
-		&dbutil.NullInt32{N: &secret.NamespaceOrgID},
+		dbutil.NewNullInt(int(secret.NamespaceUserID)),
+		dbutil.NewNullInt(int(secret.NamespaceOrgID)),
 		secret.CreatorID,
 		sqlf.Join(executorSecretsColumns, ", "),
 	)

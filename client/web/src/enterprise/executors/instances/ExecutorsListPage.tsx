@@ -19,7 +19,7 @@ import { ExecutorFields } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 
 import { ExecutorCompatibilityAlert } from './ExecutorCompatibilityAlert'
-import { queryExecutors as defaultQueryExecutors } from '../useExecutors'
+import { queryExecutors as defaultQueryExecutors } from './useExecutors'
 import { ExecutorNode } from './ExecutorNode'
 
 const filters: FilteredConnectionFilter[] = [

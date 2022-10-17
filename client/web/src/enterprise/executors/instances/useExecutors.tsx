@@ -5,7 +5,7 @@ import { map } from 'rxjs/operators'
 import { gql, getDocumentNode } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
 
-import { ExecutorFields, ExecutorsResult, ExecutorsVariables } from '../../graphql-operations'
+import { ExecutorFields, ExecutorsResult, ExecutorsVariables } from '../../../graphql-operations'
 
 export const executorFieldsFragment = gql`
     fragment ExecutorFields on Executor {

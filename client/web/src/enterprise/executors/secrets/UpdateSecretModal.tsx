@@ -3,85 +3,63 @@ import React, { useCallback, useState } from 'react'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { logger } from '@sourcegraph/common'
-import { Button, Modal, Input, H3, Text } from '@sourcegraph/wildcard'
+import { Button, Modal, Input } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
-import { ExecutorSecretScope, Scalars } from '../../../graphql-operations'
+import { ExecutorSecretFields } from '../../../graphql-operations'
 
-import { useCreateExecutorSecret } from './backend'
+import { useUpdateExecutorSecret } from './backend'
+import { ModalHeader } from './ModalHeader'
 
-export interface AddSecretModalProps {
+interface UpdateSecretModalProps {
+    secret: ExecutorSecretFields
+
     onCancel: () => void
-    afterCreate: () => void
-    namespaceID: Scalars['ID'] | null
-    scope: ExecutorSecretScope
+    afterUpdate: () => void
 }
 
-export const AddSecretModal: React.FunctionComponent<React.PropsWithChildren<AddSecretModalProps>> = ({
+export const UpdateSecretModal: React.FunctionComponent<React.PropsWithChildren<UpdateSecretModalProps>> = ({
+    secret,
     onCancel,
-    afterCreate,
-    namespaceID,
-    scope,
+    afterUpdate,
 }) => {
-    const labelId = 'addSecret'
-
-    const [key, setKey] = useState<string>('')
-    const onChangeKey = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
-        setKey(event.target.value)
-    }, [])
+    const labelId = 'updateSecret'
 
     const [value, setValue] = useState<string>('')
     const onChangeValue = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
         setValue(event.target.value)
     }, [])
 
-    const [createExecutorSecret, { loading, error }] = useCreateExecutorSecret()
+    const [updateExecutorSecret, { loading, error }] = useUpdateExecutorSecret()
 
     const onSubmit = useCallback<React.FormEventHandler>(
         async event => {
             event.preventDefault()
 
             try {
-                await createExecutorSecret({
+                await updateExecutorSecret({
                     variables: {
-                        namespace: namespaceID,
-                        key,
+                        secret: secret.id,
+                        scope: secret.scope,
                         value,
-                        scope,
                     },
                 })
 
-                afterCreate()
+                afterUpdate()
             } catch (error) {
                 logger.error(error)
             }
         },
-        [createExecutorSecret, namespaceID, key, value, scope, afterCreate]
+        [updateExecutorSecret, secret.id, secret.scope, value, afterUpdate]
     )
-
     return (
         <Modal onDismiss={onCancel} aria-labelledby={labelId}>
-            <H3 id={labelId}>Add new executor secret</H3>
-            <Text>
-                Executor secrets are available to executor jobs as environment variables. They will never appear in
-                logs.
-            </Text>
+            <ModalHeader id={labelId} secretKey={secret.key} />
+
             {error && <ErrorAlert error={error} />}
+
             <Form onSubmit={onSubmit}>
                 <div className="form-group">
-                    <Input
-                        id="key"
-                        name="key"
-                        autoComplete="off"
-                        inputClassName="mb-2"
-                        className="mb-0"
-                        required={true}
-                        spellCheck="false"
-                        minLength={1}
-                        value={key}
-                        onChange={onChangeKey}
-                        label="Key"
-                    />
                     <Input
                         id="value"
                         name="value"
@@ -91,6 +69,7 @@ export const AddSecretModal: React.FunctionComponent<React.PropsWithChildren<Add
                         spellCheck="false"
                         minLength={1}
                         label="Value"
+                        placeholder="******"
                         value={value}
                         onChange={onChangeValue}
                     />
@@ -101,11 +80,11 @@ export const AddSecretModal: React.FunctionComponent<React.PropsWithChildren<Add
                     </Button>
                     <LoaderButton
                         type="submit"
-                        disabled={loading || key.length === 0 || value.length === 0}
+                        disabled={loading || value.length === 0}
                         variant="primary"
                         loading={loading}
                         alwaysShowLabel={true}
-                        label="Add secret"
+                        label="Update secret"
                     />
                 </div>
             </Form>

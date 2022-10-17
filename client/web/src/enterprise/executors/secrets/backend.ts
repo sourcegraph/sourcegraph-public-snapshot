@@ -5,66 +5,23 @@ import { dataOrThrowErrors, gql, useMutation } from '@sourcegraph/http-client'
 import { useConnection, UseConnectionResult } from '../../../components/FilteredConnection/hooks/useConnection'
 import {
     ExecutorSecretFields,
-    CreateBatchChangesCredentialResult,
-    CreateBatchChangesCredentialVariables,
-    DeleteBatchChangesCredentialResult,
-    DeleteBatchChangesCredentialVariables,
-    GlobalBatchChangesCodeHostsResult,
-    GlobalBatchChangesCodeHostsVariables,
     Scalars,
     UserExecutorSecretsResult,
     UserExecutorSecretsVariables,
+    ExecutorSecretScope,
+    DeleteExecutorSecretResult,
+    DeleteExecutorSecretVariables,
+    GlobalExecutorSecretsResult,
+    GlobalExecutorSecretsVariables,
+    CreateExecutorSecretResult,
+    CreateExecutorSecretVariables,
+    UpdateExecutorSecretResult,
+    UpdateExecutorSecretVariables,
 } from '../../../graphql-operations'
 
-export const CREATE_BATCH_CHANGES_CREDENTIAL = gql`
-    mutation CreateBatchChangesCredential(
-        $user: ID
-        $credential: String!
-        $username: String
-        $externalServiceKind: ExternalServiceKind!
-        $externalServiceURL: String!
-    ) {
-        createBatchChangesCredential(
-            user: $user
-            credential: $credential
-            username: $username
-            externalServiceKind: $externalServiceKind
-            externalServiceURL: $externalServiceURL
-        ) {
-            ...BatchChangesCredentialFields
-        }
-    }
-`
-
-export const useCreateBatchChangesCredential = (): MutationTuple<
-    CreateBatchChangesCredentialResult,
-    CreateBatchChangesCredentialVariables
-> => useMutation(CREATE_BATCH_CHANGES_CREDENTIAL)
-
-export const DELETE_EXECUTOR_SECRET = gql`
-    mutation DeleteExecutorSecret($scope: ExecutorSecretScope!, $id: ID!) {
-        deleteExecutorSecret(scope: $scope, id: $id) {
-            alwaysNil
-        }
-    }
-`
-
-export const useDeleteExecutorSecret = (): MutationTuple<DeleteExecutorSecretResult, DeleteExecutorSecretVariables> =>
-    useMutation(DELETE_EXECUTOR_SECRET)
-
-const CODE_HOST_FIELDS_FRAGMENT = gql`
-    fragment ExecutorSecretConnectionFields on ExecutorSecretConnection {
-        totalCount
-        pageInfo {
-            hasNextPage
-            endCursor
-        }
-        nodes {
-            ...ExecutorSecretFields
-        }
-    }
-
+const EXECUTOR_SECRET_FIELDS = gql`
     fragment ExecutorSecretFields on ExecutorSecret {
+        id
         key
         scope
         createdAt
@@ -83,7 +40,59 @@ const CODE_HOST_FIELDS_FRAGMENT = gql`
     }
 `
 
-export const USER_CODE_HOSTS = gql`
+export const CREATE_EXECUTOR_SECRET = gql`
+    mutation CreateExecutorSecret($scope: ExecutorSecretScope!, $namespace: ID, $key: String!, $value: String!) {
+        createExecutorSecret(scope: $scope, namespace: $namespace, key: $key, value: $value) {
+            ...ExecutorSecretFields
+        }
+    }
+
+    ${EXECUTOR_SECRET_FIELDS}
+`
+
+export const useCreateExecutorSecret = (): MutationTuple<CreateExecutorSecretResult, CreateExecutorSecretVariables> =>
+    useMutation(CREATE_EXECUTOR_SECRET)
+
+export const UPDATE_EXECUTOR_SECRET = gql`
+    mutation UpdateExecutorSecret($scope: ExecutorSecretScope!, $secret: ID!, $value: String!) {
+        updateExecutorSecret(scope: $scope, id: $secret, value: $value) {
+            ...ExecutorSecretFields
+        }
+    }
+
+    ${EXECUTOR_SECRET_FIELDS}
+`
+
+export const useUpdateExecutorSecret = (): MutationTuple<UpdateExecutorSecretResult, UpdateExecutorSecretVariables> =>
+    useMutation(UPDATE_EXECUTOR_SECRET)
+
+export const DELETE_EXECUTOR_SECRET = gql`
+    mutation DeleteExecutorSecret($scope: ExecutorSecretScope!, $id: ID!) {
+        deleteExecutorSecret(scope: $scope, id: $id) {
+            alwaysNil
+        }
+    }
+`
+
+export const useDeleteExecutorSecret = (): MutationTuple<DeleteExecutorSecretResult, DeleteExecutorSecretVariables> =>
+    useMutation(DELETE_EXECUTOR_SECRET)
+
+const EXECUTOR_SECRET_CONNECTION_FIELDS = gql`
+    fragment ExecutorSecretConnectionFields on ExecutorSecretConnection {
+        totalCount
+        pageInfo {
+            hasNextPage
+            endCursor
+        }
+        nodes {
+            ...ExecutorSecretFields
+        }
+    }
+
+    ${EXECUTOR_SECRET_FIELDS}
+`
+
+export const USER_EXECUTOR_SECRETS = gql`
     query UserExecutorSecrets($user: ID!, $scope: ExecutorSecretScope!, $first: Int, $after: String) {
         node(id: $user) {
             __typename
@@ -95,14 +104,18 @@ export const USER_CODE_HOSTS = gql`
         }
     }
 
-    ${CODE_HOST_FIELDS_FRAGMENT}
+    ${EXECUTOR_SECRET_CONNECTION_FIELDS}
 `
 
-export const useUserBatchChangesCodeHostConnection = (user: Scalars['ID']): UseConnectionResult<ExecutorSecretFields> =>
+export const useExecutorSecretsConnection = (
+    user: Scalars['ID'],
+    scope: ExecutorSecretScope
+): UseConnectionResult<ExecutorSecretFields> =>
     useConnection<UserExecutorSecretsResult, UserExecutorSecretsVariables, ExecutorSecretFields>({
-        query: USER_CODE_HOSTS,
+        query: USER_EXECUTOR_SECRETS,
         variables: {
             user,
+            scope,
             after: null,
             first: 15,
         },
@@ -119,7 +132,7 @@ export const useUserBatchChangesCodeHostConnection = (user: Scalars['ID']): UseC
                 throw new Error(`Node is a ${node.__typename}, not a User`)
             }
 
-            return node.batchChangesCodeHosts
+            return node.executorSecrets
         },
     })
 
@@ -130,7 +143,7 @@ export const GLOBAL_EXECUTOR_SECRETS = gql`
         }
     }
 
-    ${CODE_HOST_FIELDS_FRAGMENT}
+    ${EXECUTOR_SECRET_CONNECTION_FIELDS}
 `
 
 export const useGlobalExecutorSecretsConnection = (

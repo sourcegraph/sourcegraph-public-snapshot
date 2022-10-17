@@ -1,13 +1,12 @@
 import React, { useCallback } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Modal, Text } from '@sourcegraph/wildcard'
+import { Button, H3, Modal } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
-import { BatchChangesCodeHostFields, BatchChangesCredentialFields } from '../../../graphql-operations'
+import { ExecutorSecretFields } from '../../../graphql-operations'
 
 import { useDeleteExecutorSecret } from './backend'
-import { ModalHeader } from './ModalHeader'
 
 export interface RemoveSecretModalProps {
     secret: ExecutorSecretFields
@@ -21,7 +20,7 @@ export const RemoveSecretModal: React.FunctionComponent<React.PropsWithChildren<
     onCancel,
     afterDelete,
 }) => {
-    const labelId = 'removeCredential'
+    const labelId = 'removeSecret'
     const [deleteExecutorSecret, { loading, error }] = useDeleteExecutorSecret()
     const onDelete = useCallback<React.MouseEventHandler>(async () => {
         await deleteExecutorSecret({ variables: { id: secret.id, scope: secret.scope } })

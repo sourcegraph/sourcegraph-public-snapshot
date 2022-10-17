@@ -1,23 +1,14 @@
 import React from 'react'
 
-import { H3, Text } from '@sourcegraph/wildcard'
-
-import { defaultExternalServices } from '../../../components/externalServices/externalServices'
-import { ExternalServiceKind } from '../../../graphql-operations'
+import { H3 } from '@sourcegraph/wildcard'
 
 export interface ModalHeaderProps {
     id: string
-    externalServiceKind: ExternalServiceKind
-    externalServiceURL: string
+    secretKey: string
 }
 
-export const ModalHeader: React.FunctionComponent<React.PropsWithChildren<ModalHeaderProps>> = ({
-    id,
-    externalServiceKind,
-    externalServiceURL,
-}) => (
+export const ModalHeader: React.FunctionComponent<React.PropsWithChildren<ModalHeaderProps>> = ({ id, secretKey }) => (
     <>
-        <H3 id={id}>Batch Changes credentials: {defaultExternalServices[externalServiceKind].defaultDisplayName}</H3>
-        <Text className="mb-4">{externalServiceURL}</Text>
+        <H3 id={id}>Executor secret: {secretKey}</H3>
     </>
 )
