@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
+
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
@@ -265,17 +266,10 @@ func (r *Resolver) batchSpecByID(ctx context.Context, id graphql.ID) (graphqlbac
 		return nil, err
 	}
 
-	specResolver := &batchSpecResolver{store: r.store, batchSpec: batchSpec}
-	canAdminister, err := specResolver.ViewerCanAdminister(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if !canAdminister {
-		return nil, nil
-	}
-
-	return specResolver, nil
+	// Everyone can see a batch spec, if they have the rand ID. The batch specs won't be
+	// enumerated to users other than their creators + admins, but they can be accessed
+	// directly if shared, e.g. to share a preview link before applying a new batch spec.
+	return &batchSpecResolver{store: r.store, batchSpec: batchSpec}, nil
 }
 
 func (r *Resolver) changesetSpecByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetSpecResolver, error) {
