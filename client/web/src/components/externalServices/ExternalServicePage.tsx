@@ -43,6 +43,8 @@ import { ExternalServiceWebhook } from './ExternalServiceWebhook'
 
 import styles from './ExternalServicePage.module.scss'
 
+import { ValueLegendList, ValueLegendListProps } from '../../site-admin/analytics/components/ValueLegendList'
+
 interface Props extends TelemetryProps {
     externalServiceID: Scalars['ID']
     isLightTheme: boolean
@@ -316,6 +318,48 @@ const ExternalServiceSyncJobNode: React.FunctionComponent<ExternalServiceSyncJob
         [cancelExternalServiceSync, node, onUpdate]
     )
 
+    const legends = useMemo((): ValueLegendListProps['items'] | undefined => {
+        if (!node) {
+            return undefined
+        }
+        return [
+            {
+                value: node.reposAdded,
+                description: 'Added',
+                tooltip: 'The number of new repos discovered during this sync job.',
+            },
+            {
+                value: node.reposDeleted,
+                description: 'Deleted',
+                tooltip: 'The number of repos deleted as a result of this sync job.',
+            },
+            {
+                value: node.reposModified,
+                description: 'Modified',
+                tooltip: 'The number of existing repos whose metadata has changed during this sync job.',
+            },
+            {
+                value: node.reposUnmodified,
+                description: 'Unmodified',
+                tooltip: 'The number of existing repos whose metadata did not change during this sync job.',
+            },
+            {
+                value: node.reposSynced,
+                description: 'Synced',
+                color: 'var(--green)',
+                tooltip: 'The number of repos synced during this sync job.',
+                position: 'right',
+            },
+            {
+                value: node.repoSyncErrors,
+                description: 'Errors',
+                color: 'var(--red)',
+                tooltip: 'The number of times an error occurred syncing a repo during this sync job.',
+                position: 'right',
+            },
+        ]
+    }, [node])
+
     return (
         <li className="list-group-item py-3">
             <div className="d-flex align-items-center justify-content-between">
@@ -373,6 +417,7 @@ const ExternalServiceSyncJobNode: React.FunctionComponent<ExternalServiceSyncJob
                     </div>
                 </div>
             </div>
+            {legends && <ValueLegendList className="mb-1" items={legends} />}
             {node.failureMessage && <ErrorAlert error={node.failureMessage} className="mt-2 mb-0" />}
         </li>
     )
