@@ -96,7 +96,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
 }) => {
     const isExecutionEnabled = isBatchChangesExecutionEnabled(settingsCascade)
 
-    const executionsCount = useMemo(
+    const pendingExecutionsCount = useMemo(
         () =>
             batchChange.batchSpecs.nodes.filter(
                 node => node.state === BatchSpecState.PROCESSING || node.state === BatchSpecState.QUEUED
@@ -185,9 +185,9 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                             <span className="text-content" data-tab-content="Executions">
                                 Executions
                             </span>
-                            {executionsCount > 0 && (
+                            {pendingExecutionsCount > 0 && (
                                 <Badge variant="warning" pill={true} className="ml-2">
-                                    {executionsCount} {batchChange.batchSpecs.pageInfo.hasNextPage && <>+</>}
+                                    {pendingExecutionsCount} {batchChange.batchSpecs.pageInfo.hasNextPage && <>+</>}
                                 </Badge>
                             )}
                         </span>
