@@ -124,9 +124,9 @@
         },
         "sourcegraph.accessToken": {
           "type": [
-            "string"
+            null
           ],
-          "default": "",
+          "default": null,
           "description": "The access token to query the Sourcegraph API. Create a new access token at ${SOURCEGRAPH_URL}/users/<sourcegraph-username>/settings/tokens. Unless you are using a private instance of Sourcegraph, then ${SOURCEGRAPH_URL} is https://sourcegraph.com."
         },
         "sourcegraph.remoteUrlReplacements": {

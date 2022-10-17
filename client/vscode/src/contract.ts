@@ -25,7 +25,7 @@ export interface ExtensionCoreAPI {
     getAuthenticatedUser: () => ProxySubscribable<AuthenticatedUser | null>
     /** Endpoint settings */
     getInstanceURL: () => ProxySubscribable<string>
-    getAccessToken: string | undefined
+    getAccessToken: Promise<string | undefined>
     removeAccessToken: () => Promise<void>
     setEndpointUri: (accessToken: string, uri: string) => Promise<void>
     /**

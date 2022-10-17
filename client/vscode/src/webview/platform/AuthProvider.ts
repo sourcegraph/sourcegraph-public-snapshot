@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
     authentication,
     AuthenticationProvider,
@@ -10,11 +11,13 @@ import {
     SecretStorage,
 } from 'vscode'
 
-import { observeAuthenticatedUser } from '../../backend/authenticatedUser'
-import { endpointSetting } from '../../settings/endpointSetting'
+import polyfillEventSource from '@sourcegraph/shared/src/polyfills/vendor/eventSource'
+
+import { endpointRequestHeadersSetting, endpointSetting } from '../../settings/endpointSetting'
 import { readConfiguration } from '../../settings/readConfiguration'
 
 export const scretTokenKey = 'SOURCEGRAPH_TOKEN'
+
 class SourcegraphAuthSession implements AuthenticationSession {
     public readonly account = { id: SourcegraphAuthProvider.id, label: 'Sourcegraph Token' }
     public readonly id = SourcegraphAuthProvider.id
@@ -24,7 +27,7 @@ class SourcegraphAuthSession implements AuthenticationSession {
 
 export class SourcegraphAuthProvider implements AuthenticationProvider, Disposable {
     public static id = endpointSetting() || 'https://sourcegraph.com'
-    private static secretKey = 'SOURCEGRAPH_TOKEN'
+    private static secretKey = scretTokenKey
     // Kept track of token changes through out the session
     private currentToken: string | undefined
     private initializedDisposable: Disposable | undefined
@@ -43,14 +46,10 @@ export class SourcegraphAuthProvider implements AuthenticationProvider, Disposab
         // Process the token that lives in user configuration
         // Move them to secrets and mark them as REDACTED
         const oldToken = readConfiguration().get<string>('accessToken')
-        if (oldToken && oldToken !== 'REDACTED') {
+        if (oldToken && oldToken !== undefined) {
             await this.secretStorage.store(SourcegraphAuthProvider.secretKey, oldToken)
-            await readConfiguration().update('accessToken', 'REDACTED', ConfigurationTarget.Global)
-        }
-        // delete existing token stored in secret if it is currently not working
-        const authenticatedUser = observeAuthenticatedUser(this.secretStorage)
-        if (authenticatedUser) {
-            this.currentToken = oldToken
+            await readConfiguration().update('accessToken', null, ConfigurationTarget.Global)
+            await readConfiguration().update('accessToken', null, ConfigurationTarget.Workspace)
         }
     }
 
@@ -59,7 +58,6 @@ export class SourcegraphAuthProvider implements AuthenticationProvider, Disposab
     }
 
     private async ensureInitialized(): Promise<void> {
-        await this.init()
         if (this.initializedDisposable === undefined) {
             await this.cacheTokenFromStorage()
             this.initializedDisposable = Disposable.from(
@@ -94,6 +92,10 @@ export class SourcegraphAuthProvider implements AuthenticationProvider, Disposab
             return
         }
         await this.cacheTokenFromStorage()
+        // Update the polyfillEventSource on token changes
+        polyfillEventSource(
+            this.currentToken ? { Authorization: `token ${this.currentToken}`, ...endpointRequestHeadersSetting() } : {}
+        )
         this._onDidChangeSessions.fire({ added, removed, changed })
     }
 

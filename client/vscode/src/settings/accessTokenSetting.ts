@@ -1,16 +1,19 @@
 import * as vscode from 'vscode'
 
 import { isOlderThan, observeInstanceVersionNumber } from '../backend/instanceVersion'
+import { scretTokenKey } from '../webview/platform/AuthProvider'
 
 import { endpointHostnameSetting, endpointProtocolSetting } from './endpointSetting'
 import { readConfiguration } from './readConfiguration'
 
-export function accessTokenSetting(): string | undefined {
-    return readConfiguration().get<string>('accessToken')
+export async function accessTokenSetting(secretStorage: vscode.SecretStorage): Promise<string> {
+    const currentToken = await secretStorage.get(scretTokenKey)
+    return currentToken || ''
 }
 
 export async function removeAccessTokenSetting(): Promise<void> {
-    await readConfiguration().update('accessToken', 'REDACTED', vscode.ConfigurationTarget.Global)
+    await readConfiguration().update('accessToken', undefined, vscode.ConfigurationTarget.Global)
+    await readConfiguration().update('accessToken', undefined, vscode.ConfigurationTarget.Workspace)
     return
 }
 
@@ -27,7 +30,7 @@ export async function handleAccessTokenError(badToken: string, endpointURL: stri
 
         const version = await observeInstanceVersionNumber(badToken, endpointURL).toPromise()
         const supportsTokenCallback = version && isOlderThan(version, { major: 3, minor: 41 })
-        const action = await vscode.window.showErrorMessage(message, 'Get Token', 'Update Instance URL in Setting')
+        const action = await vscode.window.showErrorMessage(message, 'Get Token', 'Update URL in Setting')
 
         if (action === 'Open Settings') {
             await vscode.commands.executeCommand('workbench.action.openSettings', 'sourcegraph.url')

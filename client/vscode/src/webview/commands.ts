@@ -1,6 +1,7 @@
 import { Observable } from 'rxjs'
 import * as vscode from 'vscode'
 
+import polyfillEventSource from '@sourcegraph/shared/src/polyfills/vendor/eventSource'
 import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 
 import { initializeSourcegraphSettings } from '../backend/sourcegraphSettings'
@@ -8,6 +9,7 @@ import { initializeCodeIntel } from '../code-intel/initialize'
 import { ExtensionCoreAPI } from '../contract'
 import { SourcegraphFileSystemProvider } from '../file-system/SourcegraphFileSystemProvider'
 import { SearchPatternType } from '../graphql-operations'
+import { endpointRequestHeadersSetting, endpointSetting } from '../settings/endpointSetting'
 
 import {
     initializeHelpSidebarWebview,
@@ -52,6 +54,20 @@ export function registerWebviews({
     context.subscriptions.push(
         vscode.window.registerUriHandler({
             handleUri,
+        })
+    )
+
+    // Update `EventSource` Authorization header on access token / headers change.
+    // It will also be changed when the token has been changed --handled by Auth Provider
+    context.subscriptions.push(
+        vscode.workspace.onDidChangeConfiguration(async config => {
+            const session = await vscode.authentication.getSession(endpointSetting(), [], { forceNewSession: false })
+            if (config.affectsConfiguration('sourcegraph.requestHeaders') && session) {
+                const newCustomHeaders = endpointRequestHeadersSetting()
+                polyfillEventSource(
+                    session.accessToken ? { Authorization: `token ${session.accessToken}`, ...newCustomHeaders } : {}
+                )
+            }
         })
     )
 

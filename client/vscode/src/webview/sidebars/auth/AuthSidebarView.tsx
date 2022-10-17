@@ -63,10 +63,10 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
                     // assumes the extension was started with a bad token because
                     // user should be autheticated automatically if token is valid
                     if (endpointUrl && token) {
-                        setAccessToken('invalid')
                         extensionCoreAPI
                             .removeAccessToken()
                             .then(() => {
+                                setAccessToken('REMOVED')
                                 setState('failure')
                             })
                             .catch(() => {})

@@ -20,6 +20,7 @@ import { openSourcegraphUriCommand } from './file-system/commands'
 import { initializeSourcegraphFileSystem } from './file-system/initialize'
 import { SourcegraphUri } from './file-system/SourcegraphUri'
 import { Event } from './graphql-operations'
+import { accessTokenSetting } from './settings/accessTokenSetting'
 import { endpointRequestHeadersSetting, endpointSetting, setEndpoint } from './settings/endpointSetting'
 import { invalidateContextOnSettingsChange } from './settings/invalidation'
 import { LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY } from './settings/LocalStorageService'
@@ -43,6 +44,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const authenticatedUser = observeAuthenticatedUser(secretStorage)
     const initialInstanceURL = endpointSetting()
     const initialAccessToken = await secretStorage.get(scretTokenKey)
+    // Ensure the token will not be reused after URL has been updated
     if (initialAccessToken && !authenticatedUser) {
         await secretStorage.delete(scretTokenKey)
     }
@@ -58,18 +60,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     // Add custom headers to `EventSource` Authorization header when provided
     const customHeaders = endpointRequestHeadersSetting()
     polyfillEventSource(initialAccessToken ? { Authorization: `token ${initialAccessToken}`, ...customHeaders } : {})
-    // Update `EventSource` Authorization header on access token / headers change.
-    context.subscriptions.push(
-        vscode.workspace.onDidChangeConfiguration(async config => {
-            const session = await vscode.authentication.getSession(endpointSetting(), [], { forceNewSession: false })
-            if (config.affectsConfiguration('sourcegraph.requestHeaders') && session) {
-                const newCustomHeaders = endpointRequestHeadersSetting()
-                polyfillEventSource(
-                    session.accessToken ? { Authorization: `token ${session.accessToken}`, ...newCustomHeaders } : {}
-                )
-            }
-        })
-    )
     context.subscriptions.push(
         vscode.commands.registerCommand('sourcegraph.auth', async (token: string, uri?: string) => {
             // Get our PAT session.
@@ -107,6 +97,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     async function logout(): Promise<void> {
         await secretStorage.delete(scretTokenKey)
     }
+
     const extensionCoreAPI: ExtensionCoreAPI = {
         panelInitialized: panelId => initializedPanelIDs.next(panelId),
         observeState: () => proxySubscribable(stateMachine.observeState()),
@@ -122,7 +113,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         openLink: (uri: string) => vscode.env.openExternal(vscode.Uri.parse(uri)),
         copyLink: (uri: string) =>
             env.clipboard.writeText(uri).then(() => vscode.window.showInformationMessage('Link Copied!')),
-        getAccessToken: session?.accessToken,
+        getAccessToken: accessTokenSetting(context.secrets),
         removeAccessToken: () => logout(),
         setEndpointUri: (accessToken, uri) => login(accessToken, uri),
         reloadWindow: () => vscode.commands.executeCommand('workbench.action.reloadWindow'),
