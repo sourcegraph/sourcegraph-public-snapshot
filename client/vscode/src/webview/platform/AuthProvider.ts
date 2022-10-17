@@ -43,14 +43,14 @@ export class SourcegraphAuthProvider implements AuthenticationProvider, Disposab
         // Process the token that lives in user configuration
         // Move them to secrets and mark them as REDACTED
         const oldToken = readConfiguration().get<string>('accessToken')
-        if (oldToken !== undefined && oldToken !== 'REDACTED') {
+        if (oldToken && oldToken !== 'REDACTED') {
             await this.secretStorage.store(SourcegraphAuthProvider.secretKey, oldToken)
             await readConfiguration().update('accessToken', 'REDACTED', ConfigurationTarget.Global)
         }
         // delete existing token stored in secret if it is currently not working
         const authenticatedUser = observeAuthenticatedUser(this.secretStorage)
-        if (!authenticatedUser) {
-            await this.secretStorage.delete(SourcegraphAuthProvider.secretKey)
+        if (authenticatedUser) {
+            this.currentToken = oldToken
         }
     }
 
@@ -111,7 +111,8 @@ export class SourcegraphAuthProvider implements AuthenticationProvider, Disposab
         return token ? [new SourcegraphAuthSession(token)] : []
     }
 
-    // This is called after `this.getSessions` and only when `createIfNone` and `forceNewSession` are set to true
+    // This is called after `this.getSessions` is called,
+    // and only when `createIfNone` or `forceNewSession` are set to true
     public async createSession(_scopes: string[]): Promise<AuthenticationSession> {
         await this.ensureInitialized()
         // Get token from scret storage

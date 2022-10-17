@@ -64,7 +64,6 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
                     // user should be autheticated automatically if token is valid
                     if (endpointUrl && token) {
                         setAccessToken('invalid')
-                        // setState('failure')
                         extensionCoreAPI
                             .removeAccessToken()
                             .then(() => {
@@ -110,11 +109,9 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
                 const currentAuthStateResult = platformContext
                     .requestGraphQL<CurrentAuthStateResult, CurrentAuthStateVariables>(authStateVariables)
                     .toPromise()
-                console.log(currentAuthStateResult)
                 currentAuthStateResult
                     .then(async ({ data }) => {
                         if (data?.currentUser) {
-                            console.log('success')
                             setState('success')
                             // Update access token and instance url in user config for the extension
                             await extensionCoreAPI.setEndpointUri(accessToken, endpointUrl)
@@ -130,7 +127,8 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
                         setState('failure')
                     })
             } catch (error) {
-                console.log(error)
+                setState('failure')
+                console.error(error)
             }
         }
         // If successful, update setting. This form will no longer be rendered

@@ -36,7 +36,7 @@ export const requestGraphQLFromVSCode = async <R, V = object>(
     // then add Access Token to request header, contributed by @ptxmac!
     const headers = new Headers(customHeaders as HeadersInit)
     headers.set('Content-Type', 'application/json')
-    if (accessToken && accessToken !== undefined) {
+    if (accessToken) {
         headers.set('Authorization', `token ${accessToken}`)
     }
     try {

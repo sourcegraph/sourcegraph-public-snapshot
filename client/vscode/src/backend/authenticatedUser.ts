@@ -56,7 +56,7 @@ export function observeAuthenticatedUser(secretStorage: vscode.SecretStorage): O
                 authenticatedUsers.next(authenticatedUserResult.data ? authenticatedUserResult.data.currentUser : null)
             })
             .catch(error => {
-                console.log('core auth error', error)
+                console.error('core auth error', error)
                 // TODO surface error?
                 authenticatedUsers.next(null)
             })
@@ -65,10 +65,10 @@ export function observeAuthenticatedUser(secretStorage: vscode.SecretStorage): O
     // Initial authenticated user
     updateAuthenticatedUser()
 
-    secretStorage.onDidChange(event => {
+    secretStorage.onDidChange(async event => {
         if (event.key === scretTokenKey) {
-            const token = secretStorage.get(scretTokenKey)
-            if (token !== undefined) {
+            const token = await secretStorage.get(scretTokenKey)
+            if (token) {
                 updateAuthenticatedUser()
             }
         }
