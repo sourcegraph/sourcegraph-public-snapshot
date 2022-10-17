@@ -77,9 +77,9 @@ describe('Code insights empty dashboard', () => {
         })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
-        await driver.page.waitForSelector('[data-reach-listbox-input]')
-        await driver.page.click('[data-reach-listbox-input]')
-        await driver.page.click('[data-value="EMPTY_DASHBOARD"]')
+        await driver.page.waitForSelector('[aria-label="Choose a dashboard, All Insights"]')
+        await driver.page.click('[aria-label="Choose a dashboard, All Insights"]')
+        await driver.page.click('[data-value="Empty Dashboard"]')
 
         expect(driver.page.url()).toBe(`${driver.sourcegraphBaseUrl}/insights/dashboards/EMPTY_DASHBOARD`)
 
