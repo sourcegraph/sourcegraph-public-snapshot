@@ -51,7 +51,7 @@ describe('Code insights [Dashboard card]', () => {
         await driver.page.waitForSelector('[aria-label="Pie chart"]')
 
         const numberOfArcs = await driver.page.$$eval('[aria-label="Pie chart"] path', elements => elements.length)
-        const numberHeadings = await driver.page.$$eval('[aria-label="Pie chart"] h3', elements => elements.length)
+        const numberHeadings = await driver.page.$$eval('[aria-label="Pie chart"] p', elements => elements.length)
 
         // Why 12?, because LANG_STAT_INSIGHT_CONTENT mock has 14 entries and only five of them
         // are rendered because all other (7 groups) are too small, and they are grouped and presented
