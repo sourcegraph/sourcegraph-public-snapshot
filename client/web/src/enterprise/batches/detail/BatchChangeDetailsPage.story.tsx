@@ -142,6 +142,17 @@ const queryChangesetCountsOverTime: typeof _queryChangesetCountsOverTime = () =>
         },
     ])
 
+const queryBatchSpecs: typeof _queryBatchSpecs = () =>
+    of({
+        __typename: 'BatchSpecConnection',
+        totalCount: 47,
+        pageInfo: {
+            endCursor: null,
+            hasNextPage: false,
+        },
+        nodes: [...NODES, successNode('pid1'), successNode('pid2'), successNode('pid3')],
+    })
+
 const deleteBatchChange = () => Promise.resolve(undefined)
 
 const Template: Story<{
@@ -249,7 +260,7 @@ SpecFile.argTypes = {
     },
     viewerCanAdminister: {
         defaultValue: false,
-    }
+    },
 }
 
 export const Archived = Template.bind({})
