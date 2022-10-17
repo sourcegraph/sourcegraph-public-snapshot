@@ -43,6 +43,9 @@ export {
     PopoverOpenEventReason,
     EMPTY_RECTANGLE,
     createRectangle,
+    usePopoverContext,
+    Flipping,
+    Strategy,
 } from './Popover'
 export { Collapse, CollapseHeader, CollapsePanel } from './Collapse'
 export {
