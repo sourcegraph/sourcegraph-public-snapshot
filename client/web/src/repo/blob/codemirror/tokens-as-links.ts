@@ -55,7 +55,7 @@ function tokenLinksToRangeSet(view: EditorView, links: TokenLink[]): DecorationS
             const to = view.state.doc.line(range.end.line + 1).from + range.end.character
             const decoration = Decoration.mark({
                 attributes: {
-                    class: 'sourcegraph-document-focus',
+                    class: 'sourcegraph-token-link',
                     href: url,
                     'data-token-link': '',
                 },

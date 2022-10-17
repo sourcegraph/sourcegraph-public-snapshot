@@ -29,7 +29,9 @@ body,
     background-color: var(--secondary);
 }
 
-.sourcegraph-document-focus {
+// Token link is used when we have converted token ranges into links within the blob view
+// This primarily removes some default link styles and adds a more suitable focus style.
+.sourcegraph-token-link {
     color: inherit;
     text-decoration: inherit;
 
