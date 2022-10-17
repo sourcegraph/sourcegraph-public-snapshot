@@ -1,6 +1,7 @@
 package sharedresolvers
 
 import (
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -23,13 +24,14 @@ type repositorySummaryResolver struct {
 }
 
 func NewRepositorySummaryResolver(autoindexingSvc AutoIndexingService, uploadsSvc UploadsService, policySvc PolicyService, summary RepositorySummary, prefetcher *Prefetcher, errTracer *observation.ErrCollector) CodeIntelRepositorySummaryResolver {
+	db := autoindexingSvc.GetUnsafeDB()
 	return &repositorySummaryResolver{
 		autoindexingSvc:  autoindexingSvc,
 		uploadsSvc:       uploadsSvc,
 		policySvc:        policySvc,
 		summary:          summary,
 		prefetcher:       prefetcher,
-		locationResolver: NewCachedLocationResolver(autoindexingSvc.GetUnsafeDB()),
+		locationResolver: NewCachedLocationResolver(db, gitserver.NewClient(db)),
 		errTracer:        errTracer,
 	}
 }

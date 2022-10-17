@@ -81,8 +81,6 @@ type ClientProvider struct {
 
 	gitlabClients   map[string]*Client
 	gitlabClientsMu sync.Mutex
-
-	tokenRefresher oauthutil.TokenRefresher
 }
 
 type CommonOp struct {
@@ -90,7 +88,7 @@ type CommonOp struct {
 	NoCache bool
 }
 
-func NewClientProvider(urn string, baseURL *url.URL, cli httpcli.Doer, tokenRefresher oauthutil.TokenRefresher) *ClientProvider {
+func NewClientProvider(urn string, baseURL *url.URL, cli httpcli.Doer) *ClientProvider {
 	if cli == nil {
 		cli = httpcli.ExternalDoer
 	}
@@ -105,11 +103,10 @@ func NewClientProvider(urn string, baseURL *url.URL, cli httpcli.Doer, tokenRefr
 	})
 
 	return &ClientProvider{
-		urn:            urn,
-		baseURL:        baseURL.ResolveReference(&url.URL{Path: path.Join(baseURL.Path, "api/v4") + "/"}),
-		httpClient:     cli,
-		gitlabClients:  make(map[string]*Client),
-		tokenRefresher: tokenRefresher,
+		urn:           urn,
+		baseURL:       baseURL.ResolveReference(&url.URL{Path: path.Join(baseURL.Path, "api/v4") + "/"}),
+		httpClient:    cli,
+		gitlabClients: make(map[string]*Client),
 	}
 }
 
@@ -191,10 +188,10 @@ type Client struct {
 //
 // See the docstring of Client for the meaning of the parameters.
 func (p *ClientProvider) newClient(a auth.Authenticator) *Client {
-	return p.NewClientWithTokenRefresher(a, p.tokenRefresher)
+	return p.NewClient(a)
 }
 
-func (p *ClientProvider) NewClientWithTokenRefresher(a auth.Authenticator, refresher oauthutil.TokenRefresher) *Client {
+func (p *ClientProvider) NewClient(a auth.Authenticator) *Client {
 	// Cache for GitLab project metadata.
 	var cacheTTL time.Duration
 	if isGitLabDotComURL(p.baseURL) && a == nil {
@@ -221,7 +218,6 @@ func (p *ClientProvider) NewClientWithTokenRefresher(a auth.Authenticator, refre
 		Auth:             a,
 		rateLimiter:      rl,
 		rateLimitMonitor: rlm,
-		tokenRefresher:   refresher,
 	}
 }
 
@@ -238,7 +234,7 @@ func (c *Client) Urn() string {
 // base path.
 func (c *Client) do(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
 	req.URL = c.baseURL.ResolveReference(req.URL)
-	return c.doWithBaseURL(ctx, getOAuthContext(c.baseURL.String()), req, result)
+	return c.doWithBaseURL(ctx, GetOAuthContext(c.baseURL.String()), req, result)
 }
 
 // doWithBaseURL doesn't amend the request URL. When an OAuth Bearer token is
@@ -272,13 +268,23 @@ func (c *Client) doWithBaseURL(ctx context.Context, oauthContext *oauthutil.OAut
 	var header http.Header
 	var body []byte
 
-	oauthAuther, ok := c.Auth.(*auth.OAuthBearerToken)
-	if ok && oauthContext != nil {
-		code, header, body, err = oauthutil.DoRequest(ctx, c.httpClient, req, oauthAuther, c.tokenRefresher, *oauthContext)
+	oauthAuther, ok := c.Auth.(auth.AuthenticatorWithRefresh)
+	if ok {
+		// Pre-emptively check for refresh
+		if oauthAuther.NeedsRefresh() {
+			oauthAuther.Refresh(ctx, c.httpClient)
+		}
+		resp, err := oauthutil.DoRequest(ctx, c.httpClient, req, oauthAuther)
 		if err != nil {
 			trace("GitLab API error", "method", req.Method, "url", req.URL.String(), "err", err)
 			return nil, 0, errors.Wrap(err, "do request with retry and refresh")
 		}
+		code = resp.StatusCode
+		header = resp.Header
+		// We swallow the error here, because we don't want to fail. Parsing the body
+		// is just optional to provide some more context.
+		body, _ = io.ReadAll(resp.Body)
+		resp.Body.Close()
 	} else {
 		if c.Auth != nil {
 			if err := c.Auth.Authenticate(req); err != nil {
@@ -350,7 +356,7 @@ func (c *Client) GetAuthenticatedUserOAuthScopes(ctx context.Context) ([]string,
 		Scopes []string `json:"scopes,omitempty"`
 	}{}
 
-	_, _, err = c.doWithBaseURL(ctx, getOAuthContext(c.baseURL.String()), req, &v)
+	_, _, err = c.doWithBaseURL(ctx, GetOAuthContext(c.baseURL.String()), req, &v)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting oauth scopes")
 	}
@@ -439,9 +445,9 @@ func (e ProjectNotFoundError) NotFound() bool { return true }
 
 var MockGetOAuthContext func() *oauthutil.OAuthContext
 
-// getOAuthContext matches the corresponding auth provider using the given
+// GetOAuthContext matches the corresponding auth provider using the given
 // baseURL and returns the oauthutil.OAuthContext of it.
-func getOAuthContext(baseURL string) *oauthutil.OAuthContext {
+func GetOAuthContext(baseURL string) *oauthutil.OAuthContext {
 	if MockGetOAuthContext != nil {
 		return MockGetOAuthContext()
 	}

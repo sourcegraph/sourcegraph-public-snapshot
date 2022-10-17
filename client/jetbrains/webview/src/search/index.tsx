@@ -95,7 +95,7 @@ export function applyConfig(config: PluginConfig): void {
     customRequestHeaders = parseCustomRequestHeadersString(config.customRequestHeadersAsString)
     anonymousUserId = config.anonymousUserId || 'no-user-id'
     pluginVersion = config.pluginVersion
-    polyfillEventSource({...(accessToken ? { Authorization: `token ${accessToken}` } : {}), ...customRequestHeaders})
+    polyfillEventSource({ ...(accessToken ? { Authorization: `token ${accessToken}` } : {}), ...customRequestHeaders })
 }
 
 function parseCustomRequestHeadersString(headersString: string | null): Record<string, string> | null {
@@ -163,7 +163,11 @@ export function applyTheme(theme: Theme, rootElement: Element = document.documen
 
 export async function updateVersionAndAuthDataFromServer(): Promise<void> {
     try {
-        const { site, currentUser } = await getSiteVersionAndAuthenticatedUser(instanceURL, accessToken, customRequestHeaders)
+        const { site, currentUser } = await getSiteVersionAndAuthenticatedUser(
+            instanceURL,
+            accessToken,
+            customRequestHeaders
+        )
         authenticatedUser = currentUser
         backendVersion = site?.productVersion || null
         isServerAccessSuccessful = true

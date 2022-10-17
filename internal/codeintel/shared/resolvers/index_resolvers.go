@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -50,13 +51,14 @@ func NewIndexResolver(autoindexingSvc AutoIndexingService, uploadsSvc UploadsSer
 		prefetcher.MarkUpload(*index.AssociatedUploadID)
 	}
 
+	db := autoindexingSvc.GetUnsafeDB()
 	return &indexResolver{
 		autoindexingSvc:  autoindexingSvc,
 		uploadsSvc:       uploadsSvc,
 		policySvc:        policySvc,
 		index:            index,
 		prefetcher:       prefetcher,
-		locationResolver: NewCachedLocationResolver(autoindexingSvc.GetUnsafeDB()),
+		locationResolver: NewCachedLocationResolver(db, gitserver.NewClient(db)),
 		traceErrs:        errTrace,
 	}
 }

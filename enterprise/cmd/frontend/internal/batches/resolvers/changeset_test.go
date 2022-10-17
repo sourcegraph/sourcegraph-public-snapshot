@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 
 	"github.com/sourcegraph/log/logtest"
@@ -15,7 +16,6 @@ import (
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -69,7 +69,7 @@ func TestChangesetResolver(t *testing.T) {
 	// These are needed for preview repository comparisons.
 	gitserverClient := gitserver.NewMockClient()
 	mockBackendCommits(t, api.CommitID(baseRev))
-	mockRepoComparison(t, *gitserverClient, baseRev, headRev, testDiff)
+	mockRepoComparison(t, gitserverClient, baseRev, headRev, testDiff)
 
 	unpublishedSpec := bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 		User:          userID,

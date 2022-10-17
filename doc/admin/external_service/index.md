@@ -141,6 +141,7 @@ We recognize there are other code hosts including CVS, Azure Dev Ops, SVN, and m
   - [Go dependencies](go.md)
   - [npm dependencies](npm.md)
   - [Python dependencies](python.md)
+  - [Ruby dependencies](ruby.md)
 
 **Users** can configure the following public code hosts:
 

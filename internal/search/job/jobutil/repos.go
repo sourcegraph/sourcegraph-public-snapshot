@@ -28,7 +28,7 @@ func (s *RepoSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
-	repos := searchrepos.NewResolver(clients.Logger, clients.DB, clients.SearcherURLs, clients.Zoekt)
+	repos := searchrepos.NewResolver(clients.Logger, clients.DB, clients.Gitserver, clients.SearcherURLs, clients.Zoekt)
 	err = repos.Paginate(ctx, s.RepoOpts, func(page *searchrepos.Resolved) error {
 		tr.LogFields(log.Int("resolved.len", len(page.RepoRevs)))
 

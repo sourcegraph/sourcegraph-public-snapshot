@@ -106,6 +106,7 @@ describe('Blob viewer', () => {
                 Blob: () => ({
                     repository: {
                         commit: {
+                            blob: null,
                             file: {
                                 content: '// Log to console\nconsole.log("Hello world")\n// Third line',
                                 richHTML: '',
@@ -190,6 +191,7 @@ describe('Blob viewer', () => {
                 Blob: () => ({
                     repository: {
                         commit: {
+                            blob: null,
                             file: {
                                 content: '// Log to console\nconsole.log("Hello world")',
                                 richHTML: '',
@@ -461,6 +463,7 @@ describe('Blob viewer', () => {
                 Blob: () => ({
                     repository: {
                         commit: {
+                            blob: null,
                             file: {
                                 content: '// Log to console\nconsole.log("Hello world")\n// Third line',
                                 richHTML: '',
@@ -756,6 +759,7 @@ describe('Blob viewer', () => {
                         repository: {
                             commit: {
                                 file,
+                                blob: null,
                             },
                         },
                     }
@@ -921,6 +925,7 @@ describe('Blob viewer', () => {
                 Blob: ({ filePath }) => ({
                     repository: {
                         commit: {
+                            blob: null,
                             file: {
                                 content: `// file path: ${filePath}\nconsole.log("Hello world")`,
                                 richHTML: '',
