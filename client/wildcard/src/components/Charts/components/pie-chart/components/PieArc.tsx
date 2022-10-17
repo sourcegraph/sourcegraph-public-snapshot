@@ -6,7 +6,7 @@ import { PieArcDatum } from '@visx/shape/lib/shapes/Pie'
 import classNames from 'classnames'
 import { Arc as ArcType } from 'd3-shape'
 
-import { H3 } from '../../../../Typography'
+import { Text } from '../../../../Typography'
 import { DEFAULT_FALLBACK_COLOR } from '../../../constants'
 
 import styles from './PieArc.module.scss'
@@ -63,7 +63,7 @@ export function PieArc<Datum>(props: PieArcProps<Datum>): ReactElement {
                 <Connector className={styles.labelLine} type="line" />
 
                 <HtmlLabel showAnchorLine={false} className={styles.label}>
-                    <H3 className={styles.labelTitle}>{title}</H3>
+                    <Text className={styles.labelTitle}>{title}</Text>
                     <small className={styles.labelSubTitle}>{subtitle}</small>
                 </HtmlLabel>
             </Annotation>

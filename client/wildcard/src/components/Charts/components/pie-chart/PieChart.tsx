@@ -98,31 +98,32 @@ export function PieChart<Datum>(props: PieChartProps<Datum>): ReactElement | nul
                         return (
                             <Group role="list">
                                 {arcs.map((arc, index) => (
-                                    <MaybeLink
-                                        key={getDatumName(arc.data)}
-                                        to={getDatumLink(arc.data)}
-                                        target="_blank"
-                                        rel="noopener"
-                                        role={getDatumLink(arc.data) ? 'link' : 'graphics-dataunit'}
-                                        aria-label={`Name: ${getDatumName(arc.data)}. Value: ${getSubtitle(
-                                            arc,
-                                            total
-                                        )}.`}
-                                        className={styles.link}
-                                        onClick={event => onDatumLinkClick(event, arc.data, index)}
-                                    >
-                                        <PieArc
-                                            arc={arc}
-                                            path={pie.path}
-                                            title={getDatumName(arc.data)}
-                                            subtitle={getSubtitle(arc, total)}
-                                            className={classNames(styles.arcPath, {
-                                                [styles.arcPathWithLink]: !!getDatumLink(arc.data),
-                                            })}
-                                            getColor={getDatumColor}
-                                            onPointerMove={() => setHoveredArc(arc)}
-                                        />
-                                    </MaybeLink>
+                                    <Group key={getDatumName(arc.data)} role="listitem">
+                                        <MaybeLink
+                                            to={getDatumLink(arc.data)}
+                                            target="_blank"
+                                            rel="noopener"
+                                            role={getDatumLink(arc.data) ? 'link' : 'graphics-dataunit'}
+                                            aria-label={`Name: ${getDatumName(arc.data)}. Value: ${getSubtitle(
+                                                arc,
+                                                total
+                                            )}.`}
+                                            className={styles.link}
+                                            onClick={event => onDatumLinkClick(event, arc.data, index)}
+                                        >
+                                            <PieArc
+                                                arc={arc}
+                                                path={pie.path}
+                                                title={getDatumName(arc.data)}
+                                                subtitle={getSubtitle(arc, total)}
+                                                className={classNames(styles.arcPath, {
+                                                    [styles.arcPathWithLink]: !!getDatumLink(arc.data),
+                                                })}
+                                                getColor={getDatumColor}
+                                                onPointerMove={() => setHoveredArc(arc)}
+                                            />
+                                        </MaybeLink>
+                                    </Group>
                                 ))}
                             </Group>
                         )
