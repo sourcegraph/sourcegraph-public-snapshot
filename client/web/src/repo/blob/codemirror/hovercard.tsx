@@ -560,6 +560,8 @@ class HovercardView implements TooltipView {
             // CodeMirror doesn't provide a "destroy" function like for
             // ViewPlugins, hence we use a mutation observer to detect the
             // removal of the DOM container and clean up resources.
+            // (note: https://github.com/codemirror/view/pull/41 adds such a
+            // method)
             const observer = new MutationObserver(mutations => {
                 for (const mutation of mutations) {
                     if (mutation.type === 'childList' && Array.from(mutation.removedNodes).includes(this.dom)) {
