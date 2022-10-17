@@ -63,12 +63,25 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
                     // assumes the extension was started with a bad token because
                     // user should be autheticated automatically if token is valid
                     if (endpointUrl && token) {
-                        setState('failure')
+                        setAccessToken('invalid')
+                        // setState('failure')
+                        extensionCoreAPI
+                            .removeAccessToken()
+                            .then(() => {
+                                setState('failure')
+                            })
+                            .catch(() => {})
                     }
                 })
                 .catch(error => console.error(error))
         }
-    }, [accessToken, endpointUrl, extensionCoreAPI.getAccessToken])
+    }, [
+        accessToken,
+        endpointUrl,
+        extensionCoreAPI,
+        extensionCoreAPI.getAccessToken,
+        extensionCoreAPI.removeAccessToken,
+    ])
 
     const onTokenInputChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
         setAccessToken(event.target.value)
@@ -92,24 +105,33 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
                 setHostname(new URL(endpointUrl).hostname)
                 authStateVariables.overrideSourcegraphURL = endpointUrl
             }
-            setState('validating')
-            const currentAuthStateResult = platformContext
-                .requestGraphQL<CurrentAuthStateResult, CurrentAuthStateVariables>(authStateVariables)
-                .toPromise()
-
-            currentAuthStateResult
-                .then(async ({ data }) => {
-                    if (data?.currentUser) {
-                        setState('success')
-                        // Update access token and instance url in user config for the extension
-                        await extensionCoreAPI.setEndpointUri(endpointUrl, accessToken)
+            try {
+                setState('validating')
+                const currentAuthStateResult = platformContext
+                    .requestGraphQL<CurrentAuthStateResult, CurrentAuthStateVariables>(authStateVariables)
+                    .toPromise()
+                console.log(currentAuthStateResult)
+                currentAuthStateResult
+                    .then(async ({ data }) => {
+                        if (data?.currentUser) {
+                            console.log('success')
+                            setState('success')
+                            // Update access token and instance url in user config for the extension
+                            await extensionCoreAPI.setEndpointUri(accessToken, endpointUrl)
+                            return
+                        }
+                        await extensionCoreAPI.setEndpointUri('', endpointUrl)
+                        setState('failure')
                         return
-                    }
-                    setState('failure')
-                    return
-                })
-                // v2/debt: Disambiguate network vs auth errors like we do in the browser extension.
-                .catch(() => setState('failure'))
+                    })
+                    // v2/debt: Disambiguate network vs auth errors like we do in the browser extension.
+                    .catch(async () => {
+                        await extensionCoreAPI.setEndpointUri('', endpointUrl)
+                        setState('failure')
+                    })
+            } catch (error) {
+                console.log(error)
+            }
         }
         // If successful, update setting. This form will no longer be rendered
     }

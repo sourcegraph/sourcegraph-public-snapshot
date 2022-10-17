@@ -20,27 +20,39 @@ import { openSourcegraphUriCommand } from './file-system/commands'
 import { initializeSourcegraphFileSystem } from './file-system/initialize'
 import { SourcegraphUri } from './file-system/SourcegraphUri'
 import { Event } from './graphql-operations'
-import { accessTokenSetting, updateAccessTokenSetting } from './settings/accessTokenSetting'
-import { endpointRequestHeadersSetting, endpointSetting, updateEndpointSetting } from './settings/endpointSetting'
+import { endpointRequestHeadersSetting, endpointSetting, setEndpoint } from './settings/endpointSetting'
 import { invalidateContextOnSettingsChange } from './settings/invalidation'
 import { LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY } from './settings/LocalStorageService'
 import { watchUninstall } from './settings/uninstall'
 import { createVSCEStateMachine, VSCEQueryState } from './state'
 import { focusSearchPanel, registerWebviews } from './webview/commands'
+import { scretTokenKey, SourcegraphAuthProvider } from './webview/platform/AuthProvider'
 /**
  * See CONTRIBUTING docs for the Architecture Diagram
  */
-export function activate(context: vscode.ExtensionContext): void {
+export async function activate(context: vscode.ExtensionContext): Promise<void> {
+    const secretStorage = context.secrets
+    context.subscriptions.push(
+        vscode.authentication.registerAuthenticationProvider(
+            endpointSetting(),
+            'Sourcegraph Auth',
+            new SourcegraphAuthProvider(secretStorage)
+        )
+    )
+    const session = await vscode.authentication.getSession(endpointSetting(), [], { createIfNone: false })
+    const authenticatedUser = observeAuthenticatedUser(secretStorage)
+    const initialInstanceURL = endpointSetting()
+    const initialAccessToken = await secretStorage.get(scretTokenKey)
+    if (initialAccessToken && !authenticatedUser) {
+        await secretStorage.delete(scretTokenKey)
+    }
     const localStorageService = new LocalStorageService(context.globalState)
     const stateMachine = createVSCEStateMachine({ localStorageService })
     invalidateContextOnSettingsChange({ context, stateMachine })
     initializeSearchContexts({ localStorageService, stateMachine, context })
     const sourcegraphSettings = initializeSourcegraphSettings({ context })
-    const authenticatedUser = observeAuthenticatedUser({ context })
-    const initialInstanceURL = endpointSetting()
-    const initialAccessToken = accessTokenSetting()
     const editorTheme = vscode.ColorThemeKind[vscode.window.activeColorTheme.kind]
-    const eventSourceType = initializeInstanceVersionNumber(localStorageService, initialInstanceURL, initialAccessToken)
+    const eventSourceType = initializeInstanceVersionNumber(localStorageService, initialAccessToken, initialInstanceURL)
     // Sets global `EventSource` for Node, which is required for streaming search.
     // Used for VS Code web as well to be able to add Authorization header.
     // Add custom headers to `EventSource` Authorization header when provided
@@ -48,19 +60,29 @@ export function activate(context: vscode.ExtensionContext): void {
     polyfillEventSource(initialAccessToken ? { Authorization: `token ${initialAccessToken}`, ...customHeaders } : {})
     // Update `EventSource` Authorization header on access token / headers change.
     context.subscriptions.push(
-        vscode.workspace.onDidChangeConfiguration(config => {
-            if (
-                config.affectsConfiguration('sourcegraph.accessToken') ||
-                config.affectsConfiguration('sourcegraph.requestHeaders')
-            ) {
-                const newAccessToken = accessTokenSetting()
+        vscode.workspace.onDidChangeConfiguration(async config => {
+            const session = await vscode.authentication.getSession(endpointSetting(), [], { forceNewSession: false })
+            if (config.affectsConfiguration('sourcegraph.requestHeaders') && session) {
                 const newCustomHeaders = endpointRequestHeadersSetting()
                 polyfillEventSource(
-                    newAccessToken ? { Authorization: `token ${newAccessToken}`, ...newCustomHeaders } : {}
+                    session.accessToken ? { Authorization: `token ${session.accessToken}`, ...newCustomHeaders } : {}
                 )
             }
         })
     )
+    context.subscriptions.push(
+        vscode.commands.registerCommand('sourcegraph.auth', async (token: string, uri?: string) => {
+            // Get our PAT session.
+            await secretStorage.store(scretTokenKey, token)
+            const session = await vscode.authentication.getSession(uri || endpointSetting(), [], {
+                forceNewSession: true,
+            })
+            if (session) {
+                await vscode.window.showInformationMessage('Logged in sucessfully')
+            }
+        })
+    )
+
     // For search panel webview to signal that it is ready for messages.
     // Replay subject with large buffer size just in case panels are opened in quick succession.
     const initializedPanelIDs = new ReplaySubject<string>(7)
@@ -69,8 +91,22 @@ export function activate(context: vscode.ExtensionContext): void {
     // Use for file tree panel
     const { fs } = initializeSourcegraphFileSystem({ context, initialInstanceURL })
     // Use api endpoint for stream search
-    const streamSearch = createStreamSearch({ context, stateMachine, sourcegraphURL: `${initialInstanceURL}/.api` })
-
+    const streamSearch = createStreamSearch({
+        context,
+        stateMachine,
+        sourcegraphURL: `${initialInstanceURL}/.api`,
+        session,
+    })
+    async function login(newtoken: string, newuri: string): Promise<void> {
+        if (newuri) {
+            await secretStorage.store(scretTokenKey, newtoken)
+        }
+        await setEndpoint(newuri)
+        await vscode.authentication.getSession(newuri, [], { forceNewSession: true })
+    }
+    async function logout(): Promise<void> {
+        await secretStorage.delete(scretTokenKey)
+    }
     const extensionCoreAPI: ExtensionCoreAPI = {
         panelInitialized: panelId => initializedPanelIDs.next(panelId),
         observeState: () => proxySubscribable(stateMachine.observeState()),
@@ -86,9 +122,9 @@ export function activate(context: vscode.ExtensionContext): void {
         openLink: (uri: string) => vscode.env.openExternal(vscode.Uri.parse(uri)),
         copyLink: (uri: string) =>
             env.clipboard.writeText(uri).then(() => vscode.window.showInformationMessage('Link Copied!')),
-        getAccessToken: accessTokenSetting(),
-        setAccessToken: accessToken => updateAccessTokenSetting(accessToken),
-        setEndpointUri: (uri, accessToken) => updateEndpointSetting(uri, accessToken),
+        getAccessToken: session?.accessToken,
+        removeAccessToken: () => logout(),
+        setEndpointUri: (accessToken, uri) => login(accessToken, uri),
         reloadWindow: () => vscode.commands.executeCommand('workbench.action.reloadWindow'),
         focusSearchPanel,
         streamSearch,

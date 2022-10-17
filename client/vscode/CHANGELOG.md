@@ -10,6 +10,8 @@ The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release v
 
 ### Changes
 
+- Tokens will now be stored in secret storage [issues/36731](https://github.com/sourcegraph/sourcegraph/issues/36731)
+
 ### Fixes
 
 ## 2.2.12

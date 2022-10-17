@@ -9,6 +9,16 @@ export function endpointSetting(): string {
     return removeEndingSlash(url)
 }
 
+export async function setEndpoint(newEndpoint: string): Promise<boolean> {
+    const newEndpointURL = removeEndingSlash(newEndpoint)
+    try {
+        await readConfiguration().update('url', newEndpointURL, vscode.ConfigurationTarget.Global)
+        return true
+    } catch {
+        return false
+    }
+}
+
 export function endpointHostnameSetting(): string {
     return new URL(endpointSetting()).hostname
 }
@@ -22,28 +32,8 @@ export function endpointProtocolSetting(): string {
     return new URL(endpointSetting()).protocol
 }
 
-export function endpointAccessTokenSetting(): boolean {
-    if (readConfiguration().get<string>('accessToken')) {
-        return true
-    }
-    return false
-}
-
 export function endpointRequestHeadersSetting(): object {
     return readConfiguration().get<object>('requestHeaders') || {}
-}
-
-export async function updateEndpointSetting(newEndpoint: string, newAccessToken?: string): Promise<boolean> {
-    const newEndpointURL = removeEndingSlash(newEndpoint)
-    try {
-        if (newAccessToken) {
-            await readConfiguration().update('accessToken', newAccessToken, vscode.ConfigurationTarget.Global)
-        }
-        await readConfiguration().update('url', newEndpointURL, vscode.ConfigurationTarget.Global)
-        return true
-    } catch {
-        return false
-    }
 }
 
 function removeEndingSlash(uri: string): string {
@@ -51,4 +41,9 @@ function removeEndingSlash(uri: string): string {
         return uri.slice(0, -1)
     }
     return uri
+}
+
+export function isSourcegraph(): boolean {
+    const hostname = new URL(endpointSetting()).hostname
+    return hostname === 'sourcegraph.com' || hostname === 'www.sourcegraph.com'
 }
