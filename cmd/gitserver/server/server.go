@@ -555,9 +555,7 @@ func (s *Server) addrForRepo(ctx context.Context, repoName api.RepoName, gitServ
 }
 
 // 🚨 SECURITY: checkXRequestedWith will ensure that the X-Requested-With header contains
-// the correct value.
-// 
-// See "What does X-Requested-With do, anyway?" in
+// the correct value. See "What does X-Requested-With do, anyway?" in
 // https://github.com/sourcegraph/sourcegraph/pull/27931.
 func checkXRequestedWith(h http.Header) error {
 	if value := h.Get("X-Requested-With"); value != "Sourcegraph" {
