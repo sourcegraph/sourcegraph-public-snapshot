@@ -33,12 +33,12 @@ Unique AMI IDs can be found in our [release page](https://github.com/sourcegraph
 #### Creation procress
 
 Our AWS AMIs are all based on the HVM method, which provides us with the ability to create a Sourcegraph instance directly on the virtual machine using the verified Amazon Linux 2 Kernel 5.10 x86_64 HVM as the base image. The following steps are performed during the AMI creation process through our [install script](https://sourcegraph.com/github.com/sourcegraph/deploy@v4.0.1/-/blob/install/install.sh):
-1. De-escalate to ec2-user to make sure tasks are performed by non-root user
+1. De-escalate to `ec2-user` to make sure tasks are performed by non-root user
 1. Install Git
 1. Clone the deployment repository
 1. Data volumes are formatted and labeled for the AMI instance to mount later
-1. Add configurations to the kernel that would otherwise limit Sourcegraph search performance
-1. Adjust the local firewall to ensure k3s cluster networking/DNS can pass through
+1. [Add configurations to the kernel](https://sourcegraph.com/github.com/sourcegraph/deploy@v4.0.1/-/blob/install/install.sh?L64-73) that would otherwise limit Sourcegraph search performance
+1. [Adjust the local firewall settings](https://sourcegraph.com/github.com/sourcegraph/deploy@v4.0.1/-/blob/install/install.sh?L78-84) to ensure k3s cluster networking/DNS can pass through
 1. Link the ephemeral kubelet/pod storage to our data disk
 1. Link the persistent volume pod storage to our data disk
 1. Link the k3s's embedded database to our data disk
@@ -75,6 +75,8 @@ Sourcegraph does not have access to your cluster and data.
 - Ability to launch an AMI instance on EC2 with custom encryption [docs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/AMIEncryption.html#AMI-encryption-launch).
 
 Please refer to the official [CIS hardening guide](https://docs.k3s.io/security/hardening-guide) by k3s for more details and general tips on how to improve security of your cluster.
+
+> NOTE: See [Sourcegraph Vulnerability Management Policy](https://handbook.sourcegraph.com/departments/engineering/dev/policies/vulnerability-management-policy/#vulnerability-service-level-agreements) to learn more about our vulnerability and patching policy as well as the current[vulnerability service level agreements](https://handbook.sourcegraph.com/departments/engineering/dev/policies/vulnerability-management-policy/#vulnerability-service-level-agreements). 
 
 ## Additional resources
 
