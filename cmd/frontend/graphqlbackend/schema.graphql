@@ -2609,32 +2609,32 @@ type ExternalServiceSyncJob implements Node {
     """
     The number of repos synced during this sync job.
     """
-    repoSynced: Int
+    reposSynced: Int!
 
     """
     The number of times an error occurred syncing a repo during this sync job.
     """
-    repoSyncErrors: Int
+    repoSyncErrors: Int!
 
     """
     The number of new repos discovered during this sync job.
     """
-    reposAdded: Int
+    reposAdded: Int!
 
     """
     The number of repos deleted as a result of this sync job.
     """
-    reposDeleted: Int
+    reposDeleted: Int!
 
     """
     The number of existing repos whose metadata has changed during this sync job.
     """
-    reposModified: Int
+    reposModified: Int!
 
     """
     The number of existing repos whose metadata did not change during this sync job.
     """
-    reposUnmodified: Int
+    reposUnmodified: Int!
 }
 
 """
