@@ -52,7 +52,11 @@ export function createStreamSearch({
                 map(version => {
                     let patternType = options.patternType
 
-                    if (patternType === SearchPatternType.standard && version && isOlderThan(version, { major: 3, minor: 43 })) {
+                    if (
+                        patternType === SearchPatternType.standard &&
+                        version &&
+                        isOlderThan(version, { major: 3, minor: 43 })
+                    ) {
                         /**
                          * SearchPatternType.standard support was added in Sourcegraph v3.43.0.
                          * Use SearchPatternType.literal for earlier versions instead (it was the default before v3.43.0).
