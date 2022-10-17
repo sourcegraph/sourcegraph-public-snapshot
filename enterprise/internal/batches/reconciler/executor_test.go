@@ -25,10 +25,12 @@ import (
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
+
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -593,11 +595,15 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			}
 			changeset := bt.CreateChangeset(t, ctx, bstore, changesetOpts)
 
-			// Setup gitserver dependency.
-			gitClient := &bt.FakeGitserverClient{ResponseErr: tc.gitClientErr}
-			if changesetSpec != nil {
-				gitClient.Response = changesetSpec.HeadRef
-			}
+			var response string
+			var createCommitFromPatchCalled bool
+			state.MockClient.CreateCommitFromPatchFunc.SetDefaultHook(func(_ context.Context, req gitprotocol.CreateCommitFromPatchRequest) (string, error) {
+				createCommitFromPatchCalled = true
+				if changesetSpec != nil {
+					response = changesetSpec.HeadRef
+				}
+				return response, tc.gitClientErr
+			})
 
 			// Setup the sourcer that's used to create a Source with which
 			// to create/update a changeset.
@@ -635,7 +641,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			err := executePlan(
 				ctx,
 				logtest.Scoped(t),
-				gitClient,
+				state.MockClient,
 				sourcer,
 				// Don't actually sleep for the sake of testing.
 				true,
@@ -651,7 +657,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			}
 
 			// Assert that all the calls happened
-			if have, want := gitClient.CreateCommitFromPatchCalled, tc.wantGitserverCommit; have != want {
+			if have, want := createCommitFromPatchCalled, tc.wantGitserverCommit; have != want {
 				t.Fatalf("wrong CreateCommitFromPatch call. wantCalled=%t, wasCalled=%t", want, have)
 			}
 
@@ -1037,14 +1043,20 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 				CommitDiff: "testdiff",
 			})
 
-			gitClient := &bt.FakeGitserverClient{ResponseErr: nil}
 			fakeSource := &stesting.FakeChangesetSource{Svc: tt.extSvc, CurrentAuthenticator: tt.credential}
 			sourcer := stesting.NewFakeSourcer(nil, fakeSource)
+
+			gitserverClient := gitserver.NewMockClient()
+			createCommitFromPatchReq := &gitprotocol.CreateCommitFromPatchRequest{}
+			gitserverClient.CreateCommitFromPatchFunc.SetDefaultHook(func(_ context.Context, req gitprotocol.CreateCommitFromPatchRequest) (string, error) {
+				createCommitFromPatchReq = &req
+				return "", nil
+			})
 
 			err := executePlan(
 				actor.WithActor(ctx, actor.FromUser(tt.user.ID)),
 				logtest.Scoped(t),
-				gitClient,
+				gitserverClient,
 				sourcer,
 				true,
 				bstore,
@@ -1062,7 +1074,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 				}
 			}
 
-			if diff := cmp.Diff(tt.wantPushConfig, gitClient.CreateCommitFromPatchReq.Push); diff != "" {
+			if diff := cmp.Diff(tt.wantPushConfig, createCommitFromPatchReq.Push); diff != "" {
 				t.Errorf("unexpected push options:\n%s", diff)
 			}
 		})

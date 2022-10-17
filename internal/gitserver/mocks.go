@@ -2,8 +2,6 @@ package gitserver
 
 import (
 	"io"
-
-	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 // Mocks is used to mock behavior in tests. Tests must call ResetMocks() when finished to ensure its
@@ -16,8 +14,7 @@ import (
 // that's done, we should take advantage of the generated mock client in this
 // package instead.
 var Mocks, emptyMocks struct {
-	ExecReader      func(args []string) (reader io.ReadCloser, err error)
-	ResolveRevision func(spec string, opt ResolveRevisionOptions) (api.CommitID, error)
+	ExecReader func(args []string) (reader io.ReadCloser, err error)
 }
 
 // ResetMocks clears the mock functions set on Mocks (so that subsequent tests don't inadvertently
