@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 
 import { Button, Container, PageHeader } from '@sourcegraph/wildcard'
 
@@ -17,6 +17,7 @@ import { ExecutorSecretFields, ExecutorSecretScope, Scalars } from '../../../gra
 import { AddSecretModal } from './AddSecretModal'
 import { useExecutorSecretsConnection, useGlobalExecutorSecretsConnection } from './backend'
 import { ExecutorSecretNode } from './ExecutorSecretNode'
+import { ExecutorSecretScopeSelector } from './ExecutorSecretScopeSelector'
 
 export interface GlobalExecutorSecretsListPageProps {
     headerLine: JSX.Element
@@ -24,13 +25,10 @@ export interface GlobalExecutorSecretsListPageProps {
 
 export const GlobalExecutorSecretsListPage: React.FunctionComponent<
     React.PropsWithChildren<GlobalExecutorSecretsListPageProps>
-> = props => (
-    <ExecutorSecretsListPage
-        namespaceID={null}
-        connectionResult={useGlobalExecutorSecretsConnection(ExecutorSecretScope.BATCHES)}
-        {...props}
-    />
-)
+> = props => {
+    const connectionLoader = useCallback((scope: ExecutorSecretScope) => useGlobalExecutorSecretsConnection(scope), [])
+    return <ExecutorSecretsListPage namespaceID={null} connectionLoader={connectionLoader} {...props} />
+}
 
 export interface UserExecutorSecretsListPageProps extends GlobalExecutorSecretsListPageProps {
     userID: Scalars['ID']
@@ -38,25 +36,26 @@ export interface UserExecutorSecretsListPageProps extends GlobalExecutorSecretsL
 
 export const UserExecutorSecretsListPage: React.FunctionComponent<
     React.PropsWithChildren<UserExecutorSecretsListPageProps>
-> = props => (
-    <ExecutorSecretsListPage
-        namespaceID={props.userID}
-        connectionResult={useExecutorSecretsConnection(props.userID, ExecutorSecretScope.BATCHES)}
-        {...props}
-    />
-)
+> = props => {
+    const connectionLoader = useCallback(
+        (scope: ExecutorSecretScope) => useExecutorSecretsConnection(props.userID, scope),
+        []
+    )
+    return <ExecutorSecretsListPage namespaceID={props.userID} connectionLoader={connectionLoader} {...props} />
+}
 
 interface ExecutorSecretsListPageProps extends GlobalExecutorSecretsListPageProps {
     namespaceID: Scalars['ID'] | null
-    connectionResult: UseConnectionResult<ExecutorSecretFields>
+    connectionLoader: (scope: ExecutorSecretScope) => UseConnectionResult<ExecutorSecretFields>
 }
 
 const ExecutorSecretsListPage: React.FunctionComponent<React.PropsWithChildren<ExecutorSecretsListPageProps>> = ({
     namespaceID,
     headerLine,
-    connectionResult,
+    connectionLoader,
 }) => {
-    const { loading, hasNextPage, fetchMore, connection, error, refetchAll } = connectionResult
+    const [selectedScope, setSelectedScope] = useState<ExecutorSecretScope>(ExecutorSecretScope.BATCHES)
+    const { loading, hasNextPage, fetchMore, connection, error, refetchAll } = connectionLoader(selectedScope)
 
     const [showAddModal, setShowAddModal] = useState<boolean>(false)
     const onClickAdd = useCallback<React.MouseEventHandler>(event => {
@@ -92,10 +91,23 @@ const ExecutorSecretsListPage: React.FunctionComponent<React.PropsWithChildren<E
                 <AddSecretModal
                     onCancel={closeModal}
                     afterCreate={afterAction}
-                    scope={ExecutorSecretScope.BATCHES}
+                    scope={selectedScope}
                     namespaceID={namespaceID}
                 />
             )}
+
+            <div className="d-flex mb-3">
+                {Object.values(ExecutorSecretScope).map(scope => (
+                    <ExecutorSecretScopeSelector
+                        key={scope}
+                        scope={scope}
+                        label={executorSecretScopeContext(scope).label}
+                        onSelect={() => setSelectedScope(scope)}
+                        selected={scope === selectedScope}
+                        description={executorSecretScopeContext(scope).description}
+                    />
+                ))}
+            </div>
 
             <Container>
                 <ConnectionContainer className="mb-3">
@@ -124,4 +136,11 @@ const ExecutorSecretsListPage: React.FunctionComponent<React.PropsWithChildren<E
             </Container>
         </>
     )
+}
+
+function executorSecretScopeContext(scope: ExecutorSecretScope): { label: string; description: string } {
+    switch (scope) {
+        case ExecutorSecretScope.BATCHES:
+            return { label: 'Batch changes', description: 'Batch change execution secrets' }
+    }
 }
