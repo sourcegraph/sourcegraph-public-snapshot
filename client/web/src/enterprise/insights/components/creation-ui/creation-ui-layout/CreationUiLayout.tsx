@@ -25,7 +25,7 @@ export const CreationUIPreview = forwardRef((props, reference) => {
         <Component
             {...attributes}
             ref={reference}
-            aria-label="Code Insight live preview card"
+            aria-label="Code Insight live preview"
             className={classNames(styles.rootLivePreview, className)}
         />
     )
