@@ -21,8 +21,10 @@ exports[`<NavMenu /> Should render Menu Items Correctly 1`] = `
     class="floatingPanel popover py-1 menuList"
     data-reach-menu-items=""
     data-reach-menu-popover=""
+    hidden=""
     id="menu-1"
     role="dialog"
+    style="visibility: hidden;"
     tabindex="-1"
   >
     <div>

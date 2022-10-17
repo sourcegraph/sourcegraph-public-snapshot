@@ -90,11 +90,11 @@ describe('<NavMenu />', () => {
             const { headerContent, navItems = [] } = navItem
 
             if (headerContent && typeof headerContent === 'string') {
-                expect(screen.getByText(headerContent)).toBeVisible()
+                expect(screen.getByText(headerContent)).toBeInTheDocument()
             }
 
             for (const { content } of navItems) {
-                expect(screen.getByText(content as string)).toBeVisible()
+                expect(screen.getByText(content as string)).toBeInTheDocument()
             }
         }
     })
