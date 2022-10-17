@@ -43,7 +43,7 @@ function removeEndingSlash(uri: string): string {
     return uri
 }
 
-export function isSourcegraph(): boolean {
+export function isSourcegraphDotCom(): boolean {
     const hostname = new URL(endpointSetting()).hostname
     return hostname === 'sourcegraph.com' || hostname === 'www.sourcegraph.com'
 }
