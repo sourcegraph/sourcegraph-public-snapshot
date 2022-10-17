@@ -272,7 +272,10 @@ func (c *Client) doWithBaseURL(ctx context.Context, oauthContext *oauthutil.OAut
 	if ok {
 		// Pre-emptively check for refresh
 		if oauthAuther.NeedsRefresh() {
-			oauthAuther.Refresh(ctx, c.httpClient)
+			err = oauthAuther.Refresh(ctx, c.httpClient)
+			if err != nil {
+				return nil, 0, errors.Wrap(err, "pre-emptive refresh")
+			}
 		}
 		resp, err := oauthutil.DoRequest(ctx, c.httpClient, req, oauthAuther)
 		if err != nil {
@@ -283,8 +286,11 @@ func (c *Client) doWithBaseURL(ctx context.Context, oauthContext *oauthutil.OAut
 		header = resp.Header
 		// We swallow the error here, because we don't want to fail. Parsing the body
 		// is just optional to provide some more context.
-		body, _ = io.ReadAll(resp.Body)
-		resp.Body.Close()
+		body, err = io.ReadAll(resp.Body)
+		_ = resp.Body.Close()
+		if err != nil {
+			return nil, code, errors.Wrap(err, "read response body")
+		}
 	} else {
 		if c.Auth != nil {
 			if err := c.Auth.Authenticate(req); err != nil {
@@ -304,7 +310,10 @@ func (c *Client) doWithBaseURL(ctx context.Context, oauthContext *oauthutil.OAut
 
 		// We swallow the error here, because we don't want to fail. Parsing the body
 		// is just optional to provide some more context.
-		body, _ = io.ReadAll(resp.Body)
+		body, err = io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, code, errors.Wrap(err, "read response body")
+		}
 	}
 	trace("GitLab API", "method", req.Method, "url", req.URL.String(), "respCode", code)
 
