@@ -118,7 +118,7 @@ export const CaptureGroupCreationContent: FC<CaptureGroupCreationContentProps> =
     return (
         <CreationUiLayout className={className}>
             <CreationUIForm
-                aria-label="Capture Group Insight creation form"
+                aria-label="Detect and track Insight creation form"
                 as={CaptureGroupCreationForm}
                 form={form}
                 title={title}
