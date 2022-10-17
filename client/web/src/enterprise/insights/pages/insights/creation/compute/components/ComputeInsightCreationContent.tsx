@@ -114,7 +114,12 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
 
     return (
         <CreationUiLayout {...attributes}>
-            <CreationUIForm noValidate={true} onSubmit={handleSubmit} onReset={handleFormReset}>
+            <CreationUIForm
+                aria-label="Group results Insight creation form"
+                noValidate={true}
+                onSubmit={handleSubmit}
+                onReset={handleFormReset}
+            >
                 <FormGroup
                     name="insight repositories"
                     title="Targeted repositories"
@@ -132,7 +137,7 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
                     />
                 </FormGroup>
 
-                <hr className="my-4 w-100" />
+                <hr aria-hidden={true} className="my-4 w-100" />
 
                 <FormGroup
                     innerRef={series.input.ref}
@@ -167,13 +172,13 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
                     />
                 </FormGroup>
 
-                <hr className="my-4 w-100" />
+                <hr aria-hidden={true} className="my-4 w-100" />
 
                 <FormGroup name="map result" title="Map result">
                     <ComputeInsightMapPicker series={validSeries} {...groupBy.input} />
                 </FormGroup>
 
-                <hr className="my-4 w-100" />
+                <hr aria-hidden={true} className="my-4 w-100" />
 
                 <FormGroup name="chart settings group" title="Chart settings">
                     <Input
@@ -186,7 +191,7 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
                     />
                 </FormGroup>
 
-                <hr className="my-4 w-100" />
+                <hr aria-hidden={true} className="my-4 w-100" />
 
                 {children({
                     submitting: formAPI.submitting,
